@@ -29,6 +29,7 @@
 
 #package-icon-image {
 	width: 4.3rem;
+	height: 4.3rem;
 	border: 0.15rem solid var(--bg4);
 	border-radius: var(--round2);
 }
@@ -50,6 +51,14 @@
 #package-id {
 	color: var(--fg3);
 	font-weight: bold;
+}
+
+#package-repo {
+	padding: 0.3rem 0.5rem;
+	border-radius: var(--round);
+	font-size: 0.7rem;
+	font-weight: bold;
+	line-height: 1;
 }
 
 #package-short-description {

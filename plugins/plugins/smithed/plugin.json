@@ -31,7 +31,8 @@
 					"metadata": {
 						"name": "Smithed",
 						"description": "Package repository for packs from the Smithed website",
-						"color": "#1b48c4"
+						"color": "#1b48c4",
+						"text_color": "#f6f6f6"
 					}
 				}
 			]

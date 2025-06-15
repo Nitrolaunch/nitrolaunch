@@ -18,6 +18,7 @@ import { FooterData } from "../../App";
 import { FooterMode } from "../../components/launch/Footer";
 import { errorToast, warningToast } from "../../components/dialog/Toasts";
 import PackageLabels from "../../components/package/PackageLabels";
+import { RepoInfo } from "../../package";
 
 const PACKAGES_PER_PAGE = 12;
 
@@ -157,6 +158,7 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 											</div>
 										),
 										color: x.meta.color,
+										selectedTextColor: x.meta.text_color,
 									};
 								})}
 								connected={false}
@@ -290,18 +292,6 @@ interface PackageProps {
 	meta: PackageMeta;
 	selected?: string;
 	onSelect: (pkg: string) => void;
-}
-
-interface RepoInfo {
-	id: string;
-	meta: RepoMetadata;
-}
-
-interface RepoMetadata {
-	name?: string;
-	description?: string;
-	mcvm_verseion?: string;
-	color?: string;
 }
 
 export interface BrowsePackagesProps {

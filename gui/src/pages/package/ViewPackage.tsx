@@ -30,6 +30,8 @@ import {
 } from "../../icons";
 import Modal from "../../components/dialog/Modal";
 import PackageLabels from "../../components/package/PackageLabels";
+import { RepoInfo } from "../../package";
+import { beautifyString, parsePkgRequest } from "../../utils";
 
 export default function ViewPackage(props: ViewPackageProps) {
 	let params = useParams();
@@ -39,6 +41,7 @@ export default function ViewPackage(props: ViewPackageProps) {
 	let [meta] = createResource(updateMeta);
 	let [properties] = createResource(updateProps);
 
+	let [repoInfo, setRepoInfo] = createSignal<RepoInfo | undefined>(undefined);
 	let [shortDescription, setShortDescription] = createSignal("");
 	let [longDescription, setLongDescription] = createSignal("");
 
@@ -54,9 +57,20 @@ export default function ViewPackage(props: ViewPackageProps) {
 	});
 
 	async function updateMeta() {
-		let meta: PackageMeta = await invoke("get_package_meta", {
-			package: packageId,
-		});
+		let [meta, repos] = (await Promise.all([
+			invoke("get_package_meta", {
+				package: packageId,
+			}),
+			invoke("get_package_repos"),
+		])) as [PackageMeta, RepoInfo[]];
+
+		let request = parsePkgRequest(packageId);
+		if (request.repo != undefined)
+			for (let repo of repos) {
+				if (repo.id == request.repo) {
+					setRepoInfo(repo);
+				}
+			}
 
 		let description = meta.description == undefined ? "" : meta.description;
 		setShortDescription(description.slice(0, 200));
@@ -96,12 +110,31 @@ export default function ViewPackage(props: ViewPackageProps) {
 											? "/icons/default_instance.png"
 											: meta()!.icon
 									}
+									onerror={(e) =>
+										((e.target as any).src = "/icons/default_instance.png")
+									}
 								/>
 							</div>
 							<div class="col" id="package-details">
 								<div class="cont" id="package-upper-details">
 									<div id="package-name">{meta()!.name}</div>
 									<div id="package-id">{packageId}</div>
+									<Show when={repoInfo() != undefined}>
+										<div
+											id="package-repo"
+											style={`background-color:${
+												repoInfo()!.meta.color == undefined
+													? "var(--fg2)"
+													: repoInfo()!.meta.color
+											};color:${
+												repoInfo()!.meta.text_color == undefined
+													? "var(--bg)"
+													: repoInfo()!.meta.text_color
+											}`}
+										>
+											{beautifyString(repoInfo()!.id).toLocaleUpperCase()}
+										</div>
+									</Show>
 								</div>
 								<div class="cont" id="package-short-description">
 									{shortDescription()}
@@ -114,7 +147,11 @@ export default function ViewPackage(props: ViewPackageProps) {
 					</div>
 					<Show when={meta()!.banner != undefined}>
 						<div id="package-banner-container">
-							<img src={meta()!.banner} id="package-banner" />
+							<img
+								src={meta()!.banner}
+								id="package-banner"
+								onerror={(e) => e.target.remove()}
+							/>
 							<div id="package-banner-gradient"></div>
 						</div>
 					</Show>

@@ -34,6 +34,9 @@ pub struct RepoMetadata {
 	/// A CSS color that represents the repository
 	#[serde(default)]
 	pub color: Option<String>,
+	/// A CSS color for text that should contrast well with the main color
+	#[serde(default)]
+	pub text_color: Option<String>,
 }
 
 /// An entry in the repository index package list that specifies information about the package

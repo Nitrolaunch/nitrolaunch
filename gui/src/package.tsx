@@ -22,6 +22,7 @@ import {
 	Plus,
 	Properties,
 	Search,
+	Speed,
 	Star,
 	Sun,
 	Text,
@@ -29,6 +30,19 @@ import {
 	Window,
 } from "./icons";
 import { beautifyString } from "./utils";
+
+export interface RepoInfo {
+	id: string;
+	meta: RepoMetadata;
+}
+
+export interface RepoMetadata {
+	name?: string;
+	description?: string;
+	mcvm_verseion?: string;
+	color?: string;
+	text_color?: string;
+}
 
 export enum PackageCategory {
 	Adventure = "adventure",
@@ -222,7 +236,7 @@ export function packageCategoryIcon(category: PackageCategory) {
 		case PackageCategory.Multiplayer:
 			return User;
 		case PackageCategory.Optimization:
-			return AngleRight;
+			return Speed;
 		case PackageCategory.Realistic:
 			return Picture;
 		case PackageCategory.Simplistic:

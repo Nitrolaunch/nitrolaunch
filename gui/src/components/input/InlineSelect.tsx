@@ -70,7 +70,11 @@ function InlineSelectOption(props: OptionProps) {
 		props.option.color == undefined ? "var(--fg2)" : props.option.color;
 
 	let textColor = () =>
-		props.solidSelect && isSelected() ? "black" : "var(--fg)";
+		props.solidSelect && isSelected()
+			? props.option.selectedTextColor == undefined
+				? "black"
+				: props.option.selectedTextColor
+			: "var(--fg)";
 	let backgroundColor = () =>
 		props.solidSelect && isSelected()
 			? color
@@ -129,5 +133,6 @@ export interface Option {
 	value: string | undefined;
 	contents: JSX.Element;
 	color?: string;
+	selectedTextColor?: string;
 	tip?: JSX.Element;
 }

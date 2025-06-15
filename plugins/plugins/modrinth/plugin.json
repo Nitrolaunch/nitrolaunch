@@ -28,7 +28,8 @@
 					"metadata": {
 						"name": "Modrinth",
 						"description": "Package repository for packs from the Modrinth website",
-						"color": "#1bd96a"
+						"color": "#1bd96a",
+						"text_color": "black"
 					}
 				}
 			]
