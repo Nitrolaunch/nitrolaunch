@@ -3,9 +3,6 @@
 	"description": "Install Smithed packs on profiles and instances",
 	"protocol_version": 3,
 	"hooks": {
-		"on_instance_setup": {
-			"executable": "${PLUGIN_DIR}/mcvm_plugin_smithed"
-		},
 		"add_sidebar_buttons": {
 			"constant": [
 				{
