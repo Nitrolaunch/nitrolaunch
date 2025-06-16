@@ -1,4 +1,4 @@
-import { For } from "solid-js";
+import { For, Show } from "solid-js";
 import {
 	PackageCategory,
 	packageCategoryDisplayName,
@@ -56,9 +56,11 @@ export default function PackageLabels(props: PackageLabelsProps) {
 								<div class="cont package-loader-icon">
 									<img src={getLoaderImage(loader)} />
 								</div>
-								<div class="cont package-category-label">
-									{getLoaderDisplayName(loader)}
-								</div>
+								<Show when={!small}>
+									<div class="cont package-category-label">
+										{getLoaderDisplayName(loader)}
+									</div>
+								</Show>
 							</div>
 						);
 					}
@@ -123,9 +125,9 @@ function getLoaderImage(loader: Loader) {
 	} else if (loader == "neoforged") {
 		return "/icons/neoforge.png";
 	} else if (loader == "sponge") {
-		return "/icons/default_instance.png";
+		return "/icons/sponge.png";
 	} else if (loader == "spongeforge") {
-		return "/icons/default_instance.png";
+		return "/icons/sponge.png";
 	} else {
 		return "/icons/default_instance.png";
 	}

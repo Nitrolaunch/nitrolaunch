@@ -1,0 +1,5 @@
+<svg fill="currentColor" version="1.1" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+	<path
+		d="m5 3c-1.108 0-2 0.892-2 2v0.21289c1.1385 0.41391 1.9834 1.5072 1.9922 2.7871h6.0156c0.008801-1.2799 0.85373-2.3732 1.9922-2.7871v-0.21289c0-1.108-0.892-2-2-2h-6zm-3 4.0352a1 0.9822 0 0 0-1 0.98242v3.9824h1v1h3v-1h6v1h3v-1h1v-3.9824a1 0.9822 0 0 0-1-0.98242 1 0.9822 0 0 0-0.99219 0.85352 1 0.9822 0 0 0-0.007812 0.12891v1.9824h-10v-1.9824a1 0.9822 0 0 0-1-0.98242z"
+		fill="currentColor" style="font-variation-settings:'wght' 600;paint-order:stroke fill markers" />
+</svg>

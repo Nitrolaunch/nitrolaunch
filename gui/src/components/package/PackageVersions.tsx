@@ -134,13 +134,14 @@ function PackageVersionEntry(props: PackageVersionEntryProps) {
 				{(version, i) => {
 					if (i() > 1) {
 						if (i() == 2) {
-							return " ...";
+							return <div>...</div>;
 						}
 						return undefined;
 					} else {
 						return (
 							<div>
-								{i() == minecraftVersions.length - 1 ? version : `${version}, `}
+								{/* {i() == minecraftVersions.length - 1 ? version : `${version}, `} */}
+								{version}
 							</div>
 						);
 					}
@@ -168,15 +169,15 @@ function PackageVersionEntry(props: PackageVersionEntryProps) {
 			class="input-shadow package-version"
 			style={`background-color:${props.backgroundColor}`}
 		>
-			<div
-				class="cont col package-version-mc-versions"
-				style={`${smallFontSize ? "font-size: 0.8rem" : ""}`}
-			>
-				{versions}
-			</div>
 			<div class="cont package-version-name">
 				<StabilityIndicator stability={version.stability} />
 				{name}
+			</div>
+			<div
+				class="cont package-version-mc-versions"
+				style={`${smallFontSize ? "font-size: 0.8rem" : ""}`}
+			>
+				{versions}
 			</div>
 			<div class="cont package-version-labels">
 				<PackageLabels

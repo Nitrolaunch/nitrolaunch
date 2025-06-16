@@ -46,6 +46,10 @@ import SunIcon from "./assets/icons/sun.svg?component-solid";
 import TextIcon from "./assets/icons/text.svg?component-solid";
 import WindowIcon from "./assets/icons/window.svg?component-solid";
 import SpeedIcon from "./assets/icons/speed.svg?component-solid";
+import AnimalIcon from "./assets/icons/animal.svg?component-solid";
+import SwordIcon from "./assets/icons/sword.svg?component-solid";
+import CouchIcon from "./assets/icons/couch.svg?component-solid";
+import HoneycombIcon from "./assets/icons/honeycomb.svg?component-solid";
 import { HasWidthHeight } from "./components/Icon";
 
 export function Pin({ width, height, viewBox }: HasWidthHeight) {
@@ -246,4 +250,20 @@ export function Window({ width, height, viewBox }: HasWidthHeight) {
 
 export function Speed({ width, height, viewBox }: HasWidthHeight) {
 	return <SpeedIcon width={width} height={height} viewBox={viewBox} />;
+}
+
+export function Animal({ width, height, viewBox }: HasWidthHeight) {
+	return <AnimalIcon width={width} height={height} viewBox={viewBox} />;
+}
+
+export function Sword({ width, height, viewBox }: HasWidthHeight) {
+	return <SwordIcon width={width} height={height} viewBox={viewBox} />;
+}
+
+export function Couch({ width, height, viewBox }: HasWidthHeight) {
+	return <CouchIcon width={width} height={height} viewBox={viewBox} />;
+}
+
+export function Honeycomb({ width, height, viewBox }: HasWidthHeight) {
+	return <HoneycombIcon width={width} height={height} viewBox={viewBox} />;
 }

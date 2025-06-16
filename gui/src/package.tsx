@@ -1,15 +1,18 @@
 import { Loader } from "./components/package/PackageLabels";
 import {
 	AngleRight,
+	Animal,
 	Audio,
 	Book,
 	Box,
+	Couch,
 	Folder,
 	Fullscreen,
 	Gear,
 	Globe,
 	Graph,
 	Home,
+	Honeycomb,
 	Jigsaw,
 	Key,
 	Language,
@@ -26,6 +29,7 @@ import {
 	Speed,
 	Star,
 	Sun,
+	Sword,
 	Text,
 	User,
 	Window,
@@ -248,21 +252,21 @@ export function packageCategoryIcon(category: PackageCategory) {
 		case PackageCategory.Blocks:
 			return Box;
 		case PackageCategory.Building:
-			return Box;
+			return Honeycomb;
 		case PackageCategory.Cartoon:
 			return Palette;
 		case PackageCategory.Challenge:
 			return Star;
 		case PackageCategory.Combat:
-			return Key;
+			return Sword;
 		case PackageCategory.Compatability:
 			return Link;
 		case PackageCategory.Decoration:
-			return Sun;
+			return Couch;
 		case PackageCategory.Economy:
 			return Graph;
 		case PackageCategory.Entities:
-			return Box;
+			return Animal;
 		case PackageCategory.Equipment:
 			return Key;
 		case PackageCategory.Exploration:
@@ -292,7 +296,7 @@ export function packageCategoryIcon(category: PackageCategory) {
 		case PackageCategory.Minigame:
 			return Jigsaw;
 		case PackageCategory.Mobs:
-			return User;
+			return Animal;
 		case PackageCategory.Multiplayer:
 			return User;
 		case PackageCategory.Optimization:
