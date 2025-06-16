@@ -191,6 +191,9 @@ pub async fn gen(
 		.await
 		.context("Failed to substitute relations")?;
 
+	let mut all_modloaders = HashSet::new();
+	let mut all_plugin_loaders = HashSet::new();
+
 	for version in versions {
 		let version_name = version.id.clone();
 		// Collect Minecraft versions
@@ -242,6 +245,9 @@ pub async fn gen(
 		if skip {
 			continue;
 		}
+
+		all_modloaders.extend(modloaders.clone());
+		all_plugin_loaders.extend(plugin_loaders.clone());
 
 		// Get stability
 		let stability = match version.version_type {
@@ -326,6 +332,8 @@ pub async fn gen(
 	}
 
 	props.content_versions = Some(content_versions);
+	props.supported_modloaders = Some(all_modloaders.into_iter().collect());
+	props.supported_plugin_loaders = Some(all_plugin_loaders.into_iter().collect());
 
 	let mut addon_map = HashMap::new();
 	addon_map.insert("addon".into(), addon);

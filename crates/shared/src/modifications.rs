@@ -80,7 +80,7 @@ impl Modloader {
 }
 
 /// Matcher for different types of loader
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Hash)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[serde(rename_all = "lowercase")]
 pub enum ModloaderMatch {
@@ -216,7 +216,7 @@ impl Display for ServerType {
 }
 
 /// Matcher for different types of server plugin loaders
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Hash)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[serde(rename_all = "lowercase")]
 pub enum PluginLoaderMatch {
