@@ -1,5 +1,4 @@
 use std::collections::{HashMap, HashSet};
-use std::sync::OnceLock;
 
 use anyhow::Context;
 use mcvm_pkg::declarative::{
@@ -20,7 +19,6 @@ use mcvm_net::modrinth::{
 	ReleaseChannel, SideSupport, Version,
 };
 use mcvm_shared::Side;
-use regex::{Regex, RegexBuilder};
 
 use crate::relation_substitution::{substitute_multiple, RelationSubFunction};
 
@@ -360,14 +358,14 @@ fn get_supported_sides(project: &Project) -> Vec<Side> {
 
 /// Cleanup a version name to remove things like modloaders
 fn cleanup_version_name(version: &str) -> String {
-	static MODLOADER_REGEX: OnceLock<Regex> = OnceLock::new();
-	let regex = MODLOADER_REGEX.get_or_init(|| {
-		RegexBuilder::new("(-|_|\\+)?(fabric|forge|quilt)")
-			.case_insensitive(true)
-			.build()
-			.expect("Failed to create regex")
-	});
-	let version = regex.replace_all(version, "");
+	// static MODLOADER_REGEX: OnceLock<Regex> = OnceLock::new();
+	// let regex = MODLOADER_REGEX.get_or_init(|| {
+	// 	RegexBuilder::new("(-|_|\\+)?(fabric|forge|quilt)")
+	// 		.case_insensitive(true)
+	// 		.build()
+	// 		.expect("Failed to create regex")
+	// });
+	// let version = regex.replace_all(version, "");
 	let version = version.replace("+", "-");
 
 	version
