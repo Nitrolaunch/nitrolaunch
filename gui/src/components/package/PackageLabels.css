@@ -9,11 +9,18 @@
 	font-size: 0.95rem;
 }
 
-.package-category {
+.package-category,
+.package-loader {
 	gap: 0.4rem;
 	text-wrap: nowrap;
 }
 
-.package-category.small {
+.package-category.small,
+.packge-loader.small {
 	gap: 0.3rem;
+}
+
+.package-loader-icon > img {
+	width: 1.75rem;
+	height: 1.75rem;
 }

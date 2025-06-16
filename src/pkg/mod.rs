@@ -115,6 +115,24 @@ impl PkgContents {
 			panic!("Attempted to get declarative package contents from a non-declarative package");
 		}
 	}
+
+	/// Get the contents of a script package
+	pub fn get_script_contents_optional(&self) -> Option<&Parsed> {
+		if let Self::Script(parsed) = &self {
+			Some(parsed)
+		} else {
+			None
+		}
+	}
+
+	/// Get the contents of a declarative package
+	pub fn get_declarative_contents_optional(&self) -> Option<&DeclarativePackage> {
+		if let Self::Declarative(contents) = &self {
+			Some(contents)
+		} else {
+			None
+		}
+	}
 }
 
 impl Package {

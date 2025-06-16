@@ -269,6 +269,7 @@ function Package(props: PackageProps) {
 						<div style="margin-top:-0.2rem">
 							<PackageLabels
 								categories={props.meta.categories!}
+								loaders={[]}
 								small
 								limit={3}
 							/>

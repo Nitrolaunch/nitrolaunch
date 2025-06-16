@@ -1,3 +1,4 @@
+import { Loader } from "./components/package/PackageLabels";
 import {
 	AngleRight,
 	Audio,
@@ -29,6 +30,7 @@ import {
 	User,
 	Window,
 } from "./icons";
+import { Side } from "./types";
 import { beautifyString } from "./utils";
 
 export interface RepoInfo {
@@ -43,6 +45,64 @@ export interface RepoMetadata {
 	color?: string;
 	text_color?: string;
 }
+
+// We store versions kinda backwards from declarative packages, grouping addons into each content version
+export interface PackageVersion {
+	id?: string;
+	name?: string;
+	addons: PackageAddon[];
+	minecraft_versions?: string | string[];
+	side?: Side;
+	modloaders?: Loader | Loader[];
+	plugin_loaders?: Loader | Loader[];
+	stability?: "stable" | "latest";
+	features?: string | string[];
+	operating_systems?: string | string[];
+	architectures?: string | string[];
+	languages?: string | string[];
+}
+
+export interface PackageAddon {
+	id: string;
+	kind: AddonKind;
+}
+
+export interface DeclarativePackage {
+	relations: DeclarativePackageRelations;
+	addons: { [id: string]: DeclarativeAddon };
+}
+
+export interface DeclarativeAddon {
+	kind: AddonKind;
+	versions: DeclarativeAddonVersion[];
+}
+
+export interface DeclarativeAddonVersion {
+	version: string;
+	relations: DeclarativePackageRelations;
+	content_versions?: string | string[];
+	minecraft_versions?: string | string[];
+	side?: Side;
+	modloaders?: Loader | Loader[];
+	plugin_loaders?: Loader | Loader[];
+	stability?: "stable" | "latest";
+	features?: string | string[];
+	operating_systems?: string | string[];
+	architectures?: string | string[];
+	languages?: string | string[];
+}
+
+export interface DeclarativePackageRelations {
+	dependencies?: string[];
+	explicit_dependencies?: string[];
+	conflicts?: string[];
+	extensions?: string[];
+	bundled?: string[];
+	compats?: [string, string][];
+	recommendations?: { value: string; invert?: boolean }[];
+}
+
+export type AddonKind = "mod" | "resource_pack" | "shader" | "plugin";
 
 export enum PackageCategory {
 	Adventure = "adventure",

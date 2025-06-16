@@ -59,6 +59,7 @@ export interface PackageProperties {
 	supported_modloaders?: string[];
 	supported_plugin_loaders?: string[];
 	supported_sides?: Side[];
+	content_versions?: string[];
 }
 
 export interface PkgRequest {

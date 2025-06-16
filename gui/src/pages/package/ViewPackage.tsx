@@ -32,6 +32,7 @@ import Modal from "../../components/dialog/Modal";
 import PackageLabels from "../../components/package/PackageLabels";
 import { RepoInfo } from "../../package";
 import { beautifyString, parsePkgRequest } from "../../utils";
+import PackageVersions from "../../components/package/PackageVersions";
 
 export default function ViewPackage(props: ViewPackageProps) {
 	let params = useParams();
@@ -139,9 +140,19 @@ export default function ViewPackage(props: ViewPackageProps) {
 								<div class="cont" id="package-short-description">
 									{shortDescription()}
 								</div>
-								<Show when={meta()!.categories != undefined}>
-									<PackageLabels categories={meta()!.categories!} />
-								</Show>
+								<PackageLabels
+									categories={
+										meta()!.categories == undefined ? [] : meta()!.categories!
+									}
+									loaders={(properties()!.supported_modloaders == undefined
+										? []
+										: properties()!.supported_modloaders!
+									).concat(
+										properties()!.supported_plugin_loaders == undefined
+											? []
+											: properties()!.supported_plugin_loaders!
+									)}
+								/>
 							</div>
 						</div>
 					</div>
@@ -193,6 +204,15 @@ export default function ViewPackage(props: ViewPackageProps) {
 										id="package-description"
 										innerHTML={longDescription()}
 									></div>
+								</Show>
+								<Show when={selectedTab() == "versions"}>
+									<div class="cont">
+										<PackageVersions
+											packageId={packageId}
+											props={properties()!}
+											backgroundColor="var(--bg)"
+										/>
+									</div>
 								</Show>
 								<Show
 									when={

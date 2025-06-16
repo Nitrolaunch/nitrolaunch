@@ -1,6 +1,7 @@
 use crate::{output::LauncherOutput, State};
 use anyhow::Context;
 use mcvm::io::lock::{Lockfile, LockfilePackage};
+use mcvm::pkg_crate::declarative::DeclarativePackage;
 use mcvm::pkg_crate::metadata::PackageMetadata;
 use mcvm::pkg_crate::properties::PackageProperties;
 use mcvm::pkg_crate::repo::RepoMetadata;
@@ -160,6 +161,30 @@ pub async fn get_package_meta_and_props(
 	.clone();
 
 	Ok((meta, props))
+}
+
+#[tauri::command]
+pub async fn get_declarative_package_contents(
+	state: tauri::State<'_, State>,
+	package: &str,
+) -> Result<Option<DeclarativePackage>, String> {
+	let mut config =
+		fmt_err(load_config(&state.paths, &mut NoOp).context("Failed to load config"))?;
+
+	let contents = fmt_err(
+		config
+			.packages
+			.parse(
+				&Arc::new(PkgRequest::parse(package, PkgRequestSource::UserRequire)),
+				&state.paths,
+				&state.client,
+				&mut NoOp,
+			)
+			.await
+			.context("Failed to get properties"),
+	)?;
+
+	Ok(contents.get_declarative_contents_optional().cloned())
 }
 
 #[tauri::command]
