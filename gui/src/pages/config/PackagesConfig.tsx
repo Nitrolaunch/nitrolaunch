@@ -11,6 +11,7 @@ import {
 import IconButton from "../../components/input/IconButton";
 import { AngleRight, Delete } from "../../icons";
 import { errorToast } from "../../components/dialog/Toasts";
+import LoadingSpinner from "../../components/utility/LoadingSpinner";
 
 export default function PackagesConfig(props: PackagesConfigProps) {
 	let [filter, setFilter] = createSignal("user");
@@ -176,6 +177,7 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 						packageMetas() != undefined &&
 						packageProps() != undefined
 					}
+					fallback={<LoadingSpinner size="5rem" />}
 				>
 					<For each={allPackages()}>
 						{(pkg) => {

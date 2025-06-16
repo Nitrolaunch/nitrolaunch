@@ -21,6 +21,7 @@ import PackagesConfig, {
 } from "./PackagesConfig";
 import Tip from "../../components/dialog/Tip";
 import { errorToast } from "../../components/dialog/Toasts";
+import DisplayShow from "../../components/utility/DisplayShow";
 
 export default function InstanceConfig(props: InstanceConfigProps) {
 	let params = useParams();
@@ -563,7 +564,7 @@ export default function InstanceConfig(props: InstanceConfigProps) {
 				<br />
 				<br />
 			</Show>
-			<Show when={tab() == "packages"}>
+			<DisplayShow when={tab() == "packages"}>
 				<PackagesConfig
 					id={id}
 					isProfile={isProfile}
@@ -600,7 +601,7 @@ export default function InstanceConfig(props: InstanceConfigProps) {
 						setDirty();
 					}}
 				/>
-			</Show>
+			</DisplayShow>
 			<br />
 			<br />
 			<br />
