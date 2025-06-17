@@ -156,9 +156,11 @@ export default function PackageVersions(props: PackageVersionsProps) {
 					</div>
 				</div>
 				<PackageFilters
+					addonType={"mod"}
 					minecraftVersions={filteredMinecraftVersions()}
 					loaders={filteredLoaders()}
 					stability={filteredStability()}
+					setAddonType={() => {}}
 					setMinecraftVersions={setFilteredMinecraftVersions}
 					setLoaders={setFilteredLoaders}
 					setStability={setFilteredStability}

@@ -5,6 +5,7 @@ use std::sync::Arc;
 use anyhow::Context;
 use mcvm_core::auth_crate::mc::ClientId;
 use mcvm_core::config::BrandingProperties;
+use mcvm_core::net::game_files::version_manifest::VersionManifestAndList;
 use mcvm_core::user::UserManager;
 use mcvm_core::util::versions::MinecraftVersion;
 use mcvm_core::version::InstalledVersion;
@@ -53,6 +54,8 @@ pub struct UpdateManager {
 	pub core: Later<MCVMCore>,
 	/// The version info to be fulfilled later
 	pub version_info: Later<VersionInfo>,
+	/// The version manifets to be fulfilled later
+	pub version_manifest: Later<Arc<VersionManifestAndList>>,
 }
 
 impl UpdateManager {
@@ -71,6 +74,7 @@ impl UpdateManager {
 			files: HashSet::new(),
 			version_info: Later::Empty,
 			mc_version: Later::Empty,
+			version_manifest: Later::Empty,
 		}
 	}
 
@@ -149,6 +153,7 @@ impl UpdateManager {
 			.get_core_version(o)
 			.await
 			.context("Failed to get version")?;
+
 		let version_info = version.get_version_info();
 
 		self.version_info.fill(version_info);
@@ -219,6 +224,9 @@ impl UpdateManager {
 			let result = result.result(o)?;
 			core.add_additional_versions(result);
 		}
+
+		let version_manifest = core.get_version_manifest(None, &mut NoOp).await?;
+		self.version_manifest.fill(version_manifest.clone());
 
 		self.core.fill(core);
 

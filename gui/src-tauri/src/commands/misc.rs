@@ -1,7 +1,7 @@
 use crate::State;
 use anyhow::Context;
 use mcvm::{
-	core::util::versions::MinecraftVersion,
+	core::{net::game_files::version_manifest::VersionType, util::versions::MinecraftVersion},
 	instance::update::manager::UpdateManager,
 	plugin_crate::hooks::{AddSupportedGameModifications, SupportedGameModifications},
 	shared::{later::Later, output::NoOp, UpdateDepth},
@@ -32,7 +32,10 @@ pub async fn get_supported_game_modifications(
 
 /// Get a list of all Minecraft versions, including from plugins
 #[tauri::command]
-pub async fn get_minecraft_versions(state: tauri::State<'_, State>) -> Result<Vec<String>, String> {
+pub async fn get_minecraft_versions(
+	state: tauri::State<'_, State>,
+	releases_only: bool,
+) -> Result<Vec<String>, String> {
 	let config = fmt_err(load_config(&state.paths, &mut NoOp).context("Failed to load config"))?;
 
 	// Use the UpdateManager and then take the version info from it
@@ -50,9 +53,25 @@ pub async fn get_minecraft_versions(state: tauri::State<'_, State>) -> Result<Ve
 			.await,
 	)?;
 
-	let Later::Full(version_info) = manager.version_info else {
-		return Err("Version info not fulfilled".into());
+	let Later::Full(version_manifest) = manager.version_manifest else {
+		return Err("Version manifest not fulfilled".into());
 	};
 
-	Ok(version_info.versions)
+	if releases_only {
+		Ok(version_manifest
+			.manifest
+			.versions
+			.iter()
+			.filter_map(|x| {
+				if let VersionType::Release = &x.ty {
+					Some(x.id.clone())
+				} else {
+					None
+				}
+			})
+			.rev()
+			.collect())
+	} else {
+		Ok(version_manifest.list.clone())
+	}
 }

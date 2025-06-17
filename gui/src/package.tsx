@@ -106,7 +106,12 @@ export interface DeclarativePackageRelations {
 	recommendations?: { value: string; invert?: boolean }[];
 }
 
-export type AddonKind = "mod" | "resource_pack" | "shader" | "plugin";
+export type AddonKind =
+	| "mod"
+	| "resource_pack"
+	| "datapack"
+	| "shader"
+	| "plugin";
 
 export enum PackageCategory {
 	Adventure = "adventure",

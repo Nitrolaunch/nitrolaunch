@@ -3,12 +3,15 @@ import "./PackageFilters.css";
 import Icon from "../Icon";
 import {
 	Box,
+	Folder,
 	Hashtag,
 	Jigsaw,
 	Lock,
 	Minecraft,
+	Palette,
 	Plus,
 	Properties,
+	Sun,
 	Warning,
 } from "../../icons";
 import {
@@ -18,9 +21,36 @@ import {
 	Loader,
 } from "./PackageLabels";
 import InlineSelect from "../input/InlineSelect";
+import { invoke } from "@tauri-apps/api";
+import { AddonKind } from "../../package";
 
 export default function PackageFilters(props: PackageFiltersProps) {
-	let [tab, setTab] = createSignal("minecraft_versions");
+	let [tab, setTab] = createSignal(
+		props.filteringVersions ? "minecraft_versions" : "types"
+	);
+
+	let [versionFilterOptions, _] = createResource(async () => {
+		// If a list of versions is available (we are filtering a list of package versions), use taht
+		if (props.availableMinecraftVersions != undefined) {
+			let versions = props.availableMinecraftVersions.concat([]);
+			versions.reverse();
+			return versions.slice(0, 7);
+		}
+
+		// Let the user select from the most recent couple versions, along with some popular ones
+		let availableVersions = (await invoke("get_minecraft_versions", {
+			releasesOnly: true,
+		})) as string[];
+
+		let latestReleases = availableVersions.slice(
+			availableVersions.length - 4,
+			availableVersions.length - 1
+		);
+		latestReleases.reverse();
+		let popularVersions = ["1.19.4", "1.18.2", "1.16.5", "1.12.2"];
+
+		return latestReleases.concat(popularVersions);
+	});
 
 	return (
 		<div class="package-filters">
@@ -109,10 +139,84 @@ export default function PackageFilters(props: PackageFiltersProps) {
 				</Show>
 			</div>
 			<div class="cont package-filter-contents">
-				<Show when={tab() == "minecraft_versions"}>
+				<Show when={tab() == "types"}>
+					<div class="cont package-filter-tab-contents" style="padding:0.5rem">
+						<InlineSelect
+							options={[
+								{
+									value: "mod",
+									contents: (
+										<div class="cont">
+											<Icon icon={Box} size="1.2rem" />
+											<div style="font-size:0.9rem;font-weight:bold">Mods</div>
+										</div>
+									),
+									color: "var(--instance)",
+								},
+								{
+									value: "resource_pack",
+									contents: (
+										<div class="cont">
+											<Icon icon={Palette} size="1.2rem" />
+											<div style="font-size:0.9rem;font-weight:bold">
+												Resource Packs
+											</div>
+										</div>
+									),
+									color: "var(--profile)",
+								},
+								{
+									value: "datapack",
+									contents: (
+										<div class="cont">
+											<Icon icon={Folder} size="1.2rem" />
+											<div style="font-size:0.9rem;font-weight:bold">
+												Datapacks
+											</div>
+										</div>
+									),
+									color: "var(--package)",
+								},
+								{
+									value: "plugin",
+									contents: (
+										<div class="cont">
+											<Icon icon={Jigsaw} size="1.2rem" />
+											<div style="font-size:0.9rem;font-weight:bold">
+												Plugins
+											</div>
+										</div>
+									),
+									color: "var(--pluginfg)",
+								},
+								{
+									value: "shader",
+									contents: (
+										<div class="cont">
+											<Icon icon={Sun} size="1.2rem" />
+											<div style="font-size:0.9rem;font-weight:bold">
+												Shaders
+											</div>
+										</div>
+									),
+									color: "var(--warning)",
+								},
+							]}
+							selected={props.addonType}
+							onChange={(value) => props.setAddonType(value as AddonKind)}
+							columns={5}
+							connected={false}
+						/>
+					</div>
+				</Show>
+				<Show
+					when={
+						tab() == "minecraft_versions" && versionFilterOptions() != undefined
+					}
+				>
 					<MinecraftVersionsTab
+						options={versionFilterOptions()!}
 						selectedVersions={props.minecraftVersions}
-						availableVersions={props.availableMinecraftVersions}
 						setMinecraftVersions={props.setMinecraftVersions}
 					/>
 				</Show>
@@ -197,9 +301,11 @@ export default function PackageFilters(props: PackageFiltersProps) {
 }
 
 export interface PackageFiltersProps {
+	addonType: AddonKind;
 	minecraftVersions: string[];
 	loaders: string[];
 	stability?: "stable" | "latest";
+	setAddonType: (type: AddonKind) => void;
 	setMinecraftVersions: (versions: string[]) => void;
 	setLoaders: (loaders: string[]) => void;
 	setStability: (stability?: "stable" | "latest") => void;
@@ -209,51 +315,35 @@ export interface PackageFiltersProps {
 }
 
 function MinecraftVersionsTab(props: MinecraftVersionsTabProps) {
-	let [versions, _] = createResource(async () => {
-		// If a list of versions is available (we are filtering a list of package versions), use taht
-		if (props.availableVersions != undefined) {
-			let versions = props.availableVersions.concat([]);
-			versions.reverse();
-			return versions.slice(0, 7);
-		}
-
-		// Let the user select from the most recent couple versions, along with some popular ones
-		// let availableVersions = (await invoke(
-		// 	"get_minecraft_versions"
-		// )) as string[];
-	});
-
 	return (
 		<div class="cont package-filter-tab-contents" style="padding:0.5rem">
-			<Show when={versions() != undefined}>
-				<InlineSelect
-					options={versions()!.map((version) => {
-						return {
-							value: version,
-							contents: (
-								<div class="cont">
-									<div style="font-size:0.9rem;font-weight:bold;text-align:center">
-										{version}
-									</div>
+			<InlineSelect
+				options={props.options.map((version) => {
+					return {
+						value: version,
+						contents: (
+							<div class="cont">
+								<div style="font-size:0.9rem;font-weight:bold;text-align:center">
+									{version}
 								</div>
-							),
-							color: "var(--instance)",
-						};
-					})}
-					selected={props.selectedVersions}
-					onChangeMulti={(values) =>
-						props.setMinecraftVersions(values == undefined ? [] : values)
-					}
-					columns={7}
-					connected={false}
-				/>
-			</Show>
+							</div>
+						),
+						color: "var(--instance)",
+					};
+				})}
+				selected={props.selectedVersions}
+				onChangeMulti={(values) =>
+					props.setMinecraftVersions(values == undefined ? [] : values)
+				}
+				columns={7}
+				connected={false}
+			/>
 		</div>
 	);
 }
 
 interface MinecraftVersionsTabProps {
-	availableVersions?: string[];
+	options: string[];
 	selectedVersions: string[];
 	setMinecraftVersions: (versions: string[]) => void;
 }

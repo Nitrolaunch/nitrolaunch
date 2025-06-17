@@ -18,7 +18,8 @@ import { FooterData } from "../../App";
 import { FooterMode } from "../../components/launch/Footer";
 import { errorToast, warningToast } from "../../components/dialog/Toasts";
 import PackageLabels from "../../components/package/PackageLabels";
-import { RepoInfo } from "../../package";
+import { AddonKind, RepoInfo } from "../../package";
+import PackageFilters from "../../components/package/PackageFilters";
 
 const PACKAGES_PER_PAGE = 12;
 
@@ -142,12 +143,22 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 		undefined
 	);
 
+	let [filteredAddonType, setFilteredAddonType] =
+		createSignal<AddonKind>("mod");
+	let [filteredMinecraftVersions, setFilteredMinecraftVersions] = createSignal<
+		string[]
+	>([]);
+	let [filteredLoaders, setFilteredLoaders] = createSignal<string[]>([]);
+	let [filteredStability, setFilteredStability] = createSignal<
+		"stable" | "latest" | undefined
+	>();
+
 	return (
-		<div class="cont col" style="width:100%">
-			<div id="header">
-				<div class="cont">
-					<Show when={repos() != undefined}>
-						<div class="cont" style="width:18rem">
+		<div class="cont col">
+			<div class="cont col" id="browse-packages">
+				<div id="browse-header">
+					<div class="cont">
+						<Show when={repos() != undefined}>
 							<InlineSelect
 								options={repos()!.map((x) => {
 									return {
@@ -162,7 +173,7 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 									};
 								})}
 								connected={false}
-								grid={false}
+								grid={true}
 								selected={selectedRepo()}
 								columns={repos()!.length}
 								onChange={(x) => {
@@ -173,59 +184,76 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 								optionClass="repo"
 								solidSelect={true}
 							/>
-						</div>
-					</Show>
+						</Show>
+					</div>
+					<h1 class="noselect">Packages</h1>
+					<div class="cont" style="justify-content:flex-end">
+						<SearchBar
+							placeholder="Search for packages..."
+							value={
+								search == undefined ? undefined : decodeURIComponent(search)
+							}
+							method={(term) => {
+								window.location.href = formatUrl(0, selectedRepo(), term);
+							}}
+						/>
+					</div>
 				</div>
-				<h1 class="noselect">Packages</h1>
-				<div class="cont">
-					<SearchBar
-						placeholder="Search for packages..."
-						value={search == undefined ? undefined : decodeURIComponent(search)}
-						method={(term) => {
-							window.location.href = formatUrl(0, selectedRepo(), term);
-						}}
+				<div id="browse-subheader">
+					<PackageFilters
+						addonType={filteredAddonType()}
+						minecraftVersions={filteredMinecraftVersions()}
+						loaders={filteredLoaders()}
+						stability={filteredStability()}
+						setAddonType={setFilteredAddonType}
+						setMinecraftVersions={setFilteredMinecraftVersions}
+						setLoaders={setFilteredLoaders}
+						setStability={setFilteredStability}
+						filteringVersions={false}
 					/>
 				</div>
-			</div>
-			<div id="packages-container">
-				<For each={packages()}>
-					{(data) => {
-						if (data == "error") {
-							return (
-								<div class="cont package package-error">Error with package</div>
-							);
-						} else {
-							return (
-								<Package
-									id={data.id}
-									meta={data.meta}
-									selected={selectedPackage()}
-									onSelect={(pkg) => {
-										setSelectedPackage(pkg);
-										props.setFooterData({
-											mode: FooterMode.PreviewPackage,
-											selectedItem: "",
-											action: () => {
-												window.location.href = `/packages/package/${data.id}`;
-											},
-										});
-									}}
-								/>
-							);
-						}
+				<div id="packages-container">
+					<For each={packages()}>
+						{(data) => {
+							if (data == "error") {
+								return (
+									<div class="cont package package-error">
+										Error with package
+									</div>
+								);
+							} else {
+								return (
+									<Package
+										id={data.id}
+										meta={data.meta}
+										selected={selectedPackage()}
+										onSelect={(pkg) => {
+											setSelectedPackage(pkg);
+											props.setFooterData({
+												mode: FooterMode.PreviewPackage,
+												selectedItem: "",
+												action: () => {
+													window.location.href = `/packages/package/${data.id}`;
+												},
+											});
+										}}
+									/>
+								);
+							}
+						}}
+					</For>
+				</div>
+				<PageButtons
+					page={page}
+					pageCount={Math.floor(packageCount() / PACKAGES_PER_PAGE)}
+					pageFunction={(page) => {
+						window.location.href = formatUrl(page, selectedRepo(), search);
 					}}
-				</For>
+				/>
+				<br />
+				<br />
+				<br />
 			</div>
-			<PageButtons
-				page={page}
-				pageCount={Math.floor(packageCount() / PACKAGES_PER_PAGE)}
-				pageFunction={(page) => {
-					window.location.href = formatUrl(page, selectedRepo(), search);
-				}}
-			/>
-			<br />
-			<br />
-			<br />
 		</div>
 	);
 }

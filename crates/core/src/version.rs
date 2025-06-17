@@ -196,7 +196,7 @@ impl VersionRegistry {
 		&mut self,
 		params: LoadVersionManifestParameters<'_>,
 		o: &mut impl MCVMOutput,
-	) -> anyhow::Result<&VersionManifestAndList> {
+	) -> anyhow::Result<&Arc<VersionManifestAndList>> {
 		if self.version_manifest.is_empty() {
 			let mut manifest = version_manifest::get_with_output(
 				params.requested_version,

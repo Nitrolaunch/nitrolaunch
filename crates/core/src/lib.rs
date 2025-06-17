@@ -8,6 +8,8 @@
 //! Note: The functions in this library expect the use of the Tokio runtime and may panic
 //! if it is not used
 
+use std::sync::Arc;
+
 pub use mcvm_auth as auth_crate;
 
 /// Configuration for library functionality
@@ -128,7 +130,7 @@ impl MCVMCore {
 		&mut self,
 		requested_version: Option<&MinecraftVersion>,
 		o: &mut impl MCVMOutput,
-	) -> anyhow::Result<&VersionManifestAndList> {
+	) -> anyhow::Result<&Arc<VersionManifestAndList>> {
 		let params = LoadVersionManifestParameters {
 			requested_version,
 			paths: &self.paths,

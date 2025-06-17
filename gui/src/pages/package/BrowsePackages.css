@@ -1,4 +1,8 @@
-#header {
+#browse-packages {
+	width: 95%;
+}
+
+#browse-header {
 	display: grid;
 	grid-template-columns: repeat(3, minmax(0, 1fr));
 	width: 100%;
@@ -6,15 +10,18 @@
 
 .repo {
 	font-size: 0.7rem;
-	/* border-radius: var(--round2); */
 	font-weight: bold;
+}
+
+#browse-subheader {
+	width: 100%;
 }
 
 #packages-container {
 	display: grid;
 	grid-template-columns: repeat(3, minmax(0, 1fr));
 	gap: 0.8rem;
-	width: 95%;
+	width: 100%;
 }
 
 .package {
