@@ -18,7 +18,7 @@ import { FooterData } from "../../App";
 import { FooterMode } from "../../components/launch/Footer";
 import { errorToast, warningToast } from "../../components/dialog/Toasts";
 import PackageLabels from "../../components/package/PackageLabels";
-import { AddonKind, RepoInfo } from "../../package";
+import { PackageType, RepoInfo } from "../../package";
 import PackageFilters from "../../components/package/PackageFilters";
 import LoadingSpinner from "../../components/utility/LoadingSpinner";
 
@@ -42,8 +42,11 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 	let [search, setSearch] = createSignal(searchParams["search"]);
 	let [repo, setRepo] = createSignal(searchParams["repo"]);
 
-	let [filteredAddonType, setFilteredAddonType] =
-		createSignal<AddonKind>("mod");
+	let [filteredPackageType, setFilteredPackageType] = createSignal<PackageType>(
+		searchParams["package_type"] == undefined
+			? "mod"
+			: (searchParams["package_type"] as PackageType)
+	);
 	let [filteredMinecraftVersions, setFilteredMinecraftVersions] = createSignal<
 		string[]
 	>([]);
@@ -51,6 +54,22 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 	let [filteredStability, setFilteredStability] = createSignal<
 		"stable" | "latest" | undefined
 	>();
+
+	// Updates the URL with current search / filters
+	let updateUrl = () => {
+		let query = search() == undefined ? "" : `&search=${search()}`;
+		window.history.replaceState(
+			"",
+			"",
+			`/packages/${page()}?repo=${selectedRepo()}&package_type=${filteredPackageType()}${query}`
+		);
+	};
+
+	// Refetches packages and modifies the URL
+	let updateFilters = () => {
+		refetchPackages();
+		updateUrl();
+	};
 
 	// Packages and repos
 	let [packages, packageMethods] = createResource(updatePackages);
@@ -99,6 +118,7 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 				repo: selectedRepo(),
 				page: page(),
 				search: search(),
+				packageKinds: [filteredPackageType()],
 			})) as [string[], number];
 
 			setPackageCount(packageCount);
@@ -172,22 +192,6 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 		</For>
 	);
 
-	// Updates the URL with current search / filters
-	let updateUrl = () => {
-		let query = search() == undefined ? "" : `&search=${search()}`;
-		window.history.replaceState(
-			"",
-			"",
-			`/packages/${page()}?repo=${selectedRepo()}${query}`
-		);
-	};
-
-	// Refetches packages and modifies the URL
-	let updateFilters = () => {
-		refetchPackages();
-		updateUrl();
-	};
-
 	return (
 		<div class="cont col">
 			<div class="cont col" id="browse-packages">
@@ -242,11 +246,14 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 				</div>
 				<div id="browse-subheader">
 					<PackageFilters
-						addonType={filteredAddonType()}
+						packageType={filteredPackageType()}
 						minecraftVersions={filteredMinecraftVersions()}
 						loaders={filteredLoaders()}
 						stability={filteredStability()}
-						setAddonType={setFilteredAddonType}
+						setPackageType={(type) => {
+							setFilteredPackageType(type);
+							updateFilters();
+						}}
 						setMinecraftVersions={setFilteredMinecraftVersions}
 						setLoaders={setFilteredLoaders}
 						setStability={setFilteredStability}

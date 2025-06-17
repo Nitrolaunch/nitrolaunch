@@ -86,7 +86,7 @@ fn main() -> anyhow::Result<()> {
 				if let Some(results) = search_cache.check::<SearchResults>(&arg.parameters) {
 					results
 				} else {
-					let results = modrinth::search_projects(arg.parameters.clone(), &client, false)
+					let results = modrinth::search_projects(arg.parameters.clone(), &client)
 						.await
 						.context("Failed to search projects from the API")?;
 

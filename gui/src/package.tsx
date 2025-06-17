@@ -113,6 +113,8 @@ export type AddonKind =
 	| "shader"
 	| "plugin";
 
+export type PackageType = AddonKind | "bundle";
+
 export enum PackageCategory {
 	Adventure = "adventure",
 	Atmosphere = "atmosphere",

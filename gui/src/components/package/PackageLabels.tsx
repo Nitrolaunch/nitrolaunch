@@ -141,7 +141,7 @@ export function getLoaderColor(loader: Loader) {
 	} else if (loader == "quilt") {
 		return "#dc29dd";
 	} else if (loader == "forge") {
-		return "#404c64";
+		return "#505c74";
 	} else if (loader == "neoforged") {
 		return "#d6732f";
 	} else if (loader == "sponge") {

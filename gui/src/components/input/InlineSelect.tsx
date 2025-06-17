@@ -94,12 +94,22 @@ function InlineSelectOption(props: OptionProps) {
 	let color =
 		props.option.color == undefined ? "var(--fg2)" : props.option.color;
 
-	let textColor = () =>
-		props.solidSelect && isSelected()
-			? props.option.selectedTextColor == undefined
-				? "black"
-				: props.option.selectedTextColor
-			: "var(--fg)";
+	let textColor = () => {
+		if (isSelected()) {
+			if (props.option.selectedTextColor == undefined) {
+				if (props.solidSelect) {
+					return "black";
+				} else {
+					return color;
+				}
+			} else {
+				return props.option.selectedTextColor;
+			}
+		} else {
+			return "var(--fg)";
+		}
+	};
+
 	let backgroundColor = () => {
 		if (isSelected()) {
 			if (props.solidSelect) {

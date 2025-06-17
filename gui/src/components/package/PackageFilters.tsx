@@ -3,6 +3,7 @@ import "./PackageFilters.css";
 import Icon from "../Icon";
 import {
 	Box,
+	CurlyBraces,
 	Folder,
 	Hashtag,
 	Jigsaw,
@@ -22,7 +23,7 @@ import {
 } from "./PackageLabels";
 import InlineSelect from "../input/InlineSelect";
 import { invoke } from "@tauri-apps/api";
-import { AddonKind } from "../../package";
+import { PackageType } from "../../package";
 
 export default function PackageFilters(props: PackageFiltersProps) {
 	let [tab, setTab] = createSignal(
@@ -169,7 +170,7 @@ export default function PackageFilters(props: PackageFiltersProps) {
 									value: "datapack",
 									contents: (
 										<div class="cont">
-											<Icon icon={Folder} size="1.2rem" />
+											<Icon icon={CurlyBraces} size="1.2rem" />
 											<div style="font-size:0.9rem;font-weight:bold">
 												Datapacks
 											</div>
@@ -201,10 +202,22 @@ export default function PackageFilters(props: PackageFiltersProps) {
 									),
 									color: "var(--warning)",
 								},
+								{
+									value: "bundle",
+									contents: (
+										<div class="cont">
+											<Icon icon={Folder} size="1.2rem" />
+											<div style="font-size:0.9rem;font-weight:bold">
+												Bundles
+											</div>
+										</div>
+									),
+									color: "var(--fg)",
+								},
 							]}
-							selected={props.addonType}
-							onChange={(value) => props.setAddonType(value as AddonKind)}
-							columns={5}
+							selected={props.packageType}
+							onChange={(value) => props.setPackageType(value as PackageType)}
+							columns={6}
 							connected={false}
 						/>
 					</div>
@@ -301,11 +314,11 @@ export default function PackageFilters(props: PackageFiltersProps) {
 }
 
 export interface PackageFiltersProps {
-	addonType: AddonKind;
+	packageType: PackageType;
 	minecraftVersions: string[];
 	loaders: string[];
 	stability?: "stable" | "latest";
-	setAddonType: (type: AddonKind) => void;
+	setPackageType: (type: PackageType) => void;
 	setMinecraftVersions: (versions: string[]) => void;
 	setLoaders: (loaders: string[]) => void;
 	setStability: (stability?: "stable" | "latest") => void;

@@ -2,7 +2,7 @@ use crate::download::{self, user_agent};
 use anyhow::{anyhow, Context};
 use mcvm_shared::{
 	modifications::{Modloader, ServerType},
-	pkg::PackageSearchParameters,
+	pkg::{PackageKind, PackageSearchParameters},
 };
 use reqwest::{Client, StatusCode};
 use serde::{Deserialize, Serialize};
@@ -479,7 +479,6 @@ pub struct User {
 pub async fn search_projects(
 	params: PackageSearchParameters,
 	client: &Client,
-	modpacks: bool,
 ) -> anyhow::Result<SearchResults> {
 	let limit = if params.count > 100 {
 		100
@@ -491,10 +490,24 @@ pub async fn search_projects(
 	} else {
 		String::new()
 	};
-	let facets = format!(
-		"facets=[[\"project_types{}modpack\"]]",
-		if modpacks { "==" } else { "!=" }
-	);
+
+	let types = params
+		.types
+		.into_iter()
+		.map(|x| match x {
+			PackageKind::Mod => "mod",
+			PackageKind::ResourcePack => "resourcepack",
+			PackageKind::Datapack => "datapack",
+			PackageKind::Plugin => "plugin",
+			PackageKind::Shader => "shader",
+			PackageKind::Bundle => "modpack",
+		})
+		.map(|x| format!("\"project_types={x}\""))
+		.collect::<Vec<_>>()
+		.join(",");
+	let types = format!("[{types}]");
+
+	let facets = format!("facets=[{types}]",);
 	let url = format!(
 		"https://api.modrinth.com/v2/search?limit={limit}{search}&{facets}&offset={}",
 		params.skip
