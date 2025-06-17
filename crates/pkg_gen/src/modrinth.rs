@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
-use anyhow::Context;
+use anyhow::{bail, Context};
 use mcvm_pkg::declarative::{
 	DeclarativeAddon, DeclarativeAddonVersion, DeclarativeConditionSet, DeclarativePackage,
 	DeclarativePackageRelations,
@@ -165,7 +165,7 @@ pub async fn gen(
 		ProjectType::Plugin => (AddonKind::Plugin, PackageKind::Plugin),
 		ProjectType::ResourcePack => (AddonKind::ResourcePack, PackageKind::ResourcePack),
 		ProjectType::Shader => (AddonKind::Shader, PackageKind::Shader),
-		ProjectType::Modpack => panic!("Modpack projects are unsupported"),
+		ProjectType::Modpack => bail!("Modpack projects are unsupported"),
 	};
 	let mut addon = DeclarativeAddon {
 		kind: addon_kind,
