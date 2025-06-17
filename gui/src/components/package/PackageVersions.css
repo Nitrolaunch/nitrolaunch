@@ -19,9 +19,10 @@
 	display: grid;
 	width: 100%;
 	height: 4rem;
-	grid-template-columns: minmax(0, 0.5fr) minmax(0, 0.8fr) minmax(0, 0.5fr);
+	grid-template-columns: minmax(0, 0.7fr) minmax(0, 0.8fr) minmax(0, 0.5fr);
 	border: 0.15rem solid var(--bg3);
 	border-radius: var(--round);
+	box-sizing: border-box;
 	cursor: pointer;
 }
 

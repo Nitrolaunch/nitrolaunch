@@ -1,11 +1,8 @@
-.page-buttons {
-	
-}
-
 .page-button {
-	background-color: var(--bg2);
 	width: 2.3rem;
 	height: 2.5rem;
+	background-color: var(--bg2);
+	border: 0.15rem solid var(--bg3);
 	border-radius: var(--round);
 }
 

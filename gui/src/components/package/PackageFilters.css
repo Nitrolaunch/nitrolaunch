@@ -31,13 +31,15 @@
 
 .package-filter-tab.selected {
 	border: 0.15rem solid var(--bg3);
-	background-color: var(--bg2);
-	border-bottom-color: var(--bg2);
+	background-color: var(--bg);
+	border-bottom-color: var(--bg);
 }
 
 .package-filter-contents {
 	width: 100%;
 	min-height: 3.5rem;
+
+	background-color: var(--bg);
 
 	border: 0.15rem solid var(--bg3);
 	border-top: none;

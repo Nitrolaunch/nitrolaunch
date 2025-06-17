@@ -20,6 +20,7 @@ import { errorToast, warningToast } from "../../components/dialog/Toasts";
 import PackageLabels from "../../components/package/PackageLabels";
 import { AddonKind, RepoInfo } from "../../package";
 import PackageFilters from "../../components/package/PackageFilters";
+import LoadingSpinner from "../../components/utility/LoadingSpinner";
 
 const PACKAGES_PER_PAGE = 12;
 
@@ -35,11 +36,28 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 		});
 	});
 
-	let page = +params.page;
-	let search = searchParams["search"];
-	let repo = searchParams["repo"];
+	// Filters and other browse functions
 
-	let [packages, _] = createResource(updatePackages);
+	let [page, setPage] = createSignal(+params.page);
+	let [search, setSearch] = createSignal(searchParams["search"]);
+	let [repo, setRepo] = createSignal(searchParams["repo"]);
+
+	let [filteredAddonType, setFilteredAddonType] =
+		createSignal<AddonKind>("mod");
+	let [filteredMinecraftVersions, setFilteredMinecraftVersions] = createSignal<
+		string[]
+	>([]);
+	let [filteredLoaders, setFilteredLoaders] = createSignal<string[]>([]);
+	let [filteredStability, setFilteredStability] = createSignal<
+		"stable" | "latest" | undefined
+	>();
+
+	// Packages and repos
+	let [packages, packageMethods] = createResource(updatePackages);
+	let refetchPackages = () => {
+		packageMethods.mutate(undefined);
+		packageMethods.refetch();
+	};
 
 	let [repos, setRepos] = createSignal<RepoInfo[] | undefined>(undefined);
 	let [packageCount, setPackageCount] = createSignal(0);
@@ -48,13 +66,13 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 		if (repos() == undefined) {
 			return undefined;
 		}
-		if (repo == undefined) {
+		if (repo() == undefined) {
 			if (repos()!.some((x) => x.id == "std")) {
 				return "std";
 			}
 			return undefined;
 		}
-		return repo;
+		return repo();
 	};
 
 	async function updatePackages() {
@@ -79,8 +97,8 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 		try {
 			let [packagesToRequest, packageCount] = (await invoke("get_packages", {
 				repo: selectedRepo(),
-				page: page,
-				search: search,
+				page: page(),
+				search: search(),
 			})) as [string[], number];
 
 			setPackageCount(packageCount);
@@ -143,15 +161,32 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 		undefined
 	);
 
-	let [filteredAddonType, setFilteredAddonType] =
-		createSignal<AddonKind>("mod");
-	let [filteredMinecraftVersions, setFilteredMinecraftVersions] = createSignal<
-		string[]
-	>([]);
-	let [filteredLoaders, setFilteredLoaders] = createSignal<string[]>([]);
-	let [filteredStability, setFilteredStability] = createSignal<
-		"stable" | "latest" | undefined
-	>();
+	// Placeholder when packages are loading
+	let packagePlaceholders = () => (
+		<For each={Array.from({ length: PACKAGES_PER_PAGE })}>
+			{() => (
+				<div class="cont package">
+					<LoadingSpinner size="3rem" />
+				</div>
+			)}
+		</For>
+	);
+
+	// Updates the URL with current search / filters
+	let updateUrl = () => {
+		let query = search() == undefined ? "" : `&search=${search()}`;
+		window.history.replaceState(
+			"",
+			"",
+			`/packages/${page()}?repo=${selectedRepo()}${query}`
+		);
+	};
+
+	// Refetches packages and modifies the URL
+	let updateFilters = () => {
+		refetchPackages();
+		updateUrl();
+	};
 
 	return (
 		<div class="cont col">
@@ -178,7 +213,9 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 								columns={repos()!.length}
 								onChange={(x) => {
 									if (x != undefined) {
-										window.location.href = formatUrl(0, x, search);
+										setRepo(x);
+										setPage(0);
+										updateFilters();
 									}
 								}}
 								optionClass="repo"
@@ -191,10 +228,14 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 						<SearchBar
 							placeholder="Search for packages..."
 							value={
-								search == undefined ? undefined : decodeURIComponent(search)
+								search() == undefined
+									? undefined
+									: decodeURIComponent(search()!)
 							}
 							method={(term) => {
-								window.location.href = formatUrl(0, selectedRepo(), term);
+								setSearch(term);
+								setPage(0);
+								updateFilters();
 							}}
 						/>
 					</div>
@@ -212,42 +253,55 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 						filteringVersions={false}
 					/>
 				</div>
-				<div id="packages-container">
-					<For each={packages()}>
-						{(data) => {
-							if (data == "error") {
-								return (
-									<div class="cont package package-error">
-										Error with package
-									</div>
-								);
-							} else {
-								return (
-									<Package
-										id={data.id}
-										meta={data.meta}
-										selected={selectedPackage()}
-										onSelect={(pkg) => {
-											setSelectedPackage(pkg);
-											props.setFooterData({
-												mode: FooterMode.PreviewPackage,
-												selectedItem: "",
-												action: () => {
-													window.location.href = `/packages/package/${data.id}`;
-												},
-											});
-										}}
-									/>
-								);
-							}
+				<div class="cont">
+					<PageButtons
+						page={page()}
+						pageCount={Math.floor(packageCount() / PACKAGES_PER_PAGE)}
+						pageFunction={(page) => {
+							setPage(page);
+							updateFilters();
 						}}
-					</For>
+					/>
+				</div>
+				<div id="packages-container">
+					<Show when={packages() != undefined} fallback={packagePlaceholders()}>
+						<For each={packages()}>
+							{(data) => {
+								if (data == "error") {
+									return (
+										<div class="cont package package-error">
+											Error with package
+										</div>
+									);
+								} else {
+									return (
+										<Package
+											id={data.id}
+											meta={data.meta}
+											selected={selectedPackage()}
+											onSelect={(pkg) => {
+												setSelectedPackage(pkg);
+												props.setFooterData({
+													mode: FooterMode.PreviewPackage,
+													selectedItem: "",
+													action: () => {
+														window.location.href = `/packages/package/${data.id}`;
+													},
+												});
+											}}
+										/>
+									);
+								}
+							}}
+						</For>
+					</Show>
 				</div>
 				<PageButtons
-					page={page}
+					page={page()}
 					pageCount={Math.floor(packageCount() / PACKAGES_PER_PAGE)}
 					pageFunction={(page) => {
-						window.location.href = formatUrl(page, selectedRepo(), search);
+						setPage(page);
+						updateFilters();
 					}}
 				/>
 				<br />
@@ -325,10 +379,4 @@ interface PackageProps {
 
 export interface BrowsePackagesProps {
 	setFooterData: (data: FooterData) => void;
-}
-
-// Formats the URL to the browse page based on search parameters
-function formatUrl(page: number, repo?: string, search?: string) {
-	let query = search == undefined ? "" : `&search=${search}`;
-	return `/packages/${page}?repo=${repo}${query}`;
 }
