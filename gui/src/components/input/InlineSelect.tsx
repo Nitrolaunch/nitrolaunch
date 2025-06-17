@@ -8,6 +8,26 @@ export default function InlineSelect(props: InlineSelectProps) {
 	let grid = props.grid == undefined ? true : props.grid;
 	let solidSelect = props.solidSelect == undefined ? false : props.solidSelect;
 
+	let selectFunction = (value: string | undefined) => {
+		if (props.onChange != undefined) {
+			props.onChange(value);
+		}
+		if (props.onChangeMulti != undefined) {
+			if (Array.isArray(props.selected)) {
+				let array = props.selected.includes(value!)
+					? props.selected.filter((x) => x != value)
+					: props.selected.concat(value!);
+				props.onChangeMulti(array);
+			} else {
+				if (value == undefined) {
+					props.onChangeMulti(undefined);
+				} else {
+					props.onChangeMulti([value]);
+				}
+			}
+		}
+	};
+
 	return (
 		<div
 			class={`${connected ? "input-shadow" : ""} inline-select ${
@@ -24,7 +44,7 @@ export default function InlineSelect(props: InlineSelectProps) {
 						contents: "None",
 					}}
 					connected={connected}
-					onSelect={props.onChange}
+					onSelect={selectFunction}
 					selected={props.selected}
 					isLast={props.selected == props.options[0].value}
 					isFirst={true}
@@ -37,7 +57,7 @@ export default function InlineSelect(props: InlineSelectProps) {
 					<InlineSelectOption
 						option={option}
 						connected={connected}
-						onSelect={props.onChange}
+						onSelect={selectFunction}
 						selected={props.selected}
 						isLast={index() == props.options.length - 1}
 						isFirst={index() == 0 && !props.allowEmpty}
@@ -52,8 +72,9 @@ export default function InlineSelect(props: InlineSelectProps) {
 
 export interface InlineSelectProps {
 	options: Option[];
-	selected?: string;
-	onChange: (option: string | undefined) => void;
+	selected?: string | string[];
+	onChange?: (option: string | undefined) => void;
+	onChangeMulti?: (options: string[] | undefined) => void;
 	columns?: number;
 	allowEmpty?: boolean;
 	connected?: boolean;
@@ -65,7 +86,11 @@ export interface InlineSelectProps {
 function InlineSelectOption(props: OptionProps) {
 	let [isHovered, setIsHovered] = createSignal(false);
 
-	let isSelected = () => props.selected == props.option.value;
+	let isSelected = () => {
+		return Array.isArray(props.selected) && props.selected != undefined
+			? props.selected.includes(props.option.value!)
+			: props.selected == props.option.value;
+	};
 	let color =
 		props.option.color == undefined ? "var(--fg2)" : props.option.color;
 
@@ -75,12 +100,17 @@ function InlineSelectOption(props: OptionProps) {
 				? "black"
 				: props.option.selectedTextColor
 			: "var(--fg)";
-	let backgroundColor = () =>
-		props.solidSelect && isSelected()
-			? color
-			: props.connected
-			? "var(--bg0)"
-			: "var(--bg2)";
+	let backgroundColor = () => {
+		if (isSelected()) {
+			if (props.solidSelect) {
+				return color;
+			} else {
+				return "var(--bg)";
+			}
+		} else {
+			return "var(--bg2)";
+		}
+	};
 	let borderColor = () =>
 		`border-color:${
 			isSelected() ? color : isHovered() ? "var(--bg4)" : "var(--bg3)"
@@ -120,7 +150,7 @@ function InlineSelectOption(props: OptionProps) {
 
 interface OptionProps {
 	option: Option;
-	selected?: string;
+	selected?: string | string[];
 	connected: boolean;
 	solidSelect: boolean;
 	class?: string;

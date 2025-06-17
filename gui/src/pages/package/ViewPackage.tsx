@@ -21,6 +21,7 @@ import {
 	CurlyBraces,
 	Folder,
 	Globe,
+	Hashtag,
 	Heart,
 	Key,
 	Picture,
@@ -119,7 +120,7 @@ export default function ViewPackage(props: ViewPackageProps) {
 							<div class="col" id="package-details">
 								<div class="cont" id="package-upper-details">
 									<div id="package-name">{meta()!.name}</div>
-									<div id="package-id">{packageId}</div>
+									{/* <div id="package-id">{packageId}</div> */}
 									<Show when={repoInfo() != undefined}>
 										<div
 											id="package-repo"
@@ -237,7 +238,11 @@ export default function ViewPackage(props: ViewPackageProps) {
 										visible={galleryPreview() != undefined}
 										onClose={() => setGalleryPreview(undefined)}
 									>
-										<img id="package-gallery-preview" src={galleryPreview()} />
+										<img
+											id="package-gallery-preview"
+											src={galleryPreview()}
+											onclick={() => setGalleryPreview(undefined)}
+										/>
 									</Modal>
 								</Show>
 							</div>
@@ -292,9 +297,14 @@ export default function ViewPackage(props: ViewPackageProps) {
 									<a href={meta()!.license} target="_blank">
 										Open
 									</a>
+								) : meta()!.license!.length > 17 ? (
+									`${meta()!.license!.slice(0, 17)}...`
 								) : (
 									meta()!.license
 								)}
+							</Property>
+							<Property icon={Hashtag} label="ID">
+								{parsePkgRequest(packageId).id}
 							</Property>
 						</div>
 					</div>

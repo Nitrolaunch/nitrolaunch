@@ -1,8 +1,25 @@
+.package-versions {
+	width: 45rem;
+}
+
+.package-versions-header {
+	width: 100%;
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	margin-bottom: 0.5rem;
+}
+
+.package-versions-count {
+	font-weight: bold;
+	margin-left: 1rem;
+	color: var(--fg3);
+}
+
 .package-version {
 	display: grid;
-	width: 45rem;
+	width: 100%;
 	height: 4rem;
-	grid-template-columns: minmax(0, 0.4fr) minmax(0, 0.3fr) minmax(0, 1fr);
+	grid-template-columns: minmax(0, 0.5fr) minmax(0, 0.8fr) minmax(0, 0.5fr);
 	border: 0.15rem solid var(--bg3);
 	border-radius: var(--round);
 	cursor: pointer;
@@ -18,8 +35,6 @@
 	gap: 0.2rem;
 	line-height: 1;
 	justify-content: flex-start;
-	/* margin-left: 1rem; */
-	/* align-items: flex-start; */
 }
 
 .package-version-mc-versions > div {

@@ -50,6 +50,8 @@ import AnimalIcon from "./assets/icons/animal.svg?component-solid";
 import SwordIcon from "./assets/icons/sword.svg?component-solid";
 import CouchIcon from "./assets/icons/couch.svg?component-solid";
 import HoneycombIcon from "./assets/icons/honeycomb.svg?component-solid";
+import HashtagIcon from "./assets/icons/hashtag.svg?component-solid";
+import LockIcon from "./assets/icons/lock.svg?component-solid";
 import { HasWidthHeight } from "./components/Icon";
 
 export function Pin({ width, height, viewBox }: HasWidthHeight) {
@@ -266,4 +268,12 @@ export function Couch({ width, height, viewBox }: HasWidthHeight) {
 
 export function Honeycomb({ width, height, viewBox }: HasWidthHeight) {
 	return <HoneycombIcon width={width} height={height} viewBox={viewBox} />;
+}
+
+export function Hashtag({ width, height, viewBox }: HasWidthHeight) {
+	return <HashtagIcon width={width} height={height} viewBox={viewBox} />;
+}
+
+export function Lock({ width, height, viewBox }: HasWidthHeight) {
+	return <LockIcon width={width} height={height} viewBox={viewBox} />;
 }

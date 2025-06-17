@@ -76,3 +76,15 @@ export function pkgRequestToString(request: PkgRequest) {
 	let version = request.version == undefined ? "" : `@${request.version}`;
 	return `${repo}${request.id}${version}`;
 }
+
+// Canonicalizes a common deserializion format (DeserListOrSingle) and an optional to just an array
+export function canonicalizeListOrSingle<T>(value: T | T[] | undefined) {
+	if (value == undefined) {
+		return [];
+	}
+	if (Array.isArray(value)) {
+		return value;
+	}
+
+	return [value];
+}

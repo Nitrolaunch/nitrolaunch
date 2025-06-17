@@ -11,17 +11,7 @@ import { beautifyString } from "../../utils";
 export default function PackageLabels(props: PackageLabelsProps) {
 	let small = props.small == undefined ? false : props.small;
 
-	let allLoaders = () => {
-		let out: Loader[] = [];
-		for (let loaderMatch of props.loaders) {
-			for (let newLoader of getLoaders(loaderMatch)) {
-				if (!out.includes(newLoader)) {
-					out.push(newLoader);
-				}
-			}
-		}
-		return out;
-	};
+	let allLoaders = () => getAllLoaders(props.loaders);
 
 	return (
 		<div class={`cont package-labels ${small ? "small" : ""}`}>
@@ -88,7 +78,19 @@ export enum Loader {
 	SpongeForge = "spongeforge",
 }
 
-function getLoaders(modification: string) {
+export function getAllLoaders(modifications: string[]) {
+	let out: Loader[] = [];
+	for (let loaderMatch of modifications) {
+		for (let newLoader of getLoaders(loaderMatch)) {
+			if (!out.includes(newLoader)) {
+				out.push(newLoader);
+			}
+		}
+	}
+	return out;
+}
+
+export function getLoaders(modification: string) {
 	if (modification == "fabriclike") {
 		return [Loader.Fabric, Loader.Quilt];
 	} else if (modification == "forgelike") {
@@ -97,7 +99,7 @@ function getLoaders(modification: string) {
 	return [modification as Loader];
 }
 
-function getLoaderDisplayName(loader: Loader) {
+export function getLoaderDisplayName(loader: Loader) {
 	if (loader == "fabric") {
 		return "Fabric";
 	} else if (loader == "quilt") {
@@ -115,7 +117,7 @@ function getLoaderDisplayName(loader: Loader) {
 	}
 }
 
-function getLoaderImage(loader: Loader) {
+export function getLoaderImage(loader: Loader) {
 	if (loader == "fabric") {
 		return "/icons/fabric.png";
 	} else if (loader == "quilt") {
@@ -130,5 +132,23 @@ function getLoaderImage(loader: Loader) {
 		return "/icons/sponge.png";
 	} else {
 		return "/icons/default_instance.png";
+	}
+}
+
+export function getLoaderColor(loader: Loader) {
+	if (loader == "fabric") {
+		return "#d4c9af";
+	} else if (loader == "quilt") {
+		return "#dc29dd";
+	} else if (loader == "forge") {
+		return "#404c64";
+	} else if (loader == "neoforged") {
+		return "#d6732f";
+	} else if (loader == "sponge") {
+		return "#f8ce0f";
+	} else if (loader == "spongeforge") {
+		return "#f8ce0f";
+	} else {
+		return "var(--fg2)";
 	}
 }

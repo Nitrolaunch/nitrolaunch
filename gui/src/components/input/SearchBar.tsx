@@ -3,6 +3,8 @@ import { Delete, Search } from "../../icons";
 import "./SearchBar.css";
 
 export default function SearchBar(props: SearchBarProps) {
+	let immediate = props.immediate == undefined ? false : props.immediate;
+
 	let [term, setTerm] = createSignal<string | undefined>(props.value);
 
 	return (
@@ -37,7 +39,12 @@ export default function SearchBar(props: SearchBarProps) {
 				type="text"
 				placeholder={props.placeholder}
 				value={term() == undefined ? "" : term()}
-				onkeyup={(e) => setTerm(e.target.value)}
+				onkeyup={(e) => {
+					setTerm(e.target.value);
+					if (immediate) {
+						props.method(e.target.value);
+					}
+				}}
 			/>
 		</form>
 	);
@@ -47,4 +54,5 @@ export interface SearchBarProps {
 	placeholder?: string;
 	value?: string;
 	method: (term: string) => void;
+	immediate?: boolean;
 }

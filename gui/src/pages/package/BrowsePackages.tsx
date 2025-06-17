@@ -180,7 +180,7 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 				<div class="cont">
 					<SearchBar
 						placeholder="Search for packages..."
-						value={search}
+						value={search == undefined ? undefined : decodeURIComponent(search)}
 						method={(term) => {
 							window.location.href = formatUrl(0, selectedRepo(), term);
 						}}

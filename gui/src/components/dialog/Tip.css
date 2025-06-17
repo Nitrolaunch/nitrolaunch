@@ -8,8 +8,8 @@
 	/* We only set the width or the height based on what side the tip is on */
 	--total-width: 15rem;
 	--width: 14.5rem;
-	--total-height: 4rem;
-	--height: 3.5rem;
+	--total-height: 3rem;
+	--height: 2.5rem;
 
 	/* How far away the tip is */
 	--offset: 0.5rem;
@@ -24,6 +24,7 @@
 	box-sizing: border-box;
 	width: var(--width);
 	height: var(--height);
+	justify-content: flex-start;
 }
 
 .tip-body.right {

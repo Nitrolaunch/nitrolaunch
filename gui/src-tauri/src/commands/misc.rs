@@ -1,8 +1,10 @@
 use crate::State;
 use anyhow::Context;
 use mcvm::{
+	core::util::versions::MinecraftVersion,
+	instance::update::manager::UpdateManager,
 	plugin_crate::hooks::{AddSupportedGameModifications, SupportedGameModifications},
-	shared::output::NoOp,
+	shared::{later::Later, output::NoOp, UpdateDepth},
 };
 
 use super::{fmt_err, load_config};
@@ -26,4 +28,31 @@ pub async fn get_supported_game_modifications(
 	}
 
 	Ok(out)
+}
+
+/// Get a list of all Minecraft versions, including from plugins
+#[tauri::command]
+pub async fn get_minecraft_versions(state: tauri::State<'_, State>) -> Result<Vec<String>, String> {
+	let config = fmt_err(load_config(&state.paths, &mut NoOp).context("Failed to load config"))?;
+
+	// Use the UpdateManager and then take the version info from it
+	let mut manager = UpdateManager::new(UpdateDepth::Shallow);
+	manager.set_version(&MinecraftVersion::Latest);
+	fmt_err(
+		manager
+			.fulfill_requirements(
+				&config.users,
+				&config.plugins,
+				&state.paths,
+				&state.client,
+				&mut NoOp,
+			)
+			.await,
+	)?;
+
+	let Later::Full(version_info) = manager.version_info else {
+		return Err("Version info not fulfilled".into());
+	};
+
+	Ok(version_info.versions)
 }

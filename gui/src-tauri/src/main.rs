@@ -88,6 +88,7 @@ fn main() {
 			commands::user::get_users,
 			commands::user::select_user,
 			commands::misc::get_supported_game_modifications,
+			commands::misc::get_minecraft_versions,
 		])
 		.run(tauri::generate_context!())
 		.expect("Error while running tauri application");

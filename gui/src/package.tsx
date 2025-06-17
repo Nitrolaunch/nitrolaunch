@@ -72,13 +72,13 @@ export interface PackageAddon {
 }
 
 export interface DeclarativePackage {
-	relations: DeclarativePackageRelations;
-	addons: { [id: string]: DeclarativeAddon };
+	relations?: DeclarativePackageRelations;
+	addons?: { [id: string]: DeclarativeAddon };
 }
 
 export interface DeclarativeAddon {
 	kind: AddonKind;
-	versions: DeclarativeAddonVersion[];
+	versions?: DeclarativeAddonVersion[];
 }
 
 export interface DeclarativeAddonVersion {

@@ -64,6 +64,7 @@
 #package-short-description {
 	color: var(--fg3);
 	justify-content: flex-start;
+	margin-bottom: 0.1rem;
 }
 
 #package-banner-container {
@@ -178,6 +179,7 @@
 .package-property-label {
 	justify-content: flex-start;
 	font-weight: bold;
+	text-wrap: nowrap;
 }
 
 .package-property-value {
@@ -185,6 +187,7 @@
 	text-align: right;
 	margin-right: 0.5rem;
 	color: var(--fg3);
+	text-wrap: nowrap;
 }
 
 #package-gallery {

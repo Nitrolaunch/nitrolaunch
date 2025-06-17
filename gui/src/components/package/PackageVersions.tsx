@@ -7,89 +7,229 @@ import {
 	PackageAddon,
 	PackageVersion,
 } from "../../package";
-import PackageLabels from "./PackageLabels";
+import PackageLabels, { getAllLoaders } from "./PackageLabels";
 import Tip from "../dialog/Tip";
+import PackageFilters from "./PackageFilters";
+import LoadingSpinner from "../utility/LoadingSpinner";
+import SearchBar from "../input/SearchBar";
+import { canonicalizeListOrSingle } from "../../utils";
+import { errorToast } from "../dialog/Toasts";
 
 export default function PackageVersions(props: PackageVersionsProps) {
 	let [isScriptPackage, setIsScriptPackage] = createSignal(false);
 
+	let [search, setSearch] = createSignal("");
+	let [filteredMinecraftVersions, setFilteredMinecraftVersions] = createSignal<
+		string[]
+	>([]);
+	let [filteredLoaders, setFilteredLoaders] = createSignal<string[]>([]);
+	let [filteredStability, setFilteredStability] = createSignal<
+		"stable" | "latest" | undefined
+	>(undefined);
+
 	let [versions, _] = createResource(async () => {
-		let declarativeContents: DeclarativePackage | undefined = await invoke(
-			"get_declarative_package_contents",
-			{ package: props.packageId }
-		);
+		try {
+			let declarativeContents: DeclarativePackage | undefined = await invoke(
+				"get_declarative_package_contents",
+				{ package: props.packageId }
+			);
 
-		// If this is a script package, just use the content versions
-		if (declarativeContents == undefined) {
-			setIsScriptPackage(true);
+			// If this is a script package, just use the content versions
+			if (declarativeContents == undefined) {
+				setIsScriptPackage(true);
 
-			if (props.props.content_versions == undefined) {
-				return undefined;
+				if (props.props.content_versions == undefined) {
+					return undefined;
+				}
+
+				let versions = props.props.content_versions.map((version) => {
+					return { name: version } as PackageVersion;
+				});
+				return versions;
 			}
 
-			let versions = props.props.content_versions.map((version) => {
-				return { name: version } as PackageVersion;
-			});
-			return versions;
-		}
+			// Combine the same content version across multiple addons into a single version if possible
+			let versionsWithIds: { [id: string]: PackageVersion } = {};
+			let versionsWithoutIds: PackageVersion[] = [];
 
-		// Combine the same content version across multiple addons into a single version if possible
-		let versionsWithIds: { [id: string]: PackageVersion } = {};
-		let versionsWithoutIds: PackageVersion[] = [];
+			if (declarativeContents.addons == undefined) {
+				return [];
+			}
 
-		for (let addonId of Object.keys(declarativeContents.addons)) {
-			let addon = declarativeContents.addons[addonId];
-			let packageAddon: PackageAddon = { id: addonId, kind: addon.kind };
-			for (let version of addon.versions) {
-				let contentVersion =
-					version.content_versions == undefined ||
-					version.content_versions.length == 0
-						? undefined
-						: Array.isArray(version.content_versions)
-						? version.content_versions[0]
-						: version.content_versions;
+			for (let addonId of Object.keys(declarativeContents.addons)) {
+				let addon = declarativeContents.addons[addonId];
+				let packageAddon: PackageAddon = { id: addonId, kind: addon.kind };
+				if (addon.versions == undefined) {
+					continue;
+				}
 
-				let newVersion: PackageVersion = {
-					id: version.version,
-					name: contentVersion,
-					addons: [packageAddon],
-					minecraft_versions: version.minecraft_versions,
-					side: version.side,
-					modloaders: version.modloaders,
-					plugin_loaders: version.plugin_loaders,
-					stability: version.stability,
-					features: version.features,
-					operating_systems: version.operating_systems,
-					architectures: version.architectures,
-					languages: version.languages,
-				};
+				for (let version of addon.versions) {
+					let contentVersion =
+						version.content_versions == undefined ||
+						version.content_versions.length == 0
+							? undefined
+							: Array.isArray(version.content_versions)
+							? version.content_versions[0]
+							: version.content_versions;
 
-				// Add a new version or append an addon to one that already exists
-				if (contentVersion == undefined) {
-					versionsWithoutIds.push(newVersion);
-				} else {
-					if (versionsWithIds[contentVersion] == undefined) {
-						versionsWithIds[contentVersion] = newVersion;
+					let newVersion: PackageVersion = {
+						id: version.version,
+						name: contentVersion,
+						addons: [packageAddon],
+						minecraft_versions: version.minecraft_versions,
+						side: version.side,
+						modloaders: version.modloaders,
+						plugin_loaders: version.plugin_loaders,
+						stability: version.stability,
+						features: version.features,
+						operating_systems: version.operating_systems,
+						architectures: version.architectures,
+						languages: version.languages,
+					};
+
+					// Add a new version or append an addon to one that already exists
+					if (contentVersion == undefined) {
+						versionsWithoutIds.push(newVersion);
 					} else {
-						versionsWithIds[contentVersion].addons.push(packageAddon);
+						if (versionsWithIds[contentVersion] == undefined) {
+							versionsWithIds[contentVersion] = newVersion;
+						} else {
+							versionsWithIds[contentVersion].addons.push(packageAddon);
+						}
 					}
 				}
 			}
+
+			return Object.values(versionsWithIds).concat(versionsWithoutIds);
+		} catch (e) {
+			errorToast("Failed to load versions: " + e);
+			return undefined;
+		}
+	});
+
+	// The list of available Minecraft versions for the filters
+	let availableMinecraftVersions = () => {
+		if (props.props.supported_versions != undefined) {
+			return canonicalizeListOrSingle(props.props.supported_versions);
+		}
+		if (versions() == undefined) {
+			return [];
 		}
 
-		return Object.values(versionsWithIds).concat(versionsWithoutIds);
-	});
+		let allVersions = new Set<string>();
+		for (let version of versions()!) {
+			for (let mcVersion of canonicalizeListOrSingle(
+				version.minecraft_versions
+			)) {
+				allVersions.add(mcVersion);
+			}
+		}
+
+		let out = [];
+		for (let version of allVersions) {
+			out.push(version);
+		}
+
+		return out;
+	};
 
 	return (
 		<div class="cont col package-versions">
-			<Show when={versions() != undefined}>
-				<For each={versions()}>
-					{(version) => (
-						<PackageVersionEntry
-							version={version}
-							backgroundColor={props.backgroundColor}
+			<Show
+				when={versions() != undefined}
+				fallback={<LoadingSpinner size="5rem" />}
+			>
+				<div class="cont package-versions-header">
+					<div
+						class="cont package-versions-count"
+						style="justify-content:flex-start"
+					>
+						{versions()!.length} versions
+					</div>
+					<div class="cont" style="justify-content:flex-end">
+						<SearchBar
+							method={(search) => {
+								setSearch(search);
+							}}
+							immediate
 						/>
-					)}
+					</div>
+				</div>
+				<PackageFilters
+					minecraftVersions={filteredMinecraftVersions()}
+					loaders={filteredLoaders()}
+					stability={filteredStability()}
+					setMinecraftVersions={setFilteredMinecraftVersions}
+					setLoaders={setFilteredLoaders}
+					setStability={setFilteredStability}
+					filteringVersions={true}
+					availableMinecraftVersions={availableMinecraftVersions()}
+				/>
+				<For each={versions()}>
+					{(version) => {
+						let isVisible = () => {
+							if (
+								search() != undefined &&
+								version.name != undefined &&
+								!version.name!.includes(search()!)
+							) {
+								return false;
+							}
+
+							if (filteredLoaders().length > 0) {
+								let found = false;
+								let allLoaders = getAllLoaders(
+									canonicalizeListOrSingle(version.modloaders).concat(
+										canonicalizeListOrSingle(version.plugin_loaders)
+									)
+								);
+								for (let loader of allLoaders) {
+									if (filteredLoaders().includes(loader)) {
+										found = true;
+										break;
+									}
+								}
+
+								if (!found) {
+									return false;
+								}
+							}
+
+							if (filteredMinecraftVersions().length > 0) {
+								let found = false;
+								for (let mcVersion of canonicalizeListOrSingle(
+									version.minecraft_versions
+								)) {
+									if (filteredMinecraftVersions().includes(mcVersion)) {
+										found = true;
+										break;
+									}
+								}
+
+								if (!found) {
+									return false;
+								}
+							}
+
+							if (filteredStability() != undefined) {
+								console.log(filteredStability(), version.stability);
+								if (version.stability != filteredStability()) {
+									return false;
+								}
+							}
+
+							return true;
+						};
+
+						return (
+							<Show when={isVisible()}>
+								<PackageVersionEntry
+									version={version}
+									backgroundColor={props.backgroundColor}
+								/>
+							</Show>
+						);
+					}}
 				</For>
 			</Show>
 		</div>
@@ -112,9 +252,7 @@ function PackageVersionEntry(props: PackageVersionEntryProps) {
 				: version.id
 			: version.name;
 
-	let minecraftVersions = Array.isArray(version.minecraft_versions)
-		? version.minecraft_versions
-		: [version.minecraft_versions!];
+	let minecraftVersions = canonicalizeListOrSingle(version.minecraft_versions);
 
 	if (version.name == "8.0.0-neo") {
 		console.log(version);
@@ -138,12 +276,7 @@ function PackageVersionEntry(props: PackageVersionEntryProps) {
 						}
 						return undefined;
 					} else {
-						return (
-							<div>
-								{/* {i() == minecraftVersions.length - 1 ? version : `${version}, `} */}
-								{version}
-							</div>
-						);
+						return <div>{version}</div>;
 					}
 				}}
 			</For>
@@ -203,6 +336,13 @@ function StabilityIndicator(props: { stability?: "stable" | "latest" }) {
 			? "S"
 			: "D";
 
+	let className =
+		props.stability == undefined
+			? "unknown"
+			: props.stability == "stable"
+			? "stable"
+			: "development";
+
 	let backgroundColor =
 		props.stability == undefined
 			? "var(--bg)"
@@ -227,7 +367,7 @@ function StabilityIndicator(props: { stability?: "stable" | "latest" }) {
 	return (
 		<Tip tip={tip} side="top">
 			<div
-				class="cont package-version-stability-indicator"
+				class={`cont package-version-stability-indicator ${className}`}
 				style={`background-color:${backgroundColor};border-color:${color};color:${color}`}
 			>
 				{letter}
