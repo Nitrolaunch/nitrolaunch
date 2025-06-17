@@ -9,7 +9,7 @@ use mcvm_pkg::declarative::{
 use mcvm_pkg::metadata::PackageMetadata;
 use mcvm_pkg::properties::PackageProperties;
 use mcvm_shared::addon::AddonKind;
-use mcvm_shared::pkg::PackageCategory;
+use mcvm_shared::pkg::{PackageCategory, PackageKind};
 use mcvm_shared::util::DeserListOrSingle;
 use mcvm_shared::versions::VersionPattern;
 
@@ -69,6 +69,7 @@ pub async fn gen(
 	};
 
 	let mut props = PackageProperties {
+		kinds: vec![PackageKind::Datapack, PackageKind::ResourcePack],
 		smithed_id: Some(pack.id),
 		tags: Some(vec!["datapack".into()]),
 		..Default::default()

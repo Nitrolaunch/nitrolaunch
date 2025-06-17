@@ -10,7 +10,7 @@ use mcvm_pkg::properties::PackageProperties;
 use mcvm_pkg::RecommendedPackage;
 use mcvm_shared::addon::AddonKind;
 use mcvm_shared::modifications::{ModloaderMatch, PluginLoaderMatch};
-use mcvm_shared::pkg::{PackageCategory, PackageStability};
+use mcvm_shared::pkg::{PackageCategory, PackageKind, PackageStability};
 use mcvm_shared::util::DeserListOrSingle;
 use mcvm_shared::versions::VersionPattern;
 
@@ -159,12 +159,12 @@ pub async fn gen(
 	};
 
 	// Generate addons
-	let addon_kind = match project.project_type {
-		ProjectType::Mod => AddonKind::Mod,
-		ProjectType::Datapack => AddonKind::Datapack,
-		ProjectType::Plugin => AddonKind::Plugin,
-		ProjectType::ResourcePack => AddonKind::ResourcePack,
-		ProjectType::Shader => AddonKind::Shader,
+	let (addon_kind, package_type) = match project.project_type {
+		ProjectType::Mod => (AddonKind::Mod, PackageKind::Mod),
+		ProjectType::Datapack => (AddonKind::Datapack, PackageKind::Datapack),
+		ProjectType::Plugin => (AddonKind::Plugin, PackageKind::Plugin),
+		ProjectType::ResourcePack => (AddonKind::ResourcePack, PackageKind::ResourcePack),
+		ProjectType::Shader => (AddonKind::Shader, PackageKind::Shader),
 		ProjectType::Modpack => panic!("Modpack projects are unsupported"),
 	};
 	let mut addon = DeclarativeAddon {
@@ -174,7 +174,7 @@ pub async fn gen(
 		optional: false,
 	};
 
-	let mut content_versions = Vec::with_capacity(versions.len());
+	props.kinds = vec![package_type];
 
 	// Make substitutions
 	let mut substitutions = HashSet::new();
@@ -189,6 +189,7 @@ pub async fn gen(
 		.await
 		.context("Failed to substitute relations")?;
 
+	let mut content_versions = Vec::with_capacity(versions.len());
 	let mut all_modloaders = HashSet::new();
 	let mut all_plugin_loaders = HashSet::new();
 

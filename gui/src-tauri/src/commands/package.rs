@@ -7,7 +7,7 @@ use mcvm::pkg_crate::properties::PackageProperties;
 use mcvm::pkg_crate::repo::RepoMetadata;
 use mcvm::pkg_crate::{PkgRequest, PkgRequestSource};
 use mcvm::shared::output::{MCVMOutput, MessageContents, MessageLevel, NoOp};
-use mcvm::shared::pkg::PackageSearchParameters;
+use mcvm::shared::pkg::{PackageKind, PackageSearchParameters};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::ops::DerefMut;
@@ -24,6 +24,7 @@ pub async fn get_packages(
 	repo: &str,
 	page: usize,
 	search: Option<&str>,
+	package_kinds: Vec<PackageKind>,
 ) -> Result<(Vec<String>, usize), String> {
 	let mut output = LauncherOutput::new(state.get_output(app_handle));
 	output.set_task("search_packages");
@@ -34,6 +35,7 @@ pub async fn get_packages(
 		count: PACKAGES_PER_PAGE,
 		skip: page * PACKAGES_PER_PAGE as usize,
 		search: search.map(|x| x.to_string()),
+		types: package_kinds,
 		categories: Vec::new(),
 	};
 

@@ -238,6 +238,25 @@ impl PackageAddonOptionalHashes {
 /// Optional PackageAddonHashes
 pub type PackageAddonOptionalHashes = PackageAddonHashes<Option<String>>;
 
+/// Different types of packages, mostly AddonKinds
+#[derive(Serialize, Deserialize, Clone, Copy, PartialEq, Eq, Hash, Debug)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
+#[serde(rename_all = "snake_case")]
+pub enum PackageKind {
+	/// A mod package
+	Mod,
+	/// A resource pack package
+	ResourcePack,
+	/// A datapack package
+	Datapack,
+	/// A plugin package
+	Plugin,
+	/// A shader package
+	Shader,
+	/// A package that bundles other packages
+	Bundle,
+}
+
 /// Parameters for a package search
 #[derive(Serialize, Deserialize, Default, Clone)]
 pub struct PackageSearchParameters {
@@ -247,6 +266,8 @@ pub struct PackageSearchParameters {
 	pub skip: usize,
 	/// The fuzzy search term for ids, names, or descriptions
 	pub search: Option<String>,
+	/// The addon kinds / package types to include
+	pub types: Vec<PackageKind>,
 	/// The package categories to include
 	pub categories: Vec<PackageCategory>,
 }

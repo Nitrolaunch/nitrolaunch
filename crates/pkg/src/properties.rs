@@ -1,6 +1,7 @@
 use anyhow::{bail, ensure};
 use mcvm_parse::conditions::{ArchCondition, OSCondition};
 use mcvm_shared::modifications::{ModloaderMatch, PluginLoaderMatch};
+use mcvm_shared::pkg::PackageKind;
 use mcvm_shared::versions::VersionPattern;
 use mcvm_shared::Side;
 #[cfg(feature = "schema")]
@@ -13,6 +14,11 @@ use crate::parse::{instruction::InstrKind, parse::Parsed, routine::PROPERTIES_RO
 #[derive(Default, Debug, Deserialize, Serialize, Clone)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 pub struct PackageProperties {
+	/// What kinds of package this is
+	#[serde(rename = "types")]
+	#[serde(skip_serializing_if = "Vec::is_empty")]
+	#[serde(default)]
+	pub kinds: Vec<PackageKind>,
 	/// Available features that can be configured for the package
 	#[serde(skip_serializing_if = "Option::is_none")]
 	pub features: Option<Vec<String>>,

@@ -134,6 +134,7 @@ pub async fn run(subcommand: PackageSubcommand, data: &mut CmdData<'_>) -> anyho
 					count: limit.unwrap_or(5),
 					skip: 0,
 					search: query,
+					types: Vec::new(),
 					categories: Vec::new(),
 				},
 			)
