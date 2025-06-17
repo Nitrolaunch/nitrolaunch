@@ -268,6 +268,8 @@ pub struct PackageSearchParameters {
 	pub search: Option<String>,
 	/// The addon kinds / package types to include
 	pub types: Vec<PackageKind>,
+	/// The Minecraft versions to include
+	pub minecraft_versions: Vec<String>,
 	/// The package categories to include
 	pub categories: Vec<PackageCategory>,
 }

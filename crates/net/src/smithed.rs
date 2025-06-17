@@ -127,7 +127,16 @@ pub async fn search_packs(
 		String::new()
 	};
 	let page = params.skip / params.count as usize + 1;
-	let url = format!("{API_URL}/packs?limit={limit}{search}&page={page}&scope=meta.rawId");
+
+	let versions = params
+		.minecraft_versions
+		.into_iter()
+		.map(|x| format!("&version={x}"))
+		.collect::<Vec<_>>()
+		.join("");
+
+	let url =
+		format!("{API_URL}/packs?limit={limit}{search}&page={page}{versions}&scope=meta.rawId");
 
 	download::json(url, client).await
 }
@@ -155,11 +164,19 @@ pub async fn count_packs(
 	client: &Client,
 ) -> anyhow::Result<usize> {
 	let search = if let Some(search) = params.search {
-		format!("?search={search}")
+		format!("search={search}")
 	} else {
 		String::new()
 	};
-	let url = format!("{API_URL}/packs/count{search}");
+
+	let versions = params
+		.minecraft_versions
+		.into_iter()
+		.map(|x| format!("&version={x}"))
+		.collect::<Vec<_>>()
+		.join("");
+
+	let url = format!("{API_URL}/packs/count?{search}{versions}");
 
 	download::json(url, client).await
 }

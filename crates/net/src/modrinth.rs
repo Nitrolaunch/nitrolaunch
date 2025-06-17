@@ -507,7 +507,19 @@ pub async fn search_projects(
 		.join(",");
 	let types = format!("[{types}]");
 
-	let facets = format!("facets=[{types}]",);
+	let versions = if params.minecraft_versions.is_empty() {
+		String::new()
+	} else {
+		let versions = params
+			.minecraft_versions
+			.into_iter()
+			.map(|x| format!("\"versions={x}\""))
+			.collect::<Vec<_>>()
+			.join(",");
+		format!(",[{versions}]")
+	};
+
+	let facets = format!("facets=[{types}{versions}]",);
 	let url = format!(
 		"https://api.modrinth.com/v2/search?limit={limit}{search}&{facets}&offset={}",
 		params.skip

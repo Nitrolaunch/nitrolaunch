@@ -49,7 +49,11 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 	);
 	let [filteredMinecraftVersions, setFilteredMinecraftVersions] = createSignal<
 		string[]
-	>([]);
+	>(
+		searchParams["minecraft_versions"] == undefined
+			? []
+			: (JSON.parse(searchParams["minecraft_versions"]) as string[])
+	);
 	let [filteredLoaders, setFilteredLoaders] = createSignal<string[]>([]);
 	let [filteredStability, setFilteredStability] = createSignal<
 		"stable" | "latest" | undefined
@@ -58,11 +62,10 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 	// Updates the URL with current search / filters
 	let updateUrl = () => {
 		let query = search() == undefined ? "" : `&search=${search()}`;
-		window.history.replaceState(
-			"",
-			"",
-			`/packages/${page()}?repo=${selectedRepo()}&package_type=${filteredPackageType()}${query}`
-		);
+		let url = `/packages/${page()}?repo=${selectedRepo()}&package_type=${filteredPackageType()}${query}&minecraft_versions=${JSON.stringify(
+			filteredMinecraftVersions()
+		)}`;
+		window.history.replaceState("", "", url);
 	};
 
 	// Refetches packages and modifies the URL
@@ -119,6 +122,7 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 				page: page(),
 				search: search(),
 				packageKinds: [filteredPackageType()],
+				minecraftVersions: filteredMinecraftVersions(),
 			})) as [string[], number];
 
 			setPackageCount(packageCount);
@@ -254,7 +258,10 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 							setFilteredPackageType(type);
 							updateFilters();
 						}}
-						setMinecraftVersions={setFilteredMinecraftVersions}
+						setMinecraftVersions={(versions) => {
+							setFilteredMinecraftVersions(versions);
+							updateFilters();
+						}}
 						setLoaders={setFilteredLoaders}
 						setStability={setFilteredStability}
 						filteringVersions={false}

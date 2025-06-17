@@ -25,6 +25,7 @@ pub async fn get_packages(
 	page: usize,
 	search: Option<&str>,
 	package_kinds: Vec<PackageKind>,
+	minecraft_versions: Vec<String>,
 ) -> Result<(Vec<String>, usize), String> {
 	let mut output = LauncherOutput::new(state.get_output(app_handle));
 	output.set_task("search_packages");
@@ -36,6 +37,7 @@ pub async fn get_packages(
 		skip: page * PACKAGES_PER_PAGE as usize,
 		search: search.map(|x| x.to_string()),
 		types: package_kinds,
+		minecraft_versions,
 		categories: Vec::new(),
 	};
 

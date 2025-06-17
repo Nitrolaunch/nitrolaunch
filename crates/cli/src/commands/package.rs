@@ -135,6 +135,7 @@ pub async fn run(subcommand: PackageSubcommand, data: &mut CmdData<'_>) -> anyho
 					skip: 0,
 					search: query,
 					types: Vec::new(),
+					minecraft_versions: Vec::new(),
 					categories: Vec::new(),
 				},
 			)
