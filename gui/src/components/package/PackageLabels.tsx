@@ -3,9 +3,13 @@ import {
 	getAllLoaders,
 	getLoaderDisplayName,
 	getLoaderImage,
+	getPackageTypeColor,
+	getPackageTypeDisplayName,
+	getPackageTypeIcon,
 	PackageCategory,
 	packageCategoryDisplayName,
 	packageCategoryIcon,
+	PackageType,
 } from "../../package";
 import Icon from "../Icon";
 import "./PackageLabels.css";
@@ -17,9 +21,33 @@ export default function PackageLabels(props: PackageLabelsProps) {
 
 	return (
 		<div class={`cont package-labels ${small ? "small" : ""}`}>
+			<For each={props.packageTypes}>
+				{(type, i) => {
+					if (props.limit != undefined && i() >= props.limit) {
+						return undefined;
+					} else {
+						return (
+							<div class={`cont package-type ${small ? "small" : ""}`}>
+								<div
+									class="cont package-type-icon"
+									style={`color:${getPackageTypeColor(type)}`}
+								>
+									<Icon icon={getPackageTypeIcon(type)} size="1rem" />
+								</div>
+								<div class="cont package-type-label">
+									{getPackageTypeDisplayName(type)}
+								</div>
+							</div>
+						);
+					}
+				}}
+			</For>
 			<For each={props.categories}>
 				{(category, i) => {
-					if (props.limit != undefined && i() >= props.limit) {
+					if (
+						props.limit != undefined &&
+						i() + props.packageTypes.length >= props.limit
+					) {
 						return undefined;
 					} else {
 						return (
@@ -39,7 +67,8 @@ export default function PackageLabels(props: PackageLabelsProps) {
 				{(loader, i) => {
 					if (
 						props.limit != undefined &&
-						i() + props.categories.length >= props.limit
+						i() + props.packageTypes.length + props.categories.length >=
+							props.limit
 					) {
 						return undefined;
 					} else {
@@ -65,6 +94,7 @@ export default function PackageLabels(props: PackageLabelsProps) {
 export interface PackageLabelsProps {
 	categories: PackageCategory[];
 	loaders: string[];
+	packageTypes: PackageType[];
 	// The maximum number of labels to include
 	limit?: number;
 	small?: boolean;

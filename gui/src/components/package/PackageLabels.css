@@ -9,12 +9,14 @@
 	font-size: 0.95rem;
 }
 
+.package-type,
 .package-category,
 .package-loader {
 	gap: 0.4rem;
 	text-wrap: nowrap;
 }
 
+.package-type.small,
 .package-category.small,
 .packge-loader.small {
 	gap: 0.3rem;

@@ -17,6 +17,8 @@ import { FooterData } from "../../App";
 import { FooterMode } from "../../components/launch/Footer";
 import Icon, { HasWidthHeight } from "../../components/Icon";
 import {
+	AngleLeft,
+	AngleRight,
 	Book,
 	CurlyBraces,
 	Folder,
@@ -34,6 +36,8 @@ import PackageLabels from "../../components/package/PackageLabels";
 import { RepoInfo } from "../../package";
 import { beautifyString, parsePkgRequest } from "../../utils";
 import PackageVersions from "../../components/package/PackageVersions";
+import PackageInstallModal from "../../components/package/PackageInstallModal";
+import { canonicalizeListOrSingle } from "../../utils/values";
 
 export default function ViewPackage(props: ViewPackageProps) {
 	let params = useParams();
@@ -48,13 +52,18 @@ export default function ViewPackage(props: ViewPackageProps) {
 	let [longDescription, setLongDescription] = createSignal("");
 
 	let [selectedTab, setSelectedTab] = createSignal("description");
-	let [galleryPreview, setGalleryPreview] = createSignal<string | undefined>();
+	let [galleryPreview, setGalleryPreview] = createSignal<
+		[string, number] | undefined
+	>();
+
+	let [showInstallModal, setShowInstallModal] = createSignal(false);
+	let [installVersion, setInstallVersion] = createSignal<string | undefined>();
 
 	createEffect(() => {
 		props.setFooterData({
 			selectedItem: "",
 			mode: FooterMode.InstallPackage,
-			action: () => {},
+			action: () => setShowInstallModal(true),
 		});
 	});
 
@@ -137,6 +146,15 @@ export default function ViewPackage(props: ViewPackageProps) {
 											{beautifyString(repoInfo()!.id).toLocaleUpperCase()}
 										</div>
 									</Show>
+									<Show when={properties()!.types != undefined}>
+										<PackageLabels
+											categories={[]}
+											loaders={[]}
+											packageTypes={canonicalizeListOrSingle(
+												properties()!.types
+											)}
+										/>
+									</Show>
 								</div>
 								<div class="cont" id="package-short-description">
 									{shortDescription()}
@@ -150,6 +168,7 @@ export default function ViewPackage(props: ViewPackageProps) {
 											? []
 											: properties()!.supported_loaders!
 									}
+									packageTypes={[]}
 								/>
 							</div>
 						</div>
@@ -209,6 +228,10 @@ export default function ViewPackage(props: ViewPackageProps) {
 											packageId={packageId}
 											props={properties()!}
 											backgroundColor="var(--bg)"
+											onInstall={(version) => {
+												setInstallVersion(version);
+												setShowInstallModal(true);
+											}}
 										/>
 									</div>
 								</Show>
@@ -220,11 +243,11 @@ export default function ViewPackage(props: ViewPackageProps) {
 									<div class="cont">
 										<div id="package-gallery">
 											<For each={meta()!.gallery!}>
-												{(entry) => (
+												{(entry, i) => (
 													<img
 														class="package-gallery-entry"
 														src={entry}
-														onclick={() => setGalleryPreview(entry)}
+														onclick={() => setGalleryPreview([entry, i()])}
 													/>
 												)}
 											</For>
@@ -237,9 +260,37 @@ export default function ViewPackage(props: ViewPackageProps) {
 									>
 										<img
 											id="package-gallery-preview"
-											src={galleryPreview()}
+											src={galleryPreview()![0]}
 											onclick={() => setGalleryPreview(undefined)}
 										/>
+										<div
+											class="package-gallery-arrow"
+											style="left:1rem"
+											onclick={() => {
+												if (galleryPreview() != undefined) {
+													let i = galleryPreview()![1];
+													if (i > 0) {
+														setGalleryPreview([meta()!.gallery![i - 1], i - 1]);
+													}
+												}
+											}}
+										>
+											<Icon icon={AngleLeft} size="2rem" />
+										</div>
+										<div
+											class="package-gallery-arrow"
+											style="right:1rem"
+											onclick={() => {
+												if (galleryPreview() != undefined) {
+													let i = galleryPreview()![1];
+													if (i < meta()!.gallery!.length - 1) {
+														setGalleryPreview([meta()!.gallery![i + 1], i + 1]);
+													}
+												}
+											}}
+										>
+											<Icon icon={AngleRight} size="2rem" />
+										</div>
 									</Modal>
 								</Show>
 							</div>
@@ -310,6 +361,14 @@ export default function ViewPackage(props: ViewPackageProps) {
 				<br />
 				<br />
 			</div>
+			<PackageInstallModal
+				packageId={parsePkgRequest(packageId).id}
+				packageRepo={parsePkgRequest(packageId).repo}
+				selectedVersion={installVersion()}
+				visible={showInstallModal()}
+				onClose={() => setShowInstallModal(false)}
+				onShowVersions={() => setSelectedTab("versions")}
+			/>
 		</Show>
 	);
 }

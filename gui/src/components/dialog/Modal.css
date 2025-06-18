@@ -20,4 +20,5 @@
 	border: 0.2rem solid var(--bg4);
 	border-radius: var(--round2);
 	z-index: 12;
+	position: relative;
 }

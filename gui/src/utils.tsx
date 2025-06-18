@@ -1,7 +1,7 @@
-import { convertFileSrc } from "@tauri-apps/api/tauri";
+import { convertFileSrc, invoke } from "@tauri-apps/api/tauri";
 import { InstanceIcon, PkgRequest } from "./types";
 
-// Gets 
+// Gets the src of an instance icon
 export function getInstanceIconSrc(icon: InstanceIcon | null): string {
 	if (icon === null) {
 		return "icons/default_instance.png";
@@ -85,4 +85,14 @@ export function parseVersionedString(
 ): [string, string | undefined] {
 	let split = object.split("@");
 	return [split[0], split.length > 1 ? split[1] : undefined];
+}
+
+// Gets the supported loader list for use with loader selection
+export async function getSupportedLoaders(): Promise<string[]> {
+	let results: string[] = await invoke("get_supported_loaders");
+
+	results.sort(stringCompare);
+	results = ["none", "vanilla"].concat(results);
+
+	return results;
 }

@@ -28,10 +28,13 @@
 	background-color: var(--bg2);
 	box-sizing: border-box;
 	height: 18rem;
+
 	border-radius: var(--round);
 	border-top-left-radius: var(--round2);
 	border-top-right-radius: var(--round2);
 	border: 0.15rem solid var(--bg3);
+	border-top-color: var(--bg4);
+	border-left-color: var(--bg4);
 }
 
 .package:hover {

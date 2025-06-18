@@ -3,22 +3,21 @@ import "./PackageFilters.css";
 import Icon from "../Icon";
 import {
 	Box,
-	CurlyBraces,
-	Folder,
 	Hashtag,
 	Jigsaw,
 	Lock,
 	Minecraft,
-	Palette,
 	Plus,
 	Properties,
-	Sun,
 	Warning,
 } from "../../icons";
 import {
 	getLoaderColor,
 	getLoaderDisplayName,
 	getLoaderImage,
+	getPackageTypeColor,
+	getPackageTypeDisplayName,
+	getPackageTypeIcon,
 	Loader,
 } from "../../package";
 import InlineSelect from "../input/InlineSelect";
@@ -143,78 +142,33 @@ export default function PackageFilters(props: PackageFiltersProps) {
 				<Show when={tab() == "types"}>
 					<div class="cont package-filter-tab-contents" style="padding:0.5rem">
 						<InlineSelect
-							options={[
-								{
-									value: "mod",
+							options={(
+								[
+									"mod",
+									"resource_pack",
+									"datapack",
+									"plugin",
+									"shader",
+									"bundle",
+								] as PackageType[]
+							).map((packageType) => {
+								return {
+									value: packageType,
 									contents: (
 										<div class="cont">
-											<Icon icon={Box} size="1.2rem" />
-											<div style="font-size:0.9rem;font-weight:bold">Mods</div>
+											<Icon
+												icon={getPackageTypeIcon(packageType)}
+												size="1.2rem"
+											/>
+											<div style="font-size:0.9rem;font-weight:bold">{`${getPackageTypeDisplayName(
+												packageType
+											)}s`}</div>
 										</div>
 									),
-									color: "var(--instance)",
-								},
-								{
-									value: "resource_pack",
-									contents: (
-										<div class="cont">
-											<Icon icon={Palette} size="1.2rem" />
-											<div style="font-size:0.9rem;font-weight:bold">
-												Resource Packs
-											</div>
-										</div>
-									),
-									color: "var(--profile)",
-								},
-								{
-									value: "datapack",
-									contents: (
-										<div class="cont">
-											<Icon icon={CurlyBraces} size="1.2rem" />
-											<div style="font-size:0.9rem;font-weight:bold">
-												Datapacks
-											</div>
-										</div>
-									),
-									color: "var(--package)",
-								},
-								{
-									value: "plugin",
-									contents: (
-										<div class="cont">
-											<Icon icon={Jigsaw} size="1.2rem" />
-											<div style="font-size:0.9rem;font-weight:bold">
-												Plugins
-											</div>
-										</div>
-									),
-									color: "var(--pluginfg)",
-								},
-								{
-									value: "shader",
-									contents: (
-										<div class="cont">
-											<Icon icon={Sun} size="1.2rem" />
-											<div style="font-size:0.9rem;font-weight:bold">
-												Shaders
-											</div>
-										</div>
-									),
-									color: "var(--warning)",
-								},
-								{
-									value: "bundle",
-									contents: (
-										<div class="cont">
-											<Icon icon={Folder} size="1.2rem" />
-											<div style="font-size:0.9rem;font-weight:bold">
-												Bundles
-											</div>
-										</div>
-									),
-									color: "var(--fg)",
-								},
-							]}
+									color: getPackageTypeColor(packageType),
+									tip: packageType == "bundle" ? "AKA Modpacks" : undefined,
+								};
+							})}
 							selected={props.packageType}
 							onChange={(value) => props.setPackageType(value as PackageType)}
 							columns={6}

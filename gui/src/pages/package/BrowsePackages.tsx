@@ -38,6 +38,20 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 
 	// Filters and other browse functions
 
+	let minecraftVersions = () => {
+		if (searchParams["minecraft_versions"] == undefined) {
+			return [];
+		}
+		try {
+			return JSON.parse(
+				decodeURIComponent(searchParams["minecraft_versions"])
+			) as string[];
+		} catch (e) {
+			console.error("Failed to parse Minecraft versions filter: " + e);
+			return [];
+		}
+	};
+
 	let [page, setPage] = createSignal(+params.page);
 	let [search, setSearch] = createSignal(searchParams["search"]);
 	let [repo, setRepo] = createSignal(searchParams["repo"]);
@@ -49,11 +63,7 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 	);
 	let [filteredMinecraftVersions, setFilteredMinecraftVersions] = createSignal<
 		string[]
-	>(
-		searchParams["minecraft_versions"] == undefined
-			? []
-			: (JSON.parse(searchParams["minecraft_versions"]) as string[])
-	);
+	>(minecraftVersions());
 	let [filteredLoaders, setFilteredLoaders] = createSignal<string[]>([]);
 	let [filteredStability, setFilteredStability] = createSignal<
 		"stable" | "latest" | undefined
@@ -65,6 +75,7 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 		let url = `/packages/${page()}?repo=${selectedRepo()}&package_type=${filteredPackageType()}${query}&minecraft_versions=${JSON.stringify(
 			filteredMinecraftVersions()
 		)}`;
+		console.log(url);
 		window.history.replaceState("", "", url);
 	};
 
@@ -256,6 +267,7 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 						stability={filteredStability()}
 						setPackageType={(type) => {
 							setFilteredPackageType(type);
+							setPage(0);
 							updateFilters();
 						}}
 						setMinecraftVersions={(versions) => {
@@ -366,6 +378,7 @@ function Package(props: PackageProps) {
 							<PackageLabels
 								categories={props.meta.categories!}
 								loaders={[]}
+								packageTypes={[]}
 								small
 								limit={3}
 							/>

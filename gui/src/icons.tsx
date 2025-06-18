@@ -52,6 +52,8 @@ import CouchIcon from "./assets/icons/couch.svg?component-solid";
 import HoneycombIcon from "./assets/icons/honeycomb.svg?component-solid";
 import HashtagIcon from "./assets/icons/hashtag.svg?component-solid";
 import LockIcon from "./assets/icons/lock.svg?component-solid";
+import DiagramIcon from "./assets/icons/diagram.svg?component-solid";
+import TagIcon from "./assets/icons/tag.svg?component-solid";
 import { HasWidthHeight } from "./components/Icon";
 
 export function Pin({ width, height, viewBox }: HasWidthHeight) {
@@ -276,4 +278,12 @@ export function Hashtag({ width, height, viewBox }: HasWidthHeight) {
 
 export function Lock({ width, height, viewBox }: HasWidthHeight) {
 	return <LockIcon width={width} height={height} viewBox={viewBox} />;
+}
+
+export function Diagram({ width, height, viewBox }: HasWidthHeight) {
+	return <DiagramIcon width={width} height={height} viewBox={viewBox} />;
+}
+
+export function Tag({ width, height, viewBox }: HasWidthHeight) {
+	return <TagIcon width={width} height={height} viewBox={viewBox} />;
 }

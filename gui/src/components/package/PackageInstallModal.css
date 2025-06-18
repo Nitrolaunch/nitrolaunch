@@ -1,0 +1,40 @@
+#package-install {
+	width: 100%;
+	padding: 2rem;
+	/* min-height: 30rem; */
+	/* justify-content: flex-start; */
+}
+
+#package-install-inner {
+	display: grid;
+	grid-template-columns: minmax(0, 0.05fr) minmax(0, 1fr);
+	column-gap: 0.5rem;
+	row-gap: 1.25rem;
+
+	max-height: 40rem;
+	overflow-y: scroll;
+}
+
+#package-install-name {
+	justify-content: flex-start;
+
+	font-weight: bold;
+	font-size: 1.3rem;
+	margin-bottom: 1rem;
+}
+
+#package-install-version {
+	justify-content: flex-start;
+}
+
+#package-install-target-category {
+	justify-content: flex-start;
+}
+
+#package-install-target {
+	justify-content: flex-start;
+}
+
+#package-install-profile-location {
+	justify-content: flex-start;
+}

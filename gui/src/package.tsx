@@ -5,6 +5,7 @@ import {
 	Book,
 	Box,
 	Couch,
+	CurlyBraces,
 	Folder,
 	Fullscreen,
 	Gear,
@@ -341,6 +342,8 @@ export enum Loader {
 	NeoForge = "neoforged",
 	Sponge = "sponge",
 	SpongeForge = "spongeforge",
+	Paper = "paper",
+	Folia = "folia",
 }
 
 export function getAllLoaders(modifications: string[]) {
@@ -377,6 +380,10 @@ export function getLoaderDisplayName(loader: Loader) {
 		return "Sponge";
 	} else if (loader == "spongeforge") {
 		return "SpongeForge";
+	} else if (loader == "paper") {
+		return "Paper";
+	} else if (loader == "folia") {
+		return "Folia";
 	} else {
 		return beautifyString(loader);
 	}
@@ -395,6 +402,8 @@ export function getLoaderImage(loader: Loader) {
 		return "/icons/sponge.png";
 	} else if (loader == "spongeforge") {
 		return "/icons/sponge.png";
+	} else if (loader == "paper" || loader == "folia") {
+		return "/icons/paper.png";
 	} else {
 		return "/icons/default_instance.png";
 	}
@@ -413,6 +422,10 @@ export function getLoaderColor(loader: Loader) {
 		return "#f8ce0f";
 	} else if (loader == "spongeforge") {
 		return "#f8ce0f";
+	} else if (loader == "paper") {
+		return "#fbfbfb";
+	} else if (loader == "folia") {
+		return "#ff6576";
 	} else {
 		return "var(--fg2)";
 	}
@@ -434,5 +447,59 @@ export function getLoaderSide(loader: string) {
 		return "client";
 	} else {
 		return "server";
+	}
+}
+
+export function getPackageTypeDisplayName(type: PackageType) {
+	if (type == "mod") {
+		return "Mod";
+	} else if (type == "resource_pack") {
+		return "Resource Pack";
+	} else if (type == "datapack") {
+		return "Datapack";
+	} else if (type == "plugin") {
+		return "Plugin";
+	} else if (type == "shader") {
+		return "Shader";
+	} else if (type == "bundle") {
+		return "Bundle";
+	} else {
+		return beautifyString(type);
+	}
+}
+
+export function getPackageTypeColor(type: PackageType) {
+	if (type == "mod") {
+		return "var(--instance)";
+	} else if (type == "resource_pack") {
+		return "var(--profile)";
+	} else if (type == "datapack") {
+		return "var(--package)";
+	} else if (type == "plugin") {
+		return "var(--pluginfg)";
+	} else if (type == "shader") {
+		return "var(--warning)";
+	} else if (type == "bundle") {
+		return "var(--fg2)";
+	} else {
+		return "var(--fg2)";
+	}
+}
+
+export function getPackageTypeIcon(type: PackageType) {
+	if (type == "mod") {
+		return Box;
+	} else if (type == "resource_pack") {
+		return Palette;
+	} else if (type == "datapack") {
+		return CurlyBraces;
+	} else if (type == "plugin") {
+		return Jigsaw;
+	} else if (type == "shader") {
+		return Sun;
+	} else if (type == "bundle") {
+		return Folder;
+	} else {
+		return Box;
 	}
 }

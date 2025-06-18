@@ -15,6 +15,8 @@ import SearchBar from "../input/SearchBar";
 import { canonicalizeListOrSingle } from "../../utils/values";
 import { errorToast } from "../dialog/Toasts";
 import PackageLabels from "./PackageLabels";
+import IconButton from "../input/IconButton";
+import { Download } from "../../icons";
 
 export default function PackageVersions(props: PackageVersionsProps) {
 	let [isScriptPackage, setIsScriptPackage] = createSignal(false);
@@ -226,6 +228,7 @@ export default function PackageVersions(props: PackageVersionsProps) {
 								<PackageVersionEntry
 									version={version}
 									backgroundColor={props.backgroundColor}
+									onInstall={props.onInstall}
 								/>
 							</Show>
 						);
@@ -240,6 +243,7 @@ export interface PackageVersionsProps {
 	packageId: string;
 	props: PackageProperties;
 	backgroundColor: string;
+	onInstall: (version: string) => void;
 }
 
 function PackageVersionEntry(props: PackageVersionEntryProps) {
@@ -301,7 +305,26 @@ function PackageVersionEntry(props: PackageVersionEntryProps) {
 				{versions}
 			</div>
 			<div class="cont package-version-labels">
-				<PackageLabels categories={[]} loaders={loaders} small />
+				<PackageLabels
+					packageTypes={[]}
+					categories={[]}
+					loaders={loaders}
+					small
+				/>
+				<Show when={props.version.name != undefined}>
+					<div></div>
+					<IconButton
+						icon={Download}
+						size="1.3rem"
+						selected
+						color="var(--bg2)"
+						selectedColor="var(--packagebg)"
+						border="var(--package)"
+						onClick={() => {
+							props.onInstall(props.version.name!);
+						}}
+					/>
+				</Show>
 			</div>
 		</div>
 	);
@@ -310,6 +333,7 @@ function PackageVersionEntry(props: PackageVersionEntryProps) {
 interface PackageVersionEntryProps {
 	version: PackageVersion;
 	backgroundColor: string;
+	onInstall: (version: string) => void;
 }
 
 function StabilityIndicator(props: { stability?: "stable" | "latest" }) {

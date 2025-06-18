@@ -12,7 +12,7 @@ import "@thisbeyond/solid-select/style.css";
 import InlineSelect from "../../components/input/InlineSelect";
 import { loadPagePlugins } from "../../plugins";
 import { inputError } from "../../errors";
-import { parseVersionedString, stringCompare } from "../../utils";
+import { getSupportedLoaders, parseVersionedString } from "../../utils";
 import { FooterData } from "../../App";
 import { FooterMode } from "../../components/launch/Footer";
 import PackagesConfig, {
@@ -29,7 +29,11 @@ import {
 	Loader,
 } from "../../package";
 import { emptyUndefined, undefinedEmpty } from "../../utils/values";
-import { InstanceConfigMode, saveInstanceConfig } from "./read_write";
+import {
+	InstanceConfigMode,
+	readInstanceConfig,
+	saveInstanceConfig,
+} from "./read_write";
 import { InstanceConfig } from "./read_write";
 
 export default function InstanceConfigPage(props: InstanceConfigProps) {
@@ -79,16 +83,8 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 			return undefined;
 		}
 		// Get the instance or profile
-		let method = isInstance
-			? "get_instance_config"
-			: isGlobalProfile
-			? "get_global_profile"
-			: "get_profile_config";
 		try {
-			let result = await invoke(method, { id: id });
-			let configuration = result as InstanceConfig;
-
-			// Canonicalize this to an array
+			let configuration = await readInstanceConfig(id, props.mode);
 			setFrom(
 				configuration.from == undefined
 					? undefined
@@ -96,7 +92,6 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 					? configuration.from
 					: [configuration.from]
 			);
-
 			return configuration;
 		} catch (e) {
 			errorToast("Failed to load configuration: " + e);
@@ -325,6 +320,13 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 			saveInstanceConfig(configId, newConfig, props.mode);
 
 			configOperations.refetch();
+			props.setFooterData({
+				selectedItem: undefined,
+				mode: isInstance
+					? FooterMode.SaveInstanceConfig
+					: FooterMode.SaveProfileConfig,
+				action: saveConfig,
+			});
 		} catch (e) {
 			errorToast(e as string);
 		}
@@ -722,14 +724,4 @@ async function idExists(
 		console.error(e);
 		return false;
 	}
-}
-
-// Gets the supported loader list for use with loader selection
-async function getSupportedLoaders(): Promise<string[]> {
-	let results: string[] = await invoke("get_supported_loaders");
-
-	results.sort(stringCompare);
-	results = ["none", "vanilla"].concat(results);
-
-	return results;
 }

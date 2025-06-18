@@ -73,6 +73,14 @@
 	gap: 0.8rem;
 	position: relative;
 	border: 0.15rem solid var(--bg3);
+	border-top-color: var(--bg4);
+	border-left-color: var(--bg4);
+}
+
+.launch-instance-list-item:hover {
+	background-color: var(--bg3);
+	border-right-color: var(--bg4);
+	border-bottom-color: var(--bg4);
 }
 
 .launch-instance-list-item.instance.selected {

@@ -50,10 +50,14 @@
 	margin-left: 1.2rem;
 }
 
-.package-version-labels > div {
+.package-version-labels {
+	justify-content: flex-end;
+	margin-right: 1rem;
+}
+
+.package-version-labels:first-child {
 	justify-content: flex-end;
 	width: 100%;
-	margin-right: 1rem;
 }
 
 .package-version-stability-indicator {

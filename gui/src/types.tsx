@@ -1,4 +1,4 @@
-import { PackageCategory } from "./package";
+import { PackageCategory, PackageType } from "./package";
 
 export type Side = "client" | "server";
 export type InstanceIcon = string;
@@ -55,6 +55,7 @@ export interface PackageMeta {
 }
 
 export interface PackageProperties {
+	types?: PackageType[];
 	supported_versions?: string[];
 	supported_loaders?: string[];
 	supported_sides?: Side[];
