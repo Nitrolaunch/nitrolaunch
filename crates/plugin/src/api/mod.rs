@@ -9,6 +9,7 @@ use std::marker::PhantomData;
 use std::path::PathBuf;
 
 use anyhow::{bail, Context};
+use mcvm_shared::output::{MCVMOutput, MessageContents, MessageLevel};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
@@ -196,7 +197,23 @@ impl CustomPlugin {
 				protocol_version: self.settings.protocol_version,
 				_h: PhantomData,
 			};
-			let result = f(ctx, arg)?;
+
+			let result = f(ctx, arg);
+			let result = match result {
+				Ok(result) => result,
+				Err(e) => {
+					if H::get_takes_over() {
+						eprintln!("Error in hook: {e:?}");
+					} else {
+						self.stored_ctx.output.display(
+							MessageContents::Error(format!("{e:?}")),
+							MessageLevel::Important,
+						);
+					}
+					return Ok(());
+				}
+			};
+
 			if !H::get_takes_over() {
 				// Output state
 				if state_has_changed {
