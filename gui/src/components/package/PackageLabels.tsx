@@ -1,12 +1,14 @@
 import { For, Show } from "solid-js";
 import {
+	getAllLoaders,
+	getLoaderDisplayName,
+	getLoaderImage,
 	PackageCategory,
 	packageCategoryDisplayName,
 	packageCategoryIcon,
 } from "../../package";
 import Icon from "../Icon";
 import "./PackageLabels.css";
-import { beautifyString } from "../../utils";
 
 export default function PackageLabels(props: PackageLabelsProps) {
 	let small = props.small == undefined ? false : props.small;
@@ -67,107 +69,4 @@ export interface PackageLabelsProps {
 	limit?: number;
 	small?: boolean;
 	reverse?: boolean;
-}
-
-export enum Loader {
-	Fabric = "fabric",
-	Quilt = "quilt",
-	Forge = "forge",
-	NeoForge = "neoforged",
-	Sponge = "sponge",
-	SpongeForge = "spongeforge",
-}
-
-export function getAllLoaders(modifications: string[]) {
-	let out: Loader[] = [];
-	for (let loaderMatch of modifications) {
-		for (let newLoader of getLoaders(loaderMatch)) {
-			if (!out.includes(newLoader)) {
-				out.push(newLoader);
-			}
-		}
-	}
-	return out;
-}
-
-export function getLoaders(modification: string) {
-	if (modification == "fabriclike") {
-		return [Loader.Fabric, Loader.Quilt];
-	} else if (modification == "forgelike") {
-		return [Loader.Forge, Loader.NeoForge, Loader.SpongeForge];
-	}
-	return [modification as Loader];
-}
-
-export function getLoaderDisplayName(loader: Loader) {
-	if (loader == "fabric") {
-		return "Fabric";
-	} else if (loader == "quilt") {
-		return "Quilt";
-	} else if (loader == "forge") {
-		return "Forge";
-	} else if (loader == "neoforged") {
-		return "NeoForged";
-	} else if (loader == "sponge") {
-		return "Sponge";
-	} else if (loader == "spongeforge") {
-		return "SpongeForge";
-	} else {
-		return beautifyString(loader);
-	}
-}
-
-export function getLoaderImage(loader: Loader) {
-	if (loader == "fabric") {
-		return "/icons/fabric.png";
-	} else if (loader == "quilt") {
-		return "/icons/quilt.png";
-	} else if (loader == "forge") {
-		return "/icons/forge.png";
-	} else if (loader == "neoforged") {
-		return "/icons/neoforge.png";
-	} else if (loader == "sponge") {
-		return "/icons/sponge.png";
-	} else if (loader == "spongeforge") {
-		return "/icons/sponge.png";
-	} else {
-		return "/icons/default_instance.png";
-	}
-}
-
-export function getLoaderColor(loader: Loader) {
-	if (loader == "fabric") {
-		return "#d4c9af";
-	} else if (loader == "quilt") {
-		return "#dc29dd";
-	} else if (loader == "forge") {
-		return "#505c74";
-	} else if (loader == "neoforged") {
-		return "#d6732f";
-	} else if (loader == "sponge") {
-		return "#f8ce0f";
-	} else if (loader == "spongeforge") {
-		return "#f8ce0f";
-	} else {
-		return "var(--fg2)";
-	}
-}
-
-export function getLoaderSide(loader: string) {
-	if (
-		loader == "none" ||
-		loader == "vanilla" ||
-		loader == "fabric" ||
-		loader == "quilt" ||
-		loader == "forge" ||
-		loader == "neoforged" ||
-		loader == "rift" ||
-		loader == "risugamis"
-	) {
-		return undefined;
-	} else if (loader == "liteloader") {
-		return "client";
-	} else {
-		return "server";
-	}
 }

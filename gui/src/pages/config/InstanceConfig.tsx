@@ -12,11 +12,7 @@ import "@thisbeyond/solid-select/style.css";
 import InlineSelect from "../../components/input/InlineSelect";
 import { loadPagePlugins } from "../../plugins";
 import { inputError } from "../../errors";
-import {
-	beautifyString,
-	parseVersionedString,
-	stringCompare,
-} from "../../utils";
+import { parseVersionedString, stringCompare } from "../../utils";
 import { FooterData } from "../../App";
 import { FooterMode } from "../../components/launch/Footer";
 import PackagesConfig, {
@@ -31,14 +27,17 @@ import {
 	getLoaderDisplayName,
 	getLoaderSide,
 	Loader,
-} from "../../components/package/PackageLabels";
+} from "../../package";
+import { emptyUndefined, undefinedEmpty } from "../../utils/values";
+import { InstanceConfigMode, saveInstanceConfig } from "./read_write";
+import { InstanceConfig } from "./read_write";
 
-export default function InstanceConfig(props: InstanceConfigProps) {
+export default function InstanceConfigPage(props: InstanceConfigProps) {
 	let params = useParams();
 
-	let isInstance = props.mode == ConfigMode.Instance;
-	let isProfile = props.mode == ConfigMode.Profile;
-	let isGlobalProfile = props.mode == ConfigMode.GlobalProfile;
+	let isInstance = props.mode == InstanceConfigMode.Instance;
+	let isProfile = props.mode == InstanceConfigMode.Profile;
+	let isGlobalProfile = props.mode == InstanceConfigMode.GlobalProfile;
 
 	let id = isInstance
 		? params.instanceId
@@ -152,11 +151,11 @@ export default function InstanceConfig(props: InstanceConfigProps) {
 	let [serverPackages, setServerPackages] = createSignal<PackageConfig[]>([]);
 
 	let [displayName, setDisplayName] = createSignal("");
-	let [message, setMessage] = createSignal("");
+	let message = () =>
+		isInstance ? `INSTANCE` : isGlobalProfile ? "GLOBAL PROFILE" : `PROFILE`;
 
 	createEffect(() => {
 		if (config() != undefined) {
-			console.log(config()!);
 			setName(config()!.name);
 			setSide(config()!.type);
 			setIcon(config()!.icon);
@@ -200,6 +199,7 @@ export default function InstanceConfig(props: InstanceConfigProps) {
 
 			setDatapackFolder(config()!.datapack_folder);
 
+			// Packages
 			if (config()!.packages == undefined) {
 				setGlobalPackages([]);
 				setClientPackages([]);
@@ -216,11 +216,9 @@ export default function InstanceConfig(props: InstanceConfigProps) {
 			}
 
 			setDisplayName(config()!.name == undefined ? id : config()!.name!);
-			setMessage(
-				isInstance ? `INSTANCE` : isGlobalProfile ? "GLOBAL PROFILE" : `PROFILE`
-			);
 		}
 
+		// Default side
 		if (props.creating && props.mode == "instance") {
 			setSide("client");
 		}
@@ -228,12 +226,6 @@ export default function InstanceConfig(props: InstanceConfigProps) {
 
 	// Writes configuration to disk
 	async function saveConfig() {
-		console.log(from());
-		console.log(side());
-		console.log(name());
-		console.log(icon());
-		console.log(version());
-
 		let configId = props.creating ? newId() : id;
 
 		if (!isGlobalProfile && configId == undefined) {
@@ -330,28 +322,17 @@ export default function InstanceConfig(props: InstanceConfigProps) {
 		}
 
 		try {
-			if (isInstance) {
-				await invoke("write_instance_config", {
-					id: configId,
-					config: newConfig,
-				});
-			} else if (isGlobalProfile) {
-				await invoke("write_global_profile", { config: newConfig });
-			} else {
-				await invoke("write_profile_config", {
-					id: configId,
-					config: newConfig,
-				});
-			}
-		} catch (e) {
-			errorToast("Failed to save: " + e);
-		}
+			saveInstanceConfig(configId, newConfig, props.mode);
 
-		configOperations.refetch();
+			configOperations.refetch();
+		} catch (e) {
+			errorToast(e as string);
+		}
 	}
 
 	let createMessage = isInstance ? "INSTANCE" : "PROFILE";
 
+	// Highlights the save button when config changes
 	function setDirty() {
 		props.setFooterData({
 			selectedItem: "",
@@ -707,77 +688,13 @@ export default function InstanceConfig(props: InstanceConfigProps) {
 }
 
 export interface InstanceConfigProps {
-	mode: ConfigMode;
+	mode: InstanceConfigMode;
 	/* Whether we are creating a new instance or profile */
 	creating: boolean;
 	setFooterData: (data: FooterData) => void;
 }
 
-interface InstanceConfig {
-	from?: string[];
-	type?: "client" | "server";
-	name?: string;
-	icon?: string;
-	version?: string | "latest" | "latest_snapshot";
-	loader?: ConfiguredLoaders;
-	datapack_folder?: string;
-	packages?:
-		| PackageConfig[]
-		| {
-				global?: PackageConfig[];
-				client?: PackageConfig[];
-				server?: PackageConfig[];
-		  };
-	[extraKey: string]: any;
-}
-
-type ConfiguredLoaders =
-	| string
-	| {
-			client?: string;
-			server?: string;
-	  };
-
-interface LaunchConfig {
-	memory?: string | LaunchMemory;
-	args?: LaunchArgs;
-	env?: string[];
-	java?: "auto" | "system" | "adoptium" | "zulu" | "graalvm" | string;
-	[extraKey: string]: any;
-}
-
-interface LaunchMemory {
-	init: string;
-	max: string;
-}
-
-interface LaunchArgs {
-	jvm?: string | string[];
-	game?: string | string[];
-}
-
-export enum ConfigMode {
-	Instance = "instance",
-	Profile = "profile",
-	GlobalProfile = "global_profile",
-}
-
-function emptyUndefined(value: string | undefined) {
-	if (value == undefined) {
-		return "";
-	} else {
-		return value;
-	}
-}
-
-function undefinedEmpty(value: string | undefined) {
-	if (value == "") {
-		return undefined;
-	} else {
-		return value;
-	}
-}
-
+// Sanitizes a string so that it is a valid instance ID
 function sanitizeInstanceId(id: string): string {
 	id = id.toLocaleLowerCase();
 	id = id.replace(/ /g, "-");
@@ -792,7 +709,11 @@ function sanitizeInstanceId(id: string): string {
 	return id;
 }
 
-async function idExists(id: string, mode: ConfigMode): Promise<boolean> {
+// Checks if an instance or profile ID exists already
+async function idExists(
+	id: string,
+	mode: InstanceConfigMode
+): Promise<boolean> {
 	let command = `get_${mode}_config`;
 	try {
 		let result = await invoke(command, { id: id });
@@ -803,6 +724,7 @@ async function idExists(id: string, mode: ConfigMode): Promise<boolean> {
 	}
 }
 
+// Gets the supported loader list for use with loader selection
 async function getSupportedLoaders(): Promise<string[]> {
 	let results: string[] = await invoke("get_supported_loaders");
 

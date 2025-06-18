@@ -4,16 +4,17 @@ import "./PackageVersions.css";
 import { invoke } from "@tauri-apps/api";
 import {
 	DeclarativePackage,
+	getAllLoaders,
 	PackageAddon,
 	PackageVersion,
 } from "../../package";
-import PackageLabels, { getAllLoaders } from "./PackageLabels";
 import Tip from "../dialog/Tip";
 import PackageFilters from "./PackageFilters";
 import LoadingSpinner from "../utility/LoadingSpinner";
 import SearchBar from "../input/SearchBar";
-import { canonicalizeListOrSingle } from "../../utils";
+import { canonicalizeListOrSingle } from "../../utils/values";
 import { errorToast } from "../dialog/Toasts";
+import PackageLabels from "./PackageLabels";
 
 export default function PackageVersions(props: PackageVersionsProps) {
 	let [isScriptPackage, setIsScriptPackage] = createSignal(false);

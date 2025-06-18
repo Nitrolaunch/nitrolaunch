@@ -1,7 +1,8 @@
 import { convertFileSrc } from "@tauri-apps/api/tauri";
 import { InstanceIcon, PkgRequest } from "./types";
 
-export function getIconSrc(icon: InstanceIcon | null): string {
+// Gets 
+export function getInstanceIconSrc(icon: InstanceIcon | null): string {
 	if (icon === null) {
 		return "icons/default_instance.png";
 	} else {
@@ -9,6 +10,7 @@ export function getIconSrc(icon: InstanceIcon | null): string {
 	}
 }
 
+// Parses a URL query string (after the ?) into an easy to access map
 export function parseQueryString(string: string): QueryStringResult {
 	if (!string.startsWith("?")) {
 		return {};
@@ -83,16 +85,4 @@ export function parseVersionedString(
 ): [string, string | undefined] {
 	let split = object.split("@");
 	return [split[0], split.length > 1 ? split[1] : undefined];
-}
-
-// Canonicalizes a common deserializion format (DeserListOrSingle) and an optional to just an array
-export function canonicalizeListOrSingle<T>(value: T | T[] | undefined) {
-	if (value == undefined) {
-		return [];
-	}
-	if (Array.isArray(value)) {
-		return value;
-	}
-
-	return [value];
 }

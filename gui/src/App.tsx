@@ -3,7 +3,7 @@ import "./App.css";
 import LaunchPage from "./pages/launch/LaunchPage";
 import NavBar from "./components/navigation/NavBar";
 import { createSignal, ErrorBoundary, onMount, Show } from "solid-js";
-import InstanceConfig, { ConfigMode } from "./pages/config/InstanceConfig";
+import InstanceConfig from "./pages/config/InstanceConfig";
 import BrowsePackages from "./pages/package/BrowsePackages";
 import ViewPackage from "./pages/package/ViewPackage";
 import Sidebar from "./components/navigation/Sidebar";
@@ -14,6 +14,7 @@ import { listen } from "@tauri-apps/api/event";
 import CustomPluginPage from "./pages/CustomPluginPage";
 import Footer, { FooterMode } from "./components/launch/Footer";
 import Toasts from "./components/dialog/Toasts";
+import { InstanceConfigMode } from "./pages/config/read_write";
 
 export default function App() {
 	const [footerData, setFooterData] = createSignal<FooterData>({
@@ -52,7 +53,7 @@ export default function App() {
 					path="/instance_config/:instanceId"
 					component={() => (
 						<InstanceConfig
-							mode={ConfigMode.Instance}
+							mode={InstanceConfigMode.Instance}
 							creating={false}
 							setFooterData={setFooterData}
 						/>
@@ -62,7 +63,7 @@ export default function App() {
 					path="/profile_config/:profileId"
 					component={() => (
 						<InstanceConfig
-							mode={ConfigMode.Profile}
+							mode={InstanceConfigMode.Profile}
 							creating={false}
 							setFooterData={setFooterData}
 						/>
@@ -72,7 +73,7 @@ export default function App() {
 					path="/create_instance"
 					component={() => (
 						<InstanceConfig
-							mode={ConfigMode.Instance}
+							mode={InstanceConfigMode.Instance}
 							creating={true}
 							setFooterData={setFooterData}
 						/>
@@ -82,7 +83,7 @@ export default function App() {
 					path="/create_profile"
 					component={() => (
 						<InstanceConfig
-							mode={ConfigMode.Profile}
+							mode={InstanceConfigMode.Profile}
 							creating={true}
 							setFooterData={setFooterData}
 						/>
@@ -92,7 +93,7 @@ export default function App() {
 					path="/global_profile_config"
 					component={() => (
 						<InstanceConfig
-							mode={ConfigMode.GlobalProfile}
+							mode={InstanceConfigMode.GlobalProfile}
 							creating={false}
 							setFooterData={setFooterData}
 						/>

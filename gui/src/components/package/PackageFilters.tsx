@@ -20,7 +20,7 @@ import {
 	getLoaderDisplayName,
 	getLoaderImage,
 	Loader,
-} from "./PackageLabels";
+} from "../../package";
 import InlineSelect from "../input/InlineSelect";
 import { invoke } from "@tauri-apps/api";
 import { PackageType } from "../../package";

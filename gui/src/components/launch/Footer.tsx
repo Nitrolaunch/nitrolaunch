@@ -15,7 +15,7 @@ import {
 import IconButton from "../input/IconButton";
 import { AuthDisplayEvent, RunningInstanceInfo } from "../../types";
 import MicrosoftAuthInfo from "../input/MicrosoftAuthInfo";
-import { getIconSrc } from "../../utils";
+import { getInstanceIconSrc } from "../../utils";
 import TaskIndicator from "../TaskIndicator";
 import { errorToast } from "../dialog/Toasts";
 import IconTextButton from "../input/IconTextButton";
@@ -412,7 +412,7 @@ function RunningInstanceList(props: RunningInstanceListProps) {
 			<For each={props.instances}>
 				{(instance) => (
 					<img
-						src={getIconSrc(instance.info.icon)}
+						src={getInstanceIconSrc(instance.info.icon)}
 						class="running-instance-list-icon border"
 						title={
 							instance.info.name != null ? instance.info.name : instance.info.id

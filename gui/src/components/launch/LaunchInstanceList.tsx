@@ -5,7 +5,7 @@ import "./LaunchInstanceList.css";
 import { Box, Edit, Folder, Pin, Plus } from "../../icons";
 import Icon from "../Icon";
 import IconButton from "../input/IconButton";
-import { getIconSrc } from "../../utils";
+import { getInstanceIconSrc } from "../../utils";
 import IconTextButton from "../input/IconTextButton";
 import { FooterData } from "../../App";
 import { FooterMode } from "./Footer";
@@ -335,7 +335,7 @@ function Item(props: ItemProps) {
 				</div>
 			</Show>
 			<img
-				src={getIconSrc(props.instance.icon)}
+				src={getInstanceIconSrc(props.instance.icon)}
 				class="launch-instance-list-icon"
 			/>
 			<div class="launch-instance-list-item-details">
