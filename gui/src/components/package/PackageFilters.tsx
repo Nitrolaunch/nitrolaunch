@@ -198,6 +198,8 @@ export default function PackageFilters(props: PackageFiltersProps) {
 								Loader.Forge,
 								Loader.NeoForge,
 								Loader.Quilt,
+								Loader.Paper,
+								Loader.Folia,
 								Loader.Sponge,
 								Loader.SpongeForge,
 							].map((loader) => {
@@ -218,7 +220,7 @@ export default function PackageFilters(props: PackageFiltersProps) {
 							onChangeMulti={(values) =>
 								props.setLoaders(values == undefined ? [] : values)
 							}
-							columns={4}
+							columns={6}
 							connected={false}
 						/>
 					</div>

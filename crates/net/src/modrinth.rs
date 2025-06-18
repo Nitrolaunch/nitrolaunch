@@ -1,6 +1,9 @@
 use crate::download::{self, user_agent};
 use anyhow::{anyhow, Context};
-use mcvm_shared::pkg::{PackageKind, PackageSearchParameters};
+use mcvm_shared::{
+	loaders::Loader,
+	pkg::{PackageKind, PackageSearchParameters},
+};
 use reqwest::{Client, StatusCode};
 use serde::{Deserialize, Serialize};
 
@@ -488,7 +491,40 @@ pub async fn search_projects(
 		format!(",[{versions}]")
 	};
 
-	let facets = format!("facets=[{types}{versions}]",);
+	let loaders = if params.loaders.is_empty() {
+		String::new()
+	} else {
+		let loaders = params
+			.loaders
+			.into_iter()
+			.filter_map(|x| match x {
+				Loader::Fabric => Some(KnownLoader::Fabric),
+				Loader::Forge => Some(KnownLoader::Forge),
+				Loader::Folia => Some(KnownLoader::Folia),
+				Loader::Quilt => Some(KnownLoader::Quilt),
+				Loader::Rift => Some(KnownLoader::Rift),
+				Loader::Risugamis => Some(KnownLoader::Risugamis),
+				Loader::LiteLoader => Some(KnownLoader::Liteloader),
+				Loader::Paper => Some(KnownLoader::Paper),
+				Loader::Purpur => Some(KnownLoader::Purpur),
+				Loader::CraftBukkit => Some(KnownLoader::Bukkit),
+				Loader::Spigot => Some(KnownLoader::Spigot),
+				Loader::Sponge => Some(KnownLoader::Sponge),
+				Loader::NeoForged => Some(KnownLoader::NeoForged),
+				_ => None,
+			})
+			.map(|x| {
+				format!(
+					"\"categories={}\"",
+					serde_json::to_string(&x).unwrap().replace("\"", "")
+				)
+			})
+			.collect::<Vec<_>>()
+			.join(",");
+		format!(",[{loaders}]")
+	};
+
+	let facets = format!("facets=[{types}{versions}{loaders}]",);
 	let url = format!(
 		"https://api.modrinth.com/v2/search?limit={limit}{search}&{facets}&offset={}",
 		params.skip

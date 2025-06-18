@@ -18,7 +18,7 @@ import { FooterData } from "../../App";
 import { FooterMode } from "../../components/launch/Footer";
 import { errorToast, warningToast } from "../../components/dialog/Toasts";
 import PackageLabels from "../../components/package/PackageLabels";
-import { PackageType, RepoInfo } from "../../package";
+import { Loader, PackageType, RepoInfo } from "../../package";
 import PackageFilters from "../../components/package/PackageFilters";
 import LoadingSpinner from "../../components/utility/LoadingSpinner";
 
@@ -52,6 +52,20 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 		}
 	};
 
+	let loaders = () => {
+		if (searchParams["loaders"] == undefined) {
+			return [];
+		}
+		try {
+			return JSON.parse(
+				decodeURIComponent(searchParams["loaders"])
+			) as Loader[];
+		} catch (e) {
+			console.error("Failed to parse loaders filter: " + e);
+			return [];
+		}
+	};
+
 	let [page, setPage] = createSignal(+params.page);
 	let [search, setSearch] = createSignal(searchParams["search"]);
 	let [repo, setRepo] = createSignal(searchParams["repo"]);
@@ -64,7 +78,7 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 	let [filteredMinecraftVersions, setFilteredMinecraftVersions] = createSignal<
 		string[]
 	>(minecraftVersions());
-	let [filteredLoaders, setFilteredLoaders] = createSignal<string[]>([]);
+	let [filteredLoaders, setFilteredLoaders] = createSignal<string[]>(loaders());
 	let [filteredStability, setFilteredStability] = createSignal<
 		"stable" | "latest" | undefined
 	>();
@@ -74,8 +88,7 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 		let query = search() == undefined ? "" : `&search=${search()}`;
 		let url = `/packages/${page()}?repo=${selectedRepo()}&package_type=${filteredPackageType()}${query}&minecraft_versions=${JSON.stringify(
 			filteredMinecraftVersions()
-		)}`;
-		console.log(url);
+		)}&loaders=${JSON.stringify(filteredLoaders())}`;
 		window.history.replaceState("", "", url);
 	};
 
@@ -146,6 +159,7 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 				search: search(),
 				packageKinds: [filteredPackageType()],
 				minecraftVersions: filteredMinecraftVersions(),
+				loaders: filteredLoaders(),
 			})) as [string[], number];
 
 			setPackageCount(packageCount);
@@ -286,7 +300,10 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 							setFilteredMinecraftVersions(versions);
 							updateFilters();
 						}}
-						setLoaders={setFilteredLoaders}
+						setLoaders={(loaders) => {
+							setFilteredLoaders(loaders);
+							updateFilters();
+						}}
 						setStability={setFilteredStability}
 						availablePackageTypes={repoPackageTypes()}
 						filteringVersions={false}

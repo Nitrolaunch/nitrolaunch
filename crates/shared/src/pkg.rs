@@ -5,6 +5,7 @@ use std::fmt::Display;
 use std::hash::Hash;
 use std::sync::Arc;
 
+use crate::loaders::Loader;
 use crate::util::is_valid_identifier;
 use crate::versions::{parse_versioned_string, VersionPattern};
 
@@ -270,6 +271,8 @@ pub struct PackageSearchParameters {
 	pub types: Vec<PackageKind>,
 	/// The Minecraft versions to include
 	pub minecraft_versions: Vec<String>,
+	/// The loaders to include
+	pub loaders: Vec<Loader>,
 	/// The package categories to include
 	pub categories: Vec<PackageCategory>,
 }

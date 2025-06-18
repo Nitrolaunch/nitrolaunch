@@ -6,6 +6,7 @@ use mcvm::pkg_crate::metadata::PackageMetadata;
 use mcvm::pkg_crate::properties::PackageProperties;
 use mcvm::pkg_crate::repo::RepoMetadata;
 use mcvm::pkg_crate::{PkgRequest, PkgRequestSource};
+use mcvm::shared::loaders::Loader;
 use mcvm::shared::output::{MCVMOutput, MessageContents, MessageLevel, NoOp};
 use mcvm::shared::pkg::{PackageKind, PackageSearchParameters};
 use serde::{Deserialize, Serialize};
@@ -26,6 +27,7 @@ pub async fn get_packages(
 	search: Option<&str>,
 	package_kinds: Vec<PackageKind>,
 	minecraft_versions: Vec<String>,
+	loaders: Vec<Loader>,
 ) -> Result<(Vec<String>, usize), String> {
 	let mut output = LauncherOutput::new(state.get_output(app_handle));
 	output.set_task("search_packages");
@@ -38,6 +40,7 @@ pub async fn get_packages(
 		search: search.map(|x| x.to_string()),
 		types: package_kinds,
 		minecraft_versions,
+		loaders,
 		categories: Vec::new(),
 	};
 
