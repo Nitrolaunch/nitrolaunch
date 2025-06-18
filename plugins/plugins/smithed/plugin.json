@@ -29,7 +29,11 @@
 						"name": "Smithed",
 						"description": "Package repository for packs from the Smithed website",
 						"color": "#1b48c4",
-						"text_color": "#f6f6f6"
+						"text_color": "#f6f6f6",
+						"package_types": [
+							"resource_pack",
+							"datapack"
+						]
 					}
 				}
 			]

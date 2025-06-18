@@ -48,6 +48,7 @@ export interface RepoMetadata {
 	mcvm_verseion?: string;
 	color?: string;
 	text_color?: string;
+	package_types?: PackageType[];
 }
 
 // We store versions kinda backwards from declarative packages, grouping addons into each content version

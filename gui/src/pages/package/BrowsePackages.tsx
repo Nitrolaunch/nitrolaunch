@@ -108,6 +108,18 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 		return repo();
 	};
 
+	let repoPackageTypes = () => {
+		if (repos() == undefined || selectedRepo() == undefined) {
+			return undefined;
+		}
+		let repo = repos()!.find((x) => x.id == selectedRepo())!;
+
+		return repo.meta.package_types == undefined ||
+			repo.meta.package_types.length == 0
+			? undefined
+			: repo.meta.package_types!;
+	};
+
 	async function updatePackages() {
 		let repos: RepoInfo[] = [];
 		try {
@@ -276,6 +288,7 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 						}}
 						setLoaders={setFilteredLoaders}
 						setStability={setFilteredStability}
+						availablePackageTypes={repoPackageTypes()}
 						filteringVersions={false}
 					/>
 				</div>

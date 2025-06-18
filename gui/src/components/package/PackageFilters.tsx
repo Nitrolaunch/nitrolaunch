@@ -52,6 +52,18 @@ export default function PackageFilters(props: PackageFiltersProps) {
 		return latestReleases.concat(popularVersions);
 	});
 
+	let availablePackageTypes = () =>
+		props.availablePackageTypes == undefined
+			? ([
+					"mod",
+					"resource_pack",
+					"datapack",
+					"plugin",
+					"shader",
+					"bundle",
+			  ] as PackageType[])
+			: props.availablePackageTypes;
+
 	return (
 		<div class="package-filters">
 			<div class="cont package-filters-tabs">
@@ -142,16 +154,7 @@ export default function PackageFilters(props: PackageFiltersProps) {
 				<Show when={tab() == "types"}>
 					<div class="cont package-filter-tab-contents" style="padding:0.5rem">
 						<InlineSelect
-							options={(
-								[
-									"mod",
-									"resource_pack",
-									"datapack",
-									"plugin",
-									"shader",
-									"bundle",
-								] as PackageType[]
-							).map((packageType) => {
+							options={availablePackageTypes().map((packageType) => {
 								return {
 									value: packageType,
 									contents: (
@@ -171,7 +174,7 @@ export default function PackageFilters(props: PackageFiltersProps) {
 							})}
 							selected={props.packageType}
 							onChange={(value) => props.setPackageType(value as PackageType)}
-							columns={6}
+							columns={availablePackageTypes().length}
 							connected={false}
 						/>
 					</div>
@@ -276,6 +279,7 @@ export interface PackageFiltersProps {
 	setMinecraftVersions: (versions: string[]) => void;
 	setLoaders: (loaders: string[]) => void;
 	setStability: (stability?: "stable" | "latest") => void;
+	availablePackageTypes?: PackageType[];
 	availableMinecraftVersions?: string[];
 	// Whether we are filtering package versions or packages
 	filteringVersions: boolean;

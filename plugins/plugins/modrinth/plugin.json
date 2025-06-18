@@ -29,7 +29,14 @@
 						"name": "Modrinth",
 						"description": "Package repository for packs from the Modrinth website",
 						"color": "#1bd96a",
-						"text_color": "black"
+						"text_color": "black",
+						"package_types": [
+							"mod",
+							"resource_pack",
+							"datapack",
+							"plugin",
+							"shader"
+						]
 					}
 				}
 			]

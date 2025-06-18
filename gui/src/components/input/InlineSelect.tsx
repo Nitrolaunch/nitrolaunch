@@ -3,7 +3,7 @@ import "./InlineSelect.css";
 import Tip from "../dialog/Tip";
 
 export default function InlineSelect(props: InlineSelectProps) {
-	let columns = props.columns == undefined ? 3 : props.columns;
+	let columns = () => (props.columns == undefined ? 3 : props.columns);
 	let connected = props.connected == undefined ? true : props.connected;
 	let grid = props.grid == undefined ? true : props.grid;
 	let solidSelect = props.solidSelect == undefined ? false : props.solidSelect;
@@ -35,7 +35,7 @@ export default function InlineSelect(props: InlineSelectProps) {
 			}`}
 			style={`display:${
 				grid ? "grid" : "flex"
-			};grid-template-columns:repeat(${columns}, minmax(0, 1fr))`}
+			};grid-template-columns:repeat(${columns()}, minmax(0, 1fr))`}
 		>
 			<Show when={props.allowEmpty == undefined ? false : props.allowEmpty}>
 				<InlineSelectOption

@@ -1,3 +1,4 @@
+use mcvm_shared::pkg::PackageKind;
 #[cfg(feature = "schema")]
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -21,22 +22,20 @@ pub struct RepoIndex {
 /// Metadata for a package repository
 #[derive(Debug, Deserialize, Serialize, Clone, Default)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
+#[serde(default)]
 pub struct RepoMetadata {
 	/// The display name of the repository
-	#[serde(default)]
 	pub name: Option<String>,
 	/// The short description of the repository
-	#[serde(default)]
 	pub description: Option<String>,
 	/// The MCVM version of the repository
-	#[serde(default)]
 	pub mcvm_version: Option<String>,
 	/// A CSS color that represents the repository
-	#[serde(default)]
 	pub color: Option<String>,
 	/// A CSS color for text that should contrast well with the main color
-	#[serde(default)]
 	pub text_color: Option<String>,
+	/// The package types that this repository supports
+	pub package_types: Vec<PackageKind>,
 }
 
 /// An entry in the repository index package list that specifies information about the package
