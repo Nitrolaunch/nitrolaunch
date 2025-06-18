@@ -83,10 +83,30 @@ impl MCVMOutput for LauncherOutput {
 			},
 			MessageContents::Header(text) => {
 				let _ = self.inner.app.emit_all(
-					"mcvm_output_header",
+					"mcvm_output_message",
 					MessageEvent {
 						message: text,
 						ty: MessageType::Header,
+						task: self.task.clone(),
+					},
+				);
+			}
+			MessageContents::Warning(text) => {
+				let _ = self.inner.app.emit_all(
+					"mcvm_output_message",
+					MessageEvent {
+						message: text,
+						ty: MessageType::Warning,
+						task: self.task.clone(),
+					},
+				);
+			}
+			MessageContents::Error(text) => {
+				let _ = self.inner.app.emit_all(
+					"mcvm_output_message",
+					MessageEvent {
+						message: text,
+						ty: MessageType::Error,
 						task: self.task.clone(),
 					},
 				);
@@ -262,4 +282,6 @@ pub struct YesNoPromptEvent {
 pub enum MessageType {
 	Simple,
 	Header,
+	Warning,
+	Error,
 }

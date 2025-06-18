@@ -2,6 +2,7 @@ import { Event, listen } from "@tauri-apps/api/event";
 import { createResource, createSignal, onCleanup, Show } from "solid-js";
 import "./TaskIndicator.css";
 import { Spinner } from "../icons";
+import { errorToast, warningToast } from "./dialog/Toasts";
 
 export default function TaskIndicator(props: TaskIndicatorProps) {
 	// Map of tasks to messages
@@ -38,6 +39,13 @@ export default function TaskIndicator(props: TaskIndicatorProps) {
 		let unlisten2 = listen(
 			"mcvm_output_message",
 			(event: Event<MessageEvent>) => {
+				if (event.payload.type == MessageType.Warning) {
+					warningToast(event.payload.message);
+					return;
+				} else if (event.payload.type == MessageType.Error) {
+					errorToast(event.payload.message);
+					return;
+				}
 				if (event.payload.task != undefined) {
 					setMessages((messages) => {
 						if (messages[event.payload.task!] != undefined) {
@@ -149,6 +157,8 @@ export interface MessageEvent {
 enum MessageType {
 	Simple = "simple",
 	Header = "header",
+	Warning = "warning",
+	Error = "error",
 }
 
 function getTaskDisplayName(task: string) {
