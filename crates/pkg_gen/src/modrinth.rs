@@ -238,7 +238,7 @@ pub async fn gen(
 					// We don't care about these
 					KnownLoader::Iris | KnownLoader::Optifine | KnownLoader::Minecraft => {}
 				},
-				ModrinthLoader::Unknown(other) => bail!("Unknown loader {other}"),
+				ModrinthLoader::Unknown(..) => {}
 			}
 		}
 		if skip {
