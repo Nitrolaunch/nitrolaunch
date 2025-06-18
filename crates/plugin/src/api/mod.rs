@@ -133,10 +133,11 @@ impl CustomPlugin {
 	hook_interface!(export_instance, "export_instance", ExportInstance);
 	hook_interface!(import_instance, "import_instance", ImportInstance);
 	hook_interface!(
-		add_supported_game_modifications,
-		"add_supported_game_modifications",
-		AddSupportedGameModifications
+		add_supported_loaders,
+		"add_supported_loaders",
+		AddSupportedLoaders
 	);
+	hook_interface!(remove_loader, "remove_loader", RemoveLoader);
 	hook_interface!(add_instances, "add_instances", AddInstances);
 	hook_interface!(add_profiles, "add_profiles", AddProfiles);
 	hook_interface!(inject_page_script, "inject_page_script", InjectPageScript);

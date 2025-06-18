@@ -78,8 +78,7 @@ export default function PackageVersions(props: PackageVersionsProps) {
 						addons: [packageAddon],
 						minecraft_versions: version.minecraft_versions,
 						side: version.side,
-						modloaders: version.modloaders,
-						plugin_loaders: version.plugin_loaders,
+						loaders: version.loaders,
 						stability: version.stability,
 						features: version.features,
 						operating_systems: version.operating_systems,
@@ -156,11 +155,11 @@ export default function PackageVersions(props: PackageVersionsProps) {
 					</div>
 				</div>
 				<PackageFilters
-					addonType={"mod"}
+					packageType={"mod"}
 					minecraftVersions={filteredMinecraftVersions()}
 					loaders={filteredLoaders()}
 					stability={filteredStability()}
-					setAddonType={() => {}}
+					setPackageType={() => {}}
 					setMinecraftVersions={setFilteredMinecraftVersions}
 					setLoaders={setFilteredLoaders}
 					setStability={setFilteredStability}
@@ -181,9 +180,7 @@ export default function PackageVersions(props: PackageVersionsProps) {
 							if (filteredLoaders().length > 0) {
 								let found = false;
 								let allLoaders = getAllLoaders(
-									canonicalizeListOrSingle(version.modloaders).concat(
-										canonicalizeListOrSingle(version.plugin_loaders)
-									)
+									canonicalizeListOrSingle(version.loaders)
 								);
 								for (let loader of allLoaders) {
 									if (filteredLoaders().includes(loader)) {
@@ -285,19 +282,7 @@ function PackageVersionEntry(props: PackageVersionEntryProps) {
 		</Show>
 	);
 
-	let modloaders =
-		version.modloaders == undefined
-			? []
-			: Array.isArray(version.modloaders)
-			? version.modloaders
-			: [version.modloaders];
-
-	let pluginLoaders =
-		version.plugin_loaders == undefined
-			? []
-			: Array.isArray(version.plugin_loaders)
-			? version.plugin_loaders
-			: [version.plugin_loaders];
+	let loaders = canonicalizeListOrSingle(version.loaders);
 
 	return (
 		<div
@@ -315,11 +300,7 @@ function PackageVersionEntry(props: PackageVersionEntryProps) {
 				{versions}
 			</div>
 			<div class="cont package-version-labels">
-				<PackageLabels
-					categories={[]}
-					loaders={modloaders.concat(pluginLoaders)}
-					small
-				/>
+				<PackageLabels categories={[]} loaders={loaders} small />
 			</div>
 		</div>
 	);

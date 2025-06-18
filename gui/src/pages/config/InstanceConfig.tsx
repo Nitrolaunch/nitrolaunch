@@ -12,7 +12,11 @@ import "@thisbeyond/solid-select/style.css";
 import InlineSelect from "../../components/input/InlineSelect";
 import { loadPagePlugins } from "../../plugins";
 import { inputError } from "../../errors";
-import { beautifyString, stringCompare } from "../../utils";
+import {
+	beautifyString,
+	parseVersionedString,
+	stringCompare,
+} from "../../utils";
 import { FooterData } from "../../App";
 import { FooterMode } from "../../components/launch/Footer";
 import PackagesConfig, {
@@ -22,6 +26,12 @@ import PackagesConfig, {
 import Tip from "../../components/dialog/Tip";
 import { errorToast } from "../../components/dialog/Toasts";
 import DisplayShow from "../../components/utility/DisplayShow";
+import {
+	getLoaderColor,
+	getLoaderDisplayName,
+	getLoaderSide,
+	Loader,
+} from "../../components/package/PackageLabels";
 
 export default function InstanceConfig(props: InstanceConfigProps) {
 	let params = useParams();
@@ -61,9 +71,7 @@ export default function InstanceConfig(props: InstanceConfigProps) {
 	let [from, setFrom] = createSignal<string[] | undefined>();
 	let [parentConfigs, parentConfigOperations] =
 		createResource(updateParentConfig);
-	let [supportedModifications, _] = createResource(
-		getSupportedGameModifications
-	);
+	let [supportedLoaders, _] = createResource(getSupportedLoaders);
 
 	let [tab, setTab] = createSignal("general");
 
@@ -129,9 +137,14 @@ export default function InstanceConfig(props: InstanceConfigProps) {
 	let [side, setSide] = createSignal<"client" | "server" | undefined>();
 	let [icon, setIcon] = createSignal<string | undefined>();
 	let [version, setVersion] = createSignal<string | undefined>();
-	let [clientType, setClientType] = createSignal<string | undefined>();
-	let [serverType, setServerType] = createSignal<string | undefined>();
-	let [gameModVersion, setGameModVersion] = createSignal<string | undefined>();
+	let [clientLoader, setClientLoader] = createSignal<string | undefined>();
+	let [clientLoaderVersion, setClientLoaderVersion] = createSignal<
+		string | undefined
+	>();
+	let [serverLoader, setServerLoader] = createSignal<string | undefined>();
+	let [serverLoaderVersion, setServerLoaderVersion] = createSignal<
+		string | undefined
+	>();
 	let [datapackFolder, setDatapackFolder] = createSignal<string | undefined>();
 
 	let [globalPackages, setGlobalPackages] = createSignal<PackageConfig[]>([]);
@@ -148,21 +161,43 @@ export default function InstanceConfig(props: InstanceConfigProps) {
 			setSide(config()!.type);
 			setIcon(config()!.icon);
 			setVersion(config()!.version);
-			setClientType(config()!.client_type);
-			setServerType(config()!.server_type);
-			if (
-				config()!.client_type == "none" ||
-				config()!.client_type == undefined
-			) {
-				setClientType(config()!.modloader);
+
+			// Loader madness
+			let [clientLoader, clientLoaderVersion]: [
+				string | undefined,
+				string | undefined
+			] = [undefined, undefined];
+			let [serverLoader, serverLoaderVersion]: [
+				string | undefined,
+				string | undefined
+			] = [undefined, undefined];
+			let configuredLoader = config()!.loader;
+			if (configuredLoader != undefined) {
+				if (typeof configuredLoader == "object") {
+					if (configuredLoader.client != undefined) {
+						[clientLoader, clientLoaderVersion] = parseVersionedString(
+							configuredLoader.client
+						);
+					}
+					if (configuredLoader.server != undefined) {
+						[serverLoader, serverLoaderVersion] = parseVersionedString(
+							configuredLoader.server
+						);
+					}
+				} else {
+					let [loader, loaderVersion] = parseVersionedString(configuredLoader);
+					clientLoader = loader;
+					clientLoaderVersion = loaderVersion;
+					serverLoader = loader;
+					serverLoaderVersion = loaderVersion;
+				}
 			}
-			if (
-				config()!.server_type == "none" ||
-				config()!.server_type == undefined
-			) {
-				setServerType(config()!.modloader);
-			}
-			setGameModVersion(config()!.game_modification_version);
+
+			setClientLoader(clientLoader);
+			setClientLoaderVersion(clientLoaderVersion);
+			setServerLoader(serverLoader);
+			setServerLoaderVersion(serverLoaderVersion);
+
 			setDatapackFolder(config()!.datapack_folder);
 
 			if (config()!.packages == undefined) {
@@ -222,6 +257,42 @@ export default function InstanceConfig(props: InstanceConfigProps) {
 			return;
 		}
 
+		// Loaders
+
+		let formatLoader = (loader?: string, version?: string) => {
+			if (loader == undefined) {
+				return undefined;
+			} else {
+				return version == undefined ? loader : `${loader}@${version}`;
+			}
+		};
+
+		let loader = () => {
+			if (clientLoader() == undefined && serverLoader() == undefined) {
+				return undefined;
+			} else {
+				if (isInstance) {
+					if (side() == "client") {
+						return formatLoader(clientLoader(), clientLoaderVersion());
+					} else {
+						return formatLoader(serverLoader(), serverLoaderVersion());
+					}
+				} else {
+					if (
+						clientLoader() == serverLoader() &&
+						clientLoaderVersion() == serverLoaderVersion()
+					) {
+						return formatLoader(clientLoader(), clientLoaderVersion());
+					} else {
+						return {
+							client: formatLoader(clientLoader(), clientLoaderVersion()),
+							server: formatLoader(serverLoader(), serverLoaderVersion()),
+						};
+					}
+				}
+			}
+		};
+
 		// Packages
 		let packages = undefined;
 		if (isInstance) {
@@ -245,10 +316,7 @@ export default function InstanceConfig(props: InstanceConfigProps) {
 			name: undefinedEmpty(name()),
 			icon: undefinedEmpty(icon()),
 			version: undefinedEmpty(version()),
-			modloader: config() != undefined ? config()!.modloader : undefined,
-			client_type: clientType(),
-			server_type: serverType(),
-			game_modification_version: undefinedEmpty(gameModVersion()),
+			loader: loader(),
 			packages: packages,
 		};
 
@@ -438,7 +506,7 @@ export default function InstanceConfig(props: InstanceConfigProps) {
 					<Show
 						when={
 							(side() == "client" || isProfile) &&
-							supportedModifications() != undefined
+							supportedLoaders() != undefined
 						}
 					>
 						<label for="client-type" class="label">{`${
@@ -447,38 +515,43 @@ export default function InstanceConfig(props: InstanceConfigProps) {
 						<Tip
 							tip={
 								isInstance
-									? "The modloader to use"
+									? "The loader to use"
 									: "The loader to use for client instances"
 							}
 							fullwidth
 						>
 							<InlineSelect
 								onChange={(x) => {
-									setClientType(x);
+									setClientLoader(x);
 									setDirty();
 								}}
-								selected={clientType() == undefined ? "none" : clientType()}
-								options={supportedModifications()!.client_types.map((x) => {
-									return {
-										value: x,
-										contents: (
-											<div class="cont">
-												{x == "none" ? "Unset" : beautifyString(x)}
-											</div>
-										),
-										color: "var(--fg2)",
-										tip: x == "none" ? "Inherit from the profile" : undefined,
-									};
-								})}
-								columns={supportedModifications()!.client_types.length}
+								selected={clientLoader() == undefined ? "none" : clientLoader()}
+								options={supportedLoaders()!
+									.filter((x) => getLoaderSide(x) != "server")
+									.map((x) => {
+										return {
+											value: x,
+											contents: (
+												<div class="cont">
+													{x == "none"
+														? "Unset"
+														: getLoaderDisplayName(x as Loader)}
+												</div>
+											),
+											color: getLoaderColor(x as Loader),
+											tip: x == "none" ? "Inherit from the profile" : undefined,
+										};
+									})}
+								columns={3}
 								allowEmpty={false}
+								connected={false}
 							/>
 						</Tip>
 					</Show>
 					<Show
 						when={
 							(side() == "server" || isProfile) &&
-							supportedModifications() != undefined
+							supportedLoaders() != undefined
 						}
 					>
 						<label for="server-type" class="label">{`${
@@ -487,54 +560,78 @@ export default function InstanceConfig(props: InstanceConfigProps) {
 						<Tip
 							tip={
 								isInstance
-									? "The mod or plugin loader to use"
+									? "The loader to use"
 									: "The loader to use for server instances"
 							}
 							fullwidth
 						>
 							<InlineSelect
 								onChange={(x) => {
-									setServerType(x);
+									setServerLoader(x);
 									setDirty();
 								}}
-								selected={serverType() == undefined ? "none" : serverType()}
-								options={supportedModifications()!.server_types.map((x) => {
-									return {
-										value: x,
-										contents: (
-											<div class="cont">
-												{x == "none" ? "Unset" : beautifyString(x)}
-											</div>
-										),
-										color: "var(--fg2)",
-										tip: x == "none" ? "Inherit from the profile" : undefined,
-									};
-								})}
-								columns={supportedModifications()!.server_types.length}
+								selected={serverLoader() == undefined ? "none" : serverLoader()}
+								options={supportedLoaders()!
+									.filter((x) => getLoaderSide(x) != "client")
+									.map((x) => {
+										return {
+											value: x,
+											contents: (
+												<div class="cont">
+													{x == "none"
+														? "Unset"
+														: getLoaderDisplayName(x as Loader)}
+												</div>
+											),
+											color: getLoaderColor(x as Loader),
+											tip: x == "none" ? "Inherit from the profile" : undefined,
+										};
+									})}
+								columns={3}
 								allowEmpty={false}
+								connected={false}
 							/>
 						</Tip>
 					</Show>
-					<Show
-						when={
-							(clientType() != undefined && clientType() != "none") ||
-							(serverType() != undefined && serverType() != "none")
-						}
-					>
-						<label for="game-mod-version" class="label">
-							LOADER VERSION
+					<Show when={clientLoader() != undefined && clientLoader() != "none"}>
+						<label for="client-loader-version" class="label">
+							{isProfile ? "CLIENT LOADER VERSION" : "LOADER VERSION"}
 						</label>
 						<Tip
-							tip="The version for the loader. Leave empty to select the best version automatically."
+							tip={`The version for the${
+								isProfile ? " client" : ""
+							} loader. Leave empty to select the best version automatically.`}
 							fullwidth
 						>
 							<input
 								type="text"
-								id="game-mod-version"
-								name="game-mod-version"
-								value={emptyUndefined(gameModVersion())}
+								id="client-loader-version"
+								name="client-loader-version"
+								value={emptyUndefined(clientLoaderVersion())}
 								onChange={(e) => {
-									setGameModVersion(e.target.value);
+									setClientLoaderVersion(e.target.value);
+									setDirty();
+								}}
+							></input>
+						</Tip>
+					</Show>
+					<Show when={serverLoader() != undefined && serverLoader() != "none"}>
+						<label for="server-loader-version" class="label">
+							{isProfile ? "SERVER LOADER VERSION" : "LOADER VERSION"}
+						</label>
+						<Tip
+							tip={`The version for the${
+								isProfile ? " server" : ""
+							} loader. Leave empty to select the best version automatically.`}
+							fullwidth
+						>
+							<input
+								type="text"
+								id="server-loader-version"
+								name="server-loader-version"
+								value={emptyUndefined(serverLoaderVersion())}
+								onChange={(e) => {
+									setServerLoaderVersion(e.target.value);
 									setDirty();
 								}}
 							></input>
@@ -622,10 +719,7 @@ interface InstanceConfig {
 	name?: string;
 	icon?: string;
 	version?: string | "latest" | "latest_snapshot";
-	modloader?: string;
-	client_type?: string;
-	server_type?: string;
-	game_modification_version?: string;
+	loader?: ConfiguredLoaders;
 	datapack_folder?: string;
 	packages?:
 		| PackageConfig[]
@@ -636,6 +730,13 @@ interface InstanceConfig {
 		  };
 	[extraKey: string]: any;
 }
+
+type ConfiguredLoaders =
+	| string
+	| {
+			client?: string;
+			server?: string;
+	  };
 
 interface LaunchConfig {
 	memory?: string | LaunchMemory;
@@ -702,25 +803,11 @@ async function idExists(id: string, mode: ConfigMode): Promise<boolean> {
 	}
 }
 
-async function getSupportedGameModifications(): Promise<SupportedGameModifications> {
-	let out: SupportedGameModifications = { client_types: [], server_types: [] };
-	let results: SupportedGameModifications[] = await invoke(
-		"get_supported_game_modifications"
-	);
-	for (let result of results) {
-		out.client_types = out.client_types.concat(result.client_types);
-		out.server_types = out.server_types.concat(result.server_types);
-	}
+async function getSupportedLoaders(): Promise<string[]> {
+	let results: string[] = await invoke("get_supported_loaders");
 
-	out.client_types.sort(stringCompare);
-	out.server_types.sort(stringCompare);
-	out.client_types = ["none", "vanilla"].concat(out.client_types);
-	out.server_types = ["none", "vanilla"].concat(out.server_types);
+	results.sort(stringCompare);
+	results = ["none", "vanilla"].concat(results);
 
-	return out;
-}
-
-interface SupportedGameModifications {
-	client_types: string[];
-	server_types: string[];
+	return results;
 }

@@ -7,7 +7,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::unexpected_token;
-use mcvm_shared::modifications::{ModloaderMatch, PluginLoaderMatch};
+use mcvm_shared::loaders::LoaderMatch;
 use mcvm_shared::Side;
 
 use super::instruction::parse_arg;
@@ -47,10 +47,8 @@ pub enum ConditionKind {
 	Version(Value),
 	/// Check the side
 	Side(Later<Side>),
-	/// Check the modloader
-	Modloader(Later<ModloaderMatch>),
-	/// Check the plugin loader
-	PluginLoader(Later<PluginLoaderMatch>),
+	/// Check the loader
+	Loader(Later<LoaderMatch>),
 	/// Check a configured feature
 	Feature(Value),
 	/// Check a variable
@@ -139,8 +137,7 @@ impl ConditionKind {
 			"not" => Some(Self::Not(Later::Empty)),
 			"version" => Some(Self::Version(Value::None)),
 			"side" => Some(Self::Side(Later::Empty)),
-			"modloader" => Some(Self::Modloader(Later::Empty)),
-			"plugin_loader" => Some(Self::PluginLoader(Later::Empty)),
+			"loader" => Some(Self::Loader(Later::Empty)),
 			"feature" => Some(Self::Feature(Value::None)),
 			"value" => Some(Self::Value(Value::None, Value::None)),
 			"defined" => Some(Self::Defined(Later::Empty)),
@@ -165,8 +162,7 @@ impl ConditionKind {
 			}
 			Self::Version(val) | Self::Feature(val) | Self::ContentVersion(val) => val.is_some(),
 			Self::Side(val) => val.is_full(),
-			Self::Modloader(val) => val.is_full(),
-			Self::PluginLoader(val) => val.is_full(),
+			Self::Loader(val) => val.is_full(),
 			Self::Defined(val) => val.is_full(),
 			Self::Const(val) => val.is_full(),
 			Self::OS(val) => val.is_full(),
@@ -230,20 +226,8 @@ impl ConditionKind {
 				)?),
 				_ => unexpected_token!(tok, pos),
 			},
-			Self::Modloader(loader) => match tok {
-				Token::Ident(name) => loader.fill(check_enum_condition_argument(
-					ModloaderMatch::parse_from_str(name),
-					name,
-					pos,
-				)?),
-				_ => unexpected_token!(tok, pos),
-			},
-			Self::PluginLoader(loader) => match tok {
-				Token::Ident(name) => loader.fill(check_enum_condition_argument(
-					PluginLoaderMatch::parse_from_str(name),
-					name,
-					pos,
-				)?),
+			Self::Loader(loader) => match tok {
+				Token::Ident(name) => loader.fill(LoaderMatch::parse_from_str(name)),
 				_ => unexpected_token!(tok, pos),
 			},
 			Self::OS(os) => match tok {

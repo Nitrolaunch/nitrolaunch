@@ -5,17 +5,17 @@
 }
 
 @install {
-	if modloader forgelike {
+	if loader forgelike {
 		require "kotlin-for-forge";
 		finish;
 	}
-	if modloader fabric {
+	if loader fabric {
 		require "fabric-language-kotlin";
 		finish;
 	}
-	if modloader quilt {
+	if loader quilt {
 		require "quilt-kotlin-libraries";
 		finish;
 	}
-	fail unsupported_modloader;
+	fail unsupported_loader;
 }

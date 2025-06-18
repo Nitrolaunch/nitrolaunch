@@ -7,7 +7,6 @@ use crate::io::paths::Paths;
 use crate::util::hash::{get_best_hash, hash_file_with_best_hash};
 use mcvm_core::io::files::{create_leading_dirs, update_hardlink};
 use mcvm_core::net::download;
-use mcvm_shared::modifications::{Modloader, ServerType};
 
 use std::future::Future;
 use std::path::{Path, PathBuf};
@@ -185,35 +184,11 @@ impl AddonRequest {
 	}
 }
 
-/// Checks if the modloader and plugin loader are compatible with each other
-pub fn game_modifications_compatible(modloader: &Modloader, plugin_loader: &ServerType) -> bool {
-	matches!(
-		(modloader, plugin_loader),
-		(Modloader::Vanilla, _) | (_, ServerType::Vanilla)
-	)
-}
-
 #[cfg(test)]
 mod tests {
 	use mcvm_shared::pkg::{PackageAddonOptionalHashes, PackageID};
 
 	use super::*;
-
-	#[test]
-	fn test_game_mods_compat() {
-		assert!(game_modifications_compatible(
-			&Modloader::Fabric,
-			&ServerType::Vanilla
-		));
-		assert!(game_modifications_compatible(
-			&Modloader::Vanilla,
-			&ServerType::Vanilla
-		));
-		assert!(!game_modifications_compatible(
-			&Modloader::Forge,
-			&ServerType::Paper
-		));
-	}
 
 	#[test]
 	fn test_addon_split_filename() {

@@ -30,10 +30,8 @@ pub enum FailReason {
 	UnsupportedVersion,
 	/// The side is unsupported
 	UnsupportedSide,
-	/// The modloader is unsupported
-	UnsupportedModloader,
-	/// The plugin loader is unsupported
-	UnsupportedPluginLoader,
+	/// The loader is unsupported
+	UnsupportedLoader,
 	/// The configured set of features is unsupported
 	UnsupportedFeatures,
 	/// The operating system is unsupported
@@ -48,8 +46,7 @@ impl FailReason {
 		match string {
 			"unsupported_version" => Some(Self::UnsupportedVersion),
 			"unsupported_side" => Some(Self::UnsupportedSide),
-			"unsupported_modloader" => Some(Self::UnsupportedModloader),
-			"unsupported_plugin_loader" => Some(Self::UnsupportedPluginLoader),
+			"unsupported_loader" => Some(Self::UnsupportedLoader),
 			"unsupported_features" => Some(Self::UnsupportedFeatures),
 			"unsupported_operating_system" => Some(Self::UnsupportedFeatures),
 			"unsupported_architecture" => Some(Self::UnsupportedArchitecture),
@@ -67,8 +64,7 @@ impl Display for FailReason {
 				Self::None => "",
 				Self::UnsupportedVersion => "Unsupported Minecraft version",
 				Self::UnsupportedSide => "Unsupported side (client / server)",
-				Self::UnsupportedModloader => "Unsupported modloader",
-				Self::UnsupportedPluginLoader => "Unsupported plugin loader",
+				Self::UnsupportedLoader => "Unsupported loader",
 				Self::UnsupportedFeatures => "Unsupported feature set",
 				Self::UnsupportedOperatingSystem => "Unsupported operating system",
 				Self::UnsupportedArchitecture => "Unsupported system architecture",

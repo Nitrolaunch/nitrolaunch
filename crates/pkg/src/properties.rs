@@ -1,6 +1,6 @@
 use anyhow::{bail, ensure};
 use mcvm_parse::conditions::{ArchCondition, OSCondition};
-use mcvm_shared::modifications::{ModloaderMatch, PluginLoaderMatch};
+use mcvm_shared::loaders::LoaderMatch;
 use mcvm_shared::pkg::PackageKind;
 use mcvm_shared::versions::VersionPattern;
 use mcvm_shared::Side;
@@ -40,12 +40,9 @@ pub struct PackageProperties {
 	/// The package's supported Minecraft versions
 	#[serde(skip_serializing_if = "Option::is_none")]
 	pub supported_versions: Option<Vec<VersionPattern>>,
-	/// The package's supported modloaders
+	/// The package's supported loaders
 	#[serde(skip_serializing_if = "Option::is_none")]
-	pub supported_modloaders: Option<Vec<ModloaderMatch>>,
-	/// The package's supported plugin loaders
-	#[serde(skip_serializing_if = "Option::is_none")]
-	pub supported_plugin_loaders: Option<Vec<PluginLoaderMatch>>,
+	pub supported_loaders: Option<Vec<LoaderMatch>>,
 	/// The package's supported sides
 	#[serde(skip_serializing_if = "Option::is_none")]
 	pub supported_sides: Option<Vec<Side>>,
@@ -83,14 +80,14 @@ impl PackageProperties {
 
 	/// Check if all properties are empty
 	pub fn is_empty(&self) -> bool {
-		self.features.is_none()
+		self.kinds.is_empty()
+			&& self.features.is_none()
 			&& self.default_features.is_none()
 			&& self.modrinth_id.is_none()
 			&& self.curseforge_id.is_none()
 			&& self.smithed_id.is_none()
 			&& self.supported_versions.is_none()
-			&& self.supported_modloaders.is_none()
-			&& self.supported_plugin_loaders.is_none()
+			&& self.supported_loaders.is_none()
 			&& self.supported_sides.is_none()
 			&& self.supported_operating_systems.is_none()
 			&& self.supported_architectures.is_none()
@@ -117,12 +114,7 @@ pub fn eval_properties(parsed: &Parsed) -> anyhow::Result<PackageProperties> {
 					InstrKind::SupportedVersions(list) => {
 						out.supported_versions = Some(list.clone())
 					}
-					InstrKind::SupportedModloaders(list) => {
-						out.supported_modloaders = Some(list.clone())
-					}
-					InstrKind::SupportedPluginLoaders(list) => {
-						out.supported_plugin_loaders = Some(list.clone())
-					}
+					InstrKind::SupportedLoaders(list) => out.supported_loaders = Some(list.clone()),
 					InstrKind::SupportedSides(list) => out.supported_sides = Some(list.clone()),
 					InstrKind::SupportedOperatingSystems(list) => {
 						out.supported_operating_systems = Some(list.clone())

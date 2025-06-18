@@ -4,10 +4,7 @@ use anyhow::{bail, Context};
 use mcvm_core::io::update::UpdateManager;
 use mcvm_mods::fabric_quilt;
 use mcvm_plugin::{api::CustomPlugin, hooks::OnInstanceSetupResult};
-use mcvm_shared::{
-	modifications::{ClientType, ServerType},
-	Side, UpdateDepth,
-};
+use mcvm_shared::{loaders::Loader, UpdateDepth};
 
 fn main() -> anyhow::Result<()> {
 	let mut plugin = CustomPlugin::from_manifest_file("fabric_quilt", include_str!("plugin.json"))?;
@@ -17,26 +14,14 @@ fn main() -> anyhow::Result<()> {
 		};
 
 		// Make sure this is a Fabric or Quilt instance
-		if (side == Side::Client
-			&& !(arg.client_type == ClientType::Fabric || arg.client_type == ClientType::Quilt))
-			|| (side == Side::Server
-				&& !(arg.server_type == ServerType::Fabric || arg.server_type == ServerType::Quilt))
-		{
+		if arg.loader != Loader::Fabric && arg.loader != Loader::Quilt {
 			return Ok(OnInstanceSetupResult::default());
 		}
 
-		let mode = if side == Side::Client {
-			if arg.client_type == ClientType::Fabric {
-				fabric_quilt::Mode::Fabric
-			} else {
-				fabric_quilt::Mode::Quilt
-			}
+		let mode = if arg.loader == Loader::Fabric {
+			fabric_quilt::Mode::Fabric
 		} else {
-			if arg.server_type == ServerType::Fabric {
-				fabric_quilt::Mode::Fabric
-			} else {
-				fabric_quilt::Mode::Quilt
-			}
+			fabric_quilt::Mode::Quilt
 		};
 
 		let internal_dir = PathBuf::from(arg.internal_dir);

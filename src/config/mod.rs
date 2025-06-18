@@ -22,10 +22,7 @@ use mcvm_config::ConfigDeser;
 use mcvm_core::auth_crate::mc::ClientId;
 use mcvm_core::io::{json_from_file, json_to_file_pretty};
 use mcvm_core::user::UserManager;
-use mcvm_plugin::hooks::{
-	AddInstances, AddInstancesArg, AddProfiles, AddSupportedGameModifications,
-	SupportedGameModifications,
-};
+use mcvm_plugin::hooks::{AddInstances, AddInstancesArg, AddProfiles, AddSupportedLoaders};
 use mcvm_shared::id::{InstanceID, ProfileID};
 use mcvm_shared::output::{MCVMOutput, MessageContents, MessageLevel};
 use mcvm_shared::translate;
@@ -165,22 +162,14 @@ impl Config {
 		let profiles = consolidate_profile_configs(config.profiles, config.global_profile.as_ref())
 			.context("Failed to merge profiles")?;
 
-		// Load extra supported game modifications
-		let mut supported_game_modifications = SupportedGameModifications {
-			client_types: Vec::new(),
-			server_types: Vec::new(),
-		};
+		// Load extra supported loaders
+		let mut supported_loaders = Vec::new();
 		let results = plugins
-			.call_hook(AddSupportedGameModifications, &(), paths, o)
-			.context("Failed to get supported game modifications")?;
+			.call_hook(AddSupportedLoaders, &(), paths, o)
+			.context("Failed to get supported loaders")?;
 		for result in results {
 			let result = result.result(o)?;
-			supported_game_modifications
-				.client_types
-				.extend(result.client_types);
-			supported_game_modifications
-				.server_types
-				.extend(result.server_types);
+			supported_loaders.extend(result);
 		}
 
 		// Instances
@@ -211,34 +200,14 @@ impl Config {
 			};
 
 			if show_warnings
-				&& !mcvm_config::instance::can_install_client_type(
-					&instance.config.modifications.client_type(),
-				) && !supported_game_modifications
-				.client_types
-				.contains(&instance.config.modifications.client_type())
+				&& !mcvm_config::instance::can_install_loader(&instance.config.loader)
+				&& !supported_loaders.contains(&instance.config.loader)
 			{
 				o.display(
 					MessageContents::Warning(translate!(
 						o,
 						ModificationNotSupported,
-						"mod" = &format!("{}", instance.config.modifications.client_type())
-					)),
-					MessageLevel::Important,
-				);
-			}
-
-			if show_warnings
-				&& !mcvm_config::instance::can_install_server_type(
-					&instance.config.modifications.server_type(),
-				) && !supported_game_modifications
-				.server_types
-				.contains(&instance.config.modifications.server_type())
-			{
-				o.display(
-					MessageContents::Warning(translate!(
-						o,
-						ModificationNotSupported,
-						"mod" = &format!("{}", instance.config.modifications.server_type())
+						"mod" = &format!("{}", instance.config.loader)
 					)),
 					MessageLevel::Important,
 				);
@@ -292,7 +261,7 @@ fn default_config() -> serde_json::Value {
 			"profiles": {
 				"1.20": {
 					"version": "1.19.3",
-					"modloader": "vanilla",
+					"loader": "vanilla",
 					"server_type": "none"
 				}
 			},

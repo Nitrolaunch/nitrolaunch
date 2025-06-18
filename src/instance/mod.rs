@@ -13,9 +13,10 @@ pub mod transfer;
 /// Updating an instance
 pub mod update;
 
-use mcvm_config::instance::{ClientWindowConfig, GameModifications, InstanceConfig};
+use mcvm_config::instance::{ClientWindowConfig, InstanceConfig};
 use mcvm_core::util::versions::MinecraftVersion;
 use mcvm_shared::later::Later;
+use mcvm_shared::loaders::Loader;
 use mcvm_shared::pkg::PackageStability;
 use mcvm_shared::versions::VersionPattern;
 use mcvm_shared::Side;
@@ -85,10 +86,10 @@ pub struct InstanceStoredConfig {
 	pub icon: Option<String>,
 	/// The Minecraft version
 	pub version: MinecraftVersion,
-	/// Modifications to the instance
-	pub modifications: GameModifications,
-	/// Version for the game modification
-	pub modification_version: Option<VersionPattern>,
+	/// Loader for the instance
+	pub loader: Loader,
+	/// Version for the loader
+	pub loader_version: Option<VersionPattern>,
 	/// Launch options for the instance
 	pub launch: LaunchOptions,
 	/// The instance's global datapack folder

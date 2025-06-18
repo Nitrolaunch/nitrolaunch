@@ -71,7 +71,7 @@ define_translations! {
 	ExtractedNativeFile, "When a native library file extract is extracted", "Extracted native file %file";
 	NoDefaultUser, "When users are available but no default is set", "Users are available but no default user is set";
 	NoUsers, "When no users are available", "No users are available";
-	ModificationNotSupported, "When a game modification can't be installed by MCVM", "%mod installation is currently unimplemented by mcvm. You might have to install a plugin to support it.";
+	ModificationNotSupported, "When a loader can't be installed by MCVM", "%mod installation is currently unimplemented by mcvm. You might have to install a plugin to support it.";
 	EmptyProfile, "When a profile has no instances", "Profile '%profile' does not have any instances";
 	StartDownloadingVersionManifest, "When starting to download the version manifest", "Downloading version manifest";
 	StartDownloadingGameJar, "When starting to download the game jar", "Downloading %side jar";
@@ -108,7 +108,7 @@ define_translations! {
 	AssetFailed, "When a single asset fails to download", "Asset failed to download:\n%error";
 	AssetsFailed, "When one or more assets fail to download", "%num assets failed to download. Minecraft may not load properly.";
 	StartUpdatingInstanceVersion, "When starting to update an instance version", "Updating instance from %version1 to %version2";
-	StartUpdatingInstanceGameModification, "When starting to change an instance game modification", "Removing current game modification from the instance";
+	StartUpdatingInstanceLoader, "When starting to change an instance's loader", "Removing current loader from the instance";
 	FinishUpdatingInstanceVersion, "When finishing updating an instance version", "Finished update";
 	InvalidInstanceConfig, "When the configuration for an instance is invalid", "Configuration for instance '%instance' is invalid:\n%error";
 }

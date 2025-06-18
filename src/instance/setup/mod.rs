@@ -18,7 +18,7 @@ use mcvm_core::user::uuid::hyphenate_uuid;
 use mcvm_core::user::{User, UserManager};
 use mcvm_core::version::InstalledVersion;
 use mcvm_core::QuickPlayType;
-use mcvm_plugin::hooks::{OnInstanceSetup, OnInstanceSetupArg, RemoveGameModification};
+use mcvm_plugin::hooks::{OnInstanceSetup, OnInstanceSetupArg, RemoveLoader};
 use mcvm_shared::output::OutputProcess;
 use mcvm_shared::output::{MCVMOutput, MessageContents, MessageLevel};
 use mcvm_shared::translate;
@@ -93,42 +93,33 @@ impl Instance {
 		lock.ensure_instance_created(&self.id, &manager.version_info.get().version);
 		let lock_instance = lock.get_instance(&self.id);
 		let current_version = lock_instance.map(|x| x.version.clone());
-		let current_game_mod_version =
-			lock_instance.and_then(|x| x.game_modification_version.clone());
-		let current_client_type = lock_instance
-			.map(|x| x.client_type.clone())
-			.unwrap_or_default();
-		let current_server_type = lock_instance
-			.map(|x| x.server_type.clone())
-			.unwrap_or_default();
+		let current_loader_version = lock_instance.and_then(|x| x.loader_version.clone());
+		let current_loader = lock_instance.map(|x| x.loader.clone()).unwrap_or_default();
 
 		let mut arg = OnInstanceSetupArg {
 			id: self.id.to_string(),
 			side: Some(self.get_side()),
 			game_dir: self.dirs.get().game_dir.to_string_lossy().to_string(),
 			version_info: manager.version_info.get_clone(),
-			client_type: self.config.modifications.client_type(),
-			server_type: self.config.modifications.server_type(),
-			current_game_modification_version: current_game_mod_version,
-			desired_game_modification_version: self.config.modification_version.clone(),
+			loader: self.config.loader.clone(),
+			current_loader_version,
+			desired_loader_version: self.config.loader_version.clone(),
 			config: self.config.original_config_with_profiles.clone(),
 			internal_dir: paths.internal.to_string_lossy().to_string(),
 			update_depth: manager.settings.depth,
 		};
 
-		// Do game modification and version change checks
+		// Do loader and version change checks
 		let is_version_different = current_version
 			.as_ref()
 			.is_some_and(|x| x != &manager.version_info.get().version);
-		let is_game_mod_different = self.config.modifications.client_type() != current_client_type
-			|| self.config.modifications.server_type() != current_server_type;
-		if is_version_different || is_game_mod_different {
+		let is_loader_different = self.config.loader != current_loader;
+
+		if is_version_different || is_loader_different {
 			let mut process = OutputProcess::new(o);
-			if is_game_mod_different {
-				let message = MessageContents::StartProcess(translate!(
-					process,
-					StartUpdatingInstanceGameModification
-				));
+			if is_loader_different {
+				let message =
+					MessageContents::StartProcess(translate!(process, StartUpdatingInstanceLoader));
 				process.display(message, MessageLevel::Important);
 			} else if is_version_different {
 				let message = MessageContents::StartProcess(translate!(
@@ -144,23 +135,21 @@ impl Instance {
 			self.teardown(paths)
 				.context("Failed to teardown instance")?;
 
-			arg.client_type = current_client_type;
-			arg.server_type = current_server_type;
+			arg.loader = current_loader;
 			if let Some(current_version) = &current_version {
 				arg.version_info.version = current_version.clone();
 			}
 			let results = plugins
-				.call_hook(RemoveGameModification, &arg, paths, process.deref_mut())
-				.context("Failed to call remove game modification hook")?;
+				.call_hook(RemoveLoader, &arg, paths, process.deref_mut())
+				.context("Failed to call remove loader hook")?;
 
 			for result in results {
 				result.result(process.deref_mut())?;
 			}
 
-			// The current game modification version is no longer valid as it is referring to the old game modification
-			arg.current_game_modification_version = None;
-			arg.client_type = self.config.modifications.client_type();
-			arg.server_type = self.config.modifications.server_type();
+			// The current loader version is no longer valid as it is referring to the old loader
+			arg.current_loader_version = None;
+			arg.loader = self.config.loader.clone();
 			arg.version_info.version = manager.version_info.get().version.clone();
 
 			let message =
@@ -172,7 +161,7 @@ impl Instance {
 			.call_hook(OnInstanceSetup, &arg, paths, o)
 			.context("Failed to call instance setup hook")?;
 
-		let mut game_mod_version_set = false;
+		let mut loader_version_set = false;
 		for result in results {
 			let result = result.result(o)?;
 			self.modification_data
@@ -195,28 +184,21 @@ impl Instance {
 				}
 			}
 
-			if let Some(game_modification_version) = result.game_modification_version {
-				if game_mod_version_set {
-					bail!("Multiple plugins attempted to modify the game modification version");
+			if let Some(loader_version) = result.loader_version {
+				if loader_version_set {
+					bail!("Multiple plugins attempted to modify the loader version");
 				}
-				lock.update_instance_game_modification_version(
-					&self.id,
-					Some(game_modification_version),
-				)
-				.expect("Instance should exist");
-				game_mod_version_set = true;
+				lock.update_instance_loader_version(&self.id, Some(loader_version))
+					.expect("Instance should exist");
+				loader_version_set = true;
 			}
 		}
 
-		// Update the game modifications and version
+		// Update the loaders and version
 		lock.update_instance_version(&self.id, &manager.version_info.get().version)
 			.expect("Instance should exist");
-		lock.update_instance_game_modifications(
-			&self.id,
-			self.config.modifications.client_type(),
-			self.config.modifications.server_type(),
-		)
-		.expect("Instance should exist");
+		lock.update_instance_loader(&self.id, self.config.loader.clone())
+			.expect("Instance should exist");
 
 		lock.finish(paths)
 			.context("Failed to finish using lockfile")?;

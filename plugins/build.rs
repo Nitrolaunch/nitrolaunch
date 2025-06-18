@@ -21,7 +21,7 @@ fn main() {
 
 	add_file!(zip, "index.md");
 	add_file!(zip, "configuring.md");
-	add_file!(zip, "modifications.md");
+	add_file!(zip, "loaders.md");
 	add_file!(zip, "principles.md");
 	zip.add_directory("packages", FileOptions::<()>::default())
 		.unwrap();

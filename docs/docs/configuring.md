@@ -57,10 +57,7 @@ Instances are defined in the id-value format underneath the `instances` object o
 	"version": string,
 	"name": string,
 	"icon": string,
-	"modloader": modloader,
-	"client_type": client_type,
-	"server_type": server_type,
-	"game_modification_version": string,
+	"loader": string,
 	"package_stability": "stable" | "latest",
 	"launch": {
 		"args": {
@@ -104,10 +101,7 @@ All fields are optional unless stated otherwise.
 - `version`: The Minecraft version of the instance. Can use `"latest"` or `"latest_snapshot"` as special identifiers to get the latest version. This is technically a required field, but can be derived from a profile instead.
 - `name`: A custom display name for this instance. Has no rules and does not have to be unique.
 - `icon`: A path to an icon file for this instance. Should be square and in a common format like PNG or JPEG.
-- `modloader`: The modloader for the instance, which can be used to set both the client and server type automatically.
-- `client_type`: The modification type for the client. Defaults to using the `modloader` setting.
-- `server_type`: The modification type for the server. Defaults to using the `modloader` setting.
-- `game_modification_version`: The desired version for the client or server type (i.e. the Paper server build number) as a version pattern. Defaults to using the newest available version.
+- `loader`: The loader for the instance. Check [the loader list](loaders.md) for which ones are available. This string can also be formatted as `loader@version` to request a specific version pattern of the loader.
 - `package_stability`: Global stability setting for all packages in this instance. Defaults to `"stable"`.
 - `launch`: Options that modify the game execution.
 - `launch.args`: Custom arguments that will be passed to the Java Virtual Machine and game. Each one is optional and can either be a string of arguments separated by spaces or a list.
@@ -130,12 +124,17 @@ Profiles allow you to easily share configuration between instances and keep them
 		"global": [ ... ],
 		"client": [ ... ],
 		"server": [ ... ]
-	}
+	},
+	"loader": {
+		"client": string,
+		"server": string
+	} | "string"
 }
 ```
 
 - `InstanceConfig`: Profiles have all of the same fields as instances, which they provide to instances that derive them
 - `packages` (Optional): Can either be a list of packages to apply to every instance in the profile, or an object of multiple lists with a different set of packages for each type of instance. The `global` key will apply to every instance.
+- `loader` (Optional): Can be the same format as an instance, or a different loader for client and server. Loader versions are still allowed.
 
 ## Packages
 

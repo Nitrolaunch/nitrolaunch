@@ -7,7 +7,7 @@
 		]
 	},
 	"properties": {
-		"supported_modloaders": [ "fabriclike" ]
+		"supported_loaders": [ "fabriclike" ]
 	},
 	"relations": {
 		"dependencies": [

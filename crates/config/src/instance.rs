@@ -5,7 +5,7 @@ use anyhow::Context;
 use mcvm_core::io::java::args::MemoryNum;
 use mcvm_core::util::versions::MinecraftVersionDeser;
 use mcvm_shared::addon::AddonKind;
-use mcvm_shared::modifications::{ClientType, Modloader, ServerType};
+use mcvm_shared::loaders::Loader;
 use mcvm_shared::pkg::PackageStability;
 use mcvm_shared::util::{merge_options, DefaultExt, DeserListOrSingle};
 use mcvm_shared::versions::{VersionInfo, VersionPattern};
@@ -50,22 +50,10 @@ pub struct CommonInstanceConfig {
 	pub from: DeserListOrSingle<String>,
 	/// The Minecraft version
 	pub version: Option<MinecraftVersionDeser>,
-	/// Configured modloader
+	/// Configured loader
 	#[serde(default)]
 	#[serde(skip_serializing_if = "DefaultExt::is_default")]
-	pub modloader: Option<Modloader>,
-	/// Configured client type
-	#[serde(default)]
-	#[serde(skip_serializing_if = "DefaultExt::is_default")]
-	pub client_type: Option<ClientType>,
-	/// Configured server type
-	#[serde(default)]
-	#[serde(skip_serializing_if = "DefaultExt::is_default")]
-	pub server_type: Option<ServerType>,
-	/// The version of whatever game modification is applied to this instance
-	#[serde(default)]
-	#[serde(skip_serializing_if = "DefaultExt::is_default")]
-	pub game_modification_version: Option<VersionPattern>,
+	pub loader: Option<String>,
 	/// Default stability setting of packages on this instance
 	#[serde(default)]
 	#[serde(skip_serializing_if = "DefaultExt::is_default")]
@@ -90,12 +78,7 @@ impl CommonInstanceConfig {
 	pub fn merge(&mut self, other: Self) -> &mut Self {
 		self.from.merge(other.from);
 		self.version = other.version.or(self.version.clone());
-		self.modloader = other.modloader.or(self.modloader.clone());
-		self.client_type = other.client_type.or(self.client_type.clone());
-		self.server_type = other.server_type.or(self.server_type.clone());
-		self.game_modification_version = other
-			.game_modification_version
-			.or(self.game_modification_version.clone());
+		self.loader = other.loader.or(self.loader.clone());
 		self.package_stability = other.package_stability.or(self.package_stability);
 		self.launch.merge(other.launch);
 		self.datapack_folder = other.datapack_folder.or(self.datapack_folder.clone());
@@ -380,123 +363,9 @@ pub fn is_valid_instance_id(id: &str) -> bool {
 	true
 }
 
-/// Game modifications
-#[derive(Clone, Debug)]
-pub struct GameModifications {
-	modloader: Modloader,
-	/// Type of the client
-	client_type: ClientType,
-	/// Type of the server
-	server_type: ServerType,
-}
-
-impl GameModifications {
-	/// Create a new GameModifications
-	pub fn new(modloader: Modloader, client_type: ClientType, server_type: ServerType) -> Self {
-		Self {
-			modloader,
-			client_type,
-			server_type,
-		}
-	}
-
-	/// Gets the client type
-	pub fn client_type(&self) -> ClientType {
-		if let ClientType::None = self.client_type {
-			match &self.modloader {
-				Modloader::Vanilla => ClientType::Vanilla,
-				Modloader::Forge => ClientType::Forge,
-				Modloader::NeoForged => ClientType::NeoForged,
-				Modloader::Fabric => ClientType::Fabric,
-				Modloader::Quilt => ClientType::Quilt,
-				Modloader::LiteLoader => ClientType::LiteLoader,
-				Modloader::Risugamis => ClientType::Risugamis,
-				Modloader::Rift => ClientType::Rift,
-				Modloader::Unknown(modloader) => ClientType::Unknown(modloader.clone()),
-			}
-		} else {
-			self.client_type.clone()
-		}
-	}
-
-	/// Gets the server type
-	pub fn server_type(&self) -> ServerType {
-		if let ServerType::None = self.server_type {
-			match &self.modloader {
-				Modloader::Vanilla => ServerType::Vanilla,
-				Modloader::Forge => ServerType::Forge,
-				Modloader::NeoForged => ServerType::NeoForged,
-				Modloader::Fabric => ServerType::Fabric,
-				Modloader::Quilt => ServerType::Quilt,
-				Modloader::LiteLoader => ServerType::Unknown("liteloader".into()),
-				Modloader::Risugamis => ServerType::Risugamis,
-				Modloader::Rift => ServerType::Rift,
-				Modloader::Unknown(modloader) => ServerType::Unknown(modloader.clone()),
-			}
-		} else {
-			self.server_type.clone()
-		}
-	}
-
-	/// Gets the modloader of a side
-	pub fn get_modloader(&self, side: Side) -> Modloader {
-		match side {
-			Side::Client => match self.client_type {
-				ClientType::None => self.modloader.clone(),
-				ClientType::Vanilla => Modloader::Vanilla,
-				ClientType::Forge => Modloader::Forge,
-				ClientType::NeoForged => Modloader::NeoForged,
-				ClientType::Fabric => Modloader::Fabric,
-				ClientType::Quilt => Modloader::Quilt,
-				ClientType::LiteLoader => Modloader::LiteLoader,
-				ClientType::Risugamis => Modloader::Risugamis,
-				ClientType::Rift => Modloader::Rift,
-				_ => Modloader::Vanilla,
-			},
-			Side::Server => match self.server_type {
-				ServerType::None => self.modloader.clone(),
-				ServerType::Forge | ServerType::SpongeForge => Modloader::Forge,
-				ServerType::NeoForged => Modloader::NeoForged,
-				ServerType::Fabric => Modloader::Fabric,
-				ServerType::Quilt => Modloader::Quilt,
-				ServerType::Risugamis => Modloader::Risugamis,
-				ServerType::Rift => Modloader::Rift,
-				_ => Modloader::Vanilla,
-			},
-		}
-	}
-
-	/// Gets whether both client and server have the same modloader
-	pub fn common_modloader(&self) -> bool {
-		matches!(
-			(&self.client_type, &self.server_type),
-			(ClientType::None, ServerType::None)
-				| (ClientType::Vanilla, ServerType::Vanilla)
-				| (ClientType::Forge, ServerType::Forge)
-				| (ClientType::NeoForged, ServerType::NeoForged)
-				| (ClientType::Fabric, ServerType::Fabric)
-				| (ClientType::Quilt, ServerType::Quilt)
-				| (ClientType::Risugamis, ServerType::Risugamis)
-				| (ClientType::Rift, ServerType::Rift)
-		)
-	}
-}
-
-/// Check if a client type can be installed by MCVM
-pub fn can_install_client_type(client_type: &ClientType) -> bool {
-	matches!(client_type, ClientType::None | ClientType::Vanilla)
-}
-
-/// Check if a server type can be installed by MCVM
-pub fn can_install_server_type(server_type: &ServerType) -> bool {
-	matches!(
-		server_type,
-		ServerType::None
-			| ServerType::Vanilla
-			| ServerType::Paper
-			| ServerType::Folia
-			| ServerType::Sponge
-	)
+/// Check if a loader can be installed by MCVM
+pub fn can_install_loader(loader: &Loader) -> bool {
+	matches!(loader, Loader::Vanilla)
 }
 
 /// Get the paths on an instance to put addons in

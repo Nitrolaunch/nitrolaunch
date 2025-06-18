@@ -8,7 +8,6 @@ pub mod script;
 use anyhow::bail;
 use anyhow::Context;
 use async_trait::async_trait;
-use mcvm_config::instance::GameModifications;
 use mcvm_config::package::EvalPermissions;
 use mcvm_parse::routine::INSTALL_ROUTINE;
 use mcvm_parse::vars::HashMapVariableStore;
@@ -26,6 +25,7 @@ use mcvm_pkg::{
 };
 use mcvm_shared::addon::{is_addon_version_valid, is_filename_valid, Addon};
 use mcvm_shared::lang::Language;
+use mcvm_shared::loaders::Loader;
 use mcvm_shared::output;
 use mcvm_shared::output::MCVMOutput;
 use mcvm_shared::output::MessageContents;
@@ -101,8 +101,8 @@ pub struct EvalInput<'a> {
 pub struct EvalConstants {
 	/// The Minecraft version
 	pub version: String,
-	/// The modifications to the game
-	pub modifications: GameModifications,
+	/// The loader used
+	pub loader: Loader,
 	/// The list of available Minecraft versions
 	pub version_list: Vec<String>,
 	/// The user's configured language
@@ -302,25 +302,12 @@ pub fn eval_check_properties(
 		}
 	}
 
-	if let Some(supported_modloaders) = &properties.supported_modloaders {
-		if !supported_modloaders.iter().any(|x| {
-			x.matches(
-				&input
-					.constants
-					.modifications
-					.get_modloader(input.params.side),
-			)
-		}) {
-			bail!("Package does not support this modloader");
-		}
-	}
-
-	if let Some(supported_plugin_loaders) = &properties.supported_plugin_loaders {
-		if !supported_plugin_loaders
+	if let Some(supported_loaders) = &properties.supported_loaders {
+		if !supported_loaders
 			.iter()
-			.any(|x| x.matches(&input.constants.modifications.server_type()))
+			.any(|x| x.matches(&input.constants.loader))
 		{
-			bail!("Package does not support this plugin loader");
+			bail!("Package does not support this loader");
 		}
 	}
 

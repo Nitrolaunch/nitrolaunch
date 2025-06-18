@@ -11,9 +11,9 @@ use mcvm::config_crate::instance::{
 use mcvm_core::io::java::install::JavaInstallationKind;
 use mcvm_plugin::{api::CustomPlugin, hooks::ImportInstanceResult};
 use mcvm_shared::{
-	modifications::{ClientType, Modloader},
+	loaders::Loader,
 	output::{MCVMOutput, MessageContents, MessageLevel},
-	versions::VersionPattern,
+	versions::parse_versioned_string,
 	Side,
 };
 use serde::{Deserialize, Serialize};
@@ -67,22 +67,17 @@ fn main() -> anyhow::Result<()> {
 
 		let (min_mem, max_mem) = arg.config.common.launch.memory.to_min_max();
 
-		fn get_game_mod_version(
-			actual_modloader: Option<&Modloader>,
-			checked_modloader: Modloader,
-			game_mod_version: &Option<String>,
+		fn get_loader_version(
+			actual_loader: Option<&Loader>,
+			checked_loader: Loader,
+			loader_version: &Option<String>,
 		) -> String {
-			if actual_modloader == Some(&checked_modloader) {
-				game_mod_version.clone().unwrap_or_default()
+			if actual_loader == Some(&checked_loader) {
+				loader_version.clone().unwrap_or_default()
 			} else {
 				String::new()
 			}
 		}
-
-		let modloader = Modloader::from_client_and_server_type(
-			arg.config.common.client_type.clone().unwrap_or_default(),
-			arg.config.common.server_type.clone().unwrap_or_default(),
-		);
 
 		let java = if let JavaInstallationKind::Custom { .. } =
 			JavaInstallationKind::parse(&arg.config.common.launch.java)
@@ -105,6 +100,13 @@ fn main() -> anyhow::Result<()> {
 				}
 			};
 
+		let loader = arg
+			.config
+			.common
+			.loader
+			.as_ref()
+			.map(|x| Loader::parse_from_str(parse_versioned_string(x).0));
+
 		let meta = Metadata {
 			name: arg.config.name.unwrap_or_default(),
 			min_memory: min_mem.unwrap_or_default().to_bytes(),
@@ -113,27 +115,23 @@ fn main() -> anyhow::Result<()> {
 			mc_options: arg.config.common.launch.args.game.parse(),
 			runtime: RuntimeMetadata {
 				minecraft: arg.minecraft_version,
-				forge: get_game_mod_version(
-					modloader.as_ref(),
-					Modloader::Forge,
-					&arg.game_modification_version,
+				forge: get_loader_version(loader.as_ref(), Loader::Forge, &arg.loader_version),
+				liteloader: get_loader_version(
+					loader.as_ref(),
+					Loader::LiteLoader,
+					&arg.loader_version,
 				),
-				liteloader: get_game_mod_version(
-					modloader.as_ref(),
-					Modloader::LiteLoader,
-					&arg.game_modification_version,
-				),
-				fabric_loader: get_game_mod_version(
-					modloader.as_ref(),
-					Modloader::Fabric,
-					&arg.game_modification_version,
+				fabric_loader: get_loader_version(
+					loader.as_ref(),
+					Loader::Fabric,
+					&arg.loader_version,
 				),
 				yarn: String::new(),
 				optifine: String::new(),
-				quilt_loader: get_game_mod_version(
-					modloader.as_ref(),
-					Modloader::Quilt,
-					&arg.game_modification_version,
+				quilt_loader: get_loader_version(
+					loader.as_ref(),
+					Loader::Quilt,
+					&arg.loader_version,
 				),
 			},
 			java,
@@ -167,24 +165,24 @@ fn main() -> anyhow::Result<()> {
 		zip.extract(target_path)
 			.context("Failed to extract instance")?;
 
-		let (client_type, game_modification_version) = if !meta.runtime.forge.is_empty() {
-			(ClientType::Forge, Some(meta.runtime.forge))
+		let (loader, loader_version) = if !meta.runtime.forge.is_empty() {
+			(Loader::Forge, Some(meta.runtime.forge))
 		} else if !meta.runtime.liteloader.is_empty() {
-			(ClientType::LiteLoader, Some(meta.runtime.liteloader))
+			(Loader::LiteLoader, Some(meta.runtime.liteloader))
 		} else if !meta.runtime.fabric_loader.is_empty() {
-			(ClientType::Fabric, Some(meta.runtime.fabric_loader))
+			(Loader::Fabric, Some(meta.runtime.fabric_loader))
 		} else if !meta.runtime.quilt_loader.is_empty() {
-			(ClientType::Quilt, Some(meta.runtime.quilt_loader))
+			(Loader::Quilt, Some(meta.runtime.quilt_loader))
 		} else if !meta.runtime.optifine.is_empty() || !meta.runtime.yarn.is_empty() {
 			ctx.get_output().display(
 				MessageContents::Warning(
-					"MCVM does not understand the instance's game modification".into(),
+					"MCVM does not understand the instance's loader".into(),
 				),
 				MessageLevel::Important,
 			);
-			(ClientType::Vanilla, None)
+			(Loader::Vanilla, None)
 		} else {
-			(ClientType::Vanilla, None)
+			(Loader::Vanilla, None)
 		};
 
 		let quick_play = if !meta.server.host.is_empty() {
@@ -196,14 +194,19 @@ fn main() -> anyhow::Result<()> {
 			QuickPlay::None
 		};
 
+		let loader = serde_json::to_string(&loader)?.replace("\"", "");
+		let loader = if let Some(loader_version) = loader_version {
+			format!("{loader}@{loader_version}")
+		} else {
+			loader
+		};
+
 		Ok(ImportInstanceResult {
 			format: arg.format,
 			config: InstanceConfig {
 				name: Some(meta.name),
 				common: CommonInstanceConfig {
-					client_type: Some(client_type),
-					game_modification_version: game_modification_version
-						.map(VersionPattern::Single),
+					loader: Some(loader),
 					launch: LaunchConfig {
 						memory: LaunchMemory::Both {
 							min: meta.min_memory.to_string(),

@@ -17,6 +17,9 @@ pub struct ProfileConfig {
 	/// The configuration for the instance
 	#[serde(flatten)]
 	pub instance: InstanceConfig,
+	/// Loader configuration
+	#[serde(default)]
+	pub loader: ProfileLoaderConfiguration,
 	/// Package configuration
 	#[serde(default)]
 	pub packages: ProfilePackageConfiguration,
@@ -25,7 +28,62 @@ pub struct ProfileConfig {
 impl ProfileConfig {
 	/// Merge this profile with another one
 	pub fn merge(&mut self, other: Self) {
+		// FIXME: merge packages
 		self.instance = merge_instance_configs(&self.instance, other.instance);
+		self.loader.merge(&other.loader);
+	}
+}
+
+/// Different representations of loader configuration on a profile
+#[derive(Deserialize, Serialize, Debug, Clone)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
+#[serde(untagged)]
+pub enum ProfileLoaderConfiguration {
+	/// Same loader for client and server
+	Simple(Option<String>),
+	/// Full configuration
+	Full {
+		/// Loader for the client
+		client: Option<String>,
+		/// Loader for the server
+		server: Option<String>,
+	},
+}
+
+impl Default for ProfileLoaderConfiguration {
+	fn default() -> Self {
+		Self::Simple(None)
+	}
+}
+
+impl ProfileLoaderConfiguration {
+	/// Gets the client side of this configuration
+	pub fn client(&self) -> Option<&String> {
+		match self {
+			Self::Simple(loader) => loader.as_ref(),
+			Self::Full { client, .. } => client.as_ref(),
+		}
+	}
+
+	/// Gets the server side of this configuration
+	pub fn server(&self) -> Option<&String> {
+		match self {
+			Self::Simple(loader) => loader.as_ref(),
+			Self::Full { server, .. } => server.as_ref(),
+		}
+	}
+
+	/// Merges this configuration with another one
+	pub fn merge(&mut self, other: &Self) {
+		let out = Self::Full {
+			client: other.client().or(self.client()).cloned(),
+			server: other.server().or(self.server()).cloned(),
+		};
+		*self = if out.client() == out.server() {
+			Self::Simple(out.client().cloned())
+		} else {
+			out
+		};
 	}
 }
 

@@ -2,7 +2,7 @@ use anyhow::{bail, Context};
 use mcvm_core::Paths;
 use mcvm_mods::sponge;
 use mcvm_plugin::{api::CustomPlugin, hooks::OnInstanceSetupResult};
-use mcvm_shared::{modifications::ServerType, Side};
+use mcvm_shared::{loaders::Loader, Side};
 
 fn main() -> anyhow::Result<()> {
 	let mut plugin = CustomPlugin::from_manifest_file("sponge", include_str!("plugin.json"))?;
@@ -12,7 +12,7 @@ fn main() -> anyhow::Result<()> {
 		};
 
 		// Make sure this is a Sponge server instance
-		if side != Side::Server || arg.server_type != ServerType::Sponge {
+		if side != Side::Server || arg.loader != Loader::Sponge {
 			return Ok(OnInstanceSetupResult::default());
 		}
 

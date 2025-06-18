@@ -4,7 +4,7 @@ use anyhow::Context;
 use mcvm_parse::conditions::{ArchCondition, OSCondition};
 use mcvm_shared::addon::AddonKind;
 use mcvm_shared::lang::Language;
-use mcvm_shared::modifications::{ModloaderMatch, PluginLoaderMatch};
+use mcvm_shared::loaders::LoaderMatch;
 use mcvm_shared::pkg::{PackageAddonOptionalHashes, PackageStability};
 use mcvm_shared::util::DeserListOrSingle;
 use mcvm_shared::versions::VersionPattern;
@@ -104,12 +104,9 @@ pub struct DeclarativeConditionSet {
 	/// What side to allow
 	#[serde(skip_serializing_if = "Option::is_none")]
 	pub side: Option<Side>,
-	/// What modloaders to allow
+	/// What loaders to allow
 	#[serde(skip_serializing_if = "DeserListOrSingle::is_option_empty")]
-	pub modloaders: Option<DeserListOrSingle<ModloaderMatch>>,
-	/// What plugin loaders to allow
-	#[serde(skip_serializing_if = "DeserListOrSingle::is_option_empty")]
-	pub plugin_loaders: Option<DeserListOrSingle<PluginLoaderMatch>>,
+	pub loaders: Option<DeserListOrSingle<LoaderMatch>>,
 	/// What stability setting to allow
 	#[serde(skip_serializing_if = "Option::is_none")]
 	pub stability: Option<PackageStability>,

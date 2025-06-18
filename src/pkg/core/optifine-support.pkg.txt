@@ -6,7 +6,7 @@
 
 @install {
 	require <"optifine">;
-	if modloader fabriclike {
+	if loader fabriclike {
 		require "optifabric";
 	}
 }

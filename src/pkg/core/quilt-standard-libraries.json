@@ -5,7 +5,7 @@
 		"package_maintainers": [ "mcvm" ]
 	},
 	"properties": {
-		"supported_modloaders": [ "quilt" ]
+		"supported_loaders": [ "quilt" ]
 	},
 	"relations": {
 		"dependencies": [ "qfapi-qsl" ]

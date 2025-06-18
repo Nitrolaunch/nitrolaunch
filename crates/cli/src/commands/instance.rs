@@ -17,7 +17,7 @@ use mcvm::io::lock::Lockfile;
 use mcvm::shared::id::InstanceID;
 
 use mcvm::instance::launch::LaunchSettings;
-use mcvm::shared::modifications::{ClientType, ServerType};
+use mcvm::shared::loaders::Loader;
 use mcvm::shared::{Side, UpdateDepth};
 use reqwest::Client;
 
@@ -183,36 +183,11 @@ async fn info(data: &mut CmdData<'_>, id: &str) -> anyhow::Result<()> {
 	}
 	cprintln!();
 
-	if instance.get_config().modifications.common_modloader() {
-		print_indent();
-		if icons_enabled() {
-			print!("{} ", LOADER);
-		}
-		cprintln!(
-			"<s>Modloader:</s> <g>{}",
-			instance
-				.get_config()
-				.modifications
-				.get_modloader(Side::Client)
-		);
-	} else {
-		print_indent();
-		if icons_enabled() {
-			print!("{} ", LOADER);
-		}
-		cprintln!(
-			"<s>Client:</s> <g>{}",
-			instance.get_config().modifications.client_type()
-		);
-		print_indent();
-		if icons_enabled() {
-			print!("{} ", LOADER);
-		}
-		cprintln!(
-			"<s>Server:</s> <g>{}",
-			instance.get_config().modifications.server_type()
-		);
+	print_indent();
+	if icons_enabled() {
+		print!("{} ", LOADER);
 	}
+	cprintln!("<s>Loader:</s> <g>{}", instance.get_config().loader);
 
 	print_indent();
 	if icons_enabled() {
@@ -412,35 +387,24 @@ async fn add(data: &mut CmdData<'_>) -> anyhow::Result<()> {
 	let mut instance = InstanceBuilder::new(id.clone(), side);
 	instance.version(version);
 
-	match side {
+	let loader_options = match side {
 		Side::Client => {
-			let options = vec![
-				ClientType::None,
-				ClientType::Vanilla,
-				ClientType::Fabric,
-				ClientType::Quilt,
-			];
-			let client_type =
-				inquire::Select::new("What client type should the instance use?", options)
-					.prompt()?;
-			instance.client_type(client_type);
+			vec![Loader::Vanilla, Loader::Fabric, Loader::Quilt]
 		}
 		Side::Server => {
-			let options = vec![
-				ServerType::None,
-				ServerType::Vanilla,
-				ServerType::Fabric,
-				ServerType::Quilt,
-				ServerType::Paper,
-				ServerType::Sponge,
-				ServerType::Folia,
-			];
-			let server_type =
-				inquire::Select::new("What server type should the instance use?", options)
-					.prompt()?;
-			instance.server_type(server_type);
+			vec![
+				Loader::Vanilla,
+				Loader::Fabric,
+				Loader::Quilt,
+				Loader::Paper,
+				Loader::Sponge,
+				Loader::Folia,
+			]
 		}
-	}
+	};
+	let loader =
+		inquire::Select::new("What loader should the instance use?", loader_options).prompt()?;
+	instance.loader(serde_json::to_string(&loader)?.replace("\"", ""));
 
 	let instance_config = instance.build_config();
 

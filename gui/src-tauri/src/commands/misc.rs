@@ -3,28 +3,28 @@ use anyhow::Context;
 use mcvm::{
 	core::{net::game_files::version_manifest::VersionType, util::versions::MinecraftVersion},
 	instance::update::manager::UpdateManager,
-	plugin_crate::hooks::{AddSupportedGameModifications, SupportedGameModifications},
-	shared::{later::Later, output::NoOp, UpdateDepth},
+	plugin_crate::hooks::AddSupportedLoaders,
+	shared::{later::Later, loaders::Loader, output::NoOp, UpdateDepth},
 };
 
 use super::{fmt_err, load_config};
 
 #[tauri::command]
-pub async fn get_supported_game_modifications(
+pub async fn get_supported_loaders(
 	state: tauri::State<'_, State>,
-) -> Result<Vec<SupportedGameModifications>, String> {
+) -> Result<Vec<Loader>, String> {
 	let config = fmt_err(load_config(&state.paths, &mut NoOp).context("Failed to load config"))?;
 
 	let results = fmt_err(
 		config
 			.plugins
-			.call_hook(AddSupportedGameModifications, &(), &state.paths, &mut NoOp)
-			.context("Failed to get supported game modifications from plugins"),
+			.call_hook(AddSupportedLoaders, &(), &state.paths, &mut NoOp)
+			.context("Failed to get supported loaders from plugins"),
 	)?;
 	let mut out = Vec::with_capacity(results.len());
 	for result in results {
 		let result = fmt_err(result.result(&mut NoOp))?;
-		out.push(result);
+		out.extend(result);
 	}
 
 	Ok(out)

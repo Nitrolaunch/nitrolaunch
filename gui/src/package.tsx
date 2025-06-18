@@ -57,8 +57,7 @@ export interface PackageVersion {
 	addons: PackageAddon[];
 	minecraft_versions?: string | string[];
 	side?: Side;
-	modloaders?: Loader | Loader[];
-	plugin_loaders?: Loader | Loader[];
+	loaders?: Loader | Loader[];
 	stability?: "stable" | "latest";
 	features?: string | string[];
 	operating_systems?: string | string[];
@@ -87,8 +86,7 @@ export interface DeclarativeAddonVersion {
 	content_versions?: string | string[];
 	minecraft_versions?: string | string[];
 	side?: Side;
-	modloaders?: Loader | Loader[];
-	plugin_loaders?: Loader | Loader[];
+	loaders?: Loader | Loader[];
 	stability?: "stable" | "latest";
 	features?: string | string[];
 	operating_systems?: string | string[];

@@ -65,8 +65,9 @@ resulting from installing a certain modification
 		"version": string,
 		"versions": [string]
 	},
-	"client_type": ClientType,
-	"server_type": ServerType,
+	"loader": Loader,
+	"current_loader_version": string | null,
+	"desired_loader_version": string | null,
 	"config": InstanceConfig,
 	"internal_dir": string,
 	"update_depth": "shallow" | "full" | "force"
@@ -81,8 +82,8 @@ resulting from installing a certain modification
 }
 ```
 
-### `remove_game_modification`
-Called when the game modifications (client or server type) of an instance change, to allow cleaning up old or invalid files. Will be given the client / server type that needs to be removed.
+### `remove_loader`
+Called when the loader of an instance changes, to allow cleaning up old or invalid files. Will be given the loader that needs to be removed.
 - Argument:
 ```
 {
@@ -93,8 +94,7 @@ Called when the game modifications (client or server type) of an instance change
 		"version": string,
 		"versions": [string]
 	},
-	"client_type": ClientType,
-	"server_type": ServerType,
+	"loader": Loader,
 	"custom_config": {...},
 	"internal_dir": string,
 	"update_depth": "shallow" | "full" | "force"
@@ -249,7 +249,7 @@ Hook called on a specific plugin to export an instance using one of the formats 
 	"id": string,
 	"config": InstanceConfig,
 	"minecraft_version": string,
-	"game_modification_version": string,
+	"loader_version": string,
 	"game_dir": string,
 	"result_path": string
 }
@@ -280,17 +280,11 @@ Hook called on a specific plugin to import an instance using one of the formats 
 }
 ```
 
-### `add_supported_game_modifications`
-Adds extra game modifications to the list of supported ones for installation. This should be done
-if you plan to install these game modifications with your plugin.
+### `add_supported_loaders`
+Adds extra loaders to the list of supported ones for installation. This should be done
+if you plan to install these loaders with your plugin.
 - Argument: None
-- Result:
-```
-{
-	"client_types": [ClientType],
-	"server_types": [ServerType]
-}
-```
+- Result: Loader[]
 
 ### `add_instances`
 Adds new instances to the config

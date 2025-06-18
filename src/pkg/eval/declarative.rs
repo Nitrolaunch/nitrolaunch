@@ -6,7 +6,7 @@ use mcvm_pkg::declarative::{
 use mcvm_pkg::properties::PackageProperties;
 use mcvm_pkg::script_eval::AddonInstructionData;
 use mcvm_pkg::RequiredPackage;
-use mcvm_shared::modifications::{ModloaderMatch, PluginLoaderMatch};
+use mcvm_shared::loaders::LoaderMatch;
 use mcvm_shared::pkg::PackageID;
 
 use crate::plugin::PluginManager;
@@ -162,16 +162,8 @@ pub fn pick_best_addon_version<'a>(
 	// Sort so that versions with less loader matches come first
 	fn get_matches(version: &DeclarativeAddonVersion) -> u16 {
 		let mut out = 0;
-		if let Some(modloaders) = &version.conditional_properties.modloaders {
-			out += modloaders
-				.iter()
-				.fold(0, |acc, x| acc + get_modloader_matches(x));
-		}
-
-		if let Some(plugin_loaders) = &version.conditional_properties.plugin_loaders {
-			out += plugin_loaders
-				.iter()
-				.fold(0, |acc, x| acc + get_plugin_loader_matches(x));
+		if let Some(loaders) = &version.conditional_properties.loaders {
+			out += loaders.iter().fold(0, |acc, x| acc + get_loader_matches(x));
 		}
 
 		out
@@ -243,24 +235,8 @@ fn check_condition_set<'a>(
 		}
 	}
 
-	if let Some(modloaders) = &conditions.modloaders {
-		if !modloaders.iter().any(|x| {
-			x.matches(
-				&input
-					.constants
-					.modifications
-					.get_modloader(input.params.side),
-			)
-		}) {
-			return false;
-		}
-	}
-
-	if let Some(plugin_loaders) = &conditions.plugin_loaders {
-		if !plugin_loaders
-			.iter()
-			.any(|x| x.matches(&input.constants.modifications.server_type()))
-		{
+	if let Some(loaders) = &conditions.loaders {
+		if !loaders.iter().any(|x| x.matches(&input.constants.loader)) {
 			return false;
 		}
 	}
@@ -313,28 +289,20 @@ fn handle_no_matched_versions(addon: &DeclarativeAddon) -> anyhow::Result<()> {
 	bail!("No valid addon version found")
 }
 
-/// Get the number of matches that a modloader match can have
-fn get_modloader_matches(modloader: &ModloaderMatch) -> u16 {
-	match modloader {
-		ModloaderMatch::FabricLike | ModloaderMatch::ForgeLike => 2,
-		_ => 1,
-	}
-}
-
-/// Get the number of matches that a plugin loader match can have
-fn get_plugin_loader_matches(plugin_loader: &PluginLoaderMatch) -> u16 {
-	match plugin_loader {
-		PluginLoaderMatch::Bukkit => 8,
+/// Get the number of matches that a loader match can have
+fn get_loader_matches(loader: &LoaderMatch) -> u16 {
+	match loader {
+		LoaderMatch::FabricLike | LoaderMatch::ForgeLike => 2,
+		LoaderMatch::Bukkit => 8,
 		_ => 1,
 	}
 }
 
 #[cfg(test)]
 mod tests {
-	use mcvm_config::instance::GameModifications;
 	use mcvm_pkg::declarative::deserialize_declarative_package;
 	use mcvm_shared::lang::Language;
-	use mcvm_shared::modifications::{ClientType, Modloader, ServerType};
+	use mcvm_shared::loaders::Loader;
 	use mcvm_shared::pkg::PackageStability;
 	use mcvm_shared::util::DeserListOrSingle;
 	use mcvm_shared::Side;
@@ -354,13 +322,13 @@ mod tests {
 							{
 								"url": "example.com",
 								"minecraft_versions": [ "1.19.2" ],
-								"modloaders": [ "forge" ],
+								"loaders": [ "forge" ],
 								"version": "1"
 							},
 							{
 								"url": "example.com",
 								"minecraft_versions": [ "1.19.2" ],
-								"modloaders": [ "fabriclike" ],
+								"loaders": [ "fabriclike" ],
 								"version": "2",
 								"relations": {
 									"dependencies": [ "foo" ]
@@ -369,13 +337,13 @@ mod tests {
 							{
 								"url": "example.com",
 								"minecraft_versions": [ "1.19.3" ],
-								"modloaders": [ "fabriclike" ],
+								"loaders": [ "fabriclike" ],
 								"version": "3"
 							},
 							{
 								"url": "example.com",
 								"minecraft_versions": [ "1.19.2" ],
-								"modloaders": [ "fabriclike" ],
+								"loaders": [ "fabriclike" ],
 								"version": "4"
 							}
 						]
@@ -441,7 +409,9 @@ mod tests {
 	fn test_addon_version_picking() {
 		let version1 = DeclarativeAddonVersion {
 			conditional_properties: DeclarativeConditionSet {
-				modloaders: Some(DeserListOrSingle::List(vec![ModloaderMatch::Fabric])),
+				loaders: Some(DeserListOrSingle::List(vec![LoaderMatch::Loader(
+					Loader::Fabric,
+				)])),
 				content_versions: Some(DeserListOrSingle::Single("1".into())),
 				..Default::default()
 			},
@@ -451,7 +421,9 @@ mod tests {
 
 		let version2 = DeclarativeAddonVersion {
 			conditional_properties: DeclarativeConditionSet {
-				modloaders: Some(DeserListOrSingle::List(vec![ModloaderMatch::Fabric])),
+				loaders: Some(DeserListOrSingle::List(vec![LoaderMatch::Loader(
+					Loader::Fabric,
+				)])),
 				content_versions: Some(DeserListOrSingle::Single("2".into())),
 				..Default::default()
 			},
@@ -461,7 +433,7 @@ mod tests {
 
 		let version3 = DeclarativeAddonVersion {
 			conditional_properties: DeclarativeConditionSet {
-				modloaders: Some(DeserListOrSingle::List(vec![ModloaderMatch::FabricLike])),
+				loaders: Some(DeserListOrSingle::List(vec![LoaderMatch::FabricLike])),
 				content_versions: Some(DeserListOrSingle::Single("2".into())),
 				..Default::default()
 			},
@@ -492,11 +464,7 @@ mod tests {
 		EvalConstants {
 			version: "1.19.2".into(),
 			version_list: vec!["1.19.2".to_string(), "1.19.3".to_string()],
-			modifications: GameModifications::new(
-				Modloader::Fabric,
-				ClientType::Fabric,
-				ServerType::Fabric,
-			),
+			loader: Loader::Fabric,
 			language: Language::AmericanEnglish,
 			profile_stability: PackageStability::Latest,
 		}

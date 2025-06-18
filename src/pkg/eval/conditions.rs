@@ -1,5 +1,4 @@
 use mcvm_shared::versions::VersionPattern;
-use mcvm_shared::Side;
 
 use super::EvalData;
 use mcvm_parse::conditions::{ArchCondition, ConditionKind, OSCondition};
@@ -24,17 +23,7 @@ pub fn eval_condition(condition: &ConditionKind, eval: &EvalData) -> anyhow::Res
 			))
 		}
 		ConditionKind::Side(side) => Ok(eval.input.params.side == *side.get()),
-		ConditionKind::Modloader(loader) => Ok(loader.get().matches(
-			&eval
-				.input
-				.constants
-				.modifications
-				.get_modloader(eval.input.params.side),
-		)),
-		ConditionKind::PluginLoader(loader) => Ok(loader
-			.get()
-			.matches(&eval.input.constants.modifications.server_type())
-			&& matches!(eval.input.params.side, Side::Server)),
+		ConditionKind::Loader(loader) => Ok(loader.get().matches(&eval.input.constants.loader)),
 		ConditionKind::Feature(feature) => Ok(eval
 			.input
 			.params

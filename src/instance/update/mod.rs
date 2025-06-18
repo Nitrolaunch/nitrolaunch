@@ -104,7 +104,7 @@ impl Instance {
 
 				let constants = EvalConstants {
 					version: mc_version.to_string(),
-					modifications: self.config.modifications.clone(),
+					loader: self.config.loader.clone(),
 					version_list: manager.version_info.get().versions.clone(),
 					language: ctx.prefs.language,
 					profile_stability: self.config.package_stability,

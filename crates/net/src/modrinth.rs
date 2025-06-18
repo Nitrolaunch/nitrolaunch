@@ -1,9 +1,6 @@
 use crate::download::{self, user_agent};
 use anyhow::{anyhow, Context};
-use mcvm_shared::{
-	modifications::{Modloader, ServerType},
-	pkg::{PackageKind, PackageSearchParameters},
-};
+use mcvm_shared::pkg::{PackageKind, PackageSearchParameters};
 use reqwest::{Client, StatusCode};
 use serde::{Deserialize, Serialize};
 
@@ -23,7 +20,7 @@ pub struct Project {
 	/// The Minecraft versions this project is available for
 	pub game_versions: Vec<String>,
 	/// The loaders this project is available for
-	pub loaders: Vec<Loader>,
+	pub loaders: Vec<ModrinthLoader>,
 	/// The project's support on the client side
 	pub client_side: SideSupport,
 	/// The project's support on the server side
@@ -166,7 +163,7 @@ pub struct Version {
 	/// The type / release channel of this version
 	pub version_type: ReleaseChannel,
 	/// The loaders that this version supports
-	pub loaders: Vec<Loader>,
+	pub loaders: Vec<ModrinthLoader>,
 	/// The list of downloads for this version
 	pub files: Vec<Download>,
 	/// The game versions this version supports
@@ -182,7 +179,7 @@ pub struct Version {
 /// Loader for a Modrinth project version
 #[derive(Deserialize, Serialize, Clone)]
 #[serde(untagged)]
-pub enum Loader {
+pub enum ModrinthLoader {
 	/// A loader that is known
 	Known(KnownLoader),
 	/// A loader that we do not know about
@@ -236,34 +233,6 @@ pub enum KnownLoader {
 	BungeeCord,
 	/// Waterfall loader
 	Waterfall,
-}
-
-impl Loader {
-	/// Checks if this loader matches an mcvm modloader
-	pub fn matches_modloader(&self, modloader: &Modloader) -> bool {
-		match modloader {
-			Modloader::Forge => matches!(self, Self::Known(KnownLoader::Forge)),
-			Modloader::Fabric => matches!(self, Self::Known(KnownLoader::Fabric)),
-			Modloader::Quilt => matches!(self, Self::Known(KnownLoader::Quilt)),
-			_ => true,
-		}
-	}
-
-	/// Checks if this loader matches an mcvm plugin loader
-	pub fn matches_plugin_loader(&self, plugin_loader: &ServerType) -> bool {
-		match plugin_loader {
-			ServerType::Paper => matches!(
-				self,
-				Self::Known(
-					KnownLoader::Paper
-						| KnownLoader::Bukkit
-						| KnownLoader::Spigot
-						| KnownLoader::Sponge
-				)
-			),
-			_ => true,
-		}
-	}
 }
 
 impl Version {

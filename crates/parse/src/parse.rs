@@ -729,7 +729,10 @@ pub fn lex_and_parse(text: &str) -> anyhow::Result<Parsed> {
 
 #[cfg(test)]
 mod tests {
-	use mcvm_shared::{later::Later, modifications::ModloaderMatch};
+	use mcvm_shared::{
+		later::Later,
+		loaders::{Loader, LoaderMatch},
+	};
 
 	use super::*;
 	use crate::routine::{INSTALL_ROUTINE, METADATA_ROUTINE};
@@ -777,7 +780,7 @@ mod tests {
 	#[test]
 	fn test_and_condition_parse() {
 		let text = r#"@install {
-			if not modloader fabric and modloader forge {}
+			if not loader fabric and loader forge {}
 		}"#;
 		let parsed = lex_and_parse(text).unwrap();
 		let block = parsed
@@ -790,10 +793,10 @@ mod tests {
 					condition.kind,
 					ConditionKind::And(
 						Box::new(ConditionKind::Not(Later::Full(Box::new(
-							ConditionKind::Modloader(Later::Full(ModloaderMatch::Fabric))
+							ConditionKind::Loader(Later::Full(LoaderMatch::Loader(Loader::Fabric)))
 						)))),
-						Later::Full(Box::new(ConditionKind::Modloader(Later::Full(
-							ModloaderMatch::Forge
+						Later::Full(Box::new(ConditionKind::Loader(Later::Full(
+							LoaderMatch::Loader(Loader::Forge)
 						)))),
 					)
 				)

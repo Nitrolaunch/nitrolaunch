@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use anyhow::bail;
 use mcvm_shared::later::Later;
-use mcvm_shared::modifications::{ModloaderMatch, PluginLoaderMatch};
+use mcvm_shared::loaders::LoaderMatch;
 use mcvm_shared::pkg::{PackageAddonHashes, PackageCategory};
 use mcvm_shared::util::yes_no;
 use mcvm_shared::versions::VersionPattern;
@@ -86,10 +86,8 @@ pub enum InstrKind {
 	SmithedID(Later<String>),
 	/// Set the package supported versions property
 	SupportedVersions(Vec<VersionPattern>),
-	/// Set the package supported modloaders property
-	SupportedModloaders(Vec<ModloaderMatch>),
-	/// Set the package supported plugin loaders property
-	SupportedPluginLoaders(Vec<PluginLoaderMatch>),
+	/// Set the package supported loaders property
+	SupportedLoaders(Vec<LoaderMatch>),
 	/// Set the package supported sides property
 	SupportedSides(Vec<Side>),
 	/// Set the package supported operating systems property
@@ -185,8 +183,7 @@ impl Display for InstrKind {
 				Self::CurseForgeID(..) => "curseforge_id",
 				Self::SmithedID(..) => "smithed_id",
 				Self::SupportedVersions(..) => "supported_versions",
-				Self::SupportedModloaders(..) => "supported_modloaders",
-				Self::SupportedPluginLoaders(..) => "supported_plugin_loaders",
+				Self::SupportedLoaders(..) => "supported_loaders",
 				Self::SupportedSides(..) => "supported_sides",
 				Self::SupportedOperatingSystems(..) => "supported_operating_systems",
 				Self::SupportedArchitectures(..) => "supported_architectures",
@@ -240,10 +237,10 @@ impl Instruction {
 			"default_features" => Ok(InstrKind::DefaultFeatures(Vec::new())),
 			"content_versions" => Ok(InstrKind::ContentVersions(Vec::new())),
 			"modrinth_id" => Ok(InstrKind::ModrinthID(Later::Empty)),
+			"smithed_id" => Ok(InstrKind::SmithedID(Later::Empty)),
 			"curseforge_id" => Ok(InstrKind::CurseForgeID(Later::Empty)),
 			"supported_versions" => Ok(InstrKind::SupportedVersions(Vec::new())),
-			"supported_modloaders" => Ok(InstrKind::SupportedModloaders(Vec::new())),
-			"supported_plugin_loaders" => Ok(InstrKind::SupportedPluginLoaders(Vec::new())),
+			"supported_loaders" => Ok(InstrKind::SupportedLoaders(Vec::new())),
 			"supported_sides" => Ok(InstrKind::SupportedSides(Vec::new())),
 			"supported_operating_systems" => Ok(InstrKind::SupportedOperatingSystems(Vec::new())),
 			"supported_architectures" => Ok(InstrKind::SupportedArchitectures(Vec::new())),
@@ -302,8 +299,7 @@ impl Instruction {
 			| InstrKind::Notice(val) => val.is_some(),
 			InstrKind::Categories(val) => !val.is_empty(),
 			InstrKind::SupportedVersions(val) => !val.is_empty(),
-			InstrKind::SupportedModloaders(val) => !val.is_empty(),
-			InstrKind::SupportedPluginLoaders(val) => !val.is_empty(),
+			InstrKind::SupportedLoaders(val) => !val.is_empty(),
 			InstrKind::SupportedSides(val) => !val.is_empty(),
 			InstrKind::SupportedOperatingSystems(val) => !val.is_empty(),
 			InstrKind::SupportedArchitectures(val) => !val.is_empty(),
@@ -394,23 +390,9 @@ impl Instruction {
 						}
 					}
 				},
-				InstrKind::SupportedModloaders(list) => match tok {
+				InstrKind::SupportedLoaders(list) => match tok {
 					Token::Ident(name) => {
-						if let Some(val) = ModloaderMatch::parse_from_str(name) {
-							list.push(val);
-						} else {
-							bail!("Value is not a valid modloader match argument")
-						}
-					}
-					_ => unexpected_token!(tok, pos),
-				},
-				InstrKind::SupportedPluginLoaders(list) => match tok {
-					Token::Ident(name) => {
-						if let Some(val) = PluginLoaderMatch::parse_from_str(name) {
-							list.push(val);
-						} else {
-							bail!("Value is not a valid plugin loader match argument")
-						}
+						list.push(LoaderMatch::parse_from_str(name));
 					}
 					_ => unexpected_token!(tok, pos),
 				},

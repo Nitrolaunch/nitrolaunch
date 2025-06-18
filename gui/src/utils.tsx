@@ -77,6 +77,14 @@ export function pkgRequestToString(request: PkgRequest) {
 	return `${repo}${request.id}${version}`;
 }
 
+// Parses a versioned string (object@version) into parts
+export function parseVersionedString(
+	object: string
+): [string, string | undefined] {
+	let split = object.split("@");
+	return [split[0], split.length > 1 ? split[1] : undefined];
+}
+
 // Canonicalizes a common deserializion format (DeserListOrSingle) and an optional to just an array
 export function canonicalizeListOrSingle<T>(value: T | T[] | undefined) {
 	if (value == undefined) {

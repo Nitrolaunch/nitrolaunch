@@ -6,11 +6,11 @@
 }
 
 @install {
-	if modloader forgelike {
+	if loader forgelike {
 		require "optifine-support";
 		finish;
 	}
-	if modloader fabriclike {
+	if loader fabriclike {
 		bundle "animated-textures-support";
 		bundle "cem-support";
 		bundle "cit-support";
@@ -27,5 +27,5 @@
 		
 		finish;
 	}
-	fail unsupported_modloader;
+	fail unsupported_loader;
 }

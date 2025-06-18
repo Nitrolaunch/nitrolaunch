@@ -152,3 +152,22 @@ export function getLoaderColor(loader: Loader) {
 		return "var(--fg2)";
 	}
 }
+
+export function getLoaderSide(loader: string) {
+	if (
+		loader == "none" ||
+		loader == "vanilla" ||
+		loader == "fabric" ||
+		loader == "quilt" ||
+		loader == "forge" ||
+		loader == "neoforged" ||
+		loader == "rift" ||
+		loader == "risugamis"
+	) {
+		return undefined;
+	} else if (loader == "liteloader") {
+		return "client";
+	} else {
+		return "server";
+	}
+}

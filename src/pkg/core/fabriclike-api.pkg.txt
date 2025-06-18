@@ -5,13 +5,13 @@
 }
 
 @install {
-	if modloader fabric {
+	if loader fabric {
 		require "fabric-api";
 		finish;
 	}
-	if modloader quilt {
+	if loader quilt {
 		require "quilted-fabric-api";
 		finish;
 	}
-	fail unsupported_modloader;
+	fail unsupported_loader;
 }

@@ -9,7 +9,7 @@ use mcvm_pkg::script_eval::AddonInstructionData;
 use mcvm_pkg::{PackageContentType, RecommendedPackage, RequiredPackage};
 use mcvm_shared::id::{InstanceID, ProfileID};
 use mcvm_shared::lang::translate::LanguageMap;
-use mcvm_shared::modifications::{ClientType, ServerType};
+use mcvm_shared::loaders::Loader;
 use mcvm_shared::pkg::{PackageID, PackageSearchParameters, PackageSearchResults};
 use mcvm_shared::versions::VersionPattern;
 use mcvm_shared::UpdateDepth;
@@ -149,7 +149,7 @@ def_hook!(
 	"Hook for doing work when setting up an instance for update or launch",
 	OnInstanceSetupArg,
 	OnInstanceSetupResult,
-	2,
+	3,
 );
 
 /// Argument for the OnInstanceSetup hook
@@ -164,14 +164,12 @@ pub struct OnInstanceSetupArg {
 	pub game_dir: String,
 	/// Version info for the instance
 	pub version_info: VersionInfo,
-	/// The client type of the instance. Doesn't apply if the instance is a server
-	pub client_type: ClientType,
-	/// The server type of the instance. Doesn't apply if the instance is a client
-	pub server_type: ServerType,
-	/// The current version of the game modification, as stored in the lockfile. Can be used to detect version changes.
-	pub current_game_modification_version: Option<String>,
-	/// The desired version of the game modification
-	pub desired_game_modification_version: Option<VersionPattern>,
+	/// The loader of the instance
+	pub loader: Loader,
+	/// The current version of the loader, as stored in the lockfile. Can be used to detect version changes.
+	pub current_loader_version: Option<String>,
+	/// The desired version of the loader
+	pub desired_loader_version: Option<VersionPattern>,
 	/// Instance configuration
 	pub config: InstanceConfig,
 	/// Path to the MCVM internal dir
@@ -190,17 +188,17 @@ pub struct OnInstanceSetupResult {
 	pub jar_path_override: Option<String>,
 	/// Optional extension to the classpath, as a list of paths
 	pub classpath_extension: Vec<String>,
-	/// Optional new version for the game modification
-	pub game_modification_version: Option<String>,
+	/// Optional new version for the loader
+	pub loader_version: Option<String>,
 }
 
 def_hook!(
-	RemoveGameModification,
-	"remove_game_modification",
-	"Hook for removing a game modification from an instance when the game modification or version changes",
+	RemoveLoader,
+	"remove_loader",
+	"Hook for removing a loader from an instance when the loader or version changes",
 	OnInstanceSetupArg,
 	(),
-	2,
+	1,
 );
 
 def_hook!(
@@ -385,7 +383,7 @@ def_hook!(
 	"Hook for exporting an instance",
 	ExportInstanceArg,
 	(),
-	2,
+	3,
 );
 
 /// Argument provided to the export_instance hook
@@ -400,8 +398,8 @@ pub struct ExportInstanceArg {
 	pub config: InstanceConfig,
 	/// The actual Minecraft version of the instance
 	pub minecraft_version: String,
-	/// The actual game modification version of the instance
-	pub game_modification_version: Option<String>,
+	/// The actual loader version of the instance
+	pub loader_version: Option<String>,
 	/// The directory where the instance game files are located
 	pub game_dir: String,
 	/// The desired path for the resulting instance, as a file path
@@ -442,23 +440,13 @@ pub struct ImportInstanceResult {
 }
 
 def_hook!(
-	AddSupportedGameModifications,
-	"add_supported_game_modifications",
-	"Tell MCVM that you support installing extra game modifications",
+	AddSupportedLoaders,
+	"add_supported_loaders",
+	"Tell MCVM that you support installing extra loaders",
 	(),
-	SupportedGameModifications,
-	1,
+	Vec<Loader>,
+	2,
 );
-
-/// Game modifications with added support by a plugin
-#[derive(Serialize, Deserialize, Default)]
-#[serde(default)]
-pub struct SupportedGameModifications {
-	/// Client types that this plugin adds support for
-	pub client_types: Vec<ClientType>,
-	/// Server types that this plugin adds support for
-	pub server_types: Vec<ServerType>,
-}
 
 def_hook!(
 	AddInstances,

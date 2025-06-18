@@ -11,7 +11,6 @@ use mcvm_core::user::{User, UserManager};
 use mcvm_core::util::versions::MinecraftVersionDeser;
 use mcvm_plugin::plugin::PluginManifest;
 use mcvm_shared::id::InstanceID;
-use mcvm_shared::modifications::{ClientType, Modloader, ServerType};
 use mcvm_shared::output::MCVMOutput;
 use mcvm_shared::pkg::{PackageID, PackageStability};
 use mcvm_shared::Side;
@@ -215,21 +214,9 @@ impl<'parent> InstanceBuilder<'parent> {
 		self
 	}
 
-	/// Set the modloader of the instance
-	pub fn modloader(&mut self, modloader: Modloader) -> &mut Self {
-		self.config.common.modloader = Some(modloader);
-		self
-	}
-
-	/// Set the client type of the instance
-	pub fn client_type(&mut self, client_type: ClientType) -> &mut Self {
-		self.config.common.client_type = Some(client_type);
-		self
-	}
-
-	/// Set the server type of the instance
-	pub fn server_type(&mut self, server_type: ServerType) -> &mut Self {
-		self.config.common.server_type = Some(server_type);
+	/// Set the loader of the instance
+	pub fn loader(&mut self, loader: String) -> &mut Self {
+		self.config.common.loader = Some(loader);
 		self
 	}
 

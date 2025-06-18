@@ -12,7 +12,7 @@ use mcvm_mods::paper::{self, BuildInfoResponse};
 use mcvm_net::download::Client;
 use mcvm_plugin::{api::CustomPlugin, hooks::OnInstanceSetupResult};
 use mcvm_shared::{
-	modifications::ServerType,
+	loaders::Loader,
 	output::{MCVMOutput, MessageContents, MessageLevel, OutputProcess},
 	versions::VersionPattern,
 	Side, UpdateDepth,
@@ -27,13 +27,11 @@ fn main() -> anyhow::Result<()> {
 		};
 
 		// Make sure this is a Paper or Folia server instance
-		if side != Side::Server
-			|| (arg.server_type != ServerType::Paper && arg.server_type != ServerType::Folia)
-		{
+		if side != Side::Server || (arg.loader != Loader::Paper && arg.loader != Loader::Folia) {
 			return Ok(OnInstanceSetupResult::default());
 		}
 
-		let mode = if arg.server_type == ServerType::Paper {
+		let mode = if arg.loader == Loader::Paper {
 			paper::Mode::Paper
 		} else {
 			paper::Mode::Folia
@@ -93,7 +91,7 @@ fn main() -> anyhow::Result<()> {
 		let build_nums_strings: Vec<_> = build_nums.iter().map(|x| x.to_string()).collect();
 
 		let desired_version = arg
-			.desired_game_modification_version
+			.desired_loader_version
 			.unwrap_or(VersionPattern::Any)
 			.get_match(&build_nums_strings)
 			.with_context(|| format!("Failed to find the given {mode} version"))?;
@@ -101,9 +99,8 @@ fn main() -> anyhow::Result<()> {
 			.parse()
 			.context("The desired version must be a an unsigned integer")?;
 
-		let current_build_num: Option<u16> = arg
-			.current_game_modification_version
-			.and_then(|x| x.parse().ok());
+		let current_build_num: Option<u16> =
+			arg.current_loader_version.and_then(|x| x.parse().ok());
 
 		// If the new and current build nums mismatch, then get info for the current build num and
 		// use it to teardown
@@ -175,7 +172,7 @@ fn main() -> anyhow::Result<()> {
 		Ok(OnInstanceSetupResult {
 			main_class_override: Some(main_class.into()),
 			jar_path_override: Some(jar_path.to_string_lossy().to_string()),
-			game_modification_version: Some(desired_build_num.to_string()),
+			loader_version: Some(desired_build_num.to_string()),
 			..Default::default()
 		})
 	})?;

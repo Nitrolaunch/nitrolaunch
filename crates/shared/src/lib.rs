@@ -11,7 +11,7 @@ pub mod addon;
 /// Tools for languages and language detection
 pub mod lang;
 /// Enums for modifications to the game
-pub mod modifications;
+pub mod loaders;
 /// MCVM output
 pub mod output;
 /// Common package constructs

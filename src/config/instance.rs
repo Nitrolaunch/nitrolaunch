@@ -6,17 +6,18 @@ use crate::instance::{InstKind, Instance, InstanceStoredConfig};
 use crate::io::paths::Paths;
 use anyhow::{bail, ensure, Context};
 use mcvm_config::instance::{
-	is_valid_instance_id, merge_instance_configs, GameModifications, InstanceConfig, LaunchConfig,
-	LaunchMemory,
+	is_valid_instance_id, merge_instance_configs, InstanceConfig, LaunchConfig, LaunchMemory,
 };
 use mcvm_config::package::PackageConfigDeser;
-use mcvm_config::profile::ProfileConfig;
+use mcvm_config::profile::{ProfileConfig, ProfileLoaderConfiguration};
 use mcvm_core::io::java::args::MemoryNum;
 use mcvm_core::io::java::install::JavaInstallationKind;
 use mcvm_pkg::{PkgRequest, PkgRequestSource};
 use mcvm_plugin::hooks::{ModifyInstanceConfig, ModifyInstanceConfigArgument};
 use mcvm_shared::id::{InstanceID, ProfileID};
+use mcvm_shared::loaders::Loader;
 use mcvm_shared::output::MCVMOutput;
+use mcvm_shared::versions::parse_versioned_string;
 use mcvm_shared::Side;
 
 use crate::plugin::PluginManager;
@@ -71,7 +72,7 @@ pub fn read_instance_config(
 	let side = config.side.context("Instance type was not specified")?;
 
 	// Consolidate all of the package configs into the instance package config list
-	let packages = consolidate_package_configs(profiles, &config, side);
+	let packages = consolidate_package_configs(&profiles, &config, side);
 
 	original_config_with_profiles.common.packages = packages.clone();
 
@@ -85,11 +86,28 @@ pub fn read_instance_config(
 		Side::Server => InstKind::server(),
 	};
 
-	let game_modifications = GameModifications::new(
-		config.common.modloader.clone().unwrap_or_default(),
-		config.common.client_type.clone().unwrap_or_default(),
-		config.common.server_type.clone().unwrap_or_default(),
-	);
+	// Loader
+	let profile_loaders =
+		profiles
+			.iter()
+			.fold(ProfileLoaderConfiguration::default(), |mut acc, profile| {
+				acc.merge(&profile.loader);
+				acc
+			});
+
+	let loader = match side {
+		Side::Client => config.common.loader.or(profile_loaders.client().cloned()),
+		Side::Server => config.common.loader.or(profile_loaders.server().cloned()),
+	};
+
+	original_config_with_profiles.common.loader = loader.clone();
+
+	let (loader, loader_version) = if let Some(loader) = loader {
+		let (loader, version) = parse_versioned_string(&loader);
+		(Loader::parse_from_str(loader), Some(version))
+	} else {
+		(Loader::Vanilla, None)
+	};
 
 	let version = config
 		.common
@@ -102,8 +120,8 @@ pub fn read_instance_config(
 		name: config.name,
 		icon: config.icon,
 		version,
-		modifications: game_modifications,
-		modification_version: config.common.game_modification_version,
+		loader,
+		loader_version,
 		launch: launch_config_to_options(config.common.launch)?,
 		datapack_folder: config.common.datapack_folder,
 		packages,
@@ -154,7 +172,7 @@ pub fn launch_config_to_options(config: LaunchConfig) -> anyhow::Result<LaunchOp
 /// Combines all of the package configs from global, profile, and instance together into
 /// the configurations for just one instance
 pub fn consolidate_package_configs(
-	profiles: Vec<&ProfileConfig>,
+	profiles: &[&ProfileConfig],
 	instance: &InstanceConfig,
 	side: Side,
 ) -> Vec<PackageConfigDeser> {

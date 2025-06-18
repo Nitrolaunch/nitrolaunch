@@ -145,14 +145,11 @@ export default function ViewPackage(props: ViewPackageProps) {
 									categories={
 										meta()!.categories == undefined ? [] : meta()!.categories!
 									}
-									loaders={(properties()!.supported_modloaders == undefined
-										? []
-										: properties()!.supported_modloaders!
-									).concat(
-										properties()!.supported_plugin_loaders == undefined
+									loaders={
+										properties()!.supported_loaders == undefined
 											? []
-											: properties()!.supported_plugin_loaders!
-									)}
+											: properties()!.supported_loaders!
+									}
 								/>
 							</div>
 						</div>

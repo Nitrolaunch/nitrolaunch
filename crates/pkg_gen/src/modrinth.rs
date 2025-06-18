@@ -9,14 +9,14 @@ use mcvm_pkg::metadata::PackageMetadata;
 use mcvm_pkg::properties::PackageProperties;
 use mcvm_pkg::RecommendedPackage;
 use mcvm_shared::addon::AddonKind;
-use mcvm_shared::modifications::{ModloaderMatch, PluginLoaderMatch};
+use mcvm_shared::loaders::{Loader, LoaderMatch};
 use mcvm_shared::pkg::{PackageCategory, PackageKind, PackageStability};
 use mcvm_shared::util::DeserListOrSingle;
 use mcvm_shared::versions::VersionPattern;
 
 use mcvm_net::modrinth::{
-	self, DependencyType, GalleryEntry, KnownLoader, License, Loader, Member, Project, ProjectType,
-	ReleaseChannel, SideSupport, Version,
+	self, DependencyType, GalleryEntry, KnownLoader, License, Member, ModrinthLoader, Project,
+	ProjectType, ReleaseChannel, SideSupport, Version,
 };
 use mcvm_shared::Side;
 
@@ -190,8 +190,7 @@ pub async fn gen(
 		.context("Failed to substitute relations")?;
 
 	let mut content_versions = Vec::with_capacity(versions.len());
-	let mut all_modloaders = HashSet::new();
-	let mut all_plugin_loaders = HashSet::new();
+	let mut all_loaders = HashSet::new();
 
 	for version in versions {
 		let version_name = version.id.clone();
@@ -203,33 +202,34 @@ pub async fn gen(
 			.collect();
 
 		// Look at loaders
-		let mut modloaders = Vec::new();
-		let mut plugin_loaders = Vec::new();
+		let mut loaders = Vec::new();
 		let mut skip = false;
 		for loader in &version.loaders {
 			match loader {
-				Loader::Known(loader) => match loader {
-					KnownLoader::Fabric => modloaders.push(if make_fabriclike {
-						ModloaderMatch::FabricLike
+				ModrinthLoader::Known(loader) => match loader {
+					KnownLoader::Fabric => loaders.push(if make_fabriclike {
+						LoaderMatch::FabricLike
 					} else {
-						ModloaderMatch::Fabric
+						LoaderMatch::Loader(Loader::Fabric)
 					}),
-					KnownLoader::Quilt => modloaders.push(ModloaderMatch::Quilt),
-					KnownLoader::Forge => modloaders.push(if make_forgelike {
-						ModloaderMatch::ForgeLike
+					KnownLoader::Quilt => loaders.push(LoaderMatch::Loader(Loader::Quilt)),
+					KnownLoader::Forge => loaders.push(if make_forgelike {
+						LoaderMatch::ForgeLike
 					} else {
-						ModloaderMatch::Forge
+						LoaderMatch::Loader(Loader::Forge)
 					}),
-					KnownLoader::NeoForged => modloaders.push(ModloaderMatch::NeoForged),
-					KnownLoader::Rift => modloaders.push(ModloaderMatch::Rift),
-					KnownLoader::Liteloader => modloaders.push(ModloaderMatch::LiteLoader),
-					KnownLoader::Risugamis => modloaders.push(ModloaderMatch::Risugamis),
-					KnownLoader::Bukkit => plugin_loaders.push(PluginLoaderMatch::Bukkit),
-					KnownLoader::Folia => plugin_loaders.push(PluginLoaderMatch::Folia),
-					KnownLoader::Spigot => plugin_loaders.push(PluginLoaderMatch::Spigot),
-					KnownLoader::Sponge => plugin_loaders.push(PluginLoaderMatch::Sponge),
-					KnownLoader::Paper => plugin_loaders.push(PluginLoaderMatch::Paper),
-					KnownLoader::Purpur => plugin_loaders.push(PluginLoaderMatch::Purpur),
+					KnownLoader::NeoForged => loaders.push(LoaderMatch::Loader(Loader::NeoForged)),
+					KnownLoader::Rift => loaders.push(LoaderMatch::Loader(Loader::Rift)),
+					KnownLoader::Liteloader => {
+						loaders.push(LoaderMatch::Loader(Loader::LiteLoader))
+					}
+					KnownLoader::Risugamis => loaders.push(LoaderMatch::Loader(Loader::Risugamis)),
+					KnownLoader::Bukkit => loaders.push(LoaderMatch::Bukkit),
+					KnownLoader::Folia => loaders.push(LoaderMatch::Loader(Loader::Folia)),
+					KnownLoader::Spigot => loaders.push(LoaderMatch::Loader(Loader::Spigot)),
+					KnownLoader::Sponge => loaders.push(LoaderMatch::Loader(Loader::Sponge)),
+					KnownLoader::Paper => loaders.push(LoaderMatch::Loader(Loader::Paper)),
+					KnownLoader::Purpur => loaders.push(LoaderMatch::Loader(Loader::Purpur)),
 					// Skip over these versions for now
 					KnownLoader::Datapack
 					| KnownLoader::BungeeCord
@@ -238,15 +238,15 @@ pub async fn gen(
 					// We don't care about these
 					KnownLoader::Iris | KnownLoader::Optifine | KnownLoader::Minecraft => {}
 				},
-				Loader::Unknown(other) => panic!("Unknown loader {other}"),
+				ModrinthLoader::Unknown(other) => bail!("Unknown loader {other}"),
 			}
 		}
 		if skip {
 			continue;
 		}
 
-		all_modloaders.extend(modloaders.clone());
-		all_plugin_loaders.extend(plugin_loaders.clone());
+		all_loaders.extend(loaders.clone());
+		all_loaders.extend(loaders.clone());
 
 		// Get stability
 		let stability = match version.version_type {
@@ -305,8 +305,7 @@ pub async fn gen(
 			version: Some(version_name),
 			conditional_properties: DeclarativeConditionSet {
 				minecraft_versions: Some(DeserListOrSingle::List(mc_versions)),
-				modloaders: Some(DeserListOrSingle::List(modloaders)),
-				plugin_loaders: Some(DeserListOrSingle::List(plugin_loaders)),
+				loaders: Some(DeserListOrSingle::List(loaders)),
 				stability: Some(stability),
 				content_versions: Some(DeserListOrSingle::Single(content_version)),
 				..Default::default()
@@ -331,8 +330,7 @@ pub async fn gen(
 	}
 
 	props.content_versions = Some(content_versions);
-	props.supported_modloaders = Some(all_modloaders.into_iter().collect());
-	props.supported_plugin_loaders = Some(all_plugin_loaders.into_iter().collect());
+	props.supported_loaders = Some(all_loaders.into_iter().collect());
 
 	let mut addon_map = HashMap::new();
 	addon_map.insert("addon".into(), addon);
@@ -357,7 +355,7 @@ fn get_supported_sides(project: &Project) -> Vec<Side> {
 	out
 }
 
-/// Cleanup a version name to remove things like modloaders
+/// Cleanup a version name to remove things like loaders
 fn cleanup_version_name(version: &str) -> String {
 	// static MODLOADER_REGEX: OnceLock<Regex> = OnceLock::new();
 	// let regex = MODLOADER_REGEX.get_or_init(|| {

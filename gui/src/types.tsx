@@ -56,8 +56,7 @@ export interface PackageMeta {
 
 export interface PackageProperties {
 	supported_versions?: string[];
-	supported_modloaders?: string[];
-	supported_plugin_loaders?: string[];
+	supported_loaders?: string[];
 	supported_sides?: Side[];
 	content_versions?: string[];
 }

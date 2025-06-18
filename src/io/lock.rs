@@ -4,7 +4,7 @@ use std::path::PathBuf;
 
 use anyhow::{anyhow, bail, Context};
 use mcvm_core::io::{json_from_file, json_to_file_pretty};
-use mcvm_shared::modifications::{ClientType, ServerType};
+use mcvm_shared::loaders::Loader;
 use mcvm_shared::output::{MCVMOutput, MessageContents};
 use mcvm_shared::translate;
 use serde::{Deserialize, Serialize};
@@ -33,9 +33,8 @@ struct LockfileContents {
 #[serde(default)]
 pub(crate) struct LockfileInstance {
 	pub(crate) version: String,
-	pub(crate) game_modification_version: Option<String>,
-	pub(crate) client_type: ClientType,
-	pub(crate) server_type: ServerType,
+	pub(crate) loader: Loader,
+	pub(crate) loader_version: Option<String>,
 }
 
 /// Package stored in the lockfile
@@ -279,9 +278,8 @@ impl Lockfile {
 				instance.to_string(),
 				LockfileInstance {
 					version: version.to_string(),
-					game_modification_version: None,
-					client_type: ClientType::Vanilla,
-					server_type: ServerType::Vanilla,
+					loader_version: None,
+					loader: Loader::Vanilla,
 				},
 			);
 		}
@@ -297,30 +295,28 @@ impl Lockfile {
 		}
 	}
 
-	/// Updates the game modifications of an instance
-	pub fn update_instance_game_modifications(
+	/// Updates the loader of an instance
+	pub fn update_instance_loader(
 		&mut self,
 		instance: &str,
-		client_type: ClientType,
-		server_type: ServerType,
+		loader: Loader,
 	) -> anyhow::Result<()> {
 		if let Some(instance) = self.contents.instances.get_mut(instance) {
-			instance.client_type = client_type;
-			instance.server_type = server_type;
+			instance.loader = loader;
 			Ok(())
 		} else {
 			bail!("Instance {instance} does not exist")
 		}
 	}
 
-	/// Updates the game modification version of an instance
-	pub fn update_instance_game_modification_version(
+	/// Updates the loader version of an instance
+	pub fn update_instance_loader_version(
 		&mut self,
 		instance: &str,
 		version: Option<String>,
 	) -> anyhow::Result<()> {
 		if let Some(instance) = self.contents.instances.get_mut(instance) {
-			instance.game_modification_version = version;
+			instance.loader_version = version;
 			Ok(())
 		} else {
 			bail!("Instance {instance} does not exist")

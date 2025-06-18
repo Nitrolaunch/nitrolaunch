@@ -6,17 +6,11 @@
 		"on_instance_setup": {
 			"executable": "${PLUGIN_DIR}/mcvm_plugin_fabric_quilt"
 		},
-		"add_supported_game_modifications": {
-			"constant": {
-				"client_types": [
-					"fabric",
-					"quilt"
-				],
-				"server_types": [
-					"fabric",
-					"quilt"
-				]
-			}
+		"add_supported_loaders": {
+			"constant": [
+				"fabric",
+				"quilt"
+			]
 		}
 	}
 }
