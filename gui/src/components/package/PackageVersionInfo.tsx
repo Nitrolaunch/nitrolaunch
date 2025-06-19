@@ -66,6 +66,8 @@ export default function PackageVersionInfo(props: PackageVersionInfoProps) {
 				allPackages.add(pkg);
 			}
 
+			console.log(allPackages);
+
 			let promises = [];
 			for (let pkg of allPackages) {
 				promises.push(
@@ -135,7 +137,7 @@ export default function PackageVersionInfo(props: PackageVersionInfoProps) {
 							meta={packageMetas()!}
 						/>
 						<RelationList
-							header="extensions"
+							header="Extensions"
 							icon={Link}
 							packages={extensions()}
 							meta={packageMetas()!}
@@ -202,7 +204,7 @@ function RelationList(props: RelationListProps) {
 					<Icon icon={props.icon} size="1.2rem" />
 					{props.header}
 				</div>
-				<div class="cont col package-version-info-relations">
+				<div class="cont package-version-info-relations">
 					<For each={props.packages}>
 						{(pkg) => {
 							let id = typeof pkg == "object" ? pkg.value : pkg;

@@ -4,6 +4,8 @@
 	/* min-height: 25rem; */
 	justify-content: flex-start;
 	gap: 1.4rem;
+	overflow: scroll;
+	max-height: 40rem;
 }
 
 #package-version-info-header {
@@ -33,6 +35,7 @@
 
 .package-version-info-relations {
 	width: 100%;
+	flex-wrap: wrap;
 	justify-content: flex-start;
 	align-items: flex-start;
 }
