@@ -1,6 +1,7 @@
 use std::{
-	collections::HashSet,
+	collections::{HashMap, HashSet},
 	path::{Path, PathBuf},
+	sync::Arc,
 };
 
 use anyhow::Context;
@@ -19,6 +20,7 @@ use mcvm_plugin::{
 };
 use mcvm_shared::pkg::PackageSearchResults;
 use serde::{Deserialize, Serialize};
+use tokio::sync::Mutex;
 
 fn main() -> anyhow::Result<()> {
 	let mut plugin = CustomPlugin::from_manifest_file("modrinth", include_str!("plugin.json"))?;
@@ -49,6 +51,11 @@ fn main() -> anyhow::Result<()> {
 		let client = Client::new();
 
 		runtime.block_on(async move {
+			if arg.packages.len() > 3 {
+				let _ =
+					download_multiple_projects(&arg.packages, &storage_dirs, &client, true).await;
+			}
+
 			let mut tasks = tokio::task::JoinSet::new();
 			for package in arg.packages {
 				let client = client.clone();
@@ -208,6 +215,14 @@ impl RelationSubFunction for RelationSub {
 			Ok("none".into())
 		}
 	}
+
+	async fn preload_substitutions(&mut self, relations: &[String]) -> anyhow::Result<()> {
+		// TODO: Save to internal map for quicker lookup
+		if relations.len() > 5 {
+			download_multiple_projects(relations, &self.storage_dirs, &self.client, false).await?;
+		}
+		Ok(())
+	}
 }
 
 /// Gets a cached package or project info
@@ -305,16 +320,170 @@ async fn get_cached_project(
 			members: members,
 		};
 
-		let id_path = storage_dirs.projects.join(&project_info.project.id);
-		let slug_path = storage_dirs.projects.join(&project_info.project.slug);
-		let _ = create_leading_dirs(&id_path);
-		let _ = json_to_file(&id_path, &project_info);
-		let _ = update_hardlink(&id_path, &slug_path);
+		let _ = save_project_info(&project_info, storage_dirs);
 
 		project_info
 	};
 
 	Ok(Some(project_info))
+}
+
+/// Downloads multiple projects at once to save on API requests. Will have much higher latency, but is better for
+/// downloading lots of projects as we won't get ratelimited
+async fn download_multiple_projects(
+	projects: &[String],
+	storage_dirs: &StorageDirs,
+	client: &Client,
+	download_dependencies: bool,
+) -> anyhow::Result<Vec<ProjectInfo>> {
+	// Filter out projects that are already cached
+	let projects: Vec<_> = projects
+		.into_iter()
+		.filter(|x| {
+			let path = storage_dirs.projects.join(x);
+			let path2 = storage_dirs.packages.join(x);
+			!path.exists() && !path2.exists()
+		})
+		.cloned()
+		.collect();
+
+	if projects.is_empty() {
+		return Ok(Vec::new());
+	}
+
+	let projects = modrinth::get_multiple_projects(&projects, &client)
+		.await
+		.context("Failed to download projects")?;
+
+	// Collect Modrinth project versions. We have to batch these into multiple requests because there becomes
+	// just too many parameters for the URL to handle
+	let batch_limit = 215;
+	let version_ids: Vec<_> = projects
+		.iter()
+		.flat_map(|x| x.versions.iter().cloned())
+		.collect();
+
+	let chunks = version_ids.chunks(batch_limit);
+
+	// Download each chunk
+	let all_versions = Arc::new(Mutex::new(Vec::new()));
+	let mut tasks = tokio::task::JoinSet::new();
+	for chunk in chunks {
+		let chunk = chunk.to_vec();
+		let client = client.clone();
+		let all_versions = all_versions.clone();
+		let task = async move {
+			let versions = modrinth::get_multiple_versions(&chunk, &client)
+				.await
+				.context("Failed to get Modrinth versions")?;
+
+			let mut lock = all_versions.lock().await;
+			lock.extend(versions);
+
+			Ok::<(), anyhow::Error>(())
+		};
+		tasks.spawn(task);
+	}
+
+	// Download teams at the same time
+	let mut team_ids = Vec::new();
+	for project in &projects {
+		team_ids.push(project.team.clone());
+	}
+	let all_teams = Arc::new(Mutex::new(Vec::new()));
+	{
+		let client = client.clone();
+		let all_teams = all_teams.clone();
+		let task = async move {
+			let teams = modrinth::get_multiple_teams(&team_ids, &client)
+				.await
+				.context("Failed to get Modrinth teams")?;
+			let mut lock = all_teams.lock().await;
+			*lock = teams;
+
+			Ok::<(), anyhow::Error>(())
+		};
+		tasks.spawn(task);
+	}
+
+	// Run the tasks
+	while let Some(result) = tasks.join_next().await {
+		result?.context("Task failed")?;
+	}
+	let all_versions = all_versions.lock().await;
+	let all_teams = all_teams.lock().await;
+
+	// Collect the versions into a HashMap so that we can look them up when ordering them correctly
+	let mut all_versions = all_versions
+		.iter()
+		.map(|x| (x.id.clone(), x.clone()))
+		.collect::<HashMap<_, _>>();
+
+	let project_infos: anyhow::Result<Vec<_>> = projects
+		.into_iter()
+		.map(|project| {
+			let versions = project
+				.versions
+				.iter()
+				.filter_map(|x| all_versions.remove(x))
+				.collect();
+
+			let team = all_teams
+				.iter()
+				.find(|x| x.iter().any(|x| x.team_id == project.team))
+				.cloned()
+				.unwrap_or_default();
+
+			Ok(ProjectInfo {
+				project,
+				versions,
+				members: team,
+			})
+		})
+		.collect();
+
+	let project_infos = project_infos?;
+
+	// Save to cache
+	for project_info in &project_infos {
+		let _ = save_project_info(project_info, storage_dirs);
+	}
+
+	if download_dependencies {
+		let mut all_dependencies = Vec::new();
+		for project in &project_infos {
+			for version in &project.versions {
+				for dep in &version.dependencies {
+					if let Some(project_id) = &dep.project_id {
+						if !all_dependencies.contains(project_id) {
+							all_dependencies.push(project_id.clone());
+						}
+					}
+				}
+			}
+		}
+
+		let _ = Box::pin(download_multiple_projects(
+			&all_dependencies,
+			storage_dirs,
+			client,
+			false,
+		))
+		.await;
+	}
+
+	Ok(project_infos)
+}
+
+/// Saves info for a project to cache
+fn save_project_info(project_info: &ProjectInfo, storage_dirs: &StorageDirs) -> anyhow::Result<()> {
+	let id_path = storage_dirs.projects.join(&project_info.project.id);
+	let slug_path = storage_dirs.projects.join(&project_info.project.slug);
+	create_leading_dirs(&id_path)?;
+	json_to_file(&id_path, &project_info)?;
+	update_hardlink(&id_path, &slug_path)?;
+
+	Ok(())
 }
 
 enum PackageOrProjectInfo {

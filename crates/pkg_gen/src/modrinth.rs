@@ -61,7 +61,7 @@ pub async fn gen(
 	project: Project,
 	versions: &[Version],
 	members: &[Member],
-	relation_substitution: impl RelationSubFunction,
+	mut relation_substitution: impl RelationSubFunction,
 	force_extensions: &[String],
 	make_fabriclike: bool,
 	make_forgelike: bool,
@@ -187,6 +187,17 @@ pub async fn gen(
 			}
 		}
 	}
+
+	relation_substitution
+		.preload_substitutions(
+			&substitutions
+				.iter()
+				.map(|x| (*x).clone())
+				.collect::<Vec<_>>(),
+		)
+		.await
+		.context("Failed to preload substitutions")?;
+
 	let substitutions = substitute_multiple(substitutions.into_iter(), relation_substitution)
 		.await
 		.context("Failed to substitute relations")?;

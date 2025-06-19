@@ -9,6 +9,15 @@ pub trait RelationSubFunction: Send + 'static + Clone {
 		&self,
 		relation: &str,
 	) -> impl std::future::Future<Output = anyhow::Result<String>> + Send;
+
+	/// Preloads files for multiple substitutions. Does not have to be implemented
+	fn preload_substitutions(
+		&mut self,
+		relations: &[String],
+	) -> impl std::future::Future<Output = anyhow::Result<()>> + Send {
+		let _ = relations;
+		async { Ok(()) }
+	}
 }
 
 // impl<A: AsyncFn(&str) -> anyhow::Result<String> + Send + 'static + Copy> RelationSubFunction for A {}
