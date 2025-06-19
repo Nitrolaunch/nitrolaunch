@@ -383,6 +383,7 @@ fn get_supported_sides(project: &Project) -> Vec<Side> {
 	}
 	if let SideSupport::Required | SideSupport::Optional = &project.server_side {
 		out.push(Side::Server);
+		out.push(Side::Client);
 	}
 	out
 }
