@@ -426,6 +426,7 @@ async fn download_multiple_projects(
 				.versions
 				.iter()
 				.filter_map(|x| all_versions.remove(x))
+				.rev()
 				.collect();
 
 			let team = all_teams
