@@ -152,10 +152,15 @@ async fn query_package(
 		storage_dir,
 	};
 
-	let package =
-		mcvm_pkg_gen::smithed::gen(pack_info.pack, pack_info.body, relation_sub_function, &[])
-			.await
-			.context("Failed to generate MCVM package")?;
+	let package = mcvm_pkg_gen::smithed::gen(
+		pack_info.pack,
+		pack_info.body,
+		relation_sub_function,
+		&[],
+		Some("smithed"),
+	)
+	.await
+	.context("Failed to generate MCVM package")?;
 	let package = serde_json::to_string_pretty(&package).context("Failed to serialized package")?;
 
 	Ok(Some(CustomRepoQueryResult {

@@ -121,6 +121,7 @@ pub async fn gen(source: PackageSource, config: Option<PackageGenerationConfig>,
 			None,
 			RelationSubMap(config.relation_substitutions),
 			&config.force_extensions,
+			None,
 		)
 		.await
 		.expect("Failed to generate package"),
@@ -130,6 +131,7 @@ pub async fn gen(source: PackageSource, config: Option<PackageGenerationConfig>,
 			&config.force_extensions,
 			config.make_fabriclike.unwrap_or_default(),
 			config.make_forgelike.unwrap_or_default(),
+			None,
 		)
 		.await
 		.expect("Failed to generate package"),

@@ -3,12 +3,12 @@ import "./PackageFilters.css";
 import Icon from "../Icon";
 import {
 	Box,
-	Hashtag,
 	Jigsaw,
 	Lock,
 	Minecraft,
 	Plus,
 	Properties,
+	Tag,
 	Warning,
 } from "../../icons";
 import {
@@ -106,7 +106,7 @@ export default function PackageFilters(props: PackageFiltersProps) {
 						onclick={() => setTab("categories")}
 						style="color:var(--profile)"
 					>
-						<Icon icon={Hashtag} size="0.8rem" />
+						<Icon icon={Tag} size="0.8rem" />
 						Category
 					</div>
 				</Show>

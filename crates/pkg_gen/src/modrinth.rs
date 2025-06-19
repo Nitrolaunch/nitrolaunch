@@ -29,6 +29,7 @@ pub async fn gen_from_id(
 	force_extensions: &[String],
 	make_fabriclike: bool,
 	make_forgelike: bool,
+	repository: Option<&str>,
 ) -> anyhow::Result<DeclarativePackage> {
 	let client = mcvm_core::net::download::Client::new();
 	let project = modrinth::get_project(id, &client)
@@ -51,6 +52,7 @@ pub async fn gen_from_id(
 		force_extensions,
 		make_fabriclike,
 		make_forgelike,
+		repository,
 	)
 	.await
 }
@@ -64,6 +66,7 @@ pub async fn gen(
 	force_extensions: &[String],
 	make_fabriclike: bool,
 	make_forgelike: bool,
+	repository: Option<&str>,
 ) -> anyhow::Result<DeclarativePackage> {
 	// Get supported sides
 	let supported_sides = get_supported_sides(&project);
@@ -267,23 +270,31 @@ pub async fn gen(
 				.get(project_id)
 				.expect("Should have errored already")
 				.clone();
+
 			// Don't count none relations
 			if pkg_id == "none" {
 				continue;
 			}
+
+			let req = if let Some(repo) = &repository {
+				format!("{repo}:{pkg_id}")
+			} else {
+				pkg_id
+			};
+
 			match dep.dependency_type {
 				DependencyType::Required => {
-					if force_extensions.contains(&pkg_id) {
-						extensions.push(pkg_id);
+					if force_extensions.contains(&req) {
+						extensions.push(req);
 					} else {
-						deps.push(pkg_id)
+						deps.push(req)
 					}
 				}
 				DependencyType::Optional => recommendations.push(RecommendedPackage {
-					value: pkg_id.into(),
+					value: req.into(),
 					invert: false,
 				}),
-				DependencyType::Incompatible => conflicts.push(pkg_id),
+				DependencyType::Incompatible => conflicts.push(req),
 				// We don't need to do anything with embedded dependencies yet
 				DependencyType::Embedded => continue,
 			}

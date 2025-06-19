@@ -159,6 +159,7 @@ async fn query_package(
 				&[],
 				true,
 				true,
+				Some("modrinth"),
 			)
 			.await
 			.context("Failed to generate MCVM package")?;

@@ -239,6 +239,7 @@ pub async fn batched_gen(mut config: BatchedConfig, filter: Vec<String>) {
 					None,
 					RelationSubMap(pkg_config.relation_substitutions),
 					&pkg_config.force_extensions,
+					None,
 				)
 				.await
 				.expect("Failed to generate package")
@@ -270,6 +271,7 @@ pub async fn batched_gen(mut config: BatchedConfig, filter: Vec<String>) {
 					&pkg_config.force_extensions,
 					pkg_config.make_fabriclike.unwrap_or_default(),
 					pkg_config.make_forgelike.unwrap_or_default(),
+					None,
 				)
 				.await
 				.expect("Failed to generate package")

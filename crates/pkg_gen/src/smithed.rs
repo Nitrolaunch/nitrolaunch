@@ -23,12 +23,13 @@ pub async fn gen_from_id(
 	body: Option<String>,
 	relation_substitution: impl RelationSubFunction,
 	force_extensions: &[String],
+	repo: Option<&str>,
 ) -> anyhow::Result<DeclarativePackage> {
 	let pack = mcvm_net::smithed::get_pack(id, &Client::new())
 		.await
 		.expect("Failed to get pack");
 
-	gen(pack, body, relation_substitution, force_extensions).await
+	gen(pack, body, relation_substitution, force_extensions, repo).await
 }
 
 /// Generates a Smithed package from a Smithed pack
@@ -37,6 +38,7 @@ pub async fn gen(
 	body: Option<String>,
 	relation_substitution: impl RelationSubFunction,
 	force_extensions: &[String],
+	repo: Option<&str>,
 ) -> anyhow::Result<DeclarativePackage> {
 	let banner = if !pack.display.gallery.is_empty() {
 		mcvm_net::smithed::get_gallery_url(&pack.id, 0)
@@ -129,6 +131,13 @@ pub async fn gen(
 				.get(&dep.id)
 				.expect("Should have errored already")
 				.clone();
+
+			let dep = if let Some(repo) = &repo {
+				format!("{repo}:{dep}")
+			} else {
+				dep
+			};
+
 			if force_extensions.contains(&dep) {
 				extensions.push(dep);
 			} else {
