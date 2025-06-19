@@ -76,19 +76,23 @@ fn eval_declarative_package_impl<'a>(
 		let version =
 			pick_best_addon_version(&addon.versions, &eval_data.input, &eval_data.properties);
 		if let Some(version) = version {
-			let data = AddonInstructionData {
-				id: addon_id.clone(),
-				url: version.url.clone(),
-				path: version.path.clone(),
-				kind: addon.kind,
-				file_name: version.filename.clone(),
-				version: version.version.clone(),
-				hashes: version.hashes.clone(),
-			};
+			// Bundle addons won't have an actual addon
+			let addon_kind = addon.kind.to_addon_kind();
+			if let Some(addon_kind) = addon_kind {
+				let data = AddonInstructionData {
+					id: addon_id.clone(),
+					url: version.url.clone(),
+					path: version.path.clone(),
+					kind: addon_kind,
+					file_name: version.filename.clone(),
+					version: version.version.clone(),
+					hashes: version.hashes.clone(),
+				};
 
-			let addon_req = create_valid_addon_request(data, pkg_id.clone(), &eval_data.input)?;
+				let addon_req = create_valid_addon_request(data, pkg_id.clone(), &eval_data.input)?;
 
-			eval_data.addon_reqs.push(addon_req);
+				eval_data.addon_reqs.push(addon_req);
+			}
 
 			relations.merge(version.relations.clone());
 			notices.extend(version.notices.iter().cloned());

@@ -8,7 +8,6 @@ use mcvm_pkg::declarative::{
 };
 use mcvm_pkg::metadata::PackageMetadata;
 use mcvm_pkg::properties::PackageProperties;
-use mcvm_shared::addon::AddonKind;
 use mcvm_shared::pkg::{PackageCategory, PackageKind};
 use mcvm_shared::util::DeserListOrSingle;
 use mcvm_shared::versions::VersionPattern;
@@ -80,14 +79,14 @@ pub async fn gen(
 	// Generate addons
 
 	let mut datapack = DeclarativeAddon {
-		kind: AddonKind::Datapack,
+		kind: PackageKind::Datapack,
 		versions: Vec::new(),
 		conditions: Vec::new(),
 		optional: false,
 	};
 
 	let mut resourcepack = DeclarativeAddon {
-		kind: AddonKind::ResourcePack,
+		kind: PackageKind::ResourcePack,
 		versions: Vec::new(),
 		conditions: Vec::new(),
 		optional: false,

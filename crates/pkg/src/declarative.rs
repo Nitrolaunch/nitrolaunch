@@ -2,10 +2,9 @@ use std::collections::HashMap;
 
 use anyhow::Context;
 use mcvm_parse::conditions::{ArchCondition, OSCondition};
-use mcvm_shared::addon::AddonKind;
 use mcvm_shared::lang::Language;
 use mcvm_shared::loaders::LoaderMatch;
-use mcvm_shared::pkg::{PackageAddonOptionalHashes, PackageStability};
+use mcvm_shared::pkg::{PackageAddonOptionalHashes, PackageKind, PackageStability};
 use mcvm_shared::util::DeserListOrSingle;
 use mcvm_shared::versions::VersionPattern;
 use mcvm_shared::Side;
@@ -157,7 +156,7 @@ pub struct DeclarativeConditionalRuleProperties {
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 pub struct DeclarativeAddon {
 	/// What kind of addon this is
-	pub kind: AddonKind,
+	pub kind: PackageKind,
 	/// The available versions of this addon
 	#[serde(default)]
 	#[serde(skip_serializing_if = "Vec::is_empty")]

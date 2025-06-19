@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
-use anyhow::{bail, Context};
+use anyhow::Context;
 use mcvm_pkg::declarative::{
 	DeclarativeAddon, DeclarativeAddonVersion, DeclarativeConditionSet, DeclarativePackage,
 	DeclarativePackageRelations,
@@ -8,7 +8,6 @@ use mcvm_pkg::declarative::{
 use mcvm_pkg::metadata::PackageMetadata;
 use mcvm_pkg::properties::PackageProperties;
 use mcvm_pkg::RecommendedPackage;
-use mcvm_shared::addon::AddonKind;
 use mcvm_shared::loaders::{Loader, LoaderMatch};
 use mcvm_shared::pkg::{PackageCategory, PackageKind, PackageStability};
 use mcvm_shared::util::DeserListOrSingle;
@@ -162,16 +161,16 @@ pub async fn gen(
 	};
 
 	// Generate addons
-	let (addon_kind, package_type) = match project.project_type {
-		ProjectType::Mod => (AddonKind::Mod, PackageKind::Mod),
-		ProjectType::Datapack => (AddonKind::Datapack, PackageKind::Datapack),
-		ProjectType::Plugin => (AddonKind::Plugin, PackageKind::Plugin),
-		ProjectType::ResourcePack => (AddonKind::ResourcePack, PackageKind::ResourcePack),
-		ProjectType::Shader => (AddonKind::Shader, PackageKind::Shader),
-		ProjectType::Modpack => bail!("Modpack projects are unsupported"),
+	let package_type = match project.project_type {
+		ProjectType::Mod => PackageKind::Mod,
+		ProjectType::Datapack => PackageKind::Datapack,
+		ProjectType::Plugin => PackageKind::Plugin,
+		ProjectType::ResourcePack => PackageKind::ResourcePack,
+		ProjectType::Shader => PackageKind::Shader,
+		ProjectType::Modpack => PackageKind::Bundle,
 	};
 	let mut addon = DeclarativeAddon {
-		kind: addon_kind,
+		kind: package_type,
 		versions: Vec::new(),
 		conditions: Vec::new(),
 		optional: false,
@@ -260,6 +259,7 @@ pub async fn gen(
 		let mut deps = Vec::new();
 		let mut recommendations = Vec::new();
 		let mut extensions = Vec::new();
+		let mut bundled = Vec::new();
 		let mut conflicts = Vec::new();
 
 		for dep in &version.dependencies {
@@ -284,7 +284,10 @@ pub async fn gen(
 
 			match dep.dependency_type {
 				DependencyType::Required => {
-					if force_extensions.contains(&req) {
+					// Modpacks bundle all their dependencies
+					if addon.kind == PackageKind::Bundle {
+						bundled.push(req);
+					} else if force_extensions.contains(&req) {
 						extensions.push(req);
 					} else {
 						deps.push(req)
@@ -304,6 +307,7 @@ pub async fn gen(
 		deps.sort();
 		recommendations.sort();
 		extensions.sort();
+		bundled.sort();
 		conflicts.sort();
 
 		// Content versions
@@ -325,17 +329,20 @@ pub async fn gen(
 				dependencies: DeserListOrSingle::List(deps),
 				recommendations: DeserListOrSingle::List(recommendations),
 				extensions: DeserListOrSingle::List(extensions),
+				bundled: DeserListOrSingle::List(bundled),
 				conflicts: DeserListOrSingle::List(conflicts),
 				..Default::default()
 			},
 			..Default::default()
 		};
 
-		// Select download
-		let download = version
-			.get_primary_download()
-			.expect("Version has no available downloads");
-		pkg_version.url = Some(download.url.clone());
+		// Select download for non-bundle kinds
+		if addon.kind != PackageKind::Bundle {
+			let download = version
+				.get_primary_download()
+				.expect("Version has no available downloads");
+			pkg_version.url = Some(download.url.clone());
+		}
 
 		addon.versions.push(pkg_version);
 	}

@@ -5,6 +5,7 @@ use std::fmt::Display;
 use std::hash::Hash;
 use std::sync::Arc;
 
+use crate::addon::AddonKind;
 use crate::loaders::Loader;
 use crate::util::is_valid_identifier;
 use crate::versions::{parse_versioned_string, VersionPattern};
@@ -256,6 +257,20 @@ pub enum PackageKind {
 	Shader,
 	/// A package that bundles other packages
 	Bundle,
+}
+
+impl PackageKind {
+	/// Converts to an addon kind, if possible
+	pub fn to_addon_kind(&self) -> Option<AddonKind> {
+		match self {
+			Self::Mod => Some(AddonKind::Mod),
+			Self::ResourcePack => Some(AddonKind::ResourcePack),
+			Self::Datapack => Some(AddonKind::Datapack),
+			Self::Plugin => Some(AddonKind::Plugin),
+			Self::Shader => Some(AddonKind::Shader),
+			Self::Bundle => None,
+		}
+	}
 }
 
 /// Parameters for a package search
