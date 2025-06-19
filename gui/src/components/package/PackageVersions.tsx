@@ -17,6 +17,7 @@ import { errorToast } from "../dialog/Toasts";
 import PackageLabels from "./PackageLabels";
 import IconButton from "../input/IconButton";
 import { Download } from "../../icons";
+import PackageVersionInfo from "./PackageVersionInfo";
 
 export default function PackageVersions(props: PackageVersionsProps) {
 	let [isScriptPackage, setIsScriptPackage] = createSignal(false);
@@ -28,6 +29,10 @@ export default function PackageVersions(props: PackageVersionsProps) {
 	let [filteredLoaders, setFilteredLoaders] = createSignal<string[]>([]);
 	let [filteredStability, setFilteredStability] = createSignal<
 		"stable" | "latest" | undefined
+	>(undefined);
+
+	let [focusedVersion, setFocusedVersion] = createSignal<
+		PackageVersion | undefined
 	>(undefined);
 
 	let [versions, _] = createResource(async () => {
@@ -79,6 +84,7 @@ export default function PackageVersions(props: PackageVersionsProps) {
 						id: version.version,
 						name: contentVersion,
 						addons: [packageAddon],
+						relations: version.relations,
 						minecraft_versions: version.minecraft_versions,
 						side: version.side,
 						loaders: version.loaders,
@@ -228,6 +234,7 @@ export default function PackageVersions(props: PackageVersionsProps) {
 								<PackageVersionEntry
 									version={version}
 									backgroundColor={props.backgroundColor}
+									onFocus={setFocusedVersion}
 									onInstall={props.onInstall}
 								/>
 							</Show>
@@ -235,6 +242,12 @@ export default function PackageVersions(props: PackageVersionsProps) {
 					}}
 				</For>
 			</Show>
+			<PackageVersionInfo
+				visible={focusedVersion() != undefined}
+				version={focusedVersion()!}
+				onClose={() => setFocusedVersion(undefined)}
+				onInstall={props.onInstall}
+			/>
 		</div>
 	);
 }
@@ -293,6 +306,7 @@ function PackageVersionEntry(props: PackageVersionEntryProps) {
 		<div
 			class="input-shadow package-version"
 			style={`background-color:${props.backgroundColor}`}
+			onclick={() => props.onFocus(props.version)}
 		>
 			<div class="cont package-version-name">
 				<StabilityIndicator stability={version.stability} />
@@ -320,7 +334,9 @@ function PackageVersionEntry(props: PackageVersionEntryProps) {
 						color="var(--bg2)"
 						selectedColor="var(--packagebg)"
 						border="var(--package)"
-						onClick={() => {
+						onClick={(e) => {
+							e.preventDefault();
+							e.stopPropagation();
 							props.onInstall(props.version.name!);
 						}}
 					/>
@@ -333,10 +349,11 @@ function PackageVersionEntry(props: PackageVersionEntryProps) {
 interface PackageVersionEntryProps {
 	version: PackageVersion;
 	backgroundColor: string;
+	onFocus: (version: PackageVersion) => void;
 	onInstall: (version: string) => void;
 }
 
-function StabilityIndicator(props: { stability?: "stable" | "latest" }) {
+export function StabilityIndicator(props: { stability?: "stable" | "latest" }) {
 	let letter =
 		props.stability == undefined
 			? "U"

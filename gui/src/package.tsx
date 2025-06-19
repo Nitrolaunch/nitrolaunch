@@ -56,6 +56,7 @@ export interface PackageVersion {
 	id?: string;
 	name?: string;
 	addons: PackageAddon[];
+	relations?: DeclarativePackageRelations;
 	minecraft_versions?: string | string[];
 	side?: Side;
 	loaders?: Loader | Loader[];
@@ -96,13 +97,15 @@ export interface DeclarativeAddonVersion {
 }
 
 export interface DeclarativePackageRelations {
-	dependencies?: string[];
-	explicit_dependencies?: string[];
-	conflicts?: string[];
-	extensions?: string[];
-	bundled?: string[];
-	compats?: [string, string][];
-	recommendations?: { value: string; invert?: boolean }[];
+	dependencies?: string[] | string;
+	explicit_dependencies?: string[] | string;
+	conflicts?: string[] | string;
+	extensions?: string[] | string;
+	bundled?: string[] | string;
+	compats?: [string, string][] | [string, string];
+	recommendations?:
+		| { value: string; invert?: boolean }[]
+		| { value: string; invert?: boolean };
 }
 
 export type AddonKind =

@@ -220,7 +220,7 @@ export default function PackageFilters(props: PackageFiltersProps) {
 							onChangeMulti={(values) =>
 								props.setLoaders(values == undefined ? [] : values)
 							}
-							columns={6}
+							columns={props.filteringVersions ? 4 : 6}
 							connected={false}
 						/>
 					</div>
