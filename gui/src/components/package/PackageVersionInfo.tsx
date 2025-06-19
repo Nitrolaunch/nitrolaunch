@@ -1,6 +1,5 @@
-import { createResource, For, JSX, Show } from "solid-js";
+import { createResource, createSignal, For, JSX, Show } from "solid-js";
 import {
-	Box,
 	Delete,
 	Diagram,
 	Download,
@@ -16,7 +15,6 @@ import Modal from "../dialog/Modal";
 import IconTextButton from "../input/IconTextButton";
 import "./PackageVersionInfo.css";
 import { StabilityIndicator } from "./PackageVersions";
-import Tip from "../dialog/Tip";
 import { canonicalizeListOrSingle } from "../../utils/values";
 import { invoke } from "@tauri-apps/api";
 import Icon, { HasWidthHeight } from "../Icon";
@@ -111,7 +109,13 @@ export default function PackageVersionInfo(props: PackageVersionInfoProps) {
 					class="cont col"
 					id="package-version-info-relation-sections-container"
 				>
-					<Show when={packageMetas() != undefined}>
+					<Show
+						when={
+							packageMetas() != undefined &&
+							props.version != undefined &&
+							!packageMetas.loading
+						}
+					>
 						<RelationList
 							header="Dependencies"
 							icon={Diagram}
