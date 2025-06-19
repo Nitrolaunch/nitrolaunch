@@ -309,8 +309,11 @@ pub async fn gen(
 					invert: false,
 				}),
 				DependencyType::Incompatible => conflicts.push(req),
-				// We don't need to do anything with embedded dependencies yet
-				DependencyType::Embedded => continue,
+				DependencyType::Embedded => {
+					if addon.kind == PackageKind::Bundle {
+						bundled.push(req);
+					}
+				}
 			}
 		}
 
