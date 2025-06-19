@@ -136,7 +136,7 @@ pub async fn search_packs(
 		.join("");
 
 	let url =
-		format!("{API_URL}/packs?limit={limit}{search}&page={page}{versions}&scope=meta.rawId");
+		format!("{API_URL}/packs?limit={limit}{search}&page={page}{versions}&scope=data&scope=meta.rawId");
 
 	download::json(url, client).await
 }
@@ -147,6 +147,7 @@ pub struct PackSearchResult {
 	pub id: String,
 	#[serde(rename = "displayName")]
 	pub display_name: String,
+	pub data: Pack,
 	pub meta: PackSearchResultMeta,
 }
 

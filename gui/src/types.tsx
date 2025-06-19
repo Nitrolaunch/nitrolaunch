@@ -67,3 +67,9 @@ export interface PkgRequest {
 	repo?: string;
 	version?: string;
 }
+
+export interface PackageSearchResults {
+	results: string[];
+	total_results: number;
+	previews: { [id: string]: [PackageMeta, PackageProperties] };
+}

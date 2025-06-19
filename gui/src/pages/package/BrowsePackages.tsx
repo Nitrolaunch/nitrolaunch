@@ -10,9 +10,13 @@ import {
 } from "solid-js";
 import "@thisbeyond/solid-select/style.css";
 import PageButtons from "../../components/input/PageButtons";
-import { PackageMeta, PackageProperties } from "../../types";
+import {
+	PackageMeta,
+	PackageProperties,
+	PackageSearchResults,
+} from "../../types";
 import SearchBar from "../../components/input/SearchBar";
-import { parseQueryString } from "../../utils";
+import { parsePkgRequest, parseQueryString } from "../../utils";
 import InlineSelect from "../../components/input/InlineSelect";
 import { FooterData } from "../../App";
 import { FooterMode } from "../../components/launch/Footer";
@@ -153,66 +157,91 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 		setRepos(repos);
 
 		try {
-			let [packagesToRequest, packageCount] = (await invoke("get_packages", {
+			let results: PackageSearchResults = await invoke("get_packages", {
 				repo: selectedRepo(),
 				page: page(),
 				search: search(),
 				packageKinds: [filteredPackageType()],
 				minecraftVersions: filteredMinecraftVersions(),
 				loaders: filteredLoaders(),
-			})) as [string[], number];
+			});
+			setPackageCount(results.total_results);
 
-			setPackageCount(packageCount);
+			let packages: (PackageData | "error")[] = [];
 
-			let promises = [];
-
-			try {
-				await invoke("preload_packages", {
-					packages: packagesToRequest,
-					repo: selectedRepo(),
-				});
-			} catch (e) {
-				errorToast("Failed to load packages: " + e);
+			// Fill out results from existing previews, removing them from the list if the preview is present
+			for (let i = 0; i < results.results.length; i++) {
+				let pkg = parsePkgRequest(results.results[i]).id;
+				let preview =
+					pkg in results.previews
+						? results.previews[pkg]
+						: `${selectedRepo()}:${pkg}` in results.previews
+						? results.previews[`${selectedRepo()}:${pkg}`]
+						: undefined;
+				if (preview != undefined) {
+					packages.push({ id: pkg, meta: preview[0], props: preview[1] });
+					results.results.splice(i, 1);
+					i--;
+				}
 			}
 
-			for (let pkg of packagesToRequest) {
-				promises.push(
-					(async () => {
-						try {
-							let meta = await invoke("get_package_meta", { package: pkg });
-							let props = await invoke("get_package_props", {
-								package: pkg,
-							});
-							return [meta, props];
-						} catch (e) {
-							console.error(e);
+			// Get the remaining packages
+			if (results.results.length > 0) {
+				let promises = [];
+
+				try {
+					await invoke("preload_packages", {
+						packages: results.results,
+						repo: selectedRepo(),
+					});
+				} catch (e) {
+					errorToast("Failed to load packages: " + e);
+				}
+
+				for (let pkg of results.results) {
+					promises.push(
+						(async () => {
+							try {
+								let [meta, props] = (await invoke(
+									"get_package_meta_and_props",
+									{
+										package: pkg,
+									}
+								)) as [PackageMeta, PackageProperties];
+								return [meta, props];
+							} catch (e) {
+								console.error(e);
+								return "error";
+							}
+						})()
+					);
+				}
+
+				try {
+					let finalPackages = (await Promise.all(promises)) as (
+						| [PackageMeta, PackageProps]
+						| "error"
+					)[];
+					let newPackages = finalPackages.map((val, i) => {
+						if (val == "error") {
 							return "error";
+						} else {
+							let [meta, props] = val;
+							return {
+								id: results.results[i],
+								meta: meta,
+								props: props,
+							} as PackageData;
 						}
-					})()
-				);
+					});
+
+					packages = packages.concat(newPackages);
+				} catch (e) {
+					errorToast("Failed to load some packages: " + e);
+				}
 			}
 
-			try {
-				let finalPackages = (await Promise.all(promises)) as (
-					| [PackageMeta, PackageProps]
-					| string
-				)[];
-				let packagesAndIds = finalPackages.map((val, i) => {
-					if (val == "error") {
-						return "error";
-					} else {
-						let [meta, props] = val;
-						return {
-							id: packagesToRequest[i],
-							meta: meta,
-							props: props,
-						} as PackageData;
-					}
-				});
-				return packagesAndIds;
-			} catch (e) {
-				errorToast("Failed to load some packages: " + e);
-			}
+			return packages;
 		} catch (e) {
 			errorToast("Failed to search packages: " + e);
 		}

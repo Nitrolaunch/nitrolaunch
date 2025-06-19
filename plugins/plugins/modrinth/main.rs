@@ -13,12 +13,15 @@ use mcvm_net::{
 	download::Client,
 	modrinth::{self, Member, Project, SearchResults, Version},
 };
-use mcvm_pkg_gen::relation_substitution::RelationSubFunction;
+use mcvm_pkg::PackageSearchResults;
+use mcvm_pkg_gen::{
+	modrinth::get_preview,
+	relation_substitution::{RelationSubFunction, RelationSubNone},
+};
 use mcvm_plugin::{
 	api::{utils::PackageSearchCache, CustomPlugin},
 	hooks::CustomRepoQueryResult,
 };
-use mcvm_shared::pkg::PackageSearchResults;
 use serde::{Deserialize, Serialize};
 use tokio::sync::Mutex;
 
@@ -84,7 +87,7 @@ fn main() -> anyhow::Result<()> {
 
 		let data_dir = ctx.get_data_dir()?;
 
-		let (projects, total_results) = runtime.block_on(async move {
+		let (projects, previews, total_results) = runtime.block_on(async move {
 			let mut search_cache =
 				PackageSearchCache::open(data_dir.join("internal/modrinth/search_cache.json"), 250)
 					.context("Failed to open search cache")?;
@@ -101,14 +104,34 @@ fn main() -> anyhow::Result<()> {
 					results
 				};
 
-			let projects = results.hits.into_iter().map(|x| x.slug);
+			let mut previews = HashMap::with_capacity(results.hits.len());
+			let mut projects = Vec::with_capacity(results.hits.len());
+			for result in results.hits {
+				projects.push(result.slug.clone());
+				let slug = result.slug.clone();
+				let package = mcvm_pkg_gen::modrinth::gen(
+					get_preview(result),
+					&[],
+					&[],
+					RelationSubNone,
+					&[],
+					true,
+					true,
+					Some("modrinth"),
+				)
+				.await;
+				if let Ok(package) = package {
+					previews.insert(slug, (package.meta, package.properties));
+				}
+			}
 
-			Ok::<_, anyhow::Error>((projects, results.total_hits))
+			Ok::<_, anyhow::Error>((projects, previews, results.total_hits))
 		})?;
 
 		Ok(PackageSearchResults {
-			results: projects.collect(),
+			results: projects,
 			total_results,
+			previews,
 		})
 	})?;
 

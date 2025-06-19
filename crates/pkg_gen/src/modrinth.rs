@@ -14,8 +14,8 @@ use mcvm_shared::util::DeserListOrSingle;
 use mcvm_shared::versions::VersionPattern;
 
 use mcvm_net::modrinth::{
-	self, DependencyType, GalleryEntry, KnownLoader, License, Member, ModrinthLoader, Project,
-	ProjectType, ReleaseChannel, SideSupport, Version,
+	self, DependencyType, FullGalleryEntry, GalleryEntry, KnownLoader, License, Member,
+	ModrinthLoader, Project, ProjectType, ReleaseChannel, SearchedProject, SideSupport, Version,
 };
 use mcvm_shared::Side;
 
@@ -107,6 +107,8 @@ pub async fn gen(
 			.find(|x| matches!(x, GalleryEntry::Full(entry) if entry.featured))
 		{
 			meta.banner = Some(banner.get_url().to_string());
+		} else {
+			meta.banner = gallery.first().map(|x| x.get_url().to_string());
 		}
 		meta.gallery = Some(
 			gallery
@@ -373,6 +375,39 @@ pub async fn gen(
 		addons: addon_map,
 		..Default::default()
 	})
+}
+
+/// Gets the project for use in generating search result previews for this project
+pub fn get_preview(result: SearchedProject) -> Project {
+	Project {
+		id: result.id,
+		slug: result.slug,
+		project_type: result.project_type,
+		title: result.title,
+		description: result.description,
+		categories: result.display_categories,
+		game_versions: result.versions,
+		icon_url: result.icon_url,
+		gallery: result.gallery.map(|x| {
+			x.into_iter()
+				.map(|x| {
+					if result
+						.featured_gallery
+						.as_ref()
+						.is_some_and(|featured| &x == featured)
+					{
+						GalleryEntry::Full(FullGalleryEntry {
+							url: x,
+							featured: true,
+						})
+					} else {
+						GalleryEntry::Simple(x)
+					}
+				})
+				.collect()
+		}),
+		..Default::default()
+	}
 }
 
 /// Gets the list of supported sides from the project

@@ -292,15 +292,6 @@ pub struct PackageSearchParameters {
 	pub categories: Vec<PackageCategory>,
 }
 
-/// Results for a package search
-#[derive(Serialize, Deserialize, Default, Clone)]
-pub struct PackageSearchResults {
-	/// The package IDs returned by the search
-	pub results: Vec<String>,
-	/// The total number of results returned by the search, that weren't limited out
-	pub total_results: usize,
-}
-
 /// A category for a package
 #[allow(missing_docs)]
 #[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Eq)]

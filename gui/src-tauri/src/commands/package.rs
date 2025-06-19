@@ -5,7 +5,7 @@ use mcvm::pkg_crate::declarative::DeclarativePackage;
 use mcvm::pkg_crate::metadata::PackageMetadata;
 use mcvm::pkg_crate::properties::PackageProperties;
 use mcvm::pkg_crate::repo::RepoMetadata;
-use mcvm::pkg_crate::{PkgRequest, PkgRequestSource};
+use mcvm::pkg_crate::{PackageSearchResults, PkgRequest, PkgRequestSource};
 use mcvm::shared::loaders::Loader;
 use mcvm::shared::output::{MCVMOutput, MessageContents, MessageLevel, NoOp};
 use mcvm::shared::pkg::{PackageKind, PackageSearchParameters};
@@ -28,7 +28,7 @@ pub async fn get_packages(
 	package_kinds: Vec<PackageKind>,
 	minecraft_versions: Vec<String>,
 	loaders: Vec<Loader>,
-) -> Result<(Vec<String>, usize), String> {
+) -> Result<PackageSearchResults, String> {
 	let mut output = LauncherOutput::new(state.get_output(app_handle));
 	output.set_task("search_packages");
 	let mut config =
@@ -52,7 +52,7 @@ pub async fn get_packages(
 			.context("Failed to get list of available packages"),
 	)?;
 
-	Ok((results.results, results.total_results))
+	Ok(results)
 }
 
 #[tauri::command]

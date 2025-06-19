@@ -19,6 +19,8 @@ pub mod resolve;
 /// Framework for evaluating script packages
 pub mod script_eval;
 
+use std::collections::HashMap;
+
 use anyhow::Context;
 use async_trait::async_trait;
 use declarative::{deserialize_declarative_package, validate_declarative_package};
@@ -162,4 +164,15 @@ pub fn is_open_source(meta: &PackageMetadata, properties: &PackageProperties) ->
 	}
 
 	true
+}
+
+/// Results for a package search
+#[derive(Serialize, Deserialize, Default, Clone)]
+pub struct PackageSearchResults {
+	/// The package IDs returned by the search
+	pub results: Vec<String>,
+	/// The total number of results returned by the search, that weren't limited out
+	pub total_results: usize,
+	/// Limited versions of package metadata to be used for previews
+	pub previews: HashMap<String, (PackageMetadata, PackageProperties)>,
 }

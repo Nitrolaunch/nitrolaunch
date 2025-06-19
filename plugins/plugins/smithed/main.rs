@@ -1,5 +1,5 @@
 use std::{
-	collections::HashSet,
+	collections::{HashMap, HashSet},
 	path::{Path, PathBuf},
 };
 
@@ -9,12 +9,12 @@ use mcvm_net::{
 	download::{self, Client},
 	smithed::{self, Pack, PackSearchResult},
 };
-use mcvm_pkg_gen::relation_substitution::RelationSubFunction;
+use mcvm_pkg::PackageSearchResults;
+use mcvm_pkg_gen::relation_substitution::{RelationSubFunction, RelationSubNone};
 use mcvm_plugin::{
 	api::{utils::PackageSearchCache, CustomPlugin},
 	hooks::CustomRepoQueryResult,
 };
-use mcvm_shared::pkg::PackageSearchResults;
 use serde::{Deserialize, Serialize};
 
 fn main() -> anyhow::Result<()> {
@@ -75,7 +75,7 @@ fn main() -> anyhow::Result<()> {
 		let client = Client::new();
 		let runtime = tokio::runtime::Runtime::new()?;
 
-		let (packs, total_results) = runtime.block_on(async move {
+		let (packs, previews, total_results) = runtime.block_on(async move {
 			let mut search_cache =
 				PackageSearchCache::open(smithed_dir.join("search_cache.json"), 300)
 					.context("Failed to open search cache")?;
@@ -101,14 +101,30 @@ fn main() -> anyhow::Result<()> {
 				result
 			};
 
-			let packs = results.into_iter().map(|x| x.meta.raw_id).collect();
+			let mut previews = HashMap::with_capacity(results.len());
+			let mut packs = Vec::with_capacity(results.len());
+			for result in results {
+				packs.push(result.meta.raw_id.clone());
+				let package = mcvm_pkg_gen::smithed::gen(
+					result.data,
+					None,
+					RelationSubNone,
+					&[],
+					Some("smithed"),
+				)
+				.await;
+				if let Ok(package) = package {
+					previews.insert(result.meta.raw_id, (package.meta, package.properties));
+				}
+			}
 
-			Ok::<_, anyhow::Error>((packs, total_results))
+			Ok::<_, anyhow::Error>((packs, previews, total_results))
 		})?;
 
 		Ok(PackageSearchResults {
 			results: packs,
 			total_results,
+			previews,
 		})
 	})?;
 

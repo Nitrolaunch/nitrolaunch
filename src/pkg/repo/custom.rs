@@ -1,7 +1,7 @@
 use std::{collections::HashSet, sync::Arc};
 
 use anyhow::Context;
-use mcvm_pkg::repo::RepoMetadata;
+use mcvm_pkg::{repo::RepoMetadata, PackageSearchResults};
 use mcvm_plugin::hooks::{
 	PreloadPackages, PreloadPackagesArg, QueryCustomPackageRepository,
 	QueryCustomPackageRepositoryArg, SearchCustomPackageRepository,
@@ -9,7 +9,7 @@ use mcvm_plugin::hooks::{
 };
 use mcvm_shared::{
 	output::MCVMOutput,
-	pkg::{ArcPkgReq, PackageSearchParameters, PackageSearchResults},
+	pkg::{ArcPkgReq, PackageSearchParameters},
 };
 
 use crate::{io::paths::Paths, pkg::PkgLocation, plugin::PluginManager};

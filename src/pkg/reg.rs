@@ -6,12 +6,12 @@ use mcvm_pkg::parse_and_validate;
 use mcvm_pkg::properties::PackageProperties;
 use mcvm_pkg::repo::PackageFlag;
 use mcvm_pkg::PackageContentType;
+use mcvm_pkg::PackageSearchResults;
 use mcvm_pkg::PkgRequest;
 use mcvm_pkg::PkgRequestSource;
 use mcvm_shared::output::MCVMOutput;
 use mcvm_shared::pkg::ArcPkgReq;
 use mcvm_shared::pkg::PackageSearchParameters;
-use mcvm_shared::pkg::PackageSearchResults;
 use reqwest::Client;
 use tokio::sync::Semaphore;
 use tokio::task::JoinSet;
@@ -386,6 +386,7 @@ impl PkgRegistry {
 		// TODO: Get all the package contents at the beginning
 
 		let mut out = Vec::with_capacity(params.count as usize);
+		let mut previews = HashMap::new();
 
 		// Search through all of the basic packages
 		if repo.is_none() || repo.is_some_and(|x| x == "core" || x == "std") {
@@ -479,6 +480,7 @@ impl PkgRegistry {
 				if out.len() < original_count as usize {
 					out.extend(results);
 					out.truncate(original_count as usize);
+					previews.extend(result.previews);
 				}
 			}
 		}
@@ -486,6 +488,7 @@ impl PkgRegistry {
 		Ok(PackageSearchResults {
 			results: out,
 			total_results,
+			previews,
 		})
 	}
 

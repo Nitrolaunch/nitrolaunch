@@ -2829,6 +2829,7 @@ dependencies = [
  "mcvm_mods",
  "mcvm_net",
  "mcvm_options",
+ "mcvm_pkg",
  "mcvm_pkg_gen",
  "mcvm_plugin",
  "mcvm_shared",

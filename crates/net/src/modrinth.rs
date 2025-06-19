@@ -552,4 +552,18 @@ pub struct SearchedProject {
 	pub slug: String,
 	/// The type of this project and its files
 	pub project_type: ProjectType,
+	/// The display name of the project
+	pub title: String,
+	/// A short description of the project
+	pub description: String,
+	/// Displayed categories of the project on it's grid tile
+	pub display_categories: Vec<String>,
+	/// Minecraft versions this project supports
+	pub versions: Vec<String>,
+	/// Icon for this project
+	pub icon_url: Option<String>,
+	/// Gallery for this project
+	pub gallery: Option<Vec<String>>,
+	/// Featured gallery image for this project
+	pub featured_gallery: Option<String>,
 }
