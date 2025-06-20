@@ -1,4 +1,4 @@
-use std::collections::VecDeque;
+use std::collections::{HashSet, VecDeque};
 use std::sync::Arc;
 
 use anyhow::{bail, Context};
@@ -21,7 +21,16 @@ pub async fn resolve<'a, E: PackageEvaluator<'a>>(
 		tasks: VecDeque::new(),
 		constraints: Vec::new(),
 		constant_input: constant_eval_input,
+		preloaded_packages: HashSet::with_capacity(packages.len()),
 	};
+
+	// Preload all of the user's configured packages
+	let collected_packages: Vec<_> = packages.into_iter().map(|x| x.get_package()).collect();
+	evaluator
+		.preload_packages(&collected_packages, common_input)
+		.await
+		.context("Failed to preload packages")?;
+	resolver.preloaded_packages.extend(collected_packages);
 
 	// Create the initial EvalPackage tasks and constraints from the installed packages
 	for config in packages.iter().sorted_by_key(|x| x.get_package()) {
@@ -43,12 +52,61 @@ pub async fn resolve<'a, E: PackageEvaluator<'a>>(
 		});
 	}
 
-	while let Some(task) = resolver.tasks.pop_front() {
-		resolve_task(task, common_input, &mut evaluator, &mut resolver).await?;
-		resolver
-			.check_compats(&mut evaluator, common_input)
+	// Resolve all of the tasks
+	// The strategy for preloading is to complete tasks until none of them have preloaded packages, then preloading all of them and repeating
+	'outer: loop {
+		let mut num_skipped = 0;
+
+		loop {
+			// We have skipped all the tasks and need to finally preload them
+			if num_skipped == resolver.tasks.len() && resolver.tasks.len() != 0 {
+				break;
+			}
+
+			if let Some(task) = resolver.tasks.pop_front() {
+				// Skip this task if it is not preloaded
+				#[allow(irrefutable_let_patterns)]
+				if let Task::EvalPackage { dest, .. } = &task {
+					if !resolver.preloaded_packages.contains(dest) {
+						num_skipped += 1;
+						resolver.tasks.push_back(task);
+						continue;
+					}
+				}
+
+				resolve_task(task, common_input, &mut evaluator, &mut resolver).await?;
+				resolver
+					.check_compats(&mut evaluator, common_input)
+					.await
+					.context("Failed to check compats")?;
+
+				// Reset the skip count since it is no longer valid
+				num_skipped = 0;
+			} else {
+				break 'outer;
+			}
+		}
+
+		// Preload all of the packages
+		let to_preload: Vec<_> = resolver
+			.tasks
+			.iter()
+			.filter_map(|x| {
+				#[allow(irrefutable_let_patterns)]
+				if let Task::EvalPackage { dest, .. } = x {
+					Some(dest.clone())
+				} else {
+					None
+				}
+			})
+			.collect();
+
+		evaluator
+			.preload_packages(&to_preload, common_input)
 			.await
-			.context("Failed to check compats")?;
+			.context("Failed to preload packages")?;
+
+		resolver.preloaded_packages.extend(to_preload);
 	}
 
 	let mut unfulfilled_recommendations = Vec::new();
@@ -291,6 +349,8 @@ struct Resolver<'a, E: PackageEvaluator<'a>> {
 	tasks: VecDeque<Task<'a, E>>,
 	constraints: Vec<Constraint>,
 	constant_input: E::EvalInput<'a>,
+	/// Used to keep track of which packages have been preloaded and are good to further evaluate as tasks
+	preloaded_packages: HashSet<ArcPkgReq>,
 }
 
 impl<'a, E> Resolver<'a, E>

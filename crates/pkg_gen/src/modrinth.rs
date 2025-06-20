@@ -163,13 +163,21 @@ pub async fn gen(
 	};
 
 	// Generate addons
-	let package_type = match project.project_type {
-		ProjectType::Mod => PackageKind::Mod,
-		ProjectType::Datapack => PackageKind::Datapack,
-		ProjectType::Plugin => PackageKind::Plugin,
-		ProjectType::ResourcePack => PackageKind::ResourcePack,
-		ProjectType::Shader => PackageKind::Shader,
-		ProjectType::Modpack => PackageKind::Bundle,
+	// I hate Modrinth
+	let package_type = if (project.project_type == ProjectType::Mod && project.loaders.is_empty())
+		|| (project.loaders.len() == 1
+			&& project.loaders[0] == ModrinthLoader::Known(KnownLoader::Datapack))
+	{
+		PackageKind::Datapack
+	} else {
+		match project.project_type {
+			ProjectType::Mod => PackageKind::Mod,
+			ProjectType::Datapack => PackageKind::Datapack,
+			ProjectType::Plugin => PackageKind::Plugin,
+			ProjectType::ResourcePack => PackageKind::ResourcePack,
+			ProjectType::Shader => PackageKind::Shader,
+			ProjectType::Modpack => PackageKind::Bundle,
+		}
 	};
 	let mut addon = DeclarativeAddon {
 		kind: package_type,
@@ -179,6 +187,11 @@ pub async fn gen(
 	};
 
 	props.kinds = vec![package_type];
+
+	let oops_all_datapacks = versions.iter().all(|x| {
+		x.loaders
+			.contains(&ModrinthLoader::Known(KnownLoader::Datapack))
+	});
 
 	// Make substitutions
 	let mut substitutions = HashSet::new();
@@ -249,7 +262,7 @@ pub async fn gen(
 					KnownLoader::Purpur => loaders.push(LoaderMatch::Loader(Loader::Purpur)),
 					KnownLoader::Datapack => {
 						is_datapack_version = true;
-						if addon.kind == PackageKind::Mod {
+						if addon.kind == PackageKind::Mod && !oops_all_datapacks {
 							needs_datapack_feature = true;
 						}
 					}

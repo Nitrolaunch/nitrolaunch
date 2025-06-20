@@ -69,14 +69,23 @@ impl PkgRegistry {
 	async fn query_insert(
 		&mut self,
 		req: &ArcPkgReq,
+		include_custom_repos: bool,
 		paths: &Paths,
 		client: &Client,
 		o: &mut impl MCVMOutput,
 	) -> anyhow::Result<&mut Package> {
 		// First check the remote repositories
-		let query = query_all(&mut self.repos, req, paths, client, &self.plugins, o)
-			.await
-			.context("Failed to query remote repositories")?;
+		let query = query_all(
+			&mut self.repos,
+			req,
+			include_custom_repos,
+			paths,
+			client,
+			&self.plugins,
+			o,
+		)
+		.await
+		.context("Failed to query remote repositories")?;
 		if let Some(result) = query {
 			return Ok(self.insert(
 				req.clone(),
@@ -103,7 +112,7 @@ impl PkgRegistry {
 		if self.has_now(req) {
 			Ok(self.packages.get_mut(req).expect("Package does not exist"))
 		} else {
-			self.query_insert(req, paths, client, o).await
+			self.query_insert(req, true, paths, client, o).await
 		}
 	}
 
@@ -490,6 +499,56 @@ impl PkgRegistry {
 			total_results,
 			previews,
 		})
+	}
+
+	/// Preloads packages, if it can, from the repos in this registry
+	pub async fn preload_packages(
+		&mut self,
+		packages: impl Iterator<Item = &ArcPkgReq>,
+		paths: &Paths,
+		client: &Client,
+		o: &mut impl MCVMOutput,
+	) -> anyhow::Result<()> {
+		// Remove any packages that are already stored
+		let mut packages: Vec<_> = packages.filter(|x| !self.has_now(x)).collect();
+
+		// Query insert and remove from the list any packages that are matched by basic repositories
+		let mut to_remove = Vec::new();
+		for (i, package) in packages.iter().enumerate() {
+			if self
+				.query_insert(&package, false, paths, client, o)
+				.await
+				.is_ok()
+			{
+				to_remove.push(i);
+			}
+		}
+
+		let mut i = 0;
+		packages.retain(|_| {
+			let out = !to_remove.contains(&i);
+			i += 1;
+			out
+		});
+
+		let packages: Vec<_> = packages.into_iter().cloned().collect();
+
+		// Preload the packages from all the custom repos. We take the greedy approach and preload all the repos at once and if they don't have a package, so what
+		let mut handles = Vec::new();
+		for repo in &self.repos {
+			if let PackageRepository::Custom(repo) = &repo {
+				let handle = repo.get_preload_task(packages.clone(), &self.plugins, paths, o);
+				if let Ok(Some(handle)) = handle {
+					handles.push(handle);
+				}
+			}
+		}
+
+		for handle in handles {
+			handle.result(o)?;
+		}
+
+		Ok(())
 	}
 
 	/// Gets the repositories stored in this registry in their correct order

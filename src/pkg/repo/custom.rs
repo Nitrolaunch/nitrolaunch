@@ -2,10 +2,14 @@ use std::{collections::HashSet, sync::Arc};
 
 use anyhow::Context;
 use mcvm_pkg::{repo::RepoMetadata, PackageSearchResults};
-use mcvm_plugin::hooks::{
-	PreloadPackages, PreloadPackagesArg, QueryCustomPackageRepository,
-	QueryCustomPackageRepositoryArg, SearchCustomPackageRepository,
-	SearchCustomPackageRepositoryArg, SyncCustomPackageRepository, SyncCustomPackageRepositoryArg,
+use mcvm_plugin::{
+	hook_call::HookHandle,
+	hooks::{
+		PreloadPackages, PreloadPackagesArg, QueryCustomPackageRepository,
+		QueryCustomPackageRepositoryArg, SearchCustomPackageRepository,
+		SearchCustomPackageRepositoryArg, SyncCustomPackageRepository,
+		SyncCustomPackageRepositoryArg,
+	},
 };
 use mcvm_shared::{
 	output::MCVMOutput,
@@ -96,21 +100,41 @@ impl CustomPackageRepository {
 		paths: &Paths,
 		o: &mut impl MCVMOutput,
 	) -> anyhow::Result<()> {
-		// Deduplicate
-		let packages: HashSet<_> = packages.into_iter().map(|x| x.id.to_string()).collect();
+		let handle = self.get_preload_task(packages, plugins, paths, o)?;
+		let Some(handle) = handle else {
+			return Ok(());
+		};
+
+		handle.result(o)
+	}
+
+	/// Runs the preload hook on this repository and gives the HookHandle
+	pub fn get_preload_task(
+		&self,
+		packages: Vec<ArcPkgReq>,
+		plugins: &PluginManager,
+		paths: &Paths,
+		o: &mut impl MCVMOutput,
+	) -> anyhow::Result<Option<HookHandle<PreloadPackages>>> {
+		// Deduplicate and remove packages not from this repo
+		let packages: HashSet<_> = packages
+			.into_iter()
+			.filter_map(|x| {
+				if x.repository.as_ref().is_some_and(|x| x != self.get_id()) {
+					None
+				} else {
+					Some(x.id.to_string())
+				}
+			})
+			.collect();
 		let arg = PreloadPackagesArg {
 			repository: self.id.clone(),
 			packages: packages.into_iter().collect(),
 		};
-		let result = plugins
+
+		plugins
 			.call_hook_on_plugin(PreloadPackages, &self.plugin, &arg, paths, o)
-			.context("Failed to call preload hook")?;
-
-		let Some(result) = result else {
-			return Ok(());
-		};
-
-		result.result(o)
+			.context("Failed to call preload hook")
 	}
 
 	/// Syncs the cache for this repository

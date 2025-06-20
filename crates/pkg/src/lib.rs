@@ -115,6 +115,13 @@ pub trait PackageEvaluator<'a> {
 		pkg: &ArcPkgReq,
 		common_input: &Self::CommonInput,
 	) -> anyhow::Result<&'b PackageProperties>;
+
+	/// Preload multiple packages
+	async fn preload_packages<'b>(
+		&'b mut self,
+		packages: &[ArcPkgReq],
+		common_input: &Self::CommonInput,
+	) -> anyhow::Result<()>;
 }
 
 /// Trait for a user-configured package

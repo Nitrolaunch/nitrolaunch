@@ -57,7 +57,7 @@ pub struct Project {
 }
 
 /// The type of a Modrinth project
-#[derive(Deserialize, Serialize, Copy, Clone, Default)]
+#[derive(Deserialize, Serialize, Copy, Clone, Default, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum ProjectType {
 	/// A mod project
@@ -180,7 +180,7 @@ pub struct Version {
 }
 
 /// Loader for a Modrinth project version
-#[derive(Deserialize, Serialize, Clone)]
+#[derive(Deserialize, Serialize, Clone, PartialEq, Eq)]
 #[serde(untagged)]
 pub enum ModrinthLoader {
 	/// A loader that is known
@@ -190,7 +190,7 @@ pub enum ModrinthLoader {
 }
 
 /// A known plugin / mod loader that Modrinth supports
-#[derive(Deserialize, Serialize, Copy, Clone)]
+#[derive(Deserialize, Serialize, Copy, Clone, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 pub enum KnownLoader {
 	/// The Vanilla game

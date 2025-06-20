@@ -30,6 +30,7 @@ use mcvm_shared::output;
 use mcvm_shared::output::MCVMOutput;
 use mcvm_shared::output::MessageContents;
 use mcvm_shared::output::MessageLevel;
+use mcvm_shared::output::Simple;
 use mcvm_shared::pkg::ArcPkgReq;
 use mcvm_shared::pkg::PackageID;
 use mcvm_shared::util::is_valid_identifier;
@@ -288,44 +289,48 @@ pub fn eval_check_properties(
 	properties: &PackageProperties,
 ) -> anyhow::Result<bool> {
 	if let Some(supported_versions) = &properties.supported_versions {
-		if !supported_versions
-			.iter()
-			.any(|x| x.matches_single(&input.constants.version, &input.constants.version_list))
-		{
-			bail!("Package does not support this Minecraft version");
-		}
-	}
-
-	if let Some(supported_sides) = &properties.supported_sides {
-		if !supported_sides.iter().any(|x| x == &input.params.side) {
-			bail!("Package does not support this side (client / server)");
+		if !supported_versions.is_empty() {
+			if !supported_versions
+				.iter()
+				.any(|x| x.matches_single(&input.constants.version, &input.constants.version_list))
+			{
+				bail!("Package does not support this Minecraft version");
+			}
 		}
 	}
 
 	if let Some(supported_loaders) = &properties.supported_loaders {
-		if !supported_loaders
-			.iter()
-			.any(|x| x.matches(&input.constants.loader))
-		{
-			bail!("Package does not support this loader");
+		if !supported_loaders.is_empty() {
+			if !supported_loaders
+				.iter()
+				.any(|x| x.matches(&input.constants.loader))
+			{
+				bail!("Package does not support this loader");
+			}
 		}
 	}
 
 	if let Some(supported_sides) = &properties.supported_sides {
-		if !supported_sides.contains(&input.params.side) {
-			return Ok(true);
+		if !supported_sides.is_empty() {
+			if !supported_sides.contains(&input.params.side) {
+				return Ok(true);
+			}
 		}
 	}
 
 	if let Some(supported_operating_systems) = &properties.supported_operating_systems {
-		if !supported_operating_systems.iter().any(check_os_condition) {
-			bail!("Package does not support your operating system");
+		if !supported_operating_systems.is_empty() {
+			if !supported_operating_systems.iter().any(check_os_condition) {
+				bail!("Package does not support your operating system");
+			}
 		}
 	}
 
 	if let Some(supported_architectures) = &properties.supported_architectures {
-		if !supported_architectures.iter().any(check_arch_condition) {
-			bail!("Package does not support your system architecture");
+		if !supported_architectures.is_empty() {
+			if !supported_architectures.iter().any(check_arch_condition) {
+				bail!("Package does not support your system architecture");
+			}
 		}
 	}
 
@@ -543,6 +548,21 @@ impl<'a> PackageEvaluatorTrait<'a> for PackageEvaluator<'a> {
 			)
 			.await?;
 		Ok(properties)
+	}
+
+	async fn preload_packages<'b>(
+		&'b mut self,
+		packages: &[ArcPkgReq],
+		common_input: &Self::CommonInput,
+	) -> anyhow::Result<()> {
+		self.reg
+			.preload_packages(
+				packages.into_iter(),
+				common_input.paths,
+				common_input.client,
+				&mut Simple(MessageLevel::Important),
+			)
+			.await
 	}
 }
 

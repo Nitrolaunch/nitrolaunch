@@ -193,12 +193,19 @@ impl PackageRepository {
 pub async fn query_all(
 	repos: &mut [PackageRepository],
 	pkg: &ArcPkgReq,
+	include_custom_repos: bool,
 	paths: &Paths,
 	client: &Client,
 	plugins: &PluginManager,
 	o: &mut impl MCVMOutput,
 ) -> anyhow::Result<Option<RepoQueryResult>> {
 	for repo in repos {
+		if let PackageRepository::Custom(..) = &repo {
+			if !include_custom_repos {
+				continue;
+			}
+		}
+
 		if let Some(requested_repo) = &pkg.repository {
 			if repo.get_id() != requested_repo {
 				continue;
