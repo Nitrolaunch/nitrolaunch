@@ -206,6 +206,7 @@ pub async fn gen(
 
 	let mut content_versions = Vec::with_capacity(versions.len());
 	let mut all_loaders = HashSet::new();
+	let mut needs_datapack_feature = false;
 
 	for version in versions {
 		let version_name = version.id.clone();
@@ -219,6 +220,7 @@ pub async fn gen(
 		// Look at loaders
 		let mut loaders = Vec::new();
 		let mut skip = false;
+		let mut is_datapack_version = false;
 		for loader in &version.loaders {
 			match loader {
 				ModrinthLoader::Known(loader) => match loader {
@@ -245,11 +247,16 @@ pub async fn gen(
 					KnownLoader::Sponge => loaders.push(LoaderMatch::Loader(Loader::Sponge)),
 					KnownLoader::Paper => loaders.push(LoaderMatch::Loader(Loader::Paper)),
 					KnownLoader::Purpur => loaders.push(LoaderMatch::Loader(Loader::Purpur)),
+					KnownLoader::Datapack => {
+						is_datapack_version = true;
+						if addon.kind == PackageKind::Mod {
+							needs_datapack_feature = true;
+						}
+					}
 					// Skip over these versions for now
-					KnownLoader::Datapack
-					| KnownLoader::BungeeCord
-					| KnownLoader::Velocity
-					| KnownLoader::Waterfall => skip = true,
+					KnownLoader::BungeeCord | KnownLoader::Velocity | KnownLoader::Waterfall => {
+						skip = true
+					}
 					// We don't care about these
 					KnownLoader::Iris | KnownLoader::Optifine | KnownLoader::Minecraft => {}
 				},
@@ -339,6 +346,11 @@ pub async fn gen(
 				loaders: Some(DeserListOrSingle::List(loaders)),
 				stability: Some(stability),
 				content_versions: Some(DeserListOrSingle::Single(content_version)),
+				features: if needs_datapack_feature && is_datapack_version {
+					Some(DeserListOrSingle::Single("datapack".into()))
+				} else {
+					None
+				},
 				..Default::default()
 			},
 			relations: DeclarativePackageRelations {
@@ -365,6 +377,9 @@ pub async fn gen(
 
 	props.content_versions = Some(content_versions);
 	props.supported_loaders = Some(all_loaders.into_iter().collect());
+	if needs_datapack_feature {
+		props.features = Some(vec!["datapack".into()]);
+	}
 
 	let mut addon_map = HashMap::new();
 	addon_map.insert("addon".into(), addon);
