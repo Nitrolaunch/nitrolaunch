@@ -1,4 +1,3 @@
-use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 
 use anyhow::Context;
@@ -21,7 +20,13 @@ macro_rules! scan {
 fn get_system_java_installation(#[allow(unused_variables)] major_version: &str) -> Option<PathBuf> {
 	// JAVA_HOME
 	if let Ok(home) = std::env::var("JAVA_HOME") {
-		scan!(&PathBuf::from(home), major_version);
+		// This isn't a directory holding Java installations, it IS a Java installation
+		if home.contains(major_version) {
+			let home = PathBuf::from(home);
+			if home.join("bin").exists() {
+				return Some(home);
+			}
+		}
 	}
 
 	#[cfg(target_os = "windows")]
@@ -81,26 +86,45 @@ fn scan_linux(major_version: &str) -> Option<PathBuf> {
 
 /// Scan a directory for Java installations
 fn scan_dir(dir: &Path, major_version: &str) -> Option<PathBuf> {
+	let debug = std::env::var("MCVM_JAVA_SCAN_DEBUG").is_ok_and(|x| x == "1");
+	if debug {
+		println!("Scanning {dir:?}");
+		dbg!(&major_version);
+	}
+
 	if dir.exists() {
 		let read = std::fs::read_dir(dir).ok()?;
 		for path in read {
 			let Ok(path) = path else { continue };
+			if debug {
+				println!("{:?}", path.path());
+			}
 			if !path.path().is_dir() {
+				if debug {
+					println!("Not directory");
+				}
 				continue;
 			}
 			let name = path.file_name().to_string_lossy().to_string();
 			if !(name.starts_with("java-") || name.starts_with("jdk-")) {
+				if debug {
+					println!("Not a Java folder");
+				}
 				continue;
 			}
 			if !name.contains(&format!("-{major_version}")) {
+				if debug {
+					println!("Does not contain major version");
+				}
 				continue;
 			}
 
 			// Make sure there is a bin directory
 			let path = path.path();
-			let mut read = std::fs::read_dir(&path).ok()?;
-			let bin_file_name = OsString::from("bin");
-			if !read.any(|x| x.map(|x| x.file_name() == bin_file_name).unwrap_or(false)) {
+			if !path.join("bin").exists() {
+				if debug {
+					println!("No bin directory found");
+				}
 				continue;
 			}
 
