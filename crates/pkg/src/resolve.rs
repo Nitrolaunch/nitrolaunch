@@ -21,8 +21,10 @@ pub async fn resolve<'a, E: PackageEvaluator<'a>>(
 		tasks: VecDeque::new(),
 		constraints: Vec::new(),
 		constant_input: constant_eval_input,
-		preloaded_packages: HashSet::with_capacity(packages.len()),
 	};
+
+	// Used to keep track of which packages have been preloaded and are good to further evaluate as tasks
+	let mut preloaded_packages = HashSet::with_capacity(packages.len());
 
 	// Preload all of the user's configured packages
 	let collected_packages: Vec<_> = packages.into_iter().map(|x| x.get_package()).collect();
@@ -30,7 +32,7 @@ pub async fn resolve<'a, E: PackageEvaluator<'a>>(
 		.preload_packages(&collected_packages, common_input)
 		.await
 		.context("Failed to preload packages")?;
-	resolver.preloaded_packages.extend(collected_packages);
+	preloaded_packages.extend(collected_packages);
 
 	// Create the initial EvalPackage tasks and constraints from the installed packages
 	for config in packages.iter().sorted_by_key(|x| x.get_package()) {
@@ -59,7 +61,7 @@ pub async fn resolve<'a, E: PackageEvaluator<'a>>(
 
 		loop {
 			// We have skipped all the tasks and need to finally preload them
-			if num_skipped == resolver.tasks.len() && resolver.tasks.len() != 0 {
+			if num_skipped >= resolver.tasks.len() && resolver.tasks.len() != 0 {
 				break;
 			}
 
@@ -67,7 +69,7 @@ pub async fn resolve<'a, E: PackageEvaluator<'a>>(
 				// Skip this task if it is not preloaded
 				#[allow(irrefutable_let_patterns)]
 				if let Task::EvalPackage { dest, .. } = &task {
-					if !resolver.preloaded_packages.contains(dest) {
+					if !preloaded_packages.contains(dest) {
 						num_skipped += 1;
 						resolver.tasks.push_back(task);
 						continue;
@@ -106,7 +108,7 @@ pub async fn resolve<'a, E: PackageEvaluator<'a>>(
 			.await
 			.context("Failed to preload packages")?;
 
-		resolver.preloaded_packages.extend(to_preload);
+		preloaded_packages.extend(to_preload);
 	}
 
 	let mut unfulfilled_recommendations = Vec::new();
@@ -349,8 +351,6 @@ struct Resolver<'a, E: PackageEvaluator<'a>> {
 	tasks: VecDeque<Task<'a, E>>,
 	constraints: Vec<Constraint>,
 	constant_input: E::EvalInput<'a>,
-	/// Used to keep track of which packages have been preloaded and are good to further evaluate as tasks
-	preloaded_packages: HashSet<ArcPkgReq>,
 }
 
 impl<'a, E> Resolver<'a, E>
