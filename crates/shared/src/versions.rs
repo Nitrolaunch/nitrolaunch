@@ -18,6 +18,8 @@ pub enum VersionPattern {
 	After(String),
 	/// Matches any versions between an inclusive range
 	Range(String, String),
+	/// Special pattern for package resolution that makes the resolver prefer a version, but not require it
+	Prefer(String),
 	/// Matches any version
 	Any,
 }
@@ -52,7 +54,7 @@ impl VersionPattern {
 				},
 				None => vec![],
 			},
-			Self::Any => versions.to_vec(),
+			Self::Prefer(..) | Self::Any => versions.to_vec(),
 		}
 	}
 
@@ -114,7 +116,7 @@ impl VersionPattern {
 					false
 				}
 			}
-			Self::Any => versions.contains(&version.to_string()),
+			Self::Prefer(..) | Self::Any => versions.contains(&version.to_string()),
 		}
 	}
 
@@ -146,6 +148,10 @@ impl VersionPattern {
 			"latest" => Self::Latest(None),
 			"*" => Self::Any,
 			text => {
+				if text.starts_with("~") {
+					return Self::Prefer(text[1..].to_string());
+				}
+
 				if let Some(last) = text.chars().last() {
 					// Check for escape
 					if !text.chars().nth(text.len() - 2).is_some_and(|x| x == '\\') {
@@ -202,6 +208,7 @@ impl Display for VersionPattern {
 				Self::Before(version) => version.to_string() + "-",
 				Self::After(version) => version.to_string() + "+",
 				Self::Range(start, end) => start.to_string() + ".." + end,
+				Self::Prefer(version) => format!("~{version}"),
 				Self::Any => "*".into(),
 			}
 		)
@@ -235,6 +242,18 @@ pub struct VersionInfo {
 	pub version: String,
 	/// The list of available versions to use for comparisons
 	pub versions: Vec<String>,
+}
+
+/// Gets the newest version from a list of versions and a list of available ones. The available versions should be ordered oldest to newest.
+pub fn get_newest_version<'versions>(
+	versions: &'versions [String],
+	available_versions: &[String],
+) -> Option<&'versions String> {
+	versions.into_iter().max_by_key(|version| {
+		available_versions
+			.into_iter()
+			.position(|available_version| available_version == *version)
+	})
 }
 
 /// Parses a string of the format foo@bar, where foo is the object and bar is the optional

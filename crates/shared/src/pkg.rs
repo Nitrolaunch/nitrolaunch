@@ -125,6 +125,16 @@ impl PkgRequest {
 		}
 	}
 
+	/// Create a new request with the content version changed
+	pub fn with_content_version(&self, content_version: VersionPattern) -> Self {
+		Self {
+			source: self.source.clone(),
+			id: self.id.clone(),
+			repository: self.repository.clone(),
+			content_version: content_version,
+		}
+	}
+
 	/// Create a dependency list for debugging
 	pub fn debug_sources(&self) -> String {
 		self.debug_sources_inner(String::new())
@@ -150,7 +160,7 @@ impl PkgRequest {
 
 impl PartialEq for PkgRequest {
 	fn eq(&self, other: &Self) -> bool {
-		self.id == other.id
+		self.id == other.id && self.repository == other.repository
 	}
 }
 

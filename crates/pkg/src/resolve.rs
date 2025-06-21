@@ -4,6 +4,7 @@ use std::sync::Arc;
 use anyhow::{bail, Context};
 use itertools::Itertools;
 use mcvm_shared::pkg::{ArcPkgReq, PackageID};
+use mcvm_shared::versions::{get_newest_version, VersionPattern};
 
 use crate::properties::PackageProperties;
 use crate::{ConfiguredPackage, PackageEvalRelationsResult, PackageEvaluator};
@@ -46,6 +47,7 @@ pub async fn resolve<'a, E: PackageEvaluator<'a>>(
 			kind: ConstraintKind::UserRequire(
 				req.clone(),
 				props.content_versions.clone().unwrap_or_default(),
+				Vec::new(),
 			),
 		});
 		resolver.tasks.push_back(Task::EvalPackage {
@@ -273,9 +275,9 @@ async fn resolve_eval_package<'a, E: PackageEvaluator<'a>>(
 			.constraints
 			.iter()
 			.find_map(|x| {
-				if let ConstraintKind::Require(req2, versions) = &x.kind {
+				if let ConstraintKind::Require(req2, versions, preferred_versions) = &x.kind {
 					if req2 == &req {
-						Some(versions)
+						Some((versions.clone(), preferred_versions.clone()))
 					} else {
 						None
 					}
@@ -283,10 +285,11 @@ async fn resolve_eval_package<'a, E: PackageEvaluator<'a>>(
 					None
 				}
 			})
-			.cloned();
+			.unwrap_or_default();
+
 		resolver.remove_require_constraint(&req);
 		resolver.constraints.push(Constraint {
-			kind: ConstraintKind::Bundle(req.clone(), existing_versions.unwrap_or_default()),
+			kind: ConstraintKind::Bundle(req.clone(), existing_versions.0, existing_versions.1),
 		});
 	}
 
@@ -360,9 +363,9 @@ where
 	fn is_required_fn(constraint: &Constraint, req: &ArcPkgReq) -> bool {
 		matches!(
 			&constraint.kind,
-			ConstraintKind::Require(dest, _)
-			| ConstraintKind::UserRequire(dest, _)
-			| ConstraintKind::Bundle(dest, _) if dest == req
+			ConstraintKind::Require(dest, ..)
+			| ConstraintKind::UserRequire(dest, ..)
+			| ConstraintKind::Bundle(dest, ..) if dest == req
 		)
 	}
 
@@ -376,8 +379,8 @@ where
 	/// Whether a package has been required by the user
 	pub fn is_user_required(&self, req: &ArcPkgReq) -> bool {
 		self.constraints.iter().any(|x| {
-			matches!(&x.kind, ConstraintKind::UserRequire(dest, _) if dest == req)
-				|| matches!(&x.kind, ConstraintKind::Bundle(dest, _) if dest == req && dest.source.is_user_bundled())
+			matches!(&x.kind, ConstraintKind::UserRequire(dest, ..) if dest == req)
+				|| matches!(&x.kind, ConstraintKind::Bundle(dest, ..) if dest == req && dest.source.is_user_bundled())
 		})
 	}
 
@@ -386,7 +389,7 @@ where
 		let index = self
 			.constraints
 			.iter()
-			.position(|x| matches!(&x.kind, ConstraintKind::Require(req2, _) if req2 == req));
+			.position(|x| matches!(&x.kind, ConstraintKind::Require(req2, ..) if req2 == req));
 		if let Some(index) = index {
 			self.constraints.swap_remove(index);
 		}
@@ -399,59 +402,95 @@ where
 		properties: &PackageProperties,
 		kind: RequireConstraint,
 	) -> anyhow::Result<()> {
-		// Find an existing constraint to update
-		let existing_constraint = self.constraints.iter_mut().find_map(|x| {
-			if let ConstraintKind::Require(req2, versions)
-			| ConstraintKind::UserRequire(req2, versions)
-			| ConstraintKind::Bundle(req2, versions) = &mut x.kind
-			{
-				if req2 == req {
-					Some(versions)
+		fn find_constraint<'a>(
+			constraints: &'a mut Vec<Constraint>,
+			req: &ArcPkgReq,
+		) -> Option<(&'a mut Vec<String>, &'a mut Vec<String>)> {
+			constraints.iter_mut().find_map(|x| {
+				if let ConstraintKind::Require(req2, versions, preferred_versions)
+				| ConstraintKind::UserRequire(req2, versions, preferred_versions)
+				| ConstraintKind::Bundle(req2, versions, preferred_versions) = &mut x.kind
+				{
+					if req2 == req {
+						Some((versions, preferred_versions))
+					} else {
+						None
+					}
 				} else {
 					None
 				}
-			} else {
-				None
-			}
-		});
+			})
+		}
 
-		// Update an existing constraint
-		if let Some(existing_versions) = existing_constraint {
-			// If the existing versions is already empty, that means this package just doesn't have any content versions
-			if existing_versions.is_empty() {
-				return Ok(());
-			}
-			// Futher constrain the list of possible content versions for the package
-			let new_versions = req.content_version.get_matches(&existing_versions);
-			// We have overconstrained to the point that there are no versions left
-			if new_versions.is_empty() {
-				bail!("Could not find a version of {req} that matches all of the content version requirements");
-			}
-			// If the number of versions is now smaller, that means a different version could be selected and we need to re-evaluate
-			if new_versions.len() != existing_versions.len() {
-				self.tasks.push_back(Task::EvalPackage {
-					dest: req.clone(),
-					config: None,
-				});
-			}
-
-			*existing_versions = new_versions;
-		} else {
+		// Insert the constraint if it does not exist
+		let just_inserted = if find_constraint(&mut self.constraints, req).is_none() {
 			// Create a new constraint
 			let versions = properties.content_versions.clone().unwrap_or_default();
 			let kind = match kind {
-				RequireConstraint::Require => ConstraintKind::Require(req.clone(), versions),
-				RequireConstraint::UserRequire => {
-					ConstraintKind::UserRequire(req.clone(), versions)
+				RequireConstraint::Require => {
+					ConstraintKind::Require(req.clone(), versions, Vec::new())
 				}
-				RequireConstraint::Bundle => ConstraintKind::Bundle(req.clone(), versions),
+				RequireConstraint::UserRequire => {
+					ConstraintKind::UserRequire(req.clone(), versions, Vec::new())
+				}
+				RequireConstraint::Bundle => {
+					ConstraintKind::Bundle(req.clone(), versions, Vec::new())
+				}
 			};
 			self.constraints.push(Constraint { kind });
+
+			true
+		} else {
+			false
+		};
+
+		// Find existing constraint versionsz to update
+		let (required_versions, preferred_versions) =
+			find_constraint(&mut self.constraints, req).expect("Should have been inserted");
+
+		// Update the constraint with the new versions
+		// If the existing versions is already empty, that means this package just doesn't have any content versions
+		if required_versions.is_empty() {
+			return Ok(());
+		}
+
+		// Constrain the list of required versions or add to the list of preferred versions
+		let new_versions = if let VersionPattern::Prefer(preferred) = &req.content_version {
+			if !preferred_versions.contains(preferred) {
+				preferred_versions.push(preferred.clone());
+			}
+			required_versions.clone()
+		} else {
+			req.content_version.get_matches(&required_versions)
+		};
+
+		// We have overconstrained to the point that there are no versions left
+		if new_versions.is_empty() {
+			bail!("Could not find a version of {req} that matches all of the content version requirements");
+		}
+
+		// Get the best available version for this package
+		let best_version = get_newest_version(preferred_versions, &new_versions)
+			.or(new_versions.last())
+			.cloned()
+			.map(VersionPattern::Single)
+			.unwrap_or(VersionPattern::Any);
+
+		// If the number of versions is now smaller, that means a different version could be selected and we need to re-evaluate.
+		// Also, if the best evaluable version has changed, we also need to re-evaluate
+		if just_inserted
+			|| new_versions.len() != required_versions.len()
+			|| best_version != req.content_version
+		{
+			let req = req.with_content_version(best_version);
+
 			self.tasks.push_back(Task::EvalPackage {
-				dest: req.clone(),
+				dest: Arc::new(req),
 				config: None,
 			});
 		}
+
+		*required_versions = new_versions;
 
 		Ok(())
 	}
@@ -546,9 +585,9 @@ where
 		self.constraints
 			.iter()
 			.filter_map(|x| match &x.kind {
-				ConstraintKind::Require(dest, _)
-				| ConstraintKind::UserRequire(dest, _)
-				| ConstraintKind::Bundle(dest, _) => Some(dest.clone()),
+				ConstraintKind::Require(dest, ..)
+				| ConstraintKind::UserRequire(dest, ..)
+				| ConstraintKind::Bundle(dest, ..) => Some(dest.clone()),
 				_ => None,
 			})
 			.collect()
@@ -563,11 +602,11 @@ struct Constraint {
 
 #[derive(Debug, PartialEq, Eq)]
 enum ConstraintKind {
-	Require(ArcPkgReq, Vec<String>),
-	UserRequire(ArcPkgReq, Vec<String>),
+	Require(ArcPkgReq, Vec<String>, Vec<String>),
+	UserRequire(ArcPkgReq, Vec<String>, Vec<String>),
 	Refuse(ArcPkgReq),
 	Recommend(ArcPkgReq, bool),
-	Bundle(ArcPkgReq, Vec<String>),
+	Bundle(ArcPkgReq, Vec<String>, Vec<String>),
 	Compat(ArcPkgReq, ArcPkgReq),
 	Extend(ArcPkgReq),
 }
