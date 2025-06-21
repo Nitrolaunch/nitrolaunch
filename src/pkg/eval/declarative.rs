@@ -8,6 +8,7 @@ use mcvm_pkg::script_eval::AddonInstructionData;
 use mcvm_pkg::RequiredPackage;
 use mcvm_shared::loaders::LoaderMatch;
 use mcvm_shared::pkg::PackageID;
+use mcvm_shared::util::DeserListOrSingle;
 
 use crate::plugin::PluginManager;
 
@@ -52,7 +53,7 @@ fn eval_declarative_package_impl<'a>(
 	// Apply conditional rules
 	for rule in &contents.conditional_rules {
 		for condition in &rule.conditions {
-			if !check_condition_set(condition, &eval_data.input, &eval_data.properties) {
+			if !check_condition_set(condition, &eval_data.input) {
 				continue;
 			}
 		}
@@ -64,11 +65,7 @@ fn eval_declarative_package_impl<'a>(
 	// Select addon versions
 	for (addon_id, addon) in &contents.addons {
 		// Check conditions
-		if !check_multiple_condition_sets(
-			&addon.conditions,
-			&eval_data.input,
-			&eval_data.properties,
-		) {
+		if !check_multiple_condition_sets(&addon.conditions, &eval_data.input) {
 			continue;
 		}
 
@@ -161,7 +158,7 @@ pub fn pick_best_addon_version<'a>(
 	// Filter versions that are not allowed
 	let versions = versions
 		.iter()
-		.filter(|x| check_condition_set(&x.conditional_properties, input, properties));
+		.filter(|x| check_condition_set(&x.conditional_properties, input));
 
 	// Sort so that versions with less loader matches come first
 	fn get_matches(version: &DeclarativeAddonVersion) -> u16 {
@@ -172,12 +169,49 @@ pub fn pick_best_addon_version<'a>(
 
 		out
 	}
+	let versions = versions.sorted_by_cached_key(|x| get_matches(x));
 
-	let mut versions = versions.sorted_by_cached_key(|x| get_matches(x));
+	let versions: Vec<_> = versions.collect();
+
+	// Check preferred content versions first
+	if !input.params.preferred_content_versions.is_empty() {
+		// Sort so newest comes first
+		let preferred_content_versions: Box<dyn Iterator<Item = &String>> =
+			if let Some(content_versions) = &properties.content_versions {
+				Box::new(
+					input
+						.params
+						.preferred_content_versions
+						.iter()
+						.sorted_by_cached_key(|x| {
+							content_versions
+								.iter()
+								.position(|candidate| &candidate == x)
+								.unwrap_or(content_versions.len())
+						}),
+				)
+			} else {
+				Box::new(input.params.preferred_content_versions.iter())
+			};
+
+		let default = DeserListOrSingle::default();
+		for version in preferred_content_versions {
+			if let Some(version) = versions.iter().find(|x| {
+				x.conditional_properties
+					.content_versions
+					.as_ref()
+					.unwrap_or(&default)
+					.contains(version)
+			}) {
+				return Some(*version);
+			}
+		}
+	}
 
 	// Sort so that versions with newer content versions come first
+	// TODO: Use max() instead for better performance@
 	if let Some(content_versions) = &properties.content_versions {
-		versions = versions.sorted_by_cached_key(|x| {
+		return versions.into_iter().max_by_key(|x| {
 			if let Some(versions) = &x.conditional_properties.content_versions {
 				versions
 					.iter()
@@ -190,26 +224,19 @@ pub fn pick_best_addon_version<'a>(
 		});
 	}
 
-	versions.next()
+	versions.into_iter().next()
 }
 
 /// Check multiple sets of addon version conditions
 fn check_multiple_condition_sets<'a>(
 	conditions: &[DeclarativeConditionSet],
 	input: &'a EvalInput<'a>,
-	properties: &PackageProperties,
 ) -> bool {
-	conditions
-		.iter()
-		.all(|x| check_condition_set(x, input, properties))
+	conditions.iter().all(|x| check_condition_set(x, input))
 }
 
 /// Filtering function for addon version picking and rule checking
-fn check_condition_set<'a>(
-	conditions: &DeclarativeConditionSet,
-	input: &'a EvalInput<'a>,
-	properties: &PackageProperties,
-) -> bool {
+fn check_condition_set<'a>(conditions: &DeclarativeConditionSet, input: &'a EvalInput<'a>) -> bool {
 	if let Some(stability) = &conditions.stability {
 		if stability > &input.params.stability {
 			return false;
@@ -264,17 +291,11 @@ fn check_condition_set<'a>(
 	}
 
 	if let Some(content_versions) = &conditions.content_versions {
-		if let Some(desired_version) = &input.params.content_version {
-			let default_versions = Vec::new();
-			if !content_versions.iter().any(|x| {
-				desired_version.matches_single(
-					x,
-					properties
-						.content_versions
-						.as_ref()
-						.unwrap_or(&default_versions),
-				)
-			}) {
+		if !input.params.required_content_versions.is_empty() {
+			if !content_versions
+				.iter()
+				.any(|x| input.params.required_content_versions.contains(x))
+			{
 				return false;
 			}
 		}

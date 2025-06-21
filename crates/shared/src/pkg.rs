@@ -169,6 +169,7 @@ impl Eq for PkgRequest {}
 impl Hash for PkgRequest {
 	fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
 		self.id.hash(state);
+		self.repository.hash(state);
 	}
 }
 

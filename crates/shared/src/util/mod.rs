@@ -292,6 +292,16 @@ impl<T> DeserListOrSingle<T> {
 	}
 }
 
+impl<T: PartialEq> DeserListOrSingle<T> {
+	/// Checks if the list or single contains a value
+	pub fn contains(&self, value: &T) -> bool {
+		match self {
+			Self::Single(single) => single == value,
+			Self::List(list) => list.contains(value),
+		}
+	}
+}
+
 impl<T: Clone> DeserListOrSingle<T> {
 	/// Get the contained value as a Vec
 	pub fn get_vec(&self) -> Vec<T> {

@@ -95,7 +95,7 @@ pub trait PackageEvaluator<'a> {
 	/// Type passed to most functions, used for common / cached values
 	type CommonInput;
 	/// Type passed to the evaluation function
-	type EvalInput<'b>: Clone;
+	type EvalInput<'b>: EvalInput + Clone;
 	/// Result from package relationship evaluation
 	type EvalRelationsResult<'b>: PackageEvalRelationsResult;
 	/// Configured package type
@@ -122,6 +122,16 @@ pub trait PackageEvaluator<'a> {
 		packages: &[ArcPkgReq],
 		common_input: &Self::CommonInput,
 	) -> anyhow::Result<()>;
+}
+
+/// Trait for an input passed to packages when evaluating their dependencies
+pub trait EvalInput {
+	/// Set the required and preferred content versions of this input before evaluating a package
+	fn set_content_versions(
+		&mut self,
+		required_versions: Vec<String>,
+		preferred_versions: Vec<String>,
+	);
 }
 
 /// Trait for a user-configured package

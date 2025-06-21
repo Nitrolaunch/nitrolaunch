@@ -20,7 +20,7 @@ use mcvm_pkg::PackageContentType;
 use mcvm_pkg::RecommendedPackage;
 use mcvm_pkg::RequiredPackage;
 use mcvm_pkg::{
-	PackageEvalRelationsResult as EvalRelationsResultTrait,
+	EvalInput as EvalInputTrait, PackageEvalRelationsResult as EvalRelationsResultTrait,
 	PackageEvaluator as PackageEvaluatorTrait,
 };
 use mcvm_shared::addon::{is_addon_version_valid, is_filename_valid, Addon};
@@ -34,7 +34,6 @@ use mcvm_shared::output::Simple;
 use mcvm_shared::pkg::ArcPkgReq;
 use mcvm_shared::pkg::PackageID;
 use mcvm_shared::util::is_valid_identifier;
-use mcvm_shared::versions::VersionPattern;
 use reqwest::Client;
 
 use self::conditions::check_arch_condition;
@@ -97,6 +96,17 @@ pub struct EvalInput<'a> {
 	pub params: EvalParameters,
 }
 
+impl<'a> EvalInputTrait for EvalInput<'a> {
+	fn set_content_versions(
+		&mut self,
+		required_versions: Vec<String>,
+		preferred_versions: Vec<String>,
+	) {
+		self.params.required_content_versions = required_versions;
+		self.params.preferred_content_versions = preferred_versions;
+	}
+}
+
 /// Constants for the evaluation that will be the same across every package
 #[derive(Debug, Clone)]
 pub struct EvalConstants {
@@ -125,8 +135,10 @@ pub struct EvalParameters {
 	pub stability: PackageStability,
 	/// Requested worlds to put addons in
 	pub worlds: Vec<String>,
-	/// Requested content version for the package
-	pub content_version: Option<VersionPattern>,
+	/// Required content versions for this package
+	pub required_content_versions: Vec<String>,
+	/// Preferred content versions for this package
+	pub preferred_content_versions: Vec<String>,
 }
 
 impl EvalParameters {
@@ -138,7 +150,8 @@ impl EvalParameters {
 			perms: EvalPermissions::default(),
 			stability: PackageStability::default(),
 			worlds: Vec::new(),
-			content_version: None,
+			required_content_versions: Vec::new(),
+			preferred_content_versions: Vec::new(),
 		}
 	}
 
@@ -156,7 +169,6 @@ impl EvalParameters {
 		self.features = features;
 		self.perms = config.permissions;
 		self.stability = config.stability;
-		self.content_version = config.content_version.as_deref().map(VersionPattern::from);
 
 		Ok(())
 	}
@@ -519,7 +531,7 @@ impl<'a> PackageEvaluatorTrait<'a> for PackageEvaluator<'a> {
 				&mut output::NoOp,
 			)
 			.await
-			.context("Failed to evaluate dependencies for package")?;
+			.context("Failed to evaluate package")?;
 
 		let result = EvalRelationsResult {
 			deps: eval.deps,

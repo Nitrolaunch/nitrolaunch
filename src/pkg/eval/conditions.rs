@@ -36,17 +36,12 @@ pub fn eval_condition(condition: &ConditionKind, eval: &EvalData) -> anyhow::Res
 		ConditionKind::ContentVersion(version) => {
 			let version = version.get(&eval.vars)?;
 
-			let default_versions = Vec::new();
-			let matches = eval.input.params.content_version.as_ref().is_some_and(|x| {
-				x.matches_single(
-					&version,
-					&eval
-						.properties
-						.content_versions
-						.as_ref()
-						.unwrap_or(&default_versions),
-				)
-			});
+			let matches = eval
+				.input
+				.params
+				.required_content_versions
+				.iter()
+				.any(|x| x == &version);
 
 			Ok(matches)
 		}

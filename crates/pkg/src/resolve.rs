@@ -1,13 +1,13 @@
-use std::collections::{HashSet, VecDeque};
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::sync::Arc;
 
 use anyhow::{bail, Context};
 use itertools::Itertools;
 use mcvm_shared::pkg::{ArcPkgReq, PackageID};
-use mcvm_shared::versions::{get_newest_version, VersionPattern};
+use mcvm_shared::versions::VersionPattern;
 
 use crate::properties::PackageProperties;
-use crate::{ConfiguredPackage, PackageEvalRelationsResult, PackageEvaluator};
+use crate::{ConfiguredPackage, EvalInput, PackageEvalRelationsResult, PackageEvaluator};
 
 use crate::{PkgRequest, PkgRequestSource};
 
@@ -22,6 +22,7 @@ pub async fn resolve<'a, E: PackageEvaluator<'a>>(
 		tasks: VecDeque::new(),
 		constraints: Vec::new(),
 		constant_input: constant_eval_input,
+		package_configs: HashMap::new(),
 	};
 
 	// Used to keep track of which packages have been preloaded and are good to further evaluate as tasks
@@ -43,17 +44,10 @@ pub async fn resolve<'a, E: PackageEvaluator<'a>>(
 			.await
 			.context("Failed to get package properties")?;
 
-		resolver.constraints.push(Constraint {
-			kind: ConstraintKind::UserRequire(
-				req.clone(),
-				props.content_versions.clone().unwrap_or_default(),
-				Vec::new(),
-			),
-		});
-		resolver.tasks.push_back(Task::EvalPackage {
-			dest: req.clone(),
-			config: Some(config.clone()),
-		});
+		resolver
+			.update_require_constraint(&req, props, RequireConstraint::UserRequire)
+			.context("Failed to update require constraint")?;
+		resolver.package_configs.insert(req.clone(), config.clone());
 	}
 
 	// Resolve all of the tasks
@@ -179,16 +173,21 @@ pub struct RecommendedPackage {
 
 /// Resolve a single task
 async fn resolve_task<'a, E: PackageEvaluator<'a>>(
-	task: Task<'a, E>,
+	task: Task,
 	common_input: &E::CommonInput,
 	evaluator: &mut E,
 	resolver: &mut Resolver<'a, E>,
 ) -> anyhow::Result<()> {
 	match task {
-		Task::EvalPackage { dest, config } => {
+		Task::EvalPackage {
+			dest,
+			required_content_versions,
+			preferred_content_versions,
+		} => {
 			resolve_eval_package(
 				dest.clone(),
-				config.as_ref(),
+				required_content_versions,
+				preferred_content_versions,
 				common_input,
 				evaluator,
 				resolver,
@@ -204,7 +203,8 @@ async fn resolve_task<'a, E: PackageEvaluator<'a>>(
 /// Resolve an EvalPackage task
 async fn resolve_eval_package<'a, E: PackageEvaluator<'a>>(
 	package: ArcPkgReq,
-	config: Option<&E::ConfiguredPackage>,
+	required_content_versions: Vec<String>,
+	preferred_content_versions: Vec<String>,
 	common_input: &E::CommonInput,
 	evaluator: &mut E,
 	resolver: &mut Resolver<'a, E>,
@@ -219,7 +219,14 @@ async fn resolve_eval_package<'a, E: PackageEvaluator<'a>>(
 		.get_package_properties(&package, common_input)
 		.await
 		.context("Failed to get package properties")?;
-	let input = override_eval_input::<E>(properties, &resolver.constant_input, config)?;
+	let config = resolver.package_configs.get(&package);
+	let input = override_eval_input::<E>(
+		properties,
+		&resolver.constant_input,
+		required_content_versions,
+		preferred_content_versions,
+		config,
+	)?;
 
 	let result = evaluator
 		.eval_package_relations(&package, &input, common_input)
@@ -336,10 +343,15 @@ async fn resolve_eval_package<'a, E: PackageEvaluator<'a>>(
 fn override_eval_input<'a, E: PackageEvaluator<'a>>(
 	properties: &PackageProperties,
 	constant_eval_input: &E::EvalInput<'a>,
+	required_content_versions: Vec<String>,
+	preferred_content_versions: Vec<String>,
 	config: Option<&E::ConfiguredPackage>,
 ) -> anyhow::Result<E::EvalInput<'a>> {
 	let input = {
 		let mut constant_eval_input = constant_eval_input.clone();
+		constant_eval_input
+			.set_content_versions(required_content_versions, preferred_content_versions);
+
 		if let Some(config) = config {
 			config.override_configured_package_input(properties, &mut constant_eval_input)?;
 		}
@@ -351,9 +363,10 @@ fn override_eval_input<'a, E: PackageEvaluator<'a>>(
 
 /// State for resolution
 struct Resolver<'a, E: PackageEvaluator<'a>> {
-	tasks: VecDeque<Task<'a, E>>,
+	tasks: VecDeque<Task>,
 	constraints: Vec<Constraint>,
 	constant_input: E::EvalInput<'a>,
+	package_configs: HashMap<ArcPkgReq, E::ConfiguredPackage>,
 }
 
 impl<'a, E> Resolver<'a, E>
@@ -444,7 +457,7 @@ where
 			false
 		};
 
-		// Find existing constraint versionsz to update
+		// Find existing constraint versions to update
 		let (required_versions, preferred_versions) =
 			find_constraint(&mut self.constraints, req).expect("Should have been inserted");
 
@@ -455,9 +468,11 @@ where
 		}
 
 		// Constrain the list of required versions or add to the list of preferred versions
+		let mut new_version_preferred = false;
 		let new_versions = if let VersionPattern::Prefer(preferred) = &req.content_version {
 			if !preferred_versions.contains(preferred) {
 				preferred_versions.push(preferred.clone());
+				new_version_preferred = true;
 			}
 			required_versions.clone()
 		} else {
@@ -469,24 +484,13 @@ where
 			bail!("Could not find a version of {req} that matches all of the content version requirements");
 		}
 
-		// Get the best available version for this package
-		let best_version = get_newest_version(preferred_versions, &new_versions)
-			.or(new_versions.last())
-			.cloned()
-			.map(VersionPattern::Single)
-			.unwrap_or(VersionPattern::Any);
-
 		// If the number of versions is now smaller, that means a different version could be selected and we need to re-evaluate.
 		// Also, if the best evaluable version has changed, we also need to re-evaluate
-		if just_inserted
-			|| new_versions.len() != required_versions.len()
-			|| best_version != req.content_version
-		{
-			let req = req.with_content_version(best_version);
-
+		if just_inserted || new_version_preferred || new_versions.len() != required_versions.len() {
 			self.tasks.push_back(Task::EvalPackage {
-				dest: Arc::new(req),
-				config: None,
+				dest: req.clone(),
+				required_content_versions: new_versions.clone(),
+				preferred_content_versions: preferred_versions.clone(),
 			});
 		}
 
@@ -612,12 +616,12 @@ enum ConstraintKind {
 }
 
 /// A task that needs to be completed for resolution
-enum Task<'a, E: PackageEvaluator<'a>> {
+enum Task {
 	/// Evaluate a package and its relationships
 	EvalPackage {
 		dest: Arc<PkgRequest>,
-		/// For packages with a config
-		config: Option<E::ConfiguredPackage>,
+		required_content_versions: Vec<String>,
+		preferred_content_versions: Vec<String>,
 	},
 }
 
