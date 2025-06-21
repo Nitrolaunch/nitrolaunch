@@ -158,9 +158,20 @@ pub async fn resolve<'a, E: PackageEvaluator<'a>>(
 /// Result from package resolution
 pub struct ResolutionResult {
 	/// The list of packages to install
-	pub packages: Vec<ArcPkgReq>,
+	pub packages: Vec<ResolutionPackageResult>,
 	/// Package recommendations that were not satisfied
 	pub unfulfilled_recommendations: Vec<RecommendedPackage>,
+}
+
+/// A single package resulting from resolution
+#[derive(Debug)]
+pub struct ResolutionPackageResult {
+	/// The request for this package. The content version probably doesn't mean anything.
+	pub req: ArcPkgReq,
+	/// The required content versions for this package
+	pub required_content_versions: Vec<String>,
+	/// The preferred content versions for this package
+	pub preferred_content_versions: Vec<String>,
 }
 
 /// Recommended package that has a PkgRequest instead of a String
@@ -275,29 +286,8 @@ async fn resolve_eval_package<'a, E: PackageEvaluator<'a>>(
 			.get_package_properties(&req, common_input)
 			.await
 			.context("Failed to get properties for required package")?;
+
 		resolver.update_require_constraint(&req, props, RequireConstraint::Bundle)?;
-
-		// Upgrade a require constraint into a bundle
-		let existing_versions = resolver
-			.constraints
-			.iter()
-			.find_map(|x| {
-				if let ConstraintKind::Require(req2, versions, preferred_versions) = &x.kind {
-					if req2 == &req {
-						Some((versions.clone(), preferred_versions.clone()))
-					} else {
-						None
-					}
-				} else {
-					None
-				}
-			})
-			.unwrap_or_default();
-
-		resolver.remove_require_constraint(&req);
-		resolver.constraints.push(Constraint {
-			kind: ConstraintKind::Bundle(req.clone(), existing_versions.0, existing_versions.1),
-		});
 	}
 
 	for (check_package, compat_package) in result.get_compats().iter().sorted() {
@@ -402,7 +392,7 @@ where
 		let index = self
 			.constraints
 			.iter()
-			.position(|x| matches!(&x.kind, ConstraintKind::Require(req2, ..) if req2 == req));
+			.position(|x| matches!(&x.kind, ConstraintKind::Require(req2, ..) | ConstraintKind::UserRequire(req2, ..) | ConstraintKind::Bundle(req2, ..) if req2 == req));
 		if let Some(index) = index {
 			self.constraints.swap_remove(index);
 		}
@@ -496,6 +486,21 @@ where
 
 		*required_versions = new_versions;
 
+		// Upgrade requires to bundles
+		let required_versions = required_versions.clone();
+		let preferred_versions = preferred_versions.clone();
+		if self
+			.constraints
+			.iter()
+			.any(|x| matches!(&x.kind, ConstraintKind::Require(req2, ..) if req2 == req))
+		{
+			self.remove_require_constraint(req);
+
+			self.constraints.push(Constraint {
+				kind: ConstraintKind::Bundle(req.clone(), required_versions, preferred_versions),
+			})
+		}
+
 		Ok(())
 	}
 
@@ -585,13 +590,29 @@ where
 	}
 
 	/// Collect all needed packages for final output
-	pub fn collect_packages(self) -> Vec<ArcPkgReq> {
+	pub fn collect_packages(self) -> Vec<ResolutionPackageResult> {
 		self.constraints
-			.iter()
-			.filter_map(|x| match &x.kind {
-				ConstraintKind::Require(dest, ..)
-				| ConstraintKind::UserRequire(dest, ..)
-				| ConstraintKind::Bundle(dest, ..) => Some(dest.clone()),
+			.into_iter()
+			.filter_map(|x| match x.kind {
+				ConstraintKind::Require(
+					dest,
+					required_content_versions,
+					preferred_content_versions,
+				)
+				| ConstraintKind::UserRequire(
+					dest,
+					required_content_versions,
+					preferred_content_versions,
+				)
+				| ConstraintKind::Bundle(
+					dest,
+					required_content_versions,
+					preferred_content_versions,
+				) => Some(ResolutionPackageResult {
+					req: dest,
+					required_content_versions,
+					preferred_content_versions,
+				}),
 				_ => None,
 			})
 			.collect()

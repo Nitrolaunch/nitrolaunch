@@ -78,6 +78,14 @@ pub async fn update_instance_packages<'a, O: MCVMOutput>(
 					.context("Failed to apply config")?;
 			}
 
+			let default = (Vec::new(), Vec::new());
+			let content_version_params = resolved_packages
+				.content_version_params
+				.get(package)
+				.unwrap_or(&default);
+			params.required_content_versions = content_version_params.0.clone();
+			params.preferred_content_versions = content_version_params.1.clone();
+
 			let input = EvalInput { constants, params };
 			let (eval, new_tasks) = instance
 				.get_package_addon_tasks(
@@ -264,6 +272,7 @@ async fn resolve_and_batch<'a, O: MCVMOutput>(
 ) -> anyhow::Result<ResolvedPackages> {
 	let mut batched: HashMap<ArcPkgReq, Vec<InstanceID>> = HashMap::new();
 	let mut resolved = HashMap::new();
+	let mut content_version_params = HashMap::new();
 
 	for instance in instances {
 		let mut params = EvalParameters::new(instance.kind.to_side());
@@ -286,19 +295,36 @@ async fn resolve_and_batch<'a, O: MCVMOutput>(
 				instance.id
 			)
 		})?;
-		for package in &instance_resolved.packages {
-			if let Some(entry) = batched.get_mut(package) {
+
+		for result in &instance_resolved.packages {
+			if let Some(entry) = batched.get_mut(&result.req) {
 				entry.push(instance.id.clone());
 			} else {
-				batched.insert(package.clone(), vec![instance.id.clone()]);
+				batched.insert(result.req.clone(), vec![instance.id.clone()]);
 			}
+
+			content_version_params.insert(
+				result.req.clone(),
+				(
+					result.required_content_versions.clone(),
+					result.preferred_content_versions.clone(),
+				),
+			);
 		}
-		resolved.insert(instance.id.clone(), instance_resolved.packages);
+		resolved.insert(
+			instance.id.clone(),
+			instance_resolved
+				.packages
+				.into_iter()
+				.map(|x| x.req)
+				.collect(),
+		);
 	}
 
 	Ok(ResolvedPackages {
 		package_to_instances: batched,
 		instance_to_packages: resolved,
+		content_version_params,
 	})
 }
 
@@ -307,6 +333,8 @@ struct ResolvedPackages {
 	pub package_to_instances: HashMap<ArcPkgReq, Vec<InstanceID>>,
 	/// A reverse mapping of instance IDs to all of the packages they have resolved
 	pub instance_to_packages: HashMap<InstanceID, Vec<ArcPkgReq>>,
+	/// A mapping of packages to their content version parameters (required and preferred content versions)
+	pub content_version_params: HashMap<ArcPkgReq, (Vec<String>, Vec<String>)>,
 }
 
 /// Checks a package with the registry to report any warnings about it

@@ -67,7 +67,7 @@ pub enum PackageContentType {
 /// A required package
 #[derive(Debug, Clone, PartialOrd, Ord, PartialEq, Eq, Serialize, Deserialize)]
 pub struct RequiredPackage {
-	/// The package id that is required
+	/// The package that is required
 	pub value: PackageID,
 	/// Whether this is an explicit dependency
 	pub explicit: bool,

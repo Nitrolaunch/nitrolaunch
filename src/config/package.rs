@@ -89,13 +89,6 @@ pub fn read_package_config(
 	// source: PackageConfigSource,
 ) -> PackageConfig {
 	let id = config.get_pkg_id();
-	let content_version = config.get_content_version().cloned();
-
-	let (id, content_version) = if let Some((real_id, version)) = id.split_once('@') {
-		(real_id.into(), Some(version.into()))
-	} else {
-		(id, content_version)
-	};
 
 	PackageConfig {
 		id,
@@ -104,6 +97,6 @@ pub fn read_package_config(
 		permissions: config.get_permissions(),
 		stability: config.get_stability(profile_stability),
 		worlds: config.get_worlds().into_owned(),
-		content_version,
+		content_version: None,
 	}
 }

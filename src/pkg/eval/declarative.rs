@@ -188,7 +188,8 @@ pub fn pick_best_addon_version<'a>(
 								.iter()
 								.position(|candidate| &candidate == x)
 								.unwrap_or(content_versions.len())
-						}),
+						})
+						.rev(),
 				)
 			} else {
 				Box::new(input.params.preferred_content_versions.iter())
@@ -209,9 +210,8 @@ pub fn pick_best_addon_version<'a>(
 	}
 
 	// Sort so that versions with newer content versions come first
-	// TODO: Use max() instead for better performance@
 	if let Some(content_versions) = &properties.content_versions {
-		return versions.into_iter().max_by_key(|x| {
+		return versions.into_iter().min_by_key(|x| {
 			if let Some(versions) = &x.conditional_properties.content_versions {
 				versions
 					.iter()

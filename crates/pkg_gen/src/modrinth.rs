@@ -394,6 +394,7 @@ pub async fn gen(
 		addon.versions.push(pkg_version);
 	}
 
+	content_versions.reverse();
 	props.content_versions = Some(content_versions);
 	props.supported_loaders = Some(all_loaders.into_iter().collect());
 	if needs_datapack_feature {
