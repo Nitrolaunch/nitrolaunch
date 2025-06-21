@@ -268,6 +268,9 @@ impl RelationSubFunction for RelationSub {
 				None
 			};
 
+			// Only prefer the version
+			let version = version.map(|x| format!("~{x}"));
+
 			Ok((id, version))
 		} else {
 			// Theres a LOT of broken Modrinth projects
