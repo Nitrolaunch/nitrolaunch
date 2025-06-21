@@ -195,25 +195,26 @@ pub async fn gen(
 
 	// Make substitutions
 	let mut substitutions = HashSet::new();
+	let mut substitutions_without_versions = HashSet::new();
 	for version in versions {
 		for dependency in &version.dependencies {
 			if let Some(project_id) = &dependency.project_id {
-				substitutions.insert(project_id);
+				substitutions.insert((project_id.clone(), dependency.version_id.clone()));
+				substitutions_without_versions.insert(project_id.clone());
 			}
 		}
 	}
 
 	relation_substitution
 		.preload_substitutions(
-			&substitutions
-				.iter()
-				.map(|x| (*x).clone())
+			&substitutions_without_versions
+				.into_iter()
 				.collect::<Vec<_>>(),
 		)
 		.await
 		.context("Failed to preload substitutions")?;
 
-	let substitutions = substitute_multiple(substitutions.into_iter(), relation_substitution)
+	let substitutions = substitute_multiple(substitutions.iter(), relation_substitution)
 		.await
 		.context("Failed to substitute relations")?;
 
@@ -299,8 +300,8 @@ pub async fn gen(
 			let Some(project_id) = &dep.project_id else {
 				continue;
 			};
-			let pkg_id = substitutions
-				.get(project_id)
+			let (pkg_id, pkg_version) = substitutions
+				.get(&(project_id.clone(), dep.version_id.clone()))
 				.expect("Should have errored already")
 				.clone();
 
@@ -313,6 +314,11 @@ pub async fn gen(
 				format!("{repo}:{pkg_id}")
 			} else {
 				pkg_id
+			};
+			let req = if let Some(pkg_version) = pkg_version {
+				format!("{req}@{pkg_version}")
+			} else {
+				req
 			};
 
 			match dep.dependency_type {
@@ -452,7 +458,7 @@ fn get_supported_sides(project: &Project) -> Vec<Side> {
 }
 
 /// Cleanup a version name to remove things like loaders
-fn cleanup_version_name(version: &str) -> String {
+pub fn cleanup_version_name(version: &str) -> String {
 	// static MODLOADER_REGEX: OnceLock<Regex> = OnceLock::new();
 	// let regex = MODLOADER_REGEX.get_or_init(|| {
 	// 	RegexBuilder::new("(-|_|\\+)?(fabric|forge|quilt)")

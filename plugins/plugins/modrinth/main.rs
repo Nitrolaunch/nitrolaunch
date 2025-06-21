@@ -13,10 +13,10 @@ use mcvm_net::{
 	download::Client,
 	modrinth::{self, Member, Project, SearchResults, Version},
 };
-use mcvm_pkg::PackageSearchResults;
+use mcvm_pkg::{declarative::DeclarativePackage, PackageSearchResults};
 use mcvm_pkg_gen::{
-	modrinth::get_preview,
-	relation_substitution::{RelationSubFunction, RelationSubNone},
+	modrinth::{cleanup_version_name, get_preview},
+	relation_substitution::{PackageAndVersion, RelationSubFunction, RelationSubNone},
 };
 use mcvm_plugin::{
 	api::{utils::PackageSearchCache, CustomPlugin},
@@ -222,20 +222,56 @@ struct RelationSub {
 }
 
 impl RelationSubFunction for RelationSub {
-	async fn substitute(&self, relation: &str) -> anyhow::Result<String> {
+	async fn substitute(
+		&self,
+		relation: &str,
+		version: Option<&str>,
+	) -> anyhow::Result<PackageAndVersion> {
 		let package_or_project =
 			get_cached_package_or_project(relation, &self.storage_dirs, &self.client)
 				.await
 				.context("Failed to get cached data")?;
 		if let Some(package_or_project) = package_or_project {
-			let id = match package_or_project {
-				PackageOrProjectInfo::Package { slug, .. } => slug,
-				PackageOrProjectInfo::ProjectInfo(info) => info.project.slug,
+			let id = match &package_or_project {
+				PackageOrProjectInfo::Package { slug, .. } => slug.clone(),
+				PackageOrProjectInfo::ProjectInfo(info) => info.project.slug.clone(),
 			};
-			Ok(id)
+
+			let version = if let Some(version) = version {
+				match package_or_project {
+					PackageOrProjectInfo::Package { package, .. } => {
+						let package: DeclarativePackage = serde_json::from_str(&package)?;
+						package
+							.addons
+							.into_values()
+							.find_map(|x| {
+								x.versions
+									.into_iter()
+									.find(|x| x.version.as_ref().is_some_and(|x| x == version))
+							})
+							.and_then(|x| {
+								x.conditional_properties
+									.content_versions
+									.unwrap_or_default()
+									.iter()
+									.next()
+									.cloned()
+							})
+					}
+					PackageOrProjectInfo::ProjectInfo(project_info) => project_info
+						.versions
+						.iter()
+						.find(|x| x.id == version)
+						.map(|x| cleanup_version_name(&x.version_number)),
+				}
+			} else {
+				None
+			};
+
+			Ok((id, version))
 		} else {
 			// Theres a LOT of broken Modrinth projects
-			Ok("none".into())
+			Ok(("none".into(), None))
 		}
 	}
 

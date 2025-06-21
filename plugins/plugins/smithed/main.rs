@@ -10,7 +10,9 @@ use mcvm_net::{
 	smithed::{self, Pack, PackSearchResult},
 };
 use mcvm_pkg::PackageSearchResults;
-use mcvm_pkg_gen::relation_substitution::{RelationSubFunction, RelationSubNone};
+use mcvm_pkg_gen::relation_substitution::{
+	PackageAndVersion, RelationSubFunction, RelationSubNone,
+};
 use mcvm_plugin::{
 	api::{utils::PackageSearchCache, CustomPlugin},
 	hooks::CustomRepoQueryResult,
@@ -193,13 +195,27 @@ struct RelationSub {
 }
 
 impl RelationSubFunction for RelationSub {
-	async fn substitute(&self, relation: &str) -> anyhow::Result<String> {
+	async fn substitute(
+		&self,
+		relation: &str,
+		version: Option<&str>,
+	) -> anyhow::Result<PackageAndVersion> {
 		let pack_info = get_cached_pack(relation, false, &self.storage_dir, &self.client)
 			.await
 			.context("Failed to get pack")?
 			.context("Pack does not exist")?;
 
-		Ok(pack_info.pack.id)
+		let version = version
+			.and_then(|version| {
+				pack_info
+					.pack
+					.versions
+					.into_iter()
+					.find(|x| x.name == version)
+			})
+			.map(|x| x.name);
+
+		Ok((pack_info.pack.id, version))
 	}
 }
 

@@ -97,10 +97,10 @@ pub async fn gen(
 	let mut substitutions = HashSet::new();
 	for version in &pack.versions {
 		for dependency in &version.dependencies {
-			substitutions.insert(&dependency.id);
+			substitutions.insert((dependency.id.clone(), Some(dependency.version.clone())));
 		}
 	}
-	let substitutions = substitute_multiple(substitutions.into_iter(), relation_substitution)
+	let substitutions = substitute_multiple(substitutions.iter(), relation_substitution)
 		.await
 		.context("Failed to substitute relations")?;
 
@@ -123,13 +123,19 @@ pub async fn gen(
 		let mut extensions = Vec::new();
 
 		for dep in version.dependencies {
-			let dep = substitutions
-				.get(&dep.id)
+			let (dep, dep_version) = substitutions
+				.get(&(dep.id.clone(), Some(dep.version.clone())))
 				.expect("Should have errored already")
 				.clone();
 
 			let dep = if let Some(repo) = &repo {
 				format!("{repo}:{dep}")
+			} else {
+				dep
+			};
+
+			let dep = if let Some(dep_version) = &dep_version {
+				format!("{dep}@{dep_version}")
 			} else {
 				dep
 			};
