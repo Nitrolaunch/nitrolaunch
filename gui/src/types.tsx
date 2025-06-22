@@ -52,6 +52,7 @@ export interface PackageMeta {
 	issues?: string;
 	community?: string;
 	license?: string;
+	authors?: string[];
 }
 
 export interface PackageProperties {

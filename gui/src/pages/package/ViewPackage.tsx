@@ -38,14 +38,17 @@ import { beautifyString, parsePkgRequest } from "../../utils";
 import PackageVersions from "../../components/package/PackageVersions";
 import PackageInstallModal from "../../components/package/PackageInstallModal";
 import { canonicalizeListOrSingle } from "../../utils/values";
+import LoadingSpinner from "../../components/utility/LoadingSpinner";
 
 export default function ViewPackage(props: ViewPackageProps) {
 	let params = useParams();
 
 	let packageId = params.id;
 
-	let [meta] = createResource(updateMeta);
-	let [properties] = createResource(updateProps);
+	let [meta] = createResource(updateMetaAndProps);
+	let [properties, setProperties] = createSignal<PackageProperties | undefined>(
+		undefined
+	);
 
 	let [repoInfo, setRepoInfo] = createSignal<RepoInfo | undefined>(undefined);
 	let [shortDescription, setShortDescription] = createSignal("");
@@ -67,48 +70,50 @@ export default function ViewPackage(props: ViewPackageProps) {
 		});
 	});
 
-	async function updateMeta() {
-		let [meta, repos] = (await Promise.all([
-			invoke("get_package_meta", {
-				package: packageId,
-			}),
-			invoke("get_package_repos"),
-		])) as [PackageMeta, RepoInfo[]];
-
-		let request = parsePkgRequest(packageId);
-		if (request.repo != undefined)
-			for (let repo of repos) {
-				if (repo.id == request.repo) {
-					setRepoInfo(repo);
-				}
-			}
-
-		let description = meta.description == undefined ? "" : meta.description;
-		setShortDescription(description.slice(0, 200));
-		let longDescription =
-			meta.long_description == undefined ? "" : meta.long_description;
-		let longDescriptionHtml = `<div>${await marked.parse(
-			longDescription
-		)}</div>`;
-		setLongDescription(longDescriptionHtml);
-
-		return meta;
-	}
-
-	async function updateProps() {
+	async function updateMetaAndProps() {
 		try {
-			let props: PackageProperties = await invoke("get_package_props", {
-				package: packageId,
-			});
+			let [[meta, properties], repos] = (await Promise.all([
+				invoke("get_package_meta_and_props", {
+					package: packageId,
+				}),
+				invoke("get_package_repos"),
+			])) as [[PackageMeta, PackageProperties], RepoInfo[]];
 
-			return props;
+			let request = parsePkgRequest(packageId);
+			if (request.repo != undefined)
+				for (let repo of repos) {
+					if (repo.id == request.repo) {
+						setRepoInfo(repo);
+					}
+				}
+
+			let description = meta.description == undefined ? "" : meta.description;
+			setShortDescription(description.slice(0, 200));
+			let longDescription =
+				meta.long_description == undefined ? "" : meta.long_description;
+			let longDescriptionHtml = `<div>${await marked.parse(
+				longDescription
+			)}</div>`;
+			setLongDescription(longDescriptionHtml);
+
+			setProperties(properties);
+
+			return meta;
 		} catch (e) {
 			errorToast("Failed to load package: " + e);
+			return undefined;
 		}
 	}
 
 	return (
-		<Show when={meta() != undefined && properties() != undefined}>
+		<Show
+			when={meta() != undefined && properties() != undefined}
+			fallback={
+				<div class="cont" style="width:100%">
+					<LoadingSpinner size="5rem" />
+				</div>
+			}
+		>
 			<div class="cont col" style="width:100%">
 				<div class="cont col" id="package-container">
 					<div class="cont" id="package-header-container">
@@ -296,13 +301,6 @@ export default function ViewPackage(props: ViewPackageProps) {
 							</div>
 						</div>
 						<div class="package-shadow cont col" id="package-properties">
-							<Show when={meta()!.website != undefined}>
-								<Property icon={Globe} label="Website">
-									<a href={meta()!.website} target="_blank">
-										Open
-									</a>
-								</Property>
-							</Show>
 							<Show when={meta()!.support_link != undefined}>
 								<Property icon={Heart} label="Donate" color="var(--error)">
 									<a href={meta()!.support_link} target="_blank">
@@ -310,9 +308,23 @@ export default function ViewPackage(props: ViewPackageProps) {
 									</a>
 								</Property>
 							</Show>
+							<Show when={meta()!.website != undefined}>
+								<Property icon={Globe} label="Website">
+									<a href={meta()!.website} target="_blank">
+										Open
+									</a>
+								</Property>
+							</Show>
 							<Show when={meta()!.documentation != undefined}>
 								<Property icon={Book} label="Documentation">
 									<a href={meta()!.documentation} target="_blank">
+										Open
+									</a>
+								</Property>
+							</Show>
+							<Show when={meta()!.community != undefined}>
+								<Property icon={User} label="Community">
+									<a href={meta()!.community} target="_blank">
 										Open
 									</a>
 								</Property>
@@ -331,13 +343,13 @@ export default function ViewPackage(props: ViewPackageProps) {
 									</a>
 								</Property>
 							</Show>
-							<Show when={meta()!.community != undefined}>
-								<Property icon={User} label="Community">
-									<a href={meta()!.community} target="_blank">
-										Open
-									</a>
-								</Property>
-							</Show>
+							<For each={canonicalizeListOrSingle(meta()!.authors)}>
+								{(author) => (
+									<Property icon={User} label="Author">
+										{author}
+									</Property>
+								)}
+							</For>
 							<Property icon={Key} label="License">
 								{meta()!.license == undefined ? (
 									"Unknown"

@@ -20,7 +20,7 @@ import PackagesConfig, {
 	PackageConfig,
 } from "./PackagesConfig";
 import Tip from "../../components/dialog/Tip";
-import { errorToast } from "../../components/dialog/Toasts";
+import { errorToast, successToast } from "../../components/dialog/Toasts";
 import DisplayShow from "../../components/utility/DisplayShow";
 import {
 	getLoaderColor,
@@ -318,6 +318,8 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 
 		try {
 			saveInstanceConfig(configId, newConfig, props.mode);
+
+			successToast("Changes saved");
 
 			configOperations.refetch();
 			props.setFooterData({
