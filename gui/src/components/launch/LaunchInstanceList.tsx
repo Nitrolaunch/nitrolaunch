@@ -315,7 +315,7 @@ function Item(props: ItemProps) {
 					<IconButton
 						icon={Pin}
 						size="22px"
-						color="var(--bg2)"
+						color="transparent"
 						selectedColor="var(--instance)"
 						iconColor={
 							props.sectionKind == "pinned" ? "var(--bg2)" : "var(--fg)"

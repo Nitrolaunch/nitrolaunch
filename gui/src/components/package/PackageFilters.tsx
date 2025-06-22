@@ -23,18 +23,24 @@ import {
 import InlineSelect from "../input/InlineSelect";
 import { invoke } from "@tauri-apps/api";
 import { PackageType } from "../../package";
+import Dropdown from "../input/Dropdown";
 
 export default function PackageFilters(props: PackageFiltersProps) {
 	let [tab, setTab] = createSignal(
 		props.filteringVersions ? "minecraft_versions" : "types"
 	);
 
+	let [extraMinecraftVersions, setExtraMinecraftVersions] = createSignal<
+		string[]
+	>([]);
+
 	let [versionFilterOptions, _] = createResource(async () => {
 		// If a list of versions is available (we are filtering a list of package versions), use taht
 		if (props.availableMinecraftVersions != undefined) {
 			let versions = props.availableMinecraftVersions.concat([]);
 			versions.reverse();
-			return versions.slice(0, 7);
+			setExtraMinecraftVersions(versions.slice(6));
+			return versions.slice(0, 5);
 		}
 
 		// Let the user select from the most recent couple versions, along with some popular ones
@@ -42,12 +48,11 @@ export default function PackageFilters(props: PackageFiltersProps) {
 			releasesOnly: true,
 		})) as string[];
 
-		let latestReleases = availableVersions.slice(
-			availableVersions.length - 4,
-			availableVersions.length - 1
-		);
-		latestReleases.reverse();
+		availableVersions.reverse();
+		let latestReleases = availableVersions.slice(0, 2);
 		let popularVersions = ["1.19.4", "1.18.2", "1.16.5", "1.12.2"];
+
+		setExtraMinecraftVersions(availableVersions.slice(2));
 
 		return latestReleases.concat(popularVersions);
 	});
@@ -186,6 +191,7 @@ export default function PackageFilters(props: PackageFiltersProps) {
 				>
 					<MinecraftVersionsTab
 						options={versionFilterOptions()!}
+						extraOptions={extraMinecraftVersions()}
 						selectedVersions={props.minecraftVersions}
 						setMinecraftVersions={props.setMinecraftVersions}
 					/>
@@ -290,33 +296,67 @@ export interface PackageFiltersProps {
 function MinecraftVersionsTab(props: MinecraftVersionsTabProps) {
 	return (
 		<div class="cont package-filter-tab-contents" style="padding:0.5rem">
-			<InlineSelect
-				options={props.options.map((version) => {
-					return {
-						value: version,
-						contents: (
-							<div class="cont">
-								<div style="font-size:0.9rem;font-weight:bold;text-align:center">
-									{version}
-								</div>
-							</div>
-						),
-						color: "var(--instance)",
-					};
-				})}
-				selected={props.selectedVersions}
-				onChangeMulti={(values) =>
-					props.setMinecraftVersions(values == undefined ? [] : values)
+			<div
+				class="cont"
+				style={
+					props.options.length > 5
+						? "width:calc(100%/7*6)"
+						: "width:calc(100%/5*4)"
 				}
-				columns={7}
-				connected={false}
-			/>
+			>
+				<InlineSelect
+					options={props.options.map((version) => {
+						return {
+							value: version,
+							contents: (
+								<div class="cont">
+									<div style="font-size:0.9rem;font-weight:bold;text-align:center">
+										{version}
+									</div>
+								</div>
+							),
+							color: "var(--instance)",
+						};
+					})}
+					selected={props.selectedVersions}
+					onChangeMulti={(values) =>
+						props.setMinecraftVersions(values == undefined ? [] : values)
+					}
+					columns={props.options.length}
+					connected={false}
+				/>
+			</div>
+			<div
+				class="cont"
+				style={`${
+					props.options.length > 5
+						? "width:calc(100%/7*1)"
+						: "width:calc(100%/5*1)"
+				};height:100%`}
+			>
+				<Dropdown
+					options={props.extraOptions.map((version) => {
+						return {
+							value: version,
+							contents: <div>{version}</div>,
+							color: "var(--instance)",
+						};
+					})}
+					selected={props.selectedVersions}
+					onChangeMulti={(versions) => {
+						props.setMinecraftVersions(versions as string[]);
+					}}
+				/>
+			</div>
 		</div>
 	);
 }
 
 interface MinecraftVersionsTabProps {
+	// The main options visible outside the dropdown
 	options: string[];
+	// The extra options inside of the dropdown
+	extraOptions: string[];
 	selectedVersions: string[];
 	setMinecraftVersions: (versions: string[]) => void;
 }

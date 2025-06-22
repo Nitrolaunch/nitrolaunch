@@ -102,8 +102,6 @@
 .launch-instance-list-pin {
 	position: absolute;
 	right: 0.8rem;
-	/* margin-left: 4.5rem; */
-	/* color: var(--bg); */
 }
 
 .launch-instance-list-item-details {

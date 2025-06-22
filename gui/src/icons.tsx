@@ -54,6 +54,7 @@ import HashtagIcon from "./assets/icons/hashtag.svg?component-solid";
 import LockIcon from "./assets/icons/lock.svg?component-solid";
 import DiagramIcon from "./assets/icons/diagram.svg?component-solid";
 import TagIcon from "./assets/icons/tag.svg?component-solid";
+import AngleDownIcon from "./assets/icons/angle_down.svg?component-solid";
 import { HasWidthHeight } from "./components/Icon";
 
 export function Pin({ width, height, viewBox }: HasWidthHeight) {
@@ -286,4 +287,8 @@ export function Diagram({ width, height, viewBox }: HasWidthHeight) {
 
 export function Tag({ width, height, viewBox }: HasWidthHeight) {
 	return <TagIcon width={width} height={height} viewBox={viewBox} />;
+}
+
+export function AngleDown({ width, height, viewBox }: HasWidthHeight) {
+	return <AngleDownIcon width={width} height={height} viewBox={viewBox} />;
 }
