@@ -16,7 +16,11 @@ import {
 	PackageSearchResults,
 } from "../../types";
 import SearchBar from "../../components/input/SearchBar";
-import { parsePkgRequest, parseQueryString } from "../../utils";
+import {
+	parsePkgRequest,
+	parseQueryString,
+	pkgRequestToString,
+} from "../../utils";
 import InlineSelect from "../../components/input/InlineSelect";
 import { FooterData } from "../../App";
 import { FooterMode } from "../../components/launch/Footer";
@@ -171,15 +175,19 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 
 			// Fill out results from existing previews, removing them from the list if the preview is present
 			for (let i = 0; i < results.results.length; i++) {
-				let pkg = parsePkgRequest(results.results[i]).id;
+				let pkg = parsePkgRequest(results.results[i]);
 				let preview =
-					pkg in results.previews
-						? results.previews[pkg]
-						: `${selectedRepo()}:${pkg}` in results.previews
-						? results.previews[`${selectedRepo()}:${pkg}`]
+					pkg.id in results.previews
+						? results.previews[pkg.id]
+						: pkgRequestToString(pkg) in results.previews
+						? results.previews[pkgRequestToString(pkg)]
 						: undefined;
 				if (preview != undefined) {
-					packages.push({ id: pkg, meta: preview[0], props: preview[1] });
+					packages.push({
+						id: pkgRequestToString(pkg),
+						meta: preview[0],
+						props: preview[1],
+					});
 					results.results.splice(i, 1);
 					i--;
 				}
