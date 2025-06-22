@@ -90,7 +90,10 @@ Instances are defined in the id-value format underneath the `instances` object o
 		}
 	},
 	"datapack_folder": string,
-	"packages": [ ... ]
+	"packages": [ ... ],
+	"overrides": {
+		"suppress": [string]
+	}
 }
 ```
 
@@ -112,6 +115,8 @@ All fields are optional unless stated otherwise.
 - `launch.use_log4j_config`: Whether to use Mojang's config for Log4J on the client. Defaults to false.
 - `datapack_folder`: Make MCVM install datapack type addons to this folder instead of every existing world. This provides better behavior than the default one, but requires a modification of some sort that enables global datapacks. This path is relative to the game directory of the instance (`.minecraft` or the folder where the server.properties is).
 - `packages`: Packages to install on this instance.
+- `overrides`: Manual overrides made to packages installed on this instance to give you more control in case something goes wrong
+- `overrides.suppress`: Packages in this list will not be installed. MCVM may say that it was installed at the end, but these packages will never be evaluated. Useful if you want to install a package dependency manually.
 
 ## Profiles
 

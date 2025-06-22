@@ -126,6 +126,7 @@ pub fn read_instance_config(
 		datapack_folder: config.common.datapack_folder,
 		packages,
 		package_stability: config.common.package_stability.unwrap_or_default(),
+		package_overrides: config.common.overrides,
 		original_config,
 		original_config_with_profiles,
 		plugin_config: config.common.plugin_config,

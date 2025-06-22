@@ -4,6 +4,7 @@ use std::path::{Path, PathBuf};
 use anyhow::Context;
 use mcvm_core::io::java::args::MemoryNum;
 use mcvm_core::util::versions::MinecraftVersionDeser;
+use mcvm_pkg::overrides::PackageOverrides;
 use mcvm_shared::addon::AddonKind;
 use mcvm_shared::loaders::Loader;
 use mcvm_shared::pkg::PackageStability;
@@ -67,6 +68,9 @@ pub struct CommonInstanceConfig {
 	/// Packages for this instance
 	#[serde(skip_serializing_if = "Vec::is_empty")]
 	pub packages: Vec<PackageConfigDeser>,
+	/// Overrides for packages on this instance
+	#[serde(skip_serializing_if = "DefaultExt::is_default")]
+	pub overrides: PackageOverrides,
 	/// Config for plugins
 	#[serde(flatten)]
 	#[serde(skip_serializing_if = "serde_json::Map::is_empty")]

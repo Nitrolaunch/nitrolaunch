@@ -11,6 +11,7 @@ use async_trait::async_trait;
 use mcvm_config::package::EvalPermissions;
 use mcvm_parse::routine::INSTALL_ROUTINE;
 use mcvm_parse::vars::HashMapVariableStore;
+use mcvm_pkg::overrides::PackageOverrides;
 use mcvm_pkg::properties::PackageProperties;
 use mcvm_pkg::resolve::ResolutionResult;
 use mcvm_pkg::script_eval::AddonInstructionData;
@@ -584,6 +585,7 @@ pub async fn resolve(
 	packages: &[PackageConfig],
 	constants: &EvalConstants,
 	default_params: EvalParameters,
+	overrides: PackageOverrides,
 	paths: &Paths,
 	reg: &mut PkgRegistry,
 	client: &Client,
@@ -603,7 +605,8 @@ pub async fn resolve(
 		.map(|x| EvalPackageConfig((*x).clone(), x.get_request()))
 		.collect::<Vec<_>>();
 
-	let result = mcvm_pkg::resolve::resolve(&packages, evaluator, input, &common_input).await?;
+	let result =
+		mcvm_pkg::resolve::resolve(&packages, evaluator, input, &common_input, overrides).await?;
 
 	for package in &result.unfulfilled_recommendations {
 		print_recommendation_warning(package, o);

@@ -175,6 +175,9 @@ impl Hash for PkgRequest {
 
 impl Display for PkgRequest {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		if let Some(repo) = &self.repository {
+			write!(f, "{repo}:")?;
+		}
 		write!(f, "{}", self.id)
 	}
 }

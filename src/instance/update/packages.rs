@@ -4,6 +4,7 @@ use std::sync::Arc;
 
 use itertools::Itertools;
 use mcvm_core::net::download::get_transfer_limit;
+use mcvm_pkg::overrides::is_package_overridden;
 use mcvm_pkg::properties::PackageProperties;
 use mcvm_pkg::repo::PackageFlag;
 use mcvm_pkg::PkgRequest;
@@ -69,6 +70,11 @@ pub async fn update_instance_packages<'a, O: MCVMOutput>(
 				.iter_mut()
 				.find(|x| &x.id == instance_id)
 				.expect("Instance should exist");
+
+			// Skip suppressed packages
+			if is_package_overridden(&package, &instance.config.package_overrides.suppress) {
+				continue;
+			}
 
 			let mut params = EvalParameters::new(instance.kind.to_side());
 			params.stability = instance.config.package_stability;
@@ -159,9 +165,11 @@ pub async fn update_instance_packages<'a, O: MCVMOutput>(
 				version: constants.version.clone(),
 				versions: constants.version_list.clone(),
 			};
-			let eval = evals
-				.get(&(package, instance_id))
-				.expect("Evaluation should be in map");
+			let Some(eval) = evals.get(&(package, instance_id)) else {
+				// Suppressed packages won't be in the map
+				continue;
+			};
+
 			instance
 				.install_eval_data(
 					package,
@@ -283,6 +291,7 @@ async fn resolve_and_batch<'a, O: MCVMOutput>(
 			instance_pkgs,
 			constants,
 			params,
+			instance.config.package_overrides.clone(),
 			ctx.paths,
 			ctx.packages,
 			ctx.client,

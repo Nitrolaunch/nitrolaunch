@@ -15,6 +15,7 @@ pub mod update;
 
 use mcvm_config::instance::{ClientWindowConfig, InstanceConfig};
 use mcvm_core::util::versions::MinecraftVersion;
+use mcvm_pkg::overrides::PackageOverrides;
 use mcvm_shared::later::Later;
 use mcvm_shared::loaders::Loader;
 use mcvm_shared::pkg::PackageStability;
@@ -98,6 +99,8 @@ pub struct InstanceStoredConfig {
 	pub packages: Vec<PackageConfig>,
 	/// Default stability for packages
 	pub package_stability: PackageStability,
+	/// Package overrides
+	pub package_overrides: PackageOverrides,
 	/// The original instance configuration before applying profiles
 	pub original_config: InstanceConfig,
 	/// The original instance configuration after applying profiles

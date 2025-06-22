@@ -6,6 +6,7 @@ use itertools::Itertools;
 use mcvm_shared::pkg::{ArcPkgReq, PackageID};
 use mcvm_shared::versions::VersionPattern;
 
+use crate::overrides::{is_package_overridden, PackageOverrides};
 use crate::properties::PackageProperties;
 use crate::{ConfiguredPackage, EvalInput, PackageEvalRelationsResult, PackageEvaluator};
 
@@ -17,12 +18,14 @@ pub async fn resolve<'a, E: PackageEvaluator<'a>>(
 	mut evaluator: E,
 	constant_eval_input: E::EvalInput<'a>,
 	common_input: &E::CommonInput,
+	overrides: PackageOverrides,
 ) -> anyhow::Result<ResolutionResult> {
 	let mut resolver = Resolver {
 		tasks: VecDeque::new(),
 		constraints: Vec::new(),
 		constant_input: constant_eval_input,
 		package_configs: HashMap::new(),
+		overrides,
 	};
 
 	// Used to keep track of which packages have been preloaded and are good to further evaluate as tasks
@@ -357,6 +360,7 @@ struct Resolver<'a, E: PackageEvaluator<'a>> {
 	constraints: Vec<Constraint>,
 	constant_input: E::EvalInput<'a>,
 	package_configs: HashMap<ArcPkgReq, E::ConfiguredPackage>,
+	overrides: PackageOverrides,
 }
 
 impl<'a, E> Resolver<'a, E>
@@ -477,11 +481,13 @@ where
 		// If the number of versions is now smaller, that means a different version could be selected and we need to re-evaluate.
 		// Also, if the best evaluable version has changed, we also need to re-evaluate
 		if just_inserted || new_version_preferred || new_versions.len() != required_versions.len() {
-			self.tasks.push_back(Task::EvalPackage {
-				dest: req.clone(),
-				required_content_versions: new_versions.clone(),
-				preferred_content_versions: preferred_versions.clone(),
-			});
+			if !is_package_overridden(&req, &self.overrides.suppress) {
+				self.tasks.push_back(Task::EvalPackage {
+					dest: req.clone(),
+					required_content_versions: new_versions.clone(),
+					preferred_content_versions: preferred_versions.clone(),
+				});
+			}
 		}
 
 		*required_versions = new_versions;

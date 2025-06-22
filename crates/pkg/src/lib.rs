@@ -10,6 +10,8 @@
 pub mod declarative;
 /// Package metadata
 pub mod metadata;
+/// Manual overrides for packages
+pub mod overrides;
 /// Package properties
 pub mod properties;
 /// Standard repository format
