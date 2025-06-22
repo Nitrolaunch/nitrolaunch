@@ -184,6 +184,8 @@ impl Instance {
 				}
 			}
 
+			self.modification_data.jvm_args.extend(result.jvm_args);
+
 			if let Some(loader_version) = result.loader_version {
 				if loader_version_set {
 					bail!("Multiple plugins attempted to modify the loader version");
@@ -262,9 +264,12 @@ impl Instance {
 				cmd: x.cmd.clone(),
 				args: x.args.clone(),
 			});
+
+		let mut jvm_args = self.config.launch.jvm_args.clone();
+		jvm_args.extend(self.modification_data.jvm_args.clone());
 		let launch_config = LaunchConfiguration {
 			java: self.config.launch.java.clone(),
-			jvm_args: self.config.launch.jvm_args.clone(),
+			jvm_args,
 			game_args: self.config.launch.game_args.clone(),
 			min_mem: self.config.launch.min_mem.clone(),
 			max_mem: self.config.launch.max_mem.clone(),
@@ -369,6 +374,8 @@ pub struct ModificationData {
 	pub jar_path_override: Option<PathBuf>,
 	/// Extension for the classpath from modifications
 	pub classpath_extension: Classpath,
+	/// Extra arguments for the JVM
+	pub jvm_args: Vec<String>,
 }
 
 impl ModificationData {
@@ -378,6 +385,7 @@ impl ModificationData {
 			main_class_override: None,
 			jar_path_override: None,
 			classpath_extension: Classpath::new(),
+			jvm_args: Vec::new(),
 		}
 	}
 }

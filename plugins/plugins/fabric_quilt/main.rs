@@ -77,6 +77,7 @@ fn main() -> anyhow::Result<()> {
 		Ok(OnInstanceSetupResult {
 			main_class_override: Some(main_class),
 			classpath_extension: classpath.get_entries().to_vec(),
+			jvm_args: vec!["-Dsodium.checks.issue2561=false".to_string()],
 			..Default::default()
 		})
 	})?;

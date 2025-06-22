@@ -190,6 +190,8 @@ pub struct OnInstanceSetupResult {
 	pub classpath_extension: Vec<String>,
 	/// Optional new version for the loader
 	pub loader_version: Option<String>,
+	/// Optional additional JVM args
+	pub jvm_args: Vec<String>,
 }
 
 def_hook!(

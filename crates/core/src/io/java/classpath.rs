@@ -73,6 +73,15 @@ impl Classpath {
 		self.entries.iter().map(PathBuf::from).collect()
 	}
 
+	/// Patches a classpath entry with a different one. Useful for replacing libraries or versions
+	pub fn patch(&mut self, entry: &str, new_entry: &str) {
+		for existing_entry in &mut self.entries {
+			if existing_entry == entry {
+				*existing_entry = new_entry.to_string();
+			}
+		}
+	}
+
 	/// Deduplicates a specific Java library in the classpath by removing ones with the same name, only keeping the latest version.
 	pub fn deduplicate_java_libs(&mut self, library: &str) {
 		let mut occurrences = Vec::new();

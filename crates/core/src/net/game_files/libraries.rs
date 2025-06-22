@@ -67,7 +67,7 @@ pub async fn get(
 			continue;
 		}
 		if let Some(artifact) = &lib.downloads.artifact {
-			let path = libraries_path.join(artifact.path.clone());
+			let path = libraries_path.join(&artifact.path);
 			if !manager.should_update_file(&path) {
 				continue;
 			}
