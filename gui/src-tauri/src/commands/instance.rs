@@ -173,8 +173,6 @@ pub async fn write_instance_config(
 			.context("Failed to modify and write config"),
 	)?;
 
-	println!("Instance config wrote");
-
 	Ok(())
 }
 
@@ -193,8 +191,6 @@ pub async fn write_profile_config(
 			.context("Failed to modify and write config"),
 	)?;
 
-	println!("Profile config wrote");
-
 	Ok(())
 }
 
@@ -211,8 +207,6 @@ pub async fn write_global_profile(
 		json_to_file_pretty(&Config::get_path(&state.paths), &configuration)
 			.context("Failed to write modified configuration"),
 	)?;
-
-	println!("Global profile wrote");
 
 	Ok(())
 }
@@ -253,7 +247,7 @@ pub async fn update_instance(
 			.await
 			.context("Failed to update instance")
 	};
-	fmt_err(fmt_err(tokio::spawn(MakeSend::new(task)).await)?)?;
+	fmt_err(fmt_err(tokio::spawn(unsafe { MakeSend::new(task) }).await)?)?;
 
 	Ok(())
 }
@@ -274,7 +268,8 @@ impl<F: Future> Future for MakeSend<F> {
 }
 
 impl<F: Future> MakeSend<F> {
-	fn new(f: F) -> Self {
+	/// SAFETY: None. The future better actually be send!z
+	unsafe fn new(f: F) -> Self {
 		Self(Box::pin(f))
 	}
 }

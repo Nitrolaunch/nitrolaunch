@@ -92,7 +92,7 @@ impl Instance {
 		.await
 		.context("Failed to create instance")?;
 
-		if update_packages && !self.get_configured_packages().is_empty() {
+		if update_packages {
 			#[cfg(not(feature = "disable_profile_update_packages"))]
 			{
 				let mut all_packages = HashSet::new();
