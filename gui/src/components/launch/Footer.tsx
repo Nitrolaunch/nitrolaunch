@@ -182,11 +182,15 @@ export default function LaunchFooter(props: LaunchFooterProps) {
 									color="var(--bg2)"
 									border="var(--bg3)"
 									selectedColor="var(--accent)"
-									onClick={() => {
+									onClick={async () => {
 										if (props.selectedItem != undefined) {
-											invoke("update_instance", {
-												instanceId: props.selectedItem,
-											});
+											try {
+												await invoke("update_instance", {
+													instanceId: props.selectedItem,
+												});
+											} catch (e) {
+												errorToast("Failed to update instance: " + e);
+											}
 										}
 									}}
 									selected={false}

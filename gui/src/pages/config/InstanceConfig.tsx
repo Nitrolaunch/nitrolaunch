@@ -317,11 +317,10 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 		}
 
 		try {
-			saveInstanceConfig(configId, newConfig, props.mode);
+			await saveInstanceConfig(configId, newConfig, props.mode);
 
 			successToast("Changes saved");
 
-			configOperations.refetch();
 			props.setFooterData({
 				selectedItem: undefined,
 				mode: isInstance
@@ -329,6 +328,8 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 					: FooterMode.SaveProfileConfig,
 				action: saveConfig,
 			});
+
+			configOperations.refetch();
 		} catch (e) {
 			errorToast(e as string);
 		}

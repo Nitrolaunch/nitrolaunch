@@ -107,6 +107,7 @@ interface ToastProps {
 	message: string;
 	type: ToastType;
 	age?: number;
+	maxAge?: number;
 	onRemove: () => void;
 }
 
@@ -117,14 +118,29 @@ export function messageToast(message: string) {
 }
 
 export function successToast(message: string) {
-	(window as any).__createToast({ message: message, type: "success", age: 3 });
+	(window as any).__createToast({
+		message: message,
+		type: "success",
+		age: 3,
+		maxAge: 3,
+	});
 }
 
 export function warningToast(message: string) {
-	(window as any).__createToast({ message: message, type: "warning", age: 7 });
+	(window as any).__createToast({
+		message: message,
+		type: "warning",
+		age: 7,
+		maxAge: 7,
+	});
 }
 
 export function errorToast(message: string) {
-	(window as any).__createToast({ message: message, type: "error", age: 9 });
+	(window as any).__createToast({
+		message: message,
+		type: "error",
+		age: 9,
+		maxAge: 9,
+	});
 	console.error("Error: " + message);
 }

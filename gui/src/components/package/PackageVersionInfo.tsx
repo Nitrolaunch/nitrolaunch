@@ -1,4 +1,4 @@
-import { createResource, createSignal, For, JSX, Show } from "solid-js";
+import { createResource, For, JSX, Show } from "solid-js";
 import {
 	Delete,
 	Diagram,
@@ -18,6 +18,7 @@ import { StabilityIndicator } from "./PackageVersions";
 import { canonicalizeListOrSingle } from "../../utils/values";
 import { invoke } from "@tauri-apps/api";
 import Icon, { HasWidthHeight } from "../Icon";
+import LoadingSpinner from "../utility/LoadingSpinner";
 
 export default function PackageVersionInfo(props: PackageVersionInfoProps) {
 	let dependencies = () =>
@@ -116,6 +117,11 @@ export default function PackageVersionInfo(props: PackageVersionInfoProps) {
 							packageMetas() != undefined &&
 							props.version != undefined &&
 							!packageMetas.loading
+						}
+						fallback={
+							<div class="cont">
+								<LoadingSpinner size="3rem" />
+							</div>
 						}
 					>
 						<RelationList

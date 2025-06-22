@@ -102,6 +102,7 @@ impl MCVMOutput for LauncherOutput {
 				);
 			}
 			MessageContents::Error(text) => {
+				eprintln!("Error: {text}");
 				let _ = self.inner.app.emit_all(
 					"mcvm_output_message",
 					MessageEvent {
