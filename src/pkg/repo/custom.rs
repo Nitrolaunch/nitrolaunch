@@ -127,6 +127,11 @@ impl CustomPackageRepository {
 				}
 			})
 			.collect();
+
+		if packages.is_empty() {
+			return Ok(None);
+		}
+
 		let arg = PreloadPackagesArg {
 			repository: self.id.clone(),
 			packages: packages.into_iter().collect(),
