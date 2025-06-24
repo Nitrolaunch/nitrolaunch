@@ -174,7 +174,7 @@ impl InstanceHandle {
 	) -> anyhow::Result<std::process::ExitStatus> {
 		let pid = self.get_pid();
 
-		// Wait for the process to complete while polling plugins
+		// Wait for the process to complete while polling plugins and stdio
 		let status = loop {
 			for handle in &mut self.hook_handles {
 				let _ = handle.poll(o);

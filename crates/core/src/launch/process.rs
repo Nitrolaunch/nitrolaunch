@@ -1,7 +1,9 @@
 use std::collections::HashMap;
 use std::ffi::OsStr;
-use std::path::Path;
+use std::fs::File;
+use std::path::{Path, PathBuf};
 use std::process::{Child, Command};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use anyhow::Context;
 use mcvm_auth::mc::AccessToken;
@@ -10,7 +12,7 @@ use mcvm_shared::translate;
 
 use crate::instance::InstanceKind;
 use crate::util::versions::VersionName;
-use crate::WrapperCommand;
+use crate::{InstanceHandle, Paths, WrapperCommand};
 
 use super::LaunchConfiguration;
 
@@ -18,7 +20,7 @@ use super::LaunchConfiguration;
 pub(crate) fn launch_game_process(
 	mut params: LaunchGameProcessParameters<'_>,
 	o: &mut impl MCVMOutput,
-) -> anyhow::Result<std::process::Child> {
+) -> anyhow::Result<InstanceHandle> {
 	// Modify the parameters based on game-specific properties
 
 	// Prepend generated game args to the beginning
@@ -45,8 +47,12 @@ pub(crate) fn launch_game_process(
 		MessageLevel::Important,
 	);
 
+	// Stdio files
+	let stdout = get_stdio_file_path(params.paths, false);
+	let stdin = get_stdio_file_path(params.paths, true);
+
 	// Get the command and output it
-	let mut cmd = get_process_launch_command(proc_params)
+	let mut cmd = get_process_launch_command(proc_params, &stdout, &stdin)
 		.context("Failed to create process launch command")?;
 
 	output_launch_command(&cmd, params.user_access_token, params.censor_secrets, o)?;
@@ -54,19 +60,36 @@ pub(crate) fn launch_game_process(
 	// Spawn
 	let child = cmd.spawn().context("Failed to spawn child process")?;
 
-	Ok(child)
+	let stdout_file = File::open(&stdout)?;
+	let stdin_file = File::open(&stdin)?;
+
+	Ok(InstanceHandle::new(
+		child,
+		stdout_file,
+		stdout,
+		stdin_file,
+		stdin,
+	))
 }
 
 /// Launch a generic process with the core's config system
-pub fn launch_process(params: LaunchProcessParameters<'_>) -> anyhow::Result<Child> {
-	let mut cmd =
-		get_process_launch_command(params).context("Failed to create process launch command")?;
+pub fn launch_process(
+	params: LaunchProcessParameters<'_>,
+	stdout_path: &Path,
+	stdin_path: &Path,
+) -> anyhow::Result<Child> {
+	let mut cmd = get_process_launch_command(params, stdout_path, stdin_path)
+		.context("Failed to create process launch command")?;
 
 	cmd.spawn().context("Failed to spawn child process")
 }
 
 /// Get the command for launching a generic process using the core's config system
-pub fn get_process_launch_command(params: LaunchProcessParameters<'_>) -> anyhow::Result<Command> {
+pub fn get_process_launch_command(
+	params: LaunchProcessParameters<'_>,
+	stdout_path: &Path,
+	stdin_path: &Path,
+) -> anyhow::Result<Command> {
 	// Create the base command based on wrapper settings
 	let mut cmd = create_wrapped_command(params.command, &params.launch_config.wrappers);
 
@@ -82,6 +105,12 @@ pub fn get_process_launch_command(params: LaunchProcessParameters<'_>) -> anyhow
 		cmd.arg(main_class);
 	}
 	cmd.args(params.props.game_args);
+
+	// Capture stdio
+	let stdout = File::create_new(stdout_path).context("Failed to open stdout")?;
+	let stdin = File::create_new(stdin_path).context("Failed to open stdin")?;
+	cmd.stdout(std::process::Stdio::from(stdout));
+	cmd.stdin(std::process::Stdio::from(stdin));
 
 	Ok(cmd)
 }
@@ -173,6 +202,20 @@ fn wrap_single(command: Command, wrapper: &WrapperCommand) -> Command {
 	new_cmd
 }
 
+/// Gets the path to an instance stdout / stdin file
+fn get_stdio_file_path(paths: &Paths, is_stdin: bool) -> PathBuf {
+	// We just use the timestamp to keep it unique
+	let now = SystemTime::now()
+		.duration_since(UNIX_EPOCH)
+		.unwrap()
+		.as_secs_f64();
+
+	let mode = if is_stdin { "stdin" } else { "stdout" };
+	let filename = format!("{mode}_{now}");
+
+	paths.stdio.join(filename)
+}
+
 /// Container struct for parameters for launching the game process
 pub(crate) struct LaunchGameProcessParameters<'a> {
 	/// The base command to run, usually the path to the JVM
@@ -181,6 +224,7 @@ pub(crate) struct LaunchGameProcessParameters<'a> {
 	pub cwd: &'a Path,
 	/// The Java main class to run
 	pub main_class: Option<&'a str>,
+	pub paths: &'a Paths,
 	pub props: LaunchProcessProperties,
 	pub launch_config: &'a LaunchConfiguration,
 	pub version: &'a VersionName,

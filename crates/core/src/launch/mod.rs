@@ -7,7 +7,8 @@ mod process;
 /// Server-specific launch functionality
 mod server;
 
-use std::path::Path;
+use std::fs::File;
+use std::path::{Path, PathBuf};
 
 use anyhow::{bail, Context};
 use mcvm_shared::output::{MCVMOutput, MessageContents, MessageLevel};
@@ -81,6 +82,7 @@ pub(crate) async fn launch(
 		command: command.as_os_str(),
 		cwd: params.launch_dir,
 		main_class: Some(params.main_class),
+		paths: params.paths,
 		props,
 		launch_config: params.launch_config,
 		version: params.version,
@@ -90,10 +92,7 @@ pub(crate) async fn launch(
 		censor_secrets: params.censor_secrets,
 	};
 
-	let child = launch_game_process(proc_params, o).context("Failed to launch game process")?;
-
-	let handle = InstanceHandle::new(child);
-	Ok(handle)
+	launch_game_process(proc_params, o).context("Failed to launch game process")
 }
 
 /// Container struct for parameters for launching an instance
@@ -173,12 +172,32 @@ impl LaunchConfiguration {
 pub struct InstanceHandle {
 	/// The child process for the launched instance
 	process: std::process::Child,
+	/// The stdout file of the process
+	stdout: File,
+	/// The stdout path of the process
+	stdout_path: PathBuf,
+	/// The stdin file of the process
+	stdin: File,
+	/// The stdin path of the process
+	stdin_path: PathBuf,
 }
 
 impl InstanceHandle {
 	/// Construct a new InstanceHandle
-	fn new(process: std::process::Child) -> Self {
-		Self { process }
+	fn new(
+		process: std::process::Child,
+		stdout: File,
+		stdout_path: PathBuf,
+		stdin: File,
+		stdin_path: PathBuf,
+	) -> Self {
+		Self {
+			process,
+			stdout,
+			stdout_path,
+			stdin,
+			stdin_path,
+		}
 	}
 
 	/// Waits for the process to complete
@@ -197,7 +216,7 @@ impl InstanceHandle {
 	}
 
 	/// Gets the internal child process for the game, consuming the
-	/// InstanceHandle
+	/// InstanceHandle and removing the stdio files
 	pub fn get_process(self) -> std::process::Child {
 		self.process
 	}
@@ -205,5 +224,15 @@ impl InstanceHandle {
 	/// Gets the PID of the instance process
 	pub fn get_pid(&self) -> u32 {
 		self.process.id()
+	}
+
+	/// Gets the stdout of the instance process
+	pub fn stdout(&mut self) -> (&mut File, PathBuf) {
+		(&mut self.stdout, self.stdout_path.clone())
+	}
+
+	/// Gets the stdin of the instance process
+	pub fn stdin(&mut self) -> (&mut File, PathBuf) {
+		(&mut self.stdin, self.stdin_path.clone())
 	}
 }
