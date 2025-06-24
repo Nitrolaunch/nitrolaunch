@@ -18,7 +18,7 @@ use super::Instance;
 
 impl Instance {
 	/// Export this instance using the given format
-	pub fn export(
+	pub async fn export(
 		&mut self,
 		format: &str,
 		result_path: &Path,
@@ -76,10 +76,11 @@ impl Instance {
 		};
 		let result = plugins
 			.call_hook_on_plugin(ExportInstance, &format.plugin, &arg, paths, o)
+			.await
 			.context("Failed to export instance using plugin")?;
 
 		if let Some(result) = result {
-			result.result(o)?;
+			result.result(o).await?;
 			o.display(
 				MessageContents::Success(o.translate(TranslationKey::FinishExporting).into()),
 				MessageLevel::Important,
@@ -95,7 +96,7 @@ impl Instance {
 	}
 
 	/// Import an instance using the given format. Returns an InstanceConfig to add to the config file
-	pub fn import(
+	pub async fn import(
 		id: &str,
 		format: &str,
 		source_path: &Path,
@@ -143,6 +144,7 @@ impl Instance {
 		};
 		let result = plugins
 			.call_hook_on_plugin(ImportInstance, &format.plugin, &arg, paths, o)
+			.await
 			.context("Failed to import instance using plugin")?;
 
 		let Some(result) = result else {
@@ -154,7 +156,7 @@ impl Instance {
 			bail!("Import plugin did not return a result");
 		};
 
-		let result = result.result(o)?;
+		let result = result.result(o).await?;
 		o.display(
 			MessageContents::Success(o.translate(TranslationKey::FinishImporting).into()),
 			MessageLevel::Important,
@@ -165,18 +167,19 @@ impl Instance {
 }
 
 /// Load transfer formats from plugins
-pub fn load_formats(
+pub async fn load_formats(
 	plugins: &PluginManager,
 	paths: &Paths,
 	o: &mut impl MCVMOutput,
 ) -> anyhow::Result<Formats> {
 	let results = plugins
 		.call_hook(AddInstanceTransferFormats, &(), paths, o)
+		.await
 		.context("Failed to get transfer formats from plugins")?;
 	let mut formats = HashMap::with_capacity(results.len());
 	for result in results {
 		let plugin_id = result.get_id().to_owned();
-		let result = result.result(o)?;
+		let result = result.result(o).await?;
 		for result in result {
 			formats.insert(
 				result.id.clone(),

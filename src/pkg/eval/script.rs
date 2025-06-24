@@ -26,7 +26,7 @@ struct SharedData<'a> {
 }
 
 /// Evaluate a script package
-pub fn eval_script_package<'a>(
+pub async fn eval_script_package<'a>(
 	pkg_id: PackageID,
 	parsed: &Parsed,
 	routine: Routine,
@@ -49,13 +49,15 @@ pub fn eval_script_package<'a>(
 		&mut ScriptEvaluator,
 		&mut data,
 		&ScriptEvalConfig { reason },
-	)?;
+	)
+	.await?;
 
 	Ok(data.eval)
 }
 
 struct ScriptEvaluator;
 
+#[async_trait::async_trait]
 impl ScriptEvaluatorTrait for ScriptEvaluator {
 	type Shared<'a> = SharedData<'a>;
 	type VariableStore = HashMapVariableStore;
@@ -170,7 +172,7 @@ impl ScriptEvaluatorTrait for ScriptEvaluator {
 		Ok(())
 	}
 
-	fn run_custom(
+	async fn run_custom(
 		&mut self,
 		shared: &mut Self::Shared<'_>,
 		command: String,
@@ -181,19 +183,18 @@ impl ScriptEvaluatorTrait for ScriptEvaluator {
 			command,
 			args,
 		};
-		let results = shared.eval.plugins.call_hook(
-			CustomPackageInstruction,
-			&arg,
-			shared.paths,
-			&mut NoOp,
-		)?;
+		let results = shared
+			.eval
+			.plugins
+			.call_hook(CustomPackageInstruction, &arg, shared.paths, &mut NoOp)
+			.await?;
 
 		if results.is_empty() {
 			shared.eval.uses_custom_instructions = true;
 		}
 
 		for result in results {
-			let result = result.result(&mut NoOp)?;
+			let result = result.result(&mut NoOp).await?;
 			if !result.handled {
 				shared.eval.uses_custom_instructions = true;
 			}

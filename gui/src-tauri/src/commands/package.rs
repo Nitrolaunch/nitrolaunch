@@ -31,8 +31,11 @@ pub async fn get_packages(
 ) -> Result<PackageSearchResults, String> {
 	let mut output = LauncherOutput::new(state.get_output(app_handle));
 	output.set_task("search_packages");
-	let mut config =
-		fmt_err(load_config(&state.paths, &mut NoOp).context("Failed to load config"))?;
+	let mut config = fmt_err(
+		load_config(&state.paths, &mut NoOp)
+			.await
+			.context("Failed to load config"),
+	)?;
 
 	let params = PackageSearchParameters {
 		count: PACKAGES_PER_PAGE,
@@ -62,8 +65,11 @@ pub async fn preload_packages(
 	packages: Vec<String>,
 	repo: &str,
 ) -> Result<(), String> {
-	let mut config =
-		fmt_err(load_config(&state.paths, &mut NoOp).context("Failed to load config"))?;
+	let mut config = fmt_err(
+		load_config(&state.paths, &mut NoOp)
+			.await
+			.context("Failed to load config"),
+	)?;
 
 	let repo = config
 		.packages
@@ -96,8 +102,11 @@ pub async fn get_package_meta(
 	state: tauri::State<'_, State>,
 	package: &str,
 ) -> Result<PackageMetadata, String> {
-	let mut config =
-		fmt_err(load_config(&state.paths, &mut NoOp).context("Failed to load config"))?;
+	let mut config = fmt_err(
+		load_config(&state.paths, &mut NoOp)
+			.await
+			.context("Failed to load config"),
+	)?;
 
 	let meta = fmt_err(
 		config
@@ -120,8 +129,11 @@ pub async fn get_package_props(
 	state: tauri::State<'_, State>,
 	package: &str,
 ) -> Result<PackageProperties, String> {
-	let mut config =
-		fmt_err(load_config(&state.paths, &mut NoOp).context("Failed to load config"))?;
+	let mut config = fmt_err(
+		load_config(&state.paths, &mut NoOp)
+			.await
+			.context("Failed to load config"),
+	)?;
 
 	let props = fmt_err(
 		config
@@ -144,8 +156,11 @@ pub async fn get_package_meta_and_props(
 	state: tauri::State<'_, State>,
 	package: &str,
 ) -> Result<(PackageMetadata, PackageProperties), String> {
-	let mut config =
-		fmt_err(load_config(&state.paths, &mut NoOp).context("Failed to load config"))?;
+	let mut config = fmt_err(
+		load_config(&state.paths, &mut NoOp)
+			.await
+			.context("Failed to load config"),
+	)?;
 
 	let request = Arc::new(PkgRequest::parse(package, PkgRequestSource::UserRequire));
 
@@ -175,8 +190,11 @@ pub async fn get_declarative_package_contents(
 	state: tauri::State<'_, State>,
 	package: &str,
 ) -> Result<Option<DeclarativePackage>, String> {
-	let mut config =
-		fmt_err(load_config(&state.paths, &mut NoOp).context("Failed to load config"))?;
+	let mut config = fmt_err(
+		load_config(&state.paths, &mut NoOp)
+			.await
+			.context("Failed to load config"),
+	)?;
 
 	let contents = fmt_err(
 		config
@@ -196,8 +214,11 @@ pub async fn get_declarative_package_contents(
 
 #[tauri::command]
 pub async fn get_package_repos(state: tauri::State<'_, State>) -> Result<Vec<RepoInfo>, String> {
-	let mut config =
-		fmt_err(load_config(&state.paths, &mut NoOp).context("Failed to load config"))?;
+	let mut config = fmt_err(
+		load_config(&state.paths, &mut NoOp)
+			.await
+			.context("Failed to load config"),
+	)?;
 
 	let mut repos = Vec::new();
 	for repo in &mut config.packages.repos {
@@ -240,8 +261,11 @@ pub async fn sync_packages(
 	state: tauri::State<'_, State>,
 	app_handle: tauri::AppHandle,
 ) -> Result<(), String> {
-	let mut config =
-		fmt_err(load_config(&state.paths, &mut NoOp).context("Failed to load config"))?;
+	let mut config = fmt_err(
+		load_config(&state.paths, &mut NoOp)
+			.await
+			.context("Failed to load config"),
+	)?;
 
 	let mut output = LauncherOutput::new(state.get_output(app_handle));
 	output.set_task("sync_packages");

@@ -60,7 +60,9 @@ async fn get_launched_game(
 ) -> anyhow::Result<JoinHandle<anyhow::Result<()>>> {
 	println!("Launching game!");
 
-	let mut config = load_config(&state.paths, &mut o).context("Failed to load config")?;
+	let mut config = load_config(&state.paths, &mut o)
+		.await
+		.context("Failed to load config")?;
 	if let Some(user) = user {
 		config.users.choose_user(user)?;
 	}
@@ -92,6 +94,7 @@ async fn get_launched_game(
 
 			handle
 				.wait(&plugins, &paths, &mut o)
+				.await
 				.context("Failed to wait for instance to finish")?;
 
 			println!("Game closed");
@@ -138,7 +141,11 @@ pub async fn get_running_instances(
 	app_handle: tauri::AppHandle,
 ) -> Result<Vec<RunningInstanceInfo>, String> {
 	let mut output = LauncherOutput::new(state.get_output(app_handle));
-	let config = fmt_err(load_config(&state.paths, &mut output).context("Failed to load config"))?;
+	let config = fmt_err(
+		load_config(&state.paths, &mut output)
+			.await
+			.context("Failed to load config"),
+	)?;
 
 	let data = state.data.lock().await;
 	let launched_games = state.launched_games.lock().await;

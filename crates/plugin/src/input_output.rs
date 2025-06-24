@@ -56,7 +56,7 @@ impl OutputAction {
 		}
 	}
 
-	/// Deserialize an action sent from the plugin
+	/// Deserialize an action sent from the plugin. Will rewrite `action` in the process in an unsafe way.
 	pub fn deserialize(
 		action: &str,
 		use_base64: bool,
@@ -72,15 +72,17 @@ impl OutputAction {
 		} else {
 			action
 		};
+		let mut buf = Vec::new();
 		let json = if use_base64 {
 			BASE64_STANDARD
-				.decode(action)
-				.context("Failed to decode action base64")?
+				.decode_vec(action, &mut buf)
+				.context("Failed to decode action base64")?;
+
+			&mut buf
 		} else {
-			action.bytes().collect()
+			action.as_bytes()
 		};
-		let action =
-			serde_json::from_slice(&json).context("Failed to deserialize output action")?;
+		let action = serde_json::from_slice(json).context("Failed to deserialize output action")?;
 		Ok(Some(action))
 	}
 }

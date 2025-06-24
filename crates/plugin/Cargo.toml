@@ -25,5 +25,8 @@ mcvm_config = { workspace = true }
 mcvm_core = { workspace = true }
 mcvm_shared = { workspace = true }
 mcvm_pkg = { workspace = true }
+pin-project-lite = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
+simd-json = { workspace = true }
+tokio = { workspace = true, features = ["process"] }

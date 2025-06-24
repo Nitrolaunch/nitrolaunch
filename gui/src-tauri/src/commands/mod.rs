@@ -12,8 +12,10 @@ pub mod package;
 pub mod plugin;
 pub mod user;
 
-fn load_config(paths: &Paths, o: &mut impl MCVMOutput) -> anyhow::Result<Config> {
-	let plugins = PluginManager::load(paths, o).context("Failed to load plugin manager")?;
+async fn load_config(paths: &Paths, o: &mut impl MCVMOutput) -> anyhow::Result<Config> {
+	let plugins = PluginManager::load(paths, o)
+		.await
+		.context("Failed to load plugin manager")?;
 	Config::load(
 		&Config::get_path(paths),
 		plugins,
@@ -22,6 +24,7 @@ fn load_config(paths: &Paths, o: &mut impl MCVMOutput) -> anyhow::Result<Config>
 		crate::get_ms_client_id(),
 		o,
 	)
+	.await
 	.context("Failed to load config")
 }
 

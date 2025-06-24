@@ -41,7 +41,7 @@ impl CustomPackageRepository {
 	}
 
 	/// Queries this repository for a package
-	pub fn query(
+	pub async fn query(
 		&self,
 		package: &str,
 		plugins: &PluginManager,
@@ -54,13 +54,14 @@ impl CustomPackageRepository {
 		};
 		let result = plugins
 			.call_hook_on_plugin(QueryCustomPackageRepository, &self.plugin, &arg, paths, o)
+			.await
 			.context("Failed to call query hook")?;
 
 		let Some(result) = result else {
 			return Ok(None);
 		};
 
-		let result = result.result(o)?;
+		let result = result.result(o).await?;
 
 		Ok(result.map(|x| RepoQueryResult {
 			location: PkgLocation::Inline(Arc::from(x.contents)),
@@ -70,7 +71,7 @@ impl CustomPackageRepository {
 	}
 
 	/// Searches this repository for packages
-	pub fn search(
+	pub async fn search(
 		&self,
 		params: PackageSearchParameters,
 		plugins: &PluginManager,
@@ -83,33 +84,34 @@ impl CustomPackageRepository {
 		};
 		let result = plugins
 			.call_hook_on_plugin(SearchCustomPackageRepository, &self.plugin, &arg, paths, o)
+			.await
 			.context("Failed to call search hook")?;
 
 		let Some(result) = result else {
 			return Ok(PackageSearchResults::default());
 		};
 
-		result.result(o)
+		result.result(o).await
 	}
 
 	/// Preloads multiple packages from this repository
-	pub fn preload(
+	pub async fn preload(
 		&self,
 		packages: Vec<ArcPkgReq>,
 		plugins: &PluginManager,
 		paths: &Paths,
 		o: &mut impl MCVMOutput,
 	) -> anyhow::Result<()> {
-		let handle = self.get_preload_task(packages, plugins, paths, o)?;
+		let handle = self.get_preload_task(packages, plugins, paths, o).await?;
 		let Some(handle) = handle else {
 			return Ok(());
 		};
 
-		handle.result(o)
+		handle.result(o).await
 	}
 
 	/// Runs the preload hook on this repository and gives the HookHandle
-	pub fn get_preload_task(
+	pub async fn get_preload_task(
 		&self,
 		packages: Vec<ArcPkgReq>,
 		plugins: &PluginManager,
@@ -139,11 +141,12 @@ impl CustomPackageRepository {
 
 		plugins
 			.call_hook_on_plugin(PreloadPackages, &self.plugin, &arg, paths, o)
+			.await
 			.context("Failed to call preload hook")
 	}
 
 	/// Syncs the cache for this repository
-	pub fn sync(
+	pub async fn sync(
 		&self,
 		plugins: &PluginManager,
 		paths: &Paths,
@@ -154,13 +157,14 @@ impl CustomPackageRepository {
 		};
 		let result = plugins
 			.call_hook_on_plugin(SyncCustomPackageRepository, &self.plugin, &arg, paths, o)
+			.await
 			.context("Failed to call sync hook")?;
 
 		let Some(result) = result else {
 			return Ok(());
 		};
 
-		result.result(o)
+		result.result(o).await
 	}
 
 	/// Gets the ID for this repository

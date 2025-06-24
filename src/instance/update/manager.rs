@@ -6,7 +6,8 @@ use anyhow::Context;
 use mcvm_core::auth_crate::mc::ClientId;
 use mcvm_core::config::BrandingProperties;
 use mcvm_core::net::game_files::version_manifest::VersionManifestAndList;
-use mcvm_core::user::UserManager;
+use mcvm_core::net::minecraft::MinecraftUserProfile;
+use mcvm_core::user::{CustomAuthFunction, UserManager};
 use mcvm_core::util::versions::MinecraftVersion;
 use mcvm_core::version::InstalledVersion;
 use mcvm_core::MCVMCore;
@@ -195,23 +196,7 @@ impl UpdateManager {
 			let paths = paths.clone();
 
 			core.get_users()
-				.set_custom_auth_function(Arc::new(move |user_id, user_type| {
-					let arg = HandleAuthArg {
-						user_id: user_id.to_string(),
-						user_type: user_type.to_string(),
-					};
-					let results = plugins
-						.call_hook(HandleAuth, &arg, &paths, &mut NoOp)
-						.context("Failed to call handle auth hook")?;
-					for result in results {
-						let result = result.result(&mut NoOp)?;
-						if result.handled {
-							return Ok(result.profile);
-						}
-					}
-
-					Ok(None)
-				}));
+				.set_custom_auth_function(Arc::new(AuthFunction { plugins, paths }));
 		}
 
 		core.set_client(client.clone());
@@ -219,9 +204,10 @@ impl UpdateManager {
 		// Add extra versions to manifest from plugins
 		let results = plugins
 			.call_hook(AddVersions, &(), paths, o)
+			.await
 			.context("Failed to call add_versions hook")?;
 		for result in results {
-			let result = result.result(o)?;
+			let result = result.result(o).await?;
 			core.add_additional_versions(result);
 		}
 
@@ -246,6 +232,39 @@ impl UpdateManager {
 			.context("Failed to get core version")?;
 
 		Ok(version)
+	}
+}
+
+/// CustomAuthFunction implementation for user types using plugins
+struct AuthFunction {
+	plugins: PluginManager,
+	paths: Paths,
+}
+
+#[async_trait::async_trait]
+impl CustomAuthFunction for AuthFunction {
+	async fn auth(
+		&self,
+		id: &str,
+		user_type: &str,
+	) -> anyhow::Result<Option<MinecraftUserProfile>> {
+		let arg = HandleAuthArg {
+			user_id: id.to_string(),
+			user_type: user_type.to_string(),
+		};
+		let results = self
+			.plugins
+			.call_hook(HandleAuth, &arg, &self.paths, &mut NoOp)
+			.await
+			.context("Failed to call handle auth hook")?;
+		for result in results {
+			let result = result.result(&mut NoOp).await?;
+			if result.handled {
+				return Ok(result.profile);
+			}
+		}
+
+		Ok(None)
 	}
 }
 

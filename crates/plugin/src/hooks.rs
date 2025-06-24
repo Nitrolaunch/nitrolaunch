@@ -43,7 +43,8 @@ pub trait Hook {
 	fn get_version() -> u16;
 
 	/// Call the hook using the specified program
-	fn call(
+	#[allow(async_fn_in_trait)]
+	async fn call(
 		&self,
 		arg: HookCallArg<'_, Self>,
 		o: &mut impl MCVMOutput,
@@ -51,7 +52,7 @@ pub trait Hook {
 	where
 		Self: Sized,
 	{
-		crate::hook_call::call(self, arg, o)
+		crate::hook_call::call(self, arg, o).await
 	}
 }
 

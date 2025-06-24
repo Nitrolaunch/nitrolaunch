@@ -27,7 +27,7 @@ pub struct ConfigPreferences {
 impl ConfigPreferences {
 	/// Convert deserialized preferences to the stored format and returns
 	/// a list of repositories to add.
-	pub fn read(
+	pub async fn read(
 		prefs: &PrefDeser,
 		plugins: &PluginManager,
 		paths: &Paths,
@@ -40,10 +40,11 @@ impl ConfigPreferences {
 		let mut backup_plugin_repositories = Vec::new();
 		let results = plugins
 			.call_hook(AddCustomPackageRepositories, &(), paths, o)
+			.await
 			.context("Failed to call custom package repositories hook")?;
 		for result in results {
 			let plugin_id = result.get_id().clone();
-			let results = result.result(o)?;
+			let results = result.result(o).await?;
 			for result in results {
 				let repository = PackageRepository::Custom(CustomPackageRepository::new(
 					result.id,

@@ -16,8 +16,11 @@ pub async fn get_users(
 	let data = state.data.lock().await;
 	let mut output = LauncherOutput::new(state.get_output(app_handle));
 
-	let mut config =
-		fmt_err(load_config(&state.paths, &mut NoOp).context("Failed to load config"))?;
+	let mut config = fmt_err(
+		load_config(&state.paths, &mut NoOp)
+			.await
+			.context("Failed to load config"),
+	)?;
 	let user_ids: Vec<_> = config.users.iter_users().map(|x| x.0.clone()).collect();
 
 	let mut users = HashMap::with_capacity(user_ids.len());

@@ -96,6 +96,7 @@ mcvm_plugin = { path = "crates/plugin", version = "0.5.0", default-features = fa
 mcvm_shared = { path = "crates/shared", version = "0.16.0" }
 nutype = { version = "0.4.0", features = ["serde"] }
 oauth2 = "4.4.2"
+pin-project-lite = "0.2.16"
 rand = "0.8.5"
 rand_chacha = "0.3.1"
 rayon = "1.10.0"

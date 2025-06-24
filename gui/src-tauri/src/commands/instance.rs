@@ -22,7 +22,11 @@ use super::{fmt_err, load_config};
 
 #[tauri::command]
 pub async fn get_instances(state: tauri::State<'_, State>) -> Result<Vec<InstanceInfo>, String> {
-	let config = fmt_err(load_config(&state.paths, &mut NoOp).context("Failed to load config"))?;
+	let config = fmt_err(
+		load_config(&state.paths, &mut NoOp)
+			.await
+			.context("Failed to load config"),
+	)?;
 
 	let data = state.data.lock().await;
 
@@ -47,7 +51,11 @@ pub async fn get_instances(state: tauri::State<'_, State>) -> Result<Vec<Instanc
 
 #[tauri::command]
 pub async fn get_profiles(state: tauri::State<'_, State>) -> Result<Vec<InstanceInfo>, String> {
-	let config = fmt_err(load_config(&state.paths, &mut NoOp).context("Failed to load config"))?;
+	let config = fmt_err(
+		load_config(&state.paths, &mut NoOp)
+			.await
+			.context("Failed to load config"),
+	)?;
 
 	let data = state.data.lock().await;
 
@@ -100,7 +108,11 @@ pub async fn pin_instance(
 pub async fn get_instance_groups(
 	state: tauri::State<'_, State>,
 ) -> Result<Vec<InstanceGroupInfo>, String> {
-	let config = fmt_err(load_config(&state.paths, &mut NoOp).context("Failed to load config"))?;
+	let config = fmt_err(
+		load_config(&state.paths, &mut NoOp)
+			.await
+			.context("Failed to load config"),
+	)?;
 
 	let groups = config
 		.instance_groups
@@ -126,7 +138,11 @@ pub async fn get_instance_config(
 	state: tauri::State<'_, State>,
 	id: String,
 ) -> Result<Option<InstanceConfig>, String> {
-	let config = fmt_err(load_config(&state.paths, &mut NoOp).context("Failed to load config"))?;
+	let config = fmt_err(
+		load_config(&state.paths, &mut NoOp)
+			.await
+			.context("Failed to load config"),
+	)?;
 
 	let Some(instance) = config.instances.get(&InstanceID::from(id)) else {
 		return Ok(None);
@@ -142,7 +158,11 @@ pub async fn get_profile_config(
 	state: tauri::State<'_, State>,
 	id: String,
 ) -> Result<Option<ProfileConfig>, String> {
-	let config = fmt_err(load_config(&state.paths, &mut NoOp).context("Failed to load config"))?;
+	let config = fmt_err(
+		load_config(&state.paths, &mut NoOp)
+			.await
+			.context("Failed to load config"),
+	)?;
 
 	let Some(profile) = config.profiles.get(&ProfileID::from(id)) else {
 		return Ok(None);
@@ -153,7 +173,11 @@ pub async fn get_profile_config(
 
 #[tauri::command]
 pub async fn get_global_profile(state: tauri::State<'_, State>) -> Result<ProfileConfig, String> {
-	let config = fmt_err(load_config(&state.paths, &mut NoOp).context("Failed to load config"))?;
+	let config = fmt_err(
+		load_config(&state.paths, &mut NoOp)
+			.await
+			.context("Failed to load config"),
+	)?;
 
 	Ok(config.global_profile)
 }
@@ -217,8 +241,11 @@ pub async fn update_instance(
 	app_handle: tauri::AppHandle,
 	instance_id: String,
 ) -> Result<(), String> {
-	let mut config =
-		fmt_err(load_config(&state.paths, &mut NoOp).context("Failed to load config"))?;
+	let mut config = fmt_err(
+		load_config(&state.paths, &mut NoOp)
+			.await
+			.context("Failed to load config"),
+	)?;
 
 	let mut output = LauncherOutput::new(state.get_output(app_handle));
 	output.set_task("update_instance");

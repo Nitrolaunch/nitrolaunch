@@ -64,7 +64,7 @@ async fn list(data: &mut CmdData<'_>, raw: bool, loaded: bool) -> anyhow::Result
 		.context("Failed to get list of available plugins")?;
 	available_plugins.sort_by_key(|x| x.0.clone());
 
-	let lock = config.plugins.get_lock()?;
+	let lock = config.plugins.get_lock().await;
 	let loaded_plugins: Vec<_> = lock.manager.iter_plugins().map(|x| x.get_id()).collect();
 
 	for (plugin_id, plugin_path) in available_plugins {
@@ -96,7 +96,7 @@ async fn info(data: &mut CmdData<'_>, plugin: String) -> anyhow::Result<()> {
 	data.ensure_config(true).await?;
 	let config = data.config.get_mut();
 
-	let lock = config.plugins.get_lock()?;
+	let lock = config.plugins.get_lock().await;
 	let plugin = lock
 		.manager
 		.iter_plugins()

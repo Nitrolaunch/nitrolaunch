@@ -137,19 +137,23 @@ pub async fn get_page_inject_script(
 ) -> Result<Option<String>, String> {
 	let mut output = LauncherOutput::new(state.get_output(app_handle));
 
-	let config = fmt_err(load_config(&state.paths, &mut NoOp).context("Failed to load config"))?;
+	let config = fmt_err(
+		load_config(&state.paths, &mut NoOp)
+			.await
+			.context("Failed to load config"),
+	)?;
 
 	let arg = InjectPageScriptArg { page, object };
-	let results = fmt_err(config.plugins.call_hook(
-		InjectPageScript,
-		&arg,
-		&state.paths,
-		&mut output,
-	))?;
+	let results = fmt_err(
+		config
+			.plugins
+			.call_hook(InjectPageScript, &arg, &state.paths, &mut output)
+			.await,
+	)?;
 
 	let mut out = String::new();
 	for result in results {
-		let result = fmt_err(result.result(&mut output))?;
+		let result = fmt_err(result.result(&mut output).await)?;
 		out.push_str(&result);
 	}
 
@@ -163,18 +167,22 @@ pub async fn get_sidebar_buttons(
 ) -> Result<Vec<SidebarButton>, String> {
 	let mut output = LauncherOutput::new(state.get_output(app_handle));
 
-	let config = fmt_err(load_config(&state.paths, &mut NoOp).context("Failed to load config"))?;
+	let config = fmt_err(
+		load_config(&state.paths, &mut NoOp)
+			.await
+			.context("Failed to load config"),
+	)?;
 
-	let results = fmt_err(config.plugins.call_hook(
-		AddSidebarButtons,
-		&(),
-		&state.paths,
-		&mut output,
-	))?;
+	let results = fmt_err(
+		config
+			.plugins
+			.call_hook(AddSidebarButtons, &(), &state.paths, &mut output)
+			.await,
+	)?;
 
 	let mut out = Vec::new();
 	for result in results {
-		let result = fmt_err(result.result(&mut output))?;
+		let result = fmt_err(result.result(&mut output).await)?;
 		out.extend(result);
 	}
 
@@ -189,17 +197,21 @@ pub async fn get_plugin_page(
 ) -> Result<Option<String>, String> {
 	let mut output = LauncherOutput::new(state.get_output(app_handle));
 
-	let config = fmt_err(load_config(&state.paths, &mut NoOp).context("Failed to load config"))?;
+	let config = fmt_err(
+		load_config(&state.paths, &mut NoOp)
+			.await
+			.context("Failed to load config"),
+	)?;
 
-	let results = fmt_err(config.plugins.call_hook(
-		GetPage,
-		&page.to_string(),
-		&state.paths,
-		&mut output,
-	))?;
+	let results = fmt_err(
+		config
+			.plugins
+			.call_hook(GetPage, &page.to_string(), &state.paths, &mut output)
+			.await,
+	)?;
 
 	for result in results {
-		let result = fmt_err(result.result(&mut output))?;
+		let result = fmt_err(result.result(&mut output).await)?;
 		if let Some(result) = result {
 			return Ok(Some(result));
 		}

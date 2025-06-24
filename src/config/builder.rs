@@ -81,14 +81,16 @@ impl ConfigBuilder {
 	}
 
 	/// Add a plugin configuration
-	pub fn add_plugin(
+	pub async fn add_plugin(
 		&mut self,
 		plugin: PluginConfig,
 		manifest: PluginManifest,
 		paths: &Paths,
 		o: &mut impl MCVMOutput,
 	) -> anyhow::Result<()> {
-		self.plugins.add_plugin(plugin, manifest, paths, None, o)
+		self.plugins
+			.add_plugin(plugin, manifest, paths, None, o)
+			.await
 	}
 
 	/// Finishes the builder
@@ -263,8 +265,8 @@ impl<'parent> InstanceBuilder<'parent> {
 	}
 
 	/// Finish the builder and go to the parent
-	pub fn build(self, paths: &Paths, o: &mut impl MCVMOutput) -> anyhow::Result<()> {
-		let (id, instance, parent) = self.build_self(paths, o)?;
+	pub async fn build(self, paths: &Paths, o: &mut impl MCVMOutput) -> anyhow::Result<()> {
+		let (id, instance, parent) = self.build_self(paths, o).await?;
 		if let Some(parent) = parent {
 			parent.instances.insert(id, instance);
 		}
@@ -273,7 +275,7 @@ impl<'parent> InstanceBuilder<'parent> {
 	}
 
 	/// Finish the builder and return the self
-	pub fn build_self(
+	pub async fn build_self(
 		self,
 		paths: &Paths,
 		o: &mut impl MCVMOutput,
@@ -291,7 +293,8 @@ impl<'parent> InstanceBuilder<'parent> {
 			plugins,
 			paths,
 			o,
-		)?;
+		)
+		.await?;
 
 		Ok((self.id, built, self.parent))
 	}

@@ -1,15 +1,19 @@
 use std::{
 	collections::VecDeque,
-	io::{BufRead, BufReader, Write},
 	path::Path,
-	process::{Child, ChildStdin, ChildStdout, Command},
-	sync::{Arc, Mutex},
-	time::Instant,
+	sync::Arc,
+	time::{Duration, Instant},
 };
 
-use anyhow::{anyhow, bail, Context};
+use crate::try_read::TryLineReader;
+use anyhow::{bail, Context};
 use mcvm_core::Paths;
 use mcvm_shared::output::{MCVMOutput, MessageContents, MessageLevel, NoOp};
+use tokio::{
+	io::AsyncWriteExt,
+	process::{Child, ChildStdin, ChildStdout, Command},
+	sync::Mutex,
+};
 
 use crate::{
 	hooks::Hook,
@@ -65,7 +69,7 @@ pub struct HookCallArg<'a, H: Hook> {
 	pub protocol_version: u16,
 }
 
-pub(crate) fn call<H: Hook>(
+pub(crate) async fn call<H: Hook>(
 	hook: &H,
 	arg: HookCallArg<'_, H>,
 	o: &mut impl MCVMOutput,
@@ -104,7 +108,7 @@ where
 	}
 	cmd.env(HOOK_VERSION_ENV, H::get_version().to_string());
 	{
-		let lock = arg.persistence.lock().map_err(|x| anyhow!("{x}"))?;
+		let lock = arg.persistence.lock().await;
 		// Don't send null state to improve performance
 		if !lock.state.is_null() {
 			let state =
@@ -123,7 +127,10 @@ where
 	}
 
 	if H::get_takes_over() {
-		cmd.spawn().context("Failed to run hook command")?.wait()?;
+		cmd.spawn()
+			.context("Failed to run hook command")?
+			.wait()
+			.await?;
 
 		Ok(HookHandle::constant(
 			H::Result::default(),
@@ -135,8 +142,9 @@ where
 
 		let mut child = cmd.spawn()?;
 
+		// let stdout = child.stdout.take().unwrap();
 		let stdout = child.stdout.take().unwrap();
-		let stdout_reader = BufReader::new(stdout);
+		let stdout = TryLineReader::new(stdout);
 
 		let stdin = child.stdin.take().unwrap();
 
@@ -149,9 +157,8 @@ where
 		let handle = HookHandle {
 			inner: HookHandleInner::Process {
 				child,
-				stdout: stdout_reader,
-				stdin: stdin,
-				line_buf: String::new(),
+				stdout,
+				stdin,
 				result: None,
 			},
 			plugin_persistence: Some(arg.persistence),
@@ -198,112 +205,113 @@ impl<H: Hook> HookHandle<H> {
 	}
 
 	/// Poll the handle, returning true if the handle is ready
-	pub fn poll(&mut self, o: &mut impl MCVMOutput) -> anyhow::Result<bool> {
+	pub async fn poll(&mut self, o: &mut impl MCVMOutput) -> anyhow::Result<bool> {
 		match &mut self.inner {
 			HookHandleInner::Process {
-				line_buf,
 				stdout,
 				result,
 				stdin,
 				..
 			} => {
-				line_buf.clear();
-				let result_len = stdout.read_line(line_buf)?;
+				let lines = stdout.lines().await?;
 				// EoF
-				if result_len == 0 {
+				let Some(lines) = lines else {
 					return Ok(true);
-				}
-				let line = line_buf.trim_end_matches("\r\n").trim_end_matches('\n');
-
-				let action =
-					OutputAction::deserialize(line, self.use_base64, self.protocol_version)
-						.context("Failed to deserialize plugin action")?;
-
-				let Some(action) = action else {
-					if let Some(message) = line.strip_prefix("$_") {
-						println!("{message}");
-					}
-					return Ok(false);
 				};
 
-				let persistence = self
-					.plugin_persistence
-					.as_mut()
-					.context("Hook handle does not have a reference to persistent plugin data")?;
-				let mut persistence_lock = persistence.lock().map_err(|x| anyhow!("{x}"))?;
+				for line in lines {
+					let action =
+						OutputAction::deserialize(&line, self.use_base64, self.protocol_version)
+							.context("Failed to deserialize plugin action")?;
 
-				// Send command results from the worker to this hook
-				if let Some(worker) = &mut persistence_lock.worker {
-					while let Some(result) = worker.command_results.pop_front() {
-						let action = InputAction::CommandResult(result)
-							.serialize(self.protocol_version)
-							.context("Failed to serialize input action")?;
-						writeln!(stdin, "{action}")
-							.context("Failed to write input action to plugin")?;
-					}
-				}
-
-				match action {
-					OutputAction::SetResult(new_result) => {
-						// Before version 3, this was just a string
-						let new_result = if self.protocol_version < 3 {
-							let string: String = serde_json::from_value(new_result)
-								.context("Failed to deserialize hook result")?;
-							serde_json::from_str(&string)
-								.context("Failed to deserialize hook result")?
-						} else {
-							serde_json::from_value(new_result)
-								.context("Failed to deserialize hook result")?
-						};
-						*result = Some(new_result);
-
-						if let Some(start_time) = &self.start_time {
-							let now = Instant::now();
-							let delta = now.duration_since(*start_time);
-							o.display(
-								MessageContents::Simple(format!(
-									"Plugin {} took {delta:?} to run hook",
-									self.plugin_id
-								)),
-								MessageLevel::Important,
-							);
+					let Some(action) = action else {
+						if let Some(message) = line.strip_prefix("$_") {
+							println!("{message}");
 						}
+						continue;
+					};
 
-						// We can stop polling early
-						return Ok(true);
+					let persistence = self.plugin_persistence.as_mut().context(
+						"Hook handle does not have a reference to persistent plugin data",
+					)?;
+					let mut persistence_lock = persistence.lock().await;
+
+					// Send command results from the worker to this hook
+					if let Some(worker) = &mut persistence_lock.worker {
+						while let Some(result) = worker.command_results.pop_front() {
+							let action = InputAction::CommandResult(result)
+								.serialize(self.protocol_version)
+								.context("Failed to serialize input action")?;
+							stdin
+								.write(action.as_bytes())
+								.await
+								.context("Failed to write input action to plugin")?;
+						}
 					}
-					OutputAction::SetState(new_state) => {
-						persistence_lock.state = new_state;
-					}
-					OutputAction::RunWorkerCommand { command, payload } => {
-						let worker = persistence_lock.worker.as_mut().context(
-							"Command was called on plugin worker, but the worker was not started",
-						)?;
-						worker
-							.send_input_action(InputAction::Command { command, payload })
-							.context("Failed to send command to worker")?;
-					}
-					OutputAction::SetCommandResult(result) => {
-						self.command_results.push_back(result)
-					}
-					OutputAction::Text(text, level) => {
-						o.display_text(text, level);
-					}
-					OutputAction::Message(message) => {
-						o.display_message(message);
-					}
-					OutputAction::StartProcess => {
-						o.start_process();
-					}
-					OutputAction::EndProcess => {
-						o.end_process();
-					}
-					OutputAction::StartSection => {
-						o.start_section();
-					}
-					OutputAction::EndSection => {
-						o.end_section();
-					}
+
+					match action {
+						OutputAction::SetResult(new_result) => {
+							// Before version 3, this was just a string
+							let new_result = if self.protocol_version < 3 {
+								let string: String = serde_json::from_value(new_result)
+									.context("Failed to deserialize hook result")?;
+								serde_json::from_str(&string)
+									.context("Failed to deserialize hook result")?
+							} else {
+								serde_json::from_value(new_result)
+									.context("Failed to deserialize hook result")?
+							};
+							*result = Some(new_result);
+
+							if let Some(start_time) = &self.start_time {
+								let now = Instant::now();
+								let delta = now.duration_since(*start_time);
+								o.display(
+									MessageContents::Simple(format!(
+										"Plugin {} took {delta:?} to run hook",
+										self.plugin_id
+									)),
+									MessageLevel::Important,
+								);
+							}
+
+							// We can stop polling early
+							return Ok(true);
+						}
+						OutputAction::SetState(new_state) => {
+							persistence_lock.state = new_state;
+						}
+						OutputAction::RunWorkerCommand { command, payload } => {
+							let worker = persistence_lock.worker.as_mut().context(
+								"Command was called on plugin worker, but the worker was not started",
+							)?;
+							worker
+								.send_input_action(InputAction::Command { command, payload })
+								.await
+								.context("Failed to send command to worker")?;
+						}
+						OutputAction::SetCommandResult(result) => {
+							self.command_results.push_back(result);
+						}
+						OutputAction::Text(text, level) => {
+							o.display_text(text, level);
+						}
+						OutputAction::Message(message) => {
+							o.display_message(message);
+						}
+						OutputAction::StartProcess => {
+							o.start_process();
+						}
+						OutputAction::EndProcess => {
+							o.end_process();
+						}
+						OutputAction::StartSection => {
+							o.start_section();
+						}
+						OutputAction::EndSection => {
+							o.end_section();
+						}
+					};
 				}
 
 				Ok(false)
@@ -313,25 +321,29 @@ impl<H: Hook> HookHandle<H> {
 	}
 
 	/// Sends an action to the plugin
-	pub fn send_input_action(&mut self, action: InputAction) -> anyhow::Result<()> {
+	pub async fn send_input_action(&mut self, action: InputAction) -> anyhow::Result<()> {
 		if let HookHandleInner::Process { stdin, .. } = &mut self.inner {
 			let action = action
 				.serialize(self.protocol_version)
 				.context("Failed to serialize input action")?;
-			writeln!(stdin, "{action}").context("Failed to write input action to plugin")?;
+			stdin
+				.write(action.as_bytes())
+				.await
+				.context("Failed to write input action to plugin")?;
 		}
 
 		Ok(())
 	}
 
 	/// Get the result of the hook by waiting for it
-	pub fn result(mut self, o: &mut impl MCVMOutput) -> anyhow::Result<H::Result> {
+	pub async fn result(mut self, o: &mut impl MCVMOutput) -> anyhow::Result<H::Result> {
 		if let HookHandleInner::Process { .. } = &self.inner {
 			loop {
-				let result = self.poll(o)?;
+				let result = self.poll(o).await?;
 				if result {
 					break;
 				}
+				tokio::time::sleep(Duration::from_micros(100)).await;
 			}
 		}
 
@@ -340,7 +352,7 @@ impl<H: Hook> HookHandle<H> {
 			HookHandleInner::Process {
 				mut child, result, ..
 			} => {
-				let cmd_result = child.wait()?;
+				let cmd_result = child.wait().await?;
 
 				if !cmd_result.success() {
 					if let Some(exit_code) = cmd_result.code() {
@@ -370,14 +382,14 @@ impl<H: Hook> HookHandle<H> {
 	}
 
 	/// Get the result of the hook by killing it
-	pub fn kill(self, o: &mut impl MCVMOutput) -> anyhow::Result<Option<H::Result>> {
+	pub async fn kill(self, o: &mut impl MCVMOutput) -> anyhow::Result<Option<H::Result>> {
 		let _ = o;
 		match self.inner {
 			HookHandleInner::Constant(result) => Ok(Some(result)),
 			HookHandleInner::Process {
 				mut child, result, ..
 			} => {
-				child.kill()?;
+				child.kill().await?;
 
 				Ok(result)
 			}
@@ -385,10 +397,10 @@ impl<H: Hook> HookHandle<H> {
 	}
 
 	/// Terminate the hook gracefully, without getting the result
-	pub fn terminate(mut self) {
-		let result = self.send_input_action(InputAction::Terminate);
+	pub async fn terminate(mut self) {
+		let result = self.send_input_action(InputAction::Terminate).await;
 		if result.is_err() {
-			let _ = self.kill(&mut NoOp);
+			let _ = self.kill(&mut NoOp).await;
 		}
 	}
 }
@@ -398,8 +410,7 @@ enum HookHandleInner<H: Hook> {
 	/// Result is coming from a running process
 	Process {
 		child: Child,
-		line_buf: String,
-		stdout: BufReader<ChildStdout>,
+		stdout: TryLineReader<ChildStdout>,
 		stdin: ChildStdin,
 		result: Option<H::Result>,
 	},

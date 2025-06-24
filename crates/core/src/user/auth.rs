@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use anyhow::{bail, Context};
 use mcvm_auth::RsaPrivateKey;
 use mcvm_shared::output::{MCVMOutput, MessageContents, MessageLevel};
@@ -59,7 +61,10 @@ impl User {
 						),
 						MessageLevel::Debug,
 					);
-					let profile = func(&self.id, other).context("Custom auth function failed")?;
+					let profile = func
+						.auth(&self.id, other)
+						.await
+						.context("Custom auth function failed")?;
 					if let Some(profile) = profile {
 						self.name = Some(profile.name);
 						self.uuid = Some(profile.uuid);
@@ -455,7 +460,7 @@ pub(crate) struct AuthParameters<'a> {
 	pub client_id: ClientId,
 	pub paths: &'a Paths,
 	pub req_client: &'a reqwest::Client,
-	pub custom_auth_fn: Option<CustomAuthFunction>,
+	pub custom_auth_fn: Option<Arc<dyn CustomAuthFunction>>,
 }
 
 /// Checks whether an account in the database is logged in

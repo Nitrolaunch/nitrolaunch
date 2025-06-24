@@ -1,12 +1,13 @@
 /// Online plugin installation from verified GitHub repos
 pub mod install;
 
+use std::collections::HashSet;
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, MutexGuard};
+use std::sync::Arc;
 
 use crate::config::plugin::{PluginConfig, PluginsConfig};
 use crate::io::paths::Paths;
-use anyhow::{anyhow, Context};
+use anyhow::Context;
 use mcvm_core::io::{json_from_file, json_to_file_pretty};
 use mcvm_plugin::hook_call::HookHandle;
 use mcvm_plugin::hooks::Hook;
@@ -15,12 +16,13 @@ use mcvm_plugin::CorePluginManager;
 use mcvm_shared::output::MCVMOutput;
 use mcvm_shared::output::{MessageContents, MessageLevel};
 use mcvm_shared::translate;
-use std::sync::Mutex;
+use tokio::sync::Mutex;
 
 /// Manager for plugin configs and the actual loaded plugin manager
 #[derive(Clone)]
 pub struct PluginManager {
 	inner: Arc<Mutex<PluginManagerInner>>,
+	plugins: HashSet<String>,
 }
 
 /// Inner for the PluginManager
@@ -48,7 +50,7 @@ impl PluginManager {
 	}
 
 	/// Load the PluginManager from the plugins.json file
-	pub fn load(paths: &Paths, o: &mut impl MCVMOutput) -> anyhow::Result<Self> {
+	pub async fn load(paths: &Paths, o: &mut impl MCVMOutput) -> anyhow::Result<Self> {
 		let config = Self::open_config(paths).context("Failed to open plugins config")?;
 
 		let mut out = Self::new();
@@ -61,10 +63,11 @@ impl PluginManager {
 			};
 
 			out.load_plugin(plugin, paths, o)
+				.await
 				.with_context(|| format!("Failed to load plugin {plugin_id}"))?;
 		}
 
-		out.check_dependencies(o);
+		out.check_dependencies(o).await;
 
 		Ok(out)
 	}
@@ -95,11 +98,12 @@ impl PluginManager {
 				manager,
 				configs: Vec::new(),
 			})),
+			plugins: HashSet::new(),
 		}
 	}
 
 	/// Add a plugin to the manager
-	pub fn add_plugin(
+	pub async fn add_plugin(
 		&mut self,
 		plugin: PluginConfig,
 		manifest: PluginManifest,
@@ -110,7 +114,7 @@ impl PluginManager {
 		let custom_config = plugin.custom_config.clone();
 		let id = plugin.id.clone();
 
-		let mut inner = self.inner.lock().map_err(|x| anyhow!("{x}"))?;
+		let mut inner = self.inner.lock().await;
 		inner.configs.push(plugin);
 
 		let mut plugin = Plugin::new(id.clone(), manifest);
@@ -142,7 +146,10 @@ impl PluginManager {
 		inner
 			.manager
 			.add_plugin(plugin, &paths.core, o)
+			.await
 			.with_context(|| format!("Failed to add plugin '{id}'"))?;
+
+		self.plugins.insert(id);
 
 		Ok(())
 	}
@@ -160,7 +167,7 @@ impl PluginManager {
 	}
 
 	/// Load a plugin from the plugin directory
-	pub fn load_plugin(
+	pub async fn load_plugin(
 		&mut self,
 		plugin: PluginConfig,
 		paths: &Paths,
@@ -184,7 +191,8 @@ impl PluginManager {
 		}
 		let manifest = json_from_file(path).context("Failed to read plugin manifest from file")?;
 
-		self.add_plugin(plugin, manifest, paths, plugin_dir.as_deref(), o)?;
+		self.add_plugin(plugin, manifest, paths, plugin_dir.as_deref(), o)
+			.await?;
 
 		Ok(())
 	}
@@ -265,19 +273,19 @@ impl PluginManager {
 	}
 
 	/// Call a plugin hook on the manager and collects the results into a Vec
-	pub fn call_hook<H: Hook>(
+	pub async fn call_hook<H: Hook>(
 		&self,
 		hook: H,
 		arg: &H::Arg,
 		paths: &Paths,
 		o: &mut impl MCVMOutput,
 	) -> anyhow::Result<Vec<HookHandle<H>>> {
-		let inner = self.inner.lock().map_err(|x| anyhow!("{x}"))?;
-		inner.manager.call_hook(hook, arg, &paths.core, o)
+		let inner = self.inner.lock().await;
+		inner.manager.call_hook(hook, arg, &paths.core, o).await
 	}
 
 	/// Call a plugin hook on a specific plugin
-	pub fn call_hook_on_plugin<H: Hook>(
+	pub async fn call_hook_on_plugin<H: Hook>(
 		&self,
 		hook: H,
 		plugin_id: &str,
@@ -285,15 +293,16 @@ impl PluginManager {
 		paths: &Paths,
 		o: &mut impl MCVMOutput,
 	) -> anyhow::Result<Option<HookHandle<H>>> {
-		let inner = self.inner.lock().map_err(|x| anyhow!("{x}"))?;
+		let inner = self.inner.lock().await;
 		inner
 			.manager
 			.call_hook_on_plugin(hook, plugin_id, arg, &paths.core, o)
+			.await
 	}
 
 	/// Checks plugins to make sure that their dependencies are installed, outputting a warning if any are not
-	pub fn check_dependencies(&self, o: &mut impl MCVMOutput) {
-		let inner = self.inner.lock().expect("Failed to lock mutex");
+	pub async fn check_dependencies(&self, o: &mut impl MCVMOutput) {
+		let inner = self.inner.lock().await;
 		let ids: Vec<_> = inner
 			.manager
 			.iter_plugins()
@@ -319,14 +328,12 @@ impl PluginManager {
 
 	/// Checks whether a plugin is present in the manager
 	pub fn has_plugin(&self, plugin: &str) -> bool {
-		let inner = self.inner.lock().expect("Failed to lock mutex");
-		inner.manager.has_plugin(plugin)
+		self.plugins.contains(plugin)
 	}
 
-	/// Get a lock for the inner mutex
-	pub fn get_lock(&self) -> anyhow::Result<MutexGuard<PluginManagerInner>> {
-		let inner = self.inner.lock().map_err(|x| anyhow!("{x}"))?;
-		Ok(inner)
+	/// Gets the mutex lock for the inner part of this plugin manager
+	pub async fn get_lock<'a>(&'a self) -> tokio::sync::MutexGuard<'a, PluginManagerInner> {
+		self.inner.lock().await
 	}
 }
 

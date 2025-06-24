@@ -22,6 +22,7 @@ pub mod hooks;
 pub mod input_output;
 /// Plugins
 pub mod plugin;
+mod try_read;
 
 pub use mcvm_shared as shared;
 
@@ -65,7 +66,7 @@ impl CorePluginManager {
 	}
 
 	/// Add a plugin to the manager
-	pub fn add_plugin(
+	pub async fn add_plugin(
 		&mut self,
 		mut plugin: Plugin,
 		paths: &Paths,
@@ -87,9 +88,10 @@ impl CorePluginManager {
 		// Call the on_load hook
 		let result = plugin
 			.call_hook(&OnLoad, &(), paths, self.mcvm_version, &self.plugin_list, o)
+			.await
 			.context("Failed to call on_load hook of plugin")?;
 		if let Some(result) = result {
-			result.result(o)?;
+			result.result(o).await?;
 		}
 
 		// Call the start_worker hook
@@ -102,10 +104,12 @@ impl CorePluginManager {
 				&self.plugin_list,
 				o,
 			)
+			.await
 			.context("Failed to call start_worker hook of plugin")?;
 		if let Some(worker_handle) = worker_handle {
 			plugin
 				.set_worker(worker_handle)
+				.await
 				.context("Failed to set plugin worker")?;
 		}
 
@@ -115,7 +119,7 @@ impl CorePluginManager {
 	}
 
 	/// Call a plugin hook on the manager and collects the results into a Vec
-	pub fn call_hook<H: Hook>(
+	pub async fn call_hook<H: Hook>(
 		&self,
 		hook: H,
 		arg: &H::Arg,
@@ -129,6 +133,7 @@ impl CorePluginManager {
 		}) {
 			let result = plugin
 				.call_hook(&hook, arg, paths, self.mcvm_version, &self.plugin_list, o)
+				.await
 				.with_context(|| format!("Hook failed for plugin {}", plugin.get_id()))?;
 			out.extend(result);
 		}
@@ -137,7 +142,7 @@ impl CorePluginManager {
 	}
 
 	/// Call a plugin hook on the manager on a specific plugin
-	pub fn call_hook_on_plugin<H: Hook>(
+	pub async fn call_hook_on_plugin<H: Hook>(
 		&self,
 		hook: H,
 		plugin_id: &str,
@@ -149,6 +154,7 @@ impl CorePluginManager {
 			if plugin.get_id() == plugin_id {
 				let result = plugin
 					.call_hook(&hook, arg, paths, self.mcvm_version, &self.plugin_list, o)
+					.await
 					.context("Plugin hook failed")?;
 				return Ok(result);
 			}

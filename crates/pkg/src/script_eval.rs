@@ -13,6 +13,7 @@ use serde::{Deserialize, Serialize};
 use crate::{RecommendedPackage, RequiredPackage};
 
 /// A trait for a type that has specific implementations of package script evaluation functions
+#[async_trait::async_trait]
 pub trait ScriptEvaluator {
 	/// The shared evaluation state to provide to methods
 	type Shared<'a>;
@@ -85,7 +86,7 @@ pub trait ScriptEvaluator {
 	) -> anyhow::Result<()>;
 
 	/// Run a custom instruction
-	fn run_custom(
+	async fn run_custom(
 		&mut self,
 		shared: &mut Self::Shared<'_>,
 		command: String,
@@ -110,7 +111,7 @@ pub enum EvalReason {
 }
 
 /// Evaluate a script package install routine with a script evaluator
-pub fn eval_script_package<E: ScriptEvaluator>(
+pub async fn eval_script_package<E: ScriptEvaluator>(
 	parsed: &Parsed,
 	e: &mut E,
 	shared: &mut E::Shared<'_>,
@@ -126,7 +127,7 @@ pub fn eval_script_package<E: ScriptEvaluator>(
 		.ok_or(anyhow!("Routine {} does not exist", INSTALL_ROUTINE))?;
 
 	for instr in &block.contents {
-		let result = eval_instr(instr, parsed, e, shared, config)?;
+		let result = eval_instr(instr, parsed, e, shared, config).await?;
 		if result.finish {
 			break;
 		}
@@ -135,7 +136,7 @@ pub fn eval_script_package<E: ScriptEvaluator>(
 }
 
 /// Evaluate a block of instructions
-fn eval_block<E: ScriptEvaluator>(
+async fn eval_block<E: ScriptEvaluator>(
 	block: &Block,
 	parsed: &Parsed,
 	e: &mut E,
@@ -145,7 +146,7 @@ fn eval_block<E: ScriptEvaluator>(
 	let mut out = EvalResult::new();
 
 	for instr in &block.contents {
-		let result = eval_instr(instr, parsed, e, shared, config)?;
+		let result = eval_instr(instr, parsed, e, shared, config).await?;
 		if result.finish {
 			out.finish = true;
 			break;
@@ -156,7 +157,7 @@ fn eval_block<E: ScriptEvaluator>(
 }
 
 /// Evaluate an instruction
-pub fn eval_instr<E: ScriptEvaluator>(
+pub async fn eval_instr<E: ScriptEvaluator>(
 	instr: &Instruction,
 	parsed: &Parsed,
 	e: &mut E,
@@ -176,7 +177,7 @@ pub fn eval_instr<E: ScriptEvaluator>(
 				} => {
 					if e.eval_condition(shared, &condition.kind)? {
 						let block = parsed.blocks.get(if_block).expect("If block missing");
-						out = eval_block(block, parsed, e, shared, config)?;
+						out = Box::pin(eval_block(block, parsed, e, shared, config)).await?;
 					} else {
 						// Eval the else block chain
 						for else_block in else_blocks {
@@ -189,7 +190,7 @@ pub fn eval_instr<E: ScriptEvaluator>(
 								.blocks
 								.get(&else_block.block)
 								.expect("If else block missing");
-							out = eval_block(block, parsed, e, shared, config)?;
+							out = Box::pin(eval_block(block, parsed, e, shared, config)).await?;
 						}
 					}
 				}
@@ -199,7 +200,7 @@ pub fn eval_instr<E: ScriptEvaluator>(
 						"Call instruction routine '{routine}' does not exist"
 					))?;
 					let block = parsed.blocks.get(routine).expect("Block does not exist");
-					out = eval_block(block, parsed, e, shared, config)?;
+					out = Box::pin(eval_block(block, parsed, e, shared, config)).await?;
 				}
 				InstrKind::Set(var, val) => {
 					let var = var.get();
@@ -305,7 +306,7 @@ pub fn eval_instr<E: ScriptEvaluator>(
 					}
 				}
 				InstrKind::Custom(cmd, args) => {
-					e.run_custom(shared, cmd.get_clone(), args.clone())?;
+					e.run_custom(shared, cmd.get_clone(), args.clone()).await?;
 				}
 				_ => bail!("Instruction is not allowed in this routine context"),
 			},

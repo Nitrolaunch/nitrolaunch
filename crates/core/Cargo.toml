@@ -18,6 +18,7 @@ schema = ["dep:schemars", "mcvm_shared/schema"]
 
 [dependencies]
 anyhow = { workspace = true }
+async-trait = { workspace = true }
 bytes = { workspace = true }
 cfg-match = { workspace = true }
 directories = { workspace = true }

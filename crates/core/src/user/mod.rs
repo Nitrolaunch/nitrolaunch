@@ -146,7 +146,7 @@ pub struct UserManager {
 	/// Whether the manager has been set as offline for authentication
 	offline: bool,
 	/// Custom auth function for plugin injection
-	custom_auth_fn: Option<CustomAuthFunction>,
+	custom_auth_fn: Option<Arc<dyn CustomAuthFunction>>,
 }
 
 /// State of authentication
@@ -327,14 +327,18 @@ impl UserManager {
 	}
 
 	/// Set the manager's custom auth function
-	pub fn set_custom_auth_function(&mut self, func: CustomAuthFunction) {
+	pub fn set_custom_auth_function(&mut self, func: Arc<dyn CustomAuthFunction>) {
 		self.custom_auth_fn = Some(func);
 	}
 }
 
 /// Function for custom authentication handling
-pub type CustomAuthFunction =
-	Arc<dyn Fn(&str, &str) -> anyhow::Result<Option<MinecraftUserProfile>> + Send + Sync>;
+#[async_trait::async_trait]
+pub trait CustomAuthFunction: Send + Sync {
+	/// Call the custom auth function
+	async fn auth(&self, id: &str, user_type: &str)
+		-> anyhow::Result<Option<MinecraftUserProfile>>;
+}
 
 /// Validate a Minecraft username
 pub fn validate_username(_kind: &UserKind, name: &str) -> bool {

@@ -2,14 +2,13 @@ use std::collections::HashMap;
 use std::fmt::Debug;
 use std::path::PathBuf;
 use std::sync::Arc;
-use std::sync::Mutex;
 
-use anyhow::anyhow;
 use anyhow::bail;
 use anyhow::Context;
 use mcvm_core::Paths;
 use mcvm_shared::output::MCVMOutput;
 use serde::{Deserialize, Deserializer};
+use tokio::sync::Mutex;
 
 use crate::hook_call::HookCallArg;
 use crate::hooks::Hook;
@@ -58,7 +57,7 @@ impl Plugin {
 	}
 
 	/// Call a hook on the plugin
-	pub fn call_hook<H: Hook>(
+	pub async fn call_hook<H: Hook>(
 		&self,
 		hook: &H,
 		arg: &H::Arg,
@@ -72,10 +71,11 @@ impl Plugin {
 		};
 
 		self.call_hook_handler(hook, handler, arg, paths, mcvm_version, plugin_list, o)
+			.await
 	}
 
 	/// Call a hook handler on the plugin
-	fn call_hook_handler<H: Hook>(
+	async fn call_hook_handler<H: Hook>(
 		&self,
 		hook: &H,
 		handler: &HookHandler,
@@ -108,7 +108,7 @@ impl Plugin {
 						.protocol_version
 						.unwrap_or(DEFAULT_PROTOCOL_VERSION),
 				};
-				hook.call(arg, o).map(Some)
+				hook.call(arg, o).await.map(Some)
 			}
 			HookHandler::Constant {
 				constant,
@@ -162,7 +162,7 @@ impl Plugin {
 
 				for (case, handler) in cases.iter() {
 					if &lhs == case {
-						return self.call_hook_handler(
+						return Box::pin(self.call_hook_handler(
 							hook,
 							&handler,
 							arg,
@@ -170,7 +170,8 @@ impl Plugin {
 							mcvm_version,
 							plugin_list,
 							o,
-						);
+						))
+						.await;
 					}
 				}
 
@@ -204,8 +205,8 @@ impl Plugin {
 	}
 
 	/// Set the plugin's worker handle
-	pub fn set_worker(&mut self, worker: HookHandle<StartWorker>) -> anyhow::Result<()> {
-		let mut lock = self.persistence.lock().map_err(|x| anyhow!("{x}"))?;
+	pub async fn set_worker(&mut self, worker: HookHandle<StartWorker>) -> anyhow::Result<()> {
+		let mut lock = self.persistence.lock().await;
 		lock.worker = Some(worker);
 
 		Ok(())

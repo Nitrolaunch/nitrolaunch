@@ -277,6 +277,7 @@ pub async fn launch(
 
 	instance_handle
 		.wait(&plugins, &data.paths, data.output)
+		.await
 		.context("Failed to wait for instance child process")?;
 
 	Ok(())
@@ -437,6 +438,7 @@ async fn import(
 
 	// Figure out the format
 	let formats = load_formats(&config.plugins, &data.paths, data.output)
+		.await
 		.context("Failed to get available transfer formats")?;
 	let format = if let Some(format) = &format {
 		format
@@ -454,6 +456,7 @@ async fn import(
 		&data.paths,
 		data.output,
 	)
+	.await
 	.context("Failed to import the new instance")?;
 
 	let mut config = data.get_raw_config()?;
@@ -483,6 +486,7 @@ async fn export(
 
 	// Figure out the format
 	let formats = load_formats(&config.plugins, &data.paths, data.output)
+		.await
 		.context("Failed to get available transfer formats")?;
 	let format = if let Some(format) = &format {
 		format
@@ -514,6 +518,7 @@ async fn export(
 			&data.paths,
 			data.output,
 		)
+		.await
 		.context("Failed to export instance")?;
 
 	Ok(())

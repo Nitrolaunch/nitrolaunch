@@ -141,10 +141,11 @@ impl Instance {
 			}
 			let results = plugins
 				.call_hook(RemoveLoader, &arg, paths, process.deref_mut())
+				.await
 				.context("Failed to call remove loader hook")?;
 
 			for result in results {
-				result.result(process.deref_mut())?;
+				result.result(process.deref_mut()).await?;
 			}
 
 			// The current loader version is no longer valid as it is referring to the old loader
@@ -159,11 +160,12 @@ impl Instance {
 
 		let results = plugins
 			.call_hook(OnInstanceSetup, &arg, paths, o)
+			.await
 			.context("Failed to call instance setup hook")?;
 
 		let mut loader_version_set = false;
 		for result in results {
-			let result = result.result(o)?;
+			let result = result.result(o).await?;
 			self.modification_data
 				.classpath_extension
 				.add_multiple(result.classpath_extension.iter());

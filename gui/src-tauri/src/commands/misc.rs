@@ -10,20 +10,23 @@ use mcvm::{
 use super::{fmt_err, load_config};
 
 #[tauri::command]
-pub async fn get_supported_loaders(
-	state: tauri::State<'_, State>,
-) -> Result<Vec<Loader>, String> {
-	let config = fmt_err(load_config(&state.paths, &mut NoOp).context("Failed to load config"))?;
+pub async fn get_supported_loaders(state: tauri::State<'_, State>) -> Result<Vec<Loader>, String> {
+	let config = fmt_err(
+		load_config(&state.paths, &mut NoOp)
+			.await
+			.context("Failed to load config"),
+	)?;
 
 	let results = fmt_err(
 		config
 			.plugins
 			.call_hook(AddSupportedLoaders, &(), &state.paths, &mut NoOp)
+			.await
 			.context("Failed to get supported loaders from plugins"),
 	)?;
 	let mut out = Vec::with_capacity(results.len());
 	for result in results {
-		let result = fmt_err(result.result(&mut NoOp))?;
+		let result = fmt_err(result.result(&mut NoOp).await)?;
 		out.extend(result);
 	}
 
@@ -36,7 +39,11 @@ pub async fn get_minecraft_versions(
 	state: tauri::State<'_, State>,
 	releases_only: bool,
 ) -> Result<Vec<String>, String> {
-	let config = fmt_err(load_config(&state.paths, &mut NoOp).context("Failed to load config"))?;
+	let config = fmt_err(
+		load_config(&state.paths, &mut NoOp)
+			.await
+			.context("Failed to load config"),
+	)?;
 
 	// Use the UpdateManager and then take the version info from it
 	let mut manager = UpdateManager::new(UpdateDepth::Shallow);

@@ -88,7 +88,7 @@ impl Config {
 	}
 
 	/// Create the Config struct from deserialized config
-	fn load_from_deser(
+	async fn load_from_deser(
 		mut config: ConfigDeser,
 		plugins: PluginManager,
 		show_warnings: bool,
@@ -101,6 +101,7 @@ impl Config {
 		// Preferences
 		let (prefs, repositories) =
 			ConfigPreferences::read(&config.preferences, &plugins, paths, o)
+				.await
 				.context("Failed to read preferences")?;
 
 		let packages = PkgRegistry::new(repositories, &plugins);
@@ -144,17 +145,19 @@ impl Config {
 		let arg = AddInstancesArg {};
 		let results = plugins
 			.call_hook(AddInstances, &arg, paths, o)
+			.await
 			.context("Failed to call add instances hook")?;
 		for result in results {
-			let result = result.result(o)?;
+			let result = result.result(o).await?;
 			config.instances.extend(result);
 		}
 		// Add profiles from plugins
 		let results = plugins
 			.call_hook(AddProfiles, &arg, paths, o)
+			.await
 			.context("Failed to call add profiles hook")?;
 		for result in results {
-			let result = result.result(o)?;
+			let result = result.result(o).await?;
 			config.profiles.extend(result);
 		}
 
@@ -166,9 +169,10 @@ impl Config {
 		let mut supported_loaders = Vec::new();
 		let results = plugins
 			.call_hook(AddSupportedLoaders, &(), paths, o)
+			.await
 			.context("Failed to get supported loaders")?;
 		for result in results {
-			let result = result.result(o)?;
+			let result = result.result(o).await?;
 			supported_loaders.extend(result);
 		}
 
@@ -181,7 +185,8 @@ impl Config {
 				&plugins,
 				paths,
 				o,
-			);
+			)
+			.await;
 
 			let instance = match result {
 				Ok(instance) => instance,
@@ -235,7 +240,7 @@ impl Config {
 	}
 
 	/// Load the configuration from the config file
-	pub fn load(
+	pub async fn load(
 		path: &Path,
 		plugins: PluginManager,
 		show_warnings: bool,
@@ -244,7 +249,7 @@ impl Config {
 		o: &mut impl MCVMOutput,
 	) -> anyhow::Result<Self> {
 		let obj = Self::open(path)?;
-		Self::load_from_deser(obj, plugins, show_warnings, paths, client_id, o)
+		Self::load_from_deser(obj, plugins, show_warnings, paths, client_id, o).await
 	}
 }
 
@@ -285,8 +290,8 @@ mod tests {
 
 	use mcvm_shared::output;
 
-	#[test]
-	fn test_default_config() {
+	#[tokio::test]
+	async fn test_default_config() {
 		let deser = serde_json::from_value(default_config()).unwrap();
 		Config::load_from_deser(
 			deser,
@@ -296,6 +301,7 @@ mod tests {
 			ClientId::new(String::new()),
 			&mut output::Simple(output::MessageLevel::Debug),
 		)
+		.await
 		.unwrap();
 	}
 }

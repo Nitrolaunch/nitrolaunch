@@ -23,7 +23,7 @@ use mcvm_shared::Side;
 use crate::plugin::PluginManager;
 
 /// Read the config for an instance to create the instance
-pub fn read_instance_config(
+pub async fn read_instance_config(
 	id: InstanceID,
 	mut config: InstanceConfig,
 	profiles: &HashMap<ProfileID, ProfileConfig>,
@@ -61,9 +61,10 @@ pub fn read_instance_config(
 	};
 	let results = plugins
 		.call_hook(ModifyInstanceConfig, &arg, paths, o)
+		.await
 		.context("Failed to apply plugin instance modifications")?;
 	for result in results {
-		let result = result.result(o)?;
+		let result = result.result(o).await?;
 		config = merge_instance_configs(&config, result.config);
 	}
 

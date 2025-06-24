@@ -277,7 +277,8 @@ impl Package {
 					input,
 					plugins,
 					paths,
-				)?;
+				)
+				.await?;
 				Ok(eval)
 			}
 			PackageContentType::Declarative => {

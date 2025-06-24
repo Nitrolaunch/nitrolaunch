@@ -91,7 +91,7 @@ impl PackageRepository {
 	) -> anyhow::Result<()> {
 		match self {
 			Self::Basic(repo) => repo.sync(paths, client).await,
-			Self::Custom(repo) => repo.sync(plugins, paths, o),
+			Self::Custom(repo) => repo.sync(plugins, paths, o).await,
 			Self::Core => Ok(()),
 		}
 	}
@@ -119,7 +119,7 @@ impl PackageRepository {
 					Ok(None)
 				}
 			}
-			Self::Custom(repo) => repo.query(id, plugins, paths, o),
+			Self::Custom(repo) => repo.query(id, plugins, paths, o).await,
 		}
 	}
 
@@ -137,7 +137,7 @@ impl PackageRepository {
 		match self {
 			Self::Basic(..) => Ok(()),
 			Self::Core => Ok(()),
-			Self::Custom(repo) => repo.preload(packages, plugins, paths, o),
+			Self::Custom(repo) => repo.preload(packages, plugins, paths, o).await,
 		}
 	}
 

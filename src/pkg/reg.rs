@@ -470,6 +470,7 @@ impl PkgRegistry {
 
 				let result = repo
 					.search(params.clone(), &self.plugins, paths, o)
+					.await
 					.with_context(|| {
 						format!(
 							"Failed to search custom package repository {}",
@@ -537,7 +538,9 @@ impl PkgRegistry {
 		let mut handles = Vec::new();
 		for repo in &self.repos {
 			if let PackageRepository::Custom(repo) = &repo {
-				let handle = repo.get_preload_task(packages.clone(), &self.plugins, paths, o);
+				let handle = repo
+					.get_preload_task(packages.clone(), &self.plugins, paths, o)
+					.await;
 				if let Ok(Some(handle)) = handle {
 					handles.push(handle);
 				}
@@ -545,7 +548,7 @@ impl PkgRegistry {
 		}
 
 		for handle in handles {
-			handle.result(o)?;
+			handle.result(o).await?;
 		}
 
 		Ok(())

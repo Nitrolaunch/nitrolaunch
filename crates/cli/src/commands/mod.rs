@@ -171,6 +171,7 @@ impl<'a> CmdData<'a> {
 	pub async fn ensure_config(&mut self, show_warnings: bool) -> anyhow::Result<()> {
 		if self.config.is_empty() {
 			let plugins = PluginManager::load(&self.paths, self.output)
+				.await
 				.context("Failed to load plugins configuration")?;
 
 			self.config.fill(
@@ -182,6 +183,7 @@ impl<'a> CmdData<'a> {
 					crate::secrets::get_ms_client_id(),
 					self.output,
 				)
+				.await
 				.context("Failed to load config")?,
 			);
 		}
@@ -192,10 +194,11 @@ impl<'a> CmdData<'a> {
 			.get()
 			.plugins
 			.call_hook(AddTranslations, &(), &self.paths, self.output)
+			.await
 			.context("Failed to get extra translations from plugins")?;
 
 		for result in results {
-			let mut result = result.result(self.output)?;
+			let mut result = result.result(self.output).await?;
 			let map = result.remove(&self.config.get().prefs.language);
 			if let Some(map) = map {
 				self.output.set_translation_map(map);
@@ -233,7 +236,7 @@ async fn call_plugin_subcommand(args: Vec<String>, data: &mut CmdData<'_>) -> an
 		.context("Subcommand does not have first argument")?;
 
 	{
-		let lock = config.plugins.get_lock()?;
+		let lock = config.plugins.get_lock().await;
 		let exists = lock
 			.manager
 			.iter_plugins()
@@ -246,9 +249,10 @@ async fn call_plugin_subcommand(args: Vec<String>, data: &mut CmdData<'_>) -> an
 	let results = config
 		.plugins
 		.call_hook(hooks::Subcommand, &args, &data.paths, data.output)
+		.await
 		.context("Plugin subcommand failed")?;
 	for result in results {
-		result.result(data.output)?;
+		result.result(data.output).await?;
 	}
 
 	Ok(())

@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use anyhow::Context;
 use mcvm_config::instance::{QuickPlay, WrapperCommand};
@@ -89,9 +89,10 @@ impl Instance {
 		// Run pre-launch hooks
 		let results = plugins
 			.call_hook(OnInstanceLaunch, &hook_arg, paths, o)
+			.await
 			.context("Failed to call on launch hook")?;
 		for result in results {
-			result.result(o)?;
+			result.result(o).await?;
 		}
 
 		// Launch the instance using core
@@ -103,6 +104,7 @@ impl Instance {
 		// Run while_instance_launch hooks alongside
 		let hook_handles = plugins
 			.call_hook(WhileInstanceLaunch, &hook_arg, paths, o)
+			.await
 			.context("Failed to call while launch hook")?;
 		let handle = InstanceHandle {
 			inner: handle,
@@ -166,7 +168,7 @@ pub struct InstanceHandle {
 
 impl InstanceHandle {
 	/// Waits for the process to complete
-	pub fn wait(
+	pub async fn wait(
 		mut self,
 		plugins: &PluginManager,
 		paths: &Paths,
@@ -175,9 +177,17 @@ impl InstanceHandle {
 		let pid = self.get_pid();
 
 		// Wait for the process to complete while polling plugins and stdio
+		let mut completed_hooks = HashSet::with_capacity(self.hook_handles.len());
 		let status = loop {
 			for handle in &mut self.hook_handles {
-				let _ = handle.poll(o);
+				if completed_hooks.contains(handle.get_id()) {
+					continue;
+				}
+
+				let finished = handle.poll(o).await;
+				if finished.is_err() || finished.is_ok_and(|x| x) {
+					completed_hooks.insert(handle.get_id().clone());
+				}
 			}
 
 			let result = self.inner.try_wait();
@@ -188,16 +198,16 @@ impl InstanceHandle {
 
 		// Terminate any sibling processes now that the main one is complete
 		for handle in self.hook_handles {
-			handle.terminate();
+			handle.terminate().await;
 		}
 
-		Self::on_stop(&self.instance_id, pid, &self.hook_arg, plugins, paths, o)?;
+		Self::on_stop(&self.instance_id, pid, &self.hook_arg, plugins, paths, o).await?;
 
 		Ok(status)
 	}
 
 	/// Kills the process early
-	pub fn kill(
+	pub async fn kill(
 		mut self,
 		plugins: &PluginManager,
 		paths: &Paths,
@@ -210,7 +220,7 @@ impl InstanceHandle {
 		}
 		let _ = self.inner.kill();
 
-		Self::on_stop(&self.instance_id, pid, &self.hook_arg, plugins, paths, o)?;
+		Self::on_stop(&self.instance_id, pid, &self.hook_arg, plugins, paths, o).await?;
 
 		Ok(())
 	}
@@ -227,7 +237,7 @@ impl InstanceHandle {
 	}
 
 	/// Function that should be run whenever the instance stops
-	fn on_stop(
+	async fn on_stop(
 		instance_id: &str,
 		pid: u32,
 		arg: &InstanceLaunchArg,
@@ -245,9 +255,10 @@ impl InstanceHandle {
 		// Call on stop hooks
 		let results = plugins
 			.call_hook(OnInstanceStop, arg, paths, o)
+			.await
 			.context("Failed to call on stop hook")?;
 		for result in results {
-			result.result(o)?;
+			result.result(o).await?;
 		}
 
 		Ok(())
