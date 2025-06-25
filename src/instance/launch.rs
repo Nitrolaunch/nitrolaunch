@@ -61,7 +61,7 @@ impl Instance {
 			.context("Failed to update instance")?;
 		manager.add_result(result);
 
-		let hook_arg = InstanceLaunchArg {
+		let mut hook_arg = InstanceLaunchArg {
 			id: self.id.to_string(),
 			side: Some(self.get_side()),
 			dir: self.dirs.get().inst_dir.to_string_lossy().into(),
@@ -69,6 +69,8 @@ impl Instance {
 			version_info: manager.version_info.get_clone(),
 			config: self.config.original_config_with_profiles.clone(),
 			pid: None,
+			stdout_path: None,
+			stdin_path: None,
 		};
 
 		let mut installed_version = manager
@@ -99,10 +101,14 @@ impl Instance {
 		}
 
 		// Launch the instance using core
-		let handle = instance
+		let mut handle = instance
 			.launch_with_handle(o)
 			.await
 			.context("Failed to launch core instance")?;
+
+		hook_arg.pid = Some(handle.get_pid());
+		hook_arg.stdout_path = Some(handle.stdout().1.to_string_lossy().to_string());
+		hook_arg.stdin_path = Some(handle.stdin().1.to_string_lossy().to_string());
 
 		// Run while_instance_launch hooks alongside
 		let hook_handles = plugins

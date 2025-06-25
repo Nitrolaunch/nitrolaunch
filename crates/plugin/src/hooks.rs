@@ -249,6 +249,10 @@ pub struct InstanceLaunchArg {
 	pub config: InstanceConfig,
 	/// The PID of the instance process
 	pub pid: Option<u32>,
+	/// The path to the file containing the instance stdout and stderr. Will not be available in the on_instance_launch hook.
+	pub stdout_path: Option<String>,
+	/// The path to the file containing the instance stdin. Will not be available in the on_instance_launch hook.
+	pub stdin_path: Option<String>,
 }
 
 def_hook!(

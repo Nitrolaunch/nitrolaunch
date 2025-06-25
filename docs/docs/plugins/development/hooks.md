@@ -3,33 +3,44 @@
 Hooks are what give your plugin functionality. They are essentially custom event handlers that can be written in any language. They can run code whenever something happens, or inject new items into some of the data-driven parts of MCVM. Handlers for hooks are defined in the plugin manifest.
 
 ## Parts of a Hook
+
 - ID: Every hook has a unique ID used to identify it
 - Argument and Result: These are the inputs and outputs of the hook. They can be any JSON type, such as a string or object, and depend on which hook you are handling.
 
 ## How Hooks are Run
+
 Most of the time when MCVM calls a hook, it will check every plugin that supports that hook, and call the hook on each one to create a final list of results. Handlers are not exclusive; multiple plugins can subscribe to the same hook. However, some hooks are only called on specific plugins. For example, the `on_load` hook is only called on a specific plugin once it is loaded.
 
 ## List of Hooks
 
 ### `on_load`
+
 Called when this plugin is loaded. Can be used to set up state and such.
+
 - Argument: None
 - Result: None
 
 ### `subcommand`
-Called whenever one of the subcommands that this hook registers are run. The argument is the list of arguments that were provided to the subcommand, *including* the subcommand itself. Note that this hook also takes over output, meaning anything coming from stdout will be output to the console instead.
+
+Called whenever one of the subcommands that this hook registers are run. The argument is the list of arguments that were provided to the subcommand, _including_ the subcommand itself. Note that this hook also takes over output, meaning anything coming from stdout will be output to the console instead.
+
 - Argument: `[string]`
 - Result: None
 
 ### `modify_instance_config`
+
 Called on every instance to possibly modify its config. The output config will be merged with the instance's current config in the same way as profiles are. Note that the input is not sequential: All plugins will be given the same config before modification, instead of applying one after the other, and the results will all be merged together.
+
 - Argument:
+
 ```
 {
 	"config": InstanceConfig
 }
 ```
+
 - Result:
+
 ```
 {
 	"config": InstanceConfig
@@ -37,9 +48,12 @@ Called on every instance to possibly modify its config. The output config will b
 ```
 
 ### `add_versions`
+
 This hook allows you to add extra Minecraft versions to the version manifest, allowing them to be specified in instance configuration and automatically downloaded.
+
 - Argument: None
 - Result:
+
 ```
 [
 	{
@@ -53,9 +67,12 @@ This hook allows you to add extra Minecraft versions to the version manifest, al
 ```
 
 ### `on_instance_setup`
+
 Called when an instance is being set up, for update or launch. Can return modifications to make to the launch parameters
 resulting from installing a certain modification
+
 - Argument:
+
 ```
 {
 	"id": string,
@@ -73,7 +90,9 @@ resulting from installing a certain modification
 	"update_depth": "shallow" | "full" | "force"
 }
 ```
+
 - Result:
+
 ```
 {
 	"main_class_override": string | null,
@@ -83,8 +102,11 @@ resulting from installing a certain modification
 ```
 
 ### `remove_loader`
+
 Called when the loader of an instance changes, to allow cleaning up old or invalid files. Will be given the loader that needs to be removed.
+
 - Argument:
+
 ```
 {
 	"id": string,
@@ -100,26 +122,36 @@ Called when the loader of an instance changes, to allow cleaning up old or inval
 	"update_depth": "shallow" | "full" | "force"
 }
 ```
+
 - Result: None
 
 ### `on_instance_launch`
+
 Called whenever an instance is launched
+
 - Argument: InstanceLaunchArg
 - Result: None
 
 ### `while_instance_launch`
+
 Also called when an instance is launched, but is non-blocking, and runs alongside the instance. Can be used for periodic tasks and such.
+
 - Argument: InstanceLaunchArg
 - Result: None
 
 ### `on_instance_stop`
-Called when an instance is stopped. This happens when Minecraft is closed or crashes. This hook will *not* be called if MCVM crashes while the instance is running.
+
+Called when an instance is stopped. This happens when Minecraft is closed or crashes. This hook will _not_ be called if MCVM crashes while the instance is running.
+
 - Argument: InstanceLaunchArg
 - Result: None
 
 ### `custom_package_instruction`
+
 Handles custom instructions in script packages.
+
 - Argument:
+
 ```
 {
 	"pkg_id": string,
@@ -127,7 +159,9 @@ Handles custom instructions in script packages.
 	"args": [string]
 }
 ```
+
 - Result:
+
 ```
 {
 	"handled": bool,
@@ -164,18 +198,24 @@ Handles custom instructions in script packages.
 	"notices": [string]
 }
 ```
+
 - `handled`: Whether this instruction was handled or not. Should be false if this instruction is not for your plugin.
 
 ## `handle_auth`
+
 Handles authentication with custom user types
+
 - Argument:
+
 ```
 {
 	"user_id": string,
 	"user_type": string
 }
 ```
+
 - Result:
+
 ```
 {
 	"handled": bool,
@@ -201,12 +241,16 @@ Handles authentication with custom user types
 	} | null
 }
 ```
+
 - `profile.id`: The UUID of the user
 
 ### `add_translations`
+
 Adds extra translations to MCVM
+
 - Argument: None
 - Result:
+
 ```
 {
 	"language": {
@@ -218,9 +262,12 @@ Adds extra translations to MCVM
 ```
 
 ### `add_instance_transfer_formats`
+
 Adds information about new transfer formats that this plugin adds support for. Returns a list of formats, including information about features that they support and don't support.
+
 - Argument: None
 - Result:
+
 ```
 [
 	{
@@ -241,8 +288,11 @@ Adds information about new transfer formats that this plugin adds support for. R
 ```
 
 ### `export_instance`
+
 Hook called on a specific plugin to export an instance using one of the formats it supports
+
 - Argument:
+
 ```
 {
 	"format": string,
@@ -254,13 +304,17 @@ Hook called on a specific plugin to export an instance using one of the formats 
 	"result_path": string
 }
 ```
+
 - `id`: The instance ID
 - `result_path`: The desired path to the output file
 - Result: None
 
 ### `import_instance`
+
 Hook called on a specific plugin to import an instance using one of the formats it supports
+
 - Argument:
+
 ```
 {
 	"format": string,
@@ -269,10 +323,12 @@ Hook called on a specific plugin to import an instance using one of the formats 
 	"result_path": string
 }
 ```
+
 - `id`: The desired ID of the resulting instance
 - `source_path`: The path to the instance to import
 - `result_path`: Where to place the files for the imported instance
 - Result:
+
 ```
 {
 	"format": string,
@@ -281,15 +337,20 @@ Hook called on a specific plugin to import an instance using one of the formats 
 ```
 
 ### `add_supported_loaders`
+
 Adds extra loaders to the list of supported ones for installation. This should be done
 if you plan to install these loaders with your plugin.
+
 - Argument: None
 - Result: Loader[]
 
 ### `add_instances`
+
 Adds new instances to the config
+
 - Argument: None
 - Result:
+
 ```
 {
 	"inst1": InstanceConfig,
@@ -299,9 +360,12 @@ Adds new instances to the config
 ```
 
 ### `add_profiles`
+
 Adds new profiles to the config
+
 - Argument: None
 - Result:
+
 ```
 {
 	"prof1": ProfileConfig,
@@ -311,7 +375,9 @@ Adds new profiles to the config
 ```
 
 ## Common Types
+
 ### InstanceLaunchArg
+
 ```
 {
 	"id": string,
@@ -323,6 +389,10 @@ Adds new profiles to the config
 		"versions": [string]
 	},
 	"config": InstanceConfig,
-	"pid": integer
+	"pid": integer | null,
+	"stdout_path": string | null,
+	"stdin_path": string | null
 }
 ```
+
+Note: The `pid`, `stdout_path`, and `stdin_path` fields will all be `null` for the `on_instance_launch` hook, and are only available in the other hooks.
