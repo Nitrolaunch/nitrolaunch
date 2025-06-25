@@ -83,6 +83,12 @@ impl<R: TryReadExt + Unpin> TryLineReader<R> {
 
 		// EoF
 		if result_len == 0 {
+			// Handle the last line
+			if !self.current_line.is_empty() {
+				let last_line = self.current_line.clone();
+				self.current_line.clear();
+				return Ok(Some(vec![Cow::Owned(last_line)]));
+			}
 			return Ok(None);
 		}
 
@@ -93,10 +99,10 @@ impl<R: TryReadExt + Unpin> TryLineReader<R> {
 		if !read_string.contains("\n") {
 			self.current_line.push_str(read_string);
 			return Ok(Some(Vec::new()));
-		}
-
-		// Special case with one newline exactly at the end. The split will return only one element.
-		if read_string.chars().last() == Some('\n') {
+		} else if read_string.chars().last() == Some('\n')
+			&& read_string.chars().filter(|x| *x == '\n').count() == 1
+		{
+			// Special case with one newline exactly at the end. The split will return only one element.
 			let mut first_line = self.current_line.clone();
 			first_line.push_str(read_string.trim_end_matches("\r\n").trim_end_matches("\n"));
 
@@ -125,8 +131,12 @@ impl<R: TryReadExt + Unpin> TryLineReader<R> {
 		// Deal with all the lines in the middle
 		out.extend(lines.map(Cow::Borrowed));
 
-		// Add the last line to the line buffer
-		self.current_line.push_str(last_line);
+		// Add the last line to the line buffer, only if it wasn't a full line
+		if read_string.chars().last() == Some('\n') {
+			out.push(Cow::Borrowed(last_line));
+		} else {
+			self.current_line.push_str(last_line);
+		}
 
 		Ok(Some(out))
 	}
@@ -179,6 +189,15 @@ mod test {
 		test(
 			&["foo", "bar\nbaz\nbar\n\nbaz", "baz\n"],
 			&["foobar", "baz", "bar", "", "bazbaz"],
+		)
+		.await;
+	}
+
+	#[tokio::test]
+	async fn test_real_data() {
+		test(
+			&["%_eyJtZXNzYWdlIjp7ImNvbnRlbnRzIjp7IlN1Y2Nlc3MiOiJGYWJyaWMgZG93bmxvYWRlZCJ9LCJsZXZlbCI6ImltcG9ydGFudCJ9fQ==\n%_ImVuZF9wcm9jZXNzIg==\n%_eyJzZXRfcmVzdWx0Ijp7ImNsYXNzcGF0aF9leHRlbnNpb24iOlsiL2hvbWUvcGFuZ28vLmxvY2FsL3NoYXJlL21jdm0vaW50ZXJuYWwvbGlicmFyaWVzL29yZy9vdzIvYXNtL2FzbS85LjgvYXNtLTkuOC5qYXIiLCIvaG9tZS9wYW5nby8ubG9jYWwvc2hhcmUvbWN2bS9pbnRlcm5hbC9saWJyYXJpZXMvb3JnL293Mi9hc20vYXNtLWFuYWx5c2lzLzkuOC9hc20tYW5hbHlzaXMtOS44LmphciIsIi9ob21lL3BhbmdvLy5sb2NhbC9zaGFyZS9tY3ZtL2ludGVybmFsL2xpYnJhcmllcy9vcmcvb3cyL2FzbS9hc20tY29tbW9ucy85LjgvYXNtLWNvbW1vbnMtOS44LmphciIsIi9ob21lL3BhbmdvLy5sb2NhbC9zaGFyZS9tY3ZtL2ludGVybmFsL2xpYnJhcmllcy9vcmcvb3cyL2FzbS9hc20tdHJlZS85LjgvYXNtLXRyZWUtOS44LmphciIsIi9ob21lL3BhbmdvLy5sb2NhbC9zaGFyZS9tY3ZtL2ludGVybmFsL2xpYnJhcmllcy9vcmcvb3cyL2FzbS9hc20tdXRpbC85LjgvYXNtLXV0aWwtOS44LmphciIsIi9ob21lL3BhbmdvLy5sb2NhbC9zaGFyZS9tY3ZtL2ludGVybmFsL2xpYnJhcmllcy9uZXQvZmFicmljbWMvc3BvbmdlLW1peGluLzAuMTUuNSttaXhpbi4wLjguNy9zcG9uZ2UtbWl4aW4tMC4xNS41K21peGluLjAuOC43LmphciIsIi9ob21lL3BhbmdvLy5sb2NhbC9zaGFyZS9tY3ZtL2ludGVybmFsL2xpYnJhcmllcy9uZXQvZmFicmljbWMvZmFicmljLWxvYWRlci8wLjE2LjE0L2ZhYnJpYy1sb2FkZXItMC4xNi4xNC5qYXIiLCIvaG9tZS9wYW5nby8ubG9jYWwvc2hhcmUvbWN2bS9pbnRlcm5hbC9saWJyYXJpZXMvbmV0L2ZhYnJpY21jL2ludGVybWVkaWFyeS8xLjIwLjEvaW50ZXJtZWRpYXJ5LTEuMjAuMS5qYXIiXSwiamFyX3BhdGhfb3ZlcnJpZGUiOm51bGwsImp2bV9hcmdzIjpbIi1Ec29kaXVtLmNoZWNrcy5pc3N1ZTI1NjE9ZmFsc2UiXSwibG9hZGVyX3ZlcnNpb24iOm51bGwsIm1haW5fY2xhc3Nfb3ZlcnJpZGUiOiJuZXQuZmFicmljbWMubG9hZGVyLmltcGwubGF1bmNoLmtub3QuS25vdENsaWVudCJ9fQ==\n"],
+			&["%_eyJtZXNzYWdlIjp7ImNvbnRlbnRzIjp7IlN1Y2Nlc3MiOiJGYWJyaWMgZG93bmxvYWRlZCJ9LCJsZXZlbCI6ImltcG9ydGFudCJ9fQ==", "%_ImVuZF9wcm9jZXNzIg==", "%_eyJzZXRfcmVzdWx0Ijp7ImNsYXNzcGF0aF9leHRlbnNpb24iOlsiL2hvbWUvcGFuZ28vLmxvY2FsL3NoYXJlL21jdm0vaW50ZXJuYWwvbGlicmFyaWVzL29yZy9vdzIvYXNtL2FzbS85LjgvYXNtLTkuOC5qYXIiLCIvaG9tZS9wYW5nby8ubG9jYWwvc2hhcmUvbWN2bS9pbnRlcm5hbC9saWJyYXJpZXMvb3JnL293Mi9hc20vYXNtLWFuYWx5c2lzLzkuOC9hc20tYW5hbHlzaXMtOS44LmphciIsIi9ob21lL3BhbmdvLy5sb2NhbC9zaGFyZS9tY3ZtL2ludGVybmFsL2xpYnJhcmllcy9vcmcvb3cyL2FzbS9hc20tY29tbW9ucy85LjgvYXNtLWNvbW1vbnMtOS44LmphciIsIi9ob21lL3BhbmdvLy5sb2NhbC9zaGFyZS9tY3ZtL2ludGVybmFsL2xpYnJhcmllcy9vcmcvb3cyL2FzbS9hc20tdHJlZS85LjgvYXNtLXRyZWUtOS44LmphciIsIi9ob21lL3BhbmdvLy5sb2NhbC9zaGFyZS9tY3ZtL2ludGVybmFsL2xpYnJhcmllcy9vcmcvb3cyL2FzbS9hc20tdXRpbC85LjgvYXNtLXV0aWwtOS44LmphciIsIi9ob21lL3BhbmdvLy5sb2NhbC9zaGFyZS9tY3ZtL2ludGVybmFsL2xpYnJhcmllcy9uZXQvZmFicmljbWMvc3BvbmdlLW1peGluLzAuMTUuNSttaXhpbi4wLjguNy9zcG9uZ2UtbWl4aW4tMC4xNS41K21peGluLjAuOC43LmphciIsIi9ob21lL3BhbmdvLy5sb2NhbC9zaGFyZS9tY3ZtL2ludGVybmFsL2xpYnJhcmllcy9uZXQvZmFicmljbWMvZmFicmljLWxvYWRlci8wLjE2LjE0L2ZhYnJpYy1sb2FkZXItMC4xNi4xNC5qYXIiLCIvaG9tZS9wYW5nby8ubG9jYWwvc2hhcmUvbWN2bS9pbnRlcm5hbC9saWJyYXJpZXMvbmV0L2ZhYnJpY21jL2ludGVybWVkaWFyeS8xLjIwLjEvaW50ZXJtZWRpYXJ5LTEuMjAuMS5qYXIiXSwiamFyX3BhdGhfb3ZlcnJpZGUiOm51bGwsImp2bV9hcmdzIjpbIi1Ec29kaXVtLmNoZWNrcy5pc3N1ZTI1NjE9ZmFsc2UiXSwibG9hZGVyX3ZlcnNpb24iOm51bGwsIm1haW5fY2xhc3Nfb3ZlcnJpZGUiOiJuZXQuZmFicmljbWMubG9hZGVyLmltcGwubGF1bmNoLmtub3QuS25vdENsaWVudCJ9fQ=="],
 		)
 		.await;
 	}
