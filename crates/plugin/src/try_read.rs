@@ -142,7 +142,7 @@ impl<R: TryReadExt + Unpin> TryLineReader<R> {
 	}
 }
 
-const BUF_SIZE: usize = 16384;
+const BUF_SIZE: usize = 32768;
 
 #[cfg(test)]
 mod test {
