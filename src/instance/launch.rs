@@ -115,6 +115,7 @@ impl Instance {
 			instance_id: self.id.clone(),
 			hook_handles,
 			hook_arg,
+			is_silent: false,
 			stdout: tokio::io::stdout(),
 			stdin: tokio::io::stdin(),
 		};
@@ -170,6 +171,8 @@ pub struct InstanceHandle {
 	hook_handles: Vec<HookHandle<WhileInstanceLaunch>>,
 	/// Arg to pass to the stop hook when the instance is stopped
 	hook_arg: InstanceLaunchArg,
+	/// Whether to redirect stdin and stdout to the process stdin and stdout
+	is_silent: bool,
 	/// Global stdout
 	stdout: Stdout,
 	/// Global stdin
@@ -203,15 +206,17 @@ impl InstanceHandle {
 			}
 
 			// Instance stdio
-			let (inst_stdout, _) = self.inner.stdout();
-			// This is non-blocking as the stdout file will have an EoF
-			if let Ok(bytes_read) = inst_stdout.read(&mut stdio_buf) {
-				let _ = self.stdout.write(&stdio_buf[0..bytes_read]).await;
-			}
+			if !self.is_silent {
+				let (inst_stdout, _) = self.inner.stdout();
+				// This is non-blocking as the stdout file will have an EoF
+				if let Ok(bytes_read) = inst_stdout.read(&mut stdio_buf) {
+					let _ = self.stdout.write(&stdio_buf[0..bytes_read]).await;
+				}
 
-			let (inst_stdin, _) = self.inner.stdin();
-			if let Ok(Some(bytes_read)) = self.stdin.try_read(&mut stdio_buf).await {
-				let _ = inst_stdin.write_all(&stdio_buf[0..bytes_read]);
+				let (inst_stdin, _) = self.inner.stdin();
+				if let Ok(Some(bytes_read)) = self.stdin.try_read(&mut stdio_buf).await {
+					let _ = inst_stdin.write_all(&stdio_buf[0..bytes_read]);
+				}
 			}
 
 			// Check if the instance has exited
@@ -261,6 +266,11 @@ impl InstanceHandle {
 	/// Gets the PID of the instance process
 	pub fn get_pid(&self) -> u32 {
 		self.inner.get_pid()
+	}
+
+	/// Set whether the stdio of the instance should be redirected to this process
+	pub fn silence_output(&mut self, is_silent: bool) {
+		self.is_silent = is_silent;
 	}
 
 	/// Function that should be run whenever the instance stops
