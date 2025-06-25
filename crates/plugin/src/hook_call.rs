@@ -344,7 +344,7 @@ impl<H: Hook> HookHandle<H> {
 				if result {
 					break;
 				}
-				tokio::time::sleep(Duration::from_micros(100)).await;
+				tokio::time::sleep(Duration::from_micros(50)).await;
 			}
 		}
 

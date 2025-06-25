@@ -148,6 +148,6 @@ mcvm_plugin = { workspace = true }
 mcvm_shared = { workspace = true }
 shellexpand = { workspace = true }
 sysinfo = { workspace = true }
-tokio = { workspace = true, features = ["fs"] }
+tokio = { workspace = true, features = ["fs", "io-std"] }
 version-compare = { workspace = true }
 zip = { workspace = true }

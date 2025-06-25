@@ -22,7 +22,8 @@ pub mod hooks;
 pub mod input_output;
 /// Plugins
 pub mod plugin;
-mod try_read;
+/// Tokio helpers for AsyncRead
+pub mod try_read;
 
 pub use mcvm_shared as shared;
 

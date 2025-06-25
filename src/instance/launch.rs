@@ -1,4 +1,5 @@
 use std::collections::{HashMap, HashSet};
+use std::io::{Read, Write};
 use std::time::Duration;
 
 use anyhow::Context;
@@ -11,10 +12,12 @@ use mcvm_plugin::hook_call::HookHandle;
 use mcvm_plugin::hooks::{
 	InstanceLaunchArg, OnInstanceLaunch, OnInstanceStop, WhileInstanceLaunch,
 };
+use mcvm_plugin::try_read::TryReadExt;
 use mcvm_shared::id::InstanceID;
 use mcvm_shared::output::{MCVMOutput, MessageContents, MessageLevel};
 use mcvm_shared::{translate, UpdateDepth};
 use reqwest::Client;
+use tokio::io::{AsyncWriteExt, Stdin, Stdout};
 
 use super::tracking::RunningInstanceRegistry;
 use super::update::manager::UpdateManager;
@@ -112,6 +115,8 @@ impl Instance {
 			instance_id: self.id.clone(),
 			hook_handles,
 			hook_arg,
+			stdout: tokio::io::stdout(),
+			stdin: tokio::io::stdin(),
 		};
 
 		// Update the running instance registry
@@ -165,6 +170,10 @@ pub struct InstanceHandle {
 	hook_handles: Vec<HookHandle<WhileInstanceLaunch>>,
 	/// Arg to pass to the stop hook when the instance is stopped
 	hook_arg: InstanceLaunchArg,
+	/// Global stdout
+	stdout: Stdout,
+	/// Global stdin
+	stdin: Stdin,
 }
 
 impl InstanceHandle {
@@ -179,7 +188,9 @@ impl InstanceHandle {
 
 		// Wait for the process to complete while polling plugins and stdio
 		let mut completed_hooks = HashSet::with_capacity(self.hook_handles.len());
+		let mut stdio_buf = [0u8; 512];
 		let status = loop {
+			// Plugins
 			for handle in &mut self.hook_handles {
 				if completed_hooks.contains(handle.get_id()) {
 					continue;
@@ -191,6 +202,19 @@ impl InstanceHandle {
 				}
 			}
 
+			// Instance stdio
+			let (inst_stdout, _) = self.inner.stdout();
+			// This is non-blocking as the stdout file will have an EoF
+			if let Ok(bytes_read) = inst_stdout.read(&mut stdio_buf) {
+				let _ = self.stdout.write(&stdio_buf[0..bytes_read]).await;
+			}
+
+			let (inst_stdin, _) = self.inner.stdin();
+			if let Ok(Some(bytes_read)) = self.stdin.try_read(&mut stdio_buf).await {
+				let _ = inst_stdin.write_all(&stdio_buf[0..bytes_read]);
+			}
+
+			// Check if the instance has exited
 			let result = self.inner.try_wait();
 			if let Ok(Some(status)) = result {
 				break status;

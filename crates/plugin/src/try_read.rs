@@ -9,6 +9,7 @@ use std::{
 use pin_project_lite::pin_project;
 use tokio::io::{AsyncRead, ReadBuf};
 
+/// Trait to read some or none bytes from an AsyncRead
 pub trait TryReadExt: AsyncRead {
 	/// Tries to read some bytes from a buffer, returning none if no bytes were immediately read
 	fn try_read<'a>(&'a mut self, buf: &'a mut [u8]) -> TryRead<'a, Self> {
@@ -23,6 +24,7 @@ pub trait TryReadExt: AsyncRead {
 impl<R: AsyncRead> TryReadExt for R {}
 
 pin_project! {
+	/// Future returned from the try_read function
 	#[derive(Debug)]
 	#[must_use = "futures do nothing unless you `.await` or poll them"]
 	pub struct TryRead<'a, R: ?Sized> {
@@ -66,6 +68,7 @@ pub struct TryLineReader<R> {
 }
 
 impl<R: TryReadExt + Unpin> TryLineReader<R> {
+	/// Create a new TryLineReader
 	pub fn new(reader: R) -> Self {
 		Self {
 			reader,
