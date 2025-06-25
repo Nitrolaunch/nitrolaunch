@@ -1,5 +1,5 @@
 use std::collections::{HashMap, HashSet};
-use std::io::{Read, Write};
+use std::io::Read;
 use std::time::Duration;
 
 use anyhow::Context;
@@ -12,7 +12,6 @@ use mcvm_plugin::hook_call::HookHandle;
 use mcvm_plugin::hooks::{
 	InstanceLaunchArg, OnInstanceLaunch, OnInstanceStop, WhileInstanceLaunch,
 };
-use mcvm_plugin::try_read::TryReadExt;
 use mcvm_shared::id::InstanceID;
 use mcvm_shared::output::{MCVMOutput, MessageContents, MessageLevel};
 use mcvm_shared::{translate, UpdateDepth};
@@ -213,10 +212,12 @@ impl InstanceHandle {
 					let _ = self.stdout.write(&stdio_buf[0..bytes_read]).await;
 				}
 
-				let (inst_stdin, _) = self.inner.stdin();
-				if let Ok(Some(bytes_read)) = self.stdin.try_read(&mut stdio_buf).await {
-					let _ = inst_stdin.write_all(&stdio_buf[0..bytes_read]);
-				}
+				// TODO: Stdin support
+				let _ = self.stdin;
+				// let (inst_stdin, _) = self.inner.stdin();
+				// if let Ok(Some(bytes_read)) = self.stdin.try_read(&mut stdio_buf).await {
+				// 	let _ = inst_stdin.write_all(&stdio_buf[0..bytes_read]);
+				// }
 			}
 
 			// Check if the instance has exited
