@@ -1,4 +1,5 @@
 use std::collections::{HashMap, HashSet};
+use std::time::Duration;
 
 use anyhow::Context;
 use mcvm_config::instance::{QuickPlay, WrapperCommand};
@@ -194,6 +195,8 @@ impl InstanceHandle {
 			if let Ok(Some(status)) = result {
 				break status;
 			}
+
+			tokio::time::sleep(Duration::from_micros(100)).await;
 		};
 
 		// Terminate any sibling processes now that the main one is complete
