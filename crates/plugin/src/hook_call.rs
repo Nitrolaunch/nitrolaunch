@@ -219,6 +219,25 @@ impl<H: Hook> HookHandle<H> {
 					return Ok(true);
 				};
 
+				let persistence = self
+					.plugin_persistence
+					.as_mut()
+					.context("Hook handle does not have a reference to persistent plugin data")?;
+				let mut persistence_lock = persistence.lock().await;
+
+				// Send command results from the worker to this hook
+				if let Some(worker) = &mut persistence_lock.worker {
+					while let Some(result) = worker.command_results.pop_front() {
+						let action = InputAction::CommandResult(result)
+							.serialize(self.protocol_version)
+							.context("Failed to serialize input action")?;
+						stdin
+							.write(action.as_bytes())
+							.await
+							.context("Failed to write input action to plugin")?;
+					}
+				}
+
 				for line in lines {
 					let action =
 						OutputAction::deserialize(&line, self.use_base64, self.protocol_version)
@@ -230,24 +249,6 @@ impl<H: Hook> HookHandle<H> {
 						}
 						continue;
 					};
-
-					let persistence = self.plugin_persistence.as_mut().context(
-						"Hook handle does not have a reference to persistent plugin data",
-					)?;
-					let mut persistence_lock = persistence.lock().await;
-
-					// Send command results from the worker to this hook
-					if let Some(worker) = &mut persistence_lock.worker {
-						while let Some(result) = worker.command_results.pop_front() {
-							let action = InputAction::CommandResult(result)
-								.serialize(self.protocol_version)
-								.context("Failed to serialize input action")?;
-							stdin
-								.write(action.as_bytes())
-								.await
-								.context("Failed to write input action to plugin")?;
-						}
-					}
 
 					match action {
 						OutputAction::SetResult(new_result) => {
