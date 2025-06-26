@@ -1,18 +1,24 @@
 import { invoke } from "@tauri-apps/api";
 import { WebviewWindow } from "@tauri-apps/api/window";
+import { errorToast } from "./components/dialog/Toasts";
 
 // Loads plugins on a page
 export function loadPagePlugins(page: string, object?: string) {
-	invoke("get_page_inject_script", { page: page, object: object }).then(
-		(script) => {
-			let script2 = script as string;
-			eval(script2);
-			console.log("Page plugins loaded successfully");
-		},
-		(e) => {
-			console.error("Failed to load page plugins: " + e);
-		}
-	);
+	try {
+		invoke("get_page_inject_script", { page: page, object: object }).then(
+			(script) => {
+				let script2 = script as string;
+				eval(script2);
+				console.log("Page plugins loaded successfully");
+			},
+			(e) => {
+				console.error("Failed to load page plugins: " + e);
+			}
+		);
+
+	} catch (e) {
+		errorToast("Failed to load page plugins: " + e);
+	}
 	setupPluginFunctions();
 }
 
