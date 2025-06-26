@@ -64,7 +64,7 @@ pub struct TryLineReader<R> {
 	/// Buffer for the current line
 	current_line: String,
 	/// Buffer for reading
-	read_buf: [u8; BUF_SIZE],
+	read_buf: Vec<u8>,
 }
 
 impl<R: TryReadExt + Unpin> TryLineReader<R> {
@@ -73,7 +73,7 @@ impl<R: TryReadExt + Unpin> TryLineReader<R> {
 		Self {
 			reader,
 			current_line: String::new(),
-			read_buf: [0u8; BUF_SIZE],
+			read_buf: vec![0; BUF_SIZE],
 		}
 	}
 

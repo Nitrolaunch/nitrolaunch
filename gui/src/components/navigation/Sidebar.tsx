@@ -26,9 +26,14 @@ export default function Sidebar(props: SidebarProps) {
 	});
 
 	let [extraButtons, _] = createResource(async () => {
-		let buttons: PluginSidebarButton[] = await invoke("get_sidebar_buttons");
-		buttons.sort((a, b) => stringCompare(a.href, b.href));
-		return buttons;
+		try {
+			let buttons: PluginSidebarButton[] = await invoke("get_sidebar_buttons");
+			buttons.sort((a, b) => stringCompare(a.href, b.href));
+			return buttons;
+		} catch (e) {
+			console.error("Failed to load sidebar buttons: " + e);
+			return undefined;
+		}
 	});
 
 	return (
