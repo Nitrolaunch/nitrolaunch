@@ -2804,6 +2804,7 @@ name = "mcvm_plugin"
 version = "0.5.0"
 dependencies = [
  "anyhow",
+ "async-trait",
  "base64 0.22.1",
  "itertools",
  "mcvm_config",

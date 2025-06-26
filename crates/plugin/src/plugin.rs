@@ -181,10 +181,13 @@ impl Plugin {
 				function,
 				priority: _,
 			} => {
-				let arg = serde_json::to_string(arg)
+				let arg = serde_json::to_value(arg)
 					.context("Failed to serialize native hook argument")?;
-				let result = function(arg).context("Native hook handler failed")?;
-				let result = serde_json::from_str(&result)
+				let result = function
+					.call(arg)
+					.await
+					.context("Native hook handler failed")?;
+				let result = serde_json::from_value(result)
 					.context("Failed to deserialize native hook result")?;
 				Ok(Some(HookHandle::constant(result, self.id.clone())))
 			}
@@ -305,7 +308,7 @@ pub enum HookHandler {
 	Native {
 		/// The function to handle the hook
 		#[serde(deserialize_with = "deserialize_native_function")]
-		function: NativeHookHandler,
+		function: Arc<dyn NativeHookHandler>,
 		/// The priority for the hook
 		#[serde(default)]
 		priority: HookPriority,
@@ -333,15 +336,30 @@ pub enum HookPriority {
 
 /// Deserialize function for the native hook. No plugin manifests should ever use this,
 /// so just return a function that does nothing.
-fn deserialize_native_function<'de, D>(_: D) -> Result<NativeHookHandler, D::Error>
+fn deserialize_native_function<'de, D>(_: D) -> Result<Arc<dyn NativeHookHandler>, D::Error>
 where
 	D: Deserializer<'de>,
 {
-	Ok(Arc::new(|_| Ok(String::new())))
+	Ok(Arc::new(NoneHookHandler))
 }
 
-/// Type for native plugin hook handlers
-pub type NativeHookHandler = Arc<dyn Fn(String) -> anyhow::Result<String> + Send + Sync + 'static>;
+/// Trait for native plugin hook handlers
+#[async_trait::async_trait]
+pub trait NativeHookHandler: Send + Sync {
+	/// Call the hook
+	async fn call(&self, arg: serde_json::Value) -> anyhow::Result<serde_json::Value>;
+}
+
+/// Used for deserialization
+struct NoneHookHandler;
+
+#[async_trait::async_trait]
+impl NativeHookHandler for NoneHookHandler {
+	async fn call(&self, arg: serde_json::Value) -> anyhow::Result<serde_json::Value> {
+		let _ = arg;
+		Ok(serde_json::Value::Null)
+	}
+}
 
 /// Persistent state for plugins
 pub struct PluginPersistence {

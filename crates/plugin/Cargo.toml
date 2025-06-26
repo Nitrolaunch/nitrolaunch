@@ -18,6 +18,7 @@ default = ["api"]
 api = []
 
 [dependencies]
+async-trait = { workspace = true }
 anyhow = { workspace = true }
 base64 = { workspace = true }
 itertools = { workspace = true }
