@@ -179,11 +179,11 @@ mod test {
 	#[tokio::test]
 	async fn test_no_lines() {
 		test(&[""], &[]).await;
-		test(&["foobar", "foobar,", "barfoo"], &[]).await;
 	}
 
 	#[tokio::test]
 	async fn test_split_lines() {
+		test(&["foobar", "foobar,", "barfoo"], &["foobarfoobar,barfoo"]).await;
 		test(&["foo", "bar\n", "foobar\n"], &["foobar", "foobar"]).await;
 	}
 
