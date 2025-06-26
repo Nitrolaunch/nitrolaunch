@@ -116,7 +116,7 @@ pub enum LoaderMatch {
 }
 
 impl LoaderMatch {
-	/// Parse a ModloaderMatch from a string
+	/// Parse a LoaderMatch from a string
 	pub fn parse_from_str(string: &str) -> Self {
 		match string {
 			"fabriclike" => Self::FabricLike,

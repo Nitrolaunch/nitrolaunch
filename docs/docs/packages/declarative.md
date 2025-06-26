@@ -79,8 +79,7 @@ Properties for the package that do have a meaning to MCVM and other package host
 	"smithed_id": string,
 	"content_versions": [string],
 	"supported_versions": [VersionPattern],
-	"supported_modloaders": ["vanilla" | "fabric" | "forge" | "quilt" | "fabriclike"],
-	"supported_plugin_loaders": ["vanilla" | "bukkit"],
+	"supported_loaders": [LoaderMatch],
 	"supported_sides": ["client" | "server"],
 	"supported_operating_systems": ["windows" | "linux" | "macos" | "unix" | "other"],
 	"supported_architectures": ["x86" | "x86_64" | "arm" | "other"],
@@ -96,8 +95,7 @@ Properties for the package that do have a meaning to MCVM and other package host
 - `smithed_id`: ID of the project for this package on Smithed, if applicable. See [the purpose of host ID instructions](Packages.md#the-purpose-of-host-id-instructions).
 - `content_versions`: The content versions that are available for this package, ordered from oldest to newest.
 - `supported_versions`: Minecraft versions supported by this package. Defaults to all of them.
-- `supported_modloaders`: Modloaders supported by this package. Defaults to all of them.
-- `supported_plugin_loaders`: Plugin loaders supported by this package. Defaults to all of them.
+- `supported_loaders`: Loaders supported by this package. Defaults to all of them.
 - `supported_sides`: Game sides supported by this package. Defaults to both of them.
 - `supported_operating_systems`: Operating systems supported by this package. Defaults to all of them.
 - `supported_architectures`: System architectures supported by this package. Defaults to all of them.
@@ -139,8 +137,7 @@ Condition sets are used in multiple parts of declarative packages to check prope
 {
 	"minecraft_versions": [VersionPattern],
 	"side": "client" | "server",
-	"modloaders": [modloader_match],
-	"plugin_loaders": [plugin_loader_match],
+	"loaders": [LoaderMatch],
 	"content_versions": [VersionPattern],
 	"stability": "stable" | "latest",
 	"features": [string],
@@ -153,8 +150,7 @@ Condition sets are used in multiple parts of declarative packages to check prope
 
 - `minecraft_versions`: Check if any one of the version patterns in the list matches the used Minecraft version.
 - `side`: Check whether this package is being installed on client or server.
-- `modloaders`: Check if the users's modloader matches any of the `modloader_match`'s.
-- `plugin_loaders`: Check if the users's plugin loader matches any of the `plugin_loader_match`'s.
+- `loaders`: Check if the users's loader matches any of the `LoaderMatch`es.
 - `content_versions`: Check if the content version requested for this package matches any of the patterns.
 - `stability`: Check for the configured stability of the package.
 - `features`: Check if all of the listed features are enabled for this package.

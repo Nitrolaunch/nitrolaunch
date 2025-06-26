@@ -23,7 +23,7 @@ To install from one of the prebuilt development binaries, visit [nightly.link](h
 MCVM has some basic features that need to be explained first.
 
 ### Instances
-Instances may be a familiar term that you have heard of before from other launchers. They are separate game installations with their own Minecraft version, modloader, and other properties. They are also the thing you actually launch when you want to play the game. The advantage of instances is that they keep worlds and configuration separate between different installations, as opposed to having conflicting files.
+Instances may be a familiar term that you have heard of before from other launchers. They are separate game installations with their own Minecraft version, modloader, files, and more. They are also the thing you actually launch when you want to play the game. The advantage of instances is that they keep worlds and configuration separate between different installations, as opposed to having conflicting files.
 
 ## 3. Configuring
 Run the command `mcvm instance list` to create the default config file, and list the example instances. Now if you run `mcvm config edit`, you should be able to edit the config file in your favorite editor and get a sense of what it looks like. Finally, let's try launching one of the default instances.

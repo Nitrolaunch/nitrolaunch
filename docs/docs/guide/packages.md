@@ -17,7 +17,7 @@ Example:
 		"example": {
 			"version": "1.20.1",
 			"side": "client",
-			"modloader": "fabric",
+			"loader": "fabric",
 			"packages": [
 				"sodium",
 				"create"

@@ -48,8 +48,7 @@ Properties like `features` and `modrinth_id` can only be used in the `@propertie
   - `value {x} {y}`: Check if two strings are the same. This is meant to be used to check the value of variables.
   - `const {true | false}`: Check a constant boolean. Used for testing purposes.
   - `version {pattern}`: Check that the Minecraft version of this instance matches a pattern.
-  - `modloader {modloader_match}`: Checks if the modloader matches a `modloader_match`.
-  - `plugin_loader {plugin_loader_match}`: Checks if the plugin loader matches a `modloader_match`.
+  - `loader {loader_match}`: Checks if the loader matches a `loader_match`.
   - `side {client | server}`: Check what instance type the package is being installed on.
   - `feature {name}`: Check if a feature is enabled for this package.
   - `os {windows | mac | linux | unix | other}`: Check if the user is using a certain operating system.
@@ -107,8 +106,7 @@ Properties like `features` and `modrinth_id` can only be used in the `@propertie
 - `smithed_id {id}`: Set the Smithed ID.
 - `content_versions`: Set the list of available content versions, from oldest to newest.
 - `supported_versions`: Set the supported versions.
-- `supported_modloaders`: Set the supported modloaders.
-- `supported_plugin_loaders`: Set the supported plugin loaders.
+- `supported_loaders`: Set the supported loaders.
 - `supported_sides`: Set the supported sides.
 - `supported_operating_systems`: Set the supported operating systems.
 - `supported_architectures`: Set the supported architectures.
@@ -154,7 +152,7 @@ Here is a simple example for a package that would install the _Sodium_ mod. As t
 	if not side client {
 		finish;
 	}
-	if not modloader fabriclike {
+	if not loader fabriclike {
 		fail unsupported_loader;
 	}
 	if version "1.18" {
