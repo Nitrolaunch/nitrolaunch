@@ -3,10 +3,14 @@ use crate::{RunState, RunningInstance};
 use anyhow::Context;
 use itertools::Itertools;
 use mcvm::instance::launch::LaunchSettings;
+use mcvm::plugin_crate::try_read::TryReadExt;
 use mcvm::shared::id::InstanceID;
 use serde::{Deserialize, Serialize};
+use std::path::PathBuf;
 use std::sync::Arc;
-use tauri::Manager;
+use std::time::Duration;
+use tauri::{AppHandle, Manager};
+use tokio::sync::Mutex;
 use tokio::task::JoinHandle;
 
 use super::instance::InstanceInfo;
@@ -21,7 +25,8 @@ pub async fn launch_game(
 	user: Option<&str>,
 ) -> Result<(), String> {
 	let state = Arc::new(state);
-	let mut output = LauncherOutput::new(state.get_output(app_handle));
+	let app_handle = Arc::new(app_handle);
+	let mut output = LauncherOutput::new(state.get_output_arc(app_handle.clone()));
 	output.set_task(&format!("launch_instance_{instance_id}"));
 
 	let instance_id = InstanceID::from(instance_id);
@@ -29,12 +34,16 @@ pub async fn launch_game(
 	// Make sure the game is stopped first
 	stop_game_impl(&state, &instance_id).await?;
 
+	let stdio_paths = Arc::new(Mutex::new(None));
+
 	let launched_game = fmt_err(
 		get_launched_game(
 			instance_id.to_string(),
 			offline,
 			user,
 			state.clone(),
+			app_handle,
+			stdio_paths.clone(),
 			output,
 		)
 		.await
@@ -45,6 +54,7 @@ pub async fn launch_game(
 		id: instance_id.clone(),
 		task: launched_game,
 		state: RunState::NotStarted,
+		stdio_paths,
 	};
 	lock.insert(instance_id, running_instance);
 
@@ -56,6 +66,8 @@ async fn get_launched_game(
 	offline: bool,
 	user: Option<&str>,
 	state: Arc<tauri::State<'_, State>>,
+	app: Arc<AppHandle>,
+	stdio_paths: Arc<Mutex<Option<(PathBuf, PathBuf)>>>,
 	mut o: LauncherOutput,
 ) -> anyhow::Result<JoinHandle<anyhow::Result<()>>> {
 	println!("Launching game!");
@@ -85,20 +97,34 @@ async fn get_launched_game(
 				ms_client_id: crate::get_ms_client_id(),
 				offline_auth: offline,
 			};
-			let handle = instance
+			let mut handle = instance
 				.launch(&paths, &mut config.users, &plugins, settings, &mut o)
 				.await
 				.context("Failed to launch instance")?;
 
 			o.finish_task();
 
-			handle
-				.wait(&plugins, &paths, &mut o)
-				.await
-				.context("Failed to wait for instance to finish")?;
+			handle.silence_output(true);
+
+			*stdio_paths.lock().await = Some((handle.stdout(), handle.stdin()));
+
+			let update_output_task =
+				emit_instance_stdio_changes(app.clone(), instance_id.to_string(), handle.stdout());
+
+			let launch_task = {
+				let paths = paths.clone();
+				let plugins = plugins.clone();
+				async move { handle.wait(&plugins, &paths, &mut o).await }
+			};
+
+			tokio::select! {
+				result = launch_task => {
+					result.context("Failed to wait for instance to finish")?;
+				}
+				_ = update_output_task => {}
+			}
 
 			println!("Game closed");
-			let app = o.get_app_handle();
 			app.emit_all("game_finished", instance_id.to_string())?;
 
 			Ok::<(), anyhow::Error>(())
@@ -207,4 +233,48 @@ pub async fn answer_password_prompt(
 	*state.password_prompt.lock().await = Some(answer);
 
 	Ok(())
+}
+
+#[tauri::command]
+pub async fn get_instance_output(
+	state: tauri::State<'_, State>,
+	instance_id: &str,
+) -> Result<Option<String>, String> {
+	let lock = state.launched_games.lock().await;
+	let Some(game) = lock.get(instance_id) else {
+		return Ok(None);
+	};
+
+	let Some(paths) = game.stdio_paths.lock().await.clone() else {
+		return Ok(None);
+	};
+
+	dbg!(&paths);
+
+	let contents = fmt_err(
+		tokio::fs::read_to_string(paths.0)
+			.await
+			.context("Failed to read output file"),
+	)?;
+
+	Ok(Some(contents))
+}
+
+async fn emit_instance_stdio_changes(
+	app: Arc<AppHandle>,
+	instance_id: String,
+	stdout_path: PathBuf,
+) -> anyhow::Result<()> {
+	let mut file = tokio::fs::File::open(stdout_path).await?;
+	let mut buf = [0u8; 512];
+
+	loop {
+		if let Ok(Some(bytes_read)) = file.try_read(&mut buf).await {
+			if bytes_read > 0 {
+				let _ = app.emit_all("update_instance_stdio", &instance_id);
+			}
+		}
+
+		tokio::time::sleep(Duration::from_millis(1)).await;
+	}
 }

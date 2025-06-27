@@ -1,0 +1,126 @@
+.instance-shadow {
+	box-shadow: var(--shadow-offset) var(--shadow-offset) #111111bb;
+}
+
+#instance-container {
+	width: 97%;
+}
+
+#instance-header-container {
+	width: 100%;
+	position: relative;
+	justify-content: flex-start;
+}
+
+#instance-header {
+	display: grid;
+	width: 100%;
+	grid-template-columns: minmax(0, 0.075fr) minmax(0, 1fr);
+	margin-top: 1rem;
+	padding: 0.5rem;
+	background-color: var(--bg2);
+	border: 0.15rem solid var(--bg3);
+	border-top-color: var(--bg4);
+	border-left-color: var(--bg4);
+	border-radius: var(--round2);
+	overflow: hidden;
+}
+
+#instance-icon {
+	align-items: flex-start;
+}
+
+#instance-icon-image {
+	width: 4.3rem;
+	height: 4.3rem;
+	border: 0.15rem solid var(--bg3);
+	border-radius: var(--round2);
+}
+
+#instance-details-container {
+	width: 100%;
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+#instance-details {
+	margin-top: 0.25rem;
+	margin-left: 0.5rem;
+}
+
+#instance-upper-details {
+	justify-content: flex-start;
+}
+
+#instance-name {
+	font-size: 1.3rem;
+	font-weight: bold;
+}
+
+#instance-id {
+	color: var(--fg3);
+	font-weight: bold;
+}
+
+#instance-repo {
+	padding: 0.3rem 0.5rem;
+	border-radius: var(--round);
+	font-size: 0.7rem;
+	font-weight: bold;
+	line-height: 1;
+}
+
+#instance-lower-details {
+	color: var(--fg3);
+	justify-content: flex-start;
+	margin-top: 0.35rem;
+}
+
+#instance-contents {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	width: 100%;
+	gap: 1rem;
+	margin-top: 1.5rem;
+}
+
+#instance-tabs {
+	height: 2.5rem;
+	display: grid;
+	background-color: #111111bb;
+	border-top-left-radius: var(--round2);
+	border-top-right-radius: var(--round2);
+}
+
+.instance-tab {
+	border-top-left-radius: var(--round2);
+	border-top-right-radius: var(--round2);
+	font-weight: bold;
+	border-top: 0.15rem solid transparent;
+	border-bottom: 0.15rem solid var(--bg4);
+	box-sizing: content-box;
+	cursor: pointer;
+}
+
+.instance-tab.selected {
+	background-color: var(--bg2);
+	border: 0.15rem solid var(--bg3);
+	border-top-color: var(--bg4);
+	border-left-color: var(--bg4);
+	border-bottom: 0.15rem solid var(--bg2);
+}
+
+#instance-tab-contents {
+	background-color: var(--bg2);
+
+	border: 0.15rem solid var(--bg3);
+	border-top-color: var(--bg4);
+	border-left-color: var(--bg4);
+	border-radius: var(--round2);
+	border-top: none;
+	border-top-left-radius: 0;
+	border-top-right-radius: 0;
+
+	min-height: 10rem;
+	padding: 2rem;
+}

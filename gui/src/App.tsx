@@ -15,6 +15,7 @@ import CustomPluginPage from "./pages/CustomPluginPage";
 import Footer, { FooterMode } from "./components/launch/Footer";
 import Toasts from "./components/dialog/Toasts";
 import { InstanceConfigMode } from "./pages/config/read_write";
+import InstanceInfo from "./pages/config/InstanceInfo";
 
 export default function App() {
 	const [footerData, setFooterData] = createSignal<FooterData>({
@@ -48,6 +49,10 @@ export default function App() {
 				<Route
 					path="/"
 					component={() => <LaunchPage setFooterData={setFooterData} />}
+				/>
+				<Route
+					path="/instance/:instanceId"
+					component={() => <InstanceInfo />}
 				/>
 				<Route
 					path="/instance_config/:instanceId"

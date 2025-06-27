@@ -9,6 +9,7 @@ mod data;
 mod output;
 
 use std::collections::HashMap;
+use std::path::PathBuf;
 use std::sync::{Arc, OnceLock};
 
 use anyhow::Context;
@@ -61,6 +62,7 @@ fn main() {
 			commands::instance::get_instance_groups,
 			commands::launch::get_running_instances,
 			commands::launch::set_running_instance_state,
+			commands::launch::get_instance_output,
 			commands::instance::pin_instance,
 			commands::instance::get_instance_config,
 			commands::instance::get_profile_config,
@@ -123,8 +125,12 @@ impl State {
 	}
 
 	pub fn get_output(&self, app_handle: AppHandle) -> &OutputInner {
+		self.get_output_arc(Arc::new(app_handle))
+	}
+
+	pub fn get_output_arc(&self, app_handle: Arc<AppHandle>) -> &OutputInner {
 		self.output_inner.get_or_init(|| OutputInner {
-			app: Arc::new(app_handle),
+			app: app_handle,
 			password_prompt: self.password_prompt.clone(),
 			passkeys: self.passkeys.clone(),
 		})
@@ -139,6 +145,8 @@ pub struct RunningInstance {
 	pub task: JoinHandle<anyhow::Result<()>>,
 	/// State of the instance in it's lifecycle
 	pub state: RunState,
+	/// The path to the stdout and stdin files for this instance, filled once it is ready
+	pub stdio_paths: Arc<Mutex<Option<(PathBuf, PathBuf)>>>,
 }
 
 /// State of a running instance

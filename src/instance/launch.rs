@@ -1,5 +1,6 @@
 use std::collections::{HashMap, HashSet};
 use std::io::Read;
+use std::path::PathBuf;
 use std::time::Duration;
 
 use anyhow::Context;
@@ -278,6 +279,16 @@ impl InstanceHandle {
 	/// Set whether the stdio of the instance should be redirected to this process
 	pub fn silence_output(&mut self, is_silent: bool) {
 		self.is_silent = is_silent;
+	}
+
+	/// Get the stdout file path for this instance
+	pub fn stdout(&mut self) -> PathBuf {
+		self.inner.stdout().1.clone()
+	}
+
+	/// Get the stdin file path for this instance
+	pub fn stdin(&mut self) -> PathBuf {
+		self.inner.stdin().1.clone()
 	}
 
 	/// Function that should be run whenever the instance stops

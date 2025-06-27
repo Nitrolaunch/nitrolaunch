@@ -1,6 +1,7 @@
 import { invoke } from "@tauri-apps/api";
 import { getPackageConfigRequest, PackageConfig } from "./PackagesConfig";
 import { canonicalizeListOrSingle } from "../../utils/values";
+import { Loader } from "../../package";
 
 // Stored configuration for an instance
 export interface InstanceConfig {
@@ -16,7 +17,7 @@ export interface InstanceConfig {
 }
 
 export type ConfiguredLoaders =
-	| string
+	| Loader
 	| {
 			client?: string;
 			server?: string;

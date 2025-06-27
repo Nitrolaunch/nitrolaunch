@@ -295,7 +295,11 @@ function Item(props: ItemProps) {
 			onClick={() => {
 				// Double click to edit
 				if (props.selected) {
-					window.location.href = `/${props.itemKind}_config/${props.instance.id}`;
+					let url =
+						props.itemKind == "instance"
+							? `/instance/${props.instance.id}`
+							: `/profile_config/${props.instance.id}`;
+					window.location.href = url;
 				} else {
 					props.onSelect();
 				}

@@ -2,8 +2,10 @@ import { convertFileSrc, invoke } from "@tauri-apps/api/tauri";
 import { InstanceIcon, PkgRequest } from "./types";
 
 // Gets the src of an instance icon
-export function getInstanceIconSrc(icon: InstanceIcon | null): string {
-	if (icon === null) {
+export function getInstanceIconSrc(
+	icon: InstanceIcon | null | undefined
+): string {
+	if (icon === null || icon == undefined) {
 		return "icons/default_instance.png";
 	} else {
 		return convertFileSrc(icon);

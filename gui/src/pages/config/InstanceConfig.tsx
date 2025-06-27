@@ -303,7 +303,7 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 			name: undefinedEmpty(name()),
 			icon: undefinedEmpty(icon()),
 			version: undefinedEmpty(version()),
-			loader: loader(),
+			loader: loader() as Loader | undefined,
 			packages: packages,
 		};
 

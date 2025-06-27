@@ -1,0 +1,32 @@
+.instance-console {
+	width: 100%;
+	height: 35rem;
+
+	background-color: var(--bg);
+	border: 0.15rem solid var(--bg3);
+	border-radius: var(--round2);
+}
+
+.instance-console-output {
+	width: 100%;
+	height: 100%;
+}
+
+.instance-console-text {
+	width: 100%;
+	height: 100%;
+	box-sizing: border-box;
+	padding: 1rem;
+
+	justify-content: flex-start;
+	align-items: flex-start;
+	overflow: scroll;
+	overscroll-behavior: contain;
+
+	font-family: "Courier New", Courier, monospace;
+	white-space: pre-wrap;
+}
+
+.bold {
+	font-weight: bold;
+}

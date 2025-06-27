@@ -21,6 +21,7 @@
 	background-color: var(--bg2);
 	border: 0.15rem solid var(--bg4);
 	border-radius: var(--round2);
+	overflow: hidden;
 }
 
 #package-icon {
@@ -35,7 +36,7 @@
 }
 
 #package-details {
-	margin-top: 0.5rem;
+	margin-top: 0.25rem;
 	margin-left: 0.5rem;
 }
 

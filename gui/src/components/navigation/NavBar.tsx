@@ -51,6 +51,7 @@ export default function NavBar(props: NavBarProps) {
 							href="/"
 							selectedPath={["/"]}
 							selectedPathStart={[
+								"/instance",
 								"/instance_config",
 								"/profile_config",
 								"/global_profile_config",
