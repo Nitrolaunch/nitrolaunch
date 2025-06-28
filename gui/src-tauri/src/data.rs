@@ -17,6 +17,8 @@ pub struct LauncherData {
 	pub pinned: HashSet<String>,
 	/// The currently selected user
 	pub current_user: Option<String>,
+	/// The last selected package repository
+	pub last_repository: Option<String>,
 }
 
 impl LauncherData {

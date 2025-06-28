@@ -77,6 +77,9 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 	let [page, setPage] = createSignal(+params.page);
 	let [search, setSearch] = createSignal(searchParams["search"]);
 	let [repo, setRepo] = createSignal(searchParams["repo"]);
+	let [lastSelectedRepo, setLastSelectedRepo] = createSignal<
+		string | undefined
+	>(undefined);
 
 	let [filteredPackageType, setFilteredPackageType] = createSignal<PackageType>(
 		searchParams["package_type"] == undefined
@@ -121,6 +124,11 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 			return undefined;
 		}
 		if (repo() == undefined) {
+			if (lastSelectedRepo() != undefined) {
+				if (repos()!.some((x) => x.id == lastSelectedRepo())) {
+					return lastSelectedRepo();
+				}
+			}
 			if (repos()!.some((x) => x.id == "std")) {
 				return "std";
 			}
@@ -143,8 +151,12 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 
 	async function updatePackages() {
 		let repos: RepoInfo[] = [];
+		let lastSelectedRepo: string | undefined = undefined;
 		try {
-			repos = await invoke("get_package_repos");
+			[repos, lastSelectedRepo] = (await Promise.all([
+				invoke("get_package_repos"),
+				invoke("get_last_selected_repo"),
+			])) as [RepoInfo[], string | undefined];
 		} catch (e) {
 			errorToast("Failed to get available repos: " + e);
 			return undefined;
@@ -154,11 +166,13 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 			warningToast("No repositories available");
 		}
 
+		// Remove the core repository
 		let index = repos.findIndex((x) => x.id == "core");
 		if (index != -1) {
 			repos.splice(index, 1);
 		}
 		setRepos(repos);
+		setLastSelectedRepo(lastSelectedRepo);
 
 		try {
 			let results: PackageSearchResults = await invoke("get_packages", {
@@ -298,6 +312,11 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 										setRepo(x);
 										setPage(0);
 										updateFilters();
+										(async () => {
+											try {
+												await invoke("set_last_selected_repo", { repo: x });
+											} catch (e) {}
+										})();
 									}
 								}}
 								optionClass="repo"

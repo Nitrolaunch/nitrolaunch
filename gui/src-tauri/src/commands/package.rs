@@ -322,3 +322,26 @@ pub async fn sync_packages(
 
 	Ok(())
 }
+
+/// Gets the last viewed package repository on the browse page
+#[tauri::command]
+pub async fn get_last_selected_repo(
+	state: tauri::State<'_, State>,
+) -> Result<Option<String>, String> {
+	let data = state.data.lock().await;
+
+	Ok(data.last_repository.clone())
+}
+
+#[tauri::command]
+pub async fn set_last_selected_repo(
+	state: tauri::State<'_, State>,
+	repo: String,
+) -> Result<(), String> {
+	let mut data = state.data.lock().await;
+	data.last_repository = Some(repo);
+
+	fmt_err(data.write(&state.paths))?;
+
+	Ok(())
+}

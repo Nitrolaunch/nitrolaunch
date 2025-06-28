@@ -80,6 +80,8 @@ fn main() {
 			commands::package::get_package_repos,
 			commands::package::get_instance_packages,
 			commands::package::sync_packages,
+			commands::package::get_last_selected_repo,
+			commands::package::set_last_selected_repo,
 			commands::plugin::get_plugins,
 			commands::plugin::enable_disable_plugin,
 			commands::plugin::install_plugin,
