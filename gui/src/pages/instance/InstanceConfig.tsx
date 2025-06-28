@@ -14,7 +14,7 @@ import { loadPagePlugins } from "../../plugins";
 import { inputError } from "../../errors";
 import { getSupportedLoaders, parseVersionedString } from "../../utils";
 import { FooterData } from "../../App";
-import { FooterMode } from "../../components/launch/Footer";
+import { FooterMode } from "../../components/navigation/Footer";
 import PackagesConfig, {
 	getPackageConfigRequest,
 	PackageConfig,

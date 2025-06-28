@@ -1,17 +1,28 @@
-import { createSignal, For, Match, Show, Switch } from "solid-js";
-import { GroupInfo, InstanceInfo, InstanceMap } from "../../types";
-import { invoke } from "@tauri-apps/api";
-import "./LaunchInstanceList.css";
-import { Box, Edit, Folder, Pin, Plus } from "../../icons";
-import Icon from "../Icon";
-import IconButton from "../input/IconButton";
-import { getInstanceIconSrc } from "../../utils";
-import IconTextButton from "../input/IconTextButton";
+import "./InstanceList.css";
+import {
+	createEffect,
+	createSignal,
+	For,
+	Match,
+	onMount,
+	Show,
+	Switch,
+} from "solid-js";
+import { loadPagePlugins } from "../../plugins";
 import { FooterData } from "../../App";
-import { FooterMode } from "./Footer";
-import { errorToast } from "../dialog/Toasts";
+import { FooterMode } from "../../components/navigation/Footer";
+import { getInstanceIconSrc } from "../../utils";
+import { GroupInfo, InstanceInfo, InstanceMap } from "../../types";
+import { errorToast } from "../../components/dialog/Toasts";
+import { invoke } from "@tauri-apps/api";
+import IconButton from "../../components/input/IconButton";
+import { Box, Edit, Folder, Pin, Plus } from "../../icons";
+import Icon from "../../components/Icon";
+import IconTextButton from "../../components/input/IconTextButton";
 
-export default function LaunchInstanceList(props: LaunchInstanceListProps) {
+export default function InstanceList(props: InstanceListProps) {
+	onMount(() => loadPagePlugins("instances"));
+
 	const [instances, setInstances] = createSignal<InstanceInfo[]>([]);
 	const [profiles, setProfiles] = createSignal<InstanceInfo[]>([]);
 	const [pinned, setPinned] = createSignal<InstanceInfo[]>([]);
@@ -88,13 +99,21 @@ export default function LaunchInstanceList(props: LaunchInstanceListProps) {
 		});
 	}
 
+	createEffect(() => {
+		props.setFooterData({
+			mode: FooterMode.Instance,
+			selectedItem: undefined,
+			action: () => {},
+		});
+	});
 	return (
-		<>
-			<div id="launch-instance-list">
+		<div class="container">
+			<br />
+			<div id="instance-list">
 				<div class="cont">
-					<div id="launch-instance-list-header">
+					<div id="instance-list-header">
 						<div
-							class={`launch-instance-list-header-item instances${
+							class={`instance-list-header-item instances${
 								instancesOrProfiles() == "instance" ? " selected" : ""
 							}`}
 							onclick={() => {
@@ -104,7 +123,7 @@ export default function LaunchInstanceList(props: LaunchInstanceListProps) {
 							Instances
 						</div>
 						<div
-							class={`launch-instance-list-header-item profiles${
+							class={`instance-list-header-item profiles${
 								instancesOrProfiles() == "profile" ? " selected" : ""
 							}`}
 							onclick={() => {
@@ -188,7 +207,8 @@ export default function LaunchInstanceList(props: LaunchInstanceListProps) {
 					</Match>
 				</Switch>
 			</div>
-		</>
+			<br />
+		</div>
 	);
 }
 
@@ -210,12 +230,12 @@ function Section(props: SectionProps) {
 
 	return (
 		<div class="cont col">
-			<div class="cont col launch-instance-list-section-container">
-				<div class="cont launch-instance-list-section-header">
+			<div class="cont col instance-list-section-container">
+				<div class="cont instance-list-section-header">
 					<HeaderIcon />
 					<h2>{props.header}</h2>
 				</div>
-				<div class="launch-instance-list-section">
+				<div class="instance-list-section">
 					<For each={props.items}>
 						{(item) => (
 							<Item
@@ -240,7 +260,7 @@ function Section(props: SectionProps) {
 					{/* Button for creating a new instance */}
 					<Show when={props.kind == "all" || props.kind == "profiles"}>
 						<div
-							class="input-shadow launch-instance-list-item noselect"
+							class="input-shadow instance-list-item noselect"
 							onclick={() => {
 								let target =
 									props.itemType == "instance"
@@ -249,7 +269,7 @@ function Section(props: SectionProps) {
 								window.location.href = target;
 							}}
 						>
-							<div class="cont launch-instance-list-icon">
+							<div class="cont instance-list-icon">
 								<Plus />
 							</div>
 							<div style="" class="bold">
@@ -289,7 +309,7 @@ function Item(props: ItemProps) {
 
 	return (
 		<div
-			class={`input-shadow launch-instance-list-item noselect ${
+			class={`input-shadow instance-list-item noselect ${
 				props.selected ? "selected" : ""
 			} ${props.itemKind}`}
 			onClick={() => {
@@ -315,7 +335,7 @@ function Item(props: ItemProps) {
 					!(props.instance.pinned && props.sectionKind !== "pinned")
 				}
 			>
-				<div class="launch-instance-list-pin">
+				<div class="instance-list-pin">
 					<IconButton
 						icon={Pin}
 						size="22px"
@@ -340,9 +360,9 @@ function Item(props: ItemProps) {
 			</Show>
 			<img
 				src={getInstanceIconSrc(props.instance.icon)}
-				class="launch-instance-list-icon"
+				class="instance-list-icon"
 			/>
-			<div class="launch-instance-list-item-details">
+			<div class="instance-list-item-details">
 				<div style="" class="bold">
 					{props.instance.name !== null
 						? props.instance.name
@@ -365,11 +385,11 @@ interface ItemProps {
 	updateList: () => void;
 }
 
-export interface LaunchInstanceListProps {
-	setFooterData: (data: FooterData) => void;
-}
-
 interface SelectedItem {
 	id?: string;
 	type: "instance" | "profile";
+}
+
+export interface InstanceListProps {
+	setFooterData: (data: FooterData) => void;
 }

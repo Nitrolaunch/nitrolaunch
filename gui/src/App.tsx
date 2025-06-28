@@ -1,9 +1,9 @@
 import { Router, Route, Location } from "@solidjs/router";
 import "./App.css";
-import LaunchPage from "./pages/launch/LaunchPage";
+import LaunchPage from "./pages/instance/InstanceList";
 import NavBar from "./components/navigation/NavBar";
 import { createSignal, ErrorBoundary, onMount, Show } from "solid-js";
-import InstanceConfig from "./pages/config/InstanceConfig";
+import InstanceConfig from "./pages/instance/InstanceConfig";
 import BrowsePackages from "./pages/package/BrowsePackages";
 import ViewPackage from "./pages/package/ViewPackage";
 import Sidebar from "./components/navigation/Sidebar";
@@ -12,10 +12,10 @@ import Docs from "./pages/Docs";
 import { loadPagePlugins } from "./plugins";
 import { listen } from "@tauri-apps/api/event";
 import CustomPluginPage from "./pages/CustomPluginPage";
-import Footer, { FooterMode } from "./components/launch/Footer";
+import Footer, { FooterMode } from "./components/navigation/Footer";
 import Toasts from "./components/dialog/Toasts";
-import { InstanceConfigMode } from "./pages/config/read_write";
-import InstanceInfo from "./pages/config/InstanceInfo";
+import { InstanceConfigMode } from "./pages/instance/read_write";
+import InstanceInfo from "./pages/instance/InstanceInfo";
 
 export default function App() {
 	const [footerData, setFooterData] = createSignal<FooterData>({

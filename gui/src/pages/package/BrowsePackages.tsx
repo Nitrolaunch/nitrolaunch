@@ -23,7 +23,7 @@ import {
 } from "../../utils";
 import InlineSelect from "../../components/input/InlineSelect";
 import { FooterData } from "../../App";
-import { FooterMode } from "../../components/launch/Footer";
+import { FooterMode } from "../../components/navigation/Footer";
 import { errorToast, warningToast } from "../../components/dialog/Toasts";
 import PackageLabels from "../../components/package/PackageLabels";
 import { Loader, PackageType, RepoInfo } from "../../package";

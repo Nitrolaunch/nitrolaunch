@@ -21,7 +21,7 @@ import {
 	InstanceConfigMode,
 	readInstanceConfig,
 	saveInstanceConfig,
-} from "../../pages/config/read_write";
+} from "../../pages/instance/read_write";
 import { pkgRequestToString } from "../../utils";
 
 export default function PackageInstallModal(props: PackageInstallModalProps) {

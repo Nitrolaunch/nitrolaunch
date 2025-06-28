@@ -14,7 +14,7 @@ import { PackageMeta, PackageProperties } from "../../types";
 import { marked } from "marked";
 import { errorToast } from "../../components/dialog/Toasts";
 import { FooterData } from "../../App";
-import { FooterMode } from "../../components/launch/Footer";
+import { FooterMode } from "../../components/navigation/Footer";
 import Icon, { HasWidthHeight } from "../../components/Icon";
 import {
 	AngleLeft,
