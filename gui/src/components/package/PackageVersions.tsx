@@ -53,7 +53,7 @@ export default function PackageVersions(props: PackageVersionsProps) {
 				setIsScriptPackage(true);
 
 				if (props.props.content_versions == undefined) {
-					return undefined;
+					return [];
 				}
 
 				let versions = props.props.content_versions.map((version) => {
@@ -181,6 +181,12 @@ export default function PackageVersions(props: PackageVersionsProps) {
 					filteringVersions={true}
 					availableMinecraftVersions={availableMinecraftVersions()}
 				/>
+				<Show when={isScriptPackage()}>
+					<div style="padding:1rem;font-weight:bold">
+						Because this package is a script package, less version information
+						will be available
+					</div>
+				</Show>
 				<For each={versions()}>
 					{(version) => {
 						let isVisible = () => {
