@@ -9,7 +9,7 @@ import {
 	PackageVersion,
 } from "../../package";
 import Tip from "../dialog/Tip";
-import PackageFilters from "./PackageFilters";
+import PackageFilters, { PackageFilterOptions } from "./PackageFilters";
 import LoadingSpinner from "../utility/LoadingSpinner";
 import SearchBar from "../input/SearchBar";
 import { canonicalizeListOrSingle } from "../../utils/values";
@@ -25,8 +25,14 @@ export default function PackageVersions(props: PackageVersionsProps) {
 	let [search, setSearch] = createSignal("");
 	let [filteredMinecraftVersions, setFilteredMinecraftVersions] = createSignal<
 		string[]
-	>([]);
-	let [filteredLoaders, setFilteredLoaders] = createSignal<string[]>([]);
+	>(
+		props.defaultFilters == undefined
+			? []
+			: props.defaultFilters.minecraft_versions
+	);
+	let [filteredLoaders, setFilteredLoaders] = createSignal<string[]>(
+		props.defaultFilters == undefined ? [] : props.defaultFilters.loaders
+	);
 	let [filteredStability, setFilteredStability] = createSignal<
 		"stable" | "latest" | undefined
 	>(undefined);
@@ -257,6 +263,7 @@ export interface PackageVersionsProps {
 	props: PackageProperties;
 	backgroundColor: string;
 	onInstall: (version: string) => void;
+	defaultFilters?: PackageFilterOptions;
 }
 
 function PackageVersionEntry(props: PackageVersionEntryProps) {

@@ -26,8 +26,10 @@ import { FooterData } from "../../App";
 import { FooterMode } from "../../components/navigation/Footer";
 import { errorToast, warningToast } from "../../components/dialog/Toasts";
 import PackageLabels from "../../components/package/PackageLabels";
-import { Loader, PackageType, RepoInfo } from "../../package";
-import PackageFilters from "../../components/package/PackageFilters";
+import { PackageType, RepoInfo } from "../../package";
+import PackageFilters, {
+	PackageFilterOptions,
+} from "../../components/package/PackageFilters";
 import LoadingSpinner from "../../components/utility/LoadingSpinner";
 
 const PACKAGES_PER_PAGE = 12;
@@ -46,31 +48,18 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 
 	// Filters and other browse functions
 
-	let minecraftVersions = () => {
-		if (searchParams["minecraft_versions"] == undefined) {
-			return [];
+	let filters = () => {
+		if (searchParams["filters"] == undefined) {
+			return { minecraft_versions: [], loaders: [] } as PackageFilterOptions;
 		}
-		try {
-			return JSON.parse(
-				decodeURIComponent(searchParams["minecraft_versions"])
-			) as string[];
-		} catch (e) {
-			console.error("Failed to parse Minecraft versions filter: " + e);
-			return [];
-		}
-	};
 
-	let loaders = () => {
-		if (searchParams["loaders"] == undefined) {
-			return [];
-		}
 		try {
 			return JSON.parse(
-				decodeURIComponent(searchParams["loaders"])
-			) as Loader[];
+				decodeURIComponent(searchParams["filters"])
+			) as PackageFilterOptions;
 		} catch (e) {
-			console.error("Failed to parse loaders filter: " + e);
-			return [];
+			console.error("Failed to parse filters: " + e);
+			return { minecraft_versions: [], loaders: [] } as PackageFilterOptions;
 		}
 	};
 
@@ -88,18 +77,27 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 	);
 	let [filteredMinecraftVersions, setFilteredMinecraftVersions] = createSignal<
 		string[]
-	>(minecraftVersions());
-	let [filteredLoaders, setFilteredLoaders] = createSignal<string[]>(loaders());
+	>(filters().minecraft_versions);
+	let [filteredLoaders, setFilteredLoaders] = createSignal<string[]>(
+		filters().loaders
+	);
 	let [filteredStability, setFilteredStability] = createSignal<
 		"stable" | "latest" | undefined
 	>();
 
+	// Creates the PackageFilterOptions object to be put in URL parameters
+	let createPackageFiltersObject = () => {
+		return {
+			minecraft_versions: filteredMinecraftVersions(),
+			loaders: filteredLoaders(),
+		} as PackageFilterOptions;
+	};
+
 	// Updates the URL with current search / filters
 	let updateUrl = () => {
 		let query = search() == undefined ? "" : `&search=${search()}`;
-		let url = `/packages/${page()}?repo=${selectedRepo()}&package_type=${filteredPackageType()}${query}&minecraft_versions=${JSON.stringify(
-			filteredMinecraftVersions()
-		)}&loaders=${JSON.stringify(filteredLoaders())}`;
+		let filters = JSON.stringify(createPackageFiltersObject());
+		let url = `/packages/${page()}?repo=${selectedRepo()}&package_type=${filteredPackageType()}${query}&filters=${filters}`;
 		window.history.replaceState("", "", url);
 	};
 
@@ -397,10 +395,13 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 													mode: FooterMode.PreviewPackage,
 													selectedItem: "",
 													action: () => {
-														window.location.href = `/packages/package/${data.id}`;
+														window.location.href = `/packages/package/${
+															data.id
+														}?filters=${createPackageFiltersObject()}`;
 													},
 												});
 											}}
+											getPackageFiltersObject={createPackageFiltersObject}
 										/>
 									);
 								}
@@ -443,7 +444,9 @@ function Package(props: PackageProps) {
 			onclick={() => {
 				// Double click to open
 				if (isSelected()) {
-					window.location.href = `/packages/package/${props.id}`;
+					window.location.href = `/packages/package/${
+						props.id
+					}?filters=${JSON.stringify(props.getPackageFiltersObject())}`;
 				} else {
 					props.onSelect(props.id);
 				}
@@ -488,6 +491,7 @@ interface PackageProps {
 	meta: PackageMeta;
 	selected?: string;
 	onSelect: (pkg: string) => void;
+	getPackageFiltersObject: () => PackageFilterOptions;
 }
 
 export interface BrowsePackagesProps {

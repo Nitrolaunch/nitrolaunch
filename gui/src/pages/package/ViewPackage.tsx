@@ -1,4 +1,4 @@
-import { useParams } from "@solidjs/router";
+import { useLocation, useParams } from "@solidjs/router";
 import "./ViewPackage.css";
 import { invoke } from "@tauri-apps/api";
 import {
@@ -34,14 +34,16 @@ import {
 import Modal from "../../components/dialog/Modal";
 import PackageLabels from "../../components/package/PackageLabels";
 import { RepoInfo } from "../../package";
-import { beautifyString, parsePkgRequest } from "../../utils";
+import { beautifyString, parsePkgRequest, parseQueryString } from "../../utils";
 import PackageVersions from "../../components/package/PackageVersions";
 import PackageInstallModal from "../../components/package/PackageInstallModal";
 import { canonicalizeListOrSingle } from "../../utils/values";
 import LoadingSpinner from "../../components/utility/LoadingSpinner";
+import { PackageFilterOptions } from "../../components/package/PackageFilters";
 
 export default function ViewPackage(props: ViewPackageProps) {
 	let params = useParams();
+	let searchParams = parseQueryString(useLocation().search);
 
 	let packageId = params.id;
 
@@ -61,6 +63,21 @@ export default function ViewPackage(props: ViewPackageProps) {
 
 	let [showInstallModal, setShowInstallModal] = createSignal(false);
 	let [installVersion, setInstallVersion] = createSignal<string | undefined>();
+
+	let filters = () => {
+		if (searchParams["filters"] == undefined) {
+			return undefined;
+		}
+
+		try {
+			return JSON.parse(
+				decodeURIComponent(searchParams["filters"])
+			) as PackageFilterOptions;
+		} catch (e) {
+			console.error("Failed to parse filters: " + e);
+			return undefined;
+		}
+	};
 
 	createEffect(() => {
 		props.setFooterData({
@@ -237,6 +254,7 @@ export default function ViewPackage(props: ViewPackageProps) {
 												setInstallVersion(version);
 												setShowInstallModal(true);
 											}}
+											defaultFilters={filters()}
 										/>
 									</div>
 								</Show>
