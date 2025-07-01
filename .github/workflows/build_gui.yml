@@ -40,7 +40,12 @@ jobs:
             - if: ${{ matrix.os == 'ubuntu-latest'}}
               name: Install Ubuntu Dependencies
               run: |
+                  cd gui &&
                   npm i turbo-linux-64 @tauri-apps/cli-linux-x64-gnu && 
+                  sudo echo " \
+                   jammy" >> /etc/apt/sources.list.d/ubuntu.sources &&
+                  sudo echo " \
+                   jammy-security" >> /etc/apt/sources.list.d/ubuntu.sources &&
                   sudo apt update &&
                   sudo apt install libwebkit2gtk-4.0-dev \
                       build-essential \
@@ -53,9 +58,10 @@ jobs:
             - if: ${{ matrix.os == 'macos-latest'}}
               name: Install MacOS Dependencies
               run: |
+                  cd gui &&
                   npm i turbo-darwin-arm64 @tauri-apps/cli-darwin-arm64 && 
                   rustup target add aarch64-apple-darwin
-            - run: npm i
+            - run: cd gui && npm i
             - if: ${{ matrix.os == 'macos-latest'}}
               name: Build App MacOS
               run: cd gui && npm run tauri build --filter=desktop -- --target universal-apple-darwin
