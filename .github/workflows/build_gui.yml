@@ -28,6 +28,7 @@ jobs:
               uses: actions/setup-node@v3.5.1
               with:
                   cache: "npm"
+                  cache-dependency-path: "gui/package.json"
                   node-version: 18
             - name: Setup Rust environment
               # You may pin to the exact commit or the version.
