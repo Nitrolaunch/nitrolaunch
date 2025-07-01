@@ -8,7 +8,7 @@ use mcvm_pkg::declarative::{
 };
 use mcvm_pkg::metadata::PackageMetadata;
 use mcvm_pkg::properties::PackageProperties;
-use mcvm_shared::pkg::{PackageCategory, PackageKind};
+use mcvm_shared::pkg::{PackageCategory, PackageKind, PackageStability};
 use mcvm_shared::util::DeserListOrSingle;
 use mcvm_shared::versions::VersionPattern;
 
@@ -147,10 +147,18 @@ pub async fn gen(
 			}
 		}
 
+		let stability = if version.name.contains("-") {
+			PackageStability::Latest
+		} else {
+			PackageStability::Stable
+		};
+
 		let mut pkg_version = DeclarativeAddonVersion {
-			version: Some(version.name),
+			version: Some(version.name.clone()),
 			conditional_properties: DeclarativeConditionSet {
 				minecraft_versions: Some(DeserListOrSingle::List(mc_versions)),
+				content_versions: Some(DeserListOrSingle::Single(version.name)),
+				stability: Some(stability),
 				..Default::default()
 			},
 			relations: DeclarativePackageRelations {
