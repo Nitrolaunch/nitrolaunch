@@ -42,10 +42,10 @@ jobs:
               run: |
                   cd gui &&
                   npm i turbo-linux-64 @tauri-apps/cli-linux-x64-gnu && 
-                  sudo echo " \
-                   jammy" >> /etc/apt/sources.list.d/ubuntu.sources &&
-                  sudo echo " \
-                   jammy-security" >> /etc/apt/sources.list.d/ubuntu.sources &&
+                  echo " \
+                   jammy" | sudo tee -a /etc/apt/sources.list.d/ubuntu.sources &&
+                  echo " \
+                   jammy-security" | sudo tee -a /etc/apt/sources.list.d/ubuntu.sources &&
                   sudo apt update &&
                   sudo apt install libwebkit2gtk-4.0-dev \
                       build-essential \
