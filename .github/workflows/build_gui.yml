@@ -43,8 +43,8 @@ jobs:
                   cd gui &&
                   npm i turbo-linux-64 @tauri-apps/cli-linux-x64-gnu && 
                   echo " \
-                  deb http://gb.archive.ubuntu.com/ubuntu jammy main" | sudo tee -a /etc/apt/sources.list.d/ubuntu.sources &&
-                  cat /etc/apt/sources.list.d/ubuntu.sources &&
+                  deb http://gb.archive.ubuntu.com/ubuntu jammy main" | sudo tee -a /etc/apt/sources.list &&
+                  cat /etc/apt/sources.list &&
                   sudo apt update &&
                   sudo apt install libwebkit2gtk-4.0-dev \
                       build-essential \
