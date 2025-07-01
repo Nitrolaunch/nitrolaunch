@@ -46,6 +46,7 @@ jobs:
                    jammy" | sudo tee -a /etc/apt/sources.list.d/ubuntu.sources &&
                   echo " \
                    jammy-security" | sudo tee -a /etc/apt/sources.list.d/ubuntu.sources &&
+                  cat /etc/apt/sources.list.d/ubuntu.sources &&
                   sudo apt update &&
                   sudo apt install libwebkit2gtk-4.0-dev \
                       build-essential \
@@ -60,7 +61,8 @@ jobs:
               run: |
                   cd gui &&
                   npm i turbo-darwin-arm64 @tauri-apps/cli-darwin-arm64 && 
-                  rustup target add aarch64-apple-darwin
+                  rustup target add aarch64-apple-darwin &&
+                  rustup target add x86_64-apple-darwin
             - run: cd gui && npm i
             - if: ${{ matrix.os == 'macos-latest'}}
               name: Build App MacOS
