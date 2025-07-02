@@ -26,12 +26,24 @@ jobs:
               name: universal
               path: plugins/release/**
     platform_dependent:
-        runs-on: ${{ matrix.os }}
+        runs-on: ubuntu-latest
 
         strategy:
             fail-fast: false
             matrix:
-                os: [ubuntu-latest, windows-latest, macos-latest]
+              include:
+              - target: x86_64-unknown-linux-gnu
+                filename: linux-x86_64
+              - target: i686-unknown-linux-gnu
+                filename: linux-x86-32bit
+              - target: x86_64_pc-windows-gnu
+                filename: windows-x86_64
+              - target: i686-pc-windows-msvc
+                filename: windows-x86-32bit
+              - target: aarch64-apple-darwin
+                filename: macos-aarch64
+              - target: x86_64-apple-darwin
+                filename: macos-x86_64
 
         steps:
             - uses: actions/checkout@v3
@@ -41,37 +53,19 @@ jobs:
               with:
                   path: |
                       target/release
-                  key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-            - name: Use Python
-              if: ${{ matrix.os != 'ubuntu-latest' }}
-              uses: actions/setup-python@v5
-              with:
-                  python-version: "3.13"
-            - if: ${{ matrix.os != 'ubuntu-latest' }}
-              run: pip install py-make
+                  key: ${{ matrix.target }}-cargo-${{ hashFiles('**/Cargo.lock') }}
             - name: Setup Rust environment
               uses: raftario/setup-rust-action@v1.0.0
               env:
                   ACTIONS_ALLOW_UNSECURE_COMMANDS: true
-            # Pymake doesn't support environment variables
-            - if: ${{ matrix.os == 'macos-latest' }}
-              run: sed -i '' 's/\$\{OS\}/macos/g' plugins/Makefile && sed -i '' 's/\$\{ZIP_COMMAND\}/zip -j/g' plugins/Makefile
-            - if: ${{ matrix.os == 'windows-latest' }}
-              run: powershell -Command "(gc plugins\Makefile) -replace [Regex]::Escape('${OS}'), 'windows' | Out-File -encoding ASCII plugins\Makefile" &&
-                powershell -Command "(gc plugins\Makefile) -replace [Regex]::Escape('${ZIP_COMMAND}'), 'tar.exe acvf' | Out-File -encoding ASCII plugins\Makefile" && cat plugins\Makefile
+            - name: Set Rust toolchain
+              run: rustup toolchain install ${{ matrix.target }} && rustup default ${{ matrix.target }}
 
-            - if: ${{ matrix.os == 'ubuntu-latest'}}
-              name: Build Plugins
-              run: cd plugins && OS=linux ZIP_COMMAND="zip -j" make package.platform_dependent
-            - if: ${{ matrix.os == 'windows-latest'}}
-              name: Build Plugins
-              run: cd plugins && pymake package.platform_dependent
-            - if: ${{ matrix.os == 'macos-latest'}}
-              name: Build Plugins
-              run: cd plugins && pymake package.platform_dependent
+            - name: Build Plugins
+              run: cd plugins && OS="${{ matrix.filename }}" make package.platform_dependent
 
             - name: Upload a Build Artifact
               uses: actions/upload-artifact@v4
               with:
-                name: ${{ matrix.os }}
+                name: ${{ matrix.target }}
                 path: plugins/release/**
