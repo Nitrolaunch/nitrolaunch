@@ -23,8 +23,8 @@ jobs:
           - name: Upload a Build Artifact
             uses: actions/upload-artifact@v4
             with:
-                path: |
-                    plugins/release/**
+              name: universal
+              path: plugins/release/**
     platform_dependent:
         runs-on: ${{ matrix.os }}
 
@@ -67,5 +67,5 @@ jobs:
             - name: Upload a Build Artifact
               uses: actions/upload-artifact@v4
               with:
-                  path: |
-                      plugins/release/**
+                name: ${{ matrix.os }}
+                path: plugins/release/**
