@@ -1,0 +1,68 @@
+name: Build Plugins
+on:
+    workflow_dispatch:
+    push:
+        branches:
+            - main
+            - dev
+
+jobs:
+    cross_platform:
+      runs-on: ubuntu-latest
+
+      steps:
+          - uses: actions/checkout@v3
+          - name: Use Python
+            uses: actions/setup-python@v5
+            with:
+                python-version: "3.13"
+          - name: Install Python dependencies
+            run: pip install shiv
+          - name: Build plugins
+            run: cd plugins && make package.cross_platform
+          - name: Upload a Build Artifact
+            uses: actions/upload-artifact@v4
+            with:
+                path: |
+                    plugins/release/**
+    platform_dependent:
+        runs-on: ${{ matrix.os }}
+
+        strategy:
+            fail-fast: false
+            matrix:
+                os: [ubuntu-latest, windows-latest, macos-latest]
+
+        steps:
+            - uses: actions/checkout@v3
+            - name: Cache Cargo Deps
+              id: cache-cargo-deps
+              uses: actions/cache@v3
+              with:
+                  path: |
+                      target/release
+                  key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+            - name: Use Node.js
+              uses: actions/setup-node@v3.5.1
+              with:
+                  node-version: 18
+            - name: Setup Rust environment
+              uses: raftario/setup-rust-action@v1.0.0
+              env:
+                  ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+
+            - if: ${{ matrix.os == 'ubuntu-latest'}}
+              name: Build Plugins
+              run: cd plugins && OS=linux make package.platform_specific
+            - if: ${{ matrix.os == 'windows-latest'}}
+              name: Build Plugins
+              run: cd plugins && OS=windows make package.platform_specific
+            - if: ${{ matrix.os == 'macos-latest'}}
+              name: Build Plugins
+              run: cd plugins && OS=macos make package.platform_specific
+
+            - name: Upload a Build Artifact
+              uses: actions/upload-artifact@v4
+              with:
+                  path: |
+                      plugins/release/**
