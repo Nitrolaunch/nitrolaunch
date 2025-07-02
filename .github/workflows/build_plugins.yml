@@ -32,17 +32,17 @@ jobs:
             fail-fast: false
             matrix:
               include:
-              - target: x86_64-unknown-linux-gnu
+              - target: stable-x86_64-unknown-linux-gnu
                 filename: linux-x86_64
-              - target: i686-unknown-linux-gnu
+              - target: stable-i686-unknown-linux-gnu
                 filename: linux-x86-32bit
-              - target: x86_64_pc-windows-gnu
+              - target: stable-x86_64_pc-windows-gnu
                 filename: windows-x86_64
-              - target: i686-pc-windows-msvc
+              - target: stable-i686-pc-windows-msvc
                 filename: windows-x86-32bit
-              - target: aarch64-apple-darwin
+              - target: stable-aarch64-apple-darwin
                 filename: macos-aarch64
-              - target: x86_64-apple-darwin
+              - target: stable-x86_64-apple-darwin
                 filename: macos-x86_64
 
         steps:
