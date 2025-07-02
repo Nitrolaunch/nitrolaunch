@@ -59,7 +59,7 @@ jobs:
               env:
                   ACTIONS_ALLOW_UNSECURE_COMMANDS: true
             - name: Set Rust toolchain
-              run: rustup target add ${{ matrix.target }} --force-non-host && rustup default stable-${{ matrix.target }}
+              run: rustup target add ${{ matrix.target }} && rustup default stable-${{ matrix.target }} --force-non-host 
 
             - name: Build Plugins
               run: cd plugins && OS="${{ matrix.filename }}" make package.platform_dependent
