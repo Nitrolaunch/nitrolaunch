@@ -58,6 +58,16 @@ jobs:
               uses: raftario/setup-rust-action@v1.0.0
               env:
                   ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+
+            # Install libraries
+            - run: sudo apt-get update
+            - if: ${{ matrix.target == 'i686-unknown-linux-gnu' || matrix.target == 'i686-pc-windows-msvc' }}
+              name: Install 32bit libs
+              run: sudo apt-get install gcc-multilib
+            - if: ${{ matrix.target == 'x86_64-pc-windows-gnu' || matrix.target == 'i686-pc-windows-msvc' }}
+              name: Install MinGW
+              run: sudo apt-get install g++-mingw-w64-x86-64 gcc-mingw-w64-x86-64
+
             - name: Set Rust toolchain
               run: rustup target add ${{ matrix.target }}
 
