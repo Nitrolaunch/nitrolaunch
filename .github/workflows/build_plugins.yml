@@ -32,17 +32,17 @@ jobs:
             fail-fast: false
             matrix:
               include:
-              - target: stable-x86_64-unknown-linux-gnu
+              - target: x86_64-unknown-linux-gnu
                 filename: linux-x86_64
-              - target: stable-i686-unknown-linux-gnu
+              - target: i686-unknown-linux-gnu
                 filename: linux-x86-32bit
-              - target: stable-x86_64_pc-windows-gnu
+              - target: x86_64-pc-windows-gnu
                 filename: windows-x86_64
-              - target: stable-i686-pc-windows-msvc
+              - target: i686-pc-windows-msvc
                 filename: windows-x86-32bit
-              - target: stable-aarch64-apple-darwin
+              - target: aarch64-apple-darwin
                 filename: macos-aarch64
-              - target: stable-x86_64-apple-darwin
+              - target: x86_64-apple-darwin
                 filename: macos-x86_64
 
         steps:
@@ -59,7 +59,7 @@ jobs:
               env:
                   ACTIONS_ALLOW_UNSECURE_COMMANDS: true
             - name: Set Rust toolchain
-              run: rustup toolchain install ${{ matrix.target }} && rustup default ${{ matrix.target }}
+              run: rustup target add ${{ matrix.target }} && rustup default stable-${{ matrix.target }}
 
             - name: Build Plugins
               run: cd plugins && OS="${{ matrix.filename }}" make package.platform_dependent
