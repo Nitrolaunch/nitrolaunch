@@ -56,13 +56,13 @@ jobs:
 
             - if: ${{ matrix.os == 'ubuntu-latest'}}
               name: Build Plugins
-              run: cd plugins && OS=linux make package.platform_dependent
+              run: cd plugins && OS=linux ZIP_COMMAND=zip make package.platform_dependent
             - if: ${{ matrix.os == 'windows-latest'}}
               name: Build Plugins
-              run: cd plugins && set OS="windows" && pymake package.platform_dependent
+              run: cd plugins && set OS="windows" && set ZIP_COMMAND="tar.exe acvf" && pymake package.platform_dependent
             - if: ${{ matrix.os == 'macos-latest'}}
               name: Build Plugins
-              run: cd plugins && OS=macos pymake package.platform_dependent
+              run: cd plugins && OS=macos ZIP_COMMAND=zip pymake package.platform_dependent
 
             - name: Upload a Build Artifact
               uses: actions/upload-artifact@v4

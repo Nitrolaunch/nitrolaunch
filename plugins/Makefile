@@ -31,30 +31,54 @@ package.platform_dependent:
 	@cargo build --release --bin mcvm_plugin_xmcl_transfer
 
 	@mkdir -p release
+	
+	@rm -f release/archive-${OS}.zip 
+	@rm -f release/args-${OS}.zip 
+	@rm -f release/automate-${OS}.zip 
+	@rm -f release/backup-${OS}.zip 
+	@rm -f release/config_split-${OS}.zip 
+	@rm -f release/custom_files-${OS}.zip 
+	@rm -f release/docs-${OS}.zip 
+	@rm -f release/fabric_quilt-${OS}.zip 
+	@rm -f release/gen_pkg-${OS}.zip 
+	@rm -f release/mcvm_transfer-${OS}.zip 
+	@rm -f release/modrinth-${OS}.zip 
+	@rm -f release/modrinth_api-${OS}.zip 
+	@rm -f release/options-${OS}.zip 
+	@rm -f release/packhost-${OS}.zip 
+	@rm -f release/paper-${OS}.zip 
+	@rm -f release/server_restart-${OS}.zip 
+	@rm -f release/smithed-${OS}.zip 
+	@rm -f release/smithed_api-${OS}.zip 
+	@rm -f release/sponge-${OS}.zip 
+	@rm -f release/stats-${OS}.zip 
+	@rm -f release/webtools-${OS}.zip 
+	@rm -f release/weld-${OS}.zip 
+	@rm -f release/xmcl_transfer-${OS}.zip 
 
-	@rm -f release/archive-${OS}.zip && zip -j release/archive-${OS}.zip ../target/release/mcvm_plugin_archive plugins/archive/plugin.json
-	@rm -f release/args-${OS}.zip && zip -j release/args-${OS}.zip ../target/release/mcvm_plugin_args plugins/args/plugin.json
-	@rm -f release/automate-${OS}.zip && zip -j release/automate-${OS}.zip ../target/release/mcvm_plugin_automate plugins/automate/plugin.json
-	@rm -f release/backup-${OS}.zip && zip -j release/backup-${OS}.zip ../target/release/mcvm_plugin_backup plugins/backup/plugin.json
-	@rm -f release/config_split-${OS}.zip && zip -j release/config_split-${OS}.zip ../target/release/mcvm_plugin_config_split plugins/config_split/plugin.json
-	@rm -f release/custom_files-${OS}.zip && zip -j release/custom_files-${OS}.zip ../target/release/mcvm_plugin_custom_files plugins/custom_files/plugin.json
-	@rm -f release/docs-${OS}.zip && zip -j release/docs-${OS}.zip ../target/release/mcvm_plugin_docs plugins/docs/plugin.json
-	@rm -f release/fabric_quilt-${OS}.zip && zip -j release/fabric_quilt-${OS}.zip ../target/release/mcvm_plugin_fabric_quilt plugins/fabric_quilt/plugin.json
-	@rm -f release/gen_pkg-${OS}.zip && zip -j release/gen_pkg-${OS}.zip ../target/release/mcvm_plugin_gen_pkg plugins/gen_pkg/plugin.json
-	@rm -f release/mcvm_transfer-${OS}.zip && zip -j release/mcvm_transfer-${OS}.zip ../target/release/mcvm_plugin_mcvm_transfer plugins/mcvm_transfer/plugin.json
-	@rm -f release/modrinth-${OS}.zip && zip -j release/modrinth-${OS}.zip ../target/release/mcvm_plugin_modrinth plugins/modrinth/plugin.json
-	@rm -f release/modrinth_api-${OS}.zip && zip -j release/modrinth_api-${OS}.zip ../target/release/mcvm_plugin_modrinth_api plugins/modrinth_api/plugin.json plugins/modrinth_api/page.html
-	@rm -f release/options-${OS}.zip && zip -j release/options-${OS}.zip ../target/release/mcvm_plugin_options plugins/options/plugin.json
-	@rm -f release/packhost-${OS}.zip && zip -j release/packhost-${OS}.zip ../target/release/mcvm_plugin_packhost plugins/packhost/plugin.json
-	@rm -f release/paper-${OS}.zip && zip -j release/paper-${OS}.zip ../target/release/mcvm_plugin_paper plugins/paper/plugin.json
-	@rm -f release/server_restart-${OS}.zip && zip -j release/server_restart-${OS}.zip ../target/release/mcvm_plugin_server_restart plugins/server_restart/plugin.json
-	@rm -f release/smithed-${OS}.zip && zip -j release/smithed-${OS}.zip ../target/release/mcvm_plugin_smithed plugins/smithed/plugin.json plugins/smithed/page.html
-	@rm -f release/smithed_api-${OS}.zip && zip -j release/smithed_api-${OS}.zip ../target/release/mcvm_plugin_smithed_api plugins/smithed_api/plugin.json
-	@rm -f release/sponge-${OS}.zip && zip -j release/sponge-${OS}.zip ../target/release/mcvm_plugin_sponge plugins/sponge/plugin.json
-	@rm -f release/stats-${OS}.zip && zip -j release/stats-${OS}.zip ../target/release/mcvm_plugin_stats plugins/stats/plugin.json
-	@rm -f release/webtools-${OS}.zip && zip -j release/webtools-${OS}.zip ../target/release/mcvm_plugin_webtools plugins/webtools/plugin.json
-	@rm -f release/weld-${OS}.zip && zip -j release/weld-${OS}.zip plugins/weld/plugin.json plugins/weld/weld.pyz
-	@rm -f release/xmcl_transfer-${OS}.zip && zip -j release/xmcl_transfer-${OS}.zip ../target/release/mcvm_plugin_xmcl_transfer plugins/xmcl_transfer/plugin.json
+	@${zipCommand} -j release/archive-${OS}.zip ../target/release/mcvm_plugin_archive plugins/archive/plugin.json
+	@${zipCommand} -j release/args-${OS}.zip ../target/release/mcvm_plugin_args plugins/args/plugin.json
+	@${zipCommand} -j release/automate-${OS}.zip ../target/release/mcvm_plugin_automate plugins/automate/plugin.json
+	@${zipCommand} -j release/backup-${OS}.zip ../target/release/mcvm_plugin_backup plugins/backup/plugin.json
+	@${zipCommand} -j release/config_split-${OS}.zip ../target/release/mcvm_plugin_config_split plugins/config_split/plugin.json
+	@${zipCommand} -j release/custom_files-${OS}.zip ../target/release/mcvm_plugin_custom_files plugins/custom_files/plugin.json
+	@${zipCommand} -j release/docs-${OS}.zip ../target/release/mcvm_plugin_docs plugins/docs/plugin.json
+	@${zipCommand} -j release/fabric_quilt-${OS}.zip ../target/release/mcvm_plugin_fabric_quilt plugins/fabric_quilt/plugin.json
+	@${zipCommand} -j release/gen_pkg-${OS}.zip ../target/release/mcvm_plugin_gen_pkg plugins/gen_pkg/plugin.json
+	@${zipCommand} -j release/mcvm_transfer-${OS}.zip ../target/release/mcvm_plugin_mcvm_transfer plugins/mcvm_transfer/plugin.json
+	@${zipCommand} -j release/modrinth-${OS}.zip ../target/release/mcvm_plugin_modrinth plugins/modrinth/plugin.json
+	@${zipCommand} -j release/modrinth_api-${OS}.zip ../target/release/mcvm_plugin_modrinth_api plugins/modrinth_api/plugin.json plugins/modrinth_api/page.html
+	@${zipCommand} -j release/options-${OS}.zip ../target/release/mcvm_plugin_options plugins/options/plugin.json
+	@${zipCommand} -j release/packhost-${OS}.zip ../target/release/mcvm_plugin_packhost plugins/packhost/plugin.json
+	@${zipCommand} -j release/paper-${OS}.zip ../target/release/mcvm_plugin_paper plugins/paper/plugin.json
+	@${zipCommand} -j release/server_restart-${OS}.zip ../target/release/mcvm_plugin_server_restart plugins/server_restart/plugin.json
+	@${zipCommand} -j release/smithed-${OS}.zip ../target/release/mcvm_plugin_smithed plugins/smithed/plugin.json plugins/smithed/page.html
+	@${zipCommand} -j release/smithed_api-${OS}.zip ../target/release/mcvm_plugin_smithed_api plugins/smithed_api/plugin.json
+	@${zipCommand} -j release/sponge-${OS}.zip ../target/release/mcvm_plugin_sponge plugins/sponge/plugin.json
+	@${zipCommand} -j release/stats-${OS}.zip ../target/release/mcvm_plugin_stats plugins/stats/plugin.json
+	@${zipCommand} -j release/webtools-${OS}.zip ../target/release/mcvm_plugin_webtools plugins/webtools/plugin.json
+	@${zipCommand} -j release/weld-${OS}.zip plugins/weld/plugin.json plugins/weld/weld.pyz
+	@${zipCommand} -j release/xmcl_transfer-${OS}.zip ../target/release/mcvm_plugin_xmcl_transfer plugins/xmcl_transfer/plugin.json
 	
 	@cp plugins/extra_versions/plugin.json release/extra_versions-universal.json
 	@cp plugins/lang/plugin.json release/lang-universal.json
