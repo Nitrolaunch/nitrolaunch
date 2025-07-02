@@ -58,7 +58,7 @@ jobs:
               run: sed -i '' 's/\$\{OS\}/macos/g' plugins/Makefile && sed -i '' 's/\$\{ZIP_COMMAND\}/zip -j/g' plugins/Makefile
             - if: ${{ matrix.os == 'windows-latest' }}
               run: powershell -Command "(gc plugins\Makefile) -replace [Regex]::Escape('${OS}'), 'windows' | Out-File -encoding ASCII plugins\Makefile" &&
-                powershell -Command "(gc plugins\Makefile) -replace [Regex]::Escape('${ZIP_COMMAND}'), 'tar.exe acvf' | Out-File -encoding ASCII plugins\Makefile"
+                powershell -Command "(gc plugins\Makefile) -replace [Regex]::Escape('${ZIP_COMMAND}'), 'tar.exe acvf' | Out-File -encoding ASCII plugins\Makefile" && cat plugins\Makefile
 
             - if: ${{ matrix.os == 'ubuntu-latest'}}
               name: Build Plugins
