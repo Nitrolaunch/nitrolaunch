@@ -42,10 +42,13 @@ jobs:
                   path: |
                       target/release
                   key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-            - name: Use Node.js
-              uses: actions/setup-node@v3.5.1
+            - name: Use Python
+              if: ${{ matrix.os != 'ubuntu-latest' }}
+              uses: actions/setup-python@v5
               with:
-                  node-version: 18
+                  python-version: "3.13"
+            - if: ${{ matrix.os != 'ubuntu-latest' }}
+              run: pip install py-make
             - name: Setup Rust environment
               uses: raftario/setup-rust-action@v1.0.0
               env:
@@ -56,10 +59,10 @@ jobs:
               run: cd plugins && OS=linux make package.platform_dependent
             - if: ${{ matrix.os == 'windows-latest'}}
               name: Build Plugins
-              run: cd plugins && OS=windows npx make package.platform_dependent
+              run: cd plugins && set OS="windows" && pymake package.platform_dependent
             - if: ${{ matrix.os == 'macos-latest'}}
               name: Build Plugins
-              run: cd plugins && OS=macos npx make package.platform_dependent
+              run: cd plugins && OS=macos pymake package.platform_dependent
 
             - name: Upload a Build Artifact
               uses: actions/upload-artifact@v4
