@@ -73,16 +73,19 @@ jobs:
               run: curl -L https://github.com/roblabla/MacOSX-SDKs/releases/download/13.3/MacOSX13.3.sdk.tar.xz | tar xJ &&
                 export SDKROOT=$(pwd)/MacOSX13.3.sdk/ &&
                 export PATH=$PATH:~/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/bin/
-            - if: ${{ matrix.target == 'x86_64-apple-darwin' }}
-              run: export CARGO_TARGET_X86_64_APPLE_DARWIN_LINKER=rust-lld
-            - if: ${{ matrix.target == 'aarch64-apple-darwin' }}
-              run: export CARGO_TARGET_AARCH64_APPLE_DARWIN_LINKER=rust-lld
 
             - name: Set Rust toolchain
               run: rustup target add ${{ matrix.target }}
 
             - name: Build Plugins
-              run: cd plugins && echo $CARGO_TARGET_X86_64_APPLE_DARWIN_LINKER && CARGO_BUILD_TARGET="${{ matrix.target }}" OS="${{ matrix.filename }}" make package.platform_dependent
+              if: ${{ matrix.target != 'x86_64-apple-darwin' && matrix.target != 'aarch64-apple-darwin' }}
+              run: cd plugins && CARGO_BUILD_TARGET="${{ matrix.target }}" OS="${{ matrix.filename }}" make package.platform_dependent
+            - name: Build Plugins
+              if: ${{ matrix.target == 'x86_64-apple-darwin' }}
+              run: cd plugins && CARGO_BUILD_TARGET="${{ matrix.target }}" OS="${{ matrix.filename }}" CARGO_TARGET_X86_64_APPLE_DARWIN_LINKER=rust-lld make package.platform_dependent
+            - name: Build Plugins
+              if: ${{ matrix.target == 'aarch64-apple-darwin' }}
+              run: cd plugins && CARGO_BUILD_TARGET="${{ matrix.target }}" OS="${{ matrix.filename }}" CARGO_TARGET_AARCH64_APPLE_DARWIN_LINKER=rust-lld make package.platform_dependent
 
             - name: Upload a Build Artifact
               uses: actions/upload-artifact@v4
