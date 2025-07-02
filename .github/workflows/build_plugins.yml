@@ -53,13 +53,13 @@ jobs:
 
             - if: ${{ matrix.os == 'ubuntu-latest'}}
               name: Build Plugins
-              run: cd plugins && OS=linux make package.platform_specific
+              run: cd plugins && OS=linux make package.platform_dependent
             - if: ${{ matrix.os == 'windows-latest'}}
               name: Build Plugins
-              run: cd plugins && OS=windows make package.platform_specific
+              run: cd plugins && OS=windows npx make package.platform_dependent
             - if: ${{ matrix.os == 'macos-latest'}}
               name: Build Plugins
-              run: cd plugins && OS=macos make package.platform_specific
+              run: cd plugins && OS=macos npx make package.platform_dependent
 
             - name: Upload a Build Artifact
               uses: actions/upload-artifact@v4
