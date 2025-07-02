@@ -32,14 +32,15 @@ jobs:
             fail-fast: false
             matrix:
               include:
+              # 32 bit targets are disabled for now because of simd_json failures
               - target: x86_64-unknown-linux-gnu
                 filename: linux-x86_64
-              - target: i686-unknown-linux-gnu
-                filename: linux-x86-32bit
+              # - target: i686-unknown-linux-gnu
+              #   filename: linux-x86-32bit
               - target: x86_64-pc-windows-gnu
                 filename: windows-x86_64
-              - target: i686-pc-windows-msvc
-                filename: windows-x86-32bit
+              # - target: i686-pc-windows-msvc
+              #   filename: windows-x86-32bit
               - target: aarch64-apple-darwin
                 filename: macos-aarch64
               - target: x86_64-apple-darwin
@@ -67,6 +68,15 @@ jobs:
             - if: ${{ matrix.target == 'x86_64-pc-windows-gnu' || matrix.target == 'i686-pc-windows-msvc' }}
               name: Install MinGW
               run: sudo apt-get install g++-mingw-w64-x86-64 gcc-mingw-w64-x86-64
+            - if: ${{ matrix.target == 'aarch64-apple-darwin' || matrix.target == 'x86_64-apple-darwin' }}
+              name: Install MacOS SDK
+              run: curl -L https://github.com/roblabla/MacOSX-SDKs/releases/download/13.3/MacOSX13.3.sdk.tar.xz | tar xJ &&
+                export SDKROOT=$(pwd)/MacOSX13.3.sdk/ &&
+                export PATH=$PATH:~/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/bin/
+            - if: ${{ matrix.target == 'x86_64-apple-darwin' }}
+              run: export CARGO_TARGET_X86_64_APPLE_DARWIN_LINKER=rust-lld
+            - if: ${{ matrix.target == 'aarch64-apple-darwin' }}
+              run: export CARGO_TARGET_AARCH64_APPLE_DARWIN_LINKER=rust-lld
 
             - name: Set Rust toolchain
               run: rustup target add ${{ matrix.target }}
