@@ -55,14 +55,14 @@ jobs:
                   ACTIONS_ALLOW_UNSECURE_COMMANDS: true
             # Pymake doesn't support environment variables
             - if: ${{ matrix.os == 'macos-latest' }}
-              run: sed -i 's/\${OS}/macos/g' plugins/Makefile && sed -i 's/\${ZIP_COMMAND}/zip/g' plugins/Makefile
+              run: sed -i 's/\$\{OS\}/macos/g' plugins/Makefile && sed -i 's/\$\{ZIP_COMMAND\}/zip/g' plugins/Makefile
             - if: ${{ matrix.os == 'windows-latest' }}
-              run: powershell -Command "(gc plugins\Makefile) -replace '${OS}', 'windows' | Out-File -encoding ASCII plugins\Makefile" &&
-                powershell -Command "(gc plugins\Makefile) -replace '${ZIP_COMMAND}', 'tar.exe acvf' | Out-File -encoding ASCII plugins\Makefile"
+              run: powershell -Command "(gc plugins\Makefile) -replace '\${OS}', 'windows' | Out-File -encoding ASCII plugins\Makefile" &&
+                powershell -Command "(gc plugins\Makefile) -replace '\${ZIP_COMMAND}', 'tar.exe acvf' | Out-File -encoding ASCII plugins\Makefile"
 
             - if: ${{ matrix.os == 'ubuntu-latest'}}
               name: Build Plugins
-              run: cd plugins && OS=linux ZIP_COMMAND=zip make package.platform_dependent
+              run: cd plugins && OS=linux ZIP_COMMAND="zip -j" make package.platform_dependent
             - if: ${{ matrix.os == 'windows-latest'}}
               name: Build Plugins
               run: cd plugins && pymake package.platform_dependent
