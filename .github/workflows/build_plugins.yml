@@ -82,7 +82,7 @@ jobs:
               run: rustup target add ${{ matrix.target }}
 
             - name: Build Plugins
-              run: cd plugins && CARGO_BUILD_TARGET="${{ matrix.target }}" OS="${{ matrix.filename }}" make package.platform_dependent
+              run: cd plugins && echo $CARGO_TARGET_X86_64_APPLE_DARWIN_LINKER && CARGO_BUILD_TARGET="${{ matrix.target }}" OS="${{ matrix.filename }}" make package.platform_dependent
 
             - name: Upload a Build Artifact
               uses: actions/upload-artifact@v4
