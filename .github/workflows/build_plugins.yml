@@ -73,7 +73,7 @@ jobs:
               run: sudo apt-get install clang llvm bash patch bzip2 &&
                 git clone https://github.com/tpoechtrager/osxcross.git &&
                 curl -o osxcross/tarballs/MacOSX13.3.sdk.tar.xz https://github.com/roblabla/MacOSX-SDKs/releases/download/13.3/MacOSX13.3.sdk.tar.xz &&
-                ./osxcross/build.sh
+                sudo sh ./osxcross/build.sh
 
             - name: Set Rust toolchain
               run: rustup target add ${{ matrix.target }}
