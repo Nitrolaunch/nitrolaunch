@@ -9,28 +9,7 @@ package.cross_platform: build.weld
 package.platform_dependent: build.platform_dependent package_zips.platform_dependent
 
 build.platform_dependent:
-	@cargo build --release --bin mcvm_plugin_archive
-	@cargo build --release --bin mcvm_plugin_args
-	@cargo build --release --bin mcvm_plugin_automate
-	@cargo build --release --bin mcvm_plugin_backup
-	@cargo build --release --bin mcvm_plugin_config_split
-	@cargo build --release --bin mcvm_plugin_custom_files
-	@cargo build --release --bin mcvm_plugin_docs
-	@cargo build --release --bin mcvm_plugin_fabric_quilt
-	@cargo build --release --bin mcvm_plugin_gen_pkg
-	@cargo build --release --bin mcvm_plugin_mcvm_transfer
-	@cargo build --release --bin mcvm_plugin_modrinth
-	@cargo build --release --bin mcvm_plugin_modrinth_api
-	@cargo build --release --bin mcvm_plugin_options
-	@cargo build --release --bin mcvm_plugin_packhost
-	@cargo build --release --bin mcvm_plugin_paper
-	@cargo build --release --bin mcvm_plugin_server_restart
-	@cargo build --release --bin mcvm_plugin_smithed
-	@cargo build --release --bin mcvm_plugin_smithed_api
-	@cargo build --release --bin mcvm_plugin_sponge
-	@cargo build --release --bin mcvm_plugin_stats
-	@cargo build --release --bin mcvm_plugin_webtools
-	@cargo build --release --bin mcvm_plugin_xmcl_transfer
+	@cargo build --release --bins
 
 package_zips.platform_dependent:
 	@mkdir -p release

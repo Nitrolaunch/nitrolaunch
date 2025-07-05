@@ -82,11 +82,9 @@ jobs:
               run: cd plugins && CARGO_BUILD_TARGET="${{ matrix.target }}" OS="${{ matrix.filename }}" make package.platform_dependent
             - name: Build Plugins
               if: ${{ matrix.target == 'x86_64-apple-darwin' || matrix.target == 'aarch64-apple-darwin' }}
-              run: export SDKROOT=$(pwd)/MacOSX13.3.sdk/ &&
-                export TARGET_CC=$(pwd)/target/bin/x86_64-apple-darwinXX-clang
-                cd plugins &&
-                CARGO_BUILD_TARGET="${{ matrix.target }}" OS="${{ matrix.filename }}" CARGO_TARGET_X86_64_APPLE_DARWIN_LINKER=rust-lld CARGO_TARGET_AARCH64_APPLE_DARWIN_LINKER=rust-lld cargo zigbuild --target ${{ matrix.target }} --bins &&
-                make package_zips.platform_dependent
+              run: cd plugins &&
+                cargo zigbuild --bins --release --target ${{ matrix.target }} &&
+                OS="${{ matrix.filename }}" make package_zips.platform_dependent
             - name: Upload a Build Artifact
               uses: actions/upload-artifact@v4
               with:
