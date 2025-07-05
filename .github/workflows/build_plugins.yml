@@ -71,7 +71,7 @@ jobs:
             - if: ${{ matrix.target == 'aarch64-apple-darwin' || matrix.target == 'x86_64-apple-darwin' }}
               name: Install MacOS dependencies
               run: sudo apt-get install snap &&
-                snap install zig --classic --beta &&
+                sudo snap install zig --classic --beta &&
                 cargo install --locked cargo-zigbuild
 
             - name: Set Rust toolchain
