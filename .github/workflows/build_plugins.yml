@@ -85,7 +85,7 @@ jobs:
               run: export SDKROOT=$(pwd)/MacOSX13.3.sdk/ &&
                 cd plugins &&
                 echo "SDKROOT $SDKROOT" &&
-                ls $SDKROOT &&
+                ls "$SDKROOT/System/Library/Frameworks" &&
                 cargo zigbuild --bins --release --target ${{ matrix.target }} &&
                 OS="${{ matrix.filename }}" make package_zips.platform_dependent
             - name: Upload a Build Artifact
