@@ -70,10 +70,9 @@ jobs:
               run: sudo apt-get install g++-mingw-w64-x86-64 gcc-mingw-w64-x86-64
             - if: ${{ matrix.target == 'aarch64-apple-darwin' || matrix.target == 'x86_64-apple-darwin' }}
               name: Install MacOS dependencies
-              run: sudo apt-get install clang llvm bash patch bzip2 &&
-                git clone https://github.com/tpoechtrager/osxcross.git &&
-                curl -o osxcross/tarballs/MacOSX13.3.sdk.tar.xz https://github.com/roblabla/MacOSX-SDKs/releases/download/13.3/MacOSX13.3.sdk.tar.xz &&
-                sudo sh ./osxcross/build.sh
+              run: sudo apt-get install snap &&
+                snap install zig --classic --beta &&
+                cargo install --locked cargo-zigbuild
 
             - name: Set Rust toolchain
               run: rustup target add ${{ matrix.target }}
@@ -90,7 +89,8 @@ jobs:
                 OS="${{ matrix.filename }}" \
                 CARGO_TARGET_X86_64_APPLE_DARWIN_LINKER=rust-lld \
                 CARGO_TARGET_AARCH64_APPLE_DARWIN_LINKER=rust-lld \
-                make package.platform_dependent
+                cargo zigbuild --target ${{ matrix.target }} --bins &&
+                make package_zips.platform_dependent
             - name: Upload a Build Artifact
               uses: actions/upload-artifact@v4
               with:

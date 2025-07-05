@@ -6,7 +6,9 @@ package.cross_platform: build.weld
 	@cp plugins/extra_versions/plugin.json release/extra_versions-universal.json
 	@cp plugins/lang/plugin.json release/lang-universal.json
 
-package.platform_dependent:
+package.platform_dependent: build.platform_dependent package_zips.platform_dependent
+
+build.platform_dependent:
 	@cargo build --release --bin mcvm_plugin_archive
 	@cargo build --release --bin mcvm_plugin_args
 	@cargo build --release --bin mcvm_plugin_automate
@@ -30,6 +32,7 @@ package.platform_dependent:
 	@cargo build --release --bin mcvm_plugin_webtools
 	@cargo build --release --bin mcvm_plugin_xmcl_transfer
 
+package_zips.platform_dependent:
 	@mkdir -p release
 	
 	@rm -f release/archive-${OS}.zip 
@@ -78,9 +81,6 @@ package.platform_dependent:
 	@zip -j release/stats-${OS}.zip ../target/release/mcvm_plugin_stats* plugins/stats/plugin.json
 	@zip -j release/webtools-${OS}.zip ../target/release/mcvm_plugin_webtools* plugins/webtools/plugin.json
 	@zip -j release/xmcl_transfer-${OS}.zip ../target/release/mcvm_plugin_xmcl_transfer* plugins/xmcl_transfer/plugin.json
-	
-	@cp plugins/extra_versions/plugin.json release/extra_versions-universal.json
-	@cp plugins/lang/plugin.json release/lang-universal.json
 
 build.weld:
 	@shiv -o plugins/weld/weld.pyz -e mcvm_weld.main --site-packages plugins/weld smithed
