@@ -81,7 +81,7 @@ jobs:
             - name: Build Plugins
               if: ${{ matrix.target == 'x86_64-apple-darwin' || matrix.target == 'aarch64-apple-darwin' }}
               run: cd plugins &&
-                cross build --bins --release --target ${{ matrix.target }} &&
+                CROSS_CONTAINER_ENGINE=podman cross build --bins --release --target ${{ matrix.target }} &&
                 OS="${{ matrix.filename }}" make package_zips.platform_dependent
             - name: Upload a Build Artifact
               uses: actions/upload-artifact@v4
