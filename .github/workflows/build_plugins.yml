@@ -73,7 +73,8 @@ jobs:
               run: sudo apt-get install snap &&
                 sudo snap install zig --classic --beta &&
                 cargo install --locked cargo-zigbuild &&
-                curl -L https://github.com/roblabla/MacOSX-SDKs/releases/download/13.3/MacOSX13.3.sdk.tar.xz | tar xJ
+                curl -L https://github.com/roblabla/MacOSX-SDKs/releases/download/13.3/MacOSX13.3.sdk.tar.xz | tar xJ &&
+                sudo cp -r MacOSX13.3.sdk/System /
 
             - name: Set Rust toolchain
               run: rustup target add ${{ matrix.target }}
@@ -83,9 +84,7 @@ jobs:
               run: cd plugins && CARGO_BUILD_TARGET="${{ matrix.target }}" OS="${{ matrix.filename }}" make package.platform_dependent
             - name: Build Plugins
               if: ${{ matrix.target == 'x86_64-apple-darwin' || matrix.target == 'aarch64-apple-darwin' }}
-              run: export SDKROOT=$(pwd)/MacOSX13.3.sdk/ &&
-                cd plugins &&
-                echo "SDKROOT $SDKROOT" &&
+              run: cd plugins &&
                 cargo zigbuild --bins --release --target ${{ matrix.target }} &&
                 OS="${{ matrix.filename }}" make package_zips.platform_dependent
             - name: Upload a Build Artifact
