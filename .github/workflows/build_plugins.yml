@@ -70,10 +70,8 @@ jobs:
               run: sudo apt-get install g++-mingw-w64-x86-64 gcc-mingw-w64-x86-64
             - if: ${{ matrix.target == 'aarch64-apple-darwin' || matrix.target == 'x86_64-apple-darwin' }}
               name: Install MacOS dependencies
-              run: sudo apt-get install snap &&
-                sudo snap install zig --classic --beta &&
-                cargo install --locked cargo-zigbuild &&
-                curl -L https://github.com/roblabla/MacOSX-SDKs/releases/download/13.3/MacOSX13.3.sdk.tar.xz | tar xJ
+              run: sudo apt-get install podman &&
+                cargo install cross --git https://github.com/cross-rs/cross
             - name: Set Rust toolchain
               run: rustup target add ${{ matrix.target }}
 
@@ -82,11 +80,8 @@ jobs:
               run: cd plugins && CARGO_BUILD_TARGET="${{ matrix.target }}" OS="${{ matrix.filename }}" make package.platform_dependent
             - name: Build Plugins
               if: ${{ matrix.target == 'x86_64-apple-darwin' || matrix.target == 'aarch64-apple-darwin' }}
-              run: export SDKROOT=$(pwd)/MacOSX13.3.sdk/ &&
-                cd plugins &&
-                echo "SDKROOT $SDKROOT" &&
-                ls "$SDKROOT/System/Library/Frameworks" &&
-                cargo zigbuild --bins --release --target ${{ matrix.target }} &&
+              run: cd plugins &&
+                cross build --bins --release --target ${{ matrix.target }} &&
                 OS="${{ matrix.filename }}" make package_zips.platform_dependent
             - name: Upload a Build Artifact
               uses: actions/upload-artifact@v4
