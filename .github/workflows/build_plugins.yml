@@ -85,6 +85,7 @@ jobs:
               if: ${{ matrix.target == 'x86_64-apple-darwin' || matrix.target == 'aarch64-apple-darwin' }}
               run: export SDKROOT=$(pwd)/MacOSX13.3.sdk/ &&
                 cd plugins &&
+                echo "SDKROOT $SDKROOT" &&
                 cargo zigbuild --bins --release --target ${{ matrix.target }} &&
                 OS="${{ matrix.filename }}" make package_zips.platform_dependent
             - name: Upload a Build Artifact
