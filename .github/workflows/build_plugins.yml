@@ -41,10 +41,6 @@ jobs:
                 filename: windows-x86_64
               # - target: i686-pc-windows-msvc
               #   filename: windows-x86-32bit
-              - target: aarch64-apple-darwin
-                filename: macos-aarch64
-              - target: x86_64-apple-darwin
-                filename: macos-x86_64
 
         steps:
             - uses: actions/checkout@v3
@@ -76,13 +72,54 @@ jobs:
               run: rustup target add ${{ matrix.target }}
 
             - name: Build Plugins
-              if: ${{ matrix.target != 'x86_64-apple-darwin' && matrix.target != 'aarch64-apple-darwin' }}
               run: cd plugins && CARGO_BUILD_TARGET="${{ matrix.target }}" OS="${{ matrix.filename }}" make package.platform_dependent
+            - name: Upload a Build Artifact
+              uses: actions/upload-artifact@v4
+              with:
+                name: ${{ matrix.target }}
+                path: plugins/release/**
+    platform_dependent_macos:
+        runs-on: macos-latest
+
+        strategy:
+            fail-fast: false
+            matrix:
+              include:
+              - target: aarch64-apple-darwin
+                filename: macos-aarch64
+              - target: x86_64-apple-darwin
+                filename: macos-x86_64
+
+        steps:
+            - uses: actions/checkout@v3
+            - name: Cache Cargo Deps
+              id: cache-cargo-deps
+              uses: actions/cache@v3
+              with:
+                  path: |
+                      target/release
+                  key: ${{ matrix.target }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+            - name: Setup Rust environment
+              uses: raftario/setup-rust-action@v1.0.0
+              env:
+                  ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+            - name: Use Python
+              uses: actions/setup-python@v5
+              with:
+                  python-version: "3.13"
+            - name: Install Python dependencies
+              run: pip install pymake && git clone https://github.com/aureliojargas/replace.git
+
+            - name: Set Rust toolchain
+              run: rustup target add ${{ matrix.target }}
+
+            - name: Update Makefile
+              run: cd replace &&
+                git reset --hard ad148213e50e13f7a46a357e6e5bb451216fa501 &&
+                ./replace.py --from "${OS}" --to "${{ matrix.filename }}" -i ../plugins/Makefile 
+
             - name: Build Plugins
-              if: ${{ matrix.target == 'x86_64-apple-darwin' || matrix.target == 'aarch64-apple-darwin' }}
-              run: cd plugins &&
-                CROSS_CONTAINER_ENGINE=podman cross build --bins --release --target ${{ matrix.target }} &&
-                OS="${{ matrix.filename }}" make package_zips.platform_dependent
+              run: cd plugins && pymake package.platform_dependent
             - name: Upload a Build Artifact
               uses: actions/upload-artifact@v4
               with:
