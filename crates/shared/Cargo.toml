@@ -20,6 +20,8 @@ schema = ["dep:schemars"]
 anyhow = { workspace = true }
 async-trait = { workspace = true }
 cfg-match = { workspace = true }
+itertools = { workspace = true }
 schemars = { workspace = true, optional = true }
 serde = { workspace = true }
 sys-locale = { workspace = true }
+thiserror = { workspace = true }

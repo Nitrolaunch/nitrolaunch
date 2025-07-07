@@ -2855,9 +2855,11 @@ dependencies = [
  "anyhow",
  "async-trait",
  "cfg-match",
+ "itertools",
  "schemars",
  "serde",
  "sys-locale",
+ "thiserror 1.0.69",
 ]
 
 [[package]]

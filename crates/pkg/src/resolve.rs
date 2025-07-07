@@ -1,9 +1,8 @@
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::sync::Arc;
 
-use anyhow::{bail, Context};
 use itertools::Itertools;
-use mcvm_shared::pkg::{ArcPkgReq, PackageID};
+use mcvm_shared::pkg::{ArcPkgReq, PackageID, ResolutionError};
 use mcvm_shared::versions::VersionPattern;
 
 use crate::overrides::{is_package_overridden, PackageOverrides};
@@ -19,7 +18,7 @@ pub async fn resolve<'a, E: PackageEvaluator<'a>>(
 	constant_eval_input: E::EvalInput<'a>,
 	common_input: &E::CommonInput,
 	overrides: PackageOverrides,
-) -> anyhow::Result<ResolutionResult> {
+) -> Result<ResolutionResult, ResolutionError> {
 	let mut resolver = Resolver {
 		tasks: VecDeque::new(),
 		constraints: Vec::new(),
@@ -33,10 +32,12 @@ pub async fn resolve<'a, E: PackageEvaluator<'a>>(
 
 	// Preload all of the user's configured packages
 	let collected_packages: Vec<_> = packages.into_iter().map(|x| x.get_package()).collect();
-	evaluator
+	if let Err(e) = evaluator
 		.preload_packages(&collected_packages, common_input)
 		.await
-		.context("Failed to preload packages")?;
+	{
+		return Err(ResolutionError::FailedToPreload(e));
+	}
 	preloaded_packages.extend(collected_packages);
 
 	// Create the initial EvalPackage tasks and constraints from the installed packages
@@ -45,11 +46,9 @@ pub async fn resolve<'a, E: PackageEvaluator<'a>>(
 		let props = evaluator
 			.get_package_properties(&req, common_input)
 			.await
-			.context("Failed to get package properties")?;
+			.map_err(|e| ResolutionError::FailedToGetProperties(req.clone(), e))?;
 
-		resolver
-			.update_require_constraint(&req, props, RequireConstraint::UserRequire)
-			.context("Failed to update require constraint")?;
+		resolver.update_require_constraint(&req, props, RequireConstraint::UserRequire)?;
 		resolver.package_configs.insert(req.clone(), config.clone());
 	}
 
@@ -76,10 +75,7 @@ pub async fn resolve<'a, E: PackageEvaluator<'a>>(
 				}
 
 				resolve_task(task, common_input, &mut evaluator, &mut resolver).await?;
-				resolver
-					.check_compats(&mut evaluator, common_input)
-					.await
-					.context("Failed to check compats")?;
+				resolver.check_compats(&mut evaluator, common_input).await?;
 
 				// Reset the skip count since it is no longer valid
 				num_skipped = 0;
@@ -102,10 +98,9 @@ pub async fn resolve<'a, E: PackageEvaluator<'a>>(
 			})
 			.collect();
 
-		evaluator
-			.preload_packages(&to_preload, common_input)
-			.await
-			.context("Failed to preload packages")?;
+		if let Err(e) = evaluator.preload_packages(&to_preload, common_input).await {
+			return Err(ResolutionError::FailedToPreload(e));
+		};
 
 		preloaded_packages.extend(to_preload);
 	}
@@ -132,18 +127,10 @@ pub async fn resolve<'a, E: PackageEvaluator<'a>>(
 			ConstraintKind::Extend(package) => {
 				if !resolver.is_required(package) {
 					let source = package.source.get_source();
-					if let Some(source) = source {
-						bail!(
-							"The package '{}' extends the functionality of the package '{}', which is not installed.",
-							source.debug_sources(),
-							package
-						);
-					} else {
-						bail!(
-							"A package extends the functionality of the package '{}', which is not installed.",
-							package
-						);
-					}
+					return Err(ResolutionError::ExtensionNotFulfilled(
+						source,
+						package.clone(),
+					));
 				}
 			}
 			_ => {}
@@ -191,7 +178,7 @@ async fn resolve_task<'a, E: PackageEvaluator<'a>>(
 	common_input: &E::CommonInput,
 	evaluator: &mut E,
 	resolver: &mut Resolver<'a, E>,
-) -> anyhow::Result<()> {
+) -> Result<(), ResolutionError> {
 	match task {
 		Task::EvalPackage {
 			dest,
@@ -207,7 +194,7 @@ async fn resolve_task<'a, E: PackageEvaluator<'a>>(
 				resolver,
 			)
 			.await
-			.with_context(|| package_context_error_message(&dest))?;
+			.map_err(|e| ResolutionError::PackageContext(dest.clone(), Box::new(e)))?;
 		}
 	}
 
@@ -222,17 +209,15 @@ async fn resolve_eval_package<'a, E: PackageEvaluator<'a>>(
 	common_input: &E::CommonInput,
 	evaluator: &mut E,
 	resolver: &mut Resolver<'a, E>,
-) -> anyhow::Result<()> {
+) -> Result<(), ResolutionError> {
 	// Make sure that this package fits the constraints as well
-	resolver
-		.check_constraints(&package)
-		.context("Package did not fit existing constraints")?;
+	resolver.check_constraints(&package)?;
 
 	// Get the correct EvalInput
 	let properties = evaluator
 		.get_package_properties(&package, common_input)
 		.await
-		.context("Failed to get package properties")?;
+		.map_err(|e| ResolutionError::FailedToGetProperties(package.clone(), e))?;
 	let config = resolver.package_configs.get(&package);
 	let input = override_eval_input::<E>(
 		properties,
@@ -245,7 +230,7 @@ async fn resolve_eval_package<'a, E: PackageEvaluator<'a>>(
 	let result = evaluator
 		.eval_package_relations(&package, &input, common_input)
 		.await
-		.context("Failed to evaluate package")?;
+		.map_err(|e| ResolutionError::FailedToEvaluate(package.clone(), e))?;
 
 	for conflict in result.get_conflicts().iter().sorted() {
 		let req = Arc::new(PkgRequest::parse(
@@ -253,10 +238,10 @@ async fn resolve_eval_package<'a, E: PackageEvaluator<'a>>(
 			PkgRequestSource::Refused(package.clone()),
 		));
 		if resolver.is_required(&req) {
-			bail!(
-				"Package '{}' is incompatible with this package.",
-				req.debug_sources()
-			);
+			return Err(ResolutionError::IncompatiblePackage(
+				req,
+				vec![package.to_string().into()],
+			));
 		}
 		resolver.constraints.push(Constraint {
 			kind: ConstraintKind::Refuse(req),
@@ -269,13 +254,16 @@ async fn resolve_eval_package<'a, E: PackageEvaluator<'a>>(
 			PkgRequestSource::Dependency(package.clone()),
 		));
 		if dep.explicit && !resolver.is_user_required(&req) {
-			bail!("Package '{req}' has been explicitly required by this package. This means it must be required by the user in their config.");
+			return Err(ResolutionError::ExplicitRequireNotFulfilled(
+				req,
+				package.clone(),
+			));
 		}
 		resolver.check_constraints(&req)?;
 		let props = evaluator
 			.get_package_properties(&req, common_input)
 			.await
-			.context("Failed to get properties for required package")?;
+			.map_err(|e| ResolutionError::FailedToGetProperties(package.clone(), e))?;
 		resolver.update_require_constraint(&req, props, RequireConstraint::Require)?;
 	}
 
@@ -288,7 +276,7 @@ async fn resolve_eval_package<'a, E: PackageEvaluator<'a>>(
 		let props = evaluator
 			.get_package_properties(&req, common_input)
 			.await
-			.context("Failed to get properties for required package")?;
+			.map_err(|e| ResolutionError::FailedToGetProperties(package.clone(), e))?;
 
 		resolver.update_require_constraint(&req, props, RequireConstraint::Bundle)?;
 	}
@@ -339,14 +327,18 @@ fn override_eval_input<'a, E: PackageEvaluator<'a>>(
 	required_content_versions: Vec<String>,
 	preferred_content_versions: Vec<String>,
 	config: Option<&E::ConfiguredPackage>,
-) -> anyhow::Result<E::EvalInput<'a>> {
+) -> Result<E::EvalInput<'a>, ResolutionError> {
 	let input = {
 		let mut constant_eval_input = constant_eval_input.clone();
 		constant_eval_input
 			.set_content_versions(required_content_versions, preferred_content_versions);
 
 		if let Some(config) = config {
-			config.override_configured_package_input(properties, &mut constant_eval_input)?;
+			if let Err(e) =
+				config.override_configured_package_input(properties, &mut constant_eval_input)
+			{
+				return Err(ResolutionError::Misc(e));
+			}
 		}
 		constant_eval_input
 	};
@@ -408,7 +400,7 @@ where
 		req: &ArcPkgReq,
 		properties: &PackageProperties,
 		kind: RequireConstraint,
-	) -> anyhow::Result<()> {
+	) -> Result<(), ResolutionError> {
 		fn find_constraint<'a>(
 			constraints: &'a mut Vec<Constraint>,
 			req: &ArcPkgReq,
@@ -475,7 +467,7 @@ where
 
 		// We have overconstrained to the point that there are no versions left
 		if new_versions.is_empty() {
-			bail!("Could not find a version of {req} that matches all of the content version requirements");
+			return Err(ResolutionError::NoValidVersionsFound(req.clone()));
 		}
 
 		// If the number of versions is now smaller, that means a different version could be selected and we need to re-evaluate.
@@ -558,13 +550,10 @@ where
 	}
 
 	/// Creates an error if this package is disallowed in the constraints
-	pub fn check_constraints(&self, req: &ArcPkgReq) -> anyhow::Result<()> {
+	pub fn check_constraints(&self, req: &ArcPkgReq) -> Result<(), ResolutionError> {
 		if self.is_refused(req) {
 			let refusers = self.get_refusers(req);
-			bail!(
-				"Package '{req}' is incompatible with existing packages {}",
-				refusers.join(", ")
-			);
+			return Err(ResolutionError::IncompatiblePackage(req.clone(), refusers));
 		}
 
 		Ok(())
@@ -575,7 +564,7 @@ where
 		&mut self,
 		evaluator: &mut E,
 		common_input: &E::CommonInput,
-	) -> anyhow::Result<()> {
+	) -> Result<(), ResolutionError> {
 		let mut packages_to_require = Vec::new();
 		for constraint in &self.constraints {
 			if let ConstraintKind::Compat(package, compat_package) = &constraint.kind {
@@ -588,7 +577,7 @@ where
 			let props = evaluator
 				.get_package_properties(&package, common_input)
 				.await
-				.context("Failed to get package properties")?;
+				.map_err(|e| ResolutionError::FailedToGetProperties(package.clone(), e))?;
 			self.update_require_constraint(&package, props, RequireConstraint::Require)?;
 		}
 
@@ -660,9 +649,4 @@ pub enum RequireConstraint {
 	UserRequire,
 	/// A bundle dependency
 	Bundle,
-}
-
-/// Creates the error message for package context
-fn package_context_error_message(package: &PkgRequest) -> String {
-	format!("In package '{}'", package.debug_sources())
 }

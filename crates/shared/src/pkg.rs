@@ -1,3 +1,4 @@
+use itertools::Itertools;
 #[cfg(feature = "schema")]
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -353,6 +354,31 @@ pub enum PackageCategory {
 	Utility,
 	VanillaPlus,
 	Worldgen,
+}
+
+/// Error from package resolution
+#[allow(missing_docs)]
+#[derive(thiserror::Error, Debug)]
+pub enum ResolutionError {
+	/// Error that happens when resolving a single package
+	#[error("When resolving the package {0}: {1:?}")]
+	PackageContext(ArcPkgReq, Box<ResolutionError>),
+	#[error("Failed to preload packages")]
+	FailedToPreload(anyhow::Error),
+	#[error("Failed to get properties of package {0}: {1:?}")]
+	FailedToGetProperties(ArcPkgReq, anyhow::Error),
+	#[error("No valid versions found for package {0}")]
+	NoValidVersionsFound(ArcPkgReq),
+	#[error("{pkg} extends the functionality of the package {1}, which is not installed", pkg = .0.as_ref().map(|x| format!("The package {}", x.debug_sources())).unwrap_or("A package".into()))]
+	ExtensionNotFulfilled(Option<ArcPkgReq>, ArcPkgReq),
+	#[error("Package {0} has been explicitly required by package {1}. This means it must be required by the user in their config.")]
+	ExplicitRequireNotFulfilled(ArcPkgReq, ArcPkgReq),
+	#[error("Package {0} is incompatible with the packages {refusers}", refusers = .1.iter().join(", "))]
+	IncompatiblePackage(ArcPkgReq, Vec<Arc<str>>),
+	#[error("Failed to evaluate package {0}: {1:?}")]
+	FailedToEvaluate(ArcPkgReq, anyhow::Error),
+	#[error("Miscellaneous error: {0:?}")]
+	Misc(anyhow::Error),
 }
 
 #[cfg(test)]

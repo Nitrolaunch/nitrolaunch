@@ -584,6 +584,7 @@ impl<'a> PackageEvaluatorTrait<'a> for PackageEvaluator<'a> {
 #[allow(clippy::too_many_arguments)]
 pub async fn resolve(
 	packages: &[PackageConfig],
+	instance_id: &str,
 	constants: &EvalConstants,
 	default_params: EvalParameters,
 	overrides: PackageOverrides,
@@ -607,7 +608,15 @@ pub async fn resolve(
 		.collect::<Vec<_>>();
 
 	let result =
-		mcvm_pkg::resolve::resolve(&packages, evaluator, input, &common_input, overrides).await?;
+		match mcvm_pkg::resolve::resolve(&packages, evaluator, input, &common_input, overrides)
+			.await
+		{
+			Ok(result) => result,
+			Err(e) => {
+				o.display_special_resolution_error(e, instance_id);
+				bail!("Package resolution failed");
+			}
+		};
 
 	for package in &result.unfulfilled_recommendations {
 		print_recommendation_warning(package, o);

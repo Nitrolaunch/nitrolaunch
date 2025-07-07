@@ -3,7 +3,10 @@ use std::ops::{Deref, DerefMut};
 use anyhow::bail;
 use serde::{Deserialize, Serialize};
 
-use crate::{lang::translate::TranslationKey, pkg::PkgRequest};
+use crate::{
+	lang::translate::TranslationKey,
+	pkg::{PkgRequest, ResolutionError},
+};
 
 /// Trait for a type that can output information about MCVM processes
 #[async_trait::async_trait]
@@ -79,6 +82,16 @@ pub trait MCVMOutput: Send {
 	/// Specialized implementation for details given to the user for Microsoft authentication
 	fn display_special_ms_auth(&mut self, url: &str, code: &str) {
 		default_special_ms_auth(self, url, code);
+	}
+
+	/// Specialized implementation for displaying a package resolution error to the user
+	fn display_special_resolution_error(&mut self, error: ResolutionError, instance_id: &str) {
+		self.display(
+			MessageContents::Error(format!(
+				"Failed to resolve packages for instance {instance_id}: {error:?}"
+			)),
+			MessageLevel::Important,
+		)
 	}
 
 	/// Specialized implementation for prompting a user passkey
