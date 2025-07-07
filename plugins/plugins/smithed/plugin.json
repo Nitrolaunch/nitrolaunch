@@ -39,16 +39,16 @@
 			]
 		},
 		"query_custom_package_repository": {
-			"executable": "${PLUGIN_DIR}/mcvm_plugin_smithed"
+			"executable": "${PLUGIN_DIR}/mcvm_plugin_smithed${EXE_EXTENSION}"
 		},
 		"preload_packages": {
-			"executable": "${PLUGIN_DIR}/mcvm_plugin_smithed"
+			"executable": "${PLUGIN_DIR}/mcvm_plugin_smithed${EXE_EXTENSION}"
 		},
 		"search_custom_package_repository": {
-			"executable": "${PLUGIN_DIR}/mcvm_plugin_smithed"
+			"executable": "${PLUGIN_DIR}/mcvm_plugin_smithed${EXE_EXTENSION}"
 		},
 		"sync_custom_package_repository": {
-			"executable": "${PLUGIN_DIR}/mcvm_plugin_smithed"
+			"executable": "${PLUGIN_DIR}/mcvm_plugin_smithed${EXE_EXTENSION}"
 		}
 	}
 }

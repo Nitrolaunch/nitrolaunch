@@ -4,7 +4,7 @@
 	"protocol_version": 3,
 	"hooks": {
 		"on_instance_setup": {
-			"executable": "${PLUGIN_DIR}/mcvm_plugin_sponge"
+			"executable": "${PLUGIN_DIR}/mcvm_plugin_sponge${EXE_EXTENSION}"
 		},
 		"add_supported_loaders": {
 			"constant": [

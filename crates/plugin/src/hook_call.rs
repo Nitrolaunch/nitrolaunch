@@ -1,5 +1,6 @@
 use std::{
 	collections::VecDeque,
+	env::consts::EXE_SUFFIX,
 	path::Path,
 	sync::Arc,
 	time::{Duration, Instant},
@@ -24,6 +25,8 @@ use crate::{
 
 /// The substitution token for the plugin directory in the command
 pub static PLUGIN_DIR_TOKEN: &str = "${PLUGIN_DIR}";
+/// The substitution token for the executable file extension in the command
+pub static EXE_EXTENSION_TOKEN: &str = "${EXE_EXTENSION}";
 /// The environment variable for custom config passed to a hook
 pub static CUSTOM_CONFIG_ENV: &str = "MCVM_CUSTOM_CONFIG";
 /// The environment variable for the data directory passed to a hook
@@ -85,6 +88,7 @@ where
 		.map(|x| x.to_string_lossy().to_string())
 		.unwrap_or_default();
 	let cmd = arg.cmd.replace(PLUGIN_DIR_TOKEN, &plugin_dir);
+	let cmd = cmd.replace(EXE_EXTENSION_TOKEN, EXE_SUFFIX);
 	let mut cmd = Command::new(cmd);
 
 	for arg in arg.additional_args {

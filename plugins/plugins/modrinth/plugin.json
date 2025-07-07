@@ -44,16 +44,16 @@
 			]
 		},
 		"query_custom_package_repository": {
-			"executable": "${PLUGIN_DIR}/mcvm_plugin_modrinth"
+			"executable": "${PLUGIN_DIR}/mcvm_plugin_modrinth${EXE_EXTENSION}"
 		},
 		"preload_packages": {
-			"executable": "${PLUGIN_DIR}/mcvm_plugin_modrinth"
+			"executable": "${PLUGIN_DIR}/mcvm_plugin_modrinth${EXE_EXTENSION}"
 		},
 		"search_custom_package_repository": {
-			"executable": "${PLUGIN_DIR}/mcvm_plugin_modrinth"
+			"executable": "${PLUGIN_DIR}/mcvm_plugin_modrinth${EXE_EXTENSION}"
 		},
 		"sync_custom_package_repository": {
-			"executable": "${PLUGIN_DIR}/mcvm_plugin_modrinth"
+			"executable": "${PLUGIN_DIR}/mcvm_plugin_modrinth${EXE_EXTENSION}"
 		}
 	}
 }

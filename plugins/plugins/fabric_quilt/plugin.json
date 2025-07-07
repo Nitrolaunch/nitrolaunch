@@ -4,7 +4,7 @@
 	"protocol_version": 3,
 	"hooks": {
 		"on_instance_setup": {
-			"executable": "${PLUGIN_DIR}/mcvm_plugin_fabric_quilt"
+			"executable": "${PLUGIN_DIR}/mcvm_plugin_fabric_quilt${EXE_EXTENSION}"
 		},
 		"add_supported_loaders": {
 			"constant": [

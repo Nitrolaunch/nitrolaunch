@@ -17,10 +17,10 @@
 			]
 		},
 		"import_instance": {
-			"executable": "${PLUGIN_DIR}/mcvm_plugin_mcvm_transfer"
+			"executable": "${PLUGIN_DIR}/mcvm_plugin_mcvm_transfer${EXE_EXTENSION}"
 		},
 		"export_instance": {
-			"executable": "${PLUGIN_DIR}/mcvm_plugin_mcvm_transfer"
+			"executable": "${PLUGIN_DIR}/mcvm_plugin_mcvm_transfer${EXE_EXTENSION}"
 		}
 	}
 }
