@@ -108,7 +108,7 @@ jobs:
               with:
                   python-version: "3.13"
             - name: Install Python dependencies
-              run: pip install pymake && git clone https://github.com/aureliojargas/replace.git
+              run: pip install py-make && git clone https://github.com/aureliojargas/replace.git
 
             - name: Set Rust toolchain
               run: rustup target add ${{ matrix.target }}
