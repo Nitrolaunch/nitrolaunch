@@ -116,7 +116,7 @@ jobs:
             - name: Update Makefile
               run: cd replace &&
                 git reset --hard ad148213e50e13f7a46a357e6e5bb451216fa501 &&
-                ./replace.py --from "${OS}" --to "${{ matrix.filename }}" -i ../plugins/Makefile 
+                ./replace.py --from "\${OS}" --to "${{ matrix.filename }}" -i ../plugins/Makefile 
 
             - name: Build Plugins
               run: cd plugins && pymake package.platform_dependent
