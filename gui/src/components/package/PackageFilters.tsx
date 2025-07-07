@@ -24,6 +24,7 @@ import InlineSelect from "../input/InlineSelect";
 import { invoke } from "@tauri-apps/api";
 import { PackageType } from "../../package";
 import Dropdown from "../input/Dropdown";
+import { beautifyString } from "../../utils";
 
 export default function PackageFilters(props: PackageFiltersProps) {
 	let [tab, setTab] = createSignal(
@@ -273,6 +274,27 @@ export default function PackageFilters(props: PackageFiltersProps) {
 						/>
 					</div>
 				</Show>
+				<Show
+					when={tab() == "features" && props.availableFeatures != undefined}
+				>
+					<div class="cont package-filter-tab-contents" style="padding:0.5rem">
+						<InlineSelect
+							options={props.availableFeatures!.map((feature) => {
+								return {
+									value: feature,
+									contents: <div class="cont">{beautifyString(feature)}</div>,
+									color: "var(--pluginfg)",
+								};
+							})}
+							selected={props.features}
+							onChangeMulti={(values) =>
+								props.setFeatures(values == undefined ? [] : values)
+							}
+							columns={props.availableFeatures!.length}
+							connected={false}
+						/>
+					</div>
+				</Show>
 			</div>
 		</div>
 	);
@@ -283,12 +305,15 @@ export interface PackageFiltersProps {
 	minecraftVersions: string[];
 	loaders: string[];
 	stability?: "stable" | "latest";
+	features: string[];
 	setPackageType: (type: PackageType) => void;
 	setMinecraftVersions: (versions: string[]) => void;
 	setLoaders: (loaders: string[]) => void;
 	setStability: (stability?: "stable" | "latest") => void;
+	setFeatures: (features: string[]) => void;
 	availablePackageTypes?: PackageType[];
 	availableMinecraftVersions?: string[];
+	availableFeatures?: string[];
 	// Whether we are filtering package versions or packages
 	filteringVersions: boolean;
 }

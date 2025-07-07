@@ -61,6 +61,7 @@ export interface PackageProperties {
 	supported_loaders?: string[];
 	supported_sides?: Side[];
 	content_versions?: string[];
+	features?: string[] | string;
 }
 
 export interface PkgRequest {

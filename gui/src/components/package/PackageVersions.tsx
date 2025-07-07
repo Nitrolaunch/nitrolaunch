@@ -36,6 +36,7 @@ export default function PackageVersions(props: PackageVersionsProps) {
 	let [filteredStability, setFilteredStability] = createSignal<
 		"stable" | "latest" | undefined
 	>(undefined);
+	let [filteredFeatures, setFilteredFeatures] = createSignal<string[]>([]);
 
 	let [focusedVersion, setFocusedVersion] = createSignal<
 		PackageVersion | undefined
@@ -174,12 +175,15 @@ export default function PackageVersions(props: PackageVersionsProps) {
 					minecraftVersions={filteredMinecraftVersions()}
 					loaders={filteredLoaders()}
 					stability={filteredStability()}
+					features={filteredFeatures()}
 					setPackageType={() => {}}
 					setMinecraftVersions={setFilteredMinecraftVersions}
 					setLoaders={setFilteredLoaders}
 					setStability={setFilteredStability}
+					setFeatures={setFilteredFeatures}
 					filteringVersions={true}
 					availableMinecraftVersions={availableMinecraftVersions()}
+					availableFeatures={canonicalizeListOrSingle(props.props.features)}
 				/>
 				<Show when={isScriptPackage()}>
 					<div style="padding:1rem;font-weight:bold">
@@ -234,6 +238,22 @@ export default function PackageVersions(props: PackageVersionsProps) {
 							if (filteredStability() != undefined) {
 								console.log(filteredStability(), version.stability);
 								if (version.stability != filteredStability()) {
+									return false;
+								}
+							}
+
+							if (filteredFeatures().length > 0) {
+								let found = false;
+								for (let feature of canonicalizeListOrSingle(
+									version.features
+								)) {
+									if (filteredFeatures().includes(feature)) {
+										found = true;
+										break;
+									}
+								}
+
+								if (!found) {
 									return false;
 								}
 							}

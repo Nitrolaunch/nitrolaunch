@@ -12,6 +12,7 @@
 	grid-template-columns: minmax(0, 1fr) minmax(0, 0.2fr);
 	cursor: pointer;
 	box-sizing: border-box;
+	border: 0.15rem solid transparent;
 }
 
 #user-widget-head.open {
