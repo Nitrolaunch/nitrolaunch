@@ -35,10 +35,12 @@ jobs:
               # 32 bit targets are disabled for now because of simd_json failures
               - target: x86_64-unknown-linux-gnu
                 filename: linux-x86_64
+                extension: ""
               # - target: i686-unknown-linux-gnu
               #   filename: linux-x86-32bit
               - target: x86_64-pc-windows-gnu
                 filename: windows-x86_64
+                extension: ".exe"
               # - target: i686-pc-windows-msvc
               #   filename: windows-x86-32bit
 
@@ -72,7 +74,7 @@ jobs:
               run: rustup target add ${{ matrix.target }}
 
             - name: Build Plugins
-              run: cd plugins && CARGO_BUILD_TARGET="${{ matrix.target }}" OS="${{ matrix.filename }}" make package.platform_dependent
+              run: cd plugins && CARGO_BUILD_TARGET="${{ matrix.target }}" OS="${{ matrix.filename }}" EXTENSION=${{ matrix.extension }} make package.platform_dependent
             - name: Upload a Build Artifact
               uses: actions/upload-artifact@v4
               with:
@@ -103,23 +105,23 @@ jobs:
               uses: raftario/setup-rust-action@v1.0.0
               env:
                   ACTIONS_ALLOW_UNSECURE_COMMANDS: true
-            - name: Use Python
-              uses: actions/setup-python@v5
-              with:
-                  python-version: "3.13"
-            - name: Install Python dependencies
-              run: pip install py-make && git clone https://github.com/aureliojargas/replace.git
+            # - name: Use Python
+            #   uses: actions/setup-python@v5
+            #   with:
+            #       python-version: "3.13"
+            # - name: Install Python dependencies
+            #   run: pip install py-make && git clone https://github.com/aureliojargas/replace.git
 
             - name: Set Rust toolchain
               run: rustup target add ${{ matrix.target }}
 
-            - name: Update Makefile
-              run: cd replace &&
-                git reset --hard ad148213e50e13f7a46a357e6e5bb451216fa501 &&
-                ./replace.py --from "\${OS}" --to "${{ matrix.filename }}" -i ../plugins/Makefile 
+            # - name: Update Makefile
+            #   run: cd replace &&
+            #     git reset --hard ad148213e50e13f7a46a357e6e5bb451216fa501 &&
+            #     ./replace.py --from "\${OS}" --to "${{ matrix.filename }}" -i ../plugins/Makefile 
 
             - name: Build Plugins
-              run: cd plugins && make package.platform_dependent
+              run: cd plugins && OS="${{ matrix.os }}" make package.platform_dependent
             - name: Upload a Build Artifact
               uses: actions/upload-artifact@v4
               with:
