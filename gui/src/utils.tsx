@@ -72,11 +72,11 @@ export function parsePkgRequest(request: string) {
 	let split2 = right.split("@");
 	let version = split2.length > 1 ? split2[1] : undefined;
 	let id = split2[0];
-	return { id: id, repo: repo, version: version } as PkgRequest;
+	return { id: id, repository: repo, version: version } as PkgRequest;
 }
 
 export function pkgRequestToString(request: PkgRequest) {
-	let repo = request.repo == undefined ? "" : `${request.repo}:`;
+	let repo = request.repository == undefined ? "" : `${request.repository}:`;
 	let version = request.version == undefined ? "" : `@${request.version}`;
 	return `${repo}${request.id}${version}`;
 }

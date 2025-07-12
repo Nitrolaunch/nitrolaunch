@@ -26,10 +26,16 @@ use tauri::async_runtime::Mutex;
 use tauri::{AppHandle, Manager};
 use tokio::task::JoinHandle;
 
+use crate::output::ResolutionErrorEvent;
+
 fn main() {
 	let state = tauri::async_runtime::block_on(async { State::new().await })
 		.expect("Error when initializing application state");
 	let launched_games = state.launched_games.clone();
+
+	let data = state.data.clone();
+	let paths = state.paths.clone();
+
 	tauri::Builder::default()
 		.manage(state)
 		.setup(move |app| {
@@ -44,6 +50,18 @@ fn main() {
 				if let Some(instance) = lock.get_mut(&InstanceID::from(payload.instance)) {
 					instance.state = payload.state;
 				}
+			});
+
+			// Save package resolution errors so that they can be displayed on the instance
+			app.listen_global("mcvm_display_resolution_error", move |event| {
+				let payload: ResolutionErrorEvent =
+					serde_json::from_str(event.payload().expect("Event should have payload"))
+						.expect("Failed to deserialize");
+
+				let mut data = tauri::async_runtime::block_on(data.lock());
+				data.last_resolution_errors
+					.insert(payload.instance, payload.error);
+				let _ = data.write(&paths);
 			});
 
 			let env = app.env();
@@ -71,6 +89,7 @@ fn main() {
 			commands::instance::write_profile_config,
 			commands::instance::write_global_profile,
 			commands::instance::update_instance,
+			commands::instance::get_instance_resolution_error,
 			commands::package::get_packages,
 			commands::package::preload_packages,
 			commands::package::get_package_meta,
@@ -100,7 +119,7 @@ fn main() {
 
 /// State for the Tauri application
 pub struct State {
-	pub data: Mutex<LauncherData>,
+	pub data: Arc<Mutex<LauncherData>>,
 	pub launched_games: Arc<Mutex<HashMap<InstanceID, RunningInstance>>>,
 	pub paths: Paths,
 	pub client: Client,
@@ -115,7 +134,9 @@ impl State {
 	async fn new() -> anyhow::Result<Self> {
 		let paths = Paths::new().await?;
 		Ok(Self {
-			data: Mutex::new(LauncherData::open(&paths).context("Failed to open launcher data")?),
+			data: Arc::new(Mutex::new(
+				LauncherData::open(&paths).context("Failed to open launcher data")?,
+			)),
 			launched_games: Arc::new(Mutex::new(HashMap::new())),
 			paths,
 			client: Client::new(),

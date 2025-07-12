@@ -12,6 +12,9 @@ import IconButton from "../../components/input/IconButton";
 import { AngleRight, Delete } from "../../icons";
 import { errorToast } from "../../components/dialog/Toasts";
 import LoadingSpinner from "../../components/utility/LoadingSpinner";
+import ResolutionError, {
+	ResolutionErrorData,
+} from "../../components/package/ResolutionError";
 
 export default function PackagesConfig(props: PackagesConfigProps) {
 	let [filter, setFilter] = createSignal("user");
@@ -104,10 +107,36 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 		return allPackages;
 	});
 
+	let [resolutionError, __] = createResource(async () => {
+		if (props.isProfile) {
+			return undefined;
+		}
+
+		try {
+			let resolutionError: ResolutionErrorData = await invoke(
+				"get_instance_resolution_error",
+				{ id: props.id }
+			);
+			return resolutionError;
+		} catch (e) {
+			console.error("Failed to get resolution error: " + e);
+			return undefined;
+		}
+	});
+
 	return (
-		<div id="packages-config">
+		<div class="cont col" id="packages-config">
+			<Show when={resolutionError() != undefined}>
+				<div class="cont" id="packages-config-resolution-error">
+					<ResolutionError error={resolutionError()!} />
+				</div>
+			</Show>
 			<div id="packages-config-header">
-				<div class="cont" style="justify-content:flex-start">
+				<div
+					class="cont"
+					id="package-config-filters"
+					style="justify-content:flex-start"
+				>
 					<InlineSelect
 						options={[
 							{
@@ -122,12 +151,12 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 								color: "var(--instance)",
 								tip: "Only packages you have set. No dependencies",
 							},
-							{
-								value: "bundled",
-								contents: <div>BUNDLED</div>,
-								color: "var(--package)",
-								tip: "Packages from modpacks and bundles",
-							},
+							// {
+							// 	value: "bundled",
+							// 	contents: <div>BUNDLED</div>,
+							// 	color: "var(--package)",
+							// 	tip: "Packages from modpacks and bundles",
+							// },
 							{
 								value: "dependencies",
 								contents: <div>DEPS</div>,
@@ -288,8 +317,8 @@ function ConfiguredPackage(props: ConfiguredPackageProps) {
 						</div>
 					</Show>
 				</div>
-				<Show when={props.request.repo != undefined}>
-					<div class="configured-package-repo">{props.request.repo}</div>
+				<Show when={props.request.repository != undefined}>
+					<div class="configured-package-repo">{props.request.repository}</div>
 				</Show>
 			</div>
 			<div></div>

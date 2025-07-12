@@ -66,7 +66,7 @@ export interface PackageProperties {
 
 export interface PkgRequest {
 	id: string;
-	repo?: string;
+	repository?: string;
 	version?: string;
 }
 

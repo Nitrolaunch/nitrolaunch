@@ -1,5 +1,5 @@
 use crate::data::InstanceIcon;
-use crate::output::LauncherOutput;
+use crate::output::{LauncherOutput, SerializableResolutionError};
 use crate::State;
 use anyhow::{bail, Context};
 use itertools::Itertools;
@@ -253,28 +253,37 @@ pub async fn update_instance(
 	let paths = state.paths.clone();
 	let client = state.client.clone();
 	let mut lock = fmt_err(Lockfile::open(&state.paths).context("Failed to open lockfile"))?;
-	let task = async move {
-		let Some(instance) = config.instances.get_mut(&InstanceID::from(instance_id)) else {
-			bail!("Instance does not exist");
-		};
+	let task = {
+		let instance_id = instance_id.clone();
+		let paths = paths.clone();
+		async move {
+			let Some(instance) = config.instances.get_mut(&InstanceID::from(instance_id)) else {
+				bail!("Instance does not exist");
+			};
 
-		let mut ctx = InstanceUpdateContext {
-			packages: &mut config.packages,
-			users: &config.users,
-			plugins: &config.plugins,
-			prefs: &config.prefs,
-			paths: &paths,
-			lock: &mut lock,
-			client: &client,
-			output: &mut output,
-		};
+			let mut ctx = InstanceUpdateContext {
+				packages: &mut config.packages,
+				users: &config.users,
+				plugins: &config.plugins,
+				prefs: &config.prefs,
+				paths: &paths,
+				lock: &mut lock,
+				client: &client,
+				output: &mut output,
+			};
 
-		instance
-			.update(true, UpdateDepth::Full, &mut ctx)
-			.await
-			.context("Failed to update instance")
+			instance
+				.update(true, UpdateDepth::Full, &mut ctx)
+				.await
+				.context("Failed to update instance")
+		}
 	};
 	fmt_err(fmt_err(tokio::spawn(unsafe { MakeSend::new(task) }).await)?)?;
+
+	// Update so that there is no resolution error since we must have completed successfully
+	let mut lock = state.data.lock().await;
+	lock.last_resolution_errors.remove(&instance_id);
+	let _ = lock.write(&paths);
 
 	Ok(())
 }
@@ -299,6 +308,16 @@ impl<F: Future> MakeSend<F> {
 	unsafe fn new(f: F) -> Self {
 		Self(Box::pin(f))
 	}
+}
+
+#[tauri::command]
+pub async fn get_instance_resolution_error(
+	state: tauri::State<'_, State>,
+	id: String,
+) -> Result<Option<SerializableResolutionError>, String> {
+	let lock = state.data.lock().await;
+
+	Ok(lock.last_resolution_errors.get(&id).cloned())
 }
 
 #[derive(Deserialize)]

@@ -5,6 +5,8 @@ use mcvm::core::io::{json_from_file, json_to_file};
 use mcvm::io::paths::Paths;
 use serde::{Deserialize, Serialize};
 
+use crate::output::SerializableResolutionError;
+
 /// Stored launcher data
 #[derive(Serialize, Deserialize, Default)]
 #[serde(default)]
@@ -19,6 +21,8 @@ pub struct LauncherData {
 	pub current_user: Option<String>,
 	/// The last selected package repository
 	pub last_repository: Option<String>,
+	/// The last package resolution error associated with instances
+	pub last_resolution_errors: HashMap<String, SerializableResolutionError>,
 }
 
 impl LauncherData {

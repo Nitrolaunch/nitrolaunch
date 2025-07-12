@@ -5,8 +5,9 @@ use mcvm::shared::{
 	id::InstanceID,
 	lang::translate::TranslationKey,
 	output::{MCVMOutput, Message, MessageContents, MessageLevel},
+	pkg::{ArcPkgReq, ResolutionError},
 };
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Manager};
 use tokio::sync::Mutex;
 
@@ -35,10 +36,6 @@ impl LauncherOutput {
 	pub fn set_task(&mut self, task: &str) {
 		let _ = self.inner.app.emit_all("mcvm_output_create_task", task);
 		self.task = Some(task.to_string());
-	}
-
-	pub fn get_app_handle(self) -> Arc<AppHandle> {
-		self.inner.app.clone()
 	}
 
 	pub fn set_instance(&mut self, instance: InstanceID) {
@@ -171,6 +168,19 @@ impl MCVMOutput for LauncherOutput {
 		);
 	}
 
+	fn display_special_resolution_error(&mut self, error: ResolutionError, instance_id: &str) {
+		eprintln!("Resolution error: {error:?}");
+		let error = SerializableResolutionError::from_err(error);
+
+		let _ = self.inner.app.emit_all(
+			"mcvm_display_resolution_error",
+			ResolutionErrorEvent {
+				error,
+				instance: instance_id.to_string(),
+			},
+		);
+	}
+
 	fn translate(&self, key: TranslationKey) -> &str {
 		// Emit an event for certain keys as they notify us of progress in the launch
 		if let TranslationKey::PreparingLaunch = key {
@@ -276,6 +286,64 @@ pub struct AuthDisplayEvent {
 pub struct YesNoPromptEvent {
 	default: bool,
 	message: String,
+}
+
+/// Event for a package resolution error
+#[derive(Clone, Serialize, Deserialize)]
+pub struct ResolutionErrorEvent {
+	pub error: SerializableResolutionError,
+	pub instance: String,
+}
+
+/// A serializable ResolutionError
+#[derive(Clone, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+#[serde(tag = "type", content = "data")]
+pub enum SerializableResolutionError {
+	PackageContext(ArcPkgReq, Box<SerializableResolutionError>),
+	FailedToPreload(String),
+	FailedToGetProperties(ArcPkgReq, String),
+	NoValidVersionsFound(ArcPkgReq),
+	ExtensionNotFulfilled(Option<ArcPkgReq>, ArcPkgReq),
+	ExplicitRequireNotFulfilled(ArcPkgReq, ArcPkgReq),
+	IncompatiblePackage(ArcPkgReq, Vec<Arc<str>>),
+	FailedToEvaluate(ArcPkgReq, String),
+	Misc(String),
+}
+
+impl SerializableResolutionError {
+	pub fn from_err(err: ResolutionError) -> Self {
+		match err {
+			ResolutionError::PackageContext(req, resolution_error) => {
+				SerializableResolutionError::PackageContext(
+					req,
+					Box::new(SerializableResolutionError::from_err(*resolution_error)),
+				)
+			}
+			ResolutionError::FailedToPreload(error) => {
+				SerializableResolutionError::FailedToPreload(error.to_string())
+			}
+			ResolutionError::FailedToGetProperties(req, error) => {
+				SerializableResolutionError::FailedToGetProperties(req, error.to_string())
+			}
+			ResolutionError::NoValidVersionsFound(req) => {
+				SerializableResolutionError::NoValidVersionsFound(req)
+			}
+			ResolutionError::ExtensionNotFulfilled(req1, req2) => {
+				SerializableResolutionError::ExtensionNotFulfilled(req1, req2)
+			}
+			ResolutionError::ExplicitRequireNotFulfilled(req1, req2) => {
+				SerializableResolutionError::ExplicitRequireNotFulfilled(req1, req2)
+			}
+			ResolutionError::IncompatiblePackage(req, items) => {
+				SerializableResolutionError::IncompatiblePackage(req, items)
+			}
+			ResolutionError::FailedToEvaluate(req, error) => {
+				SerializableResolutionError::FailedToEvaluate(req, error.to_string())
+			}
+			ResolutionError::Misc(error) => SerializableResolutionError::Misc(error.to_string()),
+		}
+	}
 }
 
 #[derive(Clone, Serialize, Copy)]

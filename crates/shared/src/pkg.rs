@@ -19,19 +19,24 @@ pub type PackageID = Arc<str>;
 pub struct PkgRequest {
 	/// The source of this request.
 	/// Could be a dependent, a recommender, or anything else.
+	#[serde(default)]
 	pub source: PkgRequestSource,
 	/// The ID of the package to request
 	pub id: PackageID,
 	/// The requested repository of the package
+	#[serde(default)]
 	pub repository: Option<String>,
 	/// The requested content version of the package
+	#[serde(default)]
 	pub content_version: VersionPattern,
 }
 
 /// Where a package was requested from
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Deserialize, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Deserialize, Serialize, Default)]
+#[serde(rename_all = "snake_case")]
 pub enum PkgRequestSource {
 	/// This package was required by the user
+	#[default]
 	UserRequire,
 	/// This package was bundled by another package
 	Bundled(ArcPkgReq),
