@@ -101,6 +101,48 @@ export async function saveInstanceConfig(
 	}
 }
 
+// Gets the global, client, and server packages configured on an instance or profile
+export function getConfigPackages(
+	config: InstanceConfig
+): [PackageConfig[], PackageConfig[], PackageConfig[]] {
+	if (config.packages == undefined) {
+		return [[], [], []];
+	} else if (length in config.packages) {
+		return [config.packages as PackageConfig[], [], []];
+	} else {
+		let packages = config.packages! as any;
+
+		return [
+			packages.global == undefined ? [] : packages.global,
+			packages.client == undefined ? [] : packages.client,
+			packages.server == undefined ? [] : packages.server,
+		];
+	}
+}
+
+// Gets the configured packages object to set on an instance or profile from each of the package groups
+export function createConfiguredPackages(
+	global: PackageConfig[],
+	client: PackageConfig[],
+	server: PackageConfig[],
+	isInstance: boolean
+): ConfiguredPackages {
+	if (isInstance) {
+		return global;
+	} else {
+		// Only include the global list if we don't need the other ones
+		if (client.length == 0 && server.length == 0) {
+			return global;
+		} else {
+			return {
+				global: global,
+				client: client,
+				server: server,
+			};
+		}
+	}
+}
+
 // Adds a package to an instance or profile
 export function addPackage(
 	config: InstanceConfig,

@@ -1,24 +1,41 @@
 import { useParams } from "@solidjs/router";
 import { createResource, createSignal, onMount, Show } from "solid-js";
 import { loadPagePlugins } from "../../plugins";
-import { InstanceConfigMode, readInstanceConfig } from "./read_write";
-import { errorToast } from "../../components/dialog/Toasts";
+import {
+	createConfiguredPackages,
+	getConfigPackages,
+	InstanceConfigMode,
+	readInstanceConfig,
+	saveInstanceConfig,
+} from "./read_write";
+import { errorToast, successToast } from "../../components/dialog/Toasts";
 import LoadingSpinner from "../../components/utility/LoadingSpinner";
 import { getInstanceIconSrc } from "../../utils";
 import PackageLabels from "../../components/package/PackageLabels";
 import { Loader } from "../../package";
 import Icon from "../../components/Icon";
-import { Gear, Play, Text, Upload } from "../../icons";
+import { Box, Gear, Play, Text, Upload } from "../../icons";
 import "./InstanceInfo.css";
 import IconTextButton from "../../components/input/IconTextButton";
 import { invoke } from "@tauri-apps/api";
 import InstanceConsole from "../../components/launch/InstanceConsole";
+import PackagesConfig, {
+	getPackageConfigRequest,
+	PackageConfig,
+} from "./PackagesConfig";
+import { FooterData } from "../../App";
+import { FooterMode } from "../../components/navigation/Footer";
 
-export default function InstanceInfo() {
+export default function InstanceInfo(props: InstanceInfoProps) {
 	let params = useParams();
 	let id = params.instanceId;
 
 	onMount(() => loadPagePlugins("instance", id));
+
+	// Global, client, and server packages for the instance
+	let [globalPackages, setGlobalPackages] = createSignal<PackageConfig[]>([]);
+	let [clientPackages, setClientPackages] = createSignal<PackageConfig[]>([]);
+	let [serverPackages, setServerPackages] = createSignal<PackageConfig[]>([]);
 
 	let [instance, _] = createResource(async () => {
 		// Get the instance or profile
@@ -27,6 +44,12 @@ export default function InstanceInfo() {
 				id,
 				InstanceConfigMode.Instance
 			);
+
+			let [global, client, server] = getConfigPackages(configuration);
+			setGlobalPackages(global);
+			setClientPackages(client);
+			setServerPackages(server);
+
 			return configuration;
 		} catch (e) {
 			errorToast("Failed to load instance: " + e);
@@ -35,6 +58,39 @@ export default function InstanceInfo() {
 	});
 
 	let [selectedTab, setSelectedTab] = createSignal("general");
+
+	let setDirty = () => {
+		props.setFooterData({
+			selectedItem: "",
+			mode: FooterMode.SaveInstanceConfig,
+			action: async () => {
+				if (instance() != undefined) {
+					let config = instance()!;
+					config.packages = createConfiguredPackages(
+						globalPackages(),
+						clientPackages(),
+						serverPackages(),
+						true
+					);
+					try {
+						await saveInstanceConfig(
+							id,
+							instance()!,
+							InstanceConfigMode.Instance
+						);
+						successToast("Changes saved");
+						props.setFooterData({
+							selectedItem: undefined,
+							mode: FooterMode.SaveInstanceConfig,
+							action: () => {},
+						});
+					} catch (e) {
+						errorToast("Failed to save: " + e);
+					}
+				}
+			},
+		});
+	};
 
 	return (
 		<Show
@@ -134,7 +190,7 @@ export default function InstanceInfo() {
 							<div
 								class="instance-shadow"
 								id="instance-tabs"
-								style={`grid-template-columns:repeat(2,minmax(0,1fr))`}
+								style={`grid-template-columns:repeat(3,minmax(0,1fr))`}
 							>
 								<div
 									class={`cont instance-tab ${
@@ -144,6 +200,15 @@ export default function InstanceInfo() {
 								>
 									<Icon icon={Gear} size="1rem" />
 									General
+								</div>
+								<div
+									class={`cont instance-tab ${
+										selectedTab() == "packages" ? "selected" : ""
+									}`}
+									onclick={() => setSelectedTab("packages")}
+								>
+									<Icon icon={Box} size="1rem" />
+									Packages
 								</div>
 								<div
 									class={`cont instance-tab ${
@@ -157,6 +222,41 @@ export default function InstanceInfo() {
 							</div>
 							<div class="cont col instance-shadow" id="instance-tab-contents">
 								<Show when={selectedTab() == "general"}>{""}</Show>
+								<Show when={selectedTab() == "packages"}>
+									<PackagesConfig
+										id={id}
+										globalPackages={globalPackages()!}
+										clientPackages={clientPackages()!}
+										serverPackages={serverPackages()!}
+										isProfile={false}
+										onRemove={(pkg, category) => {
+											if (category == "global") {
+												setGlobalPackages((packages) =>
+													packages.filter(
+														(x) => getPackageConfigRequest(x).id != pkg
+													)
+												);
+											} else if (category == "client") {
+												setClientPackages((packages) =>
+													packages.filter(
+														(x) => getPackageConfigRequest(x).id != pkg
+													)
+												);
+											} else if (category == "server") {
+												setServerPackages((packages) =>
+													packages.filter(
+														(x) => getPackageConfigRequest(x).id != pkg
+													)
+												);
+											}
+
+											setDirty();
+										}}
+										setGlobalPackages={() => {}}
+										setClientPackages={() => {}}
+										setServerPackages={() => {}}
+									/>
+								</Show>
 								<Show when={selectedTab() == "console"}>
 									<div class="cont" style="width: 100%">
 										<InstanceConsole instanceId={id} />
@@ -172,4 +272,8 @@ export default function InstanceInfo() {
 			</div>
 		</Show>
 	);
+}
+
+export interface InstanceInfoProps {
+	setFooterData: (data: FooterData) => void;
 }

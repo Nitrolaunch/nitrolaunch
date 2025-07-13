@@ -52,7 +52,7 @@ export default function App() {
 				/>
 				<Route
 					path="/instance/:instanceId"
-					component={() => <InstanceInfo />}
+					component={() => <InstanceInfo setFooterData={setFooterData} />}
 				/>
 				<Route
 					path="/instance_config/:instanceId"

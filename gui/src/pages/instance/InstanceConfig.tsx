@@ -30,6 +30,8 @@ import {
 } from "../../package";
 import { emptyUndefined, undefinedEmpty } from "../../utils/values";
 import {
+	createConfiguredPackages,
+	getConfigPackages,
 	InstanceConfigMode,
 	readInstanceConfig,
 	saveInstanceConfig,
@@ -194,21 +196,10 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 
 			setDatapackFolder(config()!.datapack_folder);
 
-			// Packages
-			if (config()!.packages == undefined) {
-				setGlobalPackages([]);
-				setClientPackages([]);
-				setServerPackages([]);
-			} else if (length in config()!.packages!) {
-				setGlobalPackages(config()!.packages as PackageConfig[]);
-				setClientPackages([]);
-				setServerPackages([]);
-			} else {
-				let packages = config()!.packages! as any;
-				setGlobalPackages(packages.global == undefined ? [] : packages.global);
-				setClientPackages(packages.client == undefined ? [] : packages.client);
-				setServerPackages(packages.server == undefined ? [] : packages.server);
-			}
+			let [global, client, server] = getConfigPackages(config()!);
+			setGlobalPackages(global);
+			setClientPackages(client);
+			setServerPackages(server);
 
 			setDisplayName(config()!.name == undefined ? id : config()!.name!);
 		}
@@ -281,21 +272,12 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 		};
 
 		// Packages
-		let packages = undefined;
-		if (isInstance) {
-			packages = globalPackages();
-		} else {
-			// Only include the global list if we don't need the other ones
-			if (clientPackages().length == 0 && serverPackages().length == 0) {
-				packages = globalPackages();
-			} else {
-				packages = {
-					global: globalPackages(),
-					client: clientPackages(),
-					server: serverPackages(),
-				};
-			}
-		}
+		let packages = createConfiguredPackages(
+			globalPackages(),
+			clientPackages(),
+			serverPackages(),
+			isInstance
+		);
 
 		let newConfig: InstanceConfig = {
 			from: from(),
