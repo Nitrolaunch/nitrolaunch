@@ -55,19 +55,6 @@ pub async fn read_instance_config(
 		config = merge_instance_configs(&profile.instance, config);
 	}
 
-	// Apply plugins
-	let arg = ModifyInstanceConfigArgument {
-		config: config.clone(),
-	};
-	let results = plugins
-		.call_hook(ModifyInstanceConfig, &arg, paths, o)
-		.await
-		.context("Failed to apply plugin instance modifications")?;
-	for result in results {
-		let result = result.result(o).await?;
-		config = merge_instance_configs(&config, result.config);
-	}
-
 	let mut original_config_with_profiles = config.clone();
 
 	let side = config.side.context("Instance type was not specified")?;
@@ -82,11 +69,6 @@ pub async fn read_instance_config(
 		.map(|x| read_package_config(x, config.common.package_stability.unwrap_or_default()))
 		.collect();
 
-	let kind = match side {
-		Side::Client => InstKind::client(config.window),
-		Side::Server => InstKind::server(),
-	};
-
 	// Loader
 	let profile_loaders =
 		profiles
@@ -97,11 +79,39 @@ pub async fn read_instance_config(
 			});
 
 	let loader = match side {
-		Side::Client => config.common.loader.or(profile_loaders.client().cloned()),
-		Side::Server => config.common.loader.or(profile_loaders.server().cloned()),
+		Side::Client => config
+			.common
+			.loader
+			.clone()
+			.or(profile_loaders.client().cloned()),
+		Side::Server => config
+			.common
+			.loader
+			.clone()
+			.or(profile_loaders.server().cloned()),
 	};
 
 	original_config_with_profiles.common.loader = loader.clone();
+
+	// Apply plugins
+	let arg = ModifyInstanceConfigArgument {
+		config: config.clone(),
+	};
+	let results = plugins
+		.call_hook(ModifyInstanceConfig, &arg, paths, o)
+		.await
+		.context("Failed to apply plugin instance modifications")?;
+	for result in results {
+		let result = result.result(o).await?;
+		config = merge_instance_configs(&config, result.config);
+	}
+
+	let original_config_with_profiles_and_plugins = config.clone();
+
+	let kind = match side {
+		Side::Client => InstKind::client(config.window),
+		Side::Server => InstKind::server(),
+	};
 
 	let (loader, loader_version) = if let Some(loader) = loader {
 		let (loader, version) = parse_versioned_string(&loader);
@@ -130,6 +140,7 @@ pub async fn read_instance_config(
 		package_overrides: config.common.overrides,
 		original_config,
 		original_config_with_profiles,
+		original_config_with_profiles_and_plugins,
 		plugin_config: config.common.plugin_config,
 	};
 

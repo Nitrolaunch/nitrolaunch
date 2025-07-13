@@ -105,6 +105,8 @@ pub struct InstanceStoredConfig {
 	pub original_config: InstanceConfig,
 	/// The original instance configuration after applying profiles
 	pub original_config_with_profiles: InstanceConfig,
+	/// The original instance configuration after applying profiles and plugins
+	pub original_config_with_profiles_and_plugins: InstanceConfig,
 	/// Custom plugin config
 	pub plugin_config: serde_json::Map<String, serde_json::Value>,
 }
