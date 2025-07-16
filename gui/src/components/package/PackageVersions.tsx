@@ -1,4 +1,11 @@
-import { createResource, createSignal, For, Show } from "solid-js";
+import {
+	createMemo,
+	createResource,
+	createSignal,
+	For,
+	Show,
+	Suspense,
+} from "solid-js";
 import { PackageProperties } from "../../types";
 import "./PackageVersions.css";
 import { invoke } from "@tauri-apps/api";
@@ -150,16 +157,13 @@ export default function PackageVersions(props: PackageVersionsProps) {
 
 	return (
 		<div class="cont col package-versions">
-			<Show
-				when={versions() != undefined}
-				fallback={<LoadingSpinner size="5rem" />}
-			>
+			<Suspense fallback={<LoadingSpinner size="5rem" />}>
 				<div class="cont package-versions-header">
 					<div
 						class="cont package-versions-count"
 						style="justify-content:flex-start"
 					>
-						{versions()!.length} versions
+						{versions() == undefined ? 0 : versions()!.length} versions
 					</div>
 					<div class="cont" style="justify-content:flex-end">
 						<SearchBar
@@ -193,7 +197,7 @@ export default function PackageVersions(props: PackageVersionsProps) {
 				</Show>
 				<For each={versions()}>
 					{(version) => {
-						let isVisible = () => {
+						let isVisible = createMemo(() => {
 							if (
 								search() != undefined &&
 								version.name != undefined &&
@@ -259,7 +263,7 @@ export default function PackageVersions(props: PackageVersionsProps) {
 							}
 
 							return true;
-						};
+						});
 
 						return (
 							<Show when={isVisible()}>
@@ -273,7 +277,7 @@ export default function PackageVersions(props: PackageVersionsProps) {
 						);
 					}}
 				</For>
-			</Show>
+			</Suspense>
 			<PackageVersionInfo
 				visible={focusedVersion() != undefined}
 				version={focusedVersion()!}
@@ -303,10 +307,6 @@ function PackageVersionEntry(props: PackageVersionEntryProps) {
 			: version.name;
 
 	let minecraftVersions = canonicalizeListOrSingle(version.minecraft_versions);
-
-	if (version.name == "8.0.0-neo") {
-		console.log(version);
-	}
 
 	// Make the font size smaller if there is a long version
 	let smallFontSize = false;

@@ -1,4 +1,4 @@
-import { For, Show } from "solid-js";
+import { createMemo, For, Show } from "solid-js";
 import {
 	getAllLoaders,
 	getLoaderDisplayName,
@@ -17,11 +17,11 @@ import "./PackageLabels.css";
 export default function PackageLabels(props: PackageLabelsProps) {
 	let small = props.small == undefined ? false : props.small;
 
-	let allLoaders = () => getAllLoaders(props.loaders);
+	let allLoaders = createMemo(() => getAllLoaders(props.loaders));
 
 	return (
 		<div class={`cont package-labels ${small ? "small" : ""}`}>
-			<For each={props.packageTypes}>
+			<For each={/* @once */ props.packageTypes}>
 				{(type, i) => {
 					if (props.limit != undefined && i() >= props.limit) {
 						return undefined;
@@ -42,7 +42,7 @@ export default function PackageLabels(props: PackageLabelsProps) {
 					}
 				}}
 			</For>
-			<For each={props.categories}>
+			<For each={/* @once */ props.categories}>
 				{(category, i) => {
 					if (
 						props.limit != undefined &&

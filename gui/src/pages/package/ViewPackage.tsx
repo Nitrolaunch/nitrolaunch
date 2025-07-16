@@ -97,9 +97,9 @@ export default function ViewPackage(props: ViewPackageProps) {
 			])) as [[PackageMeta, PackageProperties], RepoInfo[]];
 
 			let request = parsePkgRequest(packageId);
-			if (request.repo != undefined)
+			if (request.repository != undefined)
 				for (let repo of repos) {
-					if (repo.id == request.repo) {
+					if (repo.id == request.repository) {
 						setRepoInfo(repo);
 					}
 				}
@@ -393,7 +393,7 @@ export default function ViewPackage(props: ViewPackageProps) {
 			</div>
 			<PackageInstallModal
 				packageId={parsePkgRequest(packageId).id}
-				packageRepo={parsePkgRequest(packageId).repo}
+				packageRepo={parsePkgRequest(packageId).repository}
 				selectedVersion={installVersion()}
 				visible={showInstallModal()}
 				onClose={() => setShowInstallModal(false)}
