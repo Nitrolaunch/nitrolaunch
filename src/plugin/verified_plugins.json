@@ -83,13 +83,6 @@
 		"github_repo": "mcvm",
 		"description": "Install Fabric and Quilt instances"
 	},
-	"sponge": {
-		"id": "sponge",
-		"name": "Sponge",
-		"github_owner": "mcvm-launcher",
-		"github_repo": "mcvm",
-		"description": "Install Sponge server instances"
-	},
 	"custom_files": {
 		"id": "custom_files",
 		"name": "Custom Files",
