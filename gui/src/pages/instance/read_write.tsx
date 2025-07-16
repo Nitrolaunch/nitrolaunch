@@ -2,6 +2,7 @@ import { invoke } from "@tauri-apps/api";
 import { getPackageConfigRequest, PackageConfig } from "./PackagesConfig";
 import { canonicalizeListOrSingle } from "../../utils/values";
 import { Loader } from "../../package";
+import { Side } from "../../types";
 
 // Stored configuration for an instance
 export interface InstanceConfig {
@@ -19,9 +20,26 @@ export interface InstanceConfig {
 export type ConfiguredLoaders =
 	| Loader
 	| {
-			client?: string;
-			server?: string;
+			client?: Loader;
+			server?: Loader;
 	  };
+
+export function getConfiguredLoader(
+	loaders: ConfiguredLoaders | undefined,
+	side: Side | undefined
+) {
+	if (loaders == undefined) {
+		return undefined;
+	} else if (typeof loaders == "string") {
+		return loaders;
+	} else {
+		return side == "client"
+			? loaders.client
+			: side == "server"
+			? loaders.server
+			: undefined;
+	}
+}
 
 export type ConfiguredPackages =
 	| PackageConfig[]
@@ -67,10 +85,25 @@ export async function readInstanceConfig(
 			? "get_profile_config"
 			: "get_global_profile";
 	try {
-		let result = await invoke(method, { id: id });
-		let configuration = result as InstanceConfig;
+		return (await invoke(method, { id: id })) as InstanceConfig;
+	} catch (e) {
+		throw e;
+	}
+}
 
-		return configuration;
+// Gets the config for an instance or profile that can actually be edited and isn't inherited
+export async function readEditableInstanceConfig(
+	id: string | undefined,
+	mode: InstanceConfigMode
+) {
+	let method =
+		mode == InstanceConfigMode.Instance
+			? "get_editable_instance_config"
+			: mode == InstanceConfigMode.Profile
+			? "get_editable_profile_config"
+			: "get_global_profile";
+	try {
+		return (await invoke(method, { id: id })) as InstanceConfig;
 	} catch (e) {
 		throw e;
 	}
@@ -81,21 +114,18 @@ export async function saveInstanceConfig(
 	config: InstanceConfig,
 	mode: InstanceConfigMode
 ) {
+	let method =
+		mode == InstanceConfigMode.Instance
+			? "write_instance_config"
+			: mode == InstanceConfigMode.Profile
+			? "write_profile_config"
+			: "write_global_profile";
+
 	try {
-		if (mode == InstanceConfigMode.Instance) {
-			await invoke("write_instance_config", {
-				id: id,
-				config: config,
-			});
-		} else if (mode == InstanceConfigMode.Profile) {
-			await invoke("write_profile_config", {
-				id: id,
-				config: config,
-			});
-		} else if (mode == InstanceConfigMode.GlobalProfile) {
-			await invoke("write_global_profile", { config: config });
-		} else {
-		}
+		await invoke(method, {
+			id: id,
+			config: config,
+		});
 	} catch (e) {
 		throw "Failed to save instance config: " + e;
 	}
@@ -188,4 +218,13 @@ export function addPackage(
 			config.packages.server!.push(pkg);
 		}
 	}
+}
+
+// Get the derived value from a list of profile configs and a property function
+export function getDerivedValue(
+	profiles: InstanceConfig[],
+	property: (profile: InstanceConfig) => any | undefined
+) {
+	let reversed = profiles.concat([]).reverse();
+	return reversed.map(property).find((x) => x != undefined);
 }

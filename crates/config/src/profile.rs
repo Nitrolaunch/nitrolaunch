@@ -7,7 +7,7 @@ use mcvm_shared::Side;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use super::instance::{merge_instance_configs, InstanceConfig};
+use super::instance::InstanceConfig;
 use super::package::PackageConfigDeser;
 
 /// Configuration for a profile
@@ -28,9 +28,9 @@ pub struct ProfileConfig {
 impl ProfileConfig {
 	/// Merge this profile with another one
 	pub fn merge(&mut self, other: Self) {
-		// FIXME: merge packages
-		self.instance = merge_instance_configs(&self.instance, other.instance);
+		self.instance.merge(other.instance);
 		self.loader.merge(&other.loader);
+		self.packages.merge(other.packages);
 	}
 }
 
@@ -115,6 +115,49 @@ impl Default for ProfilePackageConfiguration {
 }
 
 impl ProfilePackageConfiguration {
+	/// Merge this configuration with one from another profile, with right taking precedence
+	pub fn merge(&mut self, other: Self) {
+		match (&mut *self, other) {
+			(Self::Simple(left), Self::Simple(right)) => {
+				left.extend(right);
+			}
+			(Self::Full { global, .. }, Self::Simple(right)) => {
+				global.extend(right);
+			}
+			(
+				Self::Simple(left),
+				Self::Full {
+					global,
+					client,
+					server,
+				},
+			) => {
+				left.extend(global);
+				*self = Self::Full {
+					global: left.clone(),
+					client,
+					server,
+				};
+			}
+			(
+				Self::Full {
+					global: global1,
+					client: client1,
+					server: server1,
+				},
+				Self::Full {
+					global: global2,
+					client: client2,
+					server: server2,
+				},
+			) => {
+				global1.extend(global2);
+				client1.extend(client2);
+				server1.extend(server2);
+			}
+		}
+	}
+
 	/// Validate all the configured packages
 	pub fn validate(&self) -> anyhow::Result<()> {
 		match &self {

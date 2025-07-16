@@ -41,6 +41,17 @@ pub struct InstanceConfig {
 	pub window: ClientWindowConfig,
 }
 
+impl InstanceConfig {
+	/// Merge this config with another one, with right side taking precendence
+	pub fn merge(&mut self, other: Self) {
+		self.common.merge(other.common);
+		self.name = other.name.or(self.name.clone());
+		self.icon = other.icon.or(self.icon.clone());
+		self.side = other.side.or(self.side);
+		self.window.merge(other.window);
+	}
+}
+
 /// Common full instance config for both client and server
 #[derive(Deserialize, Serialize, Clone, Default, Debug)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
@@ -87,6 +98,7 @@ impl CommonInstanceConfig {
 		self.launch.merge(other.launch);
 		self.datapack_folder = other.datapack_folder.or(self.datapack_folder.clone());
 		self.packages.extend(other.packages);
+		self.overrides.suppress.extend(other.overrides.suppress);
 		mcvm_core::util::json::merge_objects(&mut self.plugin_config, other.plugin_config);
 
 		self
@@ -182,10 +194,6 @@ fn default_java() -> String {
 	"auto".into()
 }
 
-fn default_flags_preset() -> String {
-	"none".into()
-}
-
 /// Options for the Minecraft QuickPlay feature
 #[derive(Deserialize, Serialize, Debug, PartialEq, Default, Clone)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
@@ -229,9 +237,6 @@ pub struct LaunchConfig {
 	/// The java installation to use
 	#[serde(default = "default_java")]
 	pub java: String,
-	/// The preset for flags
-	#[serde(default = "default_flags_preset")]
-	pub preset: String,
 	/// Environment variables
 	#[serde(default)]
 	#[serde(skip_serializing_if = "HashMap::is_empty")]
@@ -259,9 +264,6 @@ impl LaunchConfig {
 			self.memory = other.memory;
 		}
 		self.java = other.java;
-		if other.preset != "none" {
-			self.preset = other.preset;
-		}
 		self.env.extend(other.env);
 		if other.wrapper.is_some() {
 			self.wrapper = other.wrapper;
@@ -283,7 +285,6 @@ impl Default for LaunchConfig {
 			},
 			memory: LaunchMemory::default(),
 			java: default_java(),
-			preset: default_flags_preset(),
 			env: HashMap::new(),
 			wrapper: None,
 			quick_play: QuickPlay::default(),
@@ -329,20 +330,6 @@ impl ClientWindowConfig {
 		self.resolution = merge_options(self.resolution, other.resolution);
 		self
 	}
-}
-
-/// Merge an InstanceConfig with a preset
-///
-/// Some values will be merged while others will have the right side take precendence
-pub fn merge_instance_configs(preset: &InstanceConfig, config: InstanceConfig) -> InstanceConfig {
-	let mut out = preset.clone();
-	out.common.merge(config.common);
-	out.name = config.name.or(out.name);
-	out.icon = config.icon.or(out.icon);
-	out.side = config.side.or(out.side);
-	out.window.merge(config.window);
-
-	out
 }
 
 /// Checks if an instance ID is valid

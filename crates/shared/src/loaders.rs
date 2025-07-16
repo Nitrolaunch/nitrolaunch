@@ -77,7 +77,7 @@ impl Loader {
 impl Display for Loader {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		match self {
-			Self::Vanilla => write!(f, "None"),
+			Self::Vanilla => write!(f, "Vanilla"),
 			Self::Forge => write!(f, "Forge"),
 			Self::NeoForged => write!(f, "NeoForged"),
 			Self::Fabric => write!(f, "Fabric"),

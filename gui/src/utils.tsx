@@ -94,7 +94,7 @@ export async function getSupportedLoaders(): Promise<string[]> {
 	let results: string[] = await invoke("get_supported_loaders");
 
 	results.sort(stringCompare);
-	results = ["none", "vanilla"].concat(results);
+	results = ["vanilla"].concat(results);
 
 	return results;
 }

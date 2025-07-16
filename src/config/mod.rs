@@ -49,6 +49,8 @@ pub struct Config {
 	pub instances: HashMap<InstanceID, Instance>,
 	/// Profiles
 	pub profiles: HashMap<ProfileID, ProfileConfig>,
+	/// Consolidated profiles
+	pub consolidated_profiles: HashMap<ProfileID, ProfileConfig>,
 	/// The globally applied profile
 	pub global_profile: ProfileConfig,
 	/// Named groups of instances
@@ -162,8 +164,9 @@ impl Config {
 		}
 
 		// Consolidate profiles
-		let profiles = consolidate_profile_configs(config.profiles, config.global_profile.as_ref())
-			.context("Failed to merge profiles")?;
+		let consolidated_profiles =
+			consolidate_profile_configs(config.profiles.clone(), config.global_profile.as_ref())
+				.context("Failed to merge profiles")?;
 
 		// Load extra supported loaders
 		let mut supported_loaders = Vec::new();
@@ -181,7 +184,7 @@ impl Config {
 			let result = read_instance_config(
 				instance_id.clone(),
 				instance_config,
-				&profiles,
+				&consolidated_profiles,
 				&plugins,
 				paths,
 				o,
@@ -230,7 +233,8 @@ impl Config {
 		Ok(Self {
 			users,
 			instances,
-			profiles,
+			profiles: config.profiles,
+			consolidated_profiles,
 			global_profile: config.global_profile.unwrap_or_default(),
 			instance_groups: config.instance_groups,
 			packages,

@@ -34,6 +34,10 @@
 	color: var(--fg);
 }
 
+#configured-packages {
+	width: 100%;
+}
+
 .configured-package {
 	height: 4rem;
 	width: 100%;

@@ -41,7 +41,7 @@
 
 	box-shadow: var(--shadow-offset) var(--shadow-offset) #111111cc;
 
-	transition: max-height 0.5s;
+	transition: max-height 0.3s;
 }
 
 .dropdown-option {

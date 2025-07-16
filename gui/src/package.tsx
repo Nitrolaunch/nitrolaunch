@@ -435,9 +435,9 @@ export function getLoaderColor(loader: Loader) {
 	}
 }
 
-export function getLoaderSide(loader: string) {
+export function getLoaderSide(loader: string | undefined) {
 	if (
-		loader == "none" ||
+		loader == undefined ||
 		loader == "vanilla" ||
 		loader == "fabric" ||
 		loader == "quilt" ||

@@ -1,10 +1,9 @@
-import { createSignal, For, JSX, Show } from "solid-js";
+import { createMemo, createSignal, Index, JSX, Show } from "solid-js";
 import "./Dropdown.css";
 import Tip from "../dialog/Tip";
 import { canonicalizeListOrSingle } from "../../utils/values";
 import Icon from "../Icon";
 import { AngleDown, AngleRight } from "../../icons";
-import DisplayShow from "../utility/DisplayShow";
 
 export default function Dropdown(props: DropdownProps) {
 	let [isOpen, setIsOpen] = createSignal(false);
@@ -29,15 +28,24 @@ export default function Dropdown(props: DropdownProps) {
 		}
 	};
 
+	let zIndex = props.zIndex == undefined ? "" : `z-index:${props.zIndex}`;
+
+	let headerContents = () => {
+		if (props.onChangeMulti == undefined) {
+			let option = props.options.find((x) => x.value == props.selected);
+			return option == undefined ? "None" : option.contents;
+		} else {
+			return `${canonicalizeListOrSingle(props.selected).length} selected`;
+		}
+	};
+
 	return (
 		<div class="dropdown-container" onmouseleave={() => setIsOpen(false)}>
 			<div
 				class={`cont input-shadow dropdown-header ${isOpen() ? "open" : ""}`}
 				onclick={() => setIsOpen(!isOpen())}
 			>
-				{props.onChangeMulti == undefined
-					? props.selected
-					: `${canonicalizeListOrSingle(props.selected).length} selected`}
+				{headerContents()}
 				<div class="cont dropdown-arrow">
 					<Show
 						when={isOpen()}
@@ -47,36 +55,40 @@ export default function Dropdown(props: DropdownProps) {
 					</Show>
 				</div>
 			</div>
-			<DisplayShow when={isOpen()}>
-				<div
-					class="dropdown-options"
-					style={`${!isOpen() ? "max-height:0px" : ""}`}
-				>
-					<Show when={props.allowEmpty == undefined ? false : props.allowEmpty}>
+			<div
+				class="dropdown-options"
+				style={`${
+					!isOpen() ? "max-height:0px;border-width:0px" : ""
+				};${zIndex}`}
+			>
+				<Show when={props.allowEmpty == undefined ? false : props.allowEmpty}>
+					<DropdownOption
+						option={{
+							value: undefined,
+							contents: "None",
+						}}
+						onSelect={selectFunction}
+						isSelected={props.selected == undefined}
+						isLast={props.options.length == 0}
+						class={props.optionClass}
+					/>
+				</Show>
+				<Index each={props.options}>
+					{(option, index) => (
 						<DropdownOption
-							option={{
-								value: undefined,
-								contents: "None",
-							}}
+							option={option()}
 							onSelect={selectFunction}
-							selected={props.selected}
-							isLast={props.selected == props.options[0].value}
+							isSelected={createMemo(() =>
+								props.selected != undefined && Array.isArray(props.selected)
+									? props.selected.includes(option().value!)
+									: props.selected == option().value
+							)()}
+							isLast={index == props.options.length - 1}
 							class={props.optionClass}
 						/>
-					</Show>
-					<For each={props.options}>
-						{(option, index) => (
-							<DropdownOption
-								option={option}
-								onSelect={selectFunction}
-								selected={props.selected}
-								isLast={index() == props.options.length - 1}
-								class={props.optionClass}
-							/>
-						)}
-					</For>
-				</div>
-			</DisplayShow>
+					)}
+				</Index>
+			</div>
 		</div>
 	);
 }
@@ -87,25 +99,18 @@ export interface DropdownProps {
 	onChange?: (option: string | undefined) => void;
 	onChangeMulti?: (options: string[] | undefined) => void;
 	allowEmpty?: boolean;
-	connected?: boolean;
 	optionClass?: string;
-	grid?: boolean;
-	solidSelect?: boolean;
+	zIndex?: string;
 }
 
 function DropdownOption(props: OptionProps) {
 	let [isHovered, setIsHovered] = createSignal(false);
 
-	let isSelected = () => {
-		return Array.isArray(props.selected) && props.selected != undefined
-			? props.selected.includes(props.option.value!)
-			: props.selected == props.option.value;
-	};
 	let color =
 		props.option.color == undefined ? "var(--fg2)" : props.option.color;
 
 	let textColor = () => {
-		if (isSelected()) {
+		if (props.isSelected) {
 			if (props.option.selectedTextColor == undefined) {
 				return color;
 			} else {
@@ -117,7 +122,7 @@ function DropdownOption(props: OptionProps) {
 	};
 
 	let backgroundColor = () => {
-		if (isSelected() || isHovered()) {
+		if (props.isSelected || isHovered()) {
 			return "var(--bg0)";
 		} else {
 			return "var(--bg)";
@@ -128,7 +133,7 @@ function DropdownOption(props: OptionProps) {
 		<div
 			class={`cont dropdown-option ${
 				props.class == undefined ? "" : props.class
-			} ${isSelected() ? "selected" : ""} ${
+			} ${props.isSelected ? "selected" : ""} ${
 				props.isLast ? "last" : "not-last"
 			}`}
 			style={`color:${textColor()};background-color:${backgroundColor()}`}
@@ -156,7 +161,7 @@ function DropdownOption(props: OptionProps) {
 
 interface OptionProps {
 	option: Option;
-	selected?: string | string[];
+	isSelected: boolean;
 	class?: string;
 	isLast?: boolean;
 	onSelect: (option: string | undefined) => void;

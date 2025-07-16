@@ -18,7 +18,7 @@
 
 .tip-body {
 	background-color: var(--bg0);
-	padding: 0.5rem;
+	padding: 0.75rem;
 	border: 0.15rem solid var(--bg3);
 	border-radius: var(--round);
 	box-sizing: border-box;

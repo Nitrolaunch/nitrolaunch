@@ -12,7 +12,11 @@ import "@thisbeyond/solid-select/style.css";
 import InlineSelect from "../../components/input/InlineSelect";
 import { loadPagePlugins } from "../../plugins";
 import { inputError } from "../../errors";
-import { getSupportedLoaders, parseVersionedString } from "../../utils";
+import {
+	beautifyString,
+	getSupportedLoaders,
+	parseVersionedString,
+} from "../../utils";
 import { FooterData } from "../../App";
 import { FooterMode } from "../../components/navigation/Footer";
 import PackagesConfig, {
@@ -28,15 +32,25 @@ import {
 	getLoaderSide,
 	Loader,
 } from "../../package";
-import { emptyUndefined, undefinedEmpty } from "../../utils/values";
+import {
+	canonicalizeListOrSingle,
+	emptyUndefined,
+	undefinedEmpty,
+} from "../../utils/values";
 import {
 	createConfiguredPackages,
 	getConfigPackages,
+	getConfiguredLoader,
+	getDerivedValue,
 	InstanceConfigMode,
-	readInstanceConfig,
+	readEditableInstanceConfig,
 	saveInstanceConfig,
 } from "./read_write";
 import { InstanceConfig } from "./read_write";
+import DeriveIndicator from "./DeriveIndicator";
+import { InstanceInfo } from "../../types";
+import Dropdown from "../../components/input/Dropdown";
+import LoadingSpinner from "../../components/utility/LoadingSpinner";
 
 export default function InstanceConfigPage(props: InstanceConfigProps) {
 	let params = useParams();
@@ -72,55 +86,67 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 		});
 	});
 
-	let [config, configOperations] = createResource(updateConfig);
 	let [from, setFrom] = createSignal<string[] | undefined>();
-	let [parentConfigs, parentConfigOperations] =
-		createResource(updateParentConfig);
-	let [supportedLoaders, _] = createResource(getSupportedLoaders);
 
-	let [tab, setTab] = createSignal("general");
-
-	async function updateConfig() {
+	let [config, configOperations] = createResource(async () => {
 		if (props.creating) {
 			return undefined;
 		}
 		// Get the instance or profile
 		try {
-			let configuration = await readInstanceConfig(id, props.mode);
-			setFrom(
-				configuration.from == undefined
-					? undefined
-					: Array.isArray(configuration.from)
-					? configuration.from
-					: [configuration.from]
-			);
+			let configuration = await readEditableInstanceConfig(id, props.mode);
+			setFrom(canonicalizeListOrSingle(configuration.from));
 			return configuration;
 		} catch (e) {
 			errorToast("Failed to load configuration: " + e);
 			return undefined;
 		}
-	}
-
-	async function updateParentConfig() {
-		let fromValues = from();
-		// Get the parent
-		let parentResults: InstanceConfig[] = [];
-		if (isGlobalProfile) {
-			parentResults = [];
-		} else if (fromValues == null) {
-			let parentResult = await invoke("get_global_profile", {});
-			parentResults = [parentResult as InstanceConfig];
-		} else {
-			for (let profile of fromValues!) {
-				let parentResult = await invoke("get_profile_config", {
-					id: profile,
-				});
-				parentResults.push(parentResult as InstanceConfig);
+	});
+	let [parentConfigs, parentConfigOperations] = createResource(
+		() => from(),
+		async () => {
+			let fromValues = from();
+			// Get the parent
+			let parentResults: InstanceConfig[] = [];
+			if (isGlobalProfile) {
+				parentResults = [];
+			} else if (fromValues == undefined) {
+				let parentResult = await invoke("get_global_profile", {});
+				parentResults = [parentResult as InstanceConfig];
+			} else {
+				for (let profile of fromValues!) {
+					let parentResult = await invoke("get_profile_config", {
+						id: profile,
+					});
+					parentResults.push(parentResult as InstanceConfig);
+				}
 			}
-		}
 
-		return parentResults;
-	}
+			return parentResults;
+		},
+		{ initialValue: [] }
+	);
+
+	let [supportedMinecraftVersions, _] = createResource(async () => {
+		let availableVersions = (await invoke("get_minecraft_versions", {
+			releasesOnly: false,
+		})) as string[];
+
+		availableVersions.reverse();
+		return ["latest", "latest_snapshot"].concat(availableVersions);
+	});
+
+	let [supportedLoaders, __] = createResource(async () => {
+		let loaders = await getSupportedLoaders();
+		return [undefined as string | undefined].concat(loaders);
+	});
+
+	// Available profiles to derive from
+	let [profiles, ___] = createResource(async () => {
+		return (await invoke("get_profiles")) as InstanceInfo[];
+	});
+
+	let [tab, setTab] = createSignal("general");
 
 	// Input / convenience signals
 
@@ -312,6 +338,7 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 			});
 
 			configOperations.refetch();
+			parentConfigOperations.refetch();
 		} catch (e) {
 			errorToast(e as string);
 		}
@@ -376,9 +403,37 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 				</div>
 			</div>
 			<br />
-			<Show when={tab() == "general"}>
+			<DisplayShow when={tab() == "general"}>
 				<div class="fields">
 					{/* <h3>Basic Settings</h3> */}
+					<Show when={!isGlobalProfile}>
+						<div class="cont start label">
+							<label for="from">INHERIT CONFIG</label>
+						</div>
+						<Tip
+							tip="A list of profiles to inherit configuration from"
+							fullwidth
+						>
+							<Dropdown
+								options={
+									profiles() == undefined
+										? []
+										: profiles()!.map((x) => {
+												return {
+													value: x.id,
+													contents: (
+														<div>{x.name == undefined ? x.id : x.name}</div>
+													),
+													color: "var(--profile)",
+												};
+										  })
+								}
+								selected={from()}
+								onChangeMulti={setFrom}
+								zIndex="50"
+							/>
+						</Tip>
+					</Show>
 					<Show when={!isGlobalProfile && !isProfile}>
 						<label for="name" class="label">
 							DISPLAY NAME
@@ -425,9 +480,16 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 						</Tip>
 					</Show>
 					<Show when={props.creating || isProfile || isGlobalProfile}>
-						<label for="side" class="label">
-							TYPE
-						</label>
+						<div class="cont start">
+							<label for="side" class="label">
+								TYPE
+							</label>
+							<DeriveIndicator
+								parentConfigs={parentConfigs()}
+								currentValue={side()}
+								property={(x) => x.side}
+							/>
+						</div>
 						<Tip
 							tip="Whether this is a normal instance or a dedicated server"
 							fullwidth
@@ -456,30 +518,63 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 						</Tip>
 					</Show>
 					<hr />
-					<label for="version" class="label">
-						MINECRAFT VERSION
-					</label>
-					<Tip tip="The Minecraft version of this instance" fullwidth>
-						<input
-							type="text"
-							id="version"
-							name="version"
-							value={emptyUndefined(version())}
-							onChange={(e) => {
-								setVersion(e.target.value);
-								setDirty();
-							}}
-						></input>
-					</Tip>
+					<div class="cont start label">
+						<label for="version">MINECRAFT VERSION</label>
+						<DeriveIndicator
+							parentConfigs={parentConfigs()}
+							currentValue={version()}
+							property={(x) => x.version}
+							emptyUndefined
+							displayValue
+						/>
+					</div>
+					<Show
+						when={supportedMinecraftVersions() != undefined}
+						fallback={<LoadingSpinner size="var(--input-height)" />}
+					>
+						<Tip tip="The Minecraft version of this instance" fullwidth>
+							<Dropdown
+								options={supportedMinecraftVersions()!.map((x) => {
+									return {
+										value: x,
+										contents: (
+											<div>
+												{x == "latest" || x == "latest_snapshot"
+													? beautifyString(x)
+													: x}
+											</div>
+										),
+										color: "var(--instance)",
+									};
+								})}
+								selected={version()}
+								onChange={setVersion}
+								allowEmpty
+								zIndex="50"
+							/>
+						</Tip>
+					</Show>
 					<Show
 						when={
 							(side() == "client" || isProfile) &&
 							supportedLoaders() != undefined
 						}
 					>
-						<label for="client-type" class="label">{`${
-							isProfile ? "CLIENT " : ""
-						}LOADER`}</label>
+						<div class="cont start label">
+							<label for="client-type">{`${
+								isProfile ? "CLIENT " : ""
+							}LOADER`}</label>
+							<DeriveIndicator
+								parentConfigs={parentConfigs()}
+								currentValue={clientLoader()}
+								property={(x) => {
+									let loader = getConfiguredLoader(x.loader, "client");
+									return loader == undefined
+										? undefined
+										: getLoaderDisplayName(loader);
+								}}
+							/>
+						</div>
 						<Tip
 							tip={
 								isInstance
@@ -493,24 +588,34 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 									setClientLoader(x);
 									setDirty();
 								}}
-								selected={clientLoader() == undefined ? "none" : clientLoader()}
+								selected={clientLoader()}
 								options={supportedLoaders()!
 									.filter((x) => getLoaderSide(x) != "server")
 									.map((x) => {
 										return {
 											value: x,
 											contents: (
-												<div class="cont">
-													{x == "none"
+												<div
+													class={`cont ${
+														clientLoader() == undefined &&
+														getDerivedValue(parentConfigs(), (x) =>
+															getConfiguredLoader(x.loader, "client")
+														) == x
+															? "derived-option"
+															: ""
+													}`}
+												>
+													{x == undefined
 														? "Unset"
 														: getLoaderDisplayName(x as Loader)}
 												</div>
 											),
 											color: getLoaderColor(x as Loader),
-											tip: x == "none" ? "Inherit from the profile" : undefined,
+											tip:
+												x == undefined ? "Inherit from the profile" : undefined,
 										};
 									})}
-								columns={3}
+								columns={4}
 								allowEmpty={false}
 								connected={false}
 							/>
@@ -522,9 +627,21 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 							supportedLoaders() != undefined
 						}
 					>
-						<label for="server-type" class="label">{`${
-							isProfile ? "SERVER " : ""
-						}LOADER`}</label>
+						<div class="cont start label">
+							<label for="server-type">{`${
+								isProfile ? "SERVER " : ""
+							}LOADER`}</label>
+							<DeriveIndicator
+								parentConfigs={parentConfigs()}
+								currentValue={clientLoader()}
+								property={(x) => {
+									let loader = getConfiguredLoader(x.loader, "server");
+									return loader == undefined
+										? undefined
+										: getLoaderDisplayName(loader);
+								}}
+							/>
+						</div>
 						<Tip
 							tip={
 								isInstance
@@ -538,33 +655,53 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 									setServerLoader(x);
 									setDirty();
 								}}
-								selected={serverLoader() == undefined ? "none" : serverLoader()}
+								selected={serverLoader()}
 								options={supportedLoaders()!
 									.filter((x) => getLoaderSide(x) != "client")
 									.map((x) => {
 										return {
 											value: x,
 											contents: (
-												<div class="cont">
-													{x == "none"
+												<div
+													class={`cont ${
+														serverLoader() == undefined &&
+														getDerivedValue(parentConfigs(), (x) =>
+															getConfiguredLoader(x.loader, "server")
+														) == x
+															? "derived-option"
+															: ""
+													}`}
+												>
+													{x == undefined
 														? "Unset"
 														: getLoaderDisplayName(x as Loader)}
 												</div>
 											),
 											color: getLoaderColor(x as Loader),
-											tip: x == "none" ? "Inherit from the profile" : undefined,
+											tip:
+												x == undefined ? "Inherit from the profile" : undefined,
 										};
 									})}
-								columns={3}
+								columns={4}
 								allowEmpty={false}
 								connected={false}
 							/>
 						</Tip>
 					</Show>
-					<Show when={clientLoader() != undefined && clientLoader() != "none"}>
-						<label for="client-loader-version" class="label">
-							{isProfile ? "CLIENT LOADER VERSION" : "LOADER VERSION"}
-						</label>
+					<Show
+						when={
+							side() == "client" &&
+							(clientLoader() != undefined ||
+								parentConfigs().some(
+									(x) => getConfiguredLoader(x.loader, "client") != undefined
+								))
+						}
+					>
+						<div class="cont start label">
+							<label for="client-loader-version">
+								{isProfile ? "CLIENT LOADER VERSION" : "LOADER VERSION"}
+							</label>
+						</div>
 						<Tip
 							tip={`The version for the${
 								isProfile ? " client" : ""
@@ -583,10 +720,20 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 							></input>
 						</Tip>
 					</Show>
-					<Show when={serverLoader() != undefined && serverLoader() != "none"}>
-						<label for="server-loader-version" class="label">
-							{isProfile ? "SERVER LOADER VERSION" : "LOADER VERSION"}
-						</label>
+					<Show
+						when={
+							side() == "server" &&
+							(serverLoader() != undefined ||
+								parentConfigs().some(
+									(x) => getConfiguredLoader(x.loader, "server") != undefined
+								))
+						}
+					>
+						<div class="cont start label">
+							<label for="server-loader-version">
+								{isProfile ? "SERVER LOADER VERSION" : "LOADER VERSION"}
+							</label>
+						</div>
 						<Tip
 							tip={`The version for the${
 								isProfile ? " server" : ""
@@ -606,9 +753,15 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 						</Tip>
 					</Show>
 					<hr />
-					<label for="datapack-folder" class="label">
-						DATAPACK FOLDER
-					</label>
+					<div class="cont start label">
+						<label for="datapack-folder">DATAPACK FOLDER</label>
+						<DeriveIndicator
+							parentConfigs={parentConfigs()}
+							currentValue={datapackFolder()}
+							property={(x) => x.datapack_folder}
+							emptyUndefined
+						/>
+					</div>
 					<Tip
 						tip="The folder, relative to the instance folder, to put datapacks in. Useful if you have a global datapack mod."
 						fullwidth
@@ -617,18 +770,23 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 							type="text"
 							id="datapack-folder"
 							name="datapack-folder"
+							class="profile-placeholder"
 							value={emptyUndefined(datapackFolder())}
 							onChange={(e) => {
 								setDatapackFolder(e.target.value);
 								setDirty();
 							}}
+							placeholder={getDerivedValue(
+								parentConfigs(),
+								(x) => x.datapack_folder
+							)}
 						></input>
 					</Tip>
 				</div>
 				<br />
 				<br />
 				<br />
-			</Show>
+			</DisplayShow>
 			<DisplayShow when={tab() == "packages"}>
 				<PackagesConfig
 					id={id}

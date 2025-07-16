@@ -149,12 +149,51 @@ pub async fn get_instance_config(
 	};
 
 	Ok(Some(
-		instance.get_config().original_config_with_profiles.clone(),
+		instance
+			.get_config()
+			.original_config_with_profiles_and_plugins
+			.clone(),
 	))
 }
 
 #[tauri::command]
+pub async fn get_editable_instance_config(
+	state: tauri::State<'_, State>,
+	id: String,
+) -> Result<Option<InstanceConfig>, String> {
+	let config = fmt_err(
+		load_config(&state.paths, &mut NoOp)
+			.await
+			.context("Failed to load config"),
+	)?;
+
+	let Some(instance) = config.instances.get(&InstanceID::from(id)) else {
+		return Ok(None);
+	};
+
+	Ok(Some(instance.get_config().original_config.clone()))
+}
+
+#[tauri::command]
 pub async fn get_profile_config(
+	state: tauri::State<'_, State>,
+	id: String,
+) -> Result<Option<ProfileConfig>, String> {
+	let config = fmt_err(
+		load_config(&state.paths, &mut NoOp)
+			.await
+			.context("Failed to load config"),
+	)?;
+
+	let Some(profile) = config.consolidated_profiles.get(&ProfileID::from(id)) else {
+		return Ok(None);
+	};
+
+	Ok(Some(profile.clone()))
+}
+
+#[tauri::command]
+pub async fn get_editable_profile_config(
 	state: tauri::State<'_, State>,
 	id: String,
 ) -> Result<Option<ProfileConfig>, String> {

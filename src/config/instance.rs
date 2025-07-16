@@ -5,9 +5,7 @@ use crate::instance::launch::LaunchOptions;
 use crate::instance::{InstKind, Instance, InstanceStoredConfig};
 use crate::io::paths::Paths;
 use anyhow::{bail, ensure, Context};
-use mcvm_config::instance::{
-	is_valid_instance_id, merge_instance_configs, InstanceConfig, LaunchConfig, LaunchMemory,
-};
+use mcvm_config::instance::{is_valid_instance_id, InstanceConfig, LaunchConfig, LaunchMemory};
 use mcvm_config::package::PackageConfigDeser;
 use mcvm_config::profile::{ProfileConfig, ProfileLoaderConfiguration};
 use mcvm_core::io::java::args::MemoryNum;
@@ -52,7 +50,9 @@ pub async fn read_instance_config(
 
 	// Merge with the profile
 	for profile in &profiles {
-		config = merge_instance_configs(&profile.instance, config);
+		let mut profile_config = profile.instance.clone();
+		profile_config.merge(config);
+		config = profile_config;
 	}
 
 	let mut original_config_with_profiles = config.clone();
@@ -64,7 +64,8 @@ pub async fn read_instance_config(
 
 	original_config_with_profiles.common.packages = packages.clone();
 
-	let packages = packages
+	let read_packages = packages
+		.clone()
 		.into_iter()
 		.map(|x| read_package_config(x, config.common.package_stability.unwrap_or_default()))
 		.collect();
@@ -103,10 +104,12 @@ pub async fn read_instance_config(
 		.context("Failed to apply plugin instance modifications")?;
 	for result in results {
 		let result = result.result(o).await?;
-		config = merge_instance_configs(&config, result.config);
+		config.merge(result.config);
 	}
 
-	let original_config_with_profiles_and_plugins = config.clone();
+	let mut original_config_with_profiles_and_plugins = config.clone();
+	original_config_with_profiles_and_plugins.common.loader = loader.clone();
+	original_config_with_profiles_and_plugins.common.packages = packages.clone();
 
 	let kind = match side {
 		Side::Client => InstKind::client(config.window),
@@ -135,7 +138,7 @@ pub async fn read_instance_config(
 		loader_version,
 		launch: launch_config_to_options(config.common.launch)?,
 		datapack_folder: config.common.datapack_folder,
-		packages,
+		packages: read_packages,
 		package_stability: config.common.package_stability.unwrap_or_default(),
 		package_overrides: config.common.overrides,
 		original_config,

@@ -46,7 +46,10 @@ export default function InlineSelect(props: InlineSelectProps) {
 					connected={connected}
 					onSelect={selectFunction}
 					selected={props.selected}
-					isLast={props.selected == props.options[0].value}
+					isLast={
+						props.options.length == 0 ||
+						props.selected == props.options[0].value
+					}
 					isFirst={true}
 					class={props.optionClass}
 					solidSelect={solidSelect}
