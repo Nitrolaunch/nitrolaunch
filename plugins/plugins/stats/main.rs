@@ -92,20 +92,22 @@ fn update_playtime<H: Hook>(
 	let now = utc_timestamp()?;
 	let diff_minutes = (now - *start_time) / 60;
 
-	let mut stats = Stats::open(ctx).context("Failed to open stats")?;
-	stats
-		.instances
-		.entry(instance.to_string())
-		.or_default()
-		.playtime += diff_minutes;
+	if diff_minutes > 0 {
+		let mut stats = Stats::open(ctx).context("Failed to open stats")?;
+		stats
+			.instances
+			.entry(instance.to_string())
+			.or_default()
+			.playtime += diff_minutes;
 
-	// Update start time so that the next update doesn't grow exponentially, but only if we actually made a difference to the number of minutes
-	if update_state && diff_minutes > 0 {
-		*start_time = now;
-		ctx.set_persistent_state(state)?;
+		// Update start time so that the next update doesn't grow exponentially, but only if we actually made a difference to the number of minutes
+		if update_state {
+			*start_time = now;
+			ctx.set_persistent_state(state)?;
+		}
+
+		stats.write(ctx).context("Failed to write stats")?;
 	}
-
-	stats.write(ctx).context("Failed to write stats")?;
 
 	Ok(())
 }
