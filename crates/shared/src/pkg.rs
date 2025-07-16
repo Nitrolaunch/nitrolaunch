@@ -197,9 +197,9 @@ pub type ArcPkgReq = Arc<PkgRequest>;
 #[serde(rename_all = "snake_case")]
 pub enum PackageStability {
 	/// Whatever the latest stable version is
-	#[default]
 	Stable,
 	/// Whatever the latest version is
+	#[default]
 	Latest,
 }
 
