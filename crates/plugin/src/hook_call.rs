@@ -273,8 +273,9 @@ impl<H: Hook> HookHandle<H> {
 								let delta = now.duration_since(*start_time);
 								o.display(
 									MessageContents::Simple(format!(
-										"Plugin {} took {delta:?} to run hook",
-										self.plugin_id
+										"Plugin {} took {delta:?} to run hook '{}'",
+										self.plugin_id,
+										H::get_name_static()
 									)),
 									MessageLevel::Important,
 								);

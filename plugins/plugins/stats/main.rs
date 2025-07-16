@@ -9,7 +9,6 @@ use itertools::Itertools;
 use mcvm_core::io::{json_from_file, json_to_file};
 use mcvm_plugin::api::{CustomPlugin, HookContext};
 use mcvm_plugin::hooks::{Hook, Subcommand};
-use mcvm_plugin::input_output::InputAction;
 use mcvm_shared::util::utc_timestamp;
 use serde::{Deserialize, Serialize};
 
@@ -56,9 +55,7 @@ fn main() -> anyhow::Result<()> {
 	plugin.on_instance_stop(|mut ctx, arg| update_playtime(&mut ctx, &arg.id, false))?;
 
 	plugin.while_instance_launch(|mut ctx, arg| {
-		let Some(config) = ctx.get_custom_config() else {
-			return Ok(());
-		};
+		let config = ctx.get_custom_config().unwrap_or("{}");
 		let config: Config =
 			serde_json::from_str(config).context("Failed to deserialize custom config")?;
 
@@ -67,14 +64,12 @@ fn main() -> anyhow::Result<()> {
 		}
 
 		loop {
-			if let Some(InputAction::Terminate) = ctx.poll()? {
-				break;
+			std::thread::sleep(Duration::from_secs(10));
+			let res = update_playtime(&mut ctx, &arg.id, true).context("Failed to update playtime");
+			if let Err(e) = res {
+				println!("$_{e:?}");
 			}
-			std::thread::sleep(Duration::from_secs(1));
-			update_playtime(&mut ctx, &arg.id, true).context("Failed to update playtime")?;
 		}
-
-		Ok(())
 	})?;
 
 	Ok(())
@@ -104,9 +99,9 @@ fn update_playtime<H: Hook>(
 		.or_default()
 		.playtime += diff_minutes;
 
-	// Update start time so that the next update doesn't grow exponentially
-	if update_state {
-		*start_time = utc_timestamp()?;
+	// Update start time so that the next update doesn't grow exponentially, but only if we actually made a difference to the number of minutes
+	if update_state && diff_minutes > 0 {
+		*start_time = now;
 		ctx.set_persistent_state(state)?;
 	}
 
