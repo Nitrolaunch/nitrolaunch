@@ -227,6 +227,12 @@ async fn get_cached_pack(
 	client: &Client,
 ) -> anyhow::Result<Option<PackInfo>> {
 	let pack_path = storage_dir.join(pack);
+	// If a project does not exist, we create a dummy file so that we know not to fetch it again
+	let does_not_exist_path = storage_dir.join(format!("__missing__{pack}"));
+	if does_not_exist_path.exists() {
+		return Ok(None);
+	}
+
 	if pack_path.exists() {
 		let mut pack_info: PackInfo =
 			json_from_file(&pack_path).context("Failed to read pack info from file")?;
@@ -246,9 +252,10 @@ async fn get_cached_pack(
 	} else {
 		let result = smithed::get_pack_optional(pack, &client).await?;
 
-		let pack = match result {
-			Some(result) => result,
-			None => return Ok(None),
+		let Some(pack) = result else {
+			let file = std::fs::File::create(does_not_exist_path);
+			std::mem::drop(file);
+			return Ok(None);
 		};
 
 		let body = if download_body {
