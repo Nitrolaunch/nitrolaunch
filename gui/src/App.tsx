@@ -16,6 +16,7 @@ import Footer, { FooterMode } from "./components/navigation/Footer";
 import Toasts from "./components/dialog/Toasts";
 import { InstanceConfigMode } from "./pages/instance/read_write";
 import InstanceInfo from "./pages/instance/InstanceInfo";
+import UserPage from "./pages/user/UserPage";
 
 export default function App() {
 	const [footerData, setFooterData] = createSignal<FooterData>({
@@ -111,6 +112,10 @@ export default function App() {
 				<Route
 					path="/packages/package/:id"
 					component={() => <ViewPackage setFooterData={setFooterData} />}
+				/>
+				<Route
+					path="/users/:userId"
+					component={() => <UserPage setFooterData={setFooterData} />}
 				/>
 				<Route path="/plugins" component={() => <Plugins />} />
 				<Route path="/docs" component={() => <Docs />} />

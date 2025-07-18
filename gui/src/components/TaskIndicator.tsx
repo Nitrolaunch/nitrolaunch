@@ -3,6 +3,7 @@ import { createResource, createSignal, onCleanup, Show } from "solid-js";
 import "./TaskIndicator.css";
 import { Spinner } from "../icons";
 import { errorToast, warningToast } from "./dialog/Toasts";
+import { beautifyString } from "../utils";
 
 export default function TaskIndicator(props: TaskIndicatorProps) {
 	// Map of tasks to messages
@@ -174,8 +175,10 @@ function getTaskDisplayName(task: string) {
 		return "Loading packages";
 	} else if (task == "sync_packages") {
 		return "Syncing packages";
+	} else if (task == "login_user") {
+		return "Logging in";
 	}
-	return task;
+	return beautifyString(task);
 }
 
 function getTaskColor(task: string) {
@@ -183,7 +186,7 @@ function getTaskColor(task: string) {
 		return "plugin";
 	} else if (task.startsWith("launch_instance")) {
 		return "instance";
-	} else if (task == "update_instance") {
+	} else if (task == "update_instance" || task == "login_user") {
 		return "profile";
 	} else if (
 		task == "search_packages" ||

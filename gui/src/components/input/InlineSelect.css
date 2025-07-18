@@ -17,6 +17,7 @@
 	-webkit-user-select: none;
 	user-select: none;
 	border: 0.15rem solid;
+	height: 2.3rem;
 }
 
 .inline-select-option.connected {

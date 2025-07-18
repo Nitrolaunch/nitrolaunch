@@ -1,12 +1,13 @@
 #user-widget {
 	position: relative;
 	font-size: 0.9rem;
+	width: 15rem;
 }
 
 #user-widget-head {
 	background-color: var(--bg);
 	border-radius: var(--round);
-	width: 13rem;
+	width: 100%;
 	height: 2.2rem;
 	display: grid;
 	grid-template-columns: minmax(0, 1fr) minmax(0, 0.2fr);
@@ -24,39 +25,56 @@
 
 .user-tile {
 	width: 100%;
+
 	display: grid;
 	grid-template-columns: minmax(0, 0.15fr) minmax(0, 1fr);
-	cursor: pointer;
+
 	border-radius: var(--round);
 	box-sizing: border-box;
 	padding: 0.3rem;
+
+	cursor: pointer;
+
+	position: relative;
 }
 
-.user-tile:hover {
+.user-tile.hover {
 	background-color: var(--bg3);
 }
 
 .user-tile-image {
 	width: 1.2rem;
 	border-radius: 0.2rem;
+	image-rendering: pixelated;
 }
 
 .user-tile-name {
 	justify-content: flex-start;
 	margin-left: 0.5rem;
 	font-weight: bold;
+	overflow: hidden;
+	width: 100%;
+}
+
+.user-tile-edit {
+	position: absolute;
+	right: 0.75rem;
+	height: 100%;
 }
 
 #user-widget-dropdown {
 	position: absolute;
-	background-color: var(--bg);
-	width: 13rem;
 	left: 0px;
+	width: 100%;
+
+	background-color: var(--bg);
+
+	display: flex;
+	flex-direction: column;
+	gap: 0rem;
+
 	border-bottom-left-radius: var(--round);
 	border-bottom-right-radius: var(--round);
 	border: 0.15rem solid var(--bg3);
 	box-sizing: border-box;
-	display: flex;
-	flex-direction: column;
-	gap: 0.2rem;
 }

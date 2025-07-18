@@ -1,4 +1,4 @@
-import { createSignal, For, onMount, Show } from "solid-js";
+import { createSignal, For, JSX, onMount, Show } from "solid-js";
 import "./Toasts.css";
 import Icon from "../Icon";
 import { Check, Delete, Error, Warning } from "../../icons";
@@ -104,7 +104,7 @@ function Toast(props: ToastProps) {
 }
 
 interface ToastProps {
-	message: string;
+	message: JSX.Element;
 	type: ToastType;
 	age?: number;
 	maxAge?: number;
@@ -113,11 +113,11 @@ interface ToastProps {
 
 type ToastType = "message" | "success" | "warning" | "error";
 
-export function messageToast(message: string) {
+export function messageToast(message: JSX.Element) {
 	(window as any).__createToast({ message: message, type: "message" });
 }
 
-export function successToast(message: string) {
+export function successToast(message: JSX.Element) {
 	(window as any).__createToast({
 		message: message,
 		type: "success",
@@ -126,7 +126,7 @@ export function successToast(message: string) {
 	});
 }
 
-export function warningToast(message: string) {
+export function warningToast(message: JSX.Element) {
 	(window as any).__createToast({
 		message: message,
 		type: "warning",
@@ -135,7 +135,7 @@ export function warningToast(message: string) {
 	});
 }
 
-export function errorToast(message: string) {
+export function errorToast(message: JSX.Element) {
 	(window as any).__createToast({
 		message: message,
 		type: "error",

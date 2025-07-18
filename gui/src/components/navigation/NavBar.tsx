@@ -1,7 +1,7 @@
 import { createSignal, JSX, Show } from "solid-js";
 import { AngleLeft, AngleRight, Box, Home, Jigsaw, Menu } from "../../icons";
 import IconButton from "../input/IconButton";
-import UserWidget from "../UserWidget";
+import UserWidget from "../user/UserWidget";
 import "./NavBar.css";
 import { Location } from "@solidjs/router";
 
@@ -89,8 +89,7 @@ export default function NavBar(props: NavBarProps) {
 							MCVM
 						</a>
 					</h3>
-					<div class="cont navbar-item"></div>
-					<div class="cont navbar-item">
+					<div class="cont end navbar-item" id="navbar-right">
 						<UserWidget onSelect={props.onSelectUser} />
 					</div>
 				</div>

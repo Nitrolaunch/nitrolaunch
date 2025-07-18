@@ -429,7 +429,10 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 										  })
 								}
 								selected={from()}
-								onChangeMulti={setFrom}
+								onChangeMulti={(x) => {
+									setFrom(x);
+									setDirty();
+								}}
 								zIndex="50"
 							/>
 						</Tip>
@@ -548,7 +551,10 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 									};
 								})}
 								selected={version()}
-								onChange={setVersion}
+								onChange={(x) => {
+									setVersion(x);
+									setDirty();
+								}}
 								allowEmpty
 								zIndex="50"
 							/>

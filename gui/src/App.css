@@ -103,11 +103,12 @@ input {
 	height: var(--input-height);
 	font-weight: bold;
 	background-color: var(--bg0);
-	transition: border-color 0.25s;
+	transition: border-color 0.25s, outline-color 0.35s;
 	box-shadow: 0 2px 2px rgba(0, 0, 0, 0.2);
 	/* text-align: center; */
 	border: 0.15rem solid var(--bg3);
 	box-sizing: border-box;
+	outline-color: transparent;
 }
 
 input,
@@ -117,7 +118,7 @@ button,
 }
 
 input:focus {
-	border: none;
+	outline: 0.15rem solid var(--fg3);
 }
 
 button {
@@ -146,6 +147,10 @@ button:hover {
 button:active {
 	border-color: #396cd8;
 	background-color: #e8e8e8;
+}
+
+a {
+	outline: none;
 }
 
 /* Style classes */

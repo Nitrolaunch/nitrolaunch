@@ -5,8 +5,6 @@ import IconTextButton from "../../components/input/IconTextButton";
 import { Refresh } from "../../icons";
 import { emit } from "@tauri-apps/api/event";
 import { errorToast, successToast } from "../../components/dialog/Toasts";
-import ResolutionError from "../../components/package/ResolutionError";
-import { parsePkgRequest } from "../../utils";
 
 export default function Plugins() {
 	let [plugins, methods] = createResource(updatePlugins);
@@ -81,12 +79,6 @@ export default function Plugins() {
 				</For>
 			</div>
 			<br />
-			<ResolutionError
-				error={{
-					type: "explicit_require_not_fulfilled",
-					data: [parsePkgRequest("foo:bar"), parsePkgRequest("bar:foo")],
-				}}
-			/>
 			<br />
 			<br />
 			<br />

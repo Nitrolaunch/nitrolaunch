@@ -1,15 +1,22 @@
-import { JSXElement } from "solid-js";
+import { createSignal, JSXElement } from "solid-js";
 import "./IconButton.css";
 import Icon, { HasWidthHeight } from "../Icon";
 
 export default function IconButton(props: IconButtonProps) {
+	let [isHovered, setIsHovered] = createSignal(false);
+
 	let backgroundColor = () =>
 		props.selected ? props.selectedColor : props.color;
 
-	let border = () =>
-		props.border == undefined
-			? `border-color: ${backgroundColor()}`
-			: `border-color: ${props.border}`;
+	let border = () => {
+		if (props.hoverBorder != undefined && isHovered()) {
+			return `border-color: ${props.hoverBorder}`;
+		} else if (props.border == undefined) {
+			return `border-color: ${backgroundColor()}`;
+		} else {
+			return `border-color: ${props.border}`;
+		}
+	};
 
 	let colorStyle = () => `background-color:${backgroundColor()};${border()}`;
 
@@ -23,6 +30,8 @@ export default function IconButton(props: IconButtonProps) {
 				props.size
 			};${iconColorStyle}`}
 			onClick={props.onClick}
+			onmouseenter={() => setIsHovered(true)}
+			onmouseleave={() => setIsHovered(false)}
 		>
 			<Icon icon={props.icon} size={`calc(${props.size} * 0.7)`} />
 		</div>
@@ -35,6 +44,7 @@ export interface IconButtonProps {
 	selectedColor: string;
 	iconColor?: string;
 	border?: string;
+	hoverBorder?: string;
 	size: string;
 	selected: boolean;
 	onClick: (e: Event) => void;

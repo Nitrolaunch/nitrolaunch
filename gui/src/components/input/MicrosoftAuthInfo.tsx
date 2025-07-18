@@ -1,23 +1,22 @@
 import { createSignal } from "solid-js";
 import { AuthDisplayEvent } from "../../types";
-import PageBlock from "../PageBlock";
 import "./MicrosoftAuthInfo.css";
 import IconTextButton from "./IconTextButton";
 import { clipboard } from "@tauri-apps/api";
 import { Check, Copy, Globe } from "../../icons";
 import { WebviewWindow } from "@tauri-apps/api/window";
+import Modal from "../dialog/Modal";
 
 export default function MicrosoftAuthInfo(props: MicrosoftAuthInfoProps) {
 	return (
-		<>
-			<PageBlock />
-			<div class="ms-auth-info border">
+		<Modal visible={props.visible} width="20rem" onClose={() => {}}>
+			<div class="cont col ms-auth-info">
 				Copy this code:
 				<CopyCodeButton code={props.event.device_code} />
 				Then paste it into the login page:
 				<LoginWindowButton url={props.event.url} />
 			</div>
-		</>
+		</Modal>
 	);
 }
 
@@ -79,6 +78,7 @@ interface LoginWindowButtonProps {
 }
 
 export interface MicrosoftAuthInfoProps {
+	visible: boolean;
 	event: AuthDisplayEvent;
 	onCancel: () => void;
 }

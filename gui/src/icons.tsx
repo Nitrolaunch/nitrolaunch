@@ -55,6 +55,7 @@ import LockIcon from "./assets/icons/lock.svg?component-solid";
 import DiagramIcon from "./assets/icons/diagram.svg?component-solid";
 import TagIcon from "./assets/icons/tag.svg?component-solid";
 import AngleDownIcon from "./assets/icons/angle_down.svg?component-solid";
+import LockOpenIcon from "./assets/icons/lock_open.svg?component-solid";
 import { HasWidthHeight } from "./components/Icon";
 
 export function Pin({ width, height, viewBox }: HasWidthHeight) {
@@ -291,4 +292,8 @@ export function Tag({ width, height, viewBox }: HasWidthHeight) {
 
 export function AngleDown({ width, height, viewBox }: HasWidthHeight) {
 	return <AngleDownIcon width={width} height={height} viewBox={viewBox} />;
+}
+
+export function LockOpen({ width, height, viewBox }: HasWidthHeight) {
+	return <LockOpenIcon width={width} height={height} viewBox={viewBox} />;
 }

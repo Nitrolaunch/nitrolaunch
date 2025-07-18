@@ -123,9 +123,9 @@ function DropdownOption(props: OptionProps) {
 
 	let backgroundColor = () => {
 		if (props.isSelected || isHovered()) {
-			return "var(--bg0)";
-		} else {
 			return "var(--bg)";
+		} else {
+			return "var(--bg2)";
 		}
 	};
 

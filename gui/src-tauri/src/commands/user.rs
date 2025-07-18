@@ -82,3 +82,45 @@ pub async fn select_user(state: tauri::State<'_, State>, user: &str) -> Result<(
 
 	Ok(())
 }
+
+#[tauri::command]
+pub async fn login_user(
+	state: tauri::State<'_, State>,
+	app_handle: tauri::AppHandle,
+	user: &str,
+) -> Result<(), String> {
+	let mut config = fmt_err(
+		load_config(&state.paths, &mut NoOp)
+			.await
+			.context("Failed to load config"),
+	)?;
+
+	let mut output = LauncherOutput::new(state.get_output(app_handle));
+	output.set_task("login_user");
+
+	fmt_err(
+		config
+			.users
+			.authenticate_user(user, &state.paths.core, &state.client, &mut output)
+			.await,
+	)?;
+
+	Ok(())
+}
+
+#[tauri::command]
+pub async fn logout_user(state: tauri::State<'_, State>, user: &str) -> Result<(), String> {
+	let mut config = fmt_err(
+		load_config(&state.paths, &mut NoOp)
+			.await
+			.context("Failed to load config"),
+	)?;
+
+	let Some(user) = config.users.get_user_mut(user) else {
+		return Err("User does not exist".into());
+	};
+
+	fmt_err(user.logout(&state.paths.core))?;
+
+	Ok(())
+}

@@ -98,3 +98,10 @@ export async function getSupportedLoaders(): Promise<string[]> {
 
 	return results;
 }
+
+// Gets the head icon for a user
+export default function getUserIcon(uuid?: string) {
+	return uuid == undefined
+		? "/default_skin.png"
+		: `https://crafatar.com/avatars/${uuid}?overlay`;
+}

@@ -1,0 +1,94 @@
+#user-container {
+	width: 97%;
+}
+
+#user-header-container {
+	width: 100%;
+	position: relative;
+	justify-content: flex-start;
+}
+
+#user-header {
+	display: grid;
+	width: 100%;
+	grid-template-columns: minmax(0, 0.075fr) minmax(0, 1fr);
+	margin-top: 1rem;
+	padding: 0.5rem;
+	background-color: var(--bg2);
+	border: 0.15rem solid var(--bg3);
+	border-top-color: var(--bg4);
+	border-left-color: var(--bg4);
+	border-radius: var(--round2);
+	overflow: hidden;
+}
+
+#user-icon {
+	align-items: flex-start;
+}
+
+#user-icon-image {
+	width: 4.3rem;
+	height: 4.3rem;
+
+	border: 0.15rem solid var(--bg3);
+	border-radius: var(--round2);
+
+	image-rendering: pixelated;
+}
+
+#user-details-container {
+	width: 100%;
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+#user-details {
+	margin-top: 0.25rem;
+	margin-left: 0.5rem;
+}
+
+#user-upper-details {
+	justify-content: flex-start;
+}
+
+#user-name {
+	font-size: 1.3rem;
+	font-weight: bold;
+}
+
+#user-id {
+	color: var(--fg3);
+	font-weight: bold;
+}
+
+#user-lower-details {
+	justify-content: flex-start;
+	margin-top: 0.35rem;
+}
+
+#user-type {
+	background-color: var(--bg3);
+	color: var(--fg2);
+
+	padding: 0.3rem 0.5rem;
+	border-radius: var(--round);
+
+	font-size: 0.8rem;
+	font-weight: bold;
+	line-height: 1;
+}
+
+#user-body {
+	min-height: 10rem;
+	width: 100%;
+
+	padding: 2rem;
+	box-sizing: border-box;
+
+	background-color: var(--bg2);
+
+	border: 0.15rem solid var(--bg3);
+	border-top-color: var(--bg4);
+	border-left-color: var(--bg4);
+	border-radius: var(--round2);
+}

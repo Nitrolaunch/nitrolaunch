@@ -29,7 +29,9 @@ export default function LaunchFooter(props: LaunchFooterProps) {
 
 	// Prompts
 	const [showPasswordPrompt, setShowPasswordPrompt] = createSignal(false);
-	const [authInfo, setAuthInfo] = createSignal<AuthDisplayEvent | null>(null);
+	const [authInfo, setAuthInfo] = createSignal<AuthDisplayEvent | undefined>(
+		undefined
+	);
 	const [passwordPromptMessage, setPasswordPromptMessage] = createSignal("");
 	// Unlisteners for tauri events
 	const [unlistens, setUnlistens] = createSignal<UnlistenFn[]>([]);
@@ -63,7 +65,7 @@ export default function LaunchFooter(props: LaunchFooterProps) {
 		);
 
 		let authInfoClosePromise = listen("mcvm_close_auth_info", () => {
-			setAuthInfo(null);
+			setAuthInfo(undefined);
 		});
 
 		let passwordPromise = listen(
@@ -122,7 +124,7 @@ export default function LaunchFooter(props: LaunchFooterProps) {
 	}
 
 	async function stopGame(instance: string) {
-		setAuthInfo(null);
+		setAuthInfo(undefined);
 		setShowPasswordPrompt(false);
 		try {
 			await invoke("stop_game", { instance: instance });
@@ -242,17 +244,16 @@ export default function LaunchFooter(props: LaunchFooterProps) {
 				</div>
 			</div>
 
-			<Show when={authInfo() !== null}>
-				<MicrosoftAuthInfo
-					event={authInfo() as AuthDisplayEvent}
-					onCancel={() => {
-						setAuthInfo(null);
-						if (props.selectedItem != undefined) {
-							stopGame(props.selectedItem);
-						}
-					}}
-				/>
-			</Show>
+			<MicrosoftAuthInfo
+				visible={authInfo() != undefined}
+				event={authInfo() as AuthDisplayEvent}
+				onCancel={() => {
+					setAuthInfo(undefined);
+					if (props.selectedItem != undefined) {
+						stopGame(props.selectedItem);
+					}
+				}}
+			/>
 			<Show when={showPasswordPrompt()}>
 				<PasswordPrompt
 					onSubmit={() => setShowPasswordPrompt(false)}
