@@ -4,6 +4,7 @@ import {
 	createSignal,
 	For,
 	Match,
+	onCleanup,
 	Show,
 	Switch,
 } from "solid-js";
@@ -11,20 +12,31 @@ import { AngleDown, AngleRight, Plus, Properties } from "../../icons";
 import "./UserWidget.css";
 import getUserIcon, { stringCompare } from "../../utils";
 import Icon from "../Icon";
-import { errorToast } from "../dialog/Toasts";
+import { errorToast, successToast } from "../dialog/Toasts";
 import IconButton from "../input/IconButton";
 import { listen } from "@tauri-apps/api/event";
+import Modal from "../dialog/Modal";
+import { sanitizeInstanceId } from "../../pages/instance/InstanceConfig";
+import Dropdown from "../input/Dropdown";
+import IconTextButton from "../input/IconTextButton";
+import { clearInputError, inputError } from "../../errors";
 
 export default function UserWidget(props: UserWidgetProps) {
 	let [userData, methods] = createResource(updateUsers);
 
 	let [isOpen, setIsOpen] = createSignal(false);
 
+	let [isCreatingUser, setIsCreatingUser] = createSignal(false);
+	let [newUserId, setNewUserId] = createSignal("");
+	let [newUserType, setNewUserType] = createSignal("microsoft");
+
 	let [eventUnlisten, _] = createResource(async () => {
 		return await listen("refresh_users", () => {
 			methods.refetch();
 		});
 	});
+
+	onCleanup(() => eventUnlisten());
 
 	async function updateUsers() {
 		try {
@@ -106,7 +118,7 @@ export default function UserWidget(props: UserWidgetProps) {
 							</Show>
 						)}
 					</For>
-					<div class="user-tile" onclick={() => {}}>
+					<div class="user-tile" onclick={() => setIsCreatingUser(true)}>
 						<div class="cont">
 							<Icon icon={Plus} size="1.2rem" />
 						</div>
@@ -114,6 +126,70 @@ export default function UserWidget(props: UserWidgetProps) {
 					</div>
 				</div>
 			</Show>
+			<Modal
+				visible={isCreatingUser()}
+				width="25rem"
+				onClose={setIsCreatingUser}
+			>
+				<div class="cont col" style="padding:2rem">
+					<h3>Creating New User</h3>
+					<div class="cont col" style="width:100%">
+						<label class="cont start fullwidth label" for="user-id">
+							ID
+						</label>
+						<input
+							type="text"
+							name="user-id"
+							id="new-user-id"
+							placeholder="Enter user ID..."
+							style="width:100%"
+							onChange={(e) => {
+								e.target.value = sanitizeInstanceId(e.target.value);
+								setNewUserId(e.target.value);
+							}}
+							onkeyup={(e: any) => {
+								e.target.value = sanitizeInstanceId(e.target.value);
+							}}
+						/>
+					</div>
+					<label class="cont start fullwidth label" for="user-id">
+						TYPE
+					</label>
+					<Dropdown
+						options={[{ value: "microsoft", contents: "Microsoft" }]}
+						selected={newUserType()}
+						onChange={setNewUserType}
+					/>
+					<div></div>
+					<IconTextButton
+						text="Save"
+						size="1rem"
+						color="var(--bg2)"
+						selectedColor="var(--bg3)"
+						selected={false}
+						onClick={async () => {
+							if (newUserId() == "") {
+								inputError("new-user-id", "ID cannot be empty");
+							} else {
+								clearInputError("new-user-id");
+							}
+
+							try {
+								await invoke("create_user", {
+									id: newUserId(),
+									kind: newUserType(),
+								});
+								setIsCreatingUser(false);
+								window.location.href = `/users/${newUserId()}`;
+								successToast("User created");
+							} catch (e) {
+								setIsCreatingUser(false);
+								errorToast("Failed to create user: " + e);
+							}
+						}}
+					/>
+				</div>
+			</Modal>
 		</div>
 	);
 }

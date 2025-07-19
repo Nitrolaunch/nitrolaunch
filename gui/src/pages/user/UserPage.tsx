@@ -124,11 +124,13 @@ export default function UserPage() {
 										selectedBg="var(--errorbg)"
 										onClick={async () => {
 											try {
-												await invoke("update_instance", {
-													instanceId: id,
+												await invoke("remove_user", {
+													user: id,
 												});
+												successToast("User deleted");
+												window.location.href = "/";
 											} catch (e) {
-												errorToast("Failed to update instance: " + e);
+												errorToast("Failed to delete user: " + e);
 											}
 										}}
 										shadow={false}

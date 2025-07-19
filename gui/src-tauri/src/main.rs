@@ -115,6 +115,8 @@ fn main() {
 			commands::user::select_user,
 			commands::user::login_user,
 			commands::user::logout_user,
+			commands::user::create_user,
+			commands::user::remove_user,
 			commands::misc::get_supported_loaders,
 			commands::misc::get_minecraft_versions,
 		])

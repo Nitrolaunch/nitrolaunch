@@ -1,7 +1,15 @@
 use crate::output::LauncherOutput;
 use crate::State;
 use anyhow::Context;
-use mcvm::{core::user::UserKind, shared::output::NoOp};
+use mcvm::{
+	config::{
+		modifications::{apply_modifications_and_write, ConfigModification},
+		Config,
+	},
+	config_crate::user::{UserConfig, UserVariant},
+	core::user::UserKind,
+	shared::output::NoOp,
+};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fmt::Debug;
@@ -121,6 +129,44 @@ pub async fn logout_user(state: tauri::State<'_, State>, user: &str) -> Result<(
 	};
 
 	fmt_err(user.logout(&state.paths.core))?;
+
+	Ok(())
+}
+
+#[tauri::command]
+pub async fn create_user(
+	state: tauri::State<'_, State>,
+	id: &str,
+	kind: UserVariant,
+) -> Result<(), String> {
+	let mut configuration =
+		fmt_err(Config::open(&Config::get_path(&state.paths)).context("Failed to load config"))?;
+
+	let user = UserConfig::Simple(kind);
+
+	let modifications = vec![ConfigModification::AddUser(id.into(), user)];
+	fmt_err(
+		apply_modifications_and_write(&mut configuration, modifications, &state.paths)
+			.context("Failed to modify and write config"),
+	)?;
+
+	Ok(())
+}
+
+#[tauri::command]
+pub async fn remove_user(state: tauri::State<'_, State>, user: &str) -> Result<(), String> {
+	let paths = state.paths.clone();
+
+	logout_user(state, user).await?;
+
+	let mut configuration =
+		fmt_err(Config::open(&Config::get_path(&paths)).context("Failed to load config"))?;
+
+	let modifications = vec![ConfigModification::RemoveUser(user.into())];
+	fmt_err(
+		apply_modifications_and_write(&mut configuration, modifications, &paths)
+			.context("Failed to modify and write config"),
+	)?;
 
 	Ok(())
 }

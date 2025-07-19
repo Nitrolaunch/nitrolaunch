@@ -182,7 +182,7 @@ async fn add(data: &mut CmdData<'_>) -> anyhow::Result<()> {
 	let options = vec![UserVariant::Microsoft {}, UserVariant::Demo {}];
 	let kind = inquire::Select::new("What kind of user is this?", options).prompt()?;
 
-	let user = UserConfig { variant: kind };
+	let user = UserConfig::Simple(kind);
 
 	apply_modifications_and_write(
 		&mut config,

@@ -8,3 +8,10 @@ export function inputError(element: string, message?: string) {
 		elem.classList.add("error-shake");
 	}
 }
+
+export function clearInputError(element: string) {
+	let elem = document.getElementById(element);
+	if (elem != null) {
+		elem.classList.remove("error-shake");
+	}
+}

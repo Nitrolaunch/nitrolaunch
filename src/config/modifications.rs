@@ -20,6 +20,8 @@ pub enum ConfigModification {
 	AddInstance(InstanceID, InstanceConfig),
 	/// Adds a new package to an instance
 	AddPackage(InstanceID, PackageConfigDeser),
+	/// Removes a user
+	RemoveUser(String),
 }
 
 /// Applies modifications to the config
@@ -44,6 +46,9 @@ pub fn apply_modifications(
 					.get_mut(&instance_id)
 					.ok_or(anyhow!("Unknown instance '{instance_id}'"))?;
 				instance.common.packages.push(package);
+			}
+			ConfigModification::RemoveUser(user) => {
+				config.users.remove(&user);
 			}
 		};
 	}
@@ -73,9 +78,7 @@ mod tests {
 	fn test_user_add_modification() {
 		let mut config = ConfigDeser::default();
 
-		let user_config = UserConfig {
-			variant: UserVariant::Demo {},
-		};
+		let user_config = UserConfig::Simple(UserVariant::Demo {});
 
 		let modifications = vec![ConfigModification::AddUser("bob".into(), user_config)];
 

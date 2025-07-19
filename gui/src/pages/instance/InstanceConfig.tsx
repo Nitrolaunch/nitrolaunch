@@ -846,7 +846,7 @@ export interface InstanceConfigProps {
 }
 
 // Sanitizes a string so that it is a valid instance ID
-function sanitizeInstanceId(id: string): string {
+export function sanitizeInstanceId(id: string): string {
 	id = id.toLocaleLowerCase();
 	id = id.replace(/ /g, "-");
 	id = id.replace(/\_/g, "-");

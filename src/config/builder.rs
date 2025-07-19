@@ -144,7 +144,7 @@ impl<'parent> UserBuilder<'parent> {
 		};
 		Self {
 			id,
-			config: UserConfig { variant },
+			config: UserConfig::Simple(variant),
 			parent,
 		}
 	}

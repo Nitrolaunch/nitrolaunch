@@ -198,6 +198,10 @@ button {
 	align-items: center;
 }
 
+.fullwidth {
+	width: 100%;
+}
+
 /* Animations */
 
 .rotating {
