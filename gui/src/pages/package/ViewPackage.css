@@ -218,7 +218,7 @@
 
 .package-gallery-arrow {
 	position: absolute;
-	top: calc(50%-1rem);
+	top: calc(50% - 1rem);
 	color: white;
 	cursor: pointer;
 	mix-blend-mode: difference;

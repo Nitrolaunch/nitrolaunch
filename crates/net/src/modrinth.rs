@@ -538,9 +538,13 @@ pub async fn search_projects(
 					serde_json::to_string(&x).unwrap().replace("\"", "")
 				)
 			})
-			.collect::<Vec<_>>()
-			.join(",");
-		format!(",[{categories}]")
+			.collect::<Vec<_>>();
+		if categories.is_empty() {
+			String::new()
+		} else {
+			let categories = categories.join(",");
+			format!(",[{categories}]")
+		}
 	};
 
 	let facets = format!("facets=[{types}{versions}{loaders}{categories}]",);

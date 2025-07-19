@@ -19,6 +19,9 @@ import {
 	getPackageTypeDisplayName,
 	getPackageTypeIcon,
 	Loader,
+	PackageCategory,
+	packageCategoryDisplayName,
+	packageCategoryIcon,
 } from "../../package";
 import InlineSelect from "../input/InlineSelect";
 import { invoke } from "@tauri-apps/api";
@@ -232,6 +235,36 @@ export default function PackageFilters(props: PackageFiltersProps) {
 						/>
 					</div>
 				</Show>
+				<Show when={tab() == "categories"}>
+					<div class="cont package-filter-tab-contents" style="padding:0.5rem">
+						<div class="cont" style="width:75%">
+							<InlineSelect
+								options={[
+									PackageCategory.Adventure,
+									PackageCategory.Building,
+									PackageCategory.Optimization,
+								].map(packageCategoryToOption)}
+								connected={false}
+								selected={props.categories}
+								onChangeMulti={(x) =>
+									props.setCategories(x as PackageCategory[])
+								}
+							/>
+						</div>
+						<div class="cont" style="width:25%">
+							<Dropdown
+								options={Object.values(PackageCategory).map(
+									packageCategoryToOption
+								)}
+								selected={props.categories}
+								onChangeMulti={(x) =>
+									props.setCategories(x as PackageCategory[])
+								}
+								zIndex="20"
+							/>
+						</div>
+					</div>
+				</Show>
 				<Show when={tab() == "stability"}>
 					<div class="cont package-filter-tab-contents" style="padding:0.5rem">
 						<InlineSelect
@@ -306,11 +339,13 @@ export interface PackageFiltersProps {
 	loaders: string[];
 	stability?: "stable" | "latest";
 	features: string[];
+	categories: PackageCategory[];
 	setPackageType: (type: PackageType) => void;
 	setMinecraftVersions: (versions: string[]) => void;
 	setLoaders: (loaders: string[]) => void;
 	setStability: (stability?: "stable" | "latest") => void;
 	setFeatures: (features: string[]) => void;
+	setCategories: (categories: PackageCategory[]) => void;
 	availablePackageTypes?: PackageType[];
 	availableMinecraftVersions?: string[];
 	availableFeatures?: string[];
@@ -386,17 +421,32 @@ interface MinecraftVersionsTabProps {
 	setMinecraftVersions: (versions: string[]) => void;
 }
 
+function packageCategoryToOption(category: PackageCategory) {
+	return {
+		value: category,
+		contents: (
+			<div class="cont">
+				<Icon icon={packageCategoryIcon(category)} size="1rem" />
+				<div class="cont">{packageCategoryDisplayName(category)}</div>
+			</div>
+		),
+		color: "var(--profile)",
+	};
+}
+
 // The actual filters that are applied
 export interface PackageFilterOptions {
 	minecraft_versions: string[];
 	loaders: string[];
 	stability?: "stable" | "latest";
+	categories: PackageCategory[];
 }
 
 export function defaultPackageFilters() {
 	let out: PackageFilterOptions = {
 		minecraft_versions: [],
 		loaders: [],
+		categories: [],
 	};
 	return out;
 }

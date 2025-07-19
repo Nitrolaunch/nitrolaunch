@@ -26,8 +26,9 @@ import { FooterData } from "../../App";
 import { FooterMode } from "../../components/navigation/Footer";
 import { errorToast, warningToast } from "../../components/dialog/Toasts";
 import PackageLabels from "../../components/package/PackageLabels";
-import { PackageType, RepoInfo } from "../../package";
+import { PackageCategory, PackageType, RepoInfo } from "../../package";
 import PackageFilters, {
+	defaultPackageFilters,
 	PackageFilterOptions,
 } from "../../components/package/PackageFilters";
 import LoadingSpinner from "../../components/utility/LoadingSpinner";
@@ -50,7 +51,7 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 
 	let filters = () => {
 		if (searchParams["filters"] == undefined) {
-			return { minecraft_versions: [], loaders: [] } as PackageFilterOptions;
+			return defaultPackageFilters();
 		}
 
 		try {
@@ -59,7 +60,7 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 			) as PackageFilterOptions;
 		} catch (e) {
 			console.error("Failed to parse filters: " + e);
-			return { minecraft_versions: [], loaders: [] } as PackageFilterOptions;
+			return defaultPackageFilters();
 		}
 	};
 
@@ -81,6 +82,9 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 	let [filteredLoaders, setFilteredLoaders] = createSignal<string[]>(
 		filters().loaders
 	);
+	let [filteredCategories, setFilteredCategories] = createSignal<
+		PackageCategory[]
+	>(filters().categories);
 	let [filteredStability, setFilteredStability] = createSignal<
 		"stable" | "latest" | undefined
 	>();
@@ -90,6 +94,7 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 		return {
 			minecraft_versions: filteredMinecraftVersions(),
 			loaders: filteredLoaders(),
+			categories: filteredCategories(),
 		} as PackageFilterOptions;
 	};
 
@@ -180,6 +185,7 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 				packageKinds: [filteredPackageType()],
 				minecraftVersions: filteredMinecraftVersions(),
 				loaders: filteredLoaders(),
+				categories: filteredCategories(),
 			});
 			setPackageCount(results.total_results);
 
@@ -345,6 +351,7 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 						minecraftVersions={filteredMinecraftVersions()}
 						loaders={filteredLoaders()}
 						stability={filteredStability()}
+						categories={filteredCategories()}
 						setPackageType={(type) => {
 							setFilteredPackageType(type);
 							setPage(0);
@@ -358,9 +365,15 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 							setFilteredLoaders(loaders);
 							updateFilters();
 						}}
+						setCategories={(categories) => {
+							setFilteredCategories(categories);
+							updateFilters();
+						}}
 						setStability={setFilteredStability}
 						availablePackageTypes={repoPackageTypes()}
 						filteringVersions={false}
+						features={[]}
+						setFeatures={() => {}}
 					/>
 				</div>
 				<div class="cont">
