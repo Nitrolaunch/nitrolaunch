@@ -63,6 +63,12 @@ pub fn apply_modifications_and_write(
 ) -> anyhow::Result<()> {
 	apply_modifications(config, modifications)?;
 	let path = Config::get_path(paths);
+	// Backup the contents first
+	std::fs::copy(
+		&path,
+		paths.project.config_dir().join("mcvm_write_backup.json"),
+	)
+	.context("Failed to backup config")?;
 	json_to_file_pretty(path, config).context("Failed to write modified configuration")?;
 
 	Ok(())
