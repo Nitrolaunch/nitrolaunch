@@ -1,6 +1,7 @@
 use crate::output::LauncherOutput;
 use crate::State;
 use anyhow::Context;
+use itertools::Itertools;
 use mcvm::plugin::PluginManager;
 use mcvm::plugin_crate::hooks::{
 	AddSidebarButtons, GetPage, InjectPageScript, InjectPageScriptArg, SidebarButton,
@@ -13,19 +14,16 @@ use std::fmt::Debug;
 use super::{fmt_err, load_config};
 
 #[tauri::command]
-pub async fn get_plugins(
-	state: tauri::State<'_, State>,
-	app_handle: tauri::AppHandle,
-) -> Result<Vec<PluginInfo>, String> {
+pub async fn get_local_plugins(state: tauri::State<'_, State>) -> Result<Vec<PluginInfo>, String> {
 	let config =
 		fmt_err(PluginManager::open_config(&state.paths).context("Failed to open plugin config"))?;
 
-	let downloaded = fmt_err(
+	let plugins = fmt_err(
 		PluginManager::get_available_plugins(&state.paths)
 			.context("Failed to get available plugins"),
 	)?;
 
-	let downloaded = downloaded.into_iter().filter_map(|x| {
+	let plugins = plugins.into_iter().filter_map(|x| {
 		let id = x.0;
 		let manifest = PluginManager::read_plugin_manifest(&id, &state.paths).ok()?;
 
@@ -38,6 +36,14 @@ pub async fn get_plugins(
 		})
 	});
 
+	Ok(plugins.sorted_by_cached_key(|x| x.id.clone()).collect())
+}
+
+#[tauri::command]
+pub async fn get_remote_plugins(
+	state: tauri::State<'_, State>,
+	app_handle: tauri::AppHandle,
+) -> Result<Vec<PluginInfo>, String> {
 	let mut output = LauncherOutput::new(state.get_output(app_handle));
 	output.set_task("get_plugins");
 	let mut process = output.get_process();
@@ -63,10 +69,9 @@ pub async fn get_plugins(
 		installed: false,
 	});
 
-	let mut all: Vec<_> = downloaded.chain(verified_plugins).collect();
-	all.sort_by_cached_key(|x| x.id.clone());
-
-	Ok(all)
+	Ok(verified_plugins
+		.sorted_by_cached_key(|x| x.id.clone())
+		.collect())
 }
 
 #[derive(Serialize, Deserialize, Debug)]

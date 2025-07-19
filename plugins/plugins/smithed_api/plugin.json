@@ -1,5 +1,5 @@
 {
-	"name": "Modrinth",
+	"name": "Smithed API",
 	"description": "Make simple Smithed API calls to query project versions",
 	"protocol_version": 3,
 	"hooks": {

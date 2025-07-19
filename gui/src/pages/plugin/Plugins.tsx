@@ -2,19 +2,34 @@ import { invoke } from "@tauri-apps/api";
 import { createResource, createSignal, For, Show } from "solid-js";
 import "./Plugins.css";
 import IconTextButton from "../../components/input/IconTextButton";
-import { Refresh } from "../../icons";
+import {
+	Book,
+	Box,
+	CurlyBraces,
+	Cycle,
+	Download,
+	Folder,
+	Gear,
+	Globe,
+	Graph,
+	Language,
+	Link,
+	Refresh,
+	Text,
+} from "../../icons";
 import { emit } from "@tauri-apps/api/event";
 import { errorToast, successToast } from "../../components/dialog/Toasts";
+import Icon from "../../components/Icon";
 
 export default function Plugins() {
-	let [plugins, methods] = createResource(updatePlugins);
+	let [localPlugins, localMethods] = createResource(
+		async () => (await invoke("get_local_plugins")) as PluginInfo[]
+	);
+	let [remotePlugins, remoteMethods] = createResource(
+		async () => (await invoke("get_remote_plugins")) as PluginInfo[]
+	);
 	let [isRemote, setIsRemote] = createSignal(false);
 	let [restartNeeded, setRestartNeeded] = createSignal(false);
-
-	async function updatePlugins() {
-		let plugins: PluginInfo[] = await invoke("get_plugins");
-		return plugins;
-	}
 
 	return (
 		<div id="plugins">
@@ -57,19 +72,15 @@ export default function Plugins() {
 			</div>
 			<br />
 			<div class="cont col" id="plugin-list">
-				<For each={plugins()}>
+				<For each={localPlugins()}>
 					{(info) => {
-						let pluginIsRemote = !info.installed;
-						// Hide the remote version of a plugin if it is installed locally
-						let idCount = plugins()!.filter((x) => x.id == info.id).length;
-						let isRemoteHidden = pluginIsRemote && idCount > 1;
-						let isCorrectPage = () => isRemote() == pluginIsRemote;
 						return (
-							<Show when={isCorrectPage() && !isRemoteHidden}>
+							<Show when={!isRemote()}>
 								<Plugin
 									info={info}
 									updatePluginList={() => {
-										methods.refetch();
+										localMethods.refetch();
+										remoteMethods.refetch();
 										setRestartNeeded(true);
 									}}
 								/>
@@ -77,6 +88,28 @@ export default function Plugins() {
 						);
 					}}
 				</For>
+				<Show when={localPlugins() != undefined}>
+					<For each={remotePlugins()}>
+						{(info) => {
+							// Hide the remote version of a plugin if it is installed locally
+							let idCount = () =>
+								localPlugins()!.filter((x) => x.id == info.id).length;
+							let isRemoteHidden = () => idCount() >= 1;
+							return (
+								<Show when={isRemote() && !isRemoteHidden()}>
+									<Plugin
+										info={info}
+										updatePluginList={() => {
+											localMethods.refetch();
+											remoteMethods.refetch();
+											setRestartNeeded(true);
+										}}
+									/>
+								</Show>
+							);
+						}}
+					</For>
+				</Show>
 			</div>
 			<br />
 			<br />
@@ -97,6 +130,7 @@ function Plugin(props: PluginProps) {
 		>
 			<div class="plugin-top">
 				<div class="cont plugin-header">
+					<div class="cont plugin-icon">{getPluginIcon(props.info.id)}</div>
 					<div class="plugin-name">{props.info.name}</div>
 					<div class="plugin-id">{props.info.id}</div>
 				</div>
@@ -183,4 +217,58 @@ interface PluginInfo {
 	description?: string;
 	enabled: boolean;
 	installed: boolean;
+}
+
+function getPluginIcon(plugin: string) {
+	let imageIcon = (() => {
+		if (plugin == "fabric_quilt") {
+			return "/icons/fabric.png";
+		} else if (plugin == "paper") {
+			return "/icons/paper.png";
+		} else if (plugin == "sponge") {
+			return "/icons/sponge.png";
+		}
+	})();
+
+	if (imageIcon != undefined) {
+		return <img src={imageIcon} style="width:1rem" />;
+	}
+
+	let svgIcon = (() => {
+		if (plugin == "args") {
+			return Text;
+		} else if (plugin == "automate") {
+			return Gear;
+		} else if (plugin == "backup") {
+			return Download;
+		} else if (plugin == "config_split") {
+			return Gear;
+		} else if (plugin == "custom_files") {
+			return Folder;
+		} else if (plugin == "docs") {
+			return Book;
+		} else if (plugin == "extra_versions") {
+			return CurlyBraces;
+		} else if (plugin == "lang") {
+			return Language;
+		} else if (plugin == "mcvm_transfer") {
+			return Cycle;
+		} else if (plugin == "options") {
+			return Gear;
+		} else if (plugin == "server_restart") {
+			return Refresh;
+		} else if (plugin == "stats") {
+			return Graph;
+		} else if (plugin == "webtools") {
+			return Globe;
+		} else if (plugin == "weld") {
+			return Link;
+		} else if (plugin == "xmcl_transfer") {
+			return Cycle;
+		}
+
+		return Box;
+	})();
+
+	return <Icon icon={svgIcon} size="1rem" />;
 }

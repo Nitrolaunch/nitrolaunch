@@ -50,8 +50,11 @@
 	justify-content: flex-start;
 }
 
-.plugin-name {
+.plugin-icon {
 	margin-left: 0.3rem;
+}
+
+.plugin-name {
 	font-weight: bold;
 }
 
