@@ -2,7 +2,7 @@ use crate::download::{self, user_agent};
 use anyhow::{anyhow, Context};
 use mcvm_shared::{
 	loaders::Loader,
-	pkg::{PackageKind, PackageSearchParameters},
+	pkg::{PackageCategory, PackageKind, PackageSearchParameters},
 };
 use reqwest::{Client, StatusCode};
 use serde::{Deserialize, Serialize};
@@ -524,7 +524,26 @@ pub async fn search_projects(
 		format!(",[{loaders}]")
 	};
 
-	let facets = format!("facets=[{types}{versions}{loaders}]",);
+	let categories = if params.categories.is_empty() {
+		String::new()
+	} else {
+		let categories = params
+			.categories
+			.into_iter()
+			.map(convert_category)
+			.flatten()
+			.map(|x| {
+				format!(
+					"\"categories={}\"",
+					serde_json::to_string(&x).unwrap().replace("\"", "")
+				)
+			})
+			.collect::<Vec<_>>()
+			.join(",");
+		format!(",[{categories}]")
+	};
+
+	let facets = format!("facets=[{types}{versions}{loaders}{categories}]",);
 	let url = format!(
 		"https://api.modrinth.com/v2/search?limit={limit}{search}&{facets}&offset={}",
 		params.skip
@@ -566,4 +585,47 @@ pub struct SearchedProject {
 	pub gallery: Option<Vec<String>>,
 	/// Featured gallery image for this project
 	pub featured_gallery: Option<String>,
+}
+
+fn convert_category(category: PackageCategory) -> &'static [&'static str] {
+	match category {
+		PackageCategory::Blocks => &["blocks"],
+		PackageCategory::Building => &["blocks", "decoration"],
+		PackageCategory::Decoration => &["decoration"],
+		PackageCategory::Exploration | PackageCategory::Worldgen => &["worldgen", "adventure"],
+		PackageCategory::Adventure => &["adventure"],
+		PackageCategory::Atmosphere => &["atmosphere"],
+		PackageCategory::Audio => &["audio"],
+		PackageCategory::Cartoon => &["cartoon"],
+		PackageCategory::Challenge => &["challenging"],
+		PackageCategory::Combat => &["combat"],
+		PackageCategory::Economy => &["economy"],
+		PackageCategory::Entities => &["entities"],
+		PackageCategory::Equipment => &["equipment"],
+		PackageCategory::Fantasy => &["fantasy"],
+		PackageCategory::Fonts => &["fonts"],
+		PackageCategory::Food => &["food"],
+		PackageCategory::GameMechanics => &["game-mechanics"],
+		PackageCategory::Gui => &["gui"],
+		PackageCategory::Items => &["items"],
+		PackageCategory::Extensive => &["kitchen-sink"],
+		PackageCategory::Library => &["library"],
+		PackageCategory::Lightweight => &["lightweight"],
+		PackageCategory::Language => &["locale"],
+		PackageCategory::Magic => &["magic"],
+		PackageCategory::Minigame => &["minigame"],
+		PackageCategory::Mobs => &["mobs"],
+		PackageCategory::Multiplayer => &["multiplayer"],
+		PackageCategory::Optimization => &["optimization"],
+		PackageCategory::Realistic => &["realistic"],
+		PackageCategory::Simplistic => &["simplistic"],
+		PackageCategory::Social => &["social"],
+		PackageCategory::Storage => &["storage"],
+		PackageCategory::Technology => &["technology"],
+		PackageCategory::Transportation => &["transportation"],
+		PackageCategory::Tweaks => &["tweaks"],
+		PackageCategory::Utility => &["utility"],
+		PackageCategory::VanillaPlus => &["vanilla-like"],
+		_ => &[],
+	}
 }

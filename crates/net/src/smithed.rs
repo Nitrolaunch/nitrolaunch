@@ -1,6 +1,6 @@
 use crate::download::{self, user_agent};
 use anyhow::Context;
-use mcvm_shared::pkg::PackageSearchParameters;
+use mcvm_shared::pkg::{PackageCategory, PackageSearchParameters};
 use reqwest::{Client, StatusCode};
 use serde::{Deserialize, Serialize};
 
@@ -128,15 +128,11 @@ pub async fn search_packs(
 	};
 	let page = params.skip / params.count as usize + 1;
 
-	let versions = params
-		.minecraft_versions
-		.into_iter()
-		.map(|x| format!("&version={x}"))
-		.collect::<Vec<_>>()
-		.join("");
+	let filters = create_search_filters(params.minecraft_versions, params.categories);
 
-	let url =
-		format!("{API_URL}/packs?limit={limit}{search}&page={page}{versions}&scope=data&scope=meta.rawId");
+	let url = format!(
+		"{API_URL}/packs?limit={limit}{search}&page={page}{filters}&scope=data&scope=meta.rawId"
+	);
 
 	download::json(url, client).await
 }
@@ -170,19 +166,49 @@ pub async fn count_packs(
 		String::new()
 	};
 
-	let versions = params
-		.minecraft_versions
+	let filters = create_search_filters(params.minecraft_versions, params.categories);
+
+	let url = format!("{API_URL}/packs/count?{search}{filters}");
+
+	download::json(url, client).await
+}
+
+fn create_search_filters(
+	minecraft_versions: Vec<String>,
+	categories: Vec<PackageCategory>,
+) -> String {
+	let versions = minecraft_versions
 		.into_iter()
 		.map(|x| format!("&version={x}"))
 		.collect::<Vec<_>>()
 		.join("");
 
-	let url = format!("{API_URL}/packs/count?{search}{versions}");
+	let categories = categories
+		.into_iter()
+		.filter_map(|x| convert_category(x))
+		.map(|x| format!("&category={x}"))
+		.collect::<Vec<_>>()
+		.join("");
 
-	download::json(url, client).await
+	format!("{versions}{categories}")
 }
 
 /// Get the URL to a Smithed pack gallery entry
 pub fn get_gallery_url(pack_id: &str, index: u8) -> String {
 	format!("https://api.smithed.dev/v2/packs/{pack_id}/gallery/{index}")
+}
+
+fn convert_category(category: PackageCategory) -> Option<&'static str> {
+	match category {
+		PackageCategory::Extensive => Some("Extensive"),
+		PackageCategory::Lightweight => Some("Lightweight"),
+		PackageCategory::Tweaks => Some("QoL"),
+		PackageCategory::VanillaPlus => Some("Vanilla+"),
+		PackageCategory::Technology => Some("Tech"),
+		PackageCategory::Magic => Some("Magic"),
+		PackageCategory::Exploration => Some("Exploration"),
+		PackageCategory::Worldgen => Some("World Overhaul"),
+		PackageCategory::Library => Some("Library"),
+		_ => None,
+	}
 }
