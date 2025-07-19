@@ -270,7 +270,7 @@ function Section(props: SectionProps) {
 							}}
 						>
 							<div class="cont instance-list-icon">
-								<Plus />
+								<Icon icon={Plus} size="1.5rem" />
 							</div>
 							<div style="" class="bold">
 								{`Create ${

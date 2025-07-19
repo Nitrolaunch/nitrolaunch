@@ -15,6 +15,8 @@
 	border-style: solid;
 	border-width: 0px;
 	cursor: pointer;
+	-webkit-user-select: none;
+	user-select: none;
 }
 
 .instance-list-header-item.instances {

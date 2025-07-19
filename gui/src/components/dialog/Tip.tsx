@@ -33,4 +33,4 @@ export interface TipProps {
 	fullwidth?: boolean;
 }
 
-export type TipSide = "top" | "bottom" | "right";
+export type TipSide = "top" | "bottom" | "right" | "left";
