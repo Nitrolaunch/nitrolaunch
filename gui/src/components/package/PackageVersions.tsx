@@ -356,6 +356,7 @@ function PackageVersionEntry(props: PackageVersionEntryProps) {
 					packageTypes={[]}
 					categories={[]}
 					loaders={loaders}
+					limit={3}
 					small
 				/>
 				<Show when={props.version.name != undefined}>

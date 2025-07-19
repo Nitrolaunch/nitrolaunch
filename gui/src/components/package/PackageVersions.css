@@ -1,5 +1,5 @@
 .package-versions {
-	width: 45rem;
+	width: 48rem;
 }
 
 .package-versions-header {
@@ -19,7 +19,7 @@
 	display: grid;
 	width: 100%;
 	height: 4rem;
-	grid-template-columns: minmax(0, 0.7fr) minmax(0, 0.8fr) minmax(0, 0.5fr);
+	grid-template-columns: minmax(0, 0.7fr) minmax(0, 0.8fr) minmax(0, 0.7fr);
 	border: 0.15rem solid var(--bg3);
 	border-radius: var(--round);
 	box-sizing: border-box;
@@ -31,7 +31,7 @@
 }
 
 .package-version-mc-versions {
-	font-weight: bold;
+	/* font-weight: bold; */
 	font-size: 1rem;
 	gap: 0.2rem;
 	line-height: 1;
@@ -41,7 +41,7 @@
 .package-version-mc-versions > div {
 	border: 0.15rem solid var(--bg3);
 	border-radius: var(--round2);
-	padding: 0.3rem;
+	padding: 0.35rem;
 }
 
 .package-version-name {

@@ -4,15 +4,14 @@ import { loadPagePlugins } from "../../plugins";
 import { errorToast, successToast } from "../../components/dialog/Toasts";
 import LoadingSpinner from "../../components/utility/LoadingSpinner";
 import getUserIcon, { beautifyString } from "../../utils";
-import { Delete, Gear, Lock, LockOpen, Play, Upload } from "../../icons";
+import { Delete, Lock, LockOpen } from "../../icons";
 import "./UserPage.css";
 import IconTextButton from "../../components/input/IconTextButton";
 import { invoke } from "@tauri-apps/api";
-import { FooterData } from "../../App";
-import { FooterMode } from "../../components/navigation/Footer";
 import { UserInfo } from "../../components/user/UserWidget";
+import { emit } from "@tauri-apps/api/event";
 
-export default function UserPage(props: UserPageProps) {
+export default function UserPage() {
 	let params = useParams();
 	let id = params.userId;
 
@@ -31,14 +30,6 @@ export default function UserPage(props: UserPageProps) {
 			return undefined;
 		}
 	});
-
-	let setDirty = () => {
-		props.setFooterData({
-			selectedItem: "",
-			mode: FooterMode.SaveInstanceConfig,
-			action: async () => {},
-		});
-	};
 
 	return (
 		<Show
@@ -93,6 +84,7 @@ export default function UserPage(props: UserPageProps) {
 														await invoke("login_user", { user: id });
 														successToast("Logged in");
 														userOperations.refetch();
+														emit("refresh_users");
 													} catch (e) {
 														errorToast("Failed to log in: " + e);
 													}
@@ -113,6 +105,7 @@ export default function UserPage(props: UserPageProps) {
 														await invoke("logout_user", { user: id });
 														successToast("Logged out");
 														userOperations.refetch();
+														emit("refresh_users");
 													} catch (e) {
 														errorToast("Failed to log out: " + e);
 													}
@@ -152,8 +145,4 @@ export default function UserPage(props: UserPageProps) {
 			</div>
 		</Show>
 	);
-}
-
-export interface UserPageProps {
-	setFooterData: (data: FooterData) => void;
 }

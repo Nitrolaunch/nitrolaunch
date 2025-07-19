@@ -13,6 +13,20 @@
 	width: 100%;
 }
 
+#package-version-info-details {
+	width: 100%;
+}
+
+.package-version-info-details-row {
+	display: grid;
+	width: 100%;
+	grid-template-columns: minmax(0, 0.125fr) minmax(0, 1fr);
+}
+
+.package-version-info-details-row-values {
+	overflow-x: scroll;
+}
+
 #package-version-info-relation-sections-container {
 	display: grid;
 	grid-template-columns: repeat(2, minmax(0, 1fr));

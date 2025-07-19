@@ -13,11 +13,18 @@ import getUserIcon, { stringCompare } from "../../utils";
 import Icon from "../Icon";
 import { errorToast } from "../dialog/Toasts";
 import IconButton from "../input/IconButton";
+import { listen } from "@tauri-apps/api/event";
 
 export default function UserWidget(props: UserWidgetProps) {
 	let [userData, methods] = createResource(updateUsers);
 
 	let [isOpen, setIsOpen] = createSignal(false);
+
+	let [eventUnlisten, _] = createResource(async () => {
+		return await listen("refresh_users", () => {
+			methods.refetch();
+		});
+	});
 
 	async function updateUsers() {
 		try {

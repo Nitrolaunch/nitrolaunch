@@ -19,6 +19,11 @@ export default function PackageLabels(props: PackageLabelsProps) {
 
 	let allLoaders = createMemo(() => getAllLoaders(props.loaders));
 
+	let isLimited = () =>
+		props.limit != undefined &&
+		allLoaders().length + props.packageTypes.length + props.categories.length >
+			props.limit;
+
 	return (
 		<div class={`cont package-labels ${small ? "small" : ""}`}>
 			<For each={/* @once */ props.packageTypes}>
@@ -87,6 +92,7 @@ export default function PackageLabels(props: PackageLabelsProps) {
 					}
 				}}
 			</For>
+			<Show when={isLimited()}>...</Show>
 		</div>
 	);
 }

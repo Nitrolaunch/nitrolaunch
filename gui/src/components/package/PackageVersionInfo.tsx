@@ -18,7 +18,7 @@ import { StabilityIndicator } from "./PackageVersions";
 import { canonicalizeListOrSingle } from "../../utils/values";
 import { invoke } from "@tauri-apps/api";
 import Icon, { HasWidthHeight } from "../Icon";
-import LoadingSpinner from "../utility/LoadingSpinner";
+import PackageLabels from "./PackageLabels";
 
 export default function PackageVersionInfo(props: PackageVersionInfoProps) {
 	let dependencies = () =>
@@ -54,7 +54,7 @@ export default function PackageVersionInfo(props: PackageVersionInfoProps) {
 		() => props.version,
 		async () => {
 			if (props.version == undefined) {
-				return undefined;
+				return {};
 			}
 
 			let allPackages = new Set();
@@ -94,7 +94,8 @@ export default function PackageVersionInfo(props: PackageVersionInfoProps) {
 			}
 
 			return out;
-		}
+		},
+		{ initialValue: {} }
 	);
 
 	return (
@@ -108,59 +109,70 @@ export default function PackageVersionInfo(props: PackageVersionInfoProps) {
 							: props.version.name}
 					</div>
 				</div>
+				<div class="cont col" id="package-version-info-details">
+					<div class="package-version-info-details-row">
+						<div class="cont start bold">Versions</div>
+						<div class="cont start package-version-info-details-row-values">
+							<For
+								each={canonicalizeListOrSingle(
+									props.version.minecraft_versions
+								)}
+							>
+								{(version) => <div>{version}</div>}
+							</For>
+						</div>
+					</div>
+					<div class="package-version-info-details-row">
+						<div class="cont start bold">Loaders</div>
+						<div class="cont start package-version-info-details-row-values">
+							<PackageLabels
+								loaders={canonicalizeListOrSingle(props.version.loaders)}
+								packageTypes={[]}
+								categories={[]}
+							/>
+						</div>
+					</div>
+				</div>
 				<div
 					class="cont col"
 					id="package-version-info-relation-sections-container"
 				>
-					<Show
-						when={
-							packageMetas() != undefined &&
-							props.version != undefined &&
-							!packageMetas.loading
-						}
-						fallback={
-							<div class="cont">
-								<LoadingSpinner size="3rem" />
-							</div>
-						}
-					>
-						<RelationList
-							header="Dependencies"
-							icon={Diagram}
-							packages={dependencies()}
-							meta={packageMetas()!}
-						/>
-						<RelationList
-							header="Explicit Dependencies"
-							icon={Minecraft}
-							packages={explicitDependencies()}
-							meta={packageMetas()!}
-						/>
-						<RelationList
-							header="Conflicts"
-							icon={Error}
-							packages={conflicts()}
-							meta={packageMetas()!}
-						/>
-						<RelationList
-							header="Extensions"
-							icon={Link}
-							packages={extensions()}
-							meta={packageMetas()!}
-						/>
-						<RelationList
-							header="Bundled"
-							icon={Folder}
-							packages={bundled()}
-							meta={packageMetas()!}
-						/>
-						<RelationList
-							header="Recommended"
-							icon={Star}
-							packages={recommendations()}
-							meta={packageMetas()!}
-						/>
-					</Show>
+					<RelationList
+						header="Dependencies"
+						icon={Diagram}
+						packages={dependencies()}
+						meta={packageMetas()}
+					/>
+					<RelationList
+						header="Explicit Dependencies"
+						icon={Minecraft}
+						packages={explicitDependencies()}
+						meta={packageMetas()}
+					/>
+					<RelationList
+						header="Conflicts"
+						icon={Error}
+						packages={conflicts()}
+						meta={packageMetas()}
+					/>
+					<RelationList
+						header="Extensions"
+						icon={Link}
+						packages={extensions()}
+						meta={packageMetas()}
+					/>
+					<RelationList
+						header="Bundled"
+						icon={Folder}
+						packages={bundled()}
+						meta={packageMetas()}
+					/>
+					<RelationList
+						header="Recommended"
+						icon={Star}
+						packages={recommendations()}
+						meta={packageMetas()}
+					/>
 				</div>
 				<div class="cont">
 					<IconTextButton
@@ -214,30 +226,16 @@ function RelationList(props: RelationListProps) {
 					<For each={props.packages}>
 						{(pkg) => {
 							let id = typeof pkg == "object" ? pkg.value : pkg;
-							if (!(id in props.meta)) {
-								return (
-									<div
-										class="cont package-version-info-relation"
-										style="border-color: var(--error);cursor:initial"
-									>
-										<img
-											src="/icons/default_instance.png"
-											class="package-version-info-relation-icon"
-											onerror={(e) =>
-												((e.target as any).src = "/icons/default_instance.png")
-											}
-										/>
-										Error
-									</div>
-								);
-							}
 
-							let meta = props.meta[id];
-							let icon =
-								meta.icon == undefined
+							let meta = () => props.meta[id];
+							let icon = () =>
+								meta() == undefined || meta()!.icon == undefined
 									? "/icons/default_instance.png"
-									: meta.icon;
-							let name = meta.name == undefined ? id : meta.name;
+									: meta()!.icon;
+							let name = () =>
+								meta() == undefined || meta()!.name == undefined
+									? id
+									: meta()!.name;
 
 							return (
 								<div
@@ -247,13 +245,13 @@ function RelationList(props: RelationListProps) {
 									}}
 								>
 									<img
-										src={icon}
+										src={icon()}
 										class="package-version-info-relation-icon"
 										onerror={(e) =>
 											((e.target as any).src = "/icons/default_instance.png")
 										}
 									/>
-									{name}
+									{name()}
 								</div>
 							);
 						}}
@@ -268,5 +266,5 @@ interface RelationListProps {
 	header: string;
 	icon: (props: HasWidthHeight) => JSX.Element;
 	packages: (string | { value: string; invert?: boolean })[];
-	meta: { [id: string]: PackageMeta };
+	meta: { [id: string]: PackageMeta | undefined };
 }
