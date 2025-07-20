@@ -13,7 +13,7 @@ import {
 } from "../../icons";
 import Icon from "../Icon";
 import InlineSelect from "../input/InlineSelect";
-import { InstanceInfo } from "../../types";
+import { InstanceInfo, InstanceOrProfile } from "../../types";
 import { invoke } from "@tauri-apps/api";
 import { errorToast, successToast } from "../dialog/Toasts";
 import {
@@ -27,8 +27,9 @@ import { pkgRequestToString } from "../../utils";
 export default function PackageInstallModal(props: PackageInstallModalProps) {
 	let [selectedTab, setSelectedTab] = createSignal("instance");
 
-	let [selectedInstanceOrProfile, setSelectedInstanceOrProfile] =
-		createSignal(undefined);
+	let [selectedInstanceOrProfile, setSelectedInstanceOrProfile] = createSignal<
+		string | undefined
+	>(undefined);
 	let [selectedProfileLocation, setSelectedProfileLocation] =
 		createSignal("all");
 
@@ -45,6 +46,20 @@ export default function PackageInstallModal(props: PackageInstallModalProps) {
 		}
 
 		return [instances, profiles];
+	});
+
+	// Automatically set the type and id based on what the user last added a package to
+	createResource(async () => {
+		let lastAdded = (await invoke("get_last_added_package_location")) as
+			| [string, InstanceOrProfile]
+			| undefined;
+		if (lastAdded != undefined) {
+			// Don't overwrite if the user already selected
+			if (selectedInstanceOrProfile() == undefined) {
+				setSelectedTab(lastAdded[1]);
+				setSelectedInstanceOrProfile(lastAdded[0]);
+			}
+		}
 	});
 
 	let install = async () => {
@@ -67,12 +82,18 @@ export default function PackageInstallModal(props: PackageInstallModalProps) {
 			let pkg = pkgRequestToString({
 				id: props.packageId,
 				version: props.selectedVersion,
-				repo: props.packageRepo,
+				repository: props.packageRepo,
 			});
 
 			addPackage(config, pkg, location);
 
 			await saveInstanceConfig(selectedInstanceOrProfile(), config, mode);
+
+			// Save the last added location
+			invoke("set_last_added_package_location", {
+				id: selectedInstanceOrProfile(),
+				instanceOrProfile: selectedTab(),
+			});
 
 			successToast(
 				mode == InstanceConfigMode.Instance

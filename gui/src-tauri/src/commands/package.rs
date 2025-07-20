@@ -1,3 +1,4 @@
+use crate::commands::instance::InstanceOrProfile;
 use crate::{output::LauncherOutput, State};
 use anyhow::Context;
 use mcvm::io::lock::{Lockfile, LockfilePackage};
@@ -341,6 +342,30 @@ pub async fn set_last_selected_repo(
 ) -> Result<(), String> {
 	let mut data = state.data.lock().await;
 	data.last_repository = Some(repo);
+
+	fmt_err(data.write(&state.paths))?;
+
+	Ok(())
+}
+
+/// Gets the instance or profile where a package was last added
+#[tauri::command]
+pub async fn get_last_added_package_location(
+	state: tauri::State<'_, State>,
+) -> Result<Option<(String, InstanceOrProfile)>, String> {
+	let data = state.data.lock().await;
+
+	Ok(data.last_added_package.clone())
+}
+
+#[tauri::command]
+pub async fn set_last_added_package_location(
+	state: tauri::State<'_, State>,
+	id: String,
+	instance_or_profile: InstanceOrProfile,
+) -> Result<(), String> {
+	let mut data = state.data.lock().await;
+	data.last_added_package = Some((id, instance_or_profile));
 
 	fmt_err(data.write(&state.paths))?;
 

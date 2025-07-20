@@ -5,6 +5,7 @@ use mcvm::core::io::{json_from_file, json_to_file};
 use mcvm::io::paths::Paths;
 use serde::{Deserialize, Serialize};
 
+use crate::commands::instance::InstanceOrProfile;
 use crate::output::SerializableResolutionError;
 
 /// Stored launcher data
@@ -25,6 +26,8 @@ pub struct LauncherData {
 	pub last_resolution_errors: HashMap<String, SerializableResolutionError>,
 	/// The launch event associated with instances
 	pub last_launches: HashMap<String, InstanceLaunch>,
+	/// The instance or profile where a package was last added to
+	pub last_added_package: Option<(String, InstanceOrProfile)>,
 }
 
 impl LauncherData {

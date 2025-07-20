@@ -106,6 +106,8 @@ fn main() {
 			commands::package::sync_packages,
 			commands::package::get_last_selected_repo,
 			commands::package::set_last_selected_repo,
+			commands::package::get_last_added_package_location,
+			commands::package::set_last_added_package_location,
 			commands::plugin::get_local_plugins,
 			commands::plugin::get_remote_plugins,
 			commands::plugin::enable_disable_plugin,
