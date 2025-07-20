@@ -269,7 +269,11 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 			return;
 		}
 
-		if (isInstance && version() == undefined) {
+		let finalVersion =
+			version() == undefined
+				? getDerivedValue(parentConfigs(), (x) => x.version)
+				: version();
+		if (isInstance && finalVersion == undefined) {
 			inputError("version");
 			return;
 		}
@@ -565,30 +569,32 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 						when={supportedMinecraftVersions() != undefined}
 						fallback={<LoadingSpinner size="var(--input-height)" />}
 					>
-						<Tip tip="The Minecraft version of this instance" fullwidth>
-							<Dropdown
-								options={supportedMinecraftVersions()!.map((x) => {
-									return {
-										value: x,
-										contents: (
-											<div>
-												{x == "latest" || x == "latest_snapshot"
-													? beautifyString(x)
-													: x}
-											</div>
-										),
-										color: "var(--instance)",
-									};
-								})}
-								selected={version()}
-								onChange={(x) => {
-									setVersion(x);
-									setDirty();
-								}}
-								allowEmpty
-								zIndex="50"
-							/>
-						</Tip>
+						<div class="fullwidth" id="version">
+							<Tip tip="The Minecraft version of this instance" fullwidth>
+								<Dropdown
+									options={supportedMinecraftVersions()!.map((x) => {
+										return {
+											value: x,
+											contents: (
+												<div>
+													{x == "latest" || x == "latest_snapshot"
+														? beautifyString(x)
+														: x}
+												</div>
+											),
+											color: "var(--instance)",
+										};
+									})}
+									selected={version()}
+									onChange={(x) => {
+										setVersion(x);
+										setDirty();
+									}}
+									allowEmpty
+									zIndex="50"
+								/>
+							</Tip>
+						</div>
 					</Show>
 					<Show
 						when={
@@ -824,69 +830,71 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 				<br />
 			</DisplayShow>
 			<DisplayShow when={tab() == "packages"}>
-				<PackagesConfig
-					id={id}
-					isProfile={isProfile}
-					globalPackages={globalPackages()}
-					clientPackages={clientPackages()}
-					serverPackages={serverPackages()}
-					onRemove={(pkg, category) => {
-						if (category == "global") {
-							setGlobalPackages((packages) =>
-								packages.filter((x) => getPackageConfigRequest(x).id != pkg)
-							);
-						} else if (category == "client") {
-							setClientPackages((packages) =>
-								packages.filter((x) => getPackageConfigRequest(x).id != pkg)
-							);
-						} else if (category == "server") {
-							setServerPackages((packages) =>
-								packages.filter((x) => getPackageConfigRequest(x).id != pkg)
-							);
-						}
+				<Show when={!props.creating}>
+					<PackagesConfig
+						id={id}
+						isProfile={isProfile}
+						globalPackages={globalPackages()}
+						clientPackages={clientPackages()}
+						serverPackages={serverPackages()}
+						onRemove={(pkg, category) => {
+							if (category == "global") {
+								setGlobalPackages((packages) =>
+									packages.filter((x) => getPackageConfigRequest(x).id != pkg)
+								);
+							} else if (category == "client") {
+								setClientPackages((packages) =>
+									packages.filter((x) => getPackageConfigRequest(x).id != pkg)
+								);
+							} else if (category == "server") {
+								setServerPackages((packages) =>
+									packages.filter((x) => getPackageConfigRequest(x).id != pkg)
+								);
+							}
 
-						setDirty();
-					}}
-					setGlobalPackages={(packages) => {
-						setGlobalPackages(packages);
-						setDirty();
-					}}
-					setClientPackages={(packages) => {
-						setClientPackages(packages);
-						setDirty();
-					}}
-					setServerPackages={(packages) => {
-						setServerPackages(packages);
-						setDirty();
-					}}
-					minecraftVersion={
-						version() == undefined
-							? getDerivedValue(parentConfigs(), (x) => x.version)
-							: version()
-					}
-					loader={(() => {
-						if (side() == "client") {
-							if (clientLoader() == undefined) {
-								return getDerivedValue(parentConfigs(), (x) =>
-									getConfiguredLoader(x.loader, "client")
-								);
-							} else {
-								return clientLoader();
-							}
-						} else if (side() == "server") {
-							if (serverLoader() == undefined) {
-								return getDerivedValue(parentConfigs(), (x) =>
-									getConfiguredLoader(x.loader, "server")
-								);
-							} else {
-								return serverLoader();
-							}
-						} else {
-							return undefined;
+							setDirty();
+						}}
+						setGlobalPackages={(packages) => {
+							setGlobalPackages(packages);
+							setDirty();
+						}}
+						setClientPackages={(packages) => {
+							setClientPackages(packages);
+							setDirty();
+						}}
+						setServerPackages={(packages) => {
+							setServerPackages(packages);
+							setDirty();
+						}}
+						minecraftVersion={
+							version() == undefined
+								? getDerivedValue(parentConfigs(), (x) => x.version)
+								: version()
 						}
-					})()}
-					showBrowseButton={!props.creating}
-				/>
+						loader={(() => {
+							if (side() == "client") {
+								if (clientLoader() == undefined) {
+									return getDerivedValue(parentConfigs(), (x) =>
+										getConfiguredLoader(x.loader, "client")
+									);
+								} else {
+									return clientLoader();
+								}
+							} else if (side() == "server") {
+								if (serverLoader() == undefined) {
+									return getDerivedValue(parentConfigs(), (x) =>
+										getConfiguredLoader(x.loader, "server")
+									);
+								} else {
+									return serverLoader();
+								}
+							} else {
+								return undefined;
+							}
+						})()}
+						showBrowseButton={!props.creating}
+					/>
+				</Show>
 			</DisplayShow>
 			<DisplayShow when={tab() == "launch"}>
 				<LaunchConfig

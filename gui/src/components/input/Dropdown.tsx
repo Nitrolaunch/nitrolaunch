@@ -11,6 +11,7 @@ export default function Dropdown(props: DropdownProps) {
 	let selectFunction = (value: string | undefined) => {
 		if (props.onChange != undefined) {
 			props.onChange(value);
+			setIsOpen(false);
 		}
 		if (props.onChangeMulti != undefined) {
 			if (Array.isArray(props.selected)) {
