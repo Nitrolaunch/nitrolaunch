@@ -45,7 +45,6 @@ impl InstanceConfig {
 	/// Merge this config with another one, with right side taking precendence
 	pub fn merge(&mut self, other: Self) {
 		self.common.merge(other.common);
-		self.name = other.name.or(self.name.clone());
 		self.icon = other.icon.or(self.icon.clone());
 		self.side = other.side.or(self.side);
 		self.window.merge(other.window);

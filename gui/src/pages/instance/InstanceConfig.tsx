@@ -464,11 +464,14 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 							/>
 						</Tip>
 					</Show>
-					<Show when={!isGlobalProfile && !isProfile}>
+					<Show when={!isGlobalProfile}>
 						<label for="name" class="label">
 							DISPLAY NAME
 						</label>
-						<Tip tip="The name of the instance" fullwidth>
+						<Tip
+							tip={`The name of the ${beautifyString(props.mode)}`}
+							fullwidth
+						>
 							<input
 								type="text"
 								id="name"

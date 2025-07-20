@@ -71,7 +71,7 @@ pub async fn get_profiles(state: tauri::State<'_, State>) -> Result<Vec<Instance
 				icon: data.profile_icons.get(&id).cloned(),
 				pinned: false,
 				id,
-				name: None,
+				name: profile.instance.name.clone(),
 				side: profile.instance.side,
 			}
 		})
