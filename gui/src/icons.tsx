@@ -57,6 +57,7 @@ import TagIcon from "./assets/icons/tag.svg?component-solid";
 import AngleDownIcon from "./assets/icons/angle_down.svg?component-solid";
 import LockOpenIcon from "./assets/icons/lock_open.svg?component-solid";
 import CycleIcon from "./assets/icons/cycle.svg?component-solid";
+import LinkBrokenIcon from "./assets/icons/link_broken.svg?component-solid";
 import { HasWidthHeight } from "./components/Icon";
 
 export function Pin({ width, height, viewBox }: HasWidthHeight) {
@@ -301,4 +302,8 @@ export function LockOpen({ width, height, viewBox }: HasWidthHeight) {
 
 export function Cycle({ width, height, viewBox }: HasWidthHeight) {
 	return <CycleIcon width={width} height={height} viewBox={viewBox} />;
+}
+
+export function LinkBroken({ width, height, viewBox }: HasWidthHeight) {
+	return <LinkBrokenIcon width={width} height={height} viewBox={viewBox} />;
 }

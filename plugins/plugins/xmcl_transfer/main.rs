@@ -251,8 +251,8 @@ fn should_include_file(path: &Path) -> bool {
 #[serde(rename_all = "camelCase")]
 struct Metadata {
 	name: String,
-	min_memory: u32,
-	max_memory: u32,
+	min_memory: u64,
+	max_memory: u64,
 	vm_options: Vec<String>,
 	mc_options: Vec<String>,
 	runtime: RuntimeMetadata,

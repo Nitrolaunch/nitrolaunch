@@ -4,13 +4,13 @@ use std::fmt::Display;
 #[derive(Debug, Clone, PartialEq)]
 pub enum MemoryNum {
 	/// Bytes
-	B(u32),
+	B(u64),
 	/// Kilobytes
-	Kb(u32),
+	Kb(u64),
 	/// Megabytes
-	Mb(u32),
+	Mb(u64),
 	/// Gigabytes
-	Gb(u32),
+	Gb(u64),
 }
 
 impl MemoryNum {
@@ -25,7 +25,7 @@ impl MemoryNum {
 	}
 
 	/// Converts into the equivalent amount in bytes
-	pub fn to_bytes(&self) -> u32 {
+	pub fn to_bytes(&self) -> u64 {
 		match self {
 			Self::B(n) => *n,
 			Self::Kb(n) => *n * 1024,

@@ -14,6 +14,7 @@ export interface InstanceConfig {
 	loader?: ConfiguredLoaders;
 	datapack_folder?: string;
 	packages?: ConfiguredPackages;
+	launch?: LaunchConfig;
 	[extraKey: string]: any;
 }
 
@@ -58,7 +59,7 @@ export interface LaunchConfig {
 }
 
 export interface LaunchMemory {
-	init: string;
+	min: string;
 	max: string;
 }
 
@@ -227,4 +228,35 @@ export function getDerivedValue(
 ) {
 	let reversed = profiles.concat([]).reverse();
 	return reversed.map(property).find((x) => x != undefined);
+}
+
+// Parses launch memory args
+export function parseLaunchMemory(memory: string | LaunchMemory | undefined) {
+	if (memory == undefined) {
+		return [undefined, undefined];
+	}
+
+	if (typeof memory == "string") {
+		let num = parseMemoryNum(memory);
+		return [num, num];
+	} else {
+		return [parseMemoryNum(memory.min), parseMemoryNum(memory.max)];
+	}
+}
+
+// Parses a JVM memory number to an amount in megabytes
+export function parseMemoryNum(num: string) {
+	num = num.toLocaleLowerCase();
+
+	if (num.endsWith("b")) {
+		return +num.substring(0, num.length - 1) / 1024 / 1024;
+	} else if (num.endsWith("k")) {
+		return +num.substring(0, num.length - 1) / 1024;
+	} else if (num.endsWith("m")) {
+		return +num.substring(0, num.length - 1);
+	} else if (num.endsWith("g")) {
+		return +num.substring(0, num.length - 1) * 1024;
+	} else {
+		return +num.substring(0, num.length - 1) / 1024 / 1024;
+	}
 }

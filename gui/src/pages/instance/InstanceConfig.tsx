@@ -43,6 +43,7 @@ import {
 	getConfiguredLoader,
 	getDerivedValue,
 	InstanceConfigMode,
+	parseLaunchMemory,
 	readEditableInstanceConfig,
 	saveInstanceConfig,
 } from "./read_write";
@@ -51,6 +52,7 @@ import DeriveIndicator from "./DeriveIndicator";
 import { InstanceInfo } from "../../types";
 import Dropdown from "../../components/input/Dropdown";
 import LoadingSpinner from "../../components/utility/LoadingSpinner";
+import LaunchConfig from "./LaunchConfig";
 
 export default function InstanceConfigPage(props: InstanceConfigProps) {
 	let params = useParams();
@@ -173,6 +175,9 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 	let [clientPackages, setClientPackages] = createSignal<PackageConfig[]>([]);
 	let [serverPackages, setServerPackages] = createSignal<PackageConfig[]>([]);
 
+	let [initMemory, setInitMemory] = createSignal<number | undefined>(undefined);
+	let [maxMemory, setMaxMemory] = createSignal<number | undefined>(undefined);
+
 	let [displayName, setDisplayName] = createSignal("");
 	let message = () =>
 		isInstance ? `INSTANCE` : isGlobalProfile ? "GLOBAL PROFILE" : `PROFILE`;
@@ -222,10 +227,18 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 
 			setDatapackFolder(config()!.datapack_folder);
 
+			// Packages
 			let [global, client, server] = getConfigPackages(config()!);
 			setGlobalPackages(global);
 			setClientPackages(client);
 			setServerPackages(server);
+
+			// Launch config
+			let [init, max] = parseLaunchMemory(
+				config()!.launch == undefined ? undefined : config()!.launch!.memory
+			);
+			setInitMemory(init);
+			setMaxMemory(max);
 
 			setDisplayName(config()!.name == undefined ? id : config()!.name!);
 		}
@@ -313,6 +326,12 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 			version: undefinedEmpty(version()),
 			loader: loader() as Loader | undefined,
 			packages: packages,
+			launch: {
+				memory:
+					initMemory() == undefined || maxMemory == undefined
+						? undefined
+						: { min: `${initMemory()}m`, max: `${maxMemory()}m` },
+			},
 		};
 
 		// Handle extra fields
@@ -320,6 +339,14 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 			for (let key of Object.keys(config()!)) {
 				if (!Object.keys(newConfig).includes(key)) {
 					newConfig[key] = config()![key];
+				}
+			}
+
+			if (config()!.launch != undefined) {
+				for (let key of Object.keys(config()!.launch!)) {
+					if (!Object.keys(newConfig.launch!).includes(key)) {
+						newConfig.launch![key] = config()!.launch![key];
+					}
 				}
 			}
 		}
@@ -856,6 +883,16 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 						}
 					})()}
 					showBrowseButton={!props.creating}
+				/>
+			</DisplayShow>
+			<DisplayShow when={tab() == "launch"}>
+				<LaunchConfig
+					initMemory={initMemory()}
+					maxMemory={maxMemory()}
+					setInitMemory={setInitMemory}
+					setMaxMemory={setMaxMemory}
+					parentConfigs={parentConfigs()}
+					onChange={setDirty}
 				/>
 			</DisplayShow>
 			<br />

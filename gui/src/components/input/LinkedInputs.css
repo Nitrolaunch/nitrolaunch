@@ -1,0 +1,39 @@
+.linked-inputs-labels {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.linked-inputs-inputs {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(0, 0.2fr) minmax(0, 1fr);
+}
+
+/* Hide arrow buttons */
+.linked-input > input::-webkit-outer-spin-button,
+.linked-input > input::-webkit-inner-spin-button {
+	display: none;
+}
+
+.linked-input {
+	position: relative;
+}
+
+.linked-input::after {
+	position: absolute;
+	right: 0.5rem;
+
+	color: var(--fg2);
+	font-weight: bold;
+}
+
+.linked-input.px::after {
+	content: "px";
+}
+
+.linked-input.mb::after {
+	content: "MB";
+}
+
+.linked-inputs-link {
+	cursor: pointer;
+}
