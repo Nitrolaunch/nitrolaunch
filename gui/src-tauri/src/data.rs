@@ -23,6 +23,8 @@ pub struct LauncherData {
 	pub last_repository: Option<String>,
 	/// The last package resolution error associated with instances
 	pub last_resolution_errors: HashMap<String, SerializableResolutionError>,
+	/// The launch event associated with instances
+	pub last_launches: HashMap<String, InstanceLaunch>,
 }
 
 impl LauncherData {
@@ -54,4 +56,11 @@ impl LauncherData {
 pub enum InstanceIcon {
 	/// A custom user icon at a path
 	File(PathBuf),
+}
+
+/// Data for a single launch of an instance
+#[derive(Serialize, Deserialize)]
+pub struct InstanceLaunch {
+	/// The stdout file of the instance
+	pub stdout: String,
 }

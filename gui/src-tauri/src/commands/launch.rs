@@ -1,3 +1,4 @@
+use crate::data::{InstanceLaunch, LauncherData};
 use crate::{output::LauncherOutput, State};
 use crate::{RunState, RunningInstance};
 use anyhow::Context;
@@ -44,6 +45,7 @@ pub async fn launch_game(
 			state.clone(),
 			app_handle,
 			stdio_paths.clone(),
+			state.data.clone(),
 			output,
 		)
 		.await
@@ -68,6 +70,7 @@ async fn get_launched_game(
 	state: Arc<tauri::State<'_, State>>,
 	app: Arc<AppHandle>,
 	stdio_paths: Arc<Mutex<Option<(PathBuf, PathBuf)>>>,
+	data: Arc<Mutex<LauncherData>>,
 	mut o: LauncherOutput,
 ) -> anyhow::Result<JoinHandle<anyhow::Result<()>>> {
 	println!("Launching game!");
@@ -106,6 +109,15 @@ async fn get_launched_game(
 
 			handle.silence_output(true);
 
+			// Record the launch
+			let mut data = data.lock().await;
+			data.last_launches.insert(
+				instance_id.to_string(),
+				InstanceLaunch {
+					stdout: handle.stdout().to_string_lossy().to_string(),
+				},
+			);
+			let _ = data.write(&paths);
 			*stdio_paths.lock().await = Some((handle.stdout(), handle.stdin()));
 
 			let update_output_task =
@@ -240,19 +252,26 @@ pub async fn get_instance_output(
 	state: tauri::State<'_, State>,
 	instance_id: &str,
 ) -> Result<Option<String>, String> {
-	let lock = state.launched_games.lock().await;
-	let Some(game) = lock.get(instance_id) else {
-		return Ok(None);
-	};
+	let path = {
+		let data = state.data.lock().await;
+		if let Some(last_launch) = data.last_launches.get(instance_id) {
+			PathBuf::from(&last_launch.stdout)
+		} else {
+			let lock = state.launched_games.lock().await;
+			let Some(game) = lock.get(instance_id) else {
+				return Ok(None);
+			};
 
-	let Some(paths) = game.stdio_paths.lock().await.clone() else {
-		return Ok(None);
-	};
+			let Some(paths) = game.stdio_paths.lock().await.clone() else {
+				return Ok(None);
+			};
 
-	dbg!(&paths);
+			paths.0
+		}
+	};
 
 	let contents = fmt_err(
-		tokio::fs::read_to_string(paths.0)
+		tokio::fs::read_to_string(path)
 			.await
 			.context("Failed to read output file"),
 	)?;
