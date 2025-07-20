@@ -9,12 +9,16 @@ import {
 	stringCompare,
 } from "../../utils";
 import IconButton from "../../components/input/IconButton";
-import { AngleRight, Delete } from "../../icons";
+import { AngleRight, Delete, Search } from "../../icons";
 import { errorToast } from "../../components/dialog/Toasts";
 import LoadingSpinner from "../../components/utility/LoadingSpinner";
 import ResolutionError, {
 	ResolutionErrorData,
 } from "../../components/package/ResolutionError";
+import { Loader } from "../../package";
+import IconTextButton from "../../components/input/IconTextButton";
+import { getBrowseUrl } from "../package/BrowsePackages";
+import { canonicalizeListOrSingle } from "../../utils/values";
 
 export default function PackagesConfig(props: PackagesConfigProps) {
 	let [filter, setFilter] = createSignal("user");
@@ -131,6 +135,32 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 					<ResolutionError error={resolutionError()!} />
 				</div>
 			</Show>
+			<div class="cont start fullwidth">
+				<IconTextButton
+					icon={Search}
+					size="1rem"
+					text="Browse Packages"
+					color="var(--bg2)"
+					selectedColor=""
+					selected={false}
+					onClick={() => {
+						window.location.href = getBrowseUrl(
+							0,
+							undefined,
+							"mod",
+							undefined,
+							{
+								minecraft_versions: canonicalizeListOrSingle(
+									props.minecraftVersion
+								),
+								loaders: canonicalizeListOrSingle(props.loader),
+								categories: [],
+							}
+						);
+					}}
+				/>
+			</div>
+			<div></div>
 			<div id="packages-config-header">
 				<div
 					class="cont"
@@ -289,6 +319,9 @@ export interface PackagesConfigProps {
 	setGlobalPackages: (packages: PackageConfig[]) => void;
 	setClientPackages: (packages: PackageConfig[]) => void;
 	setServerPackages: (packages: PackageConfig[]) => void;
+	minecraftVersion?: string;
+	loader?: Loader;
+	showBrowseButton: boolean;
 }
 
 function ConfiguredPackage(props: ConfiguredPackageProps) {

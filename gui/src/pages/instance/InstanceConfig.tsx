@@ -829,6 +829,33 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 						setServerPackages(packages);
 						setDirty();
 					}}
+					minecraftVersion={
+						version() == undefined
+							? getDerivedValue(parentConfigs(), (x) => x.version)
+							: version()
+					}
+					loader={(() => {
+						if (side() == "client") {
+							if (clientLoader() == undefined) {
+								return getDerivedValue(parentConfigs(), (x) =>
+									getConfiguredLoader(x.loader, "client")
+								);
+							} else {
+								return clientLoader();
+							}
+						} else if (side() == "server") {
+							if (serverLoader() == undefined) {
+								return getDerivedValue(parentConfigs(), (x) =>
+									getConfiguredLoader(x.loader, "server")
+								);
+							} else {
+								return serverLoader();
+							}
+						} else {
+							return undefined;
+						}
+					})()}
+					showBrowseButton={!props.creating}
 				/>
 			</DisplayShow>
 			<br />

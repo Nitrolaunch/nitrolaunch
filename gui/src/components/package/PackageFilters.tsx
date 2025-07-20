@@ -3,6 +3,7 @@ import "./PackageFilters.css";
 import Icon from "../Icon";
 import {
 	Box,
+	Delete,
 	Jigsaw,
 	Lock,
 	Minecraft,
@@ -28,6 +29,7 @@ import { invoke } from "@tauri-apps/api";
 import { PackageType } from "../../package";
 import Dropdown from "../input/Dropdown";
 import { beautifyString } from "../../utils";
+import IconTextButton from "../input/IconTextButton";
 
 export default function PackageFilters(props: PackageFiltersProps) {
 	let [tab, setTab] = createSignal(
@@ -143,21 +145,14 @@ export default function PackageFilters(props: PackageFiltersProps) {
 						Features
 					</div>
 				</Show>
-				<Show when={!props.filteringVersions}>
-					<div
-						class={`cont package-filter-tab ${
-							tab() == "more" ? "selected" : ""
-						}`}
-						onclick={() => setTab("more")}
-						style="color:var(--fg3)"
-					>
-						<Icon icon={Plus} size="0.8rem" />
-						More
-					</div>
-				</Show>
-				<Show when={props.filteringVersions}>
-					<div style="height:100%;width:20%;box-sizing:border-box;border-bottom:0.15rem solid var(--bg3)"></div>
-				</Show>
+				<div
+					class={`cont package-filter-tab ${tab() == "more" ? "selected" : ""}`}
+					onclick={() => setTab("more")}
+					style="color:var(--fg3)"
+				>
+					<Icon icon={Plus} size="0.8rem" />
+					More
+				</div>
 			</div>
 			<div class="cont package-filter-contents">
 				<Show when={tab() == "types"}>
@@ -335,6 +330,25 @@ export default function PackageFilters(props: PackageFiltersProps) {
 							}
 							columns={props.availableFeatures!.length}
 							connected={false}
+						/>
+					</div>
+				</Show>
+				<Show when={tab() == "more"}>
+					<div class="cont start fullwidth" style="padding:0.5rem">
+						<IconTextButton
+							icon={Delete}
+							size="1rem"
+							text="Clear Filters"
+							color="var(--bg2)"
+							selectedColor=""
+							selected={false}
+							onClick={() => {
+								props.setMinecraftVersions([]);
+								props.setLoaders([]);
+								props.setFeatures([]);
+								props.setCategories([]);
+								props.setStability(undefined);
+							}}
 						/>
 					</div>
 				</Show>

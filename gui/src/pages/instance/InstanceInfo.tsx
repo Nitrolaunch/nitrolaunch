@@ -255,6 +255,9 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 										setGlobalPackages={() => {}}
 										setClientPackages={() => {}}
 										setServerPackages={() => {}}
+										minecraftVersion={instance()!.version}
+										loader={instance()!.loader as Loader}
+										showBrowseButton={true}
 									/>
 								</Show>
 								<Show when={selectedTab() == "console"}>

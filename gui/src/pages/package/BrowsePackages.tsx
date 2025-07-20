@@ -100,9 +100,13 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 
 	// Updates the URL with current search / filters
 	let updateUrl = () => {
-		let query = search() == undefined ? "" : `&search=${search()}`;
-		let filters = JSON.stringify(createPackageFiltersObject());
-		let url = `/packages/${page()}?repo=${selectedRepo()}&package_type=${filteredPackageType()}${query}&filters=${filters}`;
+		let url = getBrowseUrl(
+			page(),
+			selectedRepo(),
+			filteredPackageType(),
+			search(),
+			createPackageFiltersObject()
+		);
 		window.history.replaceState("", "", url);
 	};
 
@@ -522,4 +526,17 @@ interface PackageProps {
 
 export interface BrowsePackagesProps {
 	setFooterData: (data: FooterData) => void;
+}
+
+export function getBrowseUrl(
+	page: number,
+	repo: string | undefined,
+	packageType: PackageType,
+	search: string | undefined,
+	filters: PackageFilterOptions
+) {
+	let query = search == undefined ? "" : `&search=${search}`;
+	let filters2 = JSON.stringify(filters);
+	let repo2 = repo == undefined ? "" : `&repo=${repo}`;
+	return `/packages/${page}?package_type=${packageType}${repo2}${query}&filters=${filters2}`;
 }
