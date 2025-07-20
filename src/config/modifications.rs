@@ -22,6 +22,10 @@ pub enum ConfigModification {
 	AddPackage(InstanceID, PackageConfigDeser),
 	/// Removes a user
 	RemoveUser(String),
+	/// Removes an instance
+	RemoveInstance(InstanceID),
+	/// Removes a profile
+	RemoveProfile(InstanceID),
 }
 
 /// Applies modifications to the config
@@ -49,6 +53,12 @@ pub fn apply_modifications(
 			}
 			ConfigModification::RemoveUser(user) => {
 				config.users.remove(&user);
+			}
+			ConfigModification::RemoveInstance(instance) => {
+				config.instances.remove(&instance);
+			}
+			ConfigModification::RemoveProfile(profile) => {
+				config.profiles.remove(&profile);
 			}
 		};
 	}

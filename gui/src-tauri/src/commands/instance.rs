@@ -8,6 +8,7 @@ use mcvm::config::Config;
 use mcvm::config_crate::instance::InstanceConfig;
 use mcvm::config_crate::profile::ProfileConfig;
 use mcvm::core::io::json_to_file_pretty;
+use mcvm::instance::delete_instance_files;
 use mcvm::instance::update::InstanceUpdateContext;
 use mcvm::io::lock::Lockfile;
 use mcvm::shared::id::{InstanceID, ProfileID};
@@ -17,6 +18,7 @@ use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 use std::future::Future;
 use std::pin::Pin;
+use std::sync::Arc;
 
 use super::{fmt_err, load_config};
 
@@ -359,9 +361,71 @@ pub async fn get_instance_resolution_error(
 	Ok(lock.last_resolution_errors.get(&id).cloned())
 }
 
-#[derive(Deserialize)]
+#[tauri::command]
+pub async fn delete_instance(state: tauri::State<'_, State>, instance: &str) -> Result<(), String> {
+	fmt_err(
+		delete_instance_files(instance, &state.paths)
+			.await
+			.context("Failed to delete instance files"),
+	)?;
+
+	let mut configuration =
+		fmt_err(Config::open(&Config::get_path(&state.paths)).context("Failed to load config"))?;
+
+	let modifications = vec![ConfigModification::RemoveInstance(instance.into())];
+	fmt_err(
+		apply_modifications_and_write(&mut configuration, modifications, &state.paths)
+			.context("Failed to modify and write config"),
+	)?;
+
+	Ok(())
+}
+
+#[tauri::command]
+pub async fn delete_profile(state: tauri::State<'_, State>, profile: &str) -> Result<(), String> {
+	let mut configuration =
+		fmt_err(Config::open(&Config::get_path(&state.paths)).context("Failed to load config"))?;
+
+	let modifications = vec![ConfigModification::RemoveProfile(profile.into())];
+	fmt_err(
+		apply_modifications_and_write(&mut configuration, modifications, &state.paths)
+			.context("Failed to modify and write config"),
+	)?;
+
+	Ok(())
+}
+
+/// Gets a list of the instances and profiles that derive a specific profile
+#[tauri::command]
+pub async fn get_profile_users(
+	state: tauri::State<'_, State>,
+	profile: &str,
+) -> Result<Vec<(Arc<str>, InstanceOrProfile)>, String> {
+	let configuration =
+		fmt_err(Config::open(&Config::get_path(&state.paths)).context("Failed to load config"))?;
+
+	let profile = profile.to_string();
+
+	let mut out = Vec::new();
+
+	for (id, config) in &configuration.instances {
+		if config.common.from.contains(&profile) {
+			out.push((id.clone(), InstanceOrProfile::Instance));
+		}
+	}
+
+	for (id, config) in &configuration.profiles {
+		if config.instance.common.from.contains(&profile) {
+			out.push((id.clone(), InstanceOrProfile::Profile));
+		}
+	}
+
+	Ok(out)
+}
+
+#[derive(Deserialize, Serialize)]
 #[serde(rename_all = "snake_case")]
-enum InstanceOrProfile {
+pub enum InstanceOrProfile {
 	Instance,
 	Profile,
 }

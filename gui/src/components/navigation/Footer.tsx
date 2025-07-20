@@ -6,6 +6,7 @@ import { PasswordPrompt } from "../input/PasswordPrompt";
 import {
 	Box,
 	Check,
+	Delete,
 	Download,
 	Play,
 	Properties,
@@ -20,6 +21,7 @@ import TaskIndicator from "../TaskIndicator";
 import { errorToast } from "../dialog/Toasts";
 import IconTextButton from "../input/IconTextButton";
 import Tip from "../dialog/Tip";
+import ProfileDeletePrompt from "../instance/ProfileDeletePrompt";
 
 export default function LaunchFooter(props: LaunchFooterProps) {
 	// Basic state
@@ -33,6 +35,9 @@ export default function LaunchFooter(props: LaunchFooterProps) {
 		undefined
 	);
 	const [passwordPromptMessage, setPasswordPromptMessage] = createSignal("");
+	let [showProfileDeletePrompt, setShowProfileDeletePrompt] =
+		createSignal(false);
+
 	// Unlisteners for tauri events
 	const [unlistens, setUnlistens] = createSignal<UnlistenFn[]>([]);
 
@@ -180,7 +185,7 @@ export default function LaunchFooter(props: LaunchFooterProps) {
 							<div class="cont footer-update">
 								<IconButton
 									icon={Upload}
-									size="28px"
+									size="1.5rem"
 									color="var(--bg2)"
 									border="var(--bg3)"
 									selectedColor="var(--accent)"
@@ -201,17 +206,37 @@ export default function LaunchFooter(props: LaunchFooterProps) {
 							<div class="cont footer-config">
 								<IconButton
 									icon={Properties}
-									size="28px"
+									size="1.5rem"
 									color="var(--bg2)"
 									border="var(--bg3)"
 									selectedColor="var(--accent)"
 									onClick={() => {
-										if (props.selectedItem != undefined) {
-											window.location.href = `/${props.mode}_config/${props.selectedItem}`;
-										}
+										window.location.href = `/${props.mode}_config/${props.selectedItem}`;
 									}}
 									selected={false}
 								/>
+							</div>
+						</Show>
+						<Show
+							when={
+								props.mode == FooterMode.Profile &&
+								props.selectedItem != undefined
+							}
+						>
+							<div class="cont">
+								<Tip tip="Delete profile" side="top">
+									<IconButton
+										icon={Delete}
+										size="1.5rem"
+										color="var(--errorbg)"
+										border="var(--error)"
+										selectedColor="var(--accent)"
+										onClick={() => {
+											setShowProfileDeletePrompt(true);
+										}}
+										selected={false}
+									/>
+								</Tip>
 							</div>
 						</Show>
 					</div>
@@ -260,6 +285,13 @@ export default function LaunchFooter(props: LaunchFooterProps) {
 					message={passwordPromptMessage()}
 				/>
 			</Show>
+			<ProfileDeletePrompt
+				visible={showProfileDeletePrompt()}
+				onClose={() => setShowProfileDeletePrompt(false)}
+				profile={
+					props.mode != FooterMode.Profile ? undefined : props.selectedItem
+				}
+			/>
 		</div>
 	);
 }

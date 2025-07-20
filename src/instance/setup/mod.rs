@@ -318,6 +318,14 @@ impl Instance {
 		Ok(())
 	}
 
+	/// Removes all game files for an instance, including saves. Be wary when using this!
+	pub async fn delete_files(&mut self, paths: &Paths) -> anyhow::Result<()> {
+		self.ensure_dirs(paths)?;
+		tokio::fs::remove_dir_all(&self.dirs.get().inst_dir).await?;
+
+		Ok(())
+	}
+
 	/// Create a keypair file in the instance
 	fn create_keypair(&mut self, user: &User, paths: &Paths) -> anyhow::Result<()> {
 		if let Some(uuid) = user.get_uuid() {

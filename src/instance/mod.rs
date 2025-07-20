@@ -22,6 +22,8 @@ use mcvm_shared::pkg::PackageStability;
 use mcvm_shared::versions::VersionPattern;
 use mcvm_shared::Side;
 
+use crate::io::paths::Paths;
+
 use self::launch::LaunchOptions;
 use self::setup::{InstanceDirs, ModificationData};
 
@@ -147,4 +149,14 @@ impl Instance {
 	pub fn get_config(&self) -> &InstanceStoredConfig {
 		&self.config
 	}
+}
+
+/// Deletes files for the given instance ID, including saves. Use with caution!!!
+pub async fn delete_instance_files(instance_id: &str, paths: &Paths) -> anyhow::Result<()> {
+	let path = paths.data.join("instances").join(instance_id);
+	if path.exists() {
+		tokio::fs::remove_dir_all(path).await?;
+	}
+
+	Ok(())
 }

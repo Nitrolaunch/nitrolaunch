@@ -14,7 +14,7 @@ import { getInstanceIconSrc } from "../../utils";
 import PackageLabels from "../../components/package/PackageLabels";
 import { Loader } from "../../package";
 import Icon from "../../components/Icon";
-import { Box, Gear, Play, Text, Upload } from "../../icons";
+import { Box, Delete, Gear, Play, Text, Upload } from "../../icons";
 import "./InstanceInfo.css";
 import IconTextButton from "../../components/input/IconTextButton";
 import { invoke } from "@tauri-apps/api";
@@ -25,6 +25,7 @@ import PackagesConfig, {
 } from "./PackagesConfig";
 import { FooterData } from "../../App";
 import { FooterMode } from "../../components/navigation/Footer";
+import Modal from "../../components/dialog/Modal";
 
 export default function InstanceInfo(props: InstanceInfoProps) {
 	let params = useParams();
@@ -58,6 +59,8 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 	});
 
 	let [selectedTab, setSelectedTab] = createSignal("general");
+
+	let [showDeleteConfirm, setShowDeleteConfirm] = createSignal(false);
 
 	let setDirty = () => {
 		props.setFooterData({
@@ -181,6 +184,17 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 										}}
 										shadow={false}
 									/>
+									<IconTextButton
+										icon={Delete}
+										size="1.2rem"
+										text="Delete"
+										color="var(--errorbg)"
+										selectedColor="var(--error)"
+										selectedBg="var(--errorbg)"
+										selected={true}
+										onClick={() => setShowDeleteConfirm(true)}
+										shadow={false}
+									/>
 								</div>
 							</div>
 						</div>
@@ -269,6 +283,48 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 						</div>
 					</div>
 				</div>
+				<Modal
+					visible={showDeleteConfirm()}
+					onClose={setShowDeleteConfirm}
+					width="25rem"
+				>
+					<div class="cont col" style="padding:2rem">
+						<h3>Are you sure you want to delete this instance?</h3>
+						<div class="cont bold" style="font-size:0.9rem;color:var(--fg2)">
+							This will delete ALL of your worlds and data for the instance!
+						</div>
+						<div></div>
+						<div></div>
+						<div class="cont">
+							<button
+								onclick={() => setShowDeleteConfirm(false)}
+								style="border-color:var(--instance)"
+							>
+								Cancel
+							</button>
+							<IconTextButton
+								icon={Delete}
+								size="1rem"
+								text="Delete instance"
+								color="var(--errorbg)"
+								selectedColor="var(--error)"
+								selectedBg="var(--errorbg)"
+								selected={true}
+								onClick={async () => {
+									try {
+										await invoke("delete_instance", { instance: id });
+										successToast("Instance deleted");
+										setShowDeleteConfirm(false);
+										window.location.href = "/";
+									} catch (e) {
+										errorToast("Failed to delete instance: " + e);
+										setShowDeleteConfirm(false);
+									}
+								}}
+							/>
+						</div>
+					</div>
+				</Modal>
 				<br />
 				<br />
 				<br />
