@@ -188,6 +188,8 @@ export default function PackageVersions(props: PackageVersionsProps) {
 					filteringVersions={true}
 					availableMinecraftVersions={availableMinecraftVersions()}
 					availableFeatures={canonicalizeListOrSingle(props.props.features)}
+					categories={[]}
+					setCategories={() => {}}
 				/>
 				<Show when={isScriptPackage()}>
 					<div style="padding:1rem;font-weight:bold">

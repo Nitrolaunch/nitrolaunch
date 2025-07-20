@@ -1,4 +1,4 @@
-use mcvm_shared::pkg::PackageKind;
+use mcvm_shared::pkg::{PackageCategory, PackageKind};
 #[cfg(feature = "schema")]
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -36,6 +36,8 @@ pub struct RepoMetadata {
 	pub text_color: Option<String>,
 	/// The package types that this repository supports
 	pub package_types: Vec<PackageKind>,
+	/// The package categories that this repository supports
+	pub package_categories: Vec<PackageCategory>,
 }
 
 /// An entry in the repository index package list that specifies information about the package

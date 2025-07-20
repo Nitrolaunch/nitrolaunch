@@ -33,6 +33,17 @@
 						"package_types": [
 							"resource_pack",
 							"datapack"
+						],
+						"package_categories": [
+							"extensive",
+							"lightweight",
+							"tweaks",
+							"vanilla_plus",
+							"technology",
+							"magic",
+							"exploration",
+							"worldgen",
+							"library"
 						]
 					}
 				}

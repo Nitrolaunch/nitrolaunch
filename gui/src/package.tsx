@@ -49,6 +49,7 @@ export interface RepoMetadata {
 	color?: string;
 	text_color?: string;
 	package_types?: PackageType[];
+	package_categories?: PackageCategory[];
 }
 
 // We store versions kinda backwards from declarative packages, grouping addons into each content version

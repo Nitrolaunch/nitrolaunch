@@ -152,6 +152,18 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 			: repo.meta.package_types!;
 	};
 
+	let repoCategories = () => {
+		if (repos() == undefined || selectedRepo() == undefined) {
+			return undefined;
+		}
+		let repo = repos()!.find((x) => x.id == selectedRepo())!;
+
+		return repo.meta.package_categories == undefined ||
+			repo.meta.package_categories.length == 0
+			? undefined
+			: repo.meta.package_categories!;
+	};
+
 	async function updatePackages() {
 		let repos: RepoInfo[] = [];
 		let lastSelectedRepo: string | undefined = undefined;
@@ -374,6 +386,7 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 						filteringVersions={false}
 						features={[]}
 						setFeatures={() => {}}
+						availableCategories={repoCategories()}
 					/>
 				</div>
 				<div class="cont">

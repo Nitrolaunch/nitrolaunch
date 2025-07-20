@@ -243,7 +243,13 @@ export default function PackageFilters(props: PackageFiltersProps) {
 									PackageCategory.Adventure,
 									PackageCategory.Building,
 									PackageCategory.Optimization,
-								].map(packageCategoryToOption)}
+								]
+									.filter(
+										(x) =>
+											props.availableCategories == undefined ||
+											props.availableCategories.includes(x)
+									)
+									.map(packageCategoryToOption)}
 								connected={false}
 								selected={props.categories}
 								onChangeMulti={(x) =>
@@ -253,9 +259,13 @@ export default function PackageFilters(props: PackageFiltersProps) {
 						</div>
 						<div class="cont" style="width:25%">
 							<Dropdown
-								options={Object.values(PackageCategory).map(
-									packageCategoryToOption
-								)}
+								options={Object.values(PackageCategory)
+									.filter(
+										(x) =>
+											props.availableCategories == undefined ||
+											props.availableCategories.includes(x)
+									)
+									.map(packageCategoryToOption)}
 								selected={props.categories}
 								onChangeMulti={(x) =>
 									props.setCategories(x as PackageCategory[])
@@ -349,6 +359,7 @@ export interface PackageFiltersProps {
 	availablePackageTypes?: PackageType[];
 	availableMinecraftVersions?: string[];
 	availableFeatures?: string[];
+	availableCategories?: PackageCategory[];
 	// Whether we are filtering package versions or packages
 	filteringVersions: boolean;
 }
