@@ -385,9 +385,9 @@ pub async fn gen(
 
 		// Select download for non-bundle kinds
 		if addon.kind != PackageKind::Bundle {
-			let download = version
-				.get_primary_download()
-				.expect("Version has no available downloads");
+			let Ok(download) = version.get_primary_download() else {
+				continue;
+			};
 			pkg_version.url = Some(download.url.clone());
 		}
 
