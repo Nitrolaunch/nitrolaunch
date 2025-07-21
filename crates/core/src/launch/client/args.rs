@@ -66,7 +66,7 @@ pub(crate) fn process_arg(arg: &ArgumentItem, params: &LaunchParameters) -> Vec<
 				if let Some(quick_play_singleplayer) = &rule.features.is_quick_play_singleplayer {
 					if *quick_play_singleplayer {
 						let uses_quick_play =
-							!matches!(params.launch_config.quick_play, QuickPlayType::World { .. });
+							matches!(params.launch_config.quick_play, QuickPlayType::World { .. });
 						if !uses_quick_play {
 							return vec![];
 						}
@@ -74,7 +74,7 @@ pub(crate) fn process_arg(arg: &ArgumentItem, params: &LaunchParameters) -> Vec<
 				}
 				if let Some(quick_play_multiplayer) = &rule.features.is_quick_play_multiplayer {
 					if *quick_play_multiplayer {
-						let uses_quick_play = !matches!(
+						let uses_quick_play = matches!(
 							params.launch_config.quick_play,
 							QuickPlayType::Server { .. }
 						);
@@ -86,7 +86,7 @@ pub(crate) fn process_arg(arg: &ArgumentItem, params: &LaunchParameters) -> Vec<
 				if let Some(quick_play_realms) = &rule.features.is_quick_play_realms {
 					if *quick_play_realms {
 						let uses_quick_play =
-							!matches!(params.launch_config.quick_play, QuickPlayType::Realm { .. });
+							matches!(params.launch_config.quick_play, QuickPlayType::Realm { .. });
 						if !uses_quick_play {
 							return vec![];
 						}
