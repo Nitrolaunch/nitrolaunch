@@ -9,7 +9,7 @@ import {
 	stringCompare,
 } from "../../utils";
 import IconButton from "../../components/input/IconButton";
-import { AngleRight, Delete, Search } from "../../icons";
+import { AngleRight, Delete, Search, Upload } from "../../icons";
 import { errorToast } from "../../components/dialog/Toasts";
 import LoadingSpinner from "../../components/utility/LoadingSpinner";
 import ResolutionError, {
@@ -33,85 +33,94 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 		{ [key: string]: PackageProperties } | undefined
 	>();
 
-	let [allPackages, _] = createResource(async () => {
-		let installedPackages: string[] = [];
-		if (!props.isProfile) {
-			let map: { [key: string]: LockfilePackage } = await invoke(
-				"get_instance_packages",
-				{ instance: props.id }
-			);
-			installedPackages = installedPackages.concat(Object.keys(map));
-		}
-
-		// Get a list of all packages
-		let allPackages = installedPackages.concat([]);
-
-		for (let pkg of props.globalPackages.map(getPackageConfigRequest)) {
-			allPackages = allPackages.filter((x) => parsePkgRequest(x).id != pkg.id);
-			allPackages.push(pkgRequestToString(pkg));
-		}
-		for (let pkg of props.clientPackages.map(getPackageConfigRequest)) {
-			allPackages = allPackages.filter((x) => parsePkgRequest(x).id != pkg.id);
-			allPackages.push(pkgRequestToString(pkg));
-		}
-		for (let pkg of props.serverPackages.map(getPackageConfigRequest)) {
-			allPackages = allPackages.filter((x) => parsePkgRequest(x).id != pkg.id);
-			allPackages.push(pkgRequestToString(pkg));
-		}
-
-		setInstalledPackages(installedPackages);
-
-		// Get metadata and properties
-		let metas: any = {};
-		let properties: any = {};
-
-		let promises = [];
-		for (let pkg of allPackages) {
-			promises.push(
-				(async () => {
-					try {
-						return [
-							pkg,
-							await invoke("get_package_meta_and_props", { package: pkg }),
-						];
-					} catch (e) {
-						console.error("Failed to load package: " + e);
-						return "error";
-					}
-				})()
-			);
-		}
-
-		let results = await Promise.all(promises);
-		let errorExists = false;
-		for (let result of results) {
-			if (result == "error") {
-				errorExists = true;
-				continue;
+	let [allPackages, _] = createResource(
+		() => props.serverPackages,
+		async () => {
+			let installedPackages: string[] = [];
+			if (!props.isProfile) {
+				let map: { [key: string]: LockfilePackage } = await invoke(
+					"get_instance_packages",
+					{ instance: props.id }
+				);
+				installedPackages = installedPackages.concat(Object.keys(map));
 			}
-			let [id, [meta, props]] = result as [
-				string,
-				[PackageMeta, PackageProperties]
-			];
-			metas[id] = meta;
-			properties[id] = props;
+
+			// Get a list of all packages
+			let allPackages = installedPackages.concat([]);
+
+			for (let pkg of props.globalPackages.map(getPackageConfigRequest)) {
+				allPackages = allPackages.filter(
+					(x) => parsePkgRequest(x).id != pkg.id
+				);
+				allPackages.push(pkgRequestToString(pkg));
+			}
+			for (let pkg of props.clientPackages.map(getPackageConfigRequest)) {
+				allPackages = allPackages.filter(
+					(x) => parsePkgRequest(x).id != pkg.id
+				);
+				allPackages.push(pkgRequestToString(pkg));
+			}
+			for (let pkg of props.serverPackages.map(getPackageConfigRequest)) {
+				allPackages = allPackages.filter(
+					(x) => parsePkgRequest(x).id != pkg.id
+				);
+				allPackages.push(pkgRequestToString(pkg));
+			}
+
+			setInstalledPackages(installedPackages);
+
+			// Get metadata and properties
+			let metas: any = {};
+			let properties: any = {};
+
+			let promises = [];
+			for (let pkg of allPackages) {
+				promises.push(
+					(async () => {
+						try {
+							return [
+								pkg,
+								await invoke("get_package_meta_and_props", { package: pkg }),
+							];
+						} catch (e) {
+							console.error("Failed to load package: " + e);
+							return "error";
+						}
+					})()
+				);
+			}
+
+			let results = await Promise.all(promises);
+			let errorExists = false;
+			for (let result of results) {
+				if (result == "error") {
+					errorExists = true;
+					continue;
+				}
+				let [id, [meta, props]] = result as [
+					string,
+					[PackageMeta, PackageProperties]
+				];
+				metas[id] = meta;
+				properties[id] = props;
+			}
+
+			if (errorExists) {
+				errorToast("One or more packages failed to load");
+			}
+
+			setPackageMetas(metas);
+			setPackageProps(properties);
+
+			allPackages.sort((a, b) =>
+				stringCompare(parsePkgRequest(a).id, parsePkgRequest(b).id)
+			);
+
+			return allPackages;
 		}
+	);
 
-		if (errorExists) {
-			errorToast("One or more packages failed to load");
-		}
-
-		setPackageMetas(metas);
-		setPackageProps(properties);
-
-		allPackages.sort((a, b) =>
-			stringCompare(parsePkgRequest(a).id, parsePkgRequest(b).id)
-		);
-
-		return allPackages;
-	});
-
-	let [resolutionError, __] = createResource(async () => {
+	let [resolutionError, resolutionErrorMethods] = createResource(async () => {
 		if (props.isProfile) {
 			return undefined;
 		}
@@ -135,30 +144,52 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 					<ResolutionError error={resolutionError()!} />
 				</div>
 			</Show>
-			<div class="cont start fullwidth">
-				<IconTextButton
-					icon={Search}
-					size="1rem"
-					text="Browse Packages"
-					color="var(--bg2)"
-					selectedColor=""
-					selected={false}
-					onClick={() => {
-						window.location.href = getBrowseUrl(
-							0,
-							undefined,
-							"mod",
-							undefined,
-							{
-								minecraft_versions: canonicalizeListOrSingle(
-									props.minecraftVersion
-								),
-								loaders: canonicalizeListOrSingle(props.loader),
-								categories: [],
+			<div class="split fullwidth">
+				<div class="cont start fullwidth">
+					<IconTextButton
+						icon={Search}
+						size="1.5rem"
+						text="Browse Packages"
+						color="var(--bg2)"
+						selectedColor=""
+						selected={false}
+						onClick={() => {
+							window.location.href = getBrowseUrl(
+								0,
+								undefined,
+								"mod",
+								undefined,
+								{
+									minecraft_versions: canonicalizeListOrSingle(
+										props.minecraftVersion
+									),
+									loaders: canonicalizeListOrSingle(props.loader),
+									categories: [],
+								}
+							);
+						}}
+					/>
+				</div>
+				<div class="cont end fullwidth">
+					<IconTextButton
+						icon={Upload}
+						size="1.5rem"
+						text="Update Packages"
+						color="var(--bg2)"
+						selectedColor=""
+						selected={false}
+						onClick={async () => {
+							try {
+								await invoke("update_instance_packages", {
+									instanceId: props.id,
+								});
+							} catch (e) {
+								errorToast("Failed to update packages: " + e);
 							}
-						);
-					}}
-				/>
+							resolutionErrorMethods.refetch();
+						}}
+					/>
+				</div>
 			</div>
 			<div></div>
 			<div id="packages-config-header">
@@ -230,12 +261,7 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 			</div>
 			<div class="cont col" id="configured-packages">
 				<Show
-					when={
-						allPackages() != undefined &&
-						installedPackages() != undefined &&
-						packageMetas() != undefined &&
-						packageProps() != undefined
-					}
+					when={installedPackages() != undefined}
 					fallback={<LoadingSpinner size="5rem" />}
 				>
 					<For each={allPackages()}>
@@ -261,29 +287,10 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 								return true;
 							};
 
-							let meta = packageMetas()![pkg];
-							let properties = packageProps()![pkg];
-							if (meta == undefined || properties == undefined) {
-								return (
-									<Show when={isVisible()}>
-										<div
-											class="input-shadow configured-package"
-											style="border-color:var(--error)"
-										>
-											<div class="cont">
-												<img
-													src="/icons/default_instance.png"
-													class="configured-package-icon"
-												/>
-											</div>
-											<div class="cont configured-package-name">
-												{`${pkg} - Error`}
-											</div>
-											<div></div>
-										</div>
-									</Show>
-								);
-							}
+							let meta =
+								packageMetas() == undefined ? undefined : packageMetas()![pkg];
+							let properties =
+								packageProps() == undefined ? undefined : packageProps()![pkg];
 
 							return (
 								<Show when={isVisible()}>
@@ -326,9 +333,13 @@ export interface PackagesConfigProps {
 
 function ConfiguredPackage(props: ConfiguredPackageProps) {
 	let [isHovered, setIsHovered] = createSignal(false);
-	let name = props.meta.name == undefined ? props.request.id : props.meta.name;
+	let name =
+		props.meta == undefined || props.meta.name == undefined
+			? props.request.id
+			: props.meta.name;
+
 	let icon =
-		props.meta.icon == undefined
+		props.meta == undefined || props.meta.icon == undefined
 			? "/icons/default_instance.png"
 			: props.meta.icon;
 
@@ -339,7 +350,12 @@ function ConfiguredPackage(props: ConfiguredPackageProps) {
 			onmouseleave={() => setIsHovered(false)}
 		>
 			<div class="cont">
-				<img src={icon} class="configured-package-icon" />
+				<Show
+					when={props.meta != undefined}
+					fallback={<LoadingSpinner size="2rem" />}
+				>
+					<img src={icon} class="configured-package-icon" />
+				</Show>
 			</div>
 			<div class="cont col configured-package-details">
 				<div class="cont configured-package-details-top">
@@ -396,8 +412,8 @@ function ConfiguredPackage(props: ConfiguredPackageProps) {
 
 interface ConfiguredPackageProps {
 	request: PkgRequest;
-	meta: PackageMeta;
-	props: PackageProperties;
+	meta?: PackageMeta;
+	props?: PackageProperties;
 	isInherited: boolean;
 	isInstalled: boolean;
 	isConfigured: boolean;

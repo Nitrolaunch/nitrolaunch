@@ -118,6 +118,8 @@ async fn get_launched_game(
 				},
 			);
 			let _ = data.write(&paths);
+			std::mem::drop(data);
+
 			*stdio_paths.lock().await = Some((handle.stdout(), handle.stdin()));
 
 			let update_output_task =

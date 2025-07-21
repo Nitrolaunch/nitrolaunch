@@ -2,6 +2,7 @@
 	justify-content: flex-start;
 	gap: 0.9rem;
 	color: var(--fg2);
+	font-weight: bold;
 }
 
 .package-labels.small {

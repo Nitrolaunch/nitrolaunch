@@ -4,8 +4,9 @@
 
 #packages-config-resolution-error {
 	width: 100%;
-	height: 5rem;
+	height: 10rem;
 	overflow-y: scroll;
+	overscroll-behavior: none;
 
 	margin-bottom: 1rem;
 

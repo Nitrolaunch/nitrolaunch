@@ -167,6 +167,8 @@ function getTaskDisplayName(task: string) {
 		return "Getting plugins";
 	} else if (task == "update_instance") {
 		return "Updating instance";
+	} else if (task == "update_instance_packages") {
+		return "Updating packages";
 	} else if (task.startsWith("launch_instance")) {
 		return "Launching";
 	} else if (task == "search_packages") {
@@ -191,7 +193,8 @@ function getTaskColor(task: string) {
 	} else if (
 		task == "search_packages" ||
 		task == "load_packages" ||
-		task == "sync_packages"
+		task == "sync_packages" ||
+		task == "update_instance_packages"
 	) {
 		return "package";
 	}

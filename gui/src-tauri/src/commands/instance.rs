@@ -9,8 +9,10 @@ use mcvm::config_crate::instance::InstanceConfig;
 use mcvm::config_crate::profile::ProfileConfig;
 use mcvm::core::io::json_to_file_pretty;
 use mcvm::instance::delete_instance_files;
+use mcvm::instance::update::manager::UpdateManager;
 use mcvm::instance::update::InstanceUpdateContext;
 use mcvm::io::lock::Lockfile;
+use mcvm::pkg::eval::EvalConstants;
 use mcvm::shared::id::{InstanceID, ProfileID};
 use mcvm::shared::output::NoOp;
 use mcvm::shared::{Side, UpdateDepth};
@@ -317,6 +319,88 @@ pub async fn update_instance(
 				.update(true, UpdateDepth::Full, &mut ctx)
 				.await
 				.context("Failed to update instance")
+		}
+	};
+	fmt_err(fmt_err(tokio::spawn(unsafe { MakeSend::new(task) }).await)?)?;
+
+	// Update so that there is no resolution error since we must have completed successfully
+	let mut lock = state.data.lock().await;
+	lock.last_resolution_errors.remove(&instance_id);
+	let _ = lock.write(&paths);
+
+	Ok(())
+}
+
+#[tauri::command]
+pub async fn update_instance_packages(
+	state: tauri::State<'_, State>,
+	app_handle: tauri::AppHandle,
+	instance_id: String,
+) -> Result<(), String> {
+	let mut config = fmt_err(
+		load_config(&state.paths, &mut NoOp)
+			.await
+			.context("Failed to load config"),
+	)?;
+
+	let mut output = LauncherOutput::new(state.get_output(app_handle));
+	output.set_task("update_instance_packages");
+
+	let paths = state.paths.clone();
+	let client = state.client.clone();
+	let mut lock = fmt_err(Lockfile::open(&state.paths).context("Failed to open lockfile"))?;
+	let task = {
+		let instance_id = instance_id.clone();
+		let paths = paths.clone();
+		async move {
+			let Some(instance) = config.instances.get_mut(&InstanceID::from(instance_id)) else {
+				bail!("Instance does not exist");
+			};
+
+			let mut ctx = InstanceUpdateContext {
+				packages: &mut config.packages,
+				users: &config.users,
+				plugins: &config.plugins,
+				prefs: &config.prefs,
+				paths: &paths,
+				lock: &mut lock,
+				client: &client,
+				output: &mut output,
+			};
+
+			let mut manager = UpdateManager::new(UpdateDepth::Shallow);
+
+			manager.set_version(&instance.get_config().version);
+			manager.add_requirements(instance.get_requirements());
+			manager
+				.fulfill_requirements(ctx.users, ctx.plugins, ctx.paths, ctx.client, ctx.output)
+				.await
+				.context("Failed to fulfill update manager")?;
+			let mc_version = manager.version_info.get().version.clone();
+
+			ctx.lock
+				.finish(ctx.paths)
+				.context("Failed to finish using lockfile")?;
+
+			let constants = EvalConstants {
+				version: mc_version.to_string(),
+				loader: instance.get_config().loader.clone(),
+				version_list: manager.version_info.get().versions.clone(),
+				language: ctx.prefs.language,
+				profile_stability: instance.get_config().package_stability,
+			};
+
+			mcvm::instance::update::packages::update_instance_packages(
+				&mut [instance],
+				&constants,
+				&mut ctx,
+				false,
+			)
+			.await?;
+
+			ctx.lock
+				.finish(ctx.paths)
+				.context("Failed to finish using lockfile")
 		}
 	};
 	fmt_err(fmt_err(tokio::spawn(unsafe { MakeSend::new(task) }).await)?)?;

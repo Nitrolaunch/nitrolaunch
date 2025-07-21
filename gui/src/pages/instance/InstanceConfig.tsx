@@ -98,6 +98,7 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 		try {
 			let configuration = await readEditableInstanceConfig(id, props.mode);
 			setFrom(canonicalizeListOrSingle(configuration.from));
+			console.log(configuration);
 			return configuration;
 		} catch (e) {
 			errorToast("Failed to load configuration: " + e);
@@ -892,7 +893,7 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 								return undefined;
 							}
 						})()}
-						showBrowseButton={!props.creating}
+						showBrowseButton={true}
 					/>
 				</Show>
 			</DisplayShow>

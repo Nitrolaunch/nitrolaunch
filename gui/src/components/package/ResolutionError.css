@@ -1,7 +1,12 @@
 .package-resolution-error {
 	width: 100%;
+	padding: 1rem;
 }
 
 .resolution-error-header {
 	font-weight: bold;
+}
+
+.full-error {
+	font-family: unset;
 }

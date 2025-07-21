@@ -7,6 +7,8 @@ import "./ResolutionError.css";
 export default function ResolutionError(props: ResolutionErrorProps) {
 	let data = () => props.error.data as any;
 
+	console.log(data());
+
 	return (
 		<div class="cont col package-resolution-error">
 			<Switch>
@@ -20,13 +22,13 @@ export default function ResolutionError(props: ResolutionErrorProps) {
 					<div class="cont resolution-error-header">
 						Failed to load packages
 					</div>
-					<div class="cont">{data()}</div>
+					<pre class="cont full-error">{data()}</pre>
 				</Match>
 				<Match when={props.error.type == "failed_to_get_properties"}>
 					<div class="cont resolution-error-header">
 						Failed to get package {pkgRequestToString(data()[0])}
 					</div>
-					<div class="cont">{data()[1]}</div>
+					<pre class="cont full-error">{data()[1]}</pre>
 				</Match>
 				<Match when={props.error.type == "no_valid_versions_found"}>
 					<div class="cont">
@@ -63,11 +65,11 @@ export default function ResolutionError(props: ResolutionErrorProps) {
 					<div class="cont resolution-error-header">
 						Failed to evaluate package package {pkgRequestToString(data()[0])}
 					</div>
-					<div class="cont">{data()[1]}</div>
+					<pre class="cont full-error">{data()[1]}</pre>
 				</Match>
 				<Match when={props.error.type == "misc"}>
 					<div class="cont resolution-error-header">Other error:</div>
-					<div class="cont">{data()}</div>
+					<div class="cont full-error">{data()}</div>
 				</Match>
 			</Switch>
 		</div>

@@ -40,28 +40,36 @@ fn main() {
 		.manage(state)
 		.setup(move |app| {
 			app.listen_global("update_run_state", move |event| {
-				let payload: UpdateRunStateEvent = serde_json::from_str(
-					event
-						.payload()
-						.expect("Update run state event should have payload"),
-				)
-				.expect("Failed to deserialize state update");
-				let mut lock = tauri::async_runtime::block_on(launched_games.lock());
-				if let Some(instance) = lock.get_mut(&InstanceID::from(payload.instance)) {
-					instance.state = payload.state;
-				}
+				let launched_games = launched_games.clone();
+
+				tauri::async_runtime::spawn(async move {
+					let payload: UpdateRunStateEvent = serde_json::from_str(
+						event
+							.payload()
+							.expect("Update run state event should have payload"),
+					)
+					.expect("Failed to deserialize state update");
+					let mut lock = launched_games.lock().await;
+					if let Some(instance) = lock.get_mut(&InstanceID::from(payload.instance)) {
+						instance.state = payload.state;
+					}
+				});
 			});
 
 			// Save package resolution errors so that they can be displayed on the instance
 			app.listen_global("mcvm_display_resolution_error", move |event| {
-				let payload: ResolutionErrorEvent =
-					serde_json::from_str(event.payload().expect("Event should have payload"))
-						.expect("Failed to deserialize");
+				let paths = paths.clone();
+				let data = data.clone();
+				tauri::async_runtime::spawn(async move {
+					let payload: ResolutionErrorEvent =
+						serde_json::from_str(event.payload().expect("Event should have payload"))
+							.expect("Failed to deserialize");
 
-				let mut data = tauri::async_runtime::block_on(data.lock());
-				data.last_resolution_errors
-					.insert(payload.instance, payload.error);
-				let _ = data.write(&paths);
+					let mut data = data.lock().await;
+					data.last_resolution_errors
+						.insert(payload.instance, payload.error);
+					let _ = data.write(&paths);
+				});
 			});
 
 			let env = app.env();
@@ -91,6 +99,7 @@ fn main() {
 			commands::instance::write_profile_config,
 			commands::instance::write_global_profile,
 			commands::instance::update_instance,
+			commands::instance::update_instance_packages,
 			commands::instance::get_instance_resolution_error,
 			commands::instance::delete_instance,
 			commands::instance::delete_profile,

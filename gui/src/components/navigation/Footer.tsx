@@ -109,7 +109,7 @@ export default function LaunchFooter(props: LaunchFooterProps) {
 		}
 
 		// Prevent launching until the current authentication screens are finished
-		if (showPasswordPrompt() || authInfo() !== null) {
+		if (showPasswordPrompt() || authInfo() !== undefined) {
 			return;
 		}
 

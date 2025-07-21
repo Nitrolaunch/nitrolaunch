@@ -172,12 +172,15 @@ impl MCVMOutput for LauncherOutput {
 		eprintln!("Resolution error: {error:?}");
 		let error = SerializableResolutionError::from_err(error);
 
-		let _ = self.inner.app.emit_all(
+		let _ = self.inner.app.trigger_global(
 			"mcvm_display_resolution_error",
-			ResolutionErrorEvent {
-				error,
-				instance: instance_id.to_string(),
-			},
+			Some(
+				serde_json::to_string(&ResolutionErrorEvent {
+					error,
+					instance: instance_id.to_string(),
+				})
+				.unwrap(),
+			),
 		);
 	}
 
@@ -324,7 +327,7 @@ impl SerializableResolutionError {
 				SerializableResolutionError::FailedToPreload(error.to_string())
 			}
 			ResolutionError::FailedToGetProperties(req, error) => {
-				SerializableResolutionError::FailedToGetProperties(req, error.to_string())
+				SerializableResolutionError::FailedToGetProperties(req, format!("{error:?}"))
 			}
 			ResolutionError::NoValidVersionsFound(req) => {
 				SerializableResolutionError::NoValidVersionsFound(req)
@@ -339,9 +342,9 @@ impl SerializableResolutionError {
 				SerializableResolutionError::IncompatiblePackage(req, items)
 			}
 			ResolutionError::FailedToEvaluate(req, error) => {
-				SerializableResolutionError::FailedToEvaluate(req, error.to_string())
+				SerializableResolutionError::FailedToEvaluate(req, format!("{error:?}"))
 			}
-			ResolutionError::Misc(error) => SerializableResolutionError::Misc(error.to_string()),
+			ResolutionError::Misc(error) => SerializableResolutionError::Misc(format!("{error:?}")),
 		}
 	}
 }

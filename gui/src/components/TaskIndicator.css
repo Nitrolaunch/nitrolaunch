@@ -6,6 +6,7 @@
 	background-color: black;
 	font-size: 0.9rem;
 	box-shadow: var(--shadow-offset) var(--shadow-offset) black;
+	overflow-x: hidden;
 }
 
 #task-indicator-preview {
