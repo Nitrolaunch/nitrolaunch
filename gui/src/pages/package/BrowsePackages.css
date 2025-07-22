@@ -35,6 +35,8 @@
 	border: 0.15rem solid var(--bg3);
 	border-top-color: var(--bg4);
 	border-left-color: var(--bg4);
+
+	overflow-x: hidden;
 }
 
 .package:hover {

@@ -3,6 +3,7 @@ import "./InstanceConfig.css";
 import { invoke } from "@tauri-apps/api";
 import {
 	createEffect,
+	createMemo,
 	createResource,
 	createSignal,
 	onMount,
@@ -20,8 +21,8 @@ import {
 import { FooterData } from "../../App";
 import { FooterMode } from "../../components/navigation/Footer";
 import PackagesConfig, {
-	getPackageConfigRequest,
 	PackageConfig,
+	packageConfigsEqual,
 } from "./PackagesConfig";
 import Tip from "../../components/dialog/Tip";
 import { errorToast, successToast } from "../../components/dialog/Toasts";
@@ -41,6 +42,7 @@ import {
 	createConfiguredPackages,
 	getConfigPackages,
 	getConfiguredLoader,
+	getDerivedPackages,
 	getDerivedValue,
 	InstanceConfigMode,
 	parseLaunchMemory,
@@ -182,6 +184,10 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 	let [displayName, setDisplayName] = createSignal("");
 	let message = () =>
 		isInstance ? `INSTANCE` : isGlobalProfile ? "GLOBAL PROFILE" : `PROFILE`;
+
+	let derivedPackages = createMemo(() => {
+		return getDerivedPackages(parentConfigs());
+	});
 
 	createEffect(() => {
 		if (config() != undefined) {
@@ -838,18 +844,21 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 						globalPackages={globalPackages()}
 						clientPackages={clientPackages()}
 						serverPackages={serverPackages()}
+						derivedGlobalPackages={derivedPackages()[0]}
+						derivedClientPackages={derivedPackages()[1]}
+						derivedServerPackages={derivedPackages()[2]}
 						onRemove={(pkg, category) => {
 							if (category == "global") {
 								setGlobalPackages((packages) =>
-									packages.filter((x) => getPackageConfigRequest(x).id != pkg)
+									packages.filter((x) => !packageConfigsEqual(x, pkg))
 								);
 							} else if (category == "client") {
 								setClientPackages((packages) =>
-									packages.filter((x) => getPackageConfigRequest(x).id != pkg)
+									packages.filter((x) => !packageConfigsEqual(x, pkg))
 								);
 							} else if (category == "server") {
 								setServerPackages((packages) =>
-									packages.filter((x) => getPackageConfigRequest(x).id != pkg)
+									packages.filter((x) => !packageConfigsEqual(x, pkg))
 								);
 							}
 

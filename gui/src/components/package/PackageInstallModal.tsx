@@ -19,7 +19,7 @@ import { errorToast, successToast } from "../dialog/Toasts";
 import {
 	addPackage,
 	InstanceConfigMode,
-	readInstanceConfig,
+	readEditableInstanceConfig,
 	saveInstanceConfig,
 } from "../../pages/instance/read_write";
 import { pkgRequestToString } from "../../utils";
@@ -78,7 +78,10 @@ export default function PackageInstallModal(props: PackageInstallModalProps) {
 				: (selectedProfileLocation() as "client" | "server" | "all");
 
 		try {
-			let config = await readInstanceConfig(selectedInstanceOrProfile(), mode);
+			let config = await readEditableInstanceConfig(
+				selectedInstanceOrProfile(),
+				mode
+			);
 			let pkg = pkgRequestToString({
 				id: props.packageId,
 				version: props.selectedVersion,

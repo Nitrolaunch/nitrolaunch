@@ -5,6 +5,7 @@ import {
 	createConfiguredPackages,
 	getConfigPackages,
 	InstanceConfigMode,
+	readEditableInstanceConfig,
 	readInstanceConfig,
 	saveInstanceConfig,
 } from "./read_write";
@@ -22,6 +23,7 @@ import InstanceConsole from "../../components/launch/InstanceConsole";
 import PackagesConfig, {
 	getPackageConfigRequest,
 	PackageConfig,
+	packageConfigsEqual,
 } from "./PackagesConfig";
 import { FooterData } from "../../App";
 import { FooterMode } from "../../components/navigation/Footer";
@@ -37,19 +39,47 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 	let [globalPackages, setGlobalPackages] = createSignal<PackageConfig[]>([]);
 	let [clientPackages, setClientPackages] = createSignal<PackageConfig[]>([]);
 	let [serverPackages, setServerPackages] = createSignal<PackageConfig[]>([]);
+	// Derived packages
+	let [derivedGlobalPackages, setDerivedGlobalPackages] = createSignal<
+		PackageConfig[]
+	>([]);
+	let [derivedClientPackages, setDerivedClientPackages] = createSignal<
+		PackageConfig[]
+	>([]);
+	let [derivedServerPackages, setDerivedServerPackages] = createSignal<
+		PackageConfig[]
+	>([]);
 
 	let [instance, _] = createResource(async () => {
 		// Get the instance or profile
 		try {
-			let configuration = await readInstanceConfig(
-				id,
-				InstanceConfigMode.Instance
-			);
+			let [configuration, editableConfiguration] = await Promise.all([
+				readInstanceConfig(id, InstanceConfigMode.Instance),
+				readEditableInstanceConfig(id, InstanceConfigMode.Instance),
+			]);
 
-			let [global, client, server] = getConfigPackages(configuration);
+			let [global, client, server] = getConfigPackages(editableConfiguration);
 			setGlobalPackages(global);
 			setClientPackages(client);
 			setServerPackages(server);
+
+			let [allGlobal, allClient, allServer] = getConfigPackages(configuration);
+			// Derived packages are in the full config but not the editable one
+			setDerivedGlobalPackages(
+				allGlobal.filter(
+					(x) => !globalPackages().some((y) => packageConfigsEqual(x, y))
+				)
+			);
+			setDerivedClientPackages(
+				allClient.filter(
+					(x) => !clientPackages().some((y) => packageConfigsEqual(x, y))
+				)
+			);
+			setDerivedServerPackages(
+				allServer.filter(
+					(x) => !serverPackages().some((y) => packageConfigsEqual(x, y))
+				)
+			);
 
 			return configuration;
 		} catch (e) {
@@ -239,9 +269,12 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 								<Show when={selectedTab() == "packages"}>
 									<PackagesConfig
 										id={id}
-										globalPackages={globalPackages()!}
-										clientPackages={clientPackages()!}
-										serverPackages={serverPackages()!}
+										globalPackages={globalPackages()}
+										clientPackages={clientPackages()}
+										serverPackages={serverPackages()}
+										derivedGlobalPackages={derivedGlobalPackages()}
+										derivedClientPackages={derivedClientPackages()}
+										derivedServerPackages={derivedServerPackages()}
 										isProfile={false}
 										onRemove={(pkg, category) => {
 											if (category == "global") {

@@ -221,6 +221,20 @@ export function addPackage(
 	}
 }
 
+export function getDerivedPackages(profiles: InstanceConfig[]) {
+	let allGlobal: PackageConfig[] = [];
+	let allClient: PackageConfig[] = [];
+	let allServer: PackageConfig[] = [];
+	for (let profile of profiles) {
+		let [global, client, server] = getConfigPackages(profile);
+		allGlobal = allGlobal.concat(global);
+		allClient = allClient.concat(client);
+		allServer = allServer.concat(server);
+	}
+
+	return [allGlobal, allClient, allServer];
+}
+
 // Get the derived value from a list of profile configs and a property function
 export function getDerivedValue(
 	profiles: InstanceConfig[],
