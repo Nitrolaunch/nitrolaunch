@@ -367,7 +367,7 @@ export function getLoaders(modification: string) {
 	if (modification == "fabriclike") {
 		return [Loader.Fabric, Loader.Quilt];
 	} else if (modification == "forgelike") {
-		return [Loader.Forge, Loader.NeoForge, Loader.SpongeForge];
+		return [Loader.Forge, Loader.SpongeForge];
 	}
 	return [modification as Loader];
 }

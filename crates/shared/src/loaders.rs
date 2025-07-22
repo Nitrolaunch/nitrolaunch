@@ -130,10 +130,7 @@ impl LoaderMatch {
 	pub fn matches(&self, other: &Loader) -> bool {
 		match self {
 			Self::FabricLike => matches!(other, Loader::Fabric | Loader::Quilt),
-			Self::ForgeLike => matches!(
-				other,
-				Loader::Forge | Loader::NeoForged | Loader::SpongeForge
-			),
+			Self::ForgeLike => matches!(other, Loader::Forge | Loader::SpongeForge),
 			Self::Bukkit => matches!(
 				other,
 				Loader::Paper

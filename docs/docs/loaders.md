@@ -41,5 +41,5 @@ Loader matches are used in packages to match different loaders that support the 
 - `risugamis`
 - `rift`
 - `fabriclike`: Matches any loader that supports loading Fabric mods (Fabric and Quilt).
-- `forgelike`: Matches any loader that supports loading Forge mods (MinecraftForge, NeoForged, and SpongeForge).
+- `forgelike`: Matches any loader that supports loading Forge mods (MinecraftForge and SpongeForge).
 - `bukkit`: Matches any server that can load Bukkit plugins (CraftBukkit, Paper, Spigot, Glowstone, Pufferfish, and Purpur).
