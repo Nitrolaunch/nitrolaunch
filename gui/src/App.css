@@ -99,7 +99,7 @@ h2 {
 
 input {
 	border-radius: var(--round);
-	padding: 0.5rem 1.2rem;
+	padding: 0.5rem 1rem;
 	height: var(--input-height);
 	font-weight: bold;
 	background-color: var(--bg0);
@@ -124,7 +124,7 @@ input:focus {
 button {
 	border-radius: var(--round);
 	border: 1px solid transparent;
-	padding: 0.5rem 1.2rem;
+	padding: 0.5rem 0.8rem;
 
 	background-color: var(--bg2);
 	transition: border-color 0.25s;
@@ -200,6 +200,10 @@ button {
 
 .fullwidth {
 	width: 100%;
+}
+
+.fullheight {
+	height: 100%;
 }
 
 .split {

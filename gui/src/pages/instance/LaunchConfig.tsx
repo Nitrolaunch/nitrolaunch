@@ -2,6 +2,7 @@ import Tip from "../../components/dialog/Tip";
 import LinkedInputs from "../../components/input/LinkedInputs";
 import DeriveIndicator from "./DeriveIndicator";
 import { InstanceConfig } from "./read_write";
+import EditableList from "../../components/input/EditableList";
 
 export default function LaunchConfig(props: LaunchConfigProps) {
 	return (
@@ -34,6 +35,28 @@ export default function LaunchConfig(props: LaunchConfigProps) {
 					onChange={props.onChange}
 				/>
 			</Tip>
+			<div class="cont start">
+				<label for="launch-env" class="label">
+					ENVIRONMENT VARIABLES
+				</label>
+				<DeriveIndicator
+					parentConfigs={props.parentConfigs}
+					currentValue={props.envVars.join(", ")}
+					property={(x) => (x.launch == undefined ? undefined : x.launch.env)}
+				/>
+			</div>
+			<Tip
+				tip="Environment variables for the game. Each entry should look like KEY=value"
+				fullwidth
+			>
+				<EditableList
+					items={props.envVars}
+					setItems={(x) => {
+						props.setEnvVars(x);
+						props.onChange();
+					}}
+				/>
+			</Tip>
 		</div>
 	);
 }
@@ -43,6 +66,8 @@ export interface LaunchConfigProps {
 	maxMemory?: number;
 	setInitMemory: (value: number | undefined) => void;
 	setMaxMemory: (value: number | undefined) => void;
+	envVars: string[];
+	setEnvVars: (value: string[]) => void;
 	onChange: () => void;
 	parentConfigs: InstanceConfig[];
 }

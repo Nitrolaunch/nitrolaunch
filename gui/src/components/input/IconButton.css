@@ -5,6 +5,7 @@
 	cursor: pointer;
 	border: 0.15rem solid;
 	border-radius: var(--round);
+	box-sizing: border-box;
 	transition: border-color 0.35s;
 }
 

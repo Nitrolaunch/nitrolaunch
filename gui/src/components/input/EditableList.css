@@ -1,0 +1,32 @@
+.editable-list-item {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(0, 0.08fr);
+	width: 100%;
+
+	height: var(--input-height);
+	box-sizing: border-box;
+}
+
+.editable-list-item-contents {
+	padding: 0.25rem 0.5rem;
+	box-sizing: border-box;
+
+	background-color: var(--bg2);
+	border: 0.15rem solid var(--bg3);
+	border-radius: var(--round);
+
+	cursor: grab;
+	user-select: none;
+	-webkit-user-select: none;
+
+	transition: border-color 0.25s transform 0.25s;
+}
+
+.editable-list-item-contents:hover {
+	border-color: var(--bg4);
+	transform: scale(1.02);
+}
+
+.editable-list-item-contents.drag-hovered {
+	border-bottom-color: var(--profile);
+}

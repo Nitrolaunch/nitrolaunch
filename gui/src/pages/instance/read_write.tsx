@@ -53,7 +53,7 @@ export type ConfiguredPackages =
 export interface LaunchConfig {
 	memory?: string | LaunchMemory;
 	args?: LaunchArgs;
-	env?: string[];
+	env?: { [key: string]: string };
 	java?: "auto" | "system" | "adoptium" | "zulu" | "graalvm" | string;
 	[extraKey: string]: any;
 }

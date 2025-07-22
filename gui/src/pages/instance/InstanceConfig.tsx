@@ -180,6 +180,7 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 
 	let [initMemory, setInitMemory] = createSignal<number | undefined>(undefined);
 	let [maxMemory, setMaxMemory] = createSignal<number | undefined>(undefined);
+	let [envVars, setEnvVars] = createSignal<string[]>([]);
 
 	let [displayName, setDisplayName] = createSignal("");
 	let message = () =>
@@ -246,6 +247,15 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 			);
 			setInitMemory(init);
 			setMaxMemory(max);
+
+			if (config()!.launch == undefined || config()!.launch!.env == undefined) {
+				setEnvVars([]);
+			} else {
+				let out: string[] = [];
+				for (let key of Object.keys(config()!.launch!.env!)) {
+					out.push(`${key}=${config()!.launch!.env![key]}`);
+				}
+			}
 
 			setDisplayName(config()!.name == undefined ? id : config()!.name!);
 		}
@@ -329,6 +339,22 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 			isInstance
 		);
 
+		// Launch
+		let launchMemory =
+			initMemory() == undefined || maxMemory == undefined
+				? undefined
+				: { min: `${initMemory()}m`, max: `${maxMemory()}m` };
+
+		let env: { [key: string]: string } = {};
+		for (let entry of envVars()) {
+			let split = entry.split("=");
+			if (split.length < 2) {
+				continue;
+			}
+
+			env[split[0]] = split[1];
+		}
+
 		let newConfig: InstanceConfig = {
 			from: from(),
 			type: side(),
@@ -338,10 +364,8 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 			loader: loader() as Loader | undefined,
 			packages: packages,
 			launch: {
-				memory:
-					initMemory() == undefined || maxMemory == undefined
-						? undefined
-						: { min: `${initMemory()}m`, max: `${maxMemory()}m` },
+				memory: launchMemory,
+				env: Object.keys(env).length == 0 ? undefined : env,
 			},
 		};
 
@@ -912,6 +936,8 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 					maxMemory={maxMemory()}
 					setInitMemory={setInitMemory}
 					setMaxMemory={setMaxMemory}
+					envVars={envVars()}
+					setEnvVars={setEnvVars}
 					parentConfigs={parentConfigs()}
 					onChange={setDirty}
 				/>
