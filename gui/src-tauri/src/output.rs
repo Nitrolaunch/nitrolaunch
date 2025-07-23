@@ -1,10 +1,10 @@
 use std::{collections::HashMap, sync::Arc, time::Duration};
 
 use anyhow::Context;
-use mcvm::shared::{
+use nitrolaunch::shared::{
 	id::InstanceID,
 	lang::translate::TranslationKey,
-	output::{MCVMOutput, Message, MessageContents, MessageLevel},
+	output::{NitroOutput, Message, MessageContents, MessageLevel},
 	pkg::{ArcPkgReq, ResolutionError},
 };
 use serde::{Deserialize, Serialize};
@@ -34,7 +34,7 @@ impl LauncherOutput {
 	}
 
 	pub fn set_task(&mut self, task: &str) {
-		let _ = self.inner.app.emit_all("mcvm_output_create_task", task);
+		let _ = self.inner.app.emit_all("nitro_output_create_task", task);
 		self.task = Some(task.to_string());
 	}
 
@@ -44,13 +44,13 @@ impl LauncherOutput {
 
 	pub fn finish_task(&self) {
 		if let Some(task) = &self.task {
-			let _ = self.inner.app.emit_all("mcvm_output_finish_task", task);
+			let _ = self.inner.app.emit_all("nitro_output_finish_task", task);
 		}
 	}
 }
 
 #[async_trait::async_trait]
-impl MCVMOutput for LauncherOutput {
+impl NitroOutput for LauncherOutput {
 	fn display_text(&mut self, text: String, _level: MessageLevel) {
 		self.disp(text);
 	}
@@ -63,7 +63,7 @@ impl MCVMOutput for LauncherOutput {
 			MessageContents::Associated(assoc, msg) => match *assoc {
 				MessageContents::Progress { current, total } => {
 					let _ = self.inner.app.emit_all(
-						"mcvm_output_progress",
+						"nitro_output_progress",
 						AssociatedProgressEvent {
 							current,
 							total,
@@ -80,7 +80,7 @@ impl MCVMOutput for LauncherOutput {
 			},
 			MessageContents::Header(text) => {
 				let _ = self.inner.app.emit_all(
-					"mcvm_output_message",
+					"nitro_output_message",
 					MessageEvent {
 						message: text,
 						ty: MessageType::Header,
@@ -90,7 +90,7 @@ impl MCVMOutput for LauncherOutput {
 			}
 			MessageContents::Warning(text) => {
 				let _ = self.inner.app.emit_all(
-					"mcvm_output_message",
+					"nitro_output_message",
 					MessageEvent {
 						message: text,
 						ty: MessageType::Warning,
@@ -101,7 +101,7 @@ impl MCVMOutput for LauncherOutput {
 			MessageContents::Error(text) => {
 				eprintln!("Error: {text}");
 				let _ = self.inner.app.emit_all(
-					"mcvm_output_message",
+					"nitro_output_message",
 					MessageEvent {
 						message: text,
 						ty: MessageType::Error,
@@ -135,7 +135,7 @@ impl MCVMOutput for LauncherOutput {
 		println!("Starting password prompt");
 		self.inner
 			.app
-			.emit_all("mcvm_display_password_prompt", message.default_format())
+			.emit_all("nitro_display_password_prompt", message.default_format())
 			.context("Failed to display password prompt to user")?;
 
 		// Block this thread, checking every interval if the prompt has been filled
@@ -160,7 +160,7 @@ impl MCVMOutput for LauncherOutput {
 	fn display_special_ms_auth(&mut self, url: &str, code: &str) {
 		self.display_text("Showing auth info".into(), MessageLevel::Important);
 		let _ = self.inner.app.emit_all(
-			"mcvm_display_auth_info",
+			"nitro_display_auth_info",
 			AuthDisplayEvent {
 				url: url.to_owned(),
 				device_code: code.to_owned(),
@@ -173,7 +173,7 @@ impl MCVMOutput for LauncherOutput {
 		let error = SerializableResolutionError::from_err(error);
 
 		let _ = self.inner.app.trigger_global(
-			"mcvm_display_resolution_error",
+			"nitro_display_resolution_error",
 			Some(
 				serde_json::to_string(&ResolutionErrorEvent {
 					error,
@@ -198,7 +198,7 @@ impl MCVMOutput for LauncherOutput {
 			}
 		}
 		if let TranslationKey::AuthenticationSuccessful = key {
-			let _ = self.inner.app.emit_all("mcvm_close_auth_info", ());
+			let _ = self.inner.app.emit_all("nitro_close_auth_info", ());
 		}
 		if let TranslationKey::Launch = key {
 			if let Some(instance) = &self.instance {
@@ -216,19 +216,19 @@ impl MCVMOutput for LauncherOutput {
 	}
 
 	fn start_process(&mut self) {
-		let _ = self.inner.app.emit_all("mcvm_output_start_process", ());
+		let _ = self.inner.app.emit_all("nitro_output_start_process", ());
 	}
 
 	fn end_process(&mut self) {
-		let _ = self.inner.app.emit_all("mcvm_output_end_process", ());
+		let _ = self.inner.app.emit_all("nitro_output_end_process", ());
 	}
 
 	fn start_section(&mut self) {
-		let _ = self.inner.app.emit_all("mcvm_output_start_section", ());
+		let _ = self.inner.app.emit_all("nitro_output_start_section", ());
 	}
 
 	fn end_section(&mut self) {
-		let _ = self.inner.app.emit_all("mcvm_output_end_section", ());
+		let _ = self.inner.app.emit_all("nitro_output_end_section", ());
 	}
 }
 
@@ -236,7 +236,7 @@ impl LauncherOutput {
 	fn disp(&mut self, text: String) {
 		println!("{text}");
 		let _ = self.inner.app.emit_all(
-			"mcvm_output_message",
+			"nitro_output_message",
 			MessageEvent {
 				message: text,
 				ty: MessageType::Simple,

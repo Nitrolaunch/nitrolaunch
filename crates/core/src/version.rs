@@ -2,10 +2,10 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use anyhow::Context;
-use mcvm_shared::later::Later;
-use mcvm_shared::output::MCVMOutput;
-use mcvm_shared::output::{MessageContents, MessageLevel};
-use mcvm_shared::versions::VersionInfo;
+use nitro_shared::later::Later;
+use nitro_shared::output::NitroOutput;
+use nitro_shared::output::{MessageContents, MessageLevel};
+use nitro_shared::versions::VersionInfo;
 
 use crate::config::BrandingProperties;
 use crate::instance::{Instance, InstanceConfiguration, InstanceParameters};
@@ -19,7 +19,7 @@ use crate::user::UserManager;
 use crate::util::versions::{MinecraftVersion, VersionName};
 
 /// An installed version of the game. This cannot be constructed directly,
-/// only from the MCVMCore struct by using the `get_version()` method
+/// only from the NitroCore struct by using the `get_version()` method
 pub struct InstalledVersion<'inner, 'params> {
 	pub(crate) inner: &'inner mut InstalledVersionInner,
 	pub(crate) params: VersionParameters<'params>,
@@ -50,7 +50,7 @@ impl<'inner, 'params> InstalledVersion<'inner, 'params> {
 	pub async fn get_instance(
 		&mut self,
 		config: InstanceConfiguration,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<Instance> {
 		let params = InstanceParameters {
 			version: &self.inner.version,
@@ -78,7 +78,7 @@ impl<'inner, 'params> InstalledVersion<'inner, 'params> {
 	/// instance
 	pub async fn ensure_client_assets_and_libs(
 		&mut self,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<()> {
 		let params = ClientAssetsAndLibsParameters {
 			client_meta: &self.inner.client_meta,
@@ -105,7 +105,7 @@ impl InstalledVersionInner {
 		version: VersionName,
 		version_manifest: &Arc<VersionManifestAndList>,
 		params: LoadVersionParameters<'_>,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<Self> {
 		// Get the client meta
 		o.start_process();
@@ -161,7 +161,7 @@ impl VersionRegistry {
 		&mut self,
 		version: &VersionName,
 		params: LoadVersionParameters<'_>,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<&mut InstalledVersionInner> {
 		// Ensure the version manifest first
 		let requested_version = MinecraftVersion::Version(version.clone());
@@ -195,7 +195,7 @@ impl VersionRegistry {
 	pub async fn load_version_manifest(
 		&mut self,
 		params: LoadVersionManifestParameters<'_>,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<&Arc<VersionManifestAndList>> {
 		if self.version_manifest.is_empty() {
 			let mut manifest = version_manifest::get_with_output(
@@ -268,7 +268,7 @@ impl ClientAssetsAndLibraries {
 	pub async fn load(
 		&mut self,
 		params: ClientAssetsAndLibsParameters<'_>,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<()> {
 		if self.loaded {
 			return Ok(());

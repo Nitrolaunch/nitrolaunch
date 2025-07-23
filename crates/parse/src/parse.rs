@@ -1,6 +1,6 @@
 use anyhow::anyhow;
 use anyhow::{bail, Context};
-use mcvm_shared::pkg::PackageAddonHashes;
+use nitro_shared::pkg::PackageAddonHashes;
 
 use crate::instruction::ElseBlock;
 use crate::routine::can_call_routines;
@@ -11,7 +11,7 @@ use super::conditions::ConditionKind;
 use super::instruction::{parse_arg, InstrKind, Instruction};
 use super::lex::{lex, reduce_tokens, Side, Token, TokenAndPos};
 use super::vars::Value;
-use mcvm_shared::addon::AddonKind;
+use nitro_shared::addon::AddonKind;
 
 use std::collections::{HashMap, VecDeque};
 
@@ -438,7 +438,7 @@ pub fn parse<'a>(tokens: impl Iterator<Item = &'a TokenAndPos>) -> anyhow::Resul
 }
 
 mod addon {
-	use mcvm_shared::pkg::PackageAddonHashes;
+	use nitro_shared::pkg::PackageAddonHashes;
 
 	use super::*;
 
@@ -729,7 +729,7 @@ pub fn lex_and_parse(text: &str) -> anyhow::Result<Parsed> {
 
 #[cfg(test)]
 mod tests {
-	use mcvm_shared::{
+	use nitro_shared::{
 		later::Later,
 		loaders::{Loader, LoaderMatch},
 	};

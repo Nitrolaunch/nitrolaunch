@@ -1,12 +1,12 @@
 use std::str::FromStr;
 
 use anyhow::bail;
-use mcvm::config_crate::instance::{
+use nitrolaunch::config_crate::instance::{
 	CommonInstanceConfig, InstanceConfig, LaunchArgs, LaunchConfig,
 };
-use mcvm_plugin::api::CustomPlugin;
-use mcvm_plugin::hooks::ModifyInstanceConfigResult;
-use mcvm_shared::output::{MCVMOutput, MessageContents, MessageLevel};
+use nitro_plugin::api::CustomPlugin;
+use nitro_plugin::hooks::ModifyInstanceConfigResult;
+use nitro_shared::output::{NitroOutput, MessageContents, MessageLevel};
 
 fn main() -> anyhow::Result<()> {
 	let mut plugin = CustomPlugin::from_manifest_file("args", include_str!("plugin.json"))?;
@@ -38,7 +38,7 @@ fn main() -> anyhow::Result<()> {
 				common: CommonInstanceConfig {
 					launch: LaunchConfig {
 						args: LaunchArgs {
-							jvm: mcvm::config_crate::instance::Args::List(args),
+							jvm: nitrolaunch::config_crate::instance::Args::List(args),
 							..Default::default()
 						},
 						..Default::default()

@@ -1,7 +1,7 @@
 use anyhow::Context;
 use clap::Parser;
-use mcvm_core::net::download::Client;
-use mcvm_plugin::api::CustomPlugin;
+use nitro_core::net::download::Client;
+use nitro_plugin::api::CustomPlugin;
 
 fn main() -> anyhow::Result<()> {
 	let mut plugin = CustomPlugin::from_manifest_file("modrinth_api", include_str!("plugin.json"))?;
@@ -13,7 +13,7 @@ fn main() -> anyhow::Result<()> {
 			return Ok(());
 		}
 		// Trick the parser to give it the right bin name
-		let it = std::iter::once(format!("mcvm {subcommand}")).chain(args.into_iter().skip(1));
+		let it = std::iter::once(format!("nitro {subcommand}")).chain(args.into_iter().skip(1));
 		let cli = Cli::parse_from(it);
 
 		let runtime = tokio::runtime::Runtime::new()?;
@@ -53,10 +53,10 @@ enum Subcommand {
 async fn get_modrinth_project(project: String) -> anyhow::Result<()> {
 	let client = Client::new();
 
-	let project = mcvm_net::modrinth::get_project_raw(&project, &client)
+	let project = nitro_net::modrinth::get_project_raw(&project, &client)
 		.await
 		.context("Failed to get project")?;
-	let project_pretty = mcvm::core::util::json::format_json(&project);
+	let project_pretty = nitrolaunch::core::util::json::format_json(&project);
 
 	let out = if let Ok(val) = project_pretty {
 		val
@@ -72,10 +72,10 @@ async fn get_modrinth_project(project: String) -> anyhow::Result<()> {
 async fn get_modrinth_version(version: String) -> anyhow::Result<()> {
 	let client = Client::new();
 
-	let version = mcvm_net::modrinth::get_version_raw(&version, &client)
+	let version = nitro_net::modrinth::get_version_raw(&version, &client)
 		.await
 		.context("Failed to get project version")?;
-	let version_pretty = mcvm::core::util::json::format_json(&version);
+	let version_pretty = nitrolaunch::core::util::json::format_json(&version);
 
 	let out = if let Ok(val) = version_pretty {
 		val

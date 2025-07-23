@@ -1,6 +1,6 @@
 use crate::download::{self, user_agent};
 use anyhow::{anyhow, Context};
-use mcvm_shared::{
+use nitro_shared::{
 	loaders::Loader,
 	pkg::{PackageCategory, PackageKind, PackageSearchParameters},
 };

@@ -15,7 +15,7 @@ pub static RESERVED_ROUTINES: [&str; 4] = [
 	UNINSTALL_ROUTINE,
 ];
 
-/// Returns if a routine name is reserved for use by mcvm
+/// Returns if a routine name is reserved for use by Nitrolaunch
 pub fn is_reserved(routine: &str) -> bool {
 	RESERVED_ROUTINES.contains(&routine)
 }

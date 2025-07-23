@@ -1,6 +1,6 @@
 # Hooks
 
-Hooks are what give your plugin functionality. They are essentially custom event handlers that can be written in any language. They can run code whenever something happens, or inject new items into some of the data-driven parts of MCVM. Handlers for hooks are defined in the plugin manifest.
+Hooks are what give your plugin functionality. They are essentially custom event handlers that can be written in any language. They can run code whenever something happens, or inject new items into some of the data-driven parts of Nitrolaunch. Handlers for hooks are defined in the plugin manifest.
 
 ## Parts of a Hook
 
@@ -9,7 +9,7 @@ Hooks are what give your plugin functionality. They are essentially custom event
 
 ## How Hooks are Run
 
-Most of the time when MCVM calls a hook, it will check every plugin that supports that hook, and call the hook on each one to create a final list of results. Handlers are not exclusive; multiple plugins can subscribe to the same hook. However, some hooks are only called on specific plugins. For example, the `on_load` hook is only called on a specific plugin once it is loaded.
+Most of the time when Nitrolaunch calls a hook, it will check every plugin that supports that hook, and call the hook on each one to create a final list of results. Handlers are not exclusive; multiple plugins can subscribe to the same hook. However, some hooks are only called on specific plugins. For example, the `on_load` hook is only called on a specific plugin once it is loaded.
 
 ## List of Hooks
 
@@ -141,7 +141,7 @@ Also called when an instance is launched, but is non-blocking, and runs alongsid
 
 ### `on_instance_stop`
 
-Called when an instance is stopped. This happens when Minecraft is closed or crashes. This hook will _not_ be called if MCVM crashes while the instance is running.
+Called when an instance is stopped. This happens when Minecraft is closed or crashes. This hook will _not_ be called if Nitrolaunch crashes while the instance is running.
 
 - Argument: InstanceLaunchArg
 - Result: None
@@ -246,7 +246,7 @@ Handles authentication with custom user types
 
 ### `add_translations`
 
-Adds extra translations to MCVM
+Adds extra translations to Nitrolaunch
 
 - Argument: None
 - Result:

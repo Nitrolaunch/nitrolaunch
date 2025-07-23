@@ -17,16 +17,16 @@ pub mod profile;
 use self::instance::read_instance_config;
 use crate::plugin::PluginManager;
 use anyhow::{bail, Context};
-use mcvm_config::profile::ProfileConfig;
-use mcvm_config::ConfigDeser;
-use mcvm_core::auth_crate::mc::ClientId;
-use mcvm_core::io::{json_from_file, json_to_file_pretty};
-use mcvm_core::user::UserManager;
-use mcvm_plugin::hooks::{AddInstances, AddInstancesArg, AddProfiles, AddSupportedLoaders};
-use mcvm_shared::id::{InstanceID, ProfileID};
-use mcvm_shared::output::{MCVMOutput, MessageContents, MessageLevel};
-use mcvm_shared::translate;
-use mcvm_shared::util::is_valid_identifier;
+use nitro_config::profile::ProfileConfig;
+use nitro_config::ConfigDeser;
+use nitro_core::auth_crate::mc::ClientId;
+use nitro_core::io::{json_from_file, json_to_file_pretty};
+use nitro_core::user::UserManager;
+use nitro_plugin::hooks::{AddInstances, AddInstancesArg, AddProfiles, AddSupportedLoaders};
+use nitro_shared::id::{InstanceID, ProfileID};
+use nitro_shared::output::{NitroOutput, MessageContents, MessageLevel};
+use nitro_shared::translate;
+use nitro_shared::util::is_valid_identifier;
 use preferences::ConfigPreferences;
 use profile::consolidate_profile_configs;
 
@@ -41,7 +41,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 /// The data resulting from reading configuration.
-/// Represents all of the configured data that MCVM will use
+/// Represents all of the configured data that Nitrolaunch will use
 pub struct Config {
 	/// The user manager
 	pub users: UserManager,
@@ -66,7 +66,7 @@ pub struct Config {
 impl Config {
 	/// Get the config path
 	pub fn get_path(paths: &Paths) -> PathBuf {
-		paths.project.config_dir().join("mcvm.json")
+		paths.project.config_dir().join("nitro.json")
 	}
 
 	/// Open the config from a file
@@ -96,7 +96,7 @@ impl Config {
 		show_warnings: bool,
 		paths: &Paths,
 		client_id: ClientId,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<Self> {
 		let mut users = UserManager::new(client_id);
 		let mut instances = HashMap::with_capacity(config.instances.len());
@@ -208,7 +208,7 @@ impl Config {
 			};
 
 			if show_warnings
-				&& !mcvm_config::instance::can_install_loader(&instance.config.loader)
+				&& !nitro_config::instance::can_install_loader(&instance.config.loader)
 				&& !supported_loaders.contains(&instance.config.loader)
 			{
 				o.display(
@@ -250,7 +250,7 @@ impl Config {
 		show_warnings: bool,
 		paths: &Paths,
 		client_id: ClientId,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<Self> {
 		let obj = Self::open(path)?;
 		Self::load_from_deser(obj, plugins, show_warnings, paths, client_id, o).await
@@ -292,7 +292,7 @@ fn default_config() -> serde_json::Value {
 mod tests {
 	use super::*;
 
-	use mcvm_shared::output;
+	use nitro_shared::output;
 
 	#[tokio::test]
 	async fn test_default_config() {

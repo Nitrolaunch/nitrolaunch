@@ -1,13 +1,13 @@
-use mcvm_parse::conditions::ConditionKind;
-use mcvm_parse::instruction::{InstrKind, Instruction};
-use mcvm_parse::parse::{Block, Parsed};
-use mcvm_parse::routine::INSTALL_ROUTINE;
-use mcvm_parse::vars::{Value, VariableStore};
-use mcvm_parse::FailReason;
+use nitro_parse::conditions::ConditionKind;
+use nitro_parse::instruction::{InstrKind, Instruction};
+use nitro_parse::parse::{Block, Parsed};
+use nitro_parse::routine::INSTALL_ROUTINE;
+use nitro_parse::vars::{Value, VariableStore};
+use nitro_parse::FailReason;
 
 use anyhow::{anyhow, bail, Context};
-use mcvm_shared::addon::AddonKind;
-use mcvm_shared::pkg::{PackageAddonOptionalHashes, PackageID};
+use nitro_shared::addon::AddonKind;
+use nitro_shared::pkg::{PackageAddonOptionalHashes, PackageID};
 use serde::{Deserialize, Serialize};
 
 use crate::{RecommendedPackage, RequiredPackage};

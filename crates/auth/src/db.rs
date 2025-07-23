@@ -3,7 +3,7 @@ use std::fs::File;
 use std::path::{Path, PathBuf};
 
 use anyhow::{bail, ensure, Context};
-use mcvm_shared::util::utc_timestamp;
+use nitro_shared::util::utc_timestamp;
 use rsa::traits::PublicKeyParts;
 use rsa::{Pkcs1v15Encrypt, RsaPrivateKey, RsaPublicKey};
 use serde::{Deserialize, Serialize};

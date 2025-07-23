@@ -155,7 +155,7 @@ impl VariableStore for HashMapVariableStore {
 
 /// Constant var for the Minecraft version
 pub const CONSTANT_VAR_MC_VERSION: &str = "MINECRAFT_VERSION";
-/// Constant variables that are reserved by mcvm
+/// Constant variables that are reserved by Nitrolaunch
 pub const RESERVED_CONSTANT_VARS: [&str; 1] = [CONSTANT_VAR_MC_VERSION];
 
 /// Check if a variable identifier is a reserved constant variable

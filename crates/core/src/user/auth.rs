@@ -1,16 +1,16 @@
 use std::sync::Arc;
 
 use anyhow::{bail, Context};
-use mcvm_auth::RsaPrivateKey;
-use mcvm_shared::output::{MCVMOutput, MessageContents, MessageLevel};
-use mcvm_shared::translate;
-use mcvm_shared::util::utc_timestamp;
+use nitro_auth::RsaPrivateKey;
+use nitro_shared::output::{NitroOutput, MessageContents, MessageLevel};
+use nitro_shared::translate;
+use nitro_shared::util::utc_timestamp;
 
 use crate::net::minecraft::MinecraftUserProfile;
 use crate::Paths;
-use mcvm_auth::db::{AuthDatabase, DatabaseUser, SensitiveUserInfo};
-use mcvm_auth::mc::Keypair;
-use mcvm_auth::mc::{
+use nitro_auth::db::{AuthDatabase, DatabaseUser, SensitiveUserInfo};
+use nitro_auth::mc::Keypair;
+use nitro_auth::mc::{
 	self as auth, authenticate_microsoft_user, authenticate_microsoft_user_from_token, AccessToken,
 	ClientId, RefreshToken,
 };
@@ -22,7 +22,7 @@ impl User {
 	pub(crate) async fn authenticate(
 		&mut self,
 		params: AuthParameters<'_>,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<()> {
 		match &mut self.kind {
 			UserKind::Microsoft { xbox_uid } => {
@@ -113,7 +113,7 @@ impl User {
 	pub async fn update_passkey(
 		&self,
 		paths: &Paths,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<()> {
 		let mut db =
 			AuthDatabase::open(&paths.auth).context("Failed to open authentication database")?;
@@ -174,7 +174,7 @@ pub struct MicrosoftUserData {
 async fn update_microsoft_user_auth(
 	user_id: &str,
 	params: AuthParameters<'_>,
-	o: &mut impl MCVMOutput,
+	o: &mut impl NitroOutput,
 ) -> anyhow::Result<MicrosoftUserData> {
 	let mut db =
 		AuthDatabase::open(&params.paths.auth).context("Failed to open authentication database")?;
@@ -234,7 +234,7 @@ async fn update_using_refresh_token(
 	sensitive: &SensitiveUserInfo,
 	params: &AuthParameters<'_>,
 	db: &mut AuthDatabase,
-	o: &mut impl MCVMOutput,
+	o: &mut impl NitroOutput,
 ) -> anyhow::Result<AccessToken> {
 	let refresh_token = RefreshToken::new(
 		sensitive
@@ -279,7 +279,7 @@ async fn reauth_microsoft_user(
 	db: &mut AuthDatabase,
 	client_id: ClientId,
 	client: &reqwest::Client,
-	o: &mut impl MCVMOutput,
+	o: &mut impl NitroOutput,
 ) -> anyhow::Result<MicrosoftUserData> {
 	let auth_result = authenticate_microsoft_user(client_id, client, o)
 		.await
@@ -329,7 +329,7 @@ async fn reauth_microsoft_user(
 	}
 
 	// Calculate expiration time
-	let expiration_time = mcvm_auth::db::calculate_expiration_date();
+	let expiration_time = nitro_auth::db::calculate_expiration_date();
 
 	// Write the new user to the database
 
@@ -365,7 +365,7 @@ async fn reauth_microsoft_user(
 async fn get_full_user<'db>(
 	db: &'db AuthDatabase,
 	user_id: &str,
-	o: &mut impl MCVMOutput,
+	o: &mut impl NitroOutput,
 ) -> anyhow::Result<Option<(&'db DatabaseUser, SensitiveUserInfo)>> {
 	let Some(user) = db.get_valid_user(user_id) else {
 		return Ok(None);
@@ -389,7 +389,7 @@ async fn get_full_user<'db>(
 /// Gets sensitive info from a user using their passkey
 async fn get_sensitive_info(
 	db_user: &DatabaseUser,
-	o: &mut impl MCVMOutput,
+	o: &mut impl NitroOutput,
 ) -> anyhow::Result<SensitiveUserInfo> {
 	let out = if db_user.has_passkey() {
 		let private_key = get_private_key(
@@ -426,7 +426,7 @@ async fn get_sensitive_info(
 async fn get_private_key(
 	user: &DatabaseUser,
 	message: MessageContents,
-	o: &mut impl MCVMOutput,
+	o: &mut impl NitroOutput,
 ) -> anyhow::Result<RsaPrivateKey> {
 	const MAX_ATTEMPTS: u8 = 3;
 

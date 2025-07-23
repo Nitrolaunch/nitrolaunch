@@ -28,7 +28,7 @@ export default function TaskIndicator(props: TaskIndicatorProps) {
 
 	let [eventUnlistens, _] = createResource(async () => {
 		let unlisten1 = listen(
-			"mcvm_output_create_task",
+			"nitro_output_create_task",
 			(event: Event<string>) => {
 				createTask(event.payload);
 			}
@@ -38,7 +38,7 @@ export default function TaskIndicator(props: TaskIndicatorProps) {
 		(window as any).bar = taskCount;
 
 		let unlisten2 = listen(
-			"mcvm_output_message",
+			"nitro_output_message",
 			(event: Event<MessageEvent>) => {
 				if (event.payload.type == MessageType.Warning) {
 					warningToast(event.payload.message);
@@ -63,7 +63,7 @@ export default function TaskIndicator(props: TaskIndicatorProps) {
 		);
 
 		let unlisten3 = listen(
-			"mcvm_output_finish_task",
+			"nitro_output_finish_task",
 			(event: Event<string>) => {
 				if (messages()[event.payload] != undefined) {
 					setTaskCount((taskCount) => taskCount - 1);

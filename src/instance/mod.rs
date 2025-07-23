@@ -13,14 +13,14 @@ pub mod transfer;
 /// Updating an instance
 pub mod update;
 
-use mcvm_config::instance::{ClientWindowConfig, InstanceConfig};
-use mcvm_core::util::versions::MinecraftVersion;
-use mcvm_pkg::overrides::PackageOverrides;
-use mcvm_shared::later::Later;
-use mcvm_shared::loaders::Loader;
-use mcvm_shared::pkg::PackageStability;
-use mcvm_shared::versions::VersionPattern;
-use mcvm_shared::Side;
+use nitro_config::instance::{ClientWindowConfig, InstanceConfig};
+use nitro_core::util::versions::MinecraftVersion;
+use nitro_pkg::overrides::PackageOverrides;
+use nitro_shared::later::Later;
+use nitro_shared::loaders::Loader;
+use nitro_shared::pkg::PackageStability;
+use nitro_shared::versions::VersionPattern;
+use nitro_shared::Side;
 
 use crate::io::paths::Paths;
 
@@ -28,7 +28,7 @@ use self::launch::LaunchOptions;
 use self::setup::{InstanceDirs, ModificationData};
 
 use super::config::package::PackageConfig;
-use mcvm_shared::id::InstanceID;
+use nitro_shared::id::InstanceID;
 
 /// An instance of the game on a profile
 #[derive(Debug)]

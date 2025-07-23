@@ -86,7 +86,7 @@ fn scan_linux(major_version: &str) -> Option<PathBuf> {
 
 /// Scan a directory for Java installations
 fn scan_dir(dir: &Path, major_version: &str) -> Option<PathBuf> {
-	let debug = std::env::var("MCVM_JAVA_SCAN_DEBUG").is_ok_and(|x| x == "1");
+	let debug = std::env::var("NITRO_JAVA_SCAN_DEBUG").is_ok_and(|x| x == "1");
 	if debug {
 		println!("Scanning {dir:?}");
 		dbg!(&major_version);

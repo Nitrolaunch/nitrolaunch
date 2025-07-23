@@ -1,15 +1,15 @@
 use std::{collections::HashMap, path::PathBuf};
 
 use anyhow::Context;
-use mcvm_core::Paths;
-use mcvm_options::{
+use nitro_core::Paths;
+use nitro_options::{
 	client::write_options_txt, read_options, server::write_server_properties, Options,
 };
-use mcvm_plugin::{
+use nitro_plugin::{
 	api::{CustomPlugin, HookContext},
 	hooks::{Hook, OnInstanceSetupResult},
 };
-use mcvm_shared::Side;
+use nitro_shared::Side;
 
 fn main() -> anyhow::Result<()> {
 	let mut plugin = CustomPlugin::from_manifest_file("options", include_str!("plugin.json"))?;
@@ -21,7 +21,7 @@ fn main() -> anyhow::Result<()> {
 				Side::Client => {
 					if let Some(global_options) = &global_options.client {
 						let global_keys =
-							mcvm_options::client::create_keys(global_options, &arg.version_info)
+							nitro_options::client::create_keys(global_options, &arg.version_info)
 								.context("Failed to create keys for global options")?;
 						keys.extend(global_keys);
 					}
@@ -29,7 +29,7 @@ fn main() -> anyhow::Result<()> {
 				Side::Server => {
 					if let Some(global_options) = &global_options.server {
 						let global_keys =
-							mcvm_options::server::create_keys(global_options, &arg.version_info)
+							nitro_options::server::create_keys(global_options, &arg.version_info)
 								.context("Failed to create keys for global options")?;
 						keys.extend(global_keys);
 					}
@@ -42,12 +42,12 @@ fn main() -> anyhow::Result<()> {
 			let override_keys =
 				if let Ok(options) = serde_json::from_value::<Options>(options.clone()) {
 					match arg.side.unwrap() {
-						Side::Client => mcvm_options::client::create_keys(
+						Side::Client => nitro_options::client::create_keys(
 							&options.client.unwrap_or_default(),
 							&arg.version_info,
 						)
 						.context("Failed to create keys for override options")?,
-						Side::Server => mcvm_options::server::create_keys(
+						Side::Server => nitro_options::server::create_keys(
 							&options.server.unwrap_or_default(),
 							&arg.version_info,
 						)
@@ -57,12 +57,12 @@ fn main() -> anyhow::Result<()> {
 					match arg.side.unwrap() {
 						Side::Client => {
 							let options = serde_json::from_value(options.clone())?;
-							mcvm_options::client::create_keys(&options, &arg.version_info)
+							nitro_options::client::create_keys(&options, &arg.version_info)
 								.context("Failed to create keys for override options")?
 						}
 						Side::Server => {
 							let options = serde_json::from_value(options.clone())?;
-							mcvm_options::server::create_keys(&options, &arg.version_info)
+							nitro_options::server::create_keys(&options, &arg.version_info)
 								.context("Failed to create keys for override options")?
 						}
 					}
@@ -78,7 +78,7 @@ fn main() -> anyhow::Result<()> {
 					let options_path = PathBuf::from(arg.game_dir).join("options.txt");
 					let paths = Paths::new()?;
 					let data_version =
-						mcvm_core::io::minecraft::get_data_version(&arg.version_info, &paths);
+						nitro_core::io::minecraft::get_data_version(&arg.version_info, &paths);
 					write_options_txt(keys, &options_path, &data_version)
 						.context("Failed to write options.txt")?;
 				}

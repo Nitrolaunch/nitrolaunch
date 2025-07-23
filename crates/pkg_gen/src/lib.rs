@@ -1,6 +1,6 @@
 #![warn(missing_docs)]
 
-//! Package generation for MCVM from platforms like Modrinth and Smithed. Used by the package generation plugin and repository provider plugins.
+//! Package generation for Nitrolaunch from platforms like Modrinth and Smithed. Used by the package generation plugin and repository provider plugins.
 
 /// Modrinth package generation
 pub mod modrinth;

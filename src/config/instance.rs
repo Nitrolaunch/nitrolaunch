@@ -5,18 +5,18 @@ use crate::instance::launch::LaunchOptions;
 use crate::instance::{InstKind, Instance, InstanceStoredConfig};
 use crate::io::paths::Paths;
 use anyhow::{bail, ensure, Context};
-use mcvm_config::instance::{is_valid_instance_id, InstanceConfig, LaunchConfig, LaunchMemory};
-use mcvm_config::package::PackageConfigDeser;
-use mcvm_config::profile::{ProfileConfig, ProfileLoaderConfiguration};
-use mcvm_core::io::java::args::MemoryNum;
-use mcvm_core::io::java::install::JavaInstallationKind;
-use mcvm_pkg::{PkgRequest, PkgRequestSource};
-use mcvm_plugin::hooks::{ModifyInstanceConfig, ModifyInstanceConfigArgument};
-use mcvm_shared::id::{InstanceID, ProfileID};
-use mcvm_shared::loaders::Loader;
-use mcvm_shared::output::MCVMOutput;
-use mcvm_shared::versions::parse_versioned_string;
-use mcvm_shared::Side;
+use nitro_config::instance::{is_valid_instance_id, InstanceConfig, LaunchConfig, LaunchMemory};
+use nitro_config::package::PackageConfigDeser;
+use nitro_config::profile::{ProfileConfig, ProfileLoaderConfiguration};
+use nitro_core::io::java::args::MemoryNum;
+use nitro_core::io::java::install::JavaInstallationKind;
+use nitro_pkg::{PkgRequest, PkgRequestSource};
+use nitro_plugin::hooks::{ModifyInstanceConfig, ModifyInstanceConfigArgument};
+use nitro_shared::id::{InstanceID, ProfileID};
+use nitro_shared::loaders::Loader;
+use nitro_shared::output::NitroOutput;
+use nitro_shared::versions::parse_versioned_string;
+use nitro_shared::Side;
 
 use crate::plugin::PluginManager;
 
@@ -27,7 +27,7 @@ pub async fn read_instance_config(
 	profiles: &HashMap<ProfileID, ProfileConfig>,
 	plugins: &PluginManager,
 	paths: &Paths,
-	o: &mut impl MCVMOutput,
+	o: &mut impl NitroOutput,
 ) -> anyhow::Result<Instance> {
 	if !is_valid_instance_id(&id) {
 		bail!("Invalid instance ID '{}'", id.to_string());
@@ -224,7 +224,7 @@ pub fn consolidate_package_configs(
 
 #[cfg(test)]
 mod tests {
-	use mcvm_config::instance::QuickPlay;
+	use nitro_config::instance::QuickPlay;
 	use serde::Deserialize;
 
 	#[test]

@@ -3,9 +3,9 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use anyhow::Context;
-use mcvm_shared::output::{MCVMOutput, MessageContents, MessageLevel};
-use mcvm_shared::versions::VersionPattern;
-use mcvm_shared::{translate, try_3, UpdateDepth};
+use nitro_shared::output::{NitroOutput, MessageContents, MessageLevel};
+use nitro_shared::versions::VersionPattern;
+use nitro_shared::{translate, try_3, UpdateDepth};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use tokio::{sync::Semaphore, task::JoinSet};
@@ -50,7 +50,7 @@ pub async fn get(
 	version_list: &[String],
 	manager: &UpdateManager,
 	client: &Client,
-	o: &mut impl MCVMOutput,
+	o: &mut impl NitroOutput,
 ) -> anyhow::Result<UpdateMethodResult> {
 	let mut out = UpdateMethodResult::new();
 	let version_string = version.to_string();

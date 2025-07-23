@@ -1,5 +1,5 @@
 use anyhow::{bail, Context};
-use mcvm_plugin::api::CustomPlugin;
+use nitro_plugin::api::CustomPlugin;
 fn main() -> anyhow::Result<()> {
 	let mut plugin = CustomPlugin::from_manifest_file("automate", include_str!("plugin.json"))?;
 

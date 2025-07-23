@@ -5,11 +5,11 @@ use std::{
 };
 
 use anyhow::{bail, Context};
-use mcvm_core::{io::json_from_file, net::download};
-use mcvm_net::github::get_github_releases;
-use mcvm_plugin::plugin::PluginManifest;
-use mcvm_shared::{
-	output::{MCVMOutput, MessageContents, MessageLevel},
+use nitro_core::{io::json_from_file, net::download};
+use nitro_net::github::get_github_releases;
+use nitro_plugin::plugin::PluginManifest;
+use nitro_shared::{
+	output::{NitroOutput, MessageContents, MessageLevel},
 	util::TARGET_BITS_STR,
 };
 use reqwest::Client;
@@ -62,7 +62,7 @@ impl VerifiedPlugin {
 		version: Option<&str>,
 		paths: &Paths,
 		client: &Client,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<()> {
 		// Get releases
 		let releases = get_github_releases(&self.github_owner, &self.github_repo, client)

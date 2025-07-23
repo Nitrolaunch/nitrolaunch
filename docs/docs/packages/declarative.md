@@ -51,8 +51,8 @@ Metadata for a package is extra information about a package such as its display 
 - `name`: Display name of the package.
 - `description`: A short description of the package. Should be 1-2 sentences max.
 - `long_description`: A longer description of the package.
-- `authors`: A list of authors for this package. This should be the authors of the project / addons themselves, not the MCVM package file.
-- `package_maintainers`: A list of maintainers for this package. This should be the maintainers of the MCVM package file, not the project itself
+- `authors`: A list of authors for this package. This should be the authors of the project / addons themselves, not the Nitrolaunch package file.
+- `package_maintainers`: A list of maintainers for this package. This should be the maintainers of the Nitrolaunch package file, not the project itself
 - `website`: Primary website / project link / etc.
 - `support_link`: Support / donation / sponsored link.
 - `documentation`: Wiki / documentation link.
@@ -68,7 +68,7 @@ Metadata for a package is extra information about a package such as its display 
 
 ## Properties
 
-Properties for the package that do have a meaning to MCVM and other package hosts / installers. All fields are optional.
+Properties for the package that do have a meaning to Nitrolaunch and other package hosts / installers. All fields are optional.
 
 ```
 {
@@ -125,7 +125,7 @@ Relations are dependencies / conflicts / etc. with other packages. All fields ar
 - `explicit_dependencies`: The same as dependencies. However, these libraries also change the behavior of the game enough that it would be good for the user to know about them. These packages must be required by the user in their config as well.
 - `conflicts`: Packages that this package is incompatible with.
 - `extensions`: Packages that this package extends the functionality of. For example, if this package was an addon mod for the Create mod, then it would extend the `create` package. Will cause an error if the other package does not exist.
-- `bundled`: Packages included with this one. Useful for packages that group together multiple other packages, such as modpacks. Prefer using this over `dependencies` when you aren't including a library as it has a different semantic meaning to MCVM.
+- `bundled`: Packages included with this one. Useful for packages that group together multiple other packages, such as modpacks. Prefer using this over `dependencies` when you aren't including a library as it has a different semantic meaning to Nitrolaunch.
 - `compats`: A list of lists with two values, a source package and destination package. If the source package exists, the destination package will be automatically installed.
 - `recommendations`: Packages that will be recommended to the user if they are not installed. `value` is the package to be recommended. Setting `invert` to true will instead recommend _against_ the use of the package.
 
@@ -176,7 +176,7 @@ Addons are the actual files that are installed to a user's game. They are specif
 }
 ```
 
-- `addon-id`: The ID of the addon. This lets MCVM differentiate between addons from the same package and allows the user to modify specific addons from a package. Thus, try not to change it between updates of your package.
+- `addon-id`: The ID of the addon. This lets Nitrolaunch differentiate between addons from the same package and allows the user to modify specific addons from a package. Thus, try not to change it between updates of your package.
 - `kind`: What type of addon / modification this is.
 - `versions`: A list of versions for this addon. See the addon versions section.
 - `conditions` (Optional): A list of conditions for the installation of this addon. If any of these conditions fails, the addon will not be installed, but no errors will be shown. Thus, it is better to use the `supported_...` properties for this purpose.
@@ -205,11 +205,11 @@ Addon versions are different files and versions of an addon
 - ConditionSet: Addon versions contain all the fields of a ConditionSet. These conditions are used to filter down and find the version that satisfies all the requirements. If multiple versions satisfy the requirements, the evaluator will first favor versions with a content version that is newer. Then, it will favor versions that are more specific to your system ("fabric" modloader over "fabriclike", for example). Finally, the one that comes first in the list is chosen.
 - `url`: A URL to the file for this version. Not required if `path` is specified.
 - `path`: A local filesystem path to the addon file. Not required if `url` is specified. Requires elevated permissions.
-- `version` (Optional): The unique version identifier of this addon. This is important because it lets MCVM differentiate between different versions of the file for caching purposes. If this field is not present, the addon will never be cached and will be redownloaded every time. This ID should not contain any special characters.
-- `filename` (Optional): The name of the addon file in the instance, with the extension. This is not required and is not recommended most of the time as MCVM will already generate a unique filename for it that does not clash with other files.
+- `version` (Optional): The unique version identifier of this addon. This is important because it lets Nitrolaunch differentiate between different versions of the file for caching purposes. If this field is not present, the addon will never be cached and will be redownloaded every time. This ID should not contain any special characters.
+- `filename` (Optional): The name of the addon file in the instance, with the extension. This is not required and is not recommended most of the time as Nitrolaunch will already generate a unique filename for it that does not clash with other files.
 - `relations` (Optional): Extra package relations to apply if this addon version is chosen.
 - `notices` (Optional): A list of messages to display to the user if this version is chosen.
-- `hashes` (Optional): Different fields for hashes of this version file. Allows MCVM to check for valid files when downloading them.
+- `hashes` (Optional): Different fields for hashes of this version file. Allows Nitrolaunch to check for valid files when downloading them.
 
 Either `url` or `path` must be set, not both or neither.
 

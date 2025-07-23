@@ -5,8 +5,8 @@ use std::sync::Arc;
 
 use anyhow::bail;
 use anyhow::Context;
-use mcvm_core::Paths;
-use mcvm_shared::output::MCVMOutput;
+use nitro_core::Paths;
+use nitro_shared::output::NitroOutput;
 use serde::{Deserialize, Deserializer};
 use tokio::sync::Mutex;
 
@@ -62,15 +62,15 @@ impl Plugin {
 		hook: &H,
 		arg: &H::Arg,
 		paths: &Paths,
-		mcvm_version: Option<&str>,
+		nitro_version: Option<&str>,
 		plugin_list: &[String],
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<Option<HookHandle<H>>> {
 		let Some(handler) = self.manifest.hooks.get(hook.get_name()) else {
 			return Ok(None);
 		};
 
-		self.call_hook_handler(hook, handler, arg, paths, mcvm_version, plugin_list, o)
+		self.call_hook_handler(hook, handler, arg, paths, nitro_version, plugin_list, o)
 			.await
 	}
 
@@ -81,9 +81,9 @@ impl Plugin {
 		handler: &HookHandler,
 		arg: &H::Arg,
 		paths: &Paths,
-		mcvm_version: Option<&str>,
+		nitro_version: Option<&str>,
 		plugin_list: &[String],
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<Option<HookHandle<H>>> {
 		match handler {
 			HookHandler::Execute {
@@ -100,7 +100,7 @@ impl Plugin {
 					custom_config: self.custom_config.clone(),
 					persistence: self.persistence.clone(),
 					paths,
-					mcvm_version,
+					nitro_version,
 					plugin_id: &self.id,
 					plugin_list,
 					protocol_version: self
@@ -167,7 +167,7 @@ impl Plugin {
 							&handler,
 							arg,
 							paths,
-							mcvm_version,
+							nitro_version,
 							plugin_list,
 							o,
 						))
@@ -238,8 +238,9 @@ pub struct PluginManifest {
 	pub name: Option<String>,
 	/// The short description of the plugin
 	pub description: Option<String>,
-	/// The MCVM version this plugin is for
-	pub mcvm_version: Option<String>,
+	/// The Nitrolaunch version this plugin is for
+	#[serde(alias = "mcvm_version")]
+	pub nitro_version: Option<String>,
 	/// The hook handlers for the plugin
 	pub hooks: HashMap<String, HookHandler>,
 	/// The subcommands the plugin provides

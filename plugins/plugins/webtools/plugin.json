@@ -4,13 +4,13 @@
 	"protocol_version": 3,
 	"hooks": {
 		"subcommand": {
-			"executable": "${PLUGIN_DIR}/mcvm_plugin_webtools${EXE_EXTENSION}"
+			"executable": "${PLUGIN_DIR}/nitro_plugin_webtools${EXE_EXTENSION}"
 		},
 		"add_sidebar_buttons": {
-			"executable": "${PLUGIN_DIR}/mcvm_plugin_webtools${EXE_EXTENSION}"
+			"executable": "${PLUGIN_DIR}/nitro_plugin_webtools${EXE_EXTENSION}"
 		},
 		"get_page": {
-			"executable": "${PLUGIN_DIR}/mcvm_plugin_webtools${EXE_EXTENSION}"
+			"executable": "${PLUGIN_DIR}/nitro_plugin_webtools${EXE_EXTENSION}"
 		}
 	},
 	"subcommands": {

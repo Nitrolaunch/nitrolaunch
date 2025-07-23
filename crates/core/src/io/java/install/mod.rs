@@ -9,8 +9,8 @@ use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 
 use anyhow::{bail, Context};
-use mcvm_shared::output::{MCVMOutput, MessageContents, MessageLevel};
-use mcvm_shared::{translate, UpdateDepth};
+use nitro_shared::output::{NitroOutput, MessageContents, MessageLevel};
+use nitro_shared::{translate, UpdateDepth};
 use tar::Archive;
 use zip::ZipArchive;
 
@@ -18,7 +18,7 @@ use crate::io::files::{self, paths::Paths};
 use crate::io::persistent::{PersistentData, PersistentDataJavaInstallation};
 use crate::io::update::UpdateManager;
 use crate::net::{self, download};
-use mcvm_shared::util::preferred_archive_extension;
+use nitro_shared::util::preferred_archive_extension;
 
 use super::JavaMajorVersion;
 
@@ -76,7 +76,7 @@ impl JavaInstallation {
 		kind: JavaInstallationKind,
 		major_version: JavaMajorVersion,
 		mut params: JavaInstallParameters<'_>,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<Self> {
 		o.start_process();
 		o.display(
@@ -163,7 +163,7 @@ pub(crate) struct JavaInstallParameters<'a> {
 async fn install_auto(
 	major_version: &str,
 	mut params: JavaInstallParameters<'_>,
-	o: &mut impl MCVMOutput,
+	o: &mut impl NitroOutput,
 ) -> anyhow::Result<PathBuf> {
 	let out = system::install(major_version);
 	if let Ok(out) = out {
@@ -187,7 +187,7 @@ async fn install_auto(
 async fn install_adoptium(
 	major_version: &str,
 	params: &mut JavaInstallParameters<'_>,
-	o: &mut impl MCVMOutput,
+	o: &mut impl NitroOutput,
 ) -> anyhow::Result<PathBuf> {
 	if params.update_manager.update_depth == UpdateDepth::Shallow {
 		if let Some(directory) = params
@@ -210,7 +210,7 @@ async fn install_adoptium(
 async fn install_zulu(
 	major_version: &str,
 	params: &mut JavaInstallParameters<'_>,
-	o: &mut impl MCVMOutput,
+	o: &mut impl NitroOutput,
 ) -> anyhow::Result<PathBuf> {
 	if params.update_manager.update_depth == UpdateDepth::Shallow {
 		if let Some(directory) = params
@@ -233,7 +233,7 @@ async fn install_zulu(
 async fn install_graalvm(
 	major_version: &str,
 	params: &mut JavaInstallParameters<'_>,
-	o: &mut impl MCVMOutput,
+	o: &mut impl NitroOutput,
 ) -> anyhow::Result<PathBuf> {
 	if params.update_manager.update_depth == UpdateDepth::Shallow {
 		if let Some(directory) = params
@@ -257,7 +257,7 @@ async fn install_graalvm(
 async fn update_adoptium(
 	major_version: &str,
 	params: &mut JavaInstallParameters<'_>,
-	o: &mut impl MCVMOutput,
+	o: &mut impl NitroOutput,
 ) -> anyhow::Result<PathBuf> {
 	let out_dir = params.paths.java.join("adoptium");
 	files::create_dir(&out_dir)?;
@@ -327,7 +327,7 @@ async fn update_adoptium(
 async fn update_zulu(
 	major_version: &str,
 	params: &mut JavaInstallParameters<'_>,
-	o: &mut impl MCVMOutput,
+	o: &mut impl NitroOutput,
 ) -> anyhow::Result<PathBuf> {
 	let out_dir = params.paths.java.join("zulu");
 	files::create_dir(&out_dir)?;
@@ -387,7 +387,7 @@ async fn update_zulu(
 async fn update_graalvm(
 	major_version: &str,
 	params: &mut JavaInstallParameters<'_>,
-	o: &mut impl MCVMOutput,
+	o: &mut impl NitroOutput,
 ) -> anyhow::Result<PathBuf> {
 	let out_dir = params.paths.java.join("graalvm");
 	files::create_dir(&out_dir)?;

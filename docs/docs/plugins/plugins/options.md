@@ -17,7 +17,7 @@ Format:
 }
 ```
 
-Options that you do not change will not be changed in the output file. Options that MCVM does not know about will not be touched either.
+Options that you do not change will not be changed in the output file. Options that Nitrolaunch does not know about will not be touched either.
 
 Options can also be overrided on a per-instance or per-profile basis inside the `options` field on that profile or instance. For instances, just specify the options for the side the instance is on (client / server). For profiles, you can also specify the options for both clients and servers that derive from that profile.
 

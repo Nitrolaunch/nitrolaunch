@@ -1,5 +1,5 @@
 use anyhow::Context;
-use mcvm_core::user::UserManager;
+use nitro_core::user::UserManager;
 
 use crate::io::paths::Paths;
 

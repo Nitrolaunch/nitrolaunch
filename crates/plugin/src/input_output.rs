@@ -1,6 +1,6 @@
 use anyhow::Context;
 use base64::prelude::*;
-use mcvm_shared::output::{Message, MessageLevel};
+use nitro_shared::output::{Message, MessageLevel};
 use serde::{Deserialize, Serialize};
 
 /// The delimiter which starts every output line after protocol version 2

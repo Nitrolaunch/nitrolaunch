@@ -1,11 +1,11 @@
 use std::sync::Arc;
 
 use anyhow::ensure;
-use mcvm_config::package::{EvalPermissions, PackageConfigDeser};
-use mcvm_pkg::properties::PackageProperties;
-use mcvm_shared::pkg::{ArcPkgReq, PackageID, PackageStability};
+use nitro_config::package::{EvalPermissions, PackageConfigDeser};
+use nitro_pkg::properties::PackageProperties;
+use nitro_shared::pkg::{ArcPkgReq, PackageID, PackageStability};
 
-use mcvm_pkg::{PkgRequest, PkgRequestSource};
+use nitro_pkg::{PkgRequest, PkgRequestSource};
 
 /// Stored configuration for a package
 #[derive(Clone, Debug)]

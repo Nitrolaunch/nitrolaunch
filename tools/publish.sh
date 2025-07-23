@@ -3,66 +3,66 @@
 
 cd crates
 
-# mcvm_shared
+# nitro_shared
 cd shared
 cargo publish
 cd ..
 
-# mcvm_auth
+# nitro_auth
 cd auth
 cargo publish
 cd ..
 
-# mcvm_net
+# nitro_net
 cd net
 cargo publish
 cd ..
 
-# mcvm_core
+# nitro_core
 cd core
 cargo publish
 cd ..
 
-# mcvm_mods
+# nitro_mods
 cd mods
 cargo publish
 cd ..
 
-# mcvm_parse
+# nitro_parse
 cd parse
 cargo publish
 cd ..
 
-# mcvm_pkg
+# nitro_pkg
 cd pkg
 cargo publish
 cd ..
 
-# mcvm_pkg_gen
+# nitro_pkg_gen
 cd pkg_gen
 cargo publish
 cd ..
 
-# mcvm_config
+# nitro_config
 cd config
 cargo publish
 cd ..
 
-# mcvm_options
+# nitro_options
 cd options
 cargo publish
 cd ..
 
-# mcvm_plugin
+# nitro_plugin
 cd plugin
 cargo publish
 cd ..
 
-# mcvm
+# nitrolaunch
 cd ..
 cargo publish
 
-# mcvm_cli
+# nitro_cli
 cd crates/cli
 cargo publish
 

@@ -1,4 +1,4 @@
-use mcvm_auth::mc::{call_mc_api, Keypair};
+use nitro_auth::mc::{call_mc_api, Keypair};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 

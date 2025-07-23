@@ -1,9 +1,9 @@
 use std::path::{Path, PathBuf};
 
 use anyhow::{ensure, Context};
-use mcvm_config::instance::get_addon_paths;
-use mcvm_shared::addon::Addon;
-use mcvm_shared::versions::VersionInfo;
+use nitro_config::instance::get_addon_paths;
+use nitro_shared::addon::Addon;
+use nitro_shared::versions::VersionInfo;
 
 use crate::addon::{self, AddonExt};
 use crate::io::paths::Paths;
@@ -61,14 +61,14 @@ impl Instance {
 	) -> anyhow::Result<()> {
 		let link = dir.join(addon.file_name.clone());
 		let addon_path = addon.get_path(paths, instance_id);
-		mcvm_core::io::files::create_leading_dirs(&link)?;
+		nitro_core::io::files::create_leading_dirs(&link)?;
 		// These checks are to make sure that we properly link the hardlink to the right location
 		// We have to remove the current link since it doesnt let us update it in place
 		ensure!(addon_path.exists(), "Addon path does not exist");
 		if link.exists() {
 			std::fs::remove_file(&link).context("Failed to remove instance addon file")?;
 		}
-		mcvm_core::io::files::update_hardlink(&addon_path, &link)
+		nitro_core::io::files::update_hardlink(&addon_path, &link)
 			.context("Failed to create hard link")?;
 		Ok(())
 	}

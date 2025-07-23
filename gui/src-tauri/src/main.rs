@@ -5,7 +5,7 @@
 mod commands;
 /// Storage and reading for GUI-specific data
 mod data;
-/// MCVM output for the launcher frontend
+/// Nitrolaunch output for the launcher frontend
 mod output;
 
 use std::collections::HashMap;
@@ -15,10 +15,10 @@ use std::sync::{Arc, OnceLock};
 use anyhow::Context;
 use commands::launch::UpdateRunStateEvent;
 use data::LauncherData;
-use mcvm::core::auth_crate::mc::ClientId;
-use mcvm::core::{net::download::Client, user::UserManager};
-use mcvm::io::paths::Paths;
-use mcvm::shared::id::InstanceID;
+use nitrolaunch::core::auth_crate::mc::ClientId;
+use nitrolaunch::core::{net::download::Client, user::UserManager};
+use nitrolaunch::io::paths::Paths;
+use nitrolaunch::shared::id::InstanceID;
 use output::{OutputInner, PromptResponse};
 use serde::{Deserialize, Serialize};
 use tauri::api::process::restart;
@@ -57,7 +57,7 @@ fn main() {
 			});
 
 			// Save package resolution errors so that they can be displayed on the instance
-			app.listen_global("mcvm_display_resolution_error", move |event| {
+			app.listen_global("nitro_display_resolution_error", move |event| {
 				let paths = paths.clone();
 				let data = data.clone();
 				tauri::async_runtime::spawn(async move {
@@ -208,7 +208,7 @@ pub fn get_ms_client_id() -> ClientId {
 }
 
 const fn get_raw_ms_client_id() -> &'static str {
-	if let Some(id) = option_env!("MCVM_MS_CLIENT_ID") {
+	if let Some(id) = option_env!("NITRO_MS_CLIENT_ID") {
 		id
 	} else {
 		// Please don't use my client ID :)

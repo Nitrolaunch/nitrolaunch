@@ -1,14 +1,14 @@
 #![warn(missing_docs)]
 
-//! This library is used by both MCVM to load plugins, and as a framework for defining
-//! Rust plugins for MCVM to use
+//! This library is used by both Nitrolaunch to load plugins, and as a framework for defining
+//! Rust plugins for Nitrolaunch to use
 
 use anyhow::{bail, Context};
 use hook_call::HookHandle;
 use hooks::{Hook, OnLoad};
 use itertools::Itertools;
-use mcvm_core::Paths;
-use mcvm_shared::output::MCVMOutput;
+use nitro_core::Paths;
+use nitro_shared::output::NitroOutput;
 use plugin::{HookPriority, Plugin, DEFAULT_PROTOCOL_VERSION, NEWEST_PROTOCOL_VERSION};
 
 /// API for Rust-based plugins to use
@@ -25,12 +25,12 @@ pub mod plugin;
 /// Tokio helpers for AsyncRead
 pub mod try_read;
 
-pub use mcvm_shared as shared;
+pub use nitro_shared as shared;
 
 use crate::hooks::StartWorker;
 
 /// Environment variable that debugs plugins when set
-pub static PLUGIN_DEBUG_ENV: &str = "MCVM_PLUGIN_DEBUG";
+pub static PLUGIN_DEBUG_ENV: &str = "NITRO_PLUGIN_DEBUG";
 
 /// Gets whether plugin debugging is enabled
 pub fn plugin_debug_enabled() -> bool {
@@ -42,7 +42,7 @@ pub fn plugin_debug_enabled() -> bool {
 pub struct CorePluginManager {
 	plugins: Vec<Plugin>,
 	plugin_list: Vec<String>,
-	mcvm_version: Option<&'static str>,
+	nitro_version: Option<&'static str>,
 }
 
 impl Default for CorePluginManager {
@@ -57,13 +57,13 @@ impl CorePluginManager {
 		Self {
 			plugins: Vec::new(),
 			plugin_list: Vec::new(),
-			mcvm_version: None,
+			nitro_version: None,
 		}
 	}
 
-	/// Set the MCVM version of the manager
-	pub fn set_mcvm_version(&mut self, version: &'static str) {
-		self.mcvm_version = Some(version);
+	/// Set the Nitrolaunch version of the manager
+	pub fn set_nitro_version(&mut self, version: &'static str) {
+		self.nitro_version = Some(version);
 	}
 
 	/// Add a plugin to the manager
@@ -71,7 +71,7 @@ impl CorePluginManager {
 		&mut self,
 		mut plugin: Plugin,
 		paths: &Paths,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<()> {
 		// Check the protocol version
 		if plugin
@@ -80,7 +80,7 @@ impl CorePluginManager {
 			.unwrap_or(DEFAULT_PROTOCOL_VERSION)
 			> NEWEST_PROTOCOL_VERSION
 		{
-			bail!("Plugin has a newer protocol version than MCVM");
+			bail!("Plugin has a newer protocol version than Nitrolaunch");
 		}
 
 		// Update the plugin list
@@ -88,7 +88,14 @@ impl CorePluginManager {
 
 		// Call the on_load hook
 		let result = plugin
-			.call_hook(&OnLoad, &(), paths, self.mcvm_version, &self.plugin_list, o)
+			.call_hook(
+				&OnLoad,
+				&(),
+				paths,
+				self.nitro_version,
+				&self.plugin_list,
+				o,
+			)
 			.await
 			.context("Failed to call on_load hook of plugin")?;
 		if let Some(result) = result {
@@ -101,7 +108,7 @@ impl CorePluginManager {
 				&StartWorker,
 				&(),
 				paths,
-				self.mcvm_version,
+				self.nitro_version,
 				&self.plugin_list,
 				o,
 			)
@@ -125,7 +132,7 @@ impl CorePluginManager {
 		hook: H,
 		arg: &H::Arg,
 		paths: &Paths,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<Vec<HookHandle<H>>> {
 		let mut out = Vec::new();
 		for plugin in self.plugins.iter().sorted_by_key(|x| PluginSort {
@@ -133,7 +140,7 @@ impl CorePluginManager {
 			id: x.get_id().clone(),
 		}) {
 			let result = plugin
-				.call_hook(&hook, arg, paths, self.mcvm_version, &self.plugin_list, o)
+				.call_hook(&hook, arg, paths, self.nitro_version, &self.plugin_list, o)
 				.await
 				.with_context(|| format!("Hook failed for plugin {}", plugin.get_id()))?;
 			out.extend(result);
@@ -149,12 +156,12 @@ impl CorePluginManager {
 		plugin_id: &str,
 		arg: &H::Arg,
 		paths: &Paths,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<Option<HookHandle<H>>> {
 		for plugin in &self.plugins {
 			if plugin.get_id() == plugin_id {
 				let result = plugin
-					.call_hook(&hook, arg, paths, self.mcvm_version, &self.plugin_list, o)
+					.call_hook(&hook, arg, paths, self.nitro_version, &self.plugin_list, o)
 					.await
 					.context("Plugin hook failed")?;
 				return Ok(result);

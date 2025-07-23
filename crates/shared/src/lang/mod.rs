@@ -5,7 +5,7 @@ pub mod translate;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-/// A language supported by mcvm. Includes all languages in Minecraft.
+/// A language supported by Nitrolaunch. Includes all languages in Minecraft.
 #[allow(missing_docs)]
 #[derive(Deserialize, Serialize, Copy, Clone, Eq, PartialEq, Debug, Hash)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]

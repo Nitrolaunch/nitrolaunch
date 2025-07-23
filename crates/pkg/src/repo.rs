@@ -1,4 +1,4 @@
-use mcvm_shared::pkg::{PackageCategory, PackageKind};
+use nitro_shared::pkg::{PackageCategory, PackageKind};
 #[cfg(feature = "schema")]
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -28,8 +28,9 @@ pub struct RepoMetadata {
 	pub name: Option<String>,
 	/// The short description of the repository
 	pub description: Option<String>,
-	/// The MCVM version of the repository
-	pub mcvm_version: Option<String>,
+	/// The Nitrolaunch version of the repository
+	#[serde(alias = "mcvm_version")]
+	pub nitro_version: Option<String>,
 	/// A CSS color that represents the repository
 	pub color: Option<String>,
 	/// A CSS color for text that should contrast well with the main color
@@ -82,7 +83,7 @@ pub fn get_api_url(base_url: &str) -> String {
 		base_url
 	};
 
-	base_url.to_string() + "/api/mcvm/"
+	base_url.to_string() + "/api/nitrolaunch/"
 }
 
 /// Get the URL of the repository index file

@@ -1,10 +1,10 @@
 use std::path::PathBuf;
 
 use anyhow::{bail, Context};
-use mcvm_core::io::update::UpdateManager;
-use mcvm_mods::fabric_quilt;
-use mcvm_plugin::{api::CustomPlugin, hooks::OnInstanceSetupResult};
-use mcvm_shared::{loaders::Loader, UpdateDepth};
+use nitro_core::io::update::UpdateManager;
+use nitro_mods::fabric_quilt;
+use nitro_plugin::{api::CustomPlugin, hooks::OnInstanceSetupResult};
+use nitro_shared::{loaders::Loader, UpdateDepth};
 
 fn main() -> anyhow::Result<()> {
 	let mut plugin = CustomPlugin::from_manifest_file("fabric_quilt", include_str!("plugin.json"))?;
@@ -28,7 +28,7 @@ fn main() -> anyhow::Result<()> {
 
 		let manager = UpdateManager::new(UpdateDepth::Full);
 
-		let client = mcvm_net::download::Client::new();
+		let client = nitro_net::download::Client::new();
 
 		let runtime = tokio::runtime::Runtime::new()?;
 

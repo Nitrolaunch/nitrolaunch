@@ -1,6 +1,6 @@
 use crate::download::{self, user_agent};
 use anyhow::Context;
-use mcvm_shared::pkg::{PackageCategory, PackageSearchParameters};
+use nitro_shared::pkg::{PackageCategory, PackageSearchParameters};
 use reqwest::{Client, StatusCode};
 use serde::{Deserialize, Serialize};
 

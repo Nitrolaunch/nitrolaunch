@@ -3,29 +3,29 @@ use std::future::Future;
 use std::sync::Arc;
 
 use itertools::Itertools;
-use mcvm_core::net::download::get_transfer_limit;
-use mcvm_pkg::overrides::is_package_overridden;
-use mcvm_pkg::properties::PackageProperties;
-use mcvm_pkg::repo::PackageFlag;
-use mcvm_pkg::PkgRequest;
-use mcvm_shared::output::{MCVMOutput, MessageContents, MessageLevel};
-use mcvm_shared::pkg::{ArcPkgReq, PackageID};
-use mcvm_shared::translate;
-use mcvm_shared::versions::VersionInfo;
+use nitro_core::net::download::get_transfer_limit;
+use nitro_pkg::overrides::is_package_overridden;
+use nitro_pkg::properties::PackageProperties;
+use nitro_pkg::repo::PackageFlag;
+use nitro_pkg::PkgRequest;
+use nitro_shared::output::{NitroOutput, MessageContents, MessageLevel};
+use nitro_shared::pkg::{ArcPkgReq, PackageID};
+use nitro_shared::translate;
+use nitro_shared::versions::VersionInfo;
 use tokio::sync::Semaphore;
 use tokio::task::JoinSet;
 
 use crate::instance::Instance;
 use crate::pkg::eval::{resolve, EvalConstants, EvalInput, EvalParameters};
 use crate::util::select_random_n_items_from_list;
-use mcvm_shared::id::InstanceID;
+use nitro_shared::id::InstanceID;
 
 use super::InstanceUpdateContext;
 
 use anyhow::Context;
 
 /// Install packages on multiple instances. Returns a set of all unique packages
-pub async fn update_instance_packages<'a, O: MCVMOutput>(
+pub async fn update_instance_packages<'a, O: NitroOutput>(
 	instances: &mut [&mut Instance],
 	constants: &EvalConstants,
 	ctx: &mut InstanceUpdateContext<'a, O>,
@@ -234,7 +234,7 @@ pub async fn update_instance_packages<'a, O: MCVMOutput>(
 /// Evaluates addon acquire tasks efficiently with a progress display to the user
 async fn run_addon_tasks(
 	tasks: HashMap<String, impl Future<Output = anyhow::Result<()>> + Send + 'static>,
-	o: &mut impl MCVMOutput,
+	o: &mut impl NitroOutput,
 ) -> anyhow::Result<()> {
 	let total_count = tasks.len();
 	let mut task_set = JoinSet::new();
@@ -273,7 +273,7 @@ async fn run_addon_tasks(
 /// Resolve packages and create a mapping of packages to a list of instances.
 /// This allows us to update packages in a reasonable order to the user.
 /// It also returns a map of instances to packages so that unused packages can be removed
-async fn resolve_and_batch<'a, O: MCVMOutput>(
+async fn resolve_and_batch<'a, O: NitroOutput>(
 	instances: &[&mut Instance],
 	constants: &EvalConstants,
 	ctx: &mut InstanceUpdateContext<'a, O>,
@@ -348,7 +348,7 @@ struct ResolvedPackages {
 }
 
 /// Checks a package with the registry to report any warnings about it
-async fn check_package<'a, O: MCVMOutput>(
+async fn check_package<'a, O: NitroOutput>(
 	ctx: &mut InstanceUpdateContext<'a, O>,
 	pkg: &ArcPkgReq,
 ) -> anyhow::Result<()> {
@@ -389,7 +389,7 @@ async fn check_package<'a, O: MCVMOutput>(
 }
 
 /// Prints support messages about installed packages when updating
-pub async fn print_package_support_messages<'a, O: MCVMOutput>(
+pub async fn print_package_support_messages<'a, O: NitroOutput>(
 	packages: &[ArcPkgReq],
 	ctx: &mut InstanceUpdateContext<'a, O>,
 ) -> anyhow::Result<()> {

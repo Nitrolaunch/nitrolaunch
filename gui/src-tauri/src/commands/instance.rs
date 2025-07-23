@@ -3,19 +3,19 @@ use crate::output::{LauncherOutput, SerializableResolutionError};
 use crate::State;
 use anyhow::{bail, Context};
 use itertools::Itertools;
-use mcvm::config::modifications::{apply_modifications_and_write, ConfigModification};
-use mcvm::config::Config;
-use mcvm::config_crate::instance::InstanceConfig;
-use mcvm::config_crate::profile::ProfileConfig;
-use mcvm::core::io::json_to_file_pretty;
-use mcvm::instance::delete_instance_files;
-use mcvm::instance::update::manager::UpdateManager;
-use mcvm::instance::update::InstanceUpdateContext;
-use mcvm::io::lock::Lockfile;
-use mcvm::pkg::eval::EvalConstants;
-use mcvm::shared::id::{InstanceID, ProfileID};
-use mcvm::shared::output::NoOp;
-use mcvm::shared::{Side, UpdateDepth};
+use nitrolaunch::config::modifications::{apply_modifications_and_write, ConfigModification};
+use nitrolaunch::config::Config;
+use nitrolaunch::config_crate::instance::InstanceConfig;
+use nitrolaunch::config_crate::profile::ProfileConfig;
+use nitrolaunch::core::io::json_to_file_pretty;
+use nitrolaunch::instance::delete_instance_files;
+use nitrolaunch::instance::update::manager::UpdateManager;
+use nitrolaunch::instance::update::InstanceUpdateContext;
+use nitrolaunch::io::lock::Lockfile;
+use nitrolaunch::pkg::eval::EvalConstants;
+use nitrolaunch::shared::id::{InstanceID, ProfileID};
+use nitrolaunch::shared::output::NoOp;
+use nitrolaunch::shared::{Side, UpdateDepth};
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 use std::future::Future;
@@ -390,7 +390,7 @@ pub async fn update_instance_packages(
 				profile_stability: instance.get_config().package_stability,
 			};
 
-			mcvm::instance::update::packages::update_instance_packages(
+			nitrolaunch::instance::update::packages::update_instance_packages(
 				&mut [instance],
 				&constants,
 				&mut ctx,

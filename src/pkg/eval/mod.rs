@@ -8,33 +8,33 @@ pub mod script;
 use anyhow::bail;
 use anyhow::Context;
 use async_trait::async_trait;
-use mcvm_config::package::EvalPermissions;
-use mcvm_parse::routine::INSTALL_ROUTINE;
-use mcvm_parse::vars::HashMapVariableStore;
-use mcvm_pkg::overrides::PackageOverrides;
-use mcvm_pkg::properties::PackageProperties;
-use mcvm_pkg::resolve::ResolutionResult;
-use mcvm_pkg::script_eval::AddonInstructionData;
-use mcvm_pkg::script_eval::EvalReason;
-use mcvm_pkg::ConfiguredPackage;
-use mcvm_pkg::PackageContentType;
-use mcvm_pkg::RecommendedPackage;
-use mcvm_pkg::RequiredPackage;
-use mcvm_pkg::{
+use nitro_config::package::EvalPermissions;
+use nitro_parse::routine::INSTALL_ROUTINE;
+use nitro_parse::vars::HashMapVariableStore;
+use nitro_pkg::overrides::PackageOverrides;
+use nitro_pkg::properties::PackageProperties;
+use nitro_pkg::resolve::ResolutionResult;
+use nitro_pkg::script_eval::AddonInstructionData;
+use nitro_pkg::script_eval::EvalReason;
+use nitro_pkg::ConfiguredPackage;
+use nitro_pkg::PackageContentType;
+use nitro_pkg::RecommendedPackage;
+use nitro_pkg::RequiredPackage;
+use nitro_pkg::{
 	EvalInput as EvalInputTrait, PackageEvalRelationsResult as EvalRelationsResultTrait,
 	PackageEvaluator as PackageEvaluatorTrait,
 };
-use mcvm_shared::addon::{is_addon_version_valid, is_filename_valid, Addon};
-use mcvm_shared::lang::Language;
-use mcvm_shared::loaders::Loader;
-use mcvm_shared::output;
-use mcvm_shared::output::MCVMOutput;
-use mcvm_shared::output::MessageContents;
-use mcvm_shared::output::MessageLevel;
-use mcvm_shared::output::Simple;
-use mcvm_shared::pkg::ArcPkgReq;
-use mcvm_shared::pkg::PackageID;
-use mcvm_shared::util::is_valid_identifier;
+use nitro_shared::addon::{is_addon_version_valid, is_filename_valid, Addon};
+use nitro_shared::lang::Language;
+use nitro_shared::loaders::Loader;
+use nitro_shared::output;
+use nitro_shared::output::NitroOutput;
+use nitro_shared::output::MessageContents;
+use nitro_shared::output::MessageLevel;
+use nitro_shared::output::Simple;
+use nitro_shared::pkg::ArcPkgReq;
+use nitro_shared::pkg::PackageID;
+use nitro_shared::util::is_valid_identifier;
 use reqwest::Client;
 
 use self::conditions::check_arch_condition;
@@ -51,8 +51,8 @@ use crate::plugin::PluginManager;
 use crate::util::hash::{
 	get_hash_str_as_hex, HASH_SHA256_RESULT_LENGTH, HASH_SHA512_RESULT_LENGTH,
 };
-use mcvm_shared::pkg::PackageStability;
-use mcvm_shared::Side;
+use nitro_shared::pkg::PackageStability;
+use nitro_shared::Side;
 
 use std::path::PathBuf;
 
@@ -478,7 +478,7 @@ impl ConfiguredPackage for EvalPackageConfig {
 struct EvalRelationsResult {
 	pub deps: Vec<Vec<RequiredPackage>>,
 	pub conflicts: Vec<PackageID>,
-	pub recommendations: Vec<mcvm_pkg::RecommendedPackage>,
+	pub recommendations: Vec<nitro_pkg::RecommendedPackage>,
 	pub bundled: Vec<PackageID>,
 	pub compats: Vec<(PackageID, PackageID)>,
 	pub extensions: Vec<PackageID>,
@@ -504,7 +504,7 @@ impl EvalRelationsResultTrait for EvalRelationsResult {
 		self.extensions.clone()
 	}
 
-	fn get_recommendations(&self) -> Vec<mcvm_pkg::RecommendedPackage> {
+	fn get_recommendations(&self) -> Vec<nitro_pkg::RecommendedPackage> {
 		self.recommendations.clone()
 	}
 }
@@ -591,7 +591,7 @@ pub async fn resolve(
 	paths: &Paths,
 	reg: &mut PkgRegistry,
 	client: &Client,
-	o: &mut impl MCVMOutput,
+	o: &mut impl NitroOutput,
 ) -> anyhow::Result<ResolutionResult> {
 	let evaluator = PackageEvaluator { reg };
 
@@ -608,7 +608,7 @@ pub async fn resolve(
 		.collect::<Vec<_>>();
 
 	let result =
-		match mcvm_pkg::resolve::resolve(&packages, evaluator, input, &common_input, overrides)
+		match nitro_pkg::resolve::resolve(&packages, evaluator, input, &common_input, overrides)
 			.await
 		{
 			Ok(result) => result,
@@ -627,8 +627,8 @@ pub async fn resolve(
 
 /// Prints an unfulfilled recommendation warning
 fn print_recommendation_warning(
-	package: &mcvm_pkg::resolve::RecommendedPackage,
-	o: &mut impl MCVMOutput,
+	package: &nitro_pkg::resolve::RecommendedPackage,
+	o: &mut impl NitroOutput,
 ) {
 	let source = package.req.source.get_source();
 	let message = if package.invert {

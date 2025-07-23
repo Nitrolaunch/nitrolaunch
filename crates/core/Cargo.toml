@@ -1,5 +1,5 @@
 [package]
-name = "mcvm_core"
+name = "nitro_core"
 version = "0.9.0"
 description = "Core functionality for launching Minecraft"
 keywords = ["minecraft", "launcher", "game", "mc"]
@@ -14,7 +14,7 @@ rust-version.workspace = true
 workspace = true
 
 [features]
-schema = ["dep:schemars", "mcvm_shared/schema"]
+schema = ["dep:schemars", "nitro_shared/schema"]
 
 [dependencies]
 anyhow = { workspace = true }
@@ -23,9 +23,9 @@ bytes = { workspace = true }
 cfg-match = { workspace = true }
 directories = { workspace = true }
 libflate = { workspace = true }
-mcvm_auth = { workspace = true }
-mcvm_net = { workspace = true }
-mcvm_shared = { workspace = true }
+nitro_auth = { workspace = true }
+nitro_net = { workspace = true }
+nitro_shared = { workspace = true }
 reqwest = { workspace = true }
 schemars = { workspace = true, optional = true }
 serde = { workspace = true }

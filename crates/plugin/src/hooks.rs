@@ -1,19 +1,19 @@
 use std::collections::{HashMap, HashSet};
 
-use mcvm_config::instance::InstanceConfig;
-use mcvm_config::profile::ProfileConfig;
-use mcvm_core::net::game_files::version_manifest::VersionEntry;
-use mcvm_core::net::minecraft::MinecraftUserProfile;
-use mcvm_pkg::repo::{PackageFlag, RepoMetadata};
-use mcvm_pkg::script_eval::AddonInstructionData;
-use mcvm_pkg::{PackageContentType, PackageSearchResults, RecommendedPackage, RequiredPackage};
-use mcvm_shared::id::{InstanceID, ProfileID};
-use mcvm_shared::lang::translate::LanguageMap;
-use mcvm_shared::loaders::Loader;
-use mcvm_shared::pkg::{PackageID, PackageSearchParameters};
-use mcvm_shared::versions::VersionPattern;
-use mcvm_shared::UpdateDepth;
-use mcvm_shared::{output::MCVMOutput, versions::VersionInfo, Side};
+use nitro_config::instance::InstanceConfig;
+use nitro_config::profile::ProfileConfig;
+use nitro_core::net::game_files::version_manifest::VersionEntry;
+use nitro_core::net::minecraft::MinecraftUserProfile;
+use nitro_pkg::repo::{PackageFlag, RepoMetadata};
+use nitro_pkg::script_eval::AddonInstructionData;
+use nitro_pkg::{PackageContentType, PackageSearchResults, RecommendedPackage, RequiredPackage};
+use nitro_shared::id::{InstanceID, ProfileID};
+use nitro_shared::lang::translate::LanguageMap;
+use nitro_shared::loaders::Loader;
+use nitro_shared::pkg::{PackageID, PackageSearchParameters};
+use nitro_shared::versions::VersionPattern;
+use nitro_shared::UpdateDepth;
+use nitro_shared::{output::NitroOutput, versions::VersionInfo, Side};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
 use crate::hook_call::HookCallArg;
@@ -47,7 +47,7 @@ pub trait Hook {
 	async fn call(
 		&self,
 		arg: HookCallArg<'_, Self>,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<HookHandle<Self>>
 	where
 		Self: Sized,
@@ -173,7 +173,7 @@ pub struct OnInstanceSetupArg {
 	pub desired_loader_version: Option<VersionPattern>,
 	/// Instance configuration
 	pub config: InstanceConfig,
-	/// Path to the MCVM internal dir
+	/// Path to the Nitrolaunch internal dir
 	pub internal_dir: String,
 	/// The depth to update at
 	pub update_depth: UpdateDepth,
@@ -332,7 +332,7 @@ pub struct HandleAuthResult {
 def_hook!(
 	AddTranslations,
 	"add_translations",
-	"Hook for adding extra translations to MCVM",
+	"Hook for adding extra translations to Nitrolaunch",
 	(),
 	LanguageMap,
 	1,
@@ -449,7 +449,7 @@ pub struct ImportInstanceResult {
 def_hook!(
 	AddSupportedLoaders,
 	"add_supported_loaders",
-	"Tell MCVM that you support installing extra loaders",
+	"Tell Nitrolaunch that you support installing extra loaders",
 	(),
 	Vec<Loader>,
 	2,

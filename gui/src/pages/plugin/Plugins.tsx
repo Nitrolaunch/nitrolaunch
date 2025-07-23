@@ -251,7 +251,7 @@ function getPluginIcon(plugin: string) {
 			return CurlyBraces;
 		} else if (plugin == "lang") {
 			return Language;
-		} else if (plugin == "mcvm_transfer") {
+		} else if (plugin == "nitro_transfer") {
 			return Cycle;
 		} else if (plugin == "options") {
 			return Gear;

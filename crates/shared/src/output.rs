@@ -8,9 +8,9 @@ use crate::{
 	pkg::{PkgRequest, ResolutionError},
 };
 
-/// Trait for a type that can output information about MCVM processes
+/// Trait for a type that can output information about Nitrolaunch processes
 #[async_trait::async_trait]
-pub trait MCVMOutput: Send {
+pub trait NitroOutput: Send {
 	/// Base function for a simple message. Used as a fallback
 	fn display_text(&mut self, text: String, level: MessageLevel);
 
@@ -106,7 +106,7 @@ pub trait MCVMOutput: Send {
 }
 
 /// Displays the default Microsoft authentication messages
-pub fn default_special_ms_auth(o: &mut (impl MCVMOutput + ?Sized), url: &str, code: &str) {
+pub fn default_special_ms_auth(o: &mut (impl NitroOutput + ?Sized), url: &str, code: &str) {
 	o.display(
 		MessageContents::Property(
 			"Open this link in your web browser if it has not opened already".into(),
@@ -229,17 +229,17 @@ impl MessageLevel {
 	}
 }
 
-/// Dummy MCVMOutput that doesn't print anything
+/// Dummy NitroOutput that doesn't print anything
 pub struct NoOp;
 
-impl MCVMOutput for NoOp {
+impl NitroOutput for NoOp {
 	fn display_text(&mut self, _text: String, _level: MessageLevel) {}
 }
 
-/// MCVMOutput with simple terminal printing
+/// NitroOutput with simple terminal printing
 pub struct Simple(pub MessageLevel);
 
-impl MCVMOutput for Simple {
+impl NitroOutput for Simple {
 	fn display_text(&mut self, text: String, level: MessageLevel) {
 		if !level.at_least(&self.0) {
 			return;
@@ -250,13 +250,13 @@ impl MCVMOutput for Simple {
 }
 
 /// RAII struct that opens and closes an output process
-pub struct OutputProcess<'a, O: MCVMOutput>(&'a mut O);
+pub struct OutputProcess<'a, O: NitroOutput>(&'a mut O);
 
 impl<'a, O> OutputProcess<'a, O>
 where
-	O: MCVMOutput,
+	O: NitroOutput,
 {
-	/// Create a new OutputProcess from an MCVMOutput
+	/// Create a new OutputProcess from an NitroOutput
 	pub fn new(o: &'a mut O) -> Self {
 		o.start_process();
 		Self(o)
@@ -265,7 +265,7 @@ where
 
 impl<'a, O> Drop for OutputProcess<'a, O>
 where
-	O: MCVMOutput,
+	O: NitroOutput,
 {
 	fn drop(&mut self) {
 		self.0.end_process();
@@ -274,7 +274,7 @@ where
 
 impl<'a, O> Deref for OutputProcess<'a, O>
 where
-	O: MCVMOutput,
+	O: NitroOutput,
 {
 	type Target = O;
 
@@ -285,7 +285,7 @@ where
 
 impl<'a, O> DerefMut for OutputProcess<'a, O>
 where
-	O: MCVMOutput,
+	O: NitroOutput,
 {
 	fn deref_mut(&mut self) -> &mut Self::Target {
 		&mut self.0
@@ -293,13 +293,13 @@ where
 }
 
 /// RAII struct that opens and closes an output section
-pub struct OutputSection<'a, O: MCVMOutput>(&'a mut O);
+pub struct OutputSection<'a, O: NitroOutput>(&'a mut O);
 
 impl<'a, O> OutputSection<'a, O>
 where
-	O: MCVMOutput,
+	O: NitroOutput,
 {
-	/// Create a new OutputProcess from an MCVMOutput
+	/// Create a new OutputProcess from an NitroOutput
 	pub fn new(o: &'a mut O) -> Self {
 		o.start_section();
 		Self(o)
@@ -308,7 +308,7 @@ where
 
 impl<'a, O> Drop for OutputSection<'a, O>
 where
-	O: MCVMOutput,
+	O: NitroOutput,
 {
 	fn drop(&mut self) {
 		self.0.end_section();
@@ -317,7 +317,7 @@ where
 
 impl<'a, O> Deref for OutputSection<'a, O>
 where
-	O: MCVMOutput,
+	O: NitroOutput,
 {
 	type Target = O;
 
@@ -328,7 +328,7 @@ where
 
 impl<'a, O> DerefMut for OutputSection<'a, O>
 where
-	O: MCVMOutput,
+	O: NitroOutput,
 {
 	fn deref_mut(&mut self) -> &mut Self::Target {
 		&mut self.0

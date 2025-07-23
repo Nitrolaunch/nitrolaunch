@@ -1,7 +1,7 @@
 [package]
-name = "mcvm_net"
+name = "nitro_net"
 version = "0.3.0"
-description = "Various network APIs for MCVM"
+description = "Various network APIs for Nitrolaunch"
 keywords = ["minecraft", "launcher", "game", "mc", "api"]
 categories.workspace = true
 edition.workspace = true
@@ -18,7 +18,7 @@ workspace = true
 [dependencies]
 anyhow = { workspace = true }
 bytes = { workspace = true }
-mcvm_shared = { workspace = true }
+nitro_shared = { workspace = true }
 nutype = { workspace = true }
 reqwest = { workspace = true }
 serde = { workspace = true }

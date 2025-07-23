@@ -7,8 +7,8 @@ use crate::config::preferences::ConfigPreferences;
 #[cfg(not(feature = "disable_profile_update_packages"))]
 use crate::pkg::eval::EvalConstants;
 use crate::plugin::PluginManager;
-use mcvm_core::user::UserManager;
-use mcvm_shared::{translate, UpdateDepth};
+use nitro_core::user::UserManager;
+use nitro_shared::{translate, UpdateDepth};
 #[cfg(not(feature = "disable_profile_update_packages"))]
 use packages::print_package_support_messages;
 use packages::update_instance_packages;
@@ -16,7 +16,7 @@ use packages::update_instance_packages;
 use std::collections::HashSet;
 
 use anyhow::Context;
-use mcvm_shared::output::{MCVMOutput, MessageContents, MessageLevel};
+use nitro_shared::output::{NitroOutput, MessageContents, MessageLevel};
 use reqwest::Client;
 
 use crate::io::lock::Lockfile;
@@ -28,7 +28,7 @@ use manager::UpdateManager;
 use super::Instance;
 
 /// Shared objects for instance updating functions
-pub struct InstanceUpdateContext<'a, O: MCVMOutput> {
+pub struct InstanceUpdateContext<'a, O: NitroOutput> {
 	/// The package registry
 	pub packages: &'a mut PkgRegistry,
 	/// The users
@@ -49,7 +49,7 @@ pub struct InstanceUpdateContext<'a, O: MCVMOutput> {
 
 impl Instance {
 	/// Update this instance
-	pub async fn update<'a, O: MCVMOutput>(
+	pub async fn update<'a, O: NitroOutput>(
 		&mut self,
 		update_packages: bool,
 		depth: UpdateDepth,

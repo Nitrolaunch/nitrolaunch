@@ -2,19 +2,19 @@ use std::{collections::HashMap, sync::Arc};
 
 use super::CmdData;
 use itertools::Itertools;
-use mcvm::config::modifications::{apply_modifications_and_write, ConfigModification};
-use mcvm::config_crate::package::PackageConfigDeser;
-use mcvm::parse::lex::Token;
-use mcvm::pkg_crate::metadata::PackageMetadata;
-use mcvm::pkg_crate::properties::PackageProperties;
-use mcvm::pkg_crate::{PackageContentType, PkgRequest, PkgRequestSource};
-use mcvm::shared::id::{InstanceID, ProfileID};
-use mcvm::shared::util::print::ReplPrinter;
+use nitrolaunch::config::modifications::{apply_modifications_and_write, ConfigModification};
+use nitrolaunch::config_crate::package::PackageConfigDeser;
+use nitrolaunch::parse::lex::Token;
+use nitrolaunch::pkg_crate::metadata::PackageMetadata;
+use nitrolaunch::pkg_crate::properties::PackageProperties;
+use nitrolaunch::pkg_crate::{PackageContentType, PkgRequest, PkgRequestSource};
+use nitrolaunch::shared::id::{InstanceID, ProfileID};
+use nitrolaunch::shared::util::print::ReplPrinter;
 
 use anyhow::{bail, Context};
 use clap::Subcommand;
 use color_print::{cformat, cprint, cprintln};
-use mcvm::shared::pkg::{PackageID, PackageSearchParameters};
+use nitrolaunch::shared::pkg::{PackageID, PackageSearchParameters};
 use reqwest::Client;
 use serde::Serialize;
 
@@ -273,7 +273,7 @@ async fn cat(data: &mut CmdData<'_>, id: &str, raw: bool) -> anyhow::Result<()> 
 
 /// Pretty-print a package script
 fn pretty_print_package_script(contents: &str) -> anyhow::Result<()> {
-	let mut lexed = mcvm::parse::lex::lex(contents)?;
+	let mut lexed = nitrolaunch::parse::lex::lex(contents)?;
 
 	// Since the windows iterator won't go to the end with the last token on the left
 	// side of the window, because it always makes sure the array is at least 2 elements long,
@@ -576,8 +576,8 @@ async fn repo_info(data: &mut CmdData<'_>, repo_id: String) -> anyhow::Result<()
 	}
 	cprintln!("   <s>ID:</> {}", repo.get_id());
 	cprintln!("   <s>Location:</> <m>{}</>", repo.get_displayed_location());
-	if let Some(version) = &meta.mcvm_version {
-		cprintln!("   <s>MCVM Version:</> <c>{}</>", version);
+	if let Some(version) = &meta.nitro_version {
+		cprintln!("   <s>Nitrolaunch Version:</> <c>{}</>", version);
 	}
 	if let Some(pkg_count) = pkg_count {
 		cprintln!("   <s>Package Count:</> <y>{}</>", pkg_count);

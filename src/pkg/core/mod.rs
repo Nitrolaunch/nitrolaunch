@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use mcvm_pkg::{repo::RepoPkgEntry, PackageContentType};
+use nitro_pkg::{repo::RepoPkgEntry, PackageContentType};
 
 macro_rules! define_core_packages {
 	($($pkg:literal,$ext:literal,$id:ident,$content:ident);*$(;)?) => {
@@ -91,8 +91,8 @@ pub fn get_core_package_count() -> usize {
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use mcvm_parse::{parse::lex_and_parse, routine::INSTALL_ROUTINE};
-	use mcvm_pkg::parse_and_validate;
+	use nitro_parse::{parse::lex_and_parse, routine::INSTALL_ROUTINE};
+	use nitro_pkg::parse_and_validate;
 
 	#[test]
 	fn test_core_package_parse() {

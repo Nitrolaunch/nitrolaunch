@@ -10,7 +10,7 @@ use std::fs;
 pub enum FilesSubcommand {
 	#[command(
 		about = "Remove cached files",
-		long_about = "Remove cached files downloaded by mcvm. This does not include
+		long_about = "Remove cached files downloaded by Nitrolaunch. This does not include
 files in your instances or any other user data."
 	)]
 	Remove {

@@ -1,7 +1,7 @@
 [package]
-name = "mcvm_gui"
+name = "nitro_gui"
 version = "0.1.0"
-description = "Graphical interface for MCVM"
+description = "Graphical interface for Nitrolaunch"
 keywords = ["minecraft", "launcher", "game", "mc"]
 categories.workspace = true
 edition.workspace = true
@@ -20,7 +20,7 @@ always_send = { workspace = true }
 anyhow = { workspace = true }
 async-trait = { workspace = true }
 itertools = { workspace = true }
-mcvm = { workspace = true }
+nitrolaunch = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 tauri = { version = "1", features = [ "window-close", "shell-open", "protocol-asset", "clipboard-all", "window-create" ] }

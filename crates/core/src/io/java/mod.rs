@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 pub mod args;
 /// Use of Java's classpath format
 pub mod classpath;
-/// Installation of Java for MCVM
+/// Installation of Java for Nitrolaunch
 pub mod install;
 
 /// A major Java version (e.g. 14 or 17)
@@ -28,7 +28,7 @@ impl JavaMajorVersion {
 	/// Tries to parse a major version from a string
 	///
 	/// ```
-	/// use mcvm_core::io::java::JavaMajorVersion;
+	/// use nitro_core::io::java::JavaMajorVersion;
 	/// let string = "17";
 	/// let version = JavaMajorVersion::parse(string);
 	/// assert_eq!(version, Some(JavaMajorVersion(17)));
@@ -55,7 +55,7 @@ pub mod maven {
 		/// Extract the parts of a library string
 		///
 		/// ```
-		/// use mcvm_core::io::java::maven::MavenLibraryParts;
+		/// use nitro_core::io::java::maven::MavenLibraryParts;
 		///
 		/// let string = "foo.bar.baz:hello:world";
 		/// let parts = MavenLibraryParts::parse_from_str(string).unwrap();

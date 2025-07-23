@@ -1,6 +1,6 @@
 #![warn(missing_docs)]
 
-//! This crate contains shared data for the other MCVM crates
+//! This crate contains shared data for the other Nitrolaunch crates
 //!
 //! # Features:
 //!
@@ -12,7 +12,7 @@ pub mod addon;
 pub mod lang;
 /// Enums for modifications to the game
 pub mod loaders;
-/// MCVM output
+/// Nitrolaunch output
 pub mod output;
 /// Common package constructs
 pub mod pkg;

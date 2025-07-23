@@ -5,14 +5,14 @@ use std::{
 };
 
 use anyhow::{bail, Context};
-use mcvm::config_crate::instance::{
+use nitrolaunch::config_crate::instance::{
 	Args, CommonInstanceConfig, InstanceConfig, LaunchArgs, LaunchConfig, LaunchMemory, QuickPlay,
 };
-use mcvm_core::io::java::install::JavaInstallationKind;
-use mcvm_plugin::{api::CustomPlugin, hooks::ImportInstanceResult};
-use mcvm_shared::{
+use nitro_core::io::java::install::JavaInstallationKind;
+use nitro_plugin::{api::CustomPlugin, hooks::ImportInstanceResult};
+use nitro_shared::{
 	loaders::Loader,
-	output::{MCVMOutput, MessageContents, MessageLevel},
+	output::{NitroOutput, MessageContents, MessageLevel},
 	versions::parse_versioned_string,
 	Side,
 };
@@ -176,7 +176,7 @@ fn main() -> anyhow::Result<()> {
 		} else if !meta.runtime.optifine.is_empty() || !meta.runtime.yarn.is_empty() {
 			ctx.get_output().display(
 				MessageContents::Warning(
-					"MCVM does not understand the instance's loader".into(),
+					"Nitrolaunch does not understand the instance's loader".into(),
 				),
 				MessageLevel::Important,
 			);
@@ -238,7 +238,7 @@ fn main() -> anyhow::Result<()> {
 fn should_include_file(path: &Path) -> bool {
 	if let Some(file_name) = path.file_name() {
 		let file_name = file_name.to_string_lossy();
-		if file_name.starts_with("mcvm_") {
+		if file_name.starts_with("nitro_") {
 			return false;
 		}
 	}

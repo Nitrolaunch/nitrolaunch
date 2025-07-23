@@ -1,8 +1,8 @@
 use anyhow::{bail, Context};
-use mcvm_shared::output::{MCVMOutput, MessageContents, MessageLevel};
-use mcvm_shared::pkg::ArcPkgReq;
-use mcvm_shared::translate;
-use mcvm_shared::versions::VersionInfo;
+use nitro_shared::output::{NitroOutput, MessageContents, MessageLevel};
+use nitro_shared::pkg::ArcPkgReq;
+use nitro_shared::translate;
+use nitro_shared::versions::VersionInfo;
 use reqwest::Client;
 
 use crate::addon::AddonExt;
@@ -29,7 +29,7 @@ impl Instance {
 		lock: &mut Lockfile,
 		force: bool,
 		client: &Client,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<EvalData<'a>> {
 		let version_info = VersionInfo {
 			version: eval_input.constants.version.clone(),
@@ -62,7 +62,7 @@ impl Instance {
 		paths: &'a Paths,
 		force: bool,
 		client: &Client,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<(
 		EvalData<'a>,
 		HashMap<String, impl Future<Output = anyhow::Result<()>> + Send + 'static>,
@@ -94,7 +94,7 @@ impl Instance {
 		version_info: &VersionInfo,
 		paths: &Paths,
 		lock: &mut Lockfile,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<()> {
 		// Get the configuration for the package or the default if it is not configured by the user
 		let pkg_config = self
@@ -158,7 +158,7 @@ impl Instance {
 }
 
 /// Runs package commands
-fn run_package_commands(commands: &[Vec<String>], o: &mut impl MCVMOutput) -> anyhow::Result<()> {
+fn run_package_commands(commands: &[Vec<String>], o: &mut impl NitroOutput) -> anyhow::Result<()> {
 	if !commands.is_empty() {
 		o.display(
 			MessageContents::StartProcess(translate!(o, StartRunningCommands)),

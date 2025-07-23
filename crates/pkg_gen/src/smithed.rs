@@ -1,18 +1,18 @@
 use std::collections::{HashMap, HashSet};
 
 use anyhow::Context;
-use mcvm_core::net::download::Client;
-use mcvm_pkg::declarative::{
+use nitro_core::net::download::Client;
+use nitro_pkg::declarative::{
 	DeclarativeAddon, DeclarativeAddonVersion, DeclarativeConditionSet, DeclarativePackage,
 	DeclarativePackageRelations,
 };
-use mcvm_pkg::metadata::PackageMetadata;
-use mcvm_pkg::properties::PackageProperties;
-use mcvm_shared::pkg::{PackageCategory, PackageKind, PackageStability};
-use mcvm_shared::util::DeserListOrSingle;
-use mcvm_shared::versions::VersionPattern;
+use nitro_pkg::metadata::PackageMetadata;
+use nitro_pkg::properties::PackageProperties;
+use nitro_shared::pkg::{PackageCategory, PackageKind, PackageStability};
+use nitro_shared::util::DeserListOrSingle;
+use nitro_shared::versions::VersionPattern;
 
-use mcvm_net::smithed::Pack;
+use nitro_net::smithed::Pack;
 
 use crate::relation_substitution::{substitute_multiple, RelationSubFunction};
 
@@ -24,7 +24,7 @@ pub async fn gen_from_id(
 	force_extensions: &[String],
 	repo: Option<&str>,
 ) -> anyhow::Result<DeclarativePackage> {
-	let pack = mcvm_net::smithed::get_pack(id, &Client::new())
+	let pack = nitro_net::smithed::get_pack(id, &Client::new())
 		.await
 		.expect("Failed to get pack");
 
@@ -40,7 +40,7 @@ pub async fn gen(
 	repo: Option<&str>,
 ) -> anyhow::Result<DeclarativePackage> {
 	let banner = if !pack.display.gallery.is_empty() {
-		mcvm_net::smithed::get_gallery_url(&pack.id, 0)
+		nitro_net::smithed::get_gallery_url(&pack.id, 0)
 	} else {
 		pack.display.icon.clone()
 	};
@@ -55,7 +55,7 @@ pub async fn gen(
 		gallery: Some(
 			std::iter::repeat(())
 				.enumerate()
-				.map(|(i, _)| mcvm_net::smithed::get_gallery_url(&pack.id, i as u8))
+				.map(|(i, _)| nitro_net::smithed::get_gallery_url(&pack.id, i as u8))
 				.take(pack.display.gallery.len())
 				.collect(),
 		),

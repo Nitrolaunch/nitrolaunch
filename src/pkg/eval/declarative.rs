@@ -1,14 +1,14 @@
 use anyhow::bail;
 use itertools::Itertools;
-use mcvm_pkg::declarative::{
+use nitro_pkg::declarative::{
 	DeclarativeAddon, DeclarativeAddonVersion, DeclarativeConditionSet, DeclarativePackage,
 };
-use mcvm_pkg::properties::PackageProperties;
-use mcvm_pkg::script_eval::AddonInstructionData;
-use mcvm_pkg::RequiredPackage;
-use mcvm_shared::loaders::LoaderMatch;
-use mcvm_shared::pkg::PackageID;
-use mcvm_shared::util::DeserListOrSingle;
+use nitro_pkg::properties::PackageProperties;
+use nitro_pkg::script_eval::AddonInstructionData;
+use nitro_pkg::RequiredPackage;
+use nitro_shared::loaders::LoaderMatch;
+use nitro_shared::pkg::PackageID;
+use nitro_shared::util::DeserListOrSingle;
 
 use crate::plugin::PluginManager;
 
@@ -325,12 +325,12 @@ fn get_loader_matches(loader: &LoaderMatch) -> u16 {
 
 #[cfg(test)]
 mod tests {
-	use mcvm_pkg::declarative::deserialize_declarative_package;
-	use mcvm_shared::lang::Language;
-	use mcvm_shared::loaders::Loader;
-	use mcvm_shared::pkg::PackageStability;
-	use mcvm_shared::util::DeserListOrSingle;
-	use mcvm_shared::Side;
+	use nitro_pkg::declarative::deserialize_declarative_package;
+	use nitro_shared::lang::Language;
+	use nitro_shared::loaders::Loader;
+	use nitro_shared::pkg::PackageStability;
+	use nitro_shared::util::DeserListOrSingle;
+	use nitro_shared::Side;
 
 	use crate::pkg::eval::{EvalConstants, EvalParameters, RequiredPackage};
 

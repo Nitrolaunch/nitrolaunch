@@ -2,8 +2,8 @@ use std::str::FromStr;
 
 use clap::Parser;
 use color_print::cprintln;
-use mcvm_plugin::{api::CustomPlugin, hooks::SidebarButton};
-use mcvm_shared::util::open_link;
+use nitro_plugin::{api::CustomPlugin, hooks::SidebarButton};
+use nitro_shared::util::open_link;
 
 fn main() -> anyhow::Result<()> {
 	let mut plugin = CustomPlugin::from_manifest_file("webtools", include_str!("plugin.json"))?;
@@ -15,7 +15,7 @@ fn main() -> anyhow::Result<()> {
 			return Ok(());
 		}
 		// Trick the parser to give it the right bin name
-		let it = std::iter::once(format!("mcvm {subcommand}")).chain(args.into_iter().skip(1));
+		let it = std::iter::once(format!("nitro {subcommand}")).chain(args.into_iter().skip(1));
 		let cli = Cli::parse_from(it);
 		match cli.subcommand {
 			Subcommand::List => list(),

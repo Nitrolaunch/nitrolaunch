@@ -1,15 +1,15 @@
 use anyhow::bail;
-use mcvm_parse::conditions::ConditionKind;
-use mcvm_parse::parse::Parsed;
-use mcvm_parse::vars::{HashMapVariableStore, ReservedConstantVariables, VariableStore};
-use mcvm_pkg::properties::PackageProperties;
-use mcvm_pkg::script_eval::{
+use nitro_parse::conditions::ConditionKind;
+use nitro_parse::parse::Parsed;
+use nitro_parse::vars::{HashMapVariableStore, ReservedConstantVariables, VariableStore};
+use nitro_pkg::properties::PackageProperties;
+use nitro_pkg::script_eval::{
 	AddonInstructionData, ScriptEvalConfig, ScriptEvaluator as ScriptEvaluatorTrait,
 };
-use mcvm_pkg::RecommendedPackage;
-use mcvm_plugin::hooks::{CustomPackageInstruction, CustomPackageInstructionArg};
-use mcvm_shared::output::NoOp;
-use mcvm_shared::pkg::PackageID;
+use nitro_pkg::RecommendedPackage;
+use nitro_plugin::hooks::{CustomPackageInstruction, CustomPackageInstructionArg};
+use nitro_shared::output::NoOp;
+use nitro_shared::pkg::PackageID;
 
 use crate::io::paths::Paths;
 use crate::plugin::PluginManager;
@@ -44,7 +44,7 @@ pub async fn eval_script_package<'a>(
 	let reason = eval.reason;
 	let mut data = SharedData { eval, paths };
 
-	mcvm_pkg::script_eval::eval_script_package(
+	nitro_pkg::script_eval::eval_script_package(
 		parsed,
 		&mut ScriptEvaluator,
 		&mut data,

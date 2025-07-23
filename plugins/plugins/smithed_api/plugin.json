@@ -4,7 +4,7 @@
 	"protocol_version": 3,
 	"hooks": {
 		"subcommand": {
-			"executable": "${PLUGIN_DIR}/mcvm_plugin_smithed_api${EXE_EXTENSION}"
+			"executable": "${PLUGIN_DIR}/nitro_plugin_smithed_api${EXE_EXTENSION}"
 		}
 	},
 	"subcommands": {

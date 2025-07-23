@@ -1,8 +1,8 @@
 use std::path::{Path, PathBuf};
 
 use anyhow::{bail, Context};
-use mcvm_shared::output::MCVMOutput;
-use mcvm_shared::Side;
+use nitro_shared::output::NitroOutput;
+use nitro_shared::Side;
 
 use crate::config::BrandingProperties;
 use crate::io::files::paths::Paths;
@@ -37,7 +37,7 @@ impl<'params> Instance<'params> {
 	pub(crate) async fn load(
 		config: InstanceConfiguration,
 		params: InstanceParameters<'params>,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<Instance<'params>> {
 		// Start setting up the instance
 		tokio::fs::create_dir_all(&config.path)
@@ -188,7 +188,7 @@ impl<'params> Instance<'params> {
 	}
 
 	/// Launch the instance and block until the process is finished
-	pub async fn launch(&mut self, o: &mut impl MCVMOutput) -> anyhow::Result<()> {
+	pub async fn launch(&mut self, o: &mut impl NitroOutput) -> anyhow::Result<()> {
 		let mut handle = self.launch_with_handle(o).await?;
 		handle
 			.wait()
@@ -199,7 +199,7 @@ impl<'params> Instance<'params> {
 	/// Launch the instance and get the handle
 	pub async fn launch_with_handle(
 		&mut self,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<InstanceHandle> {
 		let params = LaunchParameters {
 			version: self.params.version,

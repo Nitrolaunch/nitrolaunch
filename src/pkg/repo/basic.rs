@@ -6,11 +6,11 @@ use std::{
 };
 
 use anyhow::{bail, Context};
-use mcvm_net::download;
-use mcvm_pkg::repo::{get_api_url, get_index_url, RepoIndex, RepoMetadata, RepoPkgEntry};
-use mcvm_shared::{
+use nitro_net::download;
+use nitro_pkg::repo::{get_api_url, get_index_url, RepoIndex, RepoMetadata, RepoPkgEntry};
+use nitro_shared::{
 	later::Later,
-	output::{MCVMOutput, MessageContents, MessageLevel},
+	output::{MessageContents, MessageLevel, NitroOutput},
 	translate,
 };
 use reqwest::Client;
@@ -102,7 +102,7 @@ impl BasicPackageRepository {
 		&mut self,
 		paths: &Paths,
 		client: &Client,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<()> {
 		if self.index.is_empty() {
 			let path = self.get_path(paths);
@@ -130,8 +130,8 @@ impl BasicPackageRepository {
 	}
 
 	/// Checks the index. It must be already loaded.
-	fn check_index(&self, o: &mut impl MCVMOutput) {
-		let repo_version = &self.index.get().metadata.mcvm_version;
+	fn check_index(&self, o: &mut impl NitroOutput) {
+		let repo_version = &self.index.get().metadata.nitro_version;
 		if let Some(repo_version) = repo_version {
 			let repo_version = version_compare::Version::from(repo_version);
 			let program_version = version_compare::Version::from(crate::VERSION);
@@ -156,7 +156,7 @@ impl BasicPackageRepository {
 		id: &str,
 		paths: &Paths,
 		client: &Client,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<Option<RepoQueryResult>> {
 		self.ensure_index(paths, client, o).await?;
 		let index = self.index.get();
@@ -177,7 +177,7 @@ impl BasicPackageRepository {
 		&mut self,
 		paths: &Paths,
 		client: &Client,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<Vec<(String, RepoPkgEntry)>> {
 		self.ensure_index(paths, client, o).await?;
 
@@ -194,7 +194,7 @@ impl BasicPackageRepository {
 		&mut self,
 		paths: &Paths,
 		client: &Client,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<usize> {
 		self.ensure_index(paths, client, o).await?;
 
@@ -206,7 +206,7 @@ impl BasicPackageRepository {
 		&mut self,
 		paths: &Paths,
 		client: &Client,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<&RepoMetadata> {
 		self.ensure_index(paths, client, o).await?;
 

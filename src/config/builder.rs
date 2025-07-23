@@ -2,18 +2,18 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use anyhow::bail;
-use mcvm_config::instance::{ClientWindowConfig, InstanceConfig, LaunchConfig};
-use mcvm_config::package::{EvalPermissions, FullPackageConfig, PackageConfigDeser};
-use mcvm_config::profile::ProfileConfig;
-use mcvm_config::user::{UserConfig, UserVariant};
-use mcvm_core::auth_crate::mc::ClientId;
-use mcvm_core::user::{User, UserManager};
-use mcvm_core::util::versions::MinecraftVersionDeser;
-use mcvm_plugin::plugin::PluginManifest;
-use mcvm_shared::id::InstanceID;
-use mcvm_shared::output::MCVMOutput;
-use mcvm_shared::pkg::{PackageID, PackageStability};
-use mcvm_shared::Side;
+use nitro_config::instance::{ClientWindowConfig, InstanceConfig, LaunchConfig};
+use nitro_config::package::{EvalPermissions, FullPackageConfig, PackageConfigDeser};
+use nitro_config::profile::ProfileConfig;
+use nitro_config::user::{UserConfig, UserVariant};
+use nitro_core::auth_crate::mc::ClientId;
+use nitro_core::user::{User, UserManager};
+use nitro_core::util::versions::MinecraftVersionDeser;
+use nitro_plugin::plugin::PluginManifest;
+use nitro_shared::id::InstanceID;
+use nitro_shared::output::NitroOutput;
+use nitro_shared::pkg::{PackageID, PackageStability};
+use nitro_shared::Side;
 
 use crate::instance::Instance;
 use crate::io::paths::Paths;
@@ -86,7 +86,7 @@ impl ConfigBuilder {
 		plugin: PluginConfig,
 		manifest: PluginManifest,
 		paths: &Paths,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<()> {
 		self.plugins
 			.add_plugin(plugin, manifest, paths, None, o)
@@ -266,7 +266,7 @@ impl<'parent> InstanceBuilder<'parent> {
 	}
 
 	/// Finish the builder and go to the parent
-	pub async fn build(self, paths: &Paths, o: &mut impl MCVMOutput) -> anyhow::Result<()> {
+	pub async fn build(self, paths: &Paths, o: &mut impl NitroOutput) -> anyhow::Result<()> {
 		let (id, instance, parent) = self.build_self(paths, o).await?;
 		if let Some(parent) = parent {
 			parent.instances.insert(id, instance);
@@ -279,7 +279,7 @@ impl<'parent> InstanceBuilder<'parent> {
 	pub async fn build_self(
 		self,
 		paths: &Paths,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<(InstanceID, Instance, Option<&'parent mut ConfigBuilder>)> {
 		let default_plugins = PluginManager::new();
 		let plugins = if let Some(ref parent) = self.parent {
@@ -411,8 +411,8 @@ impl<'instance, 'parent> PackageBuilderParent for PackageBuilderInstanceParent<'
 
 #[cfg(test)]
 mod tests {
-	// use mcvm_plugin::api::NoOp;
-	// use mcvm_shared::lang::Language;
+	// use nitro_plugin::api::NoOp;
+	// use nitro_shared::lang::Language;
 
 	// use crate::data::config::preferences::{PrefDeser, RepositoriesDeser};
 	// use crate::pkg::reg::CachingStrategy;

@@ -4,16 +4,16 @@
 	"protocol_version": 3,
 	"hooks": {
 		"subcommand": {
-			"executable": "${PLUGIN_DIR}/mcvm_plugin_stats${EXE_EXTENSION}"
+			"executable": "${PLUGIN_DIR}/nitro_plugin_stats${EXE_EXTENSION}"
 		},
 		"on_instance_launch": {
-			"executable": "${PLUGIN_DIR}/mcvm_plugin_stats${EXE_EXTENSION}"
+			"executable": "${PLUGIN_DIR}/nitro_plugin_stats${EXE_EXTENSION}"
 		},
 		"on_instance_stop": {
-			"executable": "${PLUGIN_DIR}/mcvm_plugin_stats${EXE_EXTENSION}"
+			"executable": "${PLUGIN_DIR}/nitro_plugin_stats${EXE_EXTENSION}"
 		},
 		"while_instance_launch": {
-			"executable": "${PLUGIN_DIR}/mcvm_plugin_stats${EXE_EXTENSION}"
+			"executable": "${PLUGIN_DIR}/nitro_plugin_stats${EXE_EXTENSION}"
 		}
 	},
 	"subcommands": {

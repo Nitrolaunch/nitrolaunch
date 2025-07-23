@@ -1,17 +1,17 @@
 use anyhow::{anyhow, Context};
 use itertools::Itertools;
-use mcvm_core::net::download;
-use mcvm_pkg::metadata::PackageMetadata;
-use mcvm_pkg::parse_and_validate;
-use mcvm_pkg::properties::PackageProperties;
-use mcvm_pkg::repo::PackageFlag;
-use mcvm_pkg::PackageContentType;
-use mcvm_pkg::PackageSearchResults;
-use mcvm_pkg::PkgRequest;
-use mcvm_pkg::PkgRequestSource;
-use mcvm_shared::output::MCVMOutput;
-use mcvm_shared::pkg::ArcPkgReq;
-use mcvm_shared::pkg::PackageSearchParameters;
+use nitro_core::net::download;
+use nitro_pkg::metadata::PackageMetadata;
+use nitro_pkg::parse_and_validate;
+use nitro_pkg::properties::PackageProperties;
+use nitro_pkg::repo::PackageFlag;
+use nitro_pkg::PackageContentType;
+use nitro_pkg::PackageSearchResults;
+use nitro_pkg::PkgRequest;
+use nitro_pkg::PkgRequestSource;
+use nitro_shared::output::NitroOutput;
+use nitro_shared::pkg::ArcPkgReq;
+use nitro_shared::pkg::PackageSearchParameters;
 use reqwest::Client;
 use tokio::sync::Semaphore;
 use tokio::task::JoinSet;
@@ -72,7 +72,7 @@ impl PkgRegistry {
 		include_custom_repos: bool,
 		paths: &Paths,
 		client: &Client,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<&mut Package> {
 		// First check the remote repositories
 		let query = query_all(
@@ -107,7 +107,7 @@ impl PkgRegistry {
 		req: &ArcPkgReq,
 		paths: &Paths,
 		client: &Client,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<&mut Package> {
 		if self.has_now(req) {
 			Ok(self.packages.get_mut(req).expect("Package does not exist"))
@@ -122,7 +122,7 @@ impl PkgRegistry {
 		req: &ArcPkgReq,
 		paths: &Paths,
 		client: &Client,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<&mut Package> {
 		let pkg = self
 			.get(req, paths, client, o)
@@ -140,7 +140,7 @@ impl PkgRegistry {
 		req: &ArcPkgReq,
 		paths: &Paths,
 		client: &Client,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<()> {
 		self.get(req, paths, client, o)
 			.await
@@ -155,7 +155,7 @@ impl PkgRegistry {
 		req: &ArcPkgReq,
 		paths: &Paths,
 		client: &Client,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<&'a PackageMetadata> {
 		let pkg = self.ensure_package_contents(req, paths, client, o).await?;
 		pkg.get_metadata(paths, client)
@@ -169,7 +169,7 @@ impl PkgRegistry {
 		req: &ArcPkgReq,
 		paths: &Paths,
 		client: &Client,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<&'a PackageProperties> {
 		let pkg = self.ensure_package_contents(req, paths, client, o).await?;
 		pkg.get_properties(paths, client)
@@ -183,7 +183,7 @@ impl PkgRegistry {
 		req: &ArcPkgReq,
 		paths: &Paths,
 		client: &Client,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<PackageContentType> {
 		let pkg = self.ensure_package_contents(req, paths, client, o).await?;
 		Ok(pkg.content_type)
@@ -195,7 +195,7 @@ impl PkgRegistry {
 		req: &ArcPkgReq,
 		paths: &Paths,
 		client: &Client,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<Arc<str>> {
 		let pkg = self.ensure_package_contents(req, paths, client, o).await?;
 		let contents = pkg.data.get().get_text();
@@ -208,7 +208,7 @@ impl PkgRegistry {
 		req: &ArcPkgReq,
 		paths: &Paths,
 		client: &Client,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<()> {
 		let pkg = self.ensure_package_contents(req, paths, client, o).await?;
 		let contents = &pkg.data.get().get_text();
@@ -224,7 +224,7 @@ impl PkgRegistry {
 		req: &ArcPkgReq,
 		paths: &Paths,
 		client: &Client,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<&'a PkgContents> {
 		let pkg = self.ensure_package_contents(req, paths, client, o).await?;
 		pkg.parse(paths, client)
@@ -242,7 +242,7 @@ impl PkgRegistry {
 		routine: Routine,
 		input: EvalInput<'a>,
 		client: &Client,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<EvalData<'a>> {
 		let plugins = self.plugins.clone();
 		let pkg = self.ensure_package_contents(req, paths, client, o).await?;
@@ -256,7 +256,7 @@ impl PkgRegistry {
 		req: &ArcPkgReq,
 		paths: &Paths,
 		client: &Client,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<PackageContentType> {
 		let pkg = self.ensure_package_contents(req, paths, client, o).await?;
 		Ok(pkg.content_type)
@@ -268,7 +268,7 @@ impl PkgRegistry {
 		req: &ArcPkgReq,
 		paths: &Paths,
 		client: &Client,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<&'a HashSet<PackageFlag>> {
 		let pkg = self.ensure_package_contents(req, paths, client, o).await?;
 		Ok(&pkg.flags)
@@ -280,7 +280,7 @@ impl PkgRegistry {
 		req: &ArcPkgReq,
 		paths: &Paths,
 		client: &Client,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<()> {
 		let pkg = self
 			.get(req, paths, client, o)
@@ -305,7 +305,7 @@ impl PkgRegistry {
 		&mut self,
 		paths: &Paths,
 		client: &Client,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<Vec<ArcPkgReq>> {
 		let out = super::repo::get_all_packages(&mut self.repos, paths, client, o)
 			.await
@@ -323,7 +323,7 @@ impl PkgRegistry {
 		packages: impl Iterator<Item = &ArcPkgReq>,
 		paths: &Paths,
 		client: &Client,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<()> {
 		for package in packages {
 			self.remove_cached(package, paths, client, o)
@@ -339,7 +339,7 @@ impl PkgRegistry {
 		&mut self,
 		paths: &Paths,
 		client: &Client,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<()> {
 		let packages = self
 			.get_all_available_packages(paths, client, o)
@@ -383,7 +383,7 @@ impl PkgRegistry {
 		repo: Option<&str>,
 		paths: &Paths,
 		client: &Client,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<PackageSearchResults> {
 		let original_count = params.count;
 		if original_count == 0 {
@@ -508,7 +508,7 @@ impl PkgRegistry {
 		packages: impl Iterator<Item = &ArcPkgReq>,
 		paths: &Paths,
 		client: &Client,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<()> {
 		// Remove any packages that are already stored
 		let mut packages: Vec<_> = packages.filter(|x| !self.has_now(x)).collect();

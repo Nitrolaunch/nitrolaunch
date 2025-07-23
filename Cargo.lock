@@ -2594,292 +2594,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2532096657941c2fea9c289d370a250971c689d4f143798ff67113ec042024a5"
 
 [[package]]
-name = "mcvm"
-version = "0.25.0"
-dependencies = [
- "anyhow",
- "async-trait",
- "cfg-match",
- "directories",
- "hex",
- "itertools",
- "mcvm_config",
- "mcvm_core",
- "mcvm_net",
- "mcvm_parse",
- "mcvm_pkg",
- "mcvm_plugin",
- "mcvm_shared",
- "rand 0.8.5",
- "reqwest 0.12.15",
- "schemars",
- "serde",
- "serde_json",
- "sha2",
- "shellexpand",
- "simd-json",
- "sysinfo",
- "tokio",
- "version-compare 0.2.0",
- "zip",
-]
-
-[[package]]
-name = "mcvm_auth"
-version = "0.7.0"
-dependencies = [
- "anyhow",
- "bytes",
- "cfg-match",
- "hex",
- "mcvm_shared",
- "nutype",
- "oauth2",
- "rand 0.8.5",
- "rand_chacha 0.3.1",
- "reqwest 0.12.15",
- "rsa",
- "serde",
- "serde_json",
- "thiserror 1.0.69",
-]
-
-[[package]]
-name = "mcvm_cli"
-version = "0.12.0"
-dependencies = [
- "anyhow",
- "async-trait",
- "clap",
- "color-print",
- "inquire",
- "itertools",
- "mcvm",
- "reqwest 0.12.15",
- "serde",
- "serde_json",
- "static_vcruntime",
- "termimad",
- "tokio",
- "which",
-]
-
-[[package]]
-name = "mcvm_config"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "cfg-match",
- "mcvm_core",
- "mcvm_pkg",
- "mcvm_shared",
- "schemars",
- "serde",
- "serde_json",
-]
-
-[[package]]
-name = "mcvm_core"
-version = "0.9.0"
-dependencies = [
- "anyhow",
- "async-trait",
- "bytes",
- "cfg-match",
- "directories",
- "libflate",
- "mcvm_auth",
- "mcvm_net",
- "mcvm_shared",
- "reqwest 0.12.15",
- "schemars",
- "serde",
- "serde_json",
- "simd-json",
- "tar",
- "tokio",
- "version-compare 0.2.0",
- "zip",
-]
-
-[[package]]
-name = "mcvm_gui"
-version = "0.1.0"
-dependencies = [
- "always_send",
- "anyhow",
- "async-trait",
- "itertools",
- "mcvm",
- "serde",
- "serde_json",
- "tauri",
- "tauri-build",
- "tokio",
-]
-
-[[package]]
-name = "mcvm_mods"
-version = "0.9.0"
-dependencies = [
- "anyhow",
- "mcvm_core",
- "mcvm_shared",
- "reqwest 0.12.15",
- "serde",
- "serde_json",
- "tokio",
-]
-
-[[package]]
-name = "mcvm_net"
-version = "0.3.0"
-dependencies = [
- "anyhow",
- "bytes",
- "mcvm_shared",
- "nutype",
- "reqwest 0.12.15",
- "serde",
- "serde_json",
- "simd-json",
-]
-
-[[package]]
-name = "mcvm_options"
-version = "0.8.0"
-dependencies = [
- "anyhow",
- "itertools",
- "mcvm_shared",
- "schemars",
- "serde",
- "serde_json",
-]
-
-[[package]]
-name = "mcvm_parse"
-version = "0.17.0"
-dependencies = [
- "anyhow",
- "mcvm_shared",
- "schemars",
- "serde",
- "serde_json",
-]
-
-[[package]]
-name = "mcvm_pkg"
-version = "0.16.0"
-dependencies = [
- "anyhow",
- "async-trait",
- "itertools",
- "mcvm_parse",
- "mcvm_shared",
- "schemars",
- "serde",
- "serde_json",
- "simd-json",
-]
-
-[[package]]
-name = "mcvm_pkg_gen"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "mcvm_core",
- "mcvm_net",
- "mcvm_pkg",
- "mcvm_shared",
- "regex",
- "serde",
- "serde_json",
- "tokio",
- "version-compare 0.2.0",
-]
-
-[[package]]
-name = "mcvm_plugin"
-version = "0.5.0"
-dependencies = [
- "anyhow",
- "async-trait",
- "base64 0.22.1",
- "itertools",
- "mcvm_config",
- "mcvm_core",
- "mcvm_pkg",
- "mcvm_shared",
- "pin-project-lite",
- "serde",
- "serde_json",
- "simd-json",
- "tokio",
-]
-
-[[package]]
-name = "mcvm_plugins"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "clap",
- "color-print",
- "glob",
- "iso8601-timestamp",
- "itertools",
- "mcvm",
- "mcvm_core",
- "mcvm_mods",
- "mcvm_net",
- "mcvm_options",
- "mcvm_pkg",
- "mcvm_pkg_gen",
- "mcvm_plugin",
- "mcvm_shared",
- "rand 0.8.5",
- "regex",
- "serde",
- "serde_json",
- "shellexpand",
- "termimad",
- "tokio",
- "version-compare 0.2.0",
- "zip",
-]
-
-[[package]]
-name = "mcvm_shared"
-version = "0.16.0"
-dependencies = [
- "anyhow",
- "async-trait",
- "cfg-match",
- "itertools",
- "schemars",
- "serde",
- "sys-locale",
- "thiserror 1.0.69",
-]
-
-[[package]]
-name = "mcvm_tools"
-version = "0.9.0"
-dependencies = [
- "anyhow",
- "clap",
- "iso8601-timestamp",
- "mcvm",
- "mcvm_net",
- "mcvm_options",
- "reqwest 0.12.15",
- "schemars",
- "serde",
- "serde_json",
- "tokio",
-]
-
-[[package]]
 name = "memchr"
 version = "2.7.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2990,6 +2704,292 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1f71d09d5c87634207f894c6b31b6a2b2c64ea3bdcf71bd5599fdbbe1600c00f"
 dependencies = [
  "unicode-segmentation",
+]
+
+[[package]]
+name = "nitro_auth"
+version = "0.7.0"
+dependencies = [
+ "anyhow",
+ "bytes",
+ "cfg-match",
+ "hex",
+ "nitro_shared",
+ "nutype",
+ "oauth2",
+ "rand 0.8.5",
+ "rand_chacha 0.3.1",
+ "reqwest 0.12.15",
+ "rsa",
+ "serde",
+ "serde_json",
+ "thiserror 1.0.69",
+]
+
+[[package]]
+name = "nitro_cli"
+version = "0.12.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "clap",
+ "color-print",
+ "inquire",
+ "itertools",
+ "nitrolaunch",
+ "reqwest 0.12.15",
+ "serde",
+ "serde_json",
+ "static_vcruntime",
+ "termimad",
+ "tokio",
+ "which",
+]
+
+[[package]]
+name = "nitro_config"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "cfg-match",
+ "nitro_core",
+ "nitro_pkg",
+ "nitro_shared",
+ "schemars",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "nitro_core"
+version = "0.9.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "bytes",
+ "cfg-match",
+ "directories",
+ "libflate",
+ "nitro_auth",
+ "nitro_net",
+ "nitro_shared",
+ "reqwest 0.12.15",
+ "schemars",
+ "serde",
+ "serde_json",
+ "simd-json",
+ "tar",
+ "tokio",
+ "version-compare 0.2.0",
+ "zip",
+]
+
+[[package]]
+name = "nitro_gui"
+version = "0.1.0"
+dependencies = [
+ "always_send",
+ "anyhow",
+ "async-trait",
+ "itertools",
+ "nitrolaunch",
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-build",
+ "tokio",
+]
+
+[[package]]
+name = "nitro_mods"
+version = "0.9.0"
+dependencies = [
+ "anyhow",
+ "nitro_core",
+ "nitro_shared",
+ "reqwest 0.12.15",
+ "serde",
+ "serde_json",
+ "tokio",
+]
+
+[[package]]
+name = "nitro_net"
+version = "0.3.0"
+dependencies = [
+ "anyhow",
+ "bytes",
+ "nitro_shared",
+ "nutype",
+ "reqwest 0.12.15",
+ "serde",
+ "serde_json",
+ "simd-json",
+]
+
+[[package]]
+name = "nitro_options"
+version = "0.8.0"
+dependencies = [
+ "anyhow",
+ "itertools",
+ "nitro_shared",
+ "schemars",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "nitro_parse"
+version = "0.17.0"
+dependencies = [
+ "anyhow",
+ "nitro_shared",
+ "schemars",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "nitro_pkg"
+version = "0.16.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "itertools",
+ "nitro_parse",
+ "nitro_shared",
+ "schemars",
+ "serde",
+ "serde_json",
+ "simd-json",
+]
+
+[[package]]
+name = "nitro_pkg_gen"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "nitro_core",
+ "nitro_net",
+ "nitro_pkg",
+ "nitro_shared",
+ "regex",
+ "serde",
+ "serde_json",
+ "tokio",
+ "version-compare 0.2.0",
+]
+
+[[package]]
+name = "nitro_plugin"
+version = "0.5.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "base64 0.22.1",
+ "itertools",
+ "nitro_config",
+ "nitro_core",
+ "nitro_pkg",
+ "nitro_shared",
+ "pin-project-lite",
+ "serde",
+ "serde_json",
+ "simd-json",
+ "tokio",
+]
+
+[[package]]
+name = "nitro_plugins"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "color-print",
+ "glob",
+ "iso8601-timestamp",
+ "itertools",
+ "nitro_core",
+ "nitro_mods",
+ "nitro_net",
+ "nitro_options",
+ "nitro_pkg",
+ "nitro_pkg_gen",
+ "nitro_plugin",
+ "nitro_shared",
+ "nitrolaunch",
+ "rand 0.8.5",
+ "regex",
+ "serde",
+ "serde_json",
+ "shellexpand",
+ "termimad",
+ "tokio",
+ "version-compare 0.2.0",
+ "zip",
+]
+
+[[package]]
+name = "nitro_shared"
+version = "0.16.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "cfg-match",
+ "itertools",
+ "schemars",
+ "serde",
+ "sys-locale",
+ "thiserror 1.0.69",
+]
+
+[[package]]
+name = "nitro_tools"
+version = "0.9.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "iso8601-timestamp",
+ "nitro_net",
+ "nitro_options",
+ "nitrolaunch",
+ "reqwest 0.12.15",
+ "schemars",
+ "serde",
+ "serde_json",
+ "tokio",
+]
+
+[[package]]
+name = "nitrolaunch"
+version = "0.25.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "cfg-match",
+ "directories",
+ "hex",
+ "itertools",
+ "nitro_config",
+ "nitro_core",
+ "nitro_net",
+ "nitro_parse",
+ "nitro_pkg",
+ "nitro_plugin",
+ "nitro_shared",
+ "rand 0.8.5",
+ "reqwest 0.12.15",
+ "schemars",
+ "serde",
+ "serde_json",
+ "sha2",
+ "shellexpand",
+ "simd-json",
+ "sysinfo",
+ "tokio",
+ "version-compare 0.2.0",
+ "zip",
 ]
 
 [[package]]

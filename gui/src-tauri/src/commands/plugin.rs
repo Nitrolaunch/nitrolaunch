@@ -2,12 +2,12 @@ use crate::output::LauncherOutput;
 use crate::State;
 use anyhow::Context;
 use itertools::Itertools;
-use mcvm::plugin::PluginManager;
-use mcvm::plugin_crate::hooks::{
+use nitrolaunch::plugin::PluginManager;
+use nitrolaunch::plugin_crate::hooks::{
 	AddSidebarButtons, GetPage, InjectPageScript, InjectPageScriptArg, SidebarButton,
 };
-use mcvm::shared::output::{MCVMOutput, MessageContents, MessageLevel};
-use mcvm::{plugin::install::get_verified_plugins, shared::output::NoOp};
+use nitrolaunch::shared::output::{NitroOutput, MessageContents, MessageLevel};
+use nitrolaunch::{plugin::install::get_verified_plugins, shared::output::NoOp};
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 

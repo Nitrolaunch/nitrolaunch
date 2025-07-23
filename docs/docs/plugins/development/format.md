@@ -6,7 +6,7 @@ Your plugin needs a unique ID to distinguish it from others. Check the official 
 
 ## Files
 
-The plugin file format is pretty simple. Inside the plugins directory (`MCVM_DATA/plugins`), all you need is a **manifest** file, located either at `plugins/plugin_id.json` or `plugins/plugin_id/plugin.json`. The nested location allows you to bundle other assets along with your plugin easily, but both locations work exactly the same.
+The plugin file format is pretty simple. Inside the plugins directory (`NITRO_DATA/plugins`), all you need is a **manifest** file, located either at `plugins/plugin_id.json` or `plugins/plugin_id/plugin.json`. The nested location allows you to bundle other assets along with your plugin easily, but both locations work exactly the same.
 
 If your plugin needs to run an executable, you can bundle your executable in your plugin directory, or install it on the system.
 
@@ -18,7 +18,7 @@ The manifest file describes information about your plugin in a JSON format. All 
 {
 	"name": string,
 	"description": string,
-	"mcvm_version": string,
+	"nitro_version": string,
 	"hooks": { ... },
 	"subcommands": {
 		"subcommand": "hook",
@@ -33,7 +33,7 @@ The manifest file describes information about your plugin in a JSON format. All 
 
 - `name`: The display name of your plugin,
 - `description`: A short description of your plugin
-- `mcvm_version`: The minimum version of MCVM that this plugin supports
+- `nitro_version`: The minimum version of Nitrolaunch that this plugin supports
 - `hooks`: A map of hook IDs to hook handlers. Will be described more in the hooks section.
 - `subcommands`: A map of custom subcommands to a short description of what they do
 - `dependencies`: A list of plugin IDs that this plugin depends on to work
@@ -43,7 +43,7 @@ The manifest file describes information about your plugin in a JSON format. All 
 
 ## Hooks
 
-Hooks are the meat and potatoes of plugins. They allow you to inject into specific points of MCVM's functionality, adding new features. They can act like event handlers, or like data-driven extensions to MCVM's data.
+Hooks are the meat and potatoes of plugins. They allow you to inject into specific points of Nitrolaunch's functionality, adding new features. They can act like event handlers, or like data-driven extensions to Nitrolaunch's data.
 
 ### Handling
 
@@ -105,8 +105,8 @@ Handler that matches the hook argument to choose another hook handler to handle 
 
 ## State
 
-Plugins can have state managed by MCVM for the duration of the MCVM program. This allows a plugin to communicate between hooks easily. Check documentation for how to use this state.
+Plugins can have state managed by Nitrolaunch for the duration of the Nitrolaunch program. This allows a plugin to communicate between hooks easily. Check documentation for how to use this state.
 
-## Profiling
+## Profiling and debugging
 
-Plugins can be profiled by setting the environment variable `MCVM_PLUGIN_PROFILE=1` before running to see how long each plugin takes to run its hooks.
+Plugins can be profiled by setting the environment variable `NITRO_PLUGIN_PROFILE=1` before running to see how long each plugin takes to run its hooks. The variable `NITRO_PLUGIN_DEBUG=1` can also be set to see which hooks are running.

@@ -1,7 +1,7 @@
 use crate::output::LauncherOutput;
 use crate::State;
 use anyhow::Context;
-use mcvm::{
+use nitrolaunch::{
 	config::{
 		modifications::{apply_modifications_and_write, ConfigModification},
 		Config,

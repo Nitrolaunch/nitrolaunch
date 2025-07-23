@@ -1,17 +1,17 @@
 # Packages
 
-An MCVM package is simply a file that is evaluated to install files and dependencies. They can be either declarative JSON files or custom scripts. Scripts usually follow the format of `package-id.pkg.txt`. Declarative packages should be named `package-id.json`. Package IDs may contain only letters, numbers, and hyphens (`-`). They cannot be longer than 32 characters.
+An Nitrolaunch package is simply a file that is evaluated to install files and dependencies. They can be either declarative JSON files or custom scripts. Scripts usually follow the format of `package-id.pkg.txt`. Declarative packages should be named `package-id.json`. Package IDs may contain only letters, numbers, and hyphens (`-`). They cannot be longer than 32 characters.
 
 # Repository
 
-A package repository is any server that provides an `index.json` of packages for the user to source. All that is required to run a repository yourself is to make this `index.json` under `https://example.com/api/mcvm/index.json`. An index follows this format:
+A package repository is any server that provides an `index.json` of packages for the user to source. All that is required to run a repository yourself is to make this `index.json` under `https://example.com/api/nitrolaunch/index.json`. An index follows this format:
 
 ```
 {
 	"metadata": {
 		"name": string,
 		"description": string,
-		"mcvm_version": string,
+		"nitro_version": string,
 		"color": string
 	}
 	"packages": {
@@ -26,7 +26,7 @@ A package repository is any server that provides an `index.json` of packages for
 
 - `metadata.name` (Optional): The display name of the repository.
 - `metadata.description` (Optional): A short description of the repository.
-- `metadata.mcvm_version` (Optional): The oldest MCVM version that packages included in the repository are compatible with. Used to give warnings to the user.
+- `metadata.nitro_version` (Optional): The oldest Nitrolaunch version that packages included in the repository are compatible with. Used to give warnings to the user.
 - `metadata.color` (Optional): A CSS color that represents the repository.
 - `package-id`: The ID of the package.
 - `url`: The URL to the package file. Unnecessary if `path` is specified.
@@ -49,4 +49,4 @@ Each variant can be escaped using backslashes, but keep in mind that all backsla
 
 # The purpose of host ID instructions
 
-These should be set even if the addons for the package are not downloaded from that website. These will allow MCVM to make smart decisions in the future and automatically replace files downloaded from these sites with the correct packages and prevent file duplication.
+These should be set even if the addons for the package are not downloaded from that website. These will allow Nitrolaunch to make smart decisions in the future and automatically replace files downloaded from these sites with the correct packages and prevent file duplication.

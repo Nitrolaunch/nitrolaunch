@@ -1,6 +1,6 @@
 use anyhow::Context;
-use mcvm_shared::output::{MCVMOutput, MessageContents, MessageLevel};
-use mcvm_shared::{translate, util::DefaultExt, UpdateDepth};
+use nitro_shared::output::{NitroOutput, MessageContents, MessageLevel};
+use nitro_shared::{translate, util::DefaultExt, UpdateDepth};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 
@@ -71,7 +71,7 @@ pub async fn get(
 	paths: &Paths,
 	manager: &UpdateManager,
 	client: &Client,
-	o: &mut impl MCVMOutput,
+	o: &mut impl NitroOutput,
 ) -> anyhow::Result<VersionManifest> {
 	let manifest = get_contents(requested_version, paths, manager, client, false, o).await;
 	let manifest = match manifest {
@@ -103,7 +103,7 @@ pub async fn get_with_output(
 	paths: &Paths,
 	manager: &UpdateManager,
 	client: &Client,
-	o: &mut impl MCVMOutput,
+	o: &mut impl NitroOutput,
 ) -> anyhow::Result<VersionManifest> {
 	o.start_process();
 	o.display(
@@ -131,7 +131,7 @@ async fn get_contents(
 	manager: &UpdateManager,
 	client: &Client,
 	force: bool,
-	o: &mut impl MCVMOutput,
+	o: &mut impl NitroOutput,
 ) -> anyhow::Result<VersionManifest> {
 	let mut path = paths.internal.join("versions");
 	files::create_dir(&path)?;

@@ -5,20 +5,20 @@ use std::{
 };
 
 use anyhow::Context;
-use mcvm_core::io::{
+use nitro_core::io::{
 	files::{create_leading_dirs, update_hardlink},
 	json_from_file, json_to_file,
 };
-use mcvm_net::{
+use nitro_net::{
 	download::Client,
 	modrinth::{self, Member, Project, SearchResults, Version},
 };
-use mcvm_pkg::{declarative::DeclarativePackage, PackageSearchResults};
-use mcvm_pkg_gen::{
+use nitro_pkg::{declarative::DeclarativePackage, PackageSearchResults};
+use nitro_pkg_gen::{
 	modrinth::{cleanup_version_name, get_preview},
 	relation_substitution::{PackageAndVersion, RelationSubFunction, RelationSubNone},
 };
-use mcvm_plugin::{
+use nitro_plugin::{
 	api::{utils::PackageSearchCache, CustomPlugin},
 	hooks::CustomRepoQueryResult,
 };
@@ -109,7 +109,7 @@ fn main() -> anyhow::Result<()> {
 			for result in results.hits {
 				projects.push(result.slug.clone());
 				let slug = result.slug.clone();
-				let package = mcvm_pkg_gen::modrinth::gen(
+				let package = nitro_pkg_gen::modrinth::gen(
 					get_preview(result),
 					&[],
 					&[],
@@ -181,7 +181,7 @@ async fn query_package(
 			let id = project_info.project.id.clone();
 			let slug = project_info.project.slug.clone();
 
-			let package = mcvm_pkg_gen::modrinth::gen(
+			let package = nitro_pkg_gen::modrinth::gen(
 				project_info.project,
 				&project_info.versions,
 				&project_info.members,
@@ -192,7 +192,7 @@ async fn query_package(
 				Some("modrinth"),
 			)
 			.await
-			.context("Failed to generate MCVM package")?;
+			.context("Failed to generate Nitrolaunch package")?;
 			let package =
 				serde_json::to_string_pretty(&package).context("Failed to serialized package")?;
 
@@ -210,7 +210,7 @@ async fn query_package(
 
 	Ok(Some(CustomRepoQueryResult {
 		contents: package,
-		content_type: mcvm::pkg_crate::PackageContentType::Declarative,
+		content_type: nitrolaunch::pkg_crate::PackageContentType::Declarative,
 		flags: HashSet::new(),
 	}))
 }

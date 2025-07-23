@@ -1,7 +1,7 @@
 #![warn(missing_docs)]
 
 //! This library can install different loaders, such as Fabric and Paper,
-//! for use with the mcvm_core library. It is packaged separately so that users who
+//! for use with the nitro_core library. It is packaged separately so that users who
 //! do not want this functionality and only act on the vanilla game don't have to include
 //! them
 //!

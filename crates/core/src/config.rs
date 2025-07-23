@@ -1,5 +1,5 @@
-use mcvm_auth::mc::ClientId;
-use mcvm_shared::UpdateDepth;
+use nitro_auth::mc::ClientId;
+use nitro_shared::UpdateDepth;
 
 use crate::util::secrets::get_ms_client_id;
 
@@ -114,7 +114,7 @@ pub struct BrandingProperties {
 impl Default for BrandingProperties {
 	fn default() -> Self {
 		Self {
-			launcher_name: "mcvm_core".into(),
+			launcher_name: "nitro_core".into(),
 			launcher_version: env!("CARGO_PKG_VERSION").into(),
 		}
 	}

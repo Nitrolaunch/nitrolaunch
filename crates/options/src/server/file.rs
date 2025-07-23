@@ -7,8 +7,8 @@ use itertools::Itertools;
 
 use crate::read::read_options_file;
 use crate::{match_key, match_key_int};
-use mcvm_shared::util::ToInt;
-use mcvm_shared::versions::{VersionInfo, VersionPattern};
+use nitro_shared::util::ToInt;
+use nitro_shared::versions::{VersionInfo, VersionPattern};
 
 use super::ServerOptions;
 

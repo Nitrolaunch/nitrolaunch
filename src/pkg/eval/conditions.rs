@@ -1,8 +1,8 @@
-use mcvm_shared::versions::VersionPattern;
+use nitro_shared::versions::VersionPattern;
 
 use super::EvalData;
-use mcvm_parse::conditions::{ArchCondition, ConditionKind, OSCondition};
-use mcvm_parse::vars::VariableStore;
+use nitro_parse::conditions::{ArchCondition, ConditionKind, OSCondition};
+use nitro_parse::vars::VariableStore;
 
 /// Evaluates a script condition to a boolean
 pub fn eval_condition(condition: &ConditionKind, eval: &EvalData) -> anyhow::Result<bool> {

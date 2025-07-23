@@ -1,7 +1,7 @@
 [package]
-name = "mcvm_shared"
+name = "nitro_shared"
 version = "0.16.0"
-description = "Shared libraries and utilities for mcvm crates"
+description = "Shared libraries and utilities for Nitrolaunch crates"
 keywords = ["minecraft", "launcher", "game", "mc"]
 categories.workspace = true
 edition.workspace = true

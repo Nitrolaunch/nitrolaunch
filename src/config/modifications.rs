@@ -1,12 +1,12 @@
 use anyhow::{anyhow, Context};
-use mcvm_config::instance::InstanceConfig;
-use mcvm_config::profile::ProfileConfig;
-use mcvm_config::ConfigDeser;
-use mcvm_config::{package::PackageConfigDeser, user::UserConfig};
-use mcvm_core::io::json_to_file_pretty;
+use nitro_config::instance::InstanceConfig;
+use nitro_config::profile::ProfileConfig;
+use nitro_config::ConfigDeser;
+use nitro_config::{package::PackageConfigDeser, user::UserConfig};
+use nitro_core::io::json_to_file_pretty;
 
 use crate::io::paths::Paths;
-use mcvm_shared::id::{InstanceID, ProfileID};
+use nitro_shared::id::{InstanceID, ProfileID};
 
 use super::Config;
 
@@ -76,7 +76,7 @@ pub fn apply_modifications_and_write(
 	// Backup the contents first
 	std::fs::copy(
 		&path,
-		paths.project.config_dir().join("mcvm_write_backup.json"),
+		paths.project.config_dir().join("nitro_write_backup.json"),
 	)
 	.context("Failed to backup config")?;
 	json_to_file_pretty(path, config).context("Failed to write modified configuration")?;
@@ -86,7 +86,7 @@ pub fn apply_modifications_and_write(
 
 #[cfg(test)]
 mod tests {
-	use mcvm_config::user::UserVariant;
+	use nitro_config::user::UserVariant;
 
 	use super::*;
 

@@ -1,12 +1,12 @@
 use std::{fmt::Display, path::PathBuf};
 
 use anyhow::{anyhow, bail, Context};
-use mcvm_core::{net::download, MCVMCore};
-use mcvm_shared::{output::MCVMOutput, versions::VersionInfo, Side};
+use nitro_core::{net::download, NitroCore};
+use nitro_shared::{output::NitroOutput, versions::VersionInfo, Side};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 
-use mcvm_core::io::files::paths::Paths;
+use nitro_core::io::files::paths::Paths;
 
 /// The main class for a Paper/Folia server
 pub const PAPER_SERVER_MAIN_CLASS: &str = "io.papermc.paperclip.Main";
@@ -51,10 +51,10 @@ impl Display for Mode {
 /// First, create the core and the version you want. Then, get the version info from the version.
 /// Finally, run this function. Returns the JAR path and main class to add to the instance you are launching
 pub async fn install_from_core(
-	core: &mut MCVMCore,
+	core: &mut NitroCore,
 	version_info: &VersionInfo,
 	mode: Mode,
-	o: &mut impl MCVMOutput,
+	o: &mut impl NitroOutput,
 ) -> anyhow::Result<(PathBuf, String)> {
 	let _ = o;
 
@@ -242,5 +242,5 @@ pub async fn download_server_jar(
 
 /// Get the path to the stored JAR file
 pub fn get_local_jar_path(mode: Mode, version: &str, paths: &Paths) -> PathBuf {
-	mcvm_core::io::minecraft::game_jar::get_path(Side::Server, version, Some(mode.to_str()), paths)
+	nitro_core::io::minecraft::game_jar::get_path(Side::Server, version, Some(mode.to_str()), paths)
 }

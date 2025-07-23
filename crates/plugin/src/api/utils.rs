@@ -4,8 +4,8 @@ use std::{
 };
 
 use anyhow::Context;
-use mcvm_core::io::{json_from_file, json_to_file};
-use mcvm_shared::{pkg::PackageSearchParameters, util::utc_timestamp};
+use nitro_core::io::{json_from_file, json_to_file};
+use nitro_shared::{pkg::PackageSearchParameters, util::utc_timestamp};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
 /// A cache for search results in a custom plugin repository that holds entries for a certain amount of time

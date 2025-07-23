@@ -1,7 +1,7 @@
 [package]
-name = "mcvm_config"
+name = "nitro_config"
 version = "0.1.0"
-description = "Serialization for MCVM configuration"
+description = "Serialization for Nitrolaunch configuration"
 keywords = ["minecraft", "launcher", "game", "mc"]
 categories.workspace = true
 edition.workspace = true
@@ -19,9 +19,9 @@ schema = ["dep:schemars"]
 [dependencies]
 anyhow = { workspace = true }
 cfg-match = { workspace = true }
-mcvm_core = { workspace = true }
-mcvm_pkg = { workspace = true }
-mcvm_shared = { workspace = true }
+nitro_core = { workspace = true }
+nitro_pkg = { workspace = true }
+nitro_shared = { workspace = true }
 schemars = { workspace = true, optional = true }
 serde = { workspace = true }
 serde_json = { workspace = true }

@@ -8,8 +8,8 @@ use std::{
 
 use crate::try_read::TryLineReader;
 use anyhow::{bail, Context};
-use mcvm_core::Paths;
-use mcvm_shared::output::{MCVMOutput, MessageContents, MessageLevel, NoOp};
+use nitro_core::Paths;
+use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput, NoOp};
 use tokio::{
 	io::AsyncWriteExt,
 	process::{Child, ChildStdin, ChildStdout, Command},
@@ -28,21 +28,21 @@ pub static PLUGIN_DIR_TOKEN: &str = "${PLUGIN_DIR}";
 /// The substitution token for the executable file extension in the command
 pub static EXE_EXTENSION_TOKEN: &str = "${EXE_EXTENSION}";
 /// The environment variable for custom config passed to a hook
-pub static CUSTOM_CONFIG_ENV: &str = "MCVM_CUSTOM_CONFIG";
+pub static CUSTOM_CONFIG_ENV: &str = "NITRO_CUSTOM_CONFIG";
 /// The environment variable for the data directory passed to a hook
-pub static DATA_DIR_ENV: &str = "MCVM_DATA_DIR";
+pub static DATA_DIR_ENV: &str = "NITRO_DATA_DIR";
 /// The environment variable for the config directory passed to a hook
-pub static CONFIG_DIR_ENV: &str = "MCVM_CONFIG_DIR";
+pub static CONFIG_DIR_ENV: &str = "NITRO_CONFIG_DIR";
 /// The environment variable for the plugin state passed to a hook
-pub static PLUGIN_STATE_ENV: &str = "MCVM_PLUGIN_STATE";
-/// The environment variable for the version of MCVM
-pub static MCVM_VERSION_ENV: &str = "MCVM_VERSION";
+pub static PLUGIN_STATE_ENV: &str = "NITRO_PLUGIN_STATE";
+/// The environment variable for the version of Nitrolaunch
+pub static NITRO_VERSION_ENV: &str = "NITRO_VERSION";
 /// The environment variable that tells the executable it is running as a plugin
-pub static MCVM_PLUGIN_ENV: &str = "MCVM_PLUGIN";
+pub static NITRO_PLUGIN_ENV: &str = "NITRO_PLUGIN";
 /// The environment variable that tells what version of the hook this is
-pub static HOOK_VERSION_ENV: &str = "MCVM_HOOK_VERSION";
+pub static HOOK_VERSION_ENV: &str = "NITRO_HOOK_VERSION";
 /// The environment variable with the list of plugins
-pub static PLUGIN_LIST_ENV: &str = "MCVM_PLUGIN_LIST";
+pub static PLUGIN_LIST_ENV: &str = "NITRO_PLUGIN_LIST";
 
 /// Argument struct for the hook call function
 pub struct HookCallArg<'a, H: Hook> {
@@ -62,8 +62,8 @@ pub struct HookCallArg<'a, H: Hook> {
 	pub persistence: Arc<Mutex<PluginPersistence>>,
 	/// Paths
 	pub paths: &'a Paths,
-	/// The version of MCVM
-	pub mcvm_version: Option<&'a str>,
+	/// The version of Nitrolaunch
+	pub nitro_version: Option<&'a str>,
 	/// The ID of the plugin
 	pub plugin_id: &'a str,
 	/// The list of all enabled plugins and their versions
@@ -75,7 +75,7 @@ pub struct HookCallArg<'a, H: Hook> {
 pub(crate) async fn call<H: Hook>(
 	hook: &H,
 	arg: HookCallArg<'_, H>,
-	o: &mut impl MCVMOutput,
+	o: &mut impl NitroOutput,
 ) -> anyhow::Result<HookHandle<H>>
 where
 	H: Sized,
@@ -103,10 +103,10 @@ where
 	}
 	cmd.env(DATA_DIR_ENV, &arg.paths.data);
 	cmd.env(CONFIG_DIR_ENV, arg.paths.project.config_dir());
-	if let Some(mcvm_version) = arg.mcvm_version {
-		cmd.env(MCVM_VERSION_ENV, mcvm_version);
+	if let Some(nitro_version) = arg.nitro_version {
+		cmd.env(NITRO_VERSION_ENV, nitro_version);
 	}
-	cmd.env(MCVM_PLUGIN_ENV, "1");
+	cmd.env(NITRO_PLUGIN_ENV, "1");
 	if let Some(working_dir) = arg.working_dir {
 		cmd.current_dir(working_dir);
 	}
@@ -126,7 +126,7 @@ where
 	if plugin_debug_enabled() {
 		o.display(
 			MessageContents::Simple(format!("{cmd:?}")),
-			MessageLevel::Debug,
+			MessageLevel::Important,
 		);
 	}
 
@@ -152,7 +152,7 @@ where
 
 		let stdin = child.stdin.take().unwrap();
 
-		let start_time = if std::env::var("MCVM_PLUGIN_PROFILE").is_ok_and(|x| x == "1") {
+		let start_time = if std::env::var("NITRO_PLUGIN_PROFILE").is_ok_and(|x| x == "1") {
 			Some(Instant::now())
 		} else {
 			None
@@ -209,7 +209,7 @@ impl<H: Hook> HookHandle<H> {
 	}
 
 	/// Poll the handle, returning true if the handle is ready
-	pub async fn poll(&mut self, o: &mut impl MCVMOutput) -> anyhow::Result<bool> {
+	pub async fn poll(&mut self, o: &mut impl NitroOutput) -> anyhow::Result<bool> {
 		match &mut self.inner {
 			HookHandleInner::Process {
 				stdout,
@@ -342,7 +342,7 @@ impl<H: Hook> HookHandle<H> {
 	}
 
 	/// Get the result of the hook by waiting for it
-	pub async fn result(mut self, o: &mut impl MCVMOutput) -> anyhow::Result<H::Result> {
+	pub async fn result(mut self, o: &mut impl NitroOutput) -> anyhow::Result<H::Result> {
 		if let HookHandleInner::Process { .. } = &self.inner {
 			loop {
 				let result = self.poll(o).await?;
@@ -388,7 +388,7 @@ impl<H: Hook> HookHandle<H> {
 	}
 
 	/// Get the result of the hook by killing it
-	pub async fn kill(self, o: &mut impl MCVMOutput) -> anyhow::Result<Option<H::Result>> {
+	pub async fn kill(self, o: &mut impl NitroOutput) -> anyhow::Result<Option<H::Result>> {
 		let _ = o;
 		match self.inner {
 			HookHandleInner::Constant(result) => Ok(Some(result)),

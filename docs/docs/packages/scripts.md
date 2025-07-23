@@ -65,7 +65,7 @@ Properties like `features` and `modrinth_id` can only be used in the `@propertie
 - `set {variable} {value}`: Sets the value of a variable.
 - `finish`: Will silently end the routine.
 - `fail [unsupported_version | unsupported_side | unsupported_loader | unsupported_plugin_loader | unsupported_features | unsupported_operating_system]`: End execution with an error.
-- `call {routine}`: Runs the contents of another routine. The called routine cannot be reserved by MCVM. Possibly recursive structures are also not allowed. MCVM will reject them.
+- `call {routine}`: Runs the contents of another routine. The called routine cannot be reserved by Nitrolaunch. Possibly recursive structures are also not allowed. Nitrolaunch will reject them.
 - `addon {id} [filename] (..)`: Add an addon to the instance. Keys and values are put inside the parentheses.
 - `require {package1} {package2} ...`: Create a dependency on one or more packages.
 - `refuse {package}`: Specifies that this package is incompatible with another.
@@ -75,7 +75,7 @@ Properties like `features` and `modrinth_id` can only be used in the `@propertie
 - `extend {package}`: Extend another package.
 - `notice {message}`: Display a warning or important information as a message to the user. Notice messages may not be more than 128 characters long, and there cannot be more than five of them that are displayed per package evaluation.
 - `cmd {command} {arg1} {arg2} ...`: Run a command on the system. Requires elevated permissions. Only runs during the install stage, not when resolving dependencies. If the command returns a non-zero exit code, the install process will fail. Context such as current working directory is not persisted across commands.
-- `custom {command} {arg1} {arg2}`: Run custom implementation-specific functionality. This allows plugins and different users of the packaging standard to do other things with MCVM packages, but MCVM itself does not recognize them, and will show a warning if they are not handled by any plugins.
+- `custom {command} {arg1} {arg2}`: Run custom implementation-specific functionality. This allows plugins and different users of the packaging standard to do other things with Nitrolaunch packages, but Nitrolaunch itself does not recognize them, and will show a warning if they are not handled by any plugins.
 
 #### Metadata Instructions
 

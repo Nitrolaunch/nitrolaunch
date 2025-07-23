@@ -5,14 +5,14 @@ use anyhow::Context;
 use color_print::{cformat, cstr};
 use inquire::{Confirm, Password};
 use itertools::Itertools;
-use mcvm::io::paths::Paths;
-use mcvm::pkg_crate::{PkgRequest, PkgRequestSource};
-use mcvm::shared::lang::translate::{TranslationKey, TranslationMap};
-use mcvm::shared::output::{
-	default_special_ms_auth, MCVMOutput, Message, MessageContents, MessageLevel,
+use nitrolaunch::io::paths::Paths;
+use nitrolaunch::pkg_crate::{PkgRequest, PkgRequestSource};
+use nitrolaunch::shared::lang::translate::{TranslationKey, TranslationMap};
+use nitrolaunch::shared::output::{
+	default_special_ms_auth, Message, MessageContents, MessageLevel, NitroOutput,
 };
-use mcvm::shared::util::print::ReplPrinter;
-use mcvm::shared::util::utc_timestamp;
+use nitrolaunch::shared::util::print::ReplPrinter;
+use nitrolaunch::shared::util::utc_timestamp;
 
 /// A nice colored bullet point for terminal output
 pub const HYPHEN_POINT: &str = cstr!("<k!> - </k!>");
@@ -30,7 +30,7 @@ pub const LOADER: &str = "\u{1F4E5}";
 /// A check icon
 pub const CHECK: &str = "\u{2713}";
 
-/// Terminal MCVMOutput
+/// Terminal NitroOutput
 pub struct TerminalOutput {
 	printer: ReplPrinter,
 	level: MessageLevel,
@@ -42,7 +42,7 @@ pub struct TerminalOutput {
 }
 
 #[async_trait::async_trait]
-impl MCVMOutput for TerminalOutput {
+impl NitroOutput for TerminalOutput {
 	fn display_text(&mut self, text: String, level: MessageLevel) {
 		let _ = self.log_message(&text, level);
 		self.display_text_impl(text, level);
@@ -120,7 +120,7 @@ impl MCVMOutput for TerminalOutput {
 	}
 
 	fn display_special_ms_auth(&mut self, url: &str, code: &str) {
-		let _ = mcvm::shared::util::open_link(url);
+		let _ = nitrolaunch::shared::util::open_link(url);
 		default_special_ms_auth(self, url, code);
 	}
 }
@@ -377,7 +377,7 @@ fn add_period(string: String) -> String {
 
 /// Get whether icons are enabled
 pub fn icons_enabled() -> bool {
-	let out = std::env::var("MCVM_CLI_ICONS").unwrap_or("0".into());
+	let out = std::env::var("NITRO_CLI_ICONS").unwrap_or("0".into());
 	let out: u8 = out.parse().unwrap_or(0);
 	out != 0
 }

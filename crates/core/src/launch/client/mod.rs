@@ -5,9 +5,9 @@ use anyhow::{anyhow, bail};
 
 use std::collections::HashMap;
 
-use mcvm_shared::skip_none;
+use nitro_shared::skip_none;
 #[cfg(target_os = "linux")]
-use mcvm_shared::versions::VersionPattern;
+use nitro_shared::versions::VersionPattern;
 
 pub use args::create_quick_play_args;
 

@@ -23,7 +23,7 @@ package_zips.platform_dependent:
 	@rm -f release/docs-${OS}.zip 
 	@rm -f release/fabric_quilt-${OS}.zip 
 	@rm -f release/gen_pkg-${OS}.zip 
-	@rm -f release/mcvm_transfer-${OS}.zip 
+	@rm -f release/nitro_transfer-${OS}.zip 
 	@rm -f release/modrinth-${OS}.zip 
 	@rm -f release/modrinth_api-${OS}.zip 
 	@rm -f release/options-${OS}.zip 
@@ -38,130 +38,130 @@ package_zips.platform_dependent:
 	@rm -f release/weld-${OS}.zip 
 	@rm -f release/xmcl_transfer-${OS}.zip 
 
-	@zip -j release/archive-${OS}.zip ../target/release/mcvm_plugin_archive${EXTENSION} plugins/archive/plugin.json
-	@zip -j release/args-${OS}.zip ../target/release/mcvm_plugin_args${EXTENSION} plugins/args/plugin.json
-	@zip -j release/automate-${OS}.zip ../target/release/mcvm_plugin_automate${EXTENSION} plugins/automate/plugin.json
-	@zip -j release/backup-${OS}.zip ../target/release/mcvm_plugin_backup${EXTENSION} plugins/backup/plugin.json
-	@zip -j release/config_split-${OS}.zip ../target/release/mcvm_plugin_config_split${EXTENSION} plugins/config_split/plugin.json
-	@zip -j release/custom_files-${OS}.zip ../target/release/mcvm_plugin_custom_files${EXTENSION} plugins/custom_files/plugin.json
-	@zip -j release/docs-${OS}.zip ../target/release/mcvm_plugin_docs${EXTENSION} plugins/docs/plugin.json
-	@zip -j release/fabric_quilt-${OS}.zip ../target/release/mcvm_plugin_fabric_quilt${EXTENSION} plugins/fabric_quilt/plugin.json
-	@zip -j release/gen_pkg-${OS}.zip ../target/release/mcvm_plugin_gen_pkg${EXTENSION} plugins/gen_pkg/plugin.json
-	@zip -j release/mcvm_transfer-${OS}.zip ../target/release/mcvm_plugin_mcvm_transfer${EXTENSION} plugins/mcvm_transfer/plugin.json
-	@zip -j release/modrinth-${OS}.zip ../target/release/mcvm_plugin_modrinth${EXTENSION} plugins/modrinth/plugin.json
-	@zip -j release/modrinth_api-${OS}.zip ../target/release/mcvm_plugin_modrinth_api${EXTENSION} plugins/modrinth_api/plugin.json plugins/modrinth_api/page.html
-	@zip -j release/options-${OS}.zip ../target/release/mcvm_plugin_options${EXTENSION} plugins/options/plugin.json
-	@zip -j release/packhost-${OS}.zip ../target/release/mcvm_plugin_packhost${EXTENSION} plugins/packhost/plugin.json
-	@zip -j release/paper-${OS}.zip ../target/release/mcvm_plugin_paper${EXTENSION} plugins/paper/plugin.json
-	@zip -j release/server_restart-${OS}.zip ../target/release/mcvm_plugin_server_restart${EXTENSION} plugins/server_restart/plugin.json
-	@zip -j release/smithed-${OS}.zip ../target/release/mcvm_plugin_smithed${EXTENSION} plugins/smithed/plugin.json plugins/smithed/page.html
-	@zip -j release/smithed_api-${OS}.zip ../target/release/mcvm_plugin_smithed_api${EXTENSION} plugins/smithed_api/plugin.json
-	@zip -j release/sponge-${OS}.zip ../target/release/mcvm_plugin_sponge${EXTENSION} plugins/sponge/plugin.json
-	@zip -j release/stats-${OS}.zip ../target/release/mcvm_plugin_stats${EXTENSION} plugins/stats/plugin.json
-	@zip -j release/webtools-${OS}.zip ../target/release/mcvm_plugin_webtools${EXTENSION} plugins/webtools/plugin.json
-	@zip -j release/xmcl_transfer-${OS}.zip ../target/release/mcvm_plugin_xmcl_transfer${EXTENSION} plugins/xmcl_transfer/plugin.json
+	@zip -j release/archive-${OS}.zip ../target/release/nitro_plugin_archive${EXTENSION} plugins/archive/plugin.json
+	@zip -j release/args-${OS}.zip ../target/release/nitro_plugin_args${EXTENSION} plugins/args/plugin.json
+	@zip -j release/automate-${OS}.zip ../target/release/nitro_plugin_automate${EXTENSION} plugins/automate/plugin.json
+	@zip -j release/backup-${OS}.zip ../target/release/nitro_plugin_backup${EXTENSION} plugins/backup/plugin.json
+	@zip -j release/config_split-${OS}.zip ../target/release/nitro_plugin_config_split${EXTENSION} plugins/config_split/plugin.json
+	@zip -j release/custom_files-${OS}.zip ../target/release/nitro_plugin_custom_files${EXTENSION} plugins/custom_files/plugin.json
+	@zip -j release/docs-${OS}.zip ../target/release/nitro_plugin_docs${EXTENSION} plugins/docs/plugin.json
+	@zip -j release/fabric_quilt-${OS}.zip ../target/release/nitro_plugin_fabric_quilt${EXTENSION} plugins/fabric_quilt/plugin.json
+	@zip -j release/gen_pkg-${OS}.zip ../target/release/nitro_plugin_gen_pkg${EXTENSION} plugins/gen_pkg/plugin.json
+	@zip -j release/nitro_transfer-${OS}.zip ../target/release/nitro_plugin_nitro_transfer${EXTENSION} plugins/nitro_transfer/plugin.json
+	@zip -j release/modrinth-${OS}.zip ../target/release/nitro_plugin_modrinth${EXTENSION} plugins/modrinth/plugin.json
+	@zip -j release/modrinth_api-${OS}.zip ../target/release/nitro_plugin_modrinth_api${EXTENSION} plugins/modrinth_api/plugin.json plugins/modrinth_api/page.html
+	@zip -j release/options-${OS}.zip ../target/release/nitro_plugin_options${EXTENSION} plugins/options/plugin.json
+	@zip -j release/packhost-${OS}.zip ../target/release/nitro_plugin_packhost${EXTENSION} plugins/packhost/plugin.json
+	@zip -j release/paper-${OS}.zip ../target/release/nitro_plugin_paper${EXTENSION} plugins/paper/plugin.json
+	@zip -j release/server_restart-${OS}.zip ../target/release/nitro_plugin_server_restart${EXTENSION} plugins/server_restart/plugin.json
+	@zip -j release/smithed-${OS}.zip ../target/release/nitro_plugin_smithed${EXTENSION} plugins/smithed/plugin.json plugins/smithed/page.html
+	@zip -j release/smithed_api-${OS}.zip ../target/release/nitro_plugin_smithed_api${EXTENSION} plugins/smithed_api/plugin.json
+	@zip -j release/sponge-${OS}.zip ../target/release/nitro_plugin_sponge${EXTENSION} plugins/sponge/plugin.json
+	@zip -j release/stats-${OS}.zip ../target/release/nitro_plugin_stats${EXTENSION} plugins/stats/plugin.json
+	@zip -j release/webtools-${OS}.zip ../target/release/nitro_plugin_webtools${EXTENSION} plugins/webtools/plugin.json
+	@zip -j release/xmcl_transfer-${OS}.zip ../target/release/nitro_plugin_xmcl_transfer${EXTENSION} plugins/xmcl_transfer/plugin.json
 
 build.weld:
-	@shiv -o plugins/weld/weld.pyz -e mcvm_weld.main --site-packages plugins/weld smithed
+	@shiv -o plugins/weld/weld.pyz -e nitro_weld.main --site-packages plugins/weld smithed
 
 install.archive:
-	@cargo install --path . --bin mcvm_plugin_archive --offline
-	@cat plugins/archive/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/mcvm/plugins/archive.json
+	@cargo install --path . --bin nitro_plugin_archive --offline
+	@cat plugins/archive/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/archive.json
 
 install.args:
-	@cargo install --path . --bin mcvm_plugin_args --offline
-	@cat plugins/args/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/mcvm/plugins/args.json
+	@cargo install --path . --bin nitro_plugin_args --offline
+	@cat plugins/args/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/args.json
 	
 install.automate:
-	@cargo install --path . --bin mcvm_plugin_automate --offline
-	@cat plugins/automate/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/mcvm/plugins/automate.json
+	@cargo install --path . --bin nitro_plugin_automate --offline
+	@cat plugins/automate/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/automate.json
 
 install.backup:
-	@cargo install --path . --bin mcvm_plugin_backup --offline
-	@cat plugins/backup/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/mcvm/plugins/backup.json
+	@cargo install --path . --bin nitro_plugin_backup --offline
+	@cat plugins/backup/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/backup.json
 
 install.config_split:
-	@cargo install --path . --bin mcvm_plugin_config_split --offline
-	@cat plugins/config_split/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/mcvm/plugins/config_split.json
+	@cargo install --path . --bin nitro_plugin_config_split --offline
+	@cat plugins/config_split/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/config_split.json
 
 install.custom_files:
-	@cargo install --path . --bin mcvm_plugin_custom_files --offline
-	@cat plugins/custom_files/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/mcvm/plugins/custom_files.json
+	@cargo install --path . --bin nitro_plugin_custom_files --offline
+	@cat plugins/custom_files/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/custom_files.json
 
 install.docs:
-	@cargo install --path . --bin mcvm_plugin_docs --offline
-	@cat plugins/docs/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/mcvm/plugins/docs.json
+	@cargo install --path . --bin nitro_plugin_docs --offline
+	@cat plugins/docs/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/docs.json
 	
 install.extra_versions:
-	@cp plugins/extra_versions/plugin.json ~/.local/share/mcvm/plugins/extra_versions.json
+	@cp plugins/extra_versions/plugin.json ~/.local/share/nitro/plugins/extra_versions.json
 
 install.fabric_quilt:
-	@cargo install --path . --bin mcvm_plugin_fabric_quilt --offline
-	@cat plugins/fabric_quilt/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/mcvm/plugins/fabric_quilt.json
+	@cargo install --path . --bin nitro_plugin_fabric_quilt --offline
+	@cat plugins/fabric_quilt/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/fabric_quilt.json
 
 install.gen_pkg:
-	@cargo install --path . --bin mcvm_plugin_gen_pkg --offline
-	@cat plugins/gen_pkg/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/mcvm/plugins/gen_pkg.json
+	@cargo install --path . --bin nitro_plugin_gen_pkg --offline
+	@cat plugins/gen_pkg/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/gen_pkg.json
 
 install.lang:
-	@cp plugins/lang/plugin.json ~/.local/share/mcvm/plugins/lang.json
+	@cp plugins/lang/plugin.json ~/.local/share/nitro/plugins/lang.json
 
-install.mcvm_transfer:
-	@cargo install --path . --bin mcvm_plugin_mcvm_transfer --offline
-	@cat plugins/mcvm_transfer/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/mcvm/plugins/mcvm_transfer.json
+install.nitro_transfer:
+	@cargo install --path . --bin nitro_plugin_nitro_transfer --offline
+	@cat plugins/nitro_transfer/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/nitro_transfer.json
 
 install.modrinth:
-	@cargo install --path . --bin mcvm_plugin_modrinth --offline
-	@cp -r plugins/modrinth ~/.local/share/mcvm/plugins
-	@cat plugins/modrinth/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/mcvm/plugins/modrinth/plugin.json
+	@cargo install --path . --bin nitro_plugin_modrinth --offline
+	@cp -r plugins/modrinth ~/.local/share/nitro/plugins
+	@cat plugins/modrinth/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/modrinth/plugin.json
 
 install.modrinth_api:
-	@cargo install --path . --bin mcvm_plugin_modrinth_api --offline
-	@cat plugins/modrinth_api/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/mcvm/plugins/modrinth_api.json
+	@cargo install --path . --bin nitro_plugin_modrinth_api --offline
+	@cat plugins/modrinth_api/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/modrinth_api.json
 
 install.options:
-	@cargo install --path . --bin mcvm_plugin_options --offline
-	@cat plugins/options/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/mcvm/plugins/options.json
+	@cargo install --path . --bin nitro_plugin_options --offline
+	@cat plugins/options/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/options.json
 
 install.packhost:
-	@cargo install --path . --bin mcvm_plugin_packhost --offline
-	@cat plugins/packhost/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/mcvm/plugins/packhost.json
+	@cargo install --path . --bin nitro_plugin_packhost --offline
+	@cat plugins/packhost/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/packhost.json
 
 install.paper:
-	@cargo install --path . --bin mcvm_plugin_paper --offline
-	@cat plugins/paper/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/mcvm/plugins/paper.json
+	@cargo install --path . --bin nitro_plugin_paper --offline
+	@cat plugins/paper/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/paper.json
 
 install.server_restart:
-	@cargo install --path . --bin mcvm_plugin_server_restart --offline
-	@cat plugins/server_restart/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/mcvm/plugins/server_restart.json
+	@cargo install --path . --bin nitro_plugin_server_restart --offline
+	@cat plugins/server_restart/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/server_restart.json
 
 install.smithed:
-	@cargo install --path . --bin mcvm_plugin_smithed --offline
-	@cp -r plugins/smithed ~/.local/share/mcvm/plugins
-	@cat plugins/smithed/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/mcvm/plugins/smithed/plugin.json
+	@cargo install --path . --bin nitro_plugin_smithed --offline
+	@cp -r plugins/smithed ~/.local/share/nitro/plugins
+	@cat plugins/smithed/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/smithed/plugin.json
 
 install.smithed_api:
-	@cargo install --path . --bin mcvm_plugin_smithed_api --offline
-	@cat plugins/smithed_api/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/mcvm/plugins/smithed_api.json
+	@cargo install --path . --bin nitro_plugin_smithed_api --offline
+	@cat plugins/smithed_api/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/smithed_api.json
 
 install.sponge:
-	@cargo install --path . --bin mcvm_plugin_sponge --offline
-	@cat plugins/sponge/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/mcvm/plugins/sponge.json
+	@cargo install --path . --bin nitro_plugin_sponge --offline
+	@cat plugins/sponge/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/sponge.json
 
 install.stats:
-	@cargo install --path . --bin mcvm_plugin_stats --offline
-	@cat plugins/stats/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/mcvm/plugins/stats.json
+	@cargo install --path . --bin nitro_plugin_stats --offline
+	@cat plugins/stats/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/stats.json
 
 install.webtools:
-	@cargo install --path . --bin mcvm_plugin_webtools --offline
-	@cp -r plugins/webtools ~/.local/share/mcvm/plugins
-	@cat plugins/webtools/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/mcvm/plugins/webtools/plugin.json
+	@cargo install --path . --bin nitro_plugin_webtools --offline
+	@cp -r plugins/webtools ~/.local/share/nitro/plugins
+	@cat plugins/webtools/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/webtools/plugin.json
 
 install.weld:
-	@mkdir -p ~/.local/share/mcvm/plugins/weld
-	@cp plugins/weld/mcvm_weld.py ~/.local/share/mcvm/plugins/weld
-	@cp plugins/weld/local_plugin.json ~/.local/share/mcvm/plugins/weld/plugin.json
+	@mkdir -p ~/.local/share/nitro/plugins/weld
+	@cp plugins/weld/nitro_weld.py ~/.local/share/nitro/plugins/weld
+	@cp plugins/weld/local_plugin.json ~/.local/share/nitro/plugins/weld/plugin.json
 
 install.xmcl_transfer:
-	@cargo install --path . --bin mcvm_plugin_xmcl_transfer --offline
-	@cat plugins/xmcl_transfer/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/mcvm/plugins/xmcl_transfer.json
+	@cargo install --path . --bin nitro_plugin_xmcl_transfer --offline
+	@cat plugins/xmcl_transfer/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/xmcl_transfer.json

@@ -1,6 +1,6 @@
 #![warn(missing_docs)]
 
-//! This library is used by MCVM to install and launch Minecraft. It aims to be the most powerful, fast,
+//! This library is used by Nitrolaunch to install and launch Minecraft. It aims to be the most powerful, fast,
 //! and correct implementation available, without being bloated with extra features. Implementations
 //! for installing certain modifications, like modloaders and alternative server runtimes, will be
 //! provided in extension plugins
@@ -10,7 +10,7 @@
 
 use std::sync::Arc;
 
-pub use mcvm_auth as auth_crate;
+pub use nitro_auth as auth_crate;
 
 /// Configuration for library functionality
 pub mod config;
@@ -33,8 +33,8 @@ use anyhow::Context;
 use io::java::install::{JavaInstallParameters, JavaInstallation, JavaInstallationKind};
 use io::java::JavaMajorVersion;
 use io::{persistent::PersistentData, update::UpdateManager};
-use mcvm_shared::output::{self, MCVMOutput};
-use mcvm_shared::versions::VersionInfo;
+use nitro_shared::output::{self, NitroOutput};
+use nitro_shared::versions::VersionInfo;
 use net::game_files::version_manifest::{make_version_list, VersionEntry, VersionManifestAndList};
 use user::UserManager;
 use util::versions::{MinecraftVersion, VersionName};
@@ -48,8 +48,8 @@ pub use instance::{ClientWindowConfig, Instance, InstanceConfiguration, Instance
 pub use io::files::paths::Paths;
 pub use launch::{InstanceHandle, QuickPlayType, WrapperCommand};
 
-/// Wrapper around all usage of `mcvm_core`
-pub struct MCVMCore {
+/// Wrapper around all usage of `nitro_core`
+pub struct NitroCore {
 	config: Configuration,
 	paths: Paths,
 	req_client: reqwest::Client,
@@ -59,7 +59,7 @@ pub struct MCVMCore {
 	users: UserManager,
 }
 
-impl MCVMCore {
+impl NitroCore {
 	/// Construct a new core with default settings
 	pub fn new() -> anyhow::Result<Self> {
 		Self::with_config(Configuration::new())
@@ -129,7 +129,7 @@ impl MCVMCore {
 	pub async fn get_version_manifest(
 		&mut self,
 		requested_version: Option<&MinecraftVersion>,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<&Arc<VersionManifestAndList>> {
 		let params = LoadVersionManifestParameters {
 			requested_version,
@@ -144,7 +144,7 @@ impl MCVMCore {
 	pub async fn get_version(
 		&mut self,
 		version: &MinecraftVersion,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<InstalledVersion> {
 		let version_manifest = self
 			.get_version_manifest(Some(version), o)
@@ -202,7 +202,7 @@ impl MCVMCore {
 		&mut self,
 		major_version: JavaMajorVersion,
 		kind: JavaInstallationKind,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<JavaInstallation> {
 		let java_params = JavaInstallParameters {
 			paths: &self.paths,

@@ -11,7 +11,7 @@ pub struct Paths {
 	/// Project-specific directories
 	pub project: ProjectDirs,
 	/// Paths object from core
-	pub core: mcvm_core::Paths,
+	pub core: nitro_core::Paths,
 	/// Holds program data
 	pub data: PathBuf,
 	/// Holds internal data
@@ -72,7 +72,7 @@ impl Paths {
 	pub fn new_no_create() -> anyhow::Result<Self> {
 		let base = BaseDirs::new().ok_or(anyhow!("Base directories failed"))?;
 		let project =
-			ProjectDirs::from("", "mcvm", "mcvm").ok_or(anyhow!("Base directories failed"))?;
+			ProjectDirs::from("", "nitro", "nitro").ok_or(anyhow!("Base directories failed"))?;
 
 		let data = project.data_dir().to_owned();
 		let internal = data.join("internal");
@@ -89,7 +89,7 @@ impl Paths {
 		let proxy = data.join("proxy");
 		let plugins = data.join("plugins");
 
-		let core_paths = mcvm_core::Paths::new().context("Failed to create core paths")?;
+		let core_paths = nitro_core::Paths::new().context("Failed to create core paths")?;
 
 		Ok(Paths {
 			base,

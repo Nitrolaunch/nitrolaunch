@@ -10,12 +10,12 @@ use crate::{
 	},
 	plugin::PluginManager,
 };
-use mcvm_config::preferences::{PrefDeser, RepoDeser};
-use mcvm_core::net::download::validate_url;
+use nitro_config::preferences::{PrefDeser, RepoDeser};
+use nitro_core::net::download::validate_url;
 
 use anyhow::{bail, Context};
-use mcvm_plugin::hooks::AddCustomPackageRepositories;
-use mcvm_shared::{lang::Language, output::MCVMOutput};
+use nitro_plugin::hooks::AddCustomPackageRepositories;
+use nitro_shared::{lang::Language, output::NitroOutput};
 
 /// Configured user preferences
 #[derive(Debug)]
@@ -31,7 +31,7 @@ impl ConfigPreferences {
 		prefs: &PrefDeser,
 		plugins: &PluginManager,
 		paths: &Paths,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<(Self, Vec<PackageRepository>)> {
 		let mut repositories = Vec::new();
 

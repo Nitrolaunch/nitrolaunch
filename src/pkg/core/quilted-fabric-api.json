@@ -2,7 +2,7 @@
 	"meta": {
 		"name": "Quilted Fabric API",
 		"description": "Ensures support for the Quilted Fabric API",
-		"package_maintainers": [ "mcvm" ]
+		"package_maintainers": [ "Nitrolaunch" ]
 	},
 	"properties": {
 		"supported_loaders": [ "quilt" ]

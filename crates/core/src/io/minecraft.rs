@@ -1,7 +1,7 @@
 use std::{fs::File, path::PathBuf};
 
 use anyhow::{bail, Context};
-use mcvm_shared::{versions::VersionInfo, Side};
+use nitro_shared::{versions::VersionInfo, Side};
 use serde::Deserialize;
 use zip::ZipArchive;
 
@@ -12,7 +12,7 @@ use super::files::paths::Paths;
 pub mod game_jar {
 	use std::io::BufReader;
 
-	use mcvm_shared::versions::VersionPattern;
+	use nitro_shared::versions::VersionPattern;
 
 	use super::*;
 

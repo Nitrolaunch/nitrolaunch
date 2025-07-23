@@ -1,6 +1,6 @@
 #![warn(missing_docs)]
 
-//! This library is used by MCVM to provide structure for specifying
+//! This library is used by Nitrolaunch to provide structure for specifying
 //! version-agnostic game options for both Minecraft clients and Minecraft
 //! servers. It also generates the options files in a way that is non-destructive
 //! to existing settings

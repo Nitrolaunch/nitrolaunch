@@ -7,7 +7,7 @@
 		"on_instance_setup": {
 			"executable": "python3",
 			"args": [
-				"${PLUGIN_DIR}/mcvm_weld.py"
+				"${PLUGIN_DIR}/nitro_weld.py"
 			],
 			"priority": "last"
 		}

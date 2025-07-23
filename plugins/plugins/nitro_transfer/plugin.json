@@ -1,12 +1,12 @@
 {
-	"name": "MCVM Transfer",
-	"description": "Instance transfer support that supports everything in MCVM instances",
+	"name": "Nitrolaunch Transfer",
+	"description": "Instance transfer support that supports everything in Nitrolaunch instances",
 	"protocol_version": 3,
 	"hooks": {
 		"add_instance_transfer_formats": {
 			"constant": [
 				{
-					"id": "mcvm",
+					"id": "nitrolaunch",
 					"import": {
 						"launch_settings": "plugin_unsupported"
 					},
@@ -17,10 +17,10 @@
 			]
 		},
 		"import_instance": {
-			"executable": "${PLUGIN_DIR}/mcvm_plugin_mcvm_transfer${EXE_EXTENSION}"
+			"executable": "${PLUGIN_DIR}/nitro_plugin_nitro_transfer${EXE_EXTENSION}"
 		},
 		"export_instance": {
-			"executable": "${PLUGIN_DIR}/mcvm_plugin_mcvm_transfer${EXE_EXTENSION}"
+			"executable": "${PLUGIN_DIR}/nitro_plugin_nitro_transfer${EXE_EXTENSION}"
 		}
 	}
 }

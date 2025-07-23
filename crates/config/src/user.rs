@@ -4,7 +4,7 @@ use std::fmt::Display;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use mcvm_core::user::{User, UserKind};
+use nitro_core::user::{User, UserKind};
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(untagged)]

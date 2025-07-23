@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
 use anyhow::bail;
-use mcvm_shared::id::ProfileID;
-use mcvm_shared::Side;
+use nitro_shared::id::ProfileID;
+use nitro_shared::Side;
 #[cfg(feature = "schema")]
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -292,7 +292,7 @@ pub fn consolidate_profile_configs(
 
 		i += 1;
 		if i > max_iterations {
-			panic!("Max iterations exceeded while resolving profiles. This is a bug in MCVM.");
+			panic!("Max iterations exceeded while resolving profiles. This is a bug in Nitrolaunch.");
 		}
 	}
 

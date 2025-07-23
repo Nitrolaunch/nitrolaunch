@@ -1,5 +1,5 @@
 use crate::net::download;
-use mcvm_shared::util::{ARCH_STRING, OS_STRING, PREFERRED_ARCHIVE};
+use nitro_shared::util::{ARCH_STRING, OS_STRING, PREFERRED_ARCHIVE};
 
 use anyhow::{anyhow, Context};
 use reqwest::Client;
@@ -80,7 +80,7 @@ pub mod adoptium {
 pub mod zulu {
 	use super::*;
 
-	use mcvm_shared::util::preferred_archive_extension;
+	use nitro_shared::util::preferred_archive_extension;
 	use serde::Deserialize;
 
 	/// Gets the newest Zulu package for a major Java version
@@ -132,7 +132,7 @@ pub mod zulu {
 /// Downloading GraalVM
 pub mod graalvm {
 	use bytes::Bytes;
-	use mcvm_shared::util::preferred_archive_extension;
+	use nitro_shared::util::preferred_archive_extension;
 
 	use super::*;
 

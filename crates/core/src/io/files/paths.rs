@@ -65,7 +65,7 @@ impl Paths {
 	/// Create the paths without creating any directories
 	pub fn new_no_create() -> anyhow::Result<Self> {
 		let base = BaseDirs::new().ok_or(anyhow!("Failed to create base directories"))?;
-		let project = ProjectDirs::from("", "mcvm", "mcvm")
+		let project = ProjectDirs::from("", "nitro", "nitro")
 			.ok_or(anyhow!("Failed to create project directories"))?;
 
 		let data = project.data_dir().to_owned();

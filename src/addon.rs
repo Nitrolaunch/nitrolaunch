@@ -1,12 +1,12 @@
 use anyhow::{bail, Context};
-use mcvm_shared::addon::{Addon, AddonKind};
-use mcvm_shared::pkg::PackageAddonOptionalHashes;
+use nitro_shared::addon::{Addon, AddonKind};
+use nitro_shared::pkg::PackageAddonOptionalHashes;
 use reqwest::Client;
 
 use crate::io::paths::Paths;
 use crate::util::hash::{get_best_hash, hash_file_with_best_hash};
-use mcvm_core::io::files::{create_leading_dirs, update_hardlink};
-use mcvm_core::net::download;
+use nitro_core::io::files::{create_leading_dirs, update_hardlink};
+use nitro_core::net::download;
 
 use std::future::Future;
 use std::path::{Path, PathBuf};
@@ -73,7 +73,7 @@ impl AddonExt for Addon {
 
 /// Gets the formulaic filename for an addon in the instance, meant to reduce name clashes
 pub fn get_addon_instance_filename(package_id: &str, id: &str, kind: &AddonKind) -> String {
-	format!("mcvm_{package_id}_{id}{}", kind.get_extension())
+	format!("nitro_{package_id}_{id}{}", kind.get_extension())
 }
 
 /// Checks if this path is in the stored addons directory
@@ -186,7 +186,7 @@ impl AddonRequest {
 
 #[cfg(test)]
 mod tests {
-	use mcvm_shared::pkg::{PackageAddonOptionalHashes, PackageID};
+	use nitro_shared::pkg::{PackageAddonOptionalHashes, PackageID};
 
 	use super::*;
 

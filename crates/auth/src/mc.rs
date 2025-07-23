@@ -2,8 +2,8 @@ use super::mc_msa::{
 	MinecraftAccessToken, MinecraftAuthenticationResponse, MinecraftAuthorizationFlow,
 };
 use anyhow::{anyhow, Context};
-use mcvm_shared::output::{MCVMOutput, MessageContents, MessageLevel};
-use mcvm_shared::translate;
+use nitro_shared::output::{NitroOutput, MessageContents, MessageLevel};
+use nitro_shared::translate;
 pub use oauth2::basic::{BasicClient, BasicTokenType};
 pub use oauth2::reqwest::async_http_client;
 pub use oauth2::{
@@ -25,7 +25,7 @@ const MSA_TOKEN_URL: &str = "https://login.microsoftonline.com/consumers/oauth2/
 pub async fn authenticate_microsoft_user(
 	client_id: ClientId,
 	client: &reqwest::Client,
-	o: &mut impl MCVMOutput,
+	o: &mut impl NitroOutput,
 ) -> anyhow::Result<MicrosoftAuthResult> {
 	let oauth_client = create_client(client_id).context("Failed to create OAuth client")?;
 	let response = generate_login_page(&oauth_client)
@@ -47,7 +47,7 @@ pub async fn authenticate_microsoft_user(
 pub async fn authenticate_microsoft_user_from_token(
 	token: MicrosoftToken,
 	client: &reqwest::Client,
-	o: &mut impl MCVMOutput,
+	o: &mut impl NitroOutput,
 ) -> anyhow::Result<MicrosoftAuthResult> {
 	let refresh_token = token.refresh_token().cloned();
 

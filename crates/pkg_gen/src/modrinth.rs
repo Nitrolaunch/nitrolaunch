@@ -1,23 +1,23 @@
 use std::collections::{HashMap, HashSet};
 
 use anyhow::Context;
-use mcvm_pkg::declarative::{
+use nitro_pkg::declarative::{
 	DeclarativeAddon, DeclarativeAddonVersion, DeclarativeConditionSet, DeclarativePackage,
 	DeclarativePackageRelations,
 };
-use mcvm_pkg::metadata::PackageMetadata;
-use mcvm_pkg::properties::PackageProperties;
-use mcvm_pkg::RecommendedPackage;
-use mcvm_shared::loaders::{Loader, LoaderMatch};
-use mcvm_shared::pkg::{PackageCategory, PackageKind, PackageStability};
-use mcvm_shared::util::DeserListOrSingle;
-use mcvm_shared::versions::VersionPattern;
+use nitro_pkg::metadata::PackageMetadata;
+use nitro_pkg::properties::PackageProperties;
+use nitro_pkg::RecommendedPackage;
+use nitro_shared::loaders::{Loader, LoaderMatch};
+use nitro_shared::pkg::{PackageCategory, PackageKind, PackageStability};
+use nitro_shared::util::DeserListOrSingle;
+use nitro_shared::versions::VersionPattern;
 
-use mcvm_net::modrinth::{
+use nitro_net::modrinth::{
 	self, DependencyType, FullGalleryEntry, GalleryEntry, KnownLoader, License, Member,
 	ModrinthLoader, Project, ProjectType, ReleaseChannel, SearchedProject, SideSupport, Version,
 };
-use mcvm_shared::Side;
+use nitro_shared::Side;
 
 use crate::relation_substitution::{substitute_multiple, RelationSubFunction};
 
@@ -30,7 +30,7 @@ pub async fn gen_from_id(
 	make_forgelike: bool,
 	repository: Option<&str>,
 ) -> anyhow::Result<DeclarativePackage> {
-	let client = mcvm_core::net::download::Client::new();
+	let client = nitro_core::net::download::Client::new();
 	let project = modrinth::get_project(id, &client)
 		.await
 		.expect("Failed to get Modrinth project");

@@ -9,9 +9,9 @@ pub mod version_manifest;
 
 use crate::io::files::paths::Paths;
 use crate::io::update::UpdateManager;
-use mcvm_shared::translate;
-use mcvm_shared::util::cap_first_letter;
-use mcvm_shared::Side;
+use nitro_shared::translate;
+use nitro_shared::util::cap_first_letter;
+use nitro_shared::Side;
 
 use reqwest::Client;
 
@@ -19,7 +19,7 @@ use super::download;
 
 /// Downloading the game JAR file
 pub mod game_jar {
-	use mcvm_shared::output::{MCVMOutput, MessageContents, MessageLevel, OutputProcess};
+	use nitro_shared::output::{NitroOutput, MessageContents, MessageLevel, OutputProcess};
 
 	use self::download::ProgressiveDownload;
 
@@ -33,7 +33,7 @@ pub mod game_jar {
 		paths: &Paths,
 		manager: &UpdateManager,
 		client: &Client,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<()> {
 		let side_str = side.to_string();
 		let path = crate::io::minecraft::game_jar::get_path(side, version, None, paths);

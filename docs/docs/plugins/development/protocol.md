@@ -1,17 +1,17 @@
 # Plugin Hook Protocol
-This page describes all of the mechanisms available to a plugin to communicate with MCVM. You can use it to help you write simple scripts or make your own plugin framework libraries for different languages.
+This page describes all of the mechanisms available to a plugin to communicate with Nitrolaunch. You can use it to help you write simple scripts or make your own plugin framework libraries for different languages.
 
 ## Environment Variables
-MCVM sets multiple environment variables on the running plugin executable
+Nitrolaunch sets multiple environment variables on the running plugin executable
 
-- `MCVM_PLUGIN`: Always set whenever running as a plugin. Can be used to make sure that the executable is being run by MCVM and not a user by accident.
-- `MCVM_CUSTOM_CONFIG`: Custom configuration for this plugin in the `plugins.json` file. In a JSON format.
-- `MCVM_DATA_DIR`: Path to MCVM's data directory
-- `MCVM_CONFIG_DIR`: Path to MCVM's config directory
-- `MCVM_PLUGIN_STATE`: The current value of this plugin's persistent state, sent as JSON
-- `MCVM_VERSION`: The version of MCVM that is running the plugin
-- `HOOK_VERSION`: The version of the hook that is running. Can be used to prevent sending back invalid data.
-- `PLUGIN_LIST`: The list of all enabled plugins, separated by commas. Will include the plugin that is running as well.
+- `NITRO_PLUGIN`: Always set whenever running as a plugin. Can be used to make sure that the executable is being run by Nitrolaunch and not a user by accident.
+- `NITRO_CUSTOM_CONFIG`: Custom configuration for this plugin in the `plugins.json` file. In a JSON format.
+- `NITRO_DATA_DIR`: Path to Nitrolaunch's data directory
+- `NITRO_CONFIG_DIR`: Path to Nitrolaunch's config directory
+- `NITRO_PLUGIN_STATE`: The current value of this plugin's persistent state, sent as JSON
+- `NITRO_VERSION`: The version of Nitrolaunch that is running the plugin
+- `NITRO_HOOK_VERSION`: The version of the hook that is running. Can be used to prevent sending back invalid data.
+- `NITRO_PLUGIN_LIST`: The list of all enabled plugins, separated by commas. Will include the plugin that is running as well.
 
 ## Arguments
 Arguments to the executable will always be passed in this order

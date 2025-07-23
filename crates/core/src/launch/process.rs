@@ -6,9 +6,9 @@ use std::process::{Child, Command};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use anyhow::Context;
-use mcvm_auth::mc::AccessToken;
-use mcvm_shared::output::{MCVMOutput, MessageContents, MessageLevel};
-use mcvm_shared::translate;
+use nitro_auth::mc::AccessToken;
+use nitro_shared::output::{NitroOutput, MessageContents, MessageLevel};
+use nitro_shared::translate;
 
 use crate::instance::InstanceKind;
 use crate::util::versions::VersionName;
@@ -19,7 +19,7 @@ use super::LaunchConfiguration;
 /// Launch the game process
 pub(crate) fn launch_game_process(
 	mut params: LaunchGameProcessParameters<'_>,
-	o: &mut impl MCVMOutput,
+	o: &mut impl NitroOutput,
 ) -> anyhow::Result<InstanceHandle> {
 	// Modify the parameters based on game-specific properties
 
@@ -121,7 +121,7 @@ fn output_launch_command(
 	command: &Command,
 	access_token: Option<&AccessToken>,
 	censor_secrets: bool,
-	o: &mut impl MCVMOutput,
+	o: &mut impl NitroOutput,
 ) -> anyhow::Result<()> {
 	o.end_process();
 	let access_token = if censor_secrets { access_token } else { None };

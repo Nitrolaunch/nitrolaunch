@@ -9,13 +9,13 @@ use anyhow::{bail, Context};
 use clap::{Parser, Subcommand};
 use color_print::{cformat, cprintln};
 
-use mcvm::config::Config;
-use mcvm::config_crate::ConfigDeser;
-use mcvm::io::paths::Paths;
-use mcvm::plugin::PluginManager;
-use mcvm::plugin_crate::hooks::{self, AddTranslations};
-use mcvm::shared::later::Later;
-use mcvm::shared::output::{MCVMOutput, MessageContents, MessageLevel};
+use nitrolaunch::config::Config;
+use nitrolaunch::config_crate::ConfigDeser;
+use nitrolaunch::io::paths::Paths;
+use nitrolaunch::plugin::PluginManager;
+use nitrolaunch::plugin_crate::hooks::{self, AddTranslations};
+use nitrolaunch::shared::later::Later;
+use nitrolaunch::shared::output::{NitroOutput, MessageContents, MessageLevel};
 
 use self::config::ConfigSubcommand;
 use self::files::FilesSubcommand;
@@ -62,9 +62,9 @@ pub enum Command {
 		#[command(subcommand)]
 		command: ConfigSubcommand,
 	},
-	#[command(about = "Print the mcvm version")]
+	#[command(about = "Print the Nitrolaunch version")]
 	Version,
-	#[command(about = "Deal with files created by mcvm")]
+	#[command(about = "Deal with files created by Nitrolaunch")]
 	Files {
 		#[command(subcommand)]
 		command: FilesSubcommand,
@@ -217,12 +217,12 @@ impl<'a> CmdData<'a> {
 	}
 }
 
-/// Print the mcvm version
+/// Print the Nitrolaunch version
 fn print_version() {
 	let version = env!("CARGO_PKG_VERSION");
-	let mcvm_version = mcvm::VERSION;
+	let nitrolaunch_version = nitrolaunch::VERSION;
 	cprintln!("CLI version: <g>{}</g>", version);
-	cprintln!("MCVM version: <g>{}</g>", mcvm_version);
+	cprintln!("Nitrolaunch version: <g>{}</g>", nitrolaunch_version);
 }
 
 /// Call a plugin subcommand

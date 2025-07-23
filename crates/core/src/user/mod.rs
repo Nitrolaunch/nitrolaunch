@@ -6,8 +6,8 @@ pub mod uuid;
 use std::{collections::HashMap, ops::Deref, sync::Arc};
 
 use anyhow::{bail, Context};
-use mcvm_auth::mc::{AccessToken, ClientId, Keypair};
-use mcvm_shared::output::MCVMOutput;
+use nitro_auth::mc::{AccessToken, ClientId, Keypair};
+use nitro_shared::output::NitroOutput;
 use reqwest::Client;
 
 use crate::{net::minecraft::MinecraftUserProfile, Paths};
@@ -152,7 +152,7 @@ pub struct UserManager {
 /// State of authentication
 #[derive(Debug, Clone)]
 enum AuthState {
-	/// No user is picked / MCVM is offline
+	/// No user is picked / Nitrolaunch is offline
 	Offline,
 	/// A default user has been selected
 	UserChosen(UserID),
@@ -260,7 +260,7 @@ impl UserManager {
 		&mut self,
 		paths: &Paths,
 		client: &Client,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<()> {
 		if let AuthState::UserChosen(user_id) = &mut self.state {
 			let user = self
@@ -290,7 +290,7 @@ impl UserManager {
 		user: &str,
 		paths: &Paths,
 		client: &Client,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<()> {
 		let user = self.users.get_mut(user).context("User does not exist")?;
 

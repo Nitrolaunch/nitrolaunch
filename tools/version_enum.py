@@ -47,7 +47,7 @@ with open("vmanifest.json", "r") as file:
 		outfile.write("#include <string>\n")
 		outfile.write("\n")
 
-		outfile.write("namespace mcvm {\n")
+		outfile.write("namespace nitro {\n")
 		outfile.write(names_enum)
 		outfile.write("\n\n")
 		outfile.write(forward_map)

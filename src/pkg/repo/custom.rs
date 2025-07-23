@@ -1,8 +1,8 @@
 use std::{collections::HashSet, sync::Arc};
 
 use anyhow::Context;
-use mcvm_pkg::{repo::RepoMetadata, PackageSearchResults};
-use mcvm_plugin::{
+use nitro_pkg::{repo::RepoMetadata, PackageSearchResults};
+use nitro_plugin::{
 	hook_call::HookHandle,
 	hooks::{
 		PreloadPackages, PreloadPackagesArg, QueryCustomPackageRepository,
@@ -11,8 +11,8 @@ use mcvm_plugin::{
 		SyncCustomPackageRepositoryArg,
 	},
 };
-use mcvm_shared::{
-	output::MCVMOutput,
+use nitro_shared::{
+	output::NitroOutput,
 	pkg::{ArcPkgReq, PackageSearchParameters},
 };
 
@@ -46,7 +46,7 @@ impl CustomPackageRepository {
 		package: &str,
 		plugins: &PluginManager,
 		paths: &Paths,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<Option<RepoQueryResult>> {
 		let arg = QueryCustomPackageRepositoryArg {
 			repository: self.id.clone(),
@@ -76,7 +76,7 @@ impl CustomPackageRepository {
 		params: PackageSearchParameters,
 		plugins: &PluginManager,
 		paths: &Paths,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<PackageSearchResults> {
 		let arg = SearchCustomPackageRepositoryArg {
 			repository: self.id.clone(),
@@ -100,7 +100,7 @@ impl CustomPackageRepository {
 		packages: Vec<ArcPkgReq>,
 		plugins: &PluginManager,
 		paths: &Paths,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<()> {
 		let handle = self.get_preload_task(packages, plugins, paths, o).await?;
 		let Some(handle) = handle else {
@@ -116,7 +116,7 @@ impl CustomPackageRepository {
 		packages: Vec<ArcPkgReq>,
 		plugins: &PluginManager,
 		paths: &Paths,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<Option<HookHandle<PreloadPackages>>> {
 		// Deduplicate and remove packages not from this repo
 		let packages: HashSet<_> = packages
@@ -150,7 +150,7 @@ impl CustomPackageRepository {
 		&self,
 		plugins: &PluginManager,
 		paths: &Paths,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<()> {
 		let arg = SyncCustomPackageRepositoryArg {
 			repository: self.id.clone(),

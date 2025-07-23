@@ -1,13 +1,13 @@
 use std::collections::HashMap;
 
 use anyhow::Context;
-use mcvm_parse::conditions::{ArchCondition, OSCondition};
-use mcvm_shared::lang::Language;
-use mcvm_shared::loaders::LoaderMatch;
-use mcvm_shared::pkg::{PackageAddonOptionalHashes, PackageKind, PackageStability};
-use mcvm_shared::util::DeserListOrSingle;
-use mcvm_shared::versions::VersionPattern;
-use mcvm_shared::Side;
+use nitro_parse::conditions::{ArchCondition, OSCondition};
+use nitro_shared::lang::Language;
+use nitro_shared::loaders::LoaderMatch;
+use nitro_shared::pkg::{PackageAddonOptionalHashes, PackageKind, PackageStability};
+use nitro_shared::util::DeserListOrSingle;
+use nitro_shared::versions::VersionPattern;
+use nitro_shared::Side;
 #[cfg(feature = "schema")]
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};

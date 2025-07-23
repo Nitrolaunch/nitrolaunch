@@ -3,7 +3,7 @@ use std::io::{BufReader, Read};
 use std::path::Path;
 
 use anyhow::Context;
-use mcvm_shared::pkg::PackageAddonOptionalHashes;
+use nitro_shared::pkg::PackageAddonOptionalHashes;
 use sha2::{Digest, Sha256, Sha512};
 
 /// Length in bytes of a SHA-256 hash

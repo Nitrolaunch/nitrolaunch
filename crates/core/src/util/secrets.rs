@@ -1,4 +1,4 @@
-use mcvm_auth::mc::ClientId;
+use nitro_auth::mc::ClientId;
 
 /// Get the Microsoft client ID
 pub fn get_ms_client_id() -> ClientId {
@@ -6,7 +6,7 @@ pub fn get_ms_client_id() -> ClientId {
 }
 
 const fn get_raw_ms_client_id() -> &'static str {
-	if let Some(id) = option_env!("MCVM_MS_CLIENT_ID") {
+	if let Some(id) = option_env!("NITRO_MS_CLIENT_ID") {
 		id
 	} else {
 		// Please don't use my client ID :)

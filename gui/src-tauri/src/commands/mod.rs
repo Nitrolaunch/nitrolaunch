@@ -1,8 +1,8 @@
 use anyhow::Context;
-use mcvm::config::Config;
-use mcvm::io::paths::Paths;
-use mcvm::plugin::PluginManager;
-use mcvm::shared::output::MCVMOutput;
+use nitrolaunch::config::Config;
+use nitrolaunch::io::paths::Paths;
+use nitrolaunch::plugin::PluginManager;
+use nitrolaunch::shared::output::NitroOutput;
 use std::fmt::Debug;
 
 pub mod instance;
@@ -12,7 +12,7 @@ pub mod package;
 pub mod plugin;
 pub mod user;
 
-async fn load_config(paths: &Paths, o: &mut impl MCVMOutput) -> anyhow::Result<Config> {
+async fn load_config(paths: &Paths, o: &mut impl NitroOutput) -> anyhow::Result<Config> {
 	let plugins = PluginManager::load(paths, o)
 		.await
 		.context("Failed to load plugin manager")?;

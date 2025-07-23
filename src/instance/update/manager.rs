@@ -3,20 +3,20 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use anyhow::Context;
-use mcvm_core::auth_crate::mc::ClientId;
-use mcvm_core::config::BrandingProperties;
-use mcvm_core::net::game_files::version_manifest::VersionManifestAndList;
-use mcvm_core::net::minecraft::MinecraftUserProfile;
-use mcvm_core::user::{CustomAuthFunction, UserManager};
-use mcvm_core::util::versions::MinecraftVersion;
-use mcvm_core::version::InstalledVersion;
-use mcvm_core::MCVMCore;
-use mcvm_plugin::hooks::{AddVersions, HandleAuth, HandleAuthArg};
-use mcvm_shared::later::Later;
-use mcvm_shared::output::MCVMOutput;
-use mcvm_shared::output::NoOp;
-use mcvm_shared::versions::VersionInfo;
-use mcvm_shared::UpdateDepth;
+use nitro_core::auth_crate::mc::ClientId;
+use nitro_core::config::BrandingProperties;
+use nitro_core::net::game_files::version_manifest::VersionManifestAndList;
+use nitro_core::net::minecraft::MinecraftUserProfile;
+use nitro_core::user::{CustomAuthFunction, UserManager};
+use nitro_core::util::versions::MinecraftVersion;
+use nitro_core::version::InstalledVersion;
+use nitro_core::NitroCore;
+use nitro_plugin::hooks::{AddVersions, HandleAuth, HandleAuthArg};
+use nitro_shared::later::Later;
+use nitro_shared::output::NitroOutput;
+use nitro_shared::output::NoOp;
+use nitro_shared::versions::VersionInfo;
+use nitro_shared::UpdateDepth;
 use reqwest::Client;
 
 use crate::io::paths::Paths;
@@ -52,7 +52,7 @@ pub struct UpdateManager {
 	/// The MS client id, if used
 	ms_client_id: Option<ClientId>,
 	/// The core to be fulfilled later
-	pub core: Later<MCVMCore>,
+	pub core: Later<NitroCore>,
 	/// The version info to be fulfilled later
 	pub version_info: Later<VersionInfo>,
 	/// The version manifets to be fulfilled later
@@ -138,7 +138,7 @@ impl UpdateManager {
 		plugins: &PluginManager,
 		paths: &Paths,
 		client: &Client,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<()> {
 		// Setup the core
 		self.setup_core(client, users, plugins, paths, o)
@@ -169,24 +169,24 @@ impl UpdateManager {
 		users: &UserManager,
 		plugins: &PluginManager,
 		paths: &Paths,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<()> {
 		if self.core.is_full() {
 			return Ok(());
 		}
 
 		// Setup the core
-		let mut core_config = mcvm_core::ConfigBuilder::new()
+		let mut core_config = nitro_core::ConfigBuilder::new()
 			.update_depth(self.settings.depth)
 			.branding(BrandingProperties::new(
-				"mcvm".into(),
+				"Nitrolaunch".into(),
 				crate::VERSION.into(),
 			));
 		if let Some(client_id) = &self.ms_client_id {
 			core_config = core_config.ms_client_id(client_id.clone());
 		}
 		let core_config = core_config.build();
-		let mut core = MCVMCore::with_config(core_config).context("Failed to initialize core")?;
+		let mut core = NitroCore::with_config(core_config).context("Failed to initialize core")?;
 
 		// Set up user manager along with custom auth function that handles using plugins
 		core.get_users().steal_users(users);
@@ -222,7 +222,7 @@ impl UpdateManager {
 	/// Get the version from the core
 	pub async fn get_core_version(
 		&mut self,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<InstalledVersion> {
 		let version = self
 			.core

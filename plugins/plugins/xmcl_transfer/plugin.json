@@ -13,10 +13,10 @@
 			]
 		},
 		"import_instance": {
-			"executable": "${PLUGIN_DIR}/mcvm_plugin_xmcl_transfer${EXE_EXTENSION}"
+			"executable": "${PLUGIN_DIR}/nitro_plugin_xmcl_transfer${EXE_EXTENSION}"
 		},
 		"export_instance": {
-			"executable": "${PLUGIN_DIR}/mcvm_plugin_xmcl_transfer${EXE_EXTENSION}"
+			"executable": "${PLUGIN_DIR}/nitro_plugin_xmcl_transfer${EXE_EXTENSION}"
 		}
 	}
 }

@@ -1,12 +1,12 @@
 use std::{collections::HashMap, path::PathBuf};
 
 use anyhow::Context;
-use mcvm_core::net::download;
-use mcvm_shared::Side;
+use nitro_core::net::download;
+use nitro_shared::Side;
 use reqwest::Client;
 use serde::Deserialize;
 
-use mcvm_core::io::files::paths::Paths;
+use nitro_core::io::files::paths::Paths;
 
 /// The main class for a Sponge server
 pub const SPONGE_SERVER_MAIN_CLASS: &str =
@@ -111,5 +111,5 @@ pub struct Asset {
 
 /// Get the path to the stored Sponge JAR file
 pub fn get_local_jar_path(mode: Mode, version: &str, paths: &Paths) -> PathBuf {
-	mcvm_core::io::minecraft::game_jar::get_path(Side::Server, version, Some(mode.to_str()), paths)
+	nitro_core::io::minecraft::game_jar::get_path(Side::Server, version, Some(mode.to_str()), paths)
 }

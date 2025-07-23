@@ -1,8 +1,8 @@
 use std::collections::HashSet;
 use std::{collections::HashMap, path::PathBuf};
 
-use mcvm::core::io::{json_from_file, json_to_file};
-use mcvm::io::paths::Paths;
+use nitrolaunch::core::io::{json_from_file, json_to_file};
+use nitrolaunch::io::paths::Paths;
 use serde::{Deserialize, Serialize};
 
 use crate::commands::instance::InstanceOrProfile;

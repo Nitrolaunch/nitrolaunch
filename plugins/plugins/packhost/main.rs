@@ -4,7 +4,7 @@ use std::net::{TcpListener, TcpStream};
 use std::path::PathBuf;
 
 use anyhow::Context;
-use mcvm_plugin::api::CustomPlugin;
+use nitro_plugin::api::CustomPlugin;
 use serde::Deserialize;
 
 fn main() -> anyhow::Result<()> {

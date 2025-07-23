@@ -1,4 +1,4 @@
-use mcvm_shared::lang::Language;
+use nitro_shared::lang::Language;
 #[cfg(feature = "schema")]
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};

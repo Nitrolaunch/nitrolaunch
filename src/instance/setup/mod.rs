@@ -9,20 +9,20 @@ use std::ops::DerefMut;
 use std::path::PathBuf;
 
 use anyhow::{bail, Context};
-use mcvm_config::instance::QuickPlay;
-use mcvm_core::instance::WindowResolution;
-use mcvm_core::io::java::classpath::Classpath;
-use mcvm_core::io::json_to_file;
-use mcvm_core::launch::LaunchConfiguration;
-use mcvm_core::user::uuid::hyphenate_uuid;
-use mcvm_core::user::{User, UserManager};
-use mcvm_core::version::InstalledVersion;
-use mcvm_core::QuickPlayType;
-use mcvm_plugin::hooks::{OnInstanceSetup, OnInstanceSetupArg, RemoveLoader};
-use mcvm_shared::output::OutputProcess;
-use mcvm_shared::output::{MCVMOutput, MessageContents, MessageLevel};
-use mcvm_shared::translate;
-use mcvm_shared::Side;
+use nitro_config::instance::QuickPlay;
+use nitro_core::instance::WindowResolution;
+use nitro_core::io::java::classpath::Classpath;
+use nitro_core::io::json_to_file;
+use nitro_core::launch::LaunchConfiguration;
+use nitro_core::user::uuid::hyphenate_uuid;
+use nitro_core::user::{User, UserManager};
+use nitro_core::version::InstalledVersion;
+use nitro_core::QuickPlayType;
+use nitro_plugin::hooks::{OnInstanceSetup, OnInstanceSetupArg, RemoveLoader};
+use nitro_shared::output::OutputProcess;
+use nitro_shared::output::{NitroOutput, MessageContents, MessageLevel};
+use nitro_shared::translate;
+use nitro_shared::Side;
 
 use crate::io::lock::Lockfile;
 use crate::io::paths::Paths;
@@ -57,7 +57,7 @@ impl Instance {
 		paths: &Paths,
 		users: &UserManager,
 		lock: &mut Lockfile,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<UpdateMethodResult> {
 		// Start by setting up side-specific stuff
 		let result = match &self.kind {
@@ -235,18 +235,18 @@ impl Instance {
 		&mut self,
 		version: &'core mut InstalledVersion<'core, 'core>,
 		paths: &Paths,
-		o: &mut impl MCVMOutput,
-	) -> anyhow::Result<mcvm_core::Instance<'core>> {
+		o: &mut impl NitroOutput,
+	) -> anyhow::Result<nitro_core::Instance<'core>> {
 		self.ensure_dirs(paths)?;
 		let side = match &self.kind {
-			InstKind::Client { window, .. } => mcvm_core::InstanceKind::Client {
-				window: mcvm_core::ClientWindowConfig {
+			InstKind::Client { window, .. } => nitro_core::InstanceKind::Client {
+				window: nitro_core::ClientWindowConfig {
 					resolution: window
 						.resolution
 						.map(|x| WindowResolution::new(x.width, x.height)),
 				},
 			},
-			InstKind::Server { .. } => mcvm_core::InstanceKind::Server {
+			InstKind::Server { .. } => nitro_core::InstanceKind::Server {
 				create_eula: true,
 				show_gui: false,
 			},
@@ -262,7 +262,7 @@ impl Instance {
 			.launch
 			.wrapper
 			.as_ref()
-			.map(|x| mcvm_core::WrapperCommand {
+			.map(|x| nitro_core::WrapperCommand {
 				cmd: x.cmd.clone(),
 				args: x.args.clone(),
 			});
@@ -280,7 +280,7 @@ impl Instance {
 			quick_play,
 			use_log4j_config: self.config.launch.use_log4j_config,
 		};
-		let config = mcvm_core::InstanceConfiguration {
+		let config = nitro_core::InstanceConfiguration {
 			side,
 			path: self.dirs.get().game_dir.clone(),
 			launch: launch_config,
@@ -334,7 +334,7 @@ impl Instance {
 				let keys_dir = self.dirs.get().game_dir.join("profilekeys");
 				let hyphenated_uuid = hyphenate_uuid(uuid).context("Failed to hyphenate UUID")?;
 				let path = keys_dir.join(format!("{hyphenated_uuid}.json"));
-				mcvm_core::io::files::create_leading_dirs(&path)?;
+				nitro_core::io::files::create_leading_dirs(&path)?;
 
 				json_to_file(path, keypair).context("Failed to write keypair to file")?;
 			}

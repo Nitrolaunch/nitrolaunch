@@ -2,15 +2,15 @@ use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
 use anyhow::Context;
-use mcvm_core::io::java::args::MemoryNum;
-use mcvm_core::util::versions::MinecraftVersionDeser;
-use mcvm_pkg::overrides::PackageOverrides;
-use mcvm_shared::addon::AddonKind;
-use mcvm_shared::loaders::Loader;
-use mcvm_shared::pkg::PackageStability;
-use mcvm_shared::util::{merge_options, DefaultExt, DeserListOrSingle};
-use mcvm_shared::versions::{VersionInfo, VersionPattern};
-use mcvm_shared::Side;
+use nitro_core::io::java::args::MemoryNum;
+use nitro_core::util::versions::MinecraftVersionDeser;
+use nitro_pkg::overrides::PackageOverrides;
+use nitro_shared::addon::AddonKind;
+use nitro_shared::loaders::Loader;
+use nitro_shared::pkg::PackageStability;
+use nitro_shared::util::{merge_options, DefaultExt, DeserListOrSingle};
+use nitro_shared::versions::{VersionInfo, VersionPattern};
+use nitro_shared::Side;
 #[cfg(feature = "schema")]
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -99,7 +99,7 @@ impl CommonInstanceConfig {
 		self.datapack_folder = other.datapack_folder.or(self.datapack_folder.clone());
 		self.packages.extend(other.packages);
 		self.overrides.suppress.extend(other.overrides.suppress);
-		mcvm_core::util::json::merge_objects(&mut self.plugin_config, other.plugin_config);
+		nitro_core::util::json::merge_objects(&mut self.plugin_config, other.plugin_config);
 
 		self
 	}
@@ -354,7 +354,7 @@ pub fn is_valid_instance_id(id: &str) -> bool {
 	true
 }
 
-/// Check if a loader can be installed by MCVM
+/// Check if a loader can be installed by Nitrolaunch
 pub fn can_install_loader(loader: &Loader) -> bool {
 	matches!(loader, Loader::Vanilla)
 }

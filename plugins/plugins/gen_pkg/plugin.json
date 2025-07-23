@@ -4,7 +4,7 @@
 	"protocol_version": 3,
 	"hooks": {
 		"subcommand": {
-			"executable": "${PLUGIN_DIR}/mcvm_plugin_gen_pkg${EXE_EXTENSION}"
+			"executable": "${PLUGIN_DIR}/nitro_plugin_gen_pkg${EXE_EXTENSION}"
 		}
 	},
 	"subcommands": {

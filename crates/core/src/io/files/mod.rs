@@ -1,4 +1,4 @@
-/// Use of MCVM's configured system directories
+/// Use of Nitrolaunch's configured system directories
 pub mod paths;
 
 use std::fs::{self, File};

@@ -4,16 +4,16 @@ use std::{
 };
 
 use anyhow::{bail, Context};
-use mcvm_core::{
+use nitro_core::{
 	io::{files::create_leading_dirs, json_from_file, json_to_file},
 	Paths,
 };
-use mcvm_mods::paper::{self, BuildInfoResponse};
-use mcvm_net::download::Client;
-use mcvm_plugin::{api::CustomPlugin, hooks::OnInstanceSetupResult};
-use mcvm_shared::{
+use nitro_mods::paper::{self, BuildInfoResponse};
+use nitro_net::download::Client;
+use nitro_plugin::{api::CustomPlugin, hooks::OnInstanceSetupResult};
+use nitro_shared::{
 	loaders::Loader,
-	output::{MCVMOutput, MessageContents, MessageLevel, OutputProcess},
+	output::{NitroOutput, MessageContents, MessageLevel, OutputProcess},
 	versions::VersionPattern,
 	Side, UpdateDepth,
 };
@@ -43,7 +43,7 @@ fn main() -> anyhow::Result<()> {
 			MessageLevel::Important,
 		);
 
-		let client = mcvm_net::download::Client::new();
+		let client = nitro_net::download::Client::new();
 		let paths = Paths::new()?;
 
 		let runtime = tokio::runtime::Runtime::new()?;
@@ -211,7 +211,7 @@ fn get_build_info(
 	update_depth: UpdateDepth,
 	runtime: &Runtime,
 	client: &Client,
-	o: &mut impl MCVMOutput,
+	o: &mut impl NitroOutput,
 ) -> anyhow::Result<BuildInfoResponse> {
 	let build_info_path = get_stored_build_info_path(&paths, mode, version, build);
 	let build_info = if build_info_path.exists() && update_depth <= UpdateDepth::Full {

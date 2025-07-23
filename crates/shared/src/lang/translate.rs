@@ -55,9 +55,9 @@ define_translations! {
 	Launch, "When launching the game", "Launching!";
 	CoreRepoName, "Name of the core repo", "Core";
 	CoreRepoDescription, "Description of the core repo", "The built-in set of packages";
-	RepoVersionWarning, "Warning when a remote repo version is too high", "Minimum MCVM version for repository %repo is higher than current installation";
+	RepoVersionWarning, "Warning when a remote repo version is too high", "Minimum Nitrolaunch version for repository %repo is higher than current installation";
 	OverwriteAddonFilePrompt, "Prompt when an addon file would be overwriten", "The existing file '%file' has the same path as an addon. Overwrite it?";
-	CustomInstructionsWarning, "When a package uses unrecognized custom instructions", "Package uses custom instructions that MCVM does not recognize";
+	CustomInstructionsWarning, "When a package uses unrecognized custom instructions", "Package uses custom instructions that Nitrolaunch does not recognize";
 	Redownloading, "When something is being redownloaded", "Redownloading";
 	AssetIndexFailed, "When the asset index is unable to be obtained", "Failed to obtain asset index";
 	StartDownloadingAssets, "When starting to download assets", "Downloading %count assets";
@@ -71,7 +71,7 @@ define_translations! {
 	ExtractedNativeFile, "When a native library file extract is extracted", "Extracted native file %file";
 	NoDefaultUser, "When users are available but no default is set", "Users are available but no default user is set";
 	NoUsers, "When no users are available", "No users are available";
-	ModificationNotSupported, "When a loader can't be installed by MCVM", "%mod installation is currently unimplemented by mcvm. You might have to install a plugin to support it.";
+	ModificationNotSupported, "When a loader can't be installed by Nitrolaunch", "%mod installation is currently unimplemented by Nitrolaunch. You might have to install a plugin to support it.";
 	EmptyProfile, "When a profile has no instances", "Profile '%profile' does not have any instances";
 	StartDownloadingVersionManifest, "When starting to download the version manifest", "Downloading version manifest";
 	StartDownloadingGameJar, "When starting to download the game jar", "Downloading %side jar";
@@ -103,7 +103,7 @@ define_translations! {
 	FinishImporting, "When finishing importing an instance", "Import finished";
 	PluginNotFound, "When a plugin cannot be found", "Could not find files for plugin %plugin";
 	PluginDependencyMissing, "When a plugin dependency is missing", "Dependency %dependency is missing for plugin %plugin";
-	PluginForNewerVersion, "When a plugin is made for a newer version of MCVM", "Plugin %plugin is made for a newer version of MCVM";
+	PluginForNewerVersion, "When a plugin is made for a newer version of Nitrolaunch", "Plugin %plugin is made for a newer version of Nitrolaunch";
 	StartAuthenticating, "When starting authentication", "Authenticating";
 	AssetFailed, "When a single asset fails to download", "Asset failed to download:\n%error";
 	AssetsFailed, "When one or more assets fail to download", "%num assets failed to download. Minecraft may not load properly.";

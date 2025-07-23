@@ -1,8 +1,8 @@
 use anyhow::{bail, Context};
-use mcvm_core::Paths;
-use mcvm_mods::sponge;
-use mcvm_plugin::{api::CustomPlugin, hooks::OnInstanceSetupResult};
-use mcvm_shared::{loaders::Loader, Side};
+use nitro_core::Paths;
+use nitro_mods::sponge;
+use nitro_plugin::{api::CustomPlugin, hooks::OnInstanceSetupResult};
+use nitro_shared::{loaders::Loader, Side};
 
 fn main() -> anyhow::Result<()> {
 	let mut plugin = CustomPlugin::from_manifest_file("sponge", include_str!("plugin.json"))?;
@@ -18,7 +18,7 @@ fn main() -> anyhow::Result<()> {
 
 		let paths = Paths::new().context("Failed to create paths")?;
 
-		let client = mcvm_net::download::Client::new();
+		let client = nitro_net::download::Client::new();
 
 		let runtime = tokio::runtime::Runtime::new()?;
 

@@ -1,15 +1,15 @@
 use std::{collections::HashMap, path::Path};
 
 use anyhow::{bail, Context};
-use mcvm_config::instance::InstanceConfig;
-use mcvm_plugin::hooks::{
+use nitro_config::instance::InstanceConfig;
+use nitro_plugin::hooks::{
 	AddInstanceTransferFormats, ExportInstance, ExportInstanceArg, ImportInstance,
 	ImportInstanceArg, InstanceTransferFeatureSupport, InstanceTransferFormat,
 	InstanceTransferFormatDirection,
 };
-use mcvm_shared::lang::translate::TranslationKey;
-use mcvm_shared::output::{MCVMOutput, MessageContents, MessageLevel};
-use mcvm_shared::translate;
+use nitro_shared::lang::translate::TranslationKey;
+use nitro_shared::output::{NitroOutput, MessageContents, MessageLevel};
+use nitro_shared::translate;
 
 use crate::io::lock::Lockfile;
 use crate::{io::paths::Paths, plugin::PluginManager};
@@ -26,7 +26,7 @@ impl Instance {
 		plugins: &PluginManager,
 		lock: &Lockfile,
 		paths: &Paths,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<()> {
 		// Get and print info about the format
 		let format = formats
@@ -103,7 +103,7 @@ impl Instance {
 		formats: &Formats,
 		plugins: &PluginManager,
 		paths: &Paths,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<InstanceConfig> {
 		// Get and print info about the format
 		let format = formats
@@ -170,7 +170,7 @@ impl Instance {
 pub async fn load_formats(
 	plugins: &PluginManager,
 	paths: &Paths,
-	o: &mut impl MCVMOutput,
+	o: &mut impl NitroOutput,
 ) -> anyhow::Result<Formats> {
 	let results = plugins
 		.call_hook(AddInstanceTransferFormats, &(), paths, o)
@@ -216,7 +216,7 @@ pub struct Format {
 }
 
 /// Output warnings about unsupported features in the transfer
-fn output_support_warnings(info: &InstanceTransferFormatDirection, o: &mut impl MCVMOutput) {
+fn output_support_warnings(info: &InstanceTransferFormatDirection, o: &mut impl NitroOutput) {
 	for (support, name) in [
 		(
 			info.launch_settings,

@@ -6,10 +6,10 @@ use anyhow::Context;
 use clap::Parser;
 use color_print::cprintln;
 use itertools::Itertools;
-use mcvm_core::io::{json_from_file, json_to_file};
-use mcvm_plugin::api::{CustomPlugin, HookContext};
-use mcvm_plugin::hooks::{Hook, Subcommand};
-use mcvm_shared::util::utc_timestamp;
+use nitro_core::io::{json_from_file, json_to_file};
+use nitro_plugin::api::{CustomPlugin, HookContext};
+use nitro_plugin::hooks::{Hook, Subcommand};
+use nitro_shared::util::utc_timestamp;
 use serde::{Deserialize, Serialize};
 
 fn main() -> anyhow::Result<()> {
@@ -22,7 +22,7 @@ fn main() -> anyhow::Result<()> {
 			return Ok(());
 		}
 		// Trick the parser to give it the right bin name
-		let it = std::iter::once(format!("mcvm {subcommand}")).chain(args.into_iter().skip(1));
+		let it = std::iter::once(format!("nitro {subcommand}")).chain(args.into_iter().skip(1));
 		Cli::parse_from(it);
 		print_stats(ctx)?;
 

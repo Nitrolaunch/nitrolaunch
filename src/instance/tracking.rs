@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use anyhow::Context;
-use mcvm_core::io::{json_from_file, json_to_file_pretty};
+use nitro_core::io::{json_from_file, json_to_file_pretty};
 use serde::{Deserialize, Serialize};
 use sysinfo::{Pid, System};
 

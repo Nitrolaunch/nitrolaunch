@@ -63,18 +63,18 @@ export default function LaunchFooter(props: LaunchFooterProps) {
 		});
 
 		let authInfoPromise = listen(
-			"mcvm_display_auth_info",
+			"nitro_display_auth_info",
 			(event: Event<AuthDisplayEvent>) => {
 				setAuthInfo(event.payload);
 			}
 		);
 
-		let authInfoClosePromise = listen("mcvm_close_auth_info", () => {
+		let authInfoClosePromise = listen("nitro_close_auth_info", () => {
 			setAuthInfo(undefined);
 		});
 
 		let passwordPromise = listen(
-			"mcvm_display_password_prompt",
+			"nitro_display_password_prompt",
 			(event: Event<string>) => {
 				setShowPasswordPrompt(true);
 				setPasswordPromptMessage(event.payload);

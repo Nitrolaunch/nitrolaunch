@@ -5,7 +5,7 @@ use anyhow::{anyhow, Context};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use mcvm_shared::util::ToInt;
+use nitro_shared::util::ToInt;
 
 use super::Options;
 

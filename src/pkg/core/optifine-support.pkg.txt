@@ -1,7 +1,7 @@
 @meta {
 	name "Optifine Support";
 	description "Installs Optifine and any necessary compatability mods";
-	authors "mcvm";
+	authors "Nitrolaunch";
 }
 
 @install {

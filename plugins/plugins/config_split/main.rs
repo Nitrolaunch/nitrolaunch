@@ -1,8 +1,8 @@
 use std::{collections::HashMap, path::Path, sync::Arc};
 
 use anyhow::Context;
-use mcvm_core::io::json_from_file;
-use mcvm_plugin::api::CustomPlugin;
+use nitro_core::io::json_from_file;
+use nitro_plugin::api::CustomPlugin;
 use serde::de::DeserializeOwned;
 
 fn main() -> anyhow::Result<()> {

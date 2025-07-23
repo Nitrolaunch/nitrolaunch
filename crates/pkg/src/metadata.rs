@@ -1,6 +1,6 @@
 use crate::parse::{instruction::InstrKind, parse::Parsed, routine::METADATA_ROUTINE};
 use anyhow::bail;
-use mcvm_shared::pkg::PackageCategory;
+use nitro_shared::pkg::PackageCategory;
 #[cfg(feature = "schema")]
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};

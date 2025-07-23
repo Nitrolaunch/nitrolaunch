@@ -1,6 +1,6 @@
 #![warn(missing_docs)]
 
-//! mcvm_pkg is a library for dealing with MCVM packages
+//! nitro_pkg is a library for dealing with Nitrolaunch packages
 //!
 //! # Features:
 //!
@@ -26,7 +26,7 @@ use std::collections::HashMap;
 use anyhow::Context;
 use async_trait::async_trait;
 use declarative::{deserialize_declarative_package, validate_declarative_package};
-use mcvm_shared::pkg::{ArcPkgReq, PackageID};
+use nitro_shared::pkg::{ArcPkgReq, PackageID};
 use metadata::PackageMetadata;
 use properties::PackageProperties;
 #[cfg(feature = "schema")]
@@ -34,8 +34,8 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 // Re-export
-pub use mcvm_parse as parse;
-pub use mcvm_shared::pkg::{PkgRequest, PkgRequestSource};
+pub use nitro_parse as parse;
+pub use nitro_shared::pkg::{PkgRequest, PkgRequestSource};
 
 /// Parses and validates a package
 pub fn parse_and_validate(contents: &str, content_type: PackageContentType) -> anyhow::Result<()> {

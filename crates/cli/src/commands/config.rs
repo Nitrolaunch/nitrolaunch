@@ -2,8 +2,8 @@ use super::CmdData;
 
 use anyhow::Context;
 use clap::Subcommand;
-use mcvm::config::Config;
-use mcvm::plugin::PluginManager;
+use nitrolaunch::config::Config;
+use nitrolaunch::plugin::PluginManager;
 
 use std::{path::PathBuf, process::Command};
 

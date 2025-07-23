@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 
-use mcvm_shared::UpdateDepth;
+use nitro_shared::UpdateDepth;
 
 /// Manager for when we are updating profile files.
 /// It will keep track of files we have already downloaded, manage task requirements, etc

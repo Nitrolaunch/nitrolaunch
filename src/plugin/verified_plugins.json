@@ -18,7 +18,7 @@
 		"name": "Docs",
 		"github_owner": "mcvm-launcher",
 		"github_repo": "mcvm",
-		"description": "View MCVM's documentation straight from the command line"
+		"description": "View Nitrolaunch's documentation straight from the command line"
 	},
 	"extra_versions": {
 		"id": "extra_versions",
@@ -39,7 +39,7 @@
 		"name": "Lang",
 		"github_owner": "mcvm-launcher",
 		"github_repo": "mcvm",
-		"description": "Language translations for MCVM"
+		"description": "Language translations for Nitrolaunch"
 	},
 	"modrinth_api": {
 		"id": "modrinth_api",
@@ -69,12 +69,12 @@
 		"github_repo": "mcvm",
 		"description": "Track and view playtime stats"
 	},
-	"mcvm_transfer": {
-		"id": "mcvm_transfer",
-		"name": "MCVM Transfer",
+	"nitro_transfer": {
+		"id": "nitro_transfer",
+		"name": "Nitrolaunch Transfer",
 		"github_owner": "mcvm-launcher",
 		"github_repo": "mcvm",
-		"description": "Import and export MCVM instances"
+		"description": "Import and export Nitrolaunch instances"
 	},
 	"fabric_quilt": {
 		"id": "fabric_quilt",

@@ -4,18 +4,18 @@ use std::path::PathBuf;
 use std::time::Duration;
 
 use anyhow::Context;
-use mcvm_config::instance::{QuickPlay, WrapperCommand};
-use mcvm_core::auth_crate::mc::ClientId;
-use mcvm_core::io::java::args::MemoryNum;
-use mcvm_core::io::java::install::JavaInstallationKind;
-use mcvm_core::user::UserManager;
-use mcvm_plugin::hook_call::HookHandle;
-use mcvm_plugin::hooks::{
+use nitro_config::instance::{QuickPlay, WrapperCommand};
+use nitro_core::auth_crate::mc::ClientId;
+use nitro_core::io::java::args::MemoryNum;
+use nitro_core::io::java::install::JavaInstallationKind;
+use nitro_core::user::UserManager;
+use nitro_plugin::hook_call::HookHandle;
+use nitro_plugin::hooks::{
 	InstanceLaunchArg, OnInstanceLaunch, OnInstanceStop, WhileInstanceLaunch,
 };
-use mcvm_shared::id::InstanceID;
-use mcvm_shared::output::{MCVMOutput, MessageContents, MessageLevel};
-use mcvm_shared::{translate, UpdateDepth};
+use nitro_shared::id::InstanceID;
+use nitro_shared::output::{NitroOutput, MessageContents, MessageLevel};
+use nitro_shared::{translate, UpdateDepth};
 use reqwest::Client;
 use tokio::io::{AsyncWriteExt, Stdin, Stdout};
 
@@ -35,7 +35,7 @@ impl Instance {
 		users: &mut UserManager,
 		plugins: &PluginManager,
 		settings: LaunchSettings,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<InstanceHandle> {
 		o.display(
 			MessageContents::StartProcess(translate!(o, StartUpdatingInstance, "inst" = &self.id)),
@@ -170,7 +170,7 @@ pub struct LaunchOptions {
 /// A handle for an instance
 pub struct InstanceHandle {
 	/// Core InstanceHandle with the process
-	inner: mcvm_core::InstanceHandle,
+	inner: nitro_core::InstanceHandle,
 	/// The ID of the instance
 	instance_id: InstanceID,
 	/// Handles for hooks running while the instance is running
@@ -191,7 +191,7 @@ impl InstanceHandle {
 		mut self,
 		plugins: &PluginManager,
 		paths: &Paths,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<std::process::ExitStatus> {
 		let pid = self.get_pid();
 
@@ -251,7 +251,7 @@ impl InstanceHandle {
 		mut self,
 		plugins: &PluginManager,
 		paths: &Paths,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<()> {
 		let pid = self.get_pid();
 
@@ -298,7 +298,7 @@ impl InstanceHandle {
 		arg: &InstanceLaunchArg,
 		plugins: &PluginManager,
 		paths: &Paths,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<()> {
 		// Remove the instance from the registry
 		let running_instance_registry = RunningInstanceRegistry::open(paths);

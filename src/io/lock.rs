@@ -3,14 +3,14 @@ use std::fs;
 use std::path::PathBuf;
 
 use anyhow::{anyhow, bail, Context};
-use mcvm_core::io::{json_from_file, json_to_file_pretty};
-use mcvm_shared::loaders::Loader;
-use mcvm_shared::output::{MCVMOutput, MessageContents};
-use mcvm_shared::translate;
+use nitro_core::io::{json_from_file, json_to_file_pretty};
+use nitro_shared::loaders::Loader;
+use nitro_shared::output::{NitroOutput, MessageContents};
+use nitro_shared::translate;
 use serde::{Deserialize, Serialize};
 
-use mcvm_shared::addon::{Addon, AddonKind};
-use mcvm_shared::pkg::{PackageAddonOptionalHashes, PackageID};
+use nitro_shared::addon::{Addon, AddonKind};
+use nitro_shared::pkg::{PackageAddonOptionalHashes, PackageID};
 
 use super::paths::Paths;
 
@@ -163,7 +163,7 @@ impl Lockfile {
 		id: &str,
 		instance: &str,
 		addons: &[LockfileAddon],
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<Vec<PathBuf>> {
 		let mut files_to_remove = Vec::new();
 		let mut new_files = Vec::new();
@@ -220,7 +220,7 @@ impl Lockfile {
 		}
 
 		for file in &new_files {
-			if PathBuf::from(file).exists() && !file.contains("mcvm_") {
+			if PathBuf::from(file).exists() && !file.contains("nitro_") {
 				let allow = o
 					.prompt_yes_no(
 						false,

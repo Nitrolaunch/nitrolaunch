@@ -4,7 +4,7 @@
 	"protocol_version": 3,
 	"hooks": {
 		"modify_instance_config": {
-			"executable": "${PLUGIN_DIR}/mcvm_plugin_args${EXE_EXTENSION}"
+			"executable": "${PLUGIN_DIR}/nitro_plugin_args${EXE_EXTENSION}"
 		}
 	}
 }

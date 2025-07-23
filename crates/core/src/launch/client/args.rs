@@ -1,6 +1,6 @@
-use mcvm_shared::output::{MCVMOutput, MessageContents, MessageLevel};
-use mcvm_shared::util::{ARCH_STRING, OS_STRING};
-use mcvm_shared::versions::VersionPattern;
+use nitro_shared::output::{NitroOutput, MessageContents, MessageLevel};
+use nitro_shared::util::{ARCH_STRING, OS_STRING};
+use nitro_shared::versions::VersionPattern;
 
 use crate::instance::{InstanceKind, WindowResolution};
 use crate::launch::{LaunchParameters, QuickPlayType};
@@ -141,7 +141,7 @@ pub(crate) fn replace_arg_placeholders(arg: &str, params: &LaunchParameters) -> 
 			.to_string(),
 	);
 	out = out.replace(placeholder!("version_name"), params.version);
-	out = out.replace(placeholder!("version_type"), "mcvm");
+	out = out.replace(placeholder!("version_type"), "Nitrolaunch");
 	out = out.replace(
 		placeholder!("game_directory"),
 		&params.launch_dir.to_string_lossy().to_string(),
@@ -158,7 +158,7 @@ pub(crate) fn replace_arg_placeholders(arg: &str, params: &LaunchParameters) -> 
 			.to_string(),
 	);
 
-	out = out.replace(placeholder!("clientid"), "mcvm");
+	out = out.replace(placeholder!("clientid"), "Nitrolaunch");
 	// Apparently this is used for Twitch on older versions
 	out = out.replace(placeholder!("user_properties"), "\"\"");
 
@@ -257,7 +257,7 @@ pub fn create_quick_play_args(
 	quick_play: &QuickPlayType,
 	version: &str,
 	version_list: &[String],
-	o: &mut impl MCVMOutput,
+	o: &mut impl NitroOutput,
 ) -> Vec<String> {
 	let mut out = Vec::new();
 

@@ -4,10 +4,10 @@
 	"protocol_version": 3,
 	"hooks": {
 		"add_instances": {
-			"executable": "${PLUGIN_DIR}/mcvm_plugin_config_split${EXE_EXTENSION}"
+			"executable": "${PLUGIN_DIR}/nitro_plugin_config_split${EXE_EXTENSION}"
 		},
 		"add_profiles": {
-			"executable": "${PLUGIN_DIR}/mcvm_plugin_config_split${EXE_EXTENSION}"
+			"executable": "${PLUGIN_DIR}/nitro_plugin_config_split${EXE_EXTENSION}"
 		}
 	}
 }

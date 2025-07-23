@@ -8,10 +8,10 @@ use anyhow::Context;
 use backup::{get_backup_directory, BackupAutoHook, Config, Index, DEFAULT_GROUP};
 use clap::Parser;
 use color_print::cprintln;
-use mcvm_plugin::api::{CustomPlugin, HookContext};
-use mcvm_plugin::hooks::{self, Hook};
-use mcvm_plugin::input_output::InputAction;
-use mcvm_shared::output::{MCVMOutput, MessageContents, MessageLevel};
+use nitro_plugin::api::{CustomPlugin, HookContext};
+use nitro_plugin::hooks::{self, Hook};
+use nitro_plugin::input_output::InputAction;
+use nitro_shared::output::{NitroOutput, MessageContents, MessageLevel};
 
 use crate::backup::BackupSource;
 
@@ -25,7 +25,7 @@ fn main() -> anyhow::Result<()> {
 			return Ok(());
 		}
 		// Trick the parser to give it the right bin name
-		let it = std::iter::once(format!("mcvm {subcommand}")).chain(args.into_iter().skip(1));
+		let it = std::iter::once(format!("nitro {subcommand}")).chain(args.into_iter().skip(1));
 		let cli = Cli::parse_from(it);
 		let result = match cli.command {
 			Subcommand::List {
@@ -125,7 +125,7 @@ struct Cli {
 }
 
 #[derive(clap::Subcommand)]
-#[command(name = "mcvm backup")]
+#[command(name = "nitro backup")]
 enum Subcommand {
 	#[command(about = "List backups for an instance")]
 	#[clap(alias = "ls")]

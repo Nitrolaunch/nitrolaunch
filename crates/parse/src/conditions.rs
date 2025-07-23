@@ -1,14 +1,14 @@
 use anyhow::bail;
-use mcvm_shared::lang::Language;
-use mcvm_shared::later::Later;
-use mcvm_shared::pkg::PackageStability;
+use nitro_shared::lang::Language;
+use nitro_shared::later::Later;
+use nitro_shared::pkg::PackageStability;
 #[cfg(feature = "schema")]
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::unexpected_token;
-use mcvm_shared::loaders::LoaderMatch;
-use mcvm_shared::Side;
+use nitro_shared::loaders::LoaderMatch;
+use nitro_shared::Side;
 
 use super::instruction::parse_arg;
 use super::lex::{TextPos, Token};

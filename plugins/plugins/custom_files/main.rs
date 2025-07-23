@@ -1,9 +1,9 @@
 use std::path::PathBuf;
 
 use anyhow::Context;
-use mcvm_core::io::files::{create_leading_dirs, update_hardlink};
-use mcvm_plugin::api::CustomPlugin;
-use mcvm_plugin::hooks::OnInstanceSetupResult;
+use nitro_core::io::files::{create_leading_dirs, update_hardlink};
+use nitro_plugin::api::CustomPlugin;
+use nitro_plugin::hooks::OnInstanceSetupResult;
 use serde::{Deserialize, Serialize};
 
 fn main() -> anyhow::Result<()> {

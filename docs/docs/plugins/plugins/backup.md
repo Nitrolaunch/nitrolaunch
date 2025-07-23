@@ -41,12 +41,12 @@ Groups allow you to define different sets of settings for backups for the same i
 	"interval": string
 }
 ```
-- `on`: When to automatically create the backup. By default, this backup group will not be created automatically. `"launch"` will create a backup whenever the game starts, and `"stop"` will create one whenever the game stops or crashes, but not when MCVM itself crashes. `"interval"` will create backups periodically as the instance is running, at whatever interval you specify in the `interval` field.
+- `on`: When to automatically create the backup. By default, this backup group will not be created automatically. `"launch"` will create a backup whenever the game starts, and `"stop"` will create one whenever the game stops or crashes, but not when Nitrolaunch itself crashes. `"interval"` will create backups periodically as the instance is running, at whatever interval you specify in the `interval` field.
 - `interval`: The interval to create periodic backups at. Ends with either `s`, `m`, `h`, or `d` for seconds, minutes, hours, and days. Example: `30s`.
 
 ### Commands
-- `mcvm backup list <instance>`: List the backups for an instance
-- `mcvm backup create <instance> [-g group]`: Manually create a new backup for an instance. The `-g` flag can be used to specify a group. If one isn't specified, the common settings will be used for the backup and it will not be part of any group.
-- `mcvm backup info <instance> [-g group] <backup>`: Get information about a specific backup
-- `mcvm backup restore <instance> [-g group] <backup>`: Restore a backup to an instance, overwriting any existing files
-- `mcvm backup remove <instance> [-g group] <backup>`: Remove a backup without restoring it
+- `nitro backup list <instance>`: List the backups for an instance
+- `nitro backup create <instance> [-g group]`: Manually create a new backup for an instance. The `-g` flag can be used to specify a group. If one isn't specified, the common settings will be used for the backup and it will not be part of any group.
+- `nitro backup info <instance> [-g group] <backup>`: Get information about a specific backup
+- `nitro backup restore <instance> [-g group] <backup>`: Restore a backup to an instance, overwriting any existing files
+- `nitro backup remove <instance> [-g group] <backup>`: Remove a backup without restoring it

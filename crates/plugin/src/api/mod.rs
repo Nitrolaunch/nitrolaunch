@@ -1,4 +1,4 @@
-/// Output back to the main MCVM process
+/// Output back to the main Nitrolaunch process
 pub mod output;
 /// Utilities for plugins to use
 pub mod utils;
@@ -9,7 +9,7 @@ use std::marker::PhantomData;
 use std::path::PathBuf;
 
 use anyhow::{bail, Context};
-use mcvm_shared::output::{MCVMOutput, MessageContents, MessageLevel};
+use nitro_shared::output::{NitroOutput, MessageContents, MessageLevel};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
@@ -178,11 +178,11 @@ impl CustomPlugin {
 	) -> anyhow::Result<()> {
 		// Check if we are running the given hook
 		if self.hook == H::get_name_static() {
-			// Check that the hook version of MCVM matches our hook version
+			// Check that the hook version of Nitrolaunch matches our hook version
 			let expected_version = std::env::var(HOOK_VERSION_ENV);
 			if let Ok(expected_version) = expected_version {
 				if expected_version != H::get_version().to_string() {
-					bail!("Hook version does not match. Try updating the plugin or MCVM.");
+					bail!("Hook version does not match. Try updating the plugin or Nitrolaunch.");
 				}
 			}
 
@@ -282,12 +282,12 @@ impl<'ctx, H: Hook> HookContext<'ctx, H> {
 		&mut self.stored_ctx.output
 	}
 
-	/// Get the mcvm data directory path
+	/// Get the Nitrolaunch data directory path
 	pub fn get_data_dir(&self) -> anyhow::Result<PathBuf> {
 		get_env_path(DATA_DIR_ENV).context("Failed to get directory from environment variable")
 	}
 
-	/// Get the mcvm config directory path
+	/// Get the Nitrolaunch config directory path
 	pub fn get_config_dir(&self) -> anyhow::Result<PathBuf> {
 		get_env_path(CONFIG_DIR_ENV).context("Failed to get directory from environment variable")
 	}

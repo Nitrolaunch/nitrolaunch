@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
 use anyhow::bail;
-use mcvm_config::profile::ProfileConfig;
-use mcvm_shared::id::ProfileID;
+use nitro_config::profile::ProfileConfig;
+use nitro_shared::id::ProfileID;
 
 /// Consolidates profile configs into the full profiles
 pub fn consolidate_profile_configs(
@@ -47,7 +47,7 @@ pub fn consolidate_profile_configs(
 
 		i += 1;
 		if i > max_iterations {
-			panic!("Max iterations exceeded while resolving profiles. This is a bug in MCVM.");
+			panic!("Max iterations exceeded while resolving profiles. This is a bug in Nitrolaunch.");
 		}
 	}
 

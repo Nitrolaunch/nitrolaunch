@@ -1,7 +1,7 @@
 [package]
-name = "mcvm_parse"
+name = "nitro_parse"
 version = "0.17.0"
-description = "Package script lexing, parsing, and basic evaluation for mcvm"
+description = "Package script lexing, parsing, and basic evaluation for Nitrolaunch"
 keywords = ["minecraft", "launcher", "game", "mc", "parse"]
 categories.workspace = true
 edition.workspace = true
@@ -14,11 +14,11 @@ rust-version.workspace = true
 workspace = true
 
 [features]
-schema = ["dep:schemars", "mcvm_shared/schema"]
+schema = ["dep:schemars", "nitro_shared/schema"]
 
 [dependencies]
 anyhow = { workspace = true }
-mcvm_shared = { workspace = true }
+nitro_shared = { workspace = true }
 schemars = { workspace = true, optional = true }
 serde = { workspace = true }
 serde_json = { workspace = true }

@@ -1,7 +1,7 @@
 [package]
-name = "mcvm_mods"
+name = "nitro_mods"
 version = "0.9.0"
-description = "Installation of loaders for use with mcvm_core"
+description = "Installation of loaders for use with nitro_core"
 keywords = ["minecraft", "launcher", "game", "mc", "modification"]
 categories.workspace = true
 edition.workspace = true
@@ -17,8 +17,8 @@ workspace = true
 
 [dependencies]
 anyhow = { workspace = true }
-mcvm_core = { workspace = true }
-mcvm_shared = { workspace = true }
+nitro_core = { workspace = true }
+nitro_shared = { workspace = true }
 reqwest = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }

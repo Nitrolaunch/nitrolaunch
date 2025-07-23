@@ -2,12 +2,12 @@ use anyhow::{bail, Context};
 use clap::Subcommand;
 use color_print::cprintln;
 use itertools::Itertools;
-use mcvm::core::io::{json_from_file, json_to_file_pretty};
-use mcvm::plugin::install::get_verified_plugins;
-use mcvm::plugin::PluginManager;
-use mcvm::plugin_crate::plugin::PluginManifest;
-use mcvm::shared::lang::translate::TranslationKey;
-use mcvm::shared::output::{MCVMOutput, MessageContents, MessageLevel};
+use nitrolaunch::core::io::{json_from_file, json_to_file_pretty};
+use nitrolaunch::plugin::install::get_verified_plugins;
+use nitrolaunch::plugin::PluginManager;
+use nitrolaunch::plugin_crate::plugin::PluginManifest;
+use nitrolaunch::shared::lang::translate::TranslationKey;
+use nitrolaunch::shared::output::{NitroOutput, MessageContents, MessageLevel};
 use reqwest::Client;
 
 use super::CmdData;

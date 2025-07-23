@@ -1,6 +1,6 @@
 use crate::State;
 use anyhow::Context;
-use mcvm::{
+use nitrolaunch::{
 	core::{net::game_files::version_manifest::VersionType, util::versions::MinecraftVersion},
 	instance::update::manager::UpdateManager,
 	plugin_crate::hooks::AddSupportedLoaders,

@@ -1,9 +1,9 @@
 use std::io::{Cursor, Read};
 
 use anyhow::{bail, Context};
-use mcvm_shared::output::{MCVMOutput, MessageContents, MessageLevel};
-use mcvm_shared::util::DeserListOrSingle;
-use mcvm_shared::{translate, UpdateDepth};
+use nitro_shared::output::{NitroOutput, MessageContents, MessageLevel};
+use nitro_shared::util::DeserListOrSingle;
+use nitro_shared::{translate, UpdateDepth};
 use reqwest::Client;
 use serde::Deserialize;
 use zip::ZipArchive;
@@ -322,7 +322,7 @@ pub async fn get(
 	paths: &Paths,
 	manager: &UpdateManager,
 	client: &Client,
-	o: &mut impl MCVMOutput,
+	o: &mut impl NitroOutput,
 ) -> anyhow::Result<ClientMeta> {
 	let version_string = version.to_owned();
 

@@ -2,13 +2,13 @@ use crate::io::paths::Paths;
 use crate::plugin::PluginManager;
 use basic::{BasicPackageRepository, RepoLocation};
 use custom::CustomPackageRepository;
-use mcvm_pkg::repo::{PackageFlag, RepoMetadata, RepoPkgEntry};
-use mcvm_pkg::PackageContentType;
+use nitro_pkg::repo::{PackageFlag, RepoMetadata, RepoPkgEntry};
+use nitro_pkg::PackageContentType;
 
 use anyhow::Context;
-use mcvm_shared::output::{MCVMOutput, MessageContents, MessageLevel};
-use mcvm_shared::pkg::ArcPkgReq;
-use mcvm_shared::translate;
+use nitro_shared::output::{NitroOutput, MessageContents, MessageLevel};
+use nitro_shared::pkg::ArcPkgReq;
+use nitro_shared::translate;
 use reqwest::Client;
 
 use std::borrow::Cow;
@@ -24,7 +24,7 @@ pub mod basic;
 /// Custom plugin repositories
 pub mod custom;
 
-/// A remote source for MCVM packages
+/// A remote source for Nitrolaunch packages
 pub enum PackageRepository {
 	/// A basic indexed repository
 	Basic(BasicPackageRepository),
@@ -87,7 +87,7 @@ impl PackageRepository {
 		paths: &Paths,
 		plugins: &PluginManager,
 		client: &Client,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<()> {
 		match self {
 			Self::Basic(repo) => repo.sync(paths, client).await,
@@ -103,7 +103,7 @@ impl PackageRepository {
 		paths: &Paths,
 		client: &Client,
 		plugins: &PluginManager,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<Option<RepoQueryResult>> {
 		match self {
 			Self::Basic(repo) => repo.query(id, paths, client, o).await,
@@ -129,7 +129,7 @@ impl PackageRepository {
 		packages: Vec<ArcPkgReq>,
 		paths: &Paths,
 		plugins: &PluginManager,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<()> {
 		if packages.is_empty() {
 			return Ok(());
@@ -146,7 +146,7 @@ impl PackageRepository {
 		&mut self,
 		paths: &Paths,
 		client: &Client,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<Vec<(String, RepoPkgEntry)>> {
 		match self {
 			Self::Basic(repo) => repo.get_all_packages(paths, client, o).await,
@@ -160,7 +160,7 @@ impl PackageRepository {
 		&mut self,
 		paths: &Paths,
 		client: &Client,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<Option<usize>> {
 		match self {
 			Self::Basic(repo) => repo.get_package_count(paths, client, o).await.map(Some),
@@ -174,14 +174,14 @@ impl PackageRepository {
 		&mut self,
 		paths: &Paths,
 		client: &Client,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<Cow<RepoMetadata>> {
 		match self {
 			Self::Basic(repo) => repo.get_metadata(paths, client, o).await.map(Cow::Borrowed),
 			Self::Core => Ok(Cow::Owned(RepoMetadata {
 				name: Some(translate!(o, CoreRepoName)),
 				description: Some(translate!(o, CoreRepoDescription)),
-				mcvm_version: Some(crate::VERSION.into()),
+				nitro_version: Some(crate::VERSION.into()),
 				..Default::default()
 			})),
 			Self::Custom(repo) => Ok(Cow::Borrowed(repo.get_meta())),
@@ -197,7 +197,7 @@ pub async fn query_all(
 	paths: &Paths,
 	client: &Client,
 	plugins: &PluginManager,
-	o: &mut impl MCVMOutput,
+	o: &mut impl NitroOutput,
 ) -> anyhow::Result<Option<RepoQueryResult>> {
 	for repo in repos {
 		if let PackageRepository::Custom(..) = &repo {
@@ -237,7 +237,7 @@ pub async fn get_all_packages(
 	repos: &mut [PackageRepository],
 	paths: &Paths,
 	client: &Client,
-	o: &mut impl MCVMOutput,
+	o: &mut impl NitroOutput,
 ) -> anyhow::Result<HashMap<String, RepoPkgEntry>> {
 	let mut out = HashMap::new();
 	// Iterate in reverse to make sure that repos at the beginning take precendence

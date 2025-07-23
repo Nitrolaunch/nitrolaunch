@@ -1,12 +1,12 @@
 #![warn(missing_docs)]
 
-//! This crate contains serde structs for MCVM configuration. It does not provide
+//! This crate contains serde structs for Nitrolaunch configuration. It does not provide
 //! any functionality to actually read the config correctly, just to create it.
 
 use std::{collections::HashMap, sync::Arc};
 
 use instance::InstanceConfig;
-use mcvm_shared::id::{InstanceID, ProfileID};
+use nitro_shared::id::{InstanceID, ProfileID};
 use preferences::PrefDeser;
 use profile::ProfileConfig;
 #[cfg(feature = "schema")]

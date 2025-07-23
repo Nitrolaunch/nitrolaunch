@@ -212,7 +212,7 @@ export default function InstanceList(props: InstanceListProps) {
 	);
 }
 
-// A section of items, like pinned or an MCVM instance group
+// A section of items, like pinned or an Nitrolaunch instance group
 function Section(props: SectionProps) {
 	const HeaderIcon = () => (
 		<Switch>

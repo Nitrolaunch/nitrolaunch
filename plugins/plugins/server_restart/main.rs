@@ -5,9 +5,9 @@ use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 
 use anyhow::Context;
-use mcvm_plugin::api::CustomPlugin;
-use mcvm_plugin::hooks::OnInstanceSetupResult;
-use mcvm_shared::Side;
+use nitro_plugin::api::CustomPlugin;
+use nitro_plugin::hooks::OnInstanceSetupResult;
+use nitro_shared::Side;
 use serde::Deserialize;
 
 fn main() -> anyhow::Result<()> {
@@ -49,7 +49,7 @@ struct Config {
 #[derive(Deserialize, Default)]
 #[serde(rename_all = "snake_case")]
 enum Mode {
-	/// Using mcvm_cli
+	/// Using nitro_cli
 	#[default]
 	Cli,
 }
@@ -66,7 +66,7 @@ fn create_script(path: &Path, inst_ref: &str, config: Config) -> anyhow::Result<
 
 		match config.mode {
 			Mode::Cli => {
-				writeln!(&mut file, "mcvm instance launch {inst_ref}")?;
+				writeln!(&mut file, "nitro instance launch {inst_ref}")?;
 			}
 		}
 	}

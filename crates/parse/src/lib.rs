@@ -1,6 +1,6 @@
 #![warn(missing_docs)]
 
-//! This library is used for parsing MCVM package scripts
+//! This library is used for parsing Nitrolaunch package scripts
 //!
 //! # Features:
 //!

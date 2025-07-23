@@ -4,16 +4,16 @@ use std::{
 };
 
 use anyhow::Context;
-use mcvm_core::io::{files::create_leading_dirs, json_from_file, json_to_file};
-use mcvm_net::{
+use nitro_core::io::{files::create_leading_dirs, json_from_file, json_to_file};
+use nitro_net::{
 	download::{self, Client},
 	smithed::{self, Pack, PackSearchResult},
 };
-use mcvm_pkg::PackageSearchResults;
-use mcvm_pkg_gen::relation_substitution::{
+use nitro_pkg::PackageSearchResults;
+use nitro_pkg_gen::relation_substitution::{
 	PackageAndVersion, RelationSubFunction, RelationSubNone,
 };
-use mcvm_plugin::{
+use nitro_plugin::{
 	api::{utils::PackageSearchCache, CustomPlugin},
 	hooks::CustomRepoQueryResult,
 };
@@ -107,7 +107,7 @@ fn main() -> anyhow::Result<()> {
 			let mut packs = Vec::with_capacity(results.len());
 			for result in results {
 				packs.push(result.meta.raw_id.clone());
-				let package = mcvm_pkg_gen::smithed::gen(
+				let package = nitro_pkg_gen::smithed::gen(
 					result.data,
 					None,
 					RelationSubNone,
@@ -170,7 +170,7 @@ async fn query_package(
 		storage_dir,
 	};
 
-	let package = mcvm_pkg_gen::smithed::gen(
+	let package = nitro_pkg_gen::smithed::gen(
 		pack_info.pack,
 		pack_info.body,
 		relation_sub_function,
@@ -178,12 +178,12 @@ async fn query_package(
 		Some("smithed"),
 	)
 	.await
-	.context("Failed to generate MCVM package")?;
+	.context("Failed to generate Nitrolaunch package")?;
 	let package = serde_json::to_string_pretty(&package).context("Failed to serialized package")?;
 
 	Ok(Some(CustomRepoQueryResult {
 		contents: package,
-		content_type: mcvm::pkg_crate::PackageContentType::Declarative,
+		content_type: nitrolaunch::pkg_crate::PackageContentType::Declarative,
 		flags: HashSet::new(),
 	}))
 }

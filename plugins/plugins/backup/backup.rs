@@ -4,8 +4,8 @@ use std::io::{BufReader, BufWriter, Read};
 use std::path::{Path, PathBuf};
 
 use anyhow::{anyhow, bail, Context};
-use mcvm_core::io::{json_from_file, json_to_file};
-use mcvm_shared::util::utc_timestamp;
+use nitro_core::io::{json_from_file, json_to_file};
+use nitro_shared::util::utc_timestamp;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 use zip::{ZipArchive, ZipWriter};
@@ -400,7 +400,7 @@ fn write_backup_files<R: Read>(
 ) -> anyhow::Result<()> {
 	match &group_config.common.storage_type {
 		StorageType::Archive => {
-			mcvm_core::io::files::create_leading_dirs(backup_path)?;
+			nitro_core::io::files::create_leading_dirs(backup_path)?;
 			let file = File::create(backup_path).context("Failed to create archive file")?;
 			let mut file = BufWriter::new(file);
 			let mut arc = ZipWriter::new(&mut file);
@@ -416,7 +416,7 @@ fn write_backup_files<R: Read>(
 		StorageType::Folder => {
 			for (path, mut reader) in readers {
 				let dest = backup_path.join(path);
-				mcvm_core::io::files::create_leading_dirs(&dest)?;
+				nitro_core::io::files::create_leading_dirs(&dest)?;
 				let file =
 					File::create(dest).context("Failed to create snapshot destination file")?;
 				let mut file = BufWriter::new(file);
@@ -444,7 +444,7 @@ fn restore_backup_files(
 				.context("Failed to extract backup archive")?;
 		}
 		StorageType::Folder => {
-			mcvm_core::io::files::copy_dir_contents(backup_path, instance_dir)
+			nitro_core::io::files::copy_dir_contents(backup_path, instance_dir)
 				.context("Failed to copy directory")?;
 		}
 	}

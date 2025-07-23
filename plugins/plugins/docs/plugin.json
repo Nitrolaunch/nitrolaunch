@@ -1,10 +1,10 @@
 {
 	"name": "Docs",
-	"description": "View MCVM's documentation straight from the program",
+	"description": "View Nitrolaunch's documentation straight from the program",
 	"protocol_version": 3,
 	"hooks": {
 		"subcommand": {
-			"executable": "${PLUGIN_DIR}/mcvm_plugin_docs${EXE_EXTENSION}"
+			"executable": "${PLUGIN_DIR}/nitro_plugin_docs${EXE_EXTENSION}"
 		}
 	},
 	"subcommands": {

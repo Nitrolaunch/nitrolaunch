@@ -5,17 +5,17 @@ use std::sync::Arc;
 use std::{cmp::Reverse, collections::HashMap};
 
 use iso8601_timestamp::Timestamp;
-use mcvm_core::io::{json_from_file, json_to_file};
-use mcvm_core::net::download::Client;
-use mcvm_net::modrinth::Version;
-use mcvm_pkg_gen::relation_substitution::RelationSubMap;
-use mcvm_pkg_gen::{modrinth, smithed};
+use nitro_core::io::{json_from_file, json_to_file};
+use nitro_core::net::download::Client;
+use nitro_net::modrinth::Version;
+use nitro_pkg_gen::relation_substitution::RelationSubMap;
+use nitro_pkg_gen::{modrinth, smithed};
 use serde::{Deserialize, Serialize};
 use serde_json::{ser::PrettyFormatter, Serializer};
 use tokio::sync::Mutex;
 use tokio::task::JoinSet;
 
-use mcvm_net::smithed as smithed_api;
+use nitro_net::smithed as smithed_api;
 
 use super::{PackageGenerationConfig, PackageSource};
 
@@ -95,7 +95,7 @@ pub async fn batched_gen(mut config: BatchedConfig, filter: Vec<String>) {
 		})
 		.map(|x| x.id.clone())
 		.collect();
-	let modrinth_projects = mcvm_net::modrinth::get_multiple_projects(&modrinth_ids, &client)
+	let modrinth_projects = nitro_net::modrinth::get_multiple_projects(&modrinth_ids, &client)
 		.await
 		.expect("Failed to get Modrinth projects");
 
@@ -138,7 +138,7 @@ pub async fn batched_gen(mut config: BatchedConfig, filter: Vec<String>) {
 			}
 
 			let uncached_versions =
-				mcvm_net::modrinth::get_multiple_versions(&uncached_versions, &client)
+				nitro_net::modrinth::get_multiple_versions(&uncached_versions, &client)
 					.await
 					.expect("Failed to get Modrinth versions");
 			// Cache the new versions
@@ -182,7 +182,7 @@ pub async fn batched_gen(mut config: BatchedConfig, filter: Vec<String>) {
 		let client = client.clone();
 		let modrinth_teams = modrinth_teams.clone();
 		let task = async move {
-			let teams = mcvm_net::modrinth::get_multiple_teams(&modrinth_team_ids, &client)
+			let teams = nitro_net::modrinth::get_multiple_teams(&modrinth_team_ids, &client)
 				.await
 				.expect("Failed to get Modrinth teams");
 			let mut lock = modrinth_teams.lock().await;
@@ -287,7 +287,7 @@ pub async fn batched_gen(mut config: BatchedConfig, filter: Vec<String>) {
 			serde_json::value::to_value(package).expect("Failed to convert package to value");
 		let merge = serde_json::value::to_value(pkg_config.merge)
 			.expect("Failed to convert merged config to value");
-		mcvm_core::util::json::merge(&mut package, merge);
+		nitro_core::util::json::merge(&mut package, merge);
 
 		// Write out the package
 		let path = PathBuf::from(&config.output_dir)

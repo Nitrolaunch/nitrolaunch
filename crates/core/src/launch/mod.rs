@@ -11,8 +11,8 @@ use std::fs::File;
 use std::path::{Path, PathBuf};
 
 use anyhow::{bail, Context};
-use mcvm_shared::output::{MCVMOutput, MessageContents, MessageLevel};
-use mcvm_shared::{translate, Side};
+use nitro_shared::output::{NitroOutput, MessageContents, MessageLevel};
+use nitro_shared::{translate, Side};
 
 use self::client::create_quick_play_args;
 use self::process::{launch_game_process, LaunchGameProcessParameters};
@@ -37,7 +37,7 @@ pub use self::process::{LaunchProcessParameters, LaunchProcessProperties};
 
 pub(crate) async fn launch(
 	params: LaunchParameters<'_>,
-	o: &mut impl MCVMOutput,
+	o: &mut impl NitroOutput,
 ) -> anyhow::Result<InstanceHandle> {
 	let command = params.java.get_jvm_path();
 
@@ -134,7 +134,7 @@ impl LaunchConfiguration {
 		version: &str,
 		version_list: &[String],
 		side: Side,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> Vec<String> {
 		let mut out = self.game_args.clone();
 
@@ -149,7 +149,7 @@ impl LaunchConfiguration {
 		version: &str,
 		version_list: &[String],
 		side: Side,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> Vec<String> {
 		let mut out = Vec::new();
 

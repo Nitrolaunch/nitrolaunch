@@ -2,16 +2,16 @@ use std::fmt::Display;
 use std::path::Path;
 
 use anyhow::{anyhow, Context};
-use mcvm_core::io::java::classpath::Classpath;
-use mcvm_core::io::java::maven::MavenLibraryParts;
-use mcvm_core::io::json_from_file;
-use mcvm_core::io::update::UpdateManager;
-use mcvm_core::io::{files, json_to_file};
-use mcvm_core::net::download;
-use mcvm_core::MCVMCore;
-use mcvm_shared::output::{MCVMOutput, MessageContents, MessageLevel, OutputProcess};
-use mcvm_shared::versions::VersionInfo;
-use mcvm_shared::{Side, UpdateDepth};
+use nitro_core::io::java::classpath::Classpath;
+use nitro_core::io::java::maven::MavenLibraryParts;
+use nitro_core::io::json_from_file;
+use nitro_core::io::update::UpdateManager;
+use nitro_core::io::{files, json_to_file};
+use nitro_core::net::download;
+use nitro_core::NitroCore;
+use nitro_shared::output::{NitroOutput, MessageContents, MessageLevel, OutputProcess};
+use nitro_shared::versions::VersionInfo;
+use nitro_shared::{Side, UpdateDepth};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use tokio::task::JoinSet;
@@ -54,11 +54,11 @@ impl Display for Mode {
 /// First, create the core and the version you want. Then, get the version info from the version.
 /// Finally, run this function. Returns the classpath and main class to add to the instance you are launching
 pub async fn install_from_core(
-	core: &mut MCVMCore,
+	core: &mut NitroCore,
 	version_info: &VersionInfo,
 	mode: Mode,
 	side: Side,
-	o: &mut impl MCVMOutput,
+	o: &mut impl NitroOutput,
 ) -> anyhow::Result<(Classpath, String)> {
 	let meta = get_meta(
 		&version_info.version,
@@ -225,7 +225,7 @@ pub async fn download_files(
 	mode: Mode,
 	manager: &UpdateManager,
 	client: &Client,
-	o: &mut impl MCVMOutput,
+	o: &mut impl NitroOutput,
 ) -> anyhow::Result<()> {
 	let force = manager.get_depth() == UpdateDepth::Force;
 

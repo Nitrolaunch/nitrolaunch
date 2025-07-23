@@ -1,5 +1,5 @@
 [package]
-name = "mcvm_options"
+name = "nitro_options"
 version = "0.8.0"
 description = "Game options generation for Minecraft"
 keywords = ["minecraft", "launcher", "game", "mc", "options"]
@@ -14,12 +14,12 @@ rust-version.workspace = true
 workspace = true
 
 [features]
-schema = ["dep:schemars", "mcvm_shared/schema"]
+schema = ["dep:schemars", "nitro_shared/schema"]
 
 [dependencies]
 anyhow = { workspace = true }
 itertools = { workspace = true }
-mcvm_shared = { workspace = true }
+nitro_shared = { workspace = true }
 schemars = { workspace = true, optional = true }
 serde = { workspace = true }
 serde_json = { workspace = true }

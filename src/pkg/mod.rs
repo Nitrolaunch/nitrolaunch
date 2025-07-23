@@ -8,12 +8,12 @@ pub mod reg;
 pub mod repo;
 
 use crate::io::paths::Paths;
-use mcvm_core::net::download;
-use mcvm_pkg::declarative::{deserialize_declarative_package, DeclarativePackage};
-use mcvm_pkg::repo::PackageFlag;
-use mcvm_pkg::PackageContentType;
-use mcvm_shared::later::Later;
-use mcvm_shared::try_3;
+use nitro_core::net::download;
+use nitro_pkg::declarative::{deserialize_declarative_package, DeclarativePackage};
+use nitro_pkg::repo::PackageFlag;
+use nitro_pkg::PackageContentType;
+use nitro_shared::later::Later;
+use nitro_shared::try_3;
 
 use std::collections::HashSet;
 use std::fs;
@@ -23,10 +23,10 @@ use std::sync::Arc;
 
 use self::core::get_core_package;
 use anyhow::{anyhow, bail, Context};
-use mcvm_parse::parse::{lex_and_parse, Parsed};
-use mcvm_pkg::metadata::{eval_metadata, PackageMetadata};
-use mcvm_pkg::properties::{eval_properties, PackageProperties};
-use mcvm_shared::pkg::PackageID;
+use nitro_parse::parse::{lex_and_parse, Parsed};
+use nitro_pkg::metadata::{eval_metadata, PackageMetadata};
+use nitro_pkg::properties::{eval_properties, PackageProperties};
+use nitro_shared::pkg::PackageID;
 use reqwest::Client;
 
 /// An installable package that loads content into your game

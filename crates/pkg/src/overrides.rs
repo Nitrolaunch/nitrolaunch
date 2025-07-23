@@ -1,4 +1,4 @@
-use mcvm_shared::pkg::{PkgRequest, PkgRequestSource};
+use nitro_shared::pkg::{PkgRequest, PkgRequestSource};
 #[cfg(feature = "schema")]
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};

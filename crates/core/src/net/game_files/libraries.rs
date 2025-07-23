@@ -4,8 +4,8 @@ use std::path::Path;
 use std::sync::Arc;
 
 use anyhow::{anyhow, Context};
-use mcvm_shared::output::{MCVMOutput, MessageContents, MessageLevel};
-use mcvm_shared::translate;
+use nitro_shared::output::{NitroOutput, MessageContents, MessageLevel};
+use nitro_shared::translate;
 use reqwest::Client;
 use tokio::{sync::Semaphore, task::JoinSet};
 use zip::ZipArchive;
@@ -14,8 +14,8 @@ use crate::io::files::{self, paths::Paths};
 use crate::io::java::classpath::Classpath;
 use crate::io::update::{UpdateManager, UpdateMethodResult};
 use crate::net::download::{self, get_transfer_limit};
-use mcvm_shared::skip_none;
-use mcvm_shared::util;
+use nitro_shared::skip_none;
+use nitro_shared::util;
 
 use super::client_meta::libraries::ExtractionRules;
 use super::client_meta::{libraries::Library, ClientMeta};
@@ -28,7 +28,7 @@ pub async fn get(
 	version: &str,
 	manager: &UpdateManager,
 	client: &Client,
-	o: &mut impl MCVMOutput,
+	o: &mut impl NitroOutput,
 ) -> anyhow::Result<UpdateMethodResult> {
 	let mut out = UpdateMethodResult::new();
 	let libraries_path = paths.internal.join("libraries");
@@ -232,7 +232,7 @@ fn extract_native(
 	natives_dir: &Path,
 	extraction_rules: &ExtractionRules,
 	manager: &UpdateManager,
-	o: &mut impl MCVMOutput,
+	o: &mut impl NitroOutput,
 ) -> anyhow::Result<UpdateMethodResult> {
 	let mut out = UpdateMethodResult::new();
 	let file = File::open(path).context("Failed to open native file")?;

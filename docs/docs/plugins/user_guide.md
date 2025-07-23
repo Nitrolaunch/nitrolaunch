@@ -1,6 +1,6 @@
 # Plugin User Guide
 
-Plugins are extensions to MCVM that add new functionality. They can add new subcommands, support extra modloaders, and more. They allow MCVM to be modular and only include the features you need, keeping it less bloated and making it easier to maintain.
+Plugins are extensions to Nitrolaunch that add new functionality. They can add new subcommands, support extra modloaders, and more. They allow Nitrolaunch to be modular and only include the features you need, keeping it less bloated and making it easier to maintain.
 
 ## ⚠️WARNING⚠️
 
@@ -10,15 +10,15 @@ Plugins work as arbitrary programs that run on your system. Malicious plugins ca
 
 ### Using The Installer
 
-Use the `mcvm plugin browse` command to see a list of available plugins. Then, you can run `mcvm plugin install {plugin}` to install the plugin you want.
+Use the `nitro plugin browse` command to see a list of available plugins. Then, you can run `nitro plugin install {plugin}` to install the plugin you want.
 
 ### Manually
 
-If you have plugin files you are sure you can trust, first locate the `plugins` directory under your MCVM data directory. If the plugin is one file with the `.json` extension, you can simply move it to that folder. If it is a `.zip` file, extract the file into the `plugins` directory, ensuring that there is a directory named after the plugin and it has a file named `plugin.json` directly inside, and not under any subfolders after that.
+If you have plugin files you are sure you can trust, first locate the `plugins` directory under your Nitrolaunch data directory. If the plugin is one file with the `.json` extension, you can simply move it to that folder. If it is a `.zip` file, extract the file into the `plugins` directory, ensuring that there is a directory named after the plugin and it has a file named `plugin.json` directly inside, and not under any subfolders after that.
 
 ### Enabling The Plugin
 
-Whichever installation method you use, you must now enable the plugin in your configuration. MCVM should have created a file in your config directory named `plugins.json`. You can edit it with the `mcvm config edit-plugins` command. Add the name of the plugin you just installed like so:
+Whichever installation method you use, you must now enable the plugin in your configuration. Nitrolaunch should have created a file in your config directory named `plugins.json`. You can edit it with the `nitro config edit-plugins` command. Add the name of the plugin you just installed like so:
 
 ```json
 {
@@ -26,7 +26,7 @@ Whichever installation method you use, you must now enable the plugin in your co
 }
 ```
 
-Now, run the `mcvm plugin list` command to see the list of plugins, and the one you just added should be in the list and marked as "Loaded". You can also use the `mcvm plugin enable` and `mcvm plugin disable` commands to enable and disable plugins.
+Now, run the `nitro plugin list` command to see the list of plugins, and the one you just added should be in the list and marked as "Loaded". You can also use the `nitro plugin enable` and `nitro plugin disable` commands to enable and disable plugins.
 
 ## Configuring
 

@@ -6,8 +6,8 @@ use std::{
 use anyhow::Context;
 use clap::Parser;
 use color_print::cprintln;
-use mcvm_core::{io::json_from_file, net::game_files::assets::AssetIndex};
-use mcvm_plugin::api::CustomPlugin;
+use nitro_core::{io::json_from_file, net::game_files::assets::AssetIndex};
+use nitro_plugin::api::CustomPlugin;
 
 fn main() -> anyhow::Result<()> {
 	let mut plugin = CustomPlugin::from_manifest_file("archive", include_str!("plugin.json"))?;
@@ -19,7 +19,7 @@ fn main() -> anyhow::Result<()> {
 			return Ok(());
 		}
 		// Trick the parser to give it the right bin name
-		let it = std::iter::once(format!("mcvm {subcommand}")).chain(args.into_iter().skip(1));
+		let it = std::iter::once(format!("nitro {subcommand}")).chain(args.into_iter().skip(1));
 		let cli = Cli::parse_from(it);
 
 		let data_dir = ctx.get_data_dir()?;

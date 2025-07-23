@@ -1,7 +1,7 @@
 [package]
-name = "mcvm_tools"
+name = "nitro_tools"
 version = "0.9.0"
-description = "Utilities for MCVM"
+description = "Utilities for Nitrolaunch"
 keywords = ["minecraft", "launcher", "game", "mc"]
 categories.workspace = true
 edition.workspace = true
@@ -14,9 +14,9 @@ rust-version.workspace = true
 anyhow = { workspace = true }
 clap = { workspace = true }
 iso8601-timestamp = { workspace = true }
-mcvm = { workspace = true, features = ["schema"] }
-mcvm_net = { workspace = true }
-mcvm_options = { workspace = true, features = ["schema"] }
+nitrolaunch = { workspace = true, features = ["schema"] }
+nitro_net = { workspace = true }
+nitro_options = { workspace = true, features = ["schema"] }
 reqwest = { workspace = true }
 schemars = { workspace = true }
 serde = { workspace = true }

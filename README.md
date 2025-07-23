@@ -1,10 +1,10 @@
-# 🚀 MCVM
+# 🚀 Nitrolaunch
 
-MCVM is a Minecraft launcher and ecosystem meant to reinvent the launcher as you know it, providing a plugin system and a better interface with custom content such as mods and resource packs.
+Nitrolaunch is a Minecraft launcher and ecosystem meant to reinvent the launcher as you know it, providing a plugin system and a better interface with custom content such as mods and resource packs.
 
-In the official launcher and many alternative ones, you have to waste time moving files in and out of folders, downloading mods from sketchy websites, setting up servers, and sharing your config to play with friends. MCVM hopes to alleviate some of these pains with its smart systems for configuration sharing and package management.
+In the official launcher and many alternative ones, you have to waste time moving files in and out of folders, downloading mods from sketchy websites, setting up servers, and sharing your config to play with friends. Nitrolaunch hopes to alleviate some of these pains with its smart systems for configuration sharing and package management.
 
-In addition, MCVM is extremely modular, allowing you to build your perfect launcher by hand, or just use the amazing tools already built by the community.
+In addition, Nitrolaunch is extremely modular, allowing you to build your perfect launcher by hand, or just use the amazing tools already built by the community.
 
 
 - 🚀 [Getting Started](https://mcvm-launcher.github.io/mcvm/docs/guide/)
@@ -18,8 +18,8 @@ In addition, MCVM is extremely modular, allowing you to build your perfect launc
 # ✨ Features
 
 - 🚀 **Launching**: Launch both clients and servers seamlessly.
-- 🔌**Plugin System**: Many of MCVM's features are split into separate plugins. You can use this system to add your own features to the launcher as well.
-- ⌨️ **CLI**: An intuitive and ergonomic command-line interface makes using MCVM easy and satisfying.
+- 🔌**Plugin System**: Many of Nitrolaunch's features are split into separate plugins. You can use this system to add your own features to the launcher as well.
+- ⌨️ **CLI**: An intuitive and ergonomic command-line interface makes using Nitrolaunch easy and satisfying.
 - 💼 **Instances**: Separate game installations into self-contained instances.
 - 📄 **Game Options**: Specify client options and server properties using a backwards compatible format that can be shared between instances.
 - 📦 **Packages**: Automatically install mods, resource packs, and other addons with a novel package format and intelligent dependency management.
@@ -28,19 +28,19 @@ In addition, MCVM is extremely modular, allowing you to build your perfect launc
 - 🗃️ **Profiles**: Easily share settings across multiple instances, both client and server.
 - 💾 **Backups**: Create archived snapshots of the files you want, and not the ones you don't.
 - ⚡**Speed**: Probably one of the fastest launchers on the market. Download files concurrently with efficient caching and optimal disk usage.
-- 🛠️ **Deep Configuration**: Sensible defaults, but plenty of options and escape hatches to make MCVM work for you.
-- 🔒 **Robustness**: A lot of design work has gone into making MCVM resilient, secure, and future-proof.
-- ✅ **Compatability**: MCVM is designed to work on as many operating systems and architectures as possible.
+- 🛠️ **Deep Configuration**: Sensible defaults, but plenty of options and escape hatches to make Nitrolaunch work for you.
+- 🔒 **Robustness**: A lot of design work has gone into making Nitrolaunch resilient, secure, and future-proof.
+- ✅ **Compatability**: Nitrolaunch is designed to work on as many operating systems and architectures as possible.
 
 # 🚀 Getting Started
 
-To get started with MCVM, view our [user guide](https://mcvm-launcher.github.io/mcvm/docs/guide/).
+To get started with Nitrolaunch, view our [user guide](https://mcvm-launcher.github.io/mcvm/docs/guide/).
 
 # ➕ More Info
 
 ### Packages
 
-**_Packages_** are a big selling point of MCVM. You simply configure what packages you want on a profile or instance and all the files you need for some addon are automatically installed.
+**_Packages_** are a big selling point of Nitrolaunch. You simply configure what packages you want on a profile or instance and all the files you need for some addon are automatically installed.
 
 #### A universal format
 
@@ -48,7 +48,7 @@ Packages are designed in such a way that they work with any hosting system. Beca
 
 #### Package relationships
 
-MCVM's packaging format provides the ability to model complex relationships between packages. You won't have to worry about getting all of the correct dependencies for your packages, as they will be automatically installed.
+Nitrolaunch's packaging format provides the ability to model complex relationships between packages. You won't have to worry about getting all of the correct dependencies for your packages, as they will be automatically installed.
 
 #### Flexibility with scripting
 
@@ -64,7 +64,7 @@ You don't have to just use the packages from the official repositories. You can 
 
 # 👷 Use Cases
 
-MCVM has many use cases for different applications
+Nitrolaunch has many use cases for different applications
 
 ### A command-line launcher
 
@@ -76,15 +76,15 @@ All the functionalities of the CLI in a more approachable format as a desktop ap
 
 ### A library for your launcher
 
-You can use the MCVM library as a base for the functionalities of your launcher. Even if you don't use the packaging formats, MCVM contains functions to launch the game in a simple way, as well as customize the launch process to your liking.
+You can use the Nitrolaunch library as a base for the functionalities of your launcher. Even if you don't use the packaging formats, Nitrolaunch contains functions to launch the game in a simple way, as well as customize the launch process to your liking.
 
 ### A server management tool
 
-The MCVM CLI is the perfect assistant for server managers. The way that it groups configuration for instances makes it easy to orchestrate multiple running servers at once. Plugins can add features like launching on remote machines, config management, automatic scaling and restarts, and proxy support.
+The Nitrolaunch CLI is the perfect assistant for server managers. The way that it groups configuration for instances makes it easy to orchestrate multiple running servers at once. Plugins can add features like launching on remote machines, config management, automatic scaling and restarts, and proxy support.
 
 ### A packaging format
 
-Launchers can use the different MCVM crates to parse, validate, evaluate, and host MCVM packages.
+Launchers can use the different Nitrolaunch crates to parse, validate, evaluate, and host Nitrolaunch packages.
 
 # 👍 Status
 

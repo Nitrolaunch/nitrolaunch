@@ -1,5 +1,5 @@
 [package]
-name = "mcvm_auth"
+name = "nitro_auth"
 version = "0.7.0"
 description = "Useful authentication wrapper for Minecraft"
 keywords = ["minecraft", "launcher", "game", "mc", "auth"]
@@ -20,7 +20,7 @@ anyhow = { workspace = true }
 bytes = { workspace = true }
 cfg-match = { workspace = true }
 hex = { workspace = true }
-mcvm_shared = { workspace = true }
+nitro_shared = { workspace = true }
 nutype = { workspace = true }
 oauth2 = { workspace = true }
 rand = { workspace = true }

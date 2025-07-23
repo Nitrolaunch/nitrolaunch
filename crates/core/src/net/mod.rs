@@ -6,4 +6,4 @@ pub mod java;
 pub mod minecraft;
 
 // Re-export
-pub use mcvm_net::download;
+pub use nitro_net::download;

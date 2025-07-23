@@ -1,12 +1,12 @@
 use std::fmt::Display;
 
 use anyhow::bail;
-use mcvm_shared::later::Later;
-use mcvm_shared::loaders::LoaderMatch;
-use mcvm_shared::pkg::{PackageAddonHashes, PackageCategory};
-use mcvm_shared::util::yes_no;
-use mcvm_shared::versions::VersionPattern;
-use mcvm_shared::Side;
+use nitro_shared::later::Later;
+use nitro_shared::loaders::LoaderMatch;
+use nitro_shared::pkg::{PackageAddonHashes, PackageCategory};
+use nitro_shared::util::yes_no;
+use nitro_shared::versions::VersionPattern;
+use nitro_shared::Side;
 
 use super::conditions::Condition;
 use super::lex::{TextPos, Token};
@@ -15,7 +15,7 @@ use super::vars::Value;
 use super::FailReason;
 use crate::conditions::{ArchCondition, OSCondition};
 use crate::unexpected_token;
-use mcvm_shared::addon::AddonKind;
+use nitro_shared::addon::AddonKind;
 
 /// A command / statement run in a package script
 #[derive(Debug, Clone)]

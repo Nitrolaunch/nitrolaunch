@@ -1,5 +1,5 @@
 [package]
-name = "mcvm"
+name = "nitrolaunch"
 version = "0.25.0"
 description = "A fast, extensible, and powerful Minecraft launcher"
 keywords = ["minecraft", "launcher", "game", "mc"]
@@ -15,7 +15,7 @@ rust-version.workspace = true
 edition = "2021"
 license = "GPL-3.0-or-later"
 authors = ["CarbonSmasher"]
-repository = "https://github.com/CarbonSmasher/mcvm"
+repository = "https://github.com/mcvm-launcher/mcvm"
 rust-version = "1.77.0"
 categories = ["games"]
 
@@ -29,7 +29,7 @@ lto = "thin"
 strip = true
 
 [lib]
-name = "mcvm"
+name = "nitrolaunch"
 path = "src/lib.rs"
 
 [workspace]
@@ -58,10 +58,10 @@ builder = []
 disable_profile_update_packages = []
 schema = [
 	"dep:schemars",
-	"mcvm_config/schema",
-	"mcvm_core/schema",
-	"mcvm_pkg/schema",
-	"mcvm_shared/schema",
+	"nitro_config/schema",
+	"nitro_core/schema",
+	"nitro_pkg/schema",
+	"nitro_shared/schema",
 ]
 
 [workspace.dependencies]
@@ -82,18 +82,18 @@ inquire = { version = "0.6.2", default-features = false, features = [
 iso8601-timestamp = "0.2.17"
 itertools = "0.11.0"
 libflate = "2.1.0"
-mcvm = { path = ".", version = "0.25.0" }
-mcvm_auth = { path = "crates/auth", version = "0.7.0" }
-mcvm_core = { path = "crates/core", version = "0.9.0" }
-mcvm_config = { path = "crates/config", version = "0.1.0" }
-mcvm_mods = { path = "crates/mods", version = "0.9.0" }
-mcvm_net = { path = "crates/net", version = "0.3.0" }
-mcvm_options = { path = "crates/options", version = "0.8.0" }
-mcvm_parse = { path = "crates/parse", version = "0.17.0" }
-mcvm_pkg = { path = "crates/pkg", version = "0.16.0" }
-mcvm_pkg_gen = { path = "crates/pkg_gen", version = "0.1.0" }
-mcvm_plugin = { path = "crates/plugin", version = "0.5.0", default-features = false }
-mcvm_shared = { path = "crates/shared", version = "0.16.0" }
+nitrolaunch = { path = ".", version = "0.25.0" }
+nitro_auth = { path = "crates/auth", version = "0.7.0" }
+nitro_core = { path = "crates/core", version = "0.9.0" }
+nitro_config = { path = "crates/config", version = "0.1.0" }
+nitro_mods = { path = "crates/mods", version = "0.9.0" }
+nitro_net = { path = "crates/net", version = "0.3.0" }
+nitro_options = { path = "crates/options", version = "0.8.0" }
+nitro_parse = { path = "crates/parse", version = "0.17.0" }
+nitro_pkg = { path = "crates/pkg", version = "0.16.0" }
+nitro_pkg_gen = { path = "crates/pkg_gen", version = "0.1.0" }
+nitro_plugin = { path = "crates/plugin", version = "0.5.0", default-features = false }
+nitro_shared = { path = "crates/shared", version = "0.16.0" }
 nutype = { version = "0.4.0", features = ["serde"] }
 oauth2 = "4.4.2"
 pin-project-lite = "0.2.16"
@@ -138,13 +138,13 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 simd-json = { workspace = true }
 sha2 = { workspace = true }
-mcvm_config = { workspace = true }
-mcvm_core = { workspace = true }
-mcvm_net = { workspace = true }
-mcvm_parse = { workspace = true }
-mcvm_pkg = { workspace = true }
-mcvm_plugin = { workspace = true }
-mcvm_shared = { workspace = true }
+nitro_config = { workspace = true }
+nitro_core = { workspace = true }
+nitro_net = { workspace = true }
+nitro_parse = { workspace = true }
+nitro_pkg = { workspace = true }
+nitro_plugin = { workspace = true }
+nitro_shared = { workspace = true }
 shellexpand = { workspace = true }
 sysinfo = { workspace = true }
 tokio = { workspace = true, features = ["fs", "io-std"] }

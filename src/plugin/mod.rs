@@ -8,14 +8,14 @@ use std::sync::Arc;
 use crate::config::plugin::{PluginConfig, PluginsConfig};
 use crate::io::paths::Paths;
 use anyhow::Context;
-use mcvm_core::io::{json_from_file, json_to_file_pretty};
-use mcvm_plugin::hook_call::HookHandle;
-use mcvm_plugin::hooks::Hook;
-use mcvm_plugin::plugin::{Plugin, PluginManifest};
-use mcvm_plugin::CorePluginManager;
-use mcvm_shared::output::MCVMOutput;
-use mcvm_shared::output::{MessageContents, MessageLevel};
-use mcvm_shared::translate;
+use nitro_core::io::{json_from_file, json_to_file_pretty};
+use nitro_plugin::hook_call::HookHandle;
+use nitro_plugin::hooks::Hook;
+use nitro_plugin::plugin::{Plugin, PluginManifest};
+use nitro_plugin::CorePluginManager;
+use nitro_shared::output::NitroOutput;
+use nitro_shared::output::{MessageContents, MessageLevel};
+use nitro_shared::translate;
 use tokio::sync::Mutex;
 
 /// Manager for plugin configs and the actual loaded plugin manager
@@ -50,7 +50,7 @@ impl PluginManager {
 	}
 
 	/// Load the PluginManager from the plugins.json file
-	pub async fn load(paths: &Paths, o: &mut impl MCVMOutput) -> anyhow::Result<Self> {
+	pub async fn load(paths: &Paths, o: &mut impl NitroOutput) -> anyhow::Result<Self> {
 		let config = Self::open_config(paths).context("Failed to open plugins config")?;
 
 		let mut out = Self::new();
@@ -92,7 +92,7 @@ impl PluginManager {
 	/// Create a new PluginManager with no plugins
 	pub fn new() -> Self {
 		let mut manager = CorePluginManager::new();
-		manager.set_mcvm_version(crate::VERSION);
+		manager.set_nitro_version(crate::VERSION);
 		Self {
 			inner: Arc::new(Mutex::new(PluginManagerInner {
 				manager,
@@ -109,7 +109,7 @@ impl PluginManager {
 		manifest: PluginManifest,
 		paths: &Paths,
 		plugin_dir: Option<&Path>,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<()> {
 		let custom_config = plugin.custom_config.clone();
 		let id = plugin.id.clone();
@@ -125,12 +125,12 @@ impl PluginManager {
 			plugin.set_working_dir(plugin_dir.to_owned());
 		}
 
-		if let Some(plugin_mcvm_version) = &plugin.get_manifest().mcvm_version {
-			if let (Some(mcvm_version), Some(plugin_mcvm_version)) = (
+		if let Some(plugin_nitro_version) = &plugin.get_manifest().nitro_version {
+			if let (Some(nitro_version), Some(plugin_nitro_version)) = (
 				version_compare::Version::from(crate::VERSION),
-				version_compare::Version::from(&plugin_mcvm_version),
+				version_compare::Version::from(&plugin_nitro_version),
 			) {
-				if plugin_mcvm_version > mcvm_version {
+				if plugin_nitro_version > nitro_version {
 					o.display(
 						MessageContents::Warning(translate!(
 							o,
@@ -171,7 +171,7 @@ impl PluginManager {
 		&mut self,
 		plugin: PluginConfig,
 		paths: &Paths,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<()> {
 		// Get the path for the manifest
 		let path = paths.plugins.join(format!("{}.json", plugin.id));
@@ -278,7 +278,7 @@ impl PluginManager {
 		hook: H,
 		arg: &H::Arg,
 		paths: &Paths,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<Vec<HookHandle<H>>> {
 		let inner = self.inner.lock().await;
 		inner.manager.call_hook(hook, arg, &paths.core, o).await
@@ -291,7 +291,7 @@ impl PluginManager {
 		plugin_id: &str,
 		arg: &H::Arg,
 		paths: &Paths,
-		o: &mut impl MCVMOutput,
+		o: &mut impl NitroOutput,
 	) -> anyhow::Result<Option<HookHandle<H>>> {
 		let inner = self.inner.lock().await;
 		inner
@@ -301,7 +301,7 @@ impl PluginManager {
 	}
 
 	/// Checks plugins to make sure that their dependencies are installed, outputting a warning if any are not
-	pub async fn check_dependencies(&self, o: &mut impl MCVMOutput) {
+	pub async fn check_dependencies(&self, o: &mut impl NitroOutput) {
 		let inner = self.inner.lock().await;
 		let ids: Vec<_> = inner
 			.manager

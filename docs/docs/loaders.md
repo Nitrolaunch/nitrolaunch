@@ -1,8 +1,8 @@
 # Loaders
 
-MCVM and its packages support multiple different loaders for the game. The package format attempts to support as many modifications as possible, but that does not mean that every launcher is able to install all of them automatically.
+Nitrolaunch and its packages support multiple different loaders for the game. The package format attempts to support as many modifications as possible, but that does not mean that every launcher is able to install all of them automatically.
 
-The different types of fields are listed here. Variants may be listed with `supported` or `unsupported` depending on whether MCVM supports installing them.
+The different types of fields are listed here. Variants may be listed with `supported` or `unsupported` depending on whether Nitrolaunch supports installing them.
 
 - `vanilla`: The standard game. (supported)
 - `fabric`: The Fabric modloader. (supported)

@@ -1,7 +1,7 @@
-# MCVM Transfer
-ID: `mcvm_transfer`
+# Nitrolaunch Transfer
+ID: `nitro_transfer`
 
-The MCVM Transfer plugin is used to import and export instances in a format that MCVM understands. This can be useful for transferring instances to other launchers that support MCVM, or between computers.
+The Nitrolaunch Transfer plugin is used to import and export instances in a format that Nitrolaunch understands. This can be useful for transferring instances to other launchers that support Nitrolaunch, or between computers.
 
 ## Usage
-Use the `mcvm instance import` and `mcvm instance export` commands along with the `mcvm` format.
+Use the `nitro instance import` and `nitro instance export` commands along with the `nitrolaunch` format.

@@ -5,15 +5,15 @@ use std::{
 };
 
 use anyhow::Context;
-use mcvm::config_crate::instance::InstanceConfig;
-use mcvm_plugin::{api::CustomPlugin, hooks::ImportInstanceResult};
-use mcvm_shared::Side;
+use nitrolaunch::config_crate::instance::InstanceConfig;
+use nitro_plugin::{api::CustomPlugin, hooks::ImportInstanceResult};
+use nitro_shared::Side;
 use serde::{Deserialize, Serialize};
 use zip::{write::FileOptions, ZipArchive, ZipWriter};
 
 fn main() -> anyhow::Result<()> {
 	let mut plugin =
-		CustomPlugin::from_manifest_file("mcvm_transfer", include_str!("plugin.json"))?;
+		CustomPlugin::from_manifest_file("nitro_transfer", include_str!("plugin.json"))?;
 
 	plugin.export_instance(|_, arg| {
 		let game_dir = PathBuf::from(arg.game_dir);
@@ -50,7 +50,7 @@ fn main() -> anyhow::Result<()> {
 		}
 
 		// Write the metadata file
-		zip.start_file("mcvm_meta.json", FileOptions::<()>::default())
+		zip.start_file("nitro_meta.json", FileOptions::<()>::default())
 			.context("Failed to create metadata file in export")?;
 
 		let meta = Metadata {
@@ -70,7 +70,7 @@ fn main() -> anyhow::Result<()> {
 		// Read the metadata
 		let mut zip = ZipArchive::new(File::open(source_path).context("Failed to open instance")?)?;
 		let mut meta_file = zip
-			.by_name("mcvm_meta.json")
+			.by_name("nitro_meta.json")
 			.context("Metadata file is missing in instance")?;
 		let meta: Metadata = serde_json::from_reader(&mut meta_file)
 			.context("Failed to deserialize instance metadata")?;
@@ -100,7 +100,7 @@ fn main() -> anyhow::Result<()> {
 fn should_include_file(path: &Path) -> bool {
 	if let Some(file_name) = path.file_name() {
 		let file_name = file_name.to_string_lossy();
-		if file_name.starts_with("mcvm_") {
+		if file_name.starts_with("nitro_") {
 			return false;
 		}
 	}

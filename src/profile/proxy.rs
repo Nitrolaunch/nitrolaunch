@@ -1,18 +1,18 @@
 use std::{path::PathBuf, process::Child};
 
 use anyhow::Context;
-// use mcvm_core::auth_crate::mc::ClientId;
-use mcvm_core::io::java::install::JavaInstallation;
-// use mcvm_core::io::java::install::JavaInstallationKind;
-// use mcvm_core::io::java::JavaMajorVersion;
-// use mcvm_core::launch::{
+// use nitro_core::auth_crate::mc::ClientId;
+use nitro_core::io::java::install::JavaInstallation;
+// use nitro_core::io::java::install::JavaInstallationKind;
+// use nitro_core::io::java::JavaMajorVersion;
+// use nitro_core::launch::{
 // 	launch_process, LaunchConfiguration, LaunchProcessParameters, LaunchProcessProperties,
 // };
-// use mcvm_core::user::UserManager;
-// use mcvm_mods::paper;
-// use mcvm_shared::modifications::Proxy;
-// use mcvm_shared::output::{MCVMOutput, MessageContents, MessageLevel};
-// use mcvm_shared::translate;
+// use nitro_core::user::UserManager;
+// use nitro_mods::paper;
+// use nitro_shared::modifications::Proxy;
+// use nitro_shared::output::{NitroOutput, MessageContents, MessageLevel};
+// use nitro_shared::translate;
 // use reqwest::Client;
 
 // use crate::data::config::plugin::PluginManager;
@@ -27,7 +27,7 @@ use mcvm_core::io::java::install::JavaInstallation;
 // 		manager: &mut UpdateManager,
 // 		paths: &Paths,
 // 		client: &Client,
-// 		o: &mut impl MCVMOutput,
+// 		o: &mut impl NitroOutput,
 // 	) -> anyhow::Result<()> {
 // 		o.start_process();
 // 		o.display(
@@ -75,7 +75,7 @@ use mcvm_core::io::java::install::JavaInstallation;
 // 		client: &Client,
 // 		paths: &Paths,
 // 		plugins: &PluginManager,
-// 		o: &mut impl MCVMOutput,
+// 		o: &mut impl NitroOutput,
 // 	) -> anyhow::Result<ProxyHandle> {
 // 		// Check for updates first
 // 		let mut manager = UpdateManager::new(false, true);
