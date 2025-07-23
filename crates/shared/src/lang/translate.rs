@@ -71,7 +71,7 @@ define_translations! {
 	ExtractedNativeFile, "When a native library file extract is extracted", "Extracted native file %file";
 	NoDefaultUser, "When users are available but no default is set", "Users are available but no default user is set";
 	NoUsers, "When no users are available", "No users are available";
-	ModificationNotSupported, "When a loader can't be installed by Nitrolaunch", "%mod installation is currently unimplemented by Nitrolaunch. You might have to install a plugin to support it.";
+	ModificationNotSupported, "When a loader can't be installed by Nitrolaunch", "A plugin is needed to support %mod installation";
 	EmptyProfile, "When a profile has no instances", "Profile '%profile' does not have any instances";
 	StartDownloadingVersionManifest, "When starting to download the version manifest", "Downloading version manifest";
 	StartDownloadingGameJar, "When starting to download the game jar", "Downloading %side jar";
