@@ -86,7 +86,7 @@ export default function NavBar(props: NavBarProps) {
 							{/* <div style="margin-top:-0.45rem">
 								<Logo width="25px" />
 							</div> */}
-							MCVM
+							NITRO
 						</a>
 					</h3>
 					<div class="cont end navbar-item" id="navbar-right">

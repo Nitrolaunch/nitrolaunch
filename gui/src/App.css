@@ -24,17 +24,17 @@
 	--text: var(--fg);
 
 	--instance: #7ee91b;
-	--profile: #1bb9e9;
-	--package: #e9901b;
-	--plugin: #8635ff;
+	--profile: #1be9e9;
+	--package: #e9671b;
+	--plugin: #5b65ff;
 	--warning: #e9ca1b;
 	--error: #d40e3d;
 
 	--instancebg: #17220d;
 	--profilebg: #0d1f24;
-	--packagebg: #311e05;
-	--pluginfg: #b380ff;
-	--pluginbg: #23123d;
+	--packagebg: #311705;
+	--pluginfg: #8b93ff;
+	--pluginbg: #11143f;
 	--errorbg: #2b0e14;
 
 	/* Other values */
