@@ -54,8 +54,32 @@ export interface LaunchConfig {
 	memory?: string | LaunchMemory;
 	args?: LaunchArgs;
 	env?: { [key: string]: string };
-	java?: "auto" | "system" | "adoptium" | "zulu" | "graalvm" | string;
+	java?: JavaType;
 	[extraKey: string]: any;
+}
+
+export type JavaType =
+	| "auto"
+	| "system"
+	| "adoptium"
+	| "zulu"
+	| "graalvm"
+	| string;
+
+export function getJavaDisplayName(x: JavaType) {
+	if (x == "auto") {
+		return "Auto";
+	} else if (x == "system") {
+		return "System";
+	} else if (x == "adoptium") {
+		return "Adoptium";
+	} else if (x == "zulu") {
+		return "Zulu";
+	} else if (x == "graalvm") {
+		return "GraalVM";
+	} else {
+		return x;
+	}
 }
 
 export interface LaunchMemory {

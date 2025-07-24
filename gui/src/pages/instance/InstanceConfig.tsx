@@ -45,6 +45,7 @@ import {
 	getDerivedPackages,
 	getDerivedValue,
 	InstanceConfigMode,
+	JavaType,
 	parseLaunchMemory,
 	readEditableInstanceConfig,
 	saveInstanceConfig,
@@ -178,6 +179,7 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 	let [clientPackages, setClientPackages] = createSignal<PackageConfig[]>([]);
 	let [serverPackages, setServerPackages] = createSignal<PackageConfig[]>([]);
 
+	let [javaType, setJavaType] = createSignal<JavaType | undefined>(undefined);
 	let [initMemory, setInitMemory] = createSignal<number | undefined>(undefined);
 	let [maxMemory, setMaxMemory] = createSignal<number | undefined>(undefined);
 	let [envVars, setEnvVars] = createSignal<string[]>([]);
@@ -242,6 +244,10 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 			setServerPackages(server);
 
 			// Launch config
+			setJavaType(
+				config()!.launch == undefined ? undefined : config()!.launch!.java
+			);
+
 			let [init, max] = parseLaunchMemory(
 				config()!.launch == undefined ? undefined : config()!.launch!.memory
 			);
@@ -366,6 +372,7 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 			launch: {
 				memory: launchMemory,
 				env: Object.keys(env).length == 0 ? undefined : env,
+				java: javaType(),
 			},
 		};
 
@@ -932,6 +939,8 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 			</DisplayShow>
 			<DisplayShow when={tab() == "launch"}>
 				<LaunchConfig
+					java={javaType()}
+					setJava={setJavaType}
 					initMemory={initMemory()}
 					maxMemory={maxMemory()}
 					setInitMemory={setInitMemory}
