@@ -152,5 +152,12 @@
 		"github_owner": "mcvm-launcher",
 		"github_repo": "mcvm",
 		"description": "Clean up old files"
+	},
+	"glfw_fix": {
+		"id": "glfw_fix",
+		"name": "GLFW Fix",
+		"github_owner": "mcvm-launcher",
+		"github_repo": "mcvm",
+		"description": "Fixes crashes from a bad GLFW version"
 	}
 }
