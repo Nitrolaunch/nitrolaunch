@@ -1,6 +1,7 @@
 /// System Java installation
 mod system;
 
+use std::env::consts::EXE_SUFFIX;
 use std::fs::File;
 use std::io::{BufReader, Read, Seek};
 
@@ -9,7 +10,7 @@ use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 
 use anyhow::{bail, Context};
-use nitro_shared::output::{NitroOutput, MessageContents, MessageLevel};
+use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
 use nitro_shared::{translate, UpdateDepth};
 use tar::Archive;
 use zip::ZipArchive;
@@ -122,11 +123,13 @@ impl JavaInstallation {
 
 	/// Get the path to the JVM.
 	pub fn get_jvm_path(&self) -> PathBuf {
-		#[cfg(target_family = "windows")]
-		let path = "bin/java.exe";
-		#[cfg(not(target_family = "windows"))]
-		let path = "bin/java";
-		self.path.join(path)
+		let filename = format!("java{}", EXE_SUFFIX);
+		let bin_path = self.path.join("bin").join(&filename);
+		if bin_path.exists() {
+			bin_path
+		} else {
+			self.path.join(filename)
+		}
 	}
 
 	/// Verifies that this installation is set up correctly
