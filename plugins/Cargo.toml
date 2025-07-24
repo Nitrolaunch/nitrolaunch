@@ -47,6 +47,10 @@ name = "nitro_plugin_gen_pkg"
 path = "plugins/gen_pkg/main.rs"
 
 [[bin]]
+name = "nitro_plugin_glfw_fix"
+path = "plugins/glfw_fix/main.rs"
+
+[[bin]]
 name = "nitro_plugin_nitro_transfer"
 path = "plugins/nitro_transfer/main.rs"
 

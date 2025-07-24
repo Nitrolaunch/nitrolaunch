@@ -23,6 +23,7 @@ package_zips.platform_dependent:
 	@rm -f release/docs-${OS}.zip 
 	@rm -f release/fabric_quilt-${OS}.zip 
 	@rm -f release/gen_pkg-${OS}.zip 
+	@rm -f release/glfw_fix-${OS}.zip 
 	@rm -f release/nitro_transfer-${OS}.zip 
 	@rm -f release/modrinth-${OS}.zip 
 	@rm -f release/modrinth_api-${OS}.zip 
@@ -47,6 +48,7 @@ package_zips.platform_dependent:
 	@zip -j release/docs-${OS}.zip ../target/release/nitro_plugin_docs${EXTENSION} plugins/docs/plugin.json
 	@zip -j release/fabric_quilt-${OS}.zip ../target/release/nitro_plugin_fabric_quilt${EXTENSION} plugins/fabric_quilt/plugin.json
 	@zip -j release/gen_pkg-${OS}.zip ../target/release/nitro_plugin_gen_pkg${EXTENSION} plugins/gen_pkg/plugin.json
+	@zip -j release/glfw_fix-${OS}.zip ../target/release/nitro_plugin_glfw_fix${EXTENSION} plugins/glfw_fix/plugin.json
 	@zip -j release/nitro_transfer-${OS}.zip ../target/release/nitro_plugin_nitro_transfer${EXTENSION} plugins/nitro_transfer/plugin.json
 	@zip -j release/modrinth-${OS}.zip ../target/release/nitro_plugin_modrinth${EXTENSION} plugins/modrinth/plugin.json
 	@zip -j release/modrinth_api-${OS}.zip ../target/release/nitro_plugin_modrinth_api${EXTENSION} plugins/modrinth_api/plugin.json plugins/modrinth_api/page.html
@@ -102,6 +104,10 @@ install.fabric_quilt:
 install.gen_pkg:
 	@cargo install --path . --bin nitro_plugin_gen_pkg --offline
 	@cat plugins/gen_pkg/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/gen_pkg.json
+
+install.glfw_fix:
+	@cargo install --path . --bin nitro_plugin_glfw_fix --offline
+	@cat plugins/glfw_fix/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/glfw_fix.json
 
 install.lang:
 	@cp plugins/lang/plugin.json ~/.local/share/nitro/plugins/lang.json
