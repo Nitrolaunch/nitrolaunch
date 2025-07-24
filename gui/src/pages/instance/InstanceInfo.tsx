@@ -1,5 +1,11 @@
 import { useParams } from "@solidjs/router";
-import { createResource, createSignal, onMount, Show } from "solid-js";
+import {
+	createEffect,
+	createResource,
+	createSignal,
+	onMount,
+	Show,
+} from "solid-js";
 import { loadPagePlugins } from "../../plugins";
 import {
 	createConfiguredPackages,
@@ -49,6 +55,15 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 	let [derivedServerPackages, setDerivedServerPackages] = createSignal<
 		PackageConfig[]
 	>([]);
+
+	createEffect(async () => {
+		try {
+			await invoke("set_last_opened_instance", {
+				id: id,
+				instanceOrProfile: "instance",
+			});
+		} catch (e) {}
+	});
 
 	let [instance, _] = createResource(async () => {
 		// Get the instance or profile

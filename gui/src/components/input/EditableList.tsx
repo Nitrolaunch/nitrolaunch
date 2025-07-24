@@ -4,6 +4,8 @@ import IconButton from "./IconButton";
 import { Delete, Plus } from "../../icons";
 
 export default function EditableList(props: EditableListProps) {
+	let reorderable = props.reorderable == undefined ? true : props.reorderable;
+
 	let [newItem, setNewItem] = createSignal("");
 
 	let addNewItem = () => {
@@ -22,7 +24,7 @@ export default function EditableList(props: EditableListProps) {
 					return (
 						<div
 							class="editable-list-item"
-							draggable="true"
+							draggable={reorderable ? "true" : "false"}
 							ondragstart={(e) => {
 								e.dataTransfer!.setData(
 									"Text",
@@ -118,4 +120,5 @@ interface DragData {
 export interface EditableListProps {
 	items: string[];
 	setItems: (value: string[]) => void;
+	reorderable?: boolean;
 }

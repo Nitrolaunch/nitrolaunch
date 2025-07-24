@@ -28,6 +28,8 @@ pub struct LauncherData {
 	pub last_launches: HashMap<String, InstanceLaunch>,
 	/// The instance or profile where a package was last added to
 	pub last_added_package: Option<(String, InstanceOrProfile)>,
+	/// The instance or profile that was last opened
+	pub last_opened_instance: Option<(String, InstanceOrProfile)>,
 }
 
 impl LauncherData {

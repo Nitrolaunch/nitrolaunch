@@ -11,12 +11,17 @@
 }
 
 .sidebar-item {
-	height: 2.7rem;
+	height: 2.3rem;
 	width: 100%;
 	border-bottom: 0.15rem solid var(--bg2);
 	justify-content: flex-start;
-	font-weight: bold;
 	box-sizing: border-box;
+
+	font-size: 0.9rem;
+	font-weight: bold;
+
+	cursor: pointer;
+	line-height: 1;
 }
 
 .sidebar-item svg,
@@ -29,11 +34,22 @@
 	border-right-width: 0.3rem;
 	border-right-style: solid;
 	border-right-color: var(--fg2);
-	border-bottom-color: var(--bg4);
 	transition: border-right-width 0.1s;
 }
 
 .sidebar-item.sidebar-item.selected {
 	background-color: var(--bg2);
 	border-top-color: var(--fg3);
+}
+
+.sidebar-divider {
+	height: 2.5rem;
+	padding-top: 0.8rem;
+	box-sizing: border-box;
+
+	border-bottom: 0.15rem solid var(--bg2);
+
+	color: var(--fg2);
+	font-size: 0.8rem;
+	font-weight: bold;
 }

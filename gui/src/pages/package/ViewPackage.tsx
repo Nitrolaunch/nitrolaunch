@@ -245,7 +245,7 @@ export default function ViewPackage(props: ViewPackageProps) {
 									></div>
 								</Show>
 								<Show when={selectedTab() == "versions"}>
-									<div class="cont">
+									<div class="cont fullwidth">
 										<PackageVersions
 											packageId={packageId}
 											props={properties()!}
@@ -287,7 +287,7 @@ export default function ViewPackage(props: ViewPackageProps) {
 											onclick={() => setGalleryPreview(undefined)}
 										/>
 										<div
-											class="package-gallery-arrow"
+											class="cont package-gallery-arrow"
 											style="left:1rem"
 											onclick={() => {
 												if (galleryPreview() != undefined) {
@@ -298,10 +298,10 @@ export default function ViewPackage(props: ViewPackageProps) {
 												}
 											}}
 										>
-											<Icon icon={AngleLeft} size="2rem" />
+											<Icon icon={AngleLeft} size="1.5rem" />
 										</div>
 										<div
-											class="package-gallery-arrow"
+											class="cont package-gallery-arrow"
 											style="right:1rem"
 											onclick={() => {
 												if (galleryPreview() != undefined) {
@@ -312,7 +312,7 @@ export default function ViewPackage(props: ViewPackageProps) {
 												}
 											}}
 										>
-											<Icon icon={AngleRight} size="2rem" />
+											<Icon icon={AngleRight} size="1.5rem" />
 										</div>
 									</Modal>
 								</Show>

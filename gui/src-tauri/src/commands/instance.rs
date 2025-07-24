@@ -21,6 +21,7 @@ use std::fmt::Debug;
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
+use tauri::Manager;
 
 use super::{fmt_err, load_config};
 
@@ -505,6 +506,32 @@ pub async fn get_profile_users(
 	}
 
 	Ok(out)
+}
+
+#[tauri::command]
+pub async fn get_last_opened_instance(
+	state: tauri::State<'_, State>,
+) -> Result<Option<(String, InstanceOrProfile)>, String> {
+	let data = state.data.lock().await;
+
+	Ok(data.last_opened_instance.clone())
+}
+
+#[tauri::command]
+pub async fn set_last_opened_instance(
+	state: tauri::State<'_, State>,
+	app_handle: tauri::AppHandle,
+	id: String,
+	instance_or_profile: InstanceOrProfile,
+) -> Result<(), String> {
+	let mut data = state.data.lock().await;
+	data.last_opened_instance = Some((id, instance_or_profile));
+
+	fmt_err(data.write(&state.paths))?;
+
+	let _ = app_handle.emit_all("nitro_update_last_opened_instance", "");
+
+	Ok(())
 }
 
 #[derive(Deserialize, Serialize, Clone, Copy)]

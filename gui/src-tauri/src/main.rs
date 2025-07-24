@@ -104,6 +104,8 @@ fn main() {
 			commands::instance::delete_instance,
 			commands::instance::delete_profile,
 			commands::instance::get_profile_users,
+			commands::instance::get_last_opened_instance,
+			commands::instance::set_last_opened_instance,
 			commands::package::get_packages,
 			commands::package::preload_packages,
 			commands::package::get_package_meta,

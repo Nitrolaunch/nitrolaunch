@@ -36,7 +36,11 @@ export default function UserWidget(props: UserWidgetProps) {
 		});
 	});
 
-	onCleanup(() => eventUnlisten());
+	onCleanup(() => {
+		if (eventUnlisten() != undefined) {
+			eventUnlisten()!();
+		}
+	});
 
 	async function updateUsers() {
 		try {

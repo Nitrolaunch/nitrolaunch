@@ -81,7 +81,7 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 		)
 	);
 
-	createEffect(() => {
+	createEffect(async () => {
 		props.setFooterData({
 			selectedItem: props.creating ? "" : undefined,
 			mode: isInstance
@@ -89,6 +89,13 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 				: FooterMode.SaveProfileConfig,
 			action: saveConfig,
 		});
+
+		try {
+			await invoke("set_last_opened_instance", {
+				id: id,
+				instanceOrProfile: props.mode,
+			});
+		} catch (e) {}
 	});
 
 	let [from, setFrom] = createSignal<string[] | undefined>();
