@@ -26,7 +26,7 @@
 					"name": "Smithed Base",
 					"loader": "fabric",
 					"packages": [
-						"globalpacks"
+						"modrinth:globalpacks"
 					],
 					"datapack_folder": "global_packs/required_data"
 				}
