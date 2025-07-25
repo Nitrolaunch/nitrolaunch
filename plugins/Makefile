@@ -2,7 +2,7 @@ package: package.platform_dependent package.cross_platform
 
 package.cross_platform: build.weld
 	@mkdir -p release
-	@rm -f release/weld-${OS}.zip && zip -j release/weld-${OS}.zip plugins/weld/plugin.json plugins/weld/weld.pyz
+	@rm -f release/weld-universal.zip && zip -j release/weld-universal.zip plugins/weld/plugin.json plugins/weld/weld.pyz
 	@cp plugins/extra_versions/plugin.json release/extra_versions-universal.json
 	@cp plugins/lang/plugin.json release/lang-universal.json
 
