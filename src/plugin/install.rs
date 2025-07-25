@@ -9,7 +9,7 @@ use nitro_core::{io::json_from_file, net::download};
 use nitro_net::github::get_github_releases;
 use nitro_plugin::plugin::PluginManifest;
 use nitro_shared::{
-	output::{NitroOutput, MessageContents, MessageLevel},
+	output::{MessageContents, MessageLevel, NitroOutput},
 	util::TARGET_BITS_STR,
 };
 use reqwest::Client;
@@ -44,7 +44,7 @@ pub async fn get_verified_plugins(
 			.context("Failed to deserialize core verified list")?;
 
 	if let Ok(remote_list) = download::json::<HashMap<String, VerifiedPlugin>>(
-		"https://github.com/mcvm-launcher/mcvm/blob/main/src/plugin/verified_plugins.json",
+		"https://github.com/Nitrolaunch/nitrolaunch/blob/main/src/plugin/verified_plugins.json",
 		client,
 	)
 	.await

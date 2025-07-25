@@ -64,7 +64,7 @@ impl PackageRepository {
 	pub fn std() -> Self {
 		Self::Basic(BasicPackageRepository::new(
 			"std",
-			RepoLocation::Remote("https://mcvm-launcher.github.io/packages/std".into()),
+			RepoLocation::Remote("https://nitrolaunch.github.io/packages/std".into()),
 		))
 	}
 

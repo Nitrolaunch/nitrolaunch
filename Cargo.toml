@@ -15,7 +15,7 @@ rust-version.workspace = true
 edition = "2021"
 license = "GPL-3.0-or-later"
 authors = ["CarbonSmasher"]
-repository = "https://github.com/mcvm-launcher/mcvm"
+repository = "https://github.com/Nitrolaunch/nitrolaunch"
 rust-version = "1.77.0"
 categories = ["games"]
 

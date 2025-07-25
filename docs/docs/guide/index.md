@@ -13,11 +13,11 @@ cargo install nitro_cli
 in your favorite terminal. This will install the CLI on your system.
 
 ### Releases
-Download the correct binary for your system from [the latest release](https://github.com/mcvm-launcher/mcvm/releases/latest).
+Download the correct binary for your system from [the latest release](https://github.com/Nitrolaunch/nitrolaunch/releases/latest).
 Note that you will have to install it yourself.
 
 ### Dev Builds
-To install from one of the prebuilt development binaries, visit [nightly.link](https://nightly.link/mcvm-launcher/mcvm/workflows/build/dev) and download and extract the artifacts for your operating system. Note that these builds may be unstable.
+To install from one of the prebuilt development binaries, visit [nightly.link](https://nightly.link/nitrolaunch/nitrolaunch/workflows/build/dev) and download and extract the artifacts for your operating system. Note that these builds may be unstable.
 
 ## 2. Basic Concepts
 Nitrolaunch has some basic features that need to be explained first.

@@ -7,8 +7,8 @@ In the official launcher and many alternative ones, you have to waste time movin
 In addition, Nitrolaunch is extremely modular, allowing you to build your perfect launcher by hand, or just use the amazing tools already built by the community.
 
 
-- 🚀 [Getting Started](https://mcvm-launcher.github.io/mcvm/docs/guide/)
-- 📖 [Documentation](https://mcvm-launcher.github.io/mcvm/docs/)
+- 🚀 [Getting Started](https://nitrolaunch.github.io/nitrolaunch/docs/guide/)
+- 📖 [Documentation](https://nitrolaunch.github.io/nitrolaunch/docs/)
 - ✨ [Features](#✨-features)
 - ➕ [More Info](#➕-more-info)
 - 👷 [Use Cases](#👷-use-cases)
@@ -34,7 +34,7 @@ In addition, Nitrolaunch is extremely modular, allowing you to build your perfec
 
 # 🚀 Getting Started
 
-To get started with Nitrolaunch, view our [user guide](https://mcvm-launcher.github.io/mcvm/docs/guide/).
+To get started with Nitrolaunch, view our [user guide](https://nitrolaunch.github.io/nitrolaunch/docs/guide/).
 
 # ➕ More Info
 
