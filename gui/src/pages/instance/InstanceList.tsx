@@ -312,6 +312,18 @@ interface GroupSectionData {
 function Item(props: ItemProps) {
 	const [isHovered, setIsHovered] = createSignal(false);
 
+	let icon =
+		props.instance.icon == undefined ? (
+			<div class="cont instance-list-icon">
+				<Icon icon={Box} size="2.1rem" />
+			</div>
+		) : (
+			<img
+				src={getInstanceIconSrc(props.instance.icon)}
+				class="instance-list-icon"
+			/>
+		);
+
 	return (
 		<div
 			class={`input-shadow instance-list-item noselect ${
@@ -363,10 +375,7 @@ function Item(props: ItemProps) {
 					/>
 				</div>
 			</Show>
-			<img
-				src={getInstanceIconSrc(props.instance.icon)}
-				class="instance-list-icon"
-			/>
+			{icon}
 			<div class="instance-list-item-details">
 				<div style="" class="bold">
 					{props.instance.name !== null
