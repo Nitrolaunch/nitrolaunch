@@ -23,7 +23,7 @@ import IconTextButton from "../input/IconTextButton";
 import Tip from "../dialog/Tip";
 import ProfileDeletePrompt from "../instance/ProfileDeletePrompt";
 
-export default function LaunchFooter(props: LaunchFooterProps) {
+export default function Footer(props: FooterProps) {
 	// Basic state
 	const [runningInstances, setRunningInstances] = createSignal<
 		RunningInstanceInfo[]
@@ -318,7 +318,7 @@ export default function LaunchFooter(props: LaunchFooterProps) {
 	);
 }
 
-export interface LaunchFooterProps {
+export interface FooterProps {
 	selectedItem?: string;
 	mode: FooterMode;
 	selectedUser?: string;

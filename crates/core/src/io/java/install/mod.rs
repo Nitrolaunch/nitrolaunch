@@ -133,10 +133,13 @@ impl JavaInstallation {
 	}
 
 	/// Verifies that this installation is set up correctly
-	pub fn verify(&self) -> anyhow::Result<bool> {
+	pub fn verify(&self) -> anyhow::Result<()> {
 		let jvm_path = self.get_jvm_path();
 		if !jvm_path.exists() || !jvm_path.is_file() {
-			return Ok(false);
+			bail!(
+				"Java executable (path {:?}) does not exist or is a file",
+				jvm_path
+			);
 		}
 		#[cfg(target_family = "unix")]
 		{
@@ -147,11 +150,11 @@ impl JavaInstallation {
 				.permissions()
 				.mode();
 			if mode & 0o111 == 0 {
-				return Ok(false);
+				bail!("Java binary is not executable");
 			}
 		}
 
-		Ok(true)
+		Ok(())
 	}
 }
 
