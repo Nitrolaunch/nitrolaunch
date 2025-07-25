@@ -20,6 +20,18 @@
 				}
 			}
 		},
+		"add_profiles": {
+			"constant": {
+				"smithed-base": {
+					"name": "Smithed Base",
+					"loader": "fabric",
+					"packages": [
+						"globalpacks"
+					],
+					"datapack_dir": "global_packs/required_data"
+				}
+			}
+		},
 		"add_custom_package_repositories": {
 			"constant": [
 				{
