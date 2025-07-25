@@ -1,4 +1,11 @@
-import { createMemo, createResource, createSignal, For, Show } from "solid-js";
+import {
+	createMemo,
+	createResource,
+	createSignal,
+	For,
+	Setter,
+	Show,
+} from "solid-js";
 import InlineSelect from "../../components/input/InlineSelect";
 import "./PackagesConfig.css";
 import { PackageMeta, PackageProperties, PkgRequest } from "../../types";
@@ -19,6 +26,11 @@ import { Loader } from "../../package";
 import IconTextButton from "../../components/input/IconTextButton";
 import { getBrowseUrl } from "../package/BrowsePackages";
 import { canonicalizeListOrSingle } from "../../utils/values";
+import Modal from "../../components/dialog/Modal";
+import DeriveIndicator from "./DeriveIndicator";
+import { InstanceConfig, PackageOverrides } from "./read_write";
+import Tip from "../../components/dialog/Tip";
+import EditableList from "../../components/input/EditableList";
 
 export default function PackagesConfig(props: PackagesConfigProps) {
 	let [filter, setFilter] = createSignal("user");
@@ -132,6 +144,8 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 		}
 	});
 
+	let [showOverridesModal, setShowOverridesModal] = createSignal(false);
+
 	return (
 		<div class="cont col" id="packages-config">
 			<Show when={resolutionError() != undefined}>
@@ -173,7 +187,9 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 						color="var(--bg2)"
 						selectedColor=""
 						selected={false}
-						onClick={() => {}}
+						onClick={() => {
+							setShowOverridesModal(true);
+						}}
 					/>
 				</div>
 				<div class="cont end fullwidth">
@@ -346,6 +362,47 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 					</For>
 				</Show>
 			</div>
+			<Modal
+				visible={showOverridesModal()}
+				onClose={setShowOverridesModal}
+				width="40rem"
+			>
+				<div class="cont fullwidth fields" style="padding:2rem">
+					<div class="cont start label">
+						<label for="launch-env">SUPPRESSED PACKAGES</label>
+						<DeriveIndicator
+							parentConfigs={props.parentConfigs}
+							currentValue={props.overrides.suppress}
+							property={(x) =>
+								x.overrides == undefined ? undefined : x.overrides.suppress
+							}
+						/>
+					</div>
+					<Tip
+						tip="These packages will still be installed, but none of their files or relationships will be applied. Perfect for removing or manually replacing packages."
+						fullwidth
+					>
+						<EditableList
+							items={canonicalizeListOrSingle(props.overrides.suppress)}
+							setItems={(x) => {
+								props.setOverrides((overrides) => {
+									overrides.suppress = x;
+									return overrides;
+								});
+								props.onChange();
+							}}
+						/>
+					</Tip>
+					<div class="cont fullwidth">
+						<button
+							onclick={() => setShowOverridesModal(false)}
+							style="border: 0.15rem solid var(--bg3)"
+						>
+							Close
+						</button>
+					</div>
+				</div>
+			</Modal>
 		</div>
 	);
 }
@@ -366,6 +423,10 @@ export interface PackagesConfigProps {
 	minecraftVersion?: string;
 	loader?: Loader;
 	showBrowseButton: boolean;
+	parentConfigs: InstanceConfig[];
+	onChange: () => void;
+	overrides: PackageOverrides;
+	setOverrides: Setter<PackageOverrides>;
 }
 
 function ConfiguredPackage(props: ConfiguredPackageProps) {

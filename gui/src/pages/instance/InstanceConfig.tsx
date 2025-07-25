@@ -44,8 +44,10 @@ import {
 	getConfiguredLoader,
 	getDerivedPackages,
 	getDerivedValue,
+	getParentProfiles,
 	InstanceConfigMode,
 	JavaType,
+	PackageOverrides,
 	parseLaunchMemory,
 	readEditableInstanceConfig,
 	saveInstanceConfig,
@@ -118,24 +120,7 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 	let [parentConfigs, parentConfigOperations] = createResource(
 		() => from(),
 		async () => {
-			let fromValues = from();
-			// Get the parent
-			let parentResults: InstanceConfig[] = [];
-			if (isGlobalProfile) {
-				parentResults = [];
-			} else if (fromValues == undefined) {
-				let parentResult = await invoke("get_global_profile", {});
-				parentResults = [parentResult as InstanceConfig];
-			} else {
-				for (let profile of fromValues!) {
-					let parentResult = await invoke("get_profile_config", {
-						id: profile,
-					});
-					parentResults.push(parentResult as InstanceConfig);
-				}
-			}
-
-			return parentResults;
+			return await getParentProfiles(from(), props.mode);
 		},
 		{ initialValue: [] }
 	);
@@ -190,6 +175,10 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 	let [initMemory, setInitMemory] = createSignal<number | undefined>(undefined);
 	let [maxMemory, setMaxMemory] = createSignal<number | undefined>(undefined);
 	let [envVars, setEnvVars] = createSignal<string[]>([]);
+
+	let [packageOverrides, setPackageOverrides] = createSignal<PackageOverrides>(
+		{}
+	);
 
 	let [displayName, setDisplayName] = createSignal("");
 	let message = () =>
@@ -269,6 +258,10 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 					out.push(`${key}=${config()!.launch!.env![key]}`);
 				}
 			}
+
+			setPackageOverrides(
+				config()!.overrides == undefined ? {} : config()!.overrides!
+			);
 
 			setDisplayName(config()!.name == undefined ? id : config()!.name!);
 		}
@@ -368,6 +361,9 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 			env[split[0]] = split[1];
 		}
 
+		let overrides =
+			packageOverrides().suppress == undefined ? undefined : packageOverrides();
+
 		let newConfig: InstanceConfig = {
 			from: from(),
 			type: side(),
@@ -381,6 +377,7 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 				env: Object.keys(env).length == 0 ? undefined : env,
 				java: javaType(),
 			},
+			overrides: overrides,
 		};
 
 		// Handle extra fields
@@ -941,6 +938,10 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 							}
 						})()}
 						showBrowseButton={true}
+						parentConfigs={parentConfigs()}
+						onChange={setDirty}
+						overrides={packageOverrides()}
+						setOverrides={setPackageOverrides}
 					/>
 				</Show>
 			</DisplayShow>

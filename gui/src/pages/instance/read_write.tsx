@@ -6,7 +6,7 @@ import { Side } from "../../types";
 
 // Stored configuration for an instance
 export interface InstanceConfig {
-	from?: string[];
+	from?: string[] | string;
 	type?: "client" | "server";
 	name?: string;
 	icon?: string;
@@ -15,6 +15,7 @@ export interface InstanceConfig {
 	datapack_folder?: string;
 	packages?: ConfiguredPackages;
 	launch?: LaunchConfig;
+	overrides?: PackageOverrides;
 	[extraKey: string]: any;
 }
 
@@ -92,6 +93,10 @@ export interface LaunchArgs {
 	game?: string | string[];
 }
 
+export interface PackageOverrides {
+	suppress?: string[];
+}
+
 // Mode for editing instance-like configs
 export enum InstanceConfigMode {
 	Instance = "instance",
@@ -154,6 +159,29 @@ export async function saveInstanceConfig(
 	} catch (e) {
 		throw "Failed to save instance config: " + e;
 	}
+}
+
+// Gets parent profile configs for a config
+export async function getParentProfiles(
+	from: string[] | undefined,
+	mode: InstanceConfigMode
+) {
+	let parentResults: InstanceConfig[] = [];
+	if (mode == InstanceConfigMode.GlobalProfile) {
+		parentResults = [];
+	} else if (from == undefined || from.length == 0) {
+		let parentResult = await invoke("get_global_profile", {});
+		parentResults = [parentResult as InstanceConfig];
+	} else {
+		for (let profile of from) {
+			let parentResult = await invoke("get_profile_config", {
+				id: profile,
+			});
+			parentResults.push(parentResult as InstanceConfig);
+		}
+	}
+
+	return parentResults;
 }
 
 // Gets the global, client, and server packages configured on an instance or profile

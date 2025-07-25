@@ -10,7 +10,10 @@ import { loadPagePlugins } from "../../plugins";
 import {
 	createConfiguredPackages,
 	getConfigPackages,
+	getParentProfiles,
+	InstanceConfig,
 	InstanceConfigMode,
+	PackageOverrides,
 	readEditableInstanceConfig,
 	readInstanceConfig,
 	saveInstanceConfig,
@@ -34,6 +37,7 @@ import PackagesConfig, {
 import { FooterData } from "../../App";
 import { FooterMode } from "../../components/navigation/Footer";
 import Modal from "../../components/dialog/Modal";
+import { canonicalizeListOrSingle } from "../../utils/values";
 
 export default function InstanceInfo(props: InstanceInfoProps) {
 	let params = useParams();
@@ -65,6 +69,8 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 		} catch (e) {}
 	});
 
+	let [from, setFrom] = createSignal<string[] | undefined>();
+	let [editableConfig, setEditableConfig] = createSignal<InstanceConfig>();
 	let [instance, _] = createResource(async () => {
 		// Get the instance or profile
 		try {
@@ -72,6 +78,8 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 				readInstanceConfig(id, InstanceConfigMode.Instance),
 				readEditableInstanceConfig(id, InstanceConfigMode.Instance),
 			]);
+
+			setFrom(canonicalizeListOrSingle(configuration.from));
 
 			let [global, client, server] = getConfigPackages(editableConfiguration);
 			setGlobalPackages(global);
@@ -96,12 +104,31 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 				)
 			);
 
+			setPackageOverrides(
+				editableConfiguration.overrides == undefined
+					? {}
+					: editableConfiguration.overrides
+			);
+
+			setEditableConfig(editableConfiguration);
 			return configuration;
 		} catch (e) {
 			errorToast("Failed to load instance: " + e);
 			return undefined;
 		}
 	});
+
+	let [parentConfigs, __] = createResource(
+		() => from(),
+		async () => {
+			return await getParentProfiles(from(), InstanceConfigMode.Instance);
+		},
+		{ initialValue: [] }
+	);
+
+	let [packageOverrides, setPackageOverrides] = createSignal<PackageOverrides>(
+		{}
+	);
 
 	let [selectedTab, setSelectedTab] = createSignal("general");
 
@@ -112,20 +139,23 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 			selectedItem: "",
 			mode: FooterMode.SaveInstanceConfig,
 			action: async () => {
-				if (instance() != undefined) {
-					let config = instance()!;
+				if (editableConfig() != undefined) {
+					let config = editableConfig()!;
 					config.packages = createConfiguredPackages(
 						globalPackages(),
 						clientPackages(),
 						serverPackages(),
 						true
 					);
+
+					let overrides =
+						packageOverrides().suppress == undefined
+							? undefined
+							: packageOverrides();
+					config.overrides = overrides;
+
 					try {
-						await saveInstanceConfig(
-							id,
-							instance()!,
-							InstanceConfigMode.Instance
-						);
+						await saveInstanceConfig(id, config, InstanceConfigMode.Instance);
 						successToast("Changes saved");
 						props.setFooterData({
 							selectedItem: undefined,
@@ -320,6 +350,10 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 										minecraftVersion={instance()!.version}
 										loader={instance()!.loader as Loader}
 										showBrowseButton={true}
+										parentConfigs={parentConfigs()}
+										onChange={setDirty}
+										overrides={packageOverrides()}
+										setOverrides={setPackageOverrides}
 									/>
 								</Show>
 								<Show when={selectedTab() == "console"}>
