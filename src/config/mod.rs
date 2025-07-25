@@ -24,7 +24,7 @@ use nitro_core::io::{json_from_file, json_to_file_pretty};
 use nitro_core::user::UserManager;
 use nitro_plugin::hooks::{AddInstances, AddInstancesArg, AddProfiles, AddSupportedLoaders};
 use nitro_shared::id::{InstanceID, ProfileID};
-use nitro_shared::output::{NitroOutput, MessageContents, MessageLevel};
+use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
 use nitro_shared::translate;
 use nitro_shared::util::is_valid_identifier;
 use preferences::ConfigPreferences;
@@ -151,7 +151,14 @@ impl Config {
 			.context("Failed to call add instances hook")?;
 		for result in results {
 			let result = result.result(o).await?;
-			config.instances.extend(result);
+			for (id, mut instance) in result.into_iter() {
+				if config.instances.contains_key(&id) {
+					continue;
+				}
+
+				instance.from_plugin = true;
+				config.instances.insert(id, instance);
+			}
 		}
 		// Add profiles from plugins
 		let results = plugins
@@ -160,7 +167,14 @@ impl Config {
 			.context("Failed to call add profiles hook")?;
 		for result in results {
 			let result = result.result(o).await?;
-			config.profiles.extend(result);
+			for (id, mut profile) in result.into_iter() {
+				if config.profiles.contains_key(&id) {
+					continue;
+				}
+
+				profile.instance.from_plugin = true;
+				config.profiles.insert(id, profile);
+			}
 		}
 
 		// Consolidate profiles

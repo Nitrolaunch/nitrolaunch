@@ -203,19 +203,21 @@ export default function LaunchFooter(props: LaunchFooterProps) {
 									selected={false}
 								/>
 							</div>
-							<div class="cont footer-config">
-								<IconButton
-									icon={Properties}
-									size="1.5rem"
-									color="var(--bg2)"
-									border="var(--bg3)"
-									selectedColor="var(--accent)"
-									onClick={() => {
-										window.location.href = `/${props.mode}_config/${props.selectedItem}`;
-									}}
-									selected={false}
-								/>
-							</div>
+							<Show when={props.itemFromPlugin != true}>
+								<div class="cont footer-config">
+									<IconButton
+										icon={Properties}
+										size="1.5rem"
+										color="var(--bg2)"
+										border="var(--bg3)"
+										selectedColor="var(--accent)"
+										onClick={() => {
+											window.location.href = `/${props.mode}_config/${props.selectedItem}`;
+										}}
+										selected={false}
+									/>
+								</div>
+							</Show>
 						</Show>
 						<Show
 							when={
@@ -301,6 +303,7 @@ export interface LaunchFooterProps {
 	mode: FooterMode;
 	selectedUser?: string;
 	action: () => void;
+	itemFromPlugin?: boolean;
 }
 
 function ActionButton(props: ActionButtonProps) {

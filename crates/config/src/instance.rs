@@ -39,6 +39,10 @@ pub struct InstanceConfig {
 	#[serde(default)]
 	#[serde(skip_serializing_if = "DefaultExt::is_default")]
 	pub window: ClientWindowConfig,
+	/// Whether this config was created by a plugin
+	#[serde(default)]
+	#[serde(skip_serializing_if = "DefaultExt::is_default")]
+	pub from_plugin: bool,
 }
 
 impl InstanceConfig {
@@ -49,6 +53,7 @@ impl InstanceConfig {
 		self.icon = other.icon.or(self.icon.clone());
 		self.side = other.side.or(self.side);
 		self.window.merge(other.window);
+		self.from_plugin = other.from_plugin;
 	}
 }
 

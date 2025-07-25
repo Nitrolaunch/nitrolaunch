@@ -96,6 +96,7 @@ export default function InstanceList(props: InstanceListProps) {
 			selectedItem: item.id,
 			mode: item.type as FooterMode,
 			action: () => {},
+			fromPlugin: item.fromPlugin,
 		});
 	}
 
@@ -247,7 +248,11 @@ function Section(props: SectionProps) {
 								}
 								onSelect={() => {
 									props.onSelectItem(
-										{ id: item.id, type: props.itemType },
+										{
+											id: item.id,
+											type: props.itemType,
+											fromPlugin: item.from_plugin,
+										},
 										props.id
 									);
 								}}
@@ -388,6 +393,7 @@ interface ItemProps {
 interface SelectedItem {
 	id?: string;
 	type: "instance" | "profile";
+	fromPlugin: boolean;
 }
 
 export interface InstanceListProps {

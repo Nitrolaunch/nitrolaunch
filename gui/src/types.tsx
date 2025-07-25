@@ -10,6 +10,7 @@ export interface InstanceInfo {
 	side: Side;
 	icon: InstanceIcon | null;
 	pinned: boolean;
+	from_plugin: boolean;
 }
 
 export type InstanceMap = {

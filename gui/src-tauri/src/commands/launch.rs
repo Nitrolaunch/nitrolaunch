@@ -206,6 +206,7 @@ pub async fn get_running_instances(
 					id,
 					name: configured_instance.get_config().name.clone(),
 					side: Some(configured_instance.get_side()),
+					from_plugin: configured_instance.get_config().original_config.from_plugin,
 				},
 				state: instance.state,
 			})

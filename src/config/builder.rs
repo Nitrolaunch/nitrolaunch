@@ -194,6 +194,7 @@ impl<'parent> InstanceBuilder<'parent> {
 			icon: None,
 			common: Default::default(),
 			window: Default::default(),
+			from_plugin: false,
 		};
 
 		Self { id, config, parent }

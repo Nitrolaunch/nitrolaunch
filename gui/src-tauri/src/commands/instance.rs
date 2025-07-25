@@ -47,6 +47,7 @@ pub async fn get_instances(state: tauri::State<'_, State>) -> Result<Vec<Instanc
 				id,
 				name: instance.get_config().name.clone(),
 				side: Some(instance.get_side()),
+				from_plugin: instance.get_config().original_config.from_plugin,
 			}
 		})
 		.collect();
@@ -76,6 +77,7 @@ pub async fn get_profiles(state: tauri::State<'_, State>) -> Result<Vec<Instance
 				id,
 				name: profile.instance.name.clone(),
 				side: profile.instance.side,
+				from_plugin: profile.instance.from_plugin,
 			}
 		})
 		.collect();
@@ -90,6 +92,7 @@ pub struct InstanceInfo {
 	pub side: Option<Side>,
 	pub icon: Option<InstanceIcon>,
 	pub pinned: bool,
+	pub from_plugin: bool,
 }
 
 #[tauri::command]

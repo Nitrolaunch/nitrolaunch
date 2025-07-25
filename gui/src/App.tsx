@@ -153,6 +153,7 @@ function Layout(props: LayoutProps) {
 				mode={props.footerData.mode}
 				selectedUser={props.selectedUser}
 				action={props.footerData.action}
+				itemFromPlugin={props.footerData.fromPlugin}
 			/>
 			<Toasts />
 		</>
@@ -171,4 +172,6 @@ export interface FooterData {
 	selectedItem?: string;
 	mode: FooterMode;
 	action: () => void;
+	// Whether a selected instance or profile was created by a plugin
+	fromPlugin?: boolean;
 }
