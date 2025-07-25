@@ -1,9 +1,22 @@
 import { Event, listen } from "@tauri-apps/api/event";
-import { createResource, createSignal, onCleanup, Show } from "solid-js";
+import {
+	createResource,
+	createSignal,
+	onCleanup,
+	onMount,
+	Show,
+} from "solid-js";
 import "./TaskIndicator.css";
 import { Spinner } from "../icons";
-import { errorToast, warningToast } from "./dialog/Toasts";
+import {
+	errorToast,
+	messageToast,
+	removeThisToast,
+	successToast,
+	warningToast,
+} from "./dialog/Toasts";
 import { beautifyString } from "../utils";
+import { invoke } from "@tauri-apps/api";
 
 export default function TaskIndicator(props: TaskIndicatorProps) {
 	// Map of tasks to messages
@@ -89,6 +102,50 @@ export default function TaskIndicator(props: TaskIndicatorProps) {
 				unlisten();
 			}
 		}
+	});
+
+	// Toast on first launch to install default plugins
+	onMount(async () => {
+		try {
+			let isFirstLaunch = await invoke("get_is_first_launch");
+			if (isFirstLaunch) {
+				let message = (
+					<div class="cont col">
+						<div class="cont">
+							Would you like to install the default plugins?
+						</div>
+						<div class="cont">
+							<button
+								style="border: 0.15rem solid var(--bg3)"
+								onclick={(e) => {
+									removeThisToast(e.target);
+									invoke("install_default_plugins").then(
+										() => {
+											successToast("Default plugins installed");
+										},
+										(e) => {
+											errorToast("Failed to install default plugins: " + e);
+										}
+									);
+								}}
+							>
+								Yes
+							</button>
+							<button
+								style="border: 0.15rem solid var(--error)"
+								onclick={(e) => {
+									removeThisToast(e.target);
+								}}
+							>
+								No
+							</button>
+						</div>
+					</div>
+				);
+
+				messageToast(message);
+			}
+		} catch (e) {}
 	});
 
 	return (
@@ -179,16 +236,24 @@ function getTaskDisplayName(task: string) {
 		return "Syncing packages";
 	} else if (task == "login_user") {
 		return "Logging in";
+	} else if (task == "install_plugins") {
+		return "Installing plugins";
+	} else if (task == "update_versions") {
+		return "Updating versions";
 	}
 	return beautifyString(task);
 }
 
 function getTaskColor(task: string) {
-	if (task == "get_plugins") {
+	if (task == "get_plugins" || task == "install_plugins") {
 		return "plugin";
 	} else if (task.startsWith("launch_instance")) {
 		return "instance";
-	} else if (task == "update_instance" || task == "login_user") {
+	} else if (
+		task == "update_instance" ||
+		task == "login_user" ||
+		task == "update_versions"
+	) {
 		return "profile";
 	} else if (
 		task == "search_packages" ||

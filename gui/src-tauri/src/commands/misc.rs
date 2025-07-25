@@ -1,4 +1,4 @@
-use crate::State;
+use crate::{output::LauncherOutput, State};
 use anyhow::Context;
 use nitrolaunch::{
 	core::{net::game_files::version_manifest::VersionType, util::versions::MinecraftVersion},
@@ -81,4 +81,49 @@ pub async fn get_minecraft_versions(
 	} else {
 		Ok(version_manifest.list.clone())
 	}
+}
+
+/// Updates the version manifest
+#[tauri::command]
+pub async fn update_version_manifest(
+	app_handle: tauri::AppHandle,
+	state: &State,
+) -> Result<(), String> {
+	let config = fmt_err(
+		load_config(&state.paths, &mut NoOp)
+			.await
+			.context("Failed to load config"),
+	)?;
+
+	let mut output = LauncherOutput::new(state.get_output(app_handle));
+	output.set_task("update_versions");
+
+	// Use the UpdateManager and then take the version info from it
+	let mut manager = UpdateManager::new(UpdateDepth::Full);
+	manager.set_version(&MinecraftVersion::Latest);
+	fmt_err(
+		manager
+			.fulfill_requirements(
+				&config.users,
+				&config.plugins,
+				&state.paths,
+				&state.client,
+				&mut output,
+			)
+			.await,
+	)?;
+
+	Ok(())
+}
+
+/// Gets whether this is the first time the launcher was opened
+#[tauri::command]
+pub async fn get_is_first_launch(state: tauri::State<'_, State>) -> Result<bool, String> {
+	let mut data = state.data.lock().await;
+	let out = !data.launcher_opened_before;
+	data.launcher_opened_before = true;
+
+	fmt_err(data.write(&state.paths))?;
+
+	Ok(out)
 }

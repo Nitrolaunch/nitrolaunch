@@ -26,7 +26,8 @@ use tauri::async_runtime::Mutex;
 use tauri::{AppHandle, Manager};
 use tokio::task::JoinHandle;
 
-use crate::output::ResolutionErrorEvent;
+use crate::commands::misc::update_version_manifest;
+use crate::output::{MessageEvent, MessageType, ResolutionErrorEvent};
 
 fn main() {
 	let state = tauri::async_runtime::block_on(async { State::new().await })
@@ -36,9 +37,30 @@ fn main() {
 	let data = state.data.clone();
 	let paths = state.paths.clone();
 
+	let state2 = state.clone();
+
 	tauri::Builder::default()
-		.manage(state)
 		.setup(move |app| {
+			// Perform inital start tasks
+			{
+				let state = state2.clone();
+				let app_handle = app.app_handle();
+				let app_handle2 = app.app_handle();
+				tauri::async_runtime::spawn(async move {
+					let result = update_version_manifest(app_handle, &state).await;
+					if let Err(e) = result {
+						let _ = app_handle2.emit_all(
+							"nitro_output_message",
+							MessageEvent {
+								message: format!("{e:?}"),
+								ty: MessageType::Error,
+								task: None,
+							},
+						);
+					}
+				});
+			}
+
 			app.listen_global("update_run_state", move |event| {
 				let launched_games = launched_games.clone();
 
@@ -79,6 +101,7 @@ fn main() {
 
 			Ok(())
 		})
+		.manage(state)
 		.invoke_handler(tauri::generate_handler![
 			commands::launch::launch_game,
 			commands::launch::stop_game,
@@ -124,6 +147,7 @@ fn main() {
 			commands::plugin::enable_disable_plugin,
 			commands::plugin::install_plugin,
 			commands::plugin::uninstall_plugin,
+			commands::plugin::install_default_plugins,
 			commands::plugin::get_page_inject_script,
 			commands::plugin::get_sidebar_buttons,
 			commands::plugin::get_plugin_page,
@@ -135,18 +159,20 @@ fn main() {
 			commands::user::remove_user,
 			commands::misc::get_supported_loaders,
 			commands::misc::get_minecraft_versions,
+			commands::misc::get_is_first_launch,
 		])
 		.run(tauri::generate_context!())
 		.expect("Error while running tauri application");
 }
 
 /// State for the Tauri application
+#[derive(Clone)]
 pub struct State {
 	pub data: Arc<Mutex<LauncherData>>,
 	pub launched_games: Arc<Mutex<HashMap<InstanceID, RunningInstance>>>,
 	pub paths: Paths,
 	pub client: Client,
-	pub user_manager: Mutex<UserManager>,
+	pub user_manager: Arc<Mutex<UserManager>>,
 	/// Map of users to their already entered passkeys
 	pub passkeys: Arc<Mutex<HashMap<String, String>>>,
 	pub password_prompt: PromptResponse,
@@ -163,7 +189,7 @@ impl State {
 			launched_games: Arc::new(Mutex::new(HashMap::new())),
 			paths,
 			client: Client::new(),
-			user_manager: Mutex::new(UserManager::new(get_ms_client_id())),
+			user_manager: Arc::new(Mutex::new(UserManager::new(get_ms_client_id()))),
 			passkeys: Arc::new(Mutex::new(HashMap::new())),
 			password_prompt: PromptResponse::new(Mutex::new(None)),
 			output_inner: OnceLock::new(),

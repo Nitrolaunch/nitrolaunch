@@ -6,7 +6,7 @@ use nitrolaunch::plugin::PluginManager;
 use nitrolaunch::plugin_crate::hooks::{
 	AddSidebarButtons, GetPage, InjectPageScript, InjectPageScriptArg, SidebarButton,
 };
-use nitrolaunch::shared::output::{NitroOutput, MessageContents, MessageLevel};
+use nitrolaunch::shared::output::{MessageContents, MessageLevel, NitroOutput};
 use nitrolaunch::{plugin::install::get_verified_plugins, shared::output::NoOp};
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
@@ -103,7 +103,14 @@ pub async fn enable_disable_plugin(
 }
 
 #[tauri::command]
-pub async fn install_plugin(state: tauri::State<'_, State>, plugin: &str) -> Result<(), String> {
+pub async fn install_plugin(
+	state: tauri::State<'_, State>,
+	app_handle: tauri::AppHandle,
+	plugin: &str,
+) -> Result<(), String> {
+	let mut output = LauncherOutput::new(state.get_output(app_handle));
+	output.set_task("install_plugins");
+
 	let verified_list = fmt_err(
 		get_verified_plugins(&state.client)
 			.await
@@ -129,6 +136,38 @@ pub async fn uninstall_plugin(state: tauri::State<'_, State>, plugin: &str) -> R
 	fmt_err(
 		PluginManager::uninstall_plugin(plugin, &state.paths).context("Failed to uninstall plugin"),
 	)?;
+
+	Ok(())
+}
+
+#[tauri::command]
+pub async fn install_default_plugins(
+	state: tauri::State<'_, State>,
+	app_handle: tauri::AppHandle,
+) -> Result<(), String> {
+	let mut output = LauncherOutput::new(state.get_output(app_handle));
+	output.set_task("install_plugins");
+
+	let default_plugins = ["fabric_quilt", "modrinth", "smithed", "stats", "docs"];
+
+	let verified_list = fmt_err(
+		get_verified_plugins(&state.client)
+			.await
+			.context("Failed to get verified plugin list"),
+	)?;
+
+	for plugin in default_plugins {
+		let Some(plugin) = verified_list.get(plugin) else {
+			return Err(format!("Unknown plugin '{plugin}'"));
+		};
+
+		fmt_err(
+			plugin
+				.install(None, &state.paths, &state.client, &mut NoOp)
+				.await
+				.with_context(|| format!("Failed to install plugin {}", plugin.id)),
+		)?;
+	}
 
 	Ok(())
 }

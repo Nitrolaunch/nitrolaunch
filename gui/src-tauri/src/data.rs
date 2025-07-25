@@ -12,6 +12,8 @@ use crate::output::SerializableResolutionError;
 #[derive(Serialize, Deserialize, Default)]
 #[serde(default)]
 pub struct LauncherData {
+	/// Whether the launcher has been opened before
+	pub launcher_opened_before: bool,
 	/// Icons for instances
 	pub instance_icons: HashMap<String, InstanceIcon>,
 	/// Icons for profiles

@@ -1,4 +1,11 @@
-import { createSignal, For, JSX, onMount, Show } from "solid-js";
+import {
+	createSignal,
+	createUniqueId,
+	For,
+	JSX,
+	onMount,
+	Show,
+} from "solid-js";
 import "./Toasts.css";
 import Icon from "../Icon";
 import { Check, Delete, Error, Warning } from "../../icons";
@@ -31,6 +38,14 @@ export default function Toasts() {
 			});
 			setVisible(false);
 			setVisible(true);
+		};
+
+		win.__toastRemoveFunctions = {};
+
+		win.__removeToast = (id: string) => {
+			if (win.__toastRemoveFunctions[id] != undefined) {
+				win.__toastRemoveFunctions[id]();
+			}
 		};
 
 		// Periodically remove toasts that have an age set
@@ -84,11 +99,17 @@ function Toast(props: ToastProps) {
 		}
 	};
 
+	let id = createUniqueId();
+
+	let win = window as any;
+	win.__toastRemoveFunctions[id] = props.onRemove;
+
 	return (
 		<div
 			class={`cont toast ${props.type}`}
 			onmouseenter={() => setIsHovered(true)}
 			onmouseleave={() => setIsHovered(false)}
+			data-id={id}
 		>
 			<div class="cont toast-icon">
 				<Icon2 />
@@ -143,4 +164,26 @@ export function errorToast(message: JSX.Element) {
 		maxAge: 9,
 	});
 	console.error("Error: " + message);
+}
+
+// Closes this toast. Called from buttons in a toast message
+export function removeThisToast(elem: Element) {
+	let id = getThisToastId(elem);
+	if (id != undefined) {
+		(window as any).__removeToast(id);
+	}
+}
+
+// Given an element, gets the unique ID of the toast above it
+function getThisToastId(elem: Element) {
+	if (elem.classList.contains("toast")) {
+		return (elem as any).dataset.id as string;
+	}
+
+	let parent = elem.parentElement;
+	if (parent == null) {
+		return undefined;
+	} else {
+		return getThisToastId(parent);
+	}
 }
