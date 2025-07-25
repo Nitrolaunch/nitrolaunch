@@ -42,12 +42,5 @@ pub mod profile;
 /// Common utilities that can't live anywhere else
 pub mod util;
 
-/// The global struct used as an Rc, depending on the `arc` feature
-#[cfg(feature = "arc")]
-pub type RcType<T> = std::sync::Arc<T>;
-/// The global struct used as an Rc, depending on the `arc` feature
-#[cfg(not(feature = "arc"))]
-pub type RcType<T> = std::rc::Rc<T>;
-
 /// The version of Nitrolaunch
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
