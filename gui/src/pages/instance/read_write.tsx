@@ -326,3 +326,14 @@ export function parseMemoryNum(num: string) {
 		return +num.substring(0, num.length - 1) / 1024 / 1024;
 	}
 }
+
+// Reads JVM or game args from config into an array
+export function readArgs(args: string | string[] | undefined) {
+	if (args == undefined) {
+		return [];
+	} else if (typeof args == "string") {
+		return args.split(" ");
+	} else {
+		return args;
+	}
+}

@@ -49,6 +49,7 @@ import {
 	JavaType,
 	PackageOverrides,
 	parseLaunchMemory,
+	readArgs,
 	readEditableInstanceConfig,
 	saveInstanceConfig,
 } from "./read_write";
@@ -175,6 +176,8 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 	let [initMemory, setInitMemory] = createSignal<number | undefined>(undefined);
 	let [maxMemory, setMaxMemory] = createSignal<number | undefined>(undefined);
 	let [envVars, setEnvVars] = createSignal<string[]>([]);
+	let [jvmArgs, setJvmArgs] = createSignal<string[]>([]);
+	let [gameArgs, setGameArgs] = createSignal<string[]>([]);
 
 	let [packageOverrides, setPackageOverrides] = createSignal<PackageOverrides>(
 		{}
@@ -257,6 +260,17 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 				for (let key of Object.keys(config()!.launch!.env!)) {
 					out.push(`${key}=${config()!.launch!.env![key]}`);
 				}
+			}
+
+			if (
+				config()!.launch == undefined ||
+				config()!.launch!.args == undefined
+			) {
+				setJvmArgs([]);
+				setGameArgs([]);
+			} else {
+				setJvmArgs(readArgs(config()!.launch!.args?.jvm));
+				setGameArgs(readArgs(config()!.launch!.args?.game));
 			}
 
 			setPackageOverrides(
@@ -347,7 +361,7 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 
 		// Launch
 		let launchMemory =
-			initMemory() == undefined || maxMemory == undefined
+			initMemory() == undefined || maxMemory() == undefined
 				? undefined
 				: { min: `${initMemory()}m`, max: `${maxMemory()}m` };
 
@@ -360,6 +374,14 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 
 			env[split[0]] = split[1];
 		}
+
+		let args =
+			jvmArgs() == undefined && gameArgs() == undefined
+				? undefined
+				: {
+						jvm: jvmArgs(),
+						game: gameArgs(),
+				  };
 
 		let overrides =
 			packageOverrides().suppress == undefined ? undefined : packageOverrides();
@@ -376,6 +398,7 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 				memory: launchMemory,
 				env: Object.keys(env).length == 0 ? undefined : env,
 				java: javaType(),
+				args: args,
 			},
 			overrides: overrides,
 		};
@@ -955,6 +978,10 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 					setMaxMemory={setMaxMemory}
 					envVars={envVars()}
 					setEnvVars={setEnvVars}
+					jvmArgs={jvmArgs()}
+					gameArgs={gameArgs()}
+					setJvmArgs={setJvmArgs}
+					setGameArgs={setGameArgs}
 					parentConfigs={parentConfigs()}
 					onChange={setDirty}
 				/>

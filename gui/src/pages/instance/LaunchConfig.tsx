@@ -62,10 +62,8 @@ export default function LaunchConfig(props: LaunchConfigProps) {
 					connected={false}
 				/>
 			</Tip>
-			<div class="cont start">
-				<label for="launch-memory" class="label">
-					JVM MEMORY
-				</label>
+			<div class="cont start label">
+				<label for="launch-memory">JVM MEMORY</label>
 				<DeriveIndicator
 					parentConfigs={props.parentConfigs}
 					currentValue={props.initMemory}
@@ -90,10 +88,8 @@ export default function LaunchConfig(props: LaunchConfigProps) {
 					onChange={props.onChange}
 				/>
 			</Tip>
-			<div class="cont start">
-				<label for="launch-env" class="label">
-					ENVIRONMENT VARIABLES
-				</label>
+			<div class="cont start label">
+				<label for="launch-env">ENVIRONMENT VARIABLES</label>
 				<DeriveIndicator
 					parentConfigs={props.parentConfigs}
 					currentValue={props.envVars.join(", ")}
@@ -112,6 +108,51 @@ export default function LaunchConfig(props: LaunchConfigProps) {
 					}}
 				/>
 			</Tip>
+			<div class="cont start label">
+				<label for="launch-jvm-args">JVM ARGUMENTS</label>
+				<DeriveIndicator
+					parentConfigs={props.parentConfigs}
+					currentValue={props.jvmArgs.join(", ")}
+					property={(x) =>
+						x.launch == undefined || x.launch.args == undefined
+							? undefined
+							: x.launch.args.jvm
+					}
+				/>
+			</div>
+			<Tip tip="Arguments for the JVM" fullwidth>
+				<EditableList
+					items={props.jvmArgs}
+					setItems={(x) => {
+						props.setJvmArgs(x);
+						props.onChange();
+					}}
+				/>
+			</Tip>
+			<div class="cont start label">
+				<label for="launch-game-args">GAME ARGUMENTS</label>
+				<DeriveIndicator
+					parentConfigs={props.parentConfigs}
+					currentValue={props.gameArgs.join(", ")}
+					property={(x) =>
+						x.launch == undefined || x.launch.args == undefined
+							? undefined
+							: x.launch.args.game
+					}
+				/>
+			</div>
+			<Tip
+				tip="Arguments for Minecraft. Most arguments are for the JVM instead."
+				fullwidth
+			>
+				<EditableList
+					items={props.gameArgs}
+					setItems={(x) => {
+						props.setGameArgs(x);
+						props.onChange();
+					}}
+				/>
+			</Tip>
 		</div>
 	);
 }
@@ -125,6 +166,10 @@ export interface LaunchConfigProps {
 	setMaxMemory: (value: number | undefined) => void;
 	envVars: string[];
 	setEnvVars: (value: string[]) => void;
+	jvmArgs: string[];
+	gameArgs: string[];
+	setJvmArgs: (value: string[]) => void;
+	setGameArgs: (value: string[]) => void;
 	onChange: () => void;
 	parentConfigs: InstanceConfig[];
 }
