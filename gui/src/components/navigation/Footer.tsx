@@ -16,7 +16,7 @@ import {
 import IconButton from "../input/IconButton";
 import { AuthDisplayEvent, RunningInstanceInfo } from "../../types";
 import MicrosoftAuthInfo from "../input/MicrosoftAuthInfo";
-import { getInstanceIconSrc } from "../../utils";
+import { beautifyString, getInstanceIconSrc } from "../../utils";
 import TaskIndicator from "../TaskIndicator";
 import { errorToast } from "../dialog/Toasts";
 import IconTextButton from "../input/IconTextButton";
@@ -174,7 +174,7 @@ export default function LaunchFooter(props: LaunchFooterProps) {
 			</div>
 			<div id="footer-center" class="cont footer-section">
 				<div id="footer-center-inner">
-					<div class="cont">
+					<div class="cont" id="footer-left-buttons">
 						<Show
 							when={
 								props.mode == FooterMode.Instance &&
@@ -243,12 +243,20 @@ export default function LaunchFooter(props: LaunchFooterProps) {
 						</Show>
 					</div>
 					<ActionButton
-						selected={props.selectedItem != undefined}
+						selected={
+							props.selectedItem != undefined &&
+							!(
+								props.itemFromPlugin == true && props.mode == FooterMode.Profile
+							)
+						}
 						mode={props.mode}
 						onClick={() => {
 							if (props.mode == FooterMode.Instance) {
 								launch();
-							} else if (props.mode == FooterMode.Profile) {
+							} else if (
+								props.mode == FooterMode.Profile &&
+								props.itemFromPlugin != true
+							) {
 								if (props.selectedItem != undefined) {
 									window.location.href = `/profile_config/${props.selectedItem}`;
 								}
@@ -257,6 +265,18 @@ export default function LaunchFooter(props: LaunchFooterProps) {
 							}
 						}}
 					/>
+				</div>
+				<div class="cont">
+					<Show when={props.itemFromPlugin == true}>
+						<Tip
+							tip={`This ${beautifyString(
+								props.mode
+							)} is from a plugin and cannot be edited`}
+							side="top"
+						>
+							<div class="cont footer-plugin-indicator">P</div>
+						</Tip>
+					</Show>
 				</div>
 			</div>
 			<div id="footer-right" class="footer-section">

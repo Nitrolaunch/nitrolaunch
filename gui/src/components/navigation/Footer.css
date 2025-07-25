@@ -28,7 +28,7 @@
 
 #footer-center-inner {
 	display: grid;
-	grid-template-columns: minmax(0, 4rem) minmax(0, 8rem);
+	grid-template-columns: minmax(0, 4rem) minmax(0, 4rem) minmax(0, 4rem);
 	gap: 1rem;
 	height: var(--height);
 	margin-left: -4rem;
@@ -84,6 +84,15 @@
 #footer-right {
 	display: grid;
 	grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.footer-plugin-indicator {
+	width: 1.5rem;
+	height: 1.5rem;
+
+	border: 0.15rem solid var(--plugin);
+	border-radius: var(--round);
+	background-color: var(--pluginbg);
 }
 
 .running-instance-list {
