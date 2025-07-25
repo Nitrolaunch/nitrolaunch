@@ -28,7 +28,7 @@
 					"packages": [
 						"globalpacks"
 					],
-					"datapack_dir": "global_packs/required_data"
+					"datapack_folder": "global_packs/required_data"
 				}
 			}
 		},
