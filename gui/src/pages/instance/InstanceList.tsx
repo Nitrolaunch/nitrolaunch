@@ -39,8 +39,14 @@ export default function InstanceList(props: InstanceListProps) {
 
 	async function updateItems() {
 		let instances: InstanceInfo[] = [];
+		let profiles: InstanceInfo[] = [];
+		let groups: GroupInfo[] = [];
 		try {
-			instances = (await invoke("get_instances")) as InstanceInfo[];
+			[instances, profiles, groups] = (await Promise.all([
+				invoke("get_instances"),
+				invoke("get_profiles"),
+				invoke("get_instance_groups"),
+			])) as [InstanceInfo[], InstanceInfo[], GroupInfo[]];
 		} catch (e) {
 			errorToast("Failed to get instances: " + e);
 		}
@@ -56,7 +62,7 @@ export default function InstanceList(props: InstanceListProps) {
 		}
 		setPinned(newPinned);
 		setInstances(instances);
-		const profiles = (await invoke("get_profiles")) as InstanceInfo[];
+
 		let profileMap: InstanceMap = {};
 		for (let profile of profiles) {
 			profileMap[profile.id] = profile;
@@ -64,7 +70,6 @@ export default function InstanceList(props: InstanceListProps) {
 		setProfiles(profiles);
 
 		// Create groups
-		const groups = (await invoke("get_instance_groups")) as GroupInfo[];
 		let newGroups: GroupSectionData[] = [];
 		for (let group of groups) {
 			let newInstances = [];
