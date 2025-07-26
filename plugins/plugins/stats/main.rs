@@ -69,14 +69,14 @@ fn main() -> anyhow::Result<()> {
 
 		loop {
 			std::thread::sleep(Duration::from_secs(10));
-			let res = update_playtime(&mut ctx, &arg.id, true).context("Failed to update playtime");
-			if let Err(e) = res {
-				println!("$_{e:?}");
-			}
-
 			system.refresh_processes(ProcessesToUpdate::Some(&[pid]), true);
 			if system.process(pid).is_none() {
 				break;
+			}
+
+			let res = update_playtime(&mut ctx, &arg.id, true).context("Failed to update playtime");
+			if let Err(e) = res {
+				println!("$_{e:?}");
 			}
 		}
 

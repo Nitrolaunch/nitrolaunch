@@ -4,12 +4,12 @@ pub mod output;
 pub mod utils;
 
 use std::env::Args;
-use std::io::Stdin;
+use std::io::{Stdin, Write};
 use std::marker::PhantomData;
 use std::path::PathBuf;
 
 use anyhow::{bail, Context};
-use nitro_shared::output::{NitroOutput, MessageContents, MessageLevel};
+use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
@@ -214,12 +214,15 @@ impl CustomPlugin {
 				}
 			};
 
+			let mut stdout = std::io::stdout();
+
 			if !H::get_takes_over() {
 				// Output state
 				if state_has_changed {
 					if let Some(state) = state {
 						let action = OutputAction::SetState(state);
-						println!(
+						let _ = writeln!(
+							&mut stdout,
 							"{}",
 							action
 								.serialize(self.settings.use_base64, self.settings.protocol_version)
@@ -235,7 +238,8 @@ impl CustomPlugin {
 					serde_json::to_value(result)?
 				};
 				let action = OutputAction::SetResult(serialized);
-				println!(
+				let _ = writeln!(
+					&mut stdout,
 					"{}",
 					action
 						.serialize(self.settings.use_base64, self.settings.protocol_version)
