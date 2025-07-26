@@ -1,10 +1,11 @@
 use std::fs::File;
-use std::io::{BufReader, BufWriter};
+use std::io::{BufReader, BufWriter, Read, Seek};
 use std::path::Path;
 
 use anyhow::Context;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
+use zip::ZipArchive;
 
 /// Utilities for dealing with the filesystem
 pub mod files;
@@ -44,5 +45,38 @@ pub fn json_to_file_pretty_fast<S: Serialize>(
 ) -> anyhow::Result<()> {
 	let file = BufWriter::new(File::create(path).context("Failed to open file")?);
 	simd_json::to_writer_pretty(file, data).context("Failed to serialize data to file")?;
+	Ok(())
+}
+
+/// Extracts a specific directory within a zip file
+pub fn extract_zip_dir<R: Read + Seek>(
+	zip: &mut ZipArchive<R>,
+	zip_dir: &str,
+	target_dir: impl AsRef<Path>,
+) -> anyhow::Result<()> {
+	let _ = std::fs::create_dir_all(target_dir.as_ref());
+
+	for index in 0..zip.len() {
+		let mut file = zip.by_index(index)?;
+		if file.is_dir() {
+			continue;
+		}
+
+		let Some(filename) = file.enclosed_name() else {
+			continue;
+		};
+
+		let Ok(filename) = filename.strip_prefix(zip_dir) else {
+			continue;
+		};
+
+		let out_path = target_dir.as_ref().join(filename);
+		let _ = files::create_leading_dirs(&out_path);
+
+		let mut out_file = File::create(out_path).context("Failed to create output file")?;
+
+		std::io::copy(&mut file, &mut out_file).context("Failed to copy file from zip")?;
+	}
+
 	Ok(())
 }

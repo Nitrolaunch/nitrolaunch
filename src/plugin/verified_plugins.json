@@ -159,5 +159,12 @@
 		"github_owner": "nitrolaunch",
 		"github_repo": "nitrolaunch",
 		"description": "Fixes crashes from a bad GLFW version"
+	},
+	"prism_transfer": {
+		"id": "prism_transfer",
+		"name": "Prism Transfer",
+		"github_owner": "nitrolaunch",
+		"github_repo": "nitrolaunch",
+		"description": "Instance transfer for PrismLauncher"
 	}
 }

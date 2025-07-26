@@ -75,6 +75,10 @@ name = "nitro_plugin_paper"
 path = "plugins/paper/main.rs"
 
 [[bin]]
+name = "nitro_plugin_prism_transfer"
+path = "plugins/prism_transfer/main.rs"
+
+[[bin]]
 name = "nitro_plugin_smithed"
 path = "plugins/smithed/main.rs"
 
