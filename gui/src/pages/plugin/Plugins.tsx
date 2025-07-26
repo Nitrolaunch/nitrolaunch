@@ -155,6 +155,30 @@ function Plugin(props: PluginProps) {
 							selected={false}
 							shadow={false}
 						/>
+						<IconTextButton
+							text="Update"
+							size="22px"
+							color="var(--bg2)"
+							selectedColor="var(--instance)"
+							onClick={() => {
+								setInProgress(true);
+								invoke("install_plugin", {
+									plugin: props.info.id,
+								}).then(
+									() => {
+										setInProgress(false);
+										successToast("Plugin updated");
+										props.updatePluginList();
+									},
+									(e) => {
+										setInProgress(false);
+										errorToast(`Failed to update plugin: ${e}`);
+									}
+								);
+							}}
+							selected={false}
+							shadow={false}
+						/>
 					</Show>
 					<IconTextButton
 						text={
