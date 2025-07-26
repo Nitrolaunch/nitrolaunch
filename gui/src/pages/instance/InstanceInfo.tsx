@@ -38,7 +38,7 @@ import PackagesConfig, {
 	packageConfigsEqual,
 } from "./PackagesConfig";
 import { FooterData } from "../../App";
-import { FooterMode } from "../../components/navigation/Footer";
+import { FooterMode, launchInstance } from "../../components/navigation/Footer";
 import Modal from "../../components/dialog/Modal";
 import { canonicalizeListOrSingle } from "../../utils/values";
 import { Event, listen, UnlistenFn } from "@tauri-apps/api/event";
@@ -259,7 +259,9 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 													color="var(--bg2)"
 													selected={false}
 													selectedColor="var(--instance)"
-													onClick={() => {}}
+													onClick={() => {
+														launchInstance(id);
+													}}
 													shadow={false}
 													style="width:100%"
 												/>

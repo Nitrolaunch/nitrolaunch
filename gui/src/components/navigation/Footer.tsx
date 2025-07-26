@@ -69,6 +69,8 @@ export default function Footer(props: FooterProps) {
 		]);
 
 		setUnlistens(eventUnlistens);
+
+		(window as any).__launchInstance = launch;
 	});
 
 	onCleanup(() => {
@@ -77,18 +79,14 @@ export default function Footer(props: FooterProps) {
 		}
 	});
 
-	async function launch() {
-		if (props.selectedItem == undefined || props.mode != FooterMode.Instance) {
-			return;
-		}
-
+	async function launch(instance: string) {
 		// Prevent launching until the current authentication screens are finished
 		if (showPasswordPrompt() || authInfo() !== undefined) {
 			return;
 		}
 
 		let launchPromise = invoke("launch_game", {
-			instanceId: props.selectedItem,
+			instanceId: instance,
 			offline: false,
 			user: props.selectedUser,
 		});
@@ -213,7 +211,9 @@ export default function Footer(props: FooterProps) {
 						mode={props.mode}
 						onClick={() => {
 							if (props.mode == FooterMode.Instance) {
-								launch();
+								if (props.selectedItem != undefined) {
+									launch(props.selectedItem);
+								}
 							} else if (
 								props.mode == FooterMode.Profile &&
 								props.itemFromPlugin != true
@@ -428,4 +428,9 @@ export enum FooterMode {
 	SaveProfileConfig = "save_profile_config",
 	PreviewPackage = "preview_package",
 	InstallPackage = "install_package",
+}
+
+// Launches an instance
+export function launchInstance(instance: string) {
+	(window as any).__launchInstance(instance);
 }
