@@ -5,16 +5,16 @@ use std::{
 };
 
 use anyhow::{bail, Context};
-use nitrolaunch::config_crate::instance::{
-	Args, CommonInstanceConfig, InstanceConfig, LaunchArgs, LaunchConfig, LaunchMemory, QuickPlay,
-};
-use nitro_core::io::java::install::JavaInstallationKind;
+use nitro_core::{io::java::install::JavaInstallationKind, util::versions::MinecraftVersionDeser};
 use nitro_plugin::{api::CustomPlugin, hooks::ImportInstanceResult};
 use nitro_shared::{
 	loaders::Loader,
-	output::{NitroOutput, MessageContents, MessageLevel},
+	output::{MessageContents, MessageLevel, NitroOutput},
 	versions::parse_versioned_string,
 	Side,
+};
+use nitrolaunch::config_crate::instance::{
+	Args, CommonInstanceConfig, InstanceConfig, LaunchArgs, LaunchConfig, LaunchMemory, QuickPlay,
 };
 use serde::{Deserialize, Serialize};
 use zip::{write::FileOptions, ZipArchive, ZipWriter};
@@ -205,8 +205,10 @@ fn main() -> anyhow::Result<()> {
 			format: arg.format,
 			config: InstanceConfig {
 				name: Some(meta.name),
+				side: Some(Side::Client),
 				common: CommonInstanceConfig {
 					loader: Some(loader),
+					version: Some(MinecraftVersionDeser::Version(meta.version.into())),
 					launch: LaunchConfig {
 						memory: LaunchMemory::Both {
 							min: meta.min_memory.to_string(),
