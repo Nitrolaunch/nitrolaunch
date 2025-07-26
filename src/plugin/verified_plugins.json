@@ -2,168 +2,168 @@
 	"args": {
 		"id": "args",
 		"name": "Args",
-		"github_owner": "nitrolaunch",
+		"github_owner": "Nitrolaunch",
 		"github_repo": "nitrolaunch",
 		"description": "Use argument presets to improve game performance"
 	},
 	"backup": {
 		"id": "backup",
 		"name": "Backup",
-		"github_owner": "nitrolaunch",
+		"github_owner": "Nitrolaunch",
 		"github_repo": "nitrolaunch",
 		"description": "Create backups of instances"
 	},
 	"docs": {
 		"id": "docs",
 		"name": "Docs",
-		"github_owner": "nitrolaunch",
+		"github_owner": "Nitrolaunch",
 		"github_repo": "nitrolaunch",
 		"description": "View Nitrolaunch's documentation straight from the command line"
 	},
 	"extra_versions": {
 		"id": "extra_versions",
 		"name": "Extra Versions",
-		"github_owner": "nitrolaunch",
+		"github_owner": "Nitrolaunch",
 		"github_repo": "nitrolaunch",
 		"description": "Add versions of Minecraft that are not normally available"
 	},
 	"gen_pkg": {
 		"id": "gen_pkg",
 		"name": "Gen Package",
-		"github_owner": "nitrolaunch",
+		"github_owner": "Nitrolaunch",
 		"github_repo": "nitrolaunch",
 		"description": "Automatically generate packages from existing websites"
 	},
 	"lang": {
 		"id": "lang",
 		"name": "Lang",
-		"github_owner": "nitrolaunch",
+		"github_owner": "Nitrolaunch",
 		"github_repo": "nitrolaunch",
 		"description": "Language translations for Nitrolaunch"
 	},
 	"modrinth_api": {
 		"id": "modrinth_api",
 		"name": "Modrinth API",
-		"github_owner": "nitrolaunch",
+		"github_owner": "Nitrolaunch",
 		"github_repo": "nitrolaunch",
 		"description": "Make simple Modrinth API calls to query project versions"
 	},
 	"options": {
 		"id": "options",
 		"name": "Options",
-		"github_owner": "nitrolaunch",
+		"github_owner": "Nitrolaunch",
 		"github_repo": "nitrolaunch",
 		"description": "Manage game options for client and server"
 	},
 	"server_restart": {
 		"id": "server_restart",
 		"name": "Server Restart",
-		"github_owner": "nitrolaunch",
+		"github_owner": "Nitrolaunch",
 		"github_repo": "nitrolaunch",
 		"description": "Manage restart behavior for Spigot and Paper servers"
 	},
 	"stats": {
 		"id": "stats",
 		"name": "Stats",
-		"github_owner": "nitrolaunch",
+		"github_owner": "Nitrolaunch",
 		"github_repo": "nitrolaunch",
 		"description": "Track and view playtime stats"
 	},
 	"nitro_transfer": {
 		"id": "nitro_transfer",
 		"name": "Nitrolaunch Transfer",
-		"github_owner": "nitrolaunch",
+		"github_owner": "Nitrolaunch",
 		"github_repo": "nitrolaunch",
 		"description": "Import and export Nitrolaunch instances"
 	},
 	"fabric_quilt": {
 		"id": "fabric_quilt",
 		"name": "Fabric Quilt",
-		"github_owner": "nitrolaunch",
+		"github_owner": "Nitrolaunch",
 		"github_repo": "nitrolaunch",
 		"description": "Install Fabric and Quilt instances"
 	},
 	"custom_files": {
 		"id": "custom_files",
 		"name": "Custom Files",
-		"github_owner": "nitrolaunch",
+		"github_owner": "Nitrolaunch",
 		"github_repo": "nitrolaunch",
 		"description": "Share custom files across multiple instances"
 	},
 	"paper": {
 		"id": "paper",
 		"name": "Paper",
-		"github_owner": "nitrolaunch",
+		"github_owner": "Nitrolaunch",
 		"github_repo": "nitrolaunch",
 		"description": "Install Paper and Folia server instances"
 	},
 	"automate": {
 		"id": "automate",
 		"name": "Automate",
-		"github_owner": "nitrolaunch",
+		"github_owner": "Nitrolaunch",
 		"github_repo": "nitrolaunch",
 		"description": "Run commands at different parts of the instance lifecycle with no coding knowledge"
 	},
 	"config_split": {
 		"id": "config_split",
 		"name": "Config Split",
-		"github_owner": "nitrolaunch",
+		"github_owner": "Nitrolaunch",
 		"github_repo": "nitrolaunch",
 		"description": "Split parts of your configuration into multiple files"
 	},
 	"smithed_api": {
 		"id": "smithed_api",
 		"name": "Smithed API",
-		"github_owner": "nitrolaunch",
+		"github_owner": "Nitrolaunch",
 		"github_repo": "nitrolaunch",
 		"description": "Make simple Smithed API calls to query project versions"
 	},
 	"smithed": {
 		"id": "smithed",
 		"name": "Smithed",
-		"github_owner": "nitrolaunch",
+		"github_owner": "Nitrolaunch",
 		"github_repo": "nitrolaunch",
 		"description": "Install Smithed packs on profiles and instances"
 	},
 	"modrinth": {
 		"id": "modrinth",
 		"name": "Modrinth",
-		"github_owner": "nitrolaunch",
+		"github_owner": "Nitrolaunch",
 		"github_repo": "nitrolaunch",
 		"description": "Install Modrinth projects on profiles and instances"
 	},
 	"weld": {
 		"id": "weld",
 		"name": "Weld",
-		"github_owner": "nitrolaunch",
+		"github_owner": "Nitrolaunch",
 		"github_repo": "nitrolaunch",
 		"description": "Weld data and resource packs together for better compatability"
 	},
 	"xmcl_transfer": {
 		"id": "xmcl_transfer",
 		"name": "XMCL Transfer",
-		"github_owner": "nitrolaunch",
+		"github_owner": "Nitrolaunch",
 		"github_repo": "nitrolaunch",
 		"description": "Instance transfer for XMCL"
 	},
 	"archive": {
 		"id": "archive",
 		"name": "Archive",
-		"github_owner": "nitrolaunch",
+		"github_owner": "Nitrolaunch",
 		"github_repo": "nitrolaunch",
 		"description": "Clean up old files"
 	},
 	"glfw_fix": {
 		"id": "glfw_fix",
 		"name": "GLFW Fix",
-		"github_owner": "nitrolaunch",
+		"github_owner": "Nitrolaunch",
 		"github_repo": "nitrolaunch",
 		"description": "Fixes crashes from a bad GLFW version"
 	},
 	"prism_transfer": {
 		"id": "prism_transfer",
 		"name": "Prism Transfer",
-		"github_owner": "nitrolaunch",
+		"github_owner": "Nitrolaunch",
 		"github_repo": "nitrolaunch",
 		"description": "Instance transfer for PrismLauncher"
 	}
