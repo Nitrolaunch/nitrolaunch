@@ -2924,6 +2924,7 @@ dependencies = [
  "serde",
  "serde_json",
  "shellexpand",
+ "sysinfo",
  "termimad",
  "tokio",
  "version-compare 0.2.0",

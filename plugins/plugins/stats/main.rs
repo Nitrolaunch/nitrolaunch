@@ -11,6 +11,7 @@ use nitro_plugin::api::{CustomPlugin, HookContext};
 use nitro_plugin::hooks::{Hook, Subcommand};
 use nitro_shared::util::utc_timestamp;
 use serde::{Deserialize, Serialize};
+use sysinfo::{Pid, ProcessesToUpdate, System};
 
 fn main() -> anyhow::Result<()> {
 	let mut plugin = CustomPlugin::from_manifest_file("stats", include_str!("plugin.json"))?;
@@ -63,13 +64,23 @@ fn main() -> anyhow::Result<()> {
 			return Ok(());
 		}
 
+		let mut system = System::new();
+		let pid = Pid::from_u32(arg.pid.unwrap_or_default());
+
 		loop {
 			std::thread::sleep(Duration::from_secs(10));
 			let res = update_playtime(&mut ctx, &arg.id, true).context("Failed to update playtime");
 			if let Err(e) = res {
 				println!("$_{e:?}");
 			}
+
+			system.refresh_processes(ProcessesToUpdate::Some(&[pid]), true);
+			if system.process(pid).is_none() {
+				break;
+			}
 		}
+
+		Ok(())
 	})?;
 
 	Ok(())
