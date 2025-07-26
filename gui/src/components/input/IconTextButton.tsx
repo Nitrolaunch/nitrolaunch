@@ -20,13 +20,17 @@ export default function IconTextButton(props: IconTextButtonProps) {
 	return (
 		<button
 			class={`${shadow ? "input-shadow" : ""} icon-text-button bold`}
-			style={`${colorStyle()}`}
+			style={`${colorStyle()};${props.style == undefined ? "" : props.style}`}
 			onClick={props.onClick}
 			onmouseenter={() => setIsHovered(true)}
 			onmouseleave={() => setIsHovered(false)}
 		>
 			<Show when={props.icon != undefined}>
-				<div class="icon-text-button-icon center">
+				<div
+					class={`icon-text-button-icon center ${
+						props.animate == true ? "rotating" : ""
+					}`}
+				>
 					<Icon icon={props.icon!} size={`calc(${props.size} * 0.7)`} />
 				</div>
 			</Show>
@@ -44,5 +48,7 @@ export interface IconTextButtonProps {
 	shadow?: boolean;
 	size: string;
 	selected: boolean;
+	animate?: boolean;
+	style?: string;
 	onClick: () => void;
 }

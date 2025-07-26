@@ -3,8 +3,11 @@ import {
 	createEffect,
 	createResource,
 	createSignal,
+	Match,
+	onCleanup,
 	onMount,
 	Show,
+	Switch,
 } from "solid-js";
 import { loadPagePlugins } from "../../plugins";
 import {
@@ -24,7 +27,7 @@ import { getInstanceIconSrc } from "../../utils";
 import PackageLabels from "../../components/package/PackageLabels";
 import { Loader } from "../../package";
 import Icon from "../../components/Icon";
-import { Box, Delete, Gear, Play, Text, Upload } from "../../icons";
+import { Box, Delete, Gear, Play, Spinner, Text, Upload } from "../../icons";
 import "./InstanceInfo.css";
 import IconTextButton from "../../components/input/IconTextButton";
 import { invoke } from "@tauri-apps/api";
@@ -38,6 +41,8 @@ import { FooterData } from "../../App";
 import { FooterMode } from "../../components/navigation/Footer";
 import Modal from "../../components/dialog/Modal";
 import { canonicalizeListOrSingle } from "../../utils/values";
+import { Event, listen, UnlistenFn } from "@tauri-apps/api/event";
+import { RunningInstancesEvent } from "../../components/launch/RunningInstanceList";
 
 export default function InstanceInfo(props: InstanceInfoProps) {
 	let params = useParams();
@@ -125,6 +130,27 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 		},
 		{ initialValue: [] }
 	);
+
+	let [isRunning, setIsRunning] = createSignal(false);
+	let [unlisten, setUnlisten] = createSignal<UnlistenFn>(() => {});
+	createEffect(async () => {
+		let unlisten = await listen(
+			"nitro_update_running_instances",
+			(e: Event<RunningInstancesEvent>) => {
+				setIsRunning(e.payload.running_instances.includes(id));
+			}
+		);
+
+		setUnlisten(() => unlisten);
+
+		await invoke("update_running_instances");
+	});
+
+	onCleanup(() => {
+		unlisten()();
+	});
+
+	let [launchButtonHovered, setLaunchButtonHovered] = createSignal(false);
 
 	let [packageOverrides, setPackageOverrides] = createSignal<PackageOverrides>(
 		{}
@@ -219,16 +245,57 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 									</div>
 								</div>
 								<div class="cont end" style="margin-right:1rem">
-									<IconTextButton
-										icon={Play}
-										size="1.2rem"
-										text="Launch"
-										color="var(--bg2)"
-										selected={false}
-										selectedColor="var(--instance)"
-										onClick={() => {}}
-										shadow={false}
-									/>
+									<div
+										onmouseenter={() => setLaunchButtonHovered(true)}
+										onmouseleave={() => setLaunchButtonHovered(false)}
+										style="width:10rem"
+									>
+										<Switch>
+											<Match when={!isRunning()}>
+												<IconTextButton
+													icon={Play}
+													size="1.2rem"
+													text="Launch"
+													color="var(--bg2)"
+													selected={false}
+													selectedColor="var(--instance)"
+													onClick={() => {}}
+													shadow={false}
+													style="width:100%"
+												/>
+											</Match>
+											<Match when={isRunning() && !launchButtonHovered()}>
+												<IconTextButton
+													icon={Spinner}
+													size="1.2rem"
+													text="Running"
+													color={"var(--bg2)"}
+													selected={false}
+													selectedColor="var(--instance)"
+													onClick={() => {}}
+													shadow={false}
+													style="width:100%"
+													animate
+												/>
+											</Match>
+											<Match when={isRunning() && launchButtonHovered()}>
+												<IconTextButton
+													icon={Delete}
+													size="1.2rem"
+													text="Kill"
+													color="var(--errorbg)"
+													selected={true}
+													selectedColor="var(--error)"
+													onClick={async () => {
+														await invoke("kill_instance", { instance: id });
+														await invoke("update_running_instances");
+													}}
+													shadow={false}
+													style="width:100%"
+												/>
+											</Match>
+										</Switch>
+									</div>
 									<IconTextButton
 										icon={Gear}
 										size="1.2rem"

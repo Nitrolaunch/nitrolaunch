@@ -6,7 +6,7 @@ export function getInstanceIconSrc(
 	icon: InstanceIcon | null | undefined
 ): string {
 	if (icon === null || icon == undefined) {
-		return "icons/default_instance.png";
+		return "/icons/default_instance.png";
 	} else {
 		return convertFileSrc(icon);
 	}

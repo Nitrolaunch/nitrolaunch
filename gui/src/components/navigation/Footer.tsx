@@ -1,4 +1,4 @@
-import { For, Show, createSignal, onCleanup, onMount } from "solid-js";
+import { Show, createSignal, onCleanup, onMount } from "solid-js";
 import "./Footer.css";
 import { UnlistenFn, listen, Event } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api";
@@ -14,21 +14,17 @@ import {
 	Upload,
 } from "../../icons";
 import IconButton from "../input/IconButton";
-import { AuthDisplayEvent, RunningInstanceInfo } from "../../types";
+import { AuthDisplayEvent } from "../../types";
 import MicrosoftAuthInfo from "../input/MicrosoftAuthInfo";
-import { beautifyString, getInstanceIconSrc } from "../../utils";
+import { beautifyString } from "../../utils";
 import TaskIndicator from "../TaskIndicator";
 import { errorToast } from "../dialog/Toasts";
 import IconTextButton from "../input/IconTextButton";
 import Tip from "../dialog/Tip";
 import ProfileDeletePrompt from "../instance/ProfileDeletePrompt";
+import RunningInstanceList from "../launch/RunningInstanceList";
 
 export default function Footer(props: FooterProps) {
-	// Basic state
-	const [runningInstances, setRunningInstances] = createSignal<
-		RunningInstanceInfo[]
-	>([]);
-
 	// Prompts
 	const [showPasswordPrompt, setShowPasswordPrompt] = createSignal(false);
 	const [authInfo, setAuthInfo] = createSignal<AuthDisplayEvent | undefined>(
@@ -41,26 +37,11 @@ export default function Footer(props: FooterProps) {
 	// Unlisteners for tauri events
 	const [unlistens, setUnlistens] = createSignal<UnlistenFn[]>([]);
 
-	async function updateRunningInstances() {
-		try {
-			setRunningInstances(await invoke("get_running_instances"));
-		} catch (e) {
-			console.error("Failed to update running instances");
-		}
-	}
-
 	// Setup and clean up event listeners for updating state
 	onMount(async () => {
-		updateRunningInstances();
-
 		for (let unlisten of unlistens()) {
 			unlisten();
 		}
-
-		let updateStatePromise = listen("update_run_state", () => {
-			console.log("Updating run state");
-			updateRunningInstances();
-		});
 
 		let authInfoPromise = listen(
 			"nitro_display_auth_info",
@@ -81,17 +62,10 @@ export default function Footer(props: FooterProps) {
 			}
 		);
 
-		let stoppedPromise = listen("game_finished", (event: Event<string>) => {
-			console.log("Stopped instance " + event.payload);
-			stopGame(event.payload);
-		});
-
 		let eventUnlistens = await Promise.all([
-			updateStatePromise,
 			authInfoPromise,
 			authInfoClosePromise,
 			passwordPromise,
-			stoppedPromise,
 		]);
 
 		setUnlistens(eventUnlistens);
@@ -124,19 +98,6 @@ export default function Footer(props: FooterProps) {
 		} catch (e) {
 			errorToast("Failed to launch instance: " + e);
 		}
-
-		updateRunningInstances();
-	}
-
-	async function stopGame(instance: string) {
-		setAuthInfo(undefined);
-		setShowPasswordPrompt(false);
-		try {
-			await invoke("stop_game", { instance: instance });
-		} catch (e) {
-			console.error(e);
-		}
-		updateRunningInstances();
 	}
 
 	return (
@@ -279,15 +240,12 @@ export default function Footer(props: FooterProps) {
 					</Show>
 				</div>
 			</div>
-			<div id="footer-right" class="footer-section">
+			<div id="footer-right" class="footer-section fullheight">
 				<div class="cont">
 					<TaskIndicator />
 				</div>
-				<div class="cont">
-					<RunningInstanceList
-						instances={runningInstances()}
-						onStop={stopGame}
-					/>
+				<div class="cont fullheight">
+					<RunningInstanceList />
 				</div>
 			</div>
 
@@ -296,9 +254,6 @@ export default function Footer(props: FooterProps) {
 				event={authInfo() as AuthDisplayEvent}
 				onCancel={() => {
 					setAuthInfo(undefined);
-					if (props.selectedItem != undefined) {
-						stopGame(props.selectedItem);
-					}
 				}}
 			/>
 			<Show when={showPasswordPrompt()}>
@@ -463,33 +418,6 @@ interface ActionButtonProps {
 	selected: boolean;
 	mode: FooterMode;
 	onClick: () => void;
-}
-
-// Displays a list of instance icons that can be interacted with
-function RunningInstanceList(props: RunningInstanceListProps) {
-	return (
-		<div class="running-instance-list">
-			<For each={props.instances}>
-				{(instance) => (
-					<img
-						src={getInstanceIconSrc(instance.info.icon)}
-						class="running-instance-list-icon border"
-						title={
-							instance.info.name != null ? instance.info.name : instance.info.id
-						}
-						onclick={() => {
-							props.onStop(instance.info.id);
-						}}
-					/>
-				)}
-			</For>
-		</div>
-	);
-}
-
-interface RunningInstanceListProps {
-	instances: RunningInstanceInfo[];
-	onStop: (instance: string) => void;
 }
 
 // The mode for the footer

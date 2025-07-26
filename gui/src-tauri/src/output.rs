@@ -4,14 +4,12 @@ use anyhow::Context;
 use nitrolaunch::shared::{
 	id::InstanceID,
 	lang::translate::TranslationKey,
-	output::{NitroOutput, Message, MessageContents, MessageLevel},
+	output::{Message, MessageContents, MessageLevel, NitroOutput},
 	pkg::{ArcPkgReq, ResolutionError},
 };
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Manager};
 use tokio::sync::Mutex;
-
-use crate::{commands::launch::UpdateRunStateEvent, RunState};
 
 /// Response to a prompt in the frontend, shared with a mutex
 pub type PromptResponse = Arc<Mutex<Option<String>>>;
@@ -186,30 +184,8 @@ impl NitroOutput for LauncherOutput {
 
 	fn translate(&self, key: TranslationKey) -> &str {
 		// Emit an event for certain keys as they notify us of progress in the launch
-		if let TranslationKey::PreparingLaunch = key {
-			if let Some(instance) = &self.instance {
-				let _ = self.inner.app.emit_all(
-					"update_run_state",
-					UpdateRunStateEvent {
-						instance: instance.to_string(),
-						state: RunState::Preparing,
-					},
-				);
-			}
-		}
 		if let TranslationKey::AuthenticationSuccessful = key {
 			let _ = self.inner.app.emit_all("nitro_close_auth_info", ());
-		}
-		if let TranslationKey::Launch = key {
-			if let Some(instance) = &self.instance {
-				let _ = self.inner.app.emit_all(
-					"update_run_state",
-					UpdateRunStateEvent {
-						instance: instance.to_string(),
-						state: RunState::Running,
-					},
-				);
-			}
 		}
 
 		key.get_default()

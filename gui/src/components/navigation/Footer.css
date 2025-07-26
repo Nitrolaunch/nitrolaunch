@@ -94,21 +94,3 @@
 	border-radius: var(--round);
 	background-color: var(--pluginbg);
 }
-
-.running-instance-list {
-	display: flex;
-	margin-left: 1rem;
-	align-items: center;
-	justify-content: center;
-	position: relative;
-	gap: 0.35rem;
-}
-
-.running-instance-list-icon {
-	width: 1.5rem;
-	height: 100%;
-	display: inline-block;
-	background-color: var(--bg2);
-	padding: 0.12rem;
-	border-color: var(--bg);
-}

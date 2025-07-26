@@ -1,0 +1,31 @@
+.running-instance-list {
+	gap: 0.35rem;
+	height: 100%;
+	width: 100%;
+
+	position: relative;
+}
+
+.running-instance-list-icon {
+	width: 1.5rem;
+
+	padding: 0.12rem;
+
+	background-color: var(--bg2);
+
+	border: 0.15rem solid var(--bg3);
+	border-radius: var(--round);
+
+	cursor: pointer;
+}
+
+#running-instance-list-tip {
+	position: absolute;
+	bottom: calc(100% + 0.75rem);
+
+	padding: 0.5rem;
+
+	background-color: var(--bg2);
+	border: 0.15rem solid var(--bg4);
+	border-radius: var(--round);
+}

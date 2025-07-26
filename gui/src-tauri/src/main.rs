@@ -5,35 +5,31 @@
 mod commands;
 /// Storage and reading for GUI-specific data
 mod data;
+/// Manager for running instances
+mod instance_manager;
 /// Nitrolaunch output for the launcher frontend
 mod output;
 
 use std::collections::HashMap;
-use std::path::PathBuf;
 use std::sync::{Arc, OnceLock};
 
 use anyhow::Context;
-use commands::launch::UpdateRunStateEvent;
 use data::LauncherData;
 use nitrolaunch::core::auth_crate::mc::ClientId;
 use nitrolaunch::core::{net::download::Client, user::UserManager};
 use nitrolaunch::io::paths::Paths;
-use nitrolaunch::shared::id::InstanceID;
 use output::{OutputInner, PromptResponse};
-use serde::{Deserialize, Serialize};
 use tauri::api::process::restart;
 use tauri::async_runtime::Mutex;
 use tauri::{AppHandle, Manager};
-use tokio::task::JoinHandle;
 
 use crate::commands::misc::update_version_manifest;
+use crate::instance_manager::RunningInstanceManager;
 use crate::output::{MessageEvent, MessageType, ResolutionErrorEvent};
 
 fn main() {
 	let state = tauri::async_runtime::block_on(async { State::new().await })
 		.expect("Error when initializing application state");
-	let launched_games = state.launched_games.clone();
-
 	let data = state.data.clone();
 	let paths = state.paths.clone();
 
@@ -41,6 +37,21 @@ fn main() {
 
 	tauri::Builder::default()
 		.setup(move |app| {
+			// Setup running instance manager
+			let running_instance_manager = RunningInstanceManager::new(&paths, app.app_handle())
+				.expect("Failed to setup running instance manager");
+
+			let _ = state2
+				.running_instances
+				.set(Arc::new(Mutex::new(running_instance_manager)));
+
+			// Update running instances periodically
+			let task = RunningInstanceManager::get_run_task(
+				state2.running_instances.get().unwrap().clone(),
+			);
+			tauri::async_runtime::spawn(task);
+			println!("Running instances set");
+
 			// Perform inital start tasks
 			{
 				let state = state2.clone();
@@ -60,23 +71,6 @@ fn main() {
 					}
 				});
 			}
-
-			app.listen_global("update_run_state", move |event| {
-				let launched_games = launched_games.clone();
-
-				tauri::async_runtime::spawn(async move {
-					let payload: UpdateRunStateEvent = serde_json::from_str(
-						event
-							.payload()
-							.expect("Update run state event should have payload"),
-					)
-					.expect("Failed to deserialize state update");
-					let mut lock = launched_games.lock().await;
-					if let Some(instance) = lock.get_mut(&InstanceID::from(payload.instance)) {
-						instance.state = payload.state;
-					}
-				});
-			});
 
 			// Save package resolution errors so that they can be displayed on the instance
 			app.listen_global("nitro_display_resolution_error", move |event| {
@@ -104,14 +98,14 @@ fn main() {
 		.manage(state)
 		.invoke_handler(tauri::generate_handler![
 			commands::launch::launch_game,
-			commands::launch::stop_game,
 			commands::launch::answer_password_prompt,
+			commands::launch::get_running_instances,
+			commands::launch::update_running_instances,
+			commands::launch::kill_instance,
+			commands::launch::get_instance_output,
 			commands::instance::get_instances,
 			commands::instance::get_profiles,
 			commands::instance::get_instance_groups,
-			commands::launch::get_running_instances,
-			commands::launch::set_running_instance_state,
-			commands::launch::get_instance_output,
 			commands::instance::pin_instance,
 			commands::instance::get_instance_config,
 			commands::instance::get_editable_instance_config,
@@ -169,14 +163,15 @@ fn main() {
 #[derive(Clone)]
 pub struct State {
 	pub data: Arc<Mutex<LauncherData>>,
-	pub launched_games: Arc<Mutex<HashMap<InstanceID, RunningInstance>>>,
+	// Will be filled during setup process
+	pub running_instances: Arc<OnceLock<Arc<Mutex<RunningInstanceManager>>>>,
 	pub paths: Paths,
 	pub client: Client,
 	pub user_manager: Arc<Mutex<UserManager>>,
 	/// Map of users to their already entered passkeys
 	pub passkeys: Arc<Mutex<HashMap<String, String>>>,
 	pub password_prompt: PromptResponse,
-	pub output_inner: OnceLock<OutputInner>,
+	pub output_inner: Arc<OnceLock<OutputInner>>,
 }
 
 impl State {
@@ -186,13 +181,13 @@ impl State {
 			data: Arc::new(Mutex::new(
 				LauncherData::open(&paths).context("Failed to open launcher data")?,
 			)),
-			launched_games: Arc::new(Mutex::new(HashMap::new())),
+			running_instances: Arc::new(OnceLock::new()),
 			paths,
 			client: Client::new(),
 			user_manager: Arc::new(Mutex::new(UserManager::new(get_ms_client_id()))),
 			passkeys: Arc::new(Mutex::new(HashMap::new())),
 			password_prompt: PromptResponse::new(Mutex::new(None)),
-			output_inner: OnceLock::new(),
+			output_inner: Arc::new(OnceLock::new()),
 		})
 	}
 
@@ -207,27 +202,6 @@ impl State {
 			passkeys: self.passkeys.clone(),
 		})
 	}
-}
-
-/// A running instance
-pub struct RunningInstance {
-	/// The ID of the instance
-	pub id: InstanceID,
-	/// The tokio task for the running instance
-	pub task: JoinHandle<anyhow::Result<()>>,
-	/// State of the instance in it's lifecycle
-	pub state: RunState,
-	/// The path to the stdout and stdin files for this instance, filled once it is ready
-	pub stdio_paths: Arc<Mutex<Option<(PathBuf, PathBuf)>>>,
-}
-
-/// State of a running instance
-#[derive(Serialize, Deserialize, Clone, Copy, Debug)]
-#[serde(rename_all = "snake_case")]
-pub enum RunState {
-	NotStarted,
-	Preparing,
-	Running,
 }
 
 /// Get the Microsoft client ID
