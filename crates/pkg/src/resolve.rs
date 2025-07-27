@@ -31,7 +31,7 @@ pub async fn resolve<'a, E: PackageEvaluator<'a>>(
 	let mut preloaded_packages = HashSet::with_capacity(packages.len());
 
 	// Preload all of the user's configured packages
-	let collected_packages: Vec<_> = packages.into_iter().map(|x| x.get_package()).collect();
+	let collected_packages: Vec<_> = packages.iter().map(|x| x.get_package()).collect();
 	if let Err(e) = evaluator
 		.preload_packages(&collected_packages, common_input)
 		.await
@@ -59,7 +59,7 @@ pub async fn resolve<'a, E: PackageEvaluator<'a>>(
 
 		loop {
 			// We have skipped all the tasks and need to finally preload them
-			if num_skipped >= resolver.tasks.len() && resolver.tasks.len() != 0 {
+			if num_skipped >= resolver.tasks.len() && !resolver.tasks.is_empty() {
 				break;
 			}
 
@@ -462,7 +462,7 @@ where
 			}
 			required_versions.clone()
 		} else {
-			req.content_version.get_matches(&required_versions)
+			req.content_version.get_matches(required_versions)
 		};
 
 		// We have overconstrained to the point that there are no versions left
@@ -472,14 +472,14 @@ where
 
 		// If the number of versions is now smaller, that means a different version could be selected and we need to re-evaluate.
 		// Also, if the best evaluable version has changed, we also need to re-evaluate
-		if just_inserted || new_version_preferred || new_versions.len() != required_versions.len() {
-			if !is_package_overridden(&req, &self.overrides.suppress) {
-				self.tasks.push_back(Task::EvalPackage {
-					dest: req.clone(),
-					required_content_versions: new_versions.clone(),
-					preferred_content_versions: preferred_versions.clone(),
-				});
-			}
+		if (just_inserted || new_version_preferred || new_versions.len() != required_versions.len())
+			&& !is_package_overridden(req, &self.overrides.suppress)
+		{
+			self.tasks.push_back(Task::EvalPackage {
+				dest: req.clone(),
+				required_content_versions: new_versions.clone(),
+				preferred_content_versions: preferred_versions.clone(),
+			});
 		}
 
 		*required_versions = new_versions;

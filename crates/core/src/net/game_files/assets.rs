@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use anyhow::Context;
-use nitro_shared::output::{NitroOutput, MessageContents, MessageLevel};
+use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
 use nitro_shared::versions::VersionPattern;
 use nitro_shared::{translate, try_3, UpdateDepth};
 use reqwest::Client;
@@ -220,7 +220,7 @@ pub async fn get(
 
 /// Downloads and loads a single asset
 async fn download_asset(asset: &AssetData, client: &Client) -> anyhow::Result<()> {
-	let response = download::bytes(&asset.url, &client)
+	let response = download::bytes(&asset.url, client)
 		.await
 		.context("Failed to download asset")?;
 

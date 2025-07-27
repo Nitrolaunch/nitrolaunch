@@ -59,7 +59,6 @@ pub(crate) async fn get_launch_props(
 					.join(params.version.to_string())
 					.join("natives")
 					.to_string_lossy()
-					.to_string()
 			));
 			jvm_args.push("-cp".into());
 			jvm_args.push(params.classpath.get_str());

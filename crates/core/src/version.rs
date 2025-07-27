@@ -25,7 +25,7 @@ pub struct InstalledVersion<'inner, 'params> {
 	pub(crate) params: VersionParameters<'params>,
 }
 
-impl<'inner, 'params> InstalledVersion<'inner, 'params> {
+impl InstalledVersion<'_, '_> {
 	/// Get the version name
 	pub fn get_version(&self) -> &VersionName {
 		&self.inner.version

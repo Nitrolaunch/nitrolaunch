@@ -272,7 +272,7 @@ pub async fn write_global_profile(
 
 	configuration.global_profile = Some(config);
 	fmt_err(
-		json_to_file_pretty(&Config::get_path(&state.paths), &configuration)
+		json_to_file_pretty(Config::get_path(&state.paths), &configuration)
 			.context("Failed to write modified configuration"),
 	)?;
 

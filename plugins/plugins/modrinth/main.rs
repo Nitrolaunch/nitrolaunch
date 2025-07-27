@@ -163,7 +163,7 @@ async fn query_package(
 	client: &Client,
 	storage_dirs: &StorageDirs,
 ) -> anyhow::Result<Option<CustomRepoQueryResult>> {
-	let package_or_project = get_cached_package_or_project(id, storage_dirs, &client)
+	let package_or_project = get_cached_package_or_project(id, storage_dirs, client)
 		.await
 		.with_context(|| format!("Failed to get cached package or project '{id}'"))?;
 	let Some(package_or_project) = package_or_project else {
@@ -333,10 +333,7 @@ async fn get_cached_project(
 	}
 
 	let project_info = if project_path.exists() {
-		let project_info =
-			json_from_file(&project_path).context("Failed to read project info from file")?;
-
-		project_info
+		json_from_file(&project_path).context("Failed to read project info from file")?
 	} else {
 		let project_task = {
 			let project = project_id.to_string();
@@ -377,9 +374,9 @@ async fn get_cached_project(
 			.context("Failed to get project versions")?;
 
 		let project_info = ProjectInfo {
-			project: project,
-			versions: versions,
-			members: members,
+			project,
+			versions,
+			members,
 		};
 
 		let _ = save_project_info(&project_info, storage_dirs);
@@ -400,7 +397,7 @@ async fn download_multiple_projects(
 ) -> anyhow::Result<Vec<ProjectInfo>> {
 	// Filter out projects that are already cached
 	let projects: Vec<_> = projects
-		.into_iter()
+		.iter()
 		.filter(|x| {
 			let path = storage_dirs.projects.join(x);
 			let path2 = storage_dirs.packages.join(x);
@@ -413,7 +410,7 @@ async fn download_multiple_projects(
 		return Ok(Vec::new());
 	}
 
-	let projects = modrinth::get_multiple_projects(&projects, &client)
+	let projects = modrinth::get_multiple_projects(&projects, client)
 		.await
 		.context("Failed to download projects")?;
 

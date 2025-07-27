@@ -13,7 +13,7 @@ use nitro_net::download::Client;
 use nitro_plugin::{api::CustomPlugin, hooks::OnInstanceSetupResult};
 use nitro_shared::{
 	loaders::Loader,
-	output::{NitroOutput, MessageContents, MessageLevel, OutputProcess},
+	output::{MessageContents, MessageLevel, NitroOutput, OutputProcess},
 	versions::VersionPattern,
 	Side, UpdateDepth,
 };
@@ -53,7 +53,7 @@ fn main() -> anyhow::Result<()> {
 		let versions = if stored_versions_path.exists() && arg.update_depth == UpdateDepth::Shallow
 		{
 			process.display(
-				MessageContents::StartProcess(format!("Downloading version list")),
+				MessageContents::StartProcess("Downloading version list".to_string()),
 				MessageLevel::Important,
 			);
 			json_from_file(&stored_versions_path).context("Failed to read versions from file")?
@@ -76,7 +76,7 @@ fn main() -> anyhow::Result<()> {
 			json_from_file(&builds_path).context("Failed to read builds from file")?
 		} else {
 			process.display(
-				MessageContents::StartProcess(format!("Getting build list")),
+				MessageContents::StartProcess("Getting build list".to_string()),
 				MessageLevel::Important,
 			);
 			runtime
@@ -107,7 +107,7 @@ fn main() -> anyhow::Result<()> {
 		if let Some(current_build_num) = current_build_num {
 			if desired_build_num != current_build_num {
 				process.display(
-					MessageContents::StartProcess(format!("Removing old build")),
+					MessageContents::StartProcess("Removing old build".to_string()),
 					MessageLevel::Important,
 				);
 				let build_info = get_build_info(
@@ -147,7 +147,7 @@ fn main() -> anyhow::Result<()> {
 		let jar_path = paper::get_local_jar_path(mode, &arg.version_info.version, &paths);
 		if !jar_path.exists() || arg.update_depth == UpdateDepth::Force {
 			process.display(
-				MessageContents::StartProcess(format!("Downloading JAR file")),
+				MessageContents::StartProcess("Downloading JAR file".to_string()),
 				MessageLevel::Important,
 			);
 			runtime
@@ -213,12 +213,12 @@ fn get_build_info(
 	client: &Client,
 	o: &mut impl NitroOutput,
 ) -> anyhow::Result<BuildInfoResponse> {
-	let build_info_path = get_stored_build_info_path(&paths, mode, version, build);
+	let build_info_path = get_stored_build_info_path(paths, mode, version, build);
 	let build_info = if build_info_path.exists() && update_depth <= UpdateDepth::Full {
 		json_from_file(&build_info_path).context("Failed to read build info from file")?
 	} else {
 		o.display(
-			MessageContents::StartProcess(format!("Downloading build info")),
+			MessageContents::StartProcess("Downloading build info".to_string()),
 			MessageLevel::Important,
 		);
 		runtime

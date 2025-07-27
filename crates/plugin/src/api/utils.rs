@@ -46,10 +46,10 @@ impl PackageSearchCache {
 		// Invalidate the entry if it is too old
 		let timestamp = utc_timestamp().ok()?;
 		if timestamp - entry.timestamp > self.max_age {
-			return None;
+			None
 		} else {
 			let results = serde_json::from_value(entry.results.clone()).ok()?;
-			return Some(results);
+			Some(results)
 		}
 	}
 

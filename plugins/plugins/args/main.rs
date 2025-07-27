@@ -1,12 +1,12 @@
 use std::str::FromStr;
 
 use anyhow::bail;
+use nitro_plugin::api::CustomPlugin;
+use nitro_plugin::hooks::ModifyInstanceConfigResult;
+use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
 use nitrolaunch::config_crate::instance::{
 	CommonInstanceConfig, InstanceConfig, LaunchArgs, LaunchConfig,
 };
-use nitro_plugin::api::CustomPlugin;
-use nitro_plugin::hooks::ModifyInstanceConfigResult;
-use nitro_shared::output::{NitroOutput, MessageContents, MessageLevel};
 
 fn main() -> anyhow::Result<()> {
 	let mut plugin = CustomPlugin::from_manifest_file("args", include_str!("plugin.json"))?;

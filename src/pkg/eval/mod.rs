@@ -28,9 +28,9 @@ use nitro_shared::addon::{is_addon_version_valid, is_filename_valid, Addon};
 use nitro_shared::lang::Language;
 use nitro_shared::loaders::Loader;
 use nitro_shared::output;
-use nitro_shared::output::NitroOutput;
 use nitro_shared::output::MessageContents;
 use nitro_shared::output::MessageLevel;
+use nitro_shared::output::NitroOutput;
 use nitro_shared::output::Simple;
 use nitro_shared::pkg::ArcPkgReq;
 use nitro_shared::pkg::PackageID;
@@ -97,7 +97,7 @@ pub struct EvalInput<'a> {
 	pub params: EvalParameters,
 }
 
-impl<'a> EvalInputTrait for EvalInput<'a> {
+impl EvalInputTrait for EvalInput<'_> {
 	fn set_content_versions(
 		&mut self,
 		required_versions: Vec<String>,
@@ -303,48 +303,44 @@ pub fn eval_check_properties(
 	properties: &PackageProperties,
 ) -> anyhow::Result<bool> {
 	if let Some(supported_versions) = &properties.supported_versions {
-		if !supported_versions.is_empty() {
-			if !supported_versions
+		if !supported_versions.is_empty()
+			&& !supported_versions
 				.iter()
 				.any(|x| x.matches_single(&input.constants.version, &input.constants.version_list))
-			{
-				bail!("Package does not support this Minecraft version");
-			}
+		{
+			bail!("Package does not support this Minecraft version");
 		}
 	}
 
 	if let Some(supported_loaders) = &properties.supported_loaders {
-		if !supported_loaders.is_empty() {
-			if !supported_loaders
+		if !supported_loaders.is_empty()
+			&& !supported_loaders
 				.iter()
 				.any(|x| x.matches(&input.constants.loader))
-			{
-				bail!("Package does not support this loader");
-			}
+		{
+			bail!("Package does not support this loader");
 		}
 	}
 
 	if let Some(supported_sides) = &properties.supported_sides {
-		if !supported_sides.is_empty() {
-			if !supported_sides.contains(&input.params.side) {
-				return Ok(true);
-			}
+		if !supported_sides.is_empty() && !supported_sides.contains(&input.params.side) {
+			return Ok(true);
 		}
 	}
 
 	if let Some(supported_operating_systems) = &properties.supported_operating_systems {
-		if !supported_operating_systems.is_empty() {
-			if !supported_operating_systems.iter().any(check_os_condition) {
-				bail!("Package does not support your operating system");
-			}
+		if !supported_operating_systems.is_empty()
+			&& !supported_operating_systems.iter().any(check_os_condition)
+		{
+			bail!("Package does not support your operating system");
 		}
 	}
 
 	if let Some(supported_architectures) = &properties.supported_architectures {
-		if !supported_architectures.is_empty() {
-			if !supported_architectures.iter().any(check_arch_condition) {
-				bail!("Package does not support your system architecture");
-			}
+		if !supported_architectures.is_empty()
+			&& !supported_architectures.iter().any(check_arch_condition)
+		{
+			bail!("Package does not support your system architecture");
 		}
 	}
 
@@ -571,7 +567,7 @@ impl<'a> PackageEvaluatorTrait<'a> for PackageEvaluator<'a> {
 	) -> anyhow::Result<()> {
 		self.reg
 			.preload_packages(
-				packages.into_iter(),
+				packages.iter(),
 				common_input.paths,
 				common_input.client,
 				&mut Simple(MessageLevel::Important),

@@ -122,8 +122,7 @@ pub async fn gen(
 		project
 			.categories
 			.into_iter()
-			.map(|x| convert_category(&x).into_iter())
-			.flatten()
+			.flat_map(|x| convert_category(&x).into_iter())
 			.collect(),
 	);
 
@@ -468,9 +467,8 @@ pub fn cleanup_version_name(version: &str) -> String {
 	// 		.expect("Failed to create regex")
 	// });
 	// let version = regex.replace_all(version, "");
-	let version = version.replace("+", "-");
 
-	version
+	version.replace("+", "-")
 }
 
 fn convert_category(category: &str) -> Vec<PackageCategory> {

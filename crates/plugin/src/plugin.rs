@@ -92,7 +92,7 @@ impl Plugin {
 				priority: _,
 			} => {
 				let arg = HookCallArg {
-					cmd: &executable,
+					cmd: executable,
 					arg,
 					additional_args: args,
 					working_dir: self.working_dir.as_deref(),
@@ -164,7 +164,7 @@ impl Plugin {
 					if &lhs == case {
 						return Box::pin(self.call_hook_handler(
 							hook,
-							&handler,
+							handler,
 							arg,
 							paths,
 							nitro_version,
@@ -368,6 +368,12 @@ pub struct PluginPersistence {
 	pub state: serde_json::Value,
 	/// The long-running plugin worker
 	pub worker: Option<HookHandle<StartWorker>>,
+}
+
+impl Default for PluginPersistence {
+	fn default() -> Self {
+		Self::new()
+	}
 }
 
 impl PluginPersistence {

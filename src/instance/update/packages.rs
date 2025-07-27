@@ -105,7 +105,7 @@ pub async fn update_instance_packages<'a, O: NitroOutput>(
 				.expect("Instance should exist");
 
 			// Skip suppressed packages
-			if is_package_overridden(&package, &instance.config.package_overrides.suppress) {
+			if is_package_overridden(package, &instance.config.package_overrides.suppress) {
 				continue;
 			}
 

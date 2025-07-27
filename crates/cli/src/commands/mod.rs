@@ -15,7 +15,7 @@ use nitrolaunch::io::paths::Paths;
 use nitrolaunch::plugin::PluginManager;
 use nitrolaunch::plugin_crate::hooks::{self, AddTranslations};
 use nitrolaunch::shared::later::Later;
-use nitrolaunch::shared::output::{NitroOutput, MessageContents, MessageLevel};
+use nitrolaunch::shared::output::{MessageContents, MessageLevel, NitroOutput};
 
 use self::config::ConfigSubcommand;
 use self::files::FilesSubcommand;

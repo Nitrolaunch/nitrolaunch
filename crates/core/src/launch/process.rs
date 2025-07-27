@@ -7,7 +7,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use anyhow::Context;
 use nitro_auth::mc::AccessToken;
-use nitro_shared::output::{NitroOutput, MessageContents, MessageLevel};
+use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
 use nitro_shared::translate;
 
 use crate::instance::InstanceKind;

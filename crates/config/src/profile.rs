@@ -292,7 +292,9 @@ pub fn consolidate_profile_configs(
 
 		i += 1;
 		if i > max_iterations {
-			panic!("Max iterations exceeded while resolving profiles. This is a bug in Nitrolaunch.");
+			panic!(
+				"Max iterations exceeded while resolving profiles. This is a bug in Nitrolaunch."
+			);
 		}
 	}
 

@@ -62,8 +62,7 @@ pub async fn gen(
 		categories: Some(
 			pack.categories
 				.into_iter()
-				.map(|x| convert_category(&x).into_iter())
-				.flatten()
+				.flat_map(|x| convert_category(&x).into_iter())
 				.collect(),
 		),
 		..Default::default()

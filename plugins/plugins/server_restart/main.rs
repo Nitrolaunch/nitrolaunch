@@ -57,7 +57,7 @@ enum Mode {
 /// Create the restart script file at the specified path
 fn create_script(path: &Path, inst_ref: &str, config: Config) -> anyhow::Result<()> {
 	if !path.exists() {
-		let mut file = BufWriter::new(File::create(&path)?);
+		let mut file = BufWriter::new(File::create(path)?);
 		#[cfg(target_family = "unix")]
 		{
 			writeln!(&mut file, "#!/bin/sh")?;
@@ -74,7 +74,7 @@ fn create_script(path: &Path, inst_ref: &str, config: Config) -> anyhow::Result<
 	// Make executable
 	#[cfg(target_family = "unix")]
 	{
-		let mut perms = std::fs::metadata(&path)
+		let mut perms = std::fs::metadata(path)
 			.context("Failed to get file metadata")?
 			.permissions();
 		perms.set_mode(0o777);

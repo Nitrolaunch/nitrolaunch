@@ -33,9 +33,9 @@ use anyhow::Context;
 use io::java::install::{JavaInstallParameters, JavaInstallation, JavaInstallationKind};
 use io::java::JavaMajorVersion;
 use io::{persistent::PersistentData, update::UpdateManager};
+use net::game_files::version_manifest::{make_version_list, VersionEntry, VersionManifestAndList};
 use nitro_shared::output::{self, NitroOutput};
 use nitro_shared::versions::VersionInfo;
-use net::game_files::version_manifest::{make_version_list, VersionEntry, VersionManifestAndList};
 use user::UserManager;
 use util::versions::{MinecraftVersion, VersionName};
 use version::{

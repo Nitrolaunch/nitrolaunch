@@ -11,7 +11,7 @@ use std::fs::File;
 use std::path::{Path, PathBuf};
 
 use anyhow::{bail, Context};
-use nitro_shared::output::{NitroOutput, MessageContents, MessageLevel};
+use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
 use nitro_shared::{translate, Side};
 
 use self::client::create_quick_play_args;

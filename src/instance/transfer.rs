@@ -8,7 +8,7 @@ use nitro_plugin::hooks::{
 	InstanceTransferFormatDirection,
 };
 use nitro_shared::lang::translate::TranslationKey;
-use nitro_shared::output::{NitroOutput, MessageContents, MessageLevel};
+use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
 use nitro_shared::translate;
 
 use crate::io::lock::Lockfile;

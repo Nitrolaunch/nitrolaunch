@@ -530,8 +530,7 @@ pub async fn search_projects(
 		let categories = params
 			.categories
 			.into_iter()
-			.map(convert_category)
-			.flatten()
+			.flat_map(convert_category)
 			.map(|x| {
 				format!(
 					"\"categories={}\"",

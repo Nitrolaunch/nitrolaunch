@@ -148,7 +148,7 @@ impl RunningInstanceRegistry {
 	}
 
 	/// Iterates over the entries in the registry
-	pub fn iter_entries<'this>(&'this self) -> impl Iterator<Item = &'this RunningInstanceEntry> {
+	pub fn iter_entries(&self) -> impl Iterator<Item = &RunningInstanceEntry> {
 		self.data.instances.iter()
 	}
 }

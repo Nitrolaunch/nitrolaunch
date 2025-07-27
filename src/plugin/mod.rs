@@ -128,7 +128,7 @@ impl PluginManager {
 		if let Some(plugin_nitro_version) = &plugin.get_manifest().nitro_version {
 			if let (Some(nitro_version), Some(plugin_nitro_version)) = (
 				version_compare::Version::from(crate::VERSION),
-				version_compare::Version::from(&plugin_nitro_version),
+				version_compare::Version::from(plugin_nitro_version),
 			) {
 				if plugin_nitro_version > nitro_version {
 					o.display(

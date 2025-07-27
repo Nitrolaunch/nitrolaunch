@@ -1,5 +1,5 @@
 use anyhow::Context;
-use nitro_shared::output::{NitroOutput, MessageContents, MessageLevel};
+use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
 use nitro_shared::{translate, util::DefaultExt, UpdateDepth};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};

@@ -14,7 +14,7 @@ use nitro_plugin::hooks::{
 	InstanceLaunchArg, OnInstanceLaunch, OnInstanceStop, WhileInstanceLaunch,
 };
 use nitro_shared::id::InstanceID;
-use nitro_shared::output::{NitroOutput, MessageContents, MessageLevel};
+use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
 use nitro_shared::{translate, UpdateDepth};
 use reqwest::Client;
 use tokio::io::{AsyncWriteExt, Stdin, Stdout};
@@ -68,7 +68,10 @@ impl Instance {
 			dir: self.dirs.get().inst_dir.to_string_lossy().into(),
 			game_dir: self.dirs.get().game_dir.to_string_lossy().into(),
 			version_info: manager.version_info.get_clone(),
-			config: self.config.original_config_with_profiles_and_plugins.clone(),
+			config: self
+				.config
+				.original_config_with_profiles_and_plugins
+				.clone(),
 			pid: None,
 			stdout_path: None,
 			stdin_path: None,

@@ -102,19 +102,18 @@ impl VerifiedPlugin {
 					continue;
 				}
 
-				if asset.name.contains("x86")
+				if (asset.name.contains("x86")
 					|| asset.name.contains("arm")
-					|| asset.name.contains("aarch64")
+					|| asset.name.contains("aarch64"))
+					&& !asset.name.contains(ARCH)
 				{
-					if !asset.name.contains(ARCH) {
-						continue;
-					}
+					continue;
 				}
 
-				if asset.name.contains("32bit") || asset.name.contains("64bit") {
-					if !asset.name.contains(TARGET_BITS_STR) {
-						continue;
-					}
+				if (asset.name.contains("32bit") || asset.name.contains("64bit"))
+					&& !asset.name.contains(TARGET_BITS_STR)
+				{
+					continue;
 				}
 
 				selected_asset = Some(asset);

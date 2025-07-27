@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use anyhow::{anyhow, bail, Context};
 use nitro_core::io::{json_from_file, json_to_file_pretty};
 use nitro_shared::loaders::Loader;
-use nitro_shared::output::{NitroOutput, MessageContents};
+use nitro_shared::output::{MessageContents, NitroOutput};
 use nitro_shared::translate;
 use serde::{Deserialize, Serialize};
 
@@ -296,11 +296,7 @@ impl Lockfile {
 	}
 
 	/// Updates the loader of an instance
-	pub fn update_instance_loader(
-		&mut self,
-		instance: &str,
-		loader: Loader,
-	) -> anyhow::Result<()> {
+	pub fn update_instance_loader(&mut self, instance: &str, loader: Loader) -> anyhow::Result<()> {
 		if let Some(instance) = self.contents.instances.get_mut(instance) {
 			instance.loader = loader;
 			Ok(())

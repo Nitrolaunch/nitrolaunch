@@ -102,7 +102,7 @@ impl<R: TryReadExt + Unpin> TryLineReader<R> {
 		if !read_string.contains("\n") {
 			self.current_line.push_str(read_string);
 			return Ok(Some(Vec::new()));
-		} else if read_string.chars().last() == Some('\n')
+		} else if read_string.ends_with('\n')
 			&& read_string.chars().filter(|x| *x == '\n').count() == 1
 		{
 			// Special case with one newline exactly at the end. The split will return only one element.
@@ -135,7 +135,7 @@ impl<R: TryReadExt + Unpin> TryLineReader<R> {
 		out.extend(lines.map(Cow::Borrowed));
 
 		// Add the last line to the line buffer, only if it wasn't a full line
-		if read_string.chars().last() == Some('\n') {
+		if read_string.ends_with('\n') {
 			out.push(Cow::Borrowed(last_line));
 		} else {
 			self.current_line.push_str(last_line);
@@ -207,7 +207,7 @@ mod test {
 
 	async fn test(outputs: &[&'static str], expected_lines: &[&'static str]) {
 		let mut reader = TryLineReader::new(TestReader {
-			outputs: outputs.into_iter().map(|x| *x).collect(),
+			outputs: outputs.iter().copied().collect(),
 		});
 
 		let mut lines = Vec::new();
@@ -215,7 +215,7 @@ mod test {
 			lines.extend(new_lines.into_iter().map(|x| x.to_string()));
 		}
 
-		let expected_lines: Vec<_> = expected_lines.into_iter().map(|x| x.to_string()).collect();
+		let expected_lines: Vec<_> = expected_lines.iter().map(|x| x.to_string()).collect();
 		assert_eq!(lines, expected_lines);
 	}
 }

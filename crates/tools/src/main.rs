@@ -1,9 +1,9 @@
 use std::{fs::File, io::BufWriter, path::PathBuf};
 
 use clap::Parser;
+use nitro_options::Options;
 use nitrolaunch::config_crate::ConfigDeser;
 use nitrolaunch::pkg_crate::{declarative::DeclarativePackage, repo::RepoIndex};
-use nitro_options::Options;
 
 #[tokio::main]
 async fn main() {

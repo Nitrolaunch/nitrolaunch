@@ -291,13 +291,12 @@ fn check_condition_set<'a>(conditions: &DeclarativeConditionSet, input: &'a Eval
 	}
 
 	if let Some(content_versions) = &conditions.content_versions {
-		if !input.params.required_content_versions.is_empty() {
-			if !content_versions
+		if !input.params.required_content_versions.is_empty()
+			&& !content_versions
 				.iter()
 				.any(|x| input.params.required_content_versions.contains(x))
-			{
-				return false;
-			}
+		{
+			return false;
 		}
 	}
 

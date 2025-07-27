@@ -404,7 +404,7 @@ pub struct PackageBuilderInstanceParent<'instance, 'parent>(
 	&'instance mut InstanceBuilder<'parent>,
 );
 
-impl<'instance, 'parent> PackageBuilderParent for PackageBuilderInstanceParent<'instance, 'parent> {
+impl PackageBuilderParent for PackageBuilderInstanceParent<'_, '_> {
 	fn build_package(self, package: FullPackageConfig) {
 		self.0.build_package(package)
 	}

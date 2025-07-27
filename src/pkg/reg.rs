@@ -87,7 +87,7 @@ impl PkgRegistry {
 		.await
 		.context("Failed to query remote repositories")?;
 		if let Some(result) = query {
-			return Ok(self.insert(
+			Ok(self.insert(
 				req.clone(),
 				Package::new(
 					req.id.clone(),
@@ -95,7 +95,7 @@ impl PkgRegistry {
 					result.content_type,
 					result.flags,
 				),
-			));
+			))
 		} else {
 			Err(anyhow!("Package '{req}' does not exist"))
 		}
@@ -407,7 +407,7 @@ impl PkgRegistry {
 			let mut num_skipped = 0;
 
 			for req in all_basic_packages.into_iter().sorted() {
-				if !params.categories.is_empty() || !params.search.is_none() {
+				if !params.categories.is_empty() || params.search.is_some() {
 					let meta = self
 						.get_metadata(&req, paths, client, o)
 						.await
@@ -517,7 +517,7 @@ impl PkgRegistry {
 		let mut to_remove = Vec::new();
 		for (i, package) in packages.iter().enumerate() {
 			if self
-				.query_insert(&package, false, paths, client, o)
+				.query_insert(package, false, paths, client, o)
 				.await
 				.is_ok()
 			{

@@ -11,7 +11,7 @@ use color_print::cprintln;
 use nitro_plugin::api::{CustomPlugin, HookContext};
 use nitro_plugin::hooks::{self, Hook};
 use nitro_plugin::input_output::InputAction;
-use nitro_shared::output::{NitroOutput, MessageContents, MessageLevel};
+use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
 
 use crate::backup::BackupSource;
 
@@ -97,7 +97,7 @@ fn main() -> anyhow::Result<()> {
 				let Some(interval) = &group.interval else {
 					continue;
 				};
-				let Some(interval) = parse_duration(&interval) else {
+				let Some(interval) = parse_duration(interval) else {
 					continue;
 				};
 
@@ -105,7 +105,7 @@ fn main() -> anyhow::Result<()> {
 				let last_update_time = last_update_times.entry(group_id).or_insert(now);
 
 				if now.duration_since(*last_update_time).unwrap_or_default() >= interval {
-					index.create_backup(BackupSource::Auto, Some(&group_id), &inst_dir)?;
+					index.create_backup(BackupSource::Auto, Some(group_id), &inst_dir)?;
 				}
 			}
 

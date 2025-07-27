@@ -2,7 +2,7 @@ use super::mc_msa::{
 	MinecraftAccessToken, MinecraftAuthenticationResponse, MinecraftAuthorizationFlow,
 };
 use anyhow::{anyhow, Context};
-use nitro_shared::output::{NitroOutput, MessageContents, MessageLevel};
+use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
 use nitro_shared::translate;
 pub use oauth2::basic::{BasicClient, BasicTokenType};
 pub use oauth2::reqwest::async_http_client;

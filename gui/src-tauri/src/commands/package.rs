@@ -8,7 +8,7 @@ use nitrolaunch::pkg_crate::properties::PackageProperties;
 use nitrolaunch::pkg_crate::repo::RepoMetadata;
 use nitrolaunch::pkg_crate::{PackageSearchResults, PkgRequest, PkgRequestSource};
 use nitrolaunch::shared::loaders::Loader;
-use nitrolaunch::shared::output::{NitroOutput, MessageContents, MessageLevel, NoOp};
+use nitrolaunch::shared::output::{MessageContents, MessageLevel, NitroOutput, NoOp};
 use nitrolaunch::shared::pkg::{PackageCategory, PackageKind, PackageSearchParameters};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;

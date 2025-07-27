@@ -43,8 +43,8 @@ impl OutputAction {
 		let json = serde_json::to_string(&self).context("Failed to serialize output action")?;
 		let out = if use_base64 {
 			// We have to base64 encode it to prevent newlines from messing up the output format
-			let base64 = BASE64_STANDARD.encode(json);
-			base64
+
+			BASE64_STANDARD.encode(json)
 		} else {
 			json
 		};

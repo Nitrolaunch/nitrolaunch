@@ -19,7 +19,7 @@ use super::download;
 
 /// Downloading the game JAR file
 pub mod game_jar {
-	use nitro_shared::output::{NitroOutput, MessageContents, MessageLevel, OutputProcess};
+	use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput, OutputProcess};
 
 	use self::download::ProgressiveDownload;
 

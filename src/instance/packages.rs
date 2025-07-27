@@ -1,5 +1,5 @@
 use anyhow::{bail, Context};
-use nitro_shared::output::{NitroOutput, MessageContents, MessageLevel};
+use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
 use nitro_shared::pkg::ArcPkgReq;
 use nitro_shared::translate;
 use nitro_shared::versions::VersionInfo;

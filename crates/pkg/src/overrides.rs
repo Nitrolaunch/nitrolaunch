@@ -14,7 +14,7 @@ pub struct PackageOverrides {
 
 /// Checks if a package is overridden in a list
 pub fn is_package_overridden(package: &PkgRequest, list: &[String]) -> bool {
-	list.into_iter()
+	list.iter()
 		.map(|x| PkgRequest::parse(x, PkgRequestSource::UserRequire))
 		.any(|x| &x == package)
 }

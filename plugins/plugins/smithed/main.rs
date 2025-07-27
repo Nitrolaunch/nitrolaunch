@@ -158,7 +158,7 @@ async fn query_package(
 	data_dir: &Path,
 ) -> anyhow::Result<Option<CustomRepoQueryResult>> {
 	let storage_dir = data_dir.join("internal/smithed/packs");
-	let pack_info = get_cached_pack(id, true, &storage_dir, &client)
+	let pack_info = get_cached_pack(id, true, &storage_dir, client)
 		.await
 		.context("Failed to get pack")?;
 	let Some(pack_info) = pack_info else {
@@ -237,20 +237,18 @@ async fn get_cached_pack(
 		let mut pack_info: PackInfo =
 			json_from_file(&pack_path).context("Failed to read pack info from file")?;
 
-		if download_body {
-			if pack_info.body_exists && pack_info.body.is_none() {
-				if let Some(body) = &pack_info.pack.display.web_page {
-					if let Ok(text) = download::text(body, client).await {
-						pack_info.body = Some(text);
-						let _ = json_to_file(&pack_path, &pack_info);
-					}
+		if download_body && pack_info.body_exists && pack_info.body.is_none() {
+			if let Some(body) = &pack_info.pack.display.web_page {
+				if let Ok(text) = download::text(body, client).await {
+					pack_info.body = Some(text);
+					let _ = json_to_file(&pack_path, &pack_info);
 				}
 			}
 		}
 
 		Ok(Some(pack_info))
 	} else {
-		let result = smithed::get_pack_optional(pack, &client).await?;
+		let result = smithed::get_pack_optional(pack, client).await?;
 
 		let Some(pack) = result else {
 			let file = std::fs::File::create(does_not_exist_path);

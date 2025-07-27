@@ -5,9 +5,9 @@ use std::{
 };
 
 use anyhow::Context;
-use nitrolaunch::config_crate::instance::InstanceConfig;
 use nitro_plugin::{api::CustomPlugin, hooks::ImportInstanceResult};
 use nitro_shared::Side;
+use nitrolaunch::config_crate::instance::InstanceConfig;
 use serde::{Deserialize, Serialize};
 use zip::{write::FileOptions, ZipArchive, ZipWriter};
 

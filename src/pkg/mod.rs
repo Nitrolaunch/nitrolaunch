@@ -212,7 +212,7 @@ impl Package {
 					self.data.fill(PkgData::new(&Arc::from(contents)));
 				}
 				PkgLocation::Inline(contents) => {
-					self.data.fill(PkgData::new(&contents));
+					self.data.fill(PkgData::new(contents));
 				}
 			};
 		}

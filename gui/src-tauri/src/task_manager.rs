@@ -68,7 +68,7 @@ impl TaskManager {
 		self.tasks.retain(|task| {
 			if task.id == task_id {
 				if let Some(join_handle) = &task.join_handle {
-					let _ = join_handle.abort();
+					join_handle.abort();
 				}
 				let _ = self
 					.app_handle

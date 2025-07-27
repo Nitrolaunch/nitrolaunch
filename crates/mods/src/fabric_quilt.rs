@@ -9,7 +9,7 @@ use nitro_core::io::update::UpdateManager;
 use nitro_core::io::{files, json_to_file};
 use nitro_core::net::download;
 use nitro_core::NitroCore;
-use nitro_shared::output::{NitroOutput, MessageContents, MessageLevel, OutputProcess};
+use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput, OutputProcess};
 use nitro_shared::versions::VersionInfo;
 use nitro_shared::{Side, UpdateDepth};
 use reqwest::Client;

@@ -26,8 +26,8 @@ use std::collections::HashMap;
 use anyhow::Context;
 use async_trait::async_trait;
 use declarative::{deserialize_declarative_package, validate_declarative_package};
-use nitro_shared::pkg::{ArcPkgReq, PackageID};
 use metadata::PackageMetadata;
+use nitro_shared::pkg::{ArcPkgReq, PackageID};
 use properties::PackageProperties;
 #[cfg(feature = "schema")]
 use schemars::JsonSchema;

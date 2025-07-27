@@ -180,7 +180,7 @@ impl NitroOutput for LauncherOutput {
 		eprintln!("Resolution error: {error:?}");
 		let error = SerializableResolutionError::from_err(error);
 
-		let _ = self.inner.app.trigger_global(
+		self.inner.app.trigger_global(
 			"nitro_display_resolution_error",
 			Some(
 				serde_json::to_string(&ResolutionErrorEvent {

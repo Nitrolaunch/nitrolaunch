@@ -263,7 +263,7 @@ where
 	}
 }
 
-impl<'a, O> Drop for OutputProcess<'a, O>
+impl<O> Drop for OutputProcess<'_, O>
 where
 	O: NitroOutput,
 {
@@ -272,23 +272,23 @@ where
 	}
 }
 
-impl<'a, O> Deref for OutputProcess<'a, O>
+impl<O> Deref for OutputProcess<'_, O>
 where
 	O: NitroOutput,
 {
 	type Target = O;
 
 	fn deref(&self) -> &Self::Target {
-		&self.0
+		self.0
 	}
 }
 
-impl<'a, O> DerefMut for OutputProcess<'a, O>
+impl<O> DerefMut for OutputProcess<'_, O>
 where
 	O: NitroOutput,
 {
 	fn deref_mut(&mut self) -> &mut Self::Target {
-		&mut self.0
+		self.0
 	}
 }
 
@@ -306,7 +306,7 @@ where
 	}
 }
 
-impl<'a, O> Drop for OutputSection<'a, O>
+impl<O> Drop for OutputSection<'_, O>
 where
 	O: NitroOutput,
 {
@@ -315,23 +315,23 @@ where
 	}
 }
 
-impl<'a, O> Deref for OutputSection<'a, O>
+impl<O> Deref for OutputSection<'_, O>
 where
 	O: NitroOutput,
 {
 	type Target = O;
 
 	fn deref(&self) -> &Self::Target {
-		&self.0
+		self.0
 	}
 }
 
-impl<'a, O> DerefMut for OutputSection<'a, O>
+impl<O> DerefMut for OutputSection<'_, O>
 where
 	O: NitroOutput,
 {
 	fn deref_mut(&mut self) -> &mut Self::Target {
-		&mut self.0
+		self.0
 	}
 }
 

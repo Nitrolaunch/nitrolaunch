@@ -275,7 +275,7 @@ pub struct HookContext<'ctx, H: Hook> {
 	_h: PhantomData<H>,
 }
 
-impl<'ctx, H: Hook> HookContext<'ctx, H> {
+impl<H: Hook> HookContext<'_, H> {
 	/// Get the custom configuration for the plugin passed into the hook
 	pub fn get_custom_config(&self) -> Option<&str> {
 		self.stored_ctx.custom_config.as_deref()

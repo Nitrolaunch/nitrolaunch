@@ -6,7 +6,7 @@ use nitro_pkg::repo::{PackageFlag, RepoMetadata, RepoPkgEntry};
 use nitro_pkg::PackageContentType;
 
 use anyhow::Context;
-use nitro_shared::output::{NitroOutput, MessageContents, MessageLevel};
+use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
 use nitro_shared::pkg::ArcPkgReq;
 use nitro_shared::translate;
 use reqwest::Client;

@@ -7,7 +7,7 @@ use nitrolaunch::plugin::install::get_verified_plugins;
 use nitrolaunch::plugin::PluginManager;
 use nitrolaunch::plugin_crate::plugin::PluginManifest;
 use nitrolaunch::shared::lang::translate::TranslationKey;
-use nitrolaunch::shared::output::{NitroOutput, MessageContents, MessageLevel};
+use nitrolaunch::shared::output::{MessageContents, MessageLevel, NitroOutput};
 use reqwest::Client;
 
 use super::CmdData;
@@ -75,16 +75,14 @@ async fn list(data: &mut CmdData<'_>, raw: bool, loaded: bool) -> anyhow::Result
 
 		if raw {
 			println!("{}", plugin_id);
+		} else if is_loaded {
+			cprintln!("{}<s>{CHECK} {}</> [Enabled]", HYPHEN_POINT, plugin_id);
 		} else {
-			if is_loaded {
-				cprintln!("{}<s>{CHECK} {}</> [Enabled]", HYPHEN_POINT, plugin_id);
+			let is_valid = json_from_file::<PluginManifest>(plugin_path).is_ok();
+			if is_valid {
+				cprintln!("{}{} [Disabled]", HYPHEN_POINT, plugin_id);
 			} else {
-				let is_valid = json_from_file::<PluginManifest>(plugin_path).is_ok();
-				if is_valid {
-					cprintln!("{}{} [Disabled]", HYPHEN_POINT, plugin_id);
-				} else {
-					cprintln!("{}<r>{} [Invalid]", HYPHEN_POINT, plugin_id);
-				}
+				cprintln!("{}<r>{} [Invalid]", HYPHEN_POINT, plugin_id);
 			}
 		}
 	}

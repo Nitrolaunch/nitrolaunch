@@ -1,7 +1,7 @@
 use std::io::{Cursor, Read};
 
 use anyhow::{bail, Context};
-use nitro_shared::output::{NitroOutput, MessageContents, MessageLevel};
+use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
 use nitro_shared::util::DeserListOrSingle;
 use nitro_shared::{translate, UpdateDepth};
 use reqwest::Client;

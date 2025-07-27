@@ -250,9 +250,9 @@ pub fn get_newest_version<'versions>(
 	versions: &'versions [String],
 	available_versions: &[String],
 ) -> Option<&'versions String> {
-	versions.into_iter().max_by_key(|version| {
+	versions.iter().max_by_key(|version| {
 		available_versions
-			.into_iter()
+			.iter()
 			.position(|available_version| available_version == *version)
 	})
 }

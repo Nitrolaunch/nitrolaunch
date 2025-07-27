@@ -95,7 +95,7 @@ struct MMCComponent {
 }
 
 /// Reads the instance.cfg file to a set of fields
-fn read_instance_cfg<'a>(contents: &'a str) -> HashMap<&'a str, &'a str> {
+fn read_instance_cfg(contents: &str) -> HashMap<&str, &str> {
 	let mut out = HashMap::new();
 
 	for line in contents.lines() {

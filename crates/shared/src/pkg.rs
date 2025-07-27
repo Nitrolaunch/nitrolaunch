@@ -137,7 +137,7 @@ impl PkgRequest {
 			source: self.source.clone(),
 			id: self.id.clone(),
 			repository: self.repository.clone(),
-			content_version: content_version,
+			content_version,
 		}
 	}
 
