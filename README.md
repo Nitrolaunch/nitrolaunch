@@ -1,11 +1,14 @@
-# 🚀 Nitrolaunch
+![Nitrolaunch Logo](assets/LogoLarge.png)
+
+## **A Minecraft launcher for the future**
+
+[![](https://dcbadge.limes.pink/api/server/https://discord.gg/25fhkjeTvW)](https://discord.gg/25fhkjeTvW)
 
 Nitrolaunch is a Minecraft launcher and ecosystem meant to reinvent the launcher as you know it, providing a plugin system and a better interface with custom content such as mods and resource packs.
 
 In the official launcher and many alternative ones, you have to waste time moving files in and out of folders, downloading mods from sketchy websites, setting up servers, and sharing your config to play with friends. Nitrolaunch hopes to alleviate some of these pains with its smart systems for configuration sharing and package management.
 
 In addition, Nitrolaunch is extremely modular, allowing you to build your perfect launcher by hand, or just use the amazing tools already built by the community.
-
 
 - 🚀 [Getting Started](https://nitrolaunch.github.io/nitrolaunch/docs/guide/)
 - 📖 [Documentation](https://nitrolaunch.github.io/nitrolaunch/docs/)
@@ -70,7 +73,7 @@ Nitrolaunch has many use cases for different applications
 
 This is the main use case of most people, and is an important focus of the ecosystem.
 
-### A GUI launcher (planned)
+### A GUI launcher
 
 All the functionalities of the CLI in a more approachable format as a desktop application.
 
@@ -85,14 +88,3 @@ The Nitrolaunch CLI is the perfect assistant for server managers. The way that i
 ### A packaging format
 
 Launchers can use the different Nitrolaunch crates to parse, validate, evaluate, and host Nitrolaunch packages.
-
-# 👍 Status
-
-Right now, the launcher and library have most of the core features implemented. The main thing that needs completed is the GUI version of the launcher, and a public repository where anyone can upload packages. If you see something you want that isn't there, try contributing!
-
-### Things that need to be completed before 1.0.0:
-
-- Installing NeoForge
-- A graphical version of the launcher
-
-Join the [Discord](https://discord.gg/25fhkjeTvW) if you have any questions.
