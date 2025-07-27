@@ -10,7 +10,7 @@ use zip::ZipArchive;
 
 fn main() -> anyhow::Result<()> {
 	let mut plugin =
-		CustomPlugin::from_manifest_file("prism_transfer", include_str!("plugin.json"))?;
+		CustomPlugin::from_manifest_file("multimc_transfer", include_str!("plugin.json"))?;
 
 	plugin.import_instance(|_, arg| {
 		let source_path = PathBuf::from(arg.source_path);

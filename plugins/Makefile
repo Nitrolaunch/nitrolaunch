@@ -27,10 +27,10 @@ package_zips.platform_dependent:
 	@rm -f release/nitro_transfer-${OS}.zip 
 	@rm -f release/modrinth-${OS}.zip 
 	@rm -f release/modrinth_api-${OS}.zip 
+	@rm -f release/multimc_transfer-${OS}.zip 
 	@rm -f release/options-${OS}.zip 
 	@rm -f release/packhost-${OS}.zip 
 	@rm -f release/paper-${OS}.zip 
-	@rm -f release/prism_transfer-${OS}.zip 
 	@rm -f release/server_restart-${OS}.zip 
 	@rm -f release/smithed-${OS}.zip 
 	@rm -f release/smithed_api-${OS}.zip 
@@ -53,10 +53,10 @@ package_zips.platform_dependent:
 	@zip -j release/nitro_transfer-${OS}.zip ../target/release/nitro_plugin_nitro_transfer${EXTENSION} plugins/nitro_transfer/plugin.json
 	@zip -j release/modrinth-${OS}.zip ../target/release/nitro_plugin_modrinth${EXTENSION} plugins/modrinth/plugin.json
 	@zip -j release/modrinth_api-${OS}.zip ../target/release/nitro_plugin_modrinth_api${EXTENSION} plugins/modrinth_api/plugin.json plugins/modrinth_api/page.html
+	@zip -j release/multimc_transfer-${OS}.zip ../target/release/nitro_plugin_multimc_transfer${EXTENSION} plugins/multimc_transfer/plugin.json
 	@zip -j release/options-${OS}.zip ../target/release/nitro_plugin_options${EXTENSION} plugins/options/plugin.json
 	@zip -j release/packhost-${OS}.zip ../target/release/nitro_plugin_packhost${EXTENSION} plugins/packhost/plugin.json
 	@zip -j release/paper-${OS}.zip ../target/release/nitro_plugin_paper${EXTENSION} plugins/paper/plugin.json
-	@zip -j release/prism_transfer-${OS}.zip ../target/release/nitro_plugin_prism_transfer${EXTENSION} plugins/prism_transfer/plugin.json
 	@zip -j release/server_restart-${OS}.zip ../target/release/nitro_plugin_server_restart${EXTENSION} plugins/server_restart/plugin.json
 	@zip -j release/smithed-${OS}.zip ../target/release/nitro_plugin_smithed${EXTENSION} plugins/smithed/plugin.json plugins/smithed/page.html
 	@zip -j release/smithed_api-${OS}.zip ../target/release/nitro_plugin_smithed_api${EXTENSION} plugins/smithed_api/plugin.json
@@ -127,6 +127,10 @@ install.modrinth_api:
 	@cargo install --path . --bin nitro_plugin_modrinth_api --offline
 	@cat plugins/modrinth_api/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/modrinth_api.json
 
+install.multimc_transfer:
+	@cargo install --path . --bin nitro_plugin_multimc_transfer --offline
+	@cat plugins/multimc_transfer/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/multimc_transfer.json
+
 install.options:
 	@cargo install --path . --bin nitro_plugin_options --offline
 	@cat plugins/options/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/options.json
@@ -138,10 +142,6 @@ install.packhost:
 install.paper:
 	@cargo install --path . --bin nitro_plugin_paper --offline
 	@cat plugins/paper/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/paper.json
-
-install.prism_transfer:
-	@cargo install --path . --bin nitro_plugin_prism_transfer --offline
-	@cat plugins/prism_transfer/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/prism_transfer.json
 
 install.server_restart:
 	@cargo install --path . --bin nitro_plugin_server_restart --offline

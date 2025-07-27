@@ -1,0 +1,22 @@
+{
+	"name": "MultiMC Transfer",
+	"description": "Instance transfer for MultiMC and PrismLauncher",
+	"protocol_version": 3,
+	"hooks": {
+		"add_instance_transfer_formats": {
+			"constant": [
+				{
+					"id": "multimc",
+					"import": {}
+				},
+				{
+					"id": "prism",
+					"import": {}
+				}
+			]
+		},
+		"import_instance": {
+			"executable": "${PLUGIN_DIR}/nitro_plugin_multimc_transfer${EXE_EXTENSION}"
+		}
+	}
+}

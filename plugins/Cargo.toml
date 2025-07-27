@@ -63,6 +63,10 @@ name = "nitro_plugin_modrinth_api"
 path = "plugins/modrinth_api/main.rs"
 
 [[bin]]
+name = "nitro_plugin_multimc_transfer"
+path = "plugins/multimc_transfer/main.rs"
+
+[[bin]]
 name = "nitro_plugin_options"
 path = "plugins/options/main.rs"
 
@@ -73,10 +77,6 @@ path = "plugins/packhost/main.rs"
 [[bin]]
 name = "nitro_plugin_paper"
 path = "plugins/paper/main.rs"
-
-[[bin]]
-name = "nitro_plugin_prism_transfer"
-path = "plugins/prism_transfer/main.rs"
 
 [[bin]]
 name = "nitro_plugin_smithed"
