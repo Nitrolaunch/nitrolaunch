@@ -285,13 +285,21 @@ pub async fn update_instance(
 	app_handle: tauri::AppHandle,
 	instance_id: String,
 ) -> Result<(), String> {
+	update_instance_impl(&state, Arc::new(app_handle), instance_id).await
+}
+
+pub async fn update_instance_impl(
+	state: &State,
+	app_handle: Arc<tauri::AppHandle>,
+	instance_id: String,
+) -> Result<(), String> {
 	let mut config = fmt_err(
 		load_config(&state.paths, &mut NoOp)
 			.await
 			.context("Failed to load config"),
 	)?;
 
-	let mut output = LauncherOutput::new(state.get_output(app_handle));
+	let mut output = LauncherOutput::new(state.get_output_arc(app_handle));
 	output.set_task("update_instance");
 
 	let paths = state.paths.clone();
@@ -544,6 +552,16 @@ pub async fn set_last_opened_instance(
 	let _ = app_handle.emit_all("nitro_update_last_opened_instance", "");
 
 	Ok(())
+}
+
+/// Checks if an instance has been fully updated before
+#[tauri::command]
+pub async fn get_instance_has_updated(
+	state: tauri::State<'_, State>,
+	instance: &str,
+) -> Result<bool, String> {
+	let lock = fmt_err(Lockfile::open(&state.paths).context("Failed to open lockfile"))?;
+	Ok(lock.has_instance_done_first_update(instance))
 }
 
 #[derive(Deserialize, Serialize, Clone, Copy)]

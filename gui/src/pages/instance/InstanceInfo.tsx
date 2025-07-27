@@ -146,8 +146,28 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 		await invoke("update_running_instances");
 	});
 
+	// Gets whether the currently selected instance is launchable (it has been updated before)
+	let [unlisten2, setUnlisten2] = createSignal<UnlistenFn>(() => {});
+	let [isInstanceLaunchable, methods] = createResource(async () => {
+		let unlisten = await listen(
+			"nitro_output_finish_task",
+			(e: Event<string>) => {
+				if (e.payload == "update_instance") {
+					methods.refetch();
+				}
+			}
+		);
+
+		setUnlisten2(() => unlisten);
+
+		return await invoke("get_instance_has_updated", {
+			instance: id,
+		});
+	});
+
 	onCleanup(() => {
 		unlisten()();
+		unlisten2()();
 	});
 
 	let [launchButtonHovered, setLaunchButtonHovered] = createSignal(false);
@@ -245,59 +265,61 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 									</div>
 								</div>
 								<div class="cont end" style="margin-right:1rem">
-									<div
-										onmouseenter={() => setLaunchButtonHovered(true)}
-										onmouseleave={() => setLaunchButtonHovered(false)}
-										style="width:10rem"
-									>
-										<Switch>
-											<Match when={!isRunning()}>
-												<IconTextButton
-													icon={Play}
-													size="1.2rem"
-													text="Launch"
-													color="var(--bg2)"
-													selected={false}
-													selectedColor="var(--instance)"
-													onClick={() => {
-														launchInstance(id);
-													}}
-													shadow={false}
-													style="width:100%"
-												/>
-											</Match>
-											<Match when={isRunning() && !launchButtonHovered()}>
-												<IconTextButton
-													icon={Spinner}
-													size="1.2rem"
-													text="Running"
-													color={"var(--bg2)"}
-													selected={false}
-													selectedColor="var(--instance)"
-													onClick={() => {}}
-													shadow={false}
-													style="width:100%"
-													animate
-												/>
-											</Match>
-											<Match when={isRunning() && launchButtonHovered()}>
-												<IconTextButton
-													icon={Delete}
-													size="1.2rem"
-													text="Kill"
-													color="var(--errorbg)"
-													selected={true}
-													selectedColor="var(--error)"
-													onClick={async () => {
-														await invoke("kill_instance", { instance: id });
-														await invoke("update_running_instances");
-													}}
-													shadow={false}
-													style="width:100%"
-												/>
-											</Match>
-										</Switch>
-									</div>
+									<Show when={isInstanceLaunchable()}>
+										<div
+											onmouseenter={() => setLaunchButtonHovered(true)}
+											onmouseleave={() => setLaunchButtonHovered(false)}
+											style="width:10rem"
+										>
+											<Switch>
+												<Match when={!isRunning()}>
+													<IconTextButton
+														icon={Play}
+														size="1.2rem"
+														text="Launch"
+														color="var(--bg2)"
+														selected={false}
+														selectedColor="var(--instance)"
+														onClick={() => {
+															launchInstance(id);
+														}}
+														shadow={false}
+														style="width:100%"
+													/>
+												</Match>
+												<Match when={isRunning() && !launchButtonHovered()}>
+													<IconTextButton
+														icon={Spinner}
+														size="1.2rem"
+														text="Running"
+														color={"var(--bg2)"}
+														selected={false}
+														selectedColor="var(--instance)"
+														onClick={() => {}}
+														shadow={false}
+														style="width:100%"
+														animate
+													/>
+												</Match>
+												<Match when={isRunning() && launchButtonHovered()}>
+													<IconTextButton
+														icon={Delete}
+														size="1.2rem"
+														text="Kill"
+														color="var(--errorbg)"
+														selected={true}
+														selectedColor="var(--error)"
+														onClick={async () => {
+															await invoke("kill_instance", { instance: id });
+															await invoke("update_running_instances");
+														}}
+														shadow={false}
+														style="width:100%"
+													/>
+												</Match>
+											</Switch>
+										</div>
+									</Show>
 									<IconTextButton
 										icon={Gear}
 										size="1.2rem"

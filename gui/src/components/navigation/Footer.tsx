@@ -1,4 +1,10 @@
-import { Show, createSignal, onCleanup, onMount } from "solid-js";
+import {
+	Show,
+	createResource,
+	createSignal,
+	onCleanup,
+	onMount,
+} from "solid-js";
 import "./Footer.css";
 import { UnlistenFn, listen, Event } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api";
@@ -97,6 +103,34 @@ export default function Footer(props: FooterProps) {
 			errorToast("Failed to launch instance: " + e);
 		}
 	}
+
+	// Gets whether the currently selected instance is launchable (it has been updated before)
+	let [isInstanceLaunchable, methods] = createResource(
+		() => props.selectedItem,
+		async () => {
+			if (props.mode != FooterMode.Instance) {
+				return undefined;
+			}
+
+			let unlisten = await listen(
+				"nitro_output_finish_task",
+				(e: Event<string>) => {
+					if (e.payload == "update_instance") {
+						methods.refetch();
+					}
+				}
+			);
+
+			setUnlistens((unlistens) => {
+				unlistens.push(unlisten);
+				return unlistens;
+			});
+
+			return await invoke("get_instance_has_updated", {
+				instance: props.selectedItem,
+			});
+		}
+	);
 
 	return (
 		<div class="footer">
@@ -206,13 +240,29 @@ export default function Footer(props: FooterProps) {
 							props.selectedItem != undefined &&
 							!(
 								props.itemFromPlugin == true && props.mode == FooterMode.Profile
+							) &&
+							!(
+								props.mode == FooterMode.Instance &&
+								isInstanceLaunchable() == undefined
 							)
 						}
 						mode={props.mode}
-						onClick={() => {
+						isInstanceLaunchable={isInstanceLaunchable() == true}
+						onClick={async () => {
 							if (props.mode == FooterMode.Instance) {
 								if (props.selectedItem != undefined) {
-									launch(props.selectedItem);
+									if (isInstanceLaunchable() == undefined) {
+									} else if (isInstanceLaunchable()) {
+										launch(props.selectedItem);
+									} else {
+										try {
+											await invoke("update_instance", {
+												instanceId: props.selectedItem,
+											});
+										} catch (e) {
+											errorToast("Failed to update instance: " + e);
+										}
+									}
 								}
 							} else if (
 								props.mode == FooterMode.Profile &&
@@ -325,7 +375,11 @@ function ActionButton(props: ActionButtonProps) {
 	};
 	let message = () => {
 		if (props.mode == FooterMode.Instance) {
-			return "Launch";
+			if (props.isInstanceLaunchable || !props.selected) {
+				return "Launch";
+			} else {
+				return "Update";
+			}
 		} else if (props.mode == FooterMode.Profile) {
 			return "Edit";
 		} else if (
@@ -341,7 +395,11 @@ function ActionButton(props: ActionButtonProps) {
 	};
 	let Icon = () => {
 		if (props.mode == FooterMode.Instance) {
-			return <Play />;
+			if (props.isInstanceLaunchable || !props.selected) {
+				return <Play />;
+			} else {
+				return <Upload />;
+			}
 		} else if (props.mode == FooterMode.Profile) {
 			return <Properties />;
 		} else if (
@@ -417,6 +475,7 @@ function ActionButton(props: ActionButtonProps) {
 interface ActionButtonProps {
 	selected: boolean;
 	mode: FooterMode;
+	isInstanceLaunchable: boolean;
 	onClick: () => void;
 }
 

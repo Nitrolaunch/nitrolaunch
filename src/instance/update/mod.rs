@@ -16,7 +16,7 @@ use packages::update_instance_packages;
 use std::collections::HashSet;
 
 use anyhow::Context;
-use nitro_shared::output::{NitroOutput, MessageContents, MessageLevel};
+use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
 use reqwest::Client;
 
 use crate::io::lock::Lockfile;
@@ -135,6 +135,9 @@ impl Instance {
 					.context("Failed to print support messages")?;
 			}
 		}
+
+		ctx.lock.update_instance_has_done_first_update(&self.id);
+		let _ = ctx.lock.finish(ctx.paths);
 
 		Ok(())
 	}

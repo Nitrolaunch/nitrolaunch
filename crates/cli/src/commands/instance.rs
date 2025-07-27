@@ -241,11 +241,6 @@ pub async fn launch(
 			.update(true, UpdateDepth::Full, &mut ctx)
 			.await
 			.context("Failed to perform first update for instance")?;
-
-		// Since the update was successful, we can mark the instance as ready
-		lock.update_instance_has_done_first_update(&instance_id);
-		lock.finish(&data.paths)
-			.context("Failed to finish using lockfile")?;
 	}
 
 	if let Some(user) = user {

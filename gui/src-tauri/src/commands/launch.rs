@@ -1,7 +1,9 @@
+use crate::commands::instance::update_instance_impl;
 use crate::data::{InstanceLaunch, LauncherData};
 use crate::{output::LauncherOutput, State};
-use anyhow::Context;
+use anyhow::{bail, Context};
 use nitrolaunch::instance::launch::LaunchSettings;
+use nitrolaunch::io::lock::Lockfile;
 use nitrolaunch::plugin_crate::try_read::TryReadExt;
 use nitrolaunch::shared::id::InstanceID;
 use std::collections::HashSet;
@@ -65,6 +67,16 @@ async fn launch_game_impl(
 		.context("Failed to load config")?;
 	if let Some(user) = user {
 		config.users.choose_user(user)?;
+	}
+
+	// Check first update
+	let lock = Lockfile::open(&state.paths).context("Failed to open lockfile")?;
+	if !lock.has_instance_done_first_update(&instance_id) {
+		if let Err(e) = update_instance_impl(&state, app.clone(), instance_id.clone()).await {
+			bail!("{e}");
+		};
+
+		return Ok(());
 	}
 
 	let paths = state.paths.clone();
