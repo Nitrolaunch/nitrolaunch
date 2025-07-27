@@ -14,6 +14,7 @@ import {
 	Check,
 	Delete,
 	Download,
+	Gear,
 	Play,
 	Properties,
 	Refresh,
@@ -205,7 +206,7 @@ export default function Footer(props: FooterProps) {
 										border="var(--bg3)"
 										selectedColor="var(--accent)"
 										onClick={() => {
-											window.location.href = `/${props.mode}_config/${props.selectedItem}`;
+											window.location.href = `/instance/${props.selectedItem}`;
 										}}
 										selected={false}
 									/>
@@ -401,7 +402,7 @@ function ActionButton(props: ActionButtonProps) {
 				return <Upload />;
 			}
 		} else if (props.mode == FooterMode.Profile) {
-			return <Properties />;
+			return <Gear />;
 		} else if (
 			props.mode == FooterMode.SaveInstanceConfig ||
 			props.mode == FooterMode.SaveProfileConfig
