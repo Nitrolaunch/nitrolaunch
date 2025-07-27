@@ -1,4 +1,4 @@
-![Nitrolaunch Logo](assets/LogoLarge.png)
+![Nitrolaunch Logo](docs/assets/LogoLarge.png)
 
 ## **A Minecraft launcher for the future**
 
@@ -10,60 +10,41 @@ In the official launcher and many alternative ones, you have to waste time movin
 
 In addition, Nitrolaunch is extremely modular, allowing you to build your perfect launcher by hand, or just use the amazing tools already built by the community.
 
-- 🚀 [Getting Started](https://nitrolaunch.github.io/nitrolaunch/docs/guide/)
-- 📖 [Documentation](https://nitrolaunch.github.io/nitrolaunch/docs/)
-- ✨ [Features](#✨-features)
-- ➕ [More Info](#➕-more-info)
-- 👷 [Use Cases](#👷-use-cases)
-- 👍 [Status](#👍-status)
-- 🤝 [Contributing](CONTRIBUTING.md)
-
 # ✨ Features
 
-- 🚀 **Launching**: Launch both clients and servers seamlessly.
-- 🔌**Plugin System**: Many of Nitrolaunch's features are split into separate plugins. You can use this system to add your own features to the launcher as well.
-- ⌨️ **CLI**: An intuitive and ergonomic command-line interface makes using Nitrolaunch easy and satisfying.
-- 💼 **Instances**: Separate game installations into self-contained instances.
-- 📄 **Game Options**: Specify client options and server properties using a backwards compatible format that can be shared between instances.
-- 📦 **Packages**: Automatically install mods, resource packs, and other addons with a novel package format and intelligent dependency management.
-- 📥 **Install Everything**: Use many of the popular loaders, like Fabric and Quilt, along with server implementations like Paper, with automatic installation.
-- 🪪 **User Management**: Set up as many users as you want, and log them in and out as needed.
-- 🗃️ **Profiles**: Easily share settings across multiple instances, both client and server.
-- 💾 **Backups**: Create archived snapshots of the files you want, and not the ones you don't.
-- ⚡**Speed**: Probably one of the fastest launchers on the market. Download files concurrently with efficient caching and optimal disk usage.
-- 🛠️ **Deep Configuration**: Sensible defaults, but plenty of options and escape hatches to make Nitrolaunch work for you.
-- 🔒 **Robustness**: A lot of design work has gone into making Nitrolaunch resilient, secure, and future-proof.
-- ✅ **Compatability**: Nitrolaunch is designed to work on as many operating systems and architectures as possible.
+## App or Command line
+
+Nitrolaunch will work how you do, as an easy-to-use desktop app or an intuitive CLI
+
+|                      App                      |                    CLI                    |
+| :-------------------------------------------: | :---------------------------------------: |
+| ![](docs/assets/screenshots/package_page.png) | ![](docs/assets/screenshots/cli_list.png) |
+
+## Client and Server Instances
+
+Set up instances of both clients and servers, and share configuration between them seamlessly.
+
+![](docs/assets/screenshots/instances.png)
+
+## Plugin System
+
+Extend the launcher with features like new modloaders and sources for mods, translations for other languages, or tools to enhance your productivity
+
+![](docs/assets/screenshots/plugins.png)
+
+## Modern Packaging
+
+Install packages from sources like Modrinth and Smithed. Nitrolaunch doesn't just support mods, it can install datapacks, resource packs, shaders, and more!
+
+![](docs/assets/screenshots/gui_packages.png)
+
+## In addition, Nitrolaunch is extremely fast, light on system resources, and available for all major platforms.
+
+![](docs/assets/screenshots/launch.gif)
 
 # 🚀 Getting Started
 
 To get started with Nitrolaunch, view our [user guide](https://nitrolaunch.github.io/nitrolaunch/docs/guide/).
-
-# ➕ More Info
-
-### Packages
-
-**_Packages_** are a big selling point of Nitrolaunch. You simply configure what packages you want on a profile or instance and all the files you need for some addon are automatically installed.
-
-#### A universal format
-
-Packages are designed in such a way that they work with any hosting system. Because they can download files from any URL, packages serve as an intermediary for the formats and conventions of many different websites.
-
-#### Package relationships
-
-Nitrolaunch's packaging format provides the ability to model complex relationships between packages. You won't have to worry about getting all of the correct dependencies for your packages, as they will be automatically installed.
-
-#### Flexibility with scripting
-
-Packages can be more than just an index of files. They can be scripts which run simple logic to determine dependencies and addon files depending on the conditions of the environment.
-
-#### Safety
-
-Packages are made to be as secure as possible. Even though they have scripting capabilities, they are in a controlled environment with no uneeded access to the system or ability to run arbitrary code. Public repositories will be screened often to ensure quality.
-
-#### Control
-
-You don't have to just use the packages from the official repositories. You can use whatever local or remote package repository you please with whatever priority, as long as they match the API standard. The syncing of package files from repositories is a separate process that only happens when you explicitly say so. Changes to packages will never break your game without your knowledge.
 
 # 👷 Use Cases
 

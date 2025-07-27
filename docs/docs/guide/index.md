@@ -1,35 +1,13 @@
-# Getting Started with Nitrolaunch
+# Nitrolaunch User Guide
 
-This guide will show you how to use the Nitrolaunch CLI (Command-line interface) from the basics to more advanced features. This guide will cover most of the important things, but more in-depth documentation can be found on reference pages like [configuring.md](../configuring.md).
+Welcome to Nitrolaunch!
 
-## 1. Installing
-There are multiple ways to install the CLI. Pick the method that is easiest for you.
+## [Desktop App](gui/index.md)
 
-### Rust
-To install using `cargo`, first install [Rust](https://rustup.rs/). Then run
-```sh
-cargo install nitro_cli
-```
-in your favorite terminal. This will install the CLI on your system.
+[![](../../assets/screenshots/instances.png)](gui/index.md)
 
-### Releases
-Download the correct binary for your system from [the latest release](https://github.com/Nitrolaunch/nitrolaunch/releases/latest).
-Note that you will have to install it yourself.
+## [CLI](cli/index.md)
 
-### Dev Builds
-To install from one of the prebuilt development binaries, visit [nightly.link](https://nightly.link/nitrolaunch/nitrolaunch/workflows/build/dev) and download and extract the artifacts for your operating system. Note that these builds may be unstable.
+[![](../../assets/screenshots/cli_list.png)](gui/index.md)
 
-## 2. Basic Concepts
-Nitrolaunch has some basic features that need to be explained first.
-
-### Instances
-Instances may be a familiar term that you have heard of before from other launchers. They are separate game installations with their own Minecraft version, modloader, files, and more. They are also the thing you actually launch when you want to play the game. The advantage of instances is that they keep worlds and configuration separate between different installations, as opposed to having conflicting files.
-
-## 3. Configuring
-Run the command `nitro instance list` to create the default config file, and list the example instances. Now if you run `nitro config edit`, you should be able to edit the config file in your favorite editor and get a sense of what it looks like. Finally, let's try launching one of the default instances.
-
-## 4. Launching!
-Looks like we are ready to launch. Run `nitro instance launch example-client` to start up the client! When launching for the first time, you will have to follow the shown login instructions in order to authenticate with your Microsoft account. Afterwards, you won't have to log in again.
-
-For more info, read the other documentation or join our [Discord server](https://discord.gg/25fhkjeTvW).
-When you want to start adding things like mods or resource packs to your instance, check out the [packages guide](packages.md).
+If you have any questions, please join our [Discord server](https://discord.gg/25fhkjeTvW).
