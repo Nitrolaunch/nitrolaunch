@@ -1,0 +1,31 @@
+.icon-selector {
+	display: grid;
+	grid-template-columns: repeat(7, minmax(0, 1fr));
+	gap: 0.5rem;
+}
+
+.icon-selector-icon {
+	width: 100%;
+	aspect-ratio: 1;
+
+	background-color: var(--bg2);
+	border: 0.15rem solid var(--bg3);
+	border-radius: var(--round2);
+	box-sizing: border-box;
+
+	cursor: pointer;
+}
+
+.icon-selector-icon:hover {
+	background-color: var(--bg3);
+}
+
+.icon-selector-icon.selected {
+	background-color: var(--instancebg);
+	border: 0.15rem solid var(--instance);
+}
+
+.icon-selector-icon-image {
+	width: 45%;
+	image-rendering: pixelated;
+}

@@ -59,6 +59,7 @@ import { InstanceInfo } from "../../types";
 import Dropdown from "../../components/input/Dropdown";
 import LoadingSpinner from "../../components/utility/LoadingSpinner";
 import LaunchConfig from "./LaunchConfig";
+import IconSelector from "../../components/input/IconSelector";
 
 export default function InstanceConfigPage(props: InstanceConfigProps) {
 	let params = useParams();
@@ -580,6 +581,25 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 								}}
 							></input>
 						</Tip>
+					</Show>
+					<Show when={!isGlobalProfile}>
+						<div class="cont start">
+							<label for="side" class="label">
+								ICON
+							</label>
+							<DeriveIndicator
+								parentConfigs={parentConfigs()}
+								currentValue={icon()}
+								property={(x) => x.icon}
+							/>
+						</div>
+						<IconSelector
+							icon={icon()}
+							setIcon={(x) => {
+								setIcon(x);
+								setDirty();
+							}}
+						/>
 					</Show>
 					<Show when={props.creating || isProfile || isGlobalProfile}>
 						<div class="cont start">

@@ -1,4 +1,3 @@
-use crate::data::InstanceIcon;
 use crate::output::{LauncherOutput, SerializableResolutionError};
 use crate::State;
 use anyhow::{bail, Context};
@@ -42,7 +41,7 @@ pub async fn get_instances(state: tauri::State<'_, State>) -> Result<Vec<Instanc
 		.map(|(id, instance)| {
 			let id = id.to_string();
 			InstanceInfo {
-				icon: data.instance_icons.get(&id).cloned(),
+				icon: instance.get_config().icon.clone(),
 				pinned: data.pinned.contains(&id),
 				id,
 				name: instance.get_config().name.clone(),
@@ -63,8 +62,6 @@ pub async fn get_profiles(state: tauri::State<'_, State>) -> Result<Vec<Instance
 			.context("Failed to load config"),
 	)?;
 
-	let data = state.data.lock().await;
-
 	let profiles = config
 		.profiles
 		.iter()
@@ -72,7 +69,7 @@ pub async fn get_profiles(state: tauri::State<'_, State>) -> Result<Vec<Instance
 		.map(|(id, profile)| {
 			let id = id.to_string();
 			InstanceInfo {
-				icon: data.profile_icons.get(&id).cloned(),
+				icon: profile.instance.icon.clone(),
 				pinned: false,
 				id,
 				name: profile.instance.name.clone(),
@@ -90,7 +87,7 @@ pub struct InstanceInfo {
 	pub id: String,
 	pub name: Option<String>,
 	pub side: Option<Side>,
-	pub icon: Option<InstanceIcon>,
+	pub icon: Option<String>,
 	pub pinned: bool,
 	pub from_plugin: bool,
 }
