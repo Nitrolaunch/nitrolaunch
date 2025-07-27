@@ -43,7 +43,7 @@ impl Instance {
 		self.ensure_dirs(paths)?;
 		let game_dir = &self.dirs.get().game_dir;
 		get_addon_paths(
-			&self.config.original_config_with_profiles,
+			&self.config.original_config_with_profiles_and_plugins,
 			game_dir,
 			addon.kind,
 			selected_worlds,

@@ -20,7 +20,7 @@ use nitro_core::version::InstalledVersion;
 use nitro_core::QuickPlayType;
 use nitro_plugin::hooks::{OnInstanceSetup, OnInstanceSetupArg, RemoveLoader};
 use nitro_shared::output::OutputProcess;
-use nitro_shared::output::{NitroOutput, MessageContents, MessageLevel};
+use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
 use nitro_shared::translate;
 use nitro_shared::Side;
 
@@ -104,7 +104,10 @@ impl Instance {
 			loader: self.config.loader.clone(),
 			current_loader_version,
 			desired_loader_version: self.config.loader_version.clone(),
-			config: self.config.original_config_with_profiles.clone(),
+			config: self
+				.config
+				.original_config_with_profiles_and_plugins
+				.clone(),
 			internal_dir: paths.internal.to_string_lossy().to_string(),
 			update_depth: manager.settings.depth,
 		};

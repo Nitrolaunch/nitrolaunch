@@ -68,7 +68,7 @@ impl Instance {
 			dir: self.dirs.get().inst_dir.to_string_lossy().into(),
 			game_dir: self.dirs.get().game_dir.to_string_lossy().into(),
 			version_info: manager.version_info.get_clone(),
-			config: self.config.original_config_with_profiles.clone(),
+			config: self.config.original_config_with_profiles_and_plugins.clone(),
 			pid: None,
 			stdout_path: None,
 			stdin_path: None,
