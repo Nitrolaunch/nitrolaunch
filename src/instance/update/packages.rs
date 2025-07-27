@@ -1,14 +1,17 @@
 use std::collections::{HashMap, HashSet};
 use std::future::Future;
+use std::path::Path;
 use std::sync::Arc;
 
 use itertools::Itertools;
+use nitro_config::instance::get_addon_paths;
 use nitro_core::net::download::get_transfer_limit;
 use nitro_pkg::overrides::is_package_overridden;
 use nitro_pkg::properties::PackageProperties;
 use nitro_pkg::repo::PackageFlag;
 use nitro_pkg::PkgRequest;
-use nitro_shared::output::{NitroOutput, MessageContents, MessageLevel};
+use nitro_shared::addon::AddonKind;
+use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
 use nitro_shared::pkg::{ArcPkgReq, PackageID};
 use nitro_shared::translate;
 use nitro_shared::versions::VersionInfo;
@@ -45,6 +48,36 @@ pub async fn update_instance_packages<'a, O: NitroOutput>(
 		MessageLevel::Important,
 	);
 	ctx.output.end_process();
+
+	// Blanket remove existing addons just in case there's a lockfile issue
+	let addon_kinds = [
+		AddonKind::Datapack,
+		AddonKind::Mod,
+		AddonKind::Plugin,
+		AddonKind::ResourcePack,
+		AddonKind::Shader,
+	];
+
+	for adddon_kind in addon_kinds {
+		for instance in instances.iter() {
+			let Ok(dirs) = get_addon_paths(
+				&instance.config.original_config_with_profiles_and_plugins,
+				&instance.get_dirs().get().game_dir,
+				adddon_kind,
+				&[],
+				&VersionInfo {
+					version: constants.version.clone(),
+					versions: constants.version_list.clone(),
+				},
+			) else {
+				continue;
+			};
+
+			for dir in dirs {
+				remove_nitro_addons(&dir);
+			}
+		}
+	}
 
 	// Evaluate first to install all of the addons
 	ctx.output.display(
@@ -440,4 +473,22 @@ fn format_package_update_message(
 	};
 
 	MessageContents::ListItem(Box::new(msg))
+}
+
+/// Removes Nitrolaunch-like addons from a directory
+fn remove_nitro_addons(dir: &Path) {
+	let Ok(dir) = dir.read_dir() else {
+		return;
+	};
+
+	for entry in dir {
+		let Ok(entry) = entry else {
+			continue;
+		};
+
+		let filename = entry.file_name().to_string_lossy().to_string();
+		if filename.starts_with("nitro_") && filename.contains("addon") {
+			let _ = std::fs::remove_file(entry.path());
+		}
+	}
 }
