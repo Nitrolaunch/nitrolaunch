@@ -5,6 +5,8 @@ use nitrolaunch::plugin::PluginManager;
 use nitrolaunch::shared::output::NitroOutput;
 use std::fmt::Debug;
 
+use crate::State;
+
 pub mod instance;
 pub mod launch;
 pub mod misc;
@@ -31,4 +33,12 @@ async fn load_config(paths: &Paths, o: &mut impl NitroOutput) -> anyhow::Result<
 /// Error formatting for results
 fn fmt_err<T, E: Debug>(r: Result<T, E>) -> Result<T, String> {
 	r.map_err(|x| format!("{x:?}"))
+}
+
+/// Cancels a task
+#[tauri::command]
+pub async fn cancel_task(state: tauri::State<'_, State>, task: &str) -> Result<(), String> {
+	state.task_manager.get().unwrap().lock().await.kill(task);
+
+	Ok(())
 }

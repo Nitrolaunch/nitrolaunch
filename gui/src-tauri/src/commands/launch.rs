@@ -72,7 +72,7 @@ async fn launch_game_impl(
 	let instance_id = InstanceID::from(instance_id);
 	o.set_instance(instance_id.clone());
 
-	{
+	let task = {
 		let instance_id = instance_id.clone();
 		tokio::spawn(async move {
 			let mut o = o;
@@ -129,6 +129,10 @@ async fn launch_game_impl(
 			Ok::<(), anyhow::Error>(())
 		})
 	};
+
+	state
+		.register_task(&format!("launch_instance_{instance_id}"), task)
+		.await;
 
 	Ok(())
 }

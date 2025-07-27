@@ -1,22 +1,72 @@
 #task-indicator {
 	width: 11rem;
 	height: 1.8rem;
+
+	background-color: black;
 	border: 0.15rem solid;
 	border-radius: var(--round2);
-	background-color: black;
+
 	font-size: 0.9rem;
+
 	box-shadow: var(--shadow-offset) var(--shadow-offset) black;
-	overflow-x: hidden;
+
+	position: relative;
+
+	cursor: pointer;
 }
 
 #task-indicator-preview {
 	display: grid;
 	grid-template-columns: minmax(0, 0.2fr) minmax(0, 1fr);
 	height: 100%;
+	overflow-x: hidden;
+
+	user-select: none;
+	-webkit-user-select: none;
 }
 
 #task-indicator-dot {
 	width: 0.5rem;
 	height: 0.5rem;
 	border-radius: 50%;
+}
+
+#task-indicator-popup {
+	position: absolute;
+	bottom: calc(100% + 1rem);
+	left: calc(50% - 25rem / 2);
+
+	width: 25rem;
+	max-height: 25rem;
+	overflow-y: scroll;
+	overscroll-behavior: none;
+
+	box-sizing: border-box;
+	padding: 0.75rem;
+
+	background-color: var(--bg2);
+	border: 0.15rem solid var(--bg4);
+	border-radius: var(--round2);
+
+	box-shadow: var(--shadow-offset) var(--shadow-offset) #0b0b0baa;
+}
+
+#task-indicator-messages {
+	width: 100%;
+	gap: 0.2rem;
+}
+
+.task-indicator-message {
+	width: 100%;
+}
+
+.task-indicator-start-process {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(0, 5fr);
+}
+
+#task-indicator-popup-cancel {
+	position: absolute;
+	left: 0.75rem;
+	top: 0.7rem;
 }

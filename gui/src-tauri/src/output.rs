@@ -86,6 +86,16 @@ impl NitroOutput for LauncherOutput {
 					},
 				);
 			}
+			MessageContents::StartProcess(text) => {
+				let _ = self.inner.app.emit_all(
+					"nitro_output_message",
+					MessageEvent {
+						message: text,
+						ty: MessageType::StartProcess,
+						task: self.task.clone(),
+					},
+				);
+			}
 			MessageContents::Warning(text) => {
 				let _ = self.inner.app.emit_all(
 					"nitro_output_message",
@@ -192,19 +202,31 @@ impl NitroOutput for LauncherOutput {
 	}
 
 	fn start_process(&mut self) {
-		let _ = self.inner.app.emit_all("nitro_output_start_process", ());
+		let _ = self
+			.inner
+			.app
+			.emit_all("nitro_output_start_process", &self.task);
 	}
 
 	fn end_process(&mut self) {
-		let _ = self.inner.app.emit_all("nitro_output_end_process", ());
+		let _ = self
+			.inner
+			.app
+			.emit_all("nitro_output_end_process", &self.task);
 	}
 
 	fn start_section(&mut self) {
-		let _ = self.inner.app.emit_all("nitro_output_start_section", ());
+		let _ = self
+			.inner
+			.app
+			.emit_all("nitro_output_start_section", &self.task);
 	}
 
 	fn end_section(&mut self) {
-		let _ = self.inner.app.emit_all("nitro_output_end_section", ());
+		let _ = self
+			.inner
+			.app
+			.emit_all("nitro_output_end_section", &self.task);
 	}
 }
 
@@ -330,6 +352,7 @@ impl SerializableResolutionError {
 pub enum MessageType {
 	Simple,
 	Header,
+	StartProcess,
 	Warning,
 	Error,
 }

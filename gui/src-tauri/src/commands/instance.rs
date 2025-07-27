@@ -299,11 +299,13 @@ pub async fn update_instance(
 
 	let paths = state.paths.clone();
 	let client = state.client.clone();
+	let data = state.data.clone();
 	let mut lock = fmt_err(Lockfile::open(&state.paths).context("Failed to open lockfile"))?;
 	let task = {
 		let instance_id = instance_id.clone();
 		let paths = paths.clone();
 		async move {
+			let instance_id2 = instance_id.clone();
 			let Some(instance) = config.instances.get_mut(&InstanceID::from(instance_id)) else {
 				bail!("Instance does not exist");
 			};
@@ -322,15 +324,18 @@ pub async fn update_instance(
 			instance
 				.update(true, UpdateDepth::Full, &mut ctx)
 				.await
-				.context("Failed to update instance")
+				.context("Failed to update instance")?;
+
+			let mut data_lock = data.lock().await;
+			data_lock.last_resolution_errors.remove(&instance_id2);
+			let _ = data_lock.write(&paths);
+
+			Ok(())
 		}
 	};
-	fmt_err(fmt_err(tokio::spawn(unsafe { MakeSend::new(task) }).await)?)?;
 
-	// Update so that there is no resolution error since we must have completed successfully
-	let mut lock = state.data.lock().await;
-	lock.last_resolution_errors.remove(&instance_id);
-	let _ = lock.write(&paths);
+	let task = tokio::spawn(unsafe { MakeSend::new(task) });
+	state.register_task("update_instance_packages", task).await;
 
 	Ok(())
 }
@@ -352,11 +357,13 @@ pub async fn update_instance_packages(
 
 	let paths = state.paths.clone();
 	let client = state.client.clone();
+	let data = state.data.clone();
 	let mut lock = fmt_err(Lockfile::open(&state.paths).context("Failed to open lockfile"))?;
 	let task = {
 		let instance_id = instance_id.clone();
 		let paths = paths.clone();
 		async move {
+			let instance_id2 = instance_id.clone();
 			let Some(instance) = config.instances.get_mut(&InstanceID::from(instance_id)) else {
 				bail!("Instance does not exist");
 			};
@@ -404,15 +411,20 @@ pub async fn update_instance_packages(
 
 			ctx.lock
 				.finish(ctx.paths)
-				.context("Failed to finish using lockfile")
+				.context("Failed to finish using lockfile")?;
+
+			let mut data_lock = data.lock().await;
+			data_lock.last_resolution_errors.remove(&instance_id2);
+			let _ = data_lock.write(&paths);
+
+			Ok(())
 		}
 	};
-	fmt_err(fmt_err(tokio::spawn(unsafe { MakeSend::new(task) }).await)?)?;
+
+	let task = tokio::spawn(unsafe { MakeSend::new(task) });
+	state.register_task("update_instance_packages", task).await;
 
 	// Update so that there is no resolution error since we must have completed successfully
-	let mut lock = state.data.lock().await;
-	lock.last_resolution_errors.remove(&instance_id);
-	let _ = lock.write(&paths);
 
 	Ok(())
 }

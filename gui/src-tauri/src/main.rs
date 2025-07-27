@@ -9,6 +9,8 @@ mod data;
 mod instance_manager;
 /// Nitrolaunch output for the launcher frontend
 mod output;
+/// Management of long-running tasks
+mod task_manager;
 
 use std::collections::HashMap;
 use std::sync::{Arc, OnceLock};
@@ -26,6 +28,7 @@ use tauri::{AppHandle, Manager};
 use crate::commands::misc::update_version_manifest;
 use crate::instance_manager::RunningInstanceManager;
 use crate::output::{MessageEvent, MessageType, ResolutionErrorEvent};
+use crate::task_manager::TaskManager;
 
 fn main() {
 	let state = tauri::async_runtime::block_on(async { State::new().await })
@@ -37,6 +40,15 @@ fn main() {
 
 	tauri::Builder::default()
 		.setup(move |app| {
+			// Setup task manager
+			let task_manager = TaskManager::new(app.app_handle());
+
+			let _ = state2.task_manager.set(Arc::new(Mutex::new(task_manager)));
+
+			// Update tasks periodically
+			let task = TaskManager::get_run_task(state2.task_manager.get().unwrap().clone());
+			tauri::async_runtime::spawn(task);
+
 			// Setup running instance manager
 			let running_instance_manager = RunningInstanceManager::new(&paths, app.app_handle())
 				.expect("Failed to setup running instance manager");
@@ -50,7 +62,6 @@ fn main() {
 				state2.running_instances.get().unwrap().clone(),
 			);
 			tauri::async_runtime::spawn(task);
-			println!("Running instances set");
 
 			// Perform inital start tasks
 			{
@@ -154,6 +165,7 @@ fn main() {
 			commands::misc::get_supported_loaders,
 			commands::misc::get_minecraft_versions,
 			commands::misc::get_is_first_launch,
+			commands::cancel_task,
 		])
 		.run(tauri::generate_context!())
 		.expect("Error while running tauri application");
@@ -165,6 +177,7 @@ pub struct State {
 	pub data: Arc<Mutex<LauncherData>>,
 	// Will be filled during setup process
 	pub running_instances: Arc<OnceLock<Arc<Mutex<RunningInstanceManager>>>>,
+	pub task_manager: Arc<OnceLock<Arc<Mutex<TaskManager>>>>,
 	pub paths: Paths,
 	pub client: Client,
 	pub user_manager: Arc<Mutex<UserManager>>,
@@ -182,6 +195,7 @@ impl State {
 				LauncherData::open(&paths).context("Failed to open launcher data")?,
 			)),
 			running_instances: Arc::new(OnceLock::new()),
+			task_manager: Arc::new(OnceLock::new()),
 			paths,
 			client: Client::new(),
 			user_manager: Arc::new(Mutex::new(UserManager::new(get_ms_client_id()))),
@@ -201,6 +215,20 @@ impl State {
 			password_prompt: self.password_prompt.clone(),
 			passkeys: self.passkeys.clone(),
 		})
+	}
+
+	/// Registers a long-running task with the task manager. Panics if the task manager is not set up yet
+	pub async fn register_task(
+		&self,
+		task_id: &str,
+		join_handle: tokio::task::JoinHandle<anyhow::Result<()>>,
+	) {
+		self.task_manager
+			.get()
+			.unwrap()
+			.lock()
+			.await
+			.register_task(task_id.to_string(), join_handle);
 	}
 }
 
