@@ -86,7 +86,7 @@ export default function NavBar(props: NavBarProps) {
 							{/* <div style="margin-top:-0.45rem">
 								<Logo width="25px" />
 							</div> */}
-							<img src="/src/assets/Logo.png" style="width:1.5rem" />
+							<img src="/Logo.png" style="width:1.5rem" />
 							NITRO
 						</a>
 					</h3>
