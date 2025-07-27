@@ -4,6 +4,8 @@ import { createResource, Match, onCleanup, Switch } from "solid-js";
 import "./InstanceConsole.css";
 
 export default function InstanceConsole(props: InstanceConsoleProps) {
+	let outputElem!: HTMLDivElement;
+
 	let [output, outputMethods] = createResource(async () => {
 		let output = (await invoke("get_instance_output", {
 			instanceId: props.instanceId,
@@ -11,6 +13,10 @@ export default function InstanceConsole(props: InstanceConsoleProps) {
 
 		if (output != undefined) {
 			output = output.replace("/INFO", '<div class="bold">/INFO</div>');
+		}
+
+		if (outputElem != undefined) {
+			outputElem.scrollTop = outputElem.scrollHeight;
 		}
 
 		return output;
@@ -42,7 +48,9 @@ export default function InstanceConsole(props: InstanceConsoleProps) {
 			<div class="cont col instance-console-output">
 				<Switch>
 					<Match when={output() != undefined}>
-						<div class="instance-console-text">{output()}</div>
+						<div class="instance-console-text" ref={outputElem}>
+							{output()}
+						</div>
 					</Match>
 					<Match when={output.error != undefined}>
 						Failed to load: {output.error}
