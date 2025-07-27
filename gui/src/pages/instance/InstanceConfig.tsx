@@ -434,6 +434,10 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 				action: saveConfig,
 			});
 
+			if (props.creating) {
+				window.location.href = "/";
+			}
+
 			configOperations.refetch();
 			parentConfigOperations.refetch();
 		} catch (e) {
