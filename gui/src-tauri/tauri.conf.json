@@ -51,7 +51,8 @@
       "targets": "all",
       "identifier": "nitro-gui",
       "icon": [
-        "icons/Logo.png"
+        "icons/Logo.png",
+        "icons/icon.ico"
       ]
     },
     "updater": {
