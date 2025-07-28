@@ -15,10 +15,13 @@ use nitro_core::net::download::validate_url;
 
 use anyhow::{bail, Context};
 use nitro_plugin::hooks::AddCustomPackageRepositories;
-use nitro_shared::{lang::Language, output::NitroOutput};
+use nitro_shared::{
+	lang::Language,
+	output::{MessageContents, MessageLevel, NitroOutput},
+};
 
 /// Configured user preferences
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct ConfigPreferences {
 	/// The global language
 	pub language: Language,
@@ -32,7 +35,7 @@ impl ConfigPreferences {
 		plugins: &PluginManager,
 		paths: &Paths,
 		o: &mut impl NitroOutput,
-	) -> anyhow::Result<(Self, Vec<PackageRepository>)> {
+	) -> (Self, Vec<PackageRepository>) {
 		let mut repositories = Vec::new();
 
 		// Get repositories from plugins
@@ -40,28 +43,49 @@ impl ConfigPreferences {
 		let mut backup_plugin_repositories = Vec::new();
 		let results = plugins
 			.call_hook(AddCustomPackageRepositories, &(), paths, o)
-			.await
-			.context("Failed to call custom package repositories hook")?;
-		for result in results {
-			let plugin_id = result.get_id().clone();
-			let results = result.result(o).await?;
-			for result in results {
-				let repository = PackageRepository::Custom(CustomPackageRepository::new(
-					result.id,
-					plugin_id.clone(),
-					result.metadata,
-				));
-				if result.is_preferred {
-					preferred_plugin_repositories.push(repository);
-				} else {
-					backup_plugin_repositories.push(repository);
+			.await;
+		match results {
+			Ok(results) => {
+				for result in results {
+					let plugin_id = result.get_id().clone();
+					let Ok(results) = result.result(o).await else {
+						continue;
+					};
+					for result in results {
+						let repository = PackageRepository::Custom(CustomPackageRepository::new(
+							result.id,
+							plugin_id.clone(),
+							result.metadata,
+						));
+						if result.is_preferred {
+							preferred_plugin_repositories.push(repository);
+						} else {
+							backup_plugin_repositories.push(repository);
+						}
+					}
 				}
+			}
+			Err(e) => {
+				o.display(
+					MessageContents::Error(format!(
+						"Failed to get repositories from plugins: {e:?}"
+					)),
+					MessageLevel::Important,
+				);
 			}
 		}
 
 		for repo in prefs.repositories.preferred.iter() {
 			if !repo.disable {
-				add_repo(&mut repositories, repo)?;
+				if let Err(e) = add_repo(&mut repositories, repo) {
+					o.display(
+						MessageContents::Error(format!(
+							"Failed to add repository {}: {e:?}",
+							repo.id
+						)),
+						MessageLevel::Important,
+					);
+				}
 			}
 		}
 		repositories.extend(preferred_plugin_repositories);
@@ -72,7 +96,15 @@ impl ConfigPreferences {
 		repositories.extend(backup_plugin_repositories);
 		for repo in prefs.repositories.backup.iter() {
 			if !repo.disable {
-				add_repo(&mut repositories, repo)?;
+				if let Err(e) = add_repo(&mut repositories, repo) {
+					o.display(
+						MessageContents::Error(format!(
+							"Failed to add repository {}: {e:?}",
+							repo.id
+						)),
+						MessageLevel::Important,
+					);
+				}
 			}
 		}
 
@@ -80,17 +112,20 @@ impl ConfigPreferences {
 		let mut existing = HashSet::new();
 		for repo in &repositories {
 			if existing.contains(&repo.get_id()) {
-				bail!("Duplicate repository ID '{}'", repo.get_id());
+				o.display(
+					MessageContents::Error(format!("Duplicate repository ID '{}'", repo.get_id())),
+					MessageLevel::Important,
+				);
 			}
 			existing.insert(repo.get_id());
 		}
 
-		Ok((
+		(
 			Self {
 				language: prefs.language,
 			},
 			repositories,
-		))
+		)
 	}
 }
 
@@ -106,8 +141,10 @@ fn add_repo(repos: &mut Vec<PackageRepository>, repo: &RepoDeser) -> anyhow::Res
 	} else {
 		bail!("Niether path nor URL was set for repository {}", repo.id);
 	};
+
 	repos.push(PackageRepository::Basic(BasicPackageRepository::new(
 		&repo.id, location,
 	)));
+
 	Ok(())
 }

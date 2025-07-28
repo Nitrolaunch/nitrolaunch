@@ -16,7 +16,7 @@ pub mod profile;
 
 use self::instance::read_instance_config;
 use crate::plugin::PluginManager;
-use anyhow::{bail, Context};
+use anyhow::Context;
 use nitro_config::profile::ProfileConfig;
 use nitro_config::ConfigDeser;
 use nitro_core::auth_crate::mc::ClientId;
@@ -25,8 +25,8 @@ use nitro_core::user::UserManager;
 use nitro_plugin::hooks::{AddInstances, AddInstancesArg, AddProfiles, AddSupportedLoaders};
 use nitro_shared::id::{InstanceID, ProfileID};
 use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
-use nitro_shared::translate;
 use nitro_shared::util::is_valid_identifier;
+use nitro_shared::{skip_fail, translate};
 use preferences::ConfigPreferences;
 use profile::consolidate_profile_configs;
 
@@ -97,27 +97,34 @@ impl Config {
 		paths: &Paths,
 		client_id: ClientId,
 		o: &mut impl NitroOutput,
-	) -> anyhow::Result<Self> {
+	) -> Self {
 		let mut users = UserManager::new(client_id);
 		let mut instances = HashMap::with_capacity(config.instances.len());
 		// Preferences
 		let (prefs, repositories) =
-			ConfigPreferences::read(&config.preferences, &plugins, paths, o)
-				.await
-				.context("Failed to read preferences")?;
+			ConfigPreferences::read(&config.preferences, &plugins, paths, o).await;
 
 		let packages = PkgRegistry::new(repositories, &plugins);
 
 		// Users
 		for (user_id, user_config) in config.users.iter() {
 			if !is_valid_identifier(user_id) {
-				bail!("Invalid user ID '{user_id}'");
+				o.display(
+					MessageContents::Error(format!("Invalid user ID '{user_id}'")),
+					MessageLevel::Important,
+				);
+				continue;
 			}
 			let user = user_config.to_user(user_id);
 			// Disabled until we can verify game ownership.
 			// We don't want to be a cracked launcher.
 			if user.is_demo() {
-				bail!("Unverified and Demo users are currently disabled");
+				o.display(
+					MessageContents::Error(
+						"Unverified and Demo users are currently disabled".into(),
+					),
+					MessageLevel::Important,
+				);
 			}
 
 			users.add_user(user);
@@ -129,7 +136,12 @@ impl Config {
 					.choose_user(default_user_id)
 					.expect("Default user should exist");
 			} else {
-				bail!("Provided default user '{default_user_id}' does not exist");
+				o.display(
+					MessageContents::Error(format!(
+						"Provided default user '{default_user_id}' does not exist"
+					)),
+					MessageLevel::Important,
+				);
 			}
 		} else if config.users.is_empty() && show_warnings {
 			o.display(
@@ -145,52 +157,76 @@ impl Config {
 
 		// Add instances from plugins
 		let arg = AddInstancesArg {};
-		let results = plugins
-			.call_hook(AddInstances, &arg, paths, o)
-			.await
-			.context("Failed to call add instances hook")?;
-		for result in results {
-			let result = result.result(o).await?;
-			for (id, mut instance) in result.into_iter() {
-				if config.instances.contains_key(&id) {
-					continue;
-				}
+		let results = plugins.call_hook(AddInstances, &arg, paths, o).await;
 
-				instance.from_plugin = true;
-				config.instances.insert(id, instance);
+		match results {
+			Ok(results) => {
+				for result in results {
+					let result = skip_fail!(result.result(o).await);
+					for (id, mut instance) in result.into_iter() {
+						if config.instances.contains_key(&id) {
+							continue;
+						}
+
+						instance.from_plugin = true;
+						config.instances.insert(id, instance);
+					}
+				}
+			}
+			Err(e) => {
+				o.display(
+					MessageContents::Error(format!("Failed to add instances from plugins: {e:?}")),
+					MessageLevel::Important,
+				);
 			}
 		}
 		// Add profiles from plugins
-		let results = plugins
-			.call_hook(AddProfiles, &arg, paths, o)
-			.await
-			.context("Failed to call add profiles hook")?;
-		for result in results {
-			let result = result.result(o).await?;
-			for (id, mut profile) in result.into_iter() {
-				if config.profiles.contains_key(&id) {
-					continue;
-				}
+		let results = plugins.call_hook(AddProfiles, &arg, paths, o).await;
+		match results {
+			Ok(results) => {
+				for result in results {
+					let result = skip_fail!(result.result(o).await);
+					for (id, mut profile) in result.into_iter() {
+						if config.profiles.contains_key(&id) {
+							continue;
+						}
 
-				profile.instance.from_plugin = true;
-				config.profiles.insert(id, profile);
+						profile.instance.from_plugin = true;
+						config.profiles.insert(id, profile);
+					}
+				}
+			}
+			Err(e) => {
+				o.display(
+					MessageContents::Error(format!("Failed to add profiles from plugins: {e:?}")),
+					MessageLevel::Important,
+				);
 			}
 		}
 
 		// Consolidate profiles
 		let consolidated_profiles =
-			consolidate_profile_configs(config.profiles.clone(), config.global_profile.as_ref())
-				.context("Failed to merge profiles")?;
+			consolidate_profile_configs(config.profiles.clone(), config.global_profile.as_ref(), o);
 
 		// Load extra supported loaders
 		let mut supported_loaders = Vec::new();
-		let results = plugins
-			.call_hook(AddSupportedLoaders, &(), paths, o)
-			.await
-			.context("Failed to get supported loaders")?;
-		for result in results {
-			let result = result.result(o).await?;
-			supported_loaders.extend(result);
+		let results = plugins.call_hook(AddSupportedLoaders, &(), paths, o).await;
+
+		match results {
+			Ok(results) => {
+				for result in results {
+					let result = skip_fail!(result.result(o).await);
+					supported_loaders.extend(result);
+				}
+			}
+			Err(e) => {
+				o.display(
+					MessageContents::Error(format!(
+						"Failed to get supported loaders from plugins: {e:?}"
+					)),
+					MessageLevel::Important,
+				);
+			}
 		}
 
 		// Instances
@@ -240,11 +276,14 @@ impl Config {
 
 		for group in config.instance_groups.keys() {
 			if !is_valid_identifier(group) {
-				bail!("Invalid ID for group '{group}'");
+				o.display(
+					MessageContents::Error(format!("Invalid ID for instance group '{group}'")),
+					MessageLevel::Important,
+				);
 			}
 		}
 
-		Ok(Self {
+		Self {
 			users,
 			instances,
 			profiles: config.profiles,
@@ -254,7 +293,7 @@ impl Config {
 			packages,
 			plugins,
 			prefs,
-		})
+		}
 	}
 
 	/// Load the configuration from the config file
@@ -267,7 +306,7 @@ impl Config {
 		o: &mut impl NitroOutput,
 	) -> anyhow::Result<Self> {
 		let obj = Self::open(path)?;
-		Self::load_from_deser(obj, plugins, show_warnings, paths, client_id, o).await
+		Ok(Self::load_from_deser(obj, plugins, show_warnings, paths, client_id, o).await)
 	}
 }
 
@@ -319,7 +358,6 @@ mod tests {
 			ClientId::new(String::new()),
 			&mut output::Simple(output::MessageLevel::Debug),
 		)
-		.await
-		.unwrap();
+		.await;
 	}
 }

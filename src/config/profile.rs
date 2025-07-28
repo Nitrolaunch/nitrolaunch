@@ -1,14 +1,17 @@
 use std::collections::HashMap;
 
-use anyhow::bail;
 use nitro_config::profile::ProfileConfig;
-use nitro_shared::id::ProfileID;
+use nitro_shared::{
+	id::ProfileID,
+	output::{MessageContents, MessageLevel, NitroOutput},
+};
 
 /// Consolidates profile configs into the full profiles
 pub fn consolidate_profile_configs(
 	profiles: HashMap<ProfileID, ProfileConfig>,
 	global_profile: Option<&ProfileConfig>,
-) -> anyhow::Result<HashMap<ProfileID, ProfileConfig>> {
+	o: &mut impl NitroOutput,
+) -> HashMap<ProfileID, ProfileConfig> {
 	let mut out: HashMap<_, ProfileConfig> = HashMap::with_capacity(profiles.len());
 
 	let max_iterations = 10000;
@@ -39,7 +42,13 @@ pub fn consolidate_profile_configs(
 						new.merge(profile.clone());
 						out.insert(id.clone(), new);
 					} else {
-						bail!("Parent profile '{parent}' does not exist, or cyclic profiles were found");
+						o.display(
+							MessageContents::Error(
+								format!("Parent profile '{parent}' does not exist, or cyclic profiles were found")
+							),
+							MessageLevel::Important
+						);
+						continue;
 					}
 				}
 			}
@@ -53,5 +62,5 @@ pub fn consolidate_profile_configs(
 		}
 	}
 
-	Ok(out)
+	out
 }
