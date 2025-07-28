@@ -9,6 +9,7 @@ on:
 jobs:
     publish:
         runs-on: ${{ matrix.os }}
+        environment: github-actions
 
         strategy:
             fail-fast: false
