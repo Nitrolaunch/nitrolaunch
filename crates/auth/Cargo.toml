@@ -1,6 +1,6 @@
 [package]
 name = "nitro_auth"
-version = "0.7.0"
+version = "0.26.0"
 description = "Useful authentication wrapper for Minecraft"
 keywords = ["minecraft", "launcher", "game", "mc", "auth"]
 categories.workspace = true
