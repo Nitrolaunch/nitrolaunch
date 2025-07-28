@@ -13,6 +13,7 @@ build.platform_dependent:
 
 package_zips.platform_dependent:
 	@mkdir -p release
+	@ls release
 	
 	@rm -f release/archive-${OS}.zip 
 	@rm -f release/args-${OS}.zip 
