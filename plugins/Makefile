@@ -11,6 +11,8 @@ package.platform_dependent: build.platform_dependent package_zips.platform_depen
 build.platform_dependent:
 	@cargo build --release --bins
 
+TARGET_DIR ?= "../target/release"
+
 package_zips.platform_dependent:
 	@mkdir -p release
 	
@@ -39,8 +41,6 @@ package_zips.platform_dependent:
 	@rm -f release/webtools-${OS}.zip
 	@rm -f release/weld-${OS}.zip
 	@rm -f release/xmcl_transfer-${OS}.zip
-
-	TARGET_DIR ?= "../target/release"
 
 	@zip -j release/archive-${OS}.zip $(TARGET_DIR)/nitro_plugin_archive${EXTENSION} plugins/archive/plugin.json
 	@zip -j release/args-${OS}.zip $(TARGET_DIR)/nitro_plugin_args${EXTENSION} plugins/args/plugin.json
