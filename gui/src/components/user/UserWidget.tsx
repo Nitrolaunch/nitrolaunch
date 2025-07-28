@@ -102,26 +102,28 @@ export default function UserWidget(props: UserWidgetProps) {
 					</Switch>
 				</div>
 			</div>
-			<Show when={isOpen() && userData() != undefined}>
+			<Show when={isOpen()}>
 				<div id="user-widget-dropdown">
-					<For each={userData()!.users}>
-						{(user) => (
-							<Show when={user != undefined}>
-								<div class="user-widget-dropdown-item">
-									<UserTile
-										user={user!}
-										isFeatured={false}
-										onclick={(user) => {
-											invoke("select_user", { user: user }).then(() => {
-												methods.refetch();
-												setIsOpen(false);
-											});
-										}}
-									/>
-								</div>
-							</Show>
-						)}
-					</For>
+					<Show when={userData() != undefined}>
+						<For each={userData()!.users}>
+							{(user) => (
+								<Show when={user != undefined}>
+									<div class="user-widget-dropdown-item">
+										<UserTile
+											user={user!}
+											isFeatured={false}
+											onclick={(user) => {
+												invoke("select_user", { user: user }).then(() => {
+													methods.refetch();
+													setIsOpen(false);
+												});
+											}}
+										/>
+									</div>
+								</Show>
+							)}
+						</For>
+					</Show>
 					<div class="user-tile" onclick={() => setIsCreatingUser(true)}>
 						<div class="cont">
 							<Icon icon={Plus} size="1.2rem" />
