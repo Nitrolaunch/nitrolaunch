@@ -70,7 +70,7 @@ jobs:
               run: rustup target add ${{ matrix.target }}
 
             - name: Build Plugins
-              run: cd plugins && CARGO_BUILD_TARGET="${{ matrix.target }}" OS="${{ matrix.filename }}" EXTENSION=${{ matrix.extension }} make package.platform_dependent && ls target/release
+              run: cd plugins && CARGO_BUILD_TARGET="${{ matrix.target }}" OS="${{ matrix.filename }}" EXTENSION=${{ matrix.extension }} make package.platform_dependent && ls ../target/release
             - name: Upload a Build Artifact
               uses: actions/upload-artifact@v4
               with:
