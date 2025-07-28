@@ -112,31 +112,7 @@ export default function Plugins() {
 				</Show>
 			</div>
 			<br />
-			<div class="cont">
-				<button onclick={() => emit("nitro_output_create_task", "get_plugins")}>
-					Start
-				</button>
-				<button onclick={() => emit("nitro_output_finish_task", "get_plugins")}>
-					End
-				</button>
-			</div>
 			<br />
-			<div class="cont">
-				<button
-					onclick={() =>
-						emit("nitro_output_create_task", "update_instance_packages")
-					}
-				>
-					Start
-				</button>
-				<button
-					onclick={() =>
-						emit("nitro_output_finish_task", "update_instance_packages")
-					}
-				>
-					End
-				</button>
-			</div>
 			<br />
 			<br />
 		</div>
