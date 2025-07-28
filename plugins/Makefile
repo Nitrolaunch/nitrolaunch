@@ -13,58 +13,59 @@ build.platform_dependent:
 
 package_zips.platform_dependent:
 	@mkdir -p release
-	@ls release
 	
-	@rm -f release/archive-${OS}.zip 
-	@rm -f release/args-${OS}.zip 
-	@rm -f release/automate-${OS}.zip 
-	@rm -f release/backup-${OS}.zip 
-	@rm -f release/config_split-${OS}.zip 
-	@rm -f release/custom_files-${OS}.zip 
-	@rm -f release/docs-${OS}.zip 
-	@rm -f release/fabric_quilt-${OS}.zip 
-	@rm -f release/gen_pkg-${OS}.zip 
-	@rm -f release/glfw_fix-${OS}.zip 
-	@rm -f release/nitro_transfer-${OS}.zip 
-	@rm -f release/modrinth-${OS}.zip 
-	@rm -f release/modrinth_api-${OS}.zip 
-	@rm -f release/multimc_transfer-${OS}.zip 
-	@rm -f release/options-${OS}.zip 
-	@rm -f release/packhost-${OS}.zip 
-	@rm -f release/paper-${OS}.zip 
-	@rm -f release/server_restart-${OS}.zip 
-	@rm -f release/smithed-${OS}.zip 
-	@rm -f release/smithed_api-${OS}.zip 
-	@rm -f release/sponge-${OS}.zip 
-	@rm -f release/stats-${OS}.zip 
-	@rm -f release/webtools-${OS}.zip 
-	@rm -f release/weld-${OS}.zip 
-	@rm -f release/xmcl_transfer-${OS}.zip 
+	@rm -f release/archive-${OS}.zip
+	@rm -f release/args-${OS}.zip
+	@rm -f release/automate-${OS}.zip
+	@rm -f release/backup-${OS}.zip
+	@rm -f release/config_split-${OS}.zip
+	@rm -f release/custom_files-${OS}.zip
+	@rm -f release/docs-${OS}.zip
+	@rm -f release/fabric_quilt-${OS}.zip
+	@rm -f release/gen_pkg-${OS}.zip
+	@rm -f release/glfw_fix-${OS}.zip
+	@rm -f release/nitro_transfer-${OS}.zip
+	@rm -f release/modrinth-${OS}.zip
+	@rm -f release/modrinth_api-${OS}.zip
+	@rm -f release/multimc_transfer-${OS}.zip
+	@rm -f release/options-${OS}.zip
+	@rm -f release/packhost-${OS}.zip
+	@rm -f release/paper-${OS}.zip
+	@rm -f release/server_restart-${OS}.zip
+	@rm -f release/smithed-${OS}.zip
+	@rm -f release/smithed_api-${OS}.zip
+	@rm -f release/sponge-${OS}.zip
+	@rm -f release/stats-${OS}.zip
+	@rm -f release/webtools-${OS}.zip
+	@rm -f release/weld-${OS}.zip
+	@rm -f release/xmcl_transfer-${OS}.zip
 
-	@zip -j release/archive-${OS}.zip ../target/release/nitro_plugin_archive${EXTENSION} plugins/archive/plugin.json
-	@zip -j release/args-${OS}.zip ../target/release/nitro_plugin_args${EXTENSION} plugins/args/plugin.json
-	@zip -j release/automate-${OS}.zip ../target/release/nitro_plugin_automate${EXTENSION} plugins/automate/plugin.json
-	@zip -j release/backup-${OS}.zip ../target/release/nitro_plugin_backup${EXTENSION} plugins/backup/plugin.json
-	@zip -j release/config_split-${OS}.zip ../target/release/nitro_plugin_config_split${EXTENSION} plugins/config_split/plugin.json
-	@zip -j release/custom_files-${OS}.zip ../target/release/nitro_plugin_custom_files${EXTENSION} plugins/custom_files/plugin.json
-	@zip -j release/docs-${OS}.zip ../target/release/nitro_plugin_docs${EXTENSION} plugins/docs/plugin.json
-	@zip -j release/fabric_quilt-${OS}.zip ../target/release/nitro_plugin_fabric_quilt${EXTENSION} plugins/fabric_quilt/plugin.json
-	@zip -j release/gen_pkg-${OS}.zip ../target/release/nitro_plugin_gen_pkg${EXTENSION} plugins/gen_pkg/plugin.json
-	@zip -j release/glfw_fix-${OS}.zip ../target/release/nitro_plugin_glfw_fix${EXTENSION} plugins/glfw_fix/plugin.json
-	@zip -j release/nitro_transfer-${OS}.zip ../target/release/nitro_plugin_nitro_transfer${EXTENSION} plugins/nitro_transfer/plugin.json
-	@zip -j release/modrinth-${OS}.zip ../target/release/nitro_plugin_modrinth${EXTENSION} plugins/modrinth/plugin.json
-	@zip -j release/modrinth_api-${OS}.zip ../target/release/nitro_plugin_modrinth_api${EXTENSION} plugins/modrinth_api/plugin.json plugins/modrinth_api/page.html
-	@zip -j release/multimc_transfer-${OS}.zip ../target/release/nitro_plugin_multimc_transfer${EXTENSION} plugins/multimc_transfer/plugin.json
-	@zip -j release/options-${OS}.zip ../target/release/nitro_plugin_options${EXTENSION} plugins/options/plugin.json
-	@zip -j release/packhost-${OS}.zip ../target/release/nitro_plugin_packhost${EXTENSION} plugins/packhost/plugin.json
-	@zip -j release/paper-${OS}.zip ../target/release/nitro_plugin_paper${EXTENSION} plugins/paper/plugin.json
-	@zip -j release/server_restart-${OS}.zip ../target/release/nitro_plugin_server_restart${EXTENSION} plugins/server_restart/plugin.json
-	@zip -j release/smithed-${OS}.zip ../target/release/nitro_plugin_smithed${EXTENSION} plugins/smithed/plugin.json plugins/smithed/page.html
-	@zip -j release/smithed_api-${OS}.zip ../target/release/nitro_plugin_smithed_api${EXTENSION} plugins/smithed_api/plugin.json
-	@zip -j release/sponge-${OS}.zip ../target/release/nitro_plugin_sponge${EXTENSION} plugins/sponge/plugin.json
-	@zip -j release/stats-${OS}.zip ../target/release/nitro_plugin_stats${EXTENSION} plugins/stats/plugin.json
-	@zip -j release/webtools-${OS}.zip ../target/release/nitro_plugin_webtools${EXTENSION} plugins/webtools/plugin.json
-	@zip -j release/xmcl_transfer-${OS}.zip ../target/release/nitro_plugin_xmcl_transfer${EXTENSION} plugins/xmcl_transfer/plugin.json
+	TARGET_DIR ?= "../target/release"
+
+	@zip -j release/archive-${OS}.zip $(TARGET_DIR)/nitro_plugin_archive${EXTENSION} plugins/archive/plugin.json
+	@zip -j release/args-${OS}.zip $(TARGET_DIR)/nitro_plugin_args${EXTENSION} plugins/args/plugin.json
+	@zip -j release/automate-${OS}.zip $(TARGET_DIR)/nitro_plugin_automate${EXTENSION} plugins/automate/plugin.json
+	@zip -j release/backup-${OS}.zip $(TARGET_DIR)/nitro_plugin_backup${EXTENSION} plugins/backup/plugin.json
+	@zip -j release/config_split-${OS}.zip $(TARGET_DIR)/nitro_plugin_config_split${EXTENSION} plugins/config_split/plugin.json
+	@zip -j release/custom_files-${OS}.zip $(TARGET_DIR)/nitro_plugin_custom_files${EXTENSION} plugins/custom_files/plugin.json
+	@zip -j release/docs-${OS}.zip $(TARGET_DIR)/nitro_plugin_docs${EXTENSION} plugins/docs/plugin.json
+	@zip -j release/fabric_quilt-${OS}.zip $(TARGET_DIR)/nitro_plugin_fabric_quilt${EXTENSION} plugins/fabric_quilt/plugin.json
+	@zip -j release/gen_pkg-${OS}.zip $(TARGET_DIR)/nitro_plugin_gen_pkg${EXTENSION} plugins/gen_pkg/plugin.json
+	@zip -j release/glfw_fix-${OS}.zip $(TARGET_DIR)/nitro_plugin_glfw_fix${EXTENSION} plugins/glfw_fix/plugin.json
+	@zip -j release/nitro_transfer-${OS}.zip $(TARGET_DIR)/nitro_plugin_nitro_transfer${EXTENSION} plugins/nitro_transfer/plugin.json
+	@zip -j release/modrinth-${OS}.zip $(TARGET_DIR)/nitro_plugin_modrinth${EXTENSION} plugins/modrinth/plugin.json
+	@zip -j release/modrinth_api-${OS}.zip $(TARGET_DIR)/nitro_plugin_modrinth_api${EXTENSION} plugins/modrinth_api/plugin.json plugins/modrinth_api/page.html
+	@zip -j release/multimc_transfer-${OS}.zip $(TARGET_DIR)/nitro_plugin_multimc_transfer${EXTENSION} plugins/multimc_transfer/plugin.json
+	@zip -j release/options-${OS}.zip $(TARGET_DIR)/nitro_plugin_options${EXTENSION} plugins/options/plugin.json
+	@zip -j release/packhost-${OS}.zip $(TARGET_DIR)/nitro_plugin_packhost${EXTENSION} plugins/packhost/plugin.json
+	@zip -j release/paper-${OS}.zip $(TARGET_DIR)/nitro_plugin_paper${EXTENSION} plugins/paper/plugin.json
+	@zip -j release/server_restart-${OS}.zip $(TARGET_DIR)/nitro_plugin_server_restart${EXTENSION} plugins/server_restart/plugin.json
+	@zip -j release/smithed-${OS}.zip $(TARGET_DIR)/nitro_plugin_smithed${EXTENSION} plugins/smithed/plugin.json plugins/smithed/page.html
+	@zip -j release/smithed_api-${OS}.zip $(TARGET_DIR)/nitro_plugin_smithed_api${EXTENSION} plugins/smithed_api/plugin.json
+	@zip -j release/sponge-${OS}.zip $(TARGET_DIR)/nitro_plugin_sponge${EXTENSION} plugins/sponge/plugin.json
+	@zip -j release/stats-${OS}.zip $(TARGET_DIR)/nitro_plugin_stats${EXTENSION} plugins/stats/plugin.json
+	@zip -j release/webtools-${OS}.zip $(TARGET_DIR)/nitro_plugin_webtools${EXTENSION} plugins/webtools/plugin.json
+	@zip -j release/xmcl_transfer-${OS}.zip $(TARGET_DIR)/nitro_plugin_xmcl_transfer${EXTENSION} plugins/xmcl_transfer/plugin.json
 
 build.weld:
 	@shiv -o plugins/weld/weld.pyz -e nitro_weld.main --site-packages plugins/weld smithed
