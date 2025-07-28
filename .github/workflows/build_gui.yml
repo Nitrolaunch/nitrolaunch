@@ -64,11 +64,11 @@ jobs:
             - run: cd gui && npm i
             - if: ${{ matrix.os == 'macos-latest'}}
               name: Build App MacOS
-              run: cd gui && npm run tauri build --filter=desktop -- --target universal-apple-darwin
+              run: TAURI_PRIVATE_KEY=${{ secrets.TAURI_PRIVATE_KEY }} TAURI_KEY_PASSWORD=${{ secrets.TAURI_KEY_PASSWORD }} cd gui && npm run tauri build --filter=desktop -- --target universal-apple-darwin
 
             - if: ${{ matrix.os != 'macos-latest'}}
               name: Build App
-              run: cd gui && npm run tauri build --filter=desktop
+              run: TAURI_PRIVATE_KEY=${{ secrets.TAURI_PRIVATE_KEY }} TAURI_KEY_PASSWORD=${{ secrets.TAURI_KEY_PASSWORD }} cd gui && npm run tauri build --filter=desktop
 
             - name: Upload a Build Artifact
               uses: actions/upload-artifact@v4

@@ -53,6 +53,14 @@
       "icon": [
         "icons/Logo.png"
       ]
+    },
+    "updater": {
+      "active": true,
+      "endpoints": [
+        "https://github.com/Nitrolaunch/nitrolaunch/blob/main/gui/update/update.json"
+      ],
+      "dialog": true,
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEM4NEJFQzM1QTVFNjg4NjcKUldSbmlPYWxOZXhMeUsxbFlWdUgyNCtwM2IxUGRVUE9INDNvRDNibDJZcms3VHBzR1M3dEM5emwK"
     }
   }
 }
