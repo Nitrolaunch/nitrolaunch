@@ -6,7 +6,7 @@ import {
 	onMount,
 } from "solid-js";
 import "./Footer.css";
-import { UnlistenFn, listen, Event } from "@tauri-apps/api/event";
+import { UnlistenFn, listen, Event, emit } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api";
 import { PasswordPrompt } from "../input/PasswordPrompt";
 import {
@@ -91,6 +91,8 @@ export default function Footer(props: FooterProps) {
 		if (showPasswordPrompt() || authInfo() !== undefined) {
 			return;
 		}
+
+		emit("refresh_users");
 
 		let launchPromise = invoke("launch_game", {
 			instanceId: instance,
