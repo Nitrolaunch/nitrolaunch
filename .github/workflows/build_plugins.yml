@@ -121,7 +121,7 @@ jobs:
             #     ./replace.py --from "\${OS}" --to "${{ matrix.filename }}" -i ../plugins/Makefile 
 
             - name: Build Plugins
-              run: cd plugins && OS="${{ matrix.os }}" make package.platform_dependent
+              run: cd plugins && OS="${{ matrix.filename }}" make package.platform_dependent
             - name: Upload a Build Artifact
               uses: actions/upload-artifact@v4
               with:
