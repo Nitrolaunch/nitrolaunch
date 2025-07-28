@@ -374,6 +374,155 @@ Adds new profiles to the config
 }
 ```
 
+### `inject_page_script`
+
+Called whenever certain pages in the GUI are opened. Runs whatever the result of the hook is as Javascript on the page.
+
+- Argument:
+
+```
+{
+	"page": "instances" | "instance" | "instance_config" | "profile_config" | "global_profile_config",
+	"object": string | null
+}
+```
+
+- Result: string
+
+- `object`: The identifier for whatever 'thing' this page is representing. Could be an instance, profile, anything else, or nothing.
+
+### `add_sidebar_buttons`
+
+Adds custom buttons to the sidebar
+
+- Argument: None
+
+- Result:
+
+```
+{
+	"html": string,
+	"href": string,
+	"selected_url": string | null,
+	"selected_url_start": string | null,
+	"color": string
+}
+```
+
+- `html`: The inner HTML of the button
+- `href`: Where the button leads to, likely a custom page
+- `selected_url`: What the current URL should equal to select this item
+- `selected_url_start`: What the current URL should start with to select this item
+
+### `get_page`
+
+Lets you add custom pages. The page will be available at `/custom/yourcustompagedata`. You can include custom data like a specific ID in the data section of the URL as well.
+
+- Argument: string
+
+This is the custom page data in the URL
+
+- Result: string | null
+
+This is the resulting page as HTML. Only include things that would be in a `<body>` tag.
+
+### `add_custom_package_repositories`
+
+Adds new package repositories that can be queried and searched
+
+- Argument: None
+
+- Result:
+
+```
+[
+	{
+		"id": string,
+		"is_preferred": bool,
+		"metadata": RepoMetadata
+	},
+	...
+]
+```
+
+- `is_preferred`: Whether this repository should be loaded before or after repositories like `std` and `core`
+- `metadata`: [RepoMetadata](../../packages/index.md)
+
+### `query_custom_package_repository`
+
+Asks for a package from a custom repository that this plugin registered with `add_custom_package_repositories`.
+
+- Argument:
+
+```
+{
+	"repository": string,
+	"package": string
+}
+```
+
+- Result:
+
+```
+{
+	"contents": string,
+	"content_type": "script" | "declarative",
+	"flags": [
+		"out_of_date" | "deprecated" | "insecure" | "malicious", ...
+	]
+} | null
+```
+
+### `search_custom_package_repository`
+
+Searches / browses for packages from a custom repository that this plugin registered with `add_custom_package_repositories`.
+
+- Argument:
+
+```
+{
+	"repository": string,
+	"parameters": {
+		"count": integer,
+		"skip": integer,
+		"search": string | null,
+		"types": PackageType[],
+		"minecraft_versions": string[],
+		"loaders": Loader[],
+		"categories": PackageCategory[]
+	}
+}
+```
+
+- Result:
+
+```
+{
+	"results": string[],
+	"total_results": integer,
+	"previews": {
+		"package": [PackageMetadata, PackageProperties],
+		...
+	}
+}
+```
+
+- `previews`: Limited data about packages used to make quick previews. Useful if your API returns them, as it makes browsing much faster.
+
+### `search_custom_package_repository`
+
+Synchronizes the cache for a custom repository that this plugin registered with `add_custom_package_repositories`. Should remove all cached packages associated with the repository so that new versions of packages can be used.
+
+- Argument:
+
+```
+{
+	"repository": string
+}
+```
+
+- Result: None
+
 ## Common Types
 
 ### InstanceLaunchArg
