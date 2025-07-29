@@ -1,5 +1,7 @@
+use std::time::Duration;
+
 use crate::{output::LauncherOutput, State};
-use anyhow::Context;
+use anyhow::{bail, Context};
 use nitrolaunch::{
 	core::{net::game_files::version_manifest::VersionType, util::versions::MinecraftVersion},
 	instance::update::manager::UpdateManager,
@@ -126,4 +128,18 @@ pub async fn get_is_first_launch(state: tauri::State<'_, State>) -> Result<bool,
 	fmt_err(data.write(&state.paths))?;
 
 	Ok(out)
+}
+
+/// Starts a long-running test task
+#[tauri::command]
+pub async fn test_long_running_task(state: tauri::State<'_, State>) -> Result<(), String> {
+	let task = tokio::spawn(async {
+		tokio::time::sleep(Duration::from_secs(3)).await;
+
+		bail!("Error:\nerror.")
+	});
+
+	state.register_task("test_task", task).await;
+
+	Ok(())
 }

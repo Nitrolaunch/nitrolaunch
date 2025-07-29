@@ -56,6 +56,8 @@ impl TaskManager {
 							},
 						);
 					}
+				} else {
+					task.join_handle = Some(join_handle);
 				}
 			}
 		}
@@ -85,6 +87,7 @@ impl TaskManager {
 }
 
 /// A single running task
+#[derive(Debug)]
 struct RunningTask {
 	id: String,
 	join_handle: Option<JoinHandle<anyhow::Result<()>>>,
