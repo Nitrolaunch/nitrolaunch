@@ -23,7 +23,6 @@ export default function Global(props: GlobalProps) {
 				invoke("get_themes"),
 				invoke("get_settings"),
 			])) as [Theme[], LauncherSettings];
-			console.log(settings);
 
 			if (settings.selected_theme != undefined) {
 				setSelectedTheme(settings.selected_theme);
@@ -40,7 +39,6 @@ export default function Global(props: GlobalProps) {
 	});
 
 	let styleElement = () => {
-		console.log(selectedTheme());
 		if (selectedTheme() == "dark" || selectedTheme() == "light") {
 			return <link rel="stylesheet" href={`/themes/${selectedTheme()}.css`} />;
 		} else {

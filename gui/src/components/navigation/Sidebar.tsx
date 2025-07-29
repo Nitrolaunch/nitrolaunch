@@ -4,7 +4,6 @@ import {
 	For,
 	JSX,
 	onCleanup,
-	onMount,
 	Show,
 } from "solid-js";
 import "./Sidebar.css";

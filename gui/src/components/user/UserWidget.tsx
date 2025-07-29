@@ -114,6 +114,7 @@ export default function UserWidget(props: UserWidgetProps) {
 											isFeatured={false}
 											onclick={(user) => {
 												invoke("select_user", { user: user }).then(() => {
+													props.onSelect(user);
 													methods.refetch();
 													setIsOpen(false);
 												});

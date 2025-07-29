@@ -1,3 +1,18 @@
+#toasts-button {
+	width: 12rem;
+	box-sizing: border-box;
+	border: 0.15rem solid var(--bg3);
+	border-radius: var(--round2);
+
+	height: 2rem;
+
+	cursor: pointer;
+}
+
+#toasts-button.selected {
+	border-color: var(--bg4);
+}
+
 #toasts {
 	z-index: 15;
 	position: fixed;

@@ -13,7 +13,6 @@ import { loadPagePlugins } from "./plugins";
 import { listen } from "@tauri-apps/api/event";
 import CustomPluginPage from "./pages/CustomPluginPage";
 import Footer, { FooterMode } from "./components/navigation/Footer";
-import Toasts from "./components/dialog/Toasts";
 import { InstanceConfigMode } from "./pages/instance/read_write";
 import InstanceInfo from "./pages/instance/InstanceInfo";
 import UserPage from "./pages/user/UserPage";
@@ -162,7 +161,6 @@ function Layout(props: LayoutProps) {
 				action={props.footerData.action}
 				itemFromPlugin={props.footerData.fromPlugin}
 			/>
-			<Toasts />
 		</>
 	);
 }

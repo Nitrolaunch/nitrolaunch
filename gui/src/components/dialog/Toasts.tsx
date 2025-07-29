@@ -4,9 +4,11 @@ import {
 	createUniqueId,
 	For,
 	JSX,
+	Match,
 	onMount,
 	Setter,
 	Show,
+	Switch,
 } from "solid-js";
 import "./Toasts.css";
 import Icon from "../Icon";
@@ -14,13 +16,29 @@ import { Check, Delete, Error, Warning } from "../../icons";
 
 export default function Toasts() {
 	let [toasts, setToasts] = createSignal<ToastProps[]>([]);
+
+	let [recentToasts, setRecentToasts] = createSignal<ToastProps[]>([]);
+	let [recentToastCount, setRecentToastCount] = createSignal(0);
+
+	let [showRecentToasts, setShowRecentToasts] = createSignal(false);
+
 	// Trick to re-render since just updating the toasts signal doesnt work on its own
 	let [visible, setVisible] = createSignal(true);
 
 	// Removes a toast at an index and updates the list
 	function removeToast(index: number) {
 		setToasts((toasts) => {
-			toasts.splice(index, 1);
+			let removed = toasts.splice(index, 1);
+			setRecentToasts((toasts) => {
+				let removedToast = removed[0];
+				removedToast.setIsFading(false);
+				removedToast.age = 0;
+				toasts.unshift(removedToast);
+
+				setRecentToastCount((count) => count + 1);
+
+				return toasts;
+			});
 			return toasts;
 		});
 		setVisible(false);
@@ -73,20 +91,41 @@ export default function Toasts() {
 	});
 
 	return (
-		<Show when={visible()}>
-			<div id="toasts" class="cont col">
-				<For each={toasts()}>
-					{(props, i) => (
-						<Toast
-							{...props}
-							onRemove={() => {
-								removeToast(i());
-							}}
-						/>
-					)}
-				</For>
+		<div id="toasts-container">
+			<div
+				id="toasts-button"
+				class={`cont ${showRecentToasts() ? "selected" : ""}`}
+				onclick={() => setShowRecentToasts(!showRecentToasts())}
+			>
+				{recentToastCount()}{" "}
+				{recentToastCount() == 1 ? "notification" : "notifications"}
 			</div>
-		</Show>
+			<div id="toasts">
+				<Show when={visible()}>
+					<div id="toasts" class="cont col">
+						<Switch>
+							<Match when={!showRecentToasts()}>
+								<For each={toasts()}>
+									{(props, i) => (
+										<Toast
+											{...props}
+											onRemove={() => {
+												removeToast(i());
+											}}
+										/>
+									)}
+								</For>
+							</Match>
+							<Match when={showRecentToasts()}>
+								<For each={recentToasts()}>
+									{(props) => <Toast {...props} onRemove={() => {}} />}
+								</For>
+							</Match>
+						</Switch>
+					</div>
+				</Show>
+			</div>
+		</div>
 	);
 }
 

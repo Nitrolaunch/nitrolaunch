@@ -3,6 +3,7 @@ import { AngleLeft, AngleRight, Box, Home, Jigsaw, Menu } from "../../icons";
 import IconButton from "../input/IconButton";
 import "./NavBar.css";
 import { Location } from "@solidjs/router";
+import Toasts from "../dialog/Toasts";
 
 export default function NavBar(props: NavBarProps) {
 	return (
@@ -82,14 +83,13 @@ export default function NavBar(props: NavBarProps) {
 					</div>
 					<h3 class="cont navbar-item">
 						<a href="/" class="cont link bold" title="Return to the homepage">
-							{/* <div style="margin-top:-0.45rem">
-								<Logo width="25px" />
-							</div> */}
-							<img src="/Logo.png" style="width:1.5rem" />
+							<img src="/Logo.png" style="width:1.5rem" class="input-shadow" />
 							NITRO
 						</a>
 					</h3>
-					<div class="cont end navbar-item" id="navbar-right"></div>
+					<div class="cont end navbar-item" id="navbar-right">
+						<Toasts />
+					</div>
 				</div>
 			</div>
 		</>
