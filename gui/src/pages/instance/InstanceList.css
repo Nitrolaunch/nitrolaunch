@@ -77,6 +77,8 @@
 	border: 0.15rem solid var(--bg3);
 	border-top-color: var(--bg4);
 	border-left-color: var(--bg4);
+
+	transition: background-color 0.15s;
 }
 
 .instance-list-item:hover {

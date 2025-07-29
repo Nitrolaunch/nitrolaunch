@@ -103,7 +103,6 @@ input {
 	border-radius: var(--round);
 	padding: 0.5rem 1rem;
 	height: var(--input-height);
-	font-weight: bold;
 	background-color: var(--bg0);
 	transition: border-color 0.25s, outline-color 0.35s;
 	box-shadow: 0 2px 2px rgba(0, 0, 0, 0.2);

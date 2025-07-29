@@ -30,7 +30,9 @@
 	position: relative;
 	align-items: flex-start;
 	max-height: 20rem;
+
 	overflow-y: scroll;
+	white-space: pre-wrap;
 
 	transition: opacity 1s;
 }

@@ -275,8 +275,6 @@ function getPluginIcon(plugin: string) {
 			return CurlyBraces;
 		} else if (plugin == "lang") {
 			return Language;
-		} else if (plugin == "nitro_transfer") {
-			return Cycle;
 		} else if (plugin == "options") {
 			return Gear;
 		} else if (plugin == "server_restart") {
@@ -287,7 +285,7 @@ function getPluginIcon(plugin: string) {
 			return Globe;
 		} else if (plugin == "weld") {
 			return Link;
-		} else if (plugin == "xmcl_transfer") {
+		} else if (plugin.includes("transfer")) {
 			return Cycle;
 		}
 

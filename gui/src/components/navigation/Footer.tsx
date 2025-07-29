@@ -179,39 +179,45 @@ export default function Footer(props: FooterProps) {
 							fallback={<div></div>}
 						>
 							<div class="cont footer-update">
-								<IconButton
-									icon={Upload}
-									size="1.5rem"
-									color="var(--bg2)"
-									border="var(--bg3)"
-									selectedColor="var(--accent)"
-									onClick={async () => {
-										if (props.selectedItem != undefined) {
-											try {
-												await invoke("update_instance", {
-													instanceId: props.selectedItem,
-												});
-											} catch (e) {
-												errorToast("Failed to update instance: " + e);
+								<Tip tip="Update instance" side="top">
+									<IconButton
+										icon={Upload}
+										size="1.5rem"
+										color="var(--bg0)"
+										selectedColor="var(--accent)"
+										onClick={async () => {
+											if (props.selectedItem != undefined) {
+												try {
+													await invoke("update_instance", {
+														instanceId: props.selectedItem,
+													});
+												} catch (e) {
+													errorToast("Failed to update instance: " + e);
+												}
 											}
-										}
-									}}
-									selected={false}
-								/>
+										}}
+										selected={false}
+										circle
+										hoverBackground="var(--bg3)"
+									/>
+								</Tip>
 							</div>
 							<Show when={props.itemFromPlugin != true}>
 								<div class="cont footer-config">
-									<IconButton
-										icon={Properties}
-										size="1.5rem"
-										color="var(--bg2)"
-										border="var(--bg3)"
-										selectedColor="var(--accent)"
-										onClick={() => {
-											window.location.href = `/instance/${props.selectedItem}`;
-										}}
-										selected={false}
-									/>
+									<Tip tip="View instance" side="top">
+										<IconButton
+											icon={Properties}
+											size="1.5rem"
+											color="var(--bg0)"
+											selectedColor="var(--accent)"
+											onClick={() => {
+												window.location.href = `/instance/${props.selectedItem}`;
+											}}
+											selected={false}
+											circle
+											hoverBackground="var(--bg3)"
+										/>
+									</Tip>
 								</div>
 							</Show>
 						</Show>
@@ -226,13 +232,14 @@ export default function Footer(props: FooterProps) {
 									<IconButton
 										icon={Delete}
 										size="1.5rem"
-										color="var(--errorbg)"
-										border="var(--error)"
+										color="var(--bg0)"
 										selectedColor="var(--accent)"
 										onClick={() => {
 											setShowProfileDeletePrompt(true);
 										}}
 										selected={false}
+										circle
+										hoverBackground="var(--bg3)"
 									/>
 								</Tip>
 							</div>

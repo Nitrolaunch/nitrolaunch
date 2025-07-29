@@ -59,7 +59,9 @@ export default function RunningInstanceList(props: RunningInstanceListProps) {
 					let info = () => instanceInfo().find((x) => x.id == instance);
 
 					let name =
-						info != undefined && info.name != undefined ? info.name : instance;
+						info() != undefined && info()!.name != undefined
+							? info()!.name!
+							: instance;
 
 					return (
 						<img

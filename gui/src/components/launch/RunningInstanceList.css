@@ -14,7 +14,7 @@
 	background-color: var(--bg2);
 
 	border: 0.15rem solid var(--bg3);
-	border-radius: var(--round);
+	border-radius: 50%;
 
 	cursor: pointer;
 }
