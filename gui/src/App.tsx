@@ -140,7 +140,6 @@ function Layout(props: LayoutProps) {
 				onSidebarToggle={() => {
 					setShowSidebar(!showSidebar());
 				}}
-				onSelectUser={props.onSelectUser}
 				location={props.location}
 			/>
 			<ErrorBoundary
@@ -154,6 +153,7 @@ function Layout(props: LayoutProps) {
 				visible={showSidebar()}
 				location={props.location}
 				setVisible={setShowSidebar}
+				onSelectUser={props.onSelectUser}
 			/>
 			<Footer
 				selectedItem={props.footerData.selectedItem}

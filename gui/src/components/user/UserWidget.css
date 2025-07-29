@@ -1,11 +1,14 @@
 #user-widget {
 	position: relative;
 	font-size: 0.9rem;
-	width: 15rem;
+	width: 95%;
+
+	user-select: none;
+	-webkit-user-select: none;
 }
 
 #user-widget-head {
-	background-color: var(--bg);
+	background-color: var(--bg0);
 	border-radius: var(--round);
 	width: 100%;
 	height: 2.2rem;

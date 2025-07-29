@@ -15,27 +15,9 @@ import { getInstanceIconSrc, stringCompare } from "../../utils";
 import { listen, UnlistenFn } from "@tauri-apps/api/event";
 import { InstanceInfo, InstanceOrProfile } from "../../types";
 import Icon from "../Icon";
+import UserWidget from "../user/UserWidget";
 
 export default function Sidebar(props: SidebarProps) {
-	// Close the sidebar when clicking outside of it
-	onMount(() => {
-		document.addEventListener("click", (e) => {
-			let sidebar = document.getElementById("sidebar");
-			let sidebarButton = document.getElementById("sidebar-button");
-			// Walk up the tree
-			let target = e.target as Element;
-			while (target != null && target != sidebar && target != sidebarButton) {
-				target = target.parentNode as Element;
-			}
-
-			if (target == null) {
-				if (props.visible) {
-					props.setVisible(false);
-				}
-			}
-		});
-	});
-
 	let [extraButtons, _] = createResource(async () => {
 		try {
 			let buttons: PluginSidebarButton[] = await invoke("get_sidebar_buttons");
@@ -113,11 +95,10 @@ export default function Sidebar(props: SidebarProps) {
 	});
 
 	return (
-		<div
-			id="sidebar"
-			style={`${props.visible ? "" : "width:0px"}`}
-			onmouseleave={() => props.setVisible(false)}
-		>
+		<div id="sidebar" style={`${props.visible ? "" : "width:0px"}`}>
+			<div class="cont" style="padding:0.25rem">
+				<UserWidget onSelect={props.onSelectUser} />
+			</div>
 			<div class="cont start">
 				<a href="/settings" class="cont" style="color:var(--fg);padding:1rem">
 					<Icon icon={Gear} size="1rem" />
@@ -224,6 +205,10 @@ export default function Sidebar(props: SidebarProps) {
 					}}
 				</For>
 			</div>
+			<div
+				id="sidebar-mousebox"
+				onmouseenter={() => props.setVisible(false)}
+			></div>
 		</div>
 	);
 }
@@ -232,6 +217,7 @@ export interface SidebarProps {
 	visible: boolean;
 	setVisible: (visible: boolean) => void;
 	location: Location;
+	onSelectUser: (user: string) => void;
 }
 
 function SidebarItem(props: SidebarItemProps) {

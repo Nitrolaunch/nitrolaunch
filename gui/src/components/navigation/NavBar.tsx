@@ -1,7 +1,6 @@
-import { createSignal, JSX, Show } from "solid-js";
+import { createSignal, JSX } from "solid-js";
 import { AngleLeft, AngleRight, Box, Home, Jigsaw, Menu } from "../../icons";
 import IconButton from "../input/IconButton";
-import UserWidget from "../user/UserWidget";
 import "./NavBar.css";
 import { Location } from "@solidjs/router";
 
@@ -90,9 +89,7 @@ export default function NavBar(props: NavBarProps) {
 							NITRO
 						</a>
 					</h3>
-					<div class="cont end navbar-item" id="navbar-right">
-						<UserWidget onSelect={props.onSelectUser} />
-					</div>
+					<div class="cont end navbar-item" id="navbar-right"></div>
 				</div>
 			</div>
 		</>
@@ -101,7 +98,6 @@ export default function NavBar(props: NavBarProps) {
 
 export interface NavBarProps {
 	onSidebarToggle: () => void;
-	onSelectUser: (user: string) => void;
 	location: Location;
 }
 
