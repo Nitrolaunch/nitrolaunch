@@ -8,7 +8,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use anyhow::Context;
 use nitro_auth::mc::AccessToken;
 use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
-use nitro_shared::translate;
+use nitro_shared::{no_window, translate};
 
 use crate::instance::InstanceKind;
 use crate::util::versions::VersionName;
@@ -111,6 +111,8 @@ pub fn get_process_launch_command(
 	let stdin = File::create_new(stdin_path).context("Failed to open stdin")?;
 	cmd.stdout(std::process::Stdio::from(stdout));
 	cmd.stdin(std::process::Stdio::from(stdin));
+
+	no_window!(cmd);
 
 	Ok(cmd)
 }

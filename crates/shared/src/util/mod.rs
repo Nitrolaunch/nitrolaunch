@@ -1,3 +1,5 @@
+/// Filesystem utilites
+pub mod io;
 /// Printing and output utilities
 pub mod print;
 

@@ -9,7 +9,7 @@ use std::{
 use crate::try_read::TryLineReader;
 use anyhow::{bail, Context};
 use nitro_core::Paths;
-use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput, NoOp};
+use nitro_shared::{no_window, output::{MessageContents, MessageLevel, NitroOutput, NoOp}};
 use tokio::{
 	io::AsyncWriteExt,
 	process::{Child, ChildStdin, ChildStdout, Command},
@@ -122,6 +122,8 @@ where
 	}
 	let plugin_list = arg.plugin_list.join(",");
 	cmd.env(PLUGIN_LIST_ENV, plugin_list);
+
+	no_window!(cmd);
 
 	if plugin_debug_enabled() {
 		o.display(
