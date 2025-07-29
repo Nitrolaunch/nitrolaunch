@@ -168,6 +168,8 @@ pub async fn install_default_plugins(
 				.await
 				.with_context(|| format!("Failed to install plugin {}", plugin.id)),
 		)?;
+
+		let _ = PluginManager::enable_plugin(&plugin.id, &state.paths);
 	}
 
 	Ok(())
