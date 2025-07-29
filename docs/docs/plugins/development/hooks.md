@@ -11,7 +11,7 @@ Hooks are what give your plugin functionality. They are essentially custom event
 
 Most of the time when Nitrolaunch calls a hook, it will check every plugin that supports that hook, and call the hook on each one to create a final list of results. Handlers are not exclusive; multiple plugins can subscribe to the same hook. However, some hooks are only called on specific plugins. For example, the `on_load` hook is only called on a specific plugin once it is loaded.
 
-## List of Hooks
+## General Hooks
 
 ### `on_load`
 
@@ -26,6 +26,44 @@ Called whenever one of the subcommands that this hook registers are run. The arg
 
 - Argument: `[string]`
 - Result: None
+
+### `add_versions`
+
+This hook allows you to add extra Minecraft versions to the version manifest, allowing them to be specified in instance configuration and automatically downloaded.
+
+- Argument: None
+- Result:
+
+```
+[
+	{
+		"id": string,
+		"type": "release" | "snapshot" | "old_alpha" | "old_beta",
+		"url": string,
+		"is_zipped": bool
+	},
+	...
+]
+```
+
+### `add_translations`
+
+Adds extra translations to Nitrolaunch
+
+- Argument: None
+- Result:
+
+```
+{
+	"language": {
+		"key": "translation",
+		...
+	},
+	...
+}
+```
+
+## Configuration Hooks
 
 ### `modify_instance_config`
 
@@ -47,24 +85,37 @@ Called on every instance to possibly modify its config. The output config will b
 }
 ```
 
-### `add_versions`
+### `add_instances`
 
-This hook allows you to add extra Minecraft versions to the version manifest, allowing them to be specified in instance configuration and automatically downloaded.
+Adds new instances to the config
 
 - Argument: None
 - Result:
 
 ```
-[
-	{
-		"id": string,
-		"type": "release" | "snapshot" | "old_alpha" | "old_beta",
-		"url": string,
-		"is_zipped": bool
-	},
+{
+	"inst1": InstanceConfig,
+	"inst2": InstanceConfig,
 	...
-]
+}
 ```
+
+### `add_profiles`
+
+Adds new profiles to the config
+
+- Argument: None
+- Result:
+
+```
+{
+	"prof1": ProfileConfig,
+	"prof2": ProfileConfig,
+	...
+}
+```
+
+## Instance Setup Hooks
 
 ### `on_instance_setup`
 
@@ -101,6 +152,14 @@ resulting from installing a certain modification
 }
 ```
 
+### `add_supported_loaders`
+
+Adds extra loaders to the list of supported ones for installation. This should be done
+if you plan to install these loaders with your plugin.
+
+- Argument: None
+- Result: Loader[]
+
 ### `remove_loader`
 
 Called when the loader of an instance changes, to allow cleaning up old or invalid files. Will be given the loader that needs to be removed.
@@ -125,6 +184,8 @@ Called when the loader of an instance changes, to allow cleaning up old or inval
 
 - Result: None
 
+## Launch Hooks
+
 ### `on_instance_launch`
 
 Called whenever an instance is launched
@@ -145,6 +206,8 @@ Called when an instance is stopped. This happens when Minecraft is closed or cra
 
 - Argument: InstanceLaunchArg
 - Result: None
+
+## Package Hooks
 
 ### `custom_package_instruction`
 
@@ -201,6 +264,8 @@ Handles custom instructions in script packages.
 
 - `handled`: Whether this instruction was handled or not. Should be false if this instruction is not for your plugin.
 
+# User Hooks
+
 ## `handle_auth`
 
 Handles authentication with custom user types
@@ -244,22 +309,7 @@ Handles authentication with custom user types
 
 - `profile.id`: The UUID of the user
 
-### `add_translations`
-
-Adds extra translations to Nitrolaunch
-
-- Argument: None
-- Result:
-
-```
-{
-	"language": {
-		"key": "translation",
-		...
-	},
-	...
-}
-```
+## Instance Transfer Hooks
 
 ### `add_instance_transfer_formats`
 
@@ -336,98 +386,7 @@ Hook called on a specific plugin to import an instance using one of the formats 
 }
 ```
 
-### `add_supported_loaders`
-
-Adds extra loaders to the list of supported ones for installation. This should be done
-if you plan to install these loaders with your plugin.
-
-- Argument: None
-- Result: Loader[]
-
-### `add_instances`
-
-Adds new instances to the config
-
-- Argument: None
-- Result:
-
-```
-{
-	"inst1": InstanceConfig,
-	"inst2": InstanceConfig,
-	...
-}
-```
-
-### `add_profiles`
-
-Adds new profiles to the config
-
-- Argument: None
-- Result:
-
-```
-{
-	"prof1": ProfileConfig,
-	"prof2": ProfileConfig,
-	...
-}
-```
-
-### `inject_page_script`
-
-Called whenever certain pages in the GUI are opened. Runs whatever the result of the hook is as Javascript on the page.
-
-- Argument:
-
-```
-{
-	"page": "instances" | "instance" | "instance_config" | "profile_config" | "global_profile_config",
-	"object": string | null
-}
-```
-
-- Result: string
-
-- `object`: The identifier for whatever 'thing' this page is representing. Could be an instance, profile, anything else, or nothing.
-
-### `add_sidebar_buttons`
-
-Adds custom buttons to the sidebar
-
-- Argument: None
-
-- Result:
-
-```
-[
-	{
-		"html": string,
-		"href": string,
-		"selected_url": string | null,
-		"selected_url_start": string | null,
-		"color": string
-	},
-	...
-]
-```
-
-- `html`: The inner HTML of the button
-- `href`: Where the button leads to, likely a custom page
-- `selected_url`: What the current URL should equal to select this item
-- `selected_url_start`: What the current URL should start with to select this item
-
-### `get_page`
-
-Lets you add custom pages. The page will be available at `/custom/yourcustompagedata`. You can include custom data like a specific ID in the data section of the URL as well.
-
-- Argument: string
-
-This is the custom page data in the URL
-
-- Result: string | null
-
-This is the resulting page as HTML. Only include things that would be in a `<body>` tag.
+## Custom Repository Hooks
 
 ### `add_custom_package_repositories`
 
@@ -525,6 +484,63 @@ Synchronizes the cache for a custom repository that this plugin registered with 
 ```
 
 - Result: None
+
+## GUI Hooks
+
+### `inject_page_script`
+
+Called whenever certain pages in the GUI are opened. Runs whatever the result of the hook is as Javascript on the page.
+
+- Argument:
+
+```
+{
+	"page": "instances" | "instance" | "instance_config" | "profile_config" | "global_profile_config",
+	"object": string | null
+}
+```
+
+- Result: string
+
+- `object`: The identifier for whatever 'thing' this page is representing. Could be an instance, profile, anything else, or nothing.
+
+### `add_sidebar_buttons`
+
+Adds custom buttons to the sidebar
+
+- Argument: None
+
+- Result:
+
+```
+[
+	{
+		"html": string,
+		"href": string,
+		"selected_url": string | null,
+		"selected_url_start": string | null,
+		"color": string
+	},
+	...
+]
+```
+
+- `html`: The inner HTML of the button
+- `href`: Where the button leads to, likely a custom page
+- `selected_url`: What the current URL should equal to select this item
+- `selected_url_start`: What the current URL should start with to select this item
+
+### `get_page`
+
+Lets you add custom pages. The page will be available at `/custom/yourcustompagedata`. You can include custom data like a specific ID in the data section of the URL as well.
+
+- Argument: string
+
+This is the custom page data in the URL
+
+- Result: string | null
+
+This is the resulting page as HTML. Only include things that would be in a `<body>` tag.
 
 ### `add_themes`
 
