@@ -5,6 +5,7 @@ export default function IconSelector(props: IconSelectorProps) {
 	let [availableIcons, _] = createResource(async () => {
 		return [
 			"/icons/default_instance.png",
+			"/icons/minecraft.png",
 			"/icons/fabric.png",
 			"/icons/quilt.png",
 			"/icons/paper.png",
