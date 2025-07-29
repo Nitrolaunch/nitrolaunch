@@ -45,8 +45,8 @@ export default function PackageFilters(props: PackageFiltersProps) {
 		if (props.availableMinecraftVersions != undefined) {
 			let versions = props.availableMinecraftVersions.concat([]);
 			versions.reverse();
-			setExtraMinecraftVersions(versions.slice(6));
-			return versions.slice(0, 5);
+			setExtraMinecraftVersions(versions.slice(5));
+			return versions.slice(0, 4);
 		}
 
 		// Let the user select from the most recent couple versions, along with some popular ones
@@ -55,10 +55,10 @@ export default function PackageFilters(props: PackageFiltersProps) {
 		})) as string[];
 
 		availableVersions.reverse();
-		let latestReleases = availableVersions.slice(0, 2);
+		let latestReleases = availableVersions.slice(0, 1);
 		let popularVersions = ["1.19.4", "1.18.2", "1.16.5", "1.12.2"];
 
-		setExtraMinecraftVersions(availableVersions.slice(2));
+		setExtraMinecraftVersions(availableVersions.slice(1));
 
 		return latestReleases.concat(popularVersions);
 	});

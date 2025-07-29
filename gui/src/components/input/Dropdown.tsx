@@ -1,4 +1,14 @@
-import { createMemo, createSignal, Index, JSX, Show } from "solid-js";
+import {
+	createEffect,
+	createMemo,
+	createSignal,
+	For,
+	Index,
+	JSX,
+	Match,
+	Show,
+	Switch,
+} from "solid-js";
 import "./Dropdown.css";
 import Tip from "../dialog/Tip";
 import { canonicalizeListOrSingle } from "../../utils/values";
@@ -40,13 +50,51 @@ export default function Dropdown(props: DropdownProps) {
 		}
 	};
 
+	let [search, setSearch] = createSignal<string | undefined>();
+
+	let searchElement!: HTMLInputElement;
+
+	createEffect(() => {
+		if (isOpen()) {
+			searchElement.focus();
+		}
+	});
+
 	return (
 		<div class="dropdown-container" onmouseleave={() => setIsOpen(false)}>
 			<div
 				class={`cont input-shadow dropdown-header ${isOpen() ? "open" : ""}`}
 				onclick={() => setIsOpen(!isOpen())}
 			>
-				{headerContents()}
+				<Switch>
+					<Match when={!isOpen()}>{headerContents()}</Match>
+					<Match when={isOpen()}>
+						<input
+							type="text"
+							class="dropdown-search"
+							style="padding-left:0.5rem"
+							onclick={(e) => {
+								e.preventDefault();
+								e.stopPropagation();
+							}}
+							onkeyup={(e: any) => {
+								if (e.target.value == "") {
+									setSearch(undefined);
+								} else {
+									setSearch(e.target.value);
+								}
+							}}
+							onkeydown={(e: any) => {
+								// Unfocus on escape
+								if (e.keyCode == 27) {
+									e.target.blur();
+								}
+							}}
+							onfocusout={() => setIsOpen(false)}
+							ref={searchElement}
+						/>
+					</Match>
+				</Switch>
 				<div class="cont dropdown-arrow">
 					<Show
 						when={isOpen()}
@@ -74,21 +122,32 @@ export default function Dropdown(props: DropdownProps) {
 						class={props.optionClass}
 					/>
 				</Show>
-				<Index each={props.options}>
-					{(option, index) => (
-						<DropdownOption
-							option={option()}
-							onSelect={selectFunction}
-							isSelected={createMemo(() =>
-								props.selected != undefined && Array.isArray(props.selected)
-									? props.selected.includes(option().value!)
-									: props.selected == option().value
-							)()}
-							isLast={index == props.options.length - 1}
-							class={props.optionClass}
-						/>
-					)}
-				</Index>
+				<For each={props.options}>
+					{(option, index) => {
+						let isVisible = createMemo(() => {
+							return (
+								search() == undefined ||
+								(option.value != undefined && option.value!.includes(search()!))
+							);
+						});
+
+						return (
+							<Show when={isVisible()}>
+								<DropdownOption
+									option={option}
+									onSelect={selectFunction}
+									isSelected={createMemo(() =>
+										props.selected != undefined && Array.isArray(props.selected)
+											? props.selected.includes(option.value!)
+											: props.selected == option.value
+									)()}
+									isLast={index() == props.options.length - 1}
+									class={props.optionClass}
+								/>
+							</Show>
+						);
+					}}
+				</For>
 			</div>
 		</div>
 	);

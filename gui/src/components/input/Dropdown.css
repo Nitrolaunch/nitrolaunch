@@ -22,6 +22,15 @@
 .dropdown-header.open {
 	border-bottom-left-radius: 0;
 	border-bottom-right-radius: 0;
+	justify-content: flex-start;
+}
+
+.dropdown-search {
+	width: 85%;
+	height: 90%;
+	background-color: transparent;
+	border: none;
+	box-shadow: none;
 }
 
 .dropdown-arrow {
