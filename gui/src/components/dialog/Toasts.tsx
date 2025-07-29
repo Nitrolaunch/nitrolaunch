@@ -45,6 +45,16 @@ export default function Toasts() {
 		setVisible(true);
 	}
 
+	function removeRecentToast(index: number) {
+		setRecentToasts((toasts) => {
+			toasts.splice(index, 1);
+			return toasts;
+		});
+		setRecentToastCount((count) => count - 1);
+		setVisible(false);
+		setVisible(true);
+	}
+
 	onMount(() => {
 		// Global function for adding toasts
 		let win = window as any;
@@ -118,7 +128,14 @@ export default function Toasts() {
 							</Match>
 							<Match when={showRecentToasts()}>
 								<For each={recentToasts()}>
-									{(props) => <Toast {...props} onRemove={() => {}} />}
+									{(props, i) => (
+										<Toast
+											{...props}
+											onRemove={() => {
+												removeRecentToast(i());
+											}}
+										/>
+									)}
 								</For>
 							</Match>
 						</Switch>
