@@ -16,6 +16,8 @@
 	align-items: flex-start;
 	max-height: 20rem;
 	overflow-y: scroll;
+
+	transition: opacity 1s;
 }
 
 .toast.message {
@@ -59,4 +61,8 @@
 	top: 0rem;
 	cursor: pointer;
 	padding: 0.5rem;
+}
+
+.toast.fading {
+	opacity: 0%;
 }

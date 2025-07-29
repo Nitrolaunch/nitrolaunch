@@ -1,9 +1,11 @@
 import {
+	Accessor,
 	createSignal,
 	createUniqueId,
 	For,
 	JSX,
 	onMount,
+	Setter,
 	Show,
 } from "solid-js";
 import "./Toasts.css";
@@ -29,6 +31,8 @@ export default function Toasts() {
 		// Global function for adding toasts
 		let win = window as any;
 		win.__createToast = (props: ToastProps) => {
+			[props.isFading, props.setIsFading] = createSignal(false);
+
 			setToasts((toasts) => {
 				if (toasts.length >= 4) {
 					toasts.splice(0, 1);
@@ -54,6 +58,10 @@ export default function Toasts() {
 			for (let i = 0; i < toasts().length; i++) {
 				let toast = toasts()[i];
 				if (toast.age != undefined) {
+					if (toast.age <= 1.0) {
+						toast.setIsFading(true);
+					}
+
 					if (toast.age <= 0) {
 						removeToast(i);
 					} else {
@@ -106,7 +114,7 @@ function Toast(props: ToastProps) {
 
 	return (
 		<div
-			class={`cont toast ${props.type}`}
+			class={`cont toast ${props.type} ${props.isFading() ? "fading" : ""}`}
 			onmouseenter={() => setIsHovered(true)}
 			onmouseleave={() => setIsHovered(false)}
 			data-id={id}
@@ -128,7 +136,8 @@ interface ToastProps {
 	message: JSX.Element;
 	type: ToastType;
 	age?: number;
-	maxAge?: number;
+	isFading: Accessor<boolean>;
+	setIsFading: Setter<boolean>;
 	onRemove: () => void;
 }
 
@@ -143,7 +152,6 @@ export function successToast(message: JSX.Element) {
 		message: message,
 		type: "success",
 		age: 3,
-		maxAge: 3,
 	});
 }
 
@@ -152,7 +160,6 @@ export function warningToast(message: JSX.Element) {
 		message: message,
 		type: "warning",
 		age: 7,
-		maxAge: 7,
 	});
 }
 
@@ -161,7 +168,6 @@ export function errorToast(message: JSX.Element) {
 		message: message,
 		type: "error",
 		age: 9,
-		maxAge: 9,
 	});
 	console.error("Error: " + message);
 }
