@@ -9,7 +9,10 @@
 	border: 0.15rem solid var(--bg2);
 	border-left-width: 0px;
 
+	overflow-x: hidden;
 	overflow-y: scroll;
+
+	transition: width 0.3s;
 }
 
 .sidebar-item {
@@ -24,6 +27,8 @@
 
 	cursor: pointer;
 	line-height: 1;
+
+	overflow-x: hidden;
 }
 
 .sidebar-item svg,

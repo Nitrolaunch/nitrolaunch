@@ -113,119 +113,118 @@ export default function Sidebar(props: SidebarProps) {
 	});
 
 	return (
-		<Show when={props.visible}>
-			<div id="sidebar">
-				<div class="cont start">
-					<a href="/settings" class="cont" style="color:var(--fg);padding:1rem">
-						<Icon icon={Gear} size="1rem" />
-					</a>
-				</div>
-				<div id="sidebar-items">
-					<SidebarItem
-						href="/"
-						location={props.location}
-						selectedPath="/"
-						color="var(--instance)"
-						selectedBg="var(--instancebg)"
-						closeSidebar={() => props.setVisible(false)}
-					>
-						<div class="cont" style="margin-top:-0.1rem;color:var(--instance)">
-							<Home />
-						</div>
-						<div class="cont">Home</div>
-					</SidebarItem>
-					<SidebarItem
-						href="/packages/0"
-						location={props.location}
-						selectedPathStart="/packages"
-						color="var(--package)"
-						selectedBg="var(--packagebg)"
-						closeSidebar={() => props.setVisible(false)}
-					>
-						<div class="cont" style="color:var(--package)">
-							<Box />
-						</div>
-						<div class="cont">Packages</div>
-					</SidebarItem>
-					<SidebarItem
-						href="/plugins"
-						location={props.location}
-						selectedPathStart="/plugins"
-						color="var(--plugin)"
-						selectedBg="var(--pluginbg)"
-						closeSidebar={() => props.setVisible(false)}
-					>
-						<div class="cont" style="margin-top:-0.1rem;color:var(--plugin)">
-							<Jigsaw />
-						</div>
-						<div class="cont">Plugins</div>
-					</SidebarItem>
-					<SidebarItem
-						href="/docs"
-						location={props.location}
-						selectedPathStart="/docs"
-						color="var(--profile)"
-						selectedBg="var(--profilebg)"
-						closeSidebar={() => props.setVisible(false)}
-					>
-						<div class="cont" style="color:var(--profile)">
-							<Menu />
-						</div>
-						<div class="cont">Documentation</div>
-					</SidebarItem>
-					<Show when={extraButtons() != undefined}>
-						<For each={extraButtons()}>
-							{(button) => (
-								<SidebarItem
-									innerhtml={button.html}
-									href={button.href}
-									location={props.location}
-									selectedPath={button.selected_url}
-									selectedPathStart={button.selected_url_start}
-									color={button.color}
-									closeSidebar={() => props.setVisible(false)}
-								></SidebarItem>
-							)}
-						</For>
-					</Show>
-					<div class="cont sidebar-divider">INSTANCES</div>
-					<For each={instanceButtons()}>
-						{([info, type]) => {
-							let url =
-								type == "instance"
-									? `/instance/${info.id}`
-									: `/profile_config/${info.id}`;
-
-							let icon =
-								info.icon == null ? (
-									<Icon icon={Box} size="1.5rem" />
-								) : (
-									<img
-										src={getInstanceIconSrc(info.icon)}
-										style="width:1.5rem"
-									/>
-								);
-
-							return (
-								<SidebarItem
-									href={url}
-									location={props.location}
-									selectedPath={url}
-									color={`var(--${type})`}
-									selectedBg={`var(--${type}bg)`}
-									closeSidebar={() => props.setVisible(false)}
-								>
-									<div class="cont">{icon}</div>
-									<div class="cont">
-										{info.name == undefined ? info.id : info.name}
-									</div>
-								</SidebarItem>
-							);
-						}}
-					</For>
-				</div>
+		<div
+			id="sidebar"
+			style={`${props.visible ? "" : "width:0px"}`}
+			onmouseleave={() => props.setVisible(false)}
+		>
+			<div class="cont start">
+				<a href="/settings" class="cont" style="color:var(--fg);padding:1rem">
+					<Icon icon={Gear} size="1rem" />
+				</a>
 			</div>
-		</Show>
+			<div id="sidebar-items">
+				<SidebarItem
+					href="/"
+					location={props.location}
+					selectedPath="/"
+					color="var(--instance)"
+					selectedBg="var(--instancebg)"
+					closeSidebar={() => props.setVisible(false)}
+				>
+					<div class="cont" style="margin-top:-0.1rem;color:var(--instance)">
+						<Home />
+					</div>
+					<div class="cont">Home</div>
+				</SidebarItem>
+				<SidebarItem
+					href="/packages/0"
+					location={props.location}
+					selectedPathStart="/packages"
+					color="var(--package)"
+					selectedBg="var(--packagebg)"
+					closeSidebar={() => props.setVisible(false)}
+				>
+					<div class="cont" style="color:var(--package)">
+						<Box />
+					</div>
+					<div class="cont">Packages</div>
+				</SidebarItem>
+				<SidebarItem
+					href="/plugins"
+					location={props.location}
+					selectedPathStart="/plugins"
+					color="var(--plugin)"
+					selectedBg="var(--pluginbg)"
+					closeSidebar={() => props.setVisible(false)}
+				>
+					<div class="cont" style="margin-top:-0.1rem;color:var(--plugin)">
+						<Jigsaw />
+					</div>
+					<div class="cont">Plugins</div>
+				</SidebarItem>
+				<SidebarItem
+					href="/docs"
+					location={props.location}
+					selectedPathStart="/docs"
+					color="var(--profile)"
+					selectedBg="var(--profilebg)"
+					closeSidebar={() => props.setVisible(false)}
+				>
+					<div class="cont" style="color:var(--profile)">
+						<Menu />
+					</div>
+					<div class="cont">Documentation</div>
+				</SidebarItem>
+				<Show when={extraButtons() != undefined}>
+					<For each={extraButtons()}>
+						{(button) => (
+							<SidebarItem
+								innerhtml={button.html}
+								href={button.href}
+								location={props.location}
+								selectedPath={button.selected_url}
+								selectedPathStart={button.selected_url_start}
+								color={button.color}
+								closeSidebar={() => props.setVisible(false)}
+							></SidebarItem>
+						)}
+					</For>
+				</Show>
+				<div class="cont sidebar-divider">INSTANCES</div>
+				<For each={instanceButtons()}>
+					{([info, type]) => {
+						let url =
+							type == "instance"
+								? `/instance/${info.id}`
+								: `/profile_config/${info.id}`;
+
+						let icon =
+							info.icon == null ? (
+								<Icon icon={Box} size="1.5rem" />
+							) : (
+								<img src={getInstanceIconSrc(info.icon)} style="width:1.5rem" />
+							);
+
+						return (
+							<SidebarItem
+								href={url}
+								location={props.location}
+								selectedPath={url}
+								color={`var(--${type})`}
+								selectedBg={`var(--${type}bg)`}
+								closeSidebar={() => props.setVisible(false)}
+							>
+								<div class="cont">{icon}</div>
+								<div class="cont">
+									{info.name == undefined ? info.id : info.name}
+								</div>
+							</SidebarItem>
+						);
+					}}
+				</For>
+			</div>
+		</div>
 	);
 }
 
