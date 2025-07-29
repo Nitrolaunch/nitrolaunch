@@ -377,6 +377,7 @@ function Item(props: ItemProps) {
 							});
 						}}
 						selected={props.sectionKind === "pinned"}
+						circle
 					/>
 				</div>
 			</Show>

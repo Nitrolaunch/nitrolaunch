@@ -11,3 +11,7 @@
 .icon-button > svg {
 	pointer-events: none;
 }
+
+.icon-button.circle {
+	border-radius: 50%;
+}

@@ -15,6 +15,7 @@ import { listen, UnlistenFn } from "@tauri-apps/api/event";
 import { InstanceInfo, InstanceOrProfile } from "../../types";
 import Icon from "../Icon";
 import UserWidget from "../user/UserWidget";
+import IconButton from "../input/IconButton";
 
 export default function Sidebar(props: SidebarProps) {
 	let [extraButtons, _] = createResource(async () => {
@@ -103,8 +104,17 @@ export default function Sidebar(props: SidebarProps) {
 				<UserWidget onSelect={props.onSelectUser} />
 			</div>
 			<div class="cont start">
-				<a href="/settings" class="cont" style="color:var(--fg);padding:1rem">
-					<Icon icon={Gear} size="1rem" />
+				<a href="/settings" class="cont" style="color:var(--fg);padding:0.55rem">
+					<IconButton
+						icon={Gear}
+						size="1.75rem"
+						color="var(--bg0)"
+						selectedColor="var(--accent)"
+						onClick={() => {}}
+						selected={false}
+						circle
+						hoverBackground="var(--bg2)"
+					/>
 				</a>
 			</div>
 			<div id="sidebar-items">

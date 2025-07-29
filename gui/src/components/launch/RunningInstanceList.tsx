@@ -56,7 +56,7 @@ export default function RunningInstanceList(props: RunningInstanceListProps) {
 			</Show>
 			<For each={instances()}>
 				{(instance) => {
-					let info = instanceInfo().find((x) => x.id == instance);
+					let info = () => instanceInfo().find((x) => x.id == instance);
 
 					let name =
 						info != undefined && info.name != undefined ? info.name : instance;
@@ -64,7 +64,7 @@ export default function RunningInstanceList(props: RunningInstanceListProps) {
 					return (
 						<img
 							src={getInstanceIconSrc(
-								info == undefined ? undefined : info.icon
+								info() == undefined ? undefined : info()!.icon
 							)}
 							class="running-instance-list-icon"
 							onclick={() => {

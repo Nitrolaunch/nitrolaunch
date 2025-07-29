@@ -5,8 +5,15 @@ import Icon, { HasWidthHeight } from "../Icon";
 export default function IconButton(props: IconButtonProps) {
 	let [isHovered, setIsHovered] = createSignal(false);
 
-	let backgroundColor = () =>
-		props.selected ? props.selectedColor : props.color;
+	let backgroundColor = () => {
+		if (props.selected) {
+			return props.selectedColor;
+		} else if (isHovered() && props.hoverBackground != undefined) {
+			return props.hoverBackground;
+		} else {
+			return props.color;
+		}
+	};
 
 	let border = () => {
 		if (props.hoverBorder != undefined && isHovered()) {
@@ -23,9 +30,11 @@ export default function IconButton(props: IconButtonProps) {
 	let iconColorStyle =
 		props.iconColor == undefined ? "" : `color:${props.iconColor}`;
 
+	let isCircle = props.circle == undefined ? false : props.circle;
+
 	return (
 		<div
-			class="cont icon-button"
+			class={`cont icon-button ${isCircle ? "circle" : ""}`}
 			style={`${colorStyle()};width:${props.size};height:${
 				props.size
 			};${iconColorStyle}`}
@@ -45,6 +54,8 @@ export interface IconButtonProps {
 	iconColor?: string;
 	border?: string;
 	hoverBorder?: string;
+	hoverBackground?: string;
+	circle?: boolean;
 	size: string;
 	selected: boolean;
 	onClick: (e: Event) => void;

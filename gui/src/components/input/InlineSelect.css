@@ -18,6 +18,8 @@
 	user-select: none;
 	border: 0.15rem solid;
 	height: 2.3rem;
+
+	transition: border-color 0.25s;
 }
 
 .inline-select-option.connected {

@@ -55,6 +55,8 @@
 	font-weight: bold;
 	box-sizing: border-box;
 	border-bottom: 0.15rem solid var(--bg);
+
+	transition: border-color 0.15s;
 }
 
 .navbar-button-text {

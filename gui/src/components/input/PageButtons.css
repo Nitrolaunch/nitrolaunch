@@ -1,11 +1,21 @@
 .page-button {
-	width: 2.3rem;
-	height: 2.5rem;
+	width: 2.5rem;
+	aspect-ratio: 1;
+
 	background-color: var(--bg2);
 	border: 0.15rem solid var(--bg3);
 	border-radius: var(--round);
+
+	cursor: pointer;
+
+	transition: border-color 0.15s;
+}
+
+.page-button:hover {
+	border-color: var(--bg4);
 }
 
 .page-button.selected {
 	background-color: var(--bg3);
+	border-color: var(--bg4);
 }

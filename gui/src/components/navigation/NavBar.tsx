@@ -21,6 +21,8 @@ export default function NavBar(props: NavBarProps) {
 								selectedColor="var(--accent)"
 								onClick={props.onSidebarToggle}
 								selected={false}
+								circle
+								hoverBackground="var(--bg3)"
 							/>
 						</div>
 						<IconButton
@@ -32,6 +34,8 @@ export default function NavBar(props: NavBarProps) {
 								history.back();
 							}}
 							selected={false}
+							circle
+							hoverBackground="var(--bg3)"
 						/>
 						<IconButton
 							icon={AngleRight}
@@ -42,6 +46,8 @@ export default function NavBar(props: NavBarProps) {
 								history.forward();
 							}}
 							selected={false}
+							circle
+							hoverBackground="var(--bg3)"
 						/>
 					</div>
 					<div class="navbar-item" id="navbar-buttons">
@@ -124,7 +130,7 @@ function NavbarButton(props: NavbarButtonProps) {
 	};
 
 	let color = () => (selected() ? props.color : "var(--fg)");
-	let borderColor = () => (selected() ? props.color : "");
+	let borderColor = () => (selected() || isHovered() ? props.color : "");
 
 	return (
 		<a
