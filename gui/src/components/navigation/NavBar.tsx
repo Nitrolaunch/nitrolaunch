@@ -141,9 +141,7 @@ function NavbarButton(props: NavbarButtonProps) {
 			onmouseleave={() => setIsHovered(false)}
 		>
 			{props.icon}
-			<Show when={isHovered() || selected()}>
-				<div class="navbar-button-text">{props.text}</div>
-			</Show>
+			<div class="navbar-button-text">{props.text}</div>
 		</a>
 	);
 }
