@@ -61,6 +61,7 @@ function LoginWindowButton(props: LoginWindowButtonProps) {
 				setOpening(true);
 				const loginWindow = new WebviewWindow("microsoft_login", {
 					url: props.url,
+					title: "Microsoft Login"
 				});
 				loginWindow.once("tauri://error", (e) => {
 					console.error("Failed to create login window: " + e.payload);
