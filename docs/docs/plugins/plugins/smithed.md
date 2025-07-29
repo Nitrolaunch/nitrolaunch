@@ -1,23 +1,9 @@
 # Smithed
 ID: `smithed`
 
-The Smithed plugin will download packs directly from Smithed and install them on your instances.
+The Smithed plugin will add the `smithed` package repository, allowing you to install Smithed packs as packages on your instances and profiles.
 
 ## Usage
-Specify the packs you want in the `smithed_packs` field on an instance. You can use a version after the `@` symbol to specify a certain version of the pack. You can do the same thing with the `smithed_bundles` field to install bundles.
+Browse packages under the Smithed repository or add them manually in your config by putting `smithed:` before the package ID.
 
-Example:
-```
-{
-	"smithed_packs": [
-		"pack1",
-		"pack2@version",
-		...
-	],
-	"smithed_bundles": [
-		"bundle1",
-		"bundle2@version",
-		...
-	]
-}
-```
+This plugin will also provide the profile `smithed-base`, which sets up Weld and a global datapacks mod to make playing Smithed packs easy.
