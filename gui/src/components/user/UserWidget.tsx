@@ -80,9 +80,15 @@ export default function UserWidget(props: UserWidgetProps) {
 				<Show
 					when={userData() != undefined && userData()!.currentUser != undefined}
 					fallback={
-						<div class="cont" id="user-widget-placeholder">
-							No User Selected
-						</div>
+						<UserTile
+							user={{
+								id: "",
+								type: "other",
+								username: "No User Selected",
+							}}
+							isFeatured={true}
+							onclick={() => {}}
+						/>
 					}
 				>
 					<UserTile
