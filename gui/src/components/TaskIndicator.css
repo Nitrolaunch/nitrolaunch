@@ -2,7 +2,7 @@
 	width: 11rem;
 	height: 1.8rem;
 
-	background-color: black;
+	background-color: var(--bg-1);
 	border: 0.15rem solid;
 	border-radius: var(--round2);
 

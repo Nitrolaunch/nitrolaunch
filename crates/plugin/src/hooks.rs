@@ -632,3 +632,28 @@ pub struct SyncCustomPackageRepositoryArg {
 	/// The repository that is being synced
 	pub repository: String,
 }
+
+def_hook!(
+	AddThemes,
+	"add_themes",
+	"Hook for adding new GUI themes",
+	(),
+	Vec<Theme>,
+	1,
+);
+
+/// Data for a GUI theme
+#[derive(Serialize, Deserialize, Default)]
+#[serde(default)]
+pub struct Theme {
+	/// A unique ID for the theme
+	pub id: String,
+	/// The name of the theme
+	pub name: String,
+	/// A description for the theme
+	pub description: Option<String>,
+	/// The CSS data for the theme
+	pub css: String,
+	/// A css color that identifies this theme
+	pub color: String,
+}

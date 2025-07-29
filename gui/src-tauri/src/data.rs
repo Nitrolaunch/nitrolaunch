@@ -32,6 +32,8 @@ pub struct LauncherData {
 	pub last_added_package: Option<(String, InstanceOrProfile)>,
 	/// The instance or profile that was last opened
 	pub last_opened_instance: Option<(String, InstanceOrProfile)>,
+	/// The currently selected theme
+	pub theme: Option<String>,
 }
 
 impl LauncherData {

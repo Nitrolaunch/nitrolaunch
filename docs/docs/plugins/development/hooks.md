@@ -400,13 +400,16 @@ Adds custom buttons to the sidebar
 - Result:
 
 ```
-{
-	"html": string,
-	"href": string,
-	"selected_url": string | null,
-	"selected_url_start": string | null,
-	"color": string
-}
+[
+	{
+		"html": string,
+		"href": string,
+		"selected_url": string | null,
+		"selected_url_start": string | null,
+		"color": string
+	},
+	...
+]
 ```
 
 - `html`: The inner HTML of the button
@@ -522,6 +525,27 @@ Synchronizes the cache for a custom repository that this plugin registered with 
 ```
 
 - Result: None
+
+### `add_themes`
+
+Adds custom themes for the GUI
+
+- Argument: None
+
+- Result:
+
+```
+[
+	{
+		"id": string,
+		"name": string,
+		"description": string | null,
+		"css": string,
+		"color": string,
+	},
+	...
+]
+```
 
 ## Common Types
 

@@ -77,3 +77,11 @@ export interface PackageSearchResults {
 	total_results: number;
 	previews: { [id: string]: [PackageMeta, PackageProperties] };
 }
+
+export interface Theme {
+	id: string;
+	name: string;
+	description?: string;
+	css: string;
+	color: string;
+}

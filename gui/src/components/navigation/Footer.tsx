@@ -154,7 +154,7 @@ export default function Footer(props: FooterProps) {
 								size="22px"
 								color="var(--bg2)"
 								selectedColor="var(--package)"
-								selectedBg="black"
+								selectedBg="var(--bg-1)"
 								onClick={async () => {
 									try {
 										await invoke("sync_packages");
@@ -344,16 +344,17 @@ function ActionButton(props: ActionButtonProps) {
 				return "var(--instancebg)";
 			} else if (
 				props.mode == FooterMode.Profile ||
-				props.mode == FooterMode.SaveProfileConfig
+				props.mode == FooterMode.SaveProfileConfig ||
+				props.mode == FooterMode.SaveSettings
 			) {
 				return "var(--profilebg)";
 			} else if (props.mode == FooterMode.PreviewPackage) {
-				return "black";
+				return "var(--bg-1)";
 			} else if (props.mode == FooterMode.InstallPackage) {
 				return "var(--packagebg)";
 			}
 		}
-		return "black";
+		return "var(--bg-1)";
 	};
 	let borderColor = () => {
 		if (props.selected) {
@@ -364,7 +365,8 @@ function ActionButton(props: ActionButtonProps) {
 				return "var(--instance)";
 			} else if (
 				props.mode == FooterMode.Profile ||
-				props.mode == FooterMode.SaveProfileConfig
+				props.mode == FooterMode.SaveProfileConfig ||
+				props.mode == FooterMode.SaveSettings
 			) {
 				return "var(--profile)";
 			} else if (
@@ -374,7 +376,7 @@ function ActionButton(props: ActionButtonProps) {
 				return "var(--package)";
 			}
 		}
-		return "var(--bg3)";
+		return "var(--fg3)";
 	};
 	let message = () => {
 		if (props.mode == FooterMode.Instance) {
@@ -387,7 +389,8 @@ function ActionButton(props: ActionButtonProps) {
 			return "Edit";
 		} else if (
 			props.mode == FooterMode.SaveInstanceConfig ||
-			props.mode == FooterMode.SaveProfileConfig
+			props.mode == FooterMode.SaveProfileConfig ||
+			props.mode == FooterMode.SaveSettings
 		) {
 			return "Save";
 		} else if (props.mode == FooterMode.PreviewPackage) {
@@ -407,7 +410,8 @@ function ActionButton(props: ActionButtonProps) {
 			return <Gear />;
 		} else if (
 			props.mode == FooterMode.SaveInstanceConfig ||
-			props.mode == FooterMode.SaveProfileConfig
+			props.mode == FooterMode.SaveProfileConfig ||
+			props.mode == FooterMode.SaveSettings
 		) {
 			return <Check />;
 		} else if (props.mode == FooterMode.PreviewPackage) {
@@ -490,6 +494,7 @@ export enum FooterMode {
 	SaveProfileConfig = "save_profile_config",
 	PreviewPackage = "preview_package",
 	InstallPackage = "install_package",
+	SaveSettings = "save_settings",
 }
 
 // Launches an instance

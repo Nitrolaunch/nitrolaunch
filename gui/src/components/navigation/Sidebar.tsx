@@ -8,7 +8,7 @@ import {
 	Show,
 } from "solid-js";
 import "./Sidebar.css";
-import { Box, Home, Jigsaw, Menu } from "../../icons";
+import { Box, Gear, Home, Jigsaw, Menu } from "../../icons";
 import { Location } from "@solidjs/router";
 import { invoke } from "@tauri-apps/api";
 import { getInstanceIconSrc, stringCompare } from "../../utils";
@@ -115,6 +115,11 @@ export default function Sidebar(props: SidebarProps) {
 	return (
 		<Show when={props.visible}>
 			<div id="sidebar">
+				<div class="cont start">
+					<a href="/settings" class="cont" style="color:var(--fg);padding:1rem">
+						<Icon icon={Gear} size="1rem" />
+					</a>
+				</div>
 				<div id="sidebar-items">
 					<SidebarItem
 						href="/"
@@ -183,7 +188,7 @@ export default function Sidebar(props: SidebarProps) {
 							)}
 						</For>
 					</Show>
-					<div class="cont sidebar-divider">QUICK LINKS</div>
+					<div class="cont sidebar-divider">INSTANCES</div>
 					<For each={instanceButtons()}>
 						{([info, type]) => {
 							let url =

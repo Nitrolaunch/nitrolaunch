@@ -14,6 +14,7 @@
 	--fg: #f6f6f6;
 	--fg2: #d3d3d3;
 	--fg3: #777777;
+	--bg-1: #000000;
 	--bg0: #101010;
 	--bg: #161616;
 	--bg2: #1d1d1d;
@@ -22,6 +23,7 @@
 	--bg2disabled: #1b1b1b;
 	--shadow: #121212;
 	--text: var(--fg);
+	--transparent-dark: #111111bb;
 
 	--instance: #7ee91b;
 	--profile: #1be9e9;

@@ -1,0 +1,30 @@
+:root {
+	--fg: #101010;
+	--fg2: #161616;
+	--fg3: #1d1d1d;
+	--bg-1: #a3a3a3;
+	--bg0: #f1f1f1;
+	--bg: #eeeeee;
+	--bg2: #eeeeee;
+	--bg3: #a3a3a3;
+	--bg4: #6b6b6b;
+
+	--bg2disabled: #1b1b1b;
+	--shadow: #121212;
+	--text: var(--fg);
+	--transparent-dark: #6e6e6ebb;
+
+	--instance: #3aca16;
+	--profile: #1be9e9;
+	--package: #e9671b;
+	--plugin: #5b65ff;
+	--warning: #e9ca1b;
+	--error: #d40e3d;
+
+	--instancebg: #dcf1c9;
+	--profilebg: #cef3f3;
+	--packagebg: #ebd1c2;
+	--pluginfg: #11143f;
+	--pluginbg: #daddfc;
+	--errorbg: #f0c4ce;
+}

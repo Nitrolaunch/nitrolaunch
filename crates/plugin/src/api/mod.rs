@@ -169,6 +169,7 @@ impl CustomPlugin {
 		"sync_custom_package_repository",
 		SyncCustomPackageRepository
 	);
+	hook_interface!(add_themes, "add_themes", AddThemes);
 
 	/// Handle a hook
 	fn handle_hook<H: Hook>(

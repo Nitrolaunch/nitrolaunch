@@ -103,7 +103,7 @@
 	height: 2.5rem;
 	display: grid;
 	grid-template-columns: repeat(3, minmax(0, 1fr));
-	background-color: #111111bb;
+	background-color: var(--transparent-dark);
 	border-top-left-radius: var(--round2);
 	border-top-right-radius: var(--round2);
 }

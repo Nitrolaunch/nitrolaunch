@@ -8,6 +8,8 @@
 	box-sizing: border-box;
 	border: 0.15rem solid var(--bg2);
 	border-left-width: 0px;
+
+	overflow-y: scroll;
 }
 
 .sidebar-item {

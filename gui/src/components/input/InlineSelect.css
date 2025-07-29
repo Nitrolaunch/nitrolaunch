@@ -52,7 +52,7 @@
 }
 
 .inline-select-option.connected.selected {
-	background-color: black;
+	background-color: var(--bg-1);
 }
 
 .inline-select-option.disconnected.selected {

@@ -4,7 +4,8 @@ use anyhow::Context;
 use itertools::Itertools;
 use nitrolaunch::plugin::PluginManager;
 use nitrolaunch::plugin_crate::hooks::{
-	AddSidebarButtons, GetPage, InjectPageScript, InjectPageScriptArg, SidebarButton,
+	AddSidebarButtons, AddThemes, GetPage, InjectPageScript, InjectPageScriptArg, SidebarButton,
+	Theme,
 };
 use nitrolaunch::shared::output::{MessageContents, MessageLevel, NitroOutput};
 use nitrolaunch::{plugin::install::get_verified_plugins, shared::output::NoOp};
@@ -262,4 +263,33 @@ pub async fn get_plugin_page(
 	}
 
 	Ok(None)
+}
+
+#[tauri::command]
+pub async fn get_themes(
+	state: tauri::State<'_, State>,
+	app_handle: tauri::AppHandle,
+) -> Result<Vec<Theme>, String> {
+	let mut output = LauncherOutput::new(state.get_output(app_handle));
+
+	let config = fmt_err(
+		load_config(&state.paths, &mut NoOp)
+			.await
+			.context("Failed to load config"),
+	)?;
+
+	let results = fmt_err(
+		config
+			.plugins
+			.call_hook(AddThemes, &(), &state.paths, &mut output)
+			.await,
+	)?;
+
+	let mut out = Vec::new();
+	for result in results {
+		let result = fmt_err(result.result(&mut output).await)?;
+		out.extend(result);
+	}
+
+	Ok(out)
 }
