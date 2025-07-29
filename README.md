@@ -14,7 +14,7 @@ In addition, Nitrolaunch is extremely modular, allowing you to build your perfec
 
 ## App or Command line
 
-Nitrolaunch will work how you do, as an easy-to-use desktop app or an intuitive CLI
+Nitrolaunch will work how you do, as an intuitive desktop app or CLI
 
 |                      App                      |                    CLI                    |
 | :-------------------------------------------: | :---------------------------------------: |
@@ -34,7 +34,7 @@ Extend the launcher with features like new modloaders and sources for mods, tran
 
 ## Modern Packaging
 
-Install packages from sources like Modrinth and Smithed. Nitrolaunch doesn't just support mods, it can install datapacks, resource packs, shaders, and more!
+Install mods, datapacks, shaders, and more from sources like Modrinth and Smithed.
 
 ![](docs/assets/screenshots/gui_packages.png)
 
@@ -54,9 +54,9 @@ Nitrolaunch has many use cases for different applications
 
 This is the main use case of most people, and is an important focus of the ecosystem.
 
-### A GUI launcher
+### A desktop app
 
-All the functionalities of the CLI in a more approachable format as a desktop application.
+All the functionalities of the CLI in a more approachable format.
 
 ### A library for your launcher
 
