@@ -94,7 +94,11 @@ export default function Sidebar(props: SidebarProps) {
 	});
 
 	return (
-		<div id="sidebar" style={`${props.visible ? "" : "width:0px"}`}>
+		<div
+			id="sidebar"
+			style={`${props.visible ? "" : "width:0px"}`}
+			onmouseleave={() => props.setVisible(false)}
+		>
 			<div class="cont" style="padding:0.25rem">
 				<UserWidget onSelect={props.onSelectUser} />
 			</div>
@@ -204,10 +208,6 @@ export default function Sidebar(props: SidebarProps) {
 					}}
 				</For>
 			</div>
-			<div
-				id="sidebar-mousebox"
-				onmouseenter={() => props.setVisible(false)}
-			></div>
 		</div>
 	);
 }
