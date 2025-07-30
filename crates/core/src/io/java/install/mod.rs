@@ -137,7 +137,7 @@ impl JavaInstallation {
 		let jvm_path = self.get_jvm_path();
 		if !jvm_path.exists() || !jvm_path.is_file() {
 			bail!(
-				"Java executable (path {:?}) does not exist or is a file",
+				"Java executable (path {:?}) does not exist or is a folder",
 				jvm_path
 			);
 		}
