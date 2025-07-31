@@ -124,6 +124,16 @@ impl JavaInstallation {
 	/// Get the path to the JVM.
 	pub fn get_jvm_path(&self) -> PathBuf {
 		let filename = format!("java{}", EXE_SUFFIX);
+
+		// In case it was set as the JVM path
+		if self
+			.path
+			.file_name()
+			.is_some_and(|x| x.to_string_lossy() == filename)
+		{
+			return self.path.clone();
+		}
+
 		let bin_path = self.path.join("bin").join(&filename);
 		if bin_path.exists() {
 			bin_path
@@ -200,7 +210,13 @@ async fn install_adoptium(
 			.persistent
 			.get_java_path(PersistentDataJavaInstallation::Adoptium, major_version)
 		{
-			Ok(directory)
+			if directory.exists() {
+				Ok(directory)
+			} else {
+				update_adoptium(major_version, params, o)
+					.await
+					.context("Failed to update Adoptium Java")
+			}
 		} else {
 			update_adoptium(major_version, params, o)
 				.await
@@ -326,7 +342,13 @@ async fn update_adoptium(
 		MessageLevel::Important,
 	);
 
-	Ok(extracted_bin_dir)
+	// MacOS does some screwery
+	#[cfg(not(target_os = "macos"))]
+	let final_dir = extracted_bin_dir;
+	#[cfg(target_os = "macos")]
+	let final_dir = extracted_bin_dir.join("Contents/Home");
+
+	Ok(final_dir)
 }
 
 /// Updates Zulu and returns the path to the installation
