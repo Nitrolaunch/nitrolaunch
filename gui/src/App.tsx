@@ -18,6 +18,7 @@ import InstanceInfo from "./pages/instance/InstanceInfo";
 import UserPage from "./pages/user/UserPage";
 import Global from "./Global";
 import Settings from "./pages/Settings";
+import "./components/package/PackageDescription.css";
 
 export default function App() {
 	const [footerData, setFooterData] = createSignal<FooterData>({

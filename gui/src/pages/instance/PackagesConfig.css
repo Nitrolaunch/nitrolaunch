@@ -40,7 +40,7 @@
 }
 
 .configured-package {
-	height: 4rem;
+	height: 4.5rem;
 	width: 100%;
 	display: grid;
 	grid-template-columns: minmax(0, 0.4fr) minmax(0, 2fr) minmax(0, 1fr) minmax(
@@ -50,6 +50,7 @@
 	background-color: var(--bg0);
 	border: 0.15rem solid var(--bg3);
 	border-radius: var(--round);
+	box-sizing: border-box;
 }
 
 .configured-package-icon {

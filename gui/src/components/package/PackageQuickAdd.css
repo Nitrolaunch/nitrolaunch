@@ -1,0 +1,83 @@
+.package-quick-add {
+	width: 40rem;
+
+	gap: 0;
+
+	background-color: var(--bg2);
+	border: 0.15rem solid var(--bg3);
+
+	box-shadow: var(--shadow-offset) var(--shadow-offset) var(--transparent-dark);
+}
+
+.package-quick-add-header {
+	width: 100%;
+	overflow-x: scroll;
+
+	padding: 1rem;
+	box-sizing: border-box;
+
+	border-bottom: 0.15rem solid var(--bg3);
+}
+
+.package-quick-add-repos {
+	width: 15rem;
+}
+
+.package-quick-add-selector {
+	display: grid;
+	grid-template-columns: 1fr 2fr;
+
+	width: 100%;
+	height: 20rem;
+}
+
+.package-quick-add-options {
+	gap: 0;
+
+	height: 100%;
+	overflow-y: scroll;
+
+	border-right: 0.15rem solid var(--bg3);
+}
+
+.package-quick-add-option {
+	display: grid;
+	grid-template-columns: 1fr 5fr;
+
+	width: 100%;
+	height: 2.5rem;
+
+	cursor: pointer;
+
+	user-select: none;
+	-webkit-user-select: none;
+}
+
+.package-quick-add-option-icon > img {
+	width: 1.3rem;
+	border-radius: var(--round);
+}
+
+.package-quick-add-option-name {
+	justify-content: flex-start;
+	text-wrap: nowrap;
+	overflow: hidden;
+}
+
+.package-quick-add-option.selected {
+	background-color: var(--bg);
+}
+
+.package-quick-add-preview {
+	padding: 0.5rem;
+
+	overflow-y: scroll;
+}
+
+.package-quick-add-preview-header {
+	font-weight: bold;
+}
+
+.package-quick-add-preview-short-description {
+	color: var(--fg3);
+}

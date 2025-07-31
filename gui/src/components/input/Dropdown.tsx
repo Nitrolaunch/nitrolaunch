@@ -3,7 +3,6 @@ import {
 	createMemo,
 	createSignal,
 	For,
-	Index,
 	JSX,
 	Match,
 	Show,
@@ -11,12 +10,12 @@ import {
 } from "solid-js";
 import "./Dropdown.css";
 import Tip from "../dialog/Tip";
-import { canonicalizeListOrSingle } from "../../utils/values";
+import { canonicalizeListOrSingle, undefinedEmpty } from "../../utils/values";
 import Icon from "../Icon";
 import { AngleDown, AngleRight } from "../../icons";
 
 export default function Dropdown(props: DropdownProps) {
-	let [isOpen, setIsOpen] = createSignal(false);
+	let [isOpen, setIsOpen] = createSignal(props.startOpen == true);
 
 	let selectFunction = (value: string | undefined) => {
 		if (props.onChange != undefined) {
@@ -78,10 +77,10 @@ export default function Dropdown(props: DropdownProps) {
 								e.stopPropagation();
 							}}
 							onkeyup={(e: any) => {
-								if (e.target.value == "") {
-									setSearch(undefined);
-								} else {
-									setSearch(e.target.value);
+								let search = undefinedEmpty(e.target.value);
+								setSearch(search);
+								if (props.customSearchFunction != undefined) {
+									props.customSearchFunction(search);
 								}
 							}}
 							onkeydown={(e: any) => {
@@ -127,6 +126,7 @@ export default function Dropdown(props: DropdownProps) {
 						let isVisible = createMemo(() => {
 							return (
 								search() == undefined ||
+								props.customSearchFunction != undefined ||
 								(option.value != undefined && option.value!.includes(search()!))
 							);
 						});
@@ -161,6 +161,8 @@ export interface DropdownProps {
 	allowEmpty?: boolean;
 	optionClass?: string;
 	zIndex?: string;
+	customSearchFunction?: (search: string | undefined) => void;
+	startOpen?: boolean;
 }
 
 function DropdownOption(props: OptionProps) {
@@ -197,7 +199,14 @@ function DropdownOption(props: OptionProps) {
 				props.isLast ? "last" : "not-last"
 			}`}
 			style={`color:${textColor()};background-color:${backgroundColor()}`}
-			onclick={() => props.onSelect(props.option.value)}
+			onclick={() => {
+				if (
+					props.option.isSelectable == undefined ||
+					props.option.isSelectable == true
+				) {
+					props.onSelect(props.option.value);
+				}
+			}}
 			onmouseenter={() => setIsHovered(true)}
 			onmouseleave={() => setIsHovered(false)}
 		>
@@ -233,4 +242,5 @@ export interface Option {
 	color?: string;
 	selectedTextColor?: string;
 	tip?: JSX.Element;
+	isSelectable?: boolean;
 }

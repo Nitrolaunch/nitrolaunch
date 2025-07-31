@@ -930,18 +930,33 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 						derivedClientPackages={derivedPackages()[1]}
 						derivedServerPackages={derivedPackages()[2]}
 						onRemove={(pkg, category) => {
+							let func = (packages: PackageConfig[]) =>
+								packages.filter((x) => !packageConfigsEqual(x, pkg));
+
 							if (category == "global") {
-								setGlobalPackages((packages) =>
-									packages.filter((x) => !packageConfigsEqual(x, pkg))
-								);
+								setGlobalPackages(func);
 							} else if (category == "client") {
-								setClientPackages((packages) =>
-									packages.filter((x) => !packageConfigsEqual(x, pkg))
-								);
+								setClientPackages(func);
 							} else if (category == "server") {
-								setServerPackages((packages) =>
-									packages.filter((x) => !packageConfigsEqual(x, pkg))
-								);
+								setServerPackages(func);
+							}
+
+							setDirty();
+						}}
+						onAdd={(pkg, category) => {
+							let func = (packages: PackageConfig[]) => {
+								if (!packages.some((x) => packageConfigsEqual(x, pkg))) {
+									packages.push(pkg);
+								}
+								return packages;
+							};
+
+							if (category == "global") {
+								setGlobalPackages(func);
+							} else if (category == "client") {
+								setClientPackages(func);
+							} else if (category == "server") {
+								setServerPackages(func);
 							}
 
 							setDirty();

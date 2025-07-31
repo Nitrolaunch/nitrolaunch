@@ -1,4 +1,5 @@
 import {
+	createEffect,
 	createMemo,
 	createResource,
 	createSignal,
@@ -16,7 +17,7 @@ import {
 	stringCompare,
 } from "../../utils";
 import IconButton from "../../components/input/IconButton";
-import { AngleRight, Delete, Edit, Search, Upload } from "../../icons";
+import { Delete, Edit, Plus, Popout, Search, Upload } from "../../icons";
 import { errorToast } from "../../components/dialog/Toasts";
 import LoadingSpinner from "../../components/utility/LoadingSpinner";
 import ResolutionError, {
@@ -31,6 +32,7 @@ import DeriveIndicator from "./DeriveIndicator";
 import { InstanceConfig, PackageOverrides } from "./read_write";
 import Tip from "../../components/dialog/Tip";
 import EditableList from "../../components/input/EditableList";
+import PackageQuickAdd from "../../components/package/PackageQuickAdd";
 
 export default function PackagesConfig(props: PackagesConfigProps) {
 	let [filter, setFilter] = createSignal("user");
@@ -45,87 +47,95 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 		{ [key: string]: PackageProperties } | undefined
 	>();
 
-	let [allPackages, _] = createResource(
-		() => props.derivedServerPackages,
-		async () => {
-			let installedPackages: string[] = [];
-			if (!props.isProfile) {
-				let map: { [key: string]: LockfilePackage } = await invoke(
-					"get_instance_packages",
-					{ instance: props.id }
-				);
-				installedPackages = installedPackages.concat(Object.keys(map));
-			}
-
-			setInstalledPackages(installedPackages);
-
-			// Get a list of all packages. We fetch and list all of the packages, and each one is then filtered by checking which groups it is in.
-			let allPackages = installedPackages.concat([]);
-
-			let configsToAdd: PackageConfig[] = [];
-
-			configsToAdd = configsToAdd.concat(props.derivedGlobalPackages);
-			configsToAdd = configsToAdd.concat(props.derivedClientPackages);
-			configsToAdd = configsToAdd.concat(props.derivedServerPackages);
-			configsToAdd = configsToAdd.concat(props.globalPackages);
-			configsToAdd = configsToAdd.concat(props.clientPackages);
-			configsToAdd = configsToAdd.concat(props.serverPackages);
-
-			for (let pkg of configsToAdd.map(getPackageConfigRequest)) {
-				allPackages = allPackages.filter((x) => !packageConfigsEqual(x, pkg));
-				allPackages.push(pkgRequestToString(pkg));
-			}
-
-			// Get metadata and properties
-			let metas: any = {};
-			let properties: any = {};
-
-			let promises = [];
-			for (let pkg of allPackages) {
-				promises.push(
-					(async () => {
-						try {
-							return [
-								pkg,
-								await invoke("get_package_meta_and_props", { package: pkg }),
-							];
-						} catch (e) {
-							console.error("Failed to load package: " + e);
-							return "error";
-						}
-					})()
-				);
-			}
-
-			let results = await Promise.all(promises);
-			let errorExists = false;
-			for (let result of results) {
-				if (result == "error") {
-					errorExists = true;
-					continue;
-				}
-				let [id, [meta, props]] = result as [
-					string,
-					[PackageMeta, PackageProperties]
-				];
-				metas[id] = meta;
-				properties[id] = props;
-			}
-
-			if (errorExists) {
-				errorToast("One or more packages failed to load");
-			}
-
-			setPackageMetas(metas);
-			setPackageProps(properties);
-
-			allPackages.sort((a, b) =>
-				stringCompare(parsePkgRequest(a).id, parsePkgRequest(b).id)
+	let [allPackages, allPackagesMethods] = createResource(async () => {
+		let installedPackages: string[] = [];
+		if (!props.isProfile) {
+			let map: { [key: string]: LockfilePackage } = await invoke(
+				"get_instance_packages",
+				{ instance: props.id }
 			);
-
-			return allPackages;
+			installedPackages = installedPackages.concat(Object.keys(map));
 		}
-	);
+
+		setInstalledPackages(installedPackages);
+
+		// Get a list of all packages. We fetch and list all of the packages, and each one is then filtered by checking which groups it is in.
+		let allPackages = installedPackages.concat([]);
+
+		let configsToAdd: PackageConfig[] = [];
+
+		configsToAdd = configsToAdd.concat(props.derivedGlobalPackages);
+		configsToAdd = configsToAdd.concat(props.derivedClientPackages);
+		configsToAdd = configsToAdd.concat(props.derivedServerPackages);
+		configsToAdd = configsToAdd.concat(props.globalPackages);
+		configsToAdd = configsToAdd.concat(props.clientPackages);
+		configsToAdd = configsToAdd.concat(props.serverPackages);
+
+		for (let pkg of configsToAdd.map(getPackageConfigRequest)) {
+			allPackages = allPackages.filter((x) => !packageConfigsEqual(x, pkg));
+			allPackages.push(pkgRequestToString(pkg));
+		}
+
+		// Get metadata and properties
+		let metas: any = {};
+		let properties: any = {};
+
+		let promises = [];
+		for (let pkg of allPackages) {
+			promises.push(
+				(async () => {
+					try {
+						return [
+							pkg,
+							await invoke("get_package_meta_and_props", { package: pkg }),
+						];
+					} catch (e) {
+						console.error("Failed to load package: " + e);
+						return "error";
+					}
+				})()
+			);
+		}
+
+		let results = await Promise.all(promises);
+		let errorExists = false;
+		for (let result of results) {
+			if (result == "error") {
+				errorExists = true;
+				continue;
+			}
+			let [id, [meta, props]] = result as [
+				string,
+				[PackageMeta, PackageProperties]
+			];
+			metas[id] = meta;
+			properties[id] = props;
+		}
+
+		if (errorExists) {
+			errorToast("One or more packages failed to load");
+		}
+
+		setPackageMetas(metas);
+		setPackageProps(properties);
+
+		allPackages.sort((a, b) =>
+			stringCompare(parsePkgRequest(a).id, parsePkgRequest(b).id)
+		);
+
+		return allPackages;
+	});
+
+	createEffect(() => {
+		props.globalPackages;
+		props.clientPackages;
+		props.serverPackages;
+		props.derivedGlobalPackages;
+		props.derivedClientPackages;
+		props.derivedServerPackages;
+
+		allPackagesMethods.refetch();
+	});
 
 	let [resolutionError, resolutionErrorMethods] = createResource(async () => {
 		if (props.isProfile) {
@@ -144,6 +154,7 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 		}
 	});
 
+	let [showQuickAdd, setShowQuickAdd] = createSignal(false);
 	let [showOverridesModal, setShowOverridesModal] = createSignal(false);
 
 	return (
@@ -153,44 +164,69 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 					<ResolutionError error={resolutionError()!} />
 				</div>
 			</Show>
-			<div class="split3 fullwidth">
+			<div class="split fullwidth">
 				<div class="cont start fullwidth">
-					<IconTextButton
-						icon={Search}
-						size="1.5rem"
-						text="Browse Packages"
-						color="var(--bg2)"
-						selectedColor=""
-						selected={false}
-						onClick={() => {
-							window.location.href = getBrowseUrl(
-								0,
-								undefined,
-								"mod",
-								undefined,
-								{
-									minecraft_versions: canonicalizeListOrSingle(
-										props.minecraftVersion
-									),
-									loaders: canonicalizeListOrSingle(props.loader),
-									categories: [],
-								}
-							);
-						}}
-					/>
-				</div>
-				<div class="cont fullwidth">
-					<IconTextButton
-						icon={Edit}
-						size="1.3rem"
-						text="Manual Overrides"
-						color="var(--bg2)"
-						selectedColor=""
-						selected={false}
-						onClick={() => {
-							setShowOverridesModal(true);
-						}}
-					/>
+					<Tip tip="Add packages" side="top">
+						<div style="position:relative">
+							<IconButton
+								icon={Plus}
+								size="1.8rem"
+								color="var(--bg2)"
+								border="var(--bg3)"
+								onClick={() => setShowQuickAdd(!showQuickAdd())}
+								shadow
+							/>
+							<Show when={showQuickAdd()}>
+								<div
+									class="cont"
+									style="position:absolute; top: calc(100% + 1rem);z-index:15"
+									onmouseleave={() => setShowQuickAdd(false)}
+								>
+									<PackageQuickAdd
+										onAdd={(pkg) => props.onAdd(pkg, "global")}
+										version={props.minecraftVersion}
+										loader={props.loader}
+									/>
+								</div>
+							</Show>
+						</div>
+					</Tip>
+					<Tip tip="Browse Packages" side="top">
+						<IconButton
+							icon={Search}
+							size="1.8rem"
+							color="var(--bg2)"
+							border="var(--bg3)"
+							onClick={() => {
+								window.location.href = getBrowseUrl(
+									0,
+									undefined,
+									"mod",
+									undefined,
+									{
+										minecraft_versions: canonicalizeListOrSingle(
+											props.minecraftVersion
+										),
+										loaders: canonicalizeListOrSingle(props.loader),
+										categories: [],
+									}
+								);
+							}}
+							shadow
+						/>
+					</Tip>
+					<Tip tip="Edit Manual Overrides" side="top">
+						<IconButton
+							icon={Edit}
+							size="1.8rem"
+							color="var(--bg2)"
+							border="var(--bg3)"
+							onClick={() => {
+								setShowOverridesModal(true);
+							}}
+							shadow
+						/>
+					</Tip>
 				</div>
 				<div class="cont end fullwidth">
 					<IconTextButton
@@ -417,6 +453,7 @@ export interface PackagesConfigProps {
 	derivedServerPackages: PackageConfig[];
 	isProfile: boolean;
 	onRemove: (pkg: string, category: ConfiguredPackageCategory) => void;
+	onAdd: (pkg: string, category: ConfiguredPackageCategory) => void;
 	setGlobalPackages: (packages: PackageConfig[]) => void;
 	setClientPackages: (packages: PackageConfig[]) => void;
 	setServerPackages: (packages: PackageConfig[]) => void;
@@ -476,7 +513,7 @@ function ConfiguredPackage(props: ConfiguredPackageProps) {
 			<div class="cont configured-package-controls">
 				<Show when={isHovered()}>
 					<IconButton
-						icon={AngleRight}
+						icon={Popout}
 						size="24px"
 						color="var(--bg2)"
 						border="var(--bg3)"

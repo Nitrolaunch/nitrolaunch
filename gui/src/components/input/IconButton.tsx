@@ -6,7 +6,7 @@ export default function IconButton(props: IconButtonProps) {
 	let [isHovered, setIsHovered] = createSignal(false);
 
 	let backgroundColor = () => {
-		if (props.selected) {
+		if (props.selected == true && props.selectedColor != undefined) {
 			return props.selectedColor;
 		} else if (isHovered() && props.hoverBackground != undefined) {
 			return props.hoverBackground;
@@ -34,7 +34,9 @@ export default function IconButton(props: IconButtonProps) {
 
 	return (
 		<div
-			class={`cont icon-button ${isCircle ? "circle" : ""}`}
+			class={`cont icon-button ${isCircle ? "circle" : ""} ${
+				props.shadow == true ? "input-shadow" : ""
+			}`}
 			style={`${colorStyle()};width:${props.size};height:${
 				props.size
 			};${iconColorStyle}`}
@@ -49,14 +51,15 @@ export default function IconButton(props: IconButtonProps) {
 
 export interface IconButtonProps {
 	icon: (props: HasWidthHeight) => JSXElement;
+	size: string;
 	color: string;
-	selectedColor: string;
 	iconColor?: string;
+	selectedColor?: string;
 	border?: string;
 	hoverBorder?: string;
 	hoverBackground?: string;
 	circle?: boolean;
-	size: string;
-	selected: boolean;
+	shadow?: boolean;
+	selected?: boolean;
 	onClick: (e: Event) => void;
 }

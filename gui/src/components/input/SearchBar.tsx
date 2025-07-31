@@ -39,7 +39,7 @@ export default function SearchBar(props: SearchBarProps) {
 				type="text"
 				placeholder={props.placeholder}
 				value={term() == undefined ? "" : term()}
-				onkeyup={(e) => {
+				onkeyup={(e: any) => {
 					setTerm(e.target.value);
 					if (immediate) {
 						props.method(e.target.value);

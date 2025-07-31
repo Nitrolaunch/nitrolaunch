@@ -135,33 +135,6 @@
 	padding: 2rem;
 }
 
-#package-description {
-	flex-wrap: wrap;
-	box-sizing: border-box;
-	justify-content: flex-start;
-	align-items: flex-start;
-	text-align: left;
-	overflow: scroll;
-	color: var(--fg2);
-	max-width: 100%;
-}
-
-#package-description img,
-#package-description iframe {
-	max-width: 100%;
-	object-fit: contain;
-}
-
-#package-description div,
-#package-description p {
-	max-width: 100%;
-	text-wrap: balance;
-}
-
-#package-description iframe {
-	display: none;
-}
-
 #package-properties {
 	background-color: var(--bg2);
 	border: 0.15rem solid var(--bg4);

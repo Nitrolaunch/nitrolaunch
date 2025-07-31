@@ -239,8 +239,7 @@ export default function ViewPackage(props: ViewPackageProps) {
 							<div class="cont col package-shadow" id="package-tab-contents">
 								<Show when={selectedTab() == "description"}>
 									<div
-										class="cont col"
-										id="package-description"
+										class="cont col package-description"
 										innerHTML={longDescription()}
 									></div>
 								</Show>

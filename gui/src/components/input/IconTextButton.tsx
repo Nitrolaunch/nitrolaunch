@@ -9,7 +9,7 @@ export default function IconTextButton(props: IconTextButtonProps) {
 		props.selectedBg == undefined ? props.color : props.selectedBg;
 
 	const colorStyle = () =>
-		props.selected
+		props.selected == true && props.selectedColor != undefined
 			? `background-color:${selectedBg};border-color:${props.selectedColor}`
 			: isHovered()
 			? `background-color:${props.color};border-color:var(--bg4)`
@@ -41,13 +41,13 @@ export default function IconTextButton(props: IconTextButtonProps) {
 
 export interface IconTextButtonProps {
 	icon?: (props: HasWidthHeight) => JSXElement;
+	size: string;
 	text: string;
 	color: string;
-	selectedColor: string;
+	selectedColor?: string;
 	selectedBg?: string;
 	shadow?: boolean;
-	size: string;
-	selected: boolean;
+	selected?: boolean;
 	animate?: boolean;
 	style?: string;
 	onClick: () => void;

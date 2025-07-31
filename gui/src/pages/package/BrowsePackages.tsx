@@ -1,6 +1,5 @@
 import { useLocation, useParams } from "@solidjs/router";
 import "./BrowsePackages.css";
-import { invoke } from "@tauri-apps/api";
 import {
 	createEffect,
 	createResource,
@@ -10,28 +9,21 @@ import {
 } from "solid-js";
 import "@thisbeyond/solid-select/style.css";
 import PageButtons from "../../components/input/PageButtons";
-import {
-	PackageMeta,
-	PackageProperties,
-	PackageSearchResults,
-} from "../../types";
+import { PackageMeta } from "../../types";
 import SearchBar from "../../components/input/SearchBar";
-import {
-	parsePkgRequest,
-	parseQueryString,
-	pkgRequestToString,
-} from "../../utils";
-import InlineSelect from "../../components/input/InlineSelect";
+import { parseQueryString } from "../../utils";
 import { FooterData } from "../../App";
 import { FooterMode } from "../../components/navigation/Footer";
-import { errorToast, warningToast } from "../../components/dialog/Toasts";
+import { errorToast } from "../../components/dialog/Toasts";
 import PackageLabels from "../../components/package/PackageLabels";
-import { PackageCategory, PackageType, RepoInfo } from "../../package";
+import { Loader, PackageCategory, PackageType } from "../../package";
 import PackageFilters, {
 	defaultPackageFilters,
 	PackageFilterOptions,
 } from "../../components/package/PackageFilters";
 import LoadingSpinner from "../../components/utility/LoadingSpinner";
+import RepoSelector from "../../components/package/RepoSelector";
+import { searchPackages } from "../../utils/package";
 
 const PACKAGES_PER_PAGE = 12;
 
@@ -67,9 +59,8 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 	let [page, setPage] = createSignal(+params.page);
 	let [search, setSearch] = createSignal(searchParams["search"]);
 	let [repo, setRepo] = createSignal(searchParams["repo"]);
-	let [lastSelectedRepo, setLastSelectedRepo] = createSignal<
-		string | undefined
-	>(undefined);
+
+	let [selectedRepo, setSelectedRepo] = createSignal<string | undefined>();
 
 	let [filteredPackageType, setFilteredPackageType] = createSignal<PackageType>(
 		searchParams["package_type"] == undefined
@@ -117,175 +108,47 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 	};
 
 	// Packages and repos
-	let [packages, packageMethods] = createResource(updatePackages);
+	let [packages, packageMethods] = createResource(
+		() => selectedRepo(),
+		updatePackages
+	);
 	let refetchPackages = () => {
 		packageMethods.mutate(undefined);
 		packageMethods.refetch();
 	};
 
-	let [repos, setRepos] = createSignal<RepoInfo[] | undefined>(undefined);
 	let [packageCount, setPackageCount] = createSignal(0);
 
-	let selectedRepo = () => {
-		if (repos() == undefined) {
-			return undefined;
-		}
-		if (repo() == undefined) {
-			if (lastSelectedRepo() != undefined) {
-				if (repos()!.some((x) => x.id == lastSelectedRepo())) {
-					return lastSelectedRepo();
-				}
-			}
-			if (repos()!.some((x) => x.id == "std")) {
-				return "std";
-			}
-			return undefined;
-		}
-		return repo();
-	};
-
-	let repoPackageTypes = () => {
-		if (repos() == undefined || selectedRepo() == undefined) {
-			return undefined;
-		}
-		let repo = repos()!.find((x) => x.id == selectedRepo())!;
-
-		return repo.meta.package_types == undefined ||
-			repo.meta.package_types.length == 0
-			? undefined
-			: repo.meta.package_types!;
-	};
-
-	let repoCategories = () => {
-		if (repos() == undefined || selectedRepo() == undefined) {
-			return undefined;
-		}
-		let repo = repos()!.find((x) => x.id == selectedRepo())!;
-
-		return repo.meta.package_categories == undefined ||
-			repo.meta.package_categories.length == 0
-			? undefined
-			: repo.meta.package_categories!;
-	};
+	let [repoPackageTypes, setRepoPackageTypes] = createSignal<
+		PackageType[] | undefined
+	>();
+	let [repoCategories, setRepoCategories] = createSignal<
+		PackageCategory[] | undefined
+	>();
 
 	async function updatePackages() {
-		let repos: RepoInfo[] = [];
-		let lastSelectedRepo: string | undefined = undefined;
-		try {
-			[repos, lastSelectedRepo] = (await Promise.all([
-				invoke("get_package_repos"),
-				invoke("get_last_selected_repo"),
-			])) as [RepoInfo[], string | undefined];
-		} catch (e) {
-			errorToast("Failed to get available repos: " + e);
+		if (selectedRepo() == undefined) {
 			return undefined;
 		}
 
-		if (repos.length == 0) {
-			warningToast("No repositories available");
-		}
-
-		// Remove the core repository
-		let index = repos.findIndex((x) => x.id == "core");
-		if (index != -1) {
-			repos.splice(index, 1);
-		}
-		setRepos(repos);
-		setLastSelectedRepo(lastSelectedRepo);
-
 		try {
-			let results: PackageSearchResults = await invoke("get_packages", {
-				repo: selectedRepo(),
-				page: page(),
-				search: search(),
-				packageKinds: [filteredPackageType()],
-				minecraftVersions: filteredMinecraftVersions(),
-				loaders: filteredLoaders(),
-				categories: filteredCategories(),
-			});
-			setPackageCount(results.total_results);
+			let result = await searchPackages(
+				selectedRepo(),
+				page(),
+				search(),
+				[filteredPackageType()],
+				filteredMinecraftVersions(),
+				filteredLoaders() as Loader[],
+				filteredCategories()
+			);
 
-			let packages: (PackageData | "error")[] = [];
-
-			// Fill out results from existing previews, removing them from the list if the preview is present
-			for (let i = 0; i < results.results.length; i++) {
-				let pkg = parsePkgRequest(results.results[i]);
-				let preview =
-					pkg.id in results.previews
-						? results.previews[pkg.id]
-						: pkgRequestToString(pkg) in results.previews
-						? results.previews[pkgRequestToString(pkg)]
-						: undefined;
-				if (preview != undefined) {
-					packages.push({
-						id: pkgRequestToString(pkg),
-						meta: preview[0],
-						props: preview[1],
-					});
-					results.results.splice(i, 1);
-					i--;
-				}
+			if (result != undefined) {
+				setPackageCount(result.totalCount);
+				return result.packages;
 			}
-
-			// Get the remaining packages
-			if (results.results.length > 0) {
-				let promises = [];
-
-				try {
-					await invoke("preload_packages", {
-						packages: results.results,
-						repo: selectedRepo(),
-					});
-				} catch (e) {
-					errorToast("Failed to load packages: " + e);
-				}
-
-				for (let pkg of results.results) {
-					promises.push(
-						(async () => {
-							try {
-								let [meta, props] = (await invoke(
-									"get_package_meta_and_props",
-									{
-										package: pkg,
-									}
-								)) as [PackageMeta, PackageProperties];
-								return [meta, props];
-							} catch (e) {
-								console.error(e);
-								return "error";
-							}
-						})()
-					);
-				}
-
-				try {
-					let finalPackages = (await Promise.all(promises)) as (
-						| [PackageMeta, PackageProps]
-						| "error"
-					)[];
-					let newPackages = finalPackages.map((val, i) => {
-						if (val == "error") {
-							return "error";
-						} else {
-							let [meta, props] = val;
-							return {
-								id: results.results[i],
-								meta: meta,
-								props: props,
-							} as PackageData;
-						}
-					});
-
-					packages = packages.concat(newPackages);
-				} catch (e) {
-					errorToast("Failed to load some packages: " + e);
-				}
-			}
-
-			return packages;
 		} catch (e) {
-			errorToast("Failed to search packages: " + e);
+			console.log(e);
+			errorToast(`${e}`);
 		}
 	}
 
@@ -309,40 +172,18 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 			<div class="cont col" id="browse-packages">
 				<div id="browse-header">
 					<div class="cont">
-						<Show when={repos() != undefined}>
-							<InlineSelect
-								options={repos()!.map((x) => {
-									return {
-										value: x.id,
-										contents: (
-											<div style="padding:0rem 0.3rem">
-												{x.id.replace(/\_/g, " ").toLocaleUpperCase()}
-											</div>
-										),
-										color: x.meta.color,
-										selectedTextColor: x.meta.text_color,
-									};
-								})}
-								connected={false}
-								grid={true}
-								selected={selectedRepo()}
-								columns={repos()!.length}
-								onChange={(x) => {
-									if (x != undefined) {
-										setRepo(x);
-										setPage(0);
-										updateFilters();
-										(async () => {
-											try {
-												await invoke("set_last_selected_repo", { repo: x });
-											} catch (e) {}
-										})();
-									}
-								}}
-								optionClass="repo"
-								solidSelect={true}
-							/>
-						</Show>
+						<RepoSelector
+							selectedRepo={repo()}
+							onSelect={(x) => {
+								setRepo(x);
+								console.log(repo());
+								setPage(0);
+								updateFilters();
+							}}
+							setFinalSelectedRepo={setSelectedRepo}
+							setRepoPackageTypes={setRepoPackageTypes}
+							setRepoCategories={setRepoCategories}
+						/>
 					</div>
 					<h1 class="noselect">Packages</h1>
 					<div class="cont" style="justify-content:flex-end">
@@ -508,12 +349,6 @@ function Package(props: PackageProps) {
 			</div>
 		</div>
 	);
-}
-
-interface PackageData {
-	id: string;
-	meta: PackageMeta;
-	props: PackageProperties;
 }
 
 interface PackageProps {

@@ -6,6 +6,9 @@
 	border: 0.15rem solid;
 	border-radius: var(--round);
 	transition: border-color 0.35s;
+
+	user-select: none;
+	-webkit-user-select: none;
 }
 
 .icon-button > svg {

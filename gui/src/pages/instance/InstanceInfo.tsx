@@ -33,7 +33,6 @@ import IconTextButton from "../../components/input/IconTextButton";
 import { invoke } from "@tauri-apps/api";
 import InstanceConsole from "../../components/launch/InstanceConsole";
 import PackagesConfig, {
-	getPackageConfigRequest,
 	PackageConfig,
 	packageConfigsEqual,
 } from "./PackagesConfig";
@@ -413,24 +412,37 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 										derivedServerPackages={derivedServerPackages()}
 										isProfile={false}
 										onRemove={(pkg, category) => {
+											let func = (packages: PackageConfig[]) =>
+												packages.filter((x) => !packageConfigsEqual(x, pkg));
+
 											if (category == "global") {
-												setGlobalPackages((packages) =>
-													packages.filter(
-														(x) => getPackageConfigRequest(x).id != pkg
-													)
-												);
+												setGlobalPackages(func);
 											} else if (category == "client") {
-												setClientPackages((packages) =>
-													packages.filter(
-														(x) => getPackageConfigRequest(x).id != pkg
-													)
-												);
+												setClientPackages(func);
 											} else if (category == "server") {
-												setServerPackages((packages) =>
-													packages.filter(
-														(x) => getPackageConfigRequest(x).id != pkg
-													)
-												);
+												setServerPackages(func);
+											}
+
+											setDirty();
+										}}
+										onAdd={(pkg, category) => {
+											let func = (packages: PackageConfig[]) => {
+												if (
+													!packages.some((x) => packageConfigsEqual(x, pkg))
+												) {
+													packages.push(pkg);
+													// Force update
+													packages = packages.concat([]);
+												}
+												return packages;
+											};
+
+											if (category == "global") {
+												setGlobalPackages(func);
+											} else if (category == "client") {
+												setClientPackages(func);
+											} else if (category == "server") {
+												setServerPackages(func);
 											}
 
 											setDirty();
