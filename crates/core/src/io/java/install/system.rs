@@ -35,6 +35,12 @@ fn get_system_java_installation(#[allow(unused_variables)] major_version: &str) 
 			return Some(path);
 		}
 	}
+	#[cfg(target_os = "macos")]
+	{
+		if let Some(path) = scan_macos(major_version) {
+			return Some(path);
+		}
+	}
 	#[cfg(target_os = "linux")]
 	{
 		if let Some(path) = scan_linux(major_version) {
@@ -50,6 +56,15 @@ fn get_system_java_installation(#[allow(unused_variables)] major_version: &str) 
 fn scan_windows(major_version: &str) -> Option<PathBuf> {
 	// OpenJDK
 	scan!(&PathBuf::from("C:/Program Files/Java"), major_version);
+
+	None
+}
+
+/// Scan for Java on MacOS
+#[cfg(target_os = "macos")]
+fn scan_macos(major_version: &str) -> Option<PathBuf> {
+	// Homebrew
+	scan!(&PathBuf::from("/opt/homebrew/opt/"), major_version);
 
 	None
 }
@@ -99,38 +114,45 @@ fn scan_dir(dir: &Path, major_version: &str) -> Option<PathBuf> {
 			if debug {
 				println!("{:?}", path.path());
 			}
-			if !path.path().is_dir() {
-				if debug {
-					println!("Not directory");
-				}
-				continue;
-			}
 			let name = path.file_name().to_string_lossy().to_string();
-			if !(name.starts_with("java-") || name.starts_with("jdk-")) {
-				if debug {
-					println!("Not a Java folder");
-				}
-				continue;
-			}
-			if !name.contains(&format!("-{major_version}")) {
-				if debug {
-					println!("Does not contain major version");
-				}
-				continue;
-			}
-
-			// Make sure there is a bin directory
 			let path = path.path();
-			if !path.join("bin").exists() {
-				if debug {
-					println!("No bin directory found");
-				}
-				continue;
-			}
 
-			return Some(path);
+			if check_single_dir(&path, name, major_version, debug) {
+				return Some(path);
+			}
 		}
 	}
 
 	None
+}
+
+fn check_single_dir(path: &Path, filename: String, major_version: &str, debug: bool) -> bool {
+	if !path.is_dir() {
+		if debug {
+			println!("Not directory");
+		}
+		return false;
+	}
+	if !(filename.contains("java") || filename.contains("jdk")) {
+		if debug {
+			println!("Not a Java folder");
+		}
+		return false;
+	}
+	if !filename.contains(&format!("-{major_version}")) {
+		if debug {
+			println!("Does not contain major version");
+		}
+		return false;
+	}
+
+	// Make sure there is a bin directory
+	if !path.join("bin").exists() {
+		if debug {
+			println!("No bin directory found");
+		}
+		return false;
+	}
+
+	true
 }
