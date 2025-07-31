@@ -19,7 +19,7 @@ impl PackageSearchCache {
 	/// Opens the cache at the given JSON file given the max age for an entry in seconds
 	pub fn open(path: impl AsRef<Path>, max_age: u64) -> anyhow::Result<Self> {
 		let contents = if path.as_ref().exists() {
-			json_from_file(path.as_ref()).context("Failed to read cache from file")?
+			json_from_file(path.as_ref()).unwrap_or_default()
 		} else {
 			let default = CacheContents::default();
 			let _ = json_to_file(path.as_ref(), &default);

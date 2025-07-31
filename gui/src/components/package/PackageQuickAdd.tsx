@@ -19,7 +19,6 @@ import LoadingSpinner from "../utility/LoadingSpinner";
 import { marked } from "marked";
 import InlineSelect from "../input/InlineSelect";
 import Icon from "../Icon";
-import IconButton from "../input/IconButton";
 import { Plus } from "../../icons";
 import IconTextButton from "../input/IconTextButton";
 
