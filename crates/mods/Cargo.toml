@@ -19,7 +19,9 @@ workspace = true
 anyhow = { workspace = true }
 nitro_core = { workspace = true }
 nitro_shared = { workspace = true }
+nitro_net = { workspace = true }
 reqwest = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 tokio = { workspace = true, features = ["fs"] }
+zip = { workspace = true }

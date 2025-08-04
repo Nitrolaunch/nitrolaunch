@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
 use anyhow::{bail, Context};
@@ -8,7 +9,8 @@ use crate::config::BrandingProperties;
 use crate::io::files::paths::Paths;
 use crate::io::files::update_hardlink;
 use crate::io::java::classpath::Classpath;
-use crate::io::java::install::{JavaInstallParameters, JavaInstallation};
+use crate::io::java::install::{JavaInstallParameters, JavaInstallation, JavaInstallationKind};
+use crate::io::java::JavaMajorVersion;
 use crate::io::persistent::PersistentData;
 use crate::io::update::UpdateManager;
 use crate::launch::{LaunchConfiguration, LaunchParameters};
@@ -55,10 +57,21 @@ impl<'params> Instance<'params> {
 			persistent: params.persistent,
 			req_client: params.req_client,
 		};
-		let java =
-			JavaInstallation::install(config.launch.java.clone(), *java_vers, java_params, o)
-				.await
-				.context("Failed to install or update Java")?;
+
+		let java_key = (config.launch.java.clone(), *java_vers);
+
+		let java = if let Some(java) = params.java_installations.get(&java_key) {
+			java.clone()
+		} else {
+			let java =
+				JavaInstallation::install(config.launch.java.clone(), *java_vers, java_params, o)
+					.await
+					.context("Failed to install or update Java")?;
+
+			params.java_installations.insert(java_key, java.clone());
+
+			java
+		};
 
 		java.verify().context("Java installation is invalid")?;
 
@@ -141,8 +154,9 @@ impl<'params> Instance<'params> {
 		// Classpath
 		let mut classpath = Classpath::new();
 		if let Side::Client = config.side.get_side() {
-			let lib_classpath = libraries::get_classpath(params.client_meta, params.paths)
-				.context("Failed to extract classpath from game library list")?;
+			let lib_classpath =
+				libraries::get_classpath(&params.client_meta.libraries, &params.paths.internal)
+					.context("Failed to extract classpath from game library list")?;
 			classpath.extend(lib_classpath);
 		}
 		for lib in &config.additional_libs {
@@ -221,6 +235,11 @@ impl<'params> Instance<'params> {
 	/// Get the JAR path of the instance
 	pub fn get_jar_path(&self) -> &Path {
 		&self.jar_path
+	}
+
+	/// Get the Java installation of the instance
+	pub fn get_java(&self) -> &JavaInstallation {
+		&self.java
 	}
 }
 
@@ -368,6 +387,8 @@ pub(crate) struct InstanceParameters<'a> {
 	pub update_manager: &'a mut UpdateManager,
 	pub client_meta: &'a ClientMeta,
 	pub users: &'a mut UserManager,
+	pub java_installations:
+		&'a mut HashMap<(JavaInstallationKind, JavaMajorVersion), JavaInstallation>,
 	pub client_assets_and_libs: &'a mut ClientAssetsAndLibraries,
 	pub censor_secrets: bool,
 	pub disable_hardlinks: bool,

@@ -24,6 +24,7 @@ package_zips.platform_dependent:
 	@rm -f release/custom_files-${OS}.zip
 	@rm -f release/docs-${OS}.zip
 	@rm -f release/fabric_quilt-${OS}.zip
+	@rm -f release/forge-${OS}.zip
 	@rm -f release/gen_pkg-${OS}.zip
 	@rm -f release/glfw_fix-${OS}.zip
 	@rm -f release/nitro_transfer-${OS}.zip
@@ -50,6 +51,7 @@ package_zips.platform_dependent:
 	@zip -j release/custom_files-${OS}.zip $(TARGET_DIR)/nitro_plugin_custom_files${EXTENSION} plugins/custom_files/plugin.json
 	@zip -j release/docs-${OS}.zip $(TARGET_DIR)/nitro_plugin_docs${EXTENSION} plugins/docs/plugin.json
 	@zip -j release/fabric_quilt-${OS}.zip $(TARGET_DIR)/nitro_plugin_fabric_quilt${EXTENSION} plugins/fabric_quilt/plugin.json
+	@zip -j release/forge-${OS}.zip $(TARGET_DIR)/nitro_plugin_forge${EXTENSION} plugins/forge/plugin.json
 	@zip -j release/gen_pkg-${OS}.zip $(TARGET_DIR)/nitro_plugin_gen_pkg${EXTENSION} plugins/gen_pkg/plugin.json
 	@zip -j release/glfw_fix-${OS}.zip $(TARGET_DIR)/nitro_plugin_glfw_fix${EXTENSION} plugins/glfw_fix/plugin.json
 	@zip -j release/nitro_transfer-${OS}.zip $(TARGET_DIR)/nitro_plugin_nitro_transfer${EXTENSION} plugins/nitro_transfer/plugin.json
@@ -104,6 +106,10 @@ install.extra_versions:
 install.fabric_quilt:
 	@cargo install --path . --bin nitro_plugin_fabric_quilt --offline
 	@cat plugins/fabric_quilt/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/fabric_quilt.json
+
+install.forge:
+	@cargo install --path . --bin nitro_plugin_forge --offline
+	@cat plugins/forge/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/forge.json
 
 install.gen_pkg:
 	@cargo install --path . --bin nitro_plugin_gen_pkg --offline

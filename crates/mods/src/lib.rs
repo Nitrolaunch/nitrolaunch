@@ -10,6 +10,8 @@
 
 /// Installation of the Fabric and Quilt modloaders
 pub mod fabric_quilt;
+/// Installation of NeoForge
+pub mod forge;
 /// Installation of projects from PaperMC, such as the Paper and Folia servers
 pub mod paper;
 /// Installation of SpongeVanilla

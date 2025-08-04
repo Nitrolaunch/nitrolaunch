@@ -177,6 +177,10 @@ pub struct OnInstanceSetupArg {
 	pub internal_dir: String,
 	/// The depth to update at
 	pub update_depth: UpdateDepth,
+	/// Path to the JVM
+	pub jvm_path: String,
+	/// Path to the vanilla game JAR
+	pub game_jar_path: String,
 }
 
 /// Result from the OnInstanceSetup hook
@@ -193,6 +197,8 @@ pub struct OnInstanceSetupResult {
 	pub loader_version: Option<String>,
 	/// Optional additional JVM args
 	pub jvm_args: Vec<String>,
+	/// Optional additional game args
+	pub game_args: Vec<String>,
 }
 
 def_hook!(

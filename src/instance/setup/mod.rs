@@ -87,10 +87,28 @@ impl Instance {
 			}
 		}?;
 
-		// Run plugin setup hooks
 		self.ensure_dirs(paths)?;
 
-		lock.ensure_instance_created(&self.id, &manager.version_info.get().version);
+		let update_depth = manager.settings.depth;
+		let version_info = manager.version_info.get_clone();
+
+		// Get the Java installation and game JAR ahead of time for plugins to use
+
+		let mut version = manager
+			.get_core_version(o)
+			.await
+			.context("Failed to get manager version")?;
+
+		let jvm_path = version
+			.get_java_installation(self.config.launch.java.clone(), o)
+			.await?
+			.get_jvm_path();
+
+		let game_jar_path = version.get_game_jar(self.get_side(), o).await?;
+
+		// Run plugin setup hooks
+
+		lock.ensure_instance_created(&self.id, &version_info.version);
 		let lock_instance = lock.get_instance(&self.id);
 		let current_version = lock_instance.map(|x| x.version.clone());
 		let current_loader_version = lock_instance.and_then(|x| x.loader_version.clone());
@@ -100,7 +118,7 @@ impl Instance {
 			id: self.id.to_string(),
 			side: Some(self.get_side()),
 			game_dir: self.dirs.get().game_dir.to_string_lossy().to_string(),
-			version_info: manager.version_info.get_clone(),
+			version_info: version_info.clone(),
 			loader: self.config.loader.clone(),
 			current_loader_version,
 			desired_loader_version: self.config.loader_version.clone(),
@@ -109,13 +127,15 @@ impl Instance {
 				.original_config_with_profiles_and_plugins
 				.clone(),
 			internal_dir: paths.internal.to_string_lossy().to_string(),
-			update_depth: manager.settings.depth,
+			update_depth,
+			jvm_path: jvm_path.to_string_lossy().to_string(),
+			game_jar_path: game_jar_path.to_string_lossy().to_string(),
 		};
 
 		// Do loader and version change checks
 		let is_version_different = current_version
 			.as_ref()
-			.is_some_and(|x| x != &manager.version_info.get().version);
+			.is_some_and(|x| x != &version_info.version);
 		let is_loader_different = self.config.loader != current_loader;
 
 		if is_version_different || is_loader_different {
@@ -129,7 +149,7 @@ impl Instance {
 					process,
 					StartUpdatingInstanceVersion,
 					"version1" = &current_version.as_ref().expect("Version should exist"),
-					"version2" = &manager.version_info.get().version
+					"version2" = &version_info.version
 				));
 				process.display(message, MessageLevel::Important);
 			}
@@ -154,7 +174,7 @@ impl Instance {
 			// The current loader version is no longer valid as it is referring to the old loader
 			arg.current_loader_version = None;
 			arg.loader = self.config.loader.clone();
-			arg.version_info.version = manager.version_info.get().version.clone();
+			arg.version_info.version = version_info.version.clone();
 
 			let message =
 				MessageContents::Success(translate!(process, FinishUpdatingInstanceVersion));
@@ -190,6 +210,7 @@ impl Instance {
 			}
 
 			self.modification_data.jvm_args.extend(result.jvm_args);
+			self.modification_data.game_args.extend(result.game_args);
 
 			if let Some(loader_version) = result.loader_version {
 				if loader_version_set {
@@ -202,7 +223,7 @@ impl Instance {
 		}
 
 		// Update the loaders and version
-		lock.update_instance_version(&self.id, &manager.version_info.get().version)
+		lock.update_instance_version(&self.id, &version_info.version)
 			.expect("Instance should exist");
 		lock.update_instance_loader(&self.id, self.config.loader.clone())
 			.expect("Instance should exist");
@@ -210,15 +231,10 @@ impl Instance {
 		lock.finish(paths)
 			.context("Failed to finish using lockfile")?;
 
-		// Make the core instance
-		let mut version = manager
-			.get_core_version(o)
-			.await
-			.context("Failed to get manager version")?;
-
 		self.create_core_instance(&mut version, paths, o)
 			.await
 			.context("Failed to create core instance")?;
+
 		o.end_section();
 
 		Ok(result)
@@ -272,10 +288,14 @@ impl Instance {
 
 		let mut jvm_args = self.config.launch.jvm_args.clone();
 		jvm_args.extend(self.modification_data.jvm_args.clone());
+
+		let mut game_args = self.config.launch.game_args.clone();
+		game_args.extend(self.modification_data.game_args.clone());
+
 		let launch_config = LaunchConfiguration {
 			java: self.config.launch.java.clone(),
 			jvm_args,
-			game_args: self.config.launch.game_args.clone(),
+			game_args,
 			min_mem: self.config.launch.min_mem.clone(),
 			max_mem: self.config.launch.max_mem.clone(),
 			env: self.config.launch.env.clone(),
@@ -389,6 +409,8 @@ pub struct ModificationData {
 	pub classpath_extension: Classpath,
 	/// Extra arguments for the JVM
 	pub jvm_args: Vec<String>,
+	/// Extra arguments for the game
+	pub game_args: Vec<String>,
 }
 
 impl ModificationData {
@@ -399,6 +421,7 @@ impl ModificationData {
 			jar_path_override: None,
 			classpath_extension: Classpath::new(),
 			jvm_args: Vec::new(),
+			game_args: Vec::new(),
 		}
 	}
 }

@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::path::PathBuf;
 use std::sync::Arc;
 
 use anyhow::Context;
@@ -6,15 +7,18 @@ use nitro_shared::later::Later;
 use nitro_shared::output::NitroOutput;
 use nitro_shared::output::{MessageContents, MessageLevel};
 use nitro_shared::versions::VersionInfo;
+use nitro_shared::Side;
 
 use crate::config::BrandingProperties;
 use crate::instance::{Instance, InstanceConfiguration, InstanceParameters};
 use crate::io::files::paths::Paths;
+use crate::io::java::install::{JavaInstallParameters, JavaInstallation, JavaInstallationKind};
+use crate::io::java::JavaMajorVersion;
 use crate::io::persistent::PersistentData;
 use crate::io::update::UpdateManager;
 use crate::net::game_files::client_meta::{self, ClientMeta};
 use crate::net::game_files::version_manifest::{self, VersionEntry, VersionManifestAndList};
-use crate::net::game_files::{assets, libraries};
+use crate::net::game_files::{assets, game_jar, libraries};
 use crate::user::UserManager;
 use crate::util::versions::{MinecraftVersion, VersionName};
 
@@ -61,6 +65,7 @@ impl InstalledVersion<'_, '_> {
 			update_manager: self.params.update_manager,
 			client_meta: &self.inner.client_meta,
 			users: self.params.users,
+			java_installations: self.params.java_installations,
 			client_assets_and_libs: &mut self.inner.client_assets_and_libs,
 			censor_secrets: self.params.censor_secrets,
 			disable_hardlinks: self.params.disable_hardlinks,
@@ -89,6 +94,65 @@ impl InstalledVersion<'_, '_> {
 			update_manager: self.params.update_manager,
 		};
 		self.inner.client_assets_and_libs.load(params, o).await
+	}
+
+	/// Gets or installs a Java installation following the parameters of this version and the given installation
+	pub async fn get_java_installation(
+		&mut self,
+		kind: JavaInstallationKind,
+		o: &mut impl NitroOutput,
+	) -> anyhow::Result<JavaInstallation> {
+		let key = (kind.clone(), self.inner.client_meta.java_info.major_version);
+
+		if !self.params.java_installations.contains_key(&key) {
+			let java_params = JavaInstallParameters {
+				paths: self.params.paths,
+				update_manager: self.params.update_manager,
+				persistent: self.params.persistent,
+				req_client: self.params.req_client,
+			};
+
+			let java = JavaInstallation::install(
+				kind,
+				self.inner.client_meta.java_info.major_version,
+				java_params,
+				o,
+			)
+			.await
+			.context("Failed to install or update Java")?;
+
+			self.params
+				.java_installations
+				.insert(key.clone(), java.clone());
+		}
+
+		Ok(self.params.java_installations.get(&key).unwrap().clone())
+	}
+
+	/// Gets the vanilla game JAR for the given side, returning the path to it
+	pub async fn get_game_jar(
+		&self,
+		side: Side,
+		o: &mut impl NitroOutput,
+	) -> anyhow::Result<PathBuf> {
+		game_jar::get(
+			side,
+			&self.inner.client_meta,
+			&self.inner.version,
+			self.params.paths,
+			self.params.update_manager,
+			self.params.req_client,
+			o,
+		)
+		.await
+		.context("Failed to get the game JAR file")?;
+
+		Ok(crate::io::minecraft::game_jar::get_path(
+			side,
+			&self.inner.version,
+			None,
+			self.params.paths,
+		))
 	}
 }
 
@@ -232,6 +296,8 @@ pub(crate) struct VersionParameters<'a> {
 	pub persistent: &'a mut PersistentData,
 	pub update_manager: &'a mut UpdateManager,
 	pub users: &'a mut UserManager,
+	pub java_installations:
+		&'a mut HashMap<(JavaInstallationKind, JavaMajorVersion), JavaInstallation>,
 	pub censor_secrets: bool,
 	pub disable_hardlinks: bool,
 	pub branding: &'a BrandingProperties,
@@ -287,8 +353,8 @@ impl ClientAssetsAndLibraries {
 		params.update_manager.add_result(result);
 
 		let result = libraries::get(
-			params.client_meta,
-			params.paths,
+			&params.client_meta.libraries,
+			&params.paths.internal,
 			params.version,
 			params.update_manager,
 			params.req_client,

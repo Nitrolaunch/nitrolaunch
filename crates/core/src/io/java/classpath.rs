@@ -4,6 +4,7 @@ use std::{
 };
 
 use anyhow::Context;
+use itertools::Itertools;
 use version_compare::Version;
 
 /// The separator for entries in the classpath
@@ -52,6 +53,13 @@ impl Classpath {
 		}
 	}
 
+	/// Adds multiple paths to the classpath
+	pub fn add_multiple_paths<I: AsRef<Path>>(&mut self, strings: impl Iterator<Item = I>) {
+		for string in strings {
+			self.add(&string.as_ref().to_string_lossy());
+		}
+	}
+
 	/// Extends the classpath with another classpath
 	pub fn extend(&mut self, other: Classpath) {
 		self.entries.extend(other.entries);
@@ -82,8 +90,13 @@ impl Classpath {
 		}
 	}
 
+	/// Deduplicated multiple Java libraries
+	pub fn deduplicate_java_libs(&mut self) {
+		self.entries = self.entries.clone().into_iter().unique().collect();
+	}
+
 	/// Deduplicates a specific Java library in the classpath by removing ones with the same name, only keeping the latest version.
-	pub fn deduplicate_java_libs(&mut self, library: &str) {
+	pub fn deduplicate_java_lib(&mut self, library: &str) {
 		let mut occurrences = Vec::new();
 		for (i, entry) in self.entries.iter().enumerate() {
 			let path = PathBuf::from(entry);
@@ -164,7 +177,7 @@ mod tests {
 		classpath.add("foo-0.2.0.jar");
 		classpath.add("bar-0.2.0.jar");
 		classpath.add("foo-0.1.3.jar");
-		classpath.deduplicate_java_libs("foo");
+		classpath.deduplicate_java_lib("foo");
 		assert_eq!(classpath.entries, vec!["foo-0.2.0.jar", "bar-0.2.0.jar"]);
 	}
 }

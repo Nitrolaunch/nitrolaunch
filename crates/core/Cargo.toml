@@ -22,6 +22,7 @@ async-trait = { workspace = true }
 bytes = { workspace = true }
 cfg-match = { workspace = true }
 directories = { workspace = true }
+itertools = { workspace = true }
 libflate = { workspace = true }
 nitro_auth = { workspace = true }
 nitro_net = { workspace = true }

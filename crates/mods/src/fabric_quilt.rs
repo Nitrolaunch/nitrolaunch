@@ -312,18 +312,7 @@ pub async fn download_side_specific_files(
 /// Get the path to a library
 fn get_lib_path(name: &str) -> Option<String> {
 	let parts = MavenLibraryParts::parse_from_str(name)?;
-	let mut url = String::new();
-	for org in parts.orgs {
-		url.push_str(&org);
-		url.push('/');
-	}
-	url.push_str(&format!(
-		"{package}/{version}/{package}-{version}.jar",
-		package = parts.package,
-		version = parts.version
-	));
-
-	Some(url)
+	Some(parts.get_dir())
 }
 
 /// Download all Fabric/Quilt libraries. Returns the resulting classpath.

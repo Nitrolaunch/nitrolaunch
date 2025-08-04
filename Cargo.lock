@@ -2809,6 +2809,7 @@ dependencies = [
  "bytes",
  "cfg-match",
  "directories",
+ "itertools",
  "libflate",
  "nitro_auth",
  "nitro_net",
@@ -2846,11 +2847,13 @@ version = "0.26.0"
 dependencies = [
  "anyhow",
  "nitro_core",
+ "nitro_net",
  "nitro_shared",
  "reqwest 0.12.15",
  "serde",
  "serde_json",
  "tokio",
+ "zip 3.0.0",
 ]
 
 [[package]]

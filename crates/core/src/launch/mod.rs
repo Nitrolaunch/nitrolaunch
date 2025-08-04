@@ -64,7 +64,8 @@ pub(crate) async fn launch(
 	}
 
 	// Deduplicate the classpath for common libraries
-	params.classpath.deduplicate_java_libs("asm");
+	params.classpath.deduplicate_java_lib("asm");
+	params.classpath.deduplicate_java_libs();
 
 	// Get side-specific launch properties
 	let props = match params.side.get_side() {

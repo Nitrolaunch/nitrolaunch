@@ -8,6 +8,7 @@
 //! Note: The functions in this library expect the use of the Tokio runtime and may panic
 //! if it is not used
 
+use std::collections::HashMap;
 use std::sync::Arc;
 
 pub use nitro_auth as auth_crate;
@@ -57,6 +58,7 @@ pub struct NitroCore {
 	update_manager: UpdateManager,
 	versions: VersionRegistry,
 	users: UserManager,
+	java_installations: HashMap<(JavaInstallationKind, JavaMajorVersion), JavaInstallation>,
 }
 
 impl NitroCore {
@@ -82,6 +84,7 @@ impl NitroCore {
 			versions: VersionRegistry::new(),
 			users: UserManager::new(config.ms_client_id.clone()),
 			config,
+			java_installations: HashMap::new(),
 		};
 		Ok(out)
 	}
@@ -169,6 +172,7 @@ impl NitroCore {
 			persistent: &mut self.persistent,
 			update_manager: &mut self.update_manager,
 			users: &mut self.users,
+			java_installations: &mut self.java_installations,
 			censor_secrets: self.config.censor_secrets,
 			disable_hardlinks: self.config.disable_hardlinks,
 			branding: &self.config.branding,
@@ -197,24 +201,32 @@ impl NitroCore {
 		})
 	}
 
-	/// Gets a raw Java installation for use with things like custom processes
-	pub async fn get_java_installation(
-		&mut self,
+	/// Installs Java
+	pub async fn get_java_installation<'this>(
+		&'this mut self,
 		major_version: JavaMajorVersion,
 		kind: JavaInstallationKind,
 		o: &mut impl NitroOutput,
-	) -> anyhow::Result<JavaInstallation> {
+	) -> anyhow::Result<&'this JavaInstallation> {
+		let key = (kind.clone(), major_version);
+
+		if self.java_installations.contains_key(&key) {
+			return Ok(self.java_installations.get(&key).unwrap());
+		}
+
 		let java_params = JavaInstallParameters {
 			paths: &self.paths,
 			update_manager: &mut self.update_manager,
 			persistent: &mut self.persistent,
 			req_client: &self.req_client,
 		};
-		let java = JavaInstallation::install(kind, major_version, java_params, o)
+		let java = JavaInstallation::install(kind.clone(), major_version, java_params, o)
 			.await
 			.context("Failed to install or update Java")?;
 
-		Ok(java)
+		self.java_installations.insert(key.clone(), java);
+
+		Ok(self.java_installations.get(&key).unwrap())
 	}
 
 	/// Add additional versions to the version manifest. Must be called before the version manifest is obtained,

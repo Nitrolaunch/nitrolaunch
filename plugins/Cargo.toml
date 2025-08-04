@@ -43,6 +43,10 @@ name = "nitro_plugin_fabric_quilt"
 path = "plugins/fabric_quilt/main.rs"
 
 [[bin]]
+name = "nitro_plugin_forge"
+path = "plugins/forge/main.rs"
+
+[[bin]]
 name = "nitro_plugin_gen_pkg"
 path = "plugins/gen_pkg/main.rs"
 

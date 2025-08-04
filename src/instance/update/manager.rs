@@ -219,6 +219,11 @@ impl UpdateManager {
 		Ok(())
 	}
 
+	/// Get the core
+	pub fn get_core(&mut self) -> &mut NitroCore {
+		self.core.get_mut()
+	}
+
 	/// Get the version from the core
 	pub async fn get_core_version(
 		&mut self,

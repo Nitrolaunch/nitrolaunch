@@ -10,7 +10,7 @@ pub mod classpath;
 pub mod install;
 
 /// A major Java version (e.g. 14 or 17)
-#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct JavaMajorVersion(pub u16);
 
 impl Display for JavaMajorVersion {
@@ -73,6 +73,22 @@ pub mod maven {
 				package,
 				version,
 			})
+		}
+
+		/// Converts these library parts to the relative dir from the libraries dir where this library would be stored
+		pub fn get_dir(self) -> String {
+			let mut url = String::new();
+			for org in self.orgs {
+				url.push_str(&org);
+				url.push('/');
+			}
+			url.push_str(&format!(
+				"{package}/{version}/{package}-{version}.jar",
+				package = self.package,
+				version = self.version
+			));
+
+			url
 		}
 	}
 

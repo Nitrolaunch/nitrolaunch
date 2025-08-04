@@ -10,7 +10,7 @@ use reqwest::Client;
 use tokio::{sync::Semaphore, task::JoinSet};
 use zip::ZipArchive;
 
-use crate::io::files::{self, paths::Paths};
+use crate::io::files;
 use crate::io::java::classpath::Classpath;
 use crate::io::update::{UpdateManager, UpdateMethodResult};
 use crate::net::download::{self, get_transfer_limit};
@@ -18,32 +18,28 @@ use nitro_shared::skip_none;
 use nitro_shared::util;
 
 use super::client_meta::libraries::ExtractionRules;
-use super::client_meta::{libraries::Library, ClientMeta};
+use super::client_meta::libraries::Library;
 
 /// Downloads base client libraries.
 /// Returns a set of files to be added to the update manager.
 pub async fn get(
-	client_meta: &ClientMeta,
-	paths: &Paths,
+	libraries: &[Library],
+	internal_dir: &Path,
 	version: &str,
 	manager: &UpdateManager,
 	client: &Client,
 	o: &mut impl NitroOutput,
 ) -> anyhow::Result<UpdateMethodResult> {
 	let mut out = UpdateMethodResult::new();
-	let libraries_path = paths.internal.join("libraries");
+	let libraries_path = internal_dir.join("libraries");
 	files::create_dir(&libraries_path)?;
-	let natives_path = paths
-		.internal
-		.join("versions")
-		.join(version)
-		.join("natives");
+	let natives_path = internal_dir.join("versions").join(version).join("natives");
 	files::create_dir(&natives_path)?;
-	let natives_jars_path = paths.internal.join("natives");
+	let natives_jars_path = internal_dir.join("natives");
 
 	let mut natives = Vec::new();
 
-	let libraries = get_list(client_meta);
+	let libraries = get_list(libraries);
 
 	let mut libs_to_download = Vec::new();
 
@@ -167,12 +163,12 @@ pub async fn get(
 }
 
 /// Gets the classpath from Minecraft libraries
-pub fn get_classpath(client_meta: &ClientMeta, paths: &Paths) -> anyhow::Result<Classpath> {
-	let natives_jars_path = paths.internal.join("natives");
-	let libraries_path = paths.internal.join("libraries");
+pub fn get_classpath(libraries: &[Library], internal_dir: &Path) -> anyhow::Result<Classpath> {
+	let natives_jars_path = internal_dir.join("natives");
+	let libraries_path = internal_dir.join("libraries");
 
 	let mut classpath = Classpath::new();
-	let libraries = get_list(client_meta);
+	let libraries = get_list(libraries);
 	for lib in libraries {
 		if !lib.natives.is_empty() {
 			let key = skip_none!(get_natives_classifier_key(&lib.natives));
@@ -277,6 +273,6 @@ fn extract_native(
 }
 
 /// Gets the list of allowed libraries from the client meta
-pub fn get_list(client_meta: &ClientMeta) -> impl Iterator<Item = &Library> {
-	client_meta.libraries.iter().filter(|lib| is_allowed(lib))
+pub fn get_list(libraries: &[Library]) -> impl Iterator<Item = &Library> {
+	libraries.iter().filter(|lib| is_allowed(lib))
 }

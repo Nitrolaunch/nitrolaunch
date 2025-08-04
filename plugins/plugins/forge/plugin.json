@@ -1,0 +1,15 @@
+{
+	"name": "Forge",
+	"description": "Install NeoForge instances",
+	"protocol_version": 3,
+	"hooks": {
+		"on_instance_setup": {
+			"executable": "${PLUGIN_DIR}/nitro_plugin_forge${EXE_EXTENSION}"
+		},
+		"add_supported_loaders": {
+			"constant": [
+				"neoforged"
+			]
+		}
+	}
+}
