@@ -14,6 +14,8 @@
 	border: 0.15rem solid var(--bg3);
 	border-radius: var(--round);
 
+	position: relative;
+
 	cursor: pointer;
 	user-select: none;
 	-webkit-user-select: none;
@@ -31,6 +33,18 @@
 	background-color: transparent;
 	border: none;
 	box-shadow: none;
+
+	padding-left: 2rem;
+}
+
+.dropdown-search-icon {
+	position: absolute;
+
+	height: 100%;
+	aspect-ratio: 1;
+
+	left: 0;
+	top: 0;
 }
 
 .dropdown-arrow {

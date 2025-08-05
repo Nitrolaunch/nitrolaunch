@@ -12,7 +12,7 @@ import "./Dropdown.css";
 import Tip from "../dialog/Tip";
 import { canonicalizeListOrSingle, undefinedEmpty } from "../../utils/values";
 import Icon from "../Icon";
-import { AngleDown, AngleRight } from "../../icons";
+import { AngleDown, AngleRight, Search } from "../../icons";
 
 export default function Dropdown(props: DropdownProps) {
 	let [isOpen, setIsOpen] = createSignal(props.startOpen == true);
@@ -61,7 +61,7 @@ export default function Dropdown(props: DropdownProps) {
 	});
 
 	return (
-		<div class="dropdown-container">
+		<div class="dropdown-container" onmouseleave={() => setIsOpen(false)}>
 			<div
 				class={`cont input-shadow dropdown-header ${isOpen() ? "open" : ""}`}
 				onclick={() => setIsOpen(!isOpen())}
@@ -72,7 +72,6 @@ export default function Dropdown(props: DropdownProps) {
 						<input
 							type="text"
 							class="dropdown-search"
-							style="padding-left:0.5rem"
 							onclick={(e) => {
 								e.preventDefault();
 								e.stopPropagation();
@@ -92,6 +91,9 @@ export default function Dropdown(props: DropdownProps) {
 							}}
 							ref={searchElement}
 						/>
+						<div class="cont dropdown-search-icon">
+							<Icon icon={Search} size="1rem" />
+						</div>
 					</Match>
 				</Switch>
 				<div class="cont dropdown-arrow">
@@ -108,7 +110,6 @@ export default function Dropdown(props: DropdownProps) {
 				style={`${
 					!isOpen() ? "max-height:0px;border-width:0px" : ""
 				};${zIndex}`}
-				onmouseleave={() => setIsOpen(false)}
 			>
 				<Show when={props.allowEmpty == undefined ? false : props.allowEmpty}>
 					<DropdownOption
