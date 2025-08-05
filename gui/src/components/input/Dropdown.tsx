@@ -23,6 +23,7 @@ export default function Dropdown(props: DropdownProps) {
 			setIsOpen(false);
 		}
 		if (props.onChangeMulti != undefined) {
+			console.log("select");
 			if (Array.isArray(props.selected)) {
 				let array = props.selected.includes(value!)
 					? props.selected.filter((x) => x != value)
@@ -60,7 +61,7 @@ export default function Dropdown(props: DropdownProps) {
 	});
 
 	return (
-		<div class="dropdown-container" onmouseleave={() => setIsOpen(false)}>
+		<div class="dropdown-container">
 			<div
 				class={`cont input-shadow dropdown-header ${isOpen() ? "open" : ""}`}
 				onclick={() => setIsOpen(!isOpen())}
@@ -89,7 +90,6 @@ export default function Dropdown(props: DropdownProps) {
 									e.target.blur();
 								}
 							}}
-							onfocusout={() => setIsOpen(false)}
 							ref={searchElement}
 						/>
 					</Match>
@@ -108,6 +108,7 @@ export default function Dropdown(props: DropdownProps) {
 				style={`${
 					!isOpen() ? "max-height:0px;border-width:0px" : ""
 				};${zIndex}`}
+				onmouseleave={() => setIsOpen(false)}
 			>
 				<Show when={props.allowEmpty == undefined ? false : props.allowEmpty}>
 					<DropdownOption
