@@ -59,7 +59,9 @@ pub async fn update_instance_packages<'a, O: NitroOutput>(
 	];
 
 	for adddon_kind in addon_kinds {
-		for instance in instances.iter() {
+		for instance in instances.iter_mut() {
+			instance.ensure_dirs(ctx.paths)?;
+
 			let Ok(dirs) = get_addon_paths(
 				&instance.config.original_config_with_profiles_and_plugins,
 				&instance.get_dirs().get().game_dir,

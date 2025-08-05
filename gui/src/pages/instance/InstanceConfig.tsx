@@ -947,6 +947,8 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 							let func = (packages: PackageConfig[]) => {
 								if (!packages.some((x) => packageConfigsEqual(x, pkg))) {
 									packages.push(pkg);
+									// Force update
+									packages = packages.concat([]);
 								}
 								return packages;
 							};

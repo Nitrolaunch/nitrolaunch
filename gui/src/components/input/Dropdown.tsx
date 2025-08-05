@@ -23,7 +23,6 @@ export default function Dropdown(props: DropdownProps) {
 			setIsOpen(false);
 		}
 		if (props.onChangeMulti != undefined) {
-			console.log("select");
 			if (Array.isArray(props.selected)) {
 				let array = props.selected.includes(value!)
 					? props.selected.filter((x) => x != value)

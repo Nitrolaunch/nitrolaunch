@@ -291,7 +291,11 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 						solidSelect={true}
 					/>
 				</div>
-				<div class="cont" style="justify-content:flex-end">
+				<div
+					class="cont"
+					id="package-config-sides"
+					style="justify-content:flex-end"
+				>
 					<Show when={props.isProfile}>
 						<InlineSelect
 							options={[
@@ -537,7 +541,11 @@ function ConfiguredPackage(props: ConfiguredPackageProps) {
 							onClick={(e) => {
 								e.preventDefault();
 								e.stopPropagation();
-								props.onRemove(props.request.id, props.category);
+								console.log(props.category);
+								props.onRemove(
+									pkgRequestToString(props.request),
+									props.category
+								);
 								(e.target! as any).parentElement.parentElement.remove();
 							}}
 							selected={false}
