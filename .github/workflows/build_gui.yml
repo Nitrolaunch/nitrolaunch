@@ -83,12 +83,12 @@ jobs:
                   # A file, directory or wildcard pattern that describes what to upload
                   if-no-files-found: ignore
                   path: |
-                      target/release/bundle/appimage/*.AppImage
-                      target/release/bundle/deb/*.deb
-                      target/release/bundle/msi/*.msi
-                      target/release/*.exe
-                      target/release/bundle/macos/*.app
-                      target/release/bundle/dmg/*.dmg
-                      target/release/bundle/osx/*.app
-                      target/universal-apple-darwin/release/bundle/macos/*.app
-                      target/universal-apple-darwin/release/bundle/dmg/*.dmg
+                      target/release/bundle/appimage/*.AppImage*
+                      target/release/bundle/deb/*.deb*
+                      target/release/bundle/msi/*.msi*
+                      target/release/*.exe*
+                      target/release/bundle/macos/*.app*
+                      target/release/bundle/dmg/*.dmg*
+                      target/release/bundle/osx/*.app*
+                      target/universal-apple-darwin/release/bundle/macos/*.app*
+                      target/universal-apple-darwin/release/bundle/dmg/*.dmg*
