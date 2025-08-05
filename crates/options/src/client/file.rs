@@ -129,34 +129,34 @@ pub fn create_keys(
 	let mut out = HashMap::new();
 
 	// Version checks
-	let after_12w50a = VersionPattern::After("12w50a".into()).matches_info(version_info);
-	let after_13w36a = VersionPattern::After("13w36a".into()).matches_info(version_info);
-	let after_13w47a = VersionPattern::After("13w47a".into()).matches_info(version_info);
-	let after_14w25a = VersionPattern::After("14w25a".into()).matches_info(version_info);
-	let after_14w28a = VersionPattern::After("14w28a".into()).matches_info(version_info);
-	let after_17w06a = VersionPattern::After("17w06a".into()).matches_info(version_info);
-	let after_17w47a = VersionPattern::After("17w47a".into()).matches_info(version_info);
-	let after_18w15a = VersionPattern::After("18w15a".into()).matches_info(version_info);
-	let after_18w21a = VersionPattern::After("18w21a".into()).matches_info(version_info);
-	let after_1_13_pre2 = VersionPattern::After("1.13-pre2".into()).matches_info(version_info);
-	let after_1_15_2_pre1 = VersionPattern::After("1.15.2-pre1".into()).matches_info(version_info);
-	let after_1_16_4_rc1 = VersionPattern::After("1.16.4-rc1".into()).matches_info(version_info);
-	let after_21w13a = VersionPattern::After("21w13a".into()).matches_info(version_info);
-	let after_21w37a = VersionPattern::After("21w37a".into()).matches_info(version_info);
-	let after_21w38a = VersionPattern::After("21w38a".into()).matches_info(version_info);
-	let after_21w42a = VersionPattern::After("21w42a".into()).matches_info(version_info);
-	let after_1_18_pre2 = VersionPattern::After("1.18-pre2".into()).matches_info(version_info);
-	let after_1_18_2_pre1 = VersionPattern::After("1.18.2-pre1".into()).matches_info(version_info);
-	let after_22w11a = VersionPattern::After("22w11a".into()).matches_info(version_info);
 	let after_22w15a = VersionPattern::After("22w15a".into()).matches_info(version_info);
+	let after_22w11a = after_22w15a || VersionPattern::After("22w11a".into()).matches_info(version_info);
+	let after_1_18_2_pre1 = after_22w11a || VersionPattern::After("1.18.2-pre1".into()).matches_info(version_info);
+	let after_1_18_pre2 = after_1_18_2_pre1 || VersionPattern::After("1.18-pre2".into()).matches_info(version_info);
+	let after_21w42a = after_1_18_pre2 || VersionPattern::After("21w42a".into()).matches_info(version_info);
+	let after_21w38a = after_21w42a || VersionPattern::After("21w38a".into()).matches_info(version_info);
+	let after_21w37a = after_21w38a || VersionPattern::After("21w37a".into()).matches_info(version_info);
+	let after_21w13a = after_21w37a || VersionPattern::After("21w13a".into()).matches_info(version_info);
+	let after_1_16_4_rc1 = after_21w13a || VersionPattern::After("1.16.4-rc1".into()).matches_info(version_info);
+	let after_1_15_2_pre1 = after_1_16_4_rc1 || VersionPattern::After("1.15.2-pre1".into()).matches_info(version_info);
+	let after_1_13_pre2 = after_1_15_2_pre1 || VersionPattern::After("1.13-pre2".into()).matches_info(version_info);
+	let after_18w21a = after_1_13_pre2 || VersionPattern::After("18w21a".into()).matches_info(version_info);
+	let after_18w15a = after_18w21a || VersionPattern::After("18w15a".into()).matches_info(version_info);
+	let after_17w47a = after_18w15a || VersionPattern::After("17w47a".into()).matches_info(version_info);
+	let after_17w06a = after_17w47a || VersionPattern::After("17w06a".into()).matches_info(version_info);
+	let after_14w28a = after_17w06a || VersionPattern::After("14w28a".into()).matches_info(version_info);
+	let after_14w25a = after_14w28a || VersionPattern::After("14w25a".into()).matches_info(version_info);
+	let after_13w47a = after_14w25a || VersionPattern::After("13w47a".into()).matches_info(version_info);
+	let after_13w36a = after_13w47a || VersionPattern::After("13w36a".into()).matches_info(version_info);
+	let after_12w50a = after_13w36a || VersionPattern::After("12w50a".into()).matches_info(version_info);
 
-	let before_13w42a = VersionPattern::Before("13w42a".into()).matches_info(version_info);
-	let before_14w03a = VersionPattern::Before("14w03a".into()).matches_info(version_info);
-	let before_15w31a = VersionPattern::Before("15w31a".into()).matches_info(version_info);
-	let before_1_13 = VersionPattern::Before("1.13".into()).matches_info(version_info);
-	let before_20w27a = VersionPattern::Before("20w27a".into()).matches_info(version_info);
-	let before_21w43a = VersionPattern::Before("21w43a".into()).matches_info(version_info);
 	let before_1_19_4 = VersionPattern::Before("1.19.4".into()).matches_info(version_info);
+	let before_21w43a = before_1_19_4 || VersionPattern::Before("21w43a".into()).matches_info(version_info);
+	let before_20w27a = before_21w43a || VersionPattern::Before("20w27a".into()).matches_info(version_info);
+	let before_1_13 = before_20w27a || VersionPattern::Before("1.13".into()).matches_info(version_info);
+	let before_15w31a = before_1_13 || VersionPattern::Before("15w31a".into()).matches_info(version_info);
+	let before_14w03a = before_15w31a || VersionPattern::Before("14w03a".into()).matches_info(version_info);
+	let before_13w42a = before_14w03a || VersionPattern::Before("13w42a".into()).matches_info(version_info);
 
 	let is_3d_shareware =
 		VersionPattern::Single("3D Shareware v1.34".into()).matches_info(version_info);

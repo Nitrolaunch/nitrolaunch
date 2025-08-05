@@ -85,13 +85,13 @@ pub mod game_jar {
 
 /// Get the game data version either from the game jar or the known map
 pub fn get_data_version(version_info: &VersionInfo, paths: &Paths) -> Option<i32> {
-	if let Some(version_json) = game_jar::extract_version_json_optional(version_info, paths)
-		.ok()
-		.flatten()
-	{
-		Some(version_json.data_version)
+	if let Some(version) = get_old_data_version(&version_info.version) {
+		Some(version)
 	} else {
-		get_old_data_version(&version_info.version)
+		game_jar::extract_version_json_optional(version_info, paths)
+			.ok()
+			.flatten()
+			.map(|x| x.data_version)
 	}
 }
 
