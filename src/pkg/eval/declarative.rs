@@ -216,15 +216,16 @@ pub fn pick_best_addon_version<'a>(
 
 	// Sort so that versions with newer content versions come first
 	if let Some(content_versions) = &properties.content_versions {
-		let version = versions.iter().max_by_key(|x| {
+		// We reverse the iterator because max_by_key returns the last of equal elements, and we want versions at the beginning to take priority
+		let version = versions.iter().rev().max_by_key(|x| {
 			if let Some(versions) = &x.conditional_properties.content_versions {
 				versions
 					.iter()
 					.map(|x| content_versions.iter().position(|candidate| candidate == x))
-					.min()
-					.unwrap_or(Some(content_versions.len()))
+					.max()
+					.unwrap_or(Some(0))
 			} else {
-				Some(content_versions.len())
+				Some(0)
 			}
 		});
 
@@ -483,7 +484,7 @@ mod tests {
 		};
 
 		let properties = PackageProperties {
-			content_versions: Some(vec!["2".into(), "1".into()]),
+			content_versions: Some(vec!["1".into(), "2".into()]),
 			..Default::default()
 		};
 
