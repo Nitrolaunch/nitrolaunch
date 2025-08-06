@@ -134,12 +134,17 @@ impl AddonRequest {
 		let path = self.addon.get_path(paths, instance_id);
 		create_leading_dirs(&path)?;
 
+		let id = self.addon.id.clone();
+		let pkg_id = self.addon.pkg_id.clone();
 		let location = self.location.clone();
 		let client = client.clone();
 		let hashes = self.addon.hashes.clone();
 		let task = async move {
 			match location {
 				AddonLocation::Remote(url) => {
+					if url.is_empty() {
+						bail!("Empty URL for addon {id} from package {pkg_id}");
+					}
 					download::file(url, &path, &client)
 						.await
 						.context("Failed to download addon")?;

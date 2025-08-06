@@ -169,21 +169,29 @@ pub async fn gen(
 		};
 
 		if let Some(url) = version.downloads.datapack {
-			pkg_version.url = Some(url);
-			datapack.versions.push(pkg_version.clone());
+			if !url.is_empty() {
+				pkg_version.url = Some(url);
+				datapack.versions.push(pkg_version.clone());
+			}
 		}
 
 		if let Some(url) = version.downloads.resourcepack {
-			pkg_version.url = Some(url);
-			resourcepack.versions.push(pkg_version.clone());
+			if !url.is_empty() {
+				pkg_version.url = Some(url);
+				resourcepack.versions.push(pkg_version.clone());
+			}
 		}
 	}
 
 	props.supported_versions = Some(all_mc_versions);
 
 	let mut addon_map = HashMap::new();
-	addon_map.insert("datapack".into(), datapack);
-	addon_map.insert("resourcepack".into(), resourcepack);
+	if !datapack.versions.is_empty() {
+		addon_map.insert("datapack".into(), datapack);
+	}
+	if !resourcepack.versions.is_empty() {
+		addon_map.insert("resourcepack".into(), resourcepack);
+	}
 
 	Ok(DeclarativePackage {
 		meta,
