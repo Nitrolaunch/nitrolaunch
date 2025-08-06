@@ -359,6 +359,8 @@ def_hook!(
 pub struct InstanceTransferFormat {
 	/// The ID for this format
 	pub id: String,
+	/// A display name for this format
+	pub name: String,
 	/// Info for the import side of this format
 	pub import: Option<InstanceTransferFormatDirection>,
 	/// Info for the export side of this format

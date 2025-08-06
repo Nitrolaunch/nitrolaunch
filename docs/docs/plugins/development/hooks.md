@@ -322,6 +322,7 @@ Adds information about new transfer formats that this plugin adds support for. R
 [
 	{
 		"id": string,
+		"name": string,
 		"import": {
 			"modloader": "supported" | "format_unsupported" | "plugin_unsupported",
 			"mods": "supported" | "format_unsupported" | "plugin_unsupported",

@@ -7,10 +7,12 @@
 			"constant": [
 				{
 					"id": "multimc",
+					"name": "MultiMC",
 					"import": {}
 				},
 				{
 					"id": "prism",
+					"name": "PrismLauncher",
 					"import": {}
 				}
 			]
