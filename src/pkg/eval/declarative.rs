@@ -1,3 +1,5 @@
+use std::ops::Deref;
+
 use anyhow::bail;
 use itertools::Itertools;
 use nitro_pkg::declarative::{
@@ -73,6 +75,9 @@ fn eval_declarative_package_impl<'a>(
 		let version =
 			pick_best_addon_version(&addon.versions, &eval_data.input, &eval_data.properties);
 		if let Some(version) = version {
+			if "distanthorizons" == eval_data.id.deref() {
+				dbg!(&version.conditional_properties.content_versions);
+			}
 			// Bundle addons won't have an actual addon
 			let addon_kind = addon.kind.to_addon_kind();
 			if let Some(addon_kind) = addon_kind {
@@ -192,7 +197,7 @@ pub fn pick_best_addon_version<'a>(
 						.rev(),
 				)
 			} else {
-				Box::new(input.params.preferred_content_versions.iter())
+				Box::new(std::iter::empty())
 			};
 
 		let default = DeserListOrSingle::default();
@@ -211,7 +216,7 @@ pub fn pick_best_addon_version<'a>(
 
 	// Sort so that versions with newer content versions come first
 	if let Some(content_versions) = &properties.content_versions {
-		return versions.into_iter().min_by_key(|x| {
+		let version = versions.iter().max_by_key(|x| {
 			if let Some(versions) = &x.conditional_properties.content_versions {
 				versions
 					.iter()
@@ -222,6 +227,10 @@ pub fn pick_best_addon_version<'a>(
 				Some(content_versions.len())
 			}
 		});
+
+		if version.is_some() {
+			return version.map(|x| *x);
+		}
 	}
 
 	versions.into_iter().next()
