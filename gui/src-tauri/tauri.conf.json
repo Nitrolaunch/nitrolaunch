@@ -30,6 +30,10 @@
       "window": {
         "create": true,
         "close": true
+      },
+      "dialog": {
+        "open": true,
+        "save": true
       }
     },
     "windows": [

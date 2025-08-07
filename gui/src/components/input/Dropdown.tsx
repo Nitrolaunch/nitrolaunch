@@ -40,12 +40,26 @@ export default function Dropdown(props: DropdownProps) {
 
 	let zIndex = props.zIndex == undefined ? "" : `z-index:${props.zIndex}`;
 
+	let isSearchable =
+		props.isSearchable == undefined ? true : props.isSearchable;
+
 	let headerContents = () => {
-		if (props.onChangeMulti == undefined) {
+		if (props.previewText != undefined) {
+			return props.previewText;
+		} else if (props.onChangeMulti == undefined) {
 			let option = props.options.find((x) => x.value == props.selected);
 			return option == undefined ? "None" : option.contents;
 		} else {
 			return `${canonicalizeListOrSingle(props.selected).length} selected`;
+		}
+	};
+
+	// The height of the opened dropdown options
+	let openedHeight = () => {
+		if (props.options.length < 10.5) {
+			return `calc(${props.options.length} * var(--option-height))`;
+		} else {
+			return "calc(10.5 * var(--option-height))";
 		}
 	};
 
@@ -54,7 +68,7 @@ export default function Dropdown(props: DropdownProps) {
 	let searchElement!: HTMLInputElement;
 
 	createEffect(() => {
-		if (isOpen()) {
+		if (isOpen() && searchElement != undefined) {
 			searchElement.focus();
 		}
 	});
@@ -64,10 +78,13 @@ export default function Dropdown(props: DropdownProps) {
 			<div
 				class={`cont input-shadow dropdown-header ${isOpen() ? "open" : ""}`}
 				onclick={() => setIsOpen(!isOpen())}
+				style={`${
+					isOpen() && isSearchable ? "justify-content:flex-start" : ""
+				}`}
 			>
 				<Switch>
-					<Match when={!isOpen()}>{headerContents()}</Match>
-					<Match when={isOpen()}>
+					<Match when={!isOpen() || !isSearchable}>{headerContents()}</Match>
+					<Match when={isOpen() && isSearchable}>
 						<input
 							type="text"
 							class="dropdown-search"
@@ -107,7 +124,9 @@ export default function Dropdown(props: DropdownProps) {
 			<div
 				class="dropdown-options"
 				style={`${
-					!isOpen() ? "max-height:0px;border-width:0px" : ""
+					!isOpen()
+						? "max-height:0px;border-width:0px"
+						: `max-height:${openedHeight()}`
 				};${zIndex}`}
 			>
 				<Show when={props.allowEmpty == undefined ? false : props.allowEmpty}>
@@ -162,8 +181,10 @@ export interface DropdownProps {
 	allowEmpty?: boolean;
 	optionClass?: string;
 	zIndex?: string;
+	isSearchable?: boolean;
 	customSearchFunction?: (search: string | undefined) => void;
 	startOpen?: boolean;
+	previewText?: JSX.Element;
 }
 
 function DropdownOption(props: OptionProps) {

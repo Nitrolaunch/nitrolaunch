@@ -16,9 +16,19 @@ import { GroupInfo, InstanceInfo, InstanceMap } from "../../types";
 import { errorToast } from "../../components/dialog/Toasts";
 import { invoke } from "@tauri-apps/api";
 import IconButton from "../../components/input/IconButton";
-import { Box, Edit, Folder, Pin, Plus } from "../../icons";
+import {
+	Box,
+	Download,
+	Edit,
+	Folder,
+	Pin,
+	Plus,
+	Properties,
+} from "../../icons";
 import Icon from "../../components/Icon";
 import IconTextButton from "../../components/input/IconTextButton";
+import InstanceTransferPrompt from "../../components/instance/InstanceTransferPrompt";
+import Dropdown from "../../components/input/Dropdown";
 
 export default function InstanceList(props: InstanceListProps) {
 	onMount(() => loadPagePlugins("instances"));
@@ -36,6 +46,8 @@ export default function InstanceList(props: InstanceListProps) {
 	const [instancesOrProfiles, setInstancesOrProfiles] = createSignal<
 		"instance" | "profile"
 	>("instance");
+
+	let [importPromptVisible, setImportPromptVisible] = createSignal(false);
 
 	async function updateItems() {
 		let instances: InstanceInfo[] = [];
@@ -117,27 +129,81 @@ export default function InstanceList(props: InstanceListProps) {
 			<br />
 			<div id="instance-list">
 				<div class="cont">
-					<div id="instance-list-header">
-						<div
-							class={`instance-list-header-item instances${
-								instancesOrProfiles() == "instance" ? " selected" : ""
-							}`}
-							onclick={() => {
-								setInstancesOrProfiles("instance");
-							}}
-						>
-							Instances
+					<div class="split3" style="width: 80%">
+						<div class="cont start" style="padding-left:0.5rem">
+							<div style="width:60%">
+								<Dropdown
+									options={[
+										{
+											value: "create_instance",
+											contents: (
+												<div class="cont">
+													<Icon icon={Box} size="1rem" />
+													Create Instance
+												</div>
+											),
+										},
+										{
+											value: "create_profile",
+											contents: (
+												<div class="cont">
+													<Icon icon={Properties} size="1rem" />
+													Create Profile
+												</div>
+											),
+										},
+										{
+											value: "import_instance",
+											contents: (
+												<div class="cont">
+													<Icon icon={Download} size="1rem" />
+													Import Instance
+												</div>
+											),
+										},
+									]}
+									previewText={
+										<div class="cont">
+											<Icon icon={Plus} size="1rem" /> Add
+										</div>
+									}
+									onChange={(selection) => {
+										if (selection == "create_instance") {
+											window.location.href = "create_instance";
+										} else if (selection == "create_profile") {
+											window.location.href = "create_profile";
+										} else if (selection == "import_instance") {
+											setImportPromptVisible(true);
+										}
+									}}
+									isSearchable={false}
+									zIndex="2"
+								/>
+							</div>
 						</div>
-						<div
-							class={`instance-list-header-item profiles${
-								instancesOrProfiles() == "profile" ? " selected" : ""
-							}`}
-							onclick={() => {
-								setInstancesOrProfiles("profile");
-							}}
-						>
-							Profiles
+						<div id="instance-list-header">
+							<div
+								class={`instance-list-header-item instances${
+									instancesOrProfiles() == "instance" ? " selected" : ""
+								}`}
+								onclick={() => {
+									setInstancesOrProfiles("instance");
+								}}
+							>
+								Instances
+							</div>
+							<div
+								class={`instance-list-header-item profiles${
+									instancesOrProfiles() == "profile" ? " selected" : ""
+								}`}
+								onclick={() => {
+									setInstancesOrProfiles("profile");
+								}}
+							>
+								Profiles
+							</div>
 						</div>
+						<div></div>
 					</div>
 				</div>
 				<br />
@@ -213,6 +279,11 @@ export default function InstanceList(props: InstanceListProps) {
 					</Match>
 				</Switch>
 			</div>
+			<InstanceTransferPrompt
+				exportedInstance={undefined}
+				visible={importPromptVisible()}
+				onClose={() => setImportPromptVisible(false)}
+			/>
 			<br />
 		</div>
 	);

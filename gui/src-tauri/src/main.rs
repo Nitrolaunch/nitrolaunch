@@ -166,6 +166,8 @@ fn main() {
 			commands::user::remove_user,
 			commands::settings::get_settings,
 			commands::settings::write_settings,
+			commands::transfer::get_instance_transfer_formats,
+			commands::transfer::import_instance,
 			commands::misc::get_supported_loaders,
 			commands::misc::get_minecraft_versions,
 			commands::misc::get_is_first_launch,

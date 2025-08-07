@@ -24,7 +24,6 @@
 .dropdown-header.open {
 	border-bottom-left-radius: 0;
 	border-bottom-right-radius: 0;
-	justify-content: flex-start;
 }
 
 .dropdown-search {
@@ -56,7 +55,6 @@
 	width: 100%;
 	position: absolute;
 
-	max-height: calc(10.5 * var(--option-height));
 	overflow-y: scroll;
 	overscroll-behavior-y: contain;
 

@@ -13,6 +13,7 @@ pub mod misc;
 pub mod package;
 pub mod plugin;
 pub mod settings;
+pub mod transfer;
 pub mod user;
 
 async fn load_config(paths: &Paths, o: &mut impl NitroOutput) -> anyhow::Result<Config> {

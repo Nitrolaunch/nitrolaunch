@@ -23,7 +23,7 @@ itertools = { workspace = true }
 nitrolaunch = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
-tauri = { version = "1", features = [ "window-close", "shell-open", "protocol-asset", "clipboard-all", "window-create", "updater" ] }
+tauri = { version = "1", features = [ "window-close", "shell-open", "protocol-asset", "clipboard-all", "window-create", "updater", "dialog-open", "dialog-save" ] }
 tokio = { workspace = true }
 
 [features]
