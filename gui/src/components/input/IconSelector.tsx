@@ -9,6 +9,7 @@ export default function IconSelector(props: IconSelectorProps) {
 			"/icons/fabric.png",
 			"/icons/quilt.png",
 			"/icons/paper.png",
+			"/icons/folia.png",
 		];
 	});
 

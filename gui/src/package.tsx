@@ -407,8 +407,10 @@ export function getLoaderImage(loader: Loader) {
 		return "/icons/sponge.png";
 	} else if (loader == "spongeforge") {
 		return "/icons/sponge.png";
-	} else if (loader == "paper" || loader == "folia") {
+	} else if (loader == "paper") {
 		return "/icons/paper.png";
+	} else if (loader == "folia") {
+		return "/icons/folia.png";
 	} else {
 		return "/icons/default_instance.png";
 	}
