@@ -4,7 +4,7 @@
 	align-items: center;
 	cursor: pointer;
 	border: 0.15rem solid;
-	border-radius: var(--round);
+	border-radius: var(--round2);
 	transition: border-color 0.35s;
 
 	user-select: none;

@@ -43,6 +43,8 @@ export default function Dropdown(props: DropdownProps) {
 	let isSearchable =
 		props.isSearchable == undefined ? true : props.isSearchable;
 
+	let showArrow = props.showArrow == undefined ? true : props.showArrow;
+
 	let headerContents = () => {
 		if (props.previewText != undefined) {
 			return props.previewText;
@@ -74,7 +76,7 @@ export default function Dropdown(props: DropdownProps) {
 	});
 
 	return (
-		<div class="dropdown-container" onmouseleave={() => setIsOpen(false)}>
+		<div class="dropdown-container">
 			<div
 				class={`cont input-shadow dropdown-header ${isOpen() ? "open" : ""}`}
 				onclick={() => setIsOpen(!isOpen())}
@@ -112,14 +114,16 @@ export default function Dropdown(props: DropdownProps) {
 						</div>
 					</Match>
 				</Switch>
-				<div class="cont dropdown-arrow">
-					<Show
-						when={isOpen()}
-						fallback={<Icon icon={AngleRight} size="1rem" />}
-					>
-						<Icon icon={AngleDown} size="1rem" />
-					</Show>
-				</div>
+				<Show when={showArrow}>
+					<div class="cont dropdown-arrow">
+						<Show
+							when={isOpen()}
+							fallback={<Icon icon={AngleRight} size="1rem" />}
+						>
+							<Icon icon={AngleDown} size="1rem" />
+						</Show>
+					</div>
+				</Show>
 			</div>
 			<div
 				class="dropdown-options"
@@ -127,7 +131,10 @@ export default function Dropdown(props: DropdownProps) {
 					!isOpen()
 						? "max-height:0px;border-width:0px"
 						: `max-height:${openedHeight()}`
-				};${zIndex}`}
+				};${zIndex};${
+					props.optionsWidth != undefined ? `width:${props.optionsWidth}` : ""
+				}`}
+				onmouseleave={() => setIsOpen(false)}
 			>
 				<Show when={props.allowEmpty == undefined ? false : props.allowEmpty}>
 					<DropdownOption
@@ -185,6 +192,8 @@ export interface DropdownProps {
 	customSearchFunction?: (search: string | undefined) => void;
 	startOpen?: boolean;
 	previewText?: JSX.Element;
+	optionsWidth?: string;
+	showArrow?: boolean;
 }
 
 function DropdownOption(props: OptionProps) {
@@ -206,8 +215,10 @@ function DropdownOption(props: OptionProps) {
 	};
 
 	let backgroundColor = () => {
-		if (props.isSelected || isHovered()) {
+		if (props.isSelected) {
 			return "var(--bg)";
+		} else if (isHovered()) {
+			return "var(--bg3)";
 		} else {
 			return "var(--bg2)";
 		}

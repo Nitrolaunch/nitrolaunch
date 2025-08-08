@@ -11,7 +11,7 @@
 }
 
 .inline-select-option {
-	border-radius: var(--round);
+	border-radius: var(--round2);
 	box-sizing: border-box;
 	cursor: pointer;
 	-webkit-user-select: none;

@@ -132,7 +132,7 @@ export default function InstanceList(props: InstanceListProps) {
 				<div class="cont">
 					<div class="split3" style="width: 80%">
 						<div class="cont start" style="padding-left:0.5rem">
-							<div style="width:60%">
+							<div style="width:30%">
 								<Dropdown
 									options={[
 										{
@@ -164,7 +164,9 @@ export default function InstanceList(props: InstanceListProps) {
 											setImportPromptVisible(true);
 										}
 									}}
+									optionsWidth="12rem"
 									isSearchable={false}
+									showArrow={false}
 									zIndex="2"
 								/>
 							</div>

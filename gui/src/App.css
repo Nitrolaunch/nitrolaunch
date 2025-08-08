@@ -225,8 +225,8 @@ button {
 
 .error-shake {
 	animation: shake 0.2s ease-in-out 0s 2;
-	outline: 0.15rem solid var(--error);
-	outline-offset: 0.5rem;
+	outline: 0.2rem dashed var(--error);
+	outline-offset: 0.4rem;
 	border-radius: var(--round);
 }
 
