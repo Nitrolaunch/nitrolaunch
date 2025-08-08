@@ -38,6 +38,8 @@ export default function Dropdown(props: DropdownProps) {
 		}
 	};
 
+	let allowEmpty = props.allowEmpty == undefined ? false : props.allowEmpty;
+
 	let zIndex = props.zIndex == undefined ? "" : `z-index:${props.zIndex}`;
 
 	let isSearchable =
@@ -136,7 +138,7 @@ export default function Dropdown(props: DropdownProps) {
 				}`}
 				onmouseleave={() => setIsOpen(false)}
 			>
-				<Show when={props.allowEmpty == undefined ? false : props.allowEmpty}>
+				<Show when={allowEmpty}>
 					<DropdownOption
 						option={{
 							value: undefined,
@@ -144,6 +146,7 @@ export default function Dropdown(props: DropdownProps) {
 						}}
 						onSelect={selectFunction}
 						isSelected={props.selected == undefined}
+						isFirst={true}
 						isLast={props.options.length == 0}
 						class={props.optionClass}
 					/>
@@ -168,6 +171,7 @@ export default function Dropdown(props: DropdownProps) {
 											? props.selected.includes(option.value!)
 											: props.selected == option.value
 									)()}
+									isFirst={index() == 0 && !allowEmpty}
 									isLast={index() == props.options.length - 1}
 									class={props.optionClass}
 								/>
@@ -231,7 +235,15 @@ function DropdownOption(props: OptionProps) {
 			} ${props.isSelected ? "selected" : ""} ${
 				props.isLast ? "last" : "not-last"
 			}`}
-			style={`color:${textColor()};background-color:${backgroundColor()}`}
+			style={`color:${textColor()};background-color:${backgroundColor()};${
+				props.isFirst
+					? "border-top-left-radius:var(--round2);border-top-right-radius:var(--round2)"
+					: ""
+			}${
+				props.isLast
+					? "border-bottom-left-radius:var(--round2);border-bottom-right-radius:var(--round2)"
+					: ""
+			}`}
 			onclick={() => {
 				if (
 					props.option.isSelectable == undefined ||
@@ -265,7 +277,8 @@ interface OptionProps {
 	option: Option;
 	isSelected: boolean;
 	class?: string;
-	isLast?: boolean;
+	isFirst: boolean;
+	isLast: boolean;
 	onSelect: (option: string | undefined) => void;
 }
 
