@@ -30,6 +30,7 @@ import { PackageType } from "../../package";
 import Dropdown from "../input/Dropdown";
 import { beautifyString } from "../../utils";
 import IconTextButton from "../input/IconTextButton";
+import IconAndText from "../utility/IconAndText";
 
 export default function PackageFilters(props: PackageFiltersProps) {
 	let [tab, setTab] = createSignal(
@@ -232,27 +233,45 @@ export default function PackageFilters(props: PackageFiltersProps) {
 				</Show>
 				<Show when={tab() == "categories"}>
 					<div class="cont package-filter-tab-contents" style="padding:0.5rem">
-						<div class="cont" style="width:75%">
+						<div class="cont" style="width:calc(400%/5)">
 							<InlineSelect
 								options={[
 									PackageCategory.Adventure,
 									PackageCategory.Building,
 									PackageCategory.Optimization,
+									PackageCategory.Magic,
 								]
 									.filter(
 										(x) =>
 											props.availableCategories == undefined ||
 											props.availableCategories.includes(x)
 									)
-									.map(packageCategoryToOption)}
+									.map((category) => {
+										return {
+											value: category,
+											contents: (
+												<div class="cont">
+													<Icon
+														icon={packageCategoryIcon(category)}
+														size="1rem"
+													/>
+													<div class="cont">
+														{packageCategoryDisplayName(category)}
+													</div>
+												</div>
+											),
+											color: "var(--profile)",
+										};
+									})}
 								connected={false}
+								columns={4}
 								selected={props.categories}
 								onChangeMulti={(x) =>
 									props.setCategories(x as PackageCategory[])
 								}
 							/>
 						</div>
-						<div class="cont" style="width:25%">
+						<div class="cont" style="width:calc(100%/5)">
 							<Dropdown
 								options={Object.values(PackageCategory)
 									.filter(
@@ -260,7 +279,18 @@ export default function PackageFilters(props: PackageFiltersProps) {
 											props.availableCategories == undefined ||
 											props.availableCategories.includes(x)
 									)
-									.map(packageCategoryToOption)}
+									.map((category) => {
+										return {
+											value: category,
+											contents: (
+												<IconAndText
+													icon={packageCategoryIcon(category)}
+													text={packageCategoryDisplayName(category)}
+												/>
+											),
+											color: "var(--profile)",
+										};
+									})}
 								selected={props.categories}
 								onChangeMulti={(x) =>
 									props.setCategories(x as PackageCategory[])
@@ -445,19 +475,6 @@ interface MinecraftVersionsTabProps {
 	extraOptions: string[];
 	selectedVersions: string[];
 	setMinecraftVersions: (versions: string[]) => void;
-}
-
-function packageCategoryToOption(category: PackageCategory) {
-	return {
-		value: category,
-		contents: (
-			<div class="cont">
-				<Icon icon={packageCategoryIcon(category)} size="1rem" />
-				<div class="cont">{packageCategoryDisplayName(category)}</div>
-			</div>
-		),
-		color: "var(--profile)",
-	};
 }
 
 // The actual filters that are applied
