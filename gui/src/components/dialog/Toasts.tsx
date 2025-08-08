@@ -26,19 +26,21 @@ export default function Toasts() {
 	let [visible, setVisible] = createSignal(true);
 
 	// Removes a toast at an index and updates the list
-	function removeToast(index: number) {
+	function removeToast(index: number, isPersistent: boolean) {
 		setToasts((toasts) => {
 			let removed = toasts.splice(index, 1);
-			setRecentToasts((toasts) => {
-				let removedToast = removed[0];
-				removedToast.setIsFading(false);
-				removedToast.age = 0;
-				toasts.unshift(removedToast);
+			if (isPersistent) {
+				setRecentToasts((toasts) => {
+					let removedToast = removed[0];
+					removedToast.setIsFading(false);
+					removedToast.age = 0;
+					toasts.unshift(removedToast);
 
-				setRecentToastCount((count) => count + 1);
+					setRecentToastCount((count) => count + 1);
 
-				return toasts;
-			});
+					return toasts;
+				});
+			}
 			return toasts;
 		});
 		setVisible(false);
@@ -91,7 +93,7 @@ export default function Toasts() {
 					}
 
 					if (toast.age <= 0) {
-						removeToast(i);
+						removeToast(i, toast.isPersistent);
 					} else {
 						toast.age -= 0.1;
 					}
@@ -120,7 +122,7 @@ export default function Toasts() {
 										<Toast
 											{...props}
 											onRemove={() => {
-												removeToast(i());
+												removeToast(i(), props.isPersistent);
 											}}
 										/>
 									)}
@@ -180,7 +182,7 @@ function Toast(props: ToastProps) {
 			</div>
 			<div class="toast-message">{props.message}</div>
 			<Show when={isHovered()}>
-				<div class="toast-x" onclick={props.onRemove}>
+				<div class="toast-x" onclick={() => props.onRemove(props.isPersistent)}>
 					<Icon class="toast-x" icon={Delete} size="1rem" />
 				</div>
 			</Show>
@@ -194,7 +196,8 @@ interface ToastProps {
 	age?: number;
 	isFading: Accessor<boolean>;
 	setIsFading: Setter<boolean>;
-	onRemove: () => void;
+	onRemove: (isPersistent: boolean) => void;
+	isPersistent: boolean;
 }
 
 type ToastType = "message" | "success" | "warning" | "error";
@@ -208,6 +211,7 @@ export function successToast(message: JSX.Element) {
 		message: message,
 		type: "success",
 		age: 3,
+		isPersistent: false,
 	});
 }
 
@@ -216,14 +220,16 @@ export function warningToast(message: JSX.Element) {
 		message: message,
 		type: "warning",
 		age: 7,
+		isPersistent: true,
 	});
 }
 
-export function errorToast(message: JSX.Element) {
+export function errorToast(message: JSX.Element, isPersistent?: boolean) {
 	(window as any).__createToast({
 		message: message,
 		type: "error",
 		age: 9,
+		isPersistent: isPersistent == undefined ? true : isPersistent,
 	});
 	console.error("Error: " + message);
 }

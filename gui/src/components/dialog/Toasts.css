@@ -23,16 +23,22 @@
 
 .toast {
 	width: 100%;
+
+	position: relative;
+
 	padding: 0.75rem;
 	box-sizing: border-box;
+
 	border: 0.15rem solid;
-	border-radius: var(--round);
-	position: relative;
+	border-radius: var(--round2);
+
 	align-items: flex-start;
 	max-height: 20rem;
 
 	overflow-y: scroll;
 	white-space: pre-wrap;
+
+	box-shadow: var(--shadow-offset) var(--shadow-offset) var(--transparent-dark);
 
 	transition: opacity 1s;
 }

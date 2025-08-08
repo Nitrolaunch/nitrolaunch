@@ -70,7 +70,7 @@
 	border-bottom: 0.15rem solid var(--bg4);
 	border-radius: var(--round2);
 
-	box-shadow: var(--shadow-offset) var(--shadow-offset) #111111cc;
+	box-shadow: var(--shadow-offset) var(--shadow-offset) var(--transparent-dark);
 
 	transition: max-height 0.3s, border-width 0.3s;
 }

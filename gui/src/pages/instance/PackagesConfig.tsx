@@ -113,7 +113,7 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 		}
 
 		if (errorExists) {
-			errorToast("One or more packages failed to load");
+			errorToast("One or more packages failed to load", false);
 		}
 
 		setPackageMetas(metas);
