@@ -2,7 +2,7 @@
 	width: 100%;
 	position: relative;
 
-	--option-height: 2.2rem;
+	--option-height: 2.5rem;
 }
 
 .dropdown-header {
@@ -16,6 +16,8 @@
 
 	position: relative;
 
+	transition: background-color 0.25s, border-color 0.25s;
+
 	cursor: pointer;
 	user-select: none;
 	-webkit-user-select: none;
@@ -28,6 +30,7 @@
 
 .dropdown-header.open {
 	border-color: var(--bg4);
+	background-color: var(--bg);
 }
 
 .dropdown-search {
@@ -85,6 +88,8 @@
 
 	text-wrap: nowrap;
 	overflow-x: hidden;
+
+	transition: background-color 0.15s;
 }
 
 .dropdown-option.last {

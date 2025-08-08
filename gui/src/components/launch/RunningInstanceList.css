@@ -19,6 +19,11 @@
 	cursor: pointer;
 }
 
+.running-instance-list-icon:hover {
+	background-color: var(--bg3);
+	border-color: var(--bg4);
+}
+
 #running-instance-list-tip {
 	position: absolute;
 	bottom: calc(100% + 0.75rem);

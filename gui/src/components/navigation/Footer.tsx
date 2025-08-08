@@ -12,12 +12,12 @@ import { PasswordPrompt } from "../input/PasswordPrompt";
 import {
 	Box,
 	Check,
-	Delete,
 	Download,
 	Gear,
 	Play,
 	Properties,
 	Refresh,
+	Trash,
 	Upload,
 } from "../../icons";
 import IconButton from "../input/IconButton";
@@ -230,7 +230,7 @@ export default function Footer(props: FooterProps) {
 							<div class="cont">
 								<Tip tip="Delete profile" side="top">
 									<IconButton
-										icon={Delete}
+										icon={Trash}
 										size="1.5rem"
 										color="var(--bg0)"
 										selectedColor="var(--accent)"

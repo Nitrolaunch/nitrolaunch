@@ -328,7 +328,7 @@ function Package(props: PackageProps) {
 					<img
 						src={image}
 						class="package-image"
-						onerror={(e) => e.target.remove()}
+						onerror={(e: any) => (e.target.src = "/icons/default_instance.png")}
 					/>
 				</div>
 				<div class="cont col package-header">

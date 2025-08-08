@@ -35,9 +35,12 @@
 	border-left-color: var(--bg4);
 
 	overflow-x: hidden;
+
+	transition: background-color 0.25s, border-color 0.25s;
 }
 
 .package:hover {
+	background-color: var(--bg3);
 	border-color: var(--bg4);
 }
 

@@ -97,14 +97,21 @@ export default function Sidebar(props: SidebarProps) {
 	return (
 		<div
 			id="sidebar"
-			style={`${props.visible ? "" : "width:0px"}`}
+			style={`${props.visible ? "" : "width:0px;border-right-color:var(--bg)"}`}
 			onmouseleave={() => props.setVisible(false)}
 		>
-			<div class="cont" style="padding:0.25rem">
+			<div
+				class="cont"
+				style="padding:0.25rem;width:var(--width);box-sizing:border-box"
+			>
 				<UserWidget onSelect={props.onSelectUser} />
 			</div>
 			<div class="cont start">
-				<a href="/settings" class="cont" style="color:var(--fg);padding:0.55rem">
+				<a
+					href="/settings"
+					class="cont"
+					style="color:var(--fg);padding:0.55rem"
+				>
 					<IconButton
 						icon={Gear}
 						size="1.75rem"

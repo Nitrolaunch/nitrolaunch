@@ -23,7 +23,7 @@ export default function LaunchConfig(props: LaunchConfigProps) {
 					}}
 				/>
 			</div>
-			<Tip tip="The Java installation to use" fullwidth>
+			<Tip tip="The Java installation to use. Defaults to 'Auto'" fullwidth>
 				<InlineSelect
 					onChange={(x) => {
 						props.setJava(x);

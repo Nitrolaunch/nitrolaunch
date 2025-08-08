@@ -59,6 +59,7 @@ import LockOpenIcon from "./assets/icons/lock_open.svg?component-solid";
 import CycleIcon from "./assets/icons/cycle.svg?component-solid";
 import LinkBrokenIcon from "./assets/icons/link_broken.svg?component-solid";
 import PopoutIcon from "./assets/icons/popout.svg?component-solid";
+import TrashIcon from "./assets/icons/trash.svg?component-solid";
 import { HasWidthHeight } from "./components/Icon";
 
 export function Pin({ width, height, viewBox }: HasWidthHeight) {
@@ -311,4 +312,8 @@ export function LinkBroken({ width, height, viewBox }: HasWidthHeight) {
 
 export function Popout({ width, height, viewBox }: HasWidthHeight) {
 	return <PopoutIcon width={width} height={height} viewBox={viewBox} />;
+}
+
+export function Trash({ width, height, viewBox }: HasWidthHeight) {
+	return <TrashIcon width={width} height={height} viewBox={viewBox} />;
 }

@@ -27,7 +27,16 @@ import { getInstanceIconSrc } from "../../utils";
 import PackageLabels from "../../components/package/PackageLabels";
 import { Loader } from "../../package";
 import Icon from "../../components/Icon";
-import { Box, Delete, Gear, Play, Spinner, Text, Upload } from "../../icons";
+import {
+	Box,
+	Delete,
+	Gear,
+	Play,
+	Spinner,
+	Text,
+	Trash,
+	Upload,
+} from "../../icons";
 import "./InstanceInfo.css";
 import IconTextButton from "../../components/input/IconTextButton";
 import { invoke } from "@tauri-apps/api";
@@ -350,7 +359,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 										shadow={false}
 									/>
 									<IconTextButton
-										icon={Delete}
+										icon={Trash}
 										size="1.2rem"
 										text="Delete"
 										color="var(--errorbg)"

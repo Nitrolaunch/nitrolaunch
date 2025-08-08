@@ -1,7 +1,7 @@
 import { createSignal, For } from "solid-js";
 import "./EditableList.css";
 import IconButton from "./IconButton";
-import { Delete, Plus } from "../../icons";
+import { Plus, Trash } from "../../icons";
 
 export default function EditableList(props: EditableListProps) {
 	let reorderable = props.reorderable == undefined ? true : props.reorderable;
@@ -60,7 +60,7 @@ export default function EditableList(props: EditableListProps) {
 							</div>
 							<div class="cont fullheight">
 								<IconButton
-									icon={Delete}
+									icon={Trash}
 									size="1.5rem"
 									color="var(--bg2)"
 									selectedColor=""

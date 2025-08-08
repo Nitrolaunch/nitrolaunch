@@ -17,7 +17,7 @@ import {
 	stringCompare,
 } from "../../utils";
 import IconButton from "../../components/input/IconButton";
-import { Delete, Edit, Plus, Popout, Search, Upload } from "../../icons";
+import { Edit, Plus, Popout, Search, Trash, Upload } from "../../icons";
 import { errorToast } from "../../components/dialog/Toasts";
 import LoadingSpinner from "../../components/utility/LoadingSpinner";
 import ResolutionError, {
@@ -49,7 +49,7 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 
 	let [allPackages, allPackagesMethods] = createResource(async () => {
 		let installedPackages: string[] = [];
-		if (!props.isProfile) {
+		if (!props.isProfile && props.id != undefined) {
 			let map: { [key: string]: LockfilePackage } = await invoke(
 				"get_instance_packages",
 				{ instance: props.id }
@@ -138,7 +138,7 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 	});
 
 	let [resolutionError, resolutionErrorMethods] = createResource(async () => {
-		if (props.isProfile) {
+		if (props.isProfile || props.id == undefined) {
 			return undefined;
 		}
 
@@ -533,9 +533,9 @@ function ConfiguredPackage(props: ConfiguredPackageProps) {
 					/>
 					<Show when={props.isConfigured && !props.isDerived}>
 						<IconButton
-							icon={Delete}
+							icon={Trash}
 							size="24px"
-							color="var(--error)"
+							color="var(--errorbg)"
 							border="var(--error)"
 							selectedColor="var(--accent)"
 							onClick={(e) => {

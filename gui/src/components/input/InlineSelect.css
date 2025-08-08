@@ -19,7 +19,7 @@
 	border: 0.15rem solid;
 	height: 2.3rem;
 
-	transition: border-color 0.25s;
+	transition: border-color 0.25s, background-color 0.25s, color 0.25s;
 }
 
 .inline-select-option.connected {

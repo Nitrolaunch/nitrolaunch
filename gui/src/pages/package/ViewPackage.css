@@ -162,6 +162,9 @@
 	margin-right: 0.5rem;
 	color: var(--fg3);
 	text-wrap: nowrap;
+
+	user-select: text;
+	-webkit-user-select: text;
 }
 
 #package-gallery {

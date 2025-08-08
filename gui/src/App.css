@@ -10,6 +10,9 @@
 	-moz-osx-font-smoothing: grayscale;
 	-webkit-text-size-adjust: 100%;
 
+	user-select: none;
+	-webkit-user-select: none;
+
 	/* Colors */
 	--fg: #f6f6f6;
 	--fg2: #d3d3d3;

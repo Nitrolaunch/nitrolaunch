@@ -12,7 +12,7 @@ import {
 import "@thisbeyond/solid-select/style.css";
 import InlineSelect from "../../components/input/InlineSelect";
 import { loadPagePlugins } from "../../plugins";
-import { inputError } from "../../errors";
+import { clearInputError, inputError } from "../../errors";
 import {
 	beautifyString,
 	getSupportedLoaders,
@@ -294,17 +294,23 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 		if (!isGlobalProfile && configId == undefined) {
 			inputError("id");
 			return;
+		} else {
+			clearInputError("id");
 		}
 		if (props.creating) {
 			if (await idExists(configId!, props.mode)) {
 				inputError("id");
 				return;
+			} else {
+				clearInputError("id");
 			}
 		}
 
 		if (isInstance && side() == undefined) {
 			inputError("side");
 			return;
+		} else {
+			clearInputError("side");
 		}
 
 		let finalVersion =
@@ -314,6 +320,8 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 		if (isInstance && finalVersion == undefined) {
 			inputError("version");
 			return;
+		} else {
+			clearInputError("version");
 		}
 
 		// Loaders
@@ -919,95 +927,93 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 				<br />
 			</DisplayShow>
 			<DisplayShow when={tab() == "packages"}>
-				<Show when={!props.creating}>
-					<PackagesConfig
-						id={id}
-						isProfile={isProfile}
-						globalPackages={globalPackages()}
-						clientPackages={clientPackages()}
-						serverPackages={serverPackages()}
-						derivedGlobalPackages={derivedPackages()[0]}
-						derivedClientPackages={derivedPackages()[1]}
-						derivedServerPackages={derivedPackages()[2]}
-						onRemove={(pkg, category) => {
-							let func = (packages: PackageConfig[]) =>
-								packages.filter((x) => !packageConfigsEqual(x, pkg));
+				<PackagesConfig
+					id={id}
+					isProfile={isProfile}
+					globalPackages={globalPackages()}
+					clientPackages={clientPackages()}
+					serverPackages={serverPackages()}
+					derivedGlobalPackages={derivedPackages()[0]}
+					derivedClientPackages={derivedPackages()[1]}
+					derivedServerPackages={derivedPackages()[2]}
+					onRemove={(pkg, category) => {
+						let func = (packages: PackageConfig[]) =>
+							packages.filter((x) => !packageConfigsEqual(x, pkg));
 
-							if (category == "global") {
-								setGlobalPackages(func);
-							} else if (category == "client") {
-								setClientPackages(func);
-							} else if (category == "server") {
-								setServerPackages(func);
-							}
-
-							setDirty();
-						}}
-						onAdd={(pkg, category) => {
-							let func = (packages: PackageConfig[]) => {
-								if (!packages.some((x) => packageConfigsEqual(x, pkg))) {
-									packages.push(pkg);
-									// Force update
-									packages = packages.concat([]);
-								}
-								return packages;
-							};
-
-							if (category == "global") {
-								setGlobalPackages(func);
-							} else if (category == "client") {
-								setClientPackages(func);
-							} else if (category == "server") {
-								setServerPackages(func);
-							}
-
-							setDirty();
-						}}
-						setGlobalPackages={(packages) => {
-							setGlobalPackages(packages);
-							setDirty();
-						}}
-						setClientPackages={(packages) => {
-							setClientPackages(packages);
-							setDirty();
-						}}
-						setServerPackages={(packages) => {
-							setServerPackages(packages);
-							setDirty();
-						}}
-						minecraftVersion={
-							version() == undefined
-								? getDerivedValue(parentConfigs(), (x) => x.version)
-								: version()
+						if (category == "global") {
+							setGlobalPackages(func);
+						} else if (category == "client") {
+							setClientPackages(func);
+						} else if (category == "server") {
+							setServerPackages(func);
 						}
-						loader={(() => {
-							if (side() == "client") {
-								if (clientLoader() == undefined) {
-									return getDerivedValue(parentConfigs(), (x) =>
-										getConfiguredLoader(x.loader, "client")
-									);
-								} else {
-									return clientLoader();
-								}
-							} else if (side() == "server") {
-								if (serverLoader() == undefined) {
-									return getDerivedValue(parentConfigs(), (x) =>
-										getConfiguredLoader(x.loader, "server")
-									);
-								} else {
-									return serverLoader();
-								}
-							} else {
-								return undefined;
+
+						setDirty();
+					}}
+					onAdd={(pkg, category) => {
+						let func = (packages: PackageConfig[]) => {
+							if (!packages.some((x) => packageConfigsEqual(x, pkg))) {
+								packages.push(pkg);
+								// Force update
+								packages = packages.concat([]);
 							}
-						})()}
-						showBrowseButton={true}
-						parentConfigs={parentConfigs()}
-						onChange={setDirty}
-						overrides={packageOverrides()}
-						setOverrides={setPackageOverrides}
-					/>
-				</Show>
+							return packages;
+						};
+
+						if (category == "global") {
+							setGlobalPackages(func);
+						} else if (category == "client") {
+							setClientPackages(func);
+						} else if (category == "server") {
+							setServerPackages(func);
+						}
+
+						setDirty();
+					}}
+					setGlobalPackages={(packages) => {
+						setGlobalPackages(packages);
+						setDirty();
+					}}
+					setClientPackages={(packages) => {
+						setClientPackages(packages);
+						setDirty();
+					}}
+					setServerPackages={(packages) => {
+						setServerPackages(packages);
+						setDirty();
+					}}
+					minecraftVersion={
+						version() == undefined
+							? getDerivedValue(parentConfigs(), (x) => x.version)
+							: version()
+					}
+					loader={(() => {
+						if (side() == "client") {
+							if (clientLoader() == undefined) {
+								return getDerivedValue(parentConfigs(), (x) =>
+									getConfiguredLoader(x.loader, "client")
+								);
+							} else {
+								return clientLoader();
+							}
+						} else if (side() == "server") {
+							if (serverLoader() == undefined) {
+								return getDerivedValue(parentConfigs(), (x) =>
+									getConfiguredLoader(x.loader, "server")
+								);
+							} else {
+								return serverLoader();
+							}
+						} else {
+							return undefined;
+						}
+					})()}
+					showBrowseButton={true}
+					parentConfigs={parentConfigs()}
+					onChange={setDirty}
+					overrides={packageOverrides()}
+					setOverrides={setPackageOverrides}
+				/>
 			</DisplayShow>
 			<DisplayShow when={tab() == "launch"}>
 				<LaunchConfig

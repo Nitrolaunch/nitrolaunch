@@ -3,13 +3,13 @@ import "./PackageFilters.css";
 import Icon from "../Icon";
 import {
 	Box,
-	Delete,
 	Jigsaw,
 	Lock,
 	Minecraft,
 	Plus,
 	Properties,
 	Tag,
+	Trash,
 	Warning,
 } from "../../icons";
 import {
@@ -265,6 +265,7 @@ export default function PackageFilters(props: PackageFiltersProps) {
 								onChangeMulti={(x) =>
 									props.setCategories(x as PackageCategory[])
 								}
+								isSearchable={false}
 								zIndex="20"
 							/>
 						</div>
@@ -336,7 +337,7 @@ export default function PackageFilters(props: PackageFiltersProps) {
 				<Show when={tab() == "more"}>
 					<div class="cont start fullwidth" style="padding:0.5rem">
 						<IconTextButton
-							icon={Delete}
+							icon={Trash}
 							size="1rem"
 							text="Clear Filters"
 							color="var(--bg2)"

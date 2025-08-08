@@ -3,7 +3,8 @@
 	background-color: var(--bg0);
 	top: 2.7rem;
 	left: 0rem;
-	width: 15rem;
+	--width: 15rem;
+	width: var(--width);
 	height: 100%;
 	box-sizing: border-box;
 	border: 0.15rem solid var(--bg2);
@@ -12,12 +13,12 @@
 	overflow-x: hidden;
 	overflow-y: scroll;
 
-	transition: width 0.3s;
+	transition: width 0.2s;
 }
 
 .sidebar-item {
 	height: 2.3rem;
-	width: 100%;
+	width: var(--width);
 	border-bottom: 0.15rem solid var(--bg2);
 	justify-content: flex-start;
 	box-sizing: border-box;
@@ -51,6 +52,8 @@
 
 .sidebar-divider {
 	height: 2.5rem;
+	width: var(--width);
+
 	padding-top: 0.8rem;
 	box-sizing: border-box;
 
