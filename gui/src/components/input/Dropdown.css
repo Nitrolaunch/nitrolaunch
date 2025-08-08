@@ -5,6 +5,24 @@
 	--option-height: 2.5rem;
 }
 
+.dropdown-darkener {
+	position: absolute;
+	left: 0px;
+	top: 0px;
+
+	pointer-events: none;
+
+	outline: 900rem solid transparent;
+	transition: outline-color 0.25s;
+}
+
+.dropdown-darkener.open {
+	outline-color: #11111188;
+
+	width: 100%;
+	height: 100%;
+}
+
 .dropdown-header {
 	width: 100%;
 	height: 2.3rem;
@@ -31,6 +49,14 @@
 .dropdown-header.open {
 	border-color: var(--bg4);
 	background-color: var(--bg);
+}
+
+/* Prevents mouseout events */
+.dropdown-header::after {
+	position: absolute;
+	top: 100%;
+	width: 100%;
+	height: 0.5rem;
 }
 
 .dropdown-search {
@@ -66,22 +92,18 @@
 	overflow-y: scroll;
 	overscroll-behavior-y: contain;
 
-	border-top: 0.15rem solid var(--bg4);
-	border-bottom: 0.15rem solid var(--bg4);
+	border: 0.15rem solid var(--bg4);
 	border-radius: var(--round2);
 
 	box-shadow: var(--shadow-offset) var(--shadow-offset) var(--transparent-dark);
 
-	transition: max-height 0.3s, border-width 0.3s;
+	transition: max-height 0.25s, border-width 0.25s;
 }
 
 .dropdown-option {
 	height: var(--option-height);
 
-	border: 0.15rem solid var(--bg3);
-	border-left-color: var(--bg4);
-	border-right-color: var(--bg4);
-	border-top: none;
+	border-bottom: 0.15rem solid var(--bg3);
 	box-sizing: border-box;
 
 	cursor: pointer;

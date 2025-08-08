@@ -80,6 +80,10 @@ export default function Dropdown(props: DropdownProps) {
 	return (
 		<div class="dropdown-container">
 			<div
+				class={`dropdown-darkener ${isOpen() ? "open" : ""}`}
+				style={`${zIndex}`}
+			></div>
+			<div
 				class={`cont input-shadow dropdown-header ${isOpen() ? "open" : ""}`}
 				onclick={() => setIsOpen(!isOpen())}
 				style={`${
@@ -131,7 +135,7 @@ export default function Dropdown(props: DropdownProps) {
 				class="dropdown-options"
 				style={`${
 					!isOpen()
-						? "max-height:0px;border-width:0px"
+						? "max-height:0px;border-top-width:0px;border-bottom-width:0px;outline-width:0"
 						: `max-height:${openedHeight()}`
 				};${zIndex};${
 					props.optionsWidth != undefined ? `width:${props.optionsWidth}` : ""
