@@ -29,6 +29,7 @@ import Icon from "../../components/Icon";
 import IconTextButton from "../../components/input/IconTextButton";
 import InstanceTransferPrompt from "../../components/instance/InstanceTransferPrompt";
 import Dropdown from "../../components/input/Dropdown";
+import IconAndText from "../../components/utility/IconAndText";
 
 export default function InstanceList(props: InstanceListProps) {
 	onMount(() => loadPagePlugins("instances"));
@@ -137,36 +138,23 @@ export default function InstanceList(props: InstanceListProps) {
 										{
 											value: "create_instance",
 											contents: (
-												<div class="cont">
-													<Icon icon={Box} size="1rem" />
-													Create Instance
-												</div>
+												<IconAndText icon={Box} text="Create Instance" />
 											),
 										},
 										{
 											value: "create_profile",
 											contents: (
-												<div class="cont">
-													<Icon icon={Properties} size="1rem" />
-													Create Profile
-												</div>
+												<IconAndText icon={Properties} text="Create Profile" />
 											),
 										},
 										{
 											value: "import_instance",
 											contents: (
-												<div class="cont">
-													<Icon icon={Download} size="1rem" />
-													Import Instance
-												</div>
+												<IconAndText icon={Download} text="Import Instance" />
 											),
 										},
 									]}
-									previewText={
-										<div class="cont">
-											<Icon icon={Plus} size="1rem" /> Add
-										</div>
-									}
+									previewText={<IconAndText icon={Plus} text="Add" />}
 									onChange={(selection) => {
 										if (selection == "create_instance") {
 											window.location.href = "create_instance";

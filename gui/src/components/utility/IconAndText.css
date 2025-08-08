@@ -1,0 +1,6 @@
+.icon-and-text {
+	display: grid;
+	grid-template-columns: 2.25rem 1fr;
+
+	width: 100%;
+}
