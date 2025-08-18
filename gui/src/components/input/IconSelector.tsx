@@ -10,6 +10,9 @@ export default function IconSelector(props: IconSelectorProps) {
 			"/icons/quilt.png",
 			"/icons/paper.png",
 			"/icons/folia.png",
+			"/icons/forge.png",
+			"/icons/neoforge.png",
+			"/icons/sponge.png",
 		];
 	});
 
@@ -19,7 +22,6 @@ export default function IconSelector(props: IconSelectorProps) {
 	return (
 		<div class="fullwidth">
 			<div class="fullwidth icon-selector">
-				<SelectableIcon icon={selectedIcon()} onSelect={() => {}} isSelected />
 				<For each={availableIcons()}>
 					{(icon) => (
 						<SelectableIcon
@@ -31,7 +33,7 @@ export default function IconSelector(props: IconSelectorProps) {
 									props.setIcon(icon);
 								}
 							}}
-							isSelected={false}
+							isSelected={icon == selectedIcon()}
 						/>
 					)}
 				</For>

@@ -421,7 +421,7 @@ function Item(props: ItemProps) {
 				<div class="instance-list-pin">
 					<IconButton
 						icon={Pin}
-						size="22px"
+						size="1.5rem"
 						color="transparent"
 						selectedColor="var(--instance)"
 						iconColor={

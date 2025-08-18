@@ -118,7 +118,7 @@ function InlineSelectOption(props: OptionProps) {
 			if (props.solidSelect) {
 				return color;
 			} else {
-				return "var(--bg)";
+				return "var(--bg0)";
 			}
 		} else {
 			return "var(--bg2)";

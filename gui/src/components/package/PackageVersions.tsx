@@ -22,8 +22,6 @@ import SearchBar from "../input/SearchBar";
 import { canonicalizeListOrSingle } from "../../utils/values";
 import { errorToast } from "../dialog/Toasts";
 import PackageLabels from "./PackageLabels";
-import IconButton from "../input/IconButton";
-import { Download } from "../../icons";
 import PackageVersionInfo from "./PackageVersionInfo";
 
 export default function PackageVersions(props: PackageVersionsProps) {
@@ -319,20 +317,18 @@ function PackageVersionEntry(props: PackageVersionEntryProps) {
 	}
 
 	let versions = (
-		<Show when={version.minecraft_versions != undefined}>
-			<For each={minecraftVersions}>
-				{(version, i) => {
-					if (i() > 1) {
-						if (i() == 2) {
-							return <div>...</div>;
-						}
-						return undefined;
-					} else {
-						return <div>{version}</div>;
+		<For each={minecraftVersions}>
+			{(version, i) => {
+				if (i() > 1) {
+					if (i() == 2) {
+						return <div>...</div>;
 					}
-				}}
-			</For>
-		</Show>
+					return undefined;
+				} else {
+					return <div>{version}</div>;
+				}
+			}}
+		</For>
 	);
 
 	let loaders = canonicalizeListOrSingle(version.loaders);
@@ -361,22 +357,6 @@ function PackageVersionEntry(props: PackageVersionEntryProps) {
 					limit={3}
 					small
 				/>
-				<Show when={props.version.name != undefined}>
-					<div></div>
-					<IconButton
-						icon={Download}
-						size="1.3rem"
-						selected
-						color="var(--bg2)"
-						selectedColor="var(--packagebg)"
-						border="var(--package)"
-						onClick={(e) => {
-							e.preventDefault();
-							e.stopPropagation();
-							props.onInstall(props.version.name!);
-						}}
-					/>
-				</Show>
 			</div>
 		</div>
 	);

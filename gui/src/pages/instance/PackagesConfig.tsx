@@ -229,24 +229,26 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 					</Tip>
 				</div>
 				<div class="cont end fullwidth">
-					<IconTextButton
-						icon={Upload}
-						size="1.5rem"
-						text="Update Packages"
-						color="var(--bg2)"
-						selectedColor=""
-						selected={false}
-						onClick={async () => {
-							try {
-								await invoke("update_instance_packages", {
-									instanceId: props.id,
-								});
-							} catch (e) {
-								errorToast("Failed to update packages: " + e);
-							}
-							resolutionErrorMethods.refetch();
-						}}
-					/>
+					<Show when={props.id != undefined && !props.isProfile}>
+						<IconTextButton
+							icon={Upload}
+							size="1.5rem"
+							text="Update Packages"
+							color="var(--bg2)"
+							selectedColor=""
+							selected={false}
+							onClick={async () => {
+								try {
+									await invoke("update_instance_packages", {
+										instanceId: props.id,
+									});
+								} catch (e) {
+									errorToast("Failed to update packages: " + e);
+								}
+								resolutionErrorMethods.refetch();
+							}}
+						/>
+					</Show>
 				</div>
 			</div>
 			<div></div>

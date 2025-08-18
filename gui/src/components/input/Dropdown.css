@@ -14,6 +14,8 @@
 
 	outline: 900rem solid transparent;
 	transition: outline-color 0.25s;
+
+	padding-bottom: 0.5rem;
 }
 
 .dropdown-darkener.open {
@@ -69,6 +71,10 @@
 	padding-left: 2rem;
 }
 
+.dropdown-search:focus {
+	outline: none;
+}
+
 .dropdown-search-icon {
 	position: absolute;
 
@@ -81,13 +87,16 @@
 
 .dropdown-arrow {
 	position: absolute;
-	right: 0.5rem;
+	right: 0rem;
+	padding: 0.5rem;
 }
 
 .dropdown-options {
 	width: 100%;
 	position: absolute;
 	top: calc(100% + 0.5rem);
+
+	box-sizing: border-box;
 
 	overflow-y: scroll;
 	overscroll-behavior-y: contain;
@@ -97,7 +106,7 @@
 
 	box-shadow: var(--shadow-offset) var(--shadow-offset) var(--transparent-dark);
 
-	transition: max-height 0.25s, border-width 0.25s;
+	transition: max-height 0.25s;
 }
 
 .dropdown-option {

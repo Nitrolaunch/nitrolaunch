@@ -588,7 +588,14 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 									setDirty();
 								}}
 								onKeyUp={(e: any) => {
-									setIsIdDirty(true);
+									if (
+										e.target.value == undefined ||
+										e.target.value.length == 0
+									) {
+										setIsIdDirty(false);
+									} else {
+										setIsIdDirty(true);
+									}
 									e.target.value = sanitizeInstanceId(e.target.value);
 								}}
 							></input>

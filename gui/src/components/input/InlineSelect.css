@@ -50,10 +50,11 @@
 }
 
 .inline-select-option.selected {
-	border-right: 0.15rem solid;
+	font-weight: bold;
 }
 
 .inline-select-option.connected.selected {
+	border-right: 0.15rem solid;
 	background-color: var(--bg-1);
 }
 

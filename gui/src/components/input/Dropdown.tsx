@@ -17,6 +17,24 @@ import { AngleDown, AngleRight, Search } from "../../icons";
 export default function Dropdown(props: DropdownProps) {
 	let [isOpen, setIsOpen] = createSignal(props.startOpen == true);
 
+	// Hovering behavior
+	let [isHeaderHovered, setIsHeaderHovered] = createSignal(false);
+	let [isGapHovered, setIsGapHovered] = createSignal(false);
+	let [areOptionsHovered, setAreOptionsHovered] = createSignal(false);
+
+	createEffect(() => {
+		let anyPartHovered = () =>
+			isHeaderHovered() || isGapHovered() || areOptionsHovered();
+		if (!anyPartHovered()) {
+			// We need to set a timeout since when we switch between elements there is an instant where nothing is hovered
+			setTimeout(() => {
+				if (!anyPartHovered()) {
+					setIsOpen(false);
+				}
+			}, 250);
+		}
+	});
+
 	let selectFunction = (value: string | undefined) => {
 		if (props.onChange != undefined) {
 			props.onChange(value);
@@ -67,6 +85,8 @@ export default function Dropdown(props: DropdownProps) {
 		}
 	};
 
+	let lastIndex = createMemo(() => props.options.length - 1);
+
 	let [search, setSearch] = createSignal<string | undefined>();
 
 	let searchElement!: HTMLInputElement;
@@ -74,6 +94,7 @@ export default function Dropdown(props: DropdownProps) {
 	createEffect(() => {
 		if (isOpen() && searchElement != undefined) {
 			searchElement.focus();
+			setSearch(undefined);
 		}
 	});
 
@@ -82,6 +103,8 @@ export default function Dropdown(props: DropdownProps) {
 			<div
 				class={`dropdown-darkener ${isOpen() ? "open" : ""}`}
 				style={`${zIndex}`}
+				onmouseenter={() => setIsGapHovered(true)}
+				onmouseleave={() => setIsGapHovered(false)}
 			></div>
 			<div
 				class={`cont input-shadow dropdown-header ${isOpen() ? "open" : ""}`}
@@ -89,6 +112,8 @@ export default function Dropdown(props: DropdownProps) {
 				style={`${
 					isOpen() && isSearchable ? "justify-content:flex-start" : ""
 				}`}
+				onmouseenter={() => setIsHeaderHovered(true)}
+				onmouseleave={() => setIsHeaderHovered(false)}
 			>
 				<Switch>
 					<Match when={!isOpen() || !isSearchable}>{headerContents()}</Match>
@@ -135,12 +160,13 @@ export default function Dropdown(props: DropdownProps) {
 				class="dropdown-options"
 				style={`${
 					!isOpen()
-						? "max-height:0px;border-top-width:0px;border-bottom-width:0px;outline-width:0"
+						? "max-height:0px;border-top-width:0px;border-bottom-width:0px;outline-width:0;transition: max-height 0.25s, border-width 0.25s step-end"
 						: `max-height:${openedHeight()}`
 				};${zIndex};${
 					props.optionsWidth != undefined ? `width:${props.optionsWidth}` : ""
 				}`}
-				onmouseleave={() => setIsOpen(false)}
+				onmouseenter={() => setAreOptionsHovered(true)}
+				onmouseleave={() => setAreOptionsHovered(false)}
 			>
 				<Show when={allowEmpty}>
 					<DropdownOption
@@ -159,8 +185,9 @@ export default function Dropdown(props: DropdownProps) {
 					{(option, index) => {
 						let isVisible = createMemo(() => {
 							return (
-								search() == undefined ||
 								props.customSearchFunction != undefined ||
+								search() == undefined ||
+								search()!.length == 0 ||
 								(option.value != undefined && option.value!.includes(search()!))
 							);
 						});
@@ -175,8 +202,8 @@ export default function Dropdown(props: DropdownProps) {
 											? props.selected.includes(option.value!)
 											: props.selected == option.value
 									)()}
-									isFirst={index() == 0 && !allowEmpty}
-									isLast={index() == props.options.length - 1}
+									isFirst={!allowEmpty && index() == 0}
+									isLast={index() == lastIndex()}
 									class={props.optionClass}
 								/>
 							</Show>

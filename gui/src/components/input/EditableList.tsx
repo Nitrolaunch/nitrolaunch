@@ -9,6 +9,10 @@ export default function EditableList(props: EditableListProps) {
 	let [newItem, setNewItem] = createSignal("");
 
 	let addNewItem = () => {
+		if (newItem().length == 0) {
+			return;
+		}
+
 		let items = props.items.concat();
 		items.push(newItem());
 		props.setItems(items);

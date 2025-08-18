@@ -22,7 +22,9 @@ export default function DeriveIndicator(props: DeriveIndicatorProps) {
 			<div class="cont derive-indicator">
 				<Switch>
 					<Match when={displayValue}>DERIVED VALUE: {value()}</Match>
-					<Match when={!displayValue}>DERIVED</Match>
+					<Match when={!displayValue}>
+						<div class="derive-indicator-asterisk">*</div>DERIVED
+					</Match>
 				</Switch>
 			</div>
 		</Show>

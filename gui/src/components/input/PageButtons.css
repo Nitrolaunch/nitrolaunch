@@ -16,6 +16,6 @@
 }
 
 .page-button.selected {
-	background-color: var(--bg3);
+	background-color: var(--bg);
 	border-color: var(--bg4);
 }

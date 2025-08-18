@@ -181,6 +181,8 @@
 	border: 0.15rem solid var(--bg0);
 	border-radius: var(--round2);
 	cursor: pointer;
+
+	transition: border-color 0.25s;
 }
 
 .package-gallery-entry:hover {
