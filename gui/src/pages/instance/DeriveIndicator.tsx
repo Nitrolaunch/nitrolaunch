@@ -21,9 +21,12 @@ export default function DeriveIndicator(props: DeriveIndicatorProps) {
 		<Show when={visible()}>
 			<div class="cont derive-indicator">
 				<Switch>
-					<Match when={displayValue}>DERIVED VALUE: {value()}</Match>
+					<Match when={displayValue}>
+						<div class="derive-indicator-asterisk">*</div>INHERITED VALUE:{" "}
+						{value()}
+					</Match>
 					<Match when={!displayValue}>
-						<div class="derive-indicator-asterisk">*</div>DERIVED
+						<div class="derive-indicator-asterisk">*</div>INHERITED
 					</Match>
 				</Switch>
 			</div>
