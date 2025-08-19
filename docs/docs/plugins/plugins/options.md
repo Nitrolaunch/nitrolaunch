@@ -276,7 +276,8 @@ A description will not be provided for every option as they mirror the options i
 	"spawn_protection": integer,
 	"sync_chunk_writes": bool,
 	"use_native_transport": bool,
-	"view_distance": integer
+	"view_distance": integer,
+	"enable_code_of_conduct": bool
 }
 ```
 

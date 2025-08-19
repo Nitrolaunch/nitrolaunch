@@ -153,6 +153,7 @@ pub fn create_keys(
 	match_key!(out, options.use_native_transport, "use-native-transport");
 	match_key!(out, options.view_distance, "view-distance");
 	match_key!(out, options.whitelist.enable, "white-list");
+	match_key!(out, options.enable_code_of_conduct, "enable-code-of-conduct");
 
 	let custom_clone = options.custom.clone();
 	out.extend(custom_clone);

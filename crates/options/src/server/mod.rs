@@ -111,6 +111,8 @@ pub mod deser {
 		pub use_native_transport: Option<bool>,
 		#[serde(skip_serializing_if = "Option::is_none")]
 		pub view_distance: Option<u8>,
+		#[serde(skip_serializing_if = "Option::is_none")]
+		pub enable_code_of_conduct: Option<bool>,
 	}
 
 	#[derive(Deserialize, Serialize, Debug, Clone, Default, PartialEq)]
