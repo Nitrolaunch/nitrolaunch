@@ -45,7 +45,7 @@ export interface RepoInfo {
 export interface RepoMetadata {
 	name?: string;
 	description?: string;
-	nitro_verseion?: string;
+	nitro_version?: string;
 	color?: string;
 	text_color?: string;
 	package_types?: PackageType[];

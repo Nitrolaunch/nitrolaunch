@@ -3,6 +3,8 @@ import { PackageCategory, PackageType, RepoInfo } from "../../package";
 import { invoke } from "@tauri-apps/api";
 import { createSignal, Show, createResource, createEffect } from "solid-js";
 import InlineSelect from "../input/InlineSelect";
+import Icon from "../Icon";
+import { Home } from "../../icons";
 
 export default function RepoSelector(props: RepoSelectorProps) {
 	let [repos, setRepos] = createSignal<RepoInfo[] | undefined>();
@@ -61,6 +63,7 @@ export default function RepoSelector(props: RepoSelectorProps) {
 			if (repo == undefined) {
 				props.setRepoPackageTypes(undefined);
 				props.setRepoCategories(undefined);
+				props.setRepoColor(undefined);
 			} else {
 				props.setRepoPackageTypes(
 					repo.meta.package_types == undefined ||
@@ -75,6 +78,8 @@ export default function RepoSelector(props: RepoSelectorProps) {
 						? undefined
 						: repo.meta.package_categories!
 				);
+
+				props.setRepoColor(repo.meta.color);
 			}
 
 			props.setFinalSelectedRepo(selectedRepo());
@@ -85,11 +90,19 @@ export default function RepoSelector(props: RepoSelectorProps) {
 		<Show when={!result.loading}>
 			<InlineSelect
 				options={repos()!.map((x) => {
+					if (x.id == "std") {
+						return {
+							value: "std",
+							contents: <Icon icon={Home} size="1rem" />,
+						};
+					}
 					return {
 						value: x.id,
 						contents: (
 							<div style="padding:0rem 0.3rem">
-								{x.id.replace(/\_/g, " ").toLocaleUpperCase()}
+								{x.meta.name == undefined
+									? x.id.replace(/\_/g, " ").toLocaleUpperCase()
+									: x.meta.name.toLocaleUpperCase()}
 							</div>
 						),
 						color: x.meta.color,
@@ -124,4 +137,5 @@ export interface RepoSelectorProps {
 	setFinalSelectedRepo: (repo: string | undefined) => void;
 	setRepoPackageTypes: (value: PackageType[] | undefined) => void;
 	setRepoCategories: (value: PackageCategory[] | undefined) => void;
+	setRepoColor: (value: string | undefined) => void;
 }

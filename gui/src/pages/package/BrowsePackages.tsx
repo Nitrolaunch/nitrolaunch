@@ -125,6 +125,7 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 	let [repoCategories, setRepoCategories] = createSignal<
 		PackageCategory[] | undefined
 	>();
+	let [repoColor, setRepoColor] = createSignal<string | undefined>();
 
 	async function updatePackages() {
 		if (selectedRepo() == undefined) {
@@ -183,6 +184,7 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 							setFinalSelectedRepo={setSelectedRepo}
 							setRepoPackageTypes={setRepoPackageTypes}
 							setRepoCategories={setRepoCategories}
+							setRepoColor={setRepoColor}
 						/>
 					</div>
 					<h1 class="noselect">Packages</h1>
@@ -202,6 +204,9 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 						/>
 					</div>
 				</div>
+				<Show when={repoColor() != undefined}>
+					<div id="browse-gradient" style={`--repo-color:${repoColor()}`}></div>
+				</Show>
 				<div id="browse-subheader">
 					<PackageFilters
 						packageType={filteredPackageType()}

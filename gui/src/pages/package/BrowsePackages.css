@@ -94,3 +94,13 @@
 	border: 0.2rem solid var(--error);
 	border-radius: var(--round2);
 }
+
+#browse-gradient {
+	position: absolute;
+	top: 0;
+	width: 100vw;
+	height: 15rem;
+	z-index: -2;
+	background-image: linear-gradient(var(--repo-color), transparent);
+	opacity: 20%;
+}
