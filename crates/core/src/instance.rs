@@ -2,8 +2,8 @@ use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
 use anyhow::{bail, Context};
-use nitro_shared::output::NitroOutput;
-use nitro_shared::Side;
+use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
+use nitro_shared::{translate, Side};
 
 use crate::config::BrandingProperties;
 use crate::io::files::paths::Paths;
@@ -182,6 +182,11 @@ impl<'params> Instance<'params> {
 					tokio::fs::write(eula_path, "eula = true\n")
 						.await
 						.context("Failed to create eula.txt")?;
+
+					o.display(
+						MessageContents::Notice(translate!(o, AgreeToEula)),
+						MessageLevel::Important,
+					);
 				}
 			}
 		}

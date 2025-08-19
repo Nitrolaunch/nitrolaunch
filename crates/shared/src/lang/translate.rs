@@ -111,6 +111,7 @@ define_translations! {
 	StartUpdatingInstanceLoader, "When starting to change an instance's loader", "Removing current loader from the instance";
 	FinishUpdatingInstanceVersion, "When finishing updating an instance version", "Finished update";
 	InvalidInstanceConfig, "When the configuration for an instance is invalid", "Configuration for instance '%instance' is invalid:\n%error";
+	AgreeToEula, "Notice that the user agrees to the server EULA", "By creating a server instance, you agree to the terms of the Minecraft EULA";
 }
 
 /// Replaces placeholders in a translated key
