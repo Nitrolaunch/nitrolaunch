@@ -6,7 +6,7 @@
 }
 
 .search-bar > input:focus {
-	border: 0px;
+	outline: 0px;
 }
 
 .search-bar {
@@ -14,6 +14,8 @@
 	padding: 0.2rem 0.6rem;
 	border: var(--border) solid var(--bg3);
 	border-radius: var(--round);
+	height: var(--input-height);
+	box-sizing: border-box;
 }
 
 .search-bar-icon {

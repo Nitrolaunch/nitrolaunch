@@ -9,7 +9,7 @@
 
 .instance-console-output {
 	width: 100%;
-	height: 100%;
+	height: 30rem;
 }
 
 .instance-console-text {
@@ -27,6 +27,16 @@
 	white-space: pre-wrap;
 }
 
-.bold {
+.console-line.info {
+	color: var(--fg3);
+}
+
+.console-line.warning {
+	color: var(--warning);
+	font-weight: bolder;
+}
+
+.console-line.error {
+	color: var(--error);
 	font-weight: bold;
 }
