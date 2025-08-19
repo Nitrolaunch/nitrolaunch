@@ -9,7 +9,7 @@
 	aspect-ratio: 1;
 
 	background-color: var(--bg2);
-	border: 0.15rem solid var(--bg3);
+	border: var(--border) solid var(--bg3);
 	border-radius: var(--round2);
 	box-sizing: border-box;
 
@@ -25,7 +25,7 @@
 
 .icon-selector-icon.selected {
 	background-color: var(--instancebg);
-	border: 0.15rem solid var(--instance);
+	border: var(--border) solid var(--instance);
 }
 
 .icon-selector-icon-image {

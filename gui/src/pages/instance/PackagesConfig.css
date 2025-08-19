@@ -10,7 +10,7 @@
 
 	margin-bottom: 1rem;
 
-	border: 0.15rem solid var(--error);
+	border: var(--border) solid var(--error);
 	border-radius: var(--round);
 
 	background-color: var(--errorbg);
@@ -52,7 +52,7 @@
 			1fr
 		);
 	background-color: var(--bg0);
-	border: 0.15rem solid var(--bg3);
+	border: var(--border) solid var(--bg3);
 	border-radius: var(--round);
 	box-sizing: border-box;
 }

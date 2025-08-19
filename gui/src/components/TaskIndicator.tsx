@@ -229,7 +229,7 @@ export default function TaskIndicator(props: TaskIndicatorProps) {
 						</div>
 						<div class="cont">
 							<button
-								style="border: 0.15rem solid var(--bg3)"
+								style="border: var(--border) solid var(--bg3)"
 								onclick={(e) => {
 									removeThisToast(e.target);
 									invoke("install_default_plugins").then(
@@ -245,7 +245,7 @@ export default function TaskIndicator(props: TaskIndicatorProps) {
 								Yes
 							</button>
 							<button
-								style="border: 0.15rem solid var(--error)"
+								style="border: var(--border) solid var(--error)"
 								onclick={(e) => {
 									removeThisToast(e.target);
 								}}

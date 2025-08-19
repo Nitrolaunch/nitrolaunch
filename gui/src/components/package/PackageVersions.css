@@ -20,7 +20,7 @@
 	width: 100%;
 	height: 4rem;
 	grid-template-columns: minmax(0, 0.7fr) minmax(0, 0.8fr) minmax(0, 0.7fr);
-	border: 0.15rem solid var(--bg3);
+	border: var(--border) solid var(--bg3);
 	border-radius: var(--round);
 	box-sizing: border-box;
 	cursor: pointer;
@@ -39,7 +39,7 @@
 }
 
 .package-version-mc-versions > div {
-	border: 0.15rem solid var(--bg3);
+	border: var(--border) solid var(--bg3);
 	border-radius: var(--round2);
 	padding: 0.35rem;
 }
@@ -63,7 +63,7 @@
 .package-version-stability-indicator {
 	width: 1rem;
 	height: 1rem;
-	border: 0.15rem solid;
+	border: var(--border) solid;
 	border-radius: var(--round);
 	font-size: 0.9rem;
 	font-weight: bold;

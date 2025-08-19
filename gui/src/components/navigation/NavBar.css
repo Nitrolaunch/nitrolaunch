@@ -9,7 +9,7 @@
 	box-sizing: border-box;
 	user-select: none;
 	-webkit-user-select: none;
-	/* border-bottom: 0.15rem solid var(--bg3); */
+	/* border-bottom: var(--border) solid var(--bg3); */
 }
 
 #navbar-container {
@@ -54,7 +54,7 @@
 	height: 100%;
 	font-weight: bold;
 	box-sizing: border-box;
-	border-bottom: 0.15rem solid var(--bg);
+	border-bottom: var(--border) solid var(--bg);
 
 	transition: border-color 0.15s, background-color 0.35s;
 }

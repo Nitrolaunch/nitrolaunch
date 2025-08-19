@@ -19,7 +19,7 @@
 .tip-body {
 	background-color: var(--bg0);
 	padding: 0.75rem;
-	border: 0.15rem solid var(--bg3);
+	border: var(--border) solid var(--bg3);
 	border-radius: var(--round);
 	box-sizing: border-box;
 	width: var(--width);
@@ -46,31 +46,31 @@
 	width: 0.5rem;
 	height: 0.5rem;
 	background-color: var(--bg0);
-	border: 0.15rem solid var(--bg3);
+	border: var(--border) solid var(--bg3);
 }
 
 .tip-arrow.right {
 	border-right-color: var(--bg0);
-	margin-right: -0.15rem;
+	margin-right: calc(-1 * var(--border));
 	border-bottom-left-radius: 5rem;
 	box-shadow: none;
 }
 
 .tip-arrow.left {
 	border-left-color: var(--bg0);
-	margin-left: -0.15rem;
+	margin-left: calc(-1 * var(--border));
 	border-bottom-right-radius: 5rem;
 }
 
 .tip-arrow.top {
 	border-top-color: var(--bg0);
-	margin-top: -0.15rem;
+	margin-top: calc(-1 * var(--border));
 	border-bottom-right-radius: 5rem;
 }
 
 .tip-arrow.bottom {
 	border-bottom-color: var(--bg0);
-	margin-bottom: -0.15rem;
+	margin-bottom: calc(-1 * var(--border));
 	border-top-right-radius: 5rem;
 	box-shadow: none;
 }

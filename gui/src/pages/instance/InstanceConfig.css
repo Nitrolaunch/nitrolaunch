@@ -14,7 +14,7 @@
 	grid-template-columns: repeat(3, minmax(0, 1fr));
 	text-align: center;
 	border-radius: var(--round);
-	border: 0.15rem solid var(--bg3);
+	border: var(--border) solid var(--bg3);
 }
 
 .config-tab {
@@ -25,7 +25,7 @@
 	width: 13rem;
 	cursor: pointer;
 	box-sizing: border-box;
-	border: 0.15rem solid var(--bg0);
+	border: var(--border) solid var(--bg0);
 }
 
 #general-tab.selected {
@@ -62,7 +62,7 @@
 hr {
 	width: 100%;
 	border: 0px;
-	border-top: 0.15rem solid var(--bg3);
+	border-top: var(--border) solid var(--bg3);
 }
 
 .profile-placeholder::placeholder {

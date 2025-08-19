@@ -30,7 +30,7 @@
 	height: 18rem;
 
 	border-radius: var(--round2);
-	border: 0.15rem solid var(--bg3);
+	border: var(--border) solid var(--bg3);
 	border-top-color: var(--bg4);
 	border-left-color: var(--bg4);
 
@@ -59,7 +59,7 @@
 
 .package-image-container {
 	width: 100%;
-	border-bottom: 0.15rem solid var(--bg3);
+	border-bottom: var(--border) solid var(--bg3);
 }
 
 .package-image {

@@ -4,7 +4,7 @@
 	gap: 0;
 
 	background-color: var(--bg2);
-	border: 0.15rem solid var(--bg3);
+	border: var(--border) solid var(--bg3);
 
 	box-shadow: var(--shadow-offset) var(--shadow-offset) var(--transparent-dark);
 }
@@ -16,7 +16,7 @@
 	padding: 1rem;
 	box-sizing: border-box;
 
-	border-bottom: 0.15rem solid var(--bg3);
+	border-bottom: var(--border) solid var(--bg3);
 }
 
 .package-quick-add-repos {
@@ -37,7 +37,7 @@
 	height: 100%;
 	overflow-y: scroll;
 
-	border-right: 0.15rem solid var(--bg3);
+	border-right: var(--border) solid var(--bg3);
 }
 
 .package-quick-add-option {

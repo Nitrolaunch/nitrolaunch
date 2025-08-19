@@ -12,7 +12,7 @@
 	box-sizing: border-box;
 
 	background-color: var(--bg2);
-	border: 0.15rem solid var(--bg3);
+	border: var(--border) solid var(--bg3);
 	border-radius: var(--round);
 
 	cursor: grab;

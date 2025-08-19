@@ -20,8 +20,8 @@
 
 	border-top-left-radius: var(--round2);
 	border-top-right-radius: var(--round2);
-	border-top: 0.15rem solid transparent;
-	border-bottom: 0.15rem solid var(--bg3);
+	border-top: var(--border) solid transparent;
+	border-bottom: var(--border) solid var(--bg3);
 	box-sizing: border-box;
 
 	cursor: pointer;
@@ -30,7 +30,7 @@
 }
 
 .package-filter-tab.selected {
-	border: 0.15rem solid var(--bg3);
+	border: var(--border) solid var(--bg3);
 	background-color: var(--bg);
 	border-bottom-color: var(--bg);
 }
@@ -41,7 +41,7 @@
 
 	background-color: var(--bg);
 
-	border: 0.15rem solid var(--bg3);
+	border: var(--border) solid var(--bg3);
 	border-top: none;
 	border-bottom-left-radius: var(--round);
 	border-bottom-right-radius: var(--round);

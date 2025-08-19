@@ -31,7 +31,7 @@
 	box-sizing: border-box;
 
 	background-color: var(--bg2);
-	border: 0.15rem solid var(--bg3);
+	border: var(--border) solid var(--bg3);
 	border-radius: var(--round2);
 
 	position: relative;
@@ -115,7 +115,7 @@
 	overflow-y: scroll;
 	overscroll-behavior-y: contain;
 
-	border: 0.15rem solid var(--bg4);
+	border: var(--border) solid var(--bg4);
 	border-radius: var(--round2);
 
 	box-shadow: var(--shadow-offset) var(--shadow-offset) var(--transparent-dark);
@@ -126,7 +126,7 @@
 .dropdown-option {
 	height: var(--option-height);
 
-	border-bottom: 0.15rem solid var(--bg3);
+	border-bottom: var(--border) solid var(--bg3);
 	box-sizing: border-box;
 
 	cursor: pointer;

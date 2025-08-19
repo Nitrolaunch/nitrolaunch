@@ -45,6 +45,7 @@
 	/* Other values */
 	--round: 0.2rem;
 	--round2: 0.6rem;
+	--border: 0.15rem;
 	--input-height: 2.2rem;
 	--shadow-offset: 0.35rem;
 
@@ -115,7 +116,7 @@ input {
 	transition: border-color 0.25s, outline-color 0.35s;
 	box-shadow: 0 2px 2px rgba(0, 0, 0, 0.2);
 	/* text-align: center; */
-	border: 0.15rem solid var(--bg3);
+	border: var(--border) solid var(--bg3);
 	box-sizing: border-box;
 	outline-color: transparent;
 }
@@ -127,7 +128,7 @@ button,
 }
 
 input:focus {
-	outline: 0.15rem solid var(--fg3);
+	outline: var(--border) solid var(--fg3);
 }
 
 button {
@@ -166,7 +167,7 @@ a {
 
 .border {
 	border-style: solid;
-	border-width: 0.15rem;
+	border-width: var(--border);
 	border-color: var(--fg);
 	border-radius: var(--round);
 }

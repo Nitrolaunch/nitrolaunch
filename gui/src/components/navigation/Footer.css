@@ -8,7 +8,7 @@
 	background-color: var(--bg0);
 	display: grid;
 	grid-template-columns: repeat(3, minmax(0, 1fr));
-	border-top: 0.15rem solid var(--bg3);
+	border-top: var(--border) solid var(--bg3);
 }
 
 #footer-left {
@@ -45,7 +45,7 @@
 
 #footer-action-button {
 	box-sizing: border-box;
-	/* border-top: 0.15rem solid; */
+	/* border-top: var(--border) solid; */
 	font-weight: bold;
 }
 
@@ -62,16 +62,16 @@
 .footer-action-button-decoration {
 	height: 25%;
 	box-sizing: border-box;
-	border-top: 0.15rem solid;
+	border-top: var(--border) solid;
 }
 
 .footer-action-button-decoration.left {
-	border-left: 0.15rem solid;
+	border-left: var(--border) solid;
 	border-top-left-radius: var(--round);
 }
 
 .footer-action-button-decoration.right {
-	border-right: 0.15rem solid;
+	border-right: var(--border) solid;
 	border-top-right-radius: var(--round);
 }
 
@@ -89,7 +89,7 @@
 	width: 1.5rem;
 	height: 1.5rem;
 
-	border: 0.15rem solid var(--plugin);
+	border: var(--border) solid var(--plugin);
 	border-radius: var(--round);
 	background-color: var(--pluginbg);
 }

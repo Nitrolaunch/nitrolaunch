@@ -460,7 +460,7 @@ function ActionButton(props: ActionButtonProps) {
 				class="cont"
 				onclick={props.onClick}
 				style={`background-color:${backgroundColor()};border-color:${borderColor()};color:${borderColor()};${
-					props.selected ? "border-top:0.15rem solid" : ""
+					props.selected ? "border-top: var(--border) solid" : ""
 				}`}
 			>
 				{Icon()}

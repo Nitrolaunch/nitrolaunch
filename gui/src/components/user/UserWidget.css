@@ -16,11 +16,11 @@
 	grid-template-columns: minmax(0, 1fr) minmax(0, 0.2fr);
 	cursor: pointer;
 	box-sizing: border-box;
-	border: 0.15rem solid transparent;
+	border: var(--border) solid transparent;
 }
 
 #user-widget-head.open {
-	border: 0.15rem solid var(--bg3);
+	border: var(--border) solid var(--bg3);
 	border-bottom-width: 0px;
 	border-bottom-left-radius: 0px;
 	border-bottom-right-radius: 0px;
@@ -78,6 +78,6 @@
 
 	border-bottom-left-radius: var(--round);
 	border-bottom-right-radius: var(--round);
-	border: 0.15rem solid var(--bg3);
+	border: var(--border) solid var(--bg3);
 	box-sizing: border-box;
 }

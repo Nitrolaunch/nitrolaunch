@@ -3,7 +3,7 @@
 	height: 1.8rem;
 
 	background-color: var(--bg-1);
-	border: 0.15rem solid;
+	border: var(--border) solid;
 	border-radius: var(--round2);
 
 	font-size: 0.9rem;
@@ -45,7 +45,7 @@
 	padding: 0.75rem;
 
 	background-color: var(--bg2);
-	border: 0.15rem solid var(--bg4);
+	border: var(--border) solid var(--bg4);
 	border-radius: var(--round2);
 
 	box-shadow: var(--shadow-offset) var(--shadow-offset) #0b0b0baa;

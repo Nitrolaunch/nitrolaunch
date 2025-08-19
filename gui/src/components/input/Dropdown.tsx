@@ -79,9 +79,9 @@ export default function Dropdown(props: DropdownProps) {
 	// The height of the opened dropdown options
 	let openedHeight = () => {
 		if (props.options.length < 10.5) {
-			return `calc(${props.options.length} * var(--option-height) + 0.3rem)`;
+			return `calc(${props.options.length} * var(--option-height) + 2 * var(--border))`;
 		} else {
-			return "calc(10.5 * var(--option-height) + 0.3rem)";
+			return "calc(10.5 * var(--option-height) + 2 * var(--border))";
 		}
 	};
 

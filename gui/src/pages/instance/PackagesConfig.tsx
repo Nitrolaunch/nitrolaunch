@@ -438,7 +438,7 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 					<div class="cont fullwidth">
 						<button
 							onclick={() => setShowOverridesModal(false)}
-							style="border: 0.15rem solid var(--bg3)"
+							style="border: var(--border) solid var(--bg3)"
 						>
 							Close
 						</button>

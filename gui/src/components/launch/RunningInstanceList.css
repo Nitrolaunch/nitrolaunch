@@ -13,7 +13,7 @@
 
 	background-color: var(--bg2);
 
-	border: 0.15rem solid var(--bg3);
+	border: var(--border) solid var(--bg3);
 	border-radius: 50%;
 
 	cursor: pointer;
@@ -31,6 +31,6 @@
 	padding: 0.5rem;
 
 	background-color: var(--bg2);
-	border: 0.15rem solid var(--bg4);
+	border: var(--border) solid var(--bg4);
 	border-radius: var(--round);
 }

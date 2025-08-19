@@ -19,7 +19,7 @@
 	margin-top: 1rem;
 	padding: 0.5rem;
 	background-color: var(--bg2);
-	border: 0.15rem solid var(--bg3);
+	border: var(--border) solid var(--bg3);
 	border-top-color: var(--bg4);
 	border-left-color: var(--bg4);
 	border-radius: var(--round2);
@@ -32,7 +32,7 @@
 #instance-icon-image {
 	width: 4.3rem;
 	height: 4.3rem;
-	border: 0.15rem solid var(--bg3);
+	border: var(--border) solid var(--bg3);
 	border-radius: var(--round2);
 }
 
@@ -120,24 +120,24 @@
 	border-top-left-radius: var(--round2);
 	border-top-right-radius: var(--round2);
 	font-weight: bold;
-	border-top: 0.15rem solid transparent;
-	border-bottom: 0.15rem solid var(--bg4);
+	border-top: var(--border) solid transparent;
+	border-bottom: var(--border) solid var(--bg4);
 	box-sizing: content-box;
 	cursor: pointer;
 }
 
 .instance-tab.selected {
 	background-color: var(--bg2);
-	border: 0.15rem solid var(--bg3);
+	border: var(--border) solid var(--bg3);
 	border-top-color: var(--bg4);
 	border-left-color: var(--bg4);
-	border-bottom: 0.15rem solid var(--bg2);
+	border-bottom: var(--border) solid var(--bg2);
 }
 
 #instance-tab-contents {
 	background-color: var(--bg2);
 
-	border: 0.15rem solid var(--bg3);
+	border: var(--border) solid var(--bg3);
 	border-top-color: var(--bg4);
 	border-left-color: var(--bg4);
 	border-radius: var(--round2);
