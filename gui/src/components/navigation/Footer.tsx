@@ -86,7 +86,7 @@ export default function Footer(props: FooterProps) {
 		}
 	});
 
-	async function launch(instance: string) {
+	async function launch(instance: string, offline: boolean) {
 		// Prevent launching until the current authentication screens are finished
 		if (showPasswordPrompt() || authInfo() !== undefined) {
 			return;
@@ -96,7 +96,7 @@ export default function Footer(props: FooterProps) {
 
 		let launchPromise = invoke("launch_game", {
 			instanceId: instance,
-			offline: false,
+			offline: offline,
 			user: props.selectedUser,
 		});
 
@@ -190,6 +190,7 @@ export default function Footer(props: FooterProps) {
 												try {
 													await invoke("update_instance", {
 														instanceId: props.selectedItem,
+														depth: "full",
 													});
 												} catch (e) {
 													errorToast("Failed to update instance: " + e);
@@ -263,11 +264,12 @@ export default function Footer(props: FooterProps) {
 								if (props.selectedItem != undefined) {
 									if (isInstanceLaunchable() == undefined) {
 									} else if (isInstanceLaunchable()) {
-										launch(props.selectedItem);
+										launch(props.selectedItem, false);
 									} else {
 										try {
 											await invoke("update_instance", {
 												instanceId: props.selectedItem,
+												depth: "full",
 											});
 										} catch (e) {
 											errorToast("Failed to update instance: " + e);
@@ -505,6 +507,6 @@ export enum FooterMode {
 }
 
 // Launches an instance
-export function launchInstance(instance: string) {
-	(window as any).__launchInstance(instance);
+export function launchInstance(instance: string, offline: boolean) {
+	(window as any).__launchInstance(instance, offline);
 }

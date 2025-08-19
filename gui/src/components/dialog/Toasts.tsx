@@ -107,7 +107,7 @@ export default function Toasts() {
 		<div id="toasts-container">
 			<div
 				id="toasts-button"
-				class={`cont ${showRecentToasts() ? "selected" : ""}`}
+				class={`cont input-shadow ${showRecentToasts() ? "selected" : ""}`}
 				onclick={() => setShowRecentToasts(!showRecentToasts())}
 			>
 				<IconAndText

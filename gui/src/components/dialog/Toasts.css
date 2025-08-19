@@ -1,12 +1,18 @@
 #toasts-button {
 	width: 12rem;
+	height: 2rem;
+
 	box-sizing: border-box;
 	border: 0.15rem solid var(--bg3);
 	border-radius: var(--round2);
 
-	height: 2rem;
+	background-color: var(--bg0);
 
 	cursor: pointer;
+}
+
+#toasts-button:hover {
+	background-color: var(--bg2);
 }
 
 #toasts-button.selected {

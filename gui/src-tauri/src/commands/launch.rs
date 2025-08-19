@@ -6,6 +6,7 @@ use nitrolaunch::instance::launch::LaunchSettings;
 use nitrolaunch::io::lock::Lockfile;
 use nitrolaunch::plugin_crate::try_read::TryReadExt;
 use nitrolaunch::shared::id::InstanceID;
+use nitrolaunch::shared::UpdateDepth;
 use std::collections::HashSet;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -72,7 +73,9 @@ async fn launch_game_impl(
 	// Check first update
 	let lock = Lockfile::open(&state.paths).context("Failed to open lockfile")?;
 	if !lock.has_instance_done_first_update(&instance_id) {
-		if let Err(e) = update_instance_impl(&state, app.clone(), instance_id.clone()).await {
+		if let Err(e) =
+			update_instance_impl(&state, app.clone(), instance_id.clone(), UpdateDepth::Full).await
+		{
 			bail!("{e}");
 		};
 

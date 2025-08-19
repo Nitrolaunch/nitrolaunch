@@ -32,7 +32,7 @@ import {
 	Delete,
 	Gear,
 	Play,
-	Spinner,
+	Stop,
 	Tag,
 	Text,
 	Trash,
@@ -53,6 +53,8 @@ import { canonicalizeListOrSingle } from "../../utils/values";
 import { Event, listen, UnlistenFn } from "@tauri-apps/api/event";
 import { RunningInstancesEvent } from "../../components/launch/RunningInstanceList";
 import { convertFileSrc } from "@tauri-apps/api/tauri";
+import Dropdown, { Option } from "../../components/input/Dropdown";
+import IconAndText from "../../components/utility/IconAndText";
 
 export default function InstanceInfo(props: InstanceInfoProps) {
 	let params = useParams();
@@ -200,8 +202,6 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 		unlisten2()();
 	});
 
-	let [launchButtonHovered, setLaunchButtonHovered] = createSignal(false);
-
 	let [packageOverrides, setPackageOverrides] = createSignal<PackageOverrides>(
 		{}
 	);
@@ -244,6 +244,37 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 				}
 			},
 		});
+	};
+
+	let launchOptions = () => {
+		let options: Option[] = [
+			{
+				value: "launch",
+				contents: (
+					<IconAndText icon={Play} text="Launch" color="var(--instance)" />
+				),
+			},
+			{
+				value: "launch_offline",
+				contents: (
+					<IconAndText
+						icon={Play}
+						text="Launch Offline"
+						color="var(--profile)"
+					/>
+				),
+			},
+		];
+
+		if (isRunning()) {
+			options.push({
+				value: "kill",
+				contents: <IconAndText icon={Stop} text="Kill" color="var(--error)" />,
+				backgroundColor: "var(--errorbg)",
+			});
+		}
+
+		return options;
 	};
 
 	return (
@@ -300,58 +331,53 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 								</div>
 								<div class="cont end" style="margin-right:1rem">
 									<Show when={isInstanceLaunchable()}>
-										<div
-											onmouseenter={() => setLaunchButtonHovered(true)}
-											onmouseleave={() => setLaunchButtonHovered(false)}
-											style="width:10rem"
-										>
-											<Switch>
-												<Match when={!isRunning()}>
-													<IconTextButton
-														icon={Play}
-														size="1.2rem"
-														text="Launch"
-														color="var(--bg2)"
-														selected={false}
-														selectedColor="var(--instance)"
-														onClick={() => {
-															launchInstance(id);
-														}}
-														shadow={false}
-														style="width:100%"
-													/>
-												</Match>
-												<Match when={isRunning() && !launchButtonHovered()}>
-													<IconTextButton
-														icon={Spinner}
-														size="1.2rem"
-														text="Running"
-														color={"var(--bg2)"}
-														selected={false}
-														selectedColor="var(--instance)"
-														onClick={() => {}}
-														shadow={false}
-														style="width:100%"
-														animate
-													/>
-												</Match>
-												<Match when={isRunning() && launchButtonHovered()}>
-													<IconTextButton
-														icon={Delete}
-														size="1.2rem"
-														text="Kill"
-														color="var(--errorbg)"
-														selected={true}
-														selectedColor="var(--error)"
-														onClick={async () => {
+										<div style="width:9rem;font-weight:bold">
+											<Dropdown
+												options={launchOptions()}
+												previewText={
+													<Switch>
+														<Match when={!isRunning()}>
+															<IconAndText icon={Play} text="Launch" />
+														</Match>
+														<Match when={isRunning()}>
+															<IconAndText
+																icon={Stop}
+																text="Kill"
+																color="var(--error)"
+															/>
+														</Match>
+													</Switch>
+												}
+												onChange={async (selection) => {
+													if (selection == "launch") {
+														launchInstance(id, false);
+													} else if (selection == "launch_offline") {
+														launchInstance(id, true);
+													} else if (selection == "kill") {
+														try {
 															await invoke("kill_instance", { instance: id });
 															await invoke("update_running_instances");
-														}}
-														shadow={false}
-														style="width:100%"
-													/>
-												</Match>
-											</Switch>
+														} catch (e) {
+															errorToast("Failed to kill instance: " + e);
+														}
+													}
+												}}
+												onHeaderClick={async () => {
+													if (isRunning()) {
+														try {
+															await invoke("kill_instance", { instance: id });
+															await invoke("update_running_instances");
+														} catch (e) {
+															errorToast("Failed to kill instance: " + e);
+														}
+													} else {
+														launchInstance(id, false);
+													}
+												}}
+												optionsWidth="12rem"
+												isSearchable={false}
+												zIndex="5"
+											/>
 										</div>
 									</Show>
 									<IconTextButton
@@ -364,26 +390,56 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 										onClick={() => {
 											window.location.href = `/instance_config/${id}`;
 										}}
-										shadow={false}
 									/>
-									<IconTextButton
-										icon={Upload}
-										size="1.2rem"
-										text="Update"
-										color="var(--bg2)"
-										selected={false}
-										selectedColor="var(--profile)"
-										onClick={async () => {
-											try {
-												await invoke("update_instance", {
-													instanceId: id,
-												});
-											} catch (e) {
-												errorToast("Failed to update instance: " + e);
-											}
-										}}
-										shadow={false}
-									/>
+									<div style="width:9rem;font-weight:bold">
+										<Dropdown
+											options={[
+												{
+													value: "update",
+													contents: <IconAndText icon={Upload} text="Update" />,
+													tip: "Update the packages and files on this instance",
+												},
+												{
+													value: "force_update",
+													contents: (
+														<IconAndText
+															icon={Upload}
+															text="Force Update"
+															color="var(--error)"
+														/>
+													),
+													backgroundColor: "var(--errorbg)",
+													tip: "Update while replacing already cached files. Should only be done if something is broken.",
+												},
+											]}
+											previewText={<IconAndText icon={Upload} text="Update" />}
+											onChange={async (selection) => {
+												try {
+													let depth = selection == "update" ? "full" : "force";
+
+													await invoke("update_instance", {
+														instanceId: id,
+														depth: depth,
+													});
+												} catch (e) {
+													errorToast("Failed to update instance: " + e);
+												}
+											}}
+											onHeaderClick={async () => {
+												try {
+													await invoke("update_instance", {
+														instanceId: id,
+														depth: "full",
+													});
+												} catch (e) {
+													errorToast("Failed to update instance: " + e);
+												}
+											}}
+											optionsWidth="12rem"
+											isSearchable={false}
+											zIndex="5"
+										/>
+									</div>
 									<IconTextButton
 										icon={Trash}
 										size="1.2rem"
@@ -393,7 +449,6 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 										selectedBg="var(--errorbg)"
 										selected={true}
 										onClick={() => setShowDeleteConfirm(true)}
-										shadow={false}
 									/>
 								</div>
 							</div>

@@ -284,14 +284,16 @@ pub async fn update_instance(
 	state: tauri::State<'_, State>,
 	app_handle: tauri::AppHandle,
 	instance_id: String,
+	depth: UpdateDepth,
 ) -> Result<(), String> {
-	update_instance_impl(&state, Arc::new(app_handle), instance_id).await
+	update_instance_impl(&state, Arc::new(app_handle), instance_id, depth).await
 }
 
 pub async fn update_instance_impl(
 	state: &State,
 	app_handle: Arc<tauri::AppHandle>,
 	instance_id: String,
+	depth: UpdateDepth,
 ) -> Result<(), String> {
 	let mut config = fmt_err(
 		load_config(&state.paths, &mut NoOp)
@@ -327,7 +329,7 @@ pub async fn update_instance_impl(
 			};
 
 			instance
-				.update(true, UpdateDepth::Full, &mut ctx)
+				.update(true, depth, &mut ctx)
 				.await
 				.context("Failed to update instance")?;
 

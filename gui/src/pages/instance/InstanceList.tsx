@@ -421,7 +421,7 @@ function Item(props: ItemProps) {
 				<div class="instance-list-pin">
 					<IconButton
 						icon={Pin}
-						size="1.5rem"
+						size="1.7rem"
 						color="transparent"
 						selectedColor="var(--instance)"
 						iconColor={
@@ -438,6 +438,7 @@ function Item(props: ItemProps) {
 							});
 						}}
 						selected={props.sectionKind === "pinned"}
+						hoverBackground="var(--bg4)"
 						circle
 					/>
 				</div>

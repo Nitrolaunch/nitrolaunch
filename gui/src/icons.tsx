@@ -61,6 +61,7 @@ import LinkBrokenIcon from "./assets/icons/link_broken.svg?component-solid";
 import PopoutIcon from "./assets/icons/popout.svg?component-solid";
 import TrashIcon from "./assets/icons/trash.svg?component-solid";
 import NotificationIcon from "./assets/icons/notification.svg?component-solid";
+import StopIcon from "./assets/icons/stop.svg?component-solid";
 import { HasWidthHeight } from "./components/Icon";
 
 export function Pin({ width, height, viewBox }: HasWidthHeight) {
@@ -321,4 +322,8 @@ export function Trash({ width, height, viewBox }: HasWidthHeight) {
 
 export function Notification({ width, height, viewBox }: HasWidthHeight) {
 	return <NotificationIcon width={width} height={height} viewBox={viewBox} />;
+}
+
+export function Stop({ width, height, viewBox }: HasWidthHeight) {
+	return <StopIcon width={width} height={height} viewBox={viewBox} />;
 }

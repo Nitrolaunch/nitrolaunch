@@ -89,6 +89,18 @@
 	position: absolute;
 	right: 0rem;
 	padding: 0.5rem;
+
+	border-radius: var(--round2);
+
+	transition: background-color 0.25s;
+}
+
+.dropdown-arrow:hover {
+	background-color: var(--bg2);
+}
+
+.dropdown-arrow.open {
+	transform: rotate(90deg);
 }
 
 .dropdown-options {
@@ -97,6 +109,8 @@
 	top: calc(100% + 0.5rem);
 
 	box-sizing: border-box;
+
+	overflow-x: hidden;
 
 	overflow-y: scroll;
 	overscroll-behavior-y: contain;

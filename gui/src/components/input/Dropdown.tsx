@@ -12,7 +12,7 @@ import "./Dropdown.css";
 import Tip from "../dialog/Tip";
 import { canonicalizeListOrSingle, undefinedEmpty } from "../../utils/values";
 import Icon from "../Icon";
-import { AngleDown, AngleRight, Search } from "../../icons";
+import { AngleRight, Search } from "../../icons";
 
 export default function Dropdown(props: DropdownProps) {
 	let [isOpen, setIsOpen] = createSignal(props.startOpen == true);
@@ -79,9 +79,9 @@ export default function Dropdown(props: DropdownProps) {
 	// The height of the opened dropdown options
 	let openedHeight = () => {
 		if (props.options.length < 10.5) {
-			return `calc(${props.options.length} * var(--option-height))`;
+			return `calc(${props.options.length} * var(--option-height) + 0.3rem)`;
 		} else {
-			return "calc(10.5 * var(--option-height))";
+			return "calc(10.5 * var(--option-height) + 0.3rem)";
 		}
 	};
 
@@ -108,7 +108,13 @@ export default function Dropdown(props: DropdownProps) {
 			></div>
 			<div
 				class={`cont input-shadow dropdown-header ${isOpen() ? "open" : ""}`}
-				onclick={() => setIsOpen(!isOpen())}
+				onclick={() => {
+					if (props.onHeaderClick != undefined && !isOpen()) {
+						props.onHeaderClick();
+					} else {
+						setIsOpen(!isOpen());
+					}
+				}}
 				style={`${
 					isOpen() && isSearchable ? "justify-content:flex-start" : ""
 				}`}
@@ -146,12 +152,21 @@ export default function Dropdown(props: DropdownProps) {
 					</Match>
 				</Switch>
 				<Show when={showArrow}>
-					<div class="cont dropdown-arrow">
+					<div
+						class={`cont dropdown-arrow ${isOpen() ? "open" : ""}`}
+						onclick={(e) => {
+							if (props.onHeaderClick != undefined) {
+								setIsOpen(!isOpen());
+								e.preventDefault();
+								e.stopPropagation();
+							}
+						}}
+					>
 						<Show
 							when={isOpen()}
 							fallback={<Icon icon={AngleRight} size="1rem" />}
 						>
-							<Icon icon={AngleDown} size="1rem" />
+							<Icon icon={AngleRight} size="1rem" />
 						</Show>
 					</div>
 				</Show>
@@ -229,6 +244,7 @@ export interface DropdownProps {
 	previewText?: JSX.Element;
 	optionsWidth?: string;
 	showArrow?: boolean;
+	onHeaderClick?: () => void;
 }
 
 function DropdownOption(props: OptionProps) {
@@ -250,7 +266,9 @@ function DropdownOption(props: OptionProps) {
 	};
 
 	let backgroundColor = () => {
-		if (props.isSelected) {
+		if (props.option.backgroundColor != undefined) {
+			return props.option.backgroundColor;
+		} else if (props.isSelected) {
 			return "var(--bg)";
 		} else if (isHovered()) {
 			return "var(--bg3)";
@@ -320,4 +338,5 @@ export interface Option {
 	selectedTextColor?: string;
 	tip?: JSX.Element;
 	isSelectable?: boolean;
+	backgroundColor?: string;
 }
