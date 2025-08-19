@@ -112,6 +112,7 @@ serde = { version = "1.0.202", features = ["derive", "rc"] }
 serde_json = "1.0.117"
 sha2 = "0.10.8"
 shellexpand = { version = "3.0.0", features = ["path"] }
+showfile = "0.1.1"
 simd-json = { version = "0.13.10", features = ["value-no-dup-keys"] }
 sysinfo = "0.34.2"
 sys-locale = "0.3.1"

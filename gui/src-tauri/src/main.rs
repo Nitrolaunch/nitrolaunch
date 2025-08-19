@@ -173,6 +173,7 @@ fn main() {
 			commands::misc::get_is_first_launch,
 			commands::misc::get_version_banner_images,
 			commands::misc::test_long_running_task,
+			commands::misc::open_data_dir,
 			commands::cancel_task,
 		])
 		.run(tauri::generate_context!())

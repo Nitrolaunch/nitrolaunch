@@ -201,3 +201,12 @@ pub async fn test_long_running_task(state: tauri::State<'_, State>) -> Result<()
 
 	Ok(())
 }
+
+#[tauri::command]
+pub async fn open_data_dir(state: tauri::State<'_, State>) -> Result<(), String> {
+	let path = state.paths.data.clone();
+	tokio::task::spawn_blocking(move || {
+		showfile::show_path_in_file_manager(&path);
+	});
+	Ok(())
+}

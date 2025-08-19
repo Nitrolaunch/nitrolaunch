@@ -7,6 +7,8 @@ import { FooterData } from "../App";
 import { FooterMode } from "../components/navigation/Footer";
 import { errorToast, successToast } from "../components/dialog/Toasts";
 import { emit } from "@tauri-apps/api/event";
+import IconTextButton from "../components/input/IconTextButton";
+import { Folder } from "../icons";
 
 export default function Settings(props: SettingsProps) {
 	createEffect(() => {
@@ -117,6 +119,20 @@ export default function Settings(props: SettingsProps) {
 								connected={false}
 							/>
 						</Show>
+					</Tip>
+					<Tip
+						tip="Open the folder where Nitrolaunch stores its instances and data"
+						fullwidth
+					>
+						<div class="cont">
+							<IconTextButton
+								icon={Folder}
+								size="1rem"
+								text="Open data folder"
+								color=""
+								onClick={() => invoke("open_data_dir")}
+							/>
+						</div>
 					</Tip>
 				</div>
 			</div>
