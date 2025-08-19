@@ -12,7 +12,8 @@ import {
 } from "solid-js";
 import "./Toasts.css";
 import Icon from "../Icon";
-import { Check, Delete, Error, Warning } from "../../icons";
+import { Check, Delete, Error, Notification, Warning } from "../../icons";
+import IconAndText from "../utility/IconAndText";
 
 export default function Toasts() {
 	let [toasts, setToasts] = createSignal<ToastProps[]>([]);
@@ -109,8 +110,13 @@ export default function Toasts() {
 				class={`cont ${showRecentToasts() ? "selected" : ""}`}
 				onclick={() => setShowRecentToasts(!showRecentToasts())}
 			>
-				{recentToastCount()}{" "}
-				{recentToastCount() == 1 ? "notification" : "notifications"}
+				<IconAndText
+					icon={Notification}
+					text={`${recentToastCount()} ${
+						recentToastCount() == 1 ? "Alert" : "Alerts"
+					}`}
+					centered
+				/>
 			</div>
 			<div id="toasts">
 				<Show when={visible()}>

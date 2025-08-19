@@ -8,7 +8,9 @@ export default function IconAndText(props: IconAndTextProps) {
 			<div class="cont">
 				<Icon icon={props.icon} size="1rem" />
 			</div>
-			<div class="cont start">{props.text}</div>
+			<div class={`cont ${props.centered == true ? "" : "start"}`}>
+				{props.text}
+			</div>
 		</div>
 	);
 }
@@ -16,4 +18,5 @@ export default function IconAndText(props: IconAndTextProps) {
 export interface IconAndTextProps {
 	icon: (props: HasWidthHeight) => JSX.Element;
 	text: JSX.Element;
+	centered?: boolean;
 }
