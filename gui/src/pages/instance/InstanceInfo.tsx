@@ -33,6 +33,7 @@ import {
 	Gear,
 	Play,
 	Spinner,
+	Tag,
 	Text,
 	Trash,
 	Upload,
@@ -51,6 +52,7 @@ import Modal from "../../components/dialog/Modal";
 import { canonicalizeListOrSingle } from "../../utils/values";
 import { Event, listen, UnlistenFn } from "@tauri-apps/api/event";
 import { RunningInstancesEvent } from "../../components/launch/RunningInstanceList";
+import { convertFileSrc } from "@tauri-apps/api/tauri";
 
 export default function InstanceInfo(props: InstanceInfoProps) {
 	let params = useParams();
@@ -137,6 +139,26 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 			return await getParentProfiles(from(), InstanceConfigMode.Instance);
 		},
 		{ initialValue: [] }
+	);
+
+	let [bannerImages, ___] = createResource(
+		() => instance(),
+		async () => {
+			if (instance() == undefined) {
+				return undefined;
+			}
+
+			try {
+				let images = (await invoke("get_version_banner_images", {
+					version: instance()!.version,
+				})) as [string, string] | undefined;
+
+				return images;
+			} catch (e) {
+				console.error("Failed to get banner images: " + e);
+				return undefined;
+			}
+		}
 	);
 
 	let [isRunning, setIsRunning] = createSignal(false);
@@ -261,6 +283,10 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 										</Show>
 									</div>
 									<div class="cont start" id="instance-lower-details">
+										<div class="cont start" id="instance-version">
+											<Icon icon={Tag} size="0.75rem" />
+											{instance()!.version}
+										</div>
 										<PackageLabels
 											categories={[]}
 											loaders={
@@ -373,6 +399,21 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 							</div>
 						</div>
 					</div>
+					<Show when={bannerImages() != undefined}>
+						<div id="instance-banner-container">
+							<div id="instance-banner">
+								<img
+									src={convertFileSrc(bannerImages()![0])}
+									onerror={(e) => e.target.remove()}
+								/>
+								<img
+									src={convertFileSrc(bannerImages()![1])}
+									onerror={(e) => e.target.remove()}
+								/>
+							</div>
+							<div id="instance-banner-gradient"></div>
+						</div>
+					</Show>
 					<div id="instance-contents">
 						<div id="instance-body">
 							<div

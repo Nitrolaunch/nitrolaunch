@@ -62,18 +62,43 @@
 	font-weight: bold;
 }
 
-#instance-repo {
-	padding: 0.3rem 0.5rem;
-	border-radius: var(--round);
-	font-size: 0.7rem;
-	font-weight: bold;
-	line-height: 1;
-}
-
 #instance-lower-details {
 	color: var(--fg3);
 	justify-content: flex-start;
 	margin-top: 0.35rem;
+}
+
+#instance-version {
+	color: var(--instance);
+	font-weight: bold;
+	gap: 0.4rem;
+}
+
+#instance-banner-container {
+	position: absolute;
+	top: 0px;
+	left: 0px;
+	width: 100%;
+	z-index: -2;
+}
+
+#instance-banner {
+	width: 100vw;
+	filter: saturate(150%);
+}
+
+#instance-banner > img {
+	width: 50%;
+	aspect-ratio: 1;
+}
+
+#instance-banner-gradient {
+	position: absolute;
+	top: 0rem;
+	left: 0px;
+	width: 100%;
+	height: 100%;
+	background-image: linear-gradient(black, transparent, var(--bg));
 }
 
 #instance-contents {

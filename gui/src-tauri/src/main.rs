@@ -171,6 +171,7 @@ fn main() {
 			commands::misc::get_supported_loaders,
 			commands::misc::get_minecraft_versions,
 			commands::misc::get_is_first_launch,
+			commands::misc::get_version_banner_images,
 			commands::misc::test_long_running_task,
 			commands::cancel_task,
 		])

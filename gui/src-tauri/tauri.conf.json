@@ -18,11 +18,14 @@
       },
       "protocol": {
         "asset": true,
-        "assetScope": [
-          "$APPCACHE/**",
-          "$RESOURCE/**",
-          "/home/**"
-        ]
+        "assetScope": {
+          "allow": [
+            "$APPCACHE/**",
+            "$RESOURCE/**",
+            "/home/**"
+          ],
+          "requireLiteralLeadingDot": false
+        }
       },
       "clipboard": {
         "all": true

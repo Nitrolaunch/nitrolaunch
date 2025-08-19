@@ -3,7 +3,11 @@ use std::time::Duration;
 use crate::{output::LauncherOutput, State};
 use anyhow::{bail, Context};
 use nitrolaunch::{
-	core::{net::game_files::version_manifest::VersionType, util::versions::MinecraftVersion},
+	core::{
+		io::json_from_file,
+		net::game_files::{assets::AssetIndex, version_manifest::VersionType},
+		util::versions::MinecraftVersion,
+	},
 	instance::update::manager::UpdateManager,
 	plugin_crate::hooks::AddSupportedLoaders,
 	shared::{later::Later, loaders::Loader, output::NoOp, UpdateDepth},
@@ -128,6 +132,60 @@ pub async fn get_is_first_launch(state: tauri::State<'_, State>) -> Result<bool,
 	fmt_err(data.write(&state.paths))?;
 
 	Ok(out)
+}
+
+/// Gets banner images for an installed Minecraft version from the game assets.
+///
+/// Returns filesystem paths to two panorama images to be stitched left-to-right
+#[tauri::command]
+pub async fn get_version_banner_images(
+	state: tauri::State<'_, State>,
+	version: &str,
+) -> Result<Option<(String, String)>, String> {
+	let index_path = state
+		.paths
+		.internal
+		.join(format!("assets/indexes/{version}.json"));
+
+	if !index_path.exists() {
+		return Ok(None);
+	}
+
+	let contents: AssetIndex =
+		fmt_err(json_from_file(index_path).context("Failed to open asset index"))?;
+
+	let pano1 = contents
+		.objects
+		.get("minecraft/textures/gui/title/background/panorama_0.png");
+	let pano2 = contents
+		.objects
+		.get("minecraft/textures/gui/title/background/panorama_1.png");
+
+	let Some(pano1) = pano1 else {
+		return Ok(None);
+	};
+
+	let Some(pano2) = pano2 else {
+		return Ok(None);
+	};
+
+	let path1 = state
+		.paths
+		.internal
+		.join(format!("assets/objects/{}", pano1.get_hash_path()));
+	let path2 = state
+		.paths
+		.internal
+		.join(format!("assets/objects/{}", pano2.get_hash_path()));
+
+	if !path1.exists() || !path2.exists() {
+		return Ok(None);
+	}
+
+	Ok(Some((
+		path1.to_string_lossy().to_string(),
+		path2.to_string_lossy().to_string(),
+	)))
 }
 
 /// Starts a long-running test task
