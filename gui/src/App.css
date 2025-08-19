@@ -50,6 +50,11 @@
 
 	color: var(--text);
 	background-color: var(--bg);
+
+	background-image: var(--background-image);
+	background-size: contain;
+	background-blend-mode: overlay;
+
 	margin: 0px;
 }
 
