@@ -40,7 +40,10 @@ export default function PageButtons(props: PageButtonsProps) {
 function PageButton(props: PageButtonProps) {
 	let selectedClass = props.selected ? " selected" : "";
 	return (
-		<div class={`cont page-button${selectedClass}`} onclick={props.onclick}>
+		<div
+			class={`cont input-shadow page-button ${selectedClass}`}
+			onclick={props.onclick}
+		>
 			{props.page}
 		</div>
 	);

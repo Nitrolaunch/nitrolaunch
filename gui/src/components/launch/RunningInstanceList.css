@@ -16,6 +16,8 @@
 	border: var(--border) solid var(--bg3);
 	border-radius: 50%;
 
+	box-shadow: var(--shadow-offset) var(--shadow-offset) black;
+
 	cursor: pointer;
 }
 

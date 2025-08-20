@@ -30,6 +30,8 @@
 	line-height: 1;
 
 	overflow-x: hidden;
+
+	transition: background-color 0.15s;
 }
 
 .sidebar-item svg,
@@ -39,10 +41,11 @@
 
 .sidebar-item.selected,
 .sidebar-item:hover {
-	border-right-width: 0.3rem;
-	border-right-style: solid;
-	border-right-color: var(--fg2);
-	transition: border-right-width 0.1s;
+	border-right: 0.3rem solid var(--fg2);
+}
+
+.sidebar-item:hover {
+	background-color: var(--bg2);
 }
 
 .sidebar-item.sidebar-item.selected {

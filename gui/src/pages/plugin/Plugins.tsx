@@ -113,6 +113,7 @@ export default function Plugins() {
 			</div>
 			<br />
 			<br />
+			<button>Hello</button>
 			<br />
 			<br />
 		</div>
