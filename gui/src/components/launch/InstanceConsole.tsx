@@ -1,10 +1,13 @@
 import { invoke } from "@tauri-apps/api";
 import { Event, listen } from "@tauri-apps/api/event";
 import {
+	createMemo,
 	createResource,
 	createSignal,
+	For,
 	Match,
 	onCleanup,
+	Show,
 	Switch,
 } from "solid-js";
 import "./InstanceConsole.css";
@@ -17,54 +20,24 @@ export default function InstanceConsole(props: InstanceConsoleProps) {
 	let [filter, setFilter] = createSignal("all");
 	let [search, setSearch] = createSignal("");
 
-	let [output, outputMethods] = createResource(
-		() => filter() + search(),
-		async () => {
-			let output = (await invoke("get_instance_output", {
-				instanceId: props.instanceId,
-			})) as string | undefined;
+	let [output, outputMethods] = createResource(async () => {
+		let output = (await invoke("get_instance_output", {
+			instanceId: props.instanceId,
+		})) as string | undefined;
 
-			if (output == undefined) {
-				return undefined;
-			}
-
-			// Format the output into lines
-
-			let lines = output.split("\n");
-
-			let out = "";
-
-			for (let line of lines) {
-				let cls = line.includes("INFO")
-					? "info"
-					: line.includes("WARN")
-					? "warning"
-					: line.includes("ERROR")
-					? "error"
-					: "";
-
-				if (filter() != "all" && filter() != cls) {
-					continue;
-				}
-
-				if (
-					search() != undefined &&
-					search().length > 0 &&
-					!line.toLocaleLowerCase().includes(search().toLocaleLowerCase())
-				) {
-					continue;
-				}
-
-				out += `<div class="console-line ${cls}">${line}</div>`;
-			}
-
-			if (outputElem != undefined) {
-				outputElem.scrollTop = outputElem.scrollHeight;
-			}
-
-			return out;
+		if (output == undefined) {
+			return undefined;
 		}
-	);
+
+		// Format the output into lines
+
+		if (outputElem != undefined) {
+			outputElem.scrollTop = outputElem.scrollHeight;
+		}
+
+		let lines = output.split("\n");
+		return lines;
+	});
 
 	// Listener for when the output updates
 	let [unlisten, _] = createResource(async () => {
@@ -132,11 +105,53 @@ export default function InstanceConsole(props: InstanceConsoleProps) {
 			<div class="cont col instance-console-output">
 				<Switch>
 					<Match when={output() != undefined}>
-						<div
-							class="instance-console-text"
-							ref={outputElem}
-							innerHTML={output()}
-						></div>
+						<div class="instance-console-text" ref={outputElem}>
+							<For each={output()!}>
+								{(line) => {
+									let cls = line.includes("INFO")
+										? "info"
+										: line.includes("WARN")
+										? "warning"
+										: line.includes("ERROR")
+										? "error"
+										: "";
+
+									let isVisible = createMemo((input) => {
+										let filter2 = filter();
+										let search2 = search();
+
+										if (input == undefined) {
+											return true;
+										}
+
+										if (filter2 != "all" && filter2 != cls) {
+											return false;
+										}
+
+										if (
+											search2 != undefined &&
+											search2.length > 0 &&
+											!line
+												.toLocaleLowerCase()
+												.includes(search2.toLocaleLowerCase())
+										) {
+											return false;
+										}
+
+										return true;
+									});
+
+									return (
+										<span
+											class={`console-line ${cls}`}
+											style={`${isVisible() ? "" : "display:none"}`}
+										>
+											{line}
+										</span>
+									);
+								}}
+							</For>
+						</div>
 					</Match>
 					<Match when={output.error != undefined}>
 						Failed to load: {output.error}

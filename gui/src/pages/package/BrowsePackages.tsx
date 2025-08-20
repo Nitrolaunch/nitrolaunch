@@ -1,4 +1,9 @@
-import { useLocation, useNavigate, useParams } from "@solidjs/router";
+import {
+	useLocation,
+	useNavigate,
+	useParams,
+	usePreloadRoute,
+} from "@solidjs/router";
 import "./BrowsePackages.css";
 import {
 	createEffect,
@@ -33,6 +38,7 @@ const PACKAGES_PER_PAGE = 12;
 
 export default function BrowsePackages(props: BrowsePackagesProps) {
 	let navigate = useNavigate();
+	let preload = usePreloadRoute();
 
 	let params = useParams();
 	let searchParams = parseQueryString(useLocation().search);
@@ -294,20 +300,22 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 											selected={selectedPackage()}
 											onSelect={(pkg) => {
 												setSelectedPackage(pkg);
+												let url = `/packages/package/${
+													data.id
+												}?filters=${JSON.stringify(
+													createPackageFiltersObject()
+												)}`;
+
 												props.setFooterData({
 													mode: FooterMode.PreviewPackage,
 													selectedItem: "",
 													action: () => {
-														navigate(
-															`/packages/package/${
-																data.id
-															}?filters=${JSON.stringify(
-																createPackageFiltersObject()
-															)}`
-														);
+														navigate(url);
 													},
 													selectedPackageGallery: data.meta.gallery,
 												});
+
+												preload(url);
 											}}
 											getPackageFiltersObject={createPackageFiltersObject}
 										/>
