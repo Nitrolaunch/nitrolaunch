@@ -33,8 +33,11 @@ import { InstanceConfig, PackageOverrides } from "./read_write";
 import Tip from "../../components/dialog/Tip";
 import EditableList from "../../components/input/EditableList";
 import PackageQuickAdd from "../../components/package/PackageQuickAdd";
+import { useNavigate } from "@solidjs/router";
 
 export default function PackagesConfig(props: PackagesConfigProps) {
+	let navigate = useNavigate();
+
 	let [filter, setFilter] = createSignal("user");
 	let [sideFilter, setSideFilter] = createSignal("all");
 
@@ -198,18 +201,14 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 							color="var(--bg2)"
 							border="var(--bg3)"
 							onClick={() => {
-								window.location.href = getBrowseUrl(
-									0,
-									undefined,
-									"mod",
-									undefined,
-									{
+								navigate(
+									getBrowseUrl(0, undefined, "mod", undefined, {
 										minecraft_versions: canonicalizeListOrSingle(
 											props.minecraftVersion
 										),
 										loaders: canonicalizeListOrSingle(props.loader),
 										categories: [],
-									}
+									})
 								);
 							}}
 							shadow
@@ -473,6 +472,8 @@ export interface PackagesConfigProps {
 }
 
 function ConfiguredPackage(props: ConfiguredPackageProps) {
+	let navigate = useNavigate();
+
 	let [isHovered, setIsHovered] = createSignal(false);
 	let name =
 		props.meta == undefined || props.meta.name == undefined
@@ -527,9 +528,9 @@ function ConfiguredPackage(props: ConfiguredPackageProps) {
 						onClick={(e) => {
 							e.preventDefault();
 							e.stopPropagation();
-							window.location.href = `/packages/package/${pkgRequestToString(
-								props.request
-							)}`;
+							navigate(
+								`/packages/package/${pkgRequestToString(props.request)}`
+							);
 						}}
 						selected={false}
 					/>

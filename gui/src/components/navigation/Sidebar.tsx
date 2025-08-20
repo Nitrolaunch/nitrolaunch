@@ -8,7 +8,7 @@ import {
 } from "solid-js";
 import "./Sidebar.css";
 import { Box, Gear, Home, Jigsaw, Menu } from "../../icons";
-import { Location } from "@solidjs/router";
+import { Location, useNavigate } from "@solidjs/router";
 import { invoke } from "@tauri-apps/api";
 import { getInstanceIconSrc, stringCompare } from "../../utils";
 import { listen, UnlistenFn } from "@tauri-apps/api/event";
@@ -111,6 +111,7 @@ export default function Sidebar(props: SidebarProps) {
 					href="/settings"
 					class="cont"
 					style="color:var(--fg);padding:0.55rem"
+					onclick={() => props.setVisible(false)}
 				>
 					<IconButton
 						icon={Gear}
@@ -237,6 +238,8 @@ export interface SidebarProps {
 }
 
 function SidebarItem(props: SidebarItemProps) {
+	let navigate = useNavigate();
+
 	const selected = () => {
 		if (props.selectedPath != undefined) {
 			return props.location.pathname == props.selectedPath;
@@ -259,7 +262,7 @@ function SidebarItem(props: SidebarItemProps) {
 			class={`cont sidebar-item ${selected() ? "selected" : ""}`}
 			style={`border-right-color:${props.color};${color()};${bgColor()}`}
 			onclick={() => {
-				window.location.href = props.href;
+				navigate(props.href);
 				props.closeSidebar();
 			}}
 			innerHTML={props.innerhtml}

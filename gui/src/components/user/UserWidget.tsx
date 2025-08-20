@@ -20,8 +20,11 @@ import { sanitizeInstanceId } from "../../pages/instance/InstanceConfig";
 import Dropdown from "../input/Dropdown";
 import IconTextButton from "../input/IconTextButton";
 import { clearInputError, inputError } from "../../errors";
+import { useNavigate } from "@solidjs/router";
 
 export default function UserWidget(props: UserWidgetProps) {
+	let navigate = useNavigate();
+
 	let [userData, methods] = createResource(updateUsers);
 
 	let [isOpen, setIsOpen] = createSignal(false);
@@ -193,7 +196,7 @@ export default function UserWidget(props: UserWidgetProps) {
 									kind: newUserType(),
 								});
 								setIsCreatingUser(false);
-								window.location.href = `/users/${newUserId()}`;
+								navigate(`/users/${newUserId()}`);
 								successToast("User created");
 							} catch (e) {
 								setIsCreatingUser(false);
@@ -226,6 +229,8 @@ export interface UserInfo {
 }
 
 function UserTile(props: UserTileProps) {
+	let navigate = useNavigate();
+
 	let [isHovered, setIsHovered] = createSignal(false);
 
 	return (
@@ -259,7 +264,7 @@ function UserTile(props: UserTileProps) {
 							e.preventDefault();
 							e.stopPropagation();
 
-							window.location.href = `/users/${props.user.id}`;
+							navigate(`/users/${props.user.id}`);
 						}}
 					/>
 				</div>

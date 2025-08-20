@@ -7,8 +7,11 @@ import "./ProfileDeletePrompt.css";
 import IconTextButton from "../input/IconTextButton";
 import { Delete } from "../../icons";
 import { errorToast, successToast } from "../dialog/Toasts";
+import { useNavigate } from "@solidjs/router";
 
 export default function ProfileDeletePrompt(props: ProfileDeletePromptProps) {
+	let navigate = useNavigate();
+
 	let [profileUsers, _] = createResource(
 		() => props.profile,
 		async () => {
@@ -40,7 +43,7 @@ export default function ProfileDeletePrompt(props: ProfileDeletePromptProps) {
 										class="profile-delete-prompt-entry"
 										onclick={() => {
 											props.onClose();
-											window.location.href = `/${item[1]}_config/${item[0]}`;
+											navigate(`/${item[1]}_config/${item[0]}`);
 										}}
 									>
 										<div
@@ -84,7 +87,7 @@ export default function ProfileDeletePrompt(props: ProfileDeletePromptProps) {
 											});
 											successToast("Profile deleted");
 											props.onClose();
-											window.location.href = "/";
+											navigate("/");
 										} catch (e) {
 											errorToast("Failed to delete profile: " + e);
 											props.onClose();

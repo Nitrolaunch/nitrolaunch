@@ -30,8 +30,11 @@ import IconTextButton from "../../components/input/IconTextButton";
 import InstanceTransferPrompt from "../../components/instance/InstanceTransferPrompt";
 import Dropdown from "../../components/input/Dropdown";
 import IconAndText from "../../components/utility/IconAndText";
+import { useNavigate } from "@solidjs/router";
 
 export default function InstanceList(props: InstanceListProps) {
+	let navigate = useNavigate();
+
 	onMount(() => loadPagePlugins("instances"));
 
 	const [instances, setInstances] = createSignal<InstanceInfo[]>([]);
@@ -157,9 +160,9 @@ export default function InstanceList(props: InstanceListProps) {
 									previewText={<IconAndText icon={Plus} text="Add" />}
 									onChange={(selection) => {
 										if (selection == "create_instance") {
-											window.location.href = "create_instance";
+											navigate("create_instance");
 										} else if (selection == "create_profile") {
-											window.location.href = "create_profile";
+											navigate("create_profile");
 										} else if (selection == "import_instance") {
 											setImportPromptVisible(true);
 										}
@@ -249,7 +252,7 @@ export default function InstanceList(props: InstanceListProps) {
 								color="var(--bg2)"
 								selectedColor="var(--instance)"
 								onClick={() => {
-									window.location.href = "/global_profile_config";
+									navigate("/global_profile_config");
 								}}
 								selected={false}
 							/>
@@ -281,6 +284,8 @@ export default function InstanceList(props: InstanceListProps) {
 
 // A section of items, like pinned or an Nitrolaunch instance group
 function Section(props: SectionProps) {
+	let navigate = useNavigate();
+
 	const HeaderIcon = () => (
 		<Switch>
 			<Match when={props.kind == "all" || props.kind == "profiles"}>
@@ -337,7 +342,7 @@ function Section(props: SectionProps) {
 									props.itemType == "instance"
 										? "create_instance"
 										: "create_profile";
-								window.location.href = target;
+								navigate(target);
 							}}
 						>
 							<div class="cont instance-list-icon">
@@ -376,6 +381,8 @@ interface GroupSectionData {
 }
 
 function Item(props: ItemProps) {
+	let navigate = useNavigate();
+
 	const [isHovered, setIsHovered] = createSignal(false);
 
 	let icon =
@@ -402,7 +409,7 @@ function Item(props: ItemProps) {
 						props.itemKind == "instance"
 							? `/instance/${props.instance.id}`
 							: `/profile_config/${props.instance.id}`;
-					window.location.href = url;
+					navigate(url);
 				} else {
 					props.onSelect();
 				}

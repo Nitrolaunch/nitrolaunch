@@ -1,4 +1,4 @@
-import { useLocation, useParams } from "@solidjs/router";
+import { useLocation, useNavigate, useParams } from "@solidjs/router";
 import "./BrowsePackages.css";
 import {
 	createEffect,
@@ -32,6 +32,8 @@ import { invoke } from "@tauri-apps/api";
 const PACKAGES_PER_PAGE = 12;
 
 export default function BrowsePackages(props: BrowsePackagesProps) {
+	let navigate = useNavigate();
+
 	let params = useParams();
 	let searchParams = parseQueryString(useLocation().search);
 
@@ -296,9 +298,13 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 													mode: FooterMode.PreviewPackage,
 													selectedItem: "",
 													action: () => {
-														window.location.href = `/packages/package/${
-															data.id
-														}?filters=${createPackageFiltersObject()}`;
+														navigate(
+															`/packages/package/${
+																data.id
+															}?filters=${JSON.stringify(
+																createPackageFiltersObject()
+															)}`
+														);
 													},
 													selectedPackageGallery: data.meta.gallery,
 												});
@@ -328,6 +334,8 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 }
 
 function Package(props: PackageProps) {
+	let navigate = useNavigate();
+
 	let image =
 		props.meta.banner == undefined
 			? props.meta.gallery == undefined || props.meta.gallery!.length == 0
@@ -346,9 +354,11 @@ function Package(props: PackageProps) {
 			onclick={() => {
 				// Double click to open
 				if (isSelected()) {
-					window.location.href = `/packages/package/${
-						props.id
-					}?filters=${JSON.stringify(props.getPackageFiltersObject())}`;
+					navigate(
+						`/packages/package/${props.id}?filters=${JSON.stringify(
+							props.getPackageFiltersObject()
+						)}`
+					);
 				} else {
 					props.onSelect(props.id);
 				}

@@ -248,7 +248,6 @@ export default function ViewPackage(props: ViewPackageProps) {
 										<PackageVersions
 											packageId={packageId}
 											props={properties()!}
-											backgroundColor="var(--bg)"
 											onInstall={(version) => {
 												setInstallVersion(version);
 												setShowInstallModal(true);

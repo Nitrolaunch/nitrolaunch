@@ -11,9 +11,12 @@ import { Event, listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api";
 import { InstanceInfo } from "../../types";
 import { getInstanceIconSrc } from "../../utils";
+import { useNavigate } from "@solidjs/router";
 
 // Displays a list of instance icons that can be interacted with
 export default function RunningInstanceList(props: RunningInstanceListProps) {
+	let navigate = useNavigate();
+
 	let [instances, setInstances] = createSignal<string[]>([]);
 
 	onMount(() => {
@@ -70,7 +73,7 @@ export default function RunningInstanceList(props: RunningInstanceListProps) {
 							)}
 							class="running-instance-list-icon"
 							onclick={() => {
-								window.location.href = `/instance/${instance}`;
+								navigate(`/instance/${instance}`);
 							}}
 							onmouseenter={() => setHoveredName(name)}
 							onmouseleave={() => setHoveredName(undefined)}

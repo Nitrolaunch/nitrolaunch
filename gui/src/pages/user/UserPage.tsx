@@ -1,4 +1,4 @@
-import { useParams } from "@solidjs/router";
+import { useNavigate, useParams } from "@solidjs/router";
 import { createResource, Match, onMount, Show, Switch } from "solid-js";
 import { loadPagePlugins } from "../../plugins";
 import { errorToast, successToast } from "../../components/dialog/Toasts";
@@ -12,6 +12,8 @@ import { UserInfo } from "../../components/user/UserWidget";
 import { emit } from "@tauri-apps/api/event";
 
 export default function UserPage() {
+	let navigate = useNavigate();
+
 	let params = useParams();
 	let id = params.userId;
 
@@ -128,7 +130,7 @@ export default function UserPage() {
 													user: id,
 												});
 												successToast("User deleted");
-												window.location.href = "/";
+												navigate("/");
 											} catch (e) {
 												errorToast("Failed to delete user: " + e);
 											}

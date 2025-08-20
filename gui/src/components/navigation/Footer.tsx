@@ -29,8 +29,11 @@ import { errorToast } from "../dialog/Toasts";
 import Tip from "../dialog/Tip";
 import ProfileDeletePrompt from "../instance/ProfileDeletePrompt";
 import RunningInstanceList from "../launch/RunningInstanceList";
+import { useNavigate } from "@solidjs/router";
 
 export default function Footer(props: FooterProps) {
+	let navigate = useNavigate();
+
 	// Prompts
 	const [showPasswordPrompt, setShowPasswordPrompt] = createSignal(false);
 	const [authInfo, setAuthInfo] = createSignal<AuthDisplayEvent | undefined>(
@@ -235,7 +238,7 @@ export default function Footer(props: FooterProps) {
 											color="var(--bg0)"
 											selectedColor="var(--accent)"
 											onClick={() => {
-												window.location.href = `/instance/${props.selectedItem}`;
+												navigate(`/instance/${props.selectedItem}`);
 											}}
 											selected={false}
 											circle
@@ -304,7 +307,7 @@ export default function Footer(props: FooterProps) {
 								props.itemFromPlugin != true
 							) {
 								if (props.selectedItem != undefined) {
-									window.location.href = `/profile_config/${props.selectedItem}`;
+									navigate(`/profile_config/${props.selectedItem}`);
 								}
 							} else {
 								props.action();

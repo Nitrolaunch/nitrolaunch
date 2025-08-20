@@ -1,4 +1,4 @@
-import { useParams } from "@solidjs/router";
+import { useNavigate, useParams } from "@solidjs/router";
 import {
 	createEffect,
 	createResource,
@@ -57,6 +57,8 @@ import Dropdown, { Option } from "../../components/input/Dropdown";
 import IconAndText from "../../components/utility/IconAndText";
 
 export default function InstanceInfo(props: InstanceInfoProps) {
+	let navigate = useNavigate();
+
 	let params = useParams();
 	let id = params.instanceId;
 
@@ -388,7 +390,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 										selected={false}
 										selectedColor="var(--instance)"
 										onClick={() => {
-											window.location.href = `/instance_config/${id}`;
+											navigate(`/instance_config/${id}`);
 										}}
 									/>
 									<div style="width:9rem;font-weight:bold">
@@ -605,7 +607,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 										await invoke("delete_instance", { instance: id });
 										successToast("Instance deleted");
 										setShowDeleteConfirm(false);
-										window.location.href = "/";
+										navigate("/");
 									} catch (e) {
 										errorToast("Failed to delete instance: " + e);
 										setShowDeleteConfirm(false);

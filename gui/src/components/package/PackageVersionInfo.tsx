@@ -19,6 +19,7 @@ import { canonicalizeListOrSingle } from "../../utils/values";
 import { invoke } from "@tauri-apps/api";
 import Icon, { HasWidthHeight } from "../Icon";
 import PackageLabels from "./PackageLabels";
+import { useNavigate } from "@solidjs/router";
 
 export default function PackageVersionInfo(props: PackageVersionInfoProps) {
 	let dependencies = () =>
@@ -215,6 +216,8 @@ export interface PackageVersionInfoProps {
 
 // A list of relations, like dependencies or
 function RelationList(props: RelationListProps) {
+	let navigate = useNavigate();
+
 	return (
 		<Show when={props.packages.length > 0}>
 			<div class="cont col package-version-info-relations-container">
@@ -241,7 +244,7 @@ function RelationList(props: RelationListProps) {
 								<div
 									class="cont package-version-info-relation"
 									onclick={() => {
-										window.location.href = `/packages/package/${id}`;
+										navigate(`/packages/package/${id}`);
 									}}
 								>
 									<img

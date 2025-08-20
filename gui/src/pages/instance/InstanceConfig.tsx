@@ -1,4 +1,4 @@
-import { useParams } from "@solidjs/router";
+import { useNavigate, useParams } from "@solidjs/router";
 import "./InstanceConfig.css";
 import { invoke } from "@tauri-apps/api";
 import {
@@ -62,6 +62,8 @@ import LaunchConfig from "./LaunchConfig";
 import IconSelector from "../../components/input/IconSelector";
 
 export default function InstanceConfigPage(props: InstanceConfigProps) {
+	let navigate = useNavigate();
+
 	let params = useParams();
 
 	let isInstance = props.mode == InstanceConfigMode.Instance;
@@ -443,7 +445,7 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 			});
 
 			if (props.creating) {
-				window.location.href = "/";
+				navigate("/");
 			}
 
 			configOperations.refetch();
