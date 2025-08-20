@@ -17,16 +17,24 @@
 
 .package-version {
 	display: grid;
+	grid-template-columns: minmax(0, 0.7fr) minmax(0, 0.8fr) minmax(0, 0.7fr);
+
 	width: 100%;
 	height: 4rem;
-	grid-template-columns: minmax(0, 0.7fr) minmax(0, 0.8fr) minmax(0, 0.7fr);
+
+	background-color: var(--bg);
+
+	box-sizing: border-box;
 	border: var(--border) solid var(--bg3);
 	border-radius: var(--round);
-	box-sizing: border-box;
+
 	cursor: pointer;
+
+	transition: background-color 0.25s;
 }
 
 .package-version:hover {
+	background-color: var(--bg2);
 	border-color: var(--bg4);
 }
 

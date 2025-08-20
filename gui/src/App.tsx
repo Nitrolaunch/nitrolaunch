@@ -161,6 +161,7 @@ function Layout(props: LayoutProps) {
 				selectedUser={props.selectedUser}
 				action={props.footerData.action}
 				itemFromPlugin={props.footerData.fromPlugin}
+				selectedPackageGallery={props.footerData.selectedPackageGallery}
 			/>
 		</>
 	);
@@ -180,4 +181,5 @@ export interface FooterData {
 	action: () => void;
 	// Whether a selected instance or profile was created by a plugin
 	fromPlugin?: boolean;
+	selectedPackageGallery?: string[];
 }

@@ -1,4 +1,5 @@
 import {
+	For,
 	Show,
 	createResource,
 	createSignal,
@@ -16,7 +17,6 @@ import {
 	Gear,
 	Play,
 	Properties,
-	Refresh,
 	Trash,
 	Upload,
 } from "../../icons";
@@ -26,7 +26,6 @@ import MicrosoftAuthInfo from "../input/MicrosoftAuthInfo";
 import { beautifyString } from "../../utils";
 import TaskIndicator from "../TaskIndicator";
 import { errorToast } from "../dialog/Toasts";
-import IconTextButton from "../input/IconTextButton";
 import Tip from "../dialog/Tip";
 import ProfileDeletePrompt from "../instance/ProfileDeletePrompt";
 import RunningInstanceList from "../launch/RunningInstanceList";
@@ -135,6 +134,22 @@ export default function Footer(props: FooterProps) {
 		}
 	);
 
+	let gallery!: HTMLDivElement;
+
+	let scrollFunction = (e: any) => {
+		if (!e.deltaY) {
+			return;
+		}
+
+		gallery.scrollLeft += e.deltaY;
+		e.preventDefault();
+		e.stopPropagation();
+	};
+
+	let [hoveredGalleryEntry, setHoveredGalleryEntry] = createSignal<
+		string | undefined
+	>();
+
 	return (
 		<div class="footer">
 			<div id="footer-left" class="footer-section">
@@ -145,26 +160,34 @@ export default function Footer(props: FooterProps) {
 						{`Selected: ${props.selectedItem}`}
 					</Show>
 				</div>
-				<div class="cont" style="margin-left:1rem">
-					<Show when={props.mode == FooterMode.PreviewPackage}>
-						<Tip tip="Refetches packages and their new versions" side="top">
-							<IconTextButton
-								icon={Refresh}
-								text="Sync Packages"
-								size="22px"
-								color="var(--bg2)"
-								selectedColor="var(--package)"
-								selectedBg="var(--bg-1)"
-								onClick={async () => {
-									try {
-										await invoke("sync_packages");
-									} catch (e) {
-										errorToast("Failed to sync packages: " + e);
-									}
-								}}
-								selected={true}
-							/>
-						</Tip>
+				<div class="cont" style="position:relative">
+					<Show when={props.selectedPackageGallery != undefined}>
+						<div
+							class="cont start"
+							id="footer-package-gallery"
+							ref={gallery}
+							onwheel={scrollFunction}
+						>
+							<For each={props.selectedPackageGallery}>
+								{(url) => (
+									<img
+										class="footer-package-gallery-entry"
+										src={url}
+										onwheel={scrollFunction}
+										onmouseenter={() => setHoveredGalleryEntry(url)}
+										onmouseleave={() => setHoveredGalleryEntry(undefined)}
+									/>
+								)}
+							</For>
+						</div>
+						<Show when={hoveredGalleryEntry() != undefined}>
+							<div
+								class="cont fade-in-fast"
+								id="footer-package-gallery-preview"
+							>
+								<img src={hoveredGalleryEntry()} />
+							</div>
+						</Show>
 					</Show>
 				</div>
 			</div>
@@ -341,6 +364,7 @@ export interface FooterProps {
 	selectedUser?: string;
 	action: () => void;
 	itemFromPlugin?: boolean;
+	selectedPackageGallery?: string[];
 }
 
 function ActionButton(props: ActionButtonProps) {

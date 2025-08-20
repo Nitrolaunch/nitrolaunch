@@ -11,7 +11,7 @@ export default function Modal(props: ModalProps) {
 					class="cont modal-behind"
 					onclick={() => props.onClose(false)}
 				></div>
-				<div class="cont modal" style={`width:${props.width}`}>
+				<div class="cont modal fade-in-fast pop-in-fast" style={`width:${props.width}`}>
 					{props.children}
 				</div>
 			</div>

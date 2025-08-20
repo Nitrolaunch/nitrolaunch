@@ -269,7 +269,6 @@ export default function PackageVersions(props: PackageVersionsProps) {
 							<Show when={isVisible()}>
 								<PackageVersionEntry
 									version={version}
-									backgroundColor={props.backgroundColor}
 									onFocus={setFocusedVersion}
 									onInstall={props.onInstall}
 								/>
@@ -291,7 +290,6 @@ export default function PackageVersions(props: PackageVersionsProps) {
 export interface PackageVersionsProps {
 	packageId: string;
 	props: PackageProperties;
-	backgroundColor: string;
 	onInstall: (version: string) => void;
 	defaultFilters?: PackageFilterOptions;
 }
@@ -336,7 +334,6 @@ function PackageVersionEntry(props: PackageVersionEntryProps) {
 	return (
 		<div
 			class="input-shadow package-version"
-			style={`background-color:${props.backgroundColor}`}
 			onclick={() => props.onFocus(props.version)}
 		>
 			<div class="cont package-version-name">
@@ -364,7 +361,6 @@ function PackageVersionEntry(props: PackageVersionEntryProps) {
 
 interface PackageVersionEntryProps {
 	version: PackageVersion;
-	backgroundColor: string;
 	onFocus: (version: PackageVersion) => void;
 	onInstall: (version: string) => void;
 }

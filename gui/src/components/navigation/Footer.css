@@ -93,3 +93,49 @@
 	border-radius: var(--round);
 	background-color: var(--pluginbg);
 }
+
+#footer-package-gallery {
+	height: var(--height);
+
+	overflow-x: scroll;
+	overscroll-behavior: contain;
+
+	position: relative;
+
+	scrollbar-width: none;
+
+	gap: 0.3rem;
+}
+
+.footer-package-gallery-entry {
+	width: 2rem;
+	aspect-ratio: 1;
+	object-fit: cover;
+
+	border: var(--border) solid var(--bg3);
+	border-radius: var(--round2);
+
+	cursor: pointer;
+}
+
+#footer-package-gallery-preview {
+	position: absolute;
+
+	bottom: calc(100% + 0.5rem);
+	left: 0;
+
+	width: 100%;
+}
+
+#footer-package-gallery-preview > img {
+	width: 20rem;
+
+	border: var(--border) solid var(--bg3);
+	border-radius: var(--round2);
+
+	background-color: var(--bg);
+
+	box-shadow: var(--shadow-offset) var(--shadow-offset) var(--transparent-dark);
+
+	outline: 500rem solid var(--transparent-dark);
+}

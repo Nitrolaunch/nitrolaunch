@@ -25,6 +25,9 @@
 
 	font-family: "Courier New", Courier, monospace;
 	white-space: pre-wrap;
+
+	-webkit-user-select: text;
+	user-select: text;
 }
 
 .console-line.info {

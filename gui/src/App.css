@@ -281,6 +281,10 @@ button {
 	animation: fade-in 0.3s ease-in;
 }
 
+.fade-in-fast {
+	animation: fade-in 0.15s ease-in;
+}
+
 @keyframes fade-in {
 	0% {
 		opacity: 0%;
@@ -288,6 +292,24 @@ button {
 
 	100% {
 		opacity: 100%;
+	}
+}
+
+.pop-in {
+	animation: pop-in 0.2s ease-in;
+}
+
+.pop-in-fast {
+	animation: pop-in 0.1s ease-in;
+}
+
+@keyframes pop-in {
+	0% {
+		scale: 97%;
+	}
+
+	100% {
+		scale: 100%;
 	}
 }
 

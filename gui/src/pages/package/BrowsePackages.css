@@ -99,7 +99,7 @@
 	position: absolute;
 	top: 0;
 	width: 100vw;
-	height: 15rem;
+	height: 12rem;
 	z-index: -2;
 	background-image: linear-gradient(var(--repo-color), transparent);
 	opacity: 20%;

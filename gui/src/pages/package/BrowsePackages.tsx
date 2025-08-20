@@ -24,6 +24,10 @@ import PackageFilters, {
 import LoadingSpinner from "../../components/utility/LoadingSpinner";
 import RepoSelector from "../../components/package/RepoSelector";
 import { searchPackages } from "../../utils/package";
+import Tip from "../../components/dialog/Tip";
+import IconTextButton from "../../components/input/IconTextButton";
+import { Refresh } from "../../icons";
+import { invoke } from "@tauri-apps/api";
 
 const PACKAGES_PER_PAGE = 12;
 
@@ -239,7 +243,8 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 						availableCategories={repoCategories()}
 					/>
 				</div>
-				<div class="cont">
+				<div class="split3 fullwidth">
+					<div></div>
 					<PageButtons
 						page={page()}
 						pageCount={Math.floor(packageCount() / PACKAGES_PER_PAGE)}
@@ -248,6 +253,26 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 							updateFilters();
 						}}
 					/>
+					<div class="cont end">
+						<Tip tip="Refetches packages and their new versions" side="left">
+							<IconTextButton
+								icon={Refresh}
+								text="Sync Packages"
+								size="22px"
+								color="var(--bg2)"
+								selectedColor="var(--package)"
+								selectedBg="var(--bg-1)"
+								onClick={async () => {
+									try {
+										await invoke("sync_packages");
+									} catch (e) {
+										errorToast("Failed to sync packages: " + e);
+									}
+								}}
+								selected={true}
+							/>
+						</Tip>
+					</div>
 				</div>
 				<div id="packages-container">
 					<Show when={packages() != undefined} fallback={packagePlaceholders()}>
@@ -275,6 +300,7 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 															data.id
 														}?filters=${createPackageFiltersObject()}`;
 													},
+													selectedPackageGallery: data.meta.gallery,
 												});
 											}}
 											getPackageFiltersObject={createPackageFiltersObject}
