@@ -185,7 +185,7 @@ export default function Footer(props: FooterProps) {
 						</div>
 						<Show when={hoveredGalleryEntry() != undefined}>
 							<div
-								class="cont fade-in-fast"
+								class="cont fade-in-fast pop-in-fast"
 								id="footer-package-gallery-preview"
 							>
 								<img src={hoveredGalleryEntry()} />

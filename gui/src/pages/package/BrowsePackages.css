@@ -49,6 +49,10 @@
 	background-color: var(--bg);
 }
 
+.package.selected .package-image {
+	filter: brightness(110%);
+}
+
 .package-inner {
 	display: grid;
 	grid-template-rows: minmax(0, 1fr) minmax(0, 0.75fr);

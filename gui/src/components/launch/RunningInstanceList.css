@@ -32,7 +32,7 @@
 
 	padding: 0.5rem;
 
-	background-color: var(--bg2);
+	background-color: var(--bg);
 	border: var(--border) solid var(--bg4);
-	border-radius: var(--round);
+	border-radius: var(--round2);
 }

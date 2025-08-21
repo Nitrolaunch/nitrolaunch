@@ -1,6 +1,6 @@
 import { useParams } from "@solidjs/router";
 import { invoke } from "@tauri-apps/api";
-import { createEffect, createResource, createSignal } from "solid-js";
+import { createEffect, createResource } from "solid-js";
 import { setupPluginFunctions } from "../plugins";
 
 export default function CustomPluginPage() {

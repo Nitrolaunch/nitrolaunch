@@ -7,7 +7,6 @@ import {
 	For,
 	Match,
 	onCleanup,
-	Show,
 	Switch,
 } from "solid-js";
 import "./InstanceConsole.css";

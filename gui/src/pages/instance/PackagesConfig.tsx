@@ -4,8 +4,10 @@ import {
 	createResource,
 	createSignal,
 	For,
+	Match,
 	Setter,
 	Show,
+	Switch,
 } from "solid-js";
 import InlineSelect from "../../components/input/InlineSelect";
 import "./PackagesConfig.css";
@@ -17,7 +19,7 @@ import {
 	stringCompare,
 } from "../../utils";
 import IconButton from "../../components/input/IconButton";
-import { Edit, Plus, Popout, Search, Trash, Upload } from "../../icons";
+import { Edit, Error, Plus, Popout, Search, Trash, Upload } from "../../icons";
 import { errorToast } from "../../components/dialog/Toasts";
 import LoadingSpinner from "../../components/utility/LoadingSpinner";
 import ResolutionError, {
@@ -34,6 +36,7 @@ import Tip from "../../components/dialog/Tip";
 import EditableList from "../../components/input/EditableList";
 import PackageQuickAdd from "../../components/package/PackageQuickAdd";
 import { useNavigate } from "@solidjs/router";
+import Icon from "../../components/Icon";
 
 export default function PackagesConfig(props: PackagesConfigProps) {
 	let navigate = useNavigate();
@@ -49,6 +52,7 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 	let [packageProps, setPackageProps] = createSignal<
 		{ [key: string]: PackageProperties } | undefined
 	>();
+	let [errors, setErrors] = createSignal<{ [key: string]: boolean }>({});
 
 	let [allPackages, allPackagesMethods] = createResource(async () => {
 		let installedPackages: string[] = [];
@@ -82,6 +86,7 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 		// Get metadata and properties
 		let metas: any = {};
 		let properties: any = {};
+		let errors: any = {};
 
 		let promises = [];
 		for (let pkg of allPackages) {
@@ -94,19 +99,19 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 						];
 					} catch (e) {
 						console.error("Failed to load package: " + e);
-						return "error";
+						errors[pkg] = true;
+						return undefined;
 					}
 				})()
 			);
 		}
 
 		let results = await Promise.all(promises);
-		let errorExists = false;
 		for (let result of results) {
-			if (result == "error") {
-				errorExists = true;
+			if (result == undefined) {
 				continue;
 			}
+
 			let [id, [meta, props]] = result as [
 				string,
 				[PackageMeta, PackageProperties]
@@ -115,12 +120,13 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 			properties[id] = props;
 		}
 
-		if (errorExists) {
-			errorToast("One or more packages failed to load", false);
+		if (Object.keys(errors).length > 0) {
+			console.log("One or more packages failed to load");
 		}
 
 		setPackageMetas(metas);
 		setPackageProps(properties);
+		setErrors(errors);
 
 		allPackages.sort((a, b) =>
 			stringCompare(parsePkgRequest(a).id, parsePkgRequest(b).id)
@@ -324,7 +330,7 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 			</div>
 			<div class="cont col" id="configured-packages">
 				<Show
-					when={installedPackages() != undefined}
+					when={!allPackages.loading}
 					fallback={<LoadingSpinner size="5rem" />}
 				>
 					<For each={allPackages()}>
@@ -378,6 +384,8 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 							let properties =
 								packageProps() == undefined ? undefined : packageProps()![pkg];
 
+							let isError = () => errors()[pkg] != undefined;
+
 							let isDerived = () =>
 								derivedGlobalIncludes() ||
 								derivedClientIncludes() ||
@@ -392,6 +400,7 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 										isDerived={isDerived()}
 										isInstalled={isInstalled()}
 										isConfigured={isConfigured()}
+										isError={isError()}
 										category={
 											isClient() ? "client" : isServer() ? "server" : "global"
 										}
@@ -492,12 +501,19 @@ function ConfiguredPackage(props: ConfiguredPackageProps) {
 			onmouseleave={() => setIsHovered(false)}
 		>
 			<div class="cont">
-				<Show
-					when={props.meta != undefined}
-					fallback={<LoadingSpinner size="2rem" />}
-				>
-					<img src={icon} class="configured-package-icon" />
-				</Show>
+				<Switch>
+					<Match when={props.isError}>
+						<div class="cont" style="color:var(--error)">
+							<Icon icon={Error} size="1.5rem" />
+						</div>
+					</Match>
+					<Match when={props.meta == undefined}>
+						<LoadingSpinner size="2rem" />
+					</Match>
+					<Match when={props.meta != undefined}>
+						<img src={icon} class="configured-package-icon" />
+					</Match>
+				</Switch>
 			</div>
 			<div class="cont col configured-package-details">
 				<div class="cont configured-package-details-top">
@@ -567,6 +583,7 @@ interface ConfiguredPackageProps {
 	isDerived: boolean;
 	isInstalled: boolean;
 	isConfigured: boolean;
+	isError: boolean;
 	category: ConfiguredPackageCategory;
 	onRemove: (pkg: string, category: ConfiguredPackageCategory) => void;
 }

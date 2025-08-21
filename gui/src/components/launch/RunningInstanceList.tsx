@@ -53,7 +53,7 @@ export default function RunningInstanceList(props: RunningInstanceListProps) {
 	return (
 		<div class="cont running-instance-list">
 			<Show when={hoveredName() != undefined}>
-				<div class="cont" id="running-instance-list-tip">
+				<div class="cont pop-in-fast" id="running-instance-list-tip">
 					{hoveredName()}
 				</div>
 			</Show>
