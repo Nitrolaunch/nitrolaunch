@@ -87,6 +87,9 @@ pub struct CommonInstanceConfig {
 	/// Overrides for packages on this instance
 	#[serde(skip_serializing_if = "DefaultExt::is_default")]
 	pub overrides: PackageOverrides,
+	/// Override for the game file directory for this instance
+	#[serde(skip_serializing_if = "Option::is_none")]
+	pub game_dir: Option<String>,
 	/// Config for plugins
 	#[serde(flatten)]
 	#[serde(skip_serializing_if = "serde_json::Map::is_empty")]

@@ -13,6 +13,8 @@ pub mod transfer;
 /// Updating an instance
 pub mod update;
 
+use std::path::PathBuf;
+
 use nitro_config::instance::{ClientWindowConfig, InstanceConfig};
 use nitro_core::util::versions::MinecraftVersion;
 use nitro_pkg::overrides::PackageOverrides;
@@ -103,6 +105,8 @@ pub struct InstanceStoredConfig {
 	pub package_stability: PackageStability,
 	/// Package overrides
 	pub package_overrides: PackageOverrides,
+	/// Game dir override
+	pub game_dir: Option<PathBuf>,
 	/// The original instance configuration before applying profiles
 	pub original_config: InstanceConfig,
 	/// The original instance configuration after applying profiles

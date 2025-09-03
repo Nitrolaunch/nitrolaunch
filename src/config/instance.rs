@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::path::PathBuf;
 
 use crate::config::package::read_package_config;
 use crate::instance::launch::LaunchOptions;
@@ -141,6 +142,7 @@ pub async fn read_instance_config(
 		packages: read_packages,
 		package_stability: config.common.package_stability.unwrap_or_default(),
 		package_overrides: config.common.overrides,
+		game_dir: config.common.game_dir.map(PathBuf::from),
 		original_config,
 		original_config_with_profiles,
 		original_config_with_profiles_and_plugins,

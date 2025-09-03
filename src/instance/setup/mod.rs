@@ -6,7 +6,7 @@ mod server;
 use std::collections::HashSet;
 use std::fs;
 use std::ops::DerefMut;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use anyhow::{bail, Context};
 use nitro_config::instance::QuickPlay;
@@ -242,8 +242,14 @@ impl Instance {
 
 	/// Ensure the directories are set and exist
 	pub fn ensure_dirs(&mut self, paths: &Paths) -> anyhow::Result<()> {
-		self.dirs
-			.ensure_full(|| InstanceDirs::new(paths, &self.id, &self.kind.to_side()));
+		self.dirs.ensure_full(|| {
+			InstanceDirs::new(
+				paths,
+				&self.id,
+				&self.kind.to_side(),
+				self.config.game_dir.as_deref(),
+			)
+		});
 		self.dirs.get().ensure_exist()?;
 
 		Ok(())
@@ -378,12 +384,21 @@ pub struct InstanceDirs {
 
 impl InstanceDirs {
 	/// Create a new InstanceDirs
-	pub fn new(paths: &Paths, instance_id: &str, side: &Side) -> Self {
+	pub fn new(
+		paths: &Paths,
+		instance_id: &str,
+		side: &Side,
+		game_dir_override: Option<&Path>,
+	) -> Self {
 		let inst_dir = paths.project.data_dir().join("instances").join(instance_id);
 
-		let game_dir = match side {
-			Side::Client => inst_dir.join(".minecraft"),
-			Side::Server => inst_dir.clone(),
+		let game_dir = if let Some(game_dir) = game_dir_override {
+			game_dir.to_owned()
+		} else {
+			match side {
+				Side::Client => inst_dir.join(".minecraft"),
+				Side::Server => inst_dir.clone(),
+			}
 		};
 
 		Self { inst_dir, game_dir }
