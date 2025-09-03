@@ -387,6 +387,25 @@ Hook called on a specific plugin to import an instance using one of the formats 
 }
 ```
 
+### `migrate_instances`
+
+Hook called to migrate all instances from another launcher using one of the formats this plugin supports
+
+- Argument: string
+- This is the transfer format to use
+
+- Result:
+
+```
+{
+	"format": string,
+	"instances": {
+		"id": InstanceConfig,
+		...
+	}
+}
+```
+
 ## Custom Repository Hooks
 
 ### `add_custom_package_repositories`

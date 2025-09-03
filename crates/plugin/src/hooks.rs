@@ -365,6 +365,8 @@ pub struct InstanceTransferFormat {
 	pub import: Option<InstanceTransferFormatDirection>,
 	/// Info for the export side of this format
 	pub export: Option<InstanceTransferFormatDirection>,
+	/// Info for the migration side of this format
+	pub migrate: Option<InstanceTransferFormatDirection>,
 }
 
 /// Information about a side of an instance transfer format
@@ -452,6 +454,25 @@ pub struct ImportInstanceResult {
 	pub format: String,
 	/// The configuration of the new instance
 	pub config: InstanceConfig,
+}
+
+def_hook!(
+	MigrateInstances,
+	"migrate_instances",
+	"Hook for migrating all instances from another launcher",
+	String,
+	MigrateInstancesResult,
+	1,
+);
+
+/// Result from the MigrateInstances hook
+#[derive(Serialize, Deserialize, Default)]
+#[serde(default)]
+pub struct MigrateInstancesResult {
+	/// The ID of the transfer format being used
+	pub format: String,
+	/// The configuration of the new instances
+	pub instances: HashMap<String, InstanceConfig>,
 }
 
 def_hook!(
