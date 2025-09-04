@@ -114,6 +114,7 @@ define_translations! {
 	AgreeToEula, "Notice that the user agrees to the server EULA", "By creating a server instance, you agree to the terms of the Minecraft EULA";
 	StartMigrating, "When starting to migrate instances", "Importing instances using format '%format' and plugin '%plugin'";
 	FinishMigrating, "When finishing migrating instances", "Migration finished";
+	NoTransferFormats, "When no instance transfer formats are available", "No transfer formats available. Try installing some plugins.";
 }
 
 /// Replaces placeholders in a translated key

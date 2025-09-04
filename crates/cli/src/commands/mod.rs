@@ -17,6 +17,7 @@ use nitrolaunch::io::paths::Paths;
 use nitrolaunch::plugin::PluginManager;
 use nitrolaunch::plugin_crate::hooks::{self, AddTranslations};
 use nitrolaunch::shared::id::InstanceID;
+use nitrolaunch::shared::lang::translate::TranslationKey;
 use nitrolaunch::shared::later::Later;
 use nitrolaunch::shared::output::{MessageContents, MessageLevel, NitroOutput};
 
@@ -75,7 +76,7 @@ pub enum Command {
 	#[command(about = "Import instances from another launcher")]
 	Migrate {
 		/// Which format to use
-		format: String,
+		format: Option<String>,
 	},
 	#[clap(external_subcommand)]
 	External(Vec<String>),
@@ -235,7 +236,7 @@ fn print_version() {
 }
 
 /// Runs instance migration
-async fn migrate(format: String, data: &mut CmdData<'_>) -> anyhow::Result<()> {
+async fn migrate(format: Option<String>, data: &mut CmdData<'_>) -> anyhow::Result<()> {
 	data.ensure_config(true).await?;
 	let config = data.config.get();
 
@@ -243,6 +244,19 @@ async fn migrate(format: String, data: &mut CmdData<'_>) -> anyhow::Result<()> {
 	let formats = load_formats(&config.plugins, &data.paths, data.output)
 		.await
 		.context("Failed to get available transfer formats")?;
+
+	let format = if let Some(format) = &format {
+		format
+	} else {
+		let options: Vec<_> = formats.iter_format_names().collect();
+		if options.is_empty() {
+			bail!(
+				"{}",
+				data.output.translate(TranslationKey::NoTransferFormats)
+			);
+		}
+		inquire::Select::new("What launcher do you want to import from?", options).prompt()?
+	};
 
 	let new_configs =
 		migrate_instances(&format, &formats, &config.plugins, &data.paths, data.output)

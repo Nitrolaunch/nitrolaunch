@@ -17,8 +17,9 @@ use nitrolaunch::io::lock::Lockfile;
 use nitrolaunch::shared::id::InstanceID;
 
 use nitrolaunch::instance::launch::LaunchSettings;
+use nitrolaunch::shared::lang::translate::TranslationKey;
 use nitrolaunch::shared::loaders::Loader;
-use nitrolaunch::shared::{Side, UpdateDepth};
+use nitrolaunch::shared::{output::NitroOutput, Side, UpdateDepth};
 use reqwest::Client;
 
 use super::CmdData;
@@ -438,7 +439,13 @@ async fn import(
 	let format = if let Some(format) = &format {
 		format
 	} else {
-		let options = formats.iter_format_names().collect();
+		let options: Vec<_> = formats.iter_format_names().collect();
+		if options.is_empty() {
+			bail!(
+				"{}",
+				data.output.translate(TranslationKey::NoTransferFormats)
+			);
+		}
 		inquire::Select::new("What format is the imported instance in?", options).prompt()?
 	};
 
@@ -486,7 +493,13 @@ async fn export(
 	let format = if let Some(format) = &format {
 		format
 	} else {
-		let options = formats.iter_format_names().collect();
+		let options: Vec<_> = formats.iter_format_names().collect();
+		if options.is_empty() {
+			bail!(
+				"{}",
+				data.output.translate(TranslationKey::NoTransferFormats)
+			);
+		}
 		inquire::Select::new("What format is the exported instance in?", options).prompt()?
 	};
 
