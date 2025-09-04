@@ -5,7 +5,7 @@ use nitro_config::instance::InstanceConfig;
 use nitro_plugin::hooks::{
 	AddInstanceTransferFormats, ExportInstance, ExportInstanceArg, ImportInstance,
 	ImportInstanceArg, InstanceTransferFeatureSupport, InstanceTransferFormat,
-	InstanceTransferFormatDirection,
+	InstanceTransferFormatDirection, MigrateInstances,
 };
 use nitro_shared::lang::translate::TranslationKey;
 use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
@@ -164,6 +164,60 @@ impl Instance {
 
 		Ok(result.config)
 	}
+}
+
+/// Migrates all instances from another launcher using a plugin
+pub async fn migrate_instances(
+	format: &str,
+	formats: &Formats,
+	plugins: &PluginManager,
+	paths: &Paths,
+	o: &mut impl NitroOutput,
+) -> anyhow::Result<HashMap<String, InstanceConfig>> {
+	let format = formats
+		.formats
+		.get(format)
+		.context("Transfer format does not exist")?;
+
+	let migrate_info = format
+		.info
+		.migrate
+		.as_ref()
+		.context("This format or the plugin providing it does not support migration")?;
+
+	output_support_warnings(migrate_info, o);
+
+	o.display(
+		MessageContents::StartProcess(translate!(
+			o,
+			StartMigrating,
+			"format" = &format.info.id,
+			"plugin" = &format.plugin
+		)),
+		MessageLevel::Important,
+	);
+
+	let result = plugins
+		.call_hook_on_plugin(MigrateInstances, &format.plugin, &format.info.id, paths, o)
+		.await
+		.context("Failed to import instances using plugin")?;
+
+	let Some(result) = result else {
+		o.display(
+			MessageContents::Error(o.translate(TranslationKey::ImportPluginNoResult).into()),
+			MessageLevel::Debug,
+		);
+
+		bail!("Migration plugin did not return a result");
+	};
+
+	let result = result.result(o).await?;
+	o.display(
+		MessageContents::Success(o.translate(TranslationKey::FinishMigrating).into()),
+		MessageLevel::Important,
+	);
+
+	Ok(result.instances)
 }
 
 /// Load transfer formats from plugins

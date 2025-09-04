@@ -9,11 +9,14 @@ use anyhow::{bail, Context};
 use clap::{Parser, Subcommand};
 use color_print::{cformat, cprintln};
 
+use nitrolaunch::config::modifications::{apply_modifications_and_write, ConfigModification};
 use nitrolaunch::config::Config;
 use nitrolaunch::config_crate::ConfigDeser;
+use nitrolaunch::instance::transfer::{load_formats, migrate_instances};
 use nitrolaunch::io::paths::Paths;
 use nitrolaunch::plugin::PluginManager;
 use nitrolaunch::plugin_crate::hooks::{self, AddTranslations};
+use nitrolaunch::shared::id::InstanceID;
 use nitrolaunch::shared::later::Later;
 use nitrolaunch::shared::output::{MessageContents, MessageLevel, NitroOutput};
 
@@ -69,6 +72,11 @@ pub enum Command {
 		#[command(subcommand)]
 		command: FilesSubcommand,
 	},
+	#[command(about = "Import instances from another launcher")]
+	Migrate {
+		/// Which format to use
+		format: String,
+	},
 	#[clap(external_subcommand)]
 	External(Vec<String>),
 }
@@ -123,6 +131,7 @@ pub async fn run_cli() -> anyhow::Result<()> {
 			Command::Instance { command } => instance::run(command, data).await,
 			Command::Plugin { command } => plugin::run(command, &mut data).await,
 			Command::Config { command } => config::run(command, &mut data).await,
+			Command::Migrate { format } => migrate(format, &mut data).await,
 			Command::External(args) => call_plugin_subcommand(args, &mut data).await,
 		}
 	};
@@ -223,6 +232,45 @@ fn print_version() {
 	let nitrolaunch_version = nitrolaunch::VERSION;
 	cprintln!("CLI version: <g>{}</g>", version);
 	cprintln!("Nitrolaunch version: <g>{}</g>", nitrolaunch_version);
+}
+
+/// Runs instance migration
+async fn migrate(format: String, data: &mut CmdData<'_>) -> anyhow::Result<()> {
+	data.ensure_config(true).await?;
+	let config = data.config.get();
+
+	// Figure out the format
+	let formats = load_formats(&config.plugins, &data.paths, data.output)
+		.await
+		.context("Failed to get available transfer formats")?;
+
+	let new_configs =
+		migrate_instances(&format, &formats, &config.plugins, &data.paths, data.output)
+			.await
+			.context("Failed to migrate instances")?;
+
+	let mut config = data.get_raw_config()?;
+
+	for key in new_configs.keys() {
+		if config
+			.instances
+			.contains_key(&InstanceID::from(key.clone()))
+		{
+			bail!("Duplicate instance ID {key}");
+		}
+	}
+
+	apply_modifications_and_write(
+		&mut config,
+		new_configs
+			.into_iter()
+			.map(|(id, config)| ConfigModification::AddInstance(id.into(), config))
+			.collect(),
+		&data.paths,
+	)
+	.context("Failed to write modified config")?;
+
+	Ok(())
 }
 
 /// Call a plugin subcommand

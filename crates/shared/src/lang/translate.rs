@@ -112,6 +112,8 @@ define_translations! {
 	FinishUpdatingInstanceVersion, "When finishing updating an instance version", "Finished update";
 	InvalidInstanceConfig, "When the configuration for an instance is invalid", "Configuration for instance '%instance' is invalid:\n%error";
 	AgreeToEula, "Notice that the user agrees to the server EULA", "By creating a server instance, you agree to the terms of the Minecraft EULA";
+	StartMigrating, "When starting to migrate instances", "Importing instances using format '%format' and plugin '%plugin'";
+	FinishMigrating, "When finishing migrating instances", "Migration finished";
 }
 
 /// Replaces placeholders in a translated key
