@@ -6,15 +6,18 @@ import { clipboard } from "@tauri-apps/api";
 import { Check, Copy, Globe } from "../../icons";
 import { WebviewWindow } from "@tauri-apps/api/window";
 import Modal from "../dialog/Modal";
+import { open } from "@tauri-apps/api/shell";
 
 export default function MicrosoftAuthInfo(props: MicrosoftAuthInfoProps) {
 	return (
-		<Modal visible={props.visible} width="20rem" onClose={() => {}}>
+		<Modal visible={props.visible} width="20rem" onClose={() => { }}>
 			<div class="cont col ms-auth-info">
 				Copy this code:
 				<CopyCodeButton code={props.event.device_code} />
 				Then paste it into the login page:
-				<LoginWindowButton url={props.event.url} />
+				<LoginWindowButton url={props.event.url} inBrowser={false} />
+				If that link doesn't work, trying opening in your browser instead:
+				<LoginWindowButton url={props.event.url} inBrowser={true} />
 			</div>
 		</Modal>
 	);
@@ -59,13 +62,17 @@ function LoginWindowButton(props: LoginWindowButtonProps) {
 			selected={opening()}
 			onClick={async () => {
 				setOpening(true);
-				const loginWindow = new WebviewWindow("microsoft_login", {
-					url: props.url,
-					title: "Microsoft Login"
-				});
-				loginWindow.once("tauri://error", (e) => {
-					console.error("Failed to create login window: " + e.payload);
-				});
+				if (props.inBrowser) {
+					open(props.url);
+				} else {
+					const loginWindow = new WebviewWindow("microsoft_login", {
+						url: props.url,
+						title: "Microsoft Login"
+					});
+					loginWindow.once("tauri://error", (e) => {
+						console.error("Failed to create login window: " + e.payload);
+					});
+				}
 				setTimeout(() => {
 					setOpening(false);
 				}, 3000);
@@ -76,6 +83,7 @@ function LoginWindowButton(props: LoginWindowButtonProps) {
 
 interface LoginWindowButtonProps {
 	url: string;
+	inBrowser: boolean;
 }
 
 export interface MicrosoftAuthInfoProps {
