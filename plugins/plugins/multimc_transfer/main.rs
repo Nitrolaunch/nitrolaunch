@@ -1,12 +1,18 @@
 use std::{
-	collections::HashMap,
+	collections::{HashMap, HashSet},
 	fs::File,
 	path::{Path, PathBuf},
 };
 
-use anyhow::Context;
-use nitro_core::{io::extract_zip_dir, util::versions::MinecraftVersionDeser};
-use nitro_plugin::{api::CustomPlugin, hooks::ImportInstanceResult};
+use anyhow::{bail, Context};
+use nitro_core::{
+	io::{extract_zip_dir, json_from_file},
+	util::versions::MinecraftVersionDeser,
+};
+use nitro_plugin::{
+	api::CustomPlugin,
+	hooks::{ImportInstanceResult, MigrateInstancesResult},
+};
 use nitro_shared::{loaders::Loader, Side};
 use nitrolaunch::config_crate::{
 	instance::{CommonInstanceConfig, InstanceConfig},
@@ -31,10 +37,8 @@ fn main() -> anyhow::Result<()> {
 			.context("CFG file is missing in instance")?;
 		let cfg =
 			std::io::read_to_string(&mut cfg_file).context("Failed to read instance config")?;
-		let mut cfg = read_instance_cfg(&cfg);
+		let cfg = read_instance_cfg(&cfg);
 		std::mem::drop(cfg_file);
-
-		let name = cfg.remove("name");
 
 		let mut mmc_pack_file = zip
 			.by_name("mmc-pack.json")
@@ -44,23 +48,8 @@ fn main() -> anyhow::Result<()> {
 
 		std::mem::drop(mmc_pack_file);
 
-		// Figure out loader and Minecraft version
-		let mut version = None;
-		let mut loader = Loader::Vanilla;
-
-		for component in mmc_pack.components {
-			if component.uid == "net.minecraft" {
-				version = Some(component.version);
-			}
-			if component.uid == "net.fabricmc.fabric-loader" {
-				loader = Loader::Fabric;
-			}
-		}
-		let version = version.context("No Minecraft version provided")?;
-
 		// Write the instance files
 
-		// We need to write in the .minecraft directory for clients
 		let target_path = target_path.join(".minecraft");
 
 		// Extract all the instance files
@@ -80,26 +69,152 @@ fn main() -> anyhow::Result<()> {
 			all_packages.extend(addons_to_packages(&target_path.join(addon_dir))?);
 		}
 
+		let config =
+			create_config(cfg, &mmc_pack, all_packages).context("Failed to create config")?;
+
 		Ok(ImportInstanceResult {
 			format: arg.format,
-			config: InstanceConfig {
-				name: name.map(|x| x.to_string()),
-				side: Some(Side::Client),
-				common: CommonInstanceConfig {
-					version: Some(MinecraftVersionDeser::Version(version.into())),
-					loader: Some(loader.to_string().to_lowercase()),
-					packages: all_packages
-						.into_iter()
-						.map(|x| PackageConfigDeser::Basic(x.into()))
-						.collect(),
-					..Default::default()
-				},
-				..Default::default()
-			},
+			config,
+		})
+	})?;
+
+	plugin.migrate_instances(|_, arg| {
+		let data_folder = if arg == "multimc" {
+			#[cfg(target_os = "linux")]
+			let data_folder = format!("{}/.local/share/multimc", std::env::var("HOME")?);
+			#[cfg(target_os = "windows")]
+			let data_folder = format!("{}/Roaming/MultiMC", std::env::var("%APPDATA%")?);
+			#[cfg(target_os = "macos")]
+			let data_folder = format!(
+				"{}/Library/Application Support/MultiMC",
+				std::env::var("HOME")?
+			);
+
+			data_folder
+		} else if arg == "prism" {
+			#[cfg(target_os = "linux")]
+			let data_folder = format!("{}/.local/share/prismlauncher", std::env::var("HOME")?);
+			#[cfg(target_os = "windows")]
+			let data_folder = format!("{}/Roaming/PrismLauncher", std::env::var("%APPDATA%")?);
+			#[cfg(target_os = "macos")]
+			let data_folder = format!(
+				"{}/Library/Application Support/PrismLauncher",
+				std::env::var("HOME")?
+			);
+
+			data_folder
+		} else {
+			bail!("Unsupported format");
+		};
+
+		let data_folder = PathBuf::from(data_folder);
+		let instances_folder = data_folder.join("instances");
+
+		if !instances_folder.exists() {
+			return Ok(MigrateInstancesResult {
+				format: arg,
+				instances: HashMap::new(),
+			});
+		}
+
+		let mut out = HashMap::new();
+
+		let read = instances_folder
+			.read_dir()
+			.context("Failed to read instances")?;
+		for entry in read {
+			let entry = entry?;
+
+			if entry.file_type()?.is_file() {
+				continue;
+			}
+
+			let path = entry.path();
+
+			let mc_dir = path.join(".minecraft");
+
+			let cfg = std::fs::read_to_string(path.join("instance.cfg"))
+				.context("Failed to read instance config")?;
+			let cfg = read_instance_cfg(&cfg);
+
+			let mmc_pack: MMCPack = json_from_file(path.join("mmc-pack.json"))
+				.context("Failed to read instance MMC pack")?;
+
+			let mut config =
+				create_config(cfg, &mmc_pack, Vec::new()).context("Failed to create config")?;
+
+			let mut id = config
+				.name
+				.as_ref()
+				.context("Instance has no name")?
+				.to_lowercase()
+				.replace(" ", "-")
+				.replace("_", "-");
+			let mut to_remove = HashSet::new();
+			for (i, c) in id.chars().enumerate() {
+				if !c.is_ascii() {
+					to_remove.insert(i);
+				}
+			}
+
+			let mut i = 0;
+			id.retain(|_| {
+				let out = !to_remove.contains(&i);
+				i += 1;
+				out
+			});
+
+			config.common.game_dir = Some(mc_dir.to_string_lossy().to_string());
+
+			let id = if out.contains_key(&id) { id + "2" } else { id };
+
+			out.insert(id, config);
+		}
+
+		Ok(MigrateInstancesResult {
+			format: arg,
+			instances: out,
 		})
 	})?;
 
 	Ok(())
+}
+
+/// Creates the config for an instance from metadata
+fn create_config(
+	mut cfg: HashMap<&str, &str>,
+	mmc_pack: &MMCPack,
+	packages: Vec<String>,
+) -> anyhow::Result<InstanceConfig> {
+	let name = cfg.remove("name");
+
+	let mut version = None;
+	let mut loader = Loader::Vanilla;
+
+	for component in &mmc_pack.components {
+		if component.uid == "net.minecraft" {
+			version = Some(component.version.clone());
+		}
+		if component.uid == "net.fabricmc.fabric-loader" {
+			loader = Loader::Fabric;
+		}
+	}
+	let version = version.context("No Minecraft version provided")?;
+
+	Ok(InstanceConfig {
+		name: name.map(|x| x.to_string()),
+		side: Some(Side::Client),
+		common: CommonInstanceConfig {
+			version: Some(MinecraftVersionDeser::Version(version.into())),
+			loader: Some(loader.to_string().to_lowercase()),
+			packages: packages
+				.into_iter()
+				.map(|x| PackageConfigDeser::Basic(x.into()))
+				.collect(),
+			..Default::default()
+		},
+		..Default::default()
+	})
 }
 
 /// Converts addons to packages in the given addon directory (resourcepacks, mods, etc.)
