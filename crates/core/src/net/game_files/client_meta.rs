@@ -267,11 +267,24 @@ pub mod conditions {
 	pub enum OSName {
 		/// Windows operating system
 		Windows,
+		/// Windows on ARM
+		#[serde(rename = "windows-arm64")]
+		WindowsArm64,
 		/// MacOS operating system
 		#[serde(alias = "osx")]
+		#[serde(rename = "macos")]
 		MacOS,
+		/// MacOS on ARM
+		#[serde(rename = "osx-arm64")]
+		MacOSArm64,
 		/// Linux operating system
 		Linux,
+		/// Linux on ARM
+		#[serde(rename = "linux-arm64")]
+		LinuxArm64,
+		/// Unknown variant
+		#[serde(untagged)]
+		Other(String),
 	}
 
 	impl Display for OSName {
@@ -281,8 +294,12 @@ pub mod conditions {
 				"{}",
 				match self {
 					Self::Windows => "windows",
+					Self::WindowsArm64 => "windows_arm64",
 					Self::MacOS => "macos",
+					Self::MacOSArm64 => "macos_arm64",
 					Self::Linux => "linux",
+					Self::LinuxArm64 => "linux_arm64",
+					Self::Other(other) => &other,
 				}
 			)
 		}
@@ -339,7 +356,7 @@ pub async fn get(
 	files::create_dir(&version_dir).context("Failed to create versions directory")?;
 	let path = version_dir.join(client_meta_name);
 
-	let mut meta = if manager.update_depth < UpdateDepth::Force && path.exists() {
+	let meta = if manager.update_depth < UpdateDepth::Full && path.exists() {
 		json_from_file(path).context("Failed to read client meta contents from file")?
 	} else {
 		let mut download = ProgressiveDownload::bytes(&entry.url, client).await?;
@@ -393,21 +410,5 @@ pub async fn get(
 		simd_json::from_slice(&mut bytes).context("Failed to parse client meta")?
 	};
 
-	modify_meta(&mut meta);
-
 	Ok(meta)
-}
-
-/// Modifies the client meta to improve compatability
-fn modify_meta(meta: &mut ClientMeta) {
-	for lib in &mut meta.libraries {
-		let _ = lib;
-		// Fix for this https://github.com/PrismLauncher/PrismLauncher/issues/916
-		// if lib.name.contains("lwjgl") && lib.name.contains("3.3.1") {
-		// 	if let Some(artifact) = &mut lib.downloads.artifact {
-		// 		artifact.path = artifact.path.replace("3.3.1", "3.2.2");
-		// 		artifact.url = artifact.url.replace("3.3.1", "3.2.2");
-		// 	}
-		// }
-	}
 }

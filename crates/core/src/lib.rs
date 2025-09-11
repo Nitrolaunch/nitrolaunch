@@ -153,7 +153,9 @@ impl NitroCore {
 			.get_version_manifest(Some(version), o)
 			.await
 			.context("Failed to ensure version manifest exists")?;
-		let version = version.get_version(&version_manifest.manifest);
+		let version = version
+			.get_version(&version_manifest.manifest)
+			.context("Latest release or snapshot is not present in manifest")?;
 
 		let params = LoadVersionParameters {
 			paths: &self.paths,

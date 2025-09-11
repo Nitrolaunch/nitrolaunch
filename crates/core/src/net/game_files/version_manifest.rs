@@ -14,7 +14,8 @@ use crate::util::versions::{MinecraftVersion, VersionName};
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct VersionManifest {
 	/// The latest available versions
-	pub latest: LatestVersions,
+	#[serde(default)]
+	pub latest: Option<LatestVersions>,
 	/// The list of available versions, from newest to oldest
 	pub versions: Vec<VersionEntry>,
 }
@@ -42,7 +43,7 @@ pub struct VersionEntry {
 }
 
 /// Type of a version in the version manifest
-#[derive(Deserialize, Serialize, Debug, Clone, Copy, Default)]
+#[derive(Deserialize, Serialize, Debug, Clone, Default)]
 #[serde(rename_all = "snake_case")]
 pub enum VersionType {
 	/// A release version
@@ -54,6 +55,9 @@ pub enum VersionType {
 	OldAlpha,
 	/// An old beta version
 	OldBeta,
+	/// An unknown version type
+	#[serde(untagged)]
+	Other(String),
 }
 
 /// Latest available Minecraft versions in the version manifest
@@ -143,12 +147,14 @@ async fn get_contents(
 				json_from_file(&path).context("Failed to read manifest contents from file")?;
 			let version = requested_version.get_version(&contents);
 			// We can avoid redownloading even on full depth if the version is already in the manifest
-			if contents
-				.versions
-				.iter()
-				.any(|x| x.id.as_str() == version.as_ref())
-			{
-				return Ok(contents);
+			if let Some(version) = version {
+				if contents
+					.versions
+					.iter()
+					.any(|x| x.id.as_str() == version.as_ref())
+				{
+					return Ok(contents);
+				}
 			}
 		}
 	}

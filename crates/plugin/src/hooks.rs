@@ -139,9 +139,9 @@ def_hook!(
 	AddVersions,
 	"add_versions",
 	"Hook for adding extra versions to the version manifest",
-	(),
+	UpdateDepth,
 	Vec<VersionEntry>,
-	1,
+	2,
 );
 
 def_hook!(

@@ -55,11 +55,11 @@ pub enum MinecraftVersion {
 
 impl MinecraftVersion {
 	/// Get the correct version from the version manifest
-	pub fn get_version(&self, manifest: &VersionManifest) -> VersionName {
+	pub fn get_version(&self, manifest: &VersionManifest) -> Option<VersionName> {
 		match self {
-			Self::Version(version) => version.clone(),
-			Self::Latest => manifest.latest.release.clone(),
-			Self::LatestSnapshot => manifest.latest.snapshot.clone(),
+			Self::Version(version) => Some(version.clone()),
+			Self::Latest => manifest.latest.as_ref().map(|x| x.release.clone()),
+			Self::LatestSnapshot => manifest.latest.as_ref().map(|x| x.snapshot.clone()),
 		}
 	}
 

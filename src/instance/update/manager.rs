@@ -203,7 +203,7 @@ impl UpdateManager {
 
 		// Add extra versions to manifest from plugins
 		let results = plugins
-			.call_hook(AddVersions, &(), paths, o)
+			.call_hook(AddVersions, &self.settings.depth, paths, o)
 			.await
 			.context("Failed to call add_versions hook")?;
 		for result in results {

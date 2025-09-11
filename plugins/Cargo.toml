@@ -27,6 +27,10 @@ name = "nitro_plugin_backup"
 path = "plugins/backup/main.rs"
 
 [[bin]]
+name = "nitro_plugin_better_jsons"
+path = "plugins/better_jsons/main.rs"
+
+[[bin]]
 name = "nitro_plugin_config_split"
 path = "plugins/config_split/main.rs"
 
