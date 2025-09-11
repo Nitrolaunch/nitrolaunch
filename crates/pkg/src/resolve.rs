@@ -31,7 +31,17 @@ pub async fn resolve<'a, E: PackageEvaluator<'a>>(
 	let mut preloaded_packages = HashSet::with_capacity(packages.len());
 
 	// Preload all of the user's configured packages
-	let collected_packages: Vec<_> = packages.iter().map(|x| x.get_package()).collect();
+	let collected_packages: Vec<_> = packages
+		.iter()
+		.filter_map(|x| {
+			let req = x.get_package();
+			if resolver.overrides.suppress.contains(&req.to_string()) {
+				None
+			} else {
+				Some(req)
+			}
+		})
+		.collect();
 	if let Err(e) = evaluator
 		.preload_packages(&collected_packages, common_input)
 		.await
@@ -91,7 +101,11 @@ pub async fn resolve<'a, E: PackageEvaluator<'a>>(
 			.filter_map(|x| {
 				#[allow(irrefutable_let_patterns)]
 				if let Task::EvalPackage { dest, .. } = x {
-					Some(dest.clone())
+					if resolver.overrides.suppress.contains(&dest.to_string()) {
+						None
+					} else {
+						Some(dest.clone())
+					}
 				} else {
 					None
 				}
@@ -186,6 +200,10 @@ async fn resolve_task<'a, E: PackageEvaluator<'a>>(
 			required_content_versions,
 			preferred_content_versions,
 		} => {
+			if resolver.overrides.suppress.contains(&dest.to_string()) {
+				return Ok(());
+			}
+
 			let result = resolve_eval_package(
 				dest.clone(),
 				required_content_versions,
