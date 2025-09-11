@@ -24,15 +24,12 @@
 			"constant": {
 				"smithed-base": {
 					"name": "Smithed Base",
-					"loader": "fabric",
 					"packages": [
-						"modrinth:globalpacks",
 						{
 							"id": "modrinth:unjank",
 							"optional": true
 						}
-					],
-					"datapack_folder": "global_packs/required_data"
+					]
 				}
 			}
 		},
