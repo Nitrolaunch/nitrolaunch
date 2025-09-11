@@ -166,5 +166,12 @@
 		"github_owner": "Nitrolaunch",
 		"github_repo": "nitrolaunch",
 		"description": "Instance transfer for MultiMC and PrismLauncher"
+	},
+	"better_jsons": {
+		"id": "better_jsons",
+		"name": "BetterJSONs",
+		"github_owner": "Nitrolaunch",
+		"github_repo": "nitrolaunch",
+		"description": "Uses BetterJSONs versions for improved compatability"
 	}
 }
