@@ -29,7 +29,7 @@ Called whenever one of the subcommands that this hook registers are run. The arg
 
 ### `add_versions`
 
-This hook allows you to add extra Minecraft versions to the version manifest, allowing them to be specified in instance configuration and automatically downloaded.
+This hook allows you to add extra Minecraft versions to the version manifest, allowing them to be specified in instance configuration and automatically downloaded. Versions that already exist in the list with the same ID will be replaced, and if they don't already exist, they will be appended to the front as the newest possible version.
 
 - Argument: None
 - Result:

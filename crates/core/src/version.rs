@@ -17,7 +17,9 @@ use crate::io::java::JavaMajorVersion;
 use crate::io::persistent::PersistentData;
 use crate::io::update::UpdateManager;
 use crate::net::game_files::client_meta::{self, ClientMeta};
-use crate::net::game_files::version_manifest::{self, VersionEntry, VersionManifestAndList};
+use crate::net::game_files::version_manifest::{
+	self, VersionEntry, VersionManifest, VersionManifestAndList,
+};
 use crate::net::game_files::{assets, game_jar, libraries};
 use crate::user::UserManager;
 use crate::util::versions::{MinecraftVersion, VersionName};
@@ -274,7 +276,7 @@ impl VersionRegistry {
 
 			// Add additional versions
 			let additional_versions = std::mem::take(&mut self.additional_versions);
-			manifest.versions.extend(additional_versions);
+			add_versions(&mut manifest, additional_versions);
 
 			let combo = VersionManifestAndList::new(manifest);
 
@@ -377,4 +379,20 @@ pub(crate) struct ClientAssetsAndLibsParameters<'a> {
 	pub req_client: &'a reqwest::Client,
 	pub version_manifest: &'a VersionManifestAndList,
 	pub update_manager: &'a mut UpdateManager,
+}
+
+/// Adds extra versions to a manifest
+pub fn add_versions(manifest: &mut VersionManifest, additional_versions: Vec<VersionEntry>) {
+	// Versions with the same name should replace existing ones in the manifest
+	for new_version in additional_versions {
+		if let Some(pos) = manifest
+			.versions
+			.iter()
+			.position(|x| x.id == new_version.id)
+		{
+			manifest.versions[pos] = new_version;
+		} else {
+			manifest.versions.insert(0, new_version);
+		}
+	}
 }
