@@ -69,6 +69,17 @@ impl PkgRequestSource {
 		}
 	}
 
+	/// Gets the original source package all the way up the chain
+	pub fn get_original_source(&self) -> Option<&ArcPkgReq> {
+		match self {
+			Self::Dependency(source) | Self::Bundled(source) => match &source.source {
+				Self::Dependency(..) | Self::Bundled(..) => source.source.get_original_source(),
+				_ => Some(source),
+			},
+			_ => None,
+		}
+	}
+
 	/// Gets whether this source list is only bundles that lead up to a UserRequire
 	pub fn is_user_bundled(&self) -> bool {
 		matches!(self, Self::Bundled(source) if source.source.is_user_bundled())

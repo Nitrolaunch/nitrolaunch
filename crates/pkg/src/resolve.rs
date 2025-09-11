@@ -217,11 +217,19 @@ async fn resolve_task<'a, E: PackageEvaluator<'a>>(
 
 			let config = resolver.package_configs.get(&dest);
 
-			// Skip errors for optional packages
+			// Skip errors for optional packages or dependencies of optional packages
 			if let Err(e) = result {
 				let Some(config) = config else {
 					return Err(e);
 				};
+
+				if let Some(original_source) = dest.source.get_original_source() {
+					if let Some(config) = resolver.package_configs.get(original_source) {
+						if config.is_optional() {
+							return Ok(());
+						}
+					}
+				}
 
 				if !config.is_optional() {
 					return Err(e);
