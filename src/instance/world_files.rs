@@ -1,6 +1,5 @@
 use std::path::{Path, PathBuf};
 
-#[cfg(target_os = "linux")]
 use anyhow::Context;
 use nitro_core::io::files::{create_leading_dirs, update_hardlink};
 use nitro_plugin::hooks::{InstanceLaunchArg, UpdateWorldFiles};
