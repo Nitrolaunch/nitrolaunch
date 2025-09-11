@@ -7,9 +7,12 @@ use std::{
 };
 
 use crate::try_read::TryLineReader;
-use anyhow::{bail, Context};
+use anyhow::{anyhow, bail, Context};
 use nitro_core::Paths;
-use nitro_shared::{no_window, output::{MessageContents, MessageLevel, NitroOutput, NoOp}};
+use nitro_shared::{
+	no_window,
+	output::{MessageContents, MessageLevel, NitroOutput, NoOp},
+};
 use tokio::{
 	io::AsyncWriteExt,
 	process::{Child, ChildStdin, ChildStdout, Command},
@@ -275,7 +278,7 @@ impl<H: Hook> HookHandle<H> {
 								let delta = now.duration_since(*start_time);
 								o.display(
 									MessageContents::Simple(format!(
-										"Plugin {} took {delta:?} to run hook '{}'",
+										"Plugin '{}' took {delta:?} to run hook '{}'",
 										self.plugin_id,
 										H::get_name_static()
 									)),
@@ -285,6 +288,12 @@ impl<H: Hook> HookHandle<H> {
 
 							// We can stop polling early
 							return Ok(true);
+						}
+						OutputAction::SetError(error) => {
+							return Err(anyhow!(
+								"Plugin '{}' returned an error: {error}",
+								self.plugin_id
+							));
 						}
 						OutputAction::SetState(new_state) => {
 							persistence_lock.state = new_state;

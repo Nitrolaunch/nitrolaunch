@@ -24,6 +24,8 @@ pub enum OutputAction {
 	EndSection,
 	/// Set the result of the hook
 	SetResult(serde_json::Value),
+	/// Sets an error result for the hook
+	SetError(String),
 	/// Set the persistent state of the plugin
 	SetState(serde_json::Value),
 	/// Return a result from a command

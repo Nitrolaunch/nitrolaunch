@@ -9,7 +9,6 @@ use std::marker::PhantomData;
 use std::path::PathBuf;
 
 use anyhow::{bail, Context};
-use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
@@ -200,6 +199,8 @@ impl CustomPlugin {
 				_h: PhantomData,
 			};
 
+			let mut stdout = std::io::stdout();
+
 			let result = f(ctx, arg);
 			let result = match result {
 				Ok(result) => result,
@@ -207,16 +208,13 @@ impl CustomPlugin {
 					if H::get_takes_over() {
 						eprintln!("Error in hook: {e:?}");
 					} else {
-						self.stored_ctx.output.display(
-							MessageContents::Error(format!("{e:?}")),
-							MessageLevel::Important,
-						);
+						let output = OutputAction::SetError(format!("{e:?}"))
+							.serialize(self.settings.use_base64, self.settings.protocol_version)?;
+						let _ = writeln!(&mut stdout, "{output}");
 					}
 					return Ok(());
 				}
 			};
-
-			let mut stdout = std::io::stdout();
 
 			if !H::get_takes_over() {
 				// Output state
