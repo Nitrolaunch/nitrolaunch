@@ -150,6 +150,11 @@ pub trait ConfiguredPackage: Clone {
 		properties: &PackageProperties,
 		input: &mut Self::EvalInput<'_>,
 	) -> anyhow::Result<()>;
+
+	/// Gets whether this package is optional to install
+	fn is_optional(&self) -> bool {
+		false
+	}
 }
 
 /// Trait for the result from evaluating a package, used for resolution

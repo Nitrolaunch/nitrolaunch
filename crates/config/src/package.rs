@@ -43,6 +43,9 @@ pub struct FullPackageConfig {
 	/// Desired content version for this package
 	#[serde(default)]
 	pub content_version: Option<String>,
+	/// Whether this package is optional
+	#[serde(default)]
+	pub optional: bool,
 }
 
 /// Trick enum used to make deserialization work in the way we want
@@ -126,6 +129,14 @@ impl PackageConfigDeser {
 		match &self {
 			Self::Basic(..) => None,
 			Self::Full(cfg) => cfg.content_version.as_ref(),
+		}
+	}
+
+	/// Get the optional setting of the config
+	pub fn get_optional(&self) -> bool {
+		match &self {
+			Self::Basic(..) => false,
+			Self::Full(cfg) => cfg.optional,
 		}
 	}
 

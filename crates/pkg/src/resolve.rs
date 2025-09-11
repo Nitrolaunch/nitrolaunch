@@ -53,7 +53,7 @@ pub async fn resolve<'a, E: PackageEvaluator<'a>>(
 	}
 
 	// Resolve all of the tasks
-	// The strategy for preloading is to complete tasks until none of them have preloaded packages, then preloading all of them and repeating
+	// The strategy for preloading is to complete tasks until none of them have preloaded packages, then preload all of them and repeat
 	'outer: loop {
 		let mut num_skipped = 0;
 
@@ -107,6 +107,7 @@ pub async fn resolve<'a, E: PackageEvaluator<'a>>(
 
 	let mut unfulfilled_recommendations = Vec::new();
 
+	// Final check for constraints
 	for constraint in resolver.constraints.iter() {
 		match &constraint.kind {
 			ConstraintKind::Recommend(package, invert) => {
@@ -185,7 +186,7 @@ async fn resolve_task<'a, E: PackageEvaluator<'a>>(
 			required_content_versions,
 			preferred_content_versions,
 		} => {
-			resolve_eval_package(
+			let result = resolve_eval_package(
 				dest.clone(),
 				required_content_versions,
 				preferred_content_versions,
@@ -194,7 +195,20 @@ async fn resolve_task<'a, E: PackageEvaluator<'a>>(
 				resolver,
 			)
 			.await
-			.map_err(|e| ResolutionError::PackageContext(dest.clone(), Box::new(e)))?;
+			.map_err(|e| ResolutionError::PackageContext(dest.clone(), Box::new(e)));
+
+			let config = resolver.package_configs.get(&dest);
+
+			// Skip errors for optional packages
+			if let Err(e) = result {
+				let Some(config) = config else {
+					return Err(e);
+				};
+
+				if !config.is_optional() {
+					return Err(e);
+				}
+			}
 		}
 	}
 

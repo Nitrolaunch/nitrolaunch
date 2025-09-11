@@ -469,6 +469,10 @@ impl ConfiguredPackage for EvalPackageConfig {
 
 		Ok(())
 	}
+
+	fn is_optional(&self) -> bool {
+		self.0.optional
+	}
 }
 
 struct EvalRelationsResult {

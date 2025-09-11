@@ -327,6 +327,7 @@ where
 			stability: Default::default(),
 			worlds: Default::default(),
 			content_version: Default::default(),
+			optional: Default::default(),
 		};
 
 		Self { config, parent }
@@ -365,6 +366,12 @@ where
 	/// Set the configured content version of the package
 	pub fn content_version(&mut self, version: String) -> &mut Self {
 		self.config.content_version = Some(version);
+		self
+	}
+
+	/// Set whether the configured package is optional
+	pub fn optional(&mut self, optional: bool) -> &mut Self {
+		self.config.optional = optional;
 		self
 	}
 

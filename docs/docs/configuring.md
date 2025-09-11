@@ -162,7 +162,8 @@ or
 	"permissions": "restricted" | "standard" | "elevated",
 	"stability": "stable" | "latest",
 	"worlds": [string],
-	"content_version": string
+	"content_version": string,
+	"optional": bool
 }
 ```
 
@@ -176,6 +177,7 @@ In most cases the first form is all you need. If you want more control over how 
 - `stability` (Optional): Specify whether you want this package to use development versions of addons or not. Defaults to using the `package_stability` setting from the profile.
 - `worlds` (Optional): A list of worlds to only apply addons like datapacks to. If left empty (the default), will apply to all worlds in the instance.
 - `content_version` (Optional): An optional content version to request the package to be. Can be a [version pattern](./packages/_index.md#version-patterns).
+- `optional` (Optional): Whether this package can be skipped if it has errors. Note that this can cause mods to have unmet dependency errors if they depend on an optional package that fails to install.
 
 ## Preferences
 

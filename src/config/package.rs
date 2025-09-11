@@ -24,6 +24,8 @@ pub struct PackageConfig {
 	pub worlds: Vec<String>,
 	/// Desired content version for this package
 	pub content_version: Option<String>,
+	/// Whether this package is optional
+	pub optional: bool,
 }
 
 /// Where a package was configured from
@@ -46,6 +48,7 @@ impl PackageConfig {
 			stability: PackageStability::default(),
 			worlds: Vec::new(),
 			content_version: None,
+			optional: false,
 		}
 	}
 
@@ -98,5 +101,6 @@ pub fn read_package_config(
 		stability: config.get_stability(profile_stability),
 		worlds: config.get_worlds().into_owned(),
 		content_version: None,
+		optional: config.get_optional(),
 	}
 }
