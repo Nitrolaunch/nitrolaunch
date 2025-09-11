@@ -410,27 +410,13 @@ pub fn get_addon_paths(
 			} else {
 				match side {
 					Side::Client => {
-						let saves_dir = game_dir.join("saves");
-						if saves_dir.exists() {
-							game_dir
-								.join("saves")
-								.read_dir()
-								.context("Failed to read saves directory")?
-								.filter_map(|world| {
-									let world = world.ok()?;
-									let path = world.path();
-									// Filter worlds not in the list
-									if !selected_worlds.is_empty() {
-										let dir_name = path.file_name()?.to_string_lossy();
-										if !selected_worlds.iter().any(|x| x == dir_name.as_ref()) {
-											return None;
-										}
-									}
-									Some(path.join("datapacks"))
-								})
-								.collect()
+						if selected_worlds.is_empty() {
+							vec![game_dir.join("world_files/datapacks")]
 						} else {
-							vec![]
+							selected_worlds
+								.iter()
+								.map(|x| game_dir.join("saves").join(x).join("datapacks"))
+								.collect()
 						}
 					}
 					Side::Server => {

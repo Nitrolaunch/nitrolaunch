@@ -15,12 +15,13 @@ use nitro_plugin::hooks::{
 };
 use nitro_shared::id::InstanceID;
 use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
-use nitro_shared::{translate, UpdateDepth};
+use nitro_shared::{translate, Side, UpdateDepth};
 use reqwest::Client;
 use tokio::io::{AsyncWriteExt, Stdin, Stdout};
 
 use super::tracking::RunningInstanceRegistry;
 use super::update::manager::UpdateManager;
+use crate::instance::world_files::WorldFilesWatcher;
 use crate::io::lock::Lockfile;
 use crate::io::paths::Paths;
 use crate::plugin::PluginManager;
@@ -119,6 +120,16 @@ impl Instance {
 			.call_hook(WhileInstanceLaunch, &hook_arg, paths, o)
 			.await
 			.context("Failed to call while launch hook")?;
+
+		let world_files = if self.get_side() == Side::Client {
+			Some(
+				WorldFilesWatcher::new(&self.dirs.get().game_dir, plugins.clone())
+					.context("Failed to setup world files watcher")?,
+			)
+		} else {
+			None
+		};
+
 		let handle = InstanceHandle {
 			inner: handle,
 			instance_id: self.id.clone(),
@@ -127,6 +138,7 @@ impl Instance {
 			is_silent: false,
 			stdout: tokio::io::stdout(),
 			stdin: tokio::io::stdin(),
+			world_files,
 		};
 
 		// Update the running instance registry
@@ -186,6 +198,8 @@ pub struct InstanceHandle {
 	stdout: Stdout,
 	/// Global stdin
 	stdin: Stdin,
+	/// Shared world file watcher
+	world_files: Option<WorldFilesWatcher>,
 }
 
 impl InstanceHandle {
@@ -228,6 +242,11 @@ impl InstanceHandle {
 				// if let Ok(Some(bytes_read)) = self.stdin.try_read(&mut stdio_buf).await {
 				// 	let _ = inst_stdin.write_all(&stdio_buf[0..bytes_read]);
 				// }
+			}
+
+			// Update world files
+			if let Some(world_files) = &mut self.world_files {
+				let _ = world_files.watch(&self.hook_arg, paths, o).await;
 			}
 
 			// Check if the instance has exited

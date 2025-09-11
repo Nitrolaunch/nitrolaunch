@@ -118,6 +118,7 @@ impl CustomPlugin {
 		WhileInstanceLaunch
 	);
 	hook_interface!(on_instance_stop, "on_instance_stop", OnInstanceStop);
+	hook_interface!(update_world_files, "update_world_files", UpdateWorldFiles);
 	hook_interface!(
 		custom_package_instruction,
 		"custom_package_instruction",

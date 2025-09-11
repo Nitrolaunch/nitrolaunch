@@ -207,6 +207,13 @@ Called when an instance is stopped. This happens when Minecraft is closed or cra
 - Argument: InstanceLaunchArg
 - Result: None
 
+### `update_world_files`
+
+Called when shared world files are updated on an instance.
+
+- Argument: InstanceLaunchArg
+- Result: None
+
 ## Package Hooks
 
 ### `custom_package_instruction`

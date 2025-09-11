@@ -12,6 +12,8 @@ pub mod tracking;
 pub mod transfer;
 /// Updating an instance
 pub mod update;
+/// Updating shared world files
+pub mod world_files;
 
 use std::path::PathBuf;
 

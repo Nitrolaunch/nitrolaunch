@@ -237,6 +237,15 @@ def_hook!(
 	2,
 );
 
+def_hook!(
+	UpdateWorldFiles,
+	"update_world_files",
+	"Hook for when shared world files are updated",
+	InstanceLaunchArg,
+	(),
+	1,
+);
+
 /// Argument for the OnInstanceLaunch and WhileInstanceLaunch hooks
 #[derive(Serialize, Deserialize, Default)]
 #[serde(default)]
