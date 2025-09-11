@@ -45,7 +45,7 @@ def weld_dir(dir: Path, ignore: list):
 
 def run():
 	hook = sys.argv[1]
-	if hook != "on_instance_setup":
+	if hook != "on_instance_setup" and hook != "update_world_files":
 		return
 	
 	arg_raw = sys.argv[2]
