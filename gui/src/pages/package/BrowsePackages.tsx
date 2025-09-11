@@ -2,7 +2,6 @@ import {
 	useLocation,
 	useNavigate,
 	useParams,
-	usePreloadRoute,
 } from "@solidjs/router";
 import "./BrowsePackages.css";
 import {
@@ -38,7 +37,6 @@ const PACKAGES_PER_PAGE = 12;
 
 export default function BrowsePackages(props: BrowsePackagesProps) {
 	let navigate = useNavigate();
-	let preload = usePreloadRoute();
 
 	let params = useParams();
 	let searchParams = parseQueryString(useLocation().search);
@@ -314,8 +312,6 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 													},
 													selectedPackageGallery: data.meta.gallery,
 												});
-
-												preload(url);
 											}}
 											getPackageFiltersObject={createPackageFiltersObject}
 										/>
