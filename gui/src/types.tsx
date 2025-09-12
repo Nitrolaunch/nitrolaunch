@@ -11,6 +11,7 @@ export interface InstanceInfo {
 	icon: InstanceIcon | null;
 	pinned: boolean;
 	from_plugin: boolean;
+	version: string;
 }
 
 export type InstanceMap = {

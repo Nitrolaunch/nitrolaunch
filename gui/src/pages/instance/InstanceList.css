@@ -44,12 +44,12 @@
 	width: 100%;
 }
 
-.instance-list-section-header > svg {
+.instance-list-section-header>svg {
 	margin-bottom: 0.05rem;
 	margin-left: 1.3rem;
 }
 
-.instance-list-section-header > h2 {
+.instance-list-section-header>h2 {
 	line-height: 0;
 	font-size: 1.2rem;
 }
@@ -81,6 +81,11 @@
 	transition: background-color 0.15s, border-color 0.25s, transform var(--bubble);
 }
 
+.instance-list-item-details {
+	align-items: flex-start;
+	gap: 0;
+}
+
 .instance-list-item:hover {
 	background-color: var(--bg3);
 	border-right-color: var(--bg4);
@@ -106,10 +111,4 @@
 .instance-list-pin {
 	position: absolute;
 	right: 0.8rem;
-}
-
-.instance-list-item-details {
-	display: flex;
-	flex-direction: column;
-	align-items: flex-start;
 }

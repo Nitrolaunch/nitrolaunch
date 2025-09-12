@@ -116,7 +116,7 @@ export default function InstanceList(props: InstanceListProps) {
 		props.setFooterData({
 			selectedItem: item.id,
 			mode: item.type as FooterMode,
-			action: () => {},
+			action: () => { },
 			fromPlugin: item.fromPlugin,
 		});
 	}
@@ -125,7 +125,7 @@ export default function InstanceList(props: InstanceListProps) {
 		props.setFooterData({
 			mode: FooterMode.Instance,
 			selectedItem: undefined,
-			action: () => {},
+			action: () => { },
 		});
 	});
 	return (
@@ -176,9 +176,8 @@ export default function InstanceList(props: InstanceListProps) {
 						</div>
 						<div id="instance-list-header">
 							<div
-								class={`instance-list-header-item instances${
-									instancesOrProfiles() == "instance" ? " selected" : ""
-								}`}
+								class={`instance-list-header-item instances${instancesOrProfiles() == "instance" ? " selected" : ""
+									}`}
 								onclick={() => {
 									setInstancesOrProfiles("instance");
 								}}
@@ -186,9 +185,8 @@ export default function InstanceList(props: InstanceListProps) {
 								Instances
 							</div>
 							<div
-								class={`instance-list-header-item profiles${
-									instancesOrProfiles() == "profile" ? " selected" : ""
-								}`}
+								class={`instance-list-header-item profiles${instancesOrProfiles() == "profile" ? " selected" : ""
+									}`}
 								onclick={() => {
 									setInstancesOrProfiles("profile");
 								}}
@@ -349,9 +347,8 @@ function Section(props: SectionProps) {
 								<Icon icon={Plus} size="1.5rem" />
 							</div>
 							<div style="" class="bold">
-								{`Create ${
-									props.itemType == "instance" ? "Instance" : "Profile"
-								}`}
+								{`Create ${props.itemType == "instance" ? "Instance" : "Profile"
+									}`}
 							</div>
 						</div>
 					</Show>
@@ -399,9 +396,8 @@ function Item(props: ItemProps) {
 
 	return (
 		<div
-			class={`input-shadow bubble-hover instance-list-item noselect ${
-				props.selected ? "selected" : ""
-			} ${props.itemKind}`}
+			class={`input-shadow bubble-hover instance-list-item noselect ${props.selected ? "selected" : ""
+				} ${props.itemKind}`}
 			onClick={() => {
 				// Double click to edit
 				if (props.selected) {
@@ -451,15 +447,18 @@ function Item(props: ItemProps) {
 				</div>
 			</Show>
 			{icon}
-			<div class="instance-list-item-details">
+			<div class="cont col instance-list-item-details">
 				<div style="" class="bold">
 					{props.instance.name !== null
 						? props.instance.name
 						: props.instance.id}
 				</div>
-				<Show when={props.instance.name !== null}>
-					<div style="color: var(--fg3)">{props.instance.id}</div>
-				</Show>
+				<div class="cont start" style="color: var(--fg3);gap:0.4rem">
+					<Show when={props.instance.name !== null}>
+						<span class="bold">{props.instance.id}</span>
+					</Show>
+					<span>{props.instance.version}</span>
+				</div>
 			</div>
 		</div>
 	);
