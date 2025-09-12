@@ -132,7 +132,7 @@ function InlineSelectOption(props: OptionProps) {
 	let contents = (
 		<div
 			class={`cont inline-select-option ${
-				props.connected ? "connected" : "disconnected input-shadow"
+				props.connected ? "connected" : "disconnected input-shadow bubble-hover"
 			} ${props.class == undefined ? "" : props.class} ${
 				isSelected() ? "selected" : ""
 			} ${props.isLast ? "last" : "not-last"} ${

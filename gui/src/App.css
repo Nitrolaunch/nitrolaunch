@@ -309,6 +309,16 @@ button {
 	}
 }
 
+.bubble-hover {
+	transform: scale(1);
+	--bubble: 0.1s;
+	transition: transform var(--bubble);
+}
+
+.bubble-hover:hover {
+	transform: scale(1.02);
+}
+
 /* Fonts */
 @font-face {
 	font-family: Rubik;

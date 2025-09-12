@@ -56,7 +56,7 @@
 	box-sizing: border-box;
 	border-bottom: var(--border) solid var(--bg);
 
-	transition: border-color 0.15s, background-color 0.35s;
+	transition: border-color 0.15s, background-color 0.35s, transform var(--bubble);
 }
 
 .navbar-button-text {

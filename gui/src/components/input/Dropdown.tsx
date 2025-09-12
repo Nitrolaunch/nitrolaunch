@@ -107,7 +107,7 @@ export default function Dropdown(props: DropdownProps) {
 				onmouseleave={() => setIsGapHovered(false)}
 			></div>
 			<div
-				class={`cont input-shadow dropdown-header ${isOpen() ? "open" : ""}`}
+				class={`cont input-shadow bubble-hover dropdown-header ${isOpen() ? "open" : ""}`}
 				onclick={() => {
 					if (props.onHeaderClick != undefined && !isOpen()) {
 						props.onHeaderClick();

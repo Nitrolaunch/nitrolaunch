@@ -333,7 +333,7 @@ function PackageVersionEntry(props: PackageVersionEntryProps) {
 
 	return (
 		<div
-			class="input-shadow package-version"
+			class="input-shadow bubble-hover package-version"
 			onclick={() => props.onFocus(props.version)}
 		>
 			<div class="cont package-version-name">

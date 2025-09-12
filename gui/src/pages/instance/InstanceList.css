@@ -78,7 +78,7 @@
 	border-top-color: var(--bg4);
 	border-left-color: var(--bg4);
 
-	transition: background-color 0.15s, border-color 0.25s;
+	transition: background-color 0.15s, border-color 0.25s, transform var(--bubble);
 }
 
 .instance-list-item:hover {

@@ -89,7 +89,7 @@ export default function NavBar(props: NavBarProps) {
 					</div>
 					<h3 class="cont navbar-item">
 						<a href="/" class="cont link bold" title="Return to the homepage">
-							<img src="/Logo.png" style="width:1.5rem" class="input-shadow" />
+							<img src="/Logo.png" style="width:1.5rem;border-radius:var(--round)" class="input-shadow" />
 							NITRO
 						</a>
 					</h3>
@@ -134,7 +134,7 @@ function NavbarButton(props: NavbarButtonProps) {
 
 	return (
 		<a
-			class={`cont link navbar-button ${selected() ? "selected" : ""}`}
+			class={`cont link navbar-button bubble-hover ${selected() ? "selected" : ""}`}
 			href={props.href}
 			style={`color:${color()};background-color:${
 				selected() ? props.backgroundColor : "var(--bg)"

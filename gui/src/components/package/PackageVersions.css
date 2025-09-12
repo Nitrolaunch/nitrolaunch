@@ -30,7 +30,7 @@
 
 	cursor: pointer;
 
-	transition: background-color 0.25s;
+	transition: background-color 0.25s, transform var(--bubble);
 }
 
 .package-version:hover {

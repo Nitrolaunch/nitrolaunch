@@ -132,6 +132,16 @@ export default function ViewPackage(props: ViewPackageProps) {
 			}
 		>
 			<div class="cont col" style="width:100%">
+				<Show when={meta()!.banner != undefined}>
+					<div id="package-banner-container">
+						<img
+							src={meta()!.banner}
+							id="package-banner"
+							onerror={(e) => e.target.remove()}
+						/>
+						<div id="package-banner-gradient"></div>
+					</div>
+				</Show>
 				<div class="cont col" id="package-container">
 					<div class="cont" id="package-header-container">
 						<div class="package-shadow" id="package-header">
@@ -155,15 +165,13 @@ export default function ViewPackage(props: ViewPackageProps) {
 									<Show when={repoInfo() != undefined}>
 										<div
 											id="package-repo"
-											style={`background-color:${
-												repoInfo()!.meta.color == undefined
+											style={`background-color:${repoInfo()!.meta.color == undefined
 													? "var(--fg2)"
 													: repoInfo()!.meta.color
-											};color:${
-												repoInfo()!.meta.text_color == undefined
+												};color:${repoInfo()!.meta.text_color == undefined
 													? "var(--bg)"
 													: repoInfo()!.meta.text_color
-											}`}
+												}`}
 										>
 											{beautifyString(repoInfo()!.id).toLocaleUpperCase()}
 										</div>
@@ -195,41 +203,28 @@ export default function ViewPackage(props: ViewPackageProps) {
 							</div>
 						</div>
 					</div>
-					<Show when={meta()!.banner != undefined}>
-						<div id="package-banner-container">
-							<img
-								src={meta()!.banner}
-								id="package-banner"
-								onerror={(e) => e.target.remove()}
-							/>
-							<div id="package-banner-gradient"></div>
-						</div>
-					</Show>
 					<div id="package-contents">
 						<div id="package-body">
 							<div class="package-shadow" id="package-tabs">
 								<div
-									class={`cont package-tab ${
-										selectedTab() == "description" ? "selected" : ""
-									}`}
+									class={`cont package-tab ${selectedTab() == "description" ? "selected" : ""
+										}`}
 									onclick={() => setSelectedTab("description")}
 								>
 									<Icon icon={Text} size="1rem" />
 									Description
 								</div>
 								<div
-									class={`cont package-tab ${
-										selectedTab() == "versions" ? "selected" : ""
-									}`}
+									class={`cont package-tab ${selectedTab() == "versions" ? "selected" : ""
+										}`}
 									onclick={() => setSelectedTab("versions")}
 								>
 									<Icon icon={Folder} size="1rem" />
 									Versions
 								</div>
 								<div
-									class={`cont package-tab ${
-										selectedTab() == "gallery" ? "selected" : ""
-									}`}
+									class={`cont package-tab ${selectedTab() == "gallery" ? "selected" : ""
+										}`}
 									onclick={() => setSelectedTab("gallery")}
 								>
 									<Icon icon={Picture} size="1rem" />
@@ -266,7 +261,7 @@ export default function ViewPackage(props: ViewPackageProps) {
 											<For each={meta()!.gallery!}>
 												{(entry, i) => (
 													<img
-														class="package-gallery-entry"
+														class="package-gallery-entry input-shadow bubble-hover"
 														src={entry}
 														onclick={() => setGalleryPreview([entry, i()])}
 													/>

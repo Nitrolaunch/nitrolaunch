@@ -8,7 +8,7 @@
 
 	cursor: pointer;
 
-	transition: border-color 0.15s;
+	transition: border-color 0.15s, transform var(--bubble);
 }
 
 .page-button:hover {

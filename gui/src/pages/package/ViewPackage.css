@@ -181,12 +181,10 @@
 	border: var(--border) solid var(--bg0);
 	border-radius: var(--round2);
 	cursor: pointer;
-
-	transition: border-color 0.25s;
 }
 
 .package-gallery-entry:hover {
-	border-color: var(--bg4);
+	outline: var(--border) solid var(--bg4);
 }
 
 #package-gallery-preview {

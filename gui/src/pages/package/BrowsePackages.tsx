@@ -353,7 +353,7 @@ function Package(props: PackageProps) {
 
 	return (
 		<div
-			class={`cont col input-shadow package ${isSelected() ? "selected" : ""}`}
+			class={`cont col input-shadow bubble-hover package ${isSelected() ? "selected" : ""}`}
 			style="cursor:pointer"
 			onclick={() => {
 				// Double click to open

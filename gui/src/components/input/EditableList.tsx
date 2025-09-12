@@ -27,7 +27,7 @@ export default function EditableList(props: EditableListProps) {
 
 					return (
 						<div
-							class="editable-list-item"
+							class="editable-list-item bubble-hover"
 							draggable={reorderable ? "true" : "false"}
 							ondragstart={(e) => {
 								e.dataTransfer!.setData(

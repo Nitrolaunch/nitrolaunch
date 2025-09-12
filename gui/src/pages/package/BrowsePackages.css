@@ -36,7 +36,7 @@
 
 	overflow-x: hidden;
 
-	transition: background-color 0.25s, border-color 0.25s;
+	transition: background-color 0.25s, border-color 0.25s, transform var(--bubble);
 }
 
 .package:hover {

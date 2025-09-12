@@ -19,7 +19,7 @@ export default function IconTextButton(props: IconTextButtonProps) {
 
 	return (
 		<button
-			class={`${shadow ? "input-shadow" : ""} icon-text-button bold`}
+			class={`${shadow ? "input-shadow" : ""} bubble-hover icon-text-button bold`}
 			style={`${colorStyle()};${props.style == undefined ? "" : props.style}`}
 			onClick={props.onClick}
 			onmouseenter={() => setIsHovered(true)}

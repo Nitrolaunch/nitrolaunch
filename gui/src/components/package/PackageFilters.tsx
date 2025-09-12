@@ -67,13 +67,13 @@ export default function PackageFilters(props: PackageFiltersProps) {
 	let availablePackageTypes = () =>
 		props.availablePackageTypes == undefined
 			? ([
-					"mod",
-					"resource_pack",
-					"datapack",
-					"plugin",
-					"shader",
-					"bundle",
-			  ] as PackageType[])
+				"mod",
+				"resource_pack",
+				"datapack",
+				"plugin",
+				"shader",
+				"bundle",
+			] as PackageType[])
 			: props.availablePackageTypes;
 
 	return (
@@ -81,9 +81,8 @@ export default function PackageFilters(props: PackageFiltersProps) {
 			<div class="cont package-filters-tabs">
 				<Show when={!props.filteringVersions}>
 					<div
-						class={`cont package-filter-tab ${
-							tab() == "types" ? "selected" : ""
-						}`}
+						class={`cont package-filter-tab ${tab() == "types" ? "selected" : ""
+							}`}
 						onclick={() => setTab("types")}
 					>
 						<Icon icon={Jigsaw} size="0.8rem" />
@@ -91,9 +90,8 @@ export default function PackageFilters(props: PackageFiltersProps) {
 					</div>
 				</Show>
 				<div
-					class={`cont package-filter-tab ${
-						tab() == "minecraft_versions" ? "selected" : ""
-					}`}
+					class={`cont package-filter-tab ${tab() == "minecraft_versions" ? "selected" : ""
+						}`}
 					onclick={() => setTab("minecraft_versions")}
 					style="color:var(--instance)"
 				>
@@ -101,9 +99,8 @@ export default function PackageFilters(props: PackageFiltersProps) {
 					Version
 				</div>
 				<div
-					class={`cont package-filter-tab ${
-						tab() == "loaders" ? "selected" : ""
-					}`}
+					class={`cont package-filter-tab ${tab() == "loaders" ? "selected" : ""
+						}`}
 					onclick={() => setTab("loaders")}
 					style="color:var(--package)"
 				>
@@ -112,9 +109,8 @@ export default function PackageFilters(props: PackageFiltersProps) {
 				</div>
 				<Show when={!props.filteringVersions}>
 					<div
-						class={`cont package-filter-tab ${
-							tab() == "categories" ? "selected" : ""
-						}`}
+						class={`cont package-filter-tab ${tab() == "categories" ? "selected" : ""
+							}`}
 						onclick={() => setTab("categories")}
 						style="color:var(--profile)"
 					>
@@ -124,9 +120,8 @@ export default function PackageFilters(props: PackageFiltersProps) {
 				</Show>
 				<Show when={props.filteringVersions}>
 					<div
-						class={`cont package-filter-tab ${
-							tab() == "stability" ? "selected" : ""
-						}`}
+						class={`cont package-filter-tab ${tab() == "stability" ? "selected" : ""
+							}`}
 						onclick={() => setTab("stability")}
 						style="color:var(--profile)"
 					>
@@ -136,9 +131,8 @@ export default function PackageFilters(props: PackageFiltersProps) {
 				</Show>
 				<Show when={props.filteringVersions}>
 					<div
-						class={`cont package-filter-tab ${
-							tab() == "features" ? "selected" : ""
-						}`}
+						class={`cont package-filter-tab ${tab() == "features" ? "selected" : ""
+							}`}
 						onclick={() => setTab("features")}
 						style="color:var(--pluginfg)"
 					>
@@ -425,10 +419,8 @@ function MinecraftVersionsTab(props: MinecraftVersionsTabProps) {
 						return {
 							value: version,
 							contents: (
-								<div class="cont">
-									<div style="font-size:0.9rem;font-weight:bold;text-align:center">
-										{version}
-									</div>
+								<div style="font-size:0.9rem;font-weight:bold;text-align:center;width:100%;overflow-x:scroll;text-wrap:nowrap">
+									{version}
 								</div>
 							),
 							color: "var(--instance)",
@@ -444,11 +436,10 @@ function MinecraftVersionsTab(props: MinecraftVersionsTabProps) {
 			</div>
 			<div
 				class="cont"
-				style={`${
-					props.options.length > 5
+				style={`${props.options.length > 5
 						? "width:calc(100%/7*1)"
 						: "width:calc(100%/5*1)"
-				};height:100%`}
+					};height:100%`}
 			>
 				<Dropdown
 					options={props.extraOptions.map((version) => {
@@ -462,6 +453,7 @@ function MinecraftVersionsTab(props: MinecraftVersionsTabProps) {
 					onChangeMulti={(versions) => {
 						props.setMinecraftVersions(versions as string[]);
 					}}
+					zIndex="5"
 				/>
 			</div>
 		</div>

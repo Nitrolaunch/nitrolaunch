@@ -5,7 +5,7 @@
 	cursor: pointer;
 	border: var(--border) solid;
 	border-radius: var(--round2);
-	transition: border-color 0.35s;
+	transition: border-color 0.35s, transform var(--bubble);
 
 	user-select: none;
 	-webkit-user-select: none;
