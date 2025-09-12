@@ -21,7 +21,10 @@ The manifest file describes information about your plugin in a JSON format. All 
 	"nitro_version": string,
 	"hooks": { ... },
 	"subcommands": {
-		"subcommand": "hook",
+		"subcommand": "description" | {
+			"supercommand": string,
+			"description": string
+		},
 		...
 	},
 	"dependencies": [string],
@@ -35,7 +38,7 @@ The manifest file describes information about your plugin in a JSON format. All 
 - `description`: A short description of your plugin
 - `nitro_version`: The minimum version of Nitrolaunch that this plugin supports
 - `hooks`: A map of hook IDs to hook handlers. Will be described more in the hooks section.
-- `subcommands`: A map of custom subcommands to a short description of what they do
+- `subcommands`: A map of custom subcommands to a short description of what they do. Can also be mapped to an object containing a supercommand for the subcommand, allowing you to do things like `nitro instance <subcommand>`.
 - `dependencies`: A list of plugin IDs that this plugin depends on to work
 - `install_message`: A warning message to display when this plugin is installed. Often this is for mentioning dependencies like Python or NodeJS that the user needs to install.
 - `protocol_version`: The version of the hook protocol that this plugin uses

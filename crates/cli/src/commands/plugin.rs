@@ -11,6 +11,7 @@ use nitrolaunch::shared::output::{MessageContents, MessageLevel, NitroOutput};
 use reqwest::Client;
 
 use super::CmdData;
+use crate::commands::call_plugin_subcommand;
 use crate::output::{CHECK, HYPHEN_POINT};
 
 #[derive(Debug, Subcommand)]
@@ -42,6 +43,8 @@ pub enum PluginSubcommand {
 	Enable { plugin: String },
 	#[command(about = "Disable a plugin")]
 	Disable { plugin: String },
+	#[clap(external_subcommand)]
+	External(Vec<String>),
 }
 
 pub async fn run(command: PluginSubcommand, data: &mut CmdData<'_>) -> anyhow::Result<()> {
@@ -53,6 +56,9 @@ pub async fn run(command: PluginSubcommand, data: &mut CmdData<'_>) -> anyhow::R
 		PluginSubcommand::Browse => browse(data).await,
 		PluginSubcommand::Enable { plugin } => enable(data, plugin).await,
 		PluginSubcommand::Disable { plugin } => disable(data, plugin).await,
+		PluginSubcommand::External(args) => {
+			call_plugin_subcommand(args, Some("plugin"), data).await
+		}
 	}
 }
 

@@ -244,7 +244,7 @@ pub struct PluginManifest {
 	/// The hook handlers for the plugin
 	pub hooks: HashMap<String, HookHandler>,
 	/// The subcommands the plugin provides
-	pub subcommands: HashMap<String, String>,
+	pub subcommands: HashMap<String, PluginProvidedSubcommand>,
 	/// Plugins that this plugin depends on
 	pub dependencies: Vec<String>,
 	/// Message to display when the plugin is installed
@@ -260,6 +260,21 @@ impl PluginManifest {
 	pub fn new() -> Self {
 		Self::default()
 	}
+}
+
+/// A CLI subcommand provided by a plugin
+#[derive(Deserialize, Debug)]
+#[serde(untagged)]
+pub enum PluginProvidedSubcommand {
+	/// A root-level subcommand, containing the description
+	Global(String),
+	/// A subsubcommand
+	Specific {
+		/// The command to be under
+		supercommand: String,
+		/// The description
+		description: String,
+	},
 }
 
 /// A handler for a single hook that a plugin uses

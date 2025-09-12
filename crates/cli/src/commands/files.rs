@@ -1,3 +1,5 @@
+use crate::commands::call_plugin_subcommand;
+
 use super::CmdData;
 
 use anyhow::Context;
@@ -19,11 +21,14 @@ files in your instances or any other user data."
 		#[arg(short, long)]
 		data: bool,
 	},
+	#[clap(external_subcommand)]
+	External(Vec<String>),
 }
 
 pub async fn run(subcommand: FilesSubcommand, data: &mut CmdData<'_>) -> anyhow::Result<()> {
 	match subcommand {
 		FilesSubcommand::Remove { data: remove_data } => remove(data, remove_data).await,
+		FilesSubcommand::External(args) => call_plugin_subcommand(args, Some("files"), data).await,
 	}
 }
 

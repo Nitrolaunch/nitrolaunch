@@ -1,3 +1,5 @@
+use crate::commands::call_plugin_subcommand;
+
 use super::CmdData;
 
 use anyhow::Context;
@@ -15,6 +17,8 @@ pub enum ConfigSubcommand {
 	EditPlugins,
 	#[command(about = "Backup configuration files to identical copies")]
 	Backup,
+	#[clap(external_subcommand)]
+	External(Vec<String>),
 }
 
 pub async fn run(subcommand: ConfigSubcommand, data: &mut CmdData<'_>) -> anyhow::Result<()> {
@@ -22,6 +26,9 @@ pub async fn run(subcommand: ConfigSubcommand, data: &mut CmdData<'_>) -> anyhow
 		ConfigSubcommand::Edit => edit(data).await,
 		ConfigSubcommand::EditPlugins => edit_plugins(data).await,
 		ConfigSubcommand::Backup => backup(data).await,
+		ConfigSubcommand::External(args) => {
+			call_plugin_subcommand(args, Some("config"), data).await
+		}
 	}
 }
 

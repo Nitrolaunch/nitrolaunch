@@ -16,6 +16,7 @@ use nitrolaunch::instance::transfer::{load_formats, migrate_instances};
 use nitrolaunch::io::paths::Paths;
 use nitrolaunch::plugin::PluginManager;
 use nitrolaunch::plugin_crate::hooks::{self, AddTranslations};
+use nitrolaunch::plugin_crate::plugin::PluginProvidedSubcommand;
 use nitrolaunch::shared::id::InstanceID;
 use nitrolaunch::shared::lang::translate::TranslationKey;
 use nitrolaunch::shared::later::Later;
@@ -133,7 +134,7 @@ pub async fn run_cli() -> anyhow::Result<()> {
 			Command::Plugin { command } => plugin::run(command, &mut data).await,
 			Command::Config { command } => config::run(command, &mut data).await,
 			Command::Migrate { format } => migrate(format, &mut data).await,
-			Command::External(args) => call_plugin_subcommand(args, &mut data).await,
+			Command::External(args) => call_plugin_subcommand(args, None, &mut data).await,
 		}
 	};
 
@@ -288,7 +289,11 @@ async fn migrate(format: Option<String>, data: &mut CmdData<'_>) -> anyhow::Resu
 }
 
 /// Call a plugin subcommand
-async fn call_plugin_subcommand(args: Vec<String>, data: &mut CmdData<'_>) -> anyhow::Result<()> {
+async fn call_plugin_subcommand(
+	args: Vec<String>,
+	supercommand: Option<&str>,
+	data: &mut CmdData<'_>,
+) -> anyhow::Result<()> {
 	data.ensure_config(true).await?;
 	let config = data.config.get();
 
@@ -299,10 +304,22 @@ async fn call_plugin_subcommand(args: Vec<String>, data: &mut CmdData<'_>) -> an
 
 	{
 		let lock = config.plugins.get_lock().await;
-		let exists = lock
-			.manager
-			.iter_plugins()
-			.any(|x| x.get_manifest().subcommands.contains_key(subcommand));
+		let exists = lock.manager.iter_plugins().any(|x| {
+			x.get_manifest()
+				.subcommands
+				.iter()
+				.any(|x| {
+					if x.0 != subcommand {
+						return false;
+					}
+
+					if let Some(supercommand2) = supercommand {
+						matches!(x.1, PluginProvidedSubcommand::Specific { supercommand, .. } if supercommand == supercommand2)
+					} else {
+						matches!(x.1, PluginProvidedSubcommand::Global(..))
+					}
+				})
+		});
 		if !exists {
 			bail!("Subcommand '{subcommand}' does not exist");
 		}

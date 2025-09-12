@@ -23,6 +23,7 @@ use nitrolaunch::shared::{output::NitroOutput, Side, UpdateDepth};
 use reqwest::Client;
 
 use super::CmdData;
+use crate::commands::call_plugin_subcommand;
 use crate::output::{icons_enabled, HYPHEN_POINT, INSTANCE, LOADER, PACKAGE, VERSION};
 use crate::secrets::get_ms_client_id;
 
@@ -96,6 +97,8 @@ pub enum InstanceSubcommand {
 		#[arg(short, long)]
 		output: Option<String>,
 	},
+	#[clap(external_subcommand)]
+	External(Vec<String>),
 }
 
 pub async fn run(command: InstanceSubcommand, mut data: CmdData<'_>) -> anyhow::Result<()> {
@@ -126,6 +129,9 @@ pub async fn run(command: InstanceSubcommand, mut data: CmdData<'_>) -> anyhow::
 			format,
 			output,
 		} => export(&mut data, instance, format, output).await,
+		InstanceSubcommand::External(args) => {
+			call_plugin_subcommand(args, Some("instance"), &mut data).await
+		}
 	}
 }
 

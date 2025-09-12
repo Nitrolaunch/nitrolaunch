@@ -1,4 +1,5 @@
 use super::CmdData;
+use crate::commands::call_plugin_subcommand;
 use crate::output::{icons_enabled, HYPHEN_POINT, STAR};
 use anyhow::{bail, Context};
 use itertools::Itertools;
@@ -41,6 +42,8 @@ pub enum UserSubcommand {
 	},
 	#[command(about = "Add new users to your config")]
 	Add {},
+	#[clap(external_subcommand)]
+	External(Vec<String>),
 }
 
 pub async fn run(subcommand: UserSubcommand, data: &mut CmdData<'_>) -> anyhow::Result<()> {
@@ -51,6 +54,7 @@ pub async fn run(subcommand: UserSubcommand, data: &mut CmdData<'_>) -> anyhow::
 		UserSubcommand::Auth { user } => auth(data, user).await,
 		UserSubcommand::Logout { user } => logout(data, user).await,
 		UserSubcommand::Add {} => add(data).await,
+		UserSubcommand::External(args) => call_plugin_subcommand(args, Some("user"), data).await,
 	}
 }
 

@@ -18,6 +18,7 @@ use nitrolaunch::shared::pkg::{PackageID, PackageSearchParameters};
 use reqwest::Client;
 use serde::Serialize;
 
+use crate::commands::call_plugin_subcommand;
 use crate::commands::instance::pick_instance;
 use crate::output::HYPHEN_POINT;
 
@@ -98,6 +99,8 @@ This package does not need to be installed, it just has to be in the index."
 		#[arg(short = 'n', long)]
 		limit: Option<u8>,
 	},
+	#[clap(external_subcommand)]
+	External(Vec<String>),
 }
 
 #[derive(Debug, Subcommand)]
@@ -141,6 +144,9 @@ pub async fn run(subcommand: PackageSubcommand, data: &mut CmdData<'_>) -> anyho
 				},
 			)
 			.await
+		}
+		PackageSubcommand::External(args) => {
+			call_plugin_subcommand(args, Some("package"), data).await
 		}
 	}
 }
