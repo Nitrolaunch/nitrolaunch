@@ -11,7 +11,7 @@
 	border-left-width: 0px;
 
 	overflow-x: hidden;
-	overflow-y: scroll;
+	overflow-y: auto;
 
 	transition: width 0.2s;
 }

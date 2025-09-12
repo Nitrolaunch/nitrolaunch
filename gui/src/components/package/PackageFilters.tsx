@@ -419,7 +419,7 @@ function MinecraftVersionsTab(props: MinecraftVersionsTabProps) {
 						return {
 							value: version,
 							contents: (
-								<div style="font-size:0.9rem;font-weight:bold;text-align:center;width:100%;overflow-x:scroll;text-wrap:nowrap">
+								<div style="font-size:0.9rem;font-weight:bold;text-align:center;width:100%;overflow-x:auto;text-wrap:nowrap">
 									{version}
 								</div>
 							),

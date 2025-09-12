@@ -12,7 +12,7 @@
 	row-gap: 1.25rem;
 
 	max-height: 40rem;
-	overflow-y: scroll;
+	overflow-y: auto;
 }
 
 #package-install-name {

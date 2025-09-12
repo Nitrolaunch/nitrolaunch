@@ -4,7 +4,7 @@
 	/* min-height: 25rem; */
 	justify-content: flex-start;
 	gap: 1.4rem;
-	overflow: scroll;
+	overflow: auto;
 	max-height: 40rem;
 }
 
@@ -24,7 +24,7 @@
 }
 
 .package-version-info-details-row-values {
-	overflow-x: scroll;
+	overflow-x: auto;
 }
 
 #package-version-info-relation-sections-container {

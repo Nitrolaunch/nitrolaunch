@@ -4,7 +4,7 @@
 	justify-content: flex-start;
 	align-items: flex-start;
 	text-align: left;
-	overflow: scroll;
+	overflow: auto;
 	color: var(--fg2);
 	max-width: 100%;
 }

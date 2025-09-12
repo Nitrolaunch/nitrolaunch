@@ -38,7 +38,7 @@
 
 	width: 25rem;
 	max-height: 25rem;
-	overflow-y: scroll;
+	overflow-y: auto;
 	overscroll-behavior: none;
 
 	box-sizing: border-box;

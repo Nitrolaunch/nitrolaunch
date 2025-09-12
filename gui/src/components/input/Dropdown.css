@@ -112,7 +112,7 @@
 
 	overflow-x: hidden;
 
-	overflow-y: scroll;
+	overflow-y: auto;
 	overscroll-behavior-y: contain;
 
 	border: var(--border) solid var(--bg4);
@@ -120,7 +120,7 @@
 
 	box-shadow: var(--shadow-offset) var(--shadow-offset) var(--transparent-dark);
 
-	transition: max-height 0.25s;
+	transition: max-height 0.25s, transform var(--bubble);
 }
 
 .dropdown-option {
@@ -132,7 +132,7 @@
 	cursor: pointer;
 
 	text-wrap: nowrap;
-	overflow-x: hidden;
+	overflow-x: auto;
 
 	transition: background-color 0.15s;
 }

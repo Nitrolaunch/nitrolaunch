@@ -13,6 +13,8 @@
 	user-select: none;
 	-webkit-user-select: none;
 
+	overscroll-behavior: none;
+
 	/* Colors */
 	--fg: #f6f6f6;
 	--fg2: #d3d3d3;
