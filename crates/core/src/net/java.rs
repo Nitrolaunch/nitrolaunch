@@ -147,7 +147,7 @@ pub mod graalvm {
 		format!(
 			"https://download.oracle.com/graalvm/{major_version}/latest/graalvm-jdk-{major_version}_{}-{}_bin{}",
 			OS_STRING,
-			ARCH_STRING,
+			ARCH_STRING.replace("x86_64", "x64"),
 			preferred_archive_extension()
 		)
 	}
