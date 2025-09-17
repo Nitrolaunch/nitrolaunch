@@ -1,4 +1,4 @@
-# Getting Started with Nitrolaunch
+# Nitrolaunch Command-Line Guide
 
 This guide will show you how to use the Nitrolaunch CLI (Command-line interface) from the basics to more advanced features. This guide will cover most of the important things, but more in-depth documentation can be found on reference pages like [configuring.md](../configuring.md).
 

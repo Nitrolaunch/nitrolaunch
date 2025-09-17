@@ -44,7 +44,7 @@ Install mods, datapacks, shaders, and more from sources like Modrinth and Smithe
 
 # 🚀 Getting Started
 
-To get started with Nitrolaunch, view our [user guide](https://nitrolaunch.github.io/nitrolaunch/docs/guide/).
+To get started with Nitrolaunch, view our [user guide](https://nitrolaunch.github.io/nitrolaunch/guide/).
 
 # 👷 Use Cases
 

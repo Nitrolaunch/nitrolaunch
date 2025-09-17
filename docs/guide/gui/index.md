@@ -1,4 +1,4 @@
-# Getting Started with Nitrolaunch
+# Nitrolaunch App Guide
 
 This guide will show you how to use the Nitrolaunch desktop app from the basics to more advanced features. This guide will cover most of the important things, but more in-depth info can be found throughout the documentation
 
