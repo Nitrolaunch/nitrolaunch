@@ -179,7 +179,7 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 	);
 
 	return (
-		<div class="cont col">
+		<div class="cont col fullwidth">
 			<div class="cont col" id="browse-packages">
 				<div id="browse-header">
 					<div class="cont">
