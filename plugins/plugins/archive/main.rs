@@ -1,3 +1,5 @@
+#[cfg(target_family = "unix")]
+use std::os::unix::fs::MetadataExt;
 use std::{
 	collections::{HashMap, HashSet},
 	path::Path,
@@ -28,6 +30,7 @@ fn main() -> anyhow::Result<()> {
 		runtime.block_on(async {
 			match cli.subcommand {
 				Subcommand::Version { version } => archive_version(&data_dir, &version).await,
+				Subcommand::Addons => archive_addons(&data_dir).await,
 			}
 		})?;
 
@@ -50,6 +53,8 @@ enum Subcommand {
 		/// The Minecraft version
 		version: String,
 	},
+	#[command(about = "Remove unused versions of addons for packages")]
+	Addons,
 }
 
 async fn archive_version(data_dir: &Path, version: &str) -> anyhow::Result<()> {
@@ -101,5 +106,67 @@ async fn archive_version(data_dir: &Path, version: &str) -> anyhow::Result<()> {
 
 	cprintln!("<s><g>Done.");
 
+	Ok(())
+}
+
+async fn archive_addons(data_dir: &Path) -> anyhow::Result<()> {
+	let mut removed_count = 0;
+	let mut removed_size = 0;
+
+	fn walk_function(
+		dir: &Path,
+		removed_count: &mut usize,
+		removed_size: &mut usize,
+	) -> anyhow::Result<()> {
+		let read = dir.read_dir()?;
+		for entry in read {
+			let Ok(entry) = entry else {
+				continue;
+			};
+
+			if entry.file_type()?.is_dir() {
+				walk_function(&entry.path(), removed_count, removed_size)?;
+			} else {
+				let Ok(meta) = std::fs::metadata(entry.path()) else {
+					continue;
+				};
+
+				let mut should_remove = false;
+
+				#[cfg(target_family = "unix")]
+				{
+					// If the file only has one link then it is unused
+					if meta.nlink() == 1 {
+						should_remove = true;
+					}
+				}
+				#[cfg(not(target_family = "unix"))]
+				{
+					should_remove = true;
+				}
+				if should_remove {
+					let _ = tokio::spawn(tokio::fs::remove_file(entry.path()));
+					*removed_count += 1;
+					*removed_size += meta.len() as usize;
+				}
+			}
+		}
+
+		Ok(())
+	}
+
+	cprintln!("<s>Removing addons...");
+
+	walk_function(
+		&data_dir.join("internal/addons"),
+		&mut removed_count,
+		&mut removed_size,
+	)?;
+
+	cprintln!("<s><g>Done.");
+	cprintln!(
+		"<s>Removed {removed_count} files totalling {}MB",
+		removed_size / 1024 / 1024
+	);
 	Ok(())
 }
