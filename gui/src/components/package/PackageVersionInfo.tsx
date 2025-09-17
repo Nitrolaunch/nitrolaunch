@@ -1,4 +1,4 @@
-import { createResource, For, JSX, Show } from "solid-js";
+import { createResource, createSignal, For, JSX, Show } from "solid-js";
 import {
 	Delete,
 	Diagram,
@@ -51,11 +51,13 @@ export default function PackageVersionInfo(props: PackageVersionInfoProps) {
 			? []
 			: canonicalizeListOrSingle(props.version.relations.recommendations);
 
-	let [packageMetas, _] = createResource(
+	let [packageMetas, setPackageMetas] = createSignal<{ [id: string]: PackageMeta }>({});
+
+	let [_, __] = createResource(
 		() => props.version,
 		async () => {
 			if (props.version == undefined) {
-				return {};
+				return;
 			}
 
 			let allPackages = new Set();
@@ -65,10 +67,10 @@ export default function PackageVersionInfo(props: PackageVersionInfoProps) {
 				.concat(extensions())
 				.concat(bundled())
 				.concat(recommendations().map((x) => x.value))) {
-				allPackages.add(pkg);
+				if (packageMetas()[pkg] == undefined) {
+					allPackages.add(pkg);
+				}
 			}
-
-			console.log(allPackages);
 
 			let promises = [];
 			for (let pkg of allPackages) {
@@ -94,9 +96,10 @@ export default function PackageVersionInfo(props: PackageVersionInfoProps) {
 				}
 			}
 
-			return out;
-		},
-		{ initialValue: {} }
+			setPackageMetas((metas) => {
+				return { ...metas, ...out };
+			});
+		}
 	);
 
 	return (
