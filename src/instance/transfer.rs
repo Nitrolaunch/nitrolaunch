@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+use std::sync::Arc;
 use std::{collections::HashMap, path::Path};
 
 use anyhow::{bail, Context};
@@ -7,11 +9,13 @@ use nitro_plugin::hooks::{
 	ImportInstanceArg, InstanceTransferFeatureSupport, InstanceTransferFormat,
 	InstanceTransferFormatDirection, MigrateInstances,
 };
+use nitro_shared::addon::Addon;
 use nitro_shared::lang::translate::TranslationKey;
 use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
+use nitro_shared::pkg::PackageAddonHashes;
 use nitro_shared::translate;
 
-use crate::io::lock::Lockfile;
+use crate::io::lock::{Lockfile, LockfileAddon};
 use crate::{io::paths::Paths, plugin::PluginManager};
 
 use super::Instance;
@@ -172,6 +176,7 @@ pub async fn migrate_instances(
 	formats: &Formats,
 	plugins: &PluginManager,
 	paths: &Paths,
+	lock: &mut Lockfile,
 	o: &mut impl NitroOutput,
 ) -> anyhow::Result<HashMap<String, InstanceConfig>> {
 	let format = formats
@@ -216,6 +221,33 @@ pub async fn migrate_instances(
 		MessageContents::Success(o.translate(TranslationKey::FinishMigrating).into()),
 		MessageLevel::Important,
 	);
+
+	for (inst, packages) in result.packages {
+		for package in packages {
+			let arc_pkg_id: Arc<str> = Arc::from(package.id.clone());
+
+			let addons: Vec<_> = package
+				.addons
+				.into_iter()
+				.map(|x| {
+					LockfileAddon::from_addon(
+						&Addon {
+							kind: x.kind,
+							id: x.id,
+							file_name: "placeholder".into(),
+							pkg_id: arc_pkg_id.clone(),
+							version: None,
+							hashes: PackageAddonHashes::default(),
+						},
+						x.paths.into_iter().map(PathBuf::from).collect(),
+					)
+				})
+				.collect();
+
+			lock.update_package(&package.id, &inst, &addons, o)
+				.context("Failed to add locked package")?;
+		}
+	}
 
 	Ok(result.instances)
 }

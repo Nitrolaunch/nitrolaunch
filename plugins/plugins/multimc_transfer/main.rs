@@ -9,11 +9,12 @@ use nitro_core::{
 	io::{extract_zip_dir, json_from_file},
 	util::versions::MinecraftVersionDeser,
 };
+use nitro_pkg::PkgRequest;
 use nitro_plugin::{
 	api::CustomPlugin,
-	hooks::{ImportInstanceResult, MigrateInstancesResult},
+	hooks::{ImportInstanceResult, MigrateInstancesResult, MigratedAddon, MigratedPackage},
 };
-use nitro_shared::{loaders::Loader, Side};
+use nitro_shared::{addon::AddonKind, loaders::Loader, Side};
 use nitrolaunch::config_crate::{
 	instance::{CommonInstanceConfig, InstanceConfig},
 	package::PackageConfigDeser,
@@ -59,18 +60,35 @@ fn main() -> anyhow::Result<()> {
 		// Replace addons with packages
 		let mut all_packages = Vec::new();
 
-		for addon_dir in [
-			"mods",
-			"resourcepacks",
-			"texturepacks",
-			"shaderpacks",
-			"shaders",
+		for (addon_dir, addon_kind) in [
+			("mods", AddonKind::Mod),
+			("resourcepacks", AddonKind::ResourcePack),
+			("texturepacks", AddonKind::ResourcePack),
+			("shaderpacks", AddonKind::Shader),
+			("shaders", AddonKind::Shader),
 		] {
-			all_packages.extend(addons_to_packages(&target_path.join(addon_dir))?);
+			all_packages.extend(addons_to_packages(
+				&target_path.join(addon_dir),
+				addon_kind,
+			)?);
 		}
 
-		let config =
-			create_config(cfg, &mmc_pack, all_packages).context("Failed to create config")?;
+		// Remove the existing package files
+		for (_, path, _) in &all_packages {
+			if path.exists() && path.is_file() {
+				std::fs::remove_file(path).context("Failed to remove addon")?;
+			}
+		}
+
+		let config = create_config(
+			cfg,
+			&mmc_pack,
+			all_packages
+				.into_iter()
+				.map(|x| x.0.id.to_string())
+				.collect(),
+		)
+		.context("Failed to create config")?;
 
 		Ok(ImportInstanceResult {
 			format: arg.format,
@@ -114,10 +132,12 @@ fn main() -> anyhow::Result<()> {
 			return Ok(MigrateInstancesResult {
 				format: arg,
 				instances: HashMap::new(),
+				packages: HashMap::new(),
 			});
 		}
 
-		let mut out = HashMap::new();
+		let mut instances = HashMap::new();
+		let mut packages = HashMap::new();
 
 		let read = instances_folder
 			.read_dir()
@@ -166,14 +186,52 @@ fn main() -> anyhow::Result<()> {
 
 			config.common.game_dir = Some(mc_dir.to_string_lossy().to_string());
 
-			let id = if out.contains_key(&id) { id + "2" } else { id };
+			let id = if instances.contains_key(&id) {
+				id + "2"
+			} else {
+				id
+			};
 
-			out.insert(id, config);
+			instances.insert(id.clone(), config);
+
+			// Packages
+			let mut inst_packages = Vec::new();
+
+			for (addon_dir, addon_kind) in [
+				("mods", AddonKind::Mod),
+				("resourcepacks", AddonKind::ResourcePack),
+				("texturepacks", AddonKind::ResourcePack),
+				("shaderpacks", AddonKind::Shader),
+				("shaders", AddonKind::Shader),
+			] {
+				inst_packages.extend(addons_to_packages(&mc_dir.join(addon_dir), addon_kind)?);
+			}
+
+			let inst_packages = inst_packages.into_iter().map(|(req, path, kind)| {
+				let addon_id = if req.repository == Some("modrinth".into()) {
+					"addon"
+				} else {
+					"addon"
+				};
+
+				MigratedPackage {
+					id: req.id.to_string(),
+					addons: vec![MigratedAddon {
+						id: addon_id.into(),
+						paths: vec![path.to_string_lossy().to_string()],
+						kind,
+						version: None,
+					}],
+				}
+			});
+
+			packages.insert(id, inst_packages.collect());
 		}
 
 		Ok(MigrateInstancesResult {
 			format: arg,
-			instances: out,
+			instances,
+			packages,
 		})
 	})?;
 
@@ -218,7 +276,10 @@ fn create_config(
 }
 
 /// Converts addons to packages in the given addon directory (resourcepacks, mods, etc.)
-fn addons_to_packages(dir: &Path) -> anyhow::Result<Vec<String>> {
+fn addons_to_packages(
+	dir: &Path,
+	addon_kind: AddonKind,
+) -> anyhow::Result<Vec<(PkgRequest, PathBuf, AddonKind)>> {
 	if !dir.exists() {
 		return Ok(Vec::new());
 	}
@@ -236,21 +297,17 @@ fn addons_to_packages(dir: &Path) -> anyhow::Result<Vec<String>> {
 			let global_section = toml.get("global").context("Global section missing")?;
 			let filename = global_section.get("filename").context("Filename missing")?;
 
-			// Whether we are replacing this addon with a package
-			let mut is_packaged = false;
-
 			if let Some(modrinth) = toml.get("update.modrinth") {
 				let id = modrinth.get("mod-id").context("ID missing")?;
 
-				is_packaged = true;
-				out.push(format!("modrinth:{id}"));
-			}
-
-			if is_packaged {
-				let path = dir.join(filename);
-				if path.exists() && path.is_file() {
-					std::fs::remove_file(path).context("Failed to remove addon")?;
-				}
+				out.push((
+					PkgRequest::parse(
+						format!("modrinth:{id}"),
+						nitro_pkg::PkgRequestSource::UserRequire,
+					),
+					dir.join(filename),
+					addon_kind,
+				));
 			}
 		}
 

@@ -409,6 +409,24 @@ Hook called to migrate all instances from another launcher using one of the form
 	"instances": {
 		"id": InstanceConfig,
 		...
+	},
+	"packages": {
+		"instance-id": [
+			{
+				"id": string,
+				"addons": [
+					{
+						"id": string,
+						"paths": string[],
+						"kind": "resource_pack" | "mod" | "datapack" | "shader" | "plugin",
+						"version": string | null
+					},
+					...
+				]
+			},
+			...
+		],
+		...
 	}
 }
 ```

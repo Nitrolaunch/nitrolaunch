@@ -7,6 +7,7 @@ use nitro_core::net::minecraft::MinecraftUserProfile;
 use nitro_pkg::repo::{PackageFlag, RepoMetadata};
 use nitro_pkg::script_eval::AddonInstructionData;
 use nitro_pkg::{PackageContentType, PackageSearchResults, RecommendedPackage, RequiredPackage};
+use nitro_shared::addon::AddonKind;
 use nitro_shared::id::{InstanceID, ProfileID};
 use nitro_shared::lang::translate::LanguageMap;
 use nitro_shared::loaders::Loader;
@@ -475,13 +476,47 @@ def_hook!(
 );
 
 /// Result from the MigrateInstances hook
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize)]
 #[serde(default)]
 pub struct MigrateInstancesResult {
 	/// The ID of the transfer format being used
 	pub format: String,
 	/// The configuration of the new instances
 	pub instances: HashMap<String, InstanceConfig>,
+	/// Map of instances to packages installed on the migrated instance
+	pub packages: HashMap<String, Vec<MigratedPackage>>,
+}
+
+impl Default for MigrateInstancesResult {
+	fn default() -> Self {
+		Self {
+			format: String::new(),
+			instances: HashMap::new(),
+			packages: HashMap::new(),
+		}
+	}
+}
+
+/// A package installed on a migrated instance
+#[derive(Serialize, Deserialize)]
+pub struct MigratedPackage {
+	/// The ID of this package
+	pub id: String,
+	/// The addons currently installed with this package
+	pub addons: Vec<MigratedAddon>,
+}
+
+/// An addon installed on a migrated instance
+#[derive(Serialize, Deserialize)]
+pub struct MigratedAddon {
+	/// The unique ID of the addon in this package
+	pub id: String,
+	/// The paths to the addon
+	pub paths: Vec<String>,
+	/// What kind of addon this is
+	pub kind: AddonKind,
+	/// The currently installed addon version ID
+	pub version: Option<String>,
 }
 
 def_hook!(
