@@ -5,7 +5,9 @@ use crate::output::LauncherOutput;
 use crate::State;
 use anyhow::Context;
 use nitrolaunch::instance::{transfer, Instance};
+use nitrolaunch::io::lock::Lockfile;
 use nitrolaunch::plugin_crate::hooks::{AddInstanceTransferFormats, InstanceTransferFormat};
+use nitrolaunch::shared::id::InstanceID;
 use nitrolaunch::shared::output::NoOp;
 
 use super::{fmt_err, load_config};
@@ -77,4 +79,51 @@ pub async fn import_instance(
 	)?;
 
 	write_instance_config(state, id, config).await
+}
+
+#[tauri::command]
+pub async fn export_instance(
+	state: tauri::State<'_, State>,
+	app_handle: tauri::AppHandle,
+	format: String,
+	path: String,
+	id: String,
+) -> Result<(), String> {
+	let mut output = LauncherOutput::new(state.get_output(app_handle));
+	output.set_task("export_instance");
+
+	let mut config = fmt_err(
+		load_config(&state.paths, &mut NoOp)
+			.await
+			.context("Failed to load config"),
+	)?;
+
+	let formats = fmt_err(
+		transfer::load_formats(&config.plugins, &state.paths, &mut output)
+			.await
+			.context("Failed to load transfer formats"),
+	)?;
+
+	let Some(instance) = config.instances.get_mut(&InstanceID::from(id)) else {
+		return Err("Instance does not exist".into());
+	};
+
+	let mut lock = fmt_err(Lockfile::open(&state.paths).context("Failed to open lockfile"))?;
+
+	fmt_err(
+		instance
+			.export(
+				&format,
+				&PathBuf::from(path),
+				&formats,
+				&config.plugins,
+				&mut lock,
+				&state.paths,
+				&mut output,
+			)
+			.await
+			.context("Failed to export instance"),
+	)?;
+
+	Ok(())
 }

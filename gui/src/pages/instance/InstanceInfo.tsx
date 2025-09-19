@@ -33,6 +33,7 @@ import {
 	Elipsis,
 	Gear,
 	Play,
+	Popout,
 	Stop,
 	Tag,
 	Text,
@@ -56,6 +57,7 @@ import { RunningInstancesEvent } from "../../components/launch/RunningInstanceLi
 import { convertFileSrc } from "@tauri-apps/api/tauri";
 import Dropdown, { Option } from "../../components/input/Dropdown";
 import IconAndText from "../../components/utility/IconAndText";
+import InstanceTransferPrompt from "../../components/instance/InstanceTransferPrompt";
 
 export default function InstanceInfo(props: InstanceInfoProps) {
 	let navigate = useNavigate();
@@ -212,6 +214,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 	let [selectedTab, setSelectedTab] = createSignal("general");
 
 	let [showDeleteConfirm, setShowDeleteConfirm] = createSignal(false);
+	let [showExportPrompt, setShowExportPrompt] = createSignal(false);
 
 	let setDirty = () => {
 		props.setFooterData({
@@ -448,6 +451,11 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 										<Dropdown
 											options={[
 												{
+													value: "export",
+													contents: <IconAndText icon={Popout} text="Export" />,
+													tip: "Export this instance to another launcher",
+												},
+												{
 													value: "delete",
 													contents: <IconAndText icon={Trash} text="Delete" color="var(--error)" />,
 													tip: "Delete this instance forever",
@@ -456,7 +464,9 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 											]}
 											previewText={<IconAndText icon={Elipsis} text="More" centered />}
 											onChange={async (selection) => {
-												if (selection == "delete") {
+												if (selection == "export") {
+													setShowExportPrompt(true);
+												} else if (selection == "delete") {
 													setShowDeleteConfirm(true);
 												}
 											}}
@@ -627,6 +637,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 						</div>
 					</div>
 				</Modal>
+				<InstanceTransferPrompt visible={showExportPrompt()} onClose={() => setShowExportPrompt(false)} exportedInstance={id} />
 				<br />
 				<br />
 				<br />

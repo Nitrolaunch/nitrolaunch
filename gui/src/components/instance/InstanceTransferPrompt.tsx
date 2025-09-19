@@ -4,11 +4,11 @@ import { invoke } from "@tauri-apps/api";
 import "./ProfileDeletePrompt.css";
 import InlineSelect from "../input/InlineSelect";
 import IconTextButton from "../input/IconTextButton";
-import { Download } from "../../icons";
+import { Download, Upload } from "../../icons";
 import { errorToast, successToast } from "../dialog/Toasts";
 import { clearInputError, inputError } from "../../errors";
 import Icon from "../Icon";
-import { open } from "@tauri-apps/api/dialog";
+import { open, save } from "@tauri-apps/api/dialog";
 import Tip from "../dialog/Tip";
 import { sanitizeInstanceId } from "../../pages/instance/InstanceConfig";
 
@@ -66,18 +66,26 @@ export default function InstanceTransferPrompt(
 						tip="The format to use for the instance. Add new formats with plugins."
 					>
 						<div class="fullwidth" id="instance-transfer-format">
-							<InlineSelect
-								options={formats().map((format) => {
-									return {
-										value: format.id,
-										contents: <div class="cont">{format.name}</div>,
-									};
-								})}
-								selected={selectedFormat()}
-								onChange={setSelectedFormat}
-								connected={false}
-								columns={1}
-							/>
+							<Switch>
+								<Match when={formats().length == 0}>
+									<span style="color:var(--fg3)">No formats available. Try installing a plugin.</span>
+								</Match>
+								<Match when={formats().length > 0}>
+									<InlineSelect
+										options={formats().map((format) => {
+											return {
+												value: format.id,
+												contents: <div class="cont">{format.name}</div>,
+											};
+										})}
+										selected={selectedFormat()}
+										onChange={setSelectedFormat}
+										connected={false}
+										columns={1}
+									/>
+
+								</Match>
+							</Switch>
 						</div>
 					</Tip>
 					<Show when={isImporting()}>
@@ -104,7 +112,7 @@ export default function InstanceTransferPrompt(
 				<div></div>
 				<div class="cont">
 					<IconTextButton
-						size="0rem"
+						size="1rem"
 						color="var(--bg2)"
 						text="Cancel"
 						onClick={props.onClose}
@@ -147,7 +155,46 @@ export default function InstanceTransferPrompt(
 											successToast("Instance imported");
 											props.onClose();
 										} catch (e) {
-											errorToast("Failed to delete import: " + e);
+											errorToast("Failed to import: " + e);
+											props.onClose();
+										}
+									} catch (e) {
+										errorToast("Failed to select file: " + e);
+									}
+								}}
+							/>
+						</Match>
+						<Match when={!isImporting()}>
+							<IconTextButton
+								icon={Upload}
+								size="1rem"
+								text="Export"
+								color="var(--bg2)"
+								onClick={async () => {
+									if (selectedFormat() == undefined) {
+										inputError("instance-transfer-format");
+										return;
+									} else {
+										clearInputError("instance-transfer-format");
+									}
+
+									try {
+										let filePath = await save();
+
+										if (filePath == null) {
+											return;
+										}
+
+										try {
+											await invoke("export_instance", {
+												format: selectedFormat(),
+												id: props.exportedInstance,
+												path: filePath,
+											});
+											successToast("Instance exported");
+											props.onClose();
+										} catch (e) {
+											errorToast("Failed to export: " + e);
 											props.onClose();
 										}
 									} catch (e) {
