@@ -3,4 +3,24 @@
 	grid-template-columns: 2.25rem 1fr;
 
 	width: 100%;
+	position: relative;
+}
+
+.icon-and-text.center {
+	display: flex;
+}
+
+.icon-and-text-icon {
+	height: 100%;
+	aspect-ratio: 1;
+}
+
+.icon-and-text-icon.float {
+	position: absolute;
+	left: 0.5rem;
+	top: 0;
+}
+
+.icon-and-text-text.center {
+	width: 100%;
 }

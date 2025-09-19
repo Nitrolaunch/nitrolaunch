@@ -5,13 +5,13 @@ import "./IconAndText.css";
 export default function IconAndText(props: IconAndTextProps) {
 	return (
 		<div
-			class={`icon-and-text ${props.bold == true ? "bold" : ""}`}
+			class={`icon-and-text ${props.bold == true ? "bold" : ""} ${props.centered == true ? "center" : ""}`}
 			style={`${props.color == undefined ? "" : `color:${props.color}`}`}
 		>
-			<div class="cont">
+			<div class={`cont icon-and-text-icon ${props.centered == true ? "float" : ""}`}>
 				<Icon icon={props.icon} size="1rem" />
 			</div>
-			<div class={`cont ${props.centered == true ? "" : "start"}`}>
+			<div class={`cont icon-and-text-text ${props.centered == true ? "center" : "start"}`}>
 				{props.text}
 			</div>
 		</div>

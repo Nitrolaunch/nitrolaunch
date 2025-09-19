@@ -90,14 +90,14 @@ export default function UserWidget(props: UserWidgetProps) {
 								username: "No User Selected",
 							}}
 							isFeatured={true}
-							onclick={() => {}}
+							onclick={() => { }}
 						/>
 					}
 				>
 					<UserTile
 						user={userData()!.currentUser!}
 						isFeatured={true}
-						onclick={() => {}}
+						onclick={() => { }}
 					/>
 				</Show>
 				<div class="cont" id="user-widget-dropdown-button">
@@ -112,7 +112,7 @@ export default function UserWidget(props: UserWidgetProps) {
 				</div>
 			</div>
 			<Show when={isOpen()}>
-				<div id="user-widget-dropdown">
+				<div class="input-shadow" id="user-widget-dropdown">
 					<Show when={userData() != undefined}>
 						<For each={userData()!.users}>
 							{(user) => (
@@ -235,7 +235,7 @@ function UserTile(props: UserTileProps) {
 
 	return (
 		<div
-			class={`user-tile ${isHovered() && !props.isFeatured ? "hover" : ""}`}
+			class={`user-tile bubble-hover ${isHovered() && !props.isFeatured ? "hover" : ""}`}
 			onclick={() => {
 				if (!props.isFeatured) {
 					props.onclick(props.user.id);

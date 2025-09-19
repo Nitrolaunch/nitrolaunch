@@ -259,7 +259,7 @@ function SidebarItem(props: SidebarItemProps) {
 
 	return (
 		<div
-			class={`cont sidebar-item ${selected() ? "selected" : ""}`}
+			class={`cont bubble-hover sidebar-item ${selected() ? "selected" : ""}`}
 			style={`border-right-color:${props.color};${color()};${bgColor()}`}
 			onclick={() => {
 				navigate(props.href);

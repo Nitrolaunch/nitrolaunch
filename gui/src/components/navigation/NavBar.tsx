@@ -87,7 +87,7 @@ export default function NavBar(props: NavBarProps) {
 							location={props.location}
 						/>
 					</div>
-					<h3 class="cont navbar-item">
+					<h3 class="cont bubble-hover navbar-item">
 						<a href="/" class="cont link bold" title="Return to the homepage">
 							<img src="/Logo.png" style="width:1.5rem;border-radius:var(--round)" class="input-shadow" />
 							NITRO
@@ -136,9 +136,8 @@ function NavbarButton(props: NavbarButtonProps) {
 		<a
 			class={`cont link navbar-button bubble-hover ${selected() ? "selected" : ""}`}
 			href={props.href}
-			style={`color:${color()};background-color:${
-				selected() ? props.backgroundColor : "var(--bg)"
-			};border-color:${borderColor()}`}
+			style={`color:${color()};background-color:${selected() ? props.backgroundColor : "var(--bg)"
+				};border-color:${borderColor()}`}
 			onmouseenter={() => setIsHovered(true)}
 			onmouseleave={() => setIsHovered(false)}
 		>

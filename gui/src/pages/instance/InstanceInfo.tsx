@@ -30,6 +30,7 @@ import Icon from "../../components/Icon";
 import {
 	Box,
 	Delete,
+	Elipsis,
 	Gear,
 	Play,
 	Stop,
@@ -85,7 +86,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 				id: id,
 				instanceOrProfile: "instance",
 			});
-		} catch (e) {}
+		} catch (e) { }
 	});
 
 	let [from, setFrom] = createSignal<string[] | undefined>();
@@ -166,7 +167,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 	);
 
 	let [isRunning, setIsRunning] = createSignal(false);
-	let [unlisten, setUnlisten] = createSignal<UnlistenFn>(() => {});
+	let [unlisten, setUnlisten] = createSignal<UnlistenFn>(() => { });
 	createEffect(async () => {
 		let unlisten = await listen(
 			"nitro_update_running_instances",
@@ -181,7 +182,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 	});
 
 	// Gets whether the currently selected instance is launchable (it has been updated before)
-	let [unlisten2, setUnlisten2] = createSignal<UnlistenFn>(() => {});
+	let [unlisten2, setUnlisten2] = createSignal<UnlistenFn>(() => { });
 	let [isInstanceLaunchable, methods] = createResource(async () => {
 		let unlisten = await listen(
 			"nitro_output_finish_task",
@@ -238,7 +239,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 						props.setFooterData({
 							selectedItem: undefined,
 							mode: FooterMode.SaveInstanceConfig,
-							action: () => {},
+							action: () => { },
 						});
 					} catch (e) {
 						errorToast("Failed to save: " + e);
@@ -339,13 +340,14 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 												previewText={
 													<Switch>
 														<Match when={!isRunning()}>
-															<IconAndText icon={Play} text="Launch" />
+															<IconAndText icon={Play} text="Launch" centered />
 														</Match>
 														<Match when={isRunning()}>
 															<IconAndText
 																icon={Stop}
 																text="Kill"
 																color="var(--error)"
+																centered
 															/>
 														</Match>
 													</Switch>
@@ -414,7 +416,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 													tip: "Update while replacing already cached files. Should only be done if something is broken.",
 												},
 											]}
-											previewText={<IconAndText icon={Upload} text="Update" />}
+											previewText={<IconAndText icon={Upload} text="Update" centered />}
 											onChange={async (selection) => {
 												try {
 													let depth = selection == "update" ? "full" : "force";
@@ -442,16 +444,27 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 											zIndex="5"
 										/>
 									</div>
-									<IconTextButton
-										icon={Trash}
-										size="1.2rem"
-										text="Delete"
-										color="var(--errorbg)"
-										selectedColor="var(--error)"
-										selectedBg="var(--errorbg)"
-										selected={true}
-										onClick={() => setShowDeleteConfirm(true)}
-									/>
+									<div style="width:9rem;font-weight:bold">
+										<Dropdown
+											options={[
+												{
+													value: "delete",
+													contents: <IconAndText icon={Trash} text="Delete" color="var(--error)" />,
+													tip: "Delete this instance forever",
+													backgroundColor: "var(--errorbg)",
+												},
+											]}
+											previewText={<IconAndText icon={Elipsis} text="More" centered />}
+											onChange={async (selection) => {
+												if (selection == "delete") {
+													setShowDeleteConfirm(true);
+												}
+											}}
+											optionsWidth="9rem"
+											isSearchable={false}
+											zIndex="5"
+										/>
+									</div>
 								</div>
 							</div>
 						</div>
@@ -479,27 +492,24 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 								style={`grid-template-columns:repeat(3,minmax(0,1fr))`}
 							>
 								<div
-									class={`cont instance-tab ${
-										selectedTab() == "general" ? "selected" : ""
-									}`}
+									class={`cont instance-tab ${selectedTab() == "general" ? "selected" : ""
+										}`}
 									onclick={() => setSelectedTab("general")}
 								>
 									<Icon icon={Gear} size="1rem" />
 									General
 								</div>
 								<div
-									class={`cont instance-tab ${
-										selectedTab() == "packages" ? "selected" : ""
-									}`}
+									class={`cont instance-tab ${selectedTab() == "packages" ? "selected" : ""
+										}`}
 									onclick={() => setSelectedTab("packages")}
 								>
 									<Icon icon={Box} size="1rem" />
 									Packages
 								</div>
 								<div
-									class={`cont instance-tab ${
-										selectedTab() == "console" ? "selected" : ""
-									}`}
+									class={`cont instance-tab ${selectedTab() == "console" ? "selected" : ""
+										}`}
 									onclick={() => setSelectedTab("console")}
 								>
 									<Icon icon={Text} size="1rem" />
@@ -554,9 +564,9 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 
 											setDirty();
 										}}
-										setGlobalPackages={() => {}}
-										setClientPackages={() => {}}
-										setServerPackages={() => {}}
+										setGlobalPackages={() => { }}
+										setClientPackages={() => { }}
+										setServerPackages={() => { }}
 										minecraftVersion={instance()!.version}
 										loader={instance()!.loader as Loader}
 										showBrowseButton={true}

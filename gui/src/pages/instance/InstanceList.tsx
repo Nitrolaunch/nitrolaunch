@@ -135,7 +135,7 @@ export default function InstanceList(props: InstanceListProps) {
 				<div class="cont">
 					<div class="split3" style="width: 80%">
 						<div class="cont start" style="padding-left:0.5rem">
-							<div style="width:30%">
+							<div style="width:7rem">
 								<Dropdown
 									options={[
 										{
@@ -157,7 +157,7 @@ export default function InstanceList(props: InstanceListProps) {
 											),
 										},
 									]}
-									previewText={<IconAndText icon={Plus} text="Add" />}
+									previewText={<IconAndText icon={Plus} text="Add" centered />}
 									onChange={(selection) => {
 										if (selection == "create_instance") {
 											navigate("create_instance");

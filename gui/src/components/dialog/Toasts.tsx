@@ -107,14 +107,13 @@ export default function Toasts() {
 		<div id="toasts-container">
 			<div
 				id="toasts-button"
-				class={`cont input-shadow ${showRecentToasts() ? "selected" : ""}`}
+				class={`cont input-shadow bubble-hover ${showRecentToasts() ? "selected" : ""}`}
 				onclick={() => setShowRecentToasts(!showRecentToasts())}
 			>
 				<IconAndText
 					icon={Notification}
-					text={`${recentToastCount()} ${
-						recentToastCount() == 1 ? "Alert" : "Alerts"
-					}`}
+					text={`${recentToastCount()} ${recentToastCount() == 1 ? "Alert" : "Alerts"
+						}`}
 					centered
 				/>
 			</div>

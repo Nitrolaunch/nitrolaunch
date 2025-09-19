@@ -14,8 +14,6 @@
 
 	outline: 900rem solid transparent;
 	transition: outline-color 0.25s;
-
-	padding-bottom: 0.5rem;
 }
 
 .dropdown-darkener.open {
