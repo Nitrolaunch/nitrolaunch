@@ -311,13 +311,18 @@ button {
 	}
 }
 
-.bubble-hover {
+.bubble-hover,
+.bubble-hover-small {
 	transform: scale(1);
 	--bubble: 0.1s;
 	transition: transform var(--bubble);
 }
 
 .bubble-hover:hover {
+	transform: scale(1.05);
+}
+
+.bubble-hover-small:hover {
 	transform: scale(1.02);
 }
 

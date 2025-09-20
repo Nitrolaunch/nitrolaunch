@@ -34,12 +34,10 @@ export default function IconButton(props: IconButtonProps) {
 
 	return (
 		<div
-			class={`cont icon-button ${isCircle ? "circle" : ""} ${
-				props.shadow == true ? "input-shadow" : ""
-			} bubble-hover`}
-			style={`${colorStyle()};width:${props.size};height:${
-				props.size
-			};${iconColorStyle}`}
+			class={`cont icon-button ${isCircle ? "circle" : ""} ${props.shadow == true ? "input-shadow" : ""
+				} bubble-hover`}
+			style={`${colorStyle()};width:${props.size};height:${props.size
+				};${iconColorStyle}`}
 			onClick={props.onClick}
 			onmouseenter={() => setIsHovered(true)}
 			onmouseleave={() => setIsHovered(false)}

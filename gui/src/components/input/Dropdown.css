@@ -132,7 +132,7 @@
 	text-wrap: nowrap;
 	overflow-x: auto;
 
-	transition: background-color 0.15s;
+	transition: background-color 0.15s, transform var(--bubble);
 }
 
 .dropdown-option.last {

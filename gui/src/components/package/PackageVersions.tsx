@@ -86,11 +86,11 @@ export default function PackageVersions(props: PackageVersionsProps) {
 				for (let version of addon.versions) {
 					let contentVersion =
 						version.content_versions == undefined ||
-						version.content_versions.length == 0
+							version.content_versions.length == 0
 							? undefined
 							: Array.isArray(version.content_versions)
-							? version.content_versions[0]
-							: version.content_versions;
+								? version.content_versions[0]
+								: version.content_versions;
 
 					let newVersion: PackageVersion = {
 						id: version.version,
@@ -178,7 +178,7 @@ export default function PackageVersions(props: PackageVersionsProps) {
 					loaders={filteredLoaders()}
 					stability={filteredStability()}
 					features={filteredFeatures()}
-					setPackageType={() => {}}
+					setPackageType={() => { }}
 					setMinecraftVersions={setFilteredMinecraftVersions}
 					setLoaders={setFilteredLoaders}
 					setStability={setFilteredStability}
@@ -187,7 +187,7 @@ export default function PackageVersions(props: PackageVersionsProps) {
 					availableMinecraftVersions={availableMinecraftVersions()}
 					availableFeatures={canonicalizeListOrSingle(props.props.features)}
 					categories={[]}
-					setCategories={() => {}}
+					setCategories={() => { }}
 				/>
 				<Show when={isScriptPackage()}>
 					<div style="padding:1rem;font-weight:bold">
@@ -333,7 +333,7 @@ function PackageVersionEntry(props: PackageVersionEntryProps) {
 
 	return (
 		<div
-			class="input-shadow bubble-hover package-version"
+			class="input-shadow bubble-hover-small package-version"
 			onclick={() => props.onFocus(props.version)}
 		>
 			<div class="cont package-version-name">
@@ -370,36 +370,36 @@ export function StabilityIndicator(props: { stability?: "stable" | "latest" }) {
 		props.stability == undefined
 			? "U"
 			: props.stability == "stable"
-			? "S"
-			: "D";
+				? "S"
+				: "D";
 
 	let className =
 		props.stability == undefined
 			? "unknown"
 			: props.stability == "stable"
-			? "stable"
-			: "development";
+				? "stable"
+				: "development";
 
 	let backgroundColor =
 		props.stability == undefined
 			? "var(--bg)"
 			: props.stability == "stable"
-			? "var(--instancebg)"
-			: "var(--bg)";
+				? "var(--instancebg)"
+				: "var(--bg)";
 
 	let color =
 		props.stability == undefined
 			? "var(--bg4)"
 			: props.stability == "stable"
-			? "var(--instance)"
-			: "var(--warning)";
+				? "var(--instance)"
+				: "var(--warning)";
 
 	let tip =
 		props.stability == undefined
 			? "Unknown stability"
 			: props.stability == "stable"
-			? "Stable version"
-			: "Unstable / development version";
+				? "Stable version"
+				: "Unstable / development version";
 
 	return (
 		<Tip tip={tip} side="top">

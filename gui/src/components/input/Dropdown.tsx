@@ -115,9 +115,8 @@ export default function Dropdown(props: DropdownProps) {
 						setIsOpen(!isOpen());
 					}
 				}}
-				style={`${
-					isOpen() && isSearchable ? "justify-content:flex-start" : ""
-				}`}
+				style={`${isOpen() && isSearchable ? "justify-content:flex-start" : ""
+					}`}
 				onmouseenter={() => setIsHeaderHovered(true)}
 				onmouseleave={() => setIsHeaderHovered(false)}
 			>
@@ -173,13 +172,11 @@ export default function Dropdown(props: DropdownProps) {
 			</div>
 			<div
 				class="dropdown-options"
-				style={`${
-					!isOpen()
+				style={`${!isOpen()
 						? "max-height:0px;border-top-width:0px;border-bottom-width:0px;outline-width:0;transition: max-height 0.25s, border-width 0.25s step-end"
 						: `max-height:${openedHeight()}`
-				};${zIndex};${
-					props.optionsWidth != undefined ? `width:${props.optionsWidth}` : ""
-				}`}
+					};${zIndex};${props.optionsWidth != undefined ? `width:${props.optionsWidth}` : ""
+					}`}
 				onmouseenter={() => setAreOptionsHovered(true)}
 				onmouseleave={() => setAreOptionsHovered(false)}
 			>
@@ -279,20 +276,16 @@ function DropdownOption(props: OptionProps) {
 
 	let contents = (
 		<div
-			class={`cont dropdown-option ${
-				props.class == undefined ? "" : props.class
-			} ${props.isSelected ? "selected" : ""} ${
-				props.isLast ? "last" : "not-last"
-			}`}
-			style={`color:${textColor()};background-color:${backgroundColor()};${
-				props.isFirst
+			class={`cont bubble-hover dropdown-option ${props.class == undefined ? "" : props.class
+				} ${props.isSelected ? "selected" : ""} ${props.isLast ? "last" : "not-last"
+				}`}
+			style={`color:${textColor()};background-color:${backgroundColor()};${props.isFirst
 					? "border-top-left-radius:var(--round2);border-top-right-radius:var(--round2)"
 					: ""
-			}${
-				props.isLast
+				}${props.isLast
 					? "border-bottom-left-radius:var(--round2);border-bottom-right-radius:var(--round2)"
 					: ""
-			}`}
+				}`}
 			onclick={() => {
 				if (
 					props.option.isSelectable == undefined ||
