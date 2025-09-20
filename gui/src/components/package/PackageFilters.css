@@ -25,8 +25,11 @@
 	box-sizing: border-box;
 
 	cursor: pointer;
-	user-select: none;
-	-webkit-user-select: none;
+	transition: background-color 0.25s;
+}
+
+.package-filter-tab:hover {
+	background-color: var(--bg2);
 }
 
 .package-filter-tab.selected {

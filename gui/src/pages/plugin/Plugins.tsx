@@ -1,12 +1,14 @@
 import { invoke } from "@tauri-apps/api";
-import { createResource, createSignal, For, Show } from "solid-js";
+import { createResource, createSignal, For, Match, Show, Switch } from "solid-js";
 import "./Plugins.css";
 import IconTextButton from "../../components/input/IconTextButton";
 import {
 	Book,
 	Box,
+	Check,
 	CurlyBraces,
 	Cycle,
+	Delete,
 	Download,
 	Folder,
 	Gear,
@@ -16,10 +18,13 @@ import {
 	Link,
 	Refresh,
 	Text,
+	Trash,
 } from "../../icons";
 import { emit } from "@tauri-apps/api/event";
 import { errorToast, successToast } from "../../components/dialog/Toasts";
 import Icon from "../../components/Icon";
+import Tip from "../../components/dialog/Tip";
+import IconButton from "../../components/input/IconButton";
 
 export default function Plugins() {
 	let [localPlugins, localMethods] = createResource(
@@ -53,7 +58,7 @@ export default function Plugins() {
 			<div class="cont">
 				<div id="plugins-subheader">
 					<div
-						class={`plugins-header-item ${isRemote() ? "" : " selected"}`}
+						class={`plugins-header-item bubble-hover ${isRemote() ? "" : " selected"}`}
 						onclick={() => {
 							setIsRemote(false);
 						}}
@@ -61,7 +66,7 @@ export default function Plugins() {
 						Installed
 					</div>
 					<div
-						class={`plugins-header-item ${isRemote() ? " selected" : ""}`}
+						class={`plugins-header-item bubble-hover ${isRemote() ? " selected" : ""}`}
 						onclick={() => {
 							setIsRemote(true);
 						}}
@@ -136,31 +141,38 @@ function Plugin(props: PluginProps) {
 				</div>
 				<div class="cont plugin-buttons">
 					<Show when={props.info.installed}>
-						<IconTextButton
-							text={props.info.enabled ? "Disable" : "Enable"}
-							size="22px"
-							color="var(--bg2)"
-							selectedColor="var(--instance)"
-							onClick={() => {
-								invoke("enable_disable_plugin", {
-									plugin: props.info.id,
-									enabled: !props.info.enabled,
-								}).then(() => {
-									successToast(
-										`Plugin ${props.info.enabled ? "disabled" : "enabled"}`
-									);
-									props.updatePluginList();
-								});
-							}}
-							selected={false}
-							shadow={false}
-						/>
-						<IconTextButton
-							text="Update"
-							size="22px"
-							color="var(--bg2)"
-							selectedColor="var(--instance)"
-							onClick={() => {
+						<Tip tip={props.info.enabled ? "Plugin Enabled" : "Plugin Disabled"} side="top">
+							<Switch>
+								<Match when={props.info.enabled}>
+									<IconButton icon={Check} size="1.5rem" color="var(--pluginbg)" border="var(--plugin)" iconColor="var(--plugin)" onClick={() => {
+										invoke("enable_disable_plugin", {
+											plugin: props.info.id,
+											enabled: !props.info.enabled,
+										}).then(() => {
+											successToast(
+												`Plugin ${props.info.enabled ? "disabled" : "enabled"}`
+											);
+											props.updatePluginList();
+										});
+									}} />
+								</Match>
+								<Match when={!props.info.enabled}>
+									<IconButton icon={Delete} size="1.5rem" color="var(--bg2)" border="var(--bg3)" iconColor="var(--fg3)" onClick={() => {
+										invoke("enable_disable_plugin", {
+											plugin: props.info.id,
+											enabled: !props.info.enabled,
+										}).then(() => {
+											successToast(
+												`Plugin ${props.info.enabled ? "disabled" : "enabled"}`
+											);
+											props.updatePluginList();
+										});
+									}} />
+								</Match>
+							</Switch>
+						</Tip>
+						<Tip tip="Update" side="top">
+							<IconButton icon={Refresh} size="1.5rem" color="var(--bg2)" border="var(--bg3)" hoverBorder="var(--bg4)" hoverBackground="var(--bg3)" onClick={() => {
 								setInProgress(true);
 								invoke("install_plugin", {
 									plugin: props.info.id,
@@ -175,52 +187,60 @@ function Plugin(props: PluginProps) {
 										errorToast(`Failed to update plugin: ${e}`);
 									}
 								);
-							}}
-							selected={false}
-							shadow={false}
-						/>
+							}} /></Tip>
 					</Show>
-					<IconTextButton
-						text={
-							props.info.installed
-								? "Uninstall"
-								: inProgress()
-								? "Installing..."
-								: "Install"
-						}
-						size="22px"
-						color="var(--bg2)"
-						selectedColor="var(--instance)"
-						onClick={() => {
-							setInProgress(true);
-							let method = props.info.installed
-								? "uninstall_plugin"
-								: "install_plugin";
-							invoke(method, {
-								plugin: props.info.id,
-							}).then(
-								() => {
-									setInProgress(false);
-									successToast(
-										`Plugin ${
-											props.info.installed ? "uninstalled" : "installed"
-										}`
+					<Tip tip={props.info.installed
+						? "Uninstall"
+						: inProgress()
+							? "Installing..."
+							: "Install"} side="top">
+						<Switch>
+							<Match when={props.info.installed}>
+								<IconButton icon={Trash} size="1.5rem" color="var(--errorbg)" iconColor="var(--error)" border="var(--error)" onClick={() => {
+									setInProgress(true);
+									invoke("uninstall_plugin", {
+										plugin: props.info.id,
+									}).then(
+										() => {
+											setInProgress(false);
+											successToast(
+												`Plugin uninstalled`
+											);
+											props.updatePluginList();
+										},
+										(e) => {
+											setInProgress(false);
+											errorToast(
+												`Failed to uninstall plugin: ${e}`
+											);
+										}
 									);
-									props.updatePluginList();
-								},
-								(e) => {
-									setInProgress(false);
-									errorToast(
-										`Failed to ${
-											props.info.installed ? "uninstall" : "install"
-										} plugin: ${e}`
+								}} />
+							</Match>
+							<Match when={!props.info.installed}>
+								<IconButton icon={Download} size="1.5rem" color="var(--bg2)" border="var(--bg3)" hoverBorder="var(--bg4)" hoverBackground="var(--bg3)" onClick={() => {
+									setInProgress(true);
+									invoke("install_plugin", {
+										plugin: props.info.id,
+									}).then(
+										() => {
+											setInProgress(false);
+											successToast(
+												`Plugin installed`
+											);
+											props.updatePluginList();
+										},
+										(e) => {
+											setInProgress(false);
+											errorToast(
+												`Failed to install plugin: ${e}`
+											);
+										}
 									);
-								}
-							);
-						}}
-						selected={false}
-						shadow={false}
-					/>
+								}} />
+							</Match>
+						</Switch>
+					</Tip>
 				</div>
 			</div>
 			<div class="cont" style="justify-content:flex-start;width:100%">
@@ -259,7 +279,9 @@ function getPluginIcon(plugin: string) {
 	}
 
 	let svgIcon = (() => {
-		if (plugin == "args") {
+		if (plugin == "archive") {
+			return Book;
+		} else if (plugin == "args") {
 			return Text;
 		} else if (plugin == "automate") {
 			return Gear;
@@ -271,7 +293,7 @@ function getPluginIcon(plugin: string) {
 			return Folder;
 		} else if (plugin == "docs") {
 			return Book;
-		} else if (plugin == "extra_versions") {
+		} else if (plugin == "extra_versions" || plugin == "better_jsons") {
 			return CurlyBraces;
 		} else if (plugin == "lang") {
 			return Language;

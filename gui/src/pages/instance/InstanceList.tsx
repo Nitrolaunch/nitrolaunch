@@ -176,7 +176,7 @@ export default function InstanceList(props: InstanceListProps) {
 						</div>
 						<div id="instance-list-header">
 							<div
-								class={`instance-list-header-item instances${instancesOrProfiles() == "instance" ? " selected" : ""
+								class={`instance-list-header-item bubble-hover instances ${instancesOrProfiles() == "instance" ? "selected" : ""
 									}`}
 								onclick={() => {
 									setInstancesOrProfiles("instance");
@@ -185,7 +185,7 @@ export default function InstanceList(props: InstanceListProps) {
 								Instances
 							</div>
 							<div
-								class={`instance-list-header-item profiles${instancesOrProfiles() == "profile" ? " selected" : ""
+								class={`instance-list-header-item bubble-hover profiles ${instancesOrProfiles() == "profile" ? "selected" : ""
 									}`}
 								onclick={() => {
 									setInstancesOrProfiles("profile");
