@@ -1,6 +1,6 @@
 ![Nitrolaunch Logo](docs/assets/LogoLarge.png)
 
-## **A Minecraft launcher for the future**
+## 🚀 **A Minecraft launcher for the future**
 
 [![](https://dcbadge.limes.pink/api/server/https://discord.gg/25fhkjeTvW)](https://discord.gg/25fhkjeTvW)
 
@@ -12,7 +12,7 @@ In addition, Nitrolaunch is extremely modular, allowing you to build your perfec
 
 # ✨ Features
 
-## App or Command line
+## 💻 App or Command line
 
 Nitrolaunch will work how you do, as an intuitive desktop app or CLI
 
@@ -20,25 +20,31 @@ Nitrolaunch will work how you do, as an intuitive desktop app or CLI
 | :-------------------------------------------: | :---------------------------------------: |
 | ![](docs/assets/screenshots/package_page.png) | ![](docs/assets/screenshots/cli_list.png) |
 
-## Client and Server Instances
+## 🚀 Client and Server Instances
 
 Set up instances of both clients and servers, and share configuration between them seamlessly.
 
 ![](docs/assets/screenshots/instances.png)
 
-## Plugin System
+## ✈️ Easy to Switch
+
+Migrate from your current launcher in a couple of clicks
+
+![](docs/assets/screenshots/migrate.png)
+
+## 🔌 Plugin System
 
 Extend the launcher with features like new modloaders and sources for mods, translations for other languages, or tools to enhance your productivity
 
 ![](docs/assets/screenshots/plugins.png)
 
-## Modern Packaging
+## 📥 Modern Packaging
 
 Install mods, datapacks, shaders, and more from sources like Modrinth and Smithed.
 
 ![](docs/assets/screenshots/gui_packages.png)
 
-## In addition, Nitrolaunch is extremely fast, light on system resources, and available for all major platforms.
+## ⚡ Extremely fast, light on system resources, and available for all major platforms.
 
 ![](docs/assets/screenshots/launch.gif)
 
