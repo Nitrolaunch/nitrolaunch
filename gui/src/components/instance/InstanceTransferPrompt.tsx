@@ -4,13 +4,14 @@ import { invoke } from "@tauri-apps/api";
 import "./ProfileDeletePrompt.css";
 import InlineSelect from "../input/InlineSelect";
 import IconTextButton from "../input/IconTextButton";
-import { Download, Upload } from "../../icons";
+import { Download, Popout, Upload } from "../../icons";
 import { errorToast, successToast } from "../dialog/Toasts";
 import { clearInputError, inputError } from "../../errors";
 import Icon from "../Icon";
 import { open, save } from "@tauri-apps/api/dialog";
 import Tip from "../dialog/Tip";
 import { sanitizeInstanceId } from "../../pages/instance/InstanceConfig";
+import { updateInstanceList } from "../../pages/instance/InstanceList";
 
 export default function InstanceTransferPrompt(
 	props: InstanceTransferPromptProps
@@ -54,6 +55,10 @@ export default function InstanceTransferPrompt(
 							<Icon icon={Download} size="1rem" />
 							Import Instance
 						</Match>
+						<Match when={!isImporting()}>
+							<Icon icon={Popout} size="1rem" />
+							Export Instance
+						</Match>
 					</Switch>
 				</div>
 				<div></div>
@@ -76,6 +81,7 @@ export default function InstanceTransferPrompt(
 											return {
 												value: format.id,
 												contents: <div class="cont">{format.name}</div>,
+												color: format.color,
 											};
 										})}
 										selected={selectedFormat()}
@@ -153,6 +159,7 @@ export default function InstanceTransferPrompt(
 												path: filePath,
 											});
 											successToast("Instance imported");
+											updateInstanceList();
 											props.onClose();
 										} catch (e) {
 											errorToast("Failed to import: " + e);
@@ -220,6 +227,8 @@ export interface InstanceTransferPromptProps {
 export interface InstanceTransferFormat {
 	id: string;
 	name: string;
+	color: string | undefined;
 	import: any | undefined;
 	export: any | undefined;
+	migrate: any | undefined;
 }

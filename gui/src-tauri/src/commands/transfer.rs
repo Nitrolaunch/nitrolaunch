@@ -4,6 +4,8 @@ use crate::commands::instance::write_instance_config;
 use crate::output::LauncherOutput;
 use crate::State;
 use anyhow::Context;
+use nitrolaunch::config::modifications::{apply_modifications_and_write, ConfigModification};
+use nitrolaunch::config::Config;
 use nitrolaunch::instance::{transfer, Instance};
 use nitrolaunch::io::lock::Lockfile;
 use nitrolaunch::plugin_crate::hooks::{AddInstanceTransferFormats, InstanceTransferFormat};
@@ -126,4 +128,58 @@ pub async fn export_instance(
 	)?;
 
 	Ok(())
+}
+
+#[tauri::command]
+pub async fn migrate_instances(
+	state: tauri::State<'_, State>,
+	app_handle: tauri::AppHandle,
+	format: &str,
+) -> Result<usize, String> {
+	let mut output = LauncherOutput::new(state.get_output(app_handle));
+	output.set_task("migrate_instances");
+
+	let config = fmt_err(
+		load_config(&state.paths, &mut NoOp)
+			.await
+			.context("Failed to load config"),
+	)?;
+
+	let formats = fmt_err(
+		transfer::load_formats(&config.plugins, &state.paths, &mut output)
+			.await
+			.context("Failed to load transfer formats"),
+	)?;
+
+	let mut lock = fmt_err(Lockfile::open(&state.paths).context("Failed to open lockfile"))?;
+
+	let instances = fmt_err(
+		nitrolaunch::instance::transfer::migrate_instances(
+			format,
+			&formats,
+			&config.plugins,
+			&state.paths,
+			&mut lock,
+			&mut output,
+		)
+		.await
+		.context("Failed to migrate instances"),
+	)?;
+
+	let mut config =
+		fmt_err(Config::open(&Config::get_path(&state.paths)).context("Failed to load config"))?;
+
+	let count = instances.len();
+
+	let modifications: Vec<_> = instances
+		.into_iter()
+		.map(|(id, config)| ConfigModification::AddInstance(id.into(), config))
+		.collect();
+
+	fmt_err(
+		apply_modifications_and_write(&mut config, modifications, &state.paths)
+			.context("Failed to modify and write config"),
+	)?;
+
+	Ok(count)
 }

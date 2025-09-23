@@ -60,6 +60,7 @@ import Dropdown from "../../components/input/Dropdown";
 import LoadingSpinner from "../../components/utility/LoadingSpinner";
 import LaunchConfig from "./LaunchConfig";
 import IconSelector from "../../components/input/IconSelector";
+import { updateInstanceList } from "./InstanceList";
 
 export default function InstanceConfigPage(props: InstanceConfigProps) {
 	let navigate = useNavigate();
@@ -73,16 +74,16 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 	let id = isInstance
 		? params.instanceId
 		: isGlobalProfile
-		? "Global Profile"
-		: params.profileId;
+			? "Global Profile"
+			: params.profileId;
 
 	onMount(() =>
 		loadPagePlugins(
 			isInstance
 				? "instance_config"
 				: isProfile
-				? "profile_config"
-				: "global_profile_config",
+					? "profile_config"
+					: "global_profile_config",
 			id
 		)
 	);
@@ -101,7 +102,7 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 				id: id,
 				instanceOrProfile: props.mode,
 			});
-		} catch (e) {}
+		} catch (e) { }
 	});
 
 	let [from, setFrom] = createSignal<string[] | undefined>();
@@ -390,9 +391,9 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 			jvmArgs() == undefined && gameArgs() == undefined
 				? undefined
 				: {
-						jvm: jvmArgs(),
-						game: gameArgs(),
-				  };
+					jvm: jvmArgs(),
+					game: gameArgs(),
+				};
 
 		let overrides =
 			packageOverrides().suppress == undefined ? undefined : packageOverrides();
@@ -443,6 +444,8 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 					: FooterMode.SaveProfileConfig,
 				action: saveConfig,
 			});
+
+			updateInstanceList();
 
 			if (props.creating) {
 				navigate("/");
@@ -530,14 +533,14 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 									profiles() == undefined
 										? []
 										: profiles()!.map((x) => {
-												return {
-													value: x.id,
-													contents: (
-														<div>{x.name == undefined ? x.id : x.name}</div>
-													),
-													color: "var(--profile)",
-												};
-										  })
+											return {
+												value: x.id,
+												contents: (
+													<div>{x.name == undefined ? x.id : x.name}</div>
+												),
+												color: "var(--profile)",
+											};
+										})
 								}
 								selected={from()}
 								onChangeMulti={(x) => {
@@ -709,9 +712,8 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 						}
 					>
 						<div class="cont start label">
-							<label for="client-type">{`${
-								isProfile ? "CLIENT " : ""
-							}LOADER`}</label>
+							<label for="client-type">{`${isProfile ? "CLIENT " : ""
+								}LOADER`}</label>
 							<DeriveIndicator
 								parentConfigs={parentConfigs()}
 								currentValue={clientLoader()}
@@ -744,14 +746,13 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 											value: x,
 											contents: (
 												<div
-													class={`cont ${
-														clientLoader() == undefined &&
-														getDerivedValue(parentConfigs(), (x) =>
-															getConfiguredLoader(x.loader, "client")
-														) == x
+													class={`cont ${clientLoader() == undefined &&
+															getDerivedValue(parentConfigs(), (x) =>
+																getConfiguredLoader(x.loader, "client")
+															) == x
 															? "derived-option"
 															: ""
-													}`}
+														}`}
 												>
 													{x == undefined
 														? "Unset"
@@ -776,9 +777,8 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 						}
 					>
 						<div class="cont start label">
-							<label for="server-type">{`${
-								isProfile ? "SERVER " : ""
-							}LOADER`}</label>
+							<label for="server-type">{`${isProfile ? "SERVER " : ""
+								}LOADER`}</label>
 							<DeriveIndicator
 								parentConfigs={parentConfigs()}
 								currentValue={clientLoader()}
@@ -811,14 +811,13 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 											value: x,
 											contents: (
 												<div
-													class={`cont ${
-														serverLoader() == undefined &&
-														getDerivedValue(parentConfigs(), (x) =>
-															getConfiguredLoader(x.loader, "server")
-														) == x
+													class={`cont ${serverLoader() == undefined &&
+															getDerivedValue(parentConfigs(), (x) =>
+																getConfiguredLoader(x.loader, "server")
+															) == x
 															? "derived-option"
 															: ""
-													}`}
+														}`}
 												>
 													{x == undefined
 														? "Unset"
@@ -851,9 +850,8 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 							</label>
 						</div>
 						<Tip
-							tip={`The version for the${
-								isProfile ? " client" : ""
-							} loader. Leave empty to select the best version automatically.`}
+							tip={`The version for the${isProfile ? " client" : ""
+								} loader. Leave empty to select the best version automatically.`}
 							fullwidth
 						>
 							<input
@@ -883,9 +881,8 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 							</label>
 						</div>
 						<Tip
-							tip={`The version for the${
-								isProfile ? " server" : ""
-							} loader. Leave empty to select the best version automatically.`}
+							tip={`The version for the${isProfile ? " server" : ""
+								} loader. Leave empty to select the best version automatically.`}
 							fullwidth
 						>
 							<input

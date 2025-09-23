@@ -18,6 +18,7 @@ import { invoke } from "@tauri-apps/api";
 import IconButton from "../../components/input/IconButton";
 import {
 	Box,
+	Cycle,
 	Download,
 	Edit,
 	Folder,
@@ -31,6 +32,7 @@ import InstanceTransferPrompt from "../../components/instance/InstanceTransferPr
 import Dropdown from "../../components/input/Dropdown";
 import IconAndText from "../../components/utility/IconAndText";
 import { useNavigate } from "@solidjs/router";
+import MigratePrompt from "../../components/instance/MigratePrompt";
 
 export default function InstanceList(props: InstanceListProps) {
 	let navigate = useNavigate();
@@ -52,6 +54,7 @@ export default function InstanceList(props: InstanceListProps) {
 	>("instance");
 
 	let [importPromptVisible, setImportPromptVisible] = createSignal(false);
+	let [migratePromptVisible, setMigratePromptVisible] = createSignal(false);
 
 	async function updateItems() {
 		let instances: InstanceInfo[] = [];
@@ -108,6 +111,8 @@ export default function InstanceList(props: InstanceListProps) {
 		setGroups(newGroups);
 	}
 
+	(window as any).__updateInstanceList = updateItems;
+
 	updateItems();
 
 	function onSelect(item: SelectedItem, section: string) {
@@ -156,6 +161,12 @@ export default function InstanceList(props: InstanceListProps) {
 												<IconAndText icon={Download} text="Import Instance" />
 											),
 										},
+										{
+											value: "migrate_instances",
+											contents: (
+												<IconAndText icon={Cycle} text="Migrate Instances" />
+											),
+										},
 									]}
 									previewText={<IconAndText icon={Plus} text="Add" centered />}
 									onChange={(selection) => {
@@ -165,6 +176,8 @@ export default function InstanceList(props: InstanceListProps) {
 											navigate("create_profile");
 										} else if (selection == "import_instance") {
 											setImportPromptVisible(true);
+										} else if (selection == "migrate_instances") {
+											setMigratePromptVisible(true);
 										}
 									}}
 									optionsWidth="12rem"
@@ -275,6 +288,7 @@ export default function InstanceList(props: InstanceListProps) {
 				visible={importPromptVisible()}
 				onClose={() => setImportPromptVisible(false)}
 			/>
+			<MigratePrompt visible={migratePromptVisible()} onClose={() => setMigratePromptVisible(false)} />
 			<br />
 		</div>
 	);
@@ -481,4 +495,8 @@ interface SelectedItem {
 
 export interface InstanceListProps {
 	setFooterData: (data: FooterData) => void;
+}
+
+export async function updateInstanceList() {
+	await (window as any).__updateInstanceList();
 }

@@ -7,6 +7,8 @@ export default function Tip(props: TipProps) {
 	let side = props.side == undefined ? "right" : props.side;
 	let fullwidth = props.fullwidth == undefined ? false : props.fullwidth;
 
+	let zIndex = props.zIndex == undefined ? "" : `z-index: ${props.zIndex}`;
+
 	return (
 		<div class="tip-container" style={`${fullwidth ? "width:100%" : ""}`}>
 			<div
@@ -17,7 +19,7 @@ export default function Tip(props: TipProps) {
 				{props.children}
 			</div>
 			<Show when={visible()}>
-				<div class={`fade-in pop-in-fast tip ${side}`}>
+				<div class={`fade-in pop-in-fast tip ${side}`} style={`${zIndex}`}>
 					<div class={`input-shadow cont tip-body ${side}`}>{props.tip}</div>
 					<div class={`input-shadow tip-arrow ${side}`}></div>
 				</div>
@@ -31,6 +33,7 @@ export interface TipProps {
 	tip: JSX.Element;
 	side?: TipSide;
 	fullwidth?: boolean;
+	zIndex?: string;
 }
 
 export type TipSide = "top" | "bottom" | "right" | "left";

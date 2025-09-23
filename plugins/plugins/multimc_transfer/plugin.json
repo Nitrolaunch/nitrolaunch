@@ -8,16 +8,23 @@
 				{
 					"id": "multimc",
 					"name": "MultiMC",
-					"import": {}
+					"color": "#8ec73b",
+					"import": {},
+					"migrate": {}
 				},
 				{
 					"id": "prism",
 					"name": "PrismLauncher",
-					"import": {}
+					"color": "#d8415a",
+					"import": {},
+					"migrate": {}
 				}
 			]
 		},
 		"import_instance": {
+			"executable": "${PLUGIN_DIR}/nitro_plugin_multimc_transfer${EXE_EXTENSION}"
+		},
+		"migrate_instances": {
 			"executable": "${PLUGIN_DIR}/nitro_plugin_multimc_transfer${EXE_EXTENSION}"
 		}
 	}

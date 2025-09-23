@@ -149,7 +149,15 @@ pub async fn install_default_plugins(
 	let mut output = LauncherOutput::new(state.get_output(app_handle));
 	output.set_task("install_plugins");
 
-	let default_plugins = ["fabric_quilt", "modrinth", "smithed", "stats", "docs"];
+	let default_plugins = [
+		"fabric_quilt",
+		"modrinth",
+		"smithed",
+		"stats",
+		"docs",
+		"multimc_transfer",
+		"xmcl_transfer",
+	];
 
 	let verified_list = fmt_err(
 		get_verified_plugins(&state.client)

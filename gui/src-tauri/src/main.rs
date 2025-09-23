@@ -169,6 +169,7 @@ fn main() {
 			commands::transfer::get_instance_transfer_formats,
 			commands::transfer::import_instance,
 			commands::transfer::export_instance,
+			commands::transfer::migrate_instances,
 			commands::misc::get_supported_loaders,
 			commands::misc::get_minecraft_versions,
 			commands::misc::get_is_first_launch,

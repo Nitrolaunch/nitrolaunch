@@ -111,7 +111,7 @@ fn main() -> anyhow::Result<()> {
 			data_folder
 		} else if arg == "prism" {
 			#[cfg(target_os = "linux")]
-			let data_folder = format!("{}/.local/share/prismlauncher", std::env::var("HOME")?);
+			let data_folder = format!("{}/.local/share/PrismLauncher", std::env::var("HOME")?);
 			#[cfg(target_os = "windows")]
 			let data_folder = format!("{}/Roaming/PrismLauncher", std::env::var("%APPDATA%")?);
 			#[cfg(target_os = "macos")]
@@ -152,9 +152,17 @@ fn main() -> anyhow::Result<()> {
 			let path = entry.path();
 
 			let mc_dir = path.join(".minecraft");
+			if !mc_dir.exists() {
+				continue;
+			}
 
-			let cfg = std::fs::read_to_string(path.join("instance.cfg"))
-				.context("Failed to read instance config")?;
+			let cfg_path = path.join("instance.cfg");
+			if !cfg_path.exists() {
+				continue;
+			}
+
+			let cfg =
+				std::fs::read_to_string(cfg_path).context("Failed to read instance config")?;
 			let cfg = read_instance_cfg(&cfg);
 
 			let mmc_pack: MMCPack = json_from_file(path.join("mmc-pack.json"))

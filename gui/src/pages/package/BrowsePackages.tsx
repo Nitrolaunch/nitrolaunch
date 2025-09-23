@@ -260,7 +260,7 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 						}}
 					/>
 					<div class="cont end">
-						<Tip tip="Refetches packages and their new versions" side="left">
+						<Tip tip="Refetches packages and their new versions" side="left" zIndex="10">
 							<IconTextButton
 								icon={Refresh}
 								text="Sync Packages"

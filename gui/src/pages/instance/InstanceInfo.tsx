@@ -58,6 +58,7 @@ import { convertFileSrc } from "@tauri-apps/api/tauri";
 import Dropdown, { Option } from "../../components/input/Dropdown";
 import IconAndText from "../../components/utility/IconAndText";
 import InstanceTransferPrompt from "../../components/instance/InstanceTransferPrompt";
+import { updateInstanceList } from "./InstanceList";
 
 export default function InstanceInfo(props: InstanceInfoProps) {
 	let navigate = useNavigate();
@@ -627,6 +628,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 										await invoke("delete_instance", { instance: id });
 										successToast("Instance deleted");
 										setShowDeleteConfirm(false);
+										updateInstanceList();
 										navigate("/");
 									} catch (e) {
 										errorToast("Failed to delete instance: " + e);

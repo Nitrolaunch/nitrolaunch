@@ -1,0 +1,123 @@
+import { createResource, createSignal, Match, Switch } from "solid-js";
+import Modal from "../dialog/Modal";
+import { invoke } from "@tauri-apps/api";
+import "./ProfileDeletePrompt.css";
+import InlineSelect from "../input/InlineSelect";
+import IconTextButton from "../input/IconTextButton";
+import { Cycle } from "../../icons";
+import { errorToast, successToast } from "../dialog/Toasts";
+import { clearInputError, inputError } from "../../errors";
+import Icon from "../Icon";
+import Tip from "../dialog/Tip";
+import { InstanceTransferFormat } from "./InstanceTransferPrompt";
+import { updateInstanceList } from "../../pages/instance/InstanceList";
+
+export default function MigratePrompt(
+	props: MigratePromptProps
+) {
+	let [formats, _] = createResource(
+		() => props.visible,
+		async () => {
+			let formats = (await invoke(
+				"get_instance_transfer_formats"
+			)) as InstanceTransferFormat[];
+
+			// Filter out formats that don't support migration
+			formats = formats.filter((format) => format.migrate != undefined);
+
+			return formats;
+		},
+		{ initialValue: [] }
+	);
+
+	let [selectedFormat, setSelectedFormat] = createSignal<string | undefined>();
+
+	return (
+		<Modal visible={props.visible} onClose={props.onClose} width="25rem">
+			<div class="cont col" style="padding:2rem">
+				<div class="cont bold">
+					<Icon icon={Cycle} size="1rem" />
+					Migrate from Launcher
+				</div>
+				<div></div>
+				<div class="cont fields" style="width:100%">
+					<div class="cont start label">
+						<label>FORMAT</label>
+					</div>
+					<Tip
+						fullwidth
+						tip="The launcher to migrate from"
+					>
+						<div class="fullwidth" id="instance-transfer-format">
+							<Switch>
+								<Match when={formats().length == 0}>
+									<span style="color:var(--fg3)">No formats available. Try installing a plugin.</span>
+								</Match>
+								<Match when={formats().length > 0}>
+									<InlineSelect
+										options={formats().map((format) => {
+											return {
+												value: format.id,
+												contents: <div class="cont">{format.name}</div>,
+												color: format.color,
+											};
+										})}
+										selected={selectedFormat()}
+										onChange={setSelectedFormat}
+										connected={false}
+										columns={1}
+									/>
+
+								</Match>
+							</Switch>
+						</div>
+					</Tip>
+				</div>
+				<div></div>
+				<div></div>
+				<div class="cont">
+					<IconTextButton
+						size="1rem"
+						color="var(--bg2)"
+						text="Cancel"
+						onClick={props.onClose}
+					/>
+					<IconTextButton
+						icon={Cycle}
+						size="1rem"
+						text="Migrate"
+						color="var(--bg2)"
+						onClick={async () => {
+							if (selectedFormat() == undefined) {
+								inputError("instance-transfer-format");
+								return;
+							} else {
+								clearInputError("instance-transfer-format");
+							}
+
+
+							try {
+								let count: number = await invoke("migrate_instances", {
+									format: selectedFormat(),
+								});
+								successToast(`Migrated ${count} instances`);
+								updateInstanceList();
+								props.onClose();
+							} catch (e) {
+								errorToast("Failed to migrate: " + e);
+								props.onClose();
+							}
+						}}
+					/>
+				</div>
+			</div>
+		</Modal>
+	);
+}
+
+export interface MigratePromptProps {
+	// The ID of the exported instance. If undefined, we are importing an instance.
+	exportedInstance?: string;
+	visible: boolean;
+	onClose: () => void;
+}

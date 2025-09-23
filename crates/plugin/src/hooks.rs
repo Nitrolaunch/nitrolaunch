@@ -371,6 +371,8 @@ pub struct InstanceTransferFormat {
 	pub id: String,
 	/// A display name for this format
 	pub name: String,
+	/// A CSS color for this format
+	pub color: Option<String>,
 	/// Info for the import side of this format
 	pub import: Option<InstanceTransferFormatDirection>,
 	/// Info for the export side of this format
