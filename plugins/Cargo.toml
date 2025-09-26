@@ -87,6 +87,10 @@ name = "nitro_plugin_paper"
 path = "plugins/paper/main.rs"
 
 [[bin]]
+name = "nitro_plugin_profile_share"
+path = "plugins/profile_share/main.rs"
+
+[[bin]]
 name = "nitro_plugin_smithed"
 path = "plugins/smithed/main.rs"
 
@@ -116,6 +120,7 @@ path = "plugins/xmcl_transfer/main.rs"
 
 [dependencies]
 anyhow = { workspace = true }
+base64 = { workspace = true }
 clap = { workspace = true }
 color-print = { workspace = true }
 glob = { workspace = true }

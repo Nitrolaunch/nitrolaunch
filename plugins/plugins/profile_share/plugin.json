@@ -1,0 +1,20 @@
+{
+	"name": "Profile Share",
+	"description": "Easily share profiles with friends",
+	"protocol_version": 3,
+	"hooks": {
+		"subcommand": {
+			"executable": "${PLUGIN_DIR}/nitro_plugin_profile_share${EXE_EXTENSION}"
+		}
+	},
+	"subcommands": {
+		"share": {
+			"supercommand": "profile",
+			"description": "Share a profile with a code"
+		},
+		"use": {
+			"supercommand": "profile",
+			"description": "Download a profile from a code"
+		}
+	}
+}

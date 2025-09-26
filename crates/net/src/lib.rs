@@ -3,6 +3,8 @@
 
 /// Download utilities
 pub mod download;
+/// Uploading and downloading from filebin.net
+pub mod filebin;
 /// GitHub releases API
 pub mod github;
 /// Interacting with the Modrinth API

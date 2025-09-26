@@ -173,5 +173,12 @@
 		"github_owner": "Nitrolaunch",
 		"github_repo": "nitrolaunch",
 		"description": "Uses BetterJSONs versions for improved compatability"
+	},
+	"profile_share": {
+		"id": "profile_share",
+		"name": "Profile Share",
+		"github_owner": "Nitrolaunch",
+		"github_repo": "nitrolaunch",
+		"description": "Easily share profiles with friends"
 	}
 }
