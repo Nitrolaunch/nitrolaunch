@@ -4,8 +4,8 @@ use anyhow::Context;
 use itertools::Itertools;
 use nitrolaunch::plugin::PluginManager;
 use nitrolaunch::plugin_crate::hooks::{
-	AddSidebarButtons, AddThemes, GetPage, InjectPageScript, InjectPageScriptArg, SidebarButton,
-	Theme,
+	AddSidebarButtons, AddThemes, CustomAction, CustomActionArg, GetPage, InjectPageScript,
+	InjectPageScriptArg, SidebarButton, Theme,
 };
 use nitrolaunch::shared::output::{MessageContents, MessageLevel, NitroOutput};
 use nitrolaunch::{plugin::install::get_verified_plugins, shared::output::NoOp};
@@ -302,4 +302,46 @@ pub async fn get_themes(
 	}
 
 	Ok(out)
+}
+
+#[tauri::command]
+pub async fn run_custom_action(
+	state: tauri::State<'_, State>,
+	app_handle: tauri::AppHandle,
+	plugin: &str,
+	action: String,
+	payload: serde_json::Value,
+) -> Result<serde_json::Value, String> {
+	let mut output = LauncherOutput::new(state.get_output(app_handle));
+
+	let config = fmt_err(
+		load_config(&state.paths, &mut NoOp)
+			.await
+			.context("Failed to load config"),
+	)?;
+
+	let result = fmt_err(
+		config
+			.plugins
+			.call_hook_on_plugin(
+				CustomAction,
+				plugin,
+				&CustomActionArg {
+					id: action,
+					payload,
+				},
+				&state.paths,
+				&mut output,
+			)
+			.await
+			.context("Failed to call custom action"),
+	)?;
+
+	let Some(result) = result else {
+		return Err("Plugin did not return a result".into());
+	};
+
+	let result = fmt_err(result.result(&mut output).await)?;
+
+	Ok(result)
 }

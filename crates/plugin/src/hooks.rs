@@ -732,3 +732,22 @@ pub struct Theme {
 	/// A css color that identifies this theme
 	pub color: String,
 }
+
+def_hook!(
+	CustomAction,
+	"custom_action",
+	"Runs an arbitrary action on this plugin",
+	CustomActionArg,
+	serde_json::Value,
+	1,
+);
+
+/// Argument for the CustomAction hook
+#[derive(Serialize, Deserialize, Default)]
+#[serde(default)]
+pub struct CustomActionArg {
+	/// The ID of the action
+	pub id: String,
+	/// The payload/argument for the action
+	pub payload: serde_json::Value,
+}

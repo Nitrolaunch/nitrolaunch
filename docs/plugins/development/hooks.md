@@ -63,6 +63,22 @@ Adds extra translations to Nitrolaunch
 }
 ```
 
+### `custom_action`
+
+Runs an arbitrary custom action, basically allowing you to define your own hooks. Used often by the GUI.
+
+- Argument:
+```
+{
+	"id": string,
+	"payload": any
+}
+```
+- Result: any
+
+- `id`: The custom identifier for this action (can be whatever you want)
+- `payload` The custom argument for this action run (can also be whatever you want)
+
 ## Configuration Hooks
 
 ### `modify_instance_config`

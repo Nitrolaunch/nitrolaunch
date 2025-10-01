@@ -28,4 +28,7 @@ export function setupPluginFunctions() {
 		await invoke(command, args);
 	};
 	global.TauriWindow = WebviewWindow;
+	global.customAction = async (plugin: string, action: string, payload: any) => {
+		return await invoke("run_custom_action", { plugin: plugin, action: action, payload: payload });
+	}
 }
