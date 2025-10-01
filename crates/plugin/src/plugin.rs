@@ -19,6 +19,8 @@ use crate::HookHandle;
 pub const NEWEST_PROTOCOL_VERSION: u16 = 3;
 /// The default protocol version used for compatability
 pub const DEFAULT_PROTOCOL_VERSION: u16 = 1;
+/// Token used for file replacement in hook handlers
+pub static FILE_REPLACEMENT_TOKEN: &str = "$file:";
 
 /// A plugin
 pub struct Plugin {
@@ -113,10 +115,46 @@ impl Plugin {
 			HookHandler::Constant {
 				constant,
 				priority: _,
-			} => Ok(Some(HookHandle::constant(
-				serde_json::from_value(constant.clone())?,
-				self.id.clone(),
-			))),
+			} => {
+				// Replace file tokens
+				let mut value = constant.clone();
+
+				fn replace_file_tokens(
+					value: &mut serde_json::Value,
+					working_dir: &Option<PathBuf>,
+				) -> anyhow::Result<()> {
+					match value {
+						serde_json::Value::Object(props) => {
+							for prop in props.values_mut() {
+								replace_file_tokens(prop, working_dir)?;
+							}
+						}
+						serde_json::Value::String(value) => {
+							if let Some(path) = value.strip_prefix(FILE_REPLACEMENT_TOKEN) {
+								let Some(working_dir) = working_dir else {
+									bail!("Plugin does not have a directory for the file hook handler to look in");
+								};
+
+								let path = working_dir.join(path);
+								let contents = std::fs::read_to_string(path)
+									.context("Failed to read hook result from file")?;
+
+								*value = contents;
+							}
+						}
+						_ => {}
+					}
+
+					Ok(())
+				}
+
+				replace_file_tokens(&mut value, &self.working_dir)?;
+
+				Ok(Some(HookHandle::constant(
+					serde_json::from_value(constant.clone())?,
+					self.id.clone(),
+				)))
+			}
 			HookHandler::File { file, priority: _ } => {
 				let Some(working_dir) = &self.working_dir else {
 					bail!("Plugin does not have a directory for the file hook handler to look in");

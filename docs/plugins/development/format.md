@@ -63,6 +63,8 @@ Constant handler that returns a fixed value every time it is called:
 
 - `constant`: The constant result of the handler. Will be a different type depending on the hook.
 
+Constant hook handlers can also have string values replaced with file contents using `$file:path`, where `path` is the path to the file relative to the directory for this plugin.
+
 Handler that calls an executable using the hook protocol:
 
 ```
