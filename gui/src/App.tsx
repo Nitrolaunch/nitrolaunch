@@ -24,7 +24,7 @@ export default function App() {
 	const [footerData, setFooterData] = createSignal<FooterData>({
 		selectedItem: undefined,
 		mode: FooterMode.Instance,
-		action: () => {},
+		action: () => { },
 	});
 
 	let [selectedUser, setSelectedUser] = createSignal<string>();
@@ -137,9 +137,8 @@ function Layout(props: LayoutProps) {
 		<>
 			<Global />
 			<NavBar
-				onSidebarToggle={() => {
-					setShowSidebar(!showSidebar());
-				}}
+				onSidebarToggle={() => setShowSidebar(!showSidebar())}
+				onSidebarClose={() => setShowSidebar(false)}
 				location={props.location}
 			/>
 			<ErrorBoundary

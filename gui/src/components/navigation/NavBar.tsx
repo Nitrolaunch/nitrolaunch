@@ -67,6 +67,7 @@ export default function NavBar(props: NavBarProps) {
 							color="var(--instance)"
 							backgroundColor="var(--instancebg)"
 							location={props.location}
+							onClick={props.onSidebarClose}
 						/>
 						<NavbarButton
 							icon={<Box />}
@@ -76,6 +77,7 @@ export default function NavBar(props: NavBarProps) {
 							color="var(--package)"
 							backgroundColor="var(--packagebg)"
 							location={props.location}
+							onClick={props.onSidebarClose}
 						/>
 						<NavbarButton
 							icon={<Jigsaw />}
@@ -85,6 +87,7 @@ export default function NavBar(props: NavBarProps) {
 							color="var(--plugin)"
 							backgroundColor="var(--pluginbg)"
 							location={props.location}
+							onClick={props.onSidebarClose}
 						/>
 					</div>
 					<h3 class="cont bubble-hover navbar-item">
@@ -104,6 +107,7 @@ export default function NavBar(props: NavBarProps) {
 
 export interface NavBarProps {
 	onSidebarToggle: () => void;
+	onSidebarClose: () => void;
 	location: Location;
 }
 
@@ -140,6 +144,7 @@ function NavbarButton(props: NavbarButtonProps) {
 				};border-color:${borderColor()}`}
 			onmouseenter={() => setIsHovered(true)}
 			onmouseleave={() => setIsHovered(false)}
+			onclick={props.onClick}
 		>
 			{props.icon}
 			<div class="navbar-button-text">{props.text}</div>
@@ -158,4 +163,5 @@ interface NavbarButtonProps {
 	selectedPathStart?: string[];
 	color: string;
 	backgroundColor: string;
+	onClick: () => void;
 }
