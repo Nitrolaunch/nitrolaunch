@@ -159,6 +159,7 @@ fn main() {
 			commands::plugin::get_plugin_page,
 			commands::plugin::get_themes,
 			commands::plugin::run_custom_action,
+			commands::plugin::get_dropdown_buttons,
 			commands::user::get_users,
 			commands::user::select_user,
 			commands::user::login_user,

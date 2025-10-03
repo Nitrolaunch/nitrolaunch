@@ -4,8 +4,9 @@ use anyhow::Context;
 use itertools::Itertools;
 use nitrolaunch::plugin::PluginManager;
 use nitrolaunch::plugin_crate::hooks::{
-	AddSidebarButtons, AddThemes, CustomAction, CustomActionArg, GetPage, InjectPageScript,
-	InjectPageScriptArg, SidebarButton, Theme,
+	AddDropdownButtons, AddSidebarButtons, AddThemes, CustomAction, CustomActionArg,
+	DropdownButton, DropdownButtonLocation, GetPage, InjectPageScript, InjectPageScriptArg,
+	SidebarButton, Theme,
 };
 use nitrolaunch::shared::output::{MessageContents, MessageLevel, NitroOutput};
 use nitrolaunch::{plugin::install::get_verified_plugins, shared::output::NoOp};
@@ -344,4 +345,34 @@ pub async fn run_custom_action(
 	let result = fmt_err(result.result(&mut output).await)?;
 
 	Ok(result)
+}
+
+#[tauri::command]
+pub async fn get_dropdown_buttons(
+	state: tauri::State<'_, State>,
+	app_handle: tauri::AppHandle,
+	location: DropdownButtonLocation,
+) -> Result<Vec<DropdownButton>, String> {
+	let mut output = LauncherOutput::new(state.get_output(app_handle));
+
+	let config = fmt_err(
+		load_config(&state.paths, &mut NoOp)
+			.await
+			.context("Failed to load config"),
+	)?;
+
+	let results = fmt_err(
+		config
+			.plugins
+			.call_hook(AddDropdownButtons, &(), &state.paths, &mut output)
+			.await,
+	)?;
+
+	let mut out = Vec::new();
+	for result in results {
+		let result = fmt_err(result.result(&mut output).await)?;
+		out.extend(result.into_iter().filter(|x| x.location == location));
+	}
+
+	Ok(out)
 }

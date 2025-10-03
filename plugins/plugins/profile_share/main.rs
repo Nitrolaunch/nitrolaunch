@@ -13,7 +13,7 @@ use nitrolaunch::{
 		modifications::{apply_modifications_and_write, ConfigModification},
 		Config,
 	},
-	config_crate::{instance::is_valid_instance_id, profile::ProfileConfig},
+	config_crate::{instance::is_valid_instance_id, profile::ProfileConfig, ConfigDeser},
 	io::paths::Paths,
 };
 use rand::{rngs::StdRng, RngCore, SeedableRng};
@@ -44,50 +44,119 @@ fn main() -> anyhow::Result<()> {
 		if subcommand == "share" {
 			let cli = Share::parse_from(it);
 
-			let Some(profile) = config.profiles.get(&ProfileID::from(cli.profile)) else {
-				bail!("Profile does not exist");
-			};
-
-			// TODO: Consolidate parent profiles before exporting
-
-			let data = serde_json::to_string(profile).context("Failed to serialize profile")?;
-
-			let code = generate_code();
-
-			runtime
-				.block_on(filebin::upload(data, &code, FILENAME, &client))
-				.context("Failed to upload profile")?;
+			let code = export_profile(&cli.profile, &config, &runtime, &client)?;
 
 			cprintln!("<s>Profile code: <g>{code}");
 		} else if subcommand == "use" {
 			let cli = Use::parse_from(it);
 
-			let id = ProfileID::from(cli.id);
-
-			if !is_valid_instance_id(&id) {
-				bail!("Profile ID is invalid");
-			}
-			if config.profiles.contains_key(&id) {
-				bail!("Profile ID '{id}' already exists. Try using another ID");
-			}
-
-			let data = runtime
-				.block_on(filebin::download(&cli.code, FILENAME, &client))
-				.context("Failed to download profile. Is the code correct and still valid?")?;
-
-			let profile: ProfileConfig =
-				serde_json::from_str(&data).context("Failed to deserialize profile")?;
-
-			let modifications = vec![ConfigModification::AddProfile(id, profile)];
-
-			apply_modifications_and_write(&mut config, modifications, &paths)
-				.context("Failed to write config")?;
+			import_profile(&cli.id, &cli.code, &mut config, &runtime, &paths, &client)?;
 
 			cprintln!("<s,g>Profile added.");
 		}
 
 		Ok(())
 	})?;
+
+	plugin.custom_action(|_, arg| {
+		if arg.id == "export_profile" {
+			let serde_json::Value::String(id) = arg.payload else {
+				bail!("Incorrect argument type");
+			};
+
+			let client = Client::new();
+			let runtime = tokio::runtime::Runtime::new()?;
+			let paths = Paths::new_no_create()?;
+
+			let config =
+				Config::open(&Config::get_path(&paths)).context("Failed to open config file")?;
+
+			let code = export_profile(&id, &config, &runtime, &client)?;
+
+			Ok(serde_json::Value::String(code))
+		} else if arg.id == "import_profile" {
+			let serde_json::Value::Object(map) = arg.payload else {
+				bail!("Incorrect argument type");
+			};
+
+			let Some(serde_json::Value::String(id)) = map.get("id") else {
+				bail!("Incorrect argument type");
+			};
+
+			let Some(serde_json::Value::String(code)) = map.get("code") else {
+				bail!("Incorrect argument type");
+			};
+
+			let client = Client::new();
+			let runtime = tokio::runtime::Runtime::new()?;
+			let paths = Paths::new_no_create()?;
+
+			let mut config =
+				Config::open(&Config::get_path(&paths)).context("Failed to open config file")?;
+
+			import_profile(id, code, &mut config, &runtime, &paths, &client)?;
+
+			Ok(serde_json::Value::Null)
+		} else {
+			Ok(serde_json::Value::Null)
+		}
+	})?;
+
+	Ok(())
+}
+
+fn export_profile(
+	profile_id: &str,
+	config: &ConfigDeser,
+	runtime: &tokio::runtime::Runtime,
+	client: &Client,
+) -> anyhow::Result<String> {
+	let Some(profile) = config.profiles.get(&ProfileID::from(profile_id)) else {
+		bail!("Profile does not exist");
+	};
+
+	// TODO: Consolidate parent profiles before exporting
+
+	let data = serde_json::to_string(profile).context("Failed to serialize profile")?;
+
+	let code = generate_code();
+
+	runtime
+		.block_on(filebin::upload(data, &code, FILENAME, &client))
+		.context("Failed to upload profile")?;
+
+	Ok(code)
+}
+
+/// Imports a profile and writes the config
+fn import_profile(
+	profile_id: &str,
+	code: &str,
+	config: &mut ConfigDeser,
+	runtime: &tokio::runtime::Runtime,
+	paths: &Paths,
+	client: &Client,
+) -> anyhow::Result<()> {
+	let id = ProfileID::from(profile_id);
+
+	if !is_valid_instance_id(&id) {
+		bail!("Profile ID is invalid");
+	}
+	if config.profiles.contains_key(&id) {
+		bail!("Profile ID '{id}' already exists. Try using another ID");
+	}
+
+	let data = runtime
+		.block_on(filebin::download(code, FILENAME, &client))
+		.context("Failed to download profile. Is the code correct and still valid?")?;
+
+	let profile: ProfileConfig =
+		serde_json::from_str(&data).context("Failed to deserialize profile")?;
+
+	let modifications = vec![ConfigModification::AddProfile(id, profile)];
+
+	apply_modifications_and_write(config, modifications, &paths)
+		.context("Failed to write config")?;
 
 	Ok(())
 }

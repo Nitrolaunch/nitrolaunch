@@ -154,7 +154,7 @@ export default function Footer(props: FooterProps) {
 	>();
 
 	return (
-		<div class="footer">
+		<div id="footer" class="footer" data-mode={props.mode} data-selected-item={props.selectedItem}>
 			<div id="footer-left" class="footer-section">
 				<div class="cont" id="footer-selection-indicator">
 					<Show
@@ -465,9 +465,8 @@ function ActionButton(props: ActionButtonProps) {
 			<div class="footer-action-button-decorations">
 				<div
 					class="footer-action-button-decoration left"
-					style={`${backgroundStyle()};${borderStyle()};${
-						props.selected ? "" : "border-top-width:0px"
-					}`}
+					style={`${backgroundStyle()};${borderStyle()};${props.selected ? "" : "border-top-width:0px"
+						}`}
 				></div>
 				<div
 					class="footer-action-button-decoration right"
@@ -486,9 +485,8 @@ function ActionButton(props: ActionButtonProps) {
 				id="footer-action-button"
 				class="cont"
 				onclick={props.onClick}
-				style={`background-color:${backgroundColor()};border-color:${borderColor()};color:${borderColor()};${
-					props.selected ? "border-top: var(--border) solid" : ""
-				}`}
+				style={`background-color:${backgroundColor()};border-color:${borderColor()};color:${borderColor()};${props.selected ? "border-top: var(--border) solid" : ""
+					}`}
 			>
 				{Icon()}
 				{message()}

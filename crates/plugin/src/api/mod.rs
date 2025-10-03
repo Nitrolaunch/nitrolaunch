@@ -172,6 +172,11 @@ impl CustomPlugin {
 	);
 	hook_interface!(add_themes, "add_themes", AddThemes);
 	hook_interface!(custom_action, "custom_action", CustomAction);
+	hook_interface!(
+		add_dropdown_buttons,
+		"add_dropdown_buttons",
+		AddDropdownButtons
+	);
 
 	/// Handle a hook
 	fn handle_hook<H: Hook>(

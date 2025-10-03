@@ -17,6 +17,14 @@ export interface IconProps {
 	[prop: string]: any;
 }
 
+export function HTMLIcon(html: string) {
+	return (props: HasWidthHeight) => {
+		let attrs = `width=${props.width} height=${props.height} viewBox=${props.viewBox}`;
+		let html2 = html.replace("<svg", `<svg ${attrs} `);
+		return <div class="cont" innerHTML={html2}></div>;
+	}
+}
+
 export interface HasWidthHeight {
 	width?: string;
 	height?: string;

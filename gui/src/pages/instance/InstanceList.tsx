@@ -1,6 +1,7 @@
 import "./InstanceList.css";
 import {
 	createEffect,
+	createResource,
 	createSignal,
 	For,
 	Match,
@@ -8,7 +9,7 @@ import {
 	Show,
 	Switch,
 } from "solid-js";
-import { loadPagePlugins } from "../../plugins";
+import { dropdownButtonToOption, getDropdownButtons, loadPagePlugins, runDropdownButtonClick } from "../../plugins";
 import { FooterData } from "../../App";
 import { FooterMode } from "../../components/navigation/Footer";
 import { getInstanceIconSrc } from "../../utils";
@@ -29,7 +30,7 @@ import {
 import Icon from "../../components/Icon";
 import IconTextButton from "../../components/input/IconTextButton";
 import InstanceTransferPrompt from "../../components/instance/InstanceTransferPrompt";
-import Dropdown from "../../components/input/Dropdown";
+import Dropdown, { Option } from "../../components/input/Dropdown";
 import IconAndText from "../../components/utility/IconAndText";
 import { useNavigate } from "@solidjs/router";
 import MigratePrompt from "../../components/instance/MigratePrompt";
@@ -133,6 +134,11 @@ export default function InstanceList(props: InstanceListProps) {
 			action: () => { },
 		});
 	});
+
+	let [dropdownButtons, _] = createResource(async () => {
+		return getDropdownButtons("add_profile_or_instance")
+	}, { initialValue: [] });
+
 	return (
 		<div class="container">
 			<br />
@@ -142,7 +148,7 @@ export default function InstanceList(props: InstanceListProps) {
 						<div class="cont start" style="padding-left:0.5rem">
 							<div style="width:7rem">
 								<Dropdown
-									options={[
+									options={([
 										{
 											value: "create_instance",
 											contents: (
@@ -167,7 +173,7 @@ export default function InstanceList(props: InstanceListProps) {
 												<IconAndText icon={Cycle} text="Migrate Instances" />
 											),
 										},
-									]}
+									] as Option[]).concat(dropdownButtons().map(dropdownButtonToOption))}
 									previewText={<IconAndText icon={Plus} text="Add" centered />}
 									onChange={(selection) => {
 										if (selection == "create_instance") {
@@ -178,6 +184,8 @@ export default function InstanceList(props: InstanceListProps) {
 											setImportPromptVisible(true);
 										} else if (selection == "migrate_instances") {
 											setMigratePromptVisible(true);
+										} else {
+											runDropdownButtonClick(selection!);
 										}
 									}}
 									optionsWidth="12rem"

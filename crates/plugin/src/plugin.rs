@@ -119,39 +119,10 @@ impl Plugin {
 				// Replace file tokens
 				let mut value = constant.clone();
 
-				fn replace_file_tokens(
-					value: &mut serde_json::Value,
-					working_dir: &Option<PathBuf>,
-				) -> anyhow::Result<()> {
-					match value {
-						serde_json::Value::Object(props) => {
-							for prop in props.values_mut() {
-								replace_file_tokens(prop, working_dir)?;
-							}
-						}
-						serde_json::Value::String(value) => {
-							if let Some(path) = value.strip_prefix(FILE_REPLACEMENT_TOKEN) {
-								let Some(working_dir) = working_dir else {
-									bail!("Plugin does not have a directory for the file hook handler to look in");
-								};
-
-								let path = working_dir.join(path);
-								let contents = std::fs::read_to_string(path)
-									.context("Failed to read hook result from file")?;
-
-								*value = contents;
-							}
-						}
-						_ => {}
-					}
-
-					Ok(())
-				}
-
-				replace_file_tokens(&mut value, &self.working_dir)?;
+				replace_file_tokens(&mut value, &self.working_dir, false)?;
 
 				Ok(Some(HookHandle::constant(
-					serde_json::from_value(constant.clone())?,
+					serde_json::from_value(value)?,
 					self.id.clone(),
 				)))
 			}
@@ -436,5 +407,68 @@ impl PluginPersistence {
 			state: serde_json::Value::Null,
 			worker: None,
 		}
+	}
+}
+
+/// Replaces file tokens in the string values of JSON value
+fn replace_file_tokens(
+	value: &mut serde_json::Value,
+	working_dir: &Option<PathBuf>,
+	test: bool,
+) -> anyhow::Result<()> {
+	match value {
+		serde_json::Value::Array(values) => {
+			for value in values {
+				replace_file_tokens(value, working_dir, test)?;
+			}
+		}
+		serde_json::Value::Object(props) => {
+			for prop in props.values_mut() {
+				replace_file_tokens(prop, working_dir, test)?;
+			}
+		}
+		serde_json::Value::String(value) => {
+			if let Some(path) = value.strip_prefix(FILE_REPLACEMENT_TOKEN) {
+				if test {
+					*value = "test".into();
+					return Ok(());
+				}
+
+				let Some(working_dir) = working_dir else {
+					bail!("Plugin does not have a directory for the file hook handler to look in");
+				};
+
+				let path = working_dir.join(path);
+				let contents = std::fs::read_to_string(path)
+					.context("Failed to read hook result from file")?;
+
+				*value = contents;
+			}
+		}
+		_ => {}
+	}
+
+	Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+	use serde_json::json;
+
+	#[test]
+	fn test_file_token_replacement() {
+		let mut json = json!([{
+			"foo": "bar",
+			"baz": format!("{FILE_REPLACEMENT_TOKEN}foobar")
+		}]);
+
+		replace_file_tokens(&mut json, &None, true).unwrap();
+
+		let expected = json!([{
+			"foo": "bar",
+			"baz": "test"
+		}]);
+		assert_eq!(json, expected);
 	}
 }

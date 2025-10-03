@@ -19,6 +19,7 @@ import UserPage from "./pages/user/UserPage";
 import Global from "./Global";
 import Settings from "./pages/Settings";
 import "./components/package/PackageDescription.css";
+import Modal from "./components/dialog/Modal";
 
 export default function App() {
 	const [footerData, setFooterData] = createSignal<FooterData>({
@@ -131,6 +132,11 @@ export default function App() {
 function Layout(props: LayoutProps) {
 	let [showSidebar, setShowSidebar] = createSignal(false);
 
+	// Modal for plugins to use
+	let [pluginModalContents, setPluginModalContents] = createSignal<string | undefined>();
+
+	(window as any).__setPluginModalContents = (x: any) => { setPluginModalContents(x); console.log("Ok"); };
+
 	onMount(() => loadPagePlugins(""));
 
 	return (
@@ -162,6 +168,9 @@ function Layout(props: LayoutProps) {
 				itemFromPlugin={props.footerData.fromPlugin}
 				selectedPackageGallery={props.footerData.selectedPackageGallery}
 			/>
+			<Modal visible={pluginModalContents() != undefined} onClose={() => setPluginModalContents(undefined)} width="40rem">
+				<div class="cont col fullwidth" innerHTML={pluginModalContents()}></div>
+			</Modal>
 		</>
 	);
 }

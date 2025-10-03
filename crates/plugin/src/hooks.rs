@@ -751,3 +751,47 @@ pub struct CustomActionArg {
 	/// The payload/argument for the action
 	pub payload: serde_json::Value,
 }
+
+def_hook!(
+	AddDropdownButtons,
+	"add_dropdown_buttons",
+	"Adds buttons to dropdowns in the GUI",
+	(),
+	Vec<DropdownButton>,
+	1,
+);
+
+/// Button for GUI dropdowns
+#[derive(Serialize, Deserialize)]
+pub struct DropdownButton {
+	/// The plugin which this button is from
+	pub plugin: String,
+	/// Which dropdown this button should be under
+	pub location: DropdownButtonLocation,
+	/// The icon for this button
+	pub icon: String,
+	/// The text for this button
+	pub text: String,
+	/// The CSS color for this button
+	pub color: Option<String>,
+	/// An optional tooltip for this button
+	pub tip: Option<String>,
+	/// The custom action to do when this button is clicked
+	pub action: Option<String>,
+	/// Javascript to run when this button is clicked
+	pub on_click: Option<String>,
+}
+
+/// Location for a DropdownButton in the UI
+#[derive(Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
+#[serde(rename_all = "snake_case")]
+pub enum DropdownButtonLocation {
+	/// Button on the instances page for adding an instance or profile
+	AddProfileOrInstance,
+	/// Button on an instance page for launching the instance
+	InstanceLaunch,
+	/// Button on an instance page for updating the instance
+	InstanceUpdate,
+	/// Button on an instance page for more options
+	InstanceMoreOptions,
+}

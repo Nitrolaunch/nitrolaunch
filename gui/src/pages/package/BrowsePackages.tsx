@@ -9,6 +9,7 @@ import {
 	createResource,
 	createSignal,
 	For,
+	onMount,
 	Show,
 } from "solid-js";
 import "@thisbeyond/solid-select/style.css";
@@ -32,6 +33,7 @@ import Tip from "../../components/dialog/Tip";
 import IconTextButton from "../../components/input/IconTextButton";
 import { Refresh } from "../../icons";
 import { invoke } from "@tauri-apps/api";
+import { loadPagePlugins } from "../../plugins";
 
 const PACKAGES_PER_PAGE = 12;
 
@@ -40,6 +42,8 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 
 	let params = useParams();
 	let searchParams = parseQueryString(useLocation().search);
+
+	onMount(() => loadPagePlugins("packages"));
 
 	createEffect(() => {
 		props.setFooterData({

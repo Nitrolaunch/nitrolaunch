@@ -90,7 +90,7 @@
 	height: 1.5rem;
 
 	border: var(--border) solid var(--plugin);
-	border-radius: var(--round);
+	border-radius: var(--round2);
 	background-color: var(--pluginbg);
 }
 

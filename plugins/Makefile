@@ -64,7 +64,7 @@ package_zips.platform_dependent:
 	@zip -j release/options-${OS}.zip $(TARGET_DIR)/nitro_plugin_options${EXTENSION} plugins/options/plugin.json
 	@zip -j release/packhost-${OS}.zip $(TARGET_DIR)/nitro_plugin_packhost${EXTENSION} plugins/packhost/plugin.json
 	@zip -j release/paper-${OS}.zip $(TARGET_DIR)/nitro_plugin_paper${EXTENSION} plugins/paper/plugin.json
-	@zip -j release/profile_share-${OS}.zip $(TARGET_DIR)/nitro_plugin_profile_share${EXTENSION} plugins/profile_share/plugin.json
+	@zip -j release/profile_share-${OS}.zip $(TARGET_DIR)/nitro_plugin_profile_share${EXTENSION} plugins/profile_share/plugin.json plugins/profile_share/import.js plugins/profile_share/export.js
 	@zip -j release/server_restart-${OS}.zip $(TARGET_DIR)/nitro_plugin_server_restart${EXTENSION} plugins/server_restart/plugin.json
 	@zip -j release/smithed-${OS}.zip $(TARGET_DIR)/nitro_plugin_smithed${EXTENSION} plugins/smithed/plugin.json plugins/smithed/page.html
 	@zip -j release/smithed_api-${OS}.zip $(TARGET_DIR)/nitro_plugin_smithed_api${EXTENSION} plugins/smithed_api/plugin.json
@@ -161,7 +161,10 @@ install.paper:
 
 install.profile_share:
 	@cargo install --path . --bin nitro_plugin_profile_share --offline
-	@cat plugins/profile_share/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/profile_share.json
+	@mkdir -p ~/.local/share/nitro/plugins/profile_share
+	@cat plugins/profile_share/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/profile_share/plugin.json
+	@cp plugins/profile_share/import.js ~/.local/share/nitro/plugins/profile_share
+	@cp plugins/profile_share/export.js ~/.local/share/nitro/plugins/profile_share
 
 install.server_restart:
 	@cargo install --path . --bin nitro_plugin_server_restart --offline

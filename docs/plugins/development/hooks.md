@@ -287,9 +287,9 @@ Handles custom instructions in script packages.
 
 - `handled`: Whether this instruction was handled or not. Should be false if this instruction is not for your plugin.
 
-# User Hooks
+## User Hooks
 
-## `handle_auth`
+### `handle_auth`
 
 Handles authentication with custom user types
 
@@ -556,7 +556,7 @@ Called whenever certain pages in the GUI are opened. Runs whatever the result of
 
 ```
 {
-	"page": "instances" | "instance" | "instance_config" | "profile_config" | "global_profile_config",
+	"page": "instances" | "instance" | "instance_config" | "profile_config" | "global_profile_config" | "packages" | "plugins",
 	"object": string | null
 }
 ```
