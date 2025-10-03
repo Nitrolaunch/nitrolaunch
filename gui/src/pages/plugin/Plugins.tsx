@@ -90,6 +90,7 @@ export default function Plugins() {
 										remoteMethods.refetch();
 										setRestartNeeded(true);
 									}}
+									setDirty={() => setRestartNeeded(true)}
 								/>
 							</Show>
 						);
@@ -111,6 +112,7 @@ export default function Plugins() {
 											remoteMethods.refetch();
 											setRestartNeeded(true);
 										}}
+										setDirty={() => setRestartNeeded(true)}
 									/>
 								</Show>
 							);
@@ -127,7 +129,8 @@ export default function Plugins() {
 }
 
 function Plugin(props: PluginProps) {
-	let isDisabled = () => !props.info.enabled && props.info.installed;
+	let [isEnabled, setIsEnabled] = createSignal(props.info.enabled);
+	let isDisabled = () => !isEnabled() && props.info.installed;
 
 	let [inProgress, setInProgress] = createSignal(false);
 
@@ -143,16 +146,17 @@ function Plugin(props: PluginProps) {
 				</div>
 				<div class="cont plugin-buttons">
 					<Show when={props.info.installed}>
-						<Tip tip={props.info.enabled ? "Plugin Enabled" : "Plugin Disabled"} side="top">
-							<SlideSwitch enabled={props.info.enabled} onToggle={() => {
+						<Tip tip={isEnabled() ? "Plugin Enabled" : "Plugin Disabled"} side="top">
+							<SlideSwitch enabled={isEnabled()} onToggle={() => {
 								invoke("enable_disable_plugin", {
 									plugin: props.info.id,
-									enabled: !props.info.enabled,
+									enabled: !isEnabled(),
 								}).then(() => {
 									successToast(
-										`Plugin ${props.info.enabled ? "disabled" : "enabled"}`
+										`Plugin ${isEnabled() ? "disabled" : "enabled"}`
 									);
-									props.updatePluginList();
+									setIsEnabled(!isEnabled());
+									props.setDirty();
 								});
 							}} disabledColor="var(--fg3)" enabledColor="var(--plugin)" />
 						</Tip>
@@ -238,6 +242,7 @@ function Plugin(props: PluginProps) {
 interface PluginProps {
 	info: PluginInfo;
 	updatePluginList: () => void;
+	setDirty: () => void;
 }
 
 interface PluginInfo {

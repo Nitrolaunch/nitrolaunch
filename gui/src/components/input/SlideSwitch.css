@@ -13,5 +13,5 @@
 	width: 0.65rem;
 	height: 0.65rem;
 
-	transition: transform 0.25s;
+	transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
