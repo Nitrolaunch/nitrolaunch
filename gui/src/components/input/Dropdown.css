@@ -108,6 +108,8 @@
 
 	box-sizing: border-box;
 
+	background-color: var(--bg2);
+
 	overflow-x: hidden;
 
 	overflow-y: auto;

@@ -8,7 +8,7 @@ import {
 	Show,
 	Switch,
 } from "solid-js";
-import { AngleDown, AngleRight, Plus, Properties } from "../../icons";
+import { AngleDown, AngleRight, Plus, Properties, User } from "../../icons";
 import "./UserWidget.css";
 import getUserIcon, { stringCompare } from "../../utils";
 import Icon from "../Icon";
@@ -134,7 +134,7 @@ export default function UserWidget(props: UserWidgetProps) {
 							)}
 						</For>
 					</Show>
-					<div class="user-tile" onclick={() => setIsCreatingUser(true)}>
+					<div class="bubble-hover user-tile" onclick={() => setIsCreatingUser(true)}>
 						<div class="cont">
 							<Icon icon={Plus} size="1.2rem" />
 						</div>
@@ -148,7 +148,7 @@ export default function UserWidget(props: UserWidgetProps) {
 				onClose={setIsCreatingUser}
 			>
 				<div class="cont col" style="padding:2rem">
-					<h3>Creating New User</h3>
+					<h3 class="cont"><Icon icon={User} size="1rem" /> Create New User</h3>
 					<div class="cont col" style="width:100%">
 						<label class="cont start fullwidth label" for="user-id">
 							ID
@@ -175,6 +175,8 @@ export default function UserWidget(props: UserWidgetProps) {
 						options={[{ value: "microsoft", contents: "Microsoft" }]}
 						selected={newUserType()}
 						onChange={setNewUserType}
+						zIndex="200"
+						isSearchable={false}
 					/>
 					<div></div>
 					<IconTextButton

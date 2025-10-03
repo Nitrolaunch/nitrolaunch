@@ -162,6 +162,7 @@ export default function Footer(props: FooterProps) {
 					<Show
 						when={props.selectedItem != undefined && props.selectedItem != ""}
 					>
+						<Icon icon={Box} size="1rem" />
 						{`Selected: ${props.selectedItem}`}
 					</Show>
 				</div>
@@ -467,8 +468,7 @@ function ActionButton(props: ActionButtonProps) {
 			<div class="footer-action-button-decorations">
 				<div
 					class="footer-action-button-decoration left"
-					style={`${backgroundStyle()};${borderStyle()};${props.selected ? "" : "border-top-width:0px"
-						}`}
+					style={`${backgroundStyle()};${borderStyle()}`}
 				></div>
 				<div
 					class="footer-action-button-decoration right"
@@ -487,8 +487,7 @@ function ActionButton(props: ActionButtonProps) {
 				id="footer-action-button"
 				class="cont"
 				onclick={props.onClick}
-				style={`background-color:${backgroundColor()};border-color:${borderColor()};color:${borderColor()};${props.selected ? "border-top: var(--border) solid" : ""
-					}`}
+				style={`background-color:${backgroundColor()};border-color:${borderColor()};color:${borderColor()};border-top: var(--border) solid`}
 			>
 				{Icon()}
 				{message()}
