@@ -110,10 +110,10 @@ export default function InstanceConsole(props: InstanceConsoleProps) {
 									let cls = line.includes("INFO")
 										? "info"
 										: line.includes("WARN")
-										? "warning"
-										: line.includes("ERROR")
-										? "error"
-										: "";
+											? "warning"
+											: line.includes("ERROR")
+												? "error"
+												: "";
 
 									let isVisible = createMemo((input) => {
 										let filter2 = filter();
@@ -156,7 +156,7 @@ export default function InstanceConsole(props: InstanceConsoleProps) {
 						Failed to load: {output.error}
 					</Match>
 					<Match when={output.loading}>Loading...</Match>
-					<Match when={!output.loading}>Instance not Running</Match>
+					<Match when={!output.loading}>No logs found</Match>
 				</Switch>
 			</div>
 		</div>
