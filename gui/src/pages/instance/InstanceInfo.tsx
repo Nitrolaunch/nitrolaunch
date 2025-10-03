@@ -9,7 +9,7 @@ import {
 	Show,
 	Switch,
 } from "solid-js";
-import { loadPagePlugins } from "../../plugins";
+import { dropdownButtonToOption, getDropdownButtons, loadPagePlugins, runDropdownButtonClick } from "../../plugins";
 import {
 	createConfiguredPackages,
 	getConfigPackages,
@@ -208,6 +208,18 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 		unlisten2()();
 	});
 
+	let [launchDropdownButtons, _1] = createResource(async () => {
+		return getDropdownButtons("instance_launch")
+	}, { initialValue: [] });
+
+	let [updateDropdownButtons, _2] = createResource(async () => {
+		return getDropdownButtons("instance_update")
+	}, { initialValue: [] });
+
+	let [moreDropdownButtons, _3] = createResource(async () => {
+		return getDropdownButtons("instance_more_options")
+	}, { initialValue: [] });
+
 	let [packageOverrides, setPackageOverrides] = createSignal<PackageOverrides>(
 		{}
 	);
@@ -280,6 +292,8 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 				backgroundColor: "var(--errorbg)",
 			});
 		}
+
+		options.concat(launchDropdownButtons().map(dropdownButtonToOption));
 
 		return options;
 	};
@@ -368,6 +382,8 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 														} catch (e) {
 															errorToast("Failed to kill instance: " + e);
 														}
+													} else {
+														runDropdownButtonClick(selection!);
 													}
 												}}
 												onHeaderClick={async () => {
@@ -401,7 +417,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 									/>
 									<div style="width:9rem;font-weight:bold">
 										<Dropdown
-											options={[
+											options={([
 												{
 													value: "update",
 													contents: <IconAndText icon={Upload} text="Update" />,
@@ -419,18 +435,22 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 													backgroundColor: "var(--errorbg)",
 													tip: "Update while replacing already cached files. Should only be done if something is broken.",
 												},
-											]}
+											] as Option[]).concat(updateDropdownButtons().map(dropdownButtonToOption))}
 											previewText={<IconAndText icon={Upload} text="Update" centered />}
 											onChange={async (selection) => {
-												try {
-													let depth = selection == "update" ? "full" : "force";
+												if (selection == "update" || selection == "force_update") {
+													try {
+														let depth = selection == "update" ? "full" : "force";
 
-													await invoke("update_instance", {
-														instanceId: id,
-														depth: depth,
-													});
-												} catch (e) {
-													errorToast("Failed to update instance: " + e);
+														await invoke("update_instance", {
+															instanceId: id,
+															depth: depth,
+														});
+													} catch (e) {
+														errorToast("Failed to update instance: " + e);
+													}
+												} else {
+													runDropdownButtonClick(selection!);
 												}
 											}}
 											onHeaderClick={async () => {
@@ -450,7 +470,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 									</div>
 									<div style="width:9rem;font-weight:bold">
 										<Dropdown
-											options={[
+											options={([
 												{
 													value: "export",
 													contents: <IconAndText icon={Popout} text="Export" />,
@@ -462,13 +482,15 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 													tip: "Delete this instance forever",
 													backgroundColor: "var(--errorbg)",
 												},
-											]}
+											] as Option[]).concat(moreDropdownButtons().map(dropdownButtonToOption))}
 											previewText={<IconAndText icon={Elipsis} text="More" centered />}
 											onChange={async (selection) => {
 												if (selection == "export") {
 													setShowExportPrompt(true);
 												} else if (selection == "delete") {
 													setShowDeleteConfirm(true);
+												} else {
+													runDropdownButtonClick(selection!);
 												}
 											}}
 											optionsWidth="9rem"
