@@ -547,6 +547,7 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 									setFrom(x);
 									setDirty();
 								}}
+								isSearchable={false}
 								zIndex="50"
 							/>
 						</Tip>
@@ -747,11 +748,11 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 											contents: (
 												<div
 													class={`cont ${clientLoader() == undefined &&
-															getDerivedValue(parentConfigs(), (x) =>
-																getConfiguredLoader(x.loader, "client")
-															) == x
-															? "derived-option"
-															: ""
+														getDerivedValue(parentConfigs(), (x) =>
+															getConfiguredLoader(x.loader, "client")
+														) == x
+														? "derived-option"
+														: ""
 														}`}
 												>
 													{x == undefined
@@ -812,11 +813,11 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 											contents: (
 												<div
 													class={`cont ${serverLoader() == undefined &&
-															getDerivedValue(parentConfigs(), (x) =>
-																getConfiguredLoader(x.loader, "server")
-															) == x
-															? "derived-option"
-															: ""
+														getDerivedValue(parentConfigs(), (x) =>
+															getConfiguredLoader(x.loader, "server")
+														) == x
+														? "derived-option"
+														: ""
 														}`}
 												>
 													{x == undefined

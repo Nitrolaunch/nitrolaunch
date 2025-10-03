@@ -555,6 +555,7 @@ function ConfiguredPackage(props: ConfiguredPackageProps) {
 							icon={Trash}
 							size="24px"
 							color="var(--errorbg)"
+							iconColor="var(--error)"
 							border="var(--error)"
 							selectedColor="var(--accent)"
 							onClick={(e) => {
@@ -591,8 +592,8 @@ interface ConfiguredPackageProps {
 export type PackageConfig =
 	| string
 	| {
-			id: string;
-	  };
+		id: string;
+	};
 
 // Gets the PkgRequest from a PackageConfig
 export function getPackageConfigRequest(config: PackageConfig) {
@@ -617,6 +618,6 @@ interface LockfilePackage {
 	addons: LockfileAddon[];
 }
 
-interface LockfileAddon {}
+interface LockfileAddon { }
 
 export type ConfiguredPackageCategory = "global" | "client" | "server";

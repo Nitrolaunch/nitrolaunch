@@ -21,8 +21,9 @@ import {
 	Box,
 	Cycle,
 	Download,
-	Edit,
 	Folder,
+	Globe,
+	Jigsaw,
 	Pin,
 	Plus,
 	Properties,
@@ -34,6 +35,7 @@ import Dropdown, { Option } from "../../components/input/Dropdown";
 import IconAndText from "../../components/utility/IconAndText";
 import { useNavigate } from "@solidjs/router";
 import MigratePrompt from "../../components/instance/MigratePrompt";
+import Tip from "../../components/dialog/Tip";
 
 export default function InstanceList(props: InstanceListProps) {
 	let navigate = useNavigate();
@@ -215,7 +217,19 @@ export default function InstanceList(props: InstanceListProps) {
 								Profiles
 							</div>
 						</div>
-						<div></div>
+						<div class="cont end" style="padding-right:0.5rem">
+							<IconTextButton
+								icon={Globe}
+								text="Edit Global Profile"
+								size="20px"
+								color="var(--bg2)"
+								selectedColor="var(--instance)"
+								onClick={() => {
+									navigate("/global_profile_config");
+								}}
+								selected={false}
+							/>
+						</div>
 					</div>
 				</div>
 				<br />
@@ -262,21 +276,6 @@ export default function InstanceList(props: InstanceListProps) {
 						/>
 					</Match>
 					<Match when={instancesOrProfiles() == "profile"}>
-						<br />
-						<div class="cont">
-							<IconTextButton
-								icon={Edit}
-								text="Edit Global Profile"
-								size="20px"
-								color="var(--bg2)"
-								selectedColor="var(--instance)"
-								onClick={() => {
-									navigate("/global_profile_config");
-								}}
-								selected={false}
-							/>
-						</div>
-						<br />
 						<Section
 							id="profiles"
 							kind="profiles"
@@ -470,10 +469,20 @@ function Item(props: ItemProps) {
 			</Show>
 			{icon}
 			<div class="cont col instance-list-item-details">
-				<div style="" class="bold">
+				<div class="cont start bold">
 					{props.instance.name !== null
 						? props.instance.name
 						: props.instance.id}
+
+					<Show when={props.instance.from_plugin}>
+						<div class="cont" style="color:var(--fg)">
+							<Tip tip="Created by plugin" side="top">
+								<div class="cont" style="color:var(--plugin)">
+									<Icon icon={Jigsaw} size="1rem" />
+								</div>
+							</Tip>
+						</div>
+					</Show>
 				</div>
 				<div class="cont start" style="color: var(--fg3);gap:0.4rem">
 					<Show when={props.instance.name !== null}>

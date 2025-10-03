@@ -15,6 +15,7 @@ import {
 	Check,
 	Download,
 	Gear,
+	Jigsaw,
 	Play,
 	Properties,
 	Trash,
@@ -30,6 +31,7 @@ import Tip from "../dialog/Tip";
 import ProfileDeletePrompt from "../instance/ProfileDeletePrompt";
 import RunningInstanceList from "../launch/RunningInstanceList";
 import { useNavigate } from "@solidjs/router";
+import Icon from "../Icon";
 
 export default function Footer(props: FooterProps) {
 	let navigate = useNavigate();
@@ -323,7 +325,7 @@ export default function Footer(props: FooterProps) {
 							)} is from a plugin and cannot be edited`}
 							side="top"
 						>
-							<div class="cont footer-plugin-indicator">P</div>
+							<div class="cont footer-plugin-indicator"><Icon icon={Jigsaw} size="1rem" /></div>
 						</Tip>
 					</Show>
 				</div>

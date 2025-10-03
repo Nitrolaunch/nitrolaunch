@@ -34,7 +34,7 @@
 
 	position: relative;
 
-	transition: background-color 0.25s, border-color 0.25s;
+	transition: background-color 0.25s, border-color 0.25s, transform var(--bubble);
 
 	cursor: pointer;
 	user-select: none;
