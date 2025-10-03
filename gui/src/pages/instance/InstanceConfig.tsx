@@ -1020,6 +1020,7 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 					onChange={setDirty}
 					overrides={packageOverrides()}
 					setOverrides={setPackageOverrides}
+					beforeUpdate={saveConfig}
 				/>
 			</DisplayShow>
 			<DisplayShow when={tab() == "launch"}>

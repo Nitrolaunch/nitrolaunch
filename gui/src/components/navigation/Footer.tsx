@@ -162,7 +162,6 @@ export default function Footer(props: FooterProps) {
 					<Show
 						when={props.selectedItem != undefined && props.selectedItem != ""}
 					>
-						<Icon icon={Box} size="1rem" />
 						{`Selected: ${props.selectedItem}`}
 					</Show>
 				</div>

@@ -229,39 +229,41 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 	let [showDeleteConfirm, setShowDeleteConfirm] = createSignal(false);
 	let [showExportPrompt, setShowExportPrompt] = createSignal(false);
 
+	async function saveConfig() {
+		if (editableConfig() != undefined) {
+			let config = editableConfig()!;
+			config.packages = createConfiguredPackages(
+				globalPackages(),
+				clientPackages(),
+				serverPackages(),
+				true
+			);
+
+			let overrides =
+				packageOverrides().suppress == undefined
+					? undefined
+					: packageOverrides();
+			config.overrides = overrides;
+
+			try {
+				await saveInstanceConfig(id, config, InstanceConfigMode.Instance);
+				successToast("Changes saved");
+				props.setFooterData({
+					selectedItem: undefined,
+					mode: FooterMode.SaveInstanceConfig,
+					action: () => { },
+				});
+			} catch (e) {
+				errorToast("Failed to save: " + e);
+			}
+		}
+	}
+
 	let setDirty = () => {
 		props.setFooterData({
 			selectedItem: "",
 			mode: FooterMode.SaveInstanceConfig,
-			action: async () => {
-				if (editableConfig() != undefined) {
-					let config = editableConfig()!;
-					config.packages = createConfiguredPackages(
-						globalPackages(),
-						clientPackages(),
-						serverPackages(),
-						true
-					);
-
-					let overrides =
-						packageOverrides().suppress == undefined
-							? undefined
-							: packageOverrides();
-					config.overrides = overrides;
-
-					try {
-						await saveInstanceConfig(id, config, InstanceConfigMode.Instance);
-						successToast("Changes saved");
-						props.setFooterData({
-							selectedItem: undefined,
-							mode: FooterMode.SaveInstanceConfig,
-							action: () => { },
-						});
-					} catch (e) {
-						errorToast("Failed to save: " + e);
-					}
-				}
-			},
+			action: saveConfig,
 		});
 	};
 
@@ -607,6 +609,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 										onChange={setDirty}
 										overrides={packageOverrides()}
 										setOverrides={setPackageOverrides}
+										beforeUpdate={saveConfig}
 									/>
 								</Show>
 								<Show when={selectedTab() == "console"}>

@@ -107,8 +107,9 @@ export default function PackageQuickAdd(props: PackageQuickAddProps) {
 							setFinalRepo(x);
 							packageMethods.refetch();
 						}}
-						setRepoCategories={() => {}}
-						setRepoPackageTypes={() => {}}
+						setRepoCategories={() => { }}
+						setRepoPackageTypes={() => { }}
+						setRepoColor={() => { }}
 					/>
 				</div>
 				<div class="split fullwidth">
@@ -183,9 +184,8 @@ export default function PackageQuickAdd(props: PackageQuickAddProps) {
 
 							return (
 								<div
-									class={`package-quick-add-option ${
-										isSelected() ? "selected" : ""
-									}`}
+									class={`package-quick-add-option ${isSelected() ? "selected" : ""
+										}`}
 									onclick={() => {
 										setPreviewedPackage(pkg.id);
 									}}

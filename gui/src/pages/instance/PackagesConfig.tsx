@@ -244,6 +244,9 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 							selected={false}
 							onClick={async () => {
 								try {
+									if (props.beforeUpdate != undefined) {
+										await props.beforeUpdate();
+									}
 									await invoke("update_instance_packages", {
 										instanceId: props.id,
 									});
@@ -478,6 +481,7 @@ export interface PackagesConfigProps {
 	onChange: () => void;
 	overrides: PackageOverrides;
 	setOverrides: Setter<PackageOverrides>;
+	beforeUpdate?: () => Promise<void>;
 }
 
 function ConfiguredPackage(props: ConfiguredPackageProps) {
