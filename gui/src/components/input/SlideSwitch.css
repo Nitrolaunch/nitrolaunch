@@ -1,0 +1,17 @@
+.slide-switch {
+	border: var(--border) solid;
+	border-radius: 1rem;
+
+	width: 2rem;
+	height: 1rem;
+
+	cursor: pointer;
+}
+
+.slide-switch-handle {
+	border-radius: 50%;
+	width: 0.65rem;
+	height: 0.65rem;
+
+	transition: transform 0.25s;
+}

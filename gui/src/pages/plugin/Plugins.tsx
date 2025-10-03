@@ -5,10 +5,8 @@ import IconTextButton from "../../components/input/IconTextButton";
 import {
 	Book,
 	Box,
-	Check,
 	CurlyBraces,
 	Cycle,
-	Delete,
 	Download,
 	Folder,
 	Gear,
@@ -26,6 +24,7 @@ import Icon from "../../components/Icon";
 import Tip from "../../components/dialog/Tip";
 import IconButton from "../../components/input/IconButton";
 import { loadPagePlugins } from "../../plugins";
+import SlideSwitch from "../../components/input/SlideSwitch";
 
 export default function Plugins() {
 	onMount(() => loadPagePlugins("plugins"));
@@ -145,34 +144,17 @@ function Plugin(props: PluginProps) {
 				<div class="cont plugin-buttons">
 					<Show when={props.info.installed}>
 						<Tip tip={props.info.enabled ? "Plugin Enabled" : "Plugin Disabled"} side="top">
-							<Switch>
-								<Match when={props.info.enabled}>
-									<IconButton icon={Check} size="1.5rem" color="var(--pluginbg)" border="var(--plugin)" iconColor="var(--plugin)" onClick={() => {
-										invoke("enable_disable_plugin", {
-											plugin: props.info.id,
-											enabled: !props.info.enabled,
-										}).then(() => {
-											successToast(
-												`Plugin ${props.info.enabled ? "disabled" : "enabled"}`
-											);
-											props.updatePluginList();
-										});
-									}} />
-								</Match>
-								<Match when={!props.info.enabled}>
-									<IconButton icon={Delete} size="1.5rem" color="var(--bg2)" border="var(--bg3)" iconColor="var(--fg3)" onClick={() => {
-										invoke("enable_disable_plugin", {
-											plugin: props.info.id,
-											enabled: !props.info.enabled,
-										}).then(() => {
-											successToast(
-												`Plugin ${props.info.enabled ? "disabled" : "enabled"}`
-											);
-											props.updatePluginList();
-										});
-									}} />
-								</Match>
-							</Switch>
+							<SlideSwitch enabled={props.info.enabled} onToggle={() => {
+								invoke("enable_disable_plugin", {
+									plugin: props.info.id,
+									enabled: !props.info.enabled,
+								}).then(() => {
+									successToast(
+										`Plugin ${props.info.enabled ? "disabled" : "enabled"}`
+									);
+									props.updatePluginList();
+								});
+							}} disabledColor="var(--fg3)" enabledColor="var(--plugin)" />
 						</Tip>
 						<Tip tip="Update" side="top">
 							<IconButton icon={Refresh} size="1.5rem" color="var(--bg2)" border="var(--bg3)" hoverBorder="var(--bg4)" hoverBackground="var(--bg3)" onClick={() => {
