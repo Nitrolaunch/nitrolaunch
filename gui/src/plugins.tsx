@@ -4,7 +4,7 @@ import { errorToast, messageToast, successToast, warningToast } from "./componen
 import { Option } from "./components/input/Dropdown";
 import IconAndText from "./components/utility/IconAndText";
 import { HTMLIcon } from "./components/Icon";
-import { inputError } from "./errors";
+import { clearInputError, inputError } from "./errors";
 import { emit } from "@tauri-apps/api/event";
 import { sanitizeInstanceId } from "./pages/instance/InstanceConfig";
 import { updateInstanceList } from "./pages/instance/InstanceList";
@@ -61,6 +61,7 @@ export function setupPluginFunctions() {
 	global.endTask = async (id: string) => await emit("nitro_output_finish_task", id);
 
 	global.inputError = inputError;
+	global.clearInputError = clearInputError;
 	global.sanitizeInstanceID = sanitizeInstanceId;
 
 	global.updateInstanceList = updateInstanceList;
