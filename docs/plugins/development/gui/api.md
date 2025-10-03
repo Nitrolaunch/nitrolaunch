@@ -1,6 +1,6 @@
-# GUI Javascript API
+# GUI JavaScript API
 
-Whenever your plugin is running Javascript code in the GUI (from hooks like `inject_page_script` and `add_dropdown_buttons`), there is an API of functions and objects available to you.
+Whenever your plugin is running JavaScript code in the GUI (from hooks like `inject_page_script` and `add_dropdown_buttons`), there is an API of functions and objects available to you.
 
 ### `tauriInvoke(command: string, args: any)`
 
