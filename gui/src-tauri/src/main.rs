@@ -160,6 +160,7 @@ fn main() {
 			commands::plugin::get_themes,
 			commands::plugin::run_custom_action,
 			commands::plugin::get_dropdown_buttons,
+			commands::plugin::get_instance_tiles,
 			commands::user::get_users,
 			commands::user::select_user,
 			commands::user::login_user,

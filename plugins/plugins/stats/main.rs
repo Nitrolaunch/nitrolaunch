@@ -3,12 +3,13 @@ use std::time::Duration;
 use std::{collections::HashMap, path::PathBuf};
 
 use anyhow::Context;
+use chrono::DateTime;
 use clap::Parser;
 use color_print::cprintln;
 use itertools::Itertools;
 use nitro_core::io::{json_from_file, json_to_file};
 use nitro_plugin::api::{CustomPlugin, HookContext};
-use nitro_plugin::hooks::{Hook, Subcommand};
+use nitro_plugin::hooks::{Hook, InstanceTile, InstanceTileSize, Subcommand};
 use nitro_shared::util::utc_timestamp;
 use serde::{Deserialize, Serialize};
 use sysinfo::{Pid, ProcessesToUpdate, System};
@@ -81,6 +82,19 @@ fn main() -> anyhow::Result<()> {
 		}
 
 		Ok(())
+	})?;
+
+	plugin.add_instance_tiles(|ctx, arg| {
+		let stats = Stats::open(&ctx).context("Failed to open stats")?;
+
+		let default = InstanceStats::default();
+		let stats = stats.instances.get(&arg).unwrap_or(&default);
+
+		Ok(vec![InstanceTile {
+			id: "stats".into(),
+			contents: format_stat_card(stats),
+			size: InstanceTileSize::Small,
+		}])
 	})?;
 
 	Ok(())
@@ -242,4 +256,47 @@ struct Config {
 
 fn default_live_tracking() -> bool {
 	true
+}
+
+/// Gets the formatted stat card HTML for the given stats
+fn format_stat_card(stats: &InstanceStats) -> String {
+	let out = include_str!("stat_card.html");
+
+	let out = out.replace("{{playtime}}", &format_time(stats.calculate_playtime()));
+
+	let last_launch = get_last_launch_difference(stats.last_launch).unwrap_or("Never".into());
+	let out = out.replace("{{last_played}}", &last_launch);
+
+	out
+}
+
+fn get_last_launch_difference(last_launch: Option<u64>) -> Option<String> {
+	let last_launch = last_launch?;
+	let now = utc_timestamp().ok()?;
+
+	let last_launch = DateTime::from_timestamp_secs(last_launch as i64)?;
+	let now = DateTime::from_timestamp_secs(now as i64)?;
+
+	let diff = now - last_launch;
+
+	Some(format_time_large(diff.num_minutes() as u64) + " ago")
+}
+
+/// Formats a larger time in minutes
+fn format_time_large(mut time: u64) -> String {
+	let days = time / 24 / 60;
+	time %= 24 * 60;
+
+	let hours = time / 60;
+	time %= 60;
+
+	let minutes = time;
+
+	if days > 0 {
+		format!("{days} days")
+	} else if hours > 0 {
+		format!("{hours} hours")
+	} else {
+		format!("{minutes} minutes")
+	}
 }

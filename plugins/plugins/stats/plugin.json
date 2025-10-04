@@ -14,6 +14,9 @@
 		},
 		"while_instance_launch": {
 			"executable": "${PLUGIN_DIR}/nitro_plugin_stats${EXE_EXTENSION}"
+		},
+		"add_instance_tiles": {
+			"executable": "${PLUGIN_DIR}/nitro_plugin_stats${EXE_EXTENSION}"
 		}
 	},
 	"subcommands": {

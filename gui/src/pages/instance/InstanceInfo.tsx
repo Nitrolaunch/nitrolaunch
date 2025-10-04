@@ -59,6 +59,7 @@ import Dropdown, { Option } from "../../components/input/Dropdown";
 import IconAndText from "../../components/utility/IconAndText";
 import InstanceTransferPrompt from "../../components/instance/InstanceTransferPrompt";
 import { updateInstanceList } from "./InstanceList";
+import InstanceTiles from "../../components/instance/InstanceTiles";
 
 export default function InstanceInfo(props: InstanceInfoProps) {
 	let navigate = useNavigate();
@@ -552,7 +553,9 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 								</div>
 							</div>
 							<div class="cont col instance-shadow" id="instance-tab-contents">
-								<Show when={selectedTab() == "general"}>{""}</Show>
+								<Show when={selectedTab() == "general"}>
+									<InstanceTiles instanceId={id} />
+								</Show>
 								<Show when={selectedTab() == "packages"}>
 									<PackagesConfig
 										id={id}

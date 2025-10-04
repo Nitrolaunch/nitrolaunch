@@ -795,3 +795,33 @@ pub enum DropdownButtonLocation {
 	/// Button on an instance page for more options
 	InstanceMoreOptions,
 }
+
+def_hook!(
+	AddInstanceTiles,
+	"add_instance_tiles",
+	"Adds tiles to the instance page in the GUI",
+	String,
+	Vec<InstanceTile>,
+	1,
+);
+
+/// Tile on the GUI instance page
+#[derive(Serialize, Deserialize)]
+pub struct InstanceTile {
+	/// Unique ID for this tile
+	pub id: String,
+	/// HTML contents of this tile
+	pub contents: String,
+	/// The size of this tile
+	pub size: InstanceTileSize,
+}
+
+/// Size of an InstanceTile
+#[derive(Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
+#[serde(rename_all = "snake_case")]
+pub enum InstanceTileSize {
+	/// Spans one unit
+	Small,
+	/// Spans two units
+	Large,
+}

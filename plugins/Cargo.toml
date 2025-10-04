@@ -121,6 +121,7 @@ path = "plugins/xmcl_transfer/main.rs"
 [dependencies]
 anyhow = { workspace = true }
 base64 = { workspace = true }
+chrono = { workspace = true }
 clap = { workspace = true }
 color-print = { workspace = true }
 glob = { workspace = true }

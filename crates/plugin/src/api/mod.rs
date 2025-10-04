@@ -177,6 +177,7 @@ impl CustomPlugin {
 		"add_dropdown_buttons",
 		AddDropdownButtons
 	);
+	hook_interface!(add_instance_tiles, "add_instance_tiles", AddInstanceTiles);
 
 	/// Handle a hook
 	fn handle_hook<H: Hook>(
