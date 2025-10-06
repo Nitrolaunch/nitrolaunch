@@ -27,6 +27,7 @@ import {
 	Heart,
 	Key,
 	Picture,
+	Popout,
 	Text,
 	User,
 	Warning,
@@ -40,6 +41,10 @@ import PackageInstallModal from "../../components/package/PackageInstallModal";
 import { canonicalizeListOrSingle } from "../../utils/values";
 import LoadingSpinner from "../../components/utility/LoadingSpinner";
 import { PackageFilterOptions } from "../../components/package/PackageFilters";
+import IconTextButton from "../../components/input/IconTextButton";
+import { open } from "@tauri-apps/api/shell";
+import IconButton from "../../components/input/IconButton";
+import { WebviewWindow } from "@tauri-apps/api/window";
 
 export default function ViewPackage(props: ViewPackageProps) {
 	let params = useParams();
@@ -166,8 +171,8 @@ export default function ViewPackage(props: ViewPackageProps) {
 										<div
 											id="package-repo"
 											style={`background-color:${repoInfo()!.meta.color == undefined
-													? "var(--fg2)"
-													: repoInfo()!.meta.color
+												? "var(--fg2)"
+												: repoInfo()!.meta.color
 												};color:${repoInfo()!.meta.text_color == undefined
 													? "var(--bg)"
 													: repoInfo()!.meta.text_color
@@ -314,44 +319,32 @@ export default function ViewPackage(props: ViewPackageProps) {
 						<div class="package-shadow cont col" id="package-properties">
 							<Show when={meta()!.support_link != undefined}>
 								<Property icon={Heart} label="Donate" color="var(--error)">
-									<a href={meta()!.support_link} target="_blank">
-										Open
-									</a>
+									<OpenButton url={meta()!.support_link} />
 								</Property>
 							</Show>
 							<Show when={meta()!.website != undefined}>
 								<Property icon={Globe} label="Website">
-									<a href={meta()!.website} target="_blank">
-										Open
-									</a>
+									<OpenButton url={meta()!.website} />
 								</Property>
 							</Show>
 							<Show when={meta()!.documentation != undefined}>
 								<Property icon={Book} label="Documentation">
-									<a href={meta()!.documentation} target="_blank">
-										Open
-									</a>
+									<OpenButton url={meta()!.documentation} />
 								</Property>
 							</Show>
 							<Show when={meta()!.community != undefined}>
 								<Property icon={User} label="Community">
-									<a href={meta()!.community} target="_blank">
-										Open
-									</a>
+									<OpenButton url={meta()!.community} />
 								</Property>
 							</Show>
 							<Show when={meta()!.source != undefined}>
 								<Property icon={CurlyBraces} label="Source">
-									<a href={meta()!.source} target="_blank">
-										Open
-									</a>
+									<OpenButton url={meta()!.source} />
 								</Property>
 							</Show>
 							<Show when={meta()!.issues != undefined}>
 								<Property icon={Warning} label="Issue Tracker">
-									<a href={meta()!.issues} target="_blank">
-										Open
-									</a>
+									<OpenButton url={meta()!.issues} />
 								</Property>
 							</Show>
 							<For each={canonicalizeListOrSingle(meta()!.authors)}>
@@ -412,6 +405,25 @@ function Property(props: PropertyProps) {
 			<div class="cont package-property-value">{props.children}</div>
 		</div>
 	);
+}
+
+function OpenButton({ url }: { url: string | undefined }) {
+	return <IconButton
+		icon={Popout}
+		size="1.5rem"
+		color="var(--bg2)"
+		hoverBackground="var(--bg3)"
+		onClick={async () => {
+			if (url != undefined) {
+				try {
+					await open(url);
+				} catch (e) {
+					console.error(e);
+					new WebviewWindow("external", { url: url, title: "External Site" });
+				}
+			}
+		}}
+	/>;
 }
 
 interface PropertyProps {
