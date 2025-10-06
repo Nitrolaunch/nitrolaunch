@@ -32,6 +32,14 @@
 	padding-bottom: 0.2rem;
 }
 
+.instance-list-header-item.instances.selected {
+	color: var(--instance);
+}
+
+.instance-list-header-item.profiles.selected {
+	color: var(--profile);
+}
+
 .instance-list-section-container {
 	width: 80%;
 	margin-bottom: 2.6rem;
