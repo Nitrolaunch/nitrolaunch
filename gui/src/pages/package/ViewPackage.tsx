@@ -41,7 +41,6 @@ import PackageInstallModal from "../../components/package/PackageInstallModal";
 import { canonicalizeListOrSingle } from "../../utils/values";
 import LoadingSpinner from "../../components/utility/LoadingSpinner";
 import { PackageFilterOptions } from "../../components/package/PackageFilters";
-import IconTextButton from "../../components/input/IconTextButton";
 import { open } from "@tauri-apps/api/shell";
 import IconButton from "../../components/input/IconButton";
 import { WebviewWindow } from "@tauri-apps/api/window";

@@ -16,6 +16,7 @@
 	border-style: solid;
 	border-width: 0px;
 	border-color: var(--plugin);
+	padding-bottom: 0.4rem;
 	cursor: pointer;
 }
 

@@ -19,11 +19,14 @@ import { invoke } from "@tauri-apps/api";
 import IconButton from "../../components/input/IconButton";
 import {
 	Box,
+	Copy,
 	Cycle,
 	Download,
 	Folder,
 	Globe,
+	Honeycomb,
 	Jigsaw,
+	Minecraft,
 	Pin,
 	Plus,
 	Properties,
@@ -199,21 +202,23 @@ export default function InstanceList(props: InstanceListProps) {
 						</div>
 						<div id="instance-list-header">
 							<div
-								class={`instance-list-header-item bubble-hover instances ${instancesOrProfiles() == "instance" ? "selected" : ""
+								class={`cont instance-list-header-item bubble-hover instances ${instancesOrProfiles() == "instance" ? "selected" : ""
 									}`}
 								onclick={() => {
 									setInstancesOrProfiles("instance");
 								}}
 							>
+								<Icon icon={Honeycomb} size="1.5rem" />
 								Instances
 							</div>
 							<div
-								class={`instance-list-header-item bubble-hover profiles ${instancesOrProfiles() == "profile" ? "selected" : ""
+								class={`cont instance-list-header-item bubble-hover profiles ${instancesOrProfiles() == "profile" ? "selected" : ""
 									}`}
 								onclick={() => {
 									setInstancesOrProfiles("profile");
 								}}
 							>
+								<Icon icon={Copy} size="1rem" />
 								Profiles
 							</div>
 						</div>
@@ -221,7 +226,7 @@ export default function InstanceList(props: InstanceListProps) {
 							<IconTextButton
 								icon={Globe}
 								text="Edit Global Profile"
-								size="20px"
+								size="1.5rem"
 								color="var(--bg2)"
 								selectedColor="var(--instance)"
 								onClick={() => {
@@ -485,6 +490,14 @@ function Item(props: ItemProps) {
 					</Show>
 				</div>
 				<div class="cont start" style="color: var(--fg3);gap:0.4rem">
+					<Switch>
+						<Match when={props.instance.side == "client"}>
+							<Icon icon={Minecraft} size="1rem" />
+						</Match>
+						<Match when={props.instance.side == "server"}>
+							<Icon icon={Globe} size="1rem" />
+						</Match>
+					</Switch>
 					<Show when={props.instance.name !== null}>
 						<span class="bold">{props.instance.id}</span>
 					</Show>

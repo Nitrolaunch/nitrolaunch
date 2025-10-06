@@ -12,6 +12,7 @@ import {
 	Gear,
 	Globe,
 	Graph,
+	Jigsaw,
 	Language,
 	Link,
 	Refresh,
@@ -54,25 +55,30 @@ export default function Plugins() {
 						selected={restartNeeded()}
 					/>
 				</div>
-				<h1 class="noselect">Plugins</h1>
+				<h1 class="cont">
+					<Icon icon={Jigsaw} size="1.5rem" />
+					Plugins
+				</h1>
 				<div></div>
 			</div>
 			<div class="cont">
 				<div id="plugins-subheader">
 					<div
-						class={`plugins-header-item bubble-hover ${isRemote() ? "" : " selected"}`}
+						class={`cont plugins-header-item bubble-hover ${isRemote() ? "" : " selected"}`}
 						onclick={() => {
 							setIsRemote(false);
 						}}
 					>
+						<Icon icon={Download} size="1rem" />
 						Installed
 					</div>
 					<div
-						class={`plugins-header-item bubble-hover ${isRemote() ? " selected" : ""}`}
+						class={`cont plugins-header-item bubble-hover ${isRemote() ? " selected" : ""}`}
 						onclick={() => {
 							setIsRemote(true);
 						}}
 					>
+						<Icon icon={Globe} size="1rem" />
 						Available
 					</div>
 				</div>

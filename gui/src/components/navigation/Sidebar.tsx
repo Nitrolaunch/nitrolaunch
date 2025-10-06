@@ -42,10 +42,10 @@ export default function Sidebar(props: SidebarProps) {
 			invoke("get_profiles"),
 			invoke("get_last_opened_instance"),
 		])) as [
-			InstanceInfo[],
-			InstanceInfo[],
-			[string, InstanceOrProfile] | undefined
-		];
+				InstanceInfo[],
+				InstanceInfo[],
+				[string, InstanceOrProfile] | undefined
+			];
 
 		let allInstances: [InstanceInfo, InstanceOrProfile][] = [];
 
@@ -97,7 +97,7 @@ export default function Sidebar(props: SidebarProps) {
 	return (
 		<div
 			id="sidebar"
-			style={`${props.visible ? "" : "width:0px;border-right-color:var(--bg)"}`}
+			style={`${props.visible ? "" : "width:0px;border-right-color:var(--bg);opacity:0%"}`}
 			onmouseleave={() => props.setVisible(false)}
 		>
 			<div
@@ -118,7 +118,7 @@ export default function Sidebar(props: SidebarProps) {
 						size="1.75rem"
 						color="var(--bg0)"
 						selectedColor="var(--accent)"
-						onClick={() => {}}
+						onClick={() => { }}
 						selected={false}
 						circle
 						hoverBackground="var(--bg2)"
@@ -134,7 +134,7 @@ export default function Sidebar(props: SidebarProps) {
 					selectedBg="var(--instancebg)"
 					closeSidebar={() => props.setVisible(false)}
 				>
-					<div class="cont" style="margin-top:-0.1rem;color:var(--instance)">
+					<div class="cont" style="margin-top:-0.1rem">
 						<Home />
 					</div>
 					<div class="cont">Home</div>
@@ -147,7 +147,7 @@ export default function Sidebar(props: SidebarProps) {
 					selectedBg="var(--packagebg)"
 					closeSidebar={() => props.setVisible(false)}
 				>
-					<div class="cont" style="color:var(--package)">
+					<div class="cont">
 						<Box />
 					</div>
 					<div class="cont">Packages</div>
@@ -160,7 +160,7 @@ export default function Sidebar(props: SidebarProps) {
 					selectedBg="var(--pluginbg)"
 					closeSidebar={() => props.setVisible(false)}
 				>
-					<div class="cont" style="margin-top:-0.1rem;color:var(--plugin)">
+					<div class="cont" style="margin-top:-0.1rem;">
 						<Jigsaw />
 					</div>
 					<div class="cont">Plugins</div>
@@ -173,7 +173,7 @@ export default function Sidebar(props: SidebarProps) {
 					selectedBg="var(--profilebg)"
 					closeSidebar={() => props.setVisible(false)}
 				>
-					<div class="cont" style="color:var(--profile)">
+					<div class="cont">
 						<Menu />
 					</div>
 					<div class="cont">Documentation</div>
@@ -225,8 +225,8 @@ export default function Sidebar(props: SidebarProps) {
 						);
 					}}
 				</For>
-			</div>
-		</div>
+			</div >
+		</div >
 	);
 }
 

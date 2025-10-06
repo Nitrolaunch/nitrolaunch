@@ -31,9 +31,10 @@ import RepoSelector from "../../components/package/RepoSelector";
 import { searchPackages } from "../../utils/package";
 import Tip from "../../components/dialog/Tip";
 import IconTextButton from "../../components/input/IconTextButton";
-import { Refresh } from "../../icons";
+import { Box, Refresh } from "../../icons";
 import { invoke } from "@tauri-apps/api";
 import { loadPagePlugins } from "../../plugins";
+import Icon from "../../components/Icon";
 
 const PACKAGES_PER_PAGE = 12;
 
@@ -201,7 +202,10 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 							setRepoColor={setRepoColor}
 						/>
 					</div>
-					<h1 class="noselect">Packages</h1>
+					<h1 class="cont">
+						<Icon icon={Box} size="1.5rem" />
+						Packages
+					</h1>
 					<div class="cont" style="justify-content:flex-end">
 						<SearchBar
 							placeholder="Search for packages..."
