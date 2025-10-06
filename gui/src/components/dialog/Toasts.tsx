@@ -63,6 +63,7 @@ export default function Toasts() {
 		let win = window as any;
 		win.__createToast = (props: ToastProps) => {
 			[props.isFading, props.setIsFading] = createSignal(false);
+			props.isRemovable = true;
 
 			setToasts((toasts) => {
 				if (toasts.length >= 4) {
@@ -134,6 +135,17 @@ export default function Toasts() {
 								</For>
 							</Match>
 							<Match when={showRecentToasts()}>
+								<Show when={recentToastCount() == 0}>
+									<Toast
+										message={<div style="color:var(--fg3)">No messages</div>}
+										type="message"
+										isFading={() => false}
+										setIsFading={() => { }}
+										onRemove={() => { }}
+										isPersistent
+										isRemovable={false}
+									/>
+								</Show>
 								<For each={recentToasts()}>
 									{(props, i) => (
 										<Toast
@@ -186,7 +198,7 @@ function Toast(props: ToastProps) {
 				<Icon2 />
 			</div>
 			<div class="toast-message">{props.message}</div>
-			<Show when={isHovered()}>
+			<Show when={props.isRemovable && isHovered()}>
 				<div class="toast-x" onclick={() => props.onRemove(props.isPersistent)}>
 					<Icon class="toast-x" icon={Delete} size="1rem" />
 				</div>
@@ -203,6 +215,7 @@ interface ToastProps {
 	setIsFading: Setter<boolean>;
 	onRemove: (isPersistent: boolean) => void;
 	isPersistent: boolean;
+	isRemovable: boolean;
 }
 
 type ToastType = "message" | "success" | "warning" | "error";
