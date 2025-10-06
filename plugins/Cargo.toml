@@ -59,10 +59,6 @@ name = "nitro_plugin_glfw_fix"
 path = "plugins/glfw_fix/main.rs"
 
 [[bin]]
-name = "nitro_plugin_nitro_transfer"
-path = "plugins/nitro_transfer/main.rs"
-
-[[bin]]
 name = "nitro_plugin_modrinth"
 path = "plugins/modrinth/main.rs"
 
@@ -73,6 +69,14 @@ path = "plugins/modrinth_api/main.rs"
 [[bin]]
 name = "nitro_plugin_multimc_transfer"
 path = "plugins/multimc_transfer/main.rs"
+
+[[bin]]
+name = "nitro_plugin_multiply"
+path = "plugins/multiply/main.rs"
+
+[[bin]]
+name = "nitro_plugin_nitro_transfer"
+path = "plugins/nitro_transfer/main.rs"
 
 [[bin]]
 name = "nitro_plugin_options"

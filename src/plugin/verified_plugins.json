@@ -180,5 +180,12 @@
 		"github_owner": "Nitrolaunch",
 		"github_repo": "nitrolaunch",
 		"description": "Easily share profiles with friends"
+	},
+	"multiply": {
+		"id": "multiply",
+		"name": "Multiply",
+		"github_owner": "Nitrolaunch",
+		"github_repo": "nitrolaunch",
+		"description": "Create many instances easily"
 	}
 }

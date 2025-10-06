@@ -1,0 +1,10 @@
+{
+	"name": "Multiply",
+	"description": "Create many instances easily",
+	"protocol_version": 3,
+	"hooks": {
+		"add_instances": {
+			"executable": "${PLUGIN_DIR}/nitro_plugin_multiply${EXE_EXTENSION}"
+		}
+	}
+}

@@ -28,10 +28,11 @@ package_zips.platform_dependent:
 	@rm -f release/forge-${OS}.zip
 	@rm -f release/gen_pkg-${OS}.zip
 	@rm -f release/glfw_fix-${OS}.zip
-	@rm -f release/nitro_transfer-${OS}.zip
 	@rm -f release/modrinth-${OS}.zip
 	@rm -f release/modrinth_api-${OS}.zip
 	@rm -f release/multimc_transfer-${OS}.zip
+	@rm -f release/multiply-${OS}.zip
+	@rm -f release/nitro_transfer-${OS}.zip
 	@rm -f release/options-${OS}.zip
 	@rm -f release/packhost-${OS}.zip
 	@rm -f release/paper-${OS}.zip
@@ -57,10 +58,11 @@ package_zips.platform_dependent:
 	@zip -j release/forge-${OS}.zip $(TARGET_DIR)/nitro_plugin_forge${EXTENSION} plugins/forge/plugin.json
 	@zip -j release/gen_pkg-${OS}.zip $(TARGET_DIR)/nitro_plugin_gen_pkg${EXTENSION} plugins/gen_pkg/plugin.json
 	@zip -j release/glfw_fix-${OS}.zip $(TARGET_DIR)/nitro_plugin_glfw_fix${EXTENSION} plugins/glfw_fix/plugin.json
-	@zip -j release/nitro_transfer-${OS}.zip $(TARGET_DIR)/nitro_plugin_nitro_transfer${EXTENSION} plugins/nitro_transfer/plugin.json
 	@zip -j release/modrinth-${OS}.zip $(TARGET_DIR)/nitro_plugin_modrinth${EXTENSION} plugins/modrinth/plugin.json
 	@zip -j release/modrinth_api-${OS}.zip $(TARGET_DIR)/nitro_plugin_modrinth_api${EXTENSION} plugins/modrinth_api/plugin.json plugins/modrinth_api/page.html
 	@zip -j release/multimc_transfer-${OS}.zip $(TARGET_DIR)/nitro_plugin_multimc_transfer${EXTENSION} plugins/multimc_transfer/plugin.json
+	@zip -j release/multiply-${OS}.zip $(TARGET_DIR)/nitro_plugin_multiply${EXTENSION} plugins/multiply/plugin.json
+	@zip -j release/nitro_transfer-${OS}.zip $(TARGET_DIR)/nitro_plugin_nitro_transfer${EXTENSION} plugins/nitro_transfer/plugin.json
 	@zip -j release/options-${OS}.zip $(TARGET_DIR)/nitro_plugin_options${EXTENSION} plugins/options/plugin.json
 	@zip -j release/packhost-${OS}.zip $(TARGET_DIR)/nitro_plugin_packhost${EXTENSION} plugins/packhost/plugin.json
 	@zip -j release/paper-${OS}.zip $(TARGET_DIR)/nitro_plugin_paper${EXTENSION} plugins/paper/plugin.json
@@ -130,10 +132,6 @@ install.glfw_fix:
 install.lang:
 	@cp plugins/lang/plugin.json ~/.local/share/nitro/plugins/lang.json
 
-install.nitro_transfer:
-	@cargo install --path . --bin nitro_plugin_nitro_transfer --offline
-	@cat plugins/nitro_transfer/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/nitro_transfer.json
-
 install.modrinth:
 	@cargo install --path . --bin nitro_plugin_modrinth --offline
 	@cp -r plugins/modrinth ~/.local/share/nitro/plugins
@@ -146,6 +144,14 @@ install.modrinth_api:
 install.multimc_transfer:
 	@cargo install --path . --bin nitro_plugin_multimc_transfer --offline
 	@cat plugins/multimc_transfer/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/multimc_transfer.json
+
+install.multiply:
+	@cargo install --path . --bin nitro_plugin_multiply --offline
+	@cat plugins/multiply/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/multiply.json
+
+install.nitro_transfer:
+	@cargo install --path . --bin nitro_plugin_nitro_transfer --offline
+	@cat plugins/nitro_transfer/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/nitro_transfer.json
 
 install.options:
 	@cargo install --path . --bin nitro_plugin_options --offline
