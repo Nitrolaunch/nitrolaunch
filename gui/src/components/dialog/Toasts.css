@@ -94,6 +94,14 @@
 	padding: 0.5rem;
 }
 
+.toast-copy {
+	position: absolute;
+	right: 1.5rem;
+	top: 0rem;
+	cursor: pointer;
+	padding: 0.5rem;
+}
+
 .toast.fading {
 	opacity: 0%;
 }

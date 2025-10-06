@@ -12,8 +12,9 @@ import {
 } from "solid-js";
 import "./Toasts.css";
 import Icon from "../Icon";
-import { Check, Delete, Error, Notification, Warning } from "../../icons";
+import { Check, Copy, Delete, Error, Notification, Warning } from "../../icons";
 import IconAndText from "../utility/IconAndText";
+import { clipboard } from "@tauri-apps/api";
 
 export default function Toasts() {
 	let [toasts, setToasts] = createSignal<ToastProps[]>([]);
@@ -199,8 +200,15 @@ function Toast(props: ToastProps) {
 			</div>
 			<div class="toast-message">{props.message}</div>
 			<Show when={props.isRemovable && isHovered()}>
+				<Show when={props.type == "error" || props.type == "warning"}>
+					<div class="toast-copy" onclick={() => {
+						clipboard.writeText(props.message!.toString())
+					}}>
+						<Icon icon={Copy} size="1rem" />
+					</div>
+				</Show>
 				<div class="toast-x" onclick={() => props.onRemove(props.isPersistent)}>
-					<Icon class="toast-x" icon={Delete} size="1rem" />
+					<Icon icon={Delete} size="1rem" />
 				</div>
 			</Show>
 		</div>
