@@ -387,7 +387,7 @@ function Package(props: PackageProps) {
 					<div class="cont start package-name">
 						{props.meta.name}
 						<Show when={props.meta.downloads != undefined}>
-							<div class="cont" style="color: var(--fg3);gap:0.2rem">
+							<div class="cont" style="color: var(--fg3);gap:0.2rem;font-size:0.95rem">
 								<Icon icon={Download} size="1rem" />
 								{formatNumber(props.meta.downloads!)}
 							</div>
@@ -404,7 +404,7 @@ function Package(props: PackageProps) {
 							/>
 						</div>
 					</Show>
-					<div class="package-description">{props.meta.description}</div>
+					<div class="browse-package-description">{props.meta.description}</div>
 				</div>
 			</div>
 		</div>
