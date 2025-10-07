@@ -74,6 +74,7 @@ pub async fn gen(
 	let mut meta = PackageMetadata {
 		name: Some(project.title),
 		description: Some(project.description),
+		downloads: Some(project.downloads),
 		..Default::default()
 	};
 	if let Some(body) = project.body {
@@ -440,6 +441,7 @@ pub fn get_preview(result: SearchedProject) -> Project {
 				})
 				.collect()
 		}),
+		downloads: result.downloads,
 		..Default::default()
 	}
 }

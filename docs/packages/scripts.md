@@ -96,6 +96,7 @@ Properties like `features` and `modrinth_id` can only be used in the `@propertie
 - `license {license}`: Set the project license.
 - `keywords {keyword1} {keyword2} ...`: Set the package keywords.
 - `categories {category1} {category2} ...`: Set the package categories.
+- `downloads {count}`: Set the number of package downloads.
 
 #### Properties Instructions
 

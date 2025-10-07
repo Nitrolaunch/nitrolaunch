@@ -16,7 +16,7 @@ import "@thisbeyond/solid-select/style.css";
 import PageButtons from "../../components/input/PageButtons";
 import { PackageMeta } from "../../types";
 import SearchBar from "../../components/input/SearchBar";
-import { parseQueryString } from "../../utils";
+import { formatNumber, parseQueryString } from "../../utils";
 import { FooterData } from "../../App";
 import { FooterMode } from "../../components/navigation/Footer";
 import { errorToast } from "../../components/dialog/Toasts";
@@ -31,7 +31,7 @@ import RepoSelector from "../../components/package/RepoSelector";
 import { searchPackages } from "../../utils/package";
 import Tip from "../../components/dialog/Tip";
 import IconTextButton from "../../components/input/IconTextButton";
-import { Honeycomb, Refresh } from "../../icons";
+import { Download, Honeycomb, Refresh } from "../../icons";
 import { invoke } from "@tauri-apps/api";
 import { loadPagePlugins } from "../../plugins";
 import Icon from "../../components/Icon";
@@ -384,7 +384,15 @@ function Package(props: PackageProps) {
 					/>
 				</div>
 				<div class="cont col package-header">
-					<div class="package-name">{props.meta.name}</div>
+					<div class="cont start package-name">
+						{props.meta.name}
+						<Show when={props.meta.downloads != undefined}>
+							<div class="cont" style="color: var(--fg3);gap:0.2rem">
+								<Icon icon={Download} size="1rem" />
+								{formatNumber(props.meta.downloads!)}
+							</div>
+						</Show>
+					</div>
 					<Show when={props.meta.categories != undefined}>
 						<div style="margin-top:-0.2rem">
 							<PackageLabels

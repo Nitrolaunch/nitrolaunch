@@ -72,6 +72,8 @@ pub enum InstrKind {
 	Keywords(Vec<String>),
 	/// Set the package categories metadata
 	Categories(Vec<PackageCategory>),
+	/// Set the package downloads metadata
+	Downloads(Later<u32>),
 	/// Set the package features property
 	Features(Vec<String>),
 	/// Set the package default features property
@@ -176,6 +178,7 @@ impl Display for InstrKind {
 				Self::License(..) => "license",
 				Self::Keywords(..) => "keywords",
 				Self::Categories(..) => "categories",
+				Self::Downloads(..) => "downloads",
 				Self::Features(..) => "features",
 				Self::DefaultFeatures(..) => "default_features",
 				Self::ContentVersions(..) => "content_versions",
@@ -233,6 +236,7 @@ impl Instruction {
 			"license" => Ok(InstrKind::License(Later::Empty)),
 			"keywords" => Ok(InstrKind::Keywords(Vec::new())),
 			"categories" => Ok(InstrKind::Categories(Vec::new())),
+			"downloads" => Ok(InstrKind::Downloads(Later::Empty)),
 			"features" => Ok(InstrKind::Features(Vec::new())),
 			"default_features" => Ok(InstrKind::DefaultFeatures(Vec::new())),
 			"content_versions" => Ok(InstrKind::ContentVersions(Vec::new())),
@@ -307,6 +311,7 @@ impl Instruction {
 			InstrKind::Compat(val1, val2) => val1.is_some() && val2.is_some(),
 			InstrKind::Set(var, val) => var.is_full() && val.is_some(),
 			InstrKind::Cmd(list) => !list.is_empty(),
+			InstrKind::Downloads(val) => !val.is_empty(),
 			InstrKind::Fail(..) | InstrKind::Finish() => true,
 			InstrKind::If { .. } | InstrKind::Addon { .. } | InstrKind::Require(..) => {
 				unimplemented!()
@@ -365,6 +370,13 @@ impl Instruction {
 					let category = parse_string(tok, pos)?;
 					let category = serde_json::from_str(&format!("\"{category}\""))?;
 					list.push(category);
+				}
+				InstrKind::Downloads(val) => {
+					let downloads = parse_integer(tok, pos)?;
+					if downloads < 0 {
+						bail!("Invalid number input (must be >= 0)");
+					}
+					val.fill(downloads as u32);
 				}
 				InstrKind::Cmd(list) => list.push(parse_arg(tok, pos)?),
 				InstrKind::Custom(cmd, args) => {
@@ -490,6 +502,14 @@ pub fn parse_arg(tok: &Token, pos: &TextPos) -> anyhow::Result<Value> {
 pub fn parse_string(tok: &Token, pos: &TextPos) -> anyhow::Result<String> {
 	match tok {
 		Token::Str(text) => Ok(text.clone()),
+		_ => unexpected_token!(tok, pos),
+	}
+}
+
+/// Parses a constant integer argument
+pub fn parse_integer(tok: &Token, pos: &TextPos) -> anyhow::Result<i64> {
+	match tok {
+		Token::Num(num) => Ok(*num),
 		_ => unexpected_token!(tok, pos),
 	}
 }

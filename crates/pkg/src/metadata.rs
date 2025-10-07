@@ -60,6 +60,9 @@ pub struct PackageMetadata {
 	/// The categories for the package
 	#[serde(skip_serializing_if = "Option::is_none")]
 	pub categories: Option<Vec<PackageCategory>>,
+	/// How many downloads the package has
+	#[serde(skip_serializing_if = "Option::is_none")]
+	pub downloads: Option<u32>,
 }
 
 impl PackageMetadata {
@@ -87,6 +90,7 @@ impl PackageMetadata {
 			&& self.license.is_none()
 			&& self.keywords.is_none()
 			&& self.categories.is_none()
+			&& self.downloads.is_none()
 	}
 }
 

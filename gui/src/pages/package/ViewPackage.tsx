@@ -21,6 +21,7 @@ import {
 	AngleRight,
 	Book,
 	CurlyBraces,
+	Download,
 	Folder,
 	Globe,
 	Hashtag,
@@ -35,7 +36,7 @@ import {
 import Modal from "../../components/dialog/Modal";
 import PackageLabels from "../../components/package/PackageLabels";
 import { RepoInfo } from "../../package";
-import { beautifyString, parsePkgRequest, parseQueryString } from "../../utils";
+import { beautifyString, formatNumber, parsePkgRequest, parseQueryString } from "../../utils";
 import PackageVersions from "../../components/package/PackageVersions";
 import PackageInstallModal from "../../components/package/PackageInstallModal";
 import { canonicalizeListOrSingle } from "../../utils/values";
@@ -188,6 +189,12 @@ export default function ViewPackage(props: ViewPackageProps) {
 												properties()!.types
 											)}
 										/>
+									</Show>
+									<Show when={meta()!.downloads != undefined}>
+										<div class="cont bold" style="color: var(--fg3);gap:0.2rem">
+											<Icon icon={Download} size="1rem" />
+											{formatNumber(meta()!.downloads!)}
+										</div>
 									</Show>
 								</div>
 								<div class="cont" id="package-short-description">

@@ -10,7 +10,7 @@ import {
 } from "solid-js";
 import { AngleDown, AngleRight, Plus, Properties, User } from "../../icons";
 import "./UserWidget.css";
-import getUserIcon, { stringCompare } from "../../utils";
+import { stringCompare, getUserIcon } from "../../utils";
 import Icon from "../Icon";
 import { errorToast, successToast } from "../dialog/Toasts";
 import IconButton from "../input/IconButton";

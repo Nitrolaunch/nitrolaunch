@@ -54,6 +54,8 @@ pub struct Project {
 	pub gallery: Option<Vec<GalleryEntry>>,
 	/// Categories for the project
 	pub categories: Vec<String>,
+	/// Number of downloads for the project
+	pub downloads: u32,
 }
 
 /// The type of a Modrinth project
@@ -588,6 +590,8 @@ pub struct SearchedProject {
 	pub gallery: Option<Vec<String>>,
 	/// Featured gallery image for this project
 	pub featured_gallery: Option<String>,
+	/// Number of downloads for this project
+	pub downloads: u32,
 }
 
 fn convert_category(category: PackageCategory) -> &'static [&'static str] {

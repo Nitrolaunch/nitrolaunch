@@ -3,7 +3,7 @@ import { createResource, Match, onMount, Show, Switch } from "solid-js";
 import { loadPagePlugins } from "../../plugins";
 import { errorToast, successToast } from "../../components/dialog/Toasts";
 import LoadingSpinner from "../../components/utility/LoadingSpinner";
-import getUserIcon, { beautifyString } from "../../utils";
+import { beautifyString, getUserIcon } from "../../utils";
 import { Delete, Lock, LockOpen } from "../../icons";
 import "./UserPage.css";
 import IconTextButton from "../../components/input/IconTextButton";
