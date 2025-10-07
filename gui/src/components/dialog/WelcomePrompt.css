@@ -1,0 +1,42 @@
+#welcome-prompt {
+	width: 100%;
+	height: 25rem;
+}
+
+#welcome-prompt-tabs {
+	height: 10%;
+	display: grid;
+	background-color: #111111bb;
+	border-top-left-radius: var(--round2);
+	border-top-right-radius: var(--round2);
+}
+
+.welcome-prompt-tab {
+	font-weight: bold;
+	border-bottom: var(--border) solid var(--bg4);
+	box-sizing: content-box;
+	cursor: pointer;
+	color: var(--fg3);
+}
+
+.welcome-prompt-tab.selected {
+	background-color: var(--bg);
+	border-bottom: var(--border) solid var(--bg);
+	color: var(--fg);
+}
+
+.welcome-prompt-tab.selected:not(.first) {
+	border-left: var(--border) solid var(--bg4);
+}
+
+.welcome-prompt-tab.selected:not(.last) {
+	border-right: var(--border) solid var(--bg4);
+}
+
+#welcome-prompt-contents {
+	height: 75%;
+}
+
+#welcome-prompt-navigation {
+	height: 15%;
+}

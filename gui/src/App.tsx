@@ -20,6 +20,8 @@ import Global from "./Global";
 import Settings from "./pages/Settings";
 import "./components/package/PackageDescription.css";
 import Modal from "./components/dialog/Modal";
+import WelcomePrompt from "./components/dialog/WelcomePrompt";
+import { invoke } from "@tauri-apps/api";
 
 export default function App() {
 	const [footerData, setFooterData] = createSignal<FooterData>({
@@ -131,13 +133,24 @@ export default function App() {
 
 function Layout(props: LayoutProps) {
 	let [showSidebar, setShowSidebar] = createSignal(false);
-
 	// Modal for plugins to use
 	let [pluginModalContents, setPluginModalContents] = createSignal<string | undefined>();
+	let [showWelcomePrompt, setShowWelcomePrompt] = createSignal(false);
 
 	(window as any).__setPluginModalContents = (x: any) => { setPluginModalContents(x); console.log("Ok"); };
 
 	onMount(() => loadPagePlugins(""));
+
+	onMount(async () => {
+		try {
+			let isFirstLaunch = await invoke("get_is_first_launch");
+			if (isFirstLaunch) {
+				setShowWelcomePrompt(true);
+			}
+		} catch (e) {
+			console.error(e);
+		}
+	});
 
 	return (
 		<>
@@ -171,6 +184,7 @@ function Layout(props: LayoutProps) {
 			<Modal visible={pluginModalContents() != undefined} onClose={() => setPluginModalContents(undefined)} width="40rem">
 				<div class="cont col fullwidth" innerHTML={pluginModalContents()}></div>
 			</Modal>
+			<WelcomePrompt visible={showWelcomePrompt()} onClose={() => setShowWelcomePrompt(false)} />
 		</>
 	);
 }

@@ -6,7 +6,6 @@ import {
 	For,
 	Match,
 	onCleanup,
-	onMount,
 	Show,
 	Switch,
 } from "solid-js";
@@ -14,9 +13,6 @@ import "./TaskIndicator.css";
 import { Delete, Spinner } from "../icons";
 import {
 	errorToast,
-	messageToast,
-	removeThisToast,
-	successToast,
 	warningToast,
 } from "./dialog/Toasts";
 import { beautifyString } from "../utils";
@@ -217,50 +213,6 @@ export default function TaskIndicator(props: TaskIndicatorProps) {
 		}
 	});
 
-	// Toast on first launch to install default plugins
-	onMount(async () => {
-		try {
-			let isFirstLaunch = await invoke("get_is_first_launch");
-			if (isFirstLaunch) {
-				let message = (
-					<div class="cont col">
-						<div class="cont">
-							Would you like to install the default plugins?
-						</div>
-						<div class="cont">
-							<button
-								style="border: var(--border) solid var(--bg3)"
-								onclick={(e) => {
-									removeThisToast(e.target);
-									invoke("install_default_plugins").then(
-										() => {
-											successToast("Default plugins installed");
-										},
-										(e) => {
-											errorToast("Failed to install default plugins: " + e);
-										}
-									);
-								}}
-							>
-								Yes
-							</button>
-							<button
-								style="border: var(--border) solid var(--error)"
-								onclick={(e) => {
-									removeThisToast(e.target);
-								}}
-							>
-								No
-							</button>
-						</div>
-					</div>
-				);
-
-				messageToast(message);
-			}
-		} catch (e) {}
-	});
-
 	let selectedTaskData = createMemo(() => {
 		if (selectedTask() == undefined) {
 			return undefined;
@@ -315,9 +267,8 @@ export default function TaskIndicator(props: TaskIndicatorProps) {
 				<div class="cont">
 					<Show
 						when={taskCount() == 1}
-						fallback={`${taskCount()} ${
-							taskCount() == 1 ? "task" : "tasks"
-						} running`}
+						fallback={`${taskCount()} ${taskCount() == 1 ? "task" : "tasks"
+							} running`}
 					>
 						{taskName()}
 					</Show>
@@ -327,16 +278,14 @@ export default function TaskIndicator(props: TaskIndicatorProps) {
 				<div
 					class="cont col"
 					id="task-indicator-popup"
-					style={`border-color:${
-						getColors(getTaskColor(selectedTaskData()!.id))[0]
-					}`}
+					style={`border-color:${getColors(getTaskColor(selectedTaskData()!.id))[0]
+						}`}
 					onclick={() => setSelectedTask(undefined)}
 				>
 					<div
 						class="cont bold"
-						style={`color:${
-							getColors(getTaskColor(selectedTaskData()!.id))[1]
-						}`}
+						style={`color:${getColors(getTaskColor(selectedTaskData()!.id))[1]
+							}`}
 					>
 						{getTaskDisplayName(selectedTaskData()!.id)}
 					</div>
@@ -381,7 +330,7 @@ export default function TaskIndicator(props: TaskIndicatorProps) {
 	);
 }
 
-export interface TaskIndicatorProps {}
+export interface TaskIndicatorProps { }
 
 function Message(props: MessageProps) {
 	return (
