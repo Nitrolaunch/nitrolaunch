@@ -1,9 +1,10 @@
 import { createSignal, JSX } from "solid-js";
-import { AngleLeft, AngleRight, Box, Home, Jigsaw, Menu } from "../../icons";
+import { AngleLeft, AngleRight, Home, Honeycomb, Jigsaw, Menu } from "../../icons";
 import IconButton from "../input/IconButton";
 import "./NavBar.css";
 import { Location } from "@solidjs/router";
 import Toasts from "../dialog/Toasts";
+import Icon, { HasWidthHeight } from "../Icon";
 
 export default function NavBar(props: NavBarProps) {
 	return (
@@ -52,7 +53,7 @@ export default function NavBar(props: NavBarProps) {
 					</div>
 					<div class="navbar-item" id="navbar-buttons">
 						<NavbarButton
-							icon={<Home />}
+							icon={Home}
 							text="Home"
 							href="/"
 							selectedPath={["/"]}
@@ -70,7 +71,7 @@ export default function NavBar(props: NavBarProps) {
 							onClick={props.onSidebarClose}
 						/>
 						<NavbarButton
-							icon={<Box />}
+							icon={Honeycomb}
 							text="Packages"
 							href="/packages/0"
 							selectedPathStart={["/packages"]}
@@ -80,7 +81,7 @@ export default function NavBar(props: NavBarProps) {
 							onClick={props.onSidebarClose}
 						/>
 						<NavbarButton
-							icon={<Jigsaw />}
+							icon={Jigsaw}
 							text="Plugins"
 							href="/plugins"
 							selectedPathStart={["/plugins"]}
@@ -146,14 +147,14 @@ function NavbarButton(props: NavbarButtonProps) {
 			onmouseleave={() => setIsHovered(false)}
 			onclick={props.onClick}
 		>
-			{props.icon}
+			<Icon icon={props.icon} size="1rem" />
 			<div class="navbar-button-text">{props.text}</div>
 		</a>
 	);
 }
 
 interface NavbarButtonProps {
-	icon: JSX.Element;
+	icon: (props: HasWidthHeight) => JSX.Element;
 	text: string;
 	href: string;
 	location: Location;

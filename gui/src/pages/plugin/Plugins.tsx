@@ -12,9 +12,12 @@ import {
 	Gear,
 	Globe,
 	Graph,
+	Heart,
+	Honeycomb,
 	Jigsaw,
 	Language,
 	Link,
+	Popout,
 	Refresh,
 	Text,
 	Trash,
@@ -291,10 +294,16 @@ function getPluginIcon(plugin: string) {
 			return Book;
 		} else if (plugin == "extra_versions" || plugin == "better_jsons") {
 			return CurlyBraces;
+		} else if (plugin == "glfw_fix") {
+			return Heart;
 		} else if (plugin == "lang") {
 			return Language;
+		} else if (plugin == "multiply") {
+			return Honeycomb;
 		} else if (plugin == "options") {
 			return Gear;
+		} else if (plugin == "profile_share") {
+			return Popout;
 		} else if (plugin == "server_restart") {
 			return Refresh;
 		} else if (plugin == "stats") {
