@@ -14,6 +14,7 @@ export default function Tip(props: TipProps) {
 			<div
 				onmouseenter={() => setVisible(true)}
 				onmouseleave={() => setVisible(false)}
+				class={`${props.cont == true ? "cont" : ""}`}
 				style={`${fullwidth ? "width:100%" : ""}`}
 			>
 				{props.children}
@@ -34,6 +35,7 @@ export interface TipProps {
 	side?: TipSide;
 	fullwidth?: boolean;
 	zIndex?: string;
+	cont?: boolean;
 }
 
 export type TipSide = "top" | "bottom" | "right" | "left";

@@ -112,12 +112,30 @@ export default function Toasts() {
 				class={`cont input-shadow bubble-hover ${showRecentToasts() ? "selected" : ""}`}
 				onclick={() => setShowRecentToasts(!showRecentToasts())}
 			>
-				<IconAndText
-					icon={Notification}
-					text={`${recentToastCount()} ${recentToastCount() == 1 ? "Alert" : "Alerts"
-						}`}
-					centered
-				/>
+				<Switch>
+					<Match when={!showRecentToasts()}>
+						<IconAndText
+							icon={Notification}
+							text={`${recentToastCount()} ${recentToastCount() == 1 ? "Alert" : "Alerts"
+								}`}
+							centered
+						/>
+					</Match>
+					<Match when={showRecentToasts()}>
+						<IconAndText
+							icon={Delete}
+							text={`${recentToastCount()} ${recentToastCount() == 1 ? "Alert" : "Alerts"
+								}`}
+							centered
+							onIconClick={() => {
+								setRecentToastCount(0);
+								setRecentToasts([]);
+							}}
+							iconTip="Clear All"
+							iconTipSide="left"
+						/>
+					</Match>
+				</Switch>
 			</div>
 			<div id="toasts">
 				<Show when={visible()}>
