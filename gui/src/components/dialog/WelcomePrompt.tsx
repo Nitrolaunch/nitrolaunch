@@ -52,10 +52,10 @@ export default function WelcomePrompt(props: WelcomePromptProps) {
 					</div>
 					<br />
 					<div class="cont">
-						<IconTextButton icon={Delete} size="1.5rem" color="var(--bg2)" text="No" onClick={() => {
+						<IconTextButton icon={Delete} size="1.5rem" color="var(--bg2)" selectedColor="var(--error)" selectedBg="var(--errorbg)" selected text="No" onClick={() => {
 							setTab(1);
 						}} />
-						<IconTextButton icon={Check} size="1.5rem" color="var(--bg2)" text="Yes" onClick={() => {
+						<IconTextButton icon={Check} size="1.5rem" color="var(--bg2)" selectedColor="var(--instance)" selectedBg="var(--instancebg)" selected text="Yes" onClick={() => {
 							invoke("install_default_plugins").then(
 								() => {
 									successToast("Default plugins installed");

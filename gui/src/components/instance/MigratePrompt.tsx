@@ -58,7 +58,7 @@ export function MigratePromptContents(props: MigratePromptProps) {
 				<div class="fullwidth" id="instance-transfer-format">
 					<Switch>
 						<Match when={formats().length == 0}>
-							<span style="color:var(--fg3)">No formats available. Try installing a plugin.</span>
+							<span style="color:var(--fg3)">No formats available. Try installing plugins.</span>
 						</Match>
 						<Match when={formats().length > 0}>
 							<InlineSelect
