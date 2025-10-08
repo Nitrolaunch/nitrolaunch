@@ -1,5 +1,5 @@
 #instance-list {
-	width: 100%;
+	width: 80%;
 }
 
 #instance-list-header {
@@ -41,7 +41,7 @@
 }
 
 .instance-list-section-container {
-	width: 80%;
+	width: 100%;
 	margin-bottom: 2.6rem;
 	gap: 0;
 }

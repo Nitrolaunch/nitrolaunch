@@ -145,11 +145,11 @@ export default function InstanceList(props: InstanceListProps) {
 	}, { initialValue: [] });
 
 	return (
-		<div class="container">
+		<div class="cont col">
 			<br />
 			<div id="instance-list">
 				<div class="cont">
-					<div class="split3" style="width: 80%">
+					<div class="split3 fullwidth">
 						<div class="cont start" style="padding-left:0.5rem">
 							<div style="width:7rem">
 								<Dropdown
