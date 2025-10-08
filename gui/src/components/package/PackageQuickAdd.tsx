@@ -97,7 +97,7 @@ export default function PackageQuickAdd(props: PackageQuickAddProps) {
 	);
 
 	return (
-		<div class="cont col package-quick-add">
+		<div class="cont col pop-in-fast package-quick-add">
 			<div class="cont col package-quick-add-header">
 				<div class="cont start package-quick-add-repos">
 					<RepoSelector
