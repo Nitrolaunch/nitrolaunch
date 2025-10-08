@@ -46,13 +46,14 @@ def weld_dir(dir: Path, ignore: list):
 def run():
 	hook = sys.argv[1]
 	if hook != "on_instance_setup" and hook != "update_world_files":
+		print("Incorrect hook")
 		return
 	
 	arg_raw = sys.argv[2]
 
 	arg = json.loads(arg_raw)
 
-	if arg["update_depth"] == "shallow":
+	if "update_depth" in arg and arg["update_depth"] == "shallow":
 		return
 	
 	if "disable_weld" in arg["config"] and arg["config"]["disable_weld"]:
@@ -69,7 +70,7 @@ def run():
 	# Figure out the paths to load packs into
 	game_dir = Path(arg["game_dir"])
 	datapack_dirs = []
-	datapack_folder = arg["config"]["datapack_folder"]
+	datapack_folder = arg["config"]["datapack_folder"] if "datapack_folder" in arg["config"] else None
 	if datapack_folder is not None:
 		datapack_dirs = [game_dir.joinpath(datapack_folder)]
 	else:
@@ -77,7 +78,9 @@ def run():
 			saves_dir = game_dir.joinpath("saves")
 			# Trick to only get the immediate subdirectories
 			for entry in next(os.walk(saves_dir))[1]:
-				datapack_dirs.append(saves_dir.join(entry[0]))
+				path = saves_dir.joinpath(entry).joinpath("datapacks")
+				if path.exists():
+					datapack_dirs.append(path)
 
 		else:
 			datapack_dirs = [game_dir.joinpath("world/datapacks")]
@@ -103,12 +106,19 @@ def run():
 	})
 	output("end_process")
 
+	if hook == "on_instance_setup":
+		output("set_result", {
+			"main_class_override": None,
+			"jar_path_override": None,
+			"classpath_extension": []
+		})
+	else:
+		output("set_result", None)
+
 
 def main():
 	run()
 
-output("set_result", {
-	"main_class_override": None,
-	"jar_path_override": None,
-	"classpath_extension": []
-})
+if __name__ == "__main__":
+	main()
+

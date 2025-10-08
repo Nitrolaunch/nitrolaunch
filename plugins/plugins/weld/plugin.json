@@ -7,6 +7,10 @@
 		"on_instance_setup": {
 			"executable": "./weld.pyz",
 			"priority": "last"
+		},
+		"update_world_files": {
+			"executable": "./weld.pyz",
+			"priority": "last"
 		}
 	}
 }

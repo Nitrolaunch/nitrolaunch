@@ -10,6 +10,13 @@
 				"${PLUGIN_DIR}/nitro_weld.py"
 			],
 			"priority": "last"
+		},
+		"update_world_files": {
+			"executable": "python3",
+			"args": [
+				"${PLUGIN_DIR}/nitro_weld.py"
+			],
+			"priority": "last"
 		}
 	}
 }
