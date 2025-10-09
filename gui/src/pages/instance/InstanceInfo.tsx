@@ -41,7 +41,7 @@ import {
 	Upload,
 } from "../../icons";
 import "./InstanceInfo.css";
-import IconTextButton from "../../components/input/IconTextButton";
+import IconTextButton from "../../components/input/button/IconTextButton";
 import { invoke } from "@tauri-apps/api";
 import InstanceConsole from "../../components/launch/InstanceConsole";
 import PackagesConfig, {
@@ -55,7 +55,7 @@ import { canonicalizeListOrSingle } from "../../utils/values";
 import { Event, listen, UnlistenFn } from "@tauri-apps/api/event";
 import { RunningInstancesEvent } from "../../components/launch/RunningInstanceList";
 import { convertFileSrc } from "@tauri-apps/api/tauri";
-import Dropdown, { Option } from "../../components/input/Dropdown";
+import Dropdown, { Option } from "../../components/input/select/Dropdown";
 import IconAndText from "../../components/utility/IconAndText";
 import InstanceTransferPrompt from "../../components/instance/InstanceTransferPrompt";
 import { updateInstanceList } from "./InstanceList";

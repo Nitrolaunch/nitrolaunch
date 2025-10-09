@@ -18,7 +18,7 @@ import {
 import Tip from "../dialog/Tip";
 import PackageFilters, { PackageFilterOptions } from "./PackageFilters";
 import LoadingSpinner from "../utility/LoadingSpinner";
-import SearchBar from "../input/SearchBar";
+import SearchBar from "../input/text/SearchBar";
 import { canonicalizeListOrSingle } from "../../utils/values";
 import { errorToast } from "../dialog/Toasts";
 import PackageLabels from "./PackageLabels";

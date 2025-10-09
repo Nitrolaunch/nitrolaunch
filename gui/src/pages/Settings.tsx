@@ -2,12 +2,12 @@ import { invoke } from "@tauri-apps/api";
 import { createEffect, createResource, createSignal, Show } from "solid-js";
 import { Theme } from "../types";
 import Tip from "../components/dialog/Tip";
-import InlineSelect from "../components/input/InlineSelect";
+import InlineSelect from "../components/input/select/InlineSelect";
 import { FooterData } from "../App";
 import { FooterMode } from "../components/navigation/Footer";
 import { errorToast, successToast } from "../components/dialog/Toasts";
 import { emit } from "@tauri-apps/api/event";
-import IconTextButton from "../components/input/IconTextButton";
+import IconTextButton from "../components/input/button/IconTextButton";
 import { Folder } from "../icons";
 
 export default function Settings(props: SettingsProps) {

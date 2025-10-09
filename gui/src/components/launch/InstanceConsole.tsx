@@ -10,8 +10,8 @@ import {
 	Switch,
 } from "solid-js";
 import "./InstanceConsole.css";
-import InlineSelect from "../input/InlineSelect";
-import SearchBar from "../input/SearchBar";
+import InlineSelect from "../input/select/InlineSelect";
+import SearchBar from "../input/text/SearchBar";
 
 export default function InstanceConsole(props: InstanceConsoleProps) {
 	let outputElem!: HTMLDivElement;

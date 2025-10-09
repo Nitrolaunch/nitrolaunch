@@ -1,6 +1,6 @@
 import { createEffect, createSignal, Match, Switch } from "solid-js";
-import Icon from "../Icon";
-import { Link, LinkBroken } from "../../icons";
+import Icon from "../../Icon";
+import { Link, LinkBroken } from "../../../icons";
 import "./LinkedInputs.css";
 
 export default function LinkedInputs(props: LinkedInputsProps) {

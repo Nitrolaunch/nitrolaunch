@@ -1,5 +1,5 @@
 import { createSignal, JSXElement, Show } from "solid-js";
-import Icon, { HasWidthHeight } from "../Icon";
+import Icon, { HasWidthHeight } from "../../Icon";
 import "./IconTextButton.css";
 
 export default function IconTextButton(props: IconTextButtonProps) {

@@ -1,5 +1,5 @@
 import Tip from "../../components/dialog/Tip";
-import LinkedInputs from "../../components/input/LinkedInputs";
+import LinkedInputs from "../../components/input/text/LinkedInputs";
 import DeriveIndicator from "./DeriveIndicator";
 import {
 	getDerivedValue,
@@ -7,8 +7,8 @@ import {
 	InstanceConfig,
 	JavaType,
 } from "./read_write";
-import EditableList from "../../components/input/EditableList";
-import InlineSelect from "../../components/input/InlineSelect";
+import EditableList from "../../components/input/text/EditableList";
+import InlineSelect from "../../components/input/select/InlineSelect";
 
 export default function LaunchConfig(props: LaunchConfigProps) {
 	return (

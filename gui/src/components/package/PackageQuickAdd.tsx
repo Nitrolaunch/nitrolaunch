@@ -11,16 +11,16 @@ import {
 import { errorToast } from "../dialog/Toasts";
 import { searchPackages } from "../../utils/package";
 import "./PackageQuickAdd.css";
-import SearchBar from "../input/SearchBar";
+import SearchBar from "../input/text/SearchBar";
 import { parsePkgRequest } from "../../utils";
 import { invoke } from "@tauri-apps/api";
 import { PackageMeta, PackageProperties } from "../../types";
 import LoadingSpinner from "../utility/LoadingSpinner";
 import { marked } from "marked";
-import InlineSelect from "../input/InlineSelect";
+import InlineSelect from "../input/select/InlineSelect";
 import Icon from "../Icon";
 import { Plus } from "../../icons";
-import IconTextButton from "../input/IconTextButton";
+import IconTextButton from "../input/button/IconTextButton";
 
 export default function PackageQuickAdd(props: PackageQuickAddProps) {
 	let [search, setSearch] = createSignal<string | undefined>(undefined);

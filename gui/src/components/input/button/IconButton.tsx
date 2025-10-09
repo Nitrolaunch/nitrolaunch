@@ -1,6 +1,6 @@
 import { createSignal, JSXElement } from "solid-js";
 import "./IconButton.css";
-import Icon, { HasWidthHeight } from "../Icon";
+import Icon, { HasWidthHeight } from "../../Icon";
 
 export default function IconButton(props: IconButtonProps) {
 	let [isHovered, setIsHovered] = createSignal(false);

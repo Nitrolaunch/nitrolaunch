@@ -17,7 +17,7 @@ import {
 } from "./dialog/Toasts";
 import { beautifyString } from "../utils";
 import { invoke } from "@tauri-apps/api";
-import IconButton from "./input/IconButton";
+import IconButton from "./input/button/IconButton";
 
 export default function TaskIndicator(props: TaskIndicatorProps) {
 	// Map of tasks to messages

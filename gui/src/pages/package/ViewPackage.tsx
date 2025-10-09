@@ -43,7 +43,7 @@ import { canonicalizeListOrSingle } from "../../utils/values";
 import LoadingSpinner from "../../components/utility/LoadingSpinner";
 import { PackageFilterOptions } from "../../components/package/PackageFilters";
 import { open } from "@tauri-apps/api/shell";
-import IconButton from "../../components/input/IconButton";
+import IconButton from "../../components/input/button/IconButton";
 import { WebviewWindow } from "@tauri-apps/api/window";
 
 export default function ViewPackage(props: ViewPackageProps) {

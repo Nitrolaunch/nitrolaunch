@@ -1,6 +1,6 @@
 import { createSignal, JSX } from "solid-js";
 import { AngleLeft, AngleRight, Home, Honeycomb, Jigsaw, Menu } from "../../icons";
-import IconButton from "../input/IconButton";
+import IconButton from "../input/button/IconButton";
 import "./NavBar.css";
 import { Location } from "@solidjs/router";
 import Toasts from "../dialog/Toasts";

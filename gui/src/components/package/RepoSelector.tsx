@@ -2,7 +2,7 @@ import { errorToast, warningToast } from "../dialog/Toasts";
 import { PackageCategory, PackageType, RepoInfo } from "../../package";
 import { invoke } from "@tauri-apps/api";
 import { createSignal, Show, createResource, createEffect } from "solid-js";
-import InlineSelect from "../input/InlineSelect";
+import InlineSelect from "../input/select/InlineSelect";
 import Icon from "../Icon";
 import { Home } from "../../icons";
 

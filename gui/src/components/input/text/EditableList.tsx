@@ -1,7 +1,7 @@
 import { createSignal, For } from "solid-js";
 import "./EditableList.css";
-import IconButton from "./IconButton";
-import { Plus, Trash } from "../../icons";
+import IconButton from "../button/IconButton";
+import { Plus, Trash } from "../../../icons";
 
 export default function EditableList(props: EditableListProps) {
 	let reorderable = props.reorderable == undefined ? true : props.reorderable;

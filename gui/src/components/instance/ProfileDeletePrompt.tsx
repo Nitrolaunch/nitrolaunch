@@ -4,7 +4,7 @@ import { invoke } from "@tauri-apps/api";
 import { InstanceOrProfile } from "../../types";
 import { beautifyString } from "../../utils";
 import "./ProfileDeletePrompt.css";
-import IconTextButton from "../input/IconTextButton";
+import IconTextButton from "../input/button/IconTextButton";
 import { Delete } from "../../icons";
 import { errorToast, successToast } from "../dialog/Toasts";
 import { useNavigate } from "@solidjs/router";

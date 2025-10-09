@@ -1,7 +1,7 @@
 import { createSignal } from "solid-js";
 import { AuthDisplayEvent } from "../../types";
 import "./MicrosoftAuthInfo.css";
-import IconTextButton from "./IconTextButton";
+import IconTextButton from "./button/IconTextButton";
 import { clipboard } from "@tauri-apps/api";
 import { Check, Copy, Globe } from "../../icons";
 import { WebviewWindow } from "@tauri-apps/api/window";

@@ -16,7 +16,7 @@ import { getInstanceIconSrc } from "../../utils";
 import { GroupInfo, InstanceInfo, InstanceMap } from "../../types";
 import { errorToast } from "../../components/dialog/Toasts";
 import { invoke } from "@tauri-apps/api";
-import IconButton from "../../components/input/IconButton";
+import IconButton from "../../components/input/button/IconButton";
 import {
 	Box,
 	Copy,
@@ -32,9 +32,9 @@ import {
 	Properties,
 } from "../../icons";
 import Icon from "../../components/Icon";
-import IconTextButton from "../../components/input/IconTextButton";
+import IconTextButton from "../../components/input/button/IconTextButton";
 import InstanceTransferPrompt from "../../components/instance/InstanceTransferPrompt";
-import Dropdown, { Option } from "../../components/input/Dropdown";
+import Dropdown, { Option } from "../../components/input/select/Dropdown";
 import IconAndText from "../../components/utility/IconAndText";
 import { useNavigate } from "@solidjs/router";
 import MigratePrompt from "../../components/instance/MigratePrompt";

@@ -12,7 +12,7 @@ import {
 import { PackageVersion } from "../../package";
 import { PackageMeta } from "../../types";
 import Modal from "../dialog/Modal";
-import IconTextButton from "../input/IconTextButton";
+import IconTextButton from "../input/button/IconTextButton";
 import "./PackageVersionInfo.css";
 import { StabilityIndicator } from "./PackageVersions";
 import { canonicalizeListOrSingle } from "../../utils/values";

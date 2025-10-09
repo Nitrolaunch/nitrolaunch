@@ -1,5 +1,5 @@
 import { createSignal, Match, Switch } from "solid-js";
-import { Delete, Search } from "../../icons";
+import { Delete, Search } from "../../../icons";
 import "./SearchBar.css";
 
 export default function SearchBar(props: SearchBarProps) {

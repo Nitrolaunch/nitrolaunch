@@ -13,9 +13,9 @@ import {
 	Show,
 } from "solid-js";
 import "@thisbeyond/solid-select/style.css";
-import PageButtons from "../../components/input/PageButtons";
+import PageButtons from "../../components/input/button/PageButtons";
 import { PackageMeta } from "../../types";
-import SearchBar from "../../components/input/SearchBar";
+import SearchBar from "../../components/input/text/SearchBar";
 import { formatNumber, parseQueryString } from "../../utils";
 import { FooterData } from "../../App";
 import { FooterMode } from "../../components/navigation/Footer";
@@ -30,7 +30,7 @@ import LoadingSpinner from "../../components/utility/LoadingSpinner";
 import RepoSelector from "../../components/package/RepoSelector";
 import { searchPackages } from "../../utils/package";
 import Tip from "../../components/dialog/Tip";
-import IconTextButton from "../../components/input/IconTextButton";
+import IconTextButton from "../../components/input/button/IconTextButton";
 import { Download, Honeycomb, Refresh } from "../../icons";
 import { invoke } from "@tauri-apps/api";
 import { loadPagePlugins } from "../../plugins";

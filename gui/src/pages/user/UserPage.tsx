@@ -6,7 +6,7 @@ import LoadingSpinner from "../../components/utility/LoadingSpinner";
 import { beautifyString, getUserIcon } from "../../utils";
 import { Delete, Lock, LockOpen } from "../../icons";
 import "./UserPage.css";
-import IconTextButton from "../../components/input/IconTextButton";
+import IconTextButton from "../../components/input/button/IconTextButton";
 import { invoke } from "@tauri-apps/api";
 import { UserInfo } from "../../components/user/UserWidget";
 import { emit } from "@tauri-apps/api/event";

@@ -10,7 +10,7 @@ import {
 	Show,
 } from "solid-js";
 import "@thisbeyond/solid-select/style.css";
-import InlineSelect from "../../components/input/InlineSelect";
+import InlineSelect from "../../components/input/select/InlineSelect";
 import { loadPagePlugins } from "../../plugins";
 import { clearInputError, inputError } from "../../errors";
 import {
@@ -56,10 +56,10 @@ import {
 import { InstanceConfig } from "./read_write";
 import DeriveIndicator from "./DeriveIndicator";
 import { InstanceInfo } from "../../types";
-import Dropdown from "../../components/input/Dropdown";
+import Dropdown from "../../components/input/select/Dropdown";
 import LoadingSpinner from "../../components/utility/LoadingSpinner";
 import LaunchConfig from "./LaunchConfig";
-import IconSelector from "../../components/input/IconSelector";
+import IconSelector from "../../components/input/select/IconSelector";
 import { updateInstanceList } from "./InstanceList";
 
 export default function InstanceConfigPage(props: InstanceConfigProps) {

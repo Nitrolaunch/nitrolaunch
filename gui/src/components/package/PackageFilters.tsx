@@ -24,12 +24,12 @@ import {
 	packageCategoryDisplayName,
 	packageCategoryIcon,
 } from "../../package";
-import InlineSelect from "../input/InlineSelect";
+import InlineSelect from "../input/select/InlineSelect";
 import { invoke } from "@tauri-apps/api";
 import { PackageType } from "../../package";
-import Dropdown from "../input/Dropdown";
+import Dropdown from "../input/select/Dropdown";
 import { beautifyString } from "../../utils";
-import IconTextButton from "../input/IconTextButton";
+import IconTextButton from "../input/button/IconTextButton";
 import IconAndText from "../utility/IconAndText";
 
 export default function PackageFilters(props: PackageFiltersProps) {

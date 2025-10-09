@@ -15,7 +15,7 @@ import { listen, UnlistenFn } from "@tauri-apps/api/event";
 import { InstanceInfo, InstanceOrProfile } from "../../types";
 import Icon from "../Icon";
 import UserWidget from "../user/UserWidget";
-import IconButton from "../input/IconButton";
+import IconButton from "../input/button/IconButton";
 
 export default function Sidebar(props: SidebarProps) {
 	let [extraButtons, _] = createResource(async () => {

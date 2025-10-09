@@ -1,6 +1,6 @@
 import { createSignal, For, JSX, Show } from "solid-js";
 import "./InlineSelect.css";
-import Tip from "../dialog/Tip";
+import Tip from "../../dialog/Tip";
 
 export default function InlineSelect(props: InlineSelectProps) {
 	let columns = () => (props.columns == undefined ? 3 : props.columns);

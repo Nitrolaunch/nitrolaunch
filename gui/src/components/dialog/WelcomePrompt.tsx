@@ -2,7 +2,7 @@ import { createSignal, Match, Show, Switch } from "solid-js";
 import Modal from "./Modal";
 
 import "./WelcomePrompt.css";
-import IconTextButton from "../input/IconTextButton";
+import IconTextButton from "../input/button/IconTextButton";
 import { AngleLeft, AngleRight, Check, Delete } from "../../icons";
 import { invoke } from "@tauri-apps/api";
 import { errorToast, successToast } from "./Toasts";

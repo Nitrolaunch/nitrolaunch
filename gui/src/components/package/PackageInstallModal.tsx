@@ -1,7 +1,7 @@
 import { createResource, createSignal, Match, Show, Switch } from "solid-js";
 import Modal from "../dialog/Modal";
 import "./PackageInstallModal.css";
-import IconTextButton from "../input/IconTextButton";
+import IconTextButton from "../input/button/IconTextButton";
 import {
 	AngleRight,
 	Box,
@@ -12,7 +12,7 @@ import {
 	Hashtag,
 } from "../../icons";
 import Icon from "../Icon";
-import InlineSelect from "../input/InlineSelect";
+import InlineSelect from "../input/select/InlineSelect";
 import { InstanceInfo, InstanceOrProfile } from "../../types";
 import { invoke } from "@tauri-apps/api";
 import { errorToast, successToast } from "../dialog/Toasts";

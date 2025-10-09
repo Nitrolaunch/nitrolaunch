@@ -13,12 +13,12 @@ import "./UserWidget.css";
 import { stringCompare, getUserIcon } from "../../utils";
 import Icon from "../Icon";
 import { errorToast, successToast } from "../dialog/Toasts";
-import IconButton from "../input/IconButton";
+import IconButton from "../input/button/IconButton";
 import { listen } from "@tauri-apps/api/event";
 import Modal from "../dialog/Modal";
 import { sanitizeInstanceId } from "../../pages/instance/InstanceConfig";
-import Dropdown from "../input/Dropdown";
-import IconTextButton from "../input/IconTextButton";
+import Dropdown from "../input/select/Dropdown";
+import IconTextButton from "../input/button/IconTextButton";
 import { clearInputError, inputError } from "../../errors";
 import { useNavigate } from "@solidjs/router";
 

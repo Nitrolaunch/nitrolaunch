@@ -9,7 +9,7 @@ import {
 	Show,
 	Switch,
 } from "solid-js";
-import InlineSelect from "../../components/input/InlineSelect";
+import InlineSelect from "../../components/input/select/InlineSelect";
 import "./PackagesConfig.css";
 import { PackageMeta, PackageProperties, PkgRequest } from "../../types";
 import { invoke } from "@tauri-apps/api";
@@ -18,7 +18,7 @@ import {
 	pkgRequestToString,
 	stringCompare,
 } from "../../utils";
-import IconButton from "../../components/input/IconButton";
+import IconButton from "../../components/input/button/IconButton";
 import { Edit, Error, Plus, Popout, Search, Trash, Upload } from "../../icons";
 import { errorToast } from "../../components/dialog/Toasts";
 import LoadingSpinner from "../../components/utility/LoadingSpinner";
@@ -26,14 +26,14 @@ import ResolutionError, {
 	ResolutionErrorData,
 } from "../../components/package/ResolutionError";
 import { Loader } from "../../package";
-import IconTextButton from "../../components/input/IconTextButton";
+import IconTextButton from "../../components/input/button/IconTextButton";
 import { getBrowseUrl } from "../package/BrowsePackages";
 import { canonicalizeListOrSingle } from "../../utils/values";
 import Modal from "../../components/dialog/Modal";
 import DeriveIndicator from "./DeriveIndicator";
 import { InstanceConfig, PackageOverrides } from "./read_write";
 import Tip from "../../components/dialog/Tip";
-import EditableList from "../../components/input/EditableList";
+import EditableList from "../../components/input/text/EditableList";
 import PackageQuickAdd from "../../components/package/PackageQuickAdd";
 import { useNavigate } from "@solidjs/router";
 import Icon from "../../components/Icon";

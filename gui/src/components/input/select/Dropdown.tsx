@@ -9,10 +9,10 @@ import {
 	Switch,
 } from "solid-js";
 import "./Dropdown.css";
-import Tip from "../dialog/Tip";
-import { canonicalizeListOrSingle, undefinedEmpty } from "../../utils/values";
-import Icon from "../Icon";
-import { AngleRight, Search } from "../../icons";
+import Tip from "../../dialog/Tip";
+import { canonicalizeListOrSingle, undefinedEmpty } from "../../../utils/values";
+import Icon from "../../Icon";
+import { AngleRight, Search } from "../../../icons";
 
 export default function Dropdown(props: DropdownProps) {
 	let [isOpen, setIsOpen] = createSignal(props.startOpen == true);

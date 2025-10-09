@@ -21,7 +21,7 @@ import {
 	Trash,
 	Upload,
 } from "../../icons";
-import IconButton from "../input/IconButton";
+import IconButton from "../input/button/IconButton";
 import { AuthDisplayEvent } from "../../types";
 import MicrosoftAuthInfo from "../input/MicrosoftAuthInfo";
 import { beautifyString } from "../../utils";

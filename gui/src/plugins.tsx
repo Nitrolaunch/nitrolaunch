@@ -1,7 +1,7 @@
 import { clipboard, invoke } from "@tauri-apps/api";
 import { WebviewWindow } from "@tauri-apps/api/window";
 import { errorToast, messageToast, successToast, warningToast } from "./components/dialog/Toasts";
-import { Option } from "./components/input/Dropdown";
+import { Option } from "./components/input/select/Dropdown";
 import IconAndText from "./components/utility/IconAndText";
 import { HTMLIcon } from "./components/Icon";
 import { clearInputError, inputError } from "./errors";
