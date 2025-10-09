@@ -154,6 +154,13 @@ pub fn create_keys(
 	match_key!(out, options.view_distance, "view-distance");
 	match_key!(out, options.whitelist.enable, "white-list");
 	match_key!(out, options.enable_code_of_conduct, "enable-code-of-conduct");
+	match_key!(out, options.management.enable, "management-server-enabled");
+	match_key!(out, &options.management.host, "management-server-host");
+	match_key!(out, options.management.port, "management-server-port");
+	match_key!(out, &options.management.secret, "management-server-secret");
+	match_key!(out, options.management.tls_enabled, "management-server-tls-enabled");
+	match_key!(out, &options.management.tls_keystore, "management-server-tls-keystore");
+	match_key!(out, &options.management.tls_keystore_password, "management-server-tls-keystore-password");
 
 	let custom_clone = options.custom.clone();
 	out.extend(custom_clone);

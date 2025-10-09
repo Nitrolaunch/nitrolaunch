@@ -41,6 +41,8 @@ pub mod deser {
 		pub world: WorldOptions,
 		#[serde(skip_serializing_if = "DefaultExt::is_default")]
 		pub resource_pack: ResourcePackOptions,
+		#[serde(skip_serializing_if = "DefaultExt::is_default")]
+		pub management: ManagementOptions,
 		#[serde(skip_serializing_if = "HashMap::is_empty")]
 		pub custom: HashMap<String, String>,
 		#[serde(skip_serializing_if = "Option::is_none")]
@@ -203,6 +205,26 @@ pub mod deser {
 		pub sha1: Option<String>,
 		#[serde(skip_serializing_if = "Option::is_none")]
 		pub required: Option<bool>,
+	}
+
+	#[derive(Deserialize, Serialize, Debug, Clone, Default, PartialEq)]
+	#[cfg_attr(feature = "schema", derive(JsonSchema))]
+	#[serde(default)]
+	pub struct ManagementOptions {
+		#[serde(skip_serializing_if = "Option::is_none")]
+		pub enable: Option<bool>,
+		#[serde(skip_serializing_if = "Option::is_none")]
+		pub host: Option<String>,
+		#[serde(skip_serializing_if = "Option::is_none")]
+		pub port: Option<u16>,
+		#[serde(skip_serializing_if = "Option::is_none")]
+		pub secret: Option<String>,
+		#[serde(skip_serializing_if = "Option::is_none")]
+		pub tls_enabled: Option<bool>,
+		#[serde(skip_serializing_if = "Option::is_none")]
+		pub tls_keystore: Option<String>,
+		#[serde(skip_serializing_if = "Option::is_none")]
+		pub tls_keystore_password: Option<String>,
 	}
 
 	#[derive(Deserialize, Serialize, Debug, Clone)]

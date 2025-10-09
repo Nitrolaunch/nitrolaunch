@@ -242,6 +242,15 @@ A description will not be provided for every option as they mirror the options i
 		"sha1"?: string,
 		"required": bool
 	},
+	"management": {
+		"enable": bool,
+		"host": string,
+		"port": integer,
+		"secret": string,
+		"tls_enabled": bool,
+		"tls_keystore": string,
+		"tls_keystore_password": string
+	},
 	"custom": {
 		...
 	},
