@@ -4,12 +4,15 @@ import json
 from pathlib import Path
 import os
 
-def output(method: str, data: object | None = None):
+def output(method: str, data: object | None | str = None):
 	if data is None:
 		print(f"%_\"{method}\"")
 	else:
 		out = {}
-		out[method] = data
+		if data == "__null__":
+			out[method] = None
+		else:
+			out[method] = data
 		out2 = json.dumps(out)
 		print(f"%_{out2}")
 
@@ -43,20 +46,32 @@ def weld_dir(dir: Path, ignore: list):
 	with run_weld(packs=packs,config=beet_config,directory=dir) as ctx:
 		ctx.data.save(path=dir.joinpath("weld_pack.zip"), overwrite=True)
 
+def set_result(hook: str):
+	if hook == "on_instance_setup":
+		output("set_result", {
+			"main_class_override": None,
+			"jar_path_override": None,
+			"classpath_extension": []
+		})
+	else:
+		output("set_result", "__null__")
+
 def run():
 	hook = sys.argv[1]
 	if hook != "on_instance_setup" and hook != "update_world_files":
-		print("Incorrect hook")
-		return
+		print("$_Incorrect hook")
+		set_result(hook)
 	
 	arg_raw = sys.argv[2]
 
 	arg = json.loads(arg_raw)
 
 	if "update_depth" in arg and arg["update_depth"] == "shallow":
+		set_result(hook)
 		return
 	
 	if "disable_weld" in arg["config"] and arg["config"]["disable_weld"]:
+		set_result(hook)
 		return
 	
 	output("start_process")
@@ -106,18 +121,19 @@ def run():
 	})
 	output("end_process")
 
-	if hook == "on_instance_setup":
-		output("set_result", {
-			"main_class_override": None,
-			"jar_path_override": None,
-			"classpath_extension": []
-		})
-	else:
-		output("set_result", None)
+	set_result(hook)
 
 
 def main():
-	run()
+	try:
+		run()
+	except Exception as e:
+		output("message", {
+			"contents": {
+				"Error": "Failed to weld packs:\n" + e,
+			},
+			"level": "important"
+		})
 
 if __name__ == "__main__":
 	main()
