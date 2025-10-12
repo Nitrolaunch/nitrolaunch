@@ -2,20 +2,22 @@
 	width: 2.5rem;
 	aspect-ratio: 1;
 
-	background-color: var(--bg2);
-	border: var(--border) solid var(--bg3);
+	border: var(--border) solid transparent;
 	border-radius: var(--round2);
 
 	cursor: pointer;
+
+	font-weight: bold;
+
 
 	transition: border-color 0.15s, transform var(--bubble);
 }
 
 .page-button:hover {
-	border-color: var(--bg4);
+	background-color: var(--bg2);
+	border-color: var(--bg3);
 }
 
 .page-button.selected {
-	background-color: var(--bg);
-	border-color: var(--bg4);
+	background-color: var(--bg3);
 }
