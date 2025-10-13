@@ -72,7 +72,7 @@
 	background-color: var(--bg2);
 	margin: 0.5rem;
 	padding: 0.2rem;
-	height: 4.3rem;
+	height: 4.8rem;
 	text-align: center;
 	box-sizing: border-box;
 	display: flex;
@@ -80,7 +80,7 @@
 	align-items: center;
 	cursor: pointer;
 	border-radius: var(--round2);
-	gap: 0.8rem;
+	gap: 0.5rem;
 	position: relative;
 	border: var(--border) solid var(--bg3);
 	border-top-color: var(--bg4);
@@ -114,6 +114,7 @@
 
 .instance-list-icon {
 	width: 3rem;
+	margin-left: 0.5rem;
 }
 
 .instance-list-pin {

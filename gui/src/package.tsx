@@ -4,6 +4,7 @@ import {
 	Audio,
 	Book,
 	Box,
+	Controller,
 	Couch,
 	CurlyBraces,
 	Folder,
@@ -105,8 +106,8 @@ export interface DeclarativePackageRelations {
 	bundled?: string[] | string;
 	compats?: [string, string][] | [string, string];
 	recommendations?:
-		| { value: string; invert?: boolean }[]
-		| { value: string; invert?: boolean };
+	| { value: string; invert?: boolean }[]
+	| { value: string; invert?: boolean };
 }
 
 export type AddonKind =
@@ -304,7 +305,7 @@ export function packageCategoryIcon(category: PackageCategory) {
 		case PackageCategory.Magic:
 			return Star;
 		case PackageCategory.Minigame:
-			return Jigsaw;
+			return Controller;
 		case PackageCategory.Mobs:
 			return Animal;
 		case PackageCategory.Multiplayer:

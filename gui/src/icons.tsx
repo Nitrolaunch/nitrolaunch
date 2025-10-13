@@ -63,6 +63,8 @@ import TrashIcon from "./assets/icons/trash.svg?component-solid";
 import NotificationIcon from "./assets/icons/notification.svg?component-solid";
 import StopIcon from "./assets/icons/stop.svg?component-solid";
 import ElipsisIcon from "./assets/icons/elipsis.svg?component-solid";
+import ServerIcon from "./assets/icons/server.svg?component-solid";
+import ControllerIcon from "./assets/icons/controller.svg?component-solid";
 import { HasWidthHeight } from "./components/Icon";
 
 export function Pin({ width, height, viewBox }: HasWidthHeight) {
@@ -331,4 +333,12 @@ export function Stop({ width, height, viewBox }: HasWidthHeight) {
 
 export function Elipsis({ width, height, viewBox }: HasWidthHeight) {
 	return <ElipsisIcon width={width} height={height} viewBox={viewBox} />;
+}
+
+export function Server({ width, height, viewBox }: HasWidthHeight) {
+	return <ServerIcon width={width} height={height} viewBox={viewBox} />;
+}
+
+export function Controller({ width, height, viewBox }: HasWidthHeight) {
+	return <ControllerIcon width={width} height={height} viewBox={viewBox} />;
 }

@@ -118,3 +118,13 @@ export function formatNumber(num: number) {
 		return "" + num;
 	}
 }
+
+// Creates a CSS translateY property to fix non-centered text based on the presence of descenders (p, g, q) and ascenders in the text
+export function fixCenter(text: string): string {
+	if (text.includes("p") || text.includes("g") || text.includes("q") || /[A-Z]/.test(text)) {
+		// Translate down the height of the character descent for the Rubik font
+		return "transform: translateY(0.1em)";
+	} else {
+		return "";
+	}
+}

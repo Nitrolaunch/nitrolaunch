@@ -28,7 +28,7 @@ import InlineSelect from "../input/select/InlineSelect";
 import { invoke } from "@tauri-apps/api";
 import { PackageType } from "../../package";
 import Dropdown from "../input/select/Dropdown";
-import { beautifyString } from "../../utils";
+import { beautifyString, fixCenter } from "../../utils";
 import IconTextButton from "../input/button/IconTextButton";
 import IconAndText from "../utility/IconAndText";
 
@@ -157,14 +157,16 @@ export default function PackageFilters(props: PackageFiltersProps) {
 								return {
 									value: packageType,
 									contents: (
-										<div class="cont">
+										<div class="cont" style="font-size:0.9rem;font-weight:bold">
 											<Icon
 												icon={getPackageTypeIcon(packageType)}
 												size="1.2rem"
 											/>
-											<div style="font-size:0.9rem;font-weight:bold">{`${getPackageTypeDisplayName(
-												packageType
-											)}s`}</div>
+											<div class="cont" style={fixCenter(getPackageTypeDisplayName(packageType))}>
+												{`${getPackageTypeDisplayName(
+													packageType
+												)}s`}
+											</div>
 										</div>
 									),
 									color: getPackageTypeColor(packageType),
@@ -437,8 +439,8 @@ function MinecraftVersionsTab(props: MinecraftVersionsTabProps) {
 			<div
 				class="cont"
 				style={`${props.options.length > 5
-						? "width:calc(100%/7*1)"
-						: "width:calc(100%/5*1)"
+					? "width:calc(100%/7*1)"
+					: "width:calc(100%/5*1)"
 					};height:100%`}
 			>
 				<Dropdown

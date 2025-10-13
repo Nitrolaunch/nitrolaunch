@@ -19,6 +19,7 @@ import { invoke } from "@tauri-apps/api";
 import IconButton from "../../components/input/button/IconButton";
 import {
 	Box,
+	Controller,
 	Copy,
 	Cycle,
 	Download,
@@ -26,10 +27,11 @@ import {
 	Globe,
 	Honeycomb,
 	Jigsaw,
-	Minecraft,
 	Pin,
 	Plus,
 	Properties,
+	Server,
+	Tag,
 } from "../../icons";
 import Icon from "../../components/Icon";
 import IconTextButton from "../../components/input/button/IconTextButton";
@@ -474,10 +476,12 @@ function Item(props: ItemProps) {
 			</Show>
 			{icon}
 			<div class="cont col instance-list-item-details">
-				<div class="cont start bold">
-					{props.instance.name !== null
-						? props.instance.name
-						: props.instance.id}
+				<div class="cont start">
+					<span class="bold">
+						{props.instance.name !== null
+							? props.instance.name
+							: props.instance.id}
+					</span>
 
 					<Show when={props.instance.from_plugin}>
 						<div class="cont" style="color:var(--fg)">
@@ -488,20 +492,37 @@ function Item(props: ItemProps) {
 							</Tip>
 						</div>
 					</Show>
-				</div>
-				<div class="cont start" style="color: var(--fg3);gap:0.4rem">
-					<Switch>
-						<Match when={props.instance.side == "client"}>
-							<Icon icon={Minecraft} size="1rem" />
-						</Match>
-						<Match when={props.instance.side == "server"}>
-							<Icon icon={Globe} size="1rem" />
-						</Match>
-					</Switch>
 					<Show when={props.instance.name !== null}>
-						<span class="bold">{props.instance.id}</span>
+						<div class="cont start" style="color:var(--fg3)">{props.instance.id}</div>
 					</Show>
-					<span>{props.instance.version}</span>
+				</div>
+				<div class="cont start bold" style="color: var(--fg3);gap:0.7rem;font-size:0.9rem;margin-left:-0.1rem">
+					<Show when={props.instance.side != undefined}>
+						<div class="cont" style="gap:0.3rem">
+							<Switch>
+								<Match when={props.instance.side == "client"}>
+									<Icon icon={Controller} size="1.2rem" />
+									<span style="transform:translateY(0.1em)">
+										Client
+									</span>
+								</Match>
+								<Match when={props.instance.side == "server"}>
+									<Icon icon={Server} size="1rem" />
+									<span style="transform:translateY(0.1em)">
+										Server
+									</span>
+								</Match>
+							</Switch>
+						</div>
+					</Show>
+					<Show when={props.instance.version != undefined}>
+						<div class="cont" style="gap:0.3rem">
+							<Icon icon={Tag} size="0.8rem" />
+							<span style="transform:translateY(0.1em)">
+								{props.instance.version}
+							</span>
+						</div>
+					</Show>
 				</div>
 			</div>
 		</div>
