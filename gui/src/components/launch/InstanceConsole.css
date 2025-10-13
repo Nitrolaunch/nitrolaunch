@@ -20,6 +20,8 @@
 
 	justify-content: flex-start;
 	align-items: flex-start;
+	gap: 0.3rem;
+
 	overflow: scroll;
 	overscroll-behavior: contain;
 

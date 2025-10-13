@@ -104,7 +104,7 @@ export default function InstanceConsole(props: InstanceConsoleProps) {
 			<div class="cont col instance-console-output">
 				<Switch>
 					<Match when={output() != undefined}>
-						<div class="instance-console-text" ref={outputElem}>
+						<div class="cont col instance-console-text" ref={outputElem}>
 							<For each={output()!}>
 								{(line) => {
 									let cls = line.includes("INFO")
