@@ -41,7 +41,7 @@ function PageButton(props: PageButtonProps) {
 	let selectedClass = props.selected ? " selected" : "";
 	return (
 		<div
-			class={`cont input-shadow bubble-hover page-button ${selectedClass}`}
+			class={`cont bubble-hover page-button ${selectedClass}`}
 			onclick={props.onclick}
 		>
 			{props.page}
