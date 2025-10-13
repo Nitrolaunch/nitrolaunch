@@ -381,7 +381,7 @@ impl GalleryEntry {
 	pub fn get_url(&self) -> &str {
 		match self {
 			Self::Simple(url) => url,
-			Self::Full(entry) => &entry.url,
+			Self::Full(entry) => &entry.raw_url,
 		}
 	}
 }
@@ -389,8 +389,10 @@ impl GalleryEntry {
 /// An entry in a project's gallery
 #[derive(Deserialize, Serialize, Clone)]
 pub struct FullGalleryEntry {
-	/// The URL to the gallery image
+	/// The URL to the low-quality version of the gallery image
 	pub url: String,
+	/// The URL to the high-quality version of the gallery image
+	pub raw_url: String,
 	/// Whether the gallery image is a featured banner on the project page
 	pub featured: bool,
 }

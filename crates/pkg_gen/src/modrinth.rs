@@ -432,7 +432,8 @@ pub fn get_preview(result: SearchedProject) -> Project {
 						.is_some_and(|featured| &x == featured)
 					{
 						GalleryEntry::Full(FullGalleryEntry {
-							url: x,
+							url: x.clone(),
+							raw_url: x,
 							featured: true,
 						})
 					} else {
