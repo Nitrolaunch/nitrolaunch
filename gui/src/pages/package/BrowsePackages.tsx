@@ -382,6 +382,7 @@ function Package(props: PackageProps) {
 						class="package-image"
 						onerror={(e: any) => (e.target.src = "/icons/default_instance.png")}
 					/>
+					<div class="package-image-gradient"></div>
 				</div>
 				<div class="cont col package-header">
 					<div class="cont start package-name">

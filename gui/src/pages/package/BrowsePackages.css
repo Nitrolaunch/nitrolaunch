@@ -36,12 +36,15 @@
 
 	overflow-x: hidden;
 
-	transition: background-color 0.25s, border-color 0.25s, transform var(--bubble);
+	--package-hover-color: var(--bg2);
+
+	transition: border-color 0.25s, transform var(--bubble), --package-hover-color 0.25s;
 }
 
 .package:hover {
 	background-color: var(--bg3);
 	border-color: var(--bg4);
+	--package-hover-color: var(--bg3);
 }
 
 .package.selected {
@@ -62,8 +65,17 @@
 }
 
 .package-image-container {
+	position: relative;
 	width: 100%;
-	border-bottom: var(--border) solid var(--bg3);
+}
+
+.package-image-gradient {
+	width: 100%;
+	height: 100%;
+	background-image: linear-gradient(transparent, transparent, 75%, var(--package-hover-color));
+	position: absolute;
+	top: 0;
+	left: 0;
 }
 
 .package-image {
