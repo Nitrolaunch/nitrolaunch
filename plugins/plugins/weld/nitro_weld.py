@@ -42,7 +42,7 @@ def weld_dir(dir: Path, ignore: list):
 	beet_config = {
 		"output": str(dir)
 	}
-	packs = [dir.joinpath(x) for x in os.listdir(unwelded_path)]
+	packs = [str(unwelded_path.joinpath(x)) for x in os.listdir(unwelded_path)]
 	with run_weld(packs=packs,config=beet_config,directory=dir) as ctx:
 		ctx.data.save(path=dir.joinpath("weld_pack.zip"), overwrite=True)
 
@@ -130,7 +130,7 @@ def main():
 	except Exception as e:
 		output("message", {
 			"contents": {
-				"Error": "Failed to weld packs:\n" + e,
+				"Error": "Failed to weld packs:\n" + str(e),
 			},
 			"level": "important"
 		})
