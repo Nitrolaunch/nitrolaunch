@@ -18,6 +18,7 @@ import {
 import { beautifyString } from "../utils";
 import { invoke } from "@tauri-apps/api";
 import IconButton from "./input/button/IconButton";
+import ProgressBar from "./ProgressBar";
 
 export default function TaskIndicator(props: TaskIndicatorProps) {
 	// Map of tasks to messages
@@ -30,6 +31,8 @@ export default function TaskIndicator(props: TaskIndicatorProps) {
 	let [selectedTask, setSelectedTask] = createSignal<number | undefined>(
 		undefined
 	);
+
+	let [selectedTaskProgress, setSelectedTaskProgress] = createSignal<number | undefined>(undefined);
 
 	function createTask(task: string) {
 		if (messages()[task] == undefined) {
@@ -49,6 +52,7 @@ export default function TaskIndicator(props: TaskIndicatorProps) {
 				processName: undefined,
 				nextMessageIsProcess: false,
 				nextMessageIsSection: true,
+				progressBar: undefined,
 			};
 			return messages;
 		});
@@ -98,6 +102,10 @@ export default function TaskIndicator(props: TaskIndicatorProps) {
 									messageType: event.payload.type,
 								});
 							}
+
+							// Clear the progress bar on any message other than the bar
+							task.progressBar = undefined;
+							updateSelectedProgress();
 						}
 						return messages;
 					});
@@ -182,7 +190,6 @@ export default function TaskIndicator(props: TaskIndicatorProps) {
 			"nitro_output_end_section",
 			(event: Event<string | undefined>) => {
 				if (event.payload != undefined) {
-					console.log("Pop");
 					setMessages((messages) => {
 						if (messages[event.payload!] != undefined) {
 							messages[event.payload!]!.sectionStack.pop();
@@ -190,6 +197,23 @@ export default function TaskIndicator(props: TaskIndicatorProps) {
 
 						return messages;
 					});
+				}
+			}
+		);
+
+		let unlisten8 = listen(
+			"nitro_output_progress",
+			(event: Event<ProgressEvent>) => {
+				if (event.payload.task != undefined) {
+					setMessages((messages) => {
+						if (messages[event.payload.task!] != undefined) {
+							messages[event.payload.task!]!.progressBar = event.payload.current / event.payload.total;
+						}
+
+						return messages;
+					});
+
+					updateSelectedProgress();
 				}
 			}
 		);
@@ -202,6 +226,7 @@ export default function TaskIndicator(props: TaskIndicatorProps) {
 			unlisten5,
 			unlisten6,
 			unlisten7,
+			unlisten8,
 		]);
 	});
 
@@ -220,6 +245,15 @@ export default function TaskIndicator(props: TaskIndicatorProps) {
 			return Object.values(messages())[selectedTask()!]!;
 		}
 	});
+
+	function updateSelectedProgress() {
+		if (selectedTask() != undefined) {
+			let selectedTaskData = Object.values(messages())[selectedTask()!]!;
+			setSelectedTaskProgress(selectedTaskData.progressBar);
+		} else {
+			setSelectedTaskProgress(undefined);
+		}
+	}
 
 	return (
 		<div id="task-indicator" style={`border-color:${getColors(color())[0]}`}>
@@ -306,6 +340,14 @@ export default function TaskIndicator(props: TaskIndicatorProps) {
 							/>
 						</Show>
 					</div>
+					<Show when={selectedTaskProgress() != undefined}>
+						<div class="cont" id="task-indicator-popup-progress">
+							<ProgressBar
+								value={selectedTaskProgress()!}
+								color={getColors(getTaskColor(selectedTaskData()!.id))[1]}
+							/>
+						</div>
+					</Show>
 					<Show when={isTaskKillable(selectedTaskData()!.id)}>
 						<div class="cont" id="task-indicator-popup-cancel">
 							<IconButton
@@ -372,11 +414,19 @@ type Task = {
 	processName: string | undefined;
 	nextMessageIsProcess: boolean;
 	nextMessageIsSection: boolean;
+	progressBar: number | undefined;
 };
 
 export interface MessageEvent {
 	message: string;
 	type: MessageType;
+	task?: string;
+}
+
+export interface ProgressEvent {
+	current: number;
+	total: number;
+	message: string;
 	task?: string;
 }
 

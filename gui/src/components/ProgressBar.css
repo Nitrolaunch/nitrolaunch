@@ -1,0 +1,17 @@
+.progress-bar {
+	height: 1rem;
+	padding: 0.25rem;
+	box-sizing: border-box;
+
+	border: var(--border) solid;
+	border-radius: var(--round2);
+
+	justify-content: flex-start;
+}
+
+.progress-bar-value {
+	height: 100%;
+	border-radius: var(--round2);
+
+	transition: width 0.25s cubic-bezier(0.645, 0.045, 0.355, 1);
+}

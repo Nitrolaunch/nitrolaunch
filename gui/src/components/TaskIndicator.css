@@ -65,6 +65,10 @@
 	grid-template-columns: minmax(0, 1fr) minmax(0, 5fr);
 }
 
+#task-indicator-popup-progress {
+	width: 85%;
+}
+
 #task-indicator-popup-cancel {
 	position: absolute;
 	left: 0.75rem;

@@ -29,6 +29,8 @@ import Tip from "../../components/dialog/Tip";
 import IconButton from "../../components/input/button/IconButton";
 import { loadPagePlugins } from "../../plugins";
 import SlideSwitch from "../../components/input/SlideSwitch";
+import ProgressBar from "../../components/ProgressBar";
+import { ProgressEvent } from "../../components/TaskIndicator";
 
 export default function Plugins() {
 	onMount(() => loadPagePlugins("plugins"));
