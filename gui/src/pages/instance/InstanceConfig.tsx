@@ -61,6 +61,7 @@ import LoadingSpinner from "../../components/utility/LoadingSpinner";
 import LaunchConfig from "./LaunchConfig";
 import IconSelector from "../../components/input/select/IconSelector";
 import { updateInstanceList } from "./InstanceList";
+import SlideSwitch from "../../components/input/SlideSwitch";
 
 export default function InstanceConfigPage(props: InstanceConfigProps) {
 	let navigate = useNavigate();
@@ -130,13 +131,24 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 		{ initialValue: [] }
 	);
 
-	let [supportedMinecraftVersions, _] = createResource(async () => {
+	let [releaseVersionsOnly, setReleaseVersionsOnly] = createSignal(true);
+
+	let [supportedMinecraftVersions, supportedVersionsMethods] = createResource(async () => {
 		let availableVersions = (await invoke("get_minecraft_versions", {
-			releasesOnly: false,
+			releasesOnly: releaseVersionsOnly(),
 		})) as string[];
 
 		availableVersions.reverse();
-		return ["latest", "latest_snapshot"].concat(availableVersions);
+		if (releaseVersionsOnly()) {
+			return ["latest"].concat(availableVersions);
+		} else {
+			return ["latest", "latest_snapshot"].concat(availableVersions);
+		}
+	});
+
+	createEffect(() => {
+		releaseVersionsOnly();
+		supportedVersionsMethods.refetch();
 	});
 
 	let [supportedLoaders, __] = createResource(async () => {
@@ -675,37 +687,48 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 							displayValue
 						/>
 					</div>
-					<Show
-						when={supportedMinecraftVersions() != undefined}
-						fallback={<LoadingSpinner size="var(--input-height)" />}
-					>
-						<div class="fullwidth" id="version">
-							<Tip tip="The Minecraft version of this instance" fullwidth>
-								<Dropdown
-									options={supportedMinecraftVersions()!.map((x) => {
-										return {
-											value: x,
-											contents: (
-												<div>
-													{x == "latest" || x == "latest_snapshot"
-														? beautifyString(x)
-														: x}
-												</div>
-											),
-											color: "var(--instance)",
-										};
-									})}
-									selected={version()}
-									onChange={(x) => {
-										setVersion(x);
-										setDirty();
-									}}
-									allowEmpty
-									zIndex="50"
-								/>
-							</Tip>
+					<div class="fullwidth split">
+						<Show
+							when={supportedMinecraftVersions() != undefined}
+							fallback={<LoadingSpinner size="var(--input-height)" />}
+						>
+							<div class="fullwidth" id="version">
+								<Tip tip="The Minecraft version of this instance" fullwidth>
+									<Dropdown
+										options={supportedMinecraftVersions()!.map((x) => {
+											return {
+												value: x,
+												contents: (
+													<div>
+														{x == "latest" || x == "latest_snapshot"
+															? beautifyString(x)
+															: x}
+													</div>
+												),
+												color: "var(--instance)",
+											};
+										})}
+										selected={version()}
+										onChange={(x) => {
+											setVersion(x);
+											setDirty();
+										}}
+										allowEmpty
+										zIndex="50"
+									/>
+								</Tip>
+							</div>
+						</Show>
+						<div class="cont">
+							<SlideSwitch
+								enabled={!releaseVersionsOnly()}
+								onToggle={() => setReleaseVersionsOnly(!releaseVersionsOnly())}
+								enabledColor="var(--instance)"
+								disabledColor="var(--fg3)"
+							/>
+							<span class="bold" style="color:var(--fg3)">Include Snapshots</span>
 						</div>
-					</Show>
+					</div>
 					<Show
 						when={
 							(side() == "client" || isProfile) &&
