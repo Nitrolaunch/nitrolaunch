@@ -1,5 +1,5 @@
 #packages-config {
-	width: 45rem;
+	width: 50rem;
 }
 
 #packages-config-resolution-error {
@@ -16,17 +16,11 @@
 	background-color: var(--errorbg);
 }
 
-#packages-config-header {
-	display: grid;
-	grid-template-columns: minmax(0, 6fr) minmax(0, 4fr);
-	width: 100%;
-}
-
-#package-config-filters > div {
+#package-config-filters>div {
 	justify-content: flex-start;
 }
 
-#package-config-sides > div {
+#package-config-sides>div {
 	justify-content: flex-end;
 }
 
@@ -47,10 +41,8 @@
 	height: 4.5rem;
 	width: 100%;
 	display: grid;
-	grid-template-columns: minmax(0, 0.4fr) minmax(0, 2fr) minmax(0, 1fr) minmax(
-			0,
-			1fr
-		);
+	grid-template-columns: minmax(0, 0.4fr) minmax(0, 2fr) minmax(0, 1fr) minmax(0,
+			1fr);
 	background-color: var(--bg0);
 	border: var(--border) solid var(--bg3);
 	border-radius: var(--round);

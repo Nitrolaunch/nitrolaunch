@@ -37,12 +37,14 @@ import EditableList from "../../components/input/text/EditableList";
 import PackageQuickAdd from "../../components/package/PackageQuickAdd";
 import { useNavigate } from "@solidjs/router";
 import Icon from "../../components/Icon";
+import SearchBar from "../../components/input/text/SearchBar";
 
 export default function PackagesConfig(props: PackagesConfigProps) {
 	let navigate = useNavigate();
 
 	let [filter, setFilter] = createSignal("user");
 	let [sideFilter, setSideFilter] = createSignal("all");
+	let [search, setSearch] = createSignal<string | undefined>(undefined);
 
 	let [installedPackages, setInstalledPackages] = createSignal<string[]>([]);
 
@@ -260,11 +262,10 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 				</div>
 			</div>
 			<div></div>
-			<div id="packages-config-header">
+			<div class="fullwidth split3" id="packages-config-header">
 				<div
-					class="cont"
+					class="cont start"
 					id="package-config-filters"
-					style="justify-content:flex-start"
 				>
 					<InlineSelect
 						options={[
@@ -301,10 +302,12 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 						solidSelect={true}
 					/>
 				</div>
+				<div>
+					<SearchBar value={search()} method={setSearch} immediate />
+				</div>
 				<div
-					class="cont"
+					class="cont end"
 					id="package-config-sides"
-					style="justify-content:flex-end"
 				>
 					<Show when={props.isProfile}>
 						<InlineSelect
@@ -377,6 +380,12 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 								} else if (sideFilter() == "client" && !isClient()) {
 									return false;
 								} else if (sideFilter() == "server" && !isServer()) {
+									return false;
+								} else if (
+									search() != undefined
+									&& !pkg.includes(search()!)
+									&& !(meta != undefined && meta.name != undefined && meta.name.includes(search()!))
+								) {
 									return false;
 								}
 								return true;
