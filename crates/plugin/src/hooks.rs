@@ -212,6 +212,37 @@ def_hook!(
 );
 
 def_hook!(
+	AfterPackagesInstalled,
+	"after_packages_installed",
+	"Hook for doing work on an instance after packages are installed on that instance",
+	AfterPackagesInstalledArg,
+	(),
+	1,
+);
+
+/// Argument for the AfterPackagesInstalled hook
+#[derive(Serialize, Deserialize, Default)]
+#[serde(default)]
+pub struct AfterPackagesInstalledArg {
+	/// The ID of the instance
+	pub id: String,
+	/// The side of the instance
+	pub side: Option<Side>,
+	/// Path to the instance's game dir
+	pub game_dir: String,
+	/// Version info for the instance
+	pub version_info: VersionInfo,
+	/// The loader of the instance
+	pub loader: Loader,
+	/// Instance configuration
+	pub config: InstanceConfig,
+	/// Path to the Nitrolaunch internal dir
+	pub internal_dir: String,
+	/// The depth to update at
+	pub update_depth: UpdateDepth,
+}
+
+def_hook!(
 	OnInstanceLaunch,
 	"on_instance_launch",
 	"Hook for doing work before an instance is launched",

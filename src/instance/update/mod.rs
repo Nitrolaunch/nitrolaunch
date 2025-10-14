@@ -8,6 +8,7 @@ use crate::config::preferences::ConfigPreferences;
 use crate::pkg::eval::EvalConstants;
 use crate::plugin::PluginManager;
 use nitro_core::user::UserManager;
+use nitro_plugin::hooks::{AfterPackagesInstalled, AfterPackagesInstalledArg};
 use nitro_shared::{translate, UpdateDepth};
 #[cfg(not(feature = "disable_profile_update_packages"))]
 use packages::print_package_support_messages;
@@ -134,6 +135,29 @@ impl Instance {
 					.await
 					.context("Failed to print support messages")?;
 			}
+		}
+
+		// Run hook after packages installed
+		let arg = AfterPackagesInstalledArg {
+			id: self.id.to_string(),
+			side: Some(self.get_side()),
+			game_dir: self.dirs.get().game_dir.to_string_lossy().to_string(),
+			version_info: manager.version_info.get().clone(),
+			loader: self.config.loader.clone(),
+			config: self
+				.config
+				.original_config_with_profiles_and_plugins
+				.clone(),
+			internal_dir: ctx.paths.internal.to_string_lossy().to_string(),
+			update_depth: manager.settings.depth,
+		};
+
+		let results = ctx
+			.plugins
+			.call_hook(AfterPackagesInstalled, &arg, ctx.paths, ctx.output)
+			.await?;
+		for result in results {
+			result.result(ctx.output).await?;
 		}
 
 		ctx.lock.update_instance_has_done_first_update(&self.id);

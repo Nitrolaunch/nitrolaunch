@@ -16,7 +16,8 @@ def output(method: str, data: object | None | str = None):
 		out2 = json.dumps(out)
 		print(f"%_{out2}")
 
-def weld_dir(dir: Path, ignore: list):
+# Welds a single datapack / resourcepack directory. Mode should be either "data" or "resource".
+def weld_dir(dir: Path, ignore: list, mode: str):
 	# Dir to store unwelded files so that they persist across updates
 	unwelded_path = dir.joinpath("unwelded")
 	if not unwelded_path.exists():
@@ -25,7 +26,7 @@ def weld_dir(dir: Path, ignore: list):
 	for entry in os.listdir(dir):
 		path = dir.joinpath(entry)
 
-		if "weld_pack" in entry:
+		if "Welded Packs" in entry:
 			continue
 		for ignored in ignore:
 			if ignored in entry:
@@ -42,9 +43,15 @@ def weld_dir(dir: Path, ignore: list):
 	beet_config = {
 		"output": str(dir)
 	}
+
 	packs = [str(unwelded_path.joinpath(x)) for x in os.listdir(unwelded_path)]
+	
+	target_pack_path = dir.joinpath("Welded Packs.zip")
 	with run_weld(packs=packs,config=beet_config,directory=dir) as ctx:
-		ctx.data.save(path=dir.joinpath("weld_pack.zip"), overwrite=True)
+		if mode == "data":
+			ctx.data.save(path=target_pack_path, overwrite=True)
+		elif mode == "resource":
+			ctx.assets.save(path=target_pack_path, overwrite=True)
 
 def set_result(hook: str):
 	if hook == "on_instance_setup":
@@ -58,7 +65,7 @@ def set_result(hook: str):
 
 def run():
 	hook = sys.argv[1]
-	if hook != "on_instance_setup" and hook != "update_world_files":
+	if hook != "after_packages_installed" and hook != "on_instance_setup" and hook != "update_world_files":
 		print("$_Incorrect hook")
 		set_result(hook)
 	
@@ -66,7 +73,8 @@ def run():
 
 	arg = json.loads(arg_raw)
 
-	if "update_depth" in arg and arg["update_depth"] == "shallow":
+	# If this is a full instance update we want to weld after packages are installed
+	if hook == "on_instance_setup" and "update_depth" in arg and arg["update_depth"] == "full":
 		set_result(hook)
 		return
 	
@@ -108,10 +116,10 @@ def run():
 
 	# Run Weld on each directory
 	for dir in datapack_dirs:
-		weld_dir(dir, weld_ignore)
+		weld_dir(dir, weld_ignore, "data")
 
 	for dir in resourcepack_dirs:
-		weld_dir(dir, weld_ignore)
+		weld_dir(dir, weld_ignore, "resource")
 
 	output("message", {
 		"contents": {

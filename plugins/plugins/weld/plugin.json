@@ -8,6 +8,10 @@
 			"executable": "./weld.pyz",
 			"priority": "last"
 		},
+		"after_packages_installed": {
+			"executable": "./weld.pyz",
+			"priority": "last"
+		},
 		"update_world_files": {
 			"executable": "./weld.pyz",
 			"priority": "last"
