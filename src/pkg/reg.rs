@@ -1,6 +1,6 @@
 use anyhow::{anyhow, Context};
 use itertools::Itertools;
-use nitro_core::net::download;
+use nitro_core::net::get_transfer_limit;
 use nitro_pkg::metadata::PackageMetadata;
 use nitro_pkg::parse_and_validate;
 use nitro_pkg::properties::PackageProperties;
@@ -352,7 +352,7 @@ impl PkgRegistry {
 
 		// Redownload all the packages
 		let mut tasks = JoinSet::new();
-		let semaphore = Arc::new(Semaphore::new(download::get_transfer_limit()));
+		let semaphore = Arc::new(Semaphore::new(get_transfer_limit()));
 		for package in packages {
 			let pkg = self
 				.get(&package, paths, client, o)

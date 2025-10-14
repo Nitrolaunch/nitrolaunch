@@ -13,7 +13,7 @@ use tokio::{sync::Semaphore, task::JoinSet};
 use crate::io::files::{self, paths::Paths};
 use crate::io::update::{UpdateManager, UpdateMethodResult};
 use crate::io::{json_from_file, json_to_file};
-use crate::net::download::{self, get_transfer_limit};
+use crate::net::{download, get_transfer_limit};
 use crate::util::versions::VersionName;
 
 use super::client_meta::ClientMeta;
@@ -242,7 +242,7 @@ async fn download_asset(asset: &AssetData, client: &Client) -> anyhow::Result<()
 	}
 
 	if let Some(virtual_path) = &asset.virtual_path {
-		files::update_hardlink_async(&asset.path, virtual_path)
+		files::update_link_async(&asset.path, virtual_path)
 			.await
 			.context("Failed to hardlink virtual asset")?;
 	}

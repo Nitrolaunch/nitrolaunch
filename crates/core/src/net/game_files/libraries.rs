@@ -13,7 +13,7 @@ use zip::ZipArchive;
 use crate::io::files;
 use crate::io::java::classpath::Classpath;
 use crate::io::update::{UpdateManager, UpdateMethodResult};
-use crate::net::download::{self, get_transfer_limit};
+use crate::net::{download, get_transfer_limit};
 use nitro_shared::skip_none;
 use nitro_shared::util;
 

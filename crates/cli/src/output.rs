@@ -5,6 +5,7 @@ use anyhow::Context;
 use color_print::{cformat, cstr};
 use inquire::{Confirm, Password};
 use itertools::Itertools;
+use nitrolaunch::core::io::config::IO_CONFIG;
 use nitrolaunch::io::paths::Paths;
 use nitrolaunch::pkg_crate::{PkgRequest, PkgRequestSource};
 use nitrolaunch::shared::lang::translate::{TranslationKey, TranslationMap};
@@ -377,7 +378,5 @@ fn add_period(string: String) -> String {
 
 /// Get whether icons are enabled
 pub fn icons_enabled() -> bool {
-	let out = std::env::var("NITRO_CLI_ICONS").unwrap_or("0".into());
-	let out: u8 = out.parse().unwrap_or(0);
-	out != 0
+	IO_CONFIG.get("cli_icons") == Some("1".into())
 }

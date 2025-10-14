@@ -5,7 +5,7 @@ use reqwest::Client;
 
 use crate::io::paths::Paths;
 use crate::util::hash::{get_best_hash, hash_file_with_best_hash};
-use nitro_core::io::files::{create_leading_dirs, update_hardlink};
+use nitro_core::io::files::{create_leading_dirs, update_link};
 use nitro_core::net::download;
 
 use std::future::Future;
@@ -150,7 +150,7 @@ impl AddonRequest {
 						.context("Failed to download addon")?;
 				}
 				AddonLocation::Local(actual_path) => {
-					update_hardlink(&actual_path, &path)
+					update_link(&actual_path, &path)
 						.context("Failed to hardlink local addon")?;
 				}
 			}

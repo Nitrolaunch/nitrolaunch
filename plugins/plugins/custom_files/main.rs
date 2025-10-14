@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use anyhow::Context;
-use nitro_core::io::files::{create_leading_dirs, update_hardlink};
+use nitro_core::io::files::{create_leading_dirs, update_link};
 use nitro_plugin::api::CustomPlugin;
 use nitro_plugin::hooks::OnInstanceSetupResult;
 use serde::{Deserialize, Serialize};
@@ -25,7 +25,7 @@ fn main() -> anyhow::Result<()> {
 			create_leading_dirs(&target).context("Failed to create leading directories to file")?;
 
 			if file.link {
-				update_hardlink(&src, &target)
+				update_link(&src, &target)
 					.with_context(|| format!("Failed to link custom file {}", file.source))?;
 			} else {
 				std::fs::copy(src, target)

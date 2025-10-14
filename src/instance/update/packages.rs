@@ -5,7 +5,7 @@ use std::sync::Arc;
 
 use itertools::Itertools;
 use nitro_config::instance::get_addon_paths;
-use nitro_core::net::download::get_transfer_limit;
+use nitro_core::net::get_transfer_limit;
 use nitro_pkg::overrides::is_package_overridden;
 use nitro_pkg::properties::PackageProperties;
 use nitro_pkg::repo::PackageFlag;

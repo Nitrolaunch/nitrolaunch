@@ -6,7 +6,7 @@ use std::{
 
 use anyhow::Context;
 use nitro_core::io::{
-	files::{create_leading_dirs, update_hardlink},
+	files::{create_leading_dirs, update_link},
 	json_from_file, json_to_file,
 };
 use nitro_net::{
@@ -202,7 +202,7 @@ async fn query_package(
 			let slug_path = storage_dirs.packages.join(&slug);
 			let _ = create_leading_dirs(&id_path);
 			let _ = std::fs::write(&id_path, &package_data);
-			let _ = update_hardlink(&id_path, &slug_path);
+			let _ = update_link(&id_path, &slug_path);
 
 			package
 		}
@@ -541,7 +541,7 @@ fn save_project_info(project_info: &ProjectInfo, storage_dirs: &StorageDirs) -> 
 	let slug_path = storage_dirs.projects.join(&project_info.project.slug);
 	create_leading_dirs(&id_path)?;
 	json_to_file(&id_path, &project_info)?;
-	update_hardlink(&id_path, &slug_path)?;
+	update_link(&id_path, &slug_path)?;
 
 	Ok(())
 }

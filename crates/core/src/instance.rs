@@ -7,7 +7,7 @@ use nitro_shared::{translate, Side};
 
 use crate::config::BrandingProperties;
 use crate::io::files::paths::Paths;
-use crate::io::files::update_hardlink;
+use crate::io::files::update_link;
 use crate::io::java::classpath::Classpath;
 use crate::io::java::install::{JavaInstallParameters, JavaInstallation, JavaInstallationKind};
 use crate::io::java::JavaMajorVersion;
@@ -121,7 +121,7 @@ impl<'params> Instance<'params> {
 							.await
 							.context("Failed to copy server.jar")?;
 					} else {
-						update_hardlink(&jar_path, &new_jar_path)
+						update_link(&jar_path, &new_jar_path)
 							.context("Failed to hardlink server.jar")?;
 					}
 					params.update_manager.add_file(new_jar_path.clone());

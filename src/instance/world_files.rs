@@ -1,7 +1,7 @@
 use std::path::{Path, PathBuf};
 
 use anyhow::Context;
-use nitro_core::io::files::{create_leading_dirs, update_hardlink};
+use nitro_core::io::files::{create_leading_dirs, update_link};
 use nitro_plugin::hooks::{InstanceLaunchArg, UpdateWorldFiles};
 use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
 
@@ -135,7 +135,7 @@ impl WorldFilesWatcher {
 				if is_first_run && target_path.exists() {
 					let _ = std::fs::remove_file(&target_path);
 				}
-				let _ = update_hardlink(&path, &target_path);
+				let _ = update_link(&path, &target_path);
 			}
 		}
 

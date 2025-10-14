@@ -68,7 +68,7 @@ impl Instance {
 		if link.exists() {
 			std::fs::remove_file(&link).context("Failed to remove instance addon file")?;
 		}
-		nitro_core::io::files::update_hardlink(&addon_path, &link)
+		nitro_core::io::files::update_link(&addon_path, &link)
 			.context("Failed to create hard link")?;
 		Ok(())
 	}
