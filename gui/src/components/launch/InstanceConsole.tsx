@@ -12,6 +12,8 @@ import {
 import "./InstanceConsole.css";
 import InlineSelect from "../input/select/InlineSelect";
 import SearchBar from "../input/text/SearchBar";
+import Icon from "../Icon";
+import { Error, Info, Text, Warning } from "../../icons";
 
 export default function InstanceConsole(props: InstanceConsoleProps) {
 	let outputElem!: HTMLDivElement;
@@ -69,24 +71,36 @@ export default function InstanceConsole(props: InstanceConsoleProps) {
 					options={[
 						{
 							value: "all",
-							contents: "ALL",
+							contents: <div class="cont">
+								<Icon icon={Text} size="1rem" />
+								ALL
+							</div>,
 							tip: "Show all messages",
 						},
 						{
 							value: "error",
-							contents: "ERRORS",
+							contents: <div class="cont">
+								<Icon icon={Error} size="1rem" />
+								ERRORS
+							</div>,
 							color: "var(--error)",
 							tip: "Show only errors",
 						},
 						{
 							value: "warning",
-							contents: "WARNINGS",
+							contents: <div class="cont">
+								<Icon icon={Warning} size="1rem" />
+								WARNINGS
+							</div>,
 							color: "var(--warning)",
 							tip: "Show only warnings",
 						},
 						{
 							value: "info",
-							contents: "INFO",
+							contents: <div class="cont">
+								<Icon icon={Info} size="1rem" />
+								INFO
+							</div>,
 							color: "var(--fg3)",
 							tip: "Show only info messages",
 						},
