@@ -45,7 +45,7 @@ export default function IconSelector(props: IconSelectorProps) {
 function SelectableIcon(props: SelectableIconProps) {
 	return (
 		<div
-			class={`cont bubble-hover icon-selector-icon ${props.isSelected ? "selected" : ""}`}
+			class={`cont bubble-hover input-shadow icon-selector-icon ${props.isSelected ? "selected" : ""}`}
 			onclick={props.onSelect}
 		>
 			<img src={props.icon} class="icon-selector-icon-image" />

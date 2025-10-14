@@ -92,6 +92,8 @@
 .instance-list-item-details {
 	align-items: flex-start;
 	gap: 0;
+	overflow-x: auto;
+	overflow-y: hidden;
 }
 
 .instance-list-item:hover {

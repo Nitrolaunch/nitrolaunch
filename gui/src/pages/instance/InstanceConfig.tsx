@@ -30,6 +30,7 @@ import DisplayShow from "../../components/utility/DisplayShow";
 import {
 	getLoaderColor,
 	getLoaderDisplayName,
+	getLoaderImage,
 	getLoaderSide,
 	Loader,
 } from "../../package";
@@ -62,6 +63,8 @@ import LaunchConfig from "./LaunchConfig";
 import IconSelector from "../../components/input/select/IconSelector";
 import { updateInstanceList } from "./InstanceList";
 import SlideSwitch from "../../components/input/SlideSwitch";
+import Icon from "../../components/Icon";
+import { Controller, Server } from "../../icons";
 
 export default function InstanceConfigPage(props: InstanceConfigProps) {
 	let navigate = useNavigate();
@@ -638,6 +641,7 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 							}}
 						/>
 					</Show>
+					<hr />
 					<Show when={props.creating || isProfile || isGlobalProfile}>
 						<div class="cont start">
 							<label for="side" class="label">
@@ -662,12 +666,12 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 								options={[
 									{
 										value: "client",
-										contents: <div class="cont">Client</div>,
+										contents: <div class="cont"><Icon icon={Controller} size="1.2rem" /> Client</div>,
 										color: "var(--instance)",
 									},
 									{
 										value: "server",
-										contents: <div class="cont">Server</div>,
+										contents: <div class="cont"><Icon icon={Server} size="1rem" /> Server</div>,
 										color: "var(--profile)",
 									},
 								]}
@@ -676,7 +680,6 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 							/>
 						</Tip>
 					</Show>
-					<hr />
 					<div class="cont start label">
 						<label for="version">MINECRAFT VERSION</label>
 						<DeriveIndicator
@@ -687,13 +690,13 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 							displayValue
 						/>
 					</div>
-					<div class="fullwidth split">
-						<Show
-							when={supportedMinecraftVersions() != undefined}
-							fallback={<LoadingSpinner size="var(--input-height)" />}
-						>
-							<div class="fullwidth" id="version">
-								<Tip tip="The Minecraft version of this instance" fullwidth>
+					<Show
+						when={supportedMinecraftVersions() != undefined}
+						fallback={<LoadingSpinner size="var(--input-height)" />}
+					>
+						<Tip tip="The Minecraft version of this instance" fullwidth>
+							<div class="fullwidth split">
+								<div class="fullwidth" id="version">
 									<Dropdown
 										options={supportedMinecraftVersions()!.map((x) => {
 											return {
@@ -716,19 +719,19 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 										allowEmpty
 										zIndex="50"
 									/>
-								</Tip>
+								</div>
+								<div class="cont">
+									<SlideSwitch
+										enabled={!releaseVersionsOnly()}
+										onToggle={() => setReleaseVersionsOnly(!releaseVersionsOnly())}
+										enabledColor="var(--instance)"
+										disabledColor="var(--fg3)"
+									/>
+									<span class="bold" style={`color:${releaseVersionsOnly() ? "var(--fg3)" : "var(--instance)"}`}>Include Snapshots</span>
+								</div>
 							</div>
-						</Show>
-						<div class="cont">
-							<SlideSwitch
-								enabled={!releaseVersionsOnly()}
-								onToggle={() => setReleaseVersionsOnly(!releaseVersionsOnly())}
-								enabledColor="var(--instance)"
-								disabledColor="var(--fg3)"
-							/>
-							<span class="bold" style="color:var(--fg3)">Include Snapshots</span>
-						</div>
-					</div>
+						</Tip>
+					</Show>
 					<Show
 						when={
 							(side() == "client" || isProfile) &&
@@ -778,6 +781,9 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 														: ""
 														}`}
 												>
+													<Show when={x != undefined}>
+														<img src={getLoaderImage(x as Loader)} style="width:1.2rem" />
+													</Show>
 													{x == undefined
 														? "Unset"
 														: getLoaderDisplayName(x as Loader)}
@@ -788,7 +794,7 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 												x == undefined ? "Inherit from the profile" : undefined,
 										};
 									})}
-								columns={4}
+								columns={3}
 								allowEmpty={false}
 								connected={false}
 							/>
@@ -843,6 +849,9 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 														: ""
 														}`}
 												>
+													<Show when={x != undefined}>
+														<img src={getLoaderImage(x as Loader)} style="width:1.2rem" />
+													</Show>
 													{x == undefined
 														? "Unset"
 														: getLoaderDisplayName(x as Loader)}
@@ -853,7 +862,7 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 												x == undefined ? "Inherit from the profile" : undefined,
 										};
 									})}
-								columns={4}
+								columns={3}
 								allowEmpty={false}
 								connected={false}
 							/>

@@ -476,7 +476,7 @@ function Item(props: ItemProps) {
 			</Show>
 			{icon}
 			<div class="cont col instance-list-item-details">
-				<div class="cont start">
+				<div class="cont start" style="text-wrap:nowrap">
 					<span class="bold">
 						{props.instance.name !== null
 							? props.instance.name
