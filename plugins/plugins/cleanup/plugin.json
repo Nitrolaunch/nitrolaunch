@@ -1,0 +1,13 @@
+{
+	"name": "Cleanup",
+	"description": "Clean up old files",
+	"protocol_version": 3,
+	"hooks": {
+		"subcommand": {
+			"executable": "${PLUGIN_DIR}/nitro_plugin_cleanup${EXE_EXTENSION}"
+		}
+	},
+	"subcommands": {
+		"cleanup": "Remove assets that aren't needed anymore"
+	}
+}

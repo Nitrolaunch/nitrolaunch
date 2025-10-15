@@ -45,11 +45,12 @@ fn main() {
 	add_file!(zip, "plugins/development/format.md");
 	add_file!(zip, "plugins/development/hooks.md");
 	add_file!(zip, "plugins/plugins/index.md");
-	add_file!(zip, "plugins/plugins/archive.md");
+
 	add_file!(zip, "plugins/plugins/args.md");
 	add_file!(zip, "plugins/plugins/automate.md");
 	add_file!(zip, "plugins/plugins/backup.md");
 	add_file!(zip, "plugins/plugins/better_jsons.md");
+	add_file!(zip, "plugins/plugins/cleanup.md");
 	add_file!(zip, "plugins/plugins/config_split.md");
 	add_file!(zip, "plugins/plugins/custom_files.md");
 	add_file!(zip, "plugins/plugins/docs.md");
@@ -66,7 +67,7 @@ fn main() {
 	add_file!(zip, "plugins/plugins/smithed.md");
 	add_file!(zip, "plugins/plugins/smithed_api.md");
 	add_file!(zip, "plugins/plugins/stats.md");
-	add_file!(zip, "plugins/plugins/weld.md");
 	add_file!(zip, "plugins/plugins/webtools.md");
+	add_file!(zip, "plugins/plugins/weld.md");
 	add_file!(zip, "plugins/plugins/xmcl_transfer.md");
 }

@@ -11,10 +11,6 @@ repository.workspace = true
 rust-version.workspace = true
 
 [[bin]]
-name = "nitro_plugin_archive"
-path = "plugins/archive/main.rs"
-
-[[bin]]
 name = "nitro_plugin_args"
 path = "plugins/args/main.rs"
 
@@ -29,6 +25,10 @@ path = "plugins/backup/main.rs"
 [[bin]]
 name = "nitro_plugin_better_jsons"
 path = "plugins/better_jsons/main.rs"
+
+[[bin]]
+name = "nitro_plugin_cleanup"
+path = "plugins/cleanup/main.rs"
 
 [[bin]]
 name = "nitro_plugin_config_split"

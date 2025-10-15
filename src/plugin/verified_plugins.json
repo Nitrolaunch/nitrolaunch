@@ -146,9 +146,9 @@
 		"github_repo": "nitrolaunch",
 		"description": "Instance transfer for XMCL"
 	},
-	"archive": {
-		"id": "archive",
-		"name": "Archive",
+	"cleanup": {
+		"id": "cleanup",
+		"name": "Cleanup",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "nitrolaunch",
 		"description": "Clean up old files"

@@ -16,11 +16,11 @@ TARGET_DIR ?= "../target/release"
 package_zips.platform_dependent:
 	@mkdir -p release
 	
-	@rm -f release/archive-${OS}.zip
 	@rm -f release/args-${OS}.zip
 	@rm -f release/automate-${OS}.zip
 	@rm -f release/backup-${OS}.zip
 	@rm -f release/better_jsons-${OS}.zip
+	@rm -f release/cleanup-${OS}.zip
 	@rm -f release/config_split-${OS}.zip
 	@rm -f release/custom_files-${OS}.zip
 	@rm -f release/docs-${OS}.zip
@@ -46,11 +46,11 @@ package_zips.platform_dependent:
 	@rm -f release/weld-${OS}.zip
 	@rm -f release/xmcl_transfer-${OS}.zip
 
-	@zip -j release/archive-${OS}.zip $(TARGET_DIR)/nitro_plugin_archive${EXTENSION} plugins/archive/plugin.json
 	@zip -j release/args-${OS}.zip $(TARGET_DIR)/nitro_plugin_args${EXTENSION} plugins/args/plugin.json
 	@zip -j release/automate-${OS}.zip $(TARGET_DIR)/nitro_plugin_automate${EXTENSION} plugins/automate/plugin.json
 	@zip -j release/backup-${OS}.zip $(TARGET_DIR)/nitro_plugin_backup${EXTENSION} plugins/backup/plugin.json
 	@zip -j release/better_jsons-${OS}.zip $(TARGET_DIR)/nitro_plugin_better_jsons${EXTENSION} plugins/better_jsons/plugin.json
+	@zip -j release/cleanup-${OS}.zip $(TARGET_DIR)/nitro_plugin_cleanup${EXTENSION} plugins/cleanup/plugin.json
 	@zip -j release/config_split-${OS}.zip $(TARGET_DIR)/nitro_plugin_config_split${EXTENSION} plugins/config_split/plugin.json
 	@zip -j release/custom_files-${OS}.zip $(TARGET_DIR)/nitro_plugin_custom_files${EXTENSION} plugins/custom_files/plugin.json
 	@zip -j release/docs-${OS}.zip $(TARGET_DIR)/nitro_plugin_docs${EXTENSION} plugins/docs/plugin.json
@@ -78,10 +78,6 @@ package_zips.platform_dependent:
 build.weld:
 	@shiv -o plugins/weld/weld.pyz -e nitro_weld.main --site-packages plugins/weld smithed
 
-install.archive:
-	@cargo install --path . --bin nitro_plugin_archive --offline
-	@cat plugins/archive/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/archive.json
-
 install.args:
 	@cargo install --path . --bin nitro_plugin_args --offline
 	@cat plugins/args/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/args.json
@@ -97,6 +93,10 @@ install.backup:
 install.better_jsons:
 	@cargo install --path . --bin nitro_plugin_better_jsons --offline
 	@cat plugins/better_jsons/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/better_jsons.json
+
+install.cleanup:
+	@cargo install --path . --bin nitro_plugin_cleanup --offline
+	@cat plugins/cleanup/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/cleanup.json
 
 install.config_split:
 	@cargo install --path . --bin nitro_plugin_config_split --offline

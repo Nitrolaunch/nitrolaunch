@@ -12,12 +12,12 @@ use nitro_core::{io::json_from_file, net::game_files::assets::AssetIndex};
 use nitro_plugin::api::CustomPlugin;
 
 fn main() -> anyhow::Result<()> {
-	let mut plugin = CustomPlugin::from_manifest_file("archive", include_str!("plugin.json"))?;
+	let mut plugin = CustomPlugin::from_manifest_file("cleanup", include_str!("plugin.json"))?;
 	plugin.subcommand(|ctx, args| {
 		let Some(subcommand) = args.first() else {
 			return Ok(());
 		};
-		if subcommand != "archive" {
+		if subcommand != "cleanup" {
 			return Ok(());
 		}
 		// Trick the parser to give it the right bin name
@@ -29,8 +29,8 @@ fn main() -> anyhow::Result<()> {
 		let runtime = tokio::runtime::Runtime::new()?;
 		runtime.block_on(async {
 			match cli.subcommand {
-				Subcommand::Version { version } => archive_version(&data_dir, &version).await,
-				Subcommand::Addons => archive_addons(&data_dir).await,
+				Subcommand::Version { version } => cleanup_version(&data_dir, &version).await,
+				Subcommand::Addons => cleanup_addons(&data_dir).await,
 			}
 		})?;
 
@@ -57,7 +57,7 @@ enum Subcommand {
 	Addons,
 }
 
-async fn archive_version(data_dir: &Path, version: &str) -> anyhow::Result<()> {
+async fn cleanup_version(data_dir: &Path, version: &str) -> anyhow::Result<()> {
 	// First load all of the asset indexes
 	let mut indexes = HashMap::new();
 	for entry in data_dir
@@ -109,7 +109,7 @@ async fn archive_version(data_dir: &Path, version: &str) -> anyhow::Result<()> {
 	Ok(())
 }
 
-async fn archive_addons(data_dir: &Path) -> anyhow::Result<()> {
+async fn cleanup_addons(data_dir: &Path) -> anyhow::Result<()> {
 	let mut removed_count = 0;
 	let mut removed_size = 0;
 
