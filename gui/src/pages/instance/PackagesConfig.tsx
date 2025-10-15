@@ -19,7 +19,7 @@ import {
 	stringCompare,
 } from "../../utils";
 import IconButton from "../../components/input/button/IconButton";
-import { Edit, Error, Plus, Popout, Search, Trash, Upload } from "../../icons";
+import { Edit, Error, Lock, Plus, Popout, Search, Trash, Upload } from "../../icons";
 import { errorToast } from "../../components/dialog/Toasts";
 import LoadingSpinner from "../../components/utility/LoadingSpinner";
 import ResolutionError, {
@@ -529,9 +529,12 @@ function ConfiguredPackage(props: ConfiguredPackageProps) {
 				<div class="cont configured-package-details-top">
 					<div class="configured-package-name">{name}</div>
 					<Show when={props.request.version != undefined}>
-						<div class="configured-package-version">
-							{props.request.version}
-						</div>
+						<Tip tip={`Version locked at ${props.request.version}`} side="top">
+							<div class="cont start configured-package-version">
+								<Icon icon={Lock} size="1rem" />
+								{props.request.version}
+							</div>
+						</Tip>
 					</Show>
 				</div>
 				<Show when={props.request.repository != undefined}>

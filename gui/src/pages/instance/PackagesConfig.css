@@ -78,6 +78,8 @@
 }
 
 .configured-package-version {
+	gap: 0.2rem;
+
 	font-size: 0.8rem;
 	font-weight: bold;
 	color: var(--fg3);
