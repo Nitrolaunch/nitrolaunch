@@ -22,7 +22,8 @@ def weld_dir(dir: Path, ignore: list, mode: str):
 	unwelded_path = dir.joinpath("unwelded")
 	if not unwelded_path.exists():
 		os.mkdir(unwelded_path)
-	# Move all files to the unwelded dir
+
+	# Move all non-ignored packs to the unwelded dir
 	for entry in os.listdir(dir):
 		path = dir.joinpath(entry)
 
@@ -38,6 +39,16 @@ def weld_dir(dir: Path, ignore: list, mode: str):
 			if target.exists():
 				os.remove(target)
 			os.rename(path, target)
+
+	# Move any ignored packs out of the unwelded dir
+	for entry in os.listdir(unwelded_path):
+		for ignored in ignore:
+			if ignored in entry:
+				source = unwelded_path.joinpath(entry)
+				target = dir.joinpath(entry)
+				if target.exists():
+					os.remove(target)
+				os.rename(source, target)
 
 	# Now Weld
 	beet_config = {
