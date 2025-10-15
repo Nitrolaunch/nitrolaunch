@@ -366,9 +366,6 @@ export default function PackageFilters(props: PackageFiltersProps) {
 							icon={Trash}
 							size="1rem"
 							text="Clear Filters"
-							color="var(--bg2)"
-							selectedColor=""
-							selected={false}
 							onClick={() => {
 								props.setMinecraftVersions([]);
 								props.setLoaders([]);

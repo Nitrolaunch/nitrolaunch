@@ -241,9 +241,6 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 							icon={Upload}
 							size="1.5rem"
 							text="Update Packages"
-							color="var(--bg2)"
-							selectedColor=""
-							selected={false}
 							onClick={async () => {
 								try {
 									if (props.beforeUpdate != undefined) {

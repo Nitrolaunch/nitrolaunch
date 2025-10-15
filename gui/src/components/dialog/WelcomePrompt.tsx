@@ -52,10 +52,10 @@ export default function WelcomePrompt(props: WelcomePromptProps) {
 					</div>
 					<br />
 					<div class="cont">
-						<IconTextButton icon={Delete} size="1.5rem" color="var(--bg2)" selectedColor="var(--error)" selectedBg="var(--errorbg)" selected text="No" onClick={() => {
+						<IconTextButton icon={Delete} size="1.5rem" color="var(--error)" bgColor="var(--errorbg)" text="No" onClick={() => {
 							setTab(1);
 						}} />
-						<IconTextButton icon={Check} size="1.5rem" color="var(--bg2)" selectedColor="var(--instance)" selectedBg="var(--instancebg)" selected text="Yes" onClick={() => {
+						<IconTextButton icon={Check} size="1.5rem" color="var(--instance)" bgColor="var(--instancebg)" text="Yes" onClick={() => {
 							invoke("install_default_plugins").then(
 								() => {
 									successToast("Default plugins installed");
@@ -80,7 +80,7 @@ export default function WelcomePrompt(props: WelcomePromptProps) {
 			<div id="welcome-prompt-navigation" class="split">
 				<div class="cont start" style="padding-left: 1rem">
 					<Show when={tab() != 0}>
-						<IconTextButton icon={AngleLeft} size="1.5rem" color="var(--bg2)" text="Back" onClick={() => {
+						<IconTextButton icon={AngleLeft} size="1.5rem" text="Back" onClick={() => {
 							setTab(tab() - 1);
 						}} />
 					</Show>
@@ -88,12 +88,12 @@ export default function WelcomePrompt(props: WelcomePromptProps) {
 				<div class="cont end" style="padding-right: 1rem">
 					<Switch>
 						<Match when={tab() != 2}>
-							<IconTextButton icon={AngleRight} size="1.5rem" color="var(--bg2)" text="Next" onClick={() => {
+							<IconTextButton icon={AngleRight} size="1.5rem" text="Next" onClick={() => {
 								setTab(tab() + 1);
 							}} />
 						</Match>
 						<Match when={tab() == 2}>
-							<IconTextButton icon={Check} size="1.5rem" color="var(--bg2)" text="Done!" onClick={() => {
+							<IconTextButton icon={Check} size="1.5rem" text="Done!" onClick={() => {
 								props.onClose();
 							}} />
 						</Match>

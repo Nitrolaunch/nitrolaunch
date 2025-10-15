@@ -78,9 +78,6 @@ export default function UserPage() {
 												icon={LockOpen}
 												size="1.2rem"
 												text="Log In"
-												color="var(--bg2)"
-												selected={false}
-												selectedColor="var(--instance)"
 												onClick={async () => {
 													try {
 														await invoke("login_user", { user: id });
@@ -99,9 +96,6 @@ export default function UserPage() {
 												icon={Lock}
 												size="1.2rem"
 												text="Log Out"
-												color="var(--bg2)"
-												selected={false}
-												selectedColor="var(--instance)"
 												onClick={async () => {
 													try {
 														await invoke("logout_user", { user: id });
@@ -120,10 +114,8 @@ export default function UserPage() {
 										icon={Delete}
 										size="1.2rem"
 										text="Delete"
-										color="var(--bg2)"
-										selected={true}
-										selectedColor="var(--error)"
-										selectedBg="var(--errorbg)"
+										color="var(--error)"
+										bgColor="var(--errorbg)"
 										onClick={async () => {
 											try {
 												await invoke("remove_user", {

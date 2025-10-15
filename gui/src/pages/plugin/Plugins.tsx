@@ -50,12 +50,10 @@ export default function Plugins() {
 						icon={Refresh}
 						text="Refresh Launcher"
 						size="22px"
-						color="var(--bg2)"
-						selectedColor="var(--plugin)"
+						color={restartNeeded() ? "var(--plugin)" : undefined}
 						onClick={() => {
 							emit("refresh_window");
 						}}
-						selected={restartNeeded()}
 					/>
 				</div>
 				<h1 class="cont">

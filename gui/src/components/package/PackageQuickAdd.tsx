@@ -221,10 +221,8 @@ export default function PackageQuickAdd(props: PackageQuickAddProps) {
 										icon={Plus}
 										size="1.2rem"
 										text="Add"
-										color="var(--bg2)"
-										selectedBg="var(--packagebg)"
-										selectedColor="var(--package)"
-										selected
+										color="var(--package)"
+										bgColor="var(--packagebg)"
 										onClick={() => {
 											props.onAdd(previewedPackage()!);
 										}}

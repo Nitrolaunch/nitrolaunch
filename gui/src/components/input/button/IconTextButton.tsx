@@ -5,15 +5,11 @@ import "./IconTextButton.css";
 export default function IconTextButton(props: IconTextButtonProps) {
 	let [isHovered, setIsHovered] = createSignal(false);
 
-	let selectedBg =
-		props.selectedBg == undefined ? props.color : props.selectedBg;
+	let color = () => props.color == undefined ? isHovered() ? "var(--bg4)" : "var(--bg3)" : props.color;
+	let bgColor = () => props.bgColor == undefined ? isHovered() ? "var(--bg3)" : "var(--bg2)" : props.bgColor;
+	let textColor = () => props.color == undefined ? "var(--fg)" : props.color;
 
-	const colorStyle = () =>
-		props.selected == true && props.selectedColor != undefined
-			? `background-color:${selectedBg};border-color:${props.selectedColor}`
-			: isHovered()
-			? `background-color:${props.color};border-color:var(--bg4)`
-			: `background-color:${props.color};border-color:var(--bg3)`;
+	const colorStyle = () => `background-color:${bgColor()};border-color:${color()};color:${textColor()}`;
 
 	let shadow = props.shadow == undefined ? true : props.shadow;
 
@@ -27,9 +23,8 @@ export default function IconTextButton(props: IconTextButtonProps) {
 		>
 			<Show when={props.icon != undefined}>
 				<div
-					class={`icon-text-button-icon center ${
-						props.animate == true ? "rotating" : ""
-					}`}
+					class={`icon-text-button-icon center ${props.animate == true ? "rotating" : ""
+						}`}
 				>
 					<Icon icon={props.icon!} size={`calc(${props.size} * 0.7)`} />
 				</div>
@@ -43,11 +38,9 @@ export interface IconTextButtonProps {
 	icon?: (props: HasWidthHeight) => JSXElement;
 	size: string;
 	text: string;
-	color: string;
-	selectedColor?: string;
-	selectedBg?: string;
+	color?: string;
+	bgColor?: string;
 	shadow?: boolean;
-	selected?: boolean;
 	animate?: boolean;
 	style?: string;
 	onClick: () => void;

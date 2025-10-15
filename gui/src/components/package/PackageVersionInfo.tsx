@@ -182,10 +182,6 @@ export default function PackageVersionInfo(props: PackageVersionInfoProps) {
 					<IconTextButton
 						icon={Delete}
 						size="1.5rem"
-						color="var(--bg2)"
-						selectedColor="var(--package)"
-						selectedBg="var(--bg)"
-						selected={false}
 						onClick={() => {
 							props.onClose();
 						}}
@@ -194,10 +190,6 @@ export default function PackageVersionInfo(props: PackageVersionInfoProps) {
 					<IconTextButton
 						icon={Download}
 						size="1.5rem"
-						color="var(--bg2)"
-						selectedColor="var(--package)"
-						selectedBg="var(--bg)"
-						selected={false}
 						onClick={() => {
 							props.onInstall(props.version.name!);
 							props.onClose();

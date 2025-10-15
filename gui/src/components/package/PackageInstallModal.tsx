@@ -73,7 +73,7 @@ export default function PackageInstallModal(props: PackageInstallModalProps) {
 		let mode = selectedTab() as InstanceConfigMode;
 		let location =
 			selectedProfileLocation() == undefined ||
-			mode == InstanceConfigMode.Instance
+				mode == InstanceConfigMode.Instance
 				? "all"
 				: (selectedProfileLocation() as "client" | "server" | "all");
 
@@ -134,9 +134,6 @@ export default function PackageInstallModal(props: PackageInstallModalProps) {
 									<IconTextButton
 										icon={AngleRight}
 										size="1.5rem"
-										color="var(--bg2)"
-										selectedColor="var(--bg2)"
-										selected={false}
 										onClick={() => {
 											props.onClose();
 											props.onShowVersions();
@@ -260,10 +257,6 @@ export default function PackageInstallModal(props: PackageInstallModalProps) {
 					<IconTextButton
 						icon={Delete}
 						size="1.5rem"
-						color="var(--bg2)"
-						selectedColor="var(--package)"
-						selectedBg="var(--bg)"
-						selected={false}
 						onClick={() => {
 							props.onClose();
 						}}
@@ -272,10 +265,6 @@ export default function PackageInstallModal(props: PackageInstallModalProps) {
 					<IconTextButton
 						icon={Download}
 						size="1.5rem"
-						color="var(--bg2)"
-						selectedColor="var(--package)"
-						selectedBg="var(--bg)"
-						selected={false}
 						onClick={() => {
 							install();
 						}}

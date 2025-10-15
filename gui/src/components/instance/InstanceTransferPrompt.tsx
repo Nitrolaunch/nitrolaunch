@@ -119,7 +119,6 @@ export default function InstanceTransferPrompt(
 				<div class="cont">
 					<IconTextButton
 						size="1rem"
-						color="var(--bg2)"
 						text="Cancel"
 						onClick={props.onClose}
 					/>
@@ -129,7 +128,6 @@ export default function InstanceTransferPrompt(
 								icon={Download}
 								size="1rem"
 								text="Import"
-								color="var(--bg2)"
 								onClick={async () => {
 									if (selectedFormat() == undefined) {
 										inputError("instance-transfer-format");
@@ -176,7 +174,6 @@ export default function InstanceTransferPrompt(
 								icon={Upload}
 								size="1rem"
 								text="Export"
-								color="var(--bg2)"
 								onClick={async () => {
 									if (selectedFormat() == undefined) {
 										inputError("instance-transfer-format");

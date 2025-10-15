@@ -229,12 +229,9 @@ export default function InstanceList(props: InstanceListProps) {
 								icon={Globe}
 								text="Edit Global Profile"
 								size="1.5rem"
-								color="var(--bg2)"
-								selectedColor="var(--instance)"
 								onClick={() => {
 									navigate("/global_profile_config");
 								}}
-								selected={false}
 							/>
 						</div>
 					</div>

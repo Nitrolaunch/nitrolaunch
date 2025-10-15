@@ -411,9 +411,6 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 										icon={Gear}
 										size="1.2rem"
 										text="Configure"
-										color="var(--bg2)"
-										selected={false}
-										selectedColor="var(--instance)"
 										onClick={() => {
 											navigate(`/instance_config/${id}`);
 										}}
@@ -647,10 +644,8 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 								icon={Delete}
 								size="1rem"
 								text="Delete instance"
-								color="var(--errorbg)"
-								selectedColor="var(--error)"
-								selectedBg="var(--errorbg)"
-								selected={true}
+								color="var(--error)"
+								bgColor="var(--errorbg)"
 								onClick={async () => {
 									try {
 										await invoke("delete_instance", { instance: id });

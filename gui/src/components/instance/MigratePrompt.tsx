@@ -85,7 +85,6 @@ export function MigratePromptContents(props: MigratePromptProps) {
 		<div class="cont">
 			<IconTextButton
 				size="1rem"
-				color="var(--bg2)"
 				text="Cancel"
 				onClick={props.onClose}
 			/>
@@ -93,7 +92,6 @@ export function MigratePromptContents(props: MigratePromptProps) {
 				icon={Cycle}
 				size="1rem"
 				text="Migrate"
-				color="var(--bg2)"
 				onClick={async () => {
 					if (selectedFormat() == undefined) {
 						inputError("instance-transfer-format");

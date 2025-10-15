@@ -31,9 +31,7 @@ function CopyCodeButton(props: CopyCodeButtonProps) {
 			text={clicked() ? "Copied!" : "Click to copy"}
 			size="18px"
 			icon={clicked() ? Check : Copy}
-			color="var(--bg2)"
-			selectedColor="var(--accent)"
-			selected={clicked()}
+			color={clicked() ? "var(--instance)" : "var(--bg2)"}
 			onClick={async () => {
 				setClicked(true);
 				await clipboard.writeText(props.code);
@@ -57,9 +55,7 @@ function LoginWindowButton(props: LoginWindowButtonProps) {
 			text={opening() ? "Opening..." : "Open login page"}
 			size="18px"
 			icon={Globe}
-			color="var(--bg2)"
-			selectedColor="var(--accent)"
-			selected={opening()}
+			color={opening() ? "var(--profile" : "var(--bg2)"}
 			onClick={async () => {
 				setOpening(true);
 				if (props.inBrowser) {

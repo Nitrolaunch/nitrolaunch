@@ -129,7 +129,6 @@ export default function Settings(props: SettingsProps) {
 								icon={Folder}
 								size="1rem"
 								text="Open data folder"
-								color=""
 								onClick={() => invoke("open_data_dir")}
 							/>
 						</div>

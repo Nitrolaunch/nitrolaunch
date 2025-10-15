@@ -182,9 +182,6 @@ export default function UserWidget(props: UserWidgetProps) {
 					<IconTextButton
 						text="Save"
 						size="1rem"
-						color="var(--bg2)"
-						selectedColor="var(--bg3)"
-						selected={false}
 						onClick={async () => {
 							if (newUserId() == "") {
 								inputError("new-user-id", "ID cannot be empty");

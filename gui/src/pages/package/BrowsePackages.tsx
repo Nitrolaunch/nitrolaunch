@@ -272,10 +272,9 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 							<IconTextButton
 								icon={Refresh}
 								text="Sync Packages"
-								size="22px"
-								color="var(--bg2)"
-								selectedColor="var(--package)"
-								selectedBg="var(--bg-1)"
+								size="1.5rem"
+								color="var(--package)"
+								bgColor="var(--bg-1)"
 								onClick={async () => {
 									try {
 										await invoke("sync_packages");
@@ -283,7 +282,6 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 										errorToast("Failed to sync packages: " + e);
 									}
 								}}
-								selected={true}
 							/>
 						</Tip>
 					</div>

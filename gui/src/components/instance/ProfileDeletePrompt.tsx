@@ -76,10 +76,8 @@ export default function ProfileDeletePrompt(props: ProfileDeletePromptProps) {
 									icon={Delete}
 									size="1rem"
 									text="Delete profile"
-									color="var(--errorbg)"
-									selectedColor="var(--error)"
-									selectedBg="var(--errorbg)"
-									selected={true}
+									color="var(--error)"
+									bgColor="var(--errorbg)"
 									onClick={async () => {
 										try {
 											await invoke("delete_profile", {
