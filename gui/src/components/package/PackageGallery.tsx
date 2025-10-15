@@ -1,6 +1,6 @@
 import { createSignal, For, Show } from "solid-js";
 import Icon from "../Icon";
-import { AngleLeft, AngleRight } from "../../icons";
+import { ArrowLeft, ArrowRight } from "../../icons";
 import Modal from "../dialog/Modal";
 
 export default function PackageGallery(props: PackageGalleryProps) {
@@ -38,7 +38,7 @@ export default function PackageGallery(props: PackageGalleryProps) {
 						setPreview([props.gallery[i - 1], i - 1]);
 					}}
 				>
-					<Icon icon={AngleLeft} size="1.5rem" />
+					<Icon icon={ArrowLeft} size="1.5rem" />
 				</div>
 			</Show>
 			<Show when={preview()![1] < props.gallery.length - 1}>
@@ -50,7 +50,7 @@ export default function PackageGallery(props: PackageGalleryProps) {
 						setPreview([props.gallery[i + 1], i + 1]);
 					}}
 				>
-					<Icon icon={AngleRight} size="1.5rem" />
+					<Icon icon={ArrowRight} size="1.5rem" />
 				</div>
 			</Show>
 		</Modal>

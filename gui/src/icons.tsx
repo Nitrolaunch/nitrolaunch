@@ -66,6 +66,8 @@ import ElipsisIcon from "./assets/icons/elipsis.svg?component-solid";
 import ServerIcon from "./assets/icons/server.svg?component-solid";
 import ControllerIcon from "./assets/icons/controller.svg?component-solid";
 import InfoIcon from "./assets/icons/info.svg?component-solid";
+import ArrowLeftIcon from "./assets/icons/arrow_left.svg?component-solid";
+import ArrowRightIcon from "./assets/icons/arrow_right.svg?component-solid";
 import { HasWidthHeight } from "./components/Icon";
 
 export function Pin({ width, height, viewBox }: HasWidthHeight) {
@@ -346,4 +348,12 @@ export function Controller({ width, height, viewBox }: HasWidthHeight) {
 
 export function Info({ width, height, viewBox }: HasWidthHeight) {
 	return <InfoIcon width={width} height={height} viewBox={viewBox} />;
+}
+
+export function ArrowLeft({ width, height, viewBox }: HasWidthHeight) {
+	return <ArrowLeftIcon width={width} height={height} viewBox={viewBox} />;
+}
+
+export function ArrowRight({ width, height, viewBox }: HasWidthHeight) {
+	return <ArrowRightIcon width={width} height={height} viewBox={viewBox} />;
 }

@@ -1,5 +1,5 @@
 import { createSignal, JSX } from "solid-js";
-import { AngleLeft, AngleRight, Home, Honeycomb, Jigsaw, Menu } from "../../icons";
+import { ArrowLeft, ArrowRight, Home, Honeycomb, Jigsaw, Menu } from "../../icons";
 import IconButton from "../input/button/IconButton";
 import "./NavBar.css";
 import { Location } from "@solidjs/router";
@@ -13,11 +13,11 @@ export default function NavBar(props: NavBarProps) {
 			<div id="navbar-gap"></div>
 			<div id="navbar">
 				<div id="navbar-container">
-					<div class="cont navbar-item" id="navbar-left">
-						<div id="sidebar-button">
+					<div class="split3 fullwidth navbar-item" id="navbar-left">
+						<div class="cont" id="sidebar-button">
 							<IconButton
 								icon={Menu}
-								size="28px"
+								size="1.8rem"
 								color="var(--bg)"
 								selectedColor="var(--accent)"
 								onClick={props.onSidebarToggle}
@@ -26,30 +26,34 @@ export default function NavBar(props: NavBarProps) {
 								hoverBackground="var(--bg3)"
 							/>
 						</div>
-						<IconButton
-							icon={AngleLeft}
-							size="28px"
-							color="var(--bg)"
-							selectedColor="var(--accent)"
-							onClick={() => {
-								history.back();
-							}}
-							selected={false}
-							circle
-							hoverBackground="var(--bg3)"
-						/>
-						<IconButton
-							icon={AngleRight}
-							size="28px"
-							color="var(--bg)"
-							selectedColor="var(--accent)"
-							onClick={() => {
-								history.forward();
-							}}
-							selected={false}
-							circle
-							hoverBackground="var(--bg3)"
-						/>
+						<div class="cont">
+							<IconButton
+								icon={ArrowLeft}
+								size="1.8rem"
+								color="var(--bg)"
+								selectedColor="var(--accent)"
+								onClick={() => {
+									history.back();
+								}}
+								selected={false}
+								circle
+								hoverBackground="var(--bg3)"
+							/>
+						</div>
+						<div class="cont">
+							<IconButton
+								icon={ArrowRight}
+								size="1.8rem"
+								color="var(--bg)"
+								selectedColor="var(--accent)"
+								onClick={() => {
+									history.forward();
+								}}
+								selected={false}
+								circle
+								hoverBackground="var(--bg3)"
+							/>
+						</div>
 					</div>
 					<div class="navbar-item" id="navbar-buttons">
 						<NavbarButton

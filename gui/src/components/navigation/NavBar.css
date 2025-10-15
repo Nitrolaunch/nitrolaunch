@@ -37,11 +37,6 @@
 	height: 3rem;
 }
 
-#navbar-left {
-	justify-content: flex-start;
-	padding-left: 0.5rem;
-}
-
 #navbar-buttons {
 	display: grid;
 	grid-template-columns: repeat(3, minmax(0, 1fr));
