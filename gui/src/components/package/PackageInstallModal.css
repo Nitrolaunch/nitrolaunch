@@ -13,6 +13,8 @@
 
 	max-height: 40rem;
 	overflow-y: auto;
+	overflow-x: hidden;
+	overscroll-behavior: contain;
 }
 
 #package-install-name {

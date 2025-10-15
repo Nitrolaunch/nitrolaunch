@@ -5,11 +5,14 @@ import IconTextButton from "../input/button/IconTextButton";
 import {
 	AngleRight,
 	Box,
+	Controller,
 	Delete,
 	Diagram,
 	Download,
 	Folder,
+	Globe,
 	Hashtag,
+	Server,
 } from "../../icons";
 import Icon from "../Icon";
 import InlineSelect from "../input/select/InlineSelect";
@@ -162,17 +165,17 @@ export default function PackageInstallModal(props: PackageInstallModalProps) {
 								options={[
 									{
 										value: "instance",
-										contents: <div>Instance</div>,
+										contents: <div class="cont"><Icon icon={Controller} size="1.2rem" /> Instance</div>,
 										color: "var(--instance)",
 									},
 									{
 										value: "profile",
-										contents: <div>Profile</div>,
+										contents: <div class="cont"><Icon icon={Server} size="1.2rem" /> Profile</div>,
 										color: "var(--profile)",
 									},
 									{
 										value: "global_profile",
-										contents: <div>Globally</div>,
+										contents: <div class="cont"><Icon icon={Globe} size="1rem" />  Globally</div>,
 										color: "var(--pluginfg)",
 									},
 								]}
@@ -221,7 +224,7 @@ export default function PackageInstallModal(props: PackageInstallModalProps) {
 						<div class="cont">
 							<Icon icon={Diagram} size="1.2rem" />
 						</div>
-						<div class="cont" id="package-install-profile-location">
+						<div class="cont fullwidth" id="package-install-profile-location">
 							<div style="width:40%">
 								What children of this profile should get this package?
 							</div>
@@ -230,17 +233,17 @@ export default function PackageInstallModal(props: PackageInstallModalProps) {
 									options={[
 										{
 											value: "all",
-											contents: <div>All of them</div>,
+											contents: <div class="cont"><Icon icon={Globe} size="1rem" />  All of them</div>,
 											color: "var(--fg2)",
 										},
 										{
 											value: "client",
-											contents: <div>Clients</div>,
+											contents: <div class="cont"><Icon icon={Controller} size="1.2rem" /> Clients</div>,
 											color: "var(--instance)",
 										},
 										{
 											value: "server",
-											contents: <div>Servers</div>,
+											contents: <div class="cont"><Icon icon={Server} size="1rem" /> Servers</div>,
 											color: "var(--profile)",
 										},
 									]}
