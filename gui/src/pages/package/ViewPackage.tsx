@@ -17,8 +17,6 @@ import { FooterData } from "../../App";
 import { FooterMode } from "../../components/navigation/Footer";
 import Icon, { HasWidthHeight } from "../../components/Icon";
 import {
-	AngleLeft,
-	AngleRight,
 	Book,
 	CurlyBraces,
 	Download,
@@ -33,7 +31,6 @@ import {
 	User,
 	Warning,
 } from "../../icons";
-import Modal from "../../components/dialog/Modal";
 import PackageLabels from "../../components/package/PackageLabels";
 import { RepoInfo } from "../../package";
 import { beautifyString, formatNumber, parsePkgRequest, parseQueryString } from "../../utils";
@@ -45,6 +42,7 @@ import { PackageFilterOptions } from "../../components/package/PackageFilters";
 import { open } from "@tauri-apps/api/shell";
 import IconButton from "../../components/input/button/IconButton";
 import { WebviewWindow } from "@tauri-apps/api/window";
+import PackageGallery from "../../components/package/PackageGallery";
 
 export default function ViewPackage(props: ViewPackageProps) {
 	let params = useParams();
@@ -62,9 +60,6 @@ export default function ViewPackage(props: ViewPackageProps) {
 	let [longDescription, setLongDescription] = createSignal("");
 
 	let [selectedTab, setSelectedTab] = createSignal("description");
-	let [galleryPreview, setGalleryPreview] = createSignal<
-		[string, number] | undefined
-	>();
 
 	let [showInstallModal, setShowInstallModal] = createSignal(false);
 	let [installVersion, setInstallVersion] = createSignal<string | undefined>();
@@ -268,57 +263,8 @@ export default function ViewPackage(props: ViewPackageProps) {
 									}
 								>
 									<div class="cont">
-										<div id="package-gallery">
-											<For each={meta()!.gallery!}>
-												{(entry, i) => (
-													<img
-														class="package-gallery-entry input-shadow bubble-hover"
-														src={entry}
-														onclick={() => setGalleryPreview([entry, i()])}
-													/>
-												)}
-											</For>
-										</div>
+										<PackageGallery gallery={meta()!.gallery!} />
 									</div>
-									<Modal
-										width="55rem"
-										visible={galleryPreview() != undefined}
-										onClose={() => setGalleryPreview(undefined)}
-									>
-										<img
-											id="package-gallery-preview"
-											src={galleryPreview()![0]}
-											onclick={() => setGalleryPreview(undefined)}
-										/>
-										<div
-											class="cont package-gallery-arrow"
-											style="left:1rem"
-											onclick={() => {
-												if (galleryPreview() != undefined) {
-													let i = galleryPreview()![1];
-													if (i > 0) {
-														setGalleryPreview([meta()!.gallery![i - 1], i - 1]);
-													}
-												}
-											}}
-										>
-											<Icon icon={AngleLeft} size="1.5rem" />
-										</div>
-										<div
-											class="cont package-gallery-arrow"
-											style="right:1rem"
-											onclick={() => {
-												if (galleryPreview() != undefined) {
-													let i = galleryPreview()![1];
-													if (i < meta()!.gallery!.length - 1) {
-														setGalleryPreview([meta()!.gallery![i + 1], i + 1]);
-													}
-												}
-											}}
-										>
-											<Icon icon={AngleRight} size="1.5rem" />
-										</div>
-									</Modal>
 								</Show>
 							</div>
 						</div>
