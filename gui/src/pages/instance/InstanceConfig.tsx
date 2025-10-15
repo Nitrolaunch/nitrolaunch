@@ -170,6 +170,10 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 
 	// Used to check if we can automatically fill out the ID with the name. We don't want to do this if the user already typed an ID.
 	let [isIdDirty, setIsIdDirty] = createSignal(!props.creating);
+	let [isTypeDirty, setIsTypeDirty] = createSignal(!props.creating);
+	let [isIconDirty, setIsIconDirty] = createSignal(!props.creating);
+	let [isVersionDirty, setIsVersionDirty] = createSignal(!props.creating);
+	let [isLoaderDirty, setIsLoaderDirty] = createSignal(!props.creating);
 
 	// Config signals
 	let [newId, setNewId] = createSignal<string | undefined>();
@@ -586,10 +590,58 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 									setDirty();
 								}}
 								onKeyUp={(e: any) => {
+									// Autofill other fields based on the name
 									if (!isIdDirty()) {
 										let value = sanitizeInstanceId(e.target.value);
 										(document.getElementById("id")! as any).value = value;
 										setNewId(value);
+									}
+
+									let lowercaseName = e.target.value.toLocaleLowerCase();
+
+									if (!isTypeDirty()) {
+										if (lowercaseName.includes("client")) {
+											setSide("client");
+										} else if (lowercaseName.includes("server")) {
+											setSide("server");
+										}
+									}
+
+									let autofillLoader = undefined;
+									if (supportedLoaders() != undefined) {
+										for (let loader of supportedLoaders()!) {
+											if (loader != undefined && lowercaseName.includes(loader)) {
+												autofillLoader = loader;
+												break;
+											}
+										}
+									}
+									if (autofillLoader != undefined) {
+										if (!isLoaderDirty()) {
+											if (side() == "client") {
+												setClientLoader(autofillLoader);
+											} else if (side() == "server") {
+												setServerLoader(autofillLoader);
+											}
+										}
+										if (!isIconDirty()) {
+											setIcon(getLoaderImage(autofillLoader as Loader));
+										}
+									}
+
+									let autofillVersion = undefined;
+									if (supportedMinecraftVersions() != undefined) {
+										// By going through in forward order, we should catch 1.xx.x before 1.xx
+										for (let version of supportedMinecraftVersions()!) {
+											if (lowercaseName.includes(version)) {
+												autofillVersion = version;
+												break;
+											}
+										}
+									}
+
+									if (autofillVersion != undefined && !isVersionDirty()) {
+										setVersion(autofillVersion);
 									}
 								}}
 							></input>
@@ -638,6 +690,7 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 							setIcon={(x) => {
 								setIcon(x);
 								setDirty();
+								setIsIconDirty(true);
 							}}
 						/>
 					</Show>
@@ -661,6 +714,7 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 								onChange={(x) => {
 									setSide(x as "client" | "server" | undefined);
 									setDirty();
+									setIsTypeDirty(true);
 								}}
 								selected={side()}
 								options={[
@@ -715,6 +769,7 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 										onChange={(x) => {
 											setVersion(x);
 											setDirty();
+											setIsVersionDirty(true);
 										}}
 										allowEmpty
 										zIndex="50"
@@ -764,6 +819,7 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 								onChange={(x) => {
 									setClientLoader(x);
 									setDirty();
+									setIsLoaderDirty(true);
 								}}
 								selected={clientLoader()}
 								options={supportedLoaders()!
@@ -832,6 +888,7 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 								onChange={(x) => {
 									setServerLoader(x);
 									setDirty();
+									setIsLoaderDirty(true);
 								}}
 								selected={serverLoader()}
 								options={supportedLoaders()!
