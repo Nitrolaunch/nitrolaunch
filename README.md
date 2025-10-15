@@ -4,7 +4,7 @@
 
 [![](https://dcbadge.limes.pink/api/server/https://discord.gg/25fhkjeTvW)](https://discord.gg/25fhkjeTvW)
 
-Nitrolaunch is a Minecraft launcher and ecosystem meant to reinvent the launcher as you know it, providing a plugin system and a better interface with custom content such as mods and resource packs.
+Nitrolaunch is a Minecraft launcher and ecosystem meant to reinvent the launcher as you know it, providing a plugin system and a better interface with custom content such as mods and datapacks.
 
 In the official launcher and many alternative ones, you have to waste time moving files in and out of folders, downloading mods from sketchy websites, setting up servers, and sharing your config to play with friends. Nitrolaunch hopes to alleviate some of these pains with its smart systems for configuration sharing and package management.
 
@@ -26,17 +26,17 @@ Set up instances of both clients and servers, and share configuration between th
 
 ![](docs/assets/screenshots/instances.png)
 
+## 🔌 Plugin System
+
+Extend the launcher with features like new modloaders and sources for mods, translations for other languages, tools to enhance your productivity, and more!
+
+![](docs/assets/screenshots/plugins.png)
+
 ## ✈️ Easy to Switch
 
 Migrate from your current launcher in a couple of clicks
 
 ![](docs/assets/screenshots/migrate.png)
-
-## 🔌 Plugin System
-
-Extend the launcher with features like new modloaders and sources for mods, translations for other languages, or tools to enhance your productivity
-
-![](docs/assets/screenshots/plugins.png)
 
 ## 📥 Modern Packaging
 
@@ -51,27 +51,3 @@ Install mods, datapacks, shaders, and more from sources like Modrinth and Smithe
 # 🚀 Getting Started
 
 To get started with Nitrolaunch, view our [user guide](https://nitrolaunch.github.io/nitrolaunch/guide/).
-
-# 👷 Use Cases
-
-Nitrolaunch has many use cases for different applications
-
-### A command-line launcher
-
-This is the main use case of most people, and is an important focus of the ecosystem.
-
-### A desktop app
-
-All the functionalities of the CLI in a more approachable format.
-
-### A library for your launcher
-
-You can use the Nitrolaunch library as a base for the functionalities of your launcher. Even if you don't use the packaging formats, Nitrolaunch contains functions to launch the game in a simple way, as well as customize the launch process to your liking.
-
-### A server management tool
-
-The Nitrolaunch CLI is the perfect assistant for server managers. The way that it groups configuration for instances makes it easy to orchestrate multiple running servers at once. Plugins can add features like launching on remote machines, config management, automatic scaling and restarts, and proxy support.
-
-### A packaging format
-
-Launchers can use the different Nitrolaunch crates to parse, validate, evaluate, and host Nitrolaunch packages.
