@@ -149,8 +149,8 @@ impl VersionPattern {
 			"latest" => Self::Latest(None),
 			"*" => Self::Any,
 			text => {
-				if text.starts_with("~") {
-					return Self::Prefer(text[1..].to_string());
+				if let Some(prefer) = text.strip_prefix("~") {
+					return Self::Prefer(prefer.to_string());
 				}
 
 				if let Some(last) = text.chars().last() {

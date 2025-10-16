@@ -442,7 +442,7 @@ where
 		kind: RequireConstraint,
 	) -> Result<(), ResolutionError> {
 		fn find_constraint<'a>(
-			constraints: &'a mut Vec<Constraint>,
+			constraints: &'a mut [Constraint],
 			req: &ArcPkgReq,
 		) -> Option<(&'a mut Vec<String>, &'a mut Vec<String>)> {
 			constraints.iter_mut().find_map(|x| {

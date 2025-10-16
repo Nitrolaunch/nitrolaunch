@@ -75,14 +75,11 @@ pub struct HookCallArg<'a, H: Hook> {
 	pub protocol_version: u16,
 }
 
-pub(crate) async fn call<H: Hook>(
+pub(crate) async fn call<H: Hook + Sized>(
 	hook: &H,
 	arg: HookCallArg<'_, H>,
 	o: &mut impl NitroOutput,
-) -> anyhow::Result<HookHandle<H>>
-where
-	H: Sized,
-{
+) -> anyhow::Result<HookHandle<H>> {
 	let _ = o;
 	let hook_arg = serde_json::to_string(arg.arg).context("Failed to serialize hook argument")?;
 

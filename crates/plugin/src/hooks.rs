@@ -509,7 +509,7 @@ def_hook!(
 );
 
 /// Result from the MigrateInstances hook
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Default)]
 #[serde(default)]
 pub struct MigrateInstancesResult {
 	/// The ID of the transfer format being used
@@ -518,16 +518,6 @@ pub struct MigrateInstancesResult {
 	pub instances: HashMap<String, InstanceConfig>,
 	/// Map of instances to packages installed on the migrated instance
 	pub packages: HashMap<String, Vec<MigratedPackage>>,
-}
-
-impl Default for MigrateInstancesResult {
-	fn default() -> Self {
-		Self {
-			format: String::new(),
-			instances: HashMap::new(),
-			packages: HashMap::new(),
-		}
-	}
 }
 
 /// A package installed on a migrated instance

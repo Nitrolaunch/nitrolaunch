@@ -28,10 +28,10 @@ use super::InstanceUpdateContext;
 use anyhow::Context;
 
 /// Install packages on multiple instances. Returns a set of all unique packages
-pub async fn update_instance_packages<'a, O: NitroOutput>(
+pub async fn update_instance_packages<O: NitroOutput>(
 	instances: &mut [&mut Instance],
 	constants: &EvalConstants,
-	ctx: &mut InstanceUpdateContext<'a, O>,
+	ctx: &mut InstanceUpdateContext<'_, O>,
 	force: bool,
 ) -> anyhow::Result<HashSet<ArcPkgReq>> {
 	// Resolve dependencies
@@ -308,10 +308,10 @@ async fn run_addon_tasks(
 /// Resolve packages and create a mapping of packages to a list of instances.
 /// This allows us to update packages in a reasonable order to the user.
 /// It also returns a map of instances to packages so that unused packages can be removed
-async fn resolve_and_batch<'a, O: NitroOutput>(
+async fn resolve_and_batch<O: NitroOutput>(
 	instances: &[&mut Instance],
 	constants: &EvalConstants,
-	ctx: &mut InstanceUpdateContext<'a, O>,
+	ctx: &mut InstanceUpdateContext<'_, O>,
 ) -> anyhow::Result<ResolvedPackages> {
 	let mut batched: HashMap<ArcPkgReq, Vec<InstanceID>> = HashMap::new();
 	let mut resolved = HashMap::new();
@@ -383,8 +383,8 @@ struct ResolvedPackages {
 }
 
 /// Checks a package with the registry to report any warnings about it
-async fn check_package<'a, O: NitroOutput>(
-	ctx: &mut InstanceUpdateContext<'a, O>,
+async fn check_package<O: NitroOutput>(
+	ctx: &mut InstanceUpdateContext<'_, O>,
 	pkg: &ArcPkgReq,
 ) -> anyhow::Result<()> {
 	let flags = ctx
@@ -424,9 +424,9 @@ async fn check_package<'a, O: NitroOutput>(
 }
 
 /// Prints support messages about installed packages when updating
-pub async fn print_package_support_messages<'a, O: NitroOutput>(
+pub async fn print_package_support_messages<O: NitroOutput>(
 	packages: &[ArcPkgReq],
-	ctx: &mut InstanceUpdateContext<'a, O>,
+	ctx: &mut InstanceUpdateContext<'_, O>,
 ) -> anyhow::Result<()> {
 	let package_count = 5;
 	let packages = select_random_n_items_from_list(packages, package_count);

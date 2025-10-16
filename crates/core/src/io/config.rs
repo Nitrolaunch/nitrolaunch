@@ -11,6 +11,7 @@ pub static IO_CONFIG: LazyLock<IoConfig> = LazyLock::new(|| {
 });
 
 /// Global IO configuration
+#[derive(Default)]
 pub struct IoConfig {
 	/// Configuration in key-value form from the file
 	file_values: HashMap<String, String>,
@@ -35,14 +36,6 @@ impl IoConfig {
 			Some(value)
 		} else {
 			self.file_values.get(key).cloned()
-		}
-	}
-}
-
-impl Default for IoConfig {
-	fn default() -> Self {
-		Self {
-			file_values: HashMap::new(),
 		}
 	}
 }

@@ -196,7 +196,7 @@ async fn update_microsoft_user_auth(
 		let access_token = if let (Some(access_token), Some(expiration)) =
 			(&sensitive.access_token, &sensitive.access_token_expires)
 		{
-			if utc_timestamp().unwrap_or(std::u64::MAX) < *expiration {
+			if utc_timestamp().unwrap_or(u64::MAX) < *expiration {
 				AccessToken(access_token.clone())
 			} else {
 				update_using_refresh_token(user_id, &sensitive, &params, &mut db, o)

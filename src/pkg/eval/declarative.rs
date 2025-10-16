@@ -230,7 +230,7 @@ pub fn pick_best_addon_version<'a>(
 		});
 
 		if version.is_some() {
-			return version.map(|x| *x);
+			return version.copied();
 		}
 	}
 

@@ -50,9 +50,9 @@ impl Instance {
 	}
 
 	/// Setup the data and folders for the instance, preparing it for launch
-	pub async fn setup<'core>(
+	pub async fn setup(
 		&mut self,
-		manager: &'core mut UpdateManager,
+		manager: &mut UpdateManager,
 		plugins: &PluginManager,
 		paths: &Paths,
 		users: &UserManager,

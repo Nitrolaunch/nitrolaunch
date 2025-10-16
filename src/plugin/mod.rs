@@ -332,7 +332,7 @@ impl PluginManager {
 	}
 
 	/// Gets the mutex lock for the inner part of this plugin manager
-	pub async fn get_lock<'a>(&'a self) -> tokio::sync::MutexGuard<'a, PluginManagerInner> {
+	pub async fn get_lock(&self) -> tokio::sync::MutexGuard<'_, PluginManagerInner> {
 		self.inner.lock().await
 	}
 }

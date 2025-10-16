@@ -50,11 +50,11 @@ pub struct InstanceUpdateContext<'a, O: NitroOutput> {
 
 impl Instance {
 	/// Update this instance
-	pub async fn update<'a, O: NitroOutput>(
+	pub async fn update<O: NitroOutput>(
 		&mut self,
 		update_packages: bool,
 		depth: UpdateDepth,
-		ctx: &mut InstanceUpdateContext<'a, O>,
+		ctx: &mut InstanceUpdateContext<'_, O>,
 	) -> anyhow::Result<()> {
 		#[cfg(feature = "disable_profile_update_packages")]
 		let _update_packages = update_packages;

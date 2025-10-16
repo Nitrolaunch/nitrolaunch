@@ -87,10 +87,10 @@ impl Instance {
 
 	/// Install the EvalData resulting from evaluating a package onto this instance
 	#[allow(clippy::too_many_arguments)]
-	pub async fn install_eval_data<'a>(
+	pub async fn install_eval_data(
 		&mut self,
 		pkg: &ArcPkgReq,
-		eval: &EvalData<'a>,
+		eval: &EvalData<'_>,
 		version_info: &VersionInfo,
 		paths: &Paths,
 		lock: &mut Lockfile,

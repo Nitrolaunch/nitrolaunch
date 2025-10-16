@@ -278,7 +278,7 @@ impl InstanceHandle {
 		let pid = self.get_pid();
 
 		for handle in self.hook_handles {
-			let _ = handle.kill(o);
+			let _ = handle.kill(o).await;
 		}
 		let _ = self.inner.kill();
 

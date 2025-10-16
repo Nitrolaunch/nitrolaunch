@@ -78,7 +78,7 @@ impl<R: TryReadExt + Unpin> TryLineReader<R> {
 	}
 
 	/// Reads lines from the reader. Returns None on EoF
-	pub async fn lines<'a>(&'a mut self) -> anyhow::Result<Option<Vec<Cow<'a, str>>>> {
+	pub async fn lines(&mut self) -> anyhow::Result<Option<Vec<Cow<'_, str>>>> {
 		let result_len = self.reader.try_read(&mut self.read_buf).await?;
 		let Some(result_len) = result_len else {
 			return Ok(Some(Vec::new()));

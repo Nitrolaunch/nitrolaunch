@@ -143,19 +143,16 @@ impl WorldFilesWatcher {
 			.plugins
 			.call_hook(UpdateWorldFiles, plugin_arg, paths, o)
 			.await;
-		match result {
-			Ok(result) => {
-				for result in result {
-					let result = result.result(o).await;
-					if let Err(e) = result {
-						o.display(
-							MessageContents::Error(format!("{e:?}")),
-							MessageLevel::Important,
-						);
-					}
+		if let Ok(result) = result {
+			for result in result {
+				let result = result.result(o).await;
+				if let Err(e) = result {
+					o.display(
+						MessageContents::Error(format!("{e:?}")),
+						MessageLevel::Important,
+					);
 				}
 			}
-			Err(_) => {}
 		}
 
 		Ok(())

@@ -66,8 +66,8 @@ impl OutputAction {
 	) -> anyhow::Result<Option<Self>> {
 		// Remove the starting delimiter
 		let action = if protocol_version >= 2 {
-			if action.starts_with(STARTING_DELIMITER) {
-				&action[STARTING_DELIMITER.len()..]
+			if let Some(stripped) = action.strip_prefix(STARTING_DELIMITER) {
+				stripped
 			} else {
 				return Ok(None);
 			}
