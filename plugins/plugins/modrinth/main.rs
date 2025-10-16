@@ -298,9 +298,11 @@ async fn get_cached_package_or_project(
 	if package_path.exists() {
 		if let Ok(data) = std::fs::read_to_string(&package_path) {
 			let mut elems = data.splitn(3, ";");
-			let id = elems.next().context("Missing")?;
-			let slug = elems.next().context("Missing")?;
-			let package = elems.next().context("Missing")?;
+			let id = elems.next().context("Missing ID in package file")?;
+			let slug = elems.next().context("Missing slug in package file")?;
+			let package = elems
+				.next()
+				.context("Missing package data in package file")?;
 			// Remove the projects to save space, we don't need it anymore
 			let _ = std::fs::remove_file(storage_dirs.projects.join(id));
 			let _ = std::fs::remove_file(storage_dirs.projects.join(slug));

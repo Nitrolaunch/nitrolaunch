@@ -102,6 +102,7 @@ pub async fn preload_packages(
 #[tauri::command]
 pub async fn get_package_meta(
 	state: tauri::State<'_, State>,
+	app_handle: tauri::AppHandle,
 	package: &str,
 ) -> Result<PackageMetadata, String> {
 	let mut config = fmt_err(
@@ -110,6 +111,8 @@ pub async fn get_package_meta(
 			.context("Failed to load config"),
 	)?;
 
+	let mut output = LauncherOutput::new(state.get_output(app_handle));
+
 	let meta = fmt_err(
 		config
 			.packages
@@ -117,7 +120,7 @@ pub async fn get_package_meta(
 				&Arc::new(PkgRequest::parse(package, PkgRequestSource::UserRequire)),
 				&state.paths,
 				&state.client,
-				&mut NoOp,
+				&mut output,
 			)
 			.await
 			.context("Failed to get metadata"),
@@ -129,6 +132,7 @@ pub async fn get_package_meta(
 #[tauri::command]
 pub async fn get_package_props(
 	state: tauri::State<'_, State>,
+	app_handle: tauri::AppHandle,
 	package: &str,
 ) -> Result<PackageProperties, String> {
 	let mut config = fmt_err(
@@ -137,6 +141,8 @@ pub async fn get_package_props(
 			.context("Failed to load config"),
 	)?;
 
+	let mut output = LauncherOutput::new(state.get_output(app_handle));
+
 	let props = fmt_err(
 		config
 			.packages
@@ -144,7 +150,7 @@ pub async fn get_package_props(
 				&Arc::new(PkgRequest::parse(package, PkgRequestSource::UserRequire)),
 				&state.paths,
 				&state.client,
-				&mut NoOp,
+				&mut output,
 			)
 			.await
 			.context("Failed to get properties"),
@@ -156,6 +162,7 @@ pub async fn get_package_props(
 #[tauri::command]
 pub async fn get_package_meta_and_props(
 	state: tauri::State<'_, State>,
+	app_handle: tauri::AppHandle,
 	package: &str,
 ) -> Result<(PackageMetadata, PackageProperties), String> {
 	let mut config = fmt_err(
@@ -166,10 +173,12 @@ pub async fn get_package_meta_and_props(
 
 	let request = Arc::new(PkgRequest::parse(package, PkgRequestSource::UserRequire));
 
+	let mut output = LauncherOutput::new(state.get_output(app_handle));
+
 	let meta = fmt_err(
 		config
 			.packages
-			.get_metadata(&request, &state.paths, &state.client, &mut NoOp)
+			.get_metadata(&request, &state.paths, &state.client, &mut output)
 			.await
 			.context("Failed to get metadata"),
 	)?
@@ -178,7 +187,7 @@ pub async fn get_package_meta_and_props(
 	let props = fmt_err(
 		config
 			.packages
-			.get_properties(&request, &state.paths, &state.client, &mut NoOp)
+			.get_properties(&request, &state.paths, &state.client, &mut output)
 			.await
 			.context("Failed to get properties"),
 	)?
@@ -190,6 +199,7 @@ pub async fn get_package_meta_and_props(
 #[tauri::command]
 pub async fn get_declarative_package_contents(
 	state: tauri::State<'_, State>,
+	app_handle: tauri::AppHandle,
 	package: &str,
 ) -> Result<Option<DeclarativePackage>, String> {
 	let mut config = fmt_err(
@@ -198,6 +208,8 @@ pub async fn get_declarative_package_contents(
 			.context("Failed to load config"),
 	)?;
 
+	let mut output = LauncherOutput::new(state.get_output(app_handle));
+
 	let contents = fmt_err(
 		config
 			.packages
@@ -205,7 +217,7 @@ pub async fn get_declarative_package_contents(
 				&Arc::new(PkgRequest::parse(package, PkgRequestSource::UserRequire)),
 				&state.paths,
 				&state.client,
-				&mut NoOp,
+				&mut output,
 			)
 			.await
 			.context("Failed to get properties"),
