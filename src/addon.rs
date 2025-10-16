@@ -150,8 +150,7 @@ impl AddonRequest {
 						.context("Failed to download addon")?;
 				}
 				AddonLocation::Local(actual_path) => {
-					update_link(&actual_path, &path)
-						.context("Failed to hardlink local addon")?;
+					update_link(&actual_path, &path).context("Failed to hardlink local addon")?;
 				}
 			}
 

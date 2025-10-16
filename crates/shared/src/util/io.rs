@@ -1,5 +1,5 @@
 /// Prevents a command from spawning a window on Windows
-/// 
+///
 /// Used from https://github.com/Mrmayman/quantumlauncher/
 #[macro_export]
 macro_rules! no_window {
