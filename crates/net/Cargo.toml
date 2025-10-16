@@ -1,6 +1,6 @@
 [package]
 name = "nitro_net"
-version = "0.26.0"
+version = "0.27.0"
 description = "Various network APIs for Nitrolaunch"
 keywords = ["minecraft", "launcher", "game", "mc", "api"]
 categories.workspace = true

@@ -1,6 +1,6 @@
 [package]
 name = "nitro_pkg_gen"
-version = "0.26.0"
+version = "0.27.0"
 description = "Nitrolaunch package generation from existing platforms"
 keywords = ["minecraft", "launcher", "game", "mc"]
 categories.workspace = true

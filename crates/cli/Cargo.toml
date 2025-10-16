@@ -1,6 +1,6 @@
 [package]
 name = "nitro_cli"
-version = "0.26.0"
+version = "0.27.0"
 description = "The command-line interface for Nitrolaunch"
 keywords = ["minecraft", "launcher", "game", "mc", "cli"]
 categories = ["games", "command-line-utilities"]
