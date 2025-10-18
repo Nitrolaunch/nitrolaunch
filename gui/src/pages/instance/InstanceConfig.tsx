@@ -810,8 +810,8 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 						<Tip
 							tip={
 								isInstance
-									? "The loader to use"
-									: "The loader to use for client instances"
+									? "The loader to use. Install more with plugins!"
+									: "The loader to use for client instances. Install more with plugins!"
 							}
 							fullwidth
 						>
@@ -879,8 +879,8 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 						<Tip
 							tip={
 								isInstance
-									? "The loader to use"
-									: "The loader to use for server instances"
+									? "The loader to use. Install more with plugins!"
+									: "The loader to use for server instances. Install more with plugins!"
 							}
 							fullwidth
 						>
