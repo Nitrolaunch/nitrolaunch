@@ -19,6 +19,8 @@ import { beautifyString } from "../utils";
 import { invoke } from "@tauri-apps/api";
 import IconButton from "./input/button/IconButton";
 import ProgressBar from "./ProgressBar";
+import { ResolutionErrorEvent } from "../types";
+import ResolutionError from "./package/ResolutionError";
 
 export default function TaskIndicator(props: TaskIndicatorProps) {
 	// Map of tasks to messages
@@ -218,6 +220,13 @@ export default function TaskIndicator(props: TaskIndicatorProps) {
 			}
 		);
 
+		let unlisten9 = listen(
+			"nitro_display_resolution_error",
+			(event: Event<ResolutionErrorEvent>) => {
+				errorToast(<ResolutionError error={event.payload.error} />);
+			}
+		);
+
 		return await Promise.all([
 			unlisten1,
 			unlisten2,
@@ -227,6 +236,7 @@ export default function TaskIndicator(props: TaskIndicatorProps) {
 			unlisten6,
 			unlisten7,
 			unlisten8,
+			unlisten9,
 		]);
 	});
 

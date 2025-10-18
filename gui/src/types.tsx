@@ -1,3 +1,4 @@
+import { ResolutionErrorData } from "./components/package/ResolutionError";
 import { PackageCategory, PackageType } from "./package";
 
 export type Side = "client" | "server";
@@ -38,6 +39,11 @@ export interface UpdateRunStateEvent {
 export interface AuthDisplayEvent {
 	url: string;
 	device_code: string;
+}
+
+export interface ResolutionErrorEvent {
+	instance: string;
+	error: ResolutionErrorData;
 }
 
 export interface PackageMeta {

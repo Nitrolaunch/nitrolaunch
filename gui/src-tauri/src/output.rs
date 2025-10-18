@@ -180,16 +180,19 @@ impl NitroOutput for LauncherOutput {
 		eprintln!("Resolution error: {error:?}");
 		let error = SerializableResolutionError::from_err(error);
 
+		let payload = ResolutionErrorEvent {
+			error,
+			instance: instance_id.to_string(),
+		};
+
 		self.inner.app.trigger_global(
 			"nitro_display_resolution_error",
-			Some(
-				serde_json::to_string(&ResolutionErrorEvent {
-					error,
-					instance: instance_id.to_string(),
-				})
-				.unwrap(),
-			),
+			Some(serde_json::to_string(&payload).unwrap()),
 		);
+		let _ = self
+			.inner
+			.app
+			.emit_all("nitro_display_resolution_error", payload);
 	}
 
 	fn translate(&self, key: TranslationKey) -> &str {
