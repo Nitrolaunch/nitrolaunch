@@ -166,6 +166,8 @@ impl VerifiedPlugin {
 			);
 		}
 
+		let _ = PluginManager::enable_plugin(&self.id, paths);
+
 		Ok(())
 	}
 }
