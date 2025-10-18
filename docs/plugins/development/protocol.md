@@ -53,10 +53,16 @@ This section is not applicable if using a hook that takes over, such as the `sub
 ```
 "end_section"
 ```
-- `set_result`: Sets the result / output of the hook to serialized JSON. This must be the last thing you output, as after this the plugin runner will stop listening to the plugin and move on.
+- `set_result`: Sets the result / output of the hook to a JSON value. This must be the last thing you output, as after this the plugin runner will stop listening to the plugin and move on.
 ```
 {
-	"set_result": string
+	"set_result": any
+}
+```
+- `set_error`: Sets the result / output of the hook to an error string.
+```
+{
+	"set_error": string
 }
 ```
 - `set_state`: Sets the persistent state of the plugin
