@@ -42,10 +42,8 @@ jobs:
               name: Install Ubuntu Dependencies
               run: |
                   cd gui &&
-                  npm i turbo-linux-64 @tauri-apps/cli-linux-x64-gnu@1.6.3 && 
-                  echo " \
+                  npm i @tauri-apps/cli-linux-x64-gnu@1.6.3 && 
                   deb http://gb.archive.ubuntu.com/ubuntu jammy main" | sudo tee -a /etc/apt/sources.list &&
-                  cat /etc/apt/sources.list &&
                   sudo apt update &&
                   sudo apt install libwebkit2gtk-4.0-dev \
                       build-essential \
@@ -59,7 +57,7 @@ jobs:
               name: Install MacOS Dependencies
               run: |
                   cd gui &&
-                  npm i turbo-darwin-arm64 @tauri-apps/cli-darwin-arm64@1.6.3 && 
+                  npm i @tauri-apps/cli-darwin-arm64@1.6.3 && 
                   rustup target add aarch64-apple-darwin &&
                   rustup target add x86_64-apple-darwin
             - run: cd gui && npm i
