@@ -42,7 +42,8 @@ jobs:
               name: Install Ubuntu Dependencies
               run: |
                   cd gui &&
-                  npm i @tauri-apps/cli-linux-x64-gnu@1.6.3 && 
+                  npm i @tauri-apps/cli-linux-x64-gnu@1.6.3 &&
+                  echo " \
                   deb http://gb.archive.ubuntu.com/ubuntu jammy main" | sudo tee -a /etc/apt/sources.list &&
                   sudo apt update &&
                   sudo apt install libwebkit2gtk-4.0-dev \
