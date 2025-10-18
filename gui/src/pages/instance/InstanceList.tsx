@@ -151,7 +151,7 @@ export default function InstanceList(props: InstanceListProps) {
 			<br />
 			<div id="instance-list">
 				<div class="cont">
-					<div class="split3 fullwidth">
+					<div class="fullwidth" id="instance-list-top">
 						<div class="cont start" style="padding-left:0.5rem">
 							<div style="width:7rem">
 								<Dropdown
@@ -210,7 +210,7 @@ export default function InstanceList(props: InstanceListProps) {
 									setInstancesOrProfiles("instance");
 								}}
 							>
-								<Icon icon={Honeycomb} size="1.5rem" />
+								<Icon icon={Honeycomb} size="1rem" />
 								Instances
 							</div>
 							<div

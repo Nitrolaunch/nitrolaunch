@@ -2,6 +2,11 @@
 	width: 80%;
 }
 
+#instance-list-top {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr) minmax(0, 1fr);
+}
+
 #instance-list-header {
 	gap: 2rem;
 	display: grid;
