@@ -31,6 +31,8 @@ use crate::output::{MessageEvent, MessageType, ResolutionErrorEvent};
 use crate::task_manager::TaskManager;
 
 fn main() {
+	fix_compatability();
+
 	let state = tauri::async_runtime::block_on(async { State::new().await })
 		.expect("Error when initializing application state");
 	let data = state.data.clone();
@@ -257,5 +259,13 @@ const fn get_raw_ms_client_id() -> &'static str {
 	} else {
 		// Please don't use my client ID :)
 		"402abc71-43fb-45c1-b230-e7fc9d4485fe"
+	}
+}
+
+/// Runs functions to enhance compatability with different systems
+fn fix_compatability() {
+	// Fix for Wayland causing the app to crash
+	if std::env::var("WAYLAND_DISPLAY").is_ok() {
+		std::env::set_var("WEBKIT_DISABLE_DMABUF_RENDERER", "1");
 	}
 }
