@@ -133,7 +133,7 @@ fn check_single_dir(path: &Path, filename: String, major_version: &str, debug: b
 		}
 		return false;
 	}
-	if !(filename.contains("java") || filename.contains("jdk")) {
+	if !filename.contains("java") && !filename.contains("jdk") {
 		if debug {
 			println!("Not a Java folder");
 		}
