@@ -155,7 +155,7 @@ pub struct PackSearchResultMeta {
 	pub raw_id: String,
 }
 
-/// Count packs from the Smithed API that match a criteris
+/// Count packs from the Smithed API that match a criteria
 pub async fn count_packs(
 	params: PackageSearchParameters,
 	client: &Client,
@@ -166,7 +166,13 @@ pub async fn count_packs(
 		String::new()
 	};
 
-	let filters = create_search_filters(params.minecraft_versions, params.categories);
+	let mut filters = create_search_filters(params.minecraft_versions, params.categories);
+
+	if search.is_empty() {
+		if let Some(stripped) = filters.strip_prefix("&") {
+			filters = stripped.to_string();
+		}
+	}
 
 	let url = format!("{API_URL}/packs/count?{search}{filters}");
 
