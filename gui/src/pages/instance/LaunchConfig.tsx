@@ -9,6 +9,17 @@ import {
 } from "./read_write";
 import EditableList from "../../components/input/text/EditableList";
 import InlineSelect from "../../components/input/select/InlineSelect";
+import PathSelect from "../../components/input/text/PathSelect";
+import { Show } from "solid-js";
+
+const JAVA_OPTIONS = [
+	undefined,
+	"auto",
+	"system",
+	"adoptium",
+	"zulu",
+	"graalvm",
+];
 
 export default function LaunchConfig(props: LaunchConfigProps) {
 	return (
@@ -30,26 +41,18 @@ export default function LaunchConfig(props: LaunchConfigProps) {
 						props.onChange();
 					}}
 					selected={props.java}
-					options={[
-						undefined,
-						"auto",
-						"system",
-						"adoptium",
-						"zulu",
-						"graalvm",
-					].map((x) => {
+					options={JAVA_OPTIONS.concat("custom").map((x) => {
 						return {
 							value: x,
 							contents: (
 								<div
-									class={`cont ${
-										props.java == undefined &&
+									class={`cont ${props.java == undefined &&
 										getDerivedValue(props.parentConfigs, (x) =>
 											x.launch == undefined ? undefined : x.launch.java
 										) == x
-											? "derived-option"
-											: ""
-									}`}
+										? "derived-option"
+										: ""
+										}`}
 								>
 									{x == undefined ? "Unset" : getJavaDisplayName(x)}
 								</div>
@@ -62,6 +65,13 @@ export default function LaunchConfig(props: LaunchConfigProps) {
 					connected={false}
 				/>
 			</Tip>
+			<Show when={!JAVA_OPTIONS.includes(props.java) && props.java != undefined}>
+				<Tip tip="Path to custom Java installation" fullwidth side="right">
+					<div class="cont fullwidth" id="launch-custom-java">
+						<PathSelect path={props.java == "custom" ? "" : props.java} setPath={(path) => { props.setJava(path); props.onChange() }} />
+					</div>
+				</Tip>
+			</Show>
 			<div class="cont start label">
 				<label for="launch-memory">JVM MEMORY</label>
 				<DeriveIndicator

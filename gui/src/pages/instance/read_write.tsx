@@ -3,6 +3,7 @@ import { getPackageConfigRequest, PackageConfig } from "./PackagesConfig";
 import { canonicalizeListOrSingle } from "../../utils/values";
 import { Loader } from "../../package";
 import { Side } from "../../types";
+import { beautifyString } from "../../utils";
 
 // Stored configuration for an instance
 export interface InstanceConfig {
@@ -22,9 +23,9 @@ export interface InstanceConfig {
 export type ConfiguredLoaders =
 	| Loader
 	| {
-			client?: Loader;
-			server?: Loader;
-	  };
+		client?: Loader;
+		server?: Loader;
+	};
 
 export function getConfiguredLoader(
 	loaders: ConfiguredLoaders | undefined,
@@ -38,18 +39,18 @@ export function getConfiguredLoader(
 		return side == "client"
 			? loaders.client
 			: side == "server"
-			? loaders.server
-			: undefined;
+				? loaders.server
+				: undefined;
 	}
 }
 
 export type ConfiguredPackages =
 	| PackageConfig[]
 	| {
-			global?: PackageConfig[];
-			client?: PackageConfig[];
-			server?: PackageConfig[];
-	  };
+		global?: PackageConfig[];
+		client?: PackageConfig[];
+		server?: PackageConfig[];
+	};
 
 export interface LaunchConfig {
 	memory?: string | LaunchMemory;
@@ -79,7 +80,7 @@ export function getJavaDisplayName(x: JavaType) {
 	} else if (x == "graalvm") {
 		return "GraalVM";
 	} else {
-		return x;
+		return beautifyString(x);
 	}
 }
 
@@ -112,8 +113,8 @@ export async function readInstanceConfig(
 		mode == InstanceConfigMode.Instance
 			? "get_instance_config"
 			: mode == InstanceConfigMode.Profile
-			? "get_profile_config"
-			: "get_global_profile";
+				? "get_profile_config"
+				: "get_global_profile";
 	try {
 		return (await invoke(method, { id: id })) as InstanceConfig;
 	} catch (e) {
@@ -130,8 +131,8 @@ export async function readEditableInstanceConfig(
 		mode == InstanceConfigMode.Instance
 			? "get_editable_instance_config"
 			: mode == InstanceConfigMode.Profile
-			? "get_editable_profile_config"
-			: "get_global_profile";
+				? "get_editable_profile_config"
+				: "get_global_profile";
 	try {
 		return (await invoke(method, { id: id })) as InstanceConfig;
 	} catch (e) {
@@ -148,8 +149,8 @@ export async function saveInstanceConfig(
 		mode == InstanceConfigMode.Instance
 			? "write_instance_config"
 			: mode == InstanceConfigMode.Profile
-			? "write_profile_config"
-			: "write_global_profile";
+				? "write_profile_config"
+				: "write_global_profile";
 
 	try {
 		await invoke(method, {

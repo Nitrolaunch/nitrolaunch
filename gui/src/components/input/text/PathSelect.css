@@ -1,0 +1,19 @@
+.path-select {
+	width: 100%;
+
+	display: grid;
+	grid-template-columns: 3fr 1fr;
+}
+
+.path-select-path {
+	height: var(--input-height);
+	width: 95%;
+
+	background-color: var(--bg0);
+	color: var(--fg3);
+
+	border: var(--border) solid var(--bg3);
+	border-radius: var(--round);
+
+	overflow-x: auto;
+}

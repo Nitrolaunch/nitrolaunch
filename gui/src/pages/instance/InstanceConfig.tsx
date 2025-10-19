@@ -346,6 +346,16 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 			clearInputError("version");
 		}
 
+		// The user selected custom Java but didn't pick anything
+		if (javaType() == "" || javaType() == "custom") {
+			inputError("launch-custom-java");
+			inputError("launch-tab");
+			return;
+		} else {
+			clearInputError("launch-custom-java");
+			clearInputError("launch-tab");
+		}
+
 		// Loaders
 
 		let formatLoader = (loader?: string, version?: string) => {
