@@ -25,7 +25,8 @@ categories = ["games"]
 workspace = true
 
 [profile.release]
-lto = "thin"
+lto = true
+codegen-units = 1
 strip = true
 
 [lib]
