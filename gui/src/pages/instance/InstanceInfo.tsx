@@ -273,7 +273,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 			{
 				value: "launch",
 				contents: (
-					<IconAndText icon={Play} text="Launch" color="var(--instance)" />
+					<IconAndText icon={Play} size="1.25rem" text="Launch" color="var(--instance)" />
 				),
 			},
 			{
@@ -281,6 +281,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 				contents: (
 					<IconAndText
 						icon={Play}
+						size="1.25rem"
 						text="Launch Offline"
 						color="var(--profile)"
 					/>
@@ -361,7 +362,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 												previewText={
 													<Switch>
 														<Match when={!isRunning()}>
-															<IconAndText icon={Play} text="Launch" centered />
+															<IconAndText icon={Play} size="1.25rem" text="Launch" centered />
 														</Match>
 														<Match when={isRunning()}>
 															<IconAndText

@@ -437,10 +437,10 @@ function ActionButton(props: ActionButtonProps) {
 			return "Install";
 		}
 	};
-	let Icon = () => {
+	let ButtonIcon = () => {
 		if (props.mode == FooterMode.Instance) {
 			if (props.isInstanceLaunchable || !props.selected) {
-				return <Play />;
+				return <Icon icon={Play} size="1.25rem" />;
 			} else {
 				return <Upload />;
 			}
@@ -488,7 +488,7 @@ function ActionButton(props: ActionButtonProps) {
 				onclick={props.onClick}
 				style={`background-color:${backgroundColor()};border-color:${borderColor()};color:${borderColor()};border-top: var(--border) solid`}
 			>
-				{Icon()}
+				{ButtonIcon()}
 				{message()}
 			</div>
 			<div class="footer-action-button-decorations">
