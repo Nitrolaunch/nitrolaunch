@@ -390,7 +390,7 @@ impl InstanceDirs {
 		side: &Side,
 		game_dir_override: Option<&Path>,
 	) -> Self {
-		let inst_dir = paths.project.data_dir().join("instances").join(instance_id);
+		let inst_dir = paths.data.join("instances").join(instance_id);
 
 		let game_dir = if let Some(game_dir) = game_dir_override {
 			game_dir.to_owned()

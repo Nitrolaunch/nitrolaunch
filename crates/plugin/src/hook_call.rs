@@ -102,7 +102,7 @@ pub(crate) async fn call<H: Hook + Sized>(
 		cmd.env(CUSTOM_CONFIG_ENV, custom_config);
 	}
 	cmd.env(DATA_DIR_ENV, &arg.paths.data);
-	cmd.env(CONFIG_DIR_ENV, arg.paths.project.config_dir());
+	cmd.env(CONFIG_DIR_ENV, &arg.paths.config);
 	if let Some(nitro_version) = arg.nitro_version {
 		cmd.env(NITRO_VERSION_ENV, nitro_version);
 	}

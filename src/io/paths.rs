@@ -1,17 +1,14 @@
-use anyhow::{anyhow, Context};
-use directories::{BaseDirs, ProjectDirs};
+use anyhow::Context;
 
 use std::path::PathBuf;
 
 /// Store for all of the paths that are used throughout the application
 #[derive(Debug, Clone)]
 pub struct Paths {
-	/// System-wide directories
-	pub base: BaseDirs,
-	/// Project-specific directories
-	pub project: ProjectDirs,
 	/// Paths object from core
 	pub core: nitro_core::Paths,
+	/// Config directory
+	pub config: PathBuf,
 	/// Holds program data
 	pub data: PathBuf,
 	/// Holds internal data
@@ -49,7 +46,7 @@ impl Paths {
 	pub async fn create_dirs(&self) -> anyhow::Result<()> {
 		let _ = tokio::join!(
 			tokio::fs::create_dir_all(&self.data),
-			tokio::fs::create_dir_all(self.project.config_dir()),
+			tokio::fs::create_dir_all(&self.config),
 			tokio::fs::create_dir_all(&self.internal),
 			tokio::fs::create_dir_all(&self.addons),
 			tokio::fs::create_dir_all(&self.pkg_cache),
@@ -69,39 +66,30 @@ impl Paths {
 
 	/// Create the paths without creating any directories
 	pub fn new_no_create() -> anyhow::Result<Self> {
-		let base = BaseDirs::new().ok_or(anyhow!("Base directories failed"))?;
-		let project =
-			ProjectDirs::from("", "nitro", "nitro").ok_or(anyhow!("Base directories failed"))?;
+		let core_paths = nitro_core::Paths::new().context("Failed to create core paths")?;
+		let data = core_paths.data.clone();
 
-		let data = project.data_dir().to_owned();
 		let internal = data.join("internal");
 		let addons = internal.join("addons");
 		let pkg_cache = internal.join("pkg");
 		let pkg_index_cache = pkg_cache.join("index");
 		let logs = data.join("logs");
 		let launch_logs = logs.join("launch");
-		let run = project
-			.runtime_dir()
-			.map(|x| x.to_path_buf())
-			.unwrap_or(internal.join("run"));
 		let snapshots = internal.join("snapshots");
 		let proxy = data.join("proxy");
 		let plugins = data.join("plugins");
 
-		let core_paths = nitro_core::Paths::new().context("Failed to create core paths")?;
-
 		Ok(Paths {
-			base,
-			project,
-			core: core_paths,
+			config: core_paths.config.clone(),
 			data,
+			run: core_paths.run.clone(),
+			core: core_paths,
 			internal,
 			addons,
 			pkg_cache,
 			pkg_index_cache,
 			logs,
 			launch_logs,
-			run,
 			snapshots,
 			proxy,
 			plugins,

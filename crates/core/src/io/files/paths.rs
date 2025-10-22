@@ -1,15 +1,15 @@
 use anyhow::anyhow;
-use directories::{BaseDirs, ProjectDirs};
+use directories::ProjectDirs;
 
 use std::path::PathBuf;
+
+use crate::io::config::IO_CONFIG;
 
 /// Store for all of the paths that are used throughout the application
 #[derive(Debug, Clone)]
 pub struct Paths {
-	/// System-wide directories
-	pub base: BaseDirs,
-	/// Project-specific directories
-	pub project: ProjectDirs,
+	/// Config directory
+	pub config: PathBuf,
 	/// Holds data
 	pub data: PathBuf,
 	/// Holds internal data
@@ -46,8 +46,8 @@ impl Paths {
 
 	/// Create the directories on an existing set of paths
 	pub fn create_dirs(&self) -> anyhow::Result<()> {
+		let _ = std::fs::create_dir_all(&self.config);
 		let _ = std::fs::create_dir_all(&self.data);
-		let _ = std::fs::create_dir_all(self.project.config_dir());
 		let _ = std::fs::create_dir_all(&self.internal);
 		let _ = std::fs::create_dir_all(&self.assets);
 		let _ = std::fs::create_dir_all(&self.java);
@@ -63,11 +63,20 @@ impl Paths {
 
 	/// Create the paths without creating any directories
 	pub fn new_no_create() -> anyhow::Result<Self> {
-		let base = BaseDirs::new().ok_or(anyhow!("Failed to create base directories"))?;
 		let project = ProjectDirs::from("", "nitro", "nitro")
 			.ok_or(anyhow!("Failed to create project directories"))?;
 
-		let data = project.data_dir().to_owned();
+		let config = if let Some(dir) = IO_CONFIG.get("config_path") {
+			PathBuf::from(dir)
+		} else {
+			project.config_dir().to_owned()
+		};
+		let data = if let Some(dir) = IO_CONFIG.get("data_path") {
+			PathBuf::from(dir)
+		} else {
+			project.data_dir().to_owned()
+		};
+
 		let internal = data.join("internal");
 		let assets = internal.join("assets");
 		let libraries = internal.join("libraries");
@@ -83,8 +92,7 @@ impl Paths {
 		let stdio = internal.join("stdio");
 
 		Ok(Paths {
-			base,
-			project,
+			config,
 			data,
 			internal,
 			assets,

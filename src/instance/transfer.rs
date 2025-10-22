@@ -135,7 +135,7 @@ impl Instance {
 		);
 
 		// Create the target directory
-		let target_dir = paths.project.data_dir().join("instances").join(id);
+		let target_dir = paths.data.join("instances").join(id);
 		std::fs::create_dir_all(&target_dir)
 			.context("Failed to create directory for new instance")?;
 

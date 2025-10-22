@@ -74,7 +74,7 @@ impl PluginManager {
 
 	/// Get the path to the config file
 	pub fn get_config_path(paths: &Paths) -> PathBuf {
-		paths.project.config_dir().join("plugins.json")
+		paths.config.join("plugins.json")
 	}
 
 	/// Write the default config file if it does not exist

@@ -66,7 +66,7 @@ pub struct Config {
 impl Config {
 	/// Get the config path
 	pub fn get_path(paths: &Paths) -> PathBuf {
-		paths.project.config_dir().join("nitro.json")
+		paths.config.join("nitro.json")
 	}
 
 	/// Open the config from a file
