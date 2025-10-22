@@ -2,7 +2,7 @@
 
 ## 🚀 **A Minecraft launcher for the future**
 
-[![](https://dcbadge.limes.pink/api/server/https://discord.gg/25fhkjeTvW)](https://discord.gg/25fhkjeTvW)
+[![](https://dcbadge.limes.pink/api/server/https://discord.gg/25fhkjeTvW)](https://discord.gg/25fhkjeTvW) | [Documentation](https://nitrolaunch.github.io/nitrolaunch)
 
 Nitrolaunch is a Minecraft launcher and ecosystem meant to reinvent the launcher as you know it, providing a plugin system and a better interface with custom content such as mods and datapacks.
 
@@ -20,23 +20,17 @@ Nitrolaunch will work how you do, as an intuitive desktop app or CLI
 | :-------------------------------------------: | :---------------------------------------: |
 | ![](docs/assets/screenshots/package_page.png) | ![](docs/assets/screenshots/cli_list.png) |
 
-## 🚀 Client and Server Instances
-
-Set up instances of both clients and servers, and share configuration between them seamlessly.
-
-![](docs/assets/screenshots/instances.png)
-
 ## 🔌 Plugin System
 
 Extend the launcher with features like new modloaders and sources for mods, translations for other languages, tools to enhance your productivity, and more!
 
 ![](docs/assets/screenshots/plugins.png)
 
-## ✈️ Easy to Switch
+## 🫶 Play with Friends
 
-Migrate from your current launcher in a couple of clicks
+Nitrolaunch supports both clients and servers, and you can export your configuration as a code with one click to synchronize your experience.
 
-![](docs/assets/screenshots/migrate.png)
+![](docs/assets/screenshots/instances.png)
 
 ## 📥 Modern Packaging
 
@@ -48,6 +42,17 @@ Install mods, datapacks, shaders, and more from sources like Modrinth and Smithe
 
 ![](docs/assets/screenshots/launch.gif)
 
+## 😺 And much more!
+
+- ✈️ Easy to switch - Migrate from your current launcher without copying any files
+- 🗜️ Enhanced datapack support, including global packs and [welding](https://weld.smithed.dev) of packs for better compatability
+- 🛠️ Global and backwards-compatible options sharing
+- 🗃️ Tools for server admins, like automatic file backups and creating many instances from one config
+
 # 🚀 Getting Started
 
 To get started with Nitrolaunch, view our [user guide](https://nitrolaunch.github.io/nitrolaunch/guide/).
+
+## Credits
+
+- Thanks to [Eyecons](https://github.com/bbfh-dev/eyecons) for icons
