@@ -163,8 +163,7 @@ impl Package {
 
 	/// Get the cached path of the package
 	pub fn cached_path(&self, paths: &Paths) -> PathBuf {
-		let cache_dir = paths.project.cache_dir().join("pkg");
-		cache_dir.join(self.filename())
+		paths.pkg_cache.join(self.filename())
 	}
 
 	/// Remove the cached package file

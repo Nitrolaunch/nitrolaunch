@@ -34,8 +34,8 @@ pub async fn run(subcommand: FilesSubcommand, data: &mut CmdData<'_>) -> anyhow:
 
 pub async fn remove(data: &mut CmdData<'_>, remove_data: bool) -> anyhow::Result<()> {
 	cprintln!("<g>Removing cached files...");
-	fs::remove_dir_all(data.paths.project.cache_dir())
-		.context("Failed to remove cache directory")?;
+	fs::remove_dir_all(&data.paths.pkg_cache)
+		.context("Failed to remove package cache directory")?;
 	if remove_data {
 		cprintln!("<g>Removing internal files...");
 		fs::remove_dir_all(&data.paths.internal)

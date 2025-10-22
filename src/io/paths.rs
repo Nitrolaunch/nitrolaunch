@@ -49,7 +49,6 @@ impl Paths {
 	pub async fn create_dirs(&self) -> anyhow::Result<()> {
 		let _ = tokio::join!(
 			tokio::fs::create_dir_all(&self.data),
-			tokio::fs::create_dir_all(self.project.cache_dir()),
 			tokio::fs::create_dir_all(self.project.config_dir()),
 			tokio::fs::create_dir_all(&self.internal),
 			tokio::fs::create_dir_all(&self.addons),
@@ -77,7 +76,7 @@ impl Paths {
 		let data = project.data_dir().to_owned();
 		let internal = data.join("internal");
 		let addons = internal.join("addons");
-		let pkg_cache = project.cache_dir().join("pkg");
+		let pkg_cache = internal.join("pkg");
 		let pkg_index_cache = pkg_cache.join("index");
 		let logs = data.join("logs");
 		let launch_logs = logs.join("launch");

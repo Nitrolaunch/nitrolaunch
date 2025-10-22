@@ -47,7 +47,6 @@ impl Paths {
 	/// Create the directories on an existing set of paths
 	pub fn create_dirs(&self) -> anyhow::Result<()> {
 		let _ = std::fs::create_dir_all(&self.data);
-		let _ = std::fs::create_dir_all(self.project.cache_dir());
 		let _ = std::fs::create_dir_all(self.project.config_dir());
 		let _ = std::fs::create_dir_all(&self.internal);
 		let _ = std::fs::create_dir_all(&self.assets);
