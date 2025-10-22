@@ -19,7 +19,7 @@ pub struct IoConfig {
 
 impl IoConfig {
 	fn new() -> anyhow::Result<Self> {
-		let path = home_dir()?.join(".nitro");
+		let path = home_dir()?.join(".nitro.json");
 
 		if !path.exists() {
 			Ok(Self::default())
