@@ -1,39 +1,44 @@
 import {
-	AngleRight,
 	Animal,
 	Audio,
 	Book,
 	Box,
+	Building,
+	Burger,
+	Bus,
 	Controller,
 	Couch,
 	CurlyBraces,
+	Diagram,
+	Dice,
+	Dumbbell,
 	Folder,
+	Font,
+	Fork,
 	Fullscreen,
 	Gear,
 	Globe,
 	Graph,
+	Helmet,
 	Home,
 	Honeycomb,
 	Jigsaw,
-	Key,
 	Language,
+	Lightning,
 	Link,
-	MapPin,
 	Microphone,
 	Minecraft,
 	Moon,
+	MultipleUsers,
 	Palette,
 	Picture,
 	Plus,
 	Properties,
 	Search,
-	Speed,
+	Server,
 	Star,
 	Sun,
 	Sword,
-	Text,
-	User,
-	Window,
 } from "./icons";
 import { Side } from "./types";
 import { beautifyString } from "./utils";
@@ -267,7 +272,7 @@ export function packageCategoryIcon(category: PackageCategory) {
 		case PackageCategory.Cartoon:
 			return Palette;
 		case PackageCategory.Challenge:
-			return Star;
+			return Dumbbell;
 		case PackageCategory.Combat:
 			return Sword;
 		case PackageCategory.Compatability:
@@ -279,7 +284,7 @@ export function packageCategoryIcon(category: PackageCategory) {
 		case PackageCategory.Entities:
 			return Animal;
 		case PackageCategory.Equipment:
-			return Key;
+			return Helmet;
 		case PackageCategory.Exploration:
 			return Search;
 		case PackageCategory.Extensive:
@@ -287,15 +292,15 @@ export function packageCategoryIcon(category: PackageCategory) {
 		case PackageCategory.Fantasy:
 			return Star;
 		case PackageCategory.Fonts:
-			return Text;
+			return Font;
 		case PackageCategory.Food:
-			return Box;
+			return Burger;
 		case PackageCategory.GameMechanics:
-			return Gear;
+			return Dice;
 		case PackageCategory.Gui:
-			return Window;
+			return Diagram;
 		case PackageCategory.Items:
-			return Box;
+			return Fork;
 		case PackageCategory.Language:
 			return Language;
 		case PackageCategory.Library:
@@ -309,13 +314,13 @@ export function packageCategoryIcon(category: PackageCategory) {
 		case PackageCategory.Mobs:
 			return Animal;
 		case PackageCategory.Multiplayer:
-			return User;
+			return MultipleUsers;
 		case PackageCategory.Optimization:
-			return Speed;
+			return Lightning;
 		case PackageCategory.Realistic:
 			return Picture;
 		case PackageCategory.Simplistic:
-			return Fullscreen;
+			return Box;
 		case PackageCategory.Space:
 			return Moon;
 		case PackageCategory.Social:
@@ -323,11 +328,11 @@ export function packageCategoryIcon(category: PackageCategory) {
 		case PackageCategory.Storage:
 			return Folder;
 		case PackageCategory.Structures:
-			return MapPin;
+			return Building;
 		case PackageCategory.Technology:
-			return Properties;
+			return Server;
 		case PackageCategory.Transportation:
-			return AngleRight;
+			return Bus;
 		case PackageCategory.Tweaks:
 			return Properties;
 		case PackageCategory.Utility:

@@ -68,6 +68,17 @@ import ControllerIcon from "./assets/icons/controller.svg?component-solid";
 import InfoIcon from "./assets/icons/info.svg?component-solid";
 import ArrowLeftIcon from "./assets/icons/arrow_left.svg?component-solid";
 import ArrowRightIcon from "./assets/icons/arrow_right.svg?component-solid";
+import BuildingIcon from "./assets/icons/building.svg?component-solid";
+import BurgerIcon from "./assets/icons/burger.svg?component-solid";
+import BusIcon from "./assets/icons/bus.svg?component-solid";
+import ConnectionsIcon from "./assets/icons/connections.svg?component-solid";
+import DumbbellIcon from "./assets/icons/dumbbell.svg?component-solid";
+import FontIcon from "./assets/icons/font.svg?component-solid";
+import ForkIcon from "./assets/icons/fork.svg?component-solid";
+import HelmetIcon from "./assets/icons/helmet.svg?component-solid";
+import LightningIcon from "./assets/icons/lightning.svg?component-solid";
+import MultipleUsersIcon from "./assets/icons/multiple_users.svg?component-solid";
+import DiceIcon from "./assets/icons/dice.svg?component-solid";
 import { HasWidthHeight } from "./components/Icon";
 
 export function Pin({ width, height, viewBox }: HasWidthHeight) {
@@ -356,4 +367,48 @@ export function ArrowLeft({ width, height, viewBox }: HasWidthHeight) {
 
 export function ArrowRight({ width, height, viewBox }: HasWidthHeight) {
 	return <ArrowRightIcon width={width} height={height} viewBox={viewBox} />;
+}
+
+export function Building({ width, height, viewBox }: HasWidthHeight) {
+	return <BuildingIcon width={width} height={height} viewBox={viewBox} />;
+}
+
+export function Burger({ width, height, viewBox }: HasWidthHeight) {
+	return <BurgerIcon width={width} height={height} viewBox={viewBox} />;
+}
+
+export function Bus({ width, height, viewBox }: HasWidthHeight) {
+	return <BusIcon width={width} height={height} viewBox={viewBox} />;
+}
+
+export function Connections({ width, height, viewBox }: HasWidthHeight) {
+	return <ConnectionsIcon width={width} height={height} viewBox={viewBox} />;
+}
+
+export function Dumbbell({ width, height, viewBox }: HasWidthHeight) {
+	return <DumbbellIcon width={width} height={height} viewBox={viewBox} />;
+}
+
+export function Font({ width, height, viewBox }: HasWidthHeight) {
+	return <FontIcon width={width} height={height} viewBox={viewBox} />;
+}
+
+export function Fork({ width, height, viewBox }: HasWidthHeight) {
+	return <ForkIcon width={width} height={height} viewBox={viewBox} />;
+}
+
+export function Helmet({ width, height, viewBox }: HasWidthHeight) {
+	return <HelmetIcon width={width} height={height} viewBox={viewBox} />;
+}
+
+export function Lightning({ width, height, viewBox }: HasWidthHeight) {
+	return <LightningIcon width={width} height={height} viewBox={viewBox} />;
+}
+
+export function MultipleUsers({ width, height, viewBox }: HasWidthHeight) {
+	return <MultipleUsersIcon width={width} height={height} viewBox={viewBox} />;
+}
+
+export function Dice({ width, height, viewBox }: HasWidthHeight) {
+	return <DiceIcon width={width} height={height} viewBox={viewBox} />;
 }
