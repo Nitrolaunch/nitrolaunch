@@ -182,7 +182,7 @@ pub async fn install(
 		game_jar_path,
 		internal_dir,
 	)
-	.context("Failed to run processsing tasks")?;
+	.context("Failed to run processing tasks")?;
 
 	process.display(
 		MessageContents::Success(format!("{mode} installed")),
