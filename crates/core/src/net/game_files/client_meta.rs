@@ -159,6 +159,9 @@ pub mod libraries {
 		/// Rules for extraction
 		#[serde(default)]
 		pub extract: ExtractionRules,
+		/// Another library download URL if downloads is not present
+		#[serde(default)]
+		pub url: Option<String>,
 	}
 
 	/// Downloads for a library

@@ -12,6 +12,7 @@ use zip::ZipArchive;
 
 use crate::io::files;
 use crate::io::java::classpath::Classpath;
+use crate::io::java::maven::MavenLibraryParts;
 use crate::io::update::{UpdateManager, UpdateMethodResult};
 use crate::net::{download, get_transfer_limit};
 use nitro_shared::skip_none;
@@ -59,17 +60,33 @@ pub async fn get(
 			if !manager.should_update_file(&path) {
 				continue;
 			}
-			libs_to_download.push((lib.name.clone(), classifier.clone(), path));
+			libs_to_download.push((lib.name.clone(), classifier.url.clone(), path));
 			continue;
 		}
-		if let Some(artifact) = &lib.downloads.artifact {
+
+		let (url, path) = if let Some(artifact) = &lib.downloads.artifact {
 			let path = libraries_path.join(&artifact.path);
 			if !manager.should_update_file(&path) {
 				continue;
 			}
-			libs_to_download.push((lib.name.clone(), artifact.clone(), path));
-			continue;
-		}
+			(artifact.url.clone(), path)
+		} else {
+			let url = lib
+				.url
+				.clone()
+				.unwrap_or_else(|| "https://libraries.minecraft.net/".into());
+
+			let parts =
+				MavenLibraryParts::parse_from_str(&lib.name).context("Invalid Maven format")?;
+			let path_start = parts.orgs.join("/");
+			let path_end = format!("/{0}/{1}/{0}-{1}.jar", parts.package, parts.version);
+			let path = path_start + &path_end;
+
+			let url = url + &path;
+			(url, libraries_path.join(path))
+		};
+
+		libs_to_download.push((lib.name.clone(), url, path));
 	}
 
 	let count = libs_to_download.len();
@@ -89,7 +106,7 @@ pub async fn get(
 	let mut join = JoinSet::new();
 	// Used to limit the number of open file descriptors
 	let sem = Arc::new(Semaphore::new(get_transfer_limit()));
-	for (name, library, path) in libs_to_download {
+	for (name, url, path) in libs_to_download {
 		let client = client.clone();
 		let sem = sem.clone();
 		let path_clone = path.clone();
@@ -98,7 +115,7 @@ pub async fn get(
 
 			let _permit = sem.acquire().await;
 
-			let response = download::bytes(library.url, &client)
+			let response = download::bytes(url, &client)
 				.await
 				.context("Failed to download library")?;
 			tokio::fs::write(&path_clone, response)

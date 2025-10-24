@@ -17,6 +17,7 @@ workspace = true
 
 [dependencies]
 anyhow = { workspace = true }
+itertools = { workspace = true }
 nitro_core = { workspace = true }
 nitro_shared = { workspace = true }
 nitro_net = { workspace = true }

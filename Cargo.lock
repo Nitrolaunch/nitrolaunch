@@ -2849,6 +2849,7 @@ name = "nitro_mods"
 version = "0.27.0"
 dependencies = [
  "anyhow",
+ "itertools",
  "nitro_core",
  "nitro_net",
  "nitro_shared",

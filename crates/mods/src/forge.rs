@@ -9,6 +9,7 @@ use std::{
 };
 
 use anyhow::{anyhow, bail, Context};
+use itertools::Itertools;
 use nitro_core::{
 	io::{
 		files::create_leading_dirs,
@@ -19,7 +20,10 @@ use nitro_core::{
 		update::UpdateManager,
 	},
 	net::game_files::{
-		client_meta::args::{ArgumentItem, Arguments},
+		client_meta::{
+			args::{ArgumentItem, Arguments},
+			libraries::Library,
+		},
 		libraries,
 	},
 };
@@ -116,8 +120,16 @@ pub async fn install(
 		MessageLevel::Important,
 	);
 
+	let libraries: Vec<_> = data
+		.version_json
+		.libraries
+		.into_iter()
+		.chain(data.launcher_profile.libraries.clone())
+		.unique_by(|x| x.name.clone())
+		.collect();
+
 	libraries::get(
-		&data.version_json.libraries,
+		&libraries,
 		internal_dir,
 		&version_info.version,
 		&UpdateManager::new(update_depth),
@@ -127,7 +139,7 @@ pub async fn install(
 	.await
 	.context("Failed to get libraries")?;
 
-	let classpath = libraries::get_classpath(&data.version_json.libraries, internal_dir)?;
+	let classpath = libraries::get_classpath(&libraries, internal_dir)?;
 
 	// Handle arguments
 	let (jvm_args, game_args) = match side {
@@ -384,6 +396,8 @@ struct LauncherProfile {
 	data: HashMap<String, DataEntry>,
 	/// Tasks to complete
 	processors: Vec<Processor>,
+	/// More libraries
+	libraries: Vec<Library>,
 }
 
 /// Entry for multiple-sided data
