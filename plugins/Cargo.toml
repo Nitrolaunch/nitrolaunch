@@ -35,6 +35,10 @@ name = "nitro_plugin_config_split"
 path = "plugins/config_split/main.rs"
 
 [[bin]]
+name = "nitro_plugin_curseforge_api"
+path = "plugins/curseforge_api/main.rs"
+
+[[bin]]
 name = "nitro_plugin_custom_files"
 path = "plugins/custom_files/main.rs"
 

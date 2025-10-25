@@ -22,6 +22,7 @@ package_zips.platform_dependent:
 	@rm -f release/better_jsons-${OS}.zip
 	@rm -f release/cleanup-${OS}.zip
 	@rm -f release/config_split-${OS}.zip
+	@rm -f release/curseforge_api-${OS}.zip
 	@rm -f release/custom_files-${OS}.zip
 	@rm -f release/docs-${OS}.zip
 	@rm -f release/fabric_quilt-${OS}.zip
@@ -52,6 +53,7 @@ package_zips.platform_dependent:
 	@zip -j release/better_jsons-${OS}.zip $(TARGET_DIR)/nitro_plugin_better_jsons${EXTENSION} plugins/better_jsons/plugin.json
 	@zip -j release/cleanup-${OS}.zip $(TARGET_DIR)/nitro_plugin_cleanup${EXTENSION} plugins/cleanup/plugin.json
 	@zip -j release/config_split-${OS}.zip $(TARGET_DIR)/nitro_plugin_config_split${EXTENSION} plugins/config_split/plugin.json
+	@zip -j release/curseforge_api-${OS}.zip $(TARGET_DIR)/nitro_plugin_curseforge_api${EXTENSION} plugins/curseforge_api/plugin.json
 	@zip -j release/custom_files-${OS}.zip $(TARGET_DIR)/nitro_plugin_custom_files${EXTENSION} plugins/custom_files/plugin.json
 	@zip -j release/docs-${OS}.zip $(TARGET_DIR)/nitro_plugin_docs${EXTENSION} plugins/docs/plugin.json
 	@zip -j release/fabric_quilt-${OS}.zip $(TARGET_DIR)/nitro_plugin_fabric_quilt${EXTENSION} plugins/fabric_quilt/plugin.json
@@ -101,6 +103,10 @@ install.cleanup:
 install.config_split:
 	@cargo install --path . --bin nitro_plugin_config_split --offline
 	@cat plugins/config_split/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/config_split.json
+
+install.curseforge_api:
+	@cargo install --path . --bin nitro_plugin_curseforge_api --offline
+	@cat plugins/curseforge_api/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/curseforge_api.json
 
 install.custom_files:
 	@cargo install --path . --bin nitro_plugin_custom_files --offline

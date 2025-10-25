@@ -1,6 +1,8 @@
 //! Note: The asynchronous functions in this library expect the use of the Tokio runtime and may panic
 //! if it is not used
 
+/// Interacting with the CurseForge API
+pub mod curseforge;
 /// Download utilities
 pub mod download;
 /// Uploading and downloading from filebin.net

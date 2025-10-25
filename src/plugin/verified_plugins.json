@@ -187,5 +187,12 @@
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Create many instances easily"
+	},
+	"curseforge_api": {
+		"id": "curseforge_api",
+		"name": "CurseForge API",
+		"github_owner": "Nitrolaunch",
+		"github_repo": "plugins",
+		"description": "Make simple CurseForge API calls to query mod versions"
 	}
 }

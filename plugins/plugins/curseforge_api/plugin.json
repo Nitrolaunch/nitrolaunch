@@ -1,0 +1,13 @@
+{
+	"name": "CurseForge API",
+	"description": "Make simple CurseForge API calls to query mod versions",
+	"protocol_version": 3,
+	"hooks": {
+		"subcommand": {
+			"executable": "${PLUGIN_DIR}/nitro_plugin_curseforge_api${EXE_EXTENSION}"
+		}
+	},
+	"subcommands": {
+		"curse": "Use the CurseForge API"
+	}
+}
