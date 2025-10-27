@@ -42,12 +42,13 @@ pub fn consolidate_profile_configs(
 						new.merge(profile.clone());
 						out.insert(id.clone(), new);
 					} else {
-						o.display(
-							MessageContents::Error(
-								format!("Parent profile '{parent}' does not exist, or cyclic profiles were found")
-							),
-							MessageLevel::Important
-						);
+						let message = if profiles.contains_key("parent") {
+							format!("Cyclic profile structure found")
+						} else {
+							format!("Parent profile '{parent}' does not exist")
+						};
+						o.display(MessageContents::Error(message), MessageLevel::Important);
+
 						continue;
 					}
 				}
