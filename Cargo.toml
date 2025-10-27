@@ -16,7 +16,7 @@ edition = "2021"
 license = "GPL-3.0-or-later"
 authors = ["CarbonSmasher"]
 repository = "https://github.com/Nitrolaunch/nitrolaunch"
-rust-version = "1.80.0"
+rust-version = "1.81.0"
 categories = ["games"]
 
 [workspace.lints.rust]
@@ -77,6 +77,7 @@ color-print = "0.3.6"
 directories = "5.0.0"
 glob = "0.3.1"
 hex = "0.4.3"
+home = "=0.5.11"
 inquire = { version = "0.6.2", default-features = false, features = [
 	"crossterm",
 ] }
