@@ -1,15 +1,13 @@
 use std::{collections::HashMap, sync::Arc, time::Duration};
 
 use anyhow::Context;
-use nitrolaunch::shared::{
-	id::InstanceID,
-	lang::translate::TranslationKey,
-	output::{Message, MessageContents, MessageLevel, NitroOutput},
-	pkg::{ArcPkgReq, ResolutionError},
-};
+use nitrolaunch::shared::id::InstanceID;
+use nitrolaunch::shared::lang::translate::TranslationKey;
+use nitrolaunch::shared::output::{Message, MessageContents, MessageLevel, NitroOutput};
+use nitrolaunch::shared::pkg::{ArcPkgReq, ResolutionError};
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Manager};
-use tokio::sync::Mutex;
+use tokio::sync::{mpsc::Sender, Mutex};
 
 /// Response to a prompt in the frontend, shared with a mutex
 pub type PromptResponse = Arc<Mutex<Option<String>>>;
@@ -54,9 +52,16 @@ impl NitroOutput for LauncherOutput {
 	}
 
 	fn display_message(&mut self, message: Message) {
+		let logger = self.inner.logger.clone();
+		let message2 = message.clone();
+		tokio::task::spawn(async move {
+			let _ = logger.send(message2).await;
+		});
+
 		if !message.level.at_least(&MessageLevel::Extra) {
 			return;
 		}
+
 		match message.contents {
 			MessageContents::Associated(assoc, msg) => match *assoc {
 				MessageContents::Progress { current, total } => {
@@ -147,18 +152,14 @@ impl NitroOutput for LauncherOutput {
 			.context("Failed to display password prompt to user")?;
 
 		// Block this thread, checking every interval if the prompt has been filled
-		// Weird lint
-		#[allow(unused_assignments)]
-		let mut result = None;
-		loop {
+		let result = loop {
 			if let Some(answer) = self.inner.password_prompt.lock().await.take() {
-				result = Some(answer);
-				break;
+				break answer;
 			}
 			tokio::time::sleep(Duration::from_millis(50)).await;
-		}
+		};
 
-		Ok(result.unwrap())
+		Ok(result)
 	}
 
 	async fn prompt_new_password(&mut self, message: MessageContents) -> anyhow::Result<String> {
@@ -258,6 +259,7 @@ pub struct OutputInner {
 	pub app: Arc<AppHandle>,
 	pub password_prompt: PromptResponse,
 	pub passkeys: Arc<Mutex<HashMap<String, String>>>,
+	pub logger: Sender<Message>,
 }
 
 /// Event for a simple text message

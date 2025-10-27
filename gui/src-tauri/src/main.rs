@@ -14,15 +14,18 @@ mod task_manager;
 
 use std::collections::HashMap;
 use std::sync::{Arc, OnceLock};
+use std::time::Duration;
 
 use anyhow::Context;
 use data::LauncherData;
 use nitrolaunch::core::auth_crate::mc::ClientId;
 use nitrolaunch::core::{net::download::Client, user::UserManager};
+use nitrolaunch::io::logging::Logger;
 use nitrolaunch::io::paths::Paths;
+use nitrolaunch::shared::output::Message;
 use output::{OutputInner, PromptResponse};
 use tauri::api::process::restart;
-use tauri::async_runtime::Mutex;
+use tauri::async_runtime::{Mutex, Sender};
 use tauri::{AppHandle, Manager};
 
 use crate::commands::misc::update_version_manifest;
@@ -33,7 +36,9 @@ use crate::task_manager::TaskManager;
 fn main() {
 	fix_compatability();
 
-	let state = tauri::async_runtime::block_on(async { State::new().await })
+	let (logging_tx, mut logging_rx) = tokio::sync::mpsc::channel::<Message>(100);
+
+	let state = tauri::async_runtime::block_on(async { State::new(logging_tx).await })
 		.expect("Error when initializing application state");
 	let data = state.data.clone();
 	let paths = state.paths.clone();
@@ -42,6 +47,21 @@ fn main() {
 
 	tauri::Builder::default()
 		.setup(move |app| {
+			// Setup logging
+			let mut logger = Logger::new(&paths, "gui")?;
+			tauri::async_runtime::spawn(async move {
+				loop {
+					if let Some(message) = logging_rx.recv().await {
+						let _ = logger.log_message(message.contents, message.level);
+					}
+
+					tokio::time::sleep(Duration::from_millis(3)).await;
+				}
+
+				#[allow(unreachable_code)]
+				Ok::<(), anyhow::Error>(())
+			});
+
 			// Setup task manager
 			let task_manager = TaskManager::new(app.app_handle());
 
@@ -201,10 +221,11 @@ pub struct State {
 	pub passkeys: Arc<Mutex<HashMap<String, String>>>,
 	pub password_prompt: PromptResponse,
 	pub output_inner: Arc<OnceLock<OutputInner>>,
+	pub logging_sender: Sender<Message>,
 }
 
 impl State {
-	async fn new() -> anyhow::Result<Self> {
+	async fn new(logging_sender: Sender<Message>) -> anyhow::Result<Self> {
 		let paths = Paths::new().await?;
 		Ok(Self {
 			data: Arc::new(Mutex::new(
@@ -218,6 +239,7 @@ impl State {
 			passkeys: Arc::new(Mutex::new(HashMap::new())),
 			password_prompt: PromptResponse::new(Mutex::new(None)),
 			output_inner: Arc::new(OnceLock::new()),
+			logging_sender,
 		})
 	}
 
@@ -230,6 +252,7 @@ impl State {
 			app: app_handle,
 			password_prompt: self.password_prompt.clone(),
 			passkeys: self.passkeys.clone(),
+			logger: self.logging_sender.clone(),
 		})
 	}
 
