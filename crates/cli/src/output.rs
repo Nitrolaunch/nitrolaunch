@@ -1,11 +1,8 @@
-use std::io::Write;
-use std::{fs::File, path::PathBuf};
-
 use anyhow::Context;
 use color_print::{cformat, cstr};
 use inquire::{Confirm, Password};
-use itertools::Itertools;
 use nitrolaunch::core::io::config::IO_CONFIG;
+use nitrolaunch::io::logging::Logger;
 use nitrolaunch::io::paths::Paths;
 use nitrolaunch::pkg_crate::{PkgRequest, PkgRequestSource};
 use nitrolaunch::shared::lang::translate::{TranslationKey, TranslationMap};
@@ -13,7 +10,6 @@ use nitrolaunch::shared::output::{
 	default_special_ms_auth, Message, MessageContents, MessageLevel, NitroOutput,
 };
 use nitrolaunch::shared::util::print::ReplPrinter;
-use nitrolaunch::shared::util::utc_timestamp;
 
 /// A nice colored bullet point for terminal output
 pub const HYPHEN_POINT: &str = cstr!("<k!> - </k!>");
@@ -37,23 +33,19 @@ pub struct TerminalOutput {
 	level: MessageLevel,
 	in_process: bool,
 	indent_level: u8,
-	log_file: File,
-	latest_log_file: File,
+	logger: Logger,
 	translation_map: Option<TranslationMap>,
 }
 
 #[async_trait::async_trait]
 impl NitroOutput for TerminalOutput {
 	fn display_text(&mut self, text: String, level: MessageLevel) {
-		let _ = self.log_message(&text, level);
+		let _ = self.log_message(MessageContents::Simple(text.clone()), level);
 		self.display_text_impl(text, level);
 	}
 
 	fn display_message(&mut self, message: Message) {
-		let _ = self.log_message(
-			&Self::format_message_log(message.contents.clone()),
-			message.level,
-		);
+		let _ = self.log_message(message.contents.clone(), message.level);
 		self.display_text_impl(self.format_message(message.contents), message.level);
 	}
 
@@ -128,18 +120,14 @@ impl NitroOutput for TerminalOutput {
 
 impl TerminalOutput {
 	pub fn new(paths: &Paths) -> anyhow::Result<Self> {
-		let _ = clear_old_logs(paths);
-		let path = get_log_file_path(paths).context("Failed to get log file path")?;
-		let file = File::create(path).context("Failed to open log file")?;
-		let latest_file = File::create(get_latest_log_file_path(paths))
-			.context("Failed to open latest.txt log file")?;
+		let logger = Logger::new(paths).context("Failed to create logger")?;
+
 		Ok(Self {
 			printer: ReplPrinter::new(true),
 			level: MessageLevel::Important,
 			in_process: false,
 			indent_level: 0,
-			log_file: file,
-			latest_log_file: latest_file,
+			logger,
 			translation_map: None,
 		})
 	}
@@ -225,50 +213,13 @@ impl TerminalOutput {
 		}
 	}
 
-	/// Formatting for messages in the log file
-	fn format_message_log(contents: MessageContents) -> String {
-		match contents {
-			MessageContents::Simple(text) => text,
-			MessageContents::Notice(text) => format!("[NOTICE] {}", text),
-			MessageContents::Warning(text) => format!("[WARN] {}", text),
-			MessageContents::Error(text) => format!("[ERR] {}", text),
-			MessageContents::Success(text) => format!("[SUCCESS] {}", add_period(text)),
-			MessageContents::Property(key, value) => {
-				format!("{}: {}", key, Self::format_message_log(*value))
-			}
-			MessageContents::Header(text) => format!("### {} ###", text),
-			MessageContents::StartProcess(text) => format!("{text}..."),
-			MessageContents::Associated(item, message) => {
-				format!(
-					"({}) {}",
-					Self::format_message_log(*item),
-					Self::format_message_log(*message)
-				)
-			}
-			MessageContents::Package(pkg, message) => {
-				let pkg_disp = pkg.debug_sources();
-				format!("[{}] {}", pkg_disp, Self::format_message_log(*message))
-			}
-			MessageContents::Hyperlink(url) => url,
-			MessageContents::ListItem(item) => " - ".to_string() + &Self::format_message_log(*item),
-			MessageContents::Copyable(text) => text,
-			MessageContents::Progress { current, total } => format!("{current}/{total}"),
-			contents => contents.default_format(),
-		}
-	}
-
 	/// Log a message to the log file
-	pub fn log_message(&mut self, text: &str, level: MessageLevel) -> anyhow::Result<()> {
-		let level_indicator = match level {
-			MessageLevel::Important => "I",
-			MessageLevel::Extra => "E",
-			MessageLevel::Debug => "D",
-			MessageLevel::Trace => "T",
-		};
-		writeln!(self.log_file, "[{level_indicator}] {text}")?;
-		writeln!(self.latest_log_file, "[{level_indicator}] {text}")?;
-
-		Ok(())
+	pub fn log_message(
+		&mut self,
+		message: MessageContents,
+		level: MessageLevel,
+	) -> anyhow::Result<()> {
+		self.logger.log_message(message, level)
 	}
 
 	/// Set the log level of the output
@@ -292,51 +243,6 @@ fn disp_pkg_request_with_colors(req: PkgRequest) -> String {
 			cformat!("<c>{}", req.id)
 		}
 	}
-}
-
-/// Get the path to a log file
-fn get_log_file_path(paths: &Paths) -> anyhow::Result<PathBuf> {
-	Ok(paths.logs.join(format!("log-{}.txt", utc_timestamp()?)))
-}
-
-/// Get the path to the latest log file
-fn get_latest_log_file_path(paths: &Paths) -> PathBuf {
-	paths.logs.join("latest.txt")
-}
-
-/// Clears out old log files
-fn clear_old_logs(paths: &Paths) -> anyhow::Result<()> {
-	let dir_reader = paths
-		.logs
-		.read_dir()
-		.context("Failed to read logs directory")?;
-
-	let mut count = 0;
-	let mapped = dir_reader.filter_map(|x| {
-		let x = x.ok()?;
-		if !x.file_type().ok()?.is_file() {
-			return None;
-		}
-
-		let name = x.file_name();
-		if !name.to_string_lossy().contains("log-") {
-			return None;
-		}
-		let time = x.metadata().ok()?.created().ok()?;
-
-		count += 1;
-
-		Some((name, time))
-	});
-	// Sort so that the oldest are at the end
-	let sorted = mapped.sorted_by_cached_key(|x| x.1).rev();
-	if count > 15 {
-		for (name, _) in sorted.skip(15) {
-			let _ = std::fs::remove_file(paths.logs.join(name));
-		}
-	}
-
-	Ok(())
 }
 
 /// Settings for progress bar formatting
