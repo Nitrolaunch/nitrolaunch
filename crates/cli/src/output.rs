@@ -120,7 +120,7 @@ impl NitroOutput for TerminalOutput {
 
 impl TerminalOutput {
 	pub fn new(paths: &Paths) -> anyhow::Result<Self> {
-		let logger = Logger::new(paths).context("Failed to create logger")?;
+		let logger = Logger::new(paths, "cli").context("Failed to create logger")?;
 
 		Ok(Self {
 			printer: ReplPrinter::new(true),

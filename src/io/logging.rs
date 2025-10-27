@@ -16,10 +16,10 @@ pub struct Logger {
 }
 
 impl Logger {
-	/// Opens this logger
-	pub fn new(paths: &Paths) -> anyhow::Result<Self> {
+	/// Opens this logger with a client ID (cli, gui, etc) to identify the log files
+	pub fn new(paths: &Paths, client_id: &str) -> anyhow::Result<Self> {
 		let _ = clear_old_logs(paths);
-		let path = get_log_file_path(paths).context("Failed to get log file path")?;
+		let path = get_log_file_path(paths, client_id).context("Failed to get log file path")?;
 		let log_file = File::create(path).context("Failed to open log file")?;
 		let latest_log_file = File::create(get_latest_log_file_path(paths)).ok();
 
@@ -47,8 +47,10 @@ impl Logger {
 }
 
 /// Get the path to a new log file
-pub fn get_log_file_path(paths: &Paths) -> anyhow::Result<PathBuf> {
-	Ok(paths.logs.join(format!("log-{}.txt", utc_timestamp()?)))
+pub fn get_log_file_path(paths: &Paths, client_id: &str) -> anyhow::Result<PathBuf> {
+	Ok(paths
+		.logs
+		.join(format!("log-{client_id}-{}.txt", utc_timestamp()?)))
 }
 
 /// Get the path to the latest log file
