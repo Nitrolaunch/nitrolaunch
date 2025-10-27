@@ -35,7 +35,7 @@ impl Logger {
 		message: MessageContents,
 		level: MessageLevel,
 	) -> anyhow::Result<()> {
-		let message = format_log_message(&format_log_message_contents(message), level);
+		let message = format_log_message(&format_log_message_contents(message), level) + "\n";
 
 		self.log_file.write_all(message.as_bytes())?;
 		if let Some(latest_log_file) = &mut self.latest_log_file {
