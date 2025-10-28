@@ -111,7 +111,7 @@ impl ConfigBuilder {
 			instance_groups: self.instance_groups,
 			profiles: HashMap::new(),
 			consolidated_profiles: HashMap::new(),
-			global_profile: ProfileConfig::default(),
+			base_profile: ProfileConfig::default(),
 			packages: self.packages,
 			plugins: self.plugins,
 			prefs: self.preferences,

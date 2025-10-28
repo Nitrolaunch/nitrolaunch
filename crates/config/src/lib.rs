@@ -40,8 +40,9 @@ pub struct ConfigDeser {
 	pub instance_groups: HashMap<Arc<str>, Vec<InstanceID>>,
 	/// The list of configured profiles
 	pub profiles: HashMap<ProfileID, ProfileConfig>,
-	/// The global profile
-	pub global_profile: Option<ProfileConfig>,
+	/// The base profile
+	#[serde(alias = "base_profile")]
+	pub base_profile: Option<ProfileConfig>,
 	/// The global preferences
 	pub preferences: PrefDeser,
 }

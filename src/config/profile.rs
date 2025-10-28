@@ -9,7 +9,7 @@ use nitro_shared::{
 /// Consolidates profile configs into the full profiles
 pub fn consolidate_profile_configs(
 	profiles: HashMap<ProfileID, ProfileConfig>,
-	global_profile: Option<&ProfileConfig>,
+	base_profile: Option<&ProfileConfig>,
 	o: &mut impl NitroOutput,
 ) -> HashMap<ProfileID, ProfileConfig> {
 	let mut out: HashMap<_, ProfileConfig> = HashMap::with_capacity(profiles.len());
@@ -26,11 +26,11 @@ pub fn consolidate_profile_configs(
 			}
 
 			if profile.instance.common.from.is_empty() {
-				// Profiles with no ancestor can just be added directly to the output, after deriving from the global profile
+				// Profiles with no ancestor can just be added directly to the output, after deriving from the base profile
 				let mut profile = profile.clone();
-				if let Some(global_profile) = global_profile {
+				if let Some(base_profile) = base_profile {
 					let overlay = profile;
-					profile = global_profile.clone();
+					profile = base_profile.clone();
 					profile.merge(overlay);
 				}
 				out.insert(id.clone(), profile);

@@ -52,7 +52,7 @@ pub struct Config {
 	/// Consolidated profiles
 	pub consolidated_profiles: HashMap<ProfileID, ProfileConfig>,
 	/// The globally applied profile
-	pub global_profile: ProfileConfig,
+	pub base_profile: ProfileConfig,
 	/// Named groups of instances
 	pub instance_groups: HashMap<Arc<str>, Vec<InstanceID>>,
 	/// The registry of packages. Will include packages that are configured when created this way
@@ -206,7 +206,7 @@ impl Config {
 
 		// Consolidate profiles
 		let consolidated_profiles =
-			consolidate_profile_configs(config.profiles.clone(), config.global_profile.as_ref(), o);
+			consolidate_profile_configs(config.profiles.clone(), config.base_profile.as_ref(), o);
 
 		// Load extra supported loaders
 		let mut supported_loaders = Vec::new();
@@ -288,7 +288,7 @@ impl Config {
 			instances,
 			profiles: config.profiles,
 			consolidated_profiles,
-			global_profile: config.global_profile.unwrap_or_default(),
+			base_profile: config.base_profile.unwrap_or_default(),
 			instance_groups: config.instance_groups,
 			packages,
 			plugins,

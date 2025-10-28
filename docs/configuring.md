@@ -18,7 +18,7 @@ When you first run a command that reads from the config, a default configuration
 	"profiles": {
 		"profile": { ... }
 	},
-	"global_profile": { ... },
+	"base_profile": { ... },
 	"instance_groups": {
 		"group": [ ... ]
 	},
@@ -26,7 +26,7 @@ When you first run a command that reads from the config, a default configuration
 }
 ```
 
-- `global_profile`: An optional global profile that all other profiles will inherit from
+- `base_profile`: An optional global profile that all other profiles will inherit from
 - `instance_groups`: Named groups of instance IDs that can be used to easily refer to multiple instances
 
 ## Users

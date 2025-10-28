@@ -227,10 +227,10 @@ export default function InstanceList(props: InstanceListProps) {
 						<div class="cont end" style="padding-right:0.5rem">
 							<IconTextButton
 								icon={Globe}
-								text="Edit Global Profile"
+								text="Edit Base Profile"
 								size="1.5rem"
 								onClick={() => {
-									navigate("/global_profile_config");
+									navigate("/base_profile_config");
 								}}
 							/>
 						</div>

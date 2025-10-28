@@ -65,7 +65,7 @@ export default function NavBar(props: NavBarProps) {
 								"/instance",
 								"/instance_config",
 								"/profile_config",
-								"/global_profile_config",
+								"/base_profile_config",
 								"create_instance",
 								"create_profile",
 							]}

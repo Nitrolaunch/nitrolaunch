@@ -102,7 +102,7 @@ export interface PackageOverrides {
 export enum InstanceConfigMode {
 	Instance = "instance",
 	Profile = "profile",
-	GlobalProfile = "global_profile",
+	GlobalProfile = "base_profile",
 }
 
 export async function readInstanceConfig(
@@ -114,7 +114,7 @@ export async function readInstanceConfig(
 			? "get_instance_config"
 			: mode == InstanceConfigMode.Profile
 				? "get_profile_config"
-				: "get_global_profile";
+				: "get_base_profile";
 	try {
 		return (await invoke(method, { id: id })) as InstanceConfig;
 	} catch (e) {
@@ -132,7 +132,7 @@ export async function readEditableInstanceConfig(
 			? "get_editable_instance_config"
 			: mode == InstanceConfigMode.Profile
 				? "get_editable_profile_config"
-				: "get_global_profile";
+				: "get_base_profile";
 	try {
 		return (await invoke(method, { id: id })) as InstanceConfig;
 	} catch (e) {
@@ -150,7 +150,7 @@ export async function saveInstanceConfig(
 			? "write_instance_config"
 			: mode == InstanceConfigMode.Profile
 				? "write_profile_config"
-				: "write_global_profile";
+				: "write_base_profile";
 
 	try {
 		await invoke(method, {
@@ -171,7 +171,7 @@ export async function getParentProfiles(
 	if (mode == InstanceConfigMode.GlobalProfile) {
 		parentResults = [];
 	} else if (from == undefined || from.length == 0) {
-		let parentResult = await invoke("get_global_profile", {});
+		let parentResult = await invoke("get_base_profile", {});
 		parentResults = [parentResult as InstanceConfig];
 	} else {
 		for (let profile of from) {

@@ -556,7 +556,7 @@ Called whenever certain pages in the GUI are opened. Runs whatever the result of
 
 ```
 {
-	"page": "instances" | "instance" | "instance_config" | "profile_config" | "global_profile_config" | "packages" | "plugins",
+	"page": "instances" | "instance" | "instance_config" | "profile_config" | "base_profile_config" | "packages" | "plugins",
 	"object": string | null
 }
 ```

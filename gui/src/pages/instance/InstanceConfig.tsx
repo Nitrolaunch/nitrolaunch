@@ -73,12 +73,12 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 
 	let isInstance = props.mode == InstanceConfigMode.Instance;
 	let isProfile = props.mode == InstanceConfigMode.Profile;
-	let isGlobalProfile = props.mode == InstanceConfigMode.GlobalProfile;
+	let isBaseProfile = props.mode == InstanceConfigMode.GlobalProfile;
 
 	let id = isInstance
 		? params.instanceId
-		: isGlobalProfile
-			? "Global Profile"
+		: isBaseProfile
+			? "Base Profile"
 			: params.profileId;
 
 	onMount(() =>
@@ -87,7 +87,7 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 				? "instance_config"
 				: isProfile
 					? "profile_config"
-					: "global_profile_config",
+					: "base_profile_config",
 			id
 		)
 	);
@@ -208,7 +208,7 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 
 	let [displayName, setDisplayName] = createSignal("");
 	let message = () =>
-		isInstance ? `INSTANCE` : isGlobalProfile ? "GLOBAL PROFILE" : `PROFILE`;
+		isInstance ? `INSTANCE` : isBaseProfile ? "BASE PROFILE" : `PROFILE`;
 
 	let derivedPackages = createMemo(() => {
 		return getDerivedPackages(parentConfigs());
@@ -313,7 +313,7 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 	async function saveConfig() {
 		let configId = props.creating ? newId() : id;
 
-		if (!isGlobalProfile && configId == undefined) {
+		if (!isBaseProfile && configId == undefined) {
 			inputError("id");
 			return;
 		} else {
@@ -549,7 +549,7 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 			<DisplayShow when={tab() == "general"}>
 				<div class="fields">
 					{/* <h3>Basic Settings</h3> */}
-					<Show when={!isGlobalProfile}>
+					<Show when={!isBaseProfile}>
 						<div class="cont start label">
 							<label for="from">INHERIT CONFIG</label>
 						</div>
@@ -581,7 +581,7 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 							/>
 						</Tip>
 					</Show>
-					<Show when={!isGlobalProfile}>
+					<Show when={!isBaseProfile}>
 						<label for="name" class="label">
 							DISPLAY NAME
 						</label>
@@ -657,7 +657,7 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 							></input>
 						</Tip>
 					</Show>
-					<Show when={props.creating && !isGlobalProfile}>
+					<Show when={props.creating && !isBaseProfile}>
 						<label for="id" class="label">{`${createMessage} ID`}</label>
 						<Tip tip="A unique name used to identify the instance" fullwidth>
 							<input
@@ -684,7 +684,7 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 							></input>
 						</Tip>
 					</Show>
-					<Show when={!isGlobalProfile}>
+					<Show when={!isBaseProfile}>
 						<div class="cont start">
 							<label for="side" class="label">
 								ICON
@@ -705,7 +705,7 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 						/>
 					</Show>
 					<hr />
-					<Show when={props.creating || isProfile || isGlobalProfile}>
+					<Show when={props.creating || isProfile || isBaseProfile}>
 						<div class="cont start">
 							<label for="side" class="label">
 								TYPE

@@ -224,14 +224,14 @@ pub async fn get_editable_profile_config(
 }
 
 #[tauri::command]
-pub async fn get_global_profile(state: tauri::State<'_, State>) -> Result<ProfileConfig, String> {
+pub async fn get_base_profile(state: tauri::State<'_, State>) -> Result<ProfileConfig, String> {
 	let config = fmt_err(
 		load_config(&state.paths, &mut NoOp)
 			.await
 			.context("Failed to load config"),
 	)?;
 
-	Ok(config.global_profile)
+	Ok(config.base_profile)
 }
 
 #[tauri::command]
@@ -271,14 +271,14 @@ pub async fn write_profile_config(
 }
 
 #[tauri::command]
-pub async fn write_global_profile(
+pub async fn write_base_profile(
 	state: tauri::State<'_, State>,
 	config: ProfileConfig,
 ) -> Result<(), String> {
 	let mut configuration =
 		fmt_err(Config::open(&Config::get_path(&state.paths)).context("Failed to load config"))?;
 
-	configuration.global_profile = Some(config);
+	configuration.base_profile = Some(config);
 	fmt_err(
 		json_to_file_pretty(Config::get_path(&state.paths), &configuration)
 			.context("Failed to write modified configuration"),

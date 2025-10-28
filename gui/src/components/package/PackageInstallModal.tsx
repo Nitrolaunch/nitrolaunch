@@ -67,7 +67,7 @@ export default function PackageInstallModal(props: PackageInstallModalProps) {
 
 	let install = async () => {
 		if (
-			selectedTab() != "global_profile" &&
+			selectedTab() != "base_profile" &&
 			selectedInstanceOrProfile() == undefined
 		) {
 			return;
@@ -174,7 +174,7 @@ export default function PackageInstallModal(props: PackageInstallModalProps) {
 										color: "var(--profile)",
 									},
 									{
-										value: "global_profile",
+										value: "base_profile",
 										contents: <div class="cont"><Icon icon={Globe} size="1rem" />  Globally</div>,
 										color: "var(--pluginfg)",
 									},
@@ -187,7 +187,7 @@ export default function PackageInstallModal(props: PackageInstallModalProps) {
 							/>
 						</div>
 					</div>
-					<Show when={selectedTab() != "global_profile"}>
+					<Show when={selectedTab() != "base_profile"}>
 						<div class="cont">
 							<Icon icon={Box} size="1.2rem" />
 						</div>

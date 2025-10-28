@@ -101,7 +101,7 @@ export default function App() {
 					)}
 				/>
 				<Route
-					path="/global_profile_config"
+					path="/base_profile_config"
 					component={() => (
 						<InstanceConfig
 							mode={InstanceConfigMode.GlobalProfile}
