@@ -42,7 +42,7 @@ pub fn consolidate_profile_configs(
 						new.merge(profile.clone());
 						out.insert(id.clone(), new);
 					} else {
-						let message = if profiles.contains_key("parent") {
+						let message = if profiles.contains_key(parent) {
 							format!("Cyclic profile structure found")
 						} else {
 							format!("Parent profile '{parent}' does not exist")
