@@ -158,6 +158,7 @@ function Layout(props: LayoutProps) {
 			<NavBar
 				onSidebarToggle={() => setShowSidebar(!showSidebar())}
 				onSidebarClose={() => setShowSidebar(false)}
+				onSelectUser={props.onSelectUser}
 				location={props.location}
 			/>
 			<ErrorBoundary

@@ -1,6 +1,6 @@
 #toasts-button {
 	width: 12rem;
-	height: 2rem;
+	height: var(--input-height);
 
 	box-sizing: border-box;
 	border: var(--border) solid var(--bg3);

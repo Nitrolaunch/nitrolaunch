@@ -14,7 +14,6 @@ import { getInstanceIconSrc, stringCompare } from "../../utils";
 import { listen, UnlistenFn } from "@tauri-apps/api/event";
 import { InstanceInfo, InstanceOrProfile } from "../../types";
 import Icon from "../Icon";
-import UserWidget from "../user/UserWidget";
 import IconButton from "../input/button/IconButton";
 
 export default function Sidebar(props: SidebarProps) {
@@ -104,7 +103,6 @@ export default function Sidebar(props: SidebarProps) {
 				class="cont"
 				style="padding:0.25rem;width:var(--width);box-sizing:border-box"
 			>
-				<UserWidget onSelect={props.onSelectUser} />
 			</div>
 			<div class="cont start">
 				<a

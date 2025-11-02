@@ -77,7 +77,7 @@ export default function UserWidget(props: UserWidgetProps) {
 		<div id="user-widget" onmouseleave={() => setIsOpen(false)}>
 			<div
 				id="user-widget-head"
-				class={isOpen() ? "open" : ""}
+				class={`input-shadow ${isOpen() ? "open" : ""}`}
 				onclick={() => setIsOpen(!isOpen())}
 			>
 				<Show
@@ -91,6 +91,7 @@ export default function UserWidget(props: UserWidgetProps) {
 							}}
 							isFeatured={true}
 							onclick={() => { }}
+							onClose={() => setIsOpen(false)}
 						/>
 					}
 				>
@@ -98,6 +99,7 @@ export default function UserWidget(props: UserWidgetProps) {
 						user={userData()!.currentUser!}
 						isFeatured={true}
 						onclick={() => { }}
+						onClose={() => setIsOpen(false)}
 					/>
 				</Show>
 				<div class="cont" id="user-widget-dropdown-button">
@@ -128,6 +130,7 @@ export default function UserWidget(props: UserWidgetProps) {
 													setIsOpen(false);
 												});
 											}}
+											onClose={() => setIsOpen(false)}
 										/>
 									</div>
 								</Show>
@@ -138,7 +141,7 @@ export default function UserWidget(props: UserWidgetProps) {
 						<div class="cont">
 							<Icon icon={Plus} size="1.2rem" />
 						</div>
-						<div class="cont user-tile-name">New User</div>
+						<div class="cont user-tile-name">Add User</div>
 					</div>
 				</div>
 			</Show>
@@ -263,6 +266,8 @@ function UserTile(props: UserTileProps) {
 							e.preventDefault();
 							e.stopPropagation();
 
+							props.onClose();
+
 							navigate(`/users/${props.user.id}`);
 						}}
 					/>
@@ -276,4 +281,5 @@ interface UserTileProps {
 	user: UserInfo;
 	isFeatured: boolean;
 	onclick: (user: string) => void;
+	onClose: () => void;
 }

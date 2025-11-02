@@ -5,6 +5,7 @@ import "./NavBar.css";
 import { Location } from "@solidjs/router";
 import Toasts from "../dialog/Toasts";
 import Icon, { HasWidthHeight } from "../Icon";
+import UserWidget from "../user/UserWidget";
 
 export default function NavBar(props: NavBarProps) {
 	return (
@@ -105,6 +106,7 @@ export default function NavBar(props: NavBarProps) {
 						</a>
 					</h3>
 					<div class="cont end navbar-item" id="navbar-right">
+						<UserWidget onSelect={props.onSelectUser} />
 						<Toasts />
 					</div>
 				</div>
@@ -116,6 +118,7 @@ export default function NavBar(props: NavBarProps) {
 export interface NavBarProps {
 	onSidebarToggle: () => void;
 	onSidebarClose: () => void;
+	onSelectUser: (user: string) => void;
 	location: Location;
 }
 
