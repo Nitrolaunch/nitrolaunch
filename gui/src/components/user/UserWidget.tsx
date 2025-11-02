@@ -188,6 +188,7 @@ export default function UserWidget(props: UserWidgetProps) {
 						onClick={async () => {
 							if (newUserId() == "") {
 								inputError("new-user-id", "ID cannot be empty");
+								return;
 							} else {
 								clearInputError("new-user-id");
 							}
