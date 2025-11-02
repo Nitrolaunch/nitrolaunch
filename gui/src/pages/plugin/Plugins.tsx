@@ -272,7 +272,7 @@ function getPluginIcon(plugin: string) {
 	})();
 
 	if (imageIcon != undefined) {
-		return <img src={imageIcon} style="width:1rem" />;
+		return <img src={imageIcon} style="width:1.25rem" />;
 	}
 
 	let svgIcon = (() => {
@@ -317,5 +317,5 @@ function getPluginIcon(plugin: string) {
 		return Box;
 	})();
 
-	return <Icon icon={svgIcon} size="1rem" />;
+	return <Icon icon={svgIcon} size="1.25rem" />;
 }
