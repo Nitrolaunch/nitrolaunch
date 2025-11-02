@@ -1,6 +1,8 @@
 import { createSignal, For, JSX, Show } from "solid-js";
 import "./InlineSelect.css";
 import Tip from "../../dialog/Tip";
+import Icon from "../../Icon";
+import { Check } from "../../../icons";
 
 export default function InlineSelect(props: InlineSelectProps) {
 	let columns = () => (props.columns == undefined ? 3 : props.columns);
@@ -30,12 +32,10 @@ export default function InlineSelect(props: InlineSelectProps) {
 
 	return (
 		<div
-			class={`${connected ? "input-shadow" : ""} inline-select ${
-				connected ? "connected" : "disconnected"
-			}`}
-			style={`display:${
-				grid ? "grid" : "flex"
-			};grid-template-columns:repeat(${columns()}, minmax(0, 1fr))`}
+			class={`${connected ? "input-shadow" : ""} inline-select ${connected ? "connected" : "disconnected"
+				}`}
+			style={`display:${grid ? "grid" : "flex"
+				};grid-template-columns:repeat(${columns()}, minmax(0, 1fr))`}
 		>
 			<Show when={props.allowEmpty == undefined ? false : props.allowEmpty}>
 				<InlineSelectOption
@@ -53,6 +53,7 @@ export default function InlineSelect(props: InlineSelectProps) {
 					isFirst={true}
 					class={props.optionClass}
 					solidSelect={solidSelect}
+					checkboxes={props.checkboxes == true}
 				/>
 			</Show>
 			<For each={props.options}>
@@ -66,6 +67,7 @@ export default function InlineSelect(props: InlineSelectProps) {
 						isFirst={index() == 0 && !props.allowEmpty}
 						class={props.optionClass}
 						solidSelect={solidSelect}
+						checkboxes={props.checkboxes == true}
 					/>
 				)}
 			</For>
@@ -84,6 +86,7 @@ export interface InlineSelectProps {
 	optionClass?: string;
 	grid?: boolean;
 	solidSelect?: boolean;
+	checkboxes?: boolean;
 }
 
 function InlineSelectOption(props: OptionProps) {
@@ -94,6 +97,7 @@ function InlineSelectOption(props: OptionProps) {
 			? props.selected.includes(props.option.value!)
 			: props.selected == props.option.value;
 	};
+
 	let color =
 		props.option.color == undefined ? "var(--fg2)" : props.option.color;
 
@@ -124,25 +128,29 @@ function InlineSelectOption(props: OptionProps) {
 			return "var(--bg2)";
 		}
 	};
-	let borderColor = () =>
-		`border-color:${
-			isSelected() ? color : isHovered() ? "var(--bg4)" : "var(--bg3)"
-		}`;
+	let borderColor = () => isSelected() ? color : isHovered() ? "var(--bg4)" : "var(--bg3)";
 
 	let contents = (
 		<div
-			class={`cont inline-select-option ${
-				props.connected ? "connected" : "disconnected input-shadow bubble-hover"
-			} ${props.class == undefined ? "" : props.class} ${
-				isSelected() ? "selected" : ""
-			} ${props.isLast ? "last" : "not-last"} ${
-				props.isFirst ? "" : "not-first"
-			}`}
-			style={`${borderColor()};color:${textColor()};background-color:${backgroundColor()}`}
+			class={`cont inline-select-option ${props.connected ? "connected" : "disconnected input-shadow bubble-hover"
+				} ${props.class == undefined ? "" : props.class} ${isSelected() ? "selected" : ""
+				} ${props.isLast ? "last" : "not-last"} ${props.isFirst ? "" : "not-first"
+				}`}
+			style={`border-color:${borderColor()};color:${textColor()};background-color:${backgroundColor()}`}
 			onclick={() => props.onSelect(props.option.value)}
 			onmouseenter={() => setIsHovered(true)}
 			onmouseleave={() => setIsHovered(false)}
 		>
+			<Show when={props.checkboxes}>
+				<div
+					class="cont inline-select-checkbox"
+					style={isSelected() ? `background-color:${borderColor()}` : `border-color:${borderColor()}`}
+				>
+					<Show when={isSelected()}>
+						<Icon icon={Check} size="0.75rem" />
+					</Show>
+				</div>
+			</Show>
 			{props.option.contents}
 		</div>
 	);
@@ -169,6 +177,7 @@ interface OptionProps {
 	class?: string;
 	isFirst: boolean;
 	isLast: boolean;
+	checkboxes: boolean;
 	onSelect: (option: string | undefined) => void;
 }
 

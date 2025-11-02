@@ -224,6 +224,7 @@ export default function PackageFilters(props: PackageFiltersProps) {
 							}
 							columns={props.filteringVersions ? 4 : 6}
 							connected={false}
+							checkboxes
 						/>
 					</div>
 				</Show>
@@ -265,6 +266,7 @@ export default function PackageFilters(props: PackageFiltersProps) {
 								onChangeMulti={(x) =>
 									props.setCategories(x as PackageCategory[])
 								}
+								checkboxes
 							/>
 						</div>
 						<div class="cont" style="width:calc(100%/5)">
@@ -357,6 +359,7 @@ export default function PackageFilters(props: PackageFiltersProps) {
 							}
 							columns={props.availableFeatures!.length}
 							connected={false}
+							checkboxes
 						/>
 					</div>
 				</Show>
@@ -418,9 +421,9 @@ function MinecraftVersionsTab(props: MinecraftVersionsTabProps) {
 						return {
 							value: version,
 							contents: (
-								<div style="font-size:0.9rem;font-weight:bold;text-align:center;width:100%;overflow-x:auto;text-wrap:nowrap">
+								<span class="cont" style="font-size:0.9rem;font-weight:bold;overflow-x:auto;text-wrap:nowrap;transform:translateY(0.1rem)">
 									{version}
-								</div>
+								</span>
 							),
 							color: "var(--instance)",
 						};
@@ -431,6 +434,7 @@ function MinecraftVersionsTab(props: MinecraftVersionsTabProps) {
 					}
 					columns={props.options.length}
 					connected={false}
+					checkboxes
 				/>
 			</div>
 			<div

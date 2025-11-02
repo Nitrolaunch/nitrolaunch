@@ -11,13 +11,14 @@
 }
 
 .inline-select-option {
+	position: relative;
+	height: 2.3rem;
+
+	border: var(--border) solid;
 	border-radius: var(--round2);
 	box-sizing: border-box;
+
 	cursor: pointer;
-	-webkit-user-select: none;
-	user-select: none;
-	border: var(--border) solid;
-	height: 2.3rem;
 
 	transition: border-color 0.25s, background-color 0.25s, color 0.25s, transform var(--bubble);
 }
@@ -60,4 +61,14 @@
 
 .inline-select-option.disconnected.selected {
 	background-color: var(--bg0);
+}
+
+.inline-select-checkbox {
+	width: 0.8rem;
+	aspect-ratio: 1;
+
+	border: var(--border) solid transparent;
+	border-radius: 50%;
+
+	color: var(--bg);
 }
