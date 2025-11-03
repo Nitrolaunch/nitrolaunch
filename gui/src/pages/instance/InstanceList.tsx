@@ -196,7 +196,7 @@ export default function InstanceList(props: InstanceListProps) {
 											runDropdownButtonClick(selection!);
 										}
 									}}
-									optionsWidth="12rem"
+									optionsWidth="13rem"
 									isSearchable={false}
 									showArrow={false}
 									zIndex="2"
