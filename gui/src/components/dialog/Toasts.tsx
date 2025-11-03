@@ -109,7 +109,7 @@ export default function Toasts() {
 		<div id="toasts-container">
 			<div
 				id="toasts-button"
-				class={`cont input-shadow bubble-hover ${showRecentToasts() ? "selected" : ""}`}
+				class={`cont bubble-hover ${showRecentToasts() ? "selected" : ""}`}
 				onclick={() => setShowRecentToasts(!showRecentToasts())}
 			>
 				<Switch>

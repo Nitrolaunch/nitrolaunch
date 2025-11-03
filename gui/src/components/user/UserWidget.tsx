@@ -76,7 +76,7 @@ export default function UserWidget(props: UserWidgetProps) {
 		<div id="user-widget" onmouseleave={() => setIsOpen(false)}>
 			<div
 				id="user-widget-head"
-				class={`input-shadow ${isOpen() ? "open" : "bubble-hover"}`}
+				class={`${isOpen() ? "open" : "bubble-hover"}`}
 				onclick={() => setIsOpen(!isOpen())}
 			>
 				<Show
@@ -143,7 +143,7 @@ export default function UserWidget(props: UserWidgetProps) {
 						<div class="cont">
 							<Icon icon={Plus} size="1.2rem" />
 						</div>
-						<div class="cont user-tile-name">Add User</div>
+						<div class="cont user-tile-name">Add Account</div>
 					</div>
 				</div>
 			</Show>

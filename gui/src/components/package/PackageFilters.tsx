@@ -2,7 +2,7 @@ import { createResource, createSignal, Show } from "solid-js";
 import "./PackageFilters.css";
 import Icon from "../Icon";
 import {
-	Box,
+	Download,
 	Jigsaw,
 	Lock,
 	Minecraft,
@@ -104,7 +104,7 @@ export default function PackageFilters(props: PackageFiltersProps) {
 					onclick={() => setTab("loaders")}
 					style="color:var(--package)"
 				>
-					<Icon icon={Box} size="0.8rem" />
+					<Icon icon={Download} size="0.8rem" />
 					Loader
 				</div>
 				<Show when={!props.filteringVersions}>

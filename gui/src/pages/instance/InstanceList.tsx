@@ -26,6 +26,7 @@ import {
 	Folder,
 	Globe,
 	Honeycomb,
+	Info,
 	Jigsaw,
 	Pin,
 	Plus,
@@ -216,14 +217,15 @@ export default function InstanceList(props: InstanceListProps) {
 						</div>
 						<div class="cont end" style="padding-right:0.5rem">
 							<div
-								class={`cont instance-list-header-item bubble-hover templatess ${instancesOrTemplates() == "template" ? "selected" : ""
+								class={`cont instance-list-header-item bubble-hover templates ${instancesOrTemplates() == "template" ? "selected" : ""
 									}`}
+								style="width:18rem"
 								onclick={() => {
 									setInstancesOrTemplates("template");
 								}}
 							>
 								<Icon icon={Diagram} size="1rem" />
-								Templates
+								Instance Templates
 							</div>
 						</div>
 					</div>
@@ -272,15 +274,23 @@ export default function InstanceList(props: InstanceListProps) {
 						/>
 					</Match>
 					<Match when={instancesOrTemplates() == "template"}>
-						<div class="cont start fullwidth" id="instance-list-templates-header">
-							<IconTextButton
-								icon={Globe}
-								text="Edit Base Template"
-								size="1.5rem"
-								onClick={() => {
-									navigate("/base_template_config");
-								}}
-							/>
+						<div class="cont fullwidth" id="instance-list-templates-header">
+							<div class="cont start fullwidth">
+								<Tip tip="Edit the template that all instances and templates inherit from" fullwidth side="top">
+									<IconTextButton
+										icon={Globe}
+										text="Edit Base Template"
+										size="1.5rem"
+										onClick={() => {
+											navigate("/base_template_config");
+										}}
+									/>
+								</Tip>
+							</div>
+							<div class="cont end bold fullwidth" style="color:var(--fg3);text-align:right;text-wrap:nowrap">
+								<Icon icon={Info} size="1rem" />
+								Templates let you share settings between multiple instances
+							</div>
 						</div>
 						<div></div>
 						<Section
