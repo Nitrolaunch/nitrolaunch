@@ -20,8 +20,8 @@ import IconButton from "../../components/input/button/IconButton";
 import {
 	Box,
 	Controller,
-	Copy,
 	Cycle,
+	Diagram,
 	Download,
 	Folder,
 	Globe,
@@ -202,7 +202,7 @@ export default function InstanceList(props: InstanceListProps) {
 								/>
 							</div>
 						</div>
-						<div id="instance-list-header">
+						<div class="cont">
 							<div
 								class={`cont instance-list-header-item bubble-hover instances ${instancesOrProfiles() == "instance" ? "selected" : ""
 									}`}
@@ -213,6 +213,8 @@ export default function InstanceList(props: InstanceListProps) {
 								<Icon icon={Honeycomb} size="1rem" />
 								Instances
 							</div>
+						</div>
+						<div class="cont end" style="padding-right:0.5rem">
 							<div
 								class={`cont instance-list-header-item bubble-hover profiles ${instancesOrProfiles() == "profile" ? "selected" : ""
 									}`}
@@ -220,19 +222,9 @@ export default function InstanceList(props: InstanceListProps) {
 									setInstancesOrProfiles("profile");
 								}}
 							>
-								<Icon icon={Copy} size="1rem" />
+								<Icon icon={Diagram} size="1rem" />
 								Profiles
 							</div>
-						</div>
-						<div class="cont end" style="padding-right:0.5rem">
-							<IconTextButton
-								icon={Globe}
-								text="Edit Base Profile"
-								size="1.5rem"
-								onClick={() => {
-									navigate("/base_profile_config");
-								}}
-							/>
 						</div>
 					</div>
 				</div>
@@ -280,6 +272,17 @@ export default function InstanceList(props: InstanceListProps) {
 						/>
 					</Match>
 					<Match when={instancesOrProfiles() == "profile"}>
+						<div class="cont start fullwidth" id="instance-list-profiles-header">
+							<IconTextButton
+								icon={Globe}
+								text="Edit Base Profile"
+								size="1.5rem"
+								onClick={() => {
+									navigate("/base_profile_config");
+								}}
+							/>
+						</div>
+						<div></div>
 						<Section
 							id="profiles"
 							kind="profiles"
@@ -326,10 +329,12 @@ function Section(props: SectionProps) {
 	return (
 		<div class="cont col">
 			<div class="cont col instance-list-section-container">
-				<div class="cont instance-list-section-header">
-					<HeaderIcon />
-					<h2>{props.header}</h2>
-				</div>
+				<Show when={props.itemType == "instance"}>
+					<div class="cont instance-list-section-header">
+						<HeaderIcon />
+						<h2>{props.header}</h2>
+					</div>
+				</Show>
 				<div class="instance-list-section">
 					<For each={props.items}>
 						{(item) => (
