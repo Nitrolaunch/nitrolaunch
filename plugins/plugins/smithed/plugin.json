@@ -3,16 +3,6 @@
 	"description": "Install Smithed packs on templates and instances",
 	"protocol_version": 3,
 	"hooks": {
-		"add_sidebar_buttons": {
-			"constant": [
-				{
-					"html": "<div style=\"margin-top:0.3rem;margin-right:-0.2rem\"><img src=\"https://smithed.net/favicon.png\" style=\"width: 16px\" /></div><div>Smithed</div>",
-					"href": "/custom/smithed",
-					"selected_url_start": "/custom/smithed",
-					"color": "#1b48c4"
-				}
-			]
-		},
 		"get_page": {
 			"cases": {
 				"\"smithed\"": {
