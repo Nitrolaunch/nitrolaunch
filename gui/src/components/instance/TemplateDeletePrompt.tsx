@@ -1,30 +1,30 @@
 import { createResource, For, Match, Suspense, Switch } from "solid-js";
 import { invoke } from "@tauri-apps/api";
-import { InstanceOrProfile } from "../../types";
+import { InstanceOrTemplate } from "../../types";
 import { beautifyString } from "../../utils";
-import "./ProfileDeletePrompt.css";
+import "./TemplateDeletePrompt.css";
 import { Delete, Trash } from "../../icons";
 import { errorToast, successToast } from "../dialog/Toasts";
 import { useNavigate } from "@solidjs/router";
 import Modal, { ModalButton } from "../dialog/Modal";
 
-export default function ProfileDeletePrompt(props: ProfileDeletePromptProps) {
+export default function TemplateDeletePrompt(props: TemplateDeletePromptProps) {
 	let navigate = useNavigate();
 
-	let [profileUsers, _] = createResource(
-		() => props.profile,
+	let [templateUsers, _] = createResource(
+		() => props.template,
 		async () => {
-			if (props.profile == undefined) {
+			if (props.template == undefined) {
 				return undefined;
 			}
 
-			return (await invoke("get_profile_users", {
-				profile: props.profile,
-			})) as [string, InstanceOrProfile][];
+			return (await invoke("get_template_users", {
+				template: props.template,
+			})) as [string, InstanceOrTemplate][];
 		}
 	);
 
-	let canDelete = () => profileUsers() != undefined && profileUsers()!.length == 0;
+	let canDelete = () => templateUsers() != undefined && templateUsers()!.length == 0;
 
 	let buttons = () => {
 		let out: ModalButton[] = [{
@@ -38,19 +38,19 @@ export default function ProfileDeletePrompt(props: ProfileDeletePromptProps) {
 		if (canDelete()) {
 			out.push(
 				{
-					text: "Delete profile",
+					text: "Delete template",
 					icon: Trash,
 					color: "var(--fg3)",
 					onClick: async () => {
 						try {
-							await invoke("delete_profile", {
-								profile: props.profile,
+							await invoke("delete_template", {
+								template: props.template,
 							});
-							successToast("Profile deleted");
+							successToast("Template deleted");
 							props.onClose();
 							navigate("/");
 						} catch (e) {
-							errorToast("Failed to delete profile: " + e);
+							errorToast("Failed to delete template: " + e);
 							props.onClose();
 						}
 					}
@@ -65,7 +65,7 @@ export default function ProfileDeletePrompt(props: ProfileDeletePromptProps) {
 		<Modal
 			visible={props.visible}
 			onClose={props.onClose}
-			title={`Delete Profile '${props.profile}'`}
+			title={`Delete Template '${props.template}'`}
 			titleIcon={Trash}
 			buttons={buttons()}
 		>
@@ -75,25 +75,25 @@ export default function ProfileDeletePrompt(props: ProfileDeletePromptProps) {
 						when={!canDelete()}
 					>
 						<h3>
-							Cannot delete this profile as there are instances or profiles
+							Cannot delete this template as there are instances or templates
 							using it
 						</h3>
-						<For each={profileUsers()!}>
+						<For each={templateUsers()!}>
 							{(item) => (
 								<div
-									class="profile-delete-prompt-entry"
+									class="template-delete-prompt-entry"
 									onclick={() => {
 										props.onClose();
 										navigate(`/${item[1]}_config/${item[0]}`);
 									}}
 								>
 									<div
-										class="cont profile-delete-prompt-entry-type"
+										class="cont template-delete-prompt-entry-type"
 										style={`color:var(--${item[1]})`}
 									>
 										{beautifyString(item[1])}
 									</div>
-									<div class="cont start profile-delete-prompt-entry-id">
+									<div class="cont start template-delete-prompt-entry-id">
 										{item[0]}
 									</div>
 								</div>
@@ -103,7 +103,7 @@ export default function ProfileDeletePrompt(props: ProfileDeletePromptProps) {
 					<Match
 						when={canDelete()}
 					>
-						<h3>Are you sure you want to delete this profile?</h3>
+						<h3>Are you sure you want to delete this template?</h3>
 					</Match>
 				</Switch>
 			</Suspense>
@@ -111,8 +111,8 @@ export default function ProfileDeletePrompt(props: ProfileDeletePromptProps) {
 	);
 }
 
-export interface ProfileDeletePromptProps {
-	profile?: string;
+export interface TemplateDeletePromptProps {
+	template?: string;
 	visible: boolean;
 	onClose: () => void;
 }

@@ -44,8 +44,8 @@ define_translations! {
 	PackageInsecure, "When a package is insecure", "Package %pkg has been flagged as insecure";
 	PackageMalicious, "When a package is malicious", "Package %pkg has been flagged as malicious";
 	PackageSupportHeader, "Header for packages to consider supporting", "Packages to consider supporting";
-	StartUpdatingPackages, "When starting to update packages on a profile", "Updating packages";
-	FinishUpdatingPackages, "When finishing updating packages on a profile", "All packages installed";
+	StartUpdatingPackages, "When starting to update packages on an instance", "Updating packages";
+	FinishUpdatingPackages, "When finishing updating packages on an instance", "All packages installed";
 	StartUpdatingProxy, "When starting to update a proxy", "Checking for proxy updates";
 	FinishUpdatingProxy, "When finishing updating a proxy", "Proxy updated";
 	StartRunningCommands, "When starting to run package commands", "Running commands";
@@ -72,7 +72,7 @@ define_translations! {
 	NoDefaultUser, "When users are available but no default is set", "Users are available but no default user is set";
 	NoUsers, "When no users are available", "No users are available";
 	ModificationNotSupported, "When a loader can't be installed by Nitrolaunch", "A plugin is needed to support %mod installation";
-	EmptyProfile, "When a profile has no instances", "Profile '%profile' does not have any instances";
+	EmptyTemplate, "When a template has no instances", "Template '%template' does not have any instances";
 	StartDownloadingVersionManifest, "When starting to download the version manifest", "Downloading version manifest";
 	StartDownloadingGameJar, "When starting to download the game jar", "Downloading %side jar";
 	FinishDownloadingGameJar, "When finishing downloading the game jar", "%side jar downloaded";

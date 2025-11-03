@@ -14,14 +14,14 @@
 	--transparent-dark: #111111bb;
 
 	--instance: #7ee91b;
-	--profile: #1be9e9;
+	--template: #1be9e9;
 	--package: #e9671b;
 	--plugin: #5b65ff;
 	--warning: #e9ca1b;
 	--error: #d40e3d;
 
 	--instancebg: #051d0d;
-	--profilebg: #0d1f24;
+	--templatebg: #0d1f24;
 	--packagebg: #311705;
 	--pluginfg: #8b93ff;
 	--pluginbg: #11143f;

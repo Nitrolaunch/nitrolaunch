@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 
 use nitro_shared::UpdateDepth;
 
-/// Manager for when we are updating profile files.
+/// Manager for when we are updating instance files.
 /// It will keep track of files we have already downloaded, manage task requirements, etc
 #[derive(Debug)]
 pub struct UpdateManager {

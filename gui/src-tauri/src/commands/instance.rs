@@ -5,14 +5,14 @@ use itertools::Itertools;
 use nitrolaunch::config::modifications::{apply_modifications_and_write, ConfigModification};
 use nitrolaunch::config::Config;
 use nitrolaunch::config_crate::instance::InstanceConfig;
-use nitrolaunch::config_crate::profile::ProfileConfig;
+use nitrolaunch::config_crate::template::TemplateConfig;
 use nitrolaunch::core::io::json_to_file_pretty;
 use nitrolaunch::instance::delete_instance_files;
 use nitrolaunch::instance::update::manager::UpdateManager;
 use nitrolaunch::instance::update::InstanceUpdateContext;
 use nitrolaunch::io::lock::Lockfile;
 use nitrolaunch::pkg::eval::EvalConstants;
-use nitrolaunch::shared::id::{InstanceID, ProfileID};
+use nitrolaunch::shared::id::{InstanceID, TemplateID};
 use nitrolaunch::shared::output::NoOp;
 use nitrolaunch::shared::{Side, UpdateDepth};
 use serde::{Deserialize, Serialize};
@@ -56,27 +56,27 @@ pub async fn get_instances(state: tauri::State<'_, State>) -> Result<Vec<Instanc
 }
 
 #[tauri::command]
-pub async fn get_profiles(state: tauri::State<'_, State>) -> Result<Vec<InstanceInfo>, String> {
+pub async fn get_templates(state: tauri::State<'_, State>) -> Result<Vec<InstanceInfo>, String> {
 	let config = fmt_err(
 		load_config(&state.paths, &mut NoOp)
 			.await
 			.context("Failed to load config"),
 	)?;
 
-	let profiles = config
-		.profiles
+	let templates = config
+		.templates
 		.iter()
 		.sorted_by_key(|x| x.0)
-		.map(|(id, profile)| {
+		.map(|(id, template)| {
 			let id = id.to_string();
 			InstanceInfo {
-				icon: profile.instance.icon.clone(),
+				icon: template.instance.icon.clone(),
 				pinned: false,
 				id,
-				name: profile.instance.name.clone(),
-				side: profile.instance.side,
-				from_plugin: profile.instance.from_plugin,
-				version: profile
+				name: template.instance.name.clone(),
+				side: template.instance.side,
+				from_plugin: template.instance.from_plugin,
+				version: template
 					.instance
 					.common
 					.version
@@ -86,7 +86,7 @@ pub async fn get_profiles(state: tauri::State<'_, State>) -> Result<Vec<Instance
 		})
 		.collect();
 
-	Ok(profiles)
+	Ok(templates)
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -164,7 +164,7 @@ pub async fn get_instance_config(
 	Ok(Some(
 		instance
 			.get_config()
-			.original_config_with_profiles_and_plugins
+			.original_config_with_templates_and_plugins
 			.clone(),
 	))
 }
@@ -188,50 +188,50 @@ pub async fn get_editable_instance_config(
 }
 
 #[tauri::command]
-pub async fn get_profile_config(
+pub async fn get_template_config(
 	state: tauri::State<'_, State>,
 	id: String,
-) -> Result<Option<ProfileConfig>, String> {
+) -> Result<Option<TemplateConfig>, String> {
 	let config = fmt_err(
 		load_config(&state.paths, &mut NoOp)
 			.await
 			.context("Failed to load config"),
 	)?;
 
-	let Some(profile) = config.consolidated_profiles.get(&ProfileID::from(id)) else {
+	let Some(template) = config.consolidated_templates.get(&TemplateID::from(id)) else {
 		return Ok(None);
 	};
 
-	Ok(Some(profile.clone()))
+	Ok(Some(template.clone()))
 }
 
 #[tauri::command]
-pub async fn get_editable_profile_config(
+pub async fn get_editable_template_config(
 	state: tauri::State<'_, State>,
 	id: String,
-) -> Result<Option<ProfileConfig>, String> {
+) -> Result<Option<TemplateConfig>, String> {
 	let config = fmt_err(
 		load_config(&state.paths, &mut NoOp)
 			.await
 			.context("Failed to load config"),
 	)?;
 
-	let Some(profile) = config.profiles.get(&ProfileID::from(id)) else {
+	let Some(template) = config.templates.get(&TemplateID::from(id)) else {
 		return Ok(None);
 	};
 
-	Ok(Some(profile.clone()))
+	Ok(Some(template.clone()))
 }
 
 #[tauri::command]
-pub async fn get_base_profile(state: tauri::State<'_, State>) -> Result<ProfileConfig, String> {
+pub async fn get_base_template(state: tauri::State<'_, State>) -> Result<TemplateConfig, String> {
 	let config = fmt_err(
 		load_config(&state.paths, &mut NoOp)
 			.await
 			.context("Failed to load config"),
 	)?;
 
-	Ok(config.base_profile)
+	Ok(config.base_template)
 }
 
 #[tauri::command]
@@ -253,15 +253,15 @@ pub async fn write_instance_config(
 }
 
 #[tauri::command]
-pub async fn write_profile_config(
+pub async fn write_template_config(
 	state: tauri::State<'_, State>,
 	id: String,
-	config: ProfileConfig,
+	config: TemplateConfig,
 ) -> Result<(), String> {
 	let mut configuration =
 		fmt_err(Config::open(&Config::get_path(&state.paths)).context("Failed to load config"))?;
 
-	let modifications = vec![ConfigModification::AddProfile(id.into(), config)];
+	let modifications = vec![ConfigModification::AddTemplate(id.into(), config)];
 	fmt_err(
 		apply_modifications_and_write(&mut configuration, modifications, &state.paths)
 			.context("Failed to modify and write config"),
@@ -271,14 +271,14 @@ pub async fn write_profile_config(
 }
 
 #[tauri::command]
-pub async fn write_base_profile(
+pub async fn write_base_template(
 	state: tauri::State<'_, State>,
-	config: ProfileConfig,
+	config: TemplateConfig,
 ) -> Result<(), String> {
 	let mut configuration =
 		fmt_err(Config::open(&Config::get_path(&state.paths)).context("Failed to load config"))?;
 
-	configuration.base_profile = Some(config);
+	configuration.base_template = Some(config);
 	fmt_err(
 		json_to_file_pretty(Config::get_path(&state.paths), &configuration)
 			.context("Failed to write modified configuration"),
@@ -413,7 +413,7 @@ pub async fn update_instance_packages(
 				loader: instance.get_config().loader.clone(),
 				version_list: manager.version_info.get().versions.clone(),
 				language: ctx.prefs.language,
-				profile_stability: instance.get_config().package_stability,
+				template_stability: instance.get_config().package_stability,
 			};
 
 			nitrolaunch::instance::update::packages::update_instance_packages(
@@ -497,11 +497,11 @@ pub async fn delete_instance(state: tauri::State<'_, State>, instance: &str) -> 
 }
 
 #[tauri::command]
-pub async fn delete_profile(state: tauri::State<'_, State>, profile: &str) -> Result<(), String> {
+pub async fn delete_template(state: tauri::State<'_, State>, template: &str) -> Result<(), String> {
 	let mut configuration =
 		fmt_err(Config::open(&Config::get_path(&state.paths)).context("Failed to load config"))?;
 
-	let modifications = vec![ConfigModification::RemoveProfile(profile.into())];
+	let modifications = vec![ConfigModification::RemoveTemplate(template.into())];
 	fmt_err(
 		apply_modifications_and_write(&mut configuration, modifications, &state.paths)
 			.context("Failed to modify and write config"),
@@ -510,28 +510,28 @@ pub async fn delete_profile(state: tauri::State<'_, State>, profile: &str) -> Re
 	Ok(())
 }
 
-/// Gets a list of the instances and profiles that derive a specific profile
+/// Gets a list of the instances and templates that derive a specific template
 #[tauri::command]
-pub async fn get_profile_users(
+pub async fn get_template_users(
 	state: tauri::State<'_, State>,
-	profile: &str,
-) -> Result<Vec<(Arc<str>, InstanceOrProfile)>, String> {
+	template: &str,
+) -> Result<Vec<(Arc<str>, InstanceOrTemplate)>, String> {
 	let configuration =
 		fmt_err(Config::open(&Config::get_path(&state.paths)).context("Failed to load config"))?;
 
-	let profile = profile.to_string();
+	let template = template.to_string();
 
 	let mut out = Vec::new();
 
 	for (id, config) in &configuration.instances {
-		if config.common.from.contains(&profile) {
-			out.push((id.clone(), InstanceOrProfile::Instance));
+		if config.common.from.contains(&template) {
+			out.push((id.clone(), InstanceOrTemplate::Instance));
 		}
 	}
 
-	for (id, config) in &configuration.profiles {
-		if config.instance.common.from.contains(&profile) {
-			out.push((id.clone(), InstanceOrProfile::Profile));
+	for (id, config) in &configuration.templates {
+		if config.instance.common.from.contains(&template) {
+			out.push((id.clone(), InstanceOrTemplate::Template));
 		}
 	}
 
@@ -541,7 +541,7 @@ pub async fn get_profile_users(
 #[tauri::command]
 pub async fn get_last_opened_instance(
 	state: tauri::State<'_, State>,
-) -> Result<Option<(String, InstanceOrProfile)>, String> {
+) -> Result<Option<(String, InstanceOrTemplate)>, String> {
 	let data = state.data.lock().await;
 
 	Ok(data.last_opened_instance.clone())
@@ -552,10 +552,10 @@ pub async fn set_last_opened_instance(
 	state: tauri::State<'_, State>,
 	app_handle: tauri::AppHandle,
 	id: String,
-	instance_or_profile: InstanceOrProfile,
+	instance_or_template: InstanceOrTemplate,
 ) -> Result<(), String> {
 	let mut data = state.data.lock().await;
-	data.last_opened_instance = Some((id, instance_or_profile));
+	data.last_opened_instance = Some((id, instance_or_template));
 
 	fmt_err(data.write(&state.paths))?;
 
@@ -576,7 +576,7 @@ pub async fn get_instance_has_updated(
 
 #[derive(Deserialize, Serialize, Clone, Copy)]
 #[serde(rename_all = "snake_case")]
-pub enum InstanceOrProfile {
+pub enum InstanceOrTemplate {
 	Instance,
-	Profile,
+	Template,
 }

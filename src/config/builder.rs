@@ -4,7 +4,7 @@ use std::sync::Arc;
 use anyhow::bail;
 use nitro_config::instance::{ClientWindowConfig, InstanceConfig, LaunchConfig};
 use nitro_config::package::{EvalPermissions, FullPackageConfig, PackageConfigDeser};
-use nitro_config::profile::ProfileConfig;
+use nitro_config::template::TemplateConfig;
 use nitro_config::user::{UserConfig, UserVariant};
 use nitro_core::auth_crate::mc::ClientId;
 use nitro_core::user::{User, UserManager};
@@ -109,9 +109,9 @@ impl ConfigBuilder {
 			users: self.users,
 			instances: self.instances,
 			instance_groups: self.instance_groups,
-			profiles: HashMap::new(),
-			consolidated_profiles: HashMap::new(),
-			base_profile: ProfileConfig::default(),
+			templates: HashMap::new(),
+			consolidated_templates: HashMap::new(),
+			base_template: TemplateConfig::default(),
 			packages: self.packages,
 			plugins: self.plugins,
 			prefs: self.preferences,

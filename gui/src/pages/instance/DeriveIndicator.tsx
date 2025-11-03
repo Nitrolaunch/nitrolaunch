@@ -37,7 +37,7 @@ export default function DeriveIndicator(props: DeriveIndicatorProps) {
 export interface DeriveIndicatorProps {
 	parentConfigs: InstanceConfig[];
 	currentValue: any | undefined;
-	property: (profile: InstanceConfig) => any | undefined;
+	property: (template: InstanceConfig) => any | undefined;
 	emptyUndefined?: boolean;
 	displayValue?: boolean;
 }

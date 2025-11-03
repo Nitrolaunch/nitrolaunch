@@ -101,8 +101,8 @@ export interface PackageOverrides {
 // Mode for editing instance-like configs
 export enum InstanceConfigMode {
 	Instance = "instance",
-	Profile = "profile",
-	GlobalProfile = "base_profile",
+	Template = "template",
+	GlobalTemplate = "base_template",
 }
 
 export async function readInstanceConfig(
@@ -112,9 +112,9 @@ export async function readInstanceConfig(
 	let method =
 		mode == InstanceConfigMode.Instance
 			? "get_instance_config"
-			: mode == InstanceConfigMode.Profile
-				? "get_profile_config"
-				: "get_base_profile";
+			: mode == InstanceConfigMode.Template
+				? "get_template_config"
+				: "get_base_template";
 	try {
 		return (await invoke(method, { id: id })) as InstanceConfig;
 	} catch (e) {
@@ -122,7 +122,7 @@ export async function readInstanceConfig(
 	}
 }
 
-// Gets the config for an instance or profile that can actually be edited and isn't inherited
+// Gets the config for an instance or template that can actually be edited and isn't inherited
 export async function readEditableInstanceConfig(
 	id: string | undefined,
 	mode: InstanceConfigMode
@@ -130,9 +130,9 @@ export async function readEditableInstanceConfig(
 	let method =
 		mode == InstanceConfigMode.Instance
 			? "get_editable_instance_config"
-			: mode == InstanceConfigMode.Profile
-				? "get_editable_profile_config"
-				: "get_base_profile";
+			: mode == InstanceConfigMode.Template
+				? "get_editable_template_config"
+				: "get_base_template";
 	try {
 		return (await invoke(method, { id: id })) as InstanceConfig;
 	} catch (e) {
@@ -148,9 +148,9 @@ export async function saveInstanceConfig(
 	let method =
 		mode == InstanceConfigMode.Instance
 			? "write_instance_config"
-			: mode == InstanceConfigMode.Profile
-				? "write_profile_config"
-				: "write_base_profile";
+			: mode == InstanceConfigMode.Template
+				? "write_template_config"
+				: "write_base_template";
 
 	try {
 		await invoke(method, {
@@ -162,21 +162,21 @@ export async function saveInstanceConfig(
 	}
 }
 
-// Gets parent profile configs for a config
-export async function getParentProfiles(
+// Gets parent template configs for a config
+export async function getParentTemplates(
 	from: string[] | undefined,
 	mode: InstanceConfigMode
 ) {
 	let parentResults: InstanceConfig[] = [];
-	if (mode == InstanceConfigMode.GlobalProfile) {
+	if (mode == InstanceConfigMode.GlobalTemplate) {
 		parentResults = [];
 	} else if (from == undefined || from.length == 0) {
-		let parentResult = await invoke("get_base_profile", {});
+		let parentResult = await invoke("get_base_template", {});
 		parentResults = [parentResult as InstanceConfig];
 	} else {
-		for (let profile of from) {
-			let parentResult = await invoke("get_profile_config", {
-				id: profile,
+		for (let template of from) {
+			let parentResult = await invoke("get_template_config", {
+				id: template,
 			});
 			parentResults.push(parentResult as InstanceConfig);
 		}
@@ -185,7 +185,7 @@ export async function getParentProfiles(
 	return parentResults;
 }
 
-// Gets the global, client, and server packages configured on an instance or profile
+// Gets the global, client, and server packages configured on an instance or template
 export function getConfigPackages(
 	config: InstanceConfig
 ): [PackageConfig[], PackageConfig[], PackageConfig[]] {
@@ -204,7 +204,7 @@ export function getConfigPackages(
 	}
 }
 
-// Gets the configured packages object to set on an instance or profile from each of the package groups
+// Gets the configured packages object to set on an instance or template from each of the package groups
 export function createConfiguredPackages(
 	global: PackageConfig[],
 	client: PackageConfig[],
@@ -227,7 +227,7 @@ export function createConfiguredPackages(
 	}
 }
 
-// Adds a package to an instance or profile
+// Adds a package to an instance or template
 export function addPackage(
 	config: InstanceConfig,
 	pkg: PackageConfig,
@@ -274,12 +274,12 @@ export function addPackage(
 	}
 }
 
-export function getDerivedPackages(profiles: InstanceConfig[]) {
+export function getDerivedPackages(templates: InstanceConfig[]) {
 	let allGlobal: PackageConfig[] = [];
 	let allClient: PackageConfig[] = [];
 	let allServer: PackageConfig[] = [];
-	for (let profile of profiles) {
-		let [global, client, server] = getConfigPackages(profile);
+	for (let template of templates) {
+		let [global, client, server] = getConfigPackages(template);
 		allGlobal = allGlobal.concat(global);
 		allClient = allClient.concat(client);
 		allServer = allServer.concat(server);
@@ -288,12 +288,12 @@ export function getDerivedPackages(profiles: InstanceConfig[]) {
 	return [allGlobal, allClient, allServer];
 }
 
-// Get the derived value from a list of profile configs and a property function
+// Get the derived value from a list of template configs and a property function
 export function getDerivedValue(
-	profiles: InstanceConfig[],
-	property: (profile: InstanceConfig) => any | undefined
+	templates: InstanceConfig[],
+	property: (template: InstanceConfig) => any | undefined
 ) {
-	let reversed = profiles.concat([]).reverse();
+	let reversed = templates.concat([]).reverse();
 	return reversed.map(property).find((x) => x != undefined);
 }
 

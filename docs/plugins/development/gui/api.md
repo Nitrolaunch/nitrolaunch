@@ -60,8 +60,8 @@ Removes the red error shake animation on the element with the given ID. Should b
 
 ### `sanitizeInstanceID(id: string)`
 
-Sanitizes an input so that it is a valid instance / profile / package ID.
+Sanitizes an input so that it is a valid instance / template / package ID.
 
 ### `updateInstanceList()`
 
-Re-fetches the list of instances and profiles on the homepage. Should be done whenever you add, remove, or change any instances with your plugin.
+Re-fetches the list of instances and templates on the homepage. Should be done whenever you add, remove, or change any instances with your plugin.

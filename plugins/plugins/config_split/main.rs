@@ -17,9 +17,9 @@ fn main() -> anyhow::Result<()> {
 
 		get_config_files(&dir)
 	})?;
-	plugin.add_profiles(|ctx, _| {
+	plugin.add_templates(|ctx, _| {
 		let config_dir = ctx.get_config_dir()?;
-		let dir = config_dir.join("profiles");
+		let dir = config_dir.join("templates");
 		if !dir.exists() {
 			let _ = std::fs::create_dir_all(&dir);
 		}

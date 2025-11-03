@@ -8,7 +8,7 @@ Before you start using packages, you need to fetch the list of available package
 Packages are referred to using their ID, which is always lowercase. To find the packages you want, use the `nitro package browse` command to search through and get information about the packages you want to install.
 
 ## 3. Adding packages to an instance
-To add a package to an instance or profile, simply edit your configuration and add the package want to the `packages` field of that instance or profile.
+To add a package to an instance or template, simply edit your configuration and add the package want to the `packages` field of that instance or template.
 
 Example:
 ```

@@ -37,7 +37,7 @@
 }
 
 #launch-tab.selected {
-	border-color: var(--profile);
+	border-color: var(--template);
 }
 
 .fields {
@@ -65,11 +65,11 @@ hr {
 	border-top: var(--border) solid var(--bg3);
 }
 
-.profile-placeholder::placeholder {
-	color: var(--profile);
+.template-placeholder::placeholder {
+	color: var(--template);
 }
 
 .derived-option {
-	color: var(--profile);
+	color: var(--template);
 	font-weight: bold;
 }

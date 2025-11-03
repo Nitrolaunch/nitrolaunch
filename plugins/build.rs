@@ -62,7 +62,7 @@ fn main() {
 	add_file!(zip, "plugins/plugins/modrinth_api.md");
 	add_file!(zip, "plugins/plugins/multimc_transfer.md");
 	add_file!(zip, "plugins/plugins/options.md");
-	add_file!(zip, "plugins/plugins/profile_share.md");
+	add_file!(zip, "plugins/plugins/template_share.md");
 	add_file!(zip, "plugins/plugins/server_restart.md");
 	add_file!(zip, "plugins/plugins/smithed.md");
 	add_file!(zip, "plugins/plugins/smithed_api.md");

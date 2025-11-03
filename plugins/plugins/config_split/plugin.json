@@ -6,7 +6,7 @@
 		"add_instances": {
 			"executable": "${PLUGIN_DIR}/nitro_plugin_config_split${EXE_EXTENSION}"
 		},
-		"add_profiles": {
+		"add_templates": {
 			"executable": "${PLUGIN_DIR}/nitro_plugin_config_split${EXE_EXTENSION}"
 		}
 	}

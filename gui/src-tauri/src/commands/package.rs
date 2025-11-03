@@ -1,4 +1,4 @@
-use crate::commands::instance::InstanceOrProfile;
+use crate::commands::instance::InstanceOrTemplate;
 use crate::{output::LauncherOutput, State};
 use anyhow::Context;
 use nitrolaunch::io::lock::{Lockfile, LockfilePackage};
@@ -360,11 +360,11 @@ pub async fn set_last_selected_repo(
 	Ok(())
 }
 
-/// Gets the instance or profile where a package was last added
+/// Gets the instance or template where a package was last added
 #[tauri::command]
 pub async fn get_last_added_package_location(
 	state: tauri::State<'_, State>,
-) -> Result<Option<(String, InstanceOrProfile)>, String> {
+) -> Result<Option<(String, InstanceOrTemplate)>, String> {
 	let data = state.data.lock().await;
 
 	Ok(data.last_added_package.clone())
@@ -374,10 +374,10 @@ pub async fn get_last_added_package_location(
 pub async fn set_last_added_package_location(
 	state: tauri::State<'_, State>,
 	id: String,
-	instance_or_profile: InstanceOrProfile,
+	instance_or_template: InstanceOrTemplate,
 ) -> Result<(), String> {
 	let mut data = state.data.lock().await;
-	data.last_added_package = Some((id, instance_or_profile));
+	data.last_added_package = Some((id, instance_or_template));
 
 	fmt_err(data.write(&state.paths))?;
 

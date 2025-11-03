@@ -1,19 +1,19 @@
 /// UpdateManager
 pub mod manager;
-/// Updating packages on a profile
+/// Updating packages on an instance
 pub mod packages;
 
 use crate::config::preferences::ConfigPreferences;
-#[cfg(not(feature = "disable_profile_update_packages"))]
+#[cfg(not(feature = "disable_instance_update_packages"))]
 use crate::pkg::eval::EvalConstants;
 use crate::plugin::PluginManager;
 use nitro_core::user::UserManager;
 use nitro_plugin::hooks::{AfterPackagesInstalled, AfterPackagesInstalledArg};
 use nitro_shared::{translate, UpdateDepth};
-#[cfg(not(feature = "disable_profile_update_packages"))]
+#[cfg(not(feature = "disable_instance_update_packages"))]
 use packages::print_package_support_messages;
 use packages::update_instance_packages;
-#[cfg(not(feature = "disable_profile_update_packages"))]
+#[cfg(not(feature = "disable_instance_update_packages"))]
 use std::collections::HashSet;
 
 use anyhow::Context;
@@ -56,7 +56,7 @@ impl Instance {
 		depth: UpdateDepth,
 		ctx: &mut InstanceUpdateContext<'_, O>,
 	) -> anyhow::Result<()> {
-		#[cfg(feature = "disable_profile_update_packages")]
+		#[cfg(feature = "disable_instance_update_packages")]
 		let _update_packages = update_packages;
 
 		let mut manager = UpdateManager::new(depth);
@@ -94,7 +94,7 @@ impl Instance {
 		.context("Failed to create instance")?;
 
 		if update_packages {
-			#[cfg(not(feature = "disable_profile_update_packages"))]
+			#[cfg(not(feature = "disable_instance_update_packages"))]
 			{
 				let mut all_packages = HashSet::new();
 
@@ -108,7 +108,7 @@ impl Instance {
 					loader: self.config.loader.clone(),
 					version_list: manager.version_info.get().versions.clone(),
 					language: ctx.prefs.language,
-					profile_stability: self.config.package_stability,
+					template_stability: self.config.package_stability,
 				};
 
 				let packages = update_instance_packages(
@@ -146,7 +146,7 @@ impl Instance {
 			loader: self.config.loader.clone(),
 			config: self
 				.config
-				.original_config_with_profiles_and_plugins
+				.original_config_with_templates_and_plugins
 				.clone(),
 			internal_dir: ctx.paths.internal.to_string_lossy().to_string(),
 			update_depth: manager.settings.depth,

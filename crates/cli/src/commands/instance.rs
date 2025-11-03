@@ -29,7 +29,7 @@ use crate::secrets::get_ms_client_id;
 
 #[derive(Debug, Subcommand)]
 pub enum InstanceSubcommand {
-	#[command(about = "List all instances in all profiles")]
+	#[command(about = "List all instances")]
 	#[clap(alias = "ls")]
 	List {
 		/// Whether to remove formatting and warnings from the output
@@ -230,7 +230,7 @@ pub async fn launch(
 	// Perform first update if needed
 	let mut lock = Lockfile::open(&data.paths).context("Failed to open lockfile")?;
 	if !lock.has_instance_done_first_update(&instance_id) {
-		cprintln!("<s>Performing first update of instance profile...");
+		cprintln!("<s>Performing first update of instance...");
 
 		let client = Client::new();
 		let mut ctx = InstanceUpdateContext {
@@ -374,7 +374,7 @@ async fn add(data: &mut CmdData<'_>) -> anyhow::Result<()> {
 	data.ensure_config(true).await?;
 	let mut config = data.get_raw_config()?;
 
-	// Build the profile
+	// Build the instance
 	let id = inquire::Text::new("What is the ID for the instance?").prompt()?;
 	let id = InstanceID::from(id);
 	let version = inquire::Text::new("What Minecraft version should the instance be?").prompt()?;

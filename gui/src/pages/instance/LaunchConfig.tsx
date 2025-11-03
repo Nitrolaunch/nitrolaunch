@@ -57,7 +57,7 @@ export default function LaunchConfig(props: LaunchConfigProps) {
 									{x == undefined ? "Unset" : getJavaDisplayName(x)}
 								</div>
 							),
-							tip: x == undefined ? "Inherit from the profile" : getJavaTip(x),
+							tip: x == undefined ? "Inherit from the template" : getJavaTip(x),
 						};
 					})}
 					columns={4}

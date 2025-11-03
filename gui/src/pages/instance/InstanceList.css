@@ -20,8 +20,8 @@
 	border-color: var(--instance);
 }
 
-.instance-list-header-item.profiles {
-	border-color: var(--profile);
+.instance-list-header-item.templates {
+	border-color: var(--template);
 }
 
 .instance-list-header-item.selected {
@@ -33,8 +33,8 @@
 	color: var(--instance);
 }
 
-.instance-list-header-item.profiles.selected {
-	color: var(--profile);
+.instance-list-header-item.templates.selected {
+	color: var(--template);
 }
 
 .instance-list-section-container {
@@ -105,10 +105,10 @@
 	background-color: var(--instancebg);
 }
 
-.instance-list-item.profile.selected {
-	border-color: var(--profile);
-	color: var(--profile);
-	background-color: var(--profilebg);
+.instance-list-item.template.selected {
+	border-color: var(--template);
+	color: var(--template);
+	background-color: var(--templatebg);
 }
 
 .instance-list-icon {
@@ -121,7 +121,7 @@
 	right: 0.8rem;
 }
 
-#instance-list-profiles-header {
+#instance-list-templates-header {
 	padding-left: 0.5rem;
 	margin-bottom: 1rem;
 }

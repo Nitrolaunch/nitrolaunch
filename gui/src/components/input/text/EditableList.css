@@ -28,5 +28,5 @@
 }
 
 .editable-list-item-contents.drag-hovered {
-	border-bottom-color: var(--profile);
+	border-bottom-color: var(--template);
 }

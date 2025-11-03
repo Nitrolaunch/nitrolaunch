@@ -1,12 +1,12 @@
 # Custom Files
 ID: `custom_files`
 
-The Custom Files plugin allows you to easily share the same file across all instances under a profile. Right now, the plugin only supports sharing single files, not folders or globs.
+The Custom Files plugin allows you to easily share the same file across all instances under a template. Right now, the plugin only supports sharing single files, not folders or globs.
 
 ## Usage
 
 ### Configuring
-Configuration is placed in the `"custom_files"` object in an instance or profile, and looks like this:
+Configuration is placed in the `"custom_files"` object in an instance or template, and looks like this:
 ```
 {
 	"custom_files": {

@@ -15,10 +15,10 @@ When you first run a command that reads from the config, a default configuration
 	"instances": {
 		"instance": { ... }
 	},
-	"profiles": {
-		"profile": { ... }
+	"templates": {
+		"template": { ... }
 	},
-	"base_profile": { ... },
+	"base_template": { ... },
 	"instance_groups": {
 		"group": [ ... ]
 	},
@@ -26,7 +26,7 @@ When you first run a command that reads from the config, a default configuration
 }
 ```
 
-- `base_profile`: An optional global profile that all other profiles will inherit from
+- `base_template`: An optional global template that all other templates and instances will inherit from
 - `instance_groups`: Named groups of instance IDs that can be used to easily refer to multiple instances
 
 ## Users
@@ -101,8 +101,8 @@ Instances are defined in the id-value format underneath the `instances` object o
 All fields are optional unless stated otherwise.
 
 - `type` (Required): The type of the instance, either `"client"` or `"server"`.
-- `from`: A [profile](#profiles) or multiple profiles to derive configuration from. The config from each profile will be applied in order, and then the config for this instance will be applied last.
-- `version`: The Minecraft version of the instance. Can use `"latest"` or `"latest_snapshot"` as special identifiers to get the latest version. This is technically a required field, but can be derived from a profile instead.
+- `from`: A [template](#templates) or multiple templates to derive configuration from. The config from each template will be applied in order, and then the config for this instance will be applied last.
+- `version`: The Minecraft version of the instance. Can use `"latest"` or `"latest_snapshot"` as special identifiers to get the latest version. This is technically a required field, but can be derived from a template instead.
 - `name`: A custom display name for this instance. Has no rules and does not have to be unique.
 - `icon`: A path to an icon file for this instance. Should be square and in a common format like PNG or JPEG.
 - `loader`: The loader for the instance. Check [the loader list](loaders.md) for which ones are available. This string can also be formatted as `loader@version` to request a specific version pattern of the loader.
@@ -120,9 +120,9 @@ All fields are optional unless stated otherwise.
 - `overrides.suppress`: Packages in this list will not be installed. Nitrolaunch may say that it was installed at the end, but these packages will never be evaluated. Useful if you want to install a package dependency manually.
 - `game_dir`: Override for the game file directory (.minecraft or the server directory). By default, is stored in the `instances` dir in the Nitro data folder.
 
-## Profiles
+## Templates
 
-Profiles allow you to easily share configuration between instances and keep them in sync without having to rewrite the same thing many times. Instances and profiles can use the `from` field to derive from other profiles in a composable manner. Profiles are listed in the same id-value format as instances under the `profiles` object. They look like this:
+Templates allow you to easily share configuration between instances and keep them in sync without having to rewrite the same thing many times. Instances and templates can use the `from` field to derive from other templates in a composable manner. Templates are listed in the same id-value format as instances under the `templates` object. They look like this:
 
 ```
 "id": {
@@ -139,13 +139,13 @@ Profiles allow you to easily share configuration between instances and keep them
 }
 ```
 
-- `InstanceConfig`: Profiles have all of the same fields as instances, which they provide to instances that derive them
-- `packages` (Optional): Can either be a list of packages to apply to every instance in the profile, or an object of multiple lists with a different set of packages for each type of instance. The `global` key will apply to every instance.
+- `InstanceConfig`: Templates have all of the same fields as instances, which they provide to instances that derive them
+- `packages` (Optional): Can either be a list of packages to apply to every instance in the template, or an object of multiple lists with a different set of packages for each type of instance. The `global` key will apply to every instance.
 - `loader` (Optional): Can be the same format as an instance, or a different loader for client and server. Loader versions are still allowed.
 
 ## Packages
 
-Packages are specified in an instance's package list or for a profile in its packages list. Each package has two valid forms:
+Packages are specified in an instance's package list or for a template in its packages list. Each package has two valid forms:
 
 ```
 "id"
@@ -174,7 +174,7 @@ In most cases the first form is all you need. If you want more control over how 
 - `features` (Optional): A list of strings for package features that you would like to enable.
 - `use_default_features` (Optional): Whether or not to use the default features of this package. `true` by default.
 - `permissions` (Optional): The amount of control you would like to give this package. Can be `"restricted"`, `"standard"`, or `"elevated"`. Packages you do not trust should be given the `"restricted"` level. Packages that you trust and want to provide access to special commands for can be given `"elevated"`. Defaults to `"standard"`.
-- `stability` (Optional): Specify whether you want this package to use development versions of addons or not. Defaults to using the `package_stability` setting from the profile.
+- `stability` (Optional): Specify whether you want this package to use development versions of addons or not. Defaults to using the `package_stability` setting from the instance.
 - `worlds` (Optional): A list of worlds to only apply addons like datapacks to. If left empty (the default), will apply to all worlds in the instance.
 - `content_version` (Optional): An optional content version to request the package to be. Can be a [version pattern](./packages/_index.md#version-patterns).
 - `optional` (Optional): Whether this package can be skipped if it has errors. Note that this can cause mods to have unmet dependency errors if they depend on an optional package that fails to install.

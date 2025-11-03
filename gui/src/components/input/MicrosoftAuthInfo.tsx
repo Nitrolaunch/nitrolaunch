@@ -53,7 +53,7 @@ function LoginWindowButton(props: LoginWindowButtonProps) {
 			text={opening() ? "Opening..." : "Open login page"}
 			size="18px"
 			icon={Globe}
-			color={opening() ? "var(--profile" : "var(--fg)"}
+			color={opening() ? "var(--template)" : "var(--fg)"}
 			onClick={async () => {
 				setOpening(true);
 				if (props.inBrowser) {

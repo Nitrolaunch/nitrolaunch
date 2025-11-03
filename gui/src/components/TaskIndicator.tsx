@@ -483,7 +483,7 @@ function getTaskColor(task: string) {
 		task == "login_user" ||
 		task == "update_versions"
 	) {
-		return "profile";
+		return "template";
 	} else if (
 		task == "search_packages" ||
 		task == "load_packages" ||
@@ -508,7 +508,7 @@ type Color =
 	| "disabled"
 	| "running"
 	| "instance"
-	| "profile"
+	| "template"
 	| "package"
 	| "plugin";
 
@@ -518,8 +518,8 @@ function getColors(color: Color) {
 		return ["lightgray", "lightgray"];
 	} else if (color == "instance") {
 		return ["var(--instance)", "var(--instance)"];
-	} else if (color == "profile") {
-		return ["var(--profile)", "var(--profile)"];
+	} else if (color == "template") {
+		return ["var(--template)", "var(--template)"];
 	} else if (color == "package") {
 		return ["var(--package)", "var(--package)"];
 	} else if (color == "plugin") {

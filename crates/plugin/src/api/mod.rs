@@ -141,7 +141,7 @@ impl CustomPlugin {
 	);
 	hook_interface!(remove_loader, "remove_loader", RemoveLoader);
 	hook_interface!(add_instances, "add_instances", AddInstances);
-	hook_interface!(add_profiles, "add_profiles", AddProfiles);
+	hook_interface!(add_templates, "add_templates", AddTemplates);
 	hook_interface!(inject_page_script, "inject_page_script", InjectPageScript);
 	hook_interface!(
 		add_sidebar_buttons,

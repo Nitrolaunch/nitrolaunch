@@ -22,7 +22,7 @@ use reqwest::Client;
 use crate::io::paths::Paths;
 use crate::plugin::PluginManager;
 
-/// Requirements for operations that may be shared by multiple instances in a profile
+/// Requirements for update operations
 #[derive(Debug, Hash, PartialEq, Eq)]
 pub enum UpdateRequirement {
 	/// Client logging configuration
@@ -38,7 +38,7 @@ pub struct UpdateSettings {
 	pub offline_auth: bool,
 }
 
-/// Manager for when we are updating profile files.
+/// Manager for when we are updating instance files.
 /// It will keep track of files we have already downloaded, manage task requirements, etc
 pub struct UpdateManager {
 	/// Settings for the update

@@ -500,7 +500,7 @@ mod tests {
 			version_list: vec!["1.19.2".to_string(), "1.19.3".to_string()],
 			loader: Loader::Fabric,
 			language: Language::AmericanEnglish,
-			profile_stability: PackageStability::Latest,
+			template_stability: PackageStability::Latest,
 		}
 	}
 }

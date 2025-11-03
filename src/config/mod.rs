@@ -3,7 +3,7 @@
 pub mod builder;
 /// Configuring instances
 pub mod instance;
-/// Configuring profile modifications
+/// Configuring instance modifications
 pub mod modifications;
 /// Configuring packages
 pub mod package;
@@ -11,24 +11,24 @@ pub mod package;
 pub mod plugin;
 /// Configuring global preferences
 pub mod preferences;
-/// Configuring profiles
-pub mod profile;
+/// Configuring templates
+pub mod template;
 
 use self::instance::read_instance_config;
 use crate::plugin::PluginManager;
 use anyhow::Context;
-use nitro_config::profile::ProfileConfig;
+use nitro_config::template::TemplateConfig;
 use nitro_config::ConfigDeser;
 use nitro_core::auth_crate::mc::ClientId;
 use nitro_core::io::{json_from_file, json_to_file_pretty};
 use nitro_core::user::UserManager;
-use nitro_plugin::hooks::{AddInstances, AddInstancesArg, AddProfiles, AddSupportedLoaders};
-use nitro_shared::id::{InstanceID, ProfileID};
+use nitro_plugin::hooks::{AddInstances, AddInstancesArg, AddTemplates, AddSupportedLoaders};
+use nitro_shared::id::{InstanceID, TemplateID};
 use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
 use nitro_shared::util::is_valid_identifier;
 use nitro_shared::{skip_fail, translate};
 use preferences::ConfigPreferences;
-use profile::consolidate_profile_configs;
+use template::consolidate_template_configs;
 
 use super::instance::Instance;
 use crate::io::paths::Paths;
@@ -47,12 +47,12 @@ pub struct Config {
 	pub users: UserManager,
 	/// Instances
 	pub instances: HashMap<InstanceID, Instance>,
-	/// Profiles
-	pub profiles: HashMap<ProfileID, ProfileConfig>,
-	/// Consolidated profiles
-	pub consolidated_profiles: HashMap<ProfileID, ProfileConfig>,
-	/// The globally applied profile
-	pub base_profile: ProfileConfig,
+	/// templates
+	pub templates: HashMap<TemplateID, TemplateConfig>,
+	/// Consolidated templates
+	pub consolidated_templates: HashMap<TemplateID, TemplateConfig>,
+	/// The globally applied template
+	pub base_template: TemplateConfig,
 	/// Named groups of instances
 	pub instance_groups: HashMap<Arc<str>, Vec<InstanceID>>,
 	/// The registry of packages. Will include packages that are configured when created this way
@@ -180,33 +180,33 @@ impl Config {
 				);
 			}
 		}
-		// Add profiles from plugins
-		let results = plugins.call_hook(AddProfiles, &arg, paths, o).await;
+		// Add templates from plugins
+		let results = plugins.call_hook(AddTemplates, &arg, paths, o).await;
 		match results {
 			Ok(results) => {
 				for result in results {
 					let result = skip_fail!(result.result(o).await);
-					for (id, mut profile) in result.into_iter() {
-						if config.profiles.contains_key(&id) {
+					for (id, mut template) in result.into_iter() {
+						if config.templates.contains_key(&id) {
 							continue;
 						}
 
-						profile.instance.from_plugin = true;
-						config.profiles.insert(id, profile);
+						template.instance.from_plugin = true;
+						config.templates.insert(id, template);
 					}
 				}
 			}
 			Err(e) => {
 				o.display(
-					MessageContents::Error(format!("Failed to add profiles from plugins: {e:?}")),
+					MessageContents::Error(format!("Failed to add templates from plugins: {e:?}")),
 					MessageLevel::Important,
 				);
 			}
 		}
 
-		// Consolidate profiles
-		let consolidated_profiles =
-			consolidate_profile_configs(config.profiles.clone(), config.base_profile.as_ref(), o);
+		// Consolidate templates
+		let consolidated_templates =
+			consolidate_template_configs(config.templates.clone(), config.base_template.as_ref(), o);
 
 		// Load extra supported loaders
 		let mut supported_loaders = Vec::new();
@@ -234,7 +234,7 @@ impl Config {
 			let result = read_instance_config(
 				instance_id.clone(),
 				instance_config,
-				&consolidated_profiles,
+				&consolidated_templates,
 				&plugins,
 				paths,
 				o,
@@ -286,9 +286,9 @@ impl Config {
 		Self {
 			users,
 			instances,
-			profiles: config.profiles,
-			consolidated_profiles,
-			base_profile: config.base_profile.unwrap_or_default(),
+			templates: config.templates,
+			consolidated_templates,
+			base_template: config.base_template.unwrap_or_default(),
 			instance_groups: config.instance_groups,
 			packages,
 			plugins,
@@ -320,7 +320,7 @@ fn default_config() -> serde_json::Value {
 				}
 			},
 			"default_user": "example",
-			"profiles": {
+			"templates": {
 				"1.20": {
 					"version": "1.19.3",
 					"loader": "vanilla",

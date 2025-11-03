@@ -83,7 +83,7 @@ Runs an arbitrary custom action, basically allowing you to define your own hooks
 
 ### `modify_instance_config`
 
-Called on every instance to possibly modify its config. The output config will be merged with the instance's current config in the same way as profiles are. Note that the input is not sequential: All plugins will be given the same config before modification, instead of applying one after the other, and the results will all be merged together.
+Called on every instance to possibly modify its config. The output config will be merged with the instance's current config in the same way as templates are. Note that the input is not sequential: All plugins will be given the same config before modification, instead of applying one after the other, and the results will all be merged together.
 
 - Argument:
 
@@ -116,17 +116,17 @@ Adds new instances to the config
 }
 ```
 
-### `add_profiles`
+### `add_templates`
 
-Adds new profiles to the config
+Adds new templates to the config
 
 - Argument: None
 - Result:
 
 ```
 {
-	"prof1": ProfileConfig,
-	"prof2": ProfileConfig,
+	"prof1": TemplateConfig,
+	"prof2": TemplateConfig,
 	...
 }
 ```
@@ -556,14 +556,14 @@ Called whenever certain pages in the GUI are opened. Runs whatever the result of
 
 ```
 {
-	"page": "instances" | "instance" | "instance_config" | "profile_config" | "base_profile_config" | "packages" | "plugins",
+	"page": "instances" | "instance" | "instance_config" | "template_config" | "base_template_config" | "packages" | "plugins",
 	"object": string | null
 }
 ```
 
 - Result: string
 
-- `object`: The identifier for whatever 'thing' this page is representing. Could be an instance, profile, anything else, or nothing.
+- `object`: The identifier for whatever 'thing' this page is representing. Could be an instance, template, anything else, or nothing.
 
 ### `add_sidebar_buttons`
 

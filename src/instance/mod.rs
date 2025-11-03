@@ -34,7 +34,7 @@ use self::setup::{InstanceDirs, ModificationData};
 use super::config::package::PackageConfig;
 use nitro_shared::id::InstanceID;
 
-/// An instance of the game on a profile
+/// An instance of the game on a template
 #[derive(Debug)]
 pub struct Instance {
 	/// What type of instance this is
@@ -109,12 +109,12 @@ pub struct InstanceStoredConfig {
 	pub package_overrides: PackageOverrides,
 	/// Game dir override
 	pub game_dir: Option<PathBuf>,
-	/// The original instance configuration before applying profiles
+	/// The original instance configuration before applying templates
 	pub original_config: InstanceConfig,
-	/// The original instance configuration after applying profiles
-	pub original_config_with_profiles: InstanceConfig,
-	/// The original instance configuration after applying profiles and plugins
-	pub original_config_with_profiles_and_plugins: InstanceConfig,
+	/// The original instance configuration after applying templates
+	pub original_config_with_templates: InstanceConfig,
+	/// The original instance configuration after applying templates and plugins
+	pub original_config_with_templates_and_plugins: InstanceConfig,
 	/// Custom plugin config
 	pub plugin_config: serde_json::Map<String, serde_json::Value>,
 }

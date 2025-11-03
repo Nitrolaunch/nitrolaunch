@@ -28,7 +28,7 @@ import { beautifyString } from "../../utils";
 import TaskIndicator from "../TaskIndicator";
 import { errorToast } from "../dialog/Toasts";
 import Tip from "../dialog/Tip";
-import ProfileDeletePrompt from "../instance/ProfileDeletePrompt";
+import TemplateDeletePrompt from "../instance/TemplateDeletePrompt";
 import RunningInstanceList from "../launch/RunningInstanceList";
 import { useNavigate } from "@solidjs/router";
 import Icon from "../Icon";
@@ -42,7 +42,7 @@ export default function Footer(props: FooterProps) {
 		undefined
 	);
 	const [passwordPromptMessage, setPasswordPromptMessage] = createSignal("");
-	let [showProfileDeletePrompt, setShowProfileDeletePrompt] =
+	let [showTemplateDeletePrompt, setShowTemplateDeletePrompt] =
 		createSignal(false);
 
 	// Unlisteners for tauri events
@@ -252,19 +252,19 @@ export default function Footer(props: FooterProps) {
 						</Show>
 						<Show
 							when={
-								props.mode == FooterMode.Profile &&
+								props.mode == FooterMode.Template &&
 								props.selectedItem != undefined
 							}
 						>
 							<div class="cont">
-								<Tip tip="Delete profile" side="top">
+								<Tip tip="Delete template" side="top">
 									<IconButton
 										icon={Trash}
 										size="1.5rem"
 										color="var(--bg0)"
 										selectedColor="var(--accent)"
 										onClick={() => {
-											setShowProfileDeletePrompt(true);
+											setShowTemplateDeletePrompt(true);
 										}}
 										selected={false}
 										circle
@@ -278,7 +278,7 @@ export default function Footer(props: FooterProps) {
 						selected={
 							props.selectedItem != undefined &&
 							!(
-								props.itemFromPlugin == true && props.mode == FooterMode.Profile
+								props.itemFromPlugin == true && props.mode == FooterMode.Template
 							) &&
 							!(
 								props.mode == FooterMode.Instance &&
@@ -305,11 +305,11 @@ export default function Footer(props: FooterProps) {
 									}
 								}
 							} else if (
-								props.mode == FooterMode.Profile &&
+								props.mode == FooterMode.Template &&
 								props.itemFromPlugin != true
 							) {
 								if (props.selectedItem != undefined) {
-									navigate(`/profile_config/${props.selectedItem}`);
+									navigate(`/template_config/${props.selectedItem}`);
 								}
 							} else {
 								props.action();
@@ -352,11 +352,11 @@ export default function Footer(props: FooterProps) {
 					message={passwordPromptMessage()}
 				/>
 			</Show>
-			<ProfileDeletePrompt
-				visible={showProfileDeletePrompt()}
-				onClose={() => setShowProfileDeletePrompt(false)}
-				profile={
-					props.mode != FooterMode.Profile ? undefined : props.selectedItem
+			<TemplateDeletePrompt
+				visible={showTemplateDeletePrompt()}
+				onClose={() => setShowTemplateDeletePrompt(false)}
+				template={
+					props.mode != FooterMode.Template ? undefined : props.selectedItem
 				}
 			/>
 		</div>
@@ -381,11 +381,11 @@ function ActionButton(props: ActionButtonProps) {
 			) {
 				return "var(--instancebg)";
 			} else if (
-				props.mode == FooterMode.Profile ||
-				props.mode == FooterMode.SaveProfileConfig ||
+				props.mode == FooterMode.Template ||
+				props.mode == FooterMode.SaveTemplateConfig ||
 				props.mode == FooterMode.SaveSettings
 			) {
-				return "var(--profilebg)";
+				return "var(--templatebg)";
 			} else if (props.mode == FooterMode.PreviewPackage) {
 				return "var(--bg-1)";
 			} else if (props.mode == FooterMode.InstallPackage) {
@@ -402,11 +402,11 @@ function ActionButton(props: ActionButtonProps) {
 			) {
 				return "var(--instance)";
 			} else if (
-				props.mode == FooterMode.Profile ||
-				props.mode == FooterMode.SaveProfileConfig ||
+				props.mode == FooterMode.Template ||
+				props.mode == FooterMode.SaveTemplateConfig ||
 				props.mode == FooterMode.SaveSettings
 			) {
-				return "var(--profile)";
+				return "var(--template)";
 			} else if (
 				props.mode == FooterMode.PreviewPackage ||
 				props.mode == FooterMode.InstallPackage
@@ -423,11 +423,11 @@ function ActionButton(props: ActionButtonProps) {
 			} else {
 				return "Update";
 			}
-		} else if (props.mode == FooterMode.Profile) {
+		} else if (props.mode == FooterMode.Template) {
 			return "Edit";
 		} else if (
 			props.mode == FooterMode.SaveInstanceConfig ||
-			props.mode == FooterMode.SaveProfileConfig ||
+			props.mode == FooterMode.SaveTemplateConfig ||
 			props.mode == FooterMode.SaveSettings
 		) {
 			return "Save";
@@ -444,11 +444,11 @@ function ActionButton(props: ActionButtonProps) {
 			} else {
 				return <Upload />;
 			}
-		} else if (props.mode == FooterMode.Profile) {
+		} else if (props.mode == FooterMode.Template) {
 			return <Gear />;
 		} else if (
 			props.mode == FooterMode.SaveInstanceConfig ||
-			props.mode == FooterMode.SaveProfileConfig ||
+			props.mode == FooterMode.SaveTemplateConfig ||
 			props.mode == FooterMode.SaveSettings
 		) {
 			return <Check />;
@@ -523,9 +523,9 @@ interface ActionButtonProps {
 // The mode for the footer
 export enum FooterMode {
 	Instance = "instance",
-	Profile = "profile",
+	Template = "template",
 	SaveInstanceConfig = "save_instance_config",
-	SaveProfileConfig = "save_profile_config",
+	SaveTemplateConfig = "save_template_config",
 	PreviewPackage = "preview_package",
 	InstallPackage = "install_package",
 	SaveSettings = "save_settings",

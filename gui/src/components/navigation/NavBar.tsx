@@ -65,10 +65,10 @@ export default function NavBar(props: NavBarProps) {
 							selectedPathStart={[
 								"/instance",
 								"/instance_config",
-								"/profile_config",
-								"/base_profile_config",
+								"/template_config",
+								"/base_template_config",
 								"create_instance",
-								"create_profile",
+								"create_template",
 							]}
 							color="var(--instance)"
 							backgroundColor="var(--instancebg)"

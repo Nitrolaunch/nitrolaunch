@@ -12,7 +12,7 @@ Packages should be fully functional with only the package file itself and not an
 The people who make content for this game should have their hard work and wishes respected.
 
 ## 4. Changes in the environment should be explicit
-Your game environment should not change unless you update the profile. Your set of available packages should not change without a repository sync.
+Your game environment should not change unless you update the instance. Your set of available packages should not change without a repository sync.
 
 ## 5. Nitrolaunch should be disconnected from any other update schedules
 You shouldn't have to update Nitrolaunch when a new Minecraft version releases or a new version of a package is published unless the process for using these systems changes.

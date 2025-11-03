@@ -29,7 +29,6 @@ import { Loader } from "../../package";
 import IconTextButton from "../../components/input/button/IconTextButton";
 import { getBrowseUrl } from "../package/BrowsePackages";
 import { canonicalizeListOrSingle } from "../../utils/values";
-import ModalBase from "../../components/dialog/ModalBase";
 import DeriveIndicator from "./DeriveIndicator";
 import { InstanceConfig, PackageOverrides } from "./read_write";
 import Tip from "../../components/dialog/Tip";
@@ -59,7 +58,7 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 
 	let [allPackages, allPackagesMethods] = createResource(async () => {
 		let installedPackages: string[] = [];
-		if (!props.isProfile && props.id != undefined) {
+		if (!props.isTemplate && props.id != undefined) {
 			let map: { [key: string]: LockfilePackage } = await invoke(
 				"get_instance_packages",
 				{ instance: props.id }
@@ -150,7 +149,7 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 	});
 
 	let [resolutionError, resolutionErrorMethods] = createResource(async () => {
-		if (props.isProfile || props.id == undefined) {
+		if (props.isTemplate || props.id == undefined) {
 			return undefined;
 		}
 
@@ -237,7 +236,7 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 					</Tip>
 				</div>
 				<div class="cont end fullwidth">
-					<Show when={props.id != undefined && !props.isProfile}>
+					<Show when={props.id != undefined && !props.isTemplate}>
 						<IconTextButton
 							icon={Upload}
 							size="1.5rem"
@@ -307,7 +306,7 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 					class="cont end"
 					id="package-config-sides"
 				>
-					<Show when={props.isProfile}>
+					<Show when={props.isTemplate}>
 						<InlineSelect
 							options={[
 								{ value: "all", contents: <div>ALL</div>, color: "var(--fg)" },
@@ -319,7 +318,7 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 								{
 									value: "server",
 									contents: <div>SERVER</div>,
-									color: "var(--profile)",
+									color: "var(--template)",
 								},
 							]}
 							optionClass="package-config-filter"
@@ -476,7 +475,7 @@ export interface PackagesConfigProps {
 	derivedGlobalPackages: PackageConfig[];
 	derivedClientPackages: PackageConfig[];
 	derivedServerPackages: PackageConfig[];
-	isProfile: boolean;
+	isTemplate: boolean;
 	onRemove: (pkg: string, category: ConfiguredPackageCategory) => void;
 	onAdd: (pkg: string, category: ConfiguredPackageCategory) => void;
 	setGlobalPackages: (packages: PackageConfig[]) => void;

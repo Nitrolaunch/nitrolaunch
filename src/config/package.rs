@@ -31,8 +31,8 @@ pub struct PackageConfig {
 /// Where a package was configured from
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum PackageConfigSource {
-	/// Configured for one profile
-	Profile,
+	/// Configured for one template
+	Template,
 	/// Configured for one instance
 	Instance,
 }
@@ -88,7 +88,7 @@ impl PackageConfig {
 /// Reads configuration for a package
 pub fn read_package_config(
 	config: PackageConfigDeser,
-	profile_stability: PackageStability,
+	template_stability: PackageStability,
 	// source: PackageConfigSource,
 ) -> PackageConfig {
 	let id = config.get_pkg_id();
@@ -98,7 +98,7 @@ pub fn read_package_config(
 		features: config.get_features(),
 		use_default_features: config.get_use_default_features(),
 		permissions: config.get_permissions(),
-		stability: config.get_stability(profile_stability),
+		stability: config.get_stability(template_stability),
 		worlds: config.get_worlds().into_owned(),
 		content_version: None,
 		optional: config.get_optional(),

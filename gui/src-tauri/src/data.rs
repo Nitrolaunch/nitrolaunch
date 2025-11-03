@@ -5,7 +5,7 @@ use nitrolaunch::core::io::{json_from_file, json_to_file};
 use nitrolaunch::io::paths::Paths;
 use serde::{Deserialize, Serialize};
 
-use crate::commands::instance::InstanceOrProfile;
+use crate::commands::instance::InstanceOrTemplate;
 use crate::output::SerializableResolutionError;
 
 /// Stored launcher data
@@ -16,8 +16,8 @@ pub struct LauncherData {
 	pub launcher_opened_before: bool,
 	/// Icons for instances
 	pub instance_icons: HashMap<String, InstanceIcon>,
-	/// Icons for profiles
-	pub profile_icons: HashMap<String, InstanceIcon>,
+	/// Icons for templates
+	pub template_icons: HashMap<String, InstanceIcon>,
 	/// Set of pinned instances
 	pub pinned: HashSet<String>,
 	/// The currently selected user
@@ -28,10 +28,10 @@ pub struct LauncherData {
 	pub last_resolution_errors: HashMap<String, SerializableResolutionError>,
 	/// The launch event associated with instances
 	pub last_launches: HashMap<String, InstanceLaunch>,
-	/// The instance or profile where a package was last added to
-	pub last_added_package: Option<(String, InstanceOrProfile)>,
-	/// The instance or profile that was last opened
-	pub last_opened_instance: Option<(String, InstanceOrProfile)>,
+	/// The instance or template where a package was last added to
+	pub last_added_package: Option<(String, InstanceOrTemplate)>,
+	/// The instance or template that was last opened
+	pub last_opened_instance: Option<(String, InstanceOrTemplate)>,
 	/// The currently selected theme
 	pub theme: Option<String>,
 }

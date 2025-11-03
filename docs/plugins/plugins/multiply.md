@@ -23,7 +23,7 @@ Multiply is configured using it's plugin config in `plugins.json`. The configura
 - `id`: The template for each copy's instance ID. Must contain `$n`, which will be replaced with the index of the current instance
 - `count`: The number of copies to create
 - `start` (Optional): The number to start at for indexes. Defaults to zero.
-- The rest of the fields are the fields for the instance config. Remember to include a side and version, and also that you can derive from profiles if you want!
+- The rest of the fields are the fields for the instance config. Remember to include a side and version, and also that you can derive from templates if you want!
 
 ## Example
 

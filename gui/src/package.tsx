@@ -485,7 +485,7 @@ export function getPackageTypeColor(type: PackageType) {
 	if (type == "mod") {
 		return "var(--instance)";
 	} else if (type == "resource_pack") {
-		return "var(--profile)";
+		return "var(--template)";
 	} else if (type == "datapack") {
 		return "var(--package)";
 	} else if (type == "plugin") {

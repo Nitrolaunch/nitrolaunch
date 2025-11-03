@@ -1,14 +1,14 @@
 use std::collections::{HashMap, HashSet};
 
 use nitro_config::instance::InstanceConfig;
-use nitro_config::profile::ProfileConfig;
+use nitro_config::template::TemplateConfig;
 use nitro_core::net::game_files::version_manifest::VersionEntry;
 use nitro_core::net::minecraft::MinecraftUserProfile;
 use nitro_pkg::repo::{PackageFlag, RepoMetadata};
 use nitro_pkg::script_eval::AddonInstructionData;
 use nitro_pkg::{PackageContentType, PackageSearchResults, RecommendedPackage, RequiredPackage};
 use nitro_shared::addon::AddonKind;
-use nitro_shared::id::{InstanceID, ProfileID};
+use nitro_shared::id::{InstanceID, TemplateID};
 use nitro_shared::lang::translate::LanguageMap;
 use nitro_shared::loaders::Loader;
 use nitro_shared::pkg::{PackageID, PackageSearchParameters};
@@ -566,11 +566,11 @@ def_hook!(
 pub struct AddInstancesArg {}
 
 def_hook!(
-	AddProfiles,
-	"add_profiles",
-	"Hook for adding new profiles",
+	AddTemplates,
+	"add_templates",
+	"Hook for adding new templates",
 	AddInstancesArg,
-	HashMap<ProfileID, ProfileConfig>,
+	HashMap<TemplateID, TemplateConfig>,
 	1,
 );
 
@@ -589,7 +589,7 @@ def_hook!(
 pub struct InjectPageScriptArg {
 	/// The identifier for the page
 	pub page: String,
-	/// The identifier for whatever 'thing' this page is representing. Could be an instance, profile, anything else, or nothing.
+	/// The identifier for whatever 'thing' this page is representing. Could be an instance, template, anything else, or nothing.
 	pub object: Option<String>,
 }
 
@@ -807,8 +807,8 @@ pub struct DropdownButton {
 #[derive(Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
 #[serde(rename_all = "snake_case")]
 pub enum DropdownButtonLocation {
-	/// Button on the instances page for adding an instance or profile
-	AddProfileOrInstance,
+	/// Button on the instances page for adding an instance or template
+	AddTemplateOrInstance,
 	/// Button on an instance page for launching the instance
 	InstanceLaunch,
 	/// Button on an instance page for updating the instance

@@ -37,7 +37,7 @@ package_zips.platform_dependent:
 	@rm -f release/options-${OS}.zip
 	@rm -f release/packhost-${OS}.zip
 	@rm -f release/paper-${OS}.zip
-	@rm -f release/profile_share-${OS}.zip
+	@rm -f release/template_share-${OS}.zip
 	@rm -f release/server_restart-${OS}.zip
 	@rm -f release/smithed-${OS}.zip
 	@rm -f release/smithed_api-${OS}.zip
@@ -68,7 +68,7 @@ package_zips.platform_dependent:
 	@zip -j release/options-${OS}.zip $(TARGET_DIR)/nitro_plugin_options${EXTENSION} plugins/options/plugin.json
 	@zip -j release/packhost-${OS}.zip $(TARGET_DIR)/nitro_plugin_packhost${EXTENSION} plugins/packhost/plugin.json
 	@zip -j release/paper-${OS}.zip $(TARGET_DIR)/nitro_plugin_paper${EXTENSION} plugins/paper/plugin.json
-	@zip -j release/profile_share-${OS}.zip $(TARGET_DIR)/nitro_plugin_profile_share${EXTENSION} plugins/profile_share/plugin.json plugins/profile_share/import.js plugins/profile_share/export.js
+	@zip -j release/template_share-${OS}.zip $(TARGET_DIR)/nitro_plugin_template_share${EXTENSION} plugins/template_share/plugin.json plugins/template_share/import.js plugins/template_share/export.js
 	@zip -j release/server_restart-${OS}.zip $(TARGET_DIR)/nitro_plugin_server_restart${EXTENSION} plugins/server_restart/plugin.json
 	@zip -j release/smithed-${OS}.zip $(TARGET_DIR)/nitro_plugin_smithed${EXTENSION} plugins/smithed/plugin.json plugins/smithed/page.html
 	@zip -j release/smithed_api-${OS}.zip $(TARGET_DIR)/nitro_plugin_smithed_api${EXTENSION} plugins/smithed_api/plugin.json
@@ -171,12 +171,12 @@ install.paper:
 	@cargo install --path . --bin nitro_plugin_paper --offline
 	@cat plugins/paper/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/paper.json
 
-install.profile_share:
-	@cargo install --path . --bin nitro_plugin_profile_share --offline
-	@mkdir -p ~/.local/share/nitro/plugins/profile_share
-	@cat plugins/profile_share/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/profile_share/plugin.json
-	@cp plugins/profile_share/import.js ~/.local/share/nitro/plugins/profile_share
-	@cp plugins/profile_share/export.js ~/.local/share/nitro/plugins/profile_share
+install.template_share:
+	@cargo install --path . --bin nitro_plugin_template_share --offline
+	@mkdir -p ~/.local/share/nitro/plugins/template_share
+	@cat plugins/template_share/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/template_share/plugin.json
+	@cp plugins/template_share/import.js ~/.local/share/nitro/plugins/template_share
+	@cp plugins/template_share/export.js ~/.local/share/nitro/plugins/template_share
 
 install.server_restart:
 	@cargo install --path . --bin nitro_plugin_server_restart --offline

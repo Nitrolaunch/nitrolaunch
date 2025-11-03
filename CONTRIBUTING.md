@@ -2,7 +2,7 @@
 Just fork and make a PR, about as simple as that. Try to only work on the `dev` branch, as `main` is for finished releases.
 
 ## Project structure
-- `/` and `/src`: The root of the project and the `nitrolaunch` crate. This is where most of the library code is for Nitrolaunch's features, such as profiles and configuration. It is split into a handful of large modules that should be pretty self-explanatory.
+- `/` and `/src`: The root of the project and the `nitrolaunch` crate. This is where most of the library code is for Nitrolaunch's features, such as instance templates and configuration. It is split into a handful of large modules that should be pretty self-explanatory.
 - `/crates`: Other crates that `nitrolaunch` either uses or is used by.
 - `/crates/auth`: Authentication for different types of accounts.
 - `/crates/config`: Nitrolaunch config deserialization.

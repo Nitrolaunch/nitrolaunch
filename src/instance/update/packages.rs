@@ -42,7 +42,7 @@ pub async fn update_instance_packages<O: NitroOutput>(
 	);
 	let resolved_packages = resolve_and_batch(instances, constants, ctx)
 		.await
-		.context("Failed to resolve dependencies for profile")?;
+		.context("Failed to resolve dependencies for instance")?;
 	ctx.output.display(
 		MessageContents::Success(translate!(ctx.output, FinishResolvingDependencies)),
 		MessageLevel::Important,
@@ -63,7 +63,7 @@ pub async fn update_instance_packages<O: NitroOutput>(
 			instance.ensure_dirs(ctx.paths)?;
 
 			let Ok(dirs) = get_addon_paths(
-				&instance.config.original_config_with_profiles_and_plugins,
+				&instance.config.original_config_with_templates_and_plugins,
 				&instance.get_dirs().get().game_dir,
 				adddon_kind,
 				&[],
@@ -456,7 +456,7 @@ pub async fn print_package_support_messages<O: NitroOutput>(
 	Ok(())
 }
 
-/// Creates the output message for package installation when updating profiles
+/// Creates the output message for package installation when updating instances
 fn format_package_update_message(
 	pkg: &PkgRequest,
 	instance: Option<&str>,

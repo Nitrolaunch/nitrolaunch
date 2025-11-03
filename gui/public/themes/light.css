@@ -15,14 +15,14 @@
 	--transparent-dark: #6e6e6ebb;
 
 	--instance: #3aca16;
-	--profile: #1be9e9;
+	--template: #1be9e9;
 	--package: #e9671b;
 	--plugin: #5b65ff;
 	--warning: #e9ca1b;
 	--error: #d40e3d;
 
 	--instancebg: #dcf1c9;
-	--profilebg: #cef3f3;
+	--templatebg: #cef3f3;
 	--packagebg: #ebd1c2;
 	--pluginfg: #11143f;
 	--pluginbg: #daddfc;

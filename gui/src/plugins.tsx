@@ -76,7 +76,7 @@ export async function getDropdownButtons(location: DropdownButtonLocation): Prom
 	}
 }
 
-export type DropdownButtonLocation = "add_profile_or_instance" | "instance_launch" | "instance_update" | "instance_more_options";
+export type DropdownButtonLocation = "add_template_or_instance" | "instance_launch" | "instance_update" | "instance_more_options";
 
 export interface PluginDropdownButton {
 	plugin: string;

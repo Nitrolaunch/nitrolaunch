@@ -12,7 +12,7 @@ import { Location, useNavigate } from "@solidjs/router";
 import { invoke } from "@tauri-apps/api";
 import { getInstanceIconSrc, stringCompare } from "../../utils";
 import { listen, UnlistenFn } from "@tauri-apps/api/event";
-import { InstanceInfo, InstanceOrProfile } from "../../types";
+import { InstanceInfo, InstanceOrTemplate } from "../../types";
 import Icon from "../Icon";
 import IconButton from "../input/button/IconButton";
 
@@ -36,20 +36,20 @@ export default function Sidebar(props: SidebarProps) {
 		});
 		setUnlisten(() => unlisten);
 
-		let [instances, profiles, lastOpenedInstance] = (await Promise.all([
+		let [instances, templates, lastOpenedInstance] = (await Promise.all([
 			invoke("get_instances"),
-			invoke("get_profiles"),
+			invoke("get_templates"),
 			invoke("get_last_opened_instance"),
 		])) as [
 				InstanceInfo[],
 				InstanceInfo[],
-				[string, InstanceOrProfile] | undefined
+				[string, InstanceOrTemplate] | undefined
 			];
 
-		let allInstances: [InstanceInfo, InstanceOrProfile][] = [];
+		let allInstances: [InstanceInfo, InstanceOrTemplate][] = [];
 
 		if (lastOpenedInstance != undefined) {
-			let source = lastOpenedInstance[1] == "instance" ? instances : profiles;
+			let source = lastOpenedInstance[1] == "instance" ? instances : templates;
 			let info = source.find((x) => x.id == lastOpenedInstance[0]);
 			if (info != undefined) {
 				allInstances.push([info, lastOpenedInstance[1]]);
@@ -70,17 +70,17 @@ export default function Sidebar(props: SidebarProps) {
 			}
 		}
 
-		for (let info of profiles) {
+		for (let info of templates) {
 			if (info.pinned) {
 				if (
 					lastOpenedInstance != undefined &&
 					lastOpenedInstance[0] == info.id &&
-					lastOpenedInstance[1] == "profile"
+					lastOpenedInstance[1] == "template"
 				) {
 					continue;
 				}
 
-				allInstances.push([info, "profile"]);
+				allInstances.push([info, "template"]);
 			}
 		}
 
@@ -167,8 +167,8 @@ export default function Sidebar(props: SidebarProps) {
 					href="/docs"
 					location={props.location}
 					selectedPathStart="/docs"
-					color="var(--profile)"
-					selectedBg="var(--profilebg)"
+					color="var(--template)"
+					selectedBg="var(--templatebg)"
 					closeSidebar={() => props.setVisible(false)}
 				>
 					<div class="cont">
@@ -197,7 +197,7 @@ export default function Sidebar(props: SidebarProps) {
 						let url =
 							type == "instance"
 								? `/instance/${info.id}`
-								: `/profile_config/${info.id}`;
+								: `/template_config/${info.id}`;
 
 						let icon =
 							info.icon == null ? (

@@ -1,12 +1,12 @@
 use anyhow::{anyhow, Context};
 use nitro_config::instance::InstanceConfig;
-use nitro_config::profile::ProfileConfig;
+use nitro_config::template::TemplateConfig;
 use nitro_config::ConfigDeser;
 use nitro_config::{package::PackageConfigDeser, user::UserConfig};
 use nitro_core::io::json_to_file_pretty;
 
 use crate::io::paths::Paths;
-use nitro_shared::id::{InstanceID, ProfileID};
+use nitro_shared::id::{InstanceID, TemplateID};
 
 use super::Config;
 
@@ -14,8 +14,8 @@ use super::Config;
 pub enum ConfigModification {
 	/// Adds a new user
 	AddUser(String, UserConfig),
-	/// Adds a new profile
-	AddProfile(ProfileID, ProfileConfig),
+	/// Adds a new template
+	AddTemplate(TemplateID, TemplateConfig),
 	/// Adds a new instance
 	AddInstance(InstanceID, InstanceConfig),
 	/// Adds a new package to an instance
@@ -24,8 +24,8 @@ pub enum ConfigModification {
 	RemoveUser(String),
 	/// Removes an instance
 	RemoveInstance(InstanceID),
-	/// Removes a profile
-	RemoveProfile(InstanceID),
+	/// Removes a template
+	RemoveTemplate(InstanceID),
 }
 
 /// Applies modifications to the config
@@ -38,8 +38,8 @@ pub fn apply_modifications(
 			ConfigModification::AddUser(id, user) => {
 				config.users.insert(id, user);
 			}
-			ConfigModification::AddProfile(id, profile) => {
-				config.profiles.insert(id, profile);
+			ConfigModification::AddTemplate(id, template) => {
+				config.templates.insert(id, template);
 			}
 			ConfigModification::AddInstance(instance_id, instance) => {
 				config.instances.insert(instance_id, instance);
@@ -57,8 +57,8 @@ pub fn apply_modifications(
 			ConfigModification::RemoveInstance(instance) => {
 				config.instances.remove(&instance);
 			}
-			ConfigModification::RemoveProfile(profile) => {
-				config.profiles.remove(&profile);
+			ConfigModification::RemoveTemplate(template) => {
+				config.templates.remove(&template);
 			}
 		};
 	}

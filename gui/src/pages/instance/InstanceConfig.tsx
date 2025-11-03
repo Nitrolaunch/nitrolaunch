@@ -45,7 +45,7 @@ import {
 	getConfiguredLoader,
 	getDerivedPackages,
 	getDerivedValue,
-	getParentProfiles,
+	getParentTemplates,
 	InstanceConfigMode,
 	JavaType,
 	PackageOverrides,
@@ -72,22 +72,22 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 	let params = useParams();
 
 	let isInstance = props.mode == InstanceConfigMode.Instance;
-	let isProfile = props.mode == InstanceConfigMode.Profile;
-	let isBaseProfile = props.mode == InstanceConfigMode.GlobalProfile;
+	let isTemplate = props.mode == InstanceConfigMode.Template;
+	let isBaseTemplate = props.mode == InstanceConfigMode.GlobalTemplate;
 
 	let id = isInstance
 		? params.instanceId
-		: isBaseProfile
-			? "Base Profile"
-			: params.profileId;
+		: isBaseTemplate
+			? "Base Template"
+			: params.TemplateID;
 
 	onMount(() =>
 		loadPagePlugins(
 			isInstance
 				? "instance_config"
-				: isProfile
-					? "profile_config"
-					: "base_profile_config",
+				: isTemplate
+					? "template_config"
+					: "base_template_config",
 			id
 		)
 	);
@@ -97,14 +97,14 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 			selectedItem: props.creating ? "" : undefined,
 			mode: isInstance
 				? FooterMode.SaveInstanceConfig
-				: FooterMode.SaveProfileConfig,
+				: FooterMode.SaveTemplateConfig,
 			action: saveConfig,
 		});
 
 		try {
 			await invoke("set_last_opened_instance", {
 				id: id,
-				instanceOrProfile: props.mode,
+				instanceOrTemplate: props.mode,
 			});
 		} catch (e) { }
 	});
@@ -115,7 +115,7 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 		if (props.creating) {
 			return undefined;
 		}
-		// Get the instance or profile
+		// Get the instance or template
 		try {
 			let configuration = await readEditableInstanceConfig(id, props.mode);
 			setFrom(canonicalizeListOrSingle(configuration.from));
@@ -129,7 +129,7 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 	let [parentConfigs, parentConfigOperations] = createResource(
 		() => from(),
 		async () => {
-			return await getParentProfiles(from(), props.mode);
+			return await getParentTemplates(from(), props.mode);
 		},
 		{ initialValue: [] }
 	);
@@ -159,9 +159,9 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 		return [undefined as string | undefined].concat(loaders);
 	});
 
-	// Available profiles to derive from
-	let [profiles, ___] = createResource(async () => {
-		return (await invoke("get_profiles")) as InstanceInfo[];
+	// Available templates to derive from
+	let [templates, ___] = createResource(async () => {
+		return (await invoke("get_templates")) as InstanceInfo[];
 	});
 
 	let [tab, setTab] = createSignal("general");
@@ -208,7 +208,7 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 
 	let [displayName, setDisplayName] = createSignal("");
 	let message = () =>
-		isInstance ? `INSTANCE` : isBaseProfile ? "BASE PROFILE" : `PROFILE`;
+		isInstance ? `INSTANCE` : isBaseTemplate ? "BASE TEMPLATE" : `TEMPLATE`;
 
 	let derivedPackages = createMemo(() => {
 		return getDerivedPackages(parentConfigs());
@@ -313,7 +313,7 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 	async function saveConfig() {
 		let configId = props.creating ? newId() : id;
 
-		if (!isBaseProfile && configId == undefined) {
+		if (!isBaseTemplate && configId == undefined) {
 			inputError("id");
 			return;
 		} else {
@@ -470,7 +470,7 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 				selectedItem: undefined,
 				mode: isInstance
 					? FooterMode.SaveInstanceConfig
-					: FooterMode.SaveProfileConfig,
+					: FooterMode.SaveTemplateConfig,
 				action: saveConfig,
 			});
 
@@ -487,7 +487,7 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 		}
 	}
 
-	let createMessage = isInstance ? "INSTANCE" : "PROFILE";
+	let createMessage = isInstance ? "INSTANCE" : "TEMPLATE";
 
 	// Highlights the save button when config changes
 	function setDirty() {
@@ -495,7 +495,7 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 			selectedItem: "",
 			mode: isInstance
 				? FooterMode.SaveInstanceConfig
-				: FooterMode.SaveProfileConfig,
+				: FooterMode.SaveTemplateConfig,
 			action: saveConfig,
 		});
 	}
@@ -549,25 +549,25 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 			<DisplayShow when={tab() == "general"}>
 				<div class="fields">
 					{/* <h3>Basic Settings</h3> */}
-					<Show when={!isBaseProfile}>
+					<Show when={!isBaseTemplate}>
 						<div class="cont start label">
 							<label for="from">INHERIT CONFIG</label>
 						</div>
 						<Tip
-							tip="A list of profiles to inherit configuration from"
+							tip="A list of templates to inherit configuration from"
 							fullwidth
 						>
 							<Dropdown
 								options={
-									profiles() == undefined
+									templates() == undefined
 										? []
-										: profiles()!.map((x) => {
+										: templates()!.map((x) => {
 											return {
 												value: x.id,
 												contents: (
 													<div>{x.name == undefined ? x.id : x.name}</div>
 												),
-												color: "var(--profile)",
+												color: "var(--template)",
 											};
 										})
 								}
@@ -581,7 +581,7 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 							/>
 						</Tip>
 					</Show>
-					<Show when={!isBaseProfile}>
+					<Show when={!isBaseTemplate}>
 						<label for="name" class="label">
 							DISPLAY NAME
 						</label>
@@ -657,7 +657,7 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 							></input>
 						</Tip>
 					</Show>
-					<Show when={props.creating && !isBaseProfile}>
+					<Show when={props.creating && !isBaseTemplate}>
 						<label for="id" class="label">{`${createMessage} ID`}</label>
 						<Tip tip="A unique name used to identify the instance" fullwidth>
 							<input
@@ -684,7 +684,7 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 							></input>
 						</Tip>
 					</Show>
-					<Show when={!isBaseProfile}>
+					<Show when={!isBaseTemplate}>
 						<div class="cont start">
 							<label for="side" class="label">
 								ICON
@@ -705,7 +705,7 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 						/>
 					</Show>
 					<hr />
-					<Show when={props.creating || isProfile || isBaseProfile}>
+					<Show when={props.creating || isTemplate || isBaseTemplate}>
 						<div class="cont start">
 							<label for="side" class="label">
 								TYPE
@@ -736,7 +736,7 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 									{
 										value: "server",
 										contents: <div class="cont"><Icon icon={Server} size="1rem" /> Server</div>,
-										color: "var(--profile)",
+										color: "var(--template)",
 									},
 								]}
 								columns={isInstance ? 2 : 3}
@@ -799,12 +799,12 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 					</Show>
 					<Show
 						when={
-							(side() == "client" || isProfile) &&
+							(side() == "client" || isTemplate) &&
 							supportedLoaders() != undefined
 						}
 					>
 						<div class="cont start label">
-							<label for="client-type">{`${isProfile ? "CLIENT " : ""
+							<label for="client-type">{`${isTemplate ? "CLIENT " : ""
 								}LOADER`}</label>
 							<DeriveIndicator
 								parentConfigs={parentConfigs()}
@@ -857,7 +857,7 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 											),
 											color: getLoaderColor(x as Loader),
 											tip:
-												x == undefined ? "Inherit from the profile" : undefined,
+												x == undefined ? "Inherit from the template" : undefined,
 										};
 									})}
 								columns={3}
@@ -868,12 +868,12 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 					</Show>
 					<Show
 						when={
-							(side() == "server" || isProfile) &&
+							(side() == "server" || isTemplate) &&
 							supportedLoaders() != undefined
 						}
 					>
 						<div class="cont start label">
-							<label for="server-type">{`${isProfile ? "SERVER " : ""
+							<label for="server-type">{`${isTemplate ? "SERVER " : ""
 								}LOADER`}</label>
 							<DeriveIndicator
 								parentConfigs={parentConfigs()}
@@ -926,7 +926,7 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 											),
 											color: getLoaderColor(x as Loader),
 											tip:
-												x == undefined ? "Inherit from the profile" : undefined,
+												x == undefined ? "Inherit from the template" : undefined,
 										};
 									})}
 								columns={3}
@@ -946,11 +946,11 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 					>
 						<div class="cont start label">
 							<label for="client-loader-version">
-								{isProfile ? "CLIENT LOADER VERSION" : "LOADER VERSION"}
+								{isTemplate ? "CLIENT LOADER VERSION" : "LOADER VERSION"}
 							</label>
 						</div>
 						<Tip
-							tip={`The version for the${isProfile ? " client" : ""
+							tip={`The version for the${isTemplate ? " client" : ""
 								} loader. Leave empty to select the best version automatically.`}
 							fullwidth
 						>
@@ -977,11 +977,11 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 					>
 						<div class="cont start label">
 							<label for="server-loader-version">
-								{isProfile ? "SERVER LOADER VERSION" : "LOADER VERSION"}
+								{isTemplate ? "SERVER LOADER VERSION" : "LOADER VERSION"}
 							</label>
 						</div>
 						<Tip
-							tip={`The version for the${isProfile ? " server" : ""
+							tip={`The version for the${isTemplate ? " server" : ""
 								} loader. Leave empty to select the best version automatically.`}
 							fullwidth
 						>
@@ -1015,7 +1015,7 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 							type="text"
 							id="datapack-folder"
 							name="datapack-folder"
-							class="profile-placeholder"
+							class="template-placeholder"
 							value={emptyUndefined(datapackFolder())}
 							onChange={(e) => {
 								setDatapackFolder(e.target.value);
@@ -1035,7 +1035,7 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 			<DisplayShow when={tab() == "packages"}>
 				<PackagesConfig
 					id={id}
-					isProfile={isProfile}
+					isTemplate={isTemplate}
 					globalPackages={globalPackages()}
 					clientPackages={clientPackages()}
 					serverPackages={serverPackages()}
@@ -1149,7 +1149,7 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 
 export interface InstanceConfigProps {
 	mode: InstanceConfigMode;
-	/* Whether we are creating a new instance or profile */
+	/* Whether we are creating a new instance or template */
 	creating: boolean;
 	setFooterData: (data: FooterData) => void;
 }
@@ -1169,7 +1169,7 @@ export function sanitizeInstanceId(id: string): string {
 	return id;
 }
 
-// Checks if an instance or profile ID exists already
+// Checks if an instance or template ID exists already
 async function idExists(
 	id: string,
 	mode: InstanceConfigMode

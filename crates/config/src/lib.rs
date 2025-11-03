@@ -6,9 +6,9 @@
 use std::{collections::HashMap, sync::Arc};
 
 use instance::InstanceConfig;
-use nitro_shared::id::{InstanceID, ProfileID};
+use nitro_shared::id::{InstanceID, TemplateID};
 use preferences::PrefDeser;
-use profile::ProfileConfig;
+use template::TemplateConfig;
 #[cfg(feature = "schema")]
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -20,8 +20,8 @@ pub mod instance;
 pub mod package;
 /// Global preferences configuration
 pub mod preferences;
-/// Profile configuration
-pub mod profile;
+/// Template configuration
+pub mod template;
 /// User configuration
 pub mod user;
 
@@ -38,11 +38,12 @@ pub struct ConfigDeser {
 	pub instances: HashMap<InstanceID, InstanceConfig>,
 	/// The list of configured instance groups
 	pub instance_groups: HashMap<Arc<str>, Vec<InstanceID>>,
-	/// The list of configured profiles
-	pub profiles: HashMap<ProfileID, ProfileConfig>,
-	/// The base profile
-	#[serde(alias = "base_profile")]
-	pub base_profile: Option<ProfileConfig>,
+	/// The list of configured templates
+	#[serde(alias = "profiles")]
+	pub templates: HashMap<TemplateID, TemplateConfig>,
+	/// The base template
+	#[serde(alias = "global_profile")]
+	pub base_template: Option<TemplateConfig>,
 	/// The global preferences
 	pub preferences: PrefDeser,
 }

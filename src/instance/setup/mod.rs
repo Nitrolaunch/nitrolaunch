@@ -124,7 +124,7 @@ impl Instance {
 			desired_loader_version: self.config.loader_version.clone(),
 			config: self
 				.config
-				.original_config_with_profiles_and_plugins
+				.original_config_with_templates_and_plugins
 				.clone(),
 			internal_dir: paths.internal.to_string_lossy().to_string(),
 			update_depth,
@@ -324,7 +324,7 @@ impl Instance {
 		Ok(inst)
 	}
 
-	/// Removes files such as the game jar for when the profile version changes
+	/// Removes files such as the game jar for when the template version changes
 	pub fn teardown(&mut self, paths: &Paths) -> anyhow::Result<()> {
 		self.ensure_dirs(paths)?;
 		match self.kind {

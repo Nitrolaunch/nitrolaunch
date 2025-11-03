@@ -112,7 +112,7 @@ export default function PackageFilters(props: PackageFiltersProps) {
 						class={`cont package-filter-tab ${tab() == "categories" ? "selected" : ""
 							}`}
 						onclick={() => setTab("categories")}
-						style="color:var(--profile)"
+						style="color:var(--template)"
 					>
 						<Icon icon={Tag} size="0.8rem" />
 						Category
@@ -123,7 +123,7 @@ export default function PackageFilters(props: PackageFiltersProps) {
 						class={`cont package-filter-tab ${tab() == "stability" ? "selected" : ""
 							}`}
 						onclick={() => setTab("stability")}
-						style="color:var(--profile)"
+						style="color:var(--template)"
 					>
 						<Icon icon={Lock} size="0.8rem" />
 						Stability
@@ -257,7 +257,7 @@ export default function PackageFilters(props: PackageFiltersProps) {
 													</div>
 												</div>
 											),
-											color: "var(--profile)",
+											color: "var(--template)",
 										};
 									})}
 								connected={false}
@@ -286,7 +286,7 @@ export default function PackageFilters(props: PackageFiltersProps) {
 													text={packageCategoryDisplayName(category)}
 												/>
 											),
-											color: "var(--profile)",
+											color: "var(--template)",
 										};
 									})}
 								selected={props.categories}

@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use anyhow::bail;
-use nitro_shared::id::ProfileID;
+use nitro_shared::id::TemplateID;
 use nitro_shared::Side;
 #[cfg(feature = "schema")]
 use schemars::JsonSchema;
@@ -10,23 +10,23 @@ use serde::{Deserialize, Serialize};
 use super::instance::InstanceConfig;
 use super::package::PackageConfigDeser;
 
-/// Configuration for a profile
+/// Configuration for a template
 #[derive(Deserialize, Serialize, Clone, Default)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
-pub struct ProfileConfig {
+pub struct TemplateConfig {
 	/// The configuration for the instance
 	#[serde(flatten)]
 	pub instance: InstanceConfig,
 	/// Loader configuration
 	#[serde(default)]
-	pub loader: ProfileLoaderConfiguration,
+	pub loader: TemplateLoaderConfiguration,
 	/// Package configuration
 	#[serde(default)]
-	pub packages: ProfilePackageConfiguration,
+	pub packages: TemplatePackageConfiguration,
 }
 
-impl ProfileConfig {
-	/// Merge this profile with another one
+impl TemplateConfig {
+	/// Merge this template with another one
 	pub fn merge(&mut self, other: Self) {
 		self.instance.merge(other.instance);
 		self.loader.merge(&other.loader);
@@ -34,11 +34,11 @@ impl ProfileConfig {
 	}
 }
 
-/// Different representations of loader configuration on a profile
+/// Different representations of loader configuration on a template
 #[derive(Deserialize, Serialize, Debug, Clone)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[serde(untagged)]
-pub enum ProfileLoaderConfiguration {
+pub enum TemplateLoaderConfiguration {
 	/// Same loader for client and server
 	Simple(Option<String>),
 	/// Full configuration
@@ -50,13 +50,13 @@ pub enum ProfileLoaderConfiguration {
 	},
 }
 
-impl Default for ProfileLoaderConfiguration {
+impl Default for TemplateLoaderConfiguration {
 	fn default() -> Self {
 		Self::Simple(None)
 	}
 }
 
-impl ProfileLoaderConfiguration {
+impl TemplateLoaderConfiguration {
 	/// Gets the client side of this configuration
 	pub fn client(&self) -> Option<&String> {
 		match self {
@@ -87,11 +87,11 @@ impl ProfileLoaderConfiguration {
 	}
 }
 
-/// Different representations of package configuration on a profile
+/// Different representations of package configuration on a template
 #[derive(Deserialize, Serialize, Debug, Clone)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[serde(untagged)]
-pub enum ProfilePackageConfiguration {
+pub enum TemplatePackageConfiguration {
 	/// Is just a list of packages for every instance
 	Simple(Vec<PackageConfigDeser>),
 	/// Full configuration
@@ -108,14 +108,14 @@ pub enum ProfilePackageConfiguration {
 	},
 }
 
-impl Default for ProfilePackageConfiguration {
+impl Default for TemplatePackageConfiguration {
 	fn default() -> Self {
 		Self::Simple(Vec::new())
 	}
 }
 
-impl ProfilePackageConfiguration {
-	/// Merge this configuration with one from another profile, with right taking precedence
+impl TemplatePackageConfiguration {
+	/// Merge this configuration with one from another template, with right taking precedence
 	pub fn merge(&mut self, other: Self) {
 		match (&mut *self, other) {
 			(Self::Simple(left), Self::Simple(right)) => {
@@ -249,42 +249,42 @@ impl ProfilePackageConfiguration {
 	}
 }
 
-/// Consolidates profile configs into the full profiles
-pub fn consolidate_profile_configs(
-	profiles: HashMap<ProfileID, ProfileConfig>,
-	base_profile: Option<&ProfileConfig>,
-) -> anyhow::Result<HashMap<ProfileID, ProfileConfig>> {
-	let mut out: HashMap<_, ProfileConfig> = HashMap::with_capacity(profiles.len());
+/// Consolidates template configs into the full templates
+pub fn consolidate_template_configs(
+	templates: HashMap<TemplateID, TemplateConfig>,
+	base_template: Option<&TemplateConfig>,
+) -> anyhow::Result<HashMap<TemplateID, TemplateConfig>> {
+	let mut out: HashMap<_, TemplateConfig> = HashMap::with_capacity(templates.len());
 
 	let max_iterations = 10000;
 
-	// We do this by repeatedly finding a profile with an already resolved ancenstor
+	// We do this by repeatedly finding a template with an already resolved ancenstor
 	let mut i = 0;
-	while out.len() != profiles.len() {
-		for (id, profile) in &profiles {
-			// Don't redo profiles that are already done
+	while out.len() != templates.len() {
+		for (id, template) in &templates {
+			// Don't redo templates that are already done
 			if out.contains_key(id) {
 				continue;
 			}
 
-			if profile.instance.common.from.is_empty() {
-				// Profiles with no ancestor can just be added directly to the output, after deriving from the base profile
-				let mut profile = profile.clone();
-				if let Some(base_profile) = base_profile {
-					let overlay = profile;
-					profile = base_profile.clone();
-					profile.merge(overlay);
+			if template.instance.common.from.is_empty() {
+				// Templates with no ancestor can just be added directly to the output, after deriving from the base template
+				let mut template = template.clone();
+				if let Some(base_template) = base_template {
+					let overlay = template;
+					template = base_template.clone();
+					template.merge(overlay);
 				}
-				out.insert(id.clone(), profile);
+				out.insert(id.clone(), template);
 			} else {
-				for parent in profile.instance.common.from.iter() {
+				for parent in template.instance.common.from.iter() {
 					// If the parent is already in the map (already consolidated) then we can derive from it and add to the map
-					if let Some(parent) = out.get(&ProfileID::from(parent.clone())) {
+					if let Some(parent) = out.get(&TemplateID::from(parent.clone())) {
 						let mut new = parent.clone();
-						new.merge(profile.clone());
+						new.merge(template.clone());
 						out.insert(id.clone(), new);
 					} else {
-						bail!("Parent profile '{parent}' does not exist");
+						bail!("Parent template '{parent}' does not exist");
 					}
 				}
 			}
@@ -293,7 +293,7 @@ pub fn consolidate_profile_configs(
 		i += 1;
 		if i > max_iterations {
 			panic!(
-				"Max iterations exceeded while resolving profiles. This is a bug in Nitrolaunch."
+				"Max iterations exceeded while resolving templates. This is a bug in Nitrolaunch."
 			);
 		}
 	}

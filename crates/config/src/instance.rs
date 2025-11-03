@@ -62,7 +62,7 @@ impl InstanceConfig {
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[serde(default)]
 pub struct CommonInstanceConfig {
-	/// A profile to use
+	/// One or more templates to use
 	#[serde(skip_serializing_if = "DeserListOrSingle::is_empty")]
 	pub from: DeserListOrSingle<String>,
 	/// The Minecraft version

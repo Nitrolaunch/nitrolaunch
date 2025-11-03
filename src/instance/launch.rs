@@ -71,7 +71,7 @@ impl Instance {
 			version_info: manager.version_info.get_clone(),
 			config: self
 				.config
-				.original_config_with_profiles_and_plugins
+				.original_config_with_templates_and_plugins
 				.clone(),
 			pid: None,
 			stdout_path: None,

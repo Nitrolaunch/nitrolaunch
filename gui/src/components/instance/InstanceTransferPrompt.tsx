@@ -1,6 +1,6 @@
 import { createResource, createSignal, Match, Show, Switch } from "solid-js";
 import { invoke } from "@tauri-apps/api";
-import "./ProfileDeletePrompt.css";
+import "./TemplateDeletePrompt.css";
 import InlineSelect from "../input/select/InlineSelect";
 import { Delete, Download, Popout } from "../../icons";
 import { errorToast, successToast } from "../dialog/Toasts";

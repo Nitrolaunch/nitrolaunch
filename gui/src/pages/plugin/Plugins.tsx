@@ -300,7 +300,7 @@ function getPluginIcon(plugin: string) {
 			return Honeycomb;
 		} else if (plugin == "options") {
 			return Gear;
-		} else if (plugin == "profile_share") {
+		} else if (plugin == "template_share") {
 			return Popout;
 		} else if (plugin == "server_restart") {
 			return Refresh;

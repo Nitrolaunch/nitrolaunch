@@ -3,7 +3,7 @@ import { PackageCategory, PackageType } from "./package";
 
 export type Side = "client" | "server";
 export type InstanceIcon = string;
-export type InstanceOrProfile = "instance" | "profile";
+export type InstanceOrTemplate = "instance" | "template";
 
 export interface InstanceInfo {
 	id: string;

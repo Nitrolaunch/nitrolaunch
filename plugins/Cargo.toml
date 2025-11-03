@@ -95,8 +95,8 @@ name = "nitro_plugin_paper"
 path = "plugins/paper/main.rs"
 
 [[bin]]
-name = "nitro_plugin_profile_share"
-path = "plugins/profile_share/main.rs"
+name = "nitro_plugin_template_share"
+path = "plugins/template_share/main.rs"
 
 [[bin]]
 name = "nitro_plugin_smithed"

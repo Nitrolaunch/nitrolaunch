@@ -1,7 +1,7 @@
 # Options
 ID: `options`
 
-The Options plugin adds the ability to define options for your game in your configuration, and share them across instances and profiles in a backwards-compatible way. The options are agnostic to the Minecraft version and automatically converted to the correct format. 
+The Options plugin adds the ability to define options for your game in your configuration, and share them across instances and templates in a backwards-compatible way. The options are agnostic to the Minecraft version and automatically converted to the correct format. 
 
 ## Usage
 Global options for all instances are supplied in a JSON format in the file `options.json` in your config directory. This file may not exist so you might have to create it yourself.
@@ -19,7 +19,7 @@ Format:
 
 Options that you do not change will not be changed in the output file. Options that Nitrolaunch does not know about will not be touched either.
 
-Options can also be overrided on a per-instance or per-profile basis inside the `options` field on that profile or instance. For instances, just specify the options for the side the instance is on (client / server). For profiles, you can also specify the options for both clients and servers that derive from that profile.
+Options can also be overrided on a per-instance or per-template basis inside the `options` field on that template or instance. For instances, just specify the options for the side the instance is on (client / server). For templates, you can also specify the options for both clients and servers that derive from that template.
 
 A description will not be provided for every option as they mirror the options in-game and inside the server.properties and should be somewhat self-explanatory. Any options that need an explanation will have a note at the bottom.
 

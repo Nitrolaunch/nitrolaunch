@@ -71,10 +71,10 @@ export default function App() {
 					)}
 				/>
 				<Route
-					path="/profile_config/:profileId"
+					path="/template_config/:TemplateID"
 					component={() => (
 						<InstanceConfig
-							mode={InstanceConfigMode.Profile}
+							mode={InstanceConfigMode.Template}
 							creating={false}
 							setFooterData={setFooterData}
 						/>
@@ -91,20 +91,20 @@ export default function App() {
 					)}
 				/>
 				<Route
-					path="/create_profile"
+					path="/create_template"
 					component={() => (
 						<InstanceConfig
-							mode={InstanceConfigMode.Profile}
+							mode={InstanceConfigMode.Template}
 							creating={true}
 							setFooterData={setFooterData}
 						/>
 					)}
 				/>
 				<Route
-					path="/base_profile_config"
+					path="/base_template_config"
 					component={() => (
 						<InstanceConfig
-							mode={InstanceConfigMode.GlobalProfile}
+							mode={InstanceConfigMode.GlobalTemplate}
 							creating={false}
 							setFooterData={setFooterData}
 						/>
@@ -202,7 +202,7 @@ export interface FooterData {
 	selectedItem?: string;
 	mode: FooterMode;
 	action: () => void;
-	// Whether a selected instance or profile was created by a plugin
+	// Whether a selected instance or template was created by a plugin
 	fromPlugin?: boolean;
 	selectedPackageGallery?: string[];
 }

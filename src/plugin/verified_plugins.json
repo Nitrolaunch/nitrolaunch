@@ -123,14 +123,14 @@
 		"name": "Smithed",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
-		"description": "Install Smithed packs on profiles and instances"
+		"description": "Install Smithed packs on templates and instances"
 	},
 	"modrinth": {
 		"id": "modrinth",
 		"name": "Modrinth",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
-		"description": "Install Modrinth projects on profiles and instances"
+		"description": "Install Modrinth projects on templates and instances"
 	},
 	"weld": {
 		"id": "weld",
@@ -174,12 +174,12 @@
 		"github_repo": "plugins",
 		"description": "Uses BetterJSONs versions for improved compatability"
 	},
-	"profile_share": {
-		"id": "profile_share",
-		"name": "Profile Share",
+	"template_share": {
+		"id": "template_share",
+		"name": "Template Share",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
-		"description": "Easily share profiles with friends"
+		"description": "Easily share templates with friends"
 	},
 	"multiply": {
 		"id": "multiply",

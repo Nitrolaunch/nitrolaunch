@@ -8,12 +8,12 @@ use crate::io::paths::Paths;
 use anyhow::{bail, ensure, Context};
 use nitro_config::instance::{is_valid_instance_id, InstanceConfig, LaunchConfig, LaunchMemory};
 use nitro_config::package::PackageConfigDeser;
-use nitro_config::profile::{ProfileConfig, ProfileLoaderConfiguration};
+use nitro_config::template::{TemplateConfig, TemplateLoaderConfiguration};
 use nitro_core::io::java::args::MemoryNum;
 use nitro_core::io::java::install::JavaInstallationKind;
 use nitro_pkg::{PkgRequest, PkgRequestSource};
 use nitro_plugin::hooks::{ModifyInstanceConfig, ModifyInstanceConfigArgument};
-use nitro_shared::id::{InstanceID, ProfileID};
+use nitro_shared::id::{InstanceID, TemplateID};
 use nitro_shared::loaders::Loader;
 use nitro_shared::output::NitroOutput;
 use nitro_shared::versions::parse_versioned_string;
@@ -25,7 +25,7 @@ use crate::plugin::PluginManager;
 pub async fn read_instance_config(
 	id: InstanceID,
 	mut config: InstanceConfig,
-	profiles: &HashMap<ProfileID, ProfileConfig>,
+	templates: &HashMap<TemplateID, TemplateConfig>,
 	plugins: &PluginManager,
 	paths: &Paths,
 	o: &mut impl NitroOutput,
@@ -34,36 +34,36 @@ pub async fn read_instance_config(
 		bail!("Invalid instance ID '{}'", id.to_string());
 	}
 
-	// Get the parent profile if it is specified
-	let profiles: anyhow::Result<Vec<_>> = config
+	// Get the parent template if it is specified
+	let templates: anyhow::Result<Vec<_>> = config
 		.common
 		.from
 		.iter()
 		.map(|x| {
-			profiles
-				.get(&ProfileID::from(x.clone()))
-				.with_context(|| format!("Derived profile '{x}' does not exist"))
+			templates
+				.get(&TemplateID::from(x.clone()))
+				.with_context(|| format!("Derived template '{x}' does not exist"))
 		})
 		.collect();
-	let profiles = profiles?;
+	let templates = templates?;
 
 	let original_config = config.clone();
 
-	// Merge with the profile
-	for profile in &profiles {
-		let mut profile_config = profile.instance.clone();
-		profile_config.merge(config);
-		config = profile_config;
+	// Merge with the template
+	for template in &templates {
+		let mut template_config = template.instance.clone();
+		template_config.merge(config);
+		config = template_config;
 	}
 
-	let mut original_config_with_profiles = config.clone();
+	let mut original_config_with_templates = config.clone();
 
 	let side = config.side.context("Instance type was not specified")?;
 
 	// Consolidate all of the package configs into the instance package config list
-	let packages = consolidate_package_configs(&profiles, &config, side);
+	let packages = consolidate_package_configs(&templates, &config, side);
 
-	original_config_with_profiles.common.packages = packages.clone();
+	original_config_with_templates.common.packages = packages.clone();
 
 	let read_packages = packages
 		.clone()
@@ -72,11 +72,11 @@ pub async fn read_instance_config(
 		.collect();
 
 	// Loader
-	let profile_loaders =
-		profiles
+	let template_loaders =
+		templates
 			.iter()
-			.fold(ProfileLoaderConfiguration::default(), |mut acc, profile| {
-				acc.merge(&profile.loader);
+			.fold(TemplateLoaderConfiguration::default(), |mut acc, template| {
+				acc.merge(&template.loader);
 				acc
 			});
 
@@ -85,15 +85,15 @@ pub async fn read_instance_config(
 			.common
 			.loader
 			.clone()
-			.or(profile_loaders.client().cloned()),
+			.or(template_loaders.client().cloned()),
 		Side::Server => config
 			.common
 			.loader
 			.clone()
-			.or(profile_loaders.server().cloned()),
+			.or(template_loaders.server().cloned()),
 	};
 
-	original_config_with_profiles.common.loader = loader.clone();
+	original_config_with_templates.common.loader = loader.clone();
 
 	// Apply plugins
 	let arg = ModifyInstanceConfigArgument {
@@ -108,9 +108,9 @@ pub async fn read_instance_config(
 		config.merge(result.config);
 	}
 
-	let mut original_config_with_profiles_and_plugins = config.clone();
-	original_config_with_profiles_and_plugins.common.loader = loader.clone();
-	original_config_with_profiles_and_plugins.common.packages = packages.clone();
+	let mut original_config_with_templates_and_plugins = config.clone();
+	original_config_with_templates_and_plugins.common.loader = loader.clone();
+	original_config_with_templates_and_plugins.common.packages = packages.clone();
 
 	let kind = match side {
 		Side::Client => InstKind::client(config.window),
@@ -144,8 +144,8 @@ pub async fn read_instance_config(
 		package_overrides: config.common.overrides,
 		game_dir: config.common.game_dir.map(PathBuf::from),
 		original_config,
-		original_config_with_profiles,
-		original_config_with_profiles_and_plugins,
+		original_config_with_templates,
+		original_config_with_templates_and_plugins,
 		plugin_config: config.common.plugin_config,
 	};
 
@@ -187,26 +187,24 @@ pub fn launch_config_to_options(config: LaunchConfig) -> anyhow::Result<LaunchOp
 	})
 }
 
-/// Combines all of the package configs from global, profile, and instance together into
+/// Combines all of the package configs from global, template, and instance together into
 /// the configurations for just one instance
 pub fn consolidate_package_configs(
-	profiles: &[&ProfileConfig],
+	templates: &[&TemplateConfig],
 	instance: &InstanceConfig,
 	side: Side,
 ) -> Vec<PackageConfigDeser> {
 	// We use a map so that we can override packages from more general sources
 	// with those from more specific ones
 	let mut map = HashMap::new();
-	for profile in profiles {
-		for pkg in profile.packages.iter_global() {
-			// let pkg = read_package_config(pkg.clone(), stability, PackageConfigSource::Instance);
+	for template in templates {
+		for pkg in template.packages.iter_global() {
 			map.insert(
 				PkgRequest::parse(pkg.get_pkg_id(), PkgRequestSource::UserRequire).id,
 				pkg.clone(),
 			);
 		}
-		for pkg in profile.packages.iter_side(side) {
-			// let pkg = read_package_config(pkg.clone(), stability, PackageConfigSource::Profile);
+		for pkg in template.packages.iter_side(side) {
 			map.insert(
 				PkgRequest::parse(pkg.get_pkg_id(), PkgRequestSource::UserRequire).id,
 				pkg.clone(),
@@ -214,7 +212,6 @@ pub fn consolidate_package_configs(
 		}
 	}
 	for pkg in &instance.common.packages {
-		// let pkg = read_package_config(pkg.clone(), stability, PackageConfigSource::Instance);
 		map.insert(
 			PkgRequest::parse(pkg.get_pkg_id(), PkgRequestSource::UserRequire).id,
 			pkg.clone(),

@@ -1,7 +1,7 @@
 .derive-indicator {
 	justify-content: flex-start;
 
-	color: var(--profile);
+	color: var(--template);
 	font-weight: bold;
 	font-size: 0.8rem;
 

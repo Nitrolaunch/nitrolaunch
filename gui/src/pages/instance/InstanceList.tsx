@@ -13,7 +13,7 @@ import { dropdownButtonToOption, getDropdownButtons, loadPagePlugins, runDropdow
 import { FooterData } from "../../App";
 import { FooterMode } from "../../components/navigation/Footer";
 import { getInstanceIconSrc } from "../../utils";
-import { GroupInfo, InstanceInfo, InstanceMap } from "../../types";
+import { GroupInfo, InstanceInfo, InstanceMap, InstanceOrTemplate } from "../../types";
 import { errorToast } from "../../components/dialog/Toasts";
 import { invoke } from "@tauri-apps/api";
 import IconButton from "../../components/input/button/IconButton";
@@ -48,7 +48,7 @@ export default function InstanceList(props: InstanceListProps) {
 	onMount(() => loadPagePlugins("instances"));
 
 	const [instances, setInstances] = createSignal<InstanceInfo[]>([]);
-	const [profiles, setProfiles] = createSignal<InstanceInfo[]>([]);
+	const [templates, setTemplates] = createSignal<InstanceInfo[]>([]);
 	const [pinned, setPinned] = createSignal<InstanceInfo[]>([]);
 	const [groups, setGroups] = createSignal<GroupSectionData[]>([]);
 	const [selectedItem, setSelectedItem] = createSignal<
@@ -57,8 +57,8 @@ export default function InstanceList(props: InstanceListProps) {
 	const [selectedSection, setSelectedSection] = createSignal<string | null>(
 		null
 	);
-	const [instancesOrProfiles, setInstancesOrProfiles] = createSignal<
-		"instance" | "profile"
+	const [instancesOrTemplates, setInstancesOrTemplates] = createSignal<
+		"instance" | "template"
 	>("instance");
 
 	let [importPromptVisible, setImportPromptVisible] = createSignal(false);
@@ -66,12 +66,12 @@ export default function InstanceList(props: InstanceListProps) {
 
 	async function updateItems() {
 		let instances: InstanceInfo[] = [];
-		let profiles: InstanceInfo[] = [];
+		let templates: InstanceInfo[] = [];
 		let groups: GroupInfo[] = [];
 		try {
-			[instances, profiles, groups] = (await Promise.all([
+			[instances, templates, groups] = (await Promise.all([
 				invoke("get_instances"),
-				invoke("get_profiles"),
+				invoke("get_templates"),
 				invoke("get_instance_groups"),
 			])) as [InstanceInfo[], InstanceInfo[], GroupInfo[]];
 		} catch (e) {
@@ -90,11 +90,11 @@ export default function InstanceList(props: InstanceListProps) {
 		setPinned(newPinned);
 		setInstances(instances);
 
-		let profileMap: InstanceMap = {};
-		for (let profile of profiles) {
-			profileMap[profile.id] = profile;
+		let templateMap: InstanceMap = {};
+		for (let template of templates) {
+			templateMap[template.id] = template;
 		}
-		setProfiles(profiles);
+		setTemplates(templates);
 
 		// Create groups
 		let newGroups: GroupSectionData[] = [];
@@ -143,7 +143,7 @@ export default function InstanceList(props: InstanceListProps) {
 	});
 
 	let [dropdownButtons, _] = createResource(async () => {
-		return getDropdownButtons("add_profile_or_instance")
+		return getDropdownButtons("add_template_or_instance")
 	}, { initialValue: [] });
 
 	return (
@@ -163,9 +163,9 @@ export default function InstanceList(props: InstanceListProps) {
 											),
 										},
 										{
-											value: "create_profile",
+											value: "create_template",
 											contents: (
-												<IconAndText icon={Properties} text="Create Profile" />
+												<IconAndText icon={Properties} text="Create Template" />
 											),
 										},
 										{
@@ -185,8 +185,8 @@ export default function InstanceList(props: InstanceListProps) {
 									onChange={(selection) => {
 										if (selection == "create_instance") {
 											navigate("create_instance");
-										} else if (selection == "create_profile") {
-											navigate("create_profile");
+										} else if (selection == "create_template") {
+											navigate("create_template");
 										} else if (selection == "import_instance") {
 											setImportPromptVisible(true);
 										} else if (selection == "migrate_instances") {
@@ -204,10 +204,10 @@ export default function InstanceList(props: InstanceListProps) {
 						</div>
 						<div class="cont">
 							<div
-								class={`cont instance-list-header-item bubble-hover instances ${instancesOrProfiles() == "instance" ? "selected" : ""
+								class={`cont instance-list-header-item bubble-hover instances ${instancesOrTemplates() == "instance" ? "selected" : ""
 									}`}
 								onclick={() => {
-									setInstancesOrProfiles("instance");
+									setInstancesOrTemplates("instance");
 								}}
 							>
 								<Icon icon={Honeycomb} size="1rem" />
@@ -216,21 +216,21 @@ export default function InstanceList(props: InstanceListProps) {
 						</div>
 						<div class="cont end" style="padding-right:0.5rem">
 							<div
-								class={`cont instance-list-header-item bubble-hover profiles ${instancesOrProfiles() == "profile" ? "selected" : ""
+								class={`cont instance-list-header-item bubble-hover templatess ${instancesOrTemplates() == "template" ? "selected" : ""
 									}`}
 								onclick={() => {
-									setInstancesOrProfiles("profile");
+									setInstancesOrTemplates("template");
 								}}
 							>
 								<Icon icon={Diagram} size="1rem" />
-								Profiles
+								Templates
 							</div>
 						</div>
 					</div>
 				</div>
 				<br />
 				<Switch>
-					<Match when={instancesOrProfiles() == "instance"}>
+					<Match when={instancesOrTemplates() == "instance"}>
 						<Show when={pinned().length > 0}>
 							<Section
 								id="pinned"
@@ -271,28 +271,28 @@ export default function InstanceList(props: InstanceListProps) {
 							itemType="instance"
 						/>
 					</Match>
-					<Match when={instancesOrProfiles() == "profile"}>
-						<div class="cont start fullwidth" id="instance-list-profiles-header">
+					<Match when={instancesOrTemplates() == "template"}>
+						<div class="cont start fullwidth" id="instance-list-templates-header">
 							<IconTextButton
 								icon={Globe}
-								text="Edit Base Profile"
+								text="Edit Base Template"
 								size="1.5rem"
 								onClick={() => {
-									navigate("/base_profile_config");
+									navigate("/base_template_config");
 								}}
 							/>
 						</div>
 						<div></div>
 						<Section
-							id="profiles"
-							kind="profiles"
-							header="ALL PROFILES"
-							items={profiles()}
+							id="templates"
+							kind="templates"
+							header="ALL TEMPLATES"
+							items={templates()}
 							selectedItem={selectedItem()}
 							selectedSection={selectedSection()}
 							onSelectItem={onSelect}
 							updateList={updateItems}
-							itemType="profile"
+							itemType="template"
 						/>
 					</Match>
 				</Switch>
@@ -314,7 +314,7 @@ function Section(props: SectionProps) {
 
 	const HeaderIcon = () => (
 		<Switch>
-			<Match when={props.kind == "all" || props.kind == "profiles"}>
+			<Match when={props.kind == "all" || props.kind == "templates"}>
 				<Icon icon={Box} size="18px" />
 			</Match>
 			<Match when={props.kind == "pinned"}>
@@ -362,14 +362,14 @@ function Section(props: SectionProps) {
 						)}
 					</For>
 					{/* Button for creating a new instance */}
-					<Show when={props.kind == "all" || props.kind == "profiles"}>
+					<Show when={props.kind == "all" || props.kind == "templates"}>
 						<div
 							class="input-shadow instance-list-item bubble-hover-small noselect"
 							onclick={() => {
 								let target =
 									props.itemType == "instance"
 										? "create_instance"
-										: "create_profile";
+										: "create_template";
 								navigate(target);
 							}}
 						>
@@ -377,7 +377,7 @@ function Section(props: SectionProps) {
 								<Icon icon={Plus} size="1.5rem" />
 							</div>
 							<div style="" class="bold">
-								{`Create ${props.itemType == "instance" ? "Instance" : "Profile"
+								{`Create ${props.itemType == "instance" ? "Instance" : "Template"
 									}`}
 							</div>
 						</div>
@@ -391,7 +391,7 @@ function Section(props: SectionProps) {
 interface SectionProps {
 	id: string;
 	kind: SectionKind;
-	itemType: "instance" | "profile";
+	itemType: InstanceOrTemplate;
 	header: string;
 	items: InstanceInfo[];
 	selectedItem?: SelectedItem;
@@ -400,7 +400,7 @@ interface SectionProps {
 	updateList: () => void;
 }
 
-type SectionKind = "pinned" | "group" | "all" | "profiles";
+type SectionKind = "pinned" | "group" | "all" | "templates";
 
 interface GroupSectionData {
 	id: string;
@@ -434,7 +434,7 @@ function Item(props: ItemProps) {
 					let url =
 						props.itemKind == "instance"
 							? `/instance/${props.instance.id}`
-							: `/profile_config/${props.instance.id}`;
+							: `/template_config/${props.instance.id}`;
 					navigate(url);
 				} else {
 					props.onSelect();
@@ -535,14 +535,14 @@ interface ItemProps {
 	instance: InstanceInfo;
 	selected: boolean;
 	sectionKind: SectionKind;
-	itemKind: "instance" | "profile";
+	itemKind: InstanceOrTemplate;
 	onSelect: () => void;
 	updateList: () => void;
 }
 
 interface SelectedItem {
 	id?: string;
-	type: "instance" | "profile";
+	type: InstanceOrTemplate;
 	fromPlugin: boolean;
 }
 

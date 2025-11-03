@@ -55,7 +55,7 @@ members = [
 [features]
 default = ["builder"]
 builder = []
-disable_profile_update_packages = []
+disable_instance_update_packages = []
 schema = [
 	"dep:schemars",
 	"nitro_config/schema",

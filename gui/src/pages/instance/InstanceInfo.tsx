@@ -13,7 +13,7 @@ import { dropdownButtonToOption, getDropdownButtons, loadPagePlugins, runDropdow
 import {
 	createConfiguredPackages,
 	getConfigPackages,
-	getParentProfiles,
+	getParentTemplates,
 	InstanceConfig,
 	InstanceConfigMode,
 	PackageOverrides,
@@ -89,7 +89,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 		try {
 			await invoke("set_last_opened_instance", {
 				id: id,
-				instanceOrProfile: "instance",
+				instanceOrTemplate: "instance",
 			});
 		} catch (e) { }
 	});
@@ -97,7 +97,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 	let [from, setFrom] = createSignal<string[] | undefined>();
 	let [editableConfig, setEditableConfig] = createSignal<InstanceConfig>();
 	let [instance, _] = createResource(async () => {
-		// Get the instance or profile
+		// Get the instance or template
 		try {
 			let [configuration, editableConfiguration] = await Promise.all([
 				readInstanceConfig(id, InstanceConfigMode.Instance),
@@ -146,7 +146,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 	let [parentConfigs, __] = createResource(
 		() => from(),
 		async () => {
-			return await getParentProfiles(from(), InstanceConfigMode.Instance);
+			return await getParentTemplates(from(), InstanceConfigMode.Instance);
 		},
 		{ initialValue: [] }
 	);
@@ -284,7 +284,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 						icon={Play}
 						size="1.25rem"
 						text="Launch Offline"
-						color="var(--profile)"
+						color="var(--template)"
 					/>
 				),
 			},
@@ -564,7 +564,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 										derivedGlobalPackages={derivedGlobalPackages()}
 										derivedClientPackages={derivedClientPackages()}
 										derivedServerPackages={derivedServerPackages()}
-										isProfile={false}
+										isTemplate={false}
 										onRemove={(pkg, category) => {
 											let func = (packages: PackageConfig[]) =>
 												packages.filter((x) => !packageConfigsEqual(x, pkg));

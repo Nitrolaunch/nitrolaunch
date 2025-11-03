@@ -207,8 +207,8 @@ pub mod id {
 	/// The ID for an instance
 	pub type InstanceID = Arc<str>;
 
-	/// The ID for a profile
-	pub type ProfileID = Arc<str>;
+	/// The ID for a template
+	pub type TemplateID = Arc<str>;
 }
 
 /// How deeply to update

@@ -119,8 +119,8 @@ pub struct EvalConstants {
 	pub version_list: Vec<String>,
 	/// The user's configured language
 	pub language: Language,
-	/// The configured default stability for the profile
-	pub profile_stability: PackageStability,
+	/// The configured default stability for the template
+	pub template_stability: PackageStability,
 }
 
 /// Constants for the evaluation that may be different for each package

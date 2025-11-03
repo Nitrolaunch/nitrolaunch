@@ -8,7 +8,7 @@ use nitrolaunch::parse::lex::Token;
 use nitrolaunch::pkg_crate::metadata::PackageMetadata;
 use nitrolaunch::pkg_crate::properties::PackageProperties;
 use nitrolaunch::pkg_crate::{PackageContentType, PkgRequest, PkgRequestSource};
-use nitrolaunch::shared::id::{InstanceID, ProfileID};
+use nitrolaunch::shared::id::{InstanceID, TemplateID};
 use nitrolaunch::shared::util::print::ReplPrinter;
 
 use anyhow::{bail, Context};
@@ -24,7 +24,7 @@ use crate::output::HYPHEN_POINT;
 
 #[derive(Debug, Subcommand)]
 pub enum PackageSubcommand {
-	#[command(about = "List all installed packages across all profiles")]
+	#[command(about = "List all installed packages across all instances")]
 	#[clap(alias = "ls")]
 	List {
 		/// Whether to remove formatting and warnings from the output
@@ -176,7 +176,7 @@ async fn list(data: &mut CmdData<'_>, raw: bool, instance: Option<String>) -> an
 			}
 		}
 	} else {
-		let mut found_pkgs: HashMap<PackageID, Vec<ProfileID>> = HashMap::new();
+		let mut found_pkgs: HashMap<PackageID, Vec<TemplateID>> = HashMap::new();
 		for (id, instance) in config.instances.iter() {
 			for pkg in instance.get_configured_packages() {
 				found_pkgs
@@ -188,13 +188,13 @@ async fn list(data: &mut CmdData<'_>, raw: bool, instance: Option<String>) -> an
 		if !raw {
 			cprintln!("<s>Packages:");
 		}
-		for (pkg, profiles) in found_pkgs.iter().sorted_by_key(|x| x.0) {
+		for (pkg, instances) in found_pkgs.iter().sorted_by_key(|x| x.0) {
 			if raw {
 				println!("{pkg}");
 			} else {
 				cprintln!("<b!>{}</>", pkg);
-				for profile in profiles.iter().sorted() {
-					cprintln!("{}<k!>{}", HYPHEN_POINT, profile);
+				for instance in instances.iter().sorted() {
+					cprintln!("{}<k!>{}", HYPHEN_POINT, instance);
 				}
 			}
 		}

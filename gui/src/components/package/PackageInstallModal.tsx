@@ -15,7 +15,7 @@ import {
 } from "../../icons";
 import Icon from "../Icon";
 import InlineSelect from "../input/select/InlineSelect";
-import { InstanceInfo, InstanceOrProfile } from "../../types";
+import { InstanceInfo, InstanceOrTemplate } from "../../types";
 import { invoke } from "@tauri-apps/api";
 import { errorToast, successToast } from "../dialog/Toasts";
 import {
@@ -30,59 +30,59 @@ import Modal from "../dialog/Modal";
 export default function PackageInstallModal(props: PackageInstallModalProps) {
 	let [selectedTab, setSelectedTab] = createSignal("instance");
 
-	let [selectedInstanceOrProfile, setSelectedInstanceOrProfile] = createSignal<
+	let [selectedInstanceOrTemplate, setSelectedInstanceOrTemplate] = createSignal<
 		string | undefined
 	>(undefined);
-	let [selectedProfileLocation, setSelectedProfileLocation] =
+	let [selectedTemplateLocation, setSelectedTemplateLocation] =
 		createSignal("all");
 
-	let [instancesAndProfiles, _] = createResource(async () => {
+	let [instancesAndTemplates, _] = createResource(async () => {
 		let instances: InstanceInfo[] = [];
-		let profiles: InstanceInfo[] = [];
+		let templates: InstanceInfo[] = [];
 		try {
-			[instances, profiles] = (await Promise.all([
+			[instances, templates] = (await Promise.all([
 				invoke("get_instances"),
-				invoke("get_profiles"),
+				invoke("get_templates"),
 			])) as [InstanceInfo[], InstanceInfo[]];
 		} catch (e) {
-			errorToast("Failed to get instances and profiles: " + e);
+			errorToast("Failed to get instances and templates: " + e);
 		}
 
-		return [instances, profiles];
+		return [instances, templates];
 	});
 
 	// Automatically set the type and id based on what the user last added a package to
 	createResource(async () => {
 		let lastAdded = (await invoke("get_last_added_package_location")) as
-			| [string, InstanceOrProfile]
+			| [string, InstanceOrTemplate]
 			| undefined;
 		if (lastAdded != undefined) {
 			// Don't overwrite if the user already selected
-			if (selectedInstanceOrProfile() == undefined) {
+			if (selectedInstanceOrTemplate() == undefined) {
 				setSelectedTab(lastAdded[1]);
-				setSelectedInstanceOrProfile(lastAdded[0]);
+				setSelectedInstanceOrTemplate(lastAdded[0]);
 			}
 		}
 	});
 
 	let install = async () => {
 		if (
-			selectedTab() != "base_profile" &&
-			selectedInstanceOrProfile() == undefined
+			selectedTab() != "base_template" &&
+			selectedInstanceOrTemplate() == undefined
 		) {
 			return;
 		}
 
 		let mode = selectedTab() as InstanceConfigMode;
 		let location =
-			selectedProfileLocation() == undefined ||
+			selectedTemplateLocation() == undefined ||
 				mode == InstanceConfigMode.Instance
 				? "all"
-				: (selectedProfileLocation() as "client" | "server" | "all");
+				: (selectedTemplateLocation() as "client" | "server" | "all");
 
 		try {
 			let config = await readEditableInstanceConfig(
-				selectedInstanceOrProfile(),
+				selectedInstanceOrTemplate(),
 				mode
 			);
 			let pkg = pkgRequestToString({
@@ -93,12 +93,12 @@ export default function PackageInstallModal(props: PackageInstallModalProps) {
 
 			addPackage(config, pkg, location);
 
-			await saveInstanceConfig(selectedInstanceOrProfile(), config, mode);
+			await saveInstanceConfig(selectedInstanceOrTemplate(), config, mode);
 
 			// Save the last added location
 			invoke("set_last_added_package_location", {
-				id: selectedInstanceOrProfile(),
-				instanceOrProfile: selectedTab(),
+				id: selectedInstanceOrTemplate(),
+				instanceOrTemplate: selectedTab(),
 			});
 
 			successToast(
@@ -196,12 +196,12 @@ export default function PackageInstallModal(props: PackageInstallModalProps) {
 									color: "var(--instance)",
 								},
 								{
-									value: "profile",
-									contents: <div class="cont"><Icon icon={Diagram} size="1rem" /> Profile</div>,
-									color: "var(--profile)",
+									value: "template",
+									contents: <div class="cont"><Icon icon={Diagram} size="1rem" /> Template</div>,
+									color: "var(--template)",
 								},
 								{
-									value: "base_profile",
+									value: "base_template",
 									contents: <div class="cont"><Icon icon={Globe} size="1rem" />  Globally</div>,
 									color: "var(--pluginfg)",
 								},
@@ -209,12 +209,12 @@ export default function PackageInstallModal(props: PackageInstallModalProps) {
 							selected={selectedTab()}
 							onChange={(tab) => {
 								setSelectedTab(tab!);
-								setSelectedInstanceOrProfile(undefined);
+								setSelectedInstanceOrTemplate(undefined);
 							}}
 						/>
 					</div>
 				</div>
-				<Show when={selectedTab() != "base_profile"}>
+				<Show when={selectedTab() != "base_template"}>
 					<div class="cont">
 						<Icon icon={Box} size="1.2rem" />
 					</div>
@@ -223,11 +223,11 @@ export default function PackageInstallModal(props: PackageInstallModalProps) {
 					</div>
 					<div></div>
 					<div class="cont" style="width:100%">
-						<Show when={instancesAndProfiles() != undefined}>
+						<Show when={instancesAndTemplates() != undefined}>
 							<InlineSelect
 								options={(selectedTab() == "instance"
-									? instancesAndProfiles()![0]
-									: instancesAndProfiles()![1]
+									? instancesAndTemplates()![0]
+									: instancesAndTemplates()![1]
 								).map((item) => {
 									return {
 										value: item.id,
@@ -239,21 +239,21 @@ export default function PackageInstallModal(props: PackageInstallModalProps) {
 										color: `var(--${selectedTab()})`,
 									};
 								})}
-								selected={selectedInstanceOrProfile()}
-								onChange={setSelectedInstanceOrProfile}
+								selected={selectedInstanceOrTemplate()}
+								onChange={setSelectedInstanceOrTemplate}
 								columns={4}
 								connected={false}
 							/>
 						</Show>
 					</div>
 				</Show>
-				<Show when={selectedTab() == "profile"}>
+				<Show when={selectedTab() == "template"}>
 					<div class="cont">
 						<Icon icon={Diagram} size="1.2rem" />
 					</div>
-					<div class="cont fullwidth" id="package-install-profile-location">
+					<div class="cont fullwidth" id="package-install-template-location">
 						<div style="width:40%">
-							What children of this profile should get this package?
+							What children of this template should get this package?
 						</div>
 						<div class="cont" style="width:60%">
 							<InlineSelect
@@ -271,11 +271,11 @@ export default function PackageInstallModal(props: PackageInstallModalProps) {
 									{
 										value: "server",
 										contents: <div class="cont"><Icon icon={Server} size="1rem" /> Servers</div>,
-										color: "var(--profile)",
+										color: "var(--template)",
 									},
 								]}
-								selected={selectedProfileLocation()}
-								onChange={setSelectedProfileLocation}
+								selected={selectedTemplateLocation()}
+								onChange={setSelectedTemplateLocation}
 							/>
 						</div>
 					</div>

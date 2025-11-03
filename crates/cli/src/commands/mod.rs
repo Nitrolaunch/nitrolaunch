@@ -3,7 +3,7 @@ mod files;
 mod instance;
 mod package;
 mod plugin;
-mod profile;
+mod template;
 mod user;
 
 use anyhow::{bail, Context};
@@ -24,13 +24,12 @@ use nitrolaunch::shared::lang::translate::TranslationKey;
 use nitrolaunch::shared::later::Later;
 use nitrolaunch::shared::output::{MessageContents, MessageLevel, NitroOutput};
 
-use crate::commands::profile::ProfileSubcommand;
-
 use self::config::ConfigSubcommand;
 use self::files::FilesSubcommand;
 use self::instance::InstanceSubcommand;
 use self::package::PackageSubcommand;
 use self::plugin::PluginSubcommand;
+use self::template::TemplateSubcommand;
 use self::user::UserSubcommand;
 
 use super::output::TerminalOutput;
@@ -78,10 +77,10 @@ pub enum Command {
 		#[command(subcommand)]
 		command: FilesSubcommand,
 	},
-	#[command(about = "Do operations with profiles")]
-	Profile {
+	#[command(about = "Do operations with instance templates")]
+	Template {
 		#[command(subcommand)]
-		command: ProfileSubcommand,
+		command: TemplateSubcommand,
 	},
 	#[command(about = "Import instances from another launcher")]
 	Migrate {
@@ -142,7 +141,7 @@ pub async fn run_cli() -> anyhow::Result<()> {
 			Command::Instance { command } => instance::run(command, data).await,
 			Command::Plugin { command } => plugin::run(command, &mut data).await,
 			Command::Config { command } => config::run(command, &mut data).await,
-			Command::Profile { command } => profile::run(command, &mut data).await,
+			Command::Template { command } => template::run(command, &mut data).await,
 			Command::Migrate { format } => migrate(format, &mut data).await,
 			Command::External(args) => call_plugin_subcommand(args, None, &mut data).await,
 		}

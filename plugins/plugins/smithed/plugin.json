@@ -1,6 +1,6 @@
 {
 	"name": "Smithed",
-	"description": "Install Smithed packs on profiles and instances",
+	"description": "Install Smithed packs on templates and instances",
 	"protocol_version": 3,
 	"hooks": {
 		"add_sidebar_buttons": {
@@ -20,7 +20,7 @@
 				}
 			}
 		},
-		"add_profiles": {
+		"add_templates": {
 			"constant": {
 				"smithed-base": {
 					"name": "Smithed Base",
