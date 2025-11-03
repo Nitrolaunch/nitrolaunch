@@ -19,7 +19,7 @@ import UserPage from "./pages/user/UserPage";
 import Global from "./Global";
 import Settings from "./pages/Settings";
 import "./components/package/PackageDescription.css";
-import Modal from "./components/dialog/Modal";
+import ModalBase from "./components/dialog/ModalBase";
 import WelcomePrompt from "./components/dialog/WelcomePrompt";
 import { invoke } from "@tauri-apps/api";
 
@@ -182,9 +182,9 @@ function Layout(props: LayoutProps) {
 				itemFromPlugin={props.footerData.fromPlugin}
 				selectedPackageGallery={props.footerData.selectedPackageGallery}
 			/>
-			<Modal visible={pluginModalContents() != undefined} onClose={() => setPluginModalContents(undefined)} width="40rem">
+			<ModalBase visible={pluginModalContents() != undefined} onClose={() => setPluginModalContents(undefined)} width="40rem">
 				<div class="cont col fullwidth" innerHTML={pluginModalContents()}></div>
-			</Modal>
+			</ModalBase>
 			<WelcomePrompt visible={showWelcomePrompt()} onClose={() => setShowWelcomePrompt(false)} />
 		</>
 	);

@@ -3,22 +3,20 @@ import { AuthDisplayEvent } from "../../types";
 import "./MicrosoftAuthInfo.css";
 import IconTextButton from "./button/IconTextButton";
 import { clipboard } from "@tauri-apps/api";
-import { Check, Copy, Globe } from "../../icons";
+import { Check, Copy, Globe, Lock } from "../../icons";
 import { WebviewWindow } from "@tauri-apps/api/window";
-import Modal from "../dialog/Modal";
 import { open } from "@tauri-apps/api/shell";
+import Modal from "../dialog/Modal";
 
 export default function MicrosoftAuthInfo(props: MicrosoftAuthInfoProps) {
 	return (
-		<Modal visible={props.visible} width="20rem" onClose={() => { }}>
-			<div class="cont col ms-auth-info">
-				Copy this code:
-				<CopyCodeButton code={props.event.device_code} />
-				Then paste it into the login page:
-				<LoginWindowButton url={props.event.url} inBrowser={false} />
-				If that link doesn't work, trying opening in your browser instead:
-				<LoginWindowButton url={props.event.url} inBrowser={true} />
-			</div>
+		<Modal visible={props.visible} onClose={() => { }} title="Microsoft Authentication" titleIcon={Lock} buttons={[]}>
+			Copy this code:
+			<CopyCodeButton code={props.event.device_code} />
+			Then paste it into the login page:
+			<LoginWindowButton url={props.event.url} inBrowser={false} />
+			If that link doesn't work, trying opening in your browser instead:
+			<LoginWindowButton url={props.event.url} inBrowser={true} />
 		</Modal>
 	);
 }
@@ -31,7 +29,7 @@ function CopyCodeButton(props: CopyCodeButtonProps) {
 			text={clicked() ? "Copied!" : "Click to copy"}
 			size="18px"
 			icon={clicked() ? Check : Copy}
-			color={clicked() ? "var(--instance)" : "var(--bg2)"}
+			color={clicked() ? "var(--instance)" : "var(--fg)"}
 			onClick={async () => {
 				setClicked(true);
 				await clipboard.writeText(props.code);
@@ -55,7 +53,7 @@ function LoginWindowButton(props: LoginWindowButtonProps) {
 			text={opening() ? "Opening..." : "Open login page"}
 			size="18px"
 			icon={Globe}
-			color={opening() ? "var(--profile" : "var(--bg2)"}
+			color={opening() ? "var(--profile" : "var(--fg)"}
 			onClick={async () => {
 				setOpening(true);
 				if (props.inBrowser) {

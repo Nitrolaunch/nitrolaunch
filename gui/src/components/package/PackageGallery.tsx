@@ -1,7 +1,7 @@
 import { createSignal, For, Show } from "solid-js";
 import Icon from "../Icon";
 import { ArrowLeft, ArrowRight } from "../../icons";
-import Modal from "../dialog/Modal";
+import ModalBase from "../dialog/ModalBase";
 
 export default function PackageGallery(props: PackageGalleryProps) {
 	// The URL and index of the previewed gallery entry. Undefined if not shown.
@@ -19,7 +19,7 @@ export default function PackageGallery(props: PackageGalleryProps) {
 				/>
 			)}
 		</For>
-		<Modal
+		<ModalBase
 			width="55rem"
 			visible={preview() != undefined}
 			onClose={() => setPreview(undefined)}
@@ -53,7 +53,7 @@ export default function PackageGallery(props: PackageGalleryProps) {
 					<Icon icon={ArrowRight} size="1.5rem" />
 				</div>
 			</Show>
-		</Modal>
+		</ModalBase>
 	</div>;
 }
 

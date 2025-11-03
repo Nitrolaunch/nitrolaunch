@@ -8,19 +8,18 @@ import {
 	Show,
 	Switch,
 } from "solid-js";
-import { AngleDown, AngleRight, Plus, Properties, User } from "../../icons";
+import { AngleDown, AngleRight, Check, Plus, Properties, User } from "../../icons";
 import "./UserWidget.css";
 import { stringCompare, getUserIcon } from "../../utils";
 import Icon from "../Icon";
 import { errorToast, successToast } from "../dialog/Toasts";
 import IconButton from "../input/button/IconButton";
 import { listen } from "@tauri-apps/api/event";
-import Modal from "../dialog/Modal";
 import { sanitizeInstanceId } from "../../pages/instance/InstanceConfig";
 import Dropdown from "../input/select/Dropdown";
-import IconTextButton from "../input/button/IconTextButton";
 import { clearInputError, inputError } from "../../errors";
 import { useNavigate } from "@solidjs/router";
+import Modal from "../dialog/Modal";
 
 export default function UserWidget(props: UserWidgetProps) {
 	let navigate = useNavigate();
@@ -77,7 +76,7 @@ export default function UserWidget(props: UserWidgetProps) {
 		<div id="user-widget" onmouseleave={() => setIsOpen(false)}>
 			<div
 				id="user-widget-head"
-				class={`input-shadow ${isOpen() ? "open" : ""}`}
+				class={`input-shadow ${isOpen() ? "open" : "bubble-hover"}`}
 				onclick={() => setIsOpen(!isOpen())}
 			>
 				<Show
@@ -137,7 +136,10 @@ export default function UserWidget(props: UserWidgetProps) {
 							)}
 						</For>
 					</Show>
-					<div class="bubble-hover user-tile" onclick={() => setIsCreatingUser(true)}>
+					<div class="bubble-hover user-tile" onclick={() => {
+						setIsCreatingUser(true);
+						setIsOpen(false);
+					}}>
 						<div class="cont">
 							<Icon icon={Plus} size="1.2rem" />
 						</div>
@@ -147,45 +149,14 @@ export default function UserWidget(props: UserWidgetProps) {
 			</Show>
 			<Modal
 				visible={isCreatingUser()}
-				width="25rem"
 				onClose={setIsCreatingUser}
-			>
-				<div class="cont col" style="padding:2rem">
-					<h3 class="cont"><Icon icon={User} size="1rem" /> Create New User</h3>
-					<div class="cont col" style="width:100%">
-						<label class="cont start fullwidth label" for="user-id">
-							ID
-						</label>
-						<input
-							type="text"
-							name="user-id"
-							id="new-user-id"
-							placeholder="Enter user ID..."
-							style="width:100%"
-							onChange={(e) => {
-								e.target.value = sanitizeInstanceId(e.target.value);
-								setNewUserId(e.target.value);
-							}}
-							onkeyup={(e: any) => {
-								e.target.value = sanitizeInstanceId(e.target.value);
-							}}
-						/>
-					</div>
-					<label class="cont start fullwidth label" for="user-id">
-						TYPE
-					</label>
-					<Dropdown
-						options={[{ value: "microsoft", contents: "Microsoft" }]}
-						selected={newUserType()}
-						onChange={setNewUserType}
-						zIndex="200"
-						isSearchable={false}
-					/>
-					<div></div>
-					<IconTextButton
-						text="Save"
-						size="1rem"
-						onClick={async () => {
+				title="Create new user"
+				titleIcon={User}
+				buttons={[
+					{
+						text: "Save",
+						icon: Check,
+						onClick: async () => {
 							if (newUserId() == "") {
 								inputError("new-user-id", "ID cannot be empty");
 								return;
@@ -205,9 +176,41 @@ export default function UserWidget(props: UserWidgetProps) {
 								setIsCreatingUser(false);
 								errorToast("Failed to create user: " + e);
 							}
+						}
+					}
+				]
+				}
+			>
+				<div class="cont col fullwidth">
+					<label class="cont start fullwidth label" for="user-id">
+						ID
+					</label>
+					<input
+						type="text"
+						name="user-id"
+						id="new-user-id"
+						placeholder="Enter user ID..."
+						style="width:100%"
+						onChange={(e) => {
+							e.target.value = sanitizeInstanceId(e.target.value);
+							setNewUserId(e.target.value);
+						}}
+						onkeyup={(e: any) => {
+							e.target.value = sanitizeInstanceId(e.target.value);
 						}}
 					/>
 				</div>
+				<label class="cont start fullwidth label" for="user-id">
+					TYPE
+				</label>
+				<Dropdown
+					options={[{ value: "microsoft", contents: "Microsoft" }]}
+					selected={newUserType()}
+					onChange={setNewUserType}
+					zIndex="200"
+					isSearchable={false}
+				/>
+				<div></div>
 			</Modal>
 		</div>
 	);
@@ -238,7 +241,7 @@ function UserTile(props: UserTileProps) {
 
 	return (
 		<div
-			class={`user-tile bubble-hover ${isHovered() && !props.isFeatured ? "hover" : ""}`}
+			class={`user-tile ${props.isFeatured ? "" : "bubble-hover"} ${isHovered() && !props.isFeatured ? "hover" : ""}`}
 			onclick={() => {
 				if (!props.isFeatured) {
 					props.onclick(props.user.id);

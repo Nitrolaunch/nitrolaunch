@@ -1,5 +1,5 @@
 import { createSignal, Match, Show, Switch } from "solid-js";
-import Modal from "./Modal";
+import ModalBase from "./ModalBase";
 
 import "./WelcomePrompt.css";
 import IconTextButton from "../input/button/IconTextButton";
@@ -12,7 +12,7 @@ import { MigratePromptContents } from "../instance/MigratePrompt";
 export default function WelcomePrompt(props: WelcomePromptProps) {
 	let [tab, setTab] = createSignal(0);
 
-	return <Modal visible={props.visible} onClose={() => { }} width="30rem">
+	return <ModalBase visible={props.visible} onClose={() => { }} width="30rem">
 		<div id="welcome-prompt">
 			<div id="welcome-prompt-tabs" style={`grid-template-columns:repeat(3,minmax(0,1fr))`}>
 				<div
@@ -101,7 +101,7 @@ export default function WelcomePrompt(props: WelcomePromptProps) {
 				</div>
 			</div>
 		</div>
-	</Modal>;
+	</ModalBase>;
 }
 
 export interface WelcomePromptProps {

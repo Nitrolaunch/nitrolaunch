@@ -11,8 +11,6 @@ import {
 } from "../../icons";
 import { PackageVersion } from "../../package";
 import { PackageMeta } from "../../types";
-import Modal from "../dialog/Modal";
-import IconTextButton from "../input/button/IconTextButton";
 import "./PackageVersionInfo.css";
 import { StabilityIndicator } from "./PackageVersions";
 import { canonicalizeListOrSingle } from "../../utils/values";
@@ -20,6 +18,7 @@ import { invoke } from "@tauri-apps/api";
 import Icon, { HasWidthHeight } from "../Icon";
 import PackageLabels from "./PackageLabels";
 import { useNavigate } from "@solidjs/router";
+import Modal from "../dialog/Modal";
 
 export default function PackageVersionInfo(props: PackageVersionInfoProps) {
 	let dependencies = () =>
@@ -103,16 +102,35 @@ export default function PackageVersionInfo(props: PackageVersionInfoProps) {
 	);
 
 	return (
-		<Modal width="50rem" visible={props.visible} onClose={props.onClose}>
-			<div class="cont col" id="package-version-info">
-				<div class="cont" id="package-version-info-header">
+		<Modal
+			width="50rem"
+			visible={props.visible}
+			onClose={props.onClose}
+			title={
+				<>
 					<StabilityIndicator stability={props.version.stability} />
-					<div id="package-version-info-name">
-						{props.version.name == undefined
-							? props.version.id
-							: props.version.name}
-					</div>
-				</div>
+					{props.version.name == undefined
+						? props.version.id
+						: props.version.name}
+				</>
+			}
+			buttons={[
+				{
+					text: "Close",
+					icon: Delete,
+					onClick: props.onClose,
+				},
+				{
+					text: "Install",
+					icon: Download,
+					onClick: () => {
+						props.onInstall(props.version.name!);
+						props.onClose();
+					}
+				}
+			]}
+		>
+			<div class="cont col" id="package-version-info">
 				<div class="cont col" id="package-version-info-details">
 					<div class="package-version-info-details-row">
 						<div class="cont start bold">Versions</div>
@@ -176,25 +194,6 @@ export default function PackageVersionInfo(props: PackageVersionInfoProps) {
 						icon={Star}
 						packages={recommendations()}
 						meta={packageMetas()}
-					/>
-				</div>
-				<div class="cont">
-					<IconTextButton
-						icon={Delete}
-						size="1.5rem"
-						onClick={() => {
-							props.onClose();
-						}}
-						text="Close"
-					/>
-					<IconTextButton
-						icon={Download}
-						size="1.5rem"
-						onClick={() => {
-							props.onInstall(props.version.name!);
-							props.onClose();
-						}}
-						text="Install"
 					/>
 				</div>
 			</div>

@@ -50,7 +50,7 @@ import PackagesConfig, {
 } from "./PackagesConfig";
 import { FooterData } from "../../App";
 import { FooterMode, launchInstance } from "../../components/navigation/Footer";
-import Modal from "../../components/dialog/Modal";
+import ModalBase from "../../components/dialog/ModalBase";
 import { canonicalizeListOrSingle } from "../../utils/values";
 import { Event, listen, UnlistenFn } from "@tauri-apps/api/event";
 import { RunningInstancesEvent } from "../../components/launch/RunningInstanceList";
@@ -60,6 +60,7 @@ import IconAndText from "../../components/utility/IconAndText";
 import InstanceTransferPrompt from "../../components/instance/InstanceTransferPrompt";
 import { updateInstanceList } from "./InstanceList";
 import InstanceTiles from "../../components/instance/InstanceTiles";
+import Modal from "../../components/dialog/Modal";
 
 export default function InstanceInfo(props: InstanceInfoProps) {
 	let navigate = useNavigate();
@@ -625,42 +626,39 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 				<Modal
 					visible={showDeleteConfirm()}
 					onClose={setShowDeleteConfirm}
-					width="25rem"
+					title="Delete instance"
+					titleIcon={Trash}
+					buttons={[
+						{
+							text: "Cancel",
+							icon: Delete,
+							color: "var(--instance)",
+							bgColor: "var(--instancebg)",
+							onClick: () => setShowDeleteConfirm(false),
+						},
+						{
+							text: "Delete instance",
+							icon: Trash,
+							color: "var(--fg3)",
+							onClick: async () => {
+								try {
+									await invoke("delete_instance", { instance: id });
+									successToast("Instance deleted");
+									setShowDeleteConfirm(false);
+									updateInstanceList();
+									navigate("/");
+								} catch (e) {
+									errorToast("Failed to delete instance: " + e);
+									setShowDeleteConfirm(false);
+								}
+							}
+						}
+					]
+					}
 				>
-					<div class="cont col" style="padding:2rem">
-						<h3>Are you sure you want to delete this instance?</h3>
-						<div class="cont bold" style="font-size:0.9rem;color:var(--fg2)">
-							This will delete ALL of your worlds and data for the instance!
-						</div>
-						<div></div>
-						<div></div>
-						<div class="cont">
-							<button
-								onclick={() => setShowDeleteConfirm(false)}
-								style="border-color:var(--instance)"
-							>
-								Cancel
-							</button>
-							<IconTextButton
-								icon={Delete}
-								size="1rem"
-								text="Delete instance"
-								color="var(--error)"
-								bgColor="var(--errorbg)"
-								onClick={async () => {
-									try {
-										await invoke("delete_instance", { instance: id });
-										successToast("Instance deleted");
-										setShowDeleteConfirm(false);
-										updateInstanceList();
-										navigate("/");
-									} catch (e) {
-										errorToast("Failed to delete instance: " + e);
-										setShowDeleteConfirm(false);
-									}
-								}}
-							/>
-						</div>
+					<h3>Are you sure you want to delete this instance?</h3>
+					<div class="cont bold" style="font-size:0.9rem;color:var(--fg2)">
+						This will delete ALL of your worlds and data for the instance!
 					</div>
 				</Modal>
 				<InstanceTransferPrompt visible={showExportPrompt()} onClose={() => setShowExportPrompt(false)} exportedInstance={id} />

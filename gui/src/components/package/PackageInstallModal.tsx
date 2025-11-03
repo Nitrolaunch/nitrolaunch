@@ -1,5 +1,4 @@
 import { createResource, createSignal, Match, Show, Switch } from "solid-js";
-import Modal from "../dialog/Modal";
 import "./PackageInstallModal.css";
 import IconTextButton from "../input/button/IconTextButton";
 import {
@@ -26,6 +25,7 @@ import {
 	saveInstanceConfig,
 } from "../../pages/instance/read_write";
 import { pkgRequestToString } from "../../utils";
+import Modal from "../dialog/Modal";
 
 export default function PackageInstallModal(props: PackageInstallModalProps) {
 	let [selectedTab, setSelectedTab] = createSignal("instance");
@@ -113,167 +113,173 @@ export default function PackageInstallModal(props: PackageInstallModalProps) {
 	};
 
 	return (
-		<Modal visible={props.visible} onClose={props.onClose} width="55rem">
-			<div id="package-install">
-				<div id="package-install-inner">
-					<div class="cont" style="margin-bottom:1rem">
-						<Icon icon={Download} size="1.2rem" />
+		<Modal
+			visible={props.visible}
+			onClose={props.onClose}
+			width="50rem"
+			height="30rem"
+			title={
+				<>
+					Installing package
+					<div style="color:var(--fg3)">
+						{props.packageId}
 					</div>
-					<div class="cont" id="package-install-name">
-						Installing package
-						<div style="color:var(--fg3)">{props.packageId}</div>
+				</>
+			}
+			titleIcon={Download}
+			buttons={[
+				{
+					text: "Cancel",
+					icon: Delete,
+					onClick: props.onClose,
+				},
+				{
+					text: "Install",
+					icon: Download,
+					onClick: install,
+					color: "var(--package)",
+					bgColor: "var(--packagebg)"
+				}
+			]}
+		>
+			<div id="package-install-inner">
+				<div class="cont" style="margin-bottom:1rem">
+					<Icon icon={Download} size="1.2rem" />
+				</div>
+				<div class="cont fullwidth" id="package-install-name">
+					Installing package
+					<div style="color:var(--fg3)">{props.packageId}</div>
+				</div>
+				<Switch>
+					<Match when={props.selectedVersion == undefined}>
+						<div class="cont">
+							<Icon icon={Hashtag} size="1.2rem" />
+						</div>
+						<div class="cont" id="package-install-version">
+							<div style="width:68%">
+								No version selected. The best version will be picked
+								automatically.
+							</div>
+							<div class="cont" style="width:32%;justify-content:flex-end">
+								<IconTextButton
+									icon={AngleRight}
+									size="1.5rem"
+									onClick={() => {
+										props.onClose();
+										props.onShowVersions();
+									}}
+									text="Select a version"
+								/>
+							</div>
+						</div>
+					</Match>
+					<Match when={props.selectedVersion != undefined}>
+						<div class="cont">
+							<Icon icon={Hashtag} size="1.2rem" />
+						</div>
+						<div class="cont" id="package-install-version">
+							<div>Selected version {props.selectedVersion}</div>
+						</div>
+					</Match>
+				</Switch>
+				<div class="cont">
+					<Icon icon={Folder} size="1.2rem" />
+				</div>
+				<div class="cont" id="package-install-target-category">
+					<div style="width:40%">Where would you like to install?</div>
+					<div class="cont" style="width:60%">
+						<InlineSelect
+							options={[
+								{
+									value: "instance",
+									contents: <div class="cont"><Icon icon={Box} size="1rem" /> Instance</div>,
+									color: "var(--instance)",
+								},
+								{
+									value: "profile",
+									contents: <div class="cont"><Icon icon={Diagram} size="1rem" /> Profile</div>,
+									color: "var(--profile)",
+								},
+								{
+									value: "base_profile",
+									contents: <div class="cont"><Icon icon={Globe} size="1rem" />  Globally</div>,
+									color: "var(--pluginfg)",
+								},
+							]}
+							selected={selectedTab()}
+							onChange={(tab) => {
+								setSelectedTab(tab!);
+								setSelectedInstanceOrProfile(undefined);
+							}}
+						/>
 					</div>
-					<Switch>
-						<Match when={props.selectedVersion == undefined}>
-							<div class="cont">
-								<Icon icon={Hashtag} size="1.2rem" />
-							</div>
-							<div class="cont" id="package-install-version">
-								<div style="width:68%">
-									No version selected. The best version will be picked
-									automatically.
-								</div>
-								<div class="cont" style="width:32%;justify-content:flex-end">
-									<IconTextButton
-										icon={AngleRight}
-										size="1.5rem"
-										onClick={() => {
-											props.onClose();
-											props.onShowVersions();
-										}}
-										text="Select a version"
-									/>
-								</div>
-							</div>
-						</Match>
-						<Match when={props.selectedVersion != undefined}>
-							<div class="cont">
-								<Icon icon={Hashtag} size="1.2rem" />
-							</div>
-							<div class="cont" id="package-install-version">
-								<div>Selected version {props.selectedVersion}</div>
-							</div>
-						</Match>
-					</Switch>
+				</div>
+				<Show when={selectedTab() != "base_profile"}>
 					<div class="cont">
-						<Icon icon={Folder} size="1.2rem" />
+						<Icon icon={Box} size="1.2rem" />
 					</div>
-					<div class="cont" id="package-install-target-category">
-						<div style="width:40%">Where would you like to install?</div>
+					<div class="cont" id="package-install-target">
+						<div>Select {selectedTab()}</div>
+					</div>
+					<div></div>
+					<div class="cont" style="width:100%">
+						<Show when={instancesAndProfiles() != undefined}>
+							<InlineSelect
+								options={(selectedTab() == "instance"
+									? instancesAndProfiles()![0]
+									: instancesAndProfiles()![1]
+								).map((item) => {
+									return {
+										value: item.id,
+										contents: (
+											<div>
+												{item.name == undefined ? item.id : item.name}
+											</div>
+										),
+										color: `var(--${selectedTab()})`,
+									};
+								})}
+								selected={selectedInstanceOrProfile()}
+								onChange={setSelectedInstanceOrProfile}
+								columns={4}
+								connected={false}
+							/>
+						</Show>
+					</div>
+				</Show>
+				<Show when={selectedTab() == "profile"}>
+					<div class="cont">
+						<Icon icon={Diagram} size="1.2rem" />
+					</div>
+					<div class="cont fullwidth" id="package-install-profile-location">
+						<div style="width:40%">
+							What children of this profile should get this package?
+						</div>
 						<div class="cont" style="width:60%">
 							<InlineSelect
 								options={[
 									{
-										value: "instance",
-										contents: <div class="cont"><Icon icon={Controller} size="1.2rem" /> Instance</div>,
+										value: "all",
+										contents: <div class="cont"><Icon icon={Globe} size="1rem" />  All of them</div>,
+										color: "var(--fg2)",
+									},
+									{
+										value: "client",
+										contents: <div class="cont"><Icon icon={Controller} size="1.2rem" /> Clients</div>,
 										color: "var(--instance)",
 									},
 									{
-										value: "profile",
-										contents: <div class="cont"><Icon icon={Server} size="1.2rem" /> Profile</div>,
+										value: "server",
+										contents: <div class="cont"><Icon icon={Server} size="1rem" /> Servers</div>,
 										color: "var(--profile)",
 									},
-									{
-										value: "base_profile",
-										contents: <div class="cont"><Icon icon={Globe} size="1rem" />  Globally</div>,
-										color: "var(--pluginfg)",
-									},
 								]}
-								selected={selectedTab()}
-								onChange={(tab) => {
-									setSelectedTab(tab!);
-									setSelectedInstanceOrProfile(undefined);
-								}}
+								selected={selectedProfileLocation()}
+								onChange={setSelectedProfileLocation}
 							/>
 						</div>
 					</div>
-					<Show when={selectedTab() != "base_profile"}>
-						<div class="cont">
-							<Icon icon={Box} size="1.2rem" />
-						</div>
-						<div class="cont" id="package-install-target">
-							<div>Select {selectedTab()}</div>
-						</div>
-						<div></div>
-						<div class="cont" style="width:100%">
-							<Show when={instancesAndProfiles() != undefined}>
-								<InlineSelect
-									options={(selectedTab() == "instance"
-										? instancesAndProfiles()![0]
-										: instancesAndProfiles()![1]
-									).map((item) => {
-										return {
-											value: item.id,
-											contents: (
-												<div>
-													{item.name == undefined ? item.id : item.name}
-												</div>
-											),
-											color: `var(--${selectedTab()})`,
-										};
-									})}
-									selected={selectedInstanceOrProfile()}
-									onChange={setSelectedInstanceOrProfile}
-									columns={4}
-									connected={false}
-								/>
-							</Show>
-						</div>
-					</Show>
-					<Show when={selectedTab() == "profile"}>
-						<div class="cont">
-							<Icon icon={Diagram} size="1.2rem" />
-						</div>
-						<div class="cont fullwidth" id="package-install-profile-location">
-							<div style="width:40%">
-								What children of this profile should get this package?
-							</div>
-							<div class="cont" style="width:60%">
-								<InlineSelect
-									options={[
-										{
-											value: "all",
-											contents: <div class="cont"><Icon icon={Globe} size="1rem" />  All of them</div>,
-											color: "var(--fg2)",
-										},
-										{
-											value: "client",
-											contents: <div class="cont"><Icon icon={Controller} size="1.2rem" /> Clients</div>,
-											color: "var(--instance)",
-										},
-										{
-											value: "server",
-											contents: <div class="cont"><Icon icon={Server} size="1rem" /> Servers</div>,
-											color: "var(--profile)",
-										},
-									]}
-									selected={selectedProfileLocation()}
-									onChange={setSelectedProfileLocation}
-								/>
-							</div>
-						</div>
-					</Show>
-				</div>
-				<br />
-				<br />
-				<div class="cont" style="width:100%">
-					<IconTextButton
-						icon={Delete}
-						size="1.5rem"
-						onClick={() => {
-							props.onClose();
-						}}
-						text="Close"
-					/>
-					<IconTextButton
-						icon={Download}
-						size="1.5rem"
-						onClick={() => {
-							install();
-						}}
-						text="Install"
-					/>
-				</div>
+				</Show>
 			</div>
 		</Modal>
 	);

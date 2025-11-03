@@ -19,7 +19,7 @@ import {
 	stringCompare,
 } from "../../utils";
 import IconButton from "../../components/input/button/IconButton";
-import { Edit, Error, Lock, Plus, Popout, Search, Trash, Upload } from "../../icons";
+import { Delete, Edit, Error, Lock, Plus, Popout, Search, Trash, Upload } from "../../icons";
 import { errorToast } from "../../components/dialog/Toasts";
 import LoadingSpinner from "../../components/utility/LoadingSpinner";
 import ResolutionError, {
@@ -29,7 +29,7 @@ import { Loader } from "../../package";
 import IconTextButton from "../../components/input/button/IconTextButton";
 import { getBrowseUrl } from "../package/BrowsePackages";
 import { canonicalizeListOrSingle } from "../../utils/values";
-import Modal from "../../components/dialog/Modal";
+import ModalBase from "../../components/dialog/ModalBase";
 import DeriveIndicator from "./DeriveIndicator";
 import { InstanceConfig, PackageOverrides } from "./read_write";
 import Tip from "../../components/dialog/Tip";
@@ -38,6 +38,7 @@ import PackageQuickAdd from "../../components/package/PackageQuickAdd";
 import { useNavigate } from "@solidjs/router";
 import Icon from "../../components/Icon";
 import SearchBar from "../../components/input/text/SearchBar";
+import Modal from "../../components/dialog/Modal";
 
 export default function PackagesConfig(props: PackagesConfigProps) {
 	let navigate = useNavigate();
@@ -425,8 +426,17 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 				visible={showOverridesModal()}
 				onClose={setShowOverridesModal}
 				width="40rem"
+				title="Package Overrides"
+				titleIcon={Edit}
+				buttons={[
+					{
+						text: "Close",
+						icon: Delete,
+						onClick: () => setShowOverridesModal(false),
+					}
+				]}
 			>
-				<div class="cont fullwidth fields" style="padding:2rem">
+				<div class="cont col fullwidth fields">
 					<div class="cont start label">
 						<label for="launch-env">SUPPRESSED PACKAGES</label>
 						<DeriveIndicator
@@ -452,14 +462,6 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 							}}
 						/>
 					</Tip>
-					<div class="cont fullwidth">
-						<button
-							onclick={() => setShowOverridesModal(false)}
-							style="border: var(--border) solid var(--bg3)"
-						>
-							Close
-						</button>
-					</div>
 				</div>
 			</Modal>
 		</div>

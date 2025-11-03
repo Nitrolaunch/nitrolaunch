@@ -1,5 +1,5 @@
 import { createResource, createSignal, Match, Switch } from "solid-js";
-import Modal from "../dialog/Modal";
+import ModalBase from "../dialog/ModalBase";
 import { invoke } from "@tauri-apps/api";
 import "./ProfileDeletePrompt.css";
 import InlineSelect from "../input/select/InlineSelect";
@@ -16,9 +16,9 @@ export default function MigratePrompt(
 	props: MigratePromptProps
 ) {
 	return (
-		<Modal visible={props.visible} onClose={props.onClose} width="25rem">
+		<ModalBase visible={props.visible} onClose={props.onClose} width="25rem">
 			<MigratePromptContents {...props} />
-		</Modal>
+		</ModalBase>
 	);
 }
 

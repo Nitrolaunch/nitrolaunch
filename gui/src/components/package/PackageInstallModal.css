@@ -1,20 +1,11 @@
-#package-install {
-	width: 100%;
-	padding: 2rem;
-	/* min-height: 30rem; */
-	/* justify-content: flex-start; */
-}
-
 #package-install-inner {
+	width: 100%;
 	display: grid;
 	grid-template-columns: minmax(0, 0.05fr) minmax(0, 1fr);
 	column-gap: 0.5rem;
 	row-gap: 1.25rem;
 
 	max-height: 40rem;
-	overflow-y: auto;
-	overflow-x: hidden;
-	overscroll-behavior: contain;
 }
 
 #package-install-name {

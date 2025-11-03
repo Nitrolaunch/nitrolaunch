@@ -8,11 +8,6 @@
 	max-height: 40rem;
 }
 
-#package-version-info-header {
-	justify-content: flex-start;
-	width: 100%;
-}
-
 #package-version-info-details {
 	width: 100%;
 }
