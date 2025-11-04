@@ -685,8 +685,8 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 						</Tip>
 					</Show>
 					<Show when={!isBaseTemplate}>
-						<div class="cont start">
-							<label for="side" class="label">
+						<div class="cont start label">
+							<label for="side">
 								ICON
 							</label>
 							<DeriveIndicator
@@ -702,6 +702,7 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 								setDirty();
 								setIsIconDirty(true);
 							}}
+							derivedIcon={getDerivedValue(parentConfigs(), (x) => x.icon)}
 						/>
 					</Show>
 					<hr />

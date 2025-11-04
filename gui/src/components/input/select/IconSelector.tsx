@@ -74,6 +74,7 @@ export default function IconSelector(props: IconSelectorProps) {
 								}
 							}}
 							isSelected={icon == selectedIcon()}
+							isDerived={icon == props.derivedIcon && props.icon == undefined}
 						/>
 					)}
 				</For>
@@ -93,7 +94,7 @@ function SelectableIcon(props: SelectableIconProps) {
 
 	return (
 		<div
-			class={`cont bubble-hover shadow icon-selector-icon ${props.isSelected ? "selected" : ""}`}
+			class={`cont bubble-hover shadow icon-selector-icon ${props.isSelected ? "selected" : ""} ${props.isDerived ? "derived" : ""}`}
 			onclick={props.onSelect}
 		>
 			<img src={src} class="icon-selector-icon-image" />
@@ -105,9 +106,11 @@ interface SelectableIconProps {
 	icon: string;
 	onSelect: () => void;
 	isSelected: boolean;
+	isDerived: boolean;
 }
 
 export interface IconSelectorProps {
 	icon: string | undefined;
 	setIcon: (value: string | undefined) => void;
+	derivedIcon: string | undefined;
 }

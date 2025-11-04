@@ -25,7 +25,12 @@
 
 .icon-selector-icon.selected {
 	background-color: var(--instancebg);
-	border: var(--border) solid var(--instance);
+	border-color: var(--instance);
+}
+
+.icon-selector-icon.derived {
+	background-color: var(--templatebg);
+	border-color: var(--template);
 }
 
 .icon-selector-icon-image {
