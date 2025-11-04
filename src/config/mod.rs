@@ -22,13 +22,14 @@ use nitro_config::ConfigDeser;
 use nitro_core::auth_crate::mc::ClientId;
 use nitro_core::io::{json_from_file, json_to_file_pretty};
 use nitro_core::user::UserManager;
-use nitro_plugin::hooks::{AddInstances, AddInstancesArg, AddTemplates, AddSupportedLoaders};
+use nitro_plugin::hooks::{AddInstances, AddInstancesArg, AddSupportedLoaders, AddTemplates};
 use nitro_shared::id::{InstanceID, TemplateID};
 use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
 use nitro_shared::util::is_valid_identifier;
 use nitro_shared::{skip_fail, translate};
 use preferences::ConfigPreferences;
 use template::consolidate_template_configs;
+use version_compare::Version;
 
 use super::instance::Instance;
 use crate::io::paths::Paths;
@@ -98,6 +99,8 @@ impl Config {
 		client_id: ClientId,
 		o: &mut impl NitroOutput,
 	) -> Self {
+		let _ = check_nitro_version(paths, o);
+
 		let mut users = UserManager::new(client_id);
 		let mut instances = HashMap::with_capacity(config.instances.len());
 		// Preferences
@@ -205,8 +208,11 @@ impl Config {
 		}
 
 		// Consolidate templates
-		let consolidated_templates =
-			consolidate_template_configs(config.templates.clone(), config.base_template.as_ref(), o);
+		let consolidated_templates = consolidate_template_configs(
+			config.templates.clone(),
+			config.base_template.as_ref(),
+			o,
+		);
 
 		// Load extra supported loaders
 		let mut supported_loaders = Vec::new();
@@ -339,6 +345,37 @@ fn default_config() -> serde_json::Value {
 			}
 		}
 	)
+}
+
+/// Checks and updates the currently installed Nitro version and warns the user
+pub fn check_nitro_version(paths: &Paths, o: &mut impl NitroOutput) -> anyhow::Result<()> {
+	let path = paths.internal.join("nitro_version");
+
+	if path.exists() {
+		let contents = std::fs::read_to_string(&path)?;
+		let contents = contents.trim_end();
+
+		let current_version = Version::from(contents).context("Current version failed to parse")?;
+		let new_version = Version::from(crate::VERSION).context("New version failed to parse")?;
+
+		if current_version.compare_to(new_version, version_compare::Cmp::Gt) {
+			o.display(
+				MessageContents::Warning(translate!(
+					o,
+					WrongNitroVersion,
+					"current" = &contents,
+					"new" = crate::VERSION
+				)),
+				MessageLevel::Important,
+			);
+		} else {
+			std::fs::write(path, crate::VERSION)?;
+		}
+	} else {
+		std::fs::write(path, crate::VERSION)?;
+	}
+
+	Ok(())
 }
 
 #[cfg(test)]
