@@ -9,6 +9,8 @@ export function getInstanceIconSrc(
 		return "/icons/default_instance.png";
 	} else if (icon.startsWith("builtin:")) {
 		return icon.substring(8);
+	} else if (icon.startsWith("http")) {
+		return icon;
 	} else {
 		return convertFileSrc(icon);
 	}
