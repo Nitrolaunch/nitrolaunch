@@ -11,6 +11,7 @@ use serde::{Deserialize, Deserializer};
 use tokio::sync::Mutex;
 
 use crate::hook_call::HookCallArg;
+use crate::hook_call::PLUGIN_DIR_TOKEN;
 use crate::hooks::Hook;
 use crate::hooks::StartWorker;
 use crate::HookHandle;
@@ -443,6 +444,10 @@ fn replace_file_tokens(
 					.context("Failed to read hook result from file")?;
 
 				*value = contents;
+			}
+
+			if let Some(working_dir) = working_dir {
+				*value = value.replace(PLUGIN_DIR_TOKEN, &working_dir.to_string_lossy());
 			}
 		}
 		_ => {}
