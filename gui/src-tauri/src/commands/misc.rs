@@ -1,4 +1,4 @@
-use std::time::Duration;
+use std::{path::PathBuf, time::Duration};
 
 use crate::{data::InstanceIcon, output::LauncherOutput, State};
 use anyhow::{bail, Context};
@@ -239,7 +239,9 @@ pub async fn open_instance_dir(
 
 /// Gets the list of available instance icons
 #[tauri::command]
-pub async fn get_available_icons(state: tauri::State<'_, State>) -> Result<Vec<InstanceIcon>, String> {
+pub async fn get_available_icons(
+	state: tauri::State<'_, State>,
+) -> Result<Vec<InstanceIcon>, String> {
 	let data = state.data.lock().await;
 	let saved = data.saved_instance_icons.clone();
 
@@ -261,10 +263,16 @@ pub async fn get_available_icons(state: tauri::State<'_, State>) -> Result<Vec<I
 			continue;
 		};
 
-		out.extend(result);
+		out.extend(
+			result
+				.into_iter()
+				.map(|x| InstanceIcon::File(PathBuf::from(x))),
+		);
 	}
 
-	Ok(data.saved_instance_icons.clone())
+	out.extend(saved);
+
+	Ok(out)
 }
 
 /// Adds a saved instance icon

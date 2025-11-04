@@ -11,6 +11,11 @@
 				}
 			}
 		},
+		"add_instance_icons": {
+			"constant": [
+				"https://modrinth.com/favicon.ico"
+			]
+		},
 		"add_custom_package_repositories": {
 			"constant": [
 				{

@@ -27,6 +27,11 @@
 				}
 			}
 		},
+		"add_instance_icons": {
+			"constant": [
+				"https://smithed.net/favicon.png"
+			]
+		},
 		"add_custom_package_repositories": {
 			"constant": [
 				{

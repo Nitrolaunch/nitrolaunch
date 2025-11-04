@@ -11,35 +11,42 @@ export default function IconSelector(props: IconSelectorProps) {
 	let selectedIcon = () =>
 		props.icon == undefined ? "builtin:/icons/default_instance.png" : props.icon;
 
-	let [availableIcons, iconMethods] = createResource(async () => {
-		let availableIcons: string[] = await invoke("get_available_icons");
+	let [availableIcons, iconMethods] = createResource(
+		() => props.derivedIcon == undefined ? "" : props.derivedIcon,
+		async () => {
+			let availableIcons: string[];
+			try {
+				availableIcons = await invoke("get_available_icons");
+			} catch (e) {
+				console.error(e);
+				availableIcons = [];
+			}
 
-		let defaultIcons = [
-			"builtin:/icons/default_instance.png",
-			"builtin:/icons/minecraft.png",
-			"builtin:/icons/fabric.png",
-			"builtin:/icons/quilt.png",
-			"builtin:/icons/paper.png",
-			"builtin:/icons/folia.png",
-			"builtin:/icons/forge.png",
-			"builtin:/icons/neoforge.png",
-			"builtin:/icons/sponge.png",
-		];
+			let defaultIcons = [
+				"builtin:/icons/default_instance.png",
+				"builtin:/icons/minecraft.png",
+				"builtin:/icons/fabric.png",
+				"builtin:/icons/quilt.png",
+				"builtin:/icons/paper.png",
+				"builtin:/icons/folia.png",
+				"builtin:/icons/forge.png",
+				"builtin:/icons/neoforge.png",
+				"builtin:/icons/sponge.png",
+			];
 
-		let out = defaultIcons;
-		out = out.concat(availableIcons);
+			let out = defaultIcons;
+			out = out.concat(availableIcons);
 
-		// Just in case it gets removed add the currently selected icon and the derived icon
-		if (props.icon != undefined && !out.includes(props.icon)) {
-			out.push(props.icon);
-		}
-		if (props.derivedIcon != undefined && !out.includes(props.derivedIcon)) {
-			out.push(props.derivedIcon);
-		}
+			// Just in case it gets removed add the currently selected icon and the derived icon
+			if (props.icon != undefined && !out.includes(props.icon)) {
+				out.push(props.icon);
+			}
+			if (props.derivedIcon != undefined && !out.includes(props.derivedIcon)) {
+				out.push(props.derivedIcon);
+			}
 
-		return out;
-	});
-
+			return out;
+		});
 
 	async function addIcon() {
 		try {
