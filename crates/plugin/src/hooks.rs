@@ -846,3 +846,12 @@ pub enum InstanceTileSize {
 	/// Spans two units
 	Large,
 }
+
+def_hook!(
+	AddInstanceIcons,
+	"add_instance_icons",
+	"Adds default instance icons for the user to use",
+	(),
+	Vec<String>,
+	1,
+);

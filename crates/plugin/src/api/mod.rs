@@ -183,6 +183,7 @@ impl CustomPlugin {
 		"after_packages_installed",
 		AfterPackagesInstalled
 	);
+	hook_interface!(add_instance_icons, "add_instance_icons", AddInstanceIcons);
 
 	/// Handle a hook
 	fn handle_hook<H: Hook>(

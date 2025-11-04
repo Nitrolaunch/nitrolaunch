@@ -12,7 +12,7 @@ export default function IconSelector(props: IconSelectorProps) {
 		props.icon == undefined ? "builtin:/icons/default_instance.png" : props.icon;
 
 	let [availableIcons, iconMethods] = createResource(async () => {
-		let savedIcons: string[] = await invoke("get_saved_icons");
+		let availableIcons: string[] = await invoke("get_available_icons");
 
 		let defaultIcons = [
 			"builtin:/icons/default_instance.png",
@@ -27,7 +27,7 @@ export default function IconSelector(props: IconSelectorProps) {
 		];
 
 		let out = defaultIcons;
-		out = out.concat(savedIcons);
+		out = out.concat(availableIcons);
 
 		// Just in case it gets removed add the currently selected icon
 		if (props.icon != undefined && !out.includes(props.icon)) {

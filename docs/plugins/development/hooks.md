@@ -131,6 +131,16 @@ Adds new templates to the config
 }
 ```
 
+### `add_instance_icons`
+
+Adds new options for instance and template icons in the UI
+
+- Argument: None
+
+- Result: `string[]`
+
+The strings can be filesystem paths (often using `${PLUGIN_DIR}` for plugin-relative paths) or web links
+
 ## Instance Setup Hooks
 
 ### `on_instance_setup`

@@ -202,7 +202,7 @@ fn main() {
 			commands::misc::test_long_running_task,
 			commands::misc::open_data_dir,
 			commands::misc::open_instance_dir,
-			commands::misc::get_saved_icons,
+			commands::misc::get_available_icons,
 			commands::misc::save_icon,
 			commands::cancel_task,
 		])

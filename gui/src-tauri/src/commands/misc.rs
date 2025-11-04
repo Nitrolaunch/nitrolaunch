@@ -9,7 +9,7 @@ use nitrolaunch::{
 		util::versions::MinecraftVersion,
 	},
 	instance::update::manager::UpdateManager,
-	plugin_crate::hooks::AddSupportedLoaders,
+	plugin_crate::hooks::{AddInstanceIcons, AddSupportedLoaders},
 	shared::{id::InstanceID, later::Later, loaders::Loader, output::NoOp, UpdateDepth},
 };
 
@@ -237,10 +237,33 @@ pub async fn open_instance_dir(
 	Ok(())
 }
 
-/// Gets the list of saved instance icons
+/// Gets the list of available instance icons
 #[tauri::command]
-pub async fn get_saved_icons(state: tauri::State<'_, State>) -> Result<Vec<InstanceIcon>, String> {
+pub async fn get_available_icons(state: tauri::State<'_, State>) -> Result<Vec<InstanceIcon>, String> {
 	let data = state.data.lock().await;
+	let saved = data.saved_instance_icons.clone();
+
+	let Ok(config) = load_config(&state.paths, &mut NoOp).await else {
+		return Ok(saved);
+	};
+
+	let Ok(results) = config
+		.plugins
+		.call_hook(AddInstanceIcons, &(), &state.paths, &mut NoOp)
+		.await
+	else {
+		return Ok(saved);
+	};
+
+	let mut out = Vec::with_capacity(results.len());
+	for result in results {
+		let Ok(result) = result.result(&mut NoOp).await else {
+			continue;
+		};
+
+		out.extend(result);
+	}
+
 	Ok(data.saved_instance_icons.clone())
 }
 
