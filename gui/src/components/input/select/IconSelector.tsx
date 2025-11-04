@@ -29,9 +29,12 @@ export default function IconSelector(props: IconSelectorProps) {
 		let out = defaultIcons;
 		out = out.concat(availableIcons);
 
-		// Just in case it gets removed add the currently selected icon
+		// Just in case it gets removed add the currently selected icon and the derived icon
 		if (props.icon != undefined && !out.includes(props.icon)) {
 			out.push(props.icon);
+		}
+		if (props.derivedIcon != undefined && !out.includes(props.derivedIcon)) {
+			out.push(props.derivedIcon);
 		}
 
 		return out;
