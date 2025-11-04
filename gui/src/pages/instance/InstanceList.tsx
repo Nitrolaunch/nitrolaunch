@@ -441,11 +441,13 @@ function Item(props: ItemProps) {
 			onClick={() => {
 				// Double click to edit
 				if (props.selected) {
-					let url =
-						props.itemKind == "instance"
-							? `/instance/${props.instance.id}`
-							: `/template_config/${props.instance.id}`;
-					navigate(url);
+					if (!props.instance.from_plugin) {
+						let url =
+							props.itemKind == "instance"
+								? `/instance/${props.instance.id}`
+								: `/template_config/${props.instance.id}`;
+						navigate(url);
+					}
 				} else {
 					props.onSelect();
 				}
