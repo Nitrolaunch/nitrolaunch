@@ -31,6 +31,7 @@ import {
 	Box,
 	Delete,
 	Elipsis,
+	Folder,
 	Gear,
 	Play,
 	Popout,
@@ -479,6 +480,11 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 													tip: "Export this instance to another launcher",
 												},
 												{
+													value: "open_dir",
+													contents: <IconAndText icon={Folder} text="Open Folder" />,
+													tip: "Open this instance's files in your explorer"
+												},
+												{
 													value: "delete",
 													contents: <IconAndText icon={Trash} text="Delete" color="var(--error)" />,
 													tip: "Delete this instance forever",
@@ -489,13 +495,15 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 											onChange={async (selection) => {
 												if (selection == "export") {
 													setShowExportPrompt(true);
+												} else if (selection == "open_dir") {
+													await invoke("open_instance_dir", { instance: id });
 												} else if (selection == "delete") {
 													setShowDeleteConfirm(true);
 												} else {
 													runDropdownButtonClick(selection!);
 												}
 											}}
-											optionsWidth="9rem"
+											optionsWidth="11rem"
 											isSearchable={false}
 											zIndex="5"
 										/>

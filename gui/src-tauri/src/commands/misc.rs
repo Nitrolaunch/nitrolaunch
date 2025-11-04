@@ -10,7 +10,7 @@ use nitrolaunch::{
 	},
 	instance::update::manager::UpdateManager,
 	plugin_crate::hooks::AddSupportedLoaders,
-	shared::{later::Later, loaders::Loader, output::NoOp, UpdateDepth},
+	shared::{id::InstanceID, later::Later, loaders::Loader, output::NoOp, UpdateDepth},
 };
 
 use super::{fmt_err, load_config};
@@ -208,5 +208,31 @@ pub async fn open_data_dir(state: tauri::State<'_, State>) -> Result<(), String>
 	tokio::task::spawn_blocking(move || {
 		showfile::show_path_in_file_manager(&path);
 	});
+	Ok(())
+}
+
+#[tauri::command]
+pub async fn open_instance_dir(
+	state: tauri::State<'_, State>,
+	instance: &str,
+) -> Result<(), String> {
+	let mut config = fmt_err(
+		load_config(&state.paths, &mut NoOp)
+			.await
+			.context("Failed to load config"),
+	)?;
+
+	let Some(instance) = config.instances.get_mut(&InstanceID::from(instance)) else {
+		return Err(format!("Instance {instance} does not exist"));
+	};
+
+	let _ = instance.ensure_dirs(&state.paths);
+
+	let path = instance.get_dirs().get().game_dir.clone();
+
+	tokio::task::spawn_blocking(move || {
+		showfile::show_path_in_file_manager(&path);
+	});
+
 	Ok(())
 }

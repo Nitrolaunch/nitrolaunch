@@ -99,7 +99,6 @@ export function dropdownButtonToOption(button: PluginDropdownButton): Option {
 }
 
 export function runDropdownButtonClick(selection: string) {
-	console.log(selection);
 	if (selection.startsWith("custom_")) {
 		let data = selection!.replace("custom_", "");
 		let split = data.split("-");
