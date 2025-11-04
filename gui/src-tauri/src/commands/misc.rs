@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use crate::{output::LauncherOutput, State};
+use crate::{data::InstanceIcon, output::LauncherOutput, State};
 use anyhow::{bail, Context};
 use nitrolaunch::{
 	core::{
@@ -233,6 +233,25 @@ pub async fn open_instance_dir(
 	tokio::task::spawn_blocking(move || {
 		showfile::show_path_in_file_manager(&path);
 	});
+
+	Ok(())
+}
+
+/// Gets the list of saved instance icons
+#[tauri::command]
+pub async fn get_saved_icons(state: tauri::State<'_, State>) -> Result<Vec<InstanceIcon>, String> {
+	let data = state.data.lock().await;
+	Ok(data.saved_instance_icons.clone())
+}
+
+/// Adds a saved instance icon
+#[tauri::command]
+pub async fn save_icon(state: tauri::State<'_, State>, icon: String) -> Result<(), String> {
+	let mut data = state.data.lock().await;
+	data.saved_instance_icons
+		.push(InstanceIcon::File(icon.into()));
+
+	fmt_err(data.write(&state.paths))?;
 
 	Ok(())
 }

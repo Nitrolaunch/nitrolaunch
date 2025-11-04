@@ -1,23 +1,63 @@
 import { createResource, For } from "solid-js";
 import "./IconSelector.css";
+import { invoke } from "@tauri-apps/api";
+import { getInstanceIconSrc } from "../../../utils";
+import Icon from "../../Icon";
+import { Folder } from "../../../icons";
+import { open } from "@tauri-apps/api/dialog";
+import { errorToast } from "../../dialog/Toasts";
 
 export default function IconSelector(props: IconSelectorProps) {
-	let [availableIcons, _] = createResource(async () => {
-		return [
-			"/icons/default_instance.png",
-			"/icons/minecraft.png",
-			"/icons/fabric.png",
-			"/icons/quilt.png",
-			"/icons/paper.png",
-			"/icons/folia.png",
-			"/icons/forge.png",
-			"/icons/neoforge.png",
-			"/icons/sponge.png",
+	let selectedIcon = () =>
+		props.icon == undefined ? "builtin:/icons/default_instance.png" : props.icon;
+
+	let [availableIcons, iconMethods] = createResource(async () => {
+		let savedIcons: string[] = await invoke("get_saved_icons");
+
+		let defaultIcons = [
+			"builtin:/icons/default_instance.png",
+			"builtin:/icons/minecraft.png",
+			"builtin:/icons/fabric.png",
+			"builtin:/icons/quilt.png",
+			"builtin:/icons/paper.png",
+			"builtin:/icons/folia.png",
+			"builtin:/icons/forge.png",
+			"builtin:/icons/neoforge.png",
+			"builtin:/icons/sponge.png",
 		];
+
+		let out = defaultIcons;
+		out = out.concat(savedIcons);
+
+		// Just in case it gets removed add the currently selected icon
+		if (props.icon != undefined && !out.includes(props.icon)) {
+			out.push(props.icon);
+		}
+
+		return out;
 	});
 
-	let selectedIcon = () =>
-		props.icon == undefined ? "/icons/default_instance.png" : props.icon;
+
+	async function addIcon() {
+		try {
+			let file = await open({
+				directory: false,
+				title: "Select Icon",
+				filters: [{
+					name: "Image",
+					extensions: ["png", "jpeg", "gif", "ico", "webp", "tiff", "svg"]
+				}],
+				multiple: false,
+			}) as string;
+
+			props.setIcon(file);
+
+			await invoke("save_icon", { icon: file });
+			iconMethods.refetch();
+		} catch (e) {
+			errorToast("Failed to select icon: " + e);
+		}
+	}
 
 	return (
 		<div class="fullwidth">
@@ -27,7 +67,7 @@ export default function IconSelector(props: IconSelectorProps) {
 						<SelectableIcon
 							icon={icon}
 							onSelect={() => {
-								if (icon == "/icons/default_instance.png") {
+								if (icon == "builtin:/icons/default_instance.png") {
 									props.setIcon(undefined);
 								} else {
 									props.setIcon(icon);
@@ -37,18 +77,26 @@ export default function IconSelector(props: IconSelectorProps) {
 						/>
 					)}
 				</For>
+				<div
+					class={`cont bubble-hover input-shadow icon-selector-icon`}
+					onclick={addIcon}
+				>
+					<Icon icon={Folder} size="2rem" />
+				</div>
 			</div>
 		</div>
 	);
 }
 
 function SelectableIcon(props: SelectableIconProps) {
+	let src = getInstanceIconSrc(props.icon);
+
 	return (
 		<div
 			class={`cont bubble-hover input-shadow icon-selector-icon ${props.isSelected ? "selected" : ""}`}
 			onclick={props.onSelect}
 		>
-			<img src={props.icon} class="icon-selector-icon-image" />
+			<img src={src} class="icon-selector-icon-image" />
 		</div>
 	);
 }

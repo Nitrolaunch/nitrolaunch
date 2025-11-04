@@ -1,4 +1,4 @@
-import { invoke } from "@tauri-apps/api/tauri";
+import { convertFileSrc, invoke } from "@tauri-apps/api/tauri";
 import { InstanceIcon, PkgRequest } from "./types";
 
 // Gets the src of an instance icon
@@ -7,8 +7,10 @@ export function getInstanceIconSrc(
 ): string {
 	if (icon === null || icon == undefined) {
 		return "/icons/default_instance.png";
+	} else if (icon.startsWith("builtin:")) {
+		return icon.substring(8);
 	} else {
-		return icon;
+		return convertFileSrc(icon);
 	}
 }
 

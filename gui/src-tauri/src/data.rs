@@ -14,10 +14,8 @@ use crate::output::SerializableResolutionError;
 pub struct LauncherData {
 	/// Whether the launcher has been opened before
 	pub launcher_opened_before: bool,
-	/// Icons for instances
-	pub instance_icons: HashMap<String, InstanceIcon>,
-	/// Icons for templates
-	pub template_icons: HashMap<String, InstanceIcon>,
+	/// Saved icons for instances
+	pub saved_instance_icons: Vec<InstanceIcon>,
 	/// Set of pinned instances
 	pub pinned: HashSet<String>,
 	/// The currently selected user
