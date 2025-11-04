@@ -23,6 +23,10 @@ name = "nitro_plugin_backup"
 path = "plugins/backup/main.rs"
 
 [[bin]]
+name = "nitro_plugin_beet"
+path = "plugins/beet/main.rs"
+
+[[bin]]
 name = "nitro_plugin_better_jsons"
 path = "plugins/better_jsons/main.rs"
 

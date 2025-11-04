@@ -19,6 +19,7 @@ package_zips.platform_dependent:
 	@rm -f release/args-${OS}.zip
 	@rm -f release/automate-${OS}.zip
 	@rm -f release/backup-${OS}.zip
+	@rm -f release/beet-${OS}.zip
 	@rm -f release/better_jsons-${OS}.zip
 	@rm -f release/cleanup-${OS}.zip
 	@rm -f release/config_split-${OS}.zip
@@ -50,6 +51,7 @@ package_zips.platform_dependent:
 	@zip -j release/args-${OS}.zip $(TARGET_DIR)/nitro_plugin_args${EXTENSION} plugins/args/plugin.json
 	@zip -j release/automate-${OS}.zip $(TARGET_DIR)/nitro_plugin_automate${EXTENSION} plugins/automate/plugin.json
 	@zip -j release/backup-${OS}.zip $(TARGET_DIR)/nitro_plugin_backup${EXTENSION} plugins/backup/plugin.json
+	@zip -j release/beet-${OS}.zip $(TARGET_DIR)/nitro_plugin_beet${EXTENSION} plugins/beet/plugin.json
 	@zip -j release/better_jsons-${OS}.zip $(TARGET_DIR)/nitro_plugin_better_jsons${EXTENSION} plugins/better_jsons/plugin.json
 	@zip -j release/cleanup-${OS}.zip $(TARGET_DIR)/nitro_plugin_cleanup${EXTENSION} plugins/cleanup/plugin.json
 	@zip -j release/config_split-${OS}.zip $(TARGET_DIR)/nitro_plugin_config_split${EXTENSION} plugins/config_split/plugin.json
@@ -91,6 +93,10 @@ install.automate:
 install.backup:
 	@cargo install --path . --bin nitro_plugin_backup --offline
 	@cat plugins/backup/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/backup.json
+
+install.beet:
+	@cargo install --path . --bin nitro_plugin_beet --offline
+	@cat plugins/beet/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/beet.json
 
 install.better_jsons:
 	@cargo install --path . --bin nitro_plugin_better_jsons --offline

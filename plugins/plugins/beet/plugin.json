@@ -1,0 +1,13 @@
+{
+	"name": "Beet",
+	"description": "Tools for Beet developers",
+	"protocol_version": 3,
+	"hooks": {
+		"subcommand": {
+			"executable": "${PLUGIN_DIR}/nitro_plugin_beet${EXE_EXTENSION}"
+		}
+	},
+	"subcommands": {
+		"beet": "Access tools for Beet"
+	}
+}

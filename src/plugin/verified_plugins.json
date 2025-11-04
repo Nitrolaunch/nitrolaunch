@@ -194,5 +194,12 @@
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Make simple CurseForge API calls to query mod versions"
+	},
+	"beet": {
+		"id": "beet",
+		"name": "Beet",
+		"github_owner": "Nitrolaunch",
+		"github_repo": "plugins",
+		"description": "Tools for Beet developers"
 	}
 }
