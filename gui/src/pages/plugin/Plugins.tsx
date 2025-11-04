@@ -143,7 +143,7 @@ function Plugin(props: PluginProps) {
 
 	return (
 		<div
-			class={`cont col input-shadow plugin ${isDisabled() ? "disabled" : ""}`}
+			class={`cont col shadow plugin ${isDisabled() ? "disabled" : ""}`}
 		>
 			<div class="plugin-top">
 				<div class="cont plugin-header">

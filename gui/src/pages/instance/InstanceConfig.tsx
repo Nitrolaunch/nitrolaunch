@@ -513,7 +513,7 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 				</h3>
 			</Show>
 			<div class="cont">
-				<div class="input-shadow" id="config-tabs">
+				<div class="shadow" id="config-tabs">
 					<Tip tip="General settings" side="top">
 						<div
 							class={`config-tab ${tab() == "general" ? "selected" : ""}`}

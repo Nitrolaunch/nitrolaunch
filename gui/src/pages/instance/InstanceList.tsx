@@ -374,7 +374,7 @@ function Section(props: SectionProps) {
 					{/* Button for creating a new instance */}
 					<Show when={props.kind == "all" || props.kind == "templates"}>
 						<div
-							class="input-shadow instance-list-item bubble-hover-small noselect"
+							class="shadow instance-list-item bubble-hover-small noselect"
 							onclick={() => {
 								let target =
 									props.itemType == "instance"
@@ -436,7 +436,7 @@ function Item(props: ItemProps) {
 
 	return (
 		<div
-			class={`input-shadow bubble-hover-small instance-list-item noselect ${props.selected ? "selected" : ""
+			class={`shadow bubble-hover-small instance-list-item noselect ${props.selected ? "selected" : ""
 				} ${props.itemKind}`}
 			onClick={() => {
 				// Double click to edit

@@ -9,7 +9,7 @@ export default function SearchBar(props: SearchBarProps) {
 
 	return (
 		<form
-			class="cont input-shadow search-bar"
+			class="cont shadow search-bar"
 			onsubmit={(e) => {
 				e.preventDefault();
 				let term2 = term() == undefined ? "" : term()!;

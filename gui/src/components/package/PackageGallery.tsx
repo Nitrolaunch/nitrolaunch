@@ -13,7 +13,7 @@ export default function PackageGallery(props: PackageGalleryProps) {
 		<For each={props.gallery}>
 			{(entry, i) => (
 				<img
-					class="package-gallery-entry input-shadow bubble-hover"
+					class="package-gallery-entry shadow bubble-hover"
 					src={entry}
 					onclick={() => setPreview([entry, i()])}
 				/>

@@ -98,7 +98,7 @@ export default function NavBar(props: NavBarProps) {
 					</div>
 					<h3 class="cont bubble-hover navbar-item">
 						<a href="/" class="cont link bold" title="Return to the homepage" style="position:relative">
-							<img src="/Logo.png" style="width:1.5rem;border-radius:var(--round)" class="input-shadow" />
+							<img src="/Logo.png" style="width:1.5rem;border-radius:var(--round)" class="shadow" />
 							<div id="logo-text">NITRO</div>
 							<div class="cont" id="beta-indicator">
 								BETA

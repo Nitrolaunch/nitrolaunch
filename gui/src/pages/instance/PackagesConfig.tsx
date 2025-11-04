@@ -507,7 +507,7 @@ function ConfiguredPackage(props: ConfiguredPackageProps) {
 
 	return (
 		<div
-			class="input-shadow configured-package"
+			class="shadow configured-package"
 			onmouseenter={() => setIsHovered(true)}
 			onmouseleave={() => setIsHovered(false)}
 		>

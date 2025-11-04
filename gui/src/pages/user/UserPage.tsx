@@ -45,7 +45,7 @@ export default function UserPage() {
 			<div class="cont col" style="width:100%">
 				<div class="cont col" id="user-container">
 					<div class="cont" id="user-header-container">
-						<div class="input-shadow" id="user-header">
+						<div class="shadow" id="user-header">
 							<div class="cont start" id="user-icon">
 								<img
 									id="user-icon-image"
@@ -133,7 +133,7 @@ export default function UserPage() {
 							</div>
 						</div>
 					</div>
-					<div id="user-body" class="input-shadow"></div>
+					<div id="user-body" class="shadow"></div>
 				</div>
 				<br />
 				<br />

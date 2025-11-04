@@ -50,6 +50,7 @@
 	--border: 0.15rem;
 	--input-height: 2.2rem;
 	--shadow-offset: 0.35rem;
+	--shadow-blur: 0.2rem;
 
 	color: var(--text);
 	background-color: var(--bg);
@@ -125,8 +126,8 @@ input {
 
 input,
 button,
-.input-shadow {
-	box-shadow: var(--shadow-offset) var(--shadow-offset) var(--shadow);
+.shadow {
+	box-shadow: var(--shadow-offset) var(--shadow-offset) var(--shadow-blur) var(--shadow);
 }
 
 input:focus {

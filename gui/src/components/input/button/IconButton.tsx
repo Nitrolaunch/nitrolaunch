@@ -34,7 +34,7 @@ export default function IconButton(props: IconButtonProps) {
 
 	return (
 		<div
-			class={`cont icon-button ${isCircle ? "circle" : ""} ${props.shadow == true ? "input-shadow" : ""
+			class={`cont icon-button ${isCircle ? "circle" : ""} ${props.shadow == true ? "shadow" : ""
 				} bubble-hover`}
 			style={`${colorStyle()};width:${props.size};height:${props.size
 				};${iconColorStyle}`}

@@ -78,7 +78,7 @@ export default function IconSelector(props: IconSelectorProps) {
 					)}
 				</For>
 				<div
-					class={`cont bubble-hover input-shadow icon-selector-icon`}
+					class={`cont bubble-hover shadow icon-selector-icon`}
 					onclick={addIcon}
 				>
 					<Icon icon={Folder} size="2rem" />
@@ -93,7 +93,7 @@ function SelectableIcon(props: SelectableIconProps) {
 
 	return (
 		<div
-			class={`cont bubble-hover input-shadow icon-selector-icon ${props.isSelected ? "selected" : ""}`}
+			class={`cont bubble-hover shadow icon-selector-icon ${props.isSelected ? "selected" : ""}`}
 			onclick={props.onSelect}
 		>
 			<img src={src} class="icon-selector-icon-image" />

@@ -113,7 +113,7 @@ export default function UserWidget(props: UserWidgetProps) {
 				</div>
 			</div>
 			<Show when={isOpen()}>
-				<div class="input-shadow" id="user-widget-dropdown">
+				<div class="shadow" id="user-widget-dropdown">
 					<Show when={userData() != undefined}>
 						<For each={userData()!.users}>
 							{(user) => (

@@ -32,7 +32,7 @@ export default function InlineSelect(props: InlineSelectProps) {
 
 	return (
 		<div
-			class={`${connected ? "input-shadow" : ""} inline-select ${connected ? "connected" : "disconnected"
+			class={`${connected ? "shadow" : ""} inline-select ${connected ? "connected" : "disconnected"
 				}`}
 			style={`display:${grid ? "grid" : "flex"
 				};grid-template-columns:repeat(${columns()}, minmax(0, 1fr))`}
@@ -132,7 +132,7 @@ function InlineSelectOption(props: OptionProps) {
 
 	let contents = (
 		<div
-			class={`cont inline-select-option ${props.connected ? "connected" : "disconnected input-shadow bubble-hover"
+			class={`cont inline-select-option ${props.connected ? "connected" : "disconnected shadow bubble-hover"
 				} ${props.class == undefined ? "" : props.class} ${isSelected() ? "selected" : ""
 				} ${props.isLast ? "last" : "not-last"} ${props.isFirst ? "" : "not-first"
 				}`}
