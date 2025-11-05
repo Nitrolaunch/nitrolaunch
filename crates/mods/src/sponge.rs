@@ -40,8 +40,10 @@ pub async fn get_artifacts(
 	);
 	let resp: Versions = download::json(url, client).await?;
 
-	let artifacts = resp.artifacts.into_keys();
-	Ok(artifacts.collect())
+	let mut artifacts: Vec<_> = resp.artifacts.into_keys().collect();
+	artifacts.reverse();
+
+	Ok(artifacts)
 }
 
 #[derive(Deserialize, Clone)]

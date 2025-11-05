@@ -32,12 +32,19 @@ fn main() -> anyhow::Result<()> {
 			))
 			.context("Failed to get list of Sponge versions")?;
 
-		let artifact = artifacts
-			.first()
-			.context("Failed to find a valid Sponge version")?;
+		let artifact = if let Some(version) = arg.desired_loader_version {
+			version
+				.get_match(&artifacts)
+				.context("Sponge version does not exist")?
+		} else {
+			artifacts
+				.last()
+				.context("Failed to find a valid Sponge version")?
+				.clone()
+		};
 
 		let artifact_info = runtime
-			.block_on(sponge::get_artifact_info(mode, artifact, &client))
+			.block_on(sponge::get_artifact_info(mode, &artifact, &client))
 			.context("Failed to get artifact info")?;
 
 		runtime
@@ -59,6 +66,23 @@ fn main() -> anyhow::Result<()> {
 			jar_path_override: Some(jar_path.to_string_lossy().to_string()),
 			..Default::default()
 		})
+	})?;
+
+	plugin.get_loader_versions(|_, arg| {
+		if arg.loader != Loader::Sponge {
+			return Ok(Vec::new());
+		}
+
+		let client = nitro_net::download::Client::new();
+		let runtime = tokio::runtime::Runtime::new()?;
+
+		let mode = sponge::Mode::Vanilla;
+
+		let artifacts = runtime
+			.block_on(sponge::get_artifacts(mode, &arg.minecraft_version, &client))
+			.context("Failed to get list of Sponge versions")?;
+
+		Ok(artifacts)
 	})?;
 
 	Ok(())

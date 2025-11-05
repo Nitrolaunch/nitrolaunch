@@ -10,6 +10,9 @@
 			"constant": [
 				"sponge"
 			]
+		},
+		"get_loader_versions": {
+			"executable": "${PLUGIN_DIR}/nitro_plugin_sponge${EXE_EXTENSION}"
 		}
 	}
 }
