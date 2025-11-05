@@ -28,10 +28,7 @@ import Tip from "../../components/dialog/Tip";
 import { errorToast, successToast } from "../../components/dialog/Toasts";
 import DisplayShow from "../../components/utility/DisplayShow";
 import {
-	getLoaderColor,
-	getLoaderDisplayName,
 	getLoaderImage,
-	getLoaderSide,
 	Loader,
 } from "../../package";
 import {
@@ -65,6 +62,7 @@ import { updateInstanceList } from "./InstanceList";
 import SlideSwitch from "../../components/input/SlideSwitch";
 import Icon from "../../components/Icon";
 import { Controller, Server } from "../../icons";
+import LoaderConfig from "./LoaderConfig";
 
 export default function InstanceConfigPage(props: InstanceConfigProps) {
 	let navigate = useNavigate();
@@ -798,206 +796,27 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 							</div>
 						</Tip>
 					</Show>
-					<Show
-						when={
-							(side() == "client" || isTemplate) &&
-							supportedLoaders() != undefined
-						}
-					>
-						<div class="cont start label">
-							<label for="client-type">{`${isTemplate ? "CLIENT " : ""
-								}LOADER`}</label>
-							<DeriveIndicator
-								parentConfigs={parentConfigs()}
-								currentValue={clientLoader()}
-								property={(x) => {
-									let loader = getConfiguredLoader(x.loader, "client");
-									return loader == undefined
-										? undefined
-										: getLoaderDisplayName(loader);
-								}}
-							/>
-						</div>
-						<Tip
-							tip={
-								isInstance
-									? "The loader to use. Install more with plugins!"
-									: "The loader to use for client instances. Install more with plugins!"
-							}
-							fullwidth
-						>
-							<InlineSelect
-								onChange={(x) => {
-									setClientLoader(x);
-									setDirty();
-									setIsLoaderDirty(true);
-								}}
-								selected={clientLoader()}
-								options={supportedLoaders()!
-									.filter((x) => getLoaderSide(x) != "server")
-									.map((x) => {
-										return {
-											value: x,
-											contents: (
-												<div
-													class={`cont ${clientLoader() == undefined &&
-														getDerivedValue(parentConfigs(), (x) =>
-															getConfiguredLoader(x.loader, "client")
-														) == x
-														? "derived-option"
-														: ""
-														}`}
-												>
-													<Show when={x != undefined}>
-														<img src={getLoaderImage(x as Loader)} style="width:1.2rem" />
-													</Show>
-													{x == undefined
-														? "Unset"
-														: getLoaderDisplayName(x as Loader)}
-												</div>
-											),
-											color: getLoaderColor(x as Loader),
-											tip:
-												x == undefined ? "Inherit from the template" : undefined,
-										};
-									})}
-								columns={3}
-								allowEmpty={false}
-								connected={false}
-							/>
-						</Tip>
-					</Show>
-					<Show
-						when={
-							(side() == "server" || isTemplate) &&
-							supportedLoaders() != undefined
-						}
-					>
-						<div class="cont start label">
-							<label for="server-type">{`${isTemplate ? "SERVER " : ""
-								}LOADER`}</label>
-							<DeriveIndicator
-								parentConfigs={parentConfigs()}
-								currentValue={clientLoader()}
-								property={(x) => {
-									let loader = getConfiguredLoader(x.loader, "server");
-									return loader == undefined
-										? undefined
-										: getLoaderDisplayName(loader);
-								}}
-							/>
-						</div>
-						<Tip
-							tip={
-								isInstance
-									? "The loader to use. Install more with plugins!"
-									: "The loader to use for server instances. Install more with plugins!"
-							}
-							fullwidth
-						>
-							<InlineSelect
-								onChange={(x) => {
-									setServerLoader(x);
-									setDirty();
-									setIsLoaderDirty(true);
-								}}
-								selected={serverLoader()}
-								options={supportedLoaders()!
-									.filter((x) => getLoaderSide(x) != "client")
-									.map((x) => {
-										return {
-											value: x,
-											contents: (
-												<div
-													class={`cont ${serverLoader() == undefined &&
-														getDerivedValue(parentConfigs(), (x) =>
-															getConfiguredLoader(x.loader, "server")
-														) == x
-														? "derived-option"
-														: ""
-														}`}
-												>
-													<Show when={x != undefined}>
-														<img src={getLoaderImage(x as Loader)} style="width:1.2rem" />
-													</Show>
-													{x == undefined
-														? "Unset"
-														: getLoaderDisplayName(x as Loader)}
-												</div>
-											),
-											color: getLoaderColor(x as Loader),
-											tip:
-												x == undefined ? "Inherit from the template" : undefined,
-										};
-									})}
-								columns={3}
-								allowEmpty={false}
-								connected={false}
-							/>
-						</Tip>
-					</Show>
-					<Show
-						when={
-							side() == "client" &&
-							(clientLoader() != undefined ||
-								parentConfigs().some(
-									(x) => getConfiguredLoader(x.loader, "client") != undefined
-								))
-						}
-					>
-						<div class="cont start label">
-							<label for="client-loader-version">
-								{isTemplate ? "CLIENT LOADER VERSION" : "LOADER VERSION"}
-							</label>
-						</div>
-						<Tip
-							tip={`The version for the${isTemplate ? " client" : ""
-								} loader. Leave empty to select the best version automatically.`}
-							fullwidth
-						>
-							<input
-								type="text"
-								id="client-loader-version"
-								name="client-loader-version"
-								value={emptyUndefined(clientLoaderVersion())}
-								onChange={(e) => {
-									setClientLoaderVersion(e.target.value);
-									setDirty();
-								}}
-							></input>
-						</Tip>
-					</Show>
-					<Show
-						when={
-							side() == "server" &&
-							(serverLoader() != undefined ||
-								parentConfigs().some(
-									(x) => getConfiguredLoader(x.loader, "server") != undefined
-								))
-						}
-					>
-						<div class="cont start label">
-							<label for="server-loader-version">
-								{isTemplate ? "SERVER LOADER VERSION" : "LOADER VERSION"}
-							</label>
-						</div>
-						<Tip
-							tip={`The version for the${isTemplate ? " server" : ""
-								} loader. Leave empty to select the best version automatically.`}
-							fullwidth
-						>
-							<input
-								type="text"
-								id="server-loader-version"
-								name="server-loader-version"
-								value={emptyUndefined(serverLoaderVersion())}
-								onChange={(e) => {
-									setServerLoaderVersion(e.target.value);
-									setDirty();
-								}}
-							></input>
-						</Tip>
-					</Show>
+					<LoaderConfig
+						minecraftVersion={version() == undefined ? getDerivedValue(parentConfigs(), (x) => x.version) : version()}
+						side={side()}
+						isTemplate={isTemplate}
+
+						clientLoader={clientLoader()}
+						serverLoader={serverLoader()}
+						clientLoaderVersion={clientLoaderVersion()}
+						serverLoaderVersion={serverLoaderVersion()}
+
+						setClientLoader={setClientLoader}
+						setServerLoader={setServerLoader}
+						setClientLoaderVersion={setClientLoaderVersion}
+						setServerLoaderVersion={setServerLoaderVersion}
+
+						supportedLoaders={supportedLoaders()}
+
+						parentConfigs={parentConfigs()}
+						setDirty={setDirty}
+						setLoaderDirty={() => setIsLoaderDirty(true)}
+					/>
 					<hr />
 					<div class="cont start label">
 						<label for="datapack-folder">DATAPACK FOLDER</label>

@@ -855,3 +855,22 @@ def_hook!(
 	Vec<String>,
 	1,
 );
+
+def_hook!(
+	GetLoaderVersions,
+	"get_loader_versions",
+	"Gets the list of versions for a loader",
+	GetLoaderVersionsArg,
+	Vec<String>,
+	1,
+);
+
+/// Argument for the GetLoaderVersions hook
+#[derive(Serialize, Deserialize, Default)]
+#[serde(default)]
+pub struct GetLoaderVersionsArg {
+	/// The loader to get versions for
+	pub loader: Loader,
+	/// The Minecraft version of the instance
+	pub minecraft_version: String,
+}

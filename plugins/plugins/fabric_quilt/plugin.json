@@ -11,6 +11,9 @@
 				"fabric",
 				"quilt"
 			]
+		},
+		"get_loader_versions": {
+			"executable": "${PLUGIN_DIR}/nitro_plugin_fabric_quilt${EXE_EXTENSION}"
 		}
 	}
 }

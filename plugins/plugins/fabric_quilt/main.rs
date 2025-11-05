@@ -4,7 +4,7 @@ use anyhow::{bail, Context};
 use nitro_core::io::update::UpdateManager;
 use nitro_mods::fabric_quilt;
 use nitro_plugin::{api::CustomPlugin, hooks::OnInstanceSetupResult};
-use nitro_shared::{loaders::Loader, UpdateDepth};
+use nitro_shared::{loaders::Loader, versions::VersionPattern, UpdateDepth};
 
 fn main() -> anyhow::Result<()> {
 	let mut plugin = CustomPlugin::from_manifest_file("fabric_quilt", include_str!("plugin.json"))?;
@@ -32,9 +32,18 @@ fn main() -> anyhow::Result<()> {
 
 		let runtime = tokio::runtime::Runtime::new()?;
 
+		let desired_fq_version = arg.desired_loader_version.and_then(|x| {
+			if let VersionPattern::Single(pat) = x {
+				Some(pat)
+			} else {
+				None
+			}
+		});
+
 		let meta = runtime
 			.block_on(fabric_quilt::get_meta(
 				&arg.version_info.version,
+				desired_fq_version.as_deref(),
 				&mode,
 				&internal_dir,
 				&manager,
@@ -80,6 +89,42 @@ fn main() -> anyhow::Result<()> {
 			jvm_args: vec!["-Dsodium.checks.issue2561=false".to_string()],
 			..Default::default()
 		})
+	})?;
+
+	plugin.get_loader_versions(|ctx, arg| {
+		if arg.loader != Loader::Fabric && arg.loader != Loader::Quilt {
+			return Ok(Vec::new());
+		}
+
+		let runtime = tokio::runtime::Runtime::new()?;
+		let internal_dir = PathBuf::from(ctx.get_data_dir()?.join("internal"));
+		let manager = UpdateManager::new(UpdateDepth::Full);
+		let client = nitro_net::download::Client::new();
+
+		let mode = if arg.loader == Loader::Fabric {
+			fabric_quilt::Mode::Fabric
+		} else {
+			fabric_quilt::Mode::Quilt
+		};
+
+		let meta = runtime
+			.block_on(fabric_quilt::get_all_meta(
+				&arg.minecraft_version,
+				&mode,
+				&internal_dir,
+				&manager,
+				&client,
+			))
+			.context("Failed to get metadata")?;
+
+		let out = meta.into_iter().map(|version| {
+			version
+				.loader
+				.maven
+				.replace("net.fabricmc:fabric-loader:", "")
+		});
+
+		Ok(out.collect())
 	})?;
 
 	Ok(())

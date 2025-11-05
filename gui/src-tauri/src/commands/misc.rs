@@ -9,7 +9,9 @@ use nitrolaunch::{
 		util::versions::MinecraftVersion,
 	},
 	instance::update::manager::UpdateManager,
-	plugin_crate::hooks::{AddInstanceIcons, AddSupportedLoaders},
+	plugin_crate::hooks::{
+		AddInstanceIcons, AddSupportedLoaders, GetLoaderVersions, GetLoaderVersionsArg,
+	},
 	shared::{id::InstanceID, later::Later, loaders::Loader, output::NoOp, UpdateDepth},
 };
 
@@ -29,6 +31,39 @@ pub async fn get_supported_loaders(state: tauri::State<'_, State>) -> Result<Vec
 			.call_hook(AddSupportedLoaders, &(), &state.paths, &mut NoOp)
 			.await
 			.context("Failed to get supported loaders from plugins"),
+	)?;
+	let mut out = Vec::with_capacity(results.len());
+	for result in results {
+		let result = fmt_err(result.result(&mut NoOp).await)?;
+		out.extend(result);
+	}
+
+	Ok(out)
+}
+
+#[tauri::command]
+pub async fn get_loader_versions(
+	state: tauri::State<'_, State>,
+	loader: Loader,
+	minecraft_version: String,
+) -> Result<Vec<String>, String> {
+	let config = fmt_err(
+		load_config(&state.paths, &mut NoOp)
+			.await
+			.context("Failed to load config"),
+	)?;
+
+	let arg = GetLoaderVersionsArg {
+		loader,
+		minecraft_version,
+	};
+
+	let results = fmt_err(
+		config
+			.plugins
+			.call_hook(GetLoaderVersions, &arg, &state.paths, &mut NoOp)
+			.await
+			.context("Failed to get loader versions from plugins"),
 	)?;
 	let mut out = Vec::with_capacity(results.len());
 	for result in results {

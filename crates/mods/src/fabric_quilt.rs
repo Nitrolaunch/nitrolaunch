@@ -57,11 +57,13 @@ pub async fn install_from_core(
 	core: &mut NitroCore,
 	version_info: &VersionInfo,
 	mode: Mode,
+	fq_version: Option<&str>,
 	side: Side,
 	o: &mut impl NitroOutput,
 ) -> anyhow::Result<(Classpath, String)> {
 	let meta = get_meta(
 		&version_info.version,
+		fq_version,
 		&mode,
 		&core.get_paths().internal,
 		core.get_update_manager(),
@@ -139,7 +141,8 @@ fn default_library_url() -> String {
 /// An important library in the Fabric/Quilt meta
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct MainLibrary {
-	maven: String,
+	/// The Maven identifier for the library
+	pub maven: String,
 }
 
 /// The struct of libraries for different sides
@@ -178,14 +181,14 @@ impl MainClass {
 	}
 }
 
-/// Get the Fabric/Quilt metadata file
-pub async fn get_meta(
+/// Get the Fabric/Quilt metadata file with all versions for a specified Minecraft version
+pub async fn get_all_meta(
 	version: &str,
 	mode: &Mode,
 	internal_dir: &Path,
 	manager: &UpdateManager,
 	client: &Client,
-) -> anyhow::Result<FabricQuiltMeta> {
+) -> anyhow::Result<Vec<FabricQuiltMeta>> {
 	let meta_url = match mode {
 		Mode::Fabric => format!("https://meta.fabricmc.net/v2/versions/loader/{version}"),
 		Mode::Quilt => format!("https://meta.quiltmc.org/v3/versions/loader/{version}"),
@@ -211,11 +214,31 @@ pub async fn get_meta(
 		out
 	};
 
-	let meta = meta
-		.first()
-		.ok_or(anyhow!("Could not find a valid {mode} version"))?;
+	Ok(meta)
+}
 
-	Ok(meta.clone())
+/// Get the Fabric/Quilt metadata file
+pub async fn get_meta(
+	version: &str,
+	fq_version: Option<&str>,
+	mode: &Mode,
+	internal_dir: &Path,
+	manager: &UpdateManager,
+	client: &Client,
+) -> anyhow::Result<FabricQuiltMeta> {
+	let meta = get_all_meta(version, mode, internal_dir, manager, client).await?;
+
+	let meta = if let Some(fq_version) = fq_version {
+		meta.into_iter()
+			.find(|x| x.loader.maven.contains(fq_version))
+			.context("Specified version does not exist")?
+	} else {
+		meta.first()
+			.ok_or(anyhow!("Could not find a valid {mode} version"))?
+			.clone()
+	};
+
+	Ok(meta)
 }
 
 /// Download files for Quilt/Fabric that are common for both client and server
