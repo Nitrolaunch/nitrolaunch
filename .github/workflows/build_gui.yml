@@ -64,13 +64,13 @@ jobs:
             - run: cd gui && npm i
             - if: ${{ matrix.os == 'macos-latest'}}
               name: Build App MacOS
-              run: cd gui && npm run tauri build --filter=desktop -- --target universal-apple-darwin
+              run: cd gui && cargo tauri build --filter=desktop -- --target universal-apple-darwin
               env:
                 TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
 
             - if: ${{ matrix.os != 'macos-latest'}}
               name: Build App
-              run: cd gui && npm run tauri build --filter=desktop
+              run: cd gui && cargo tauri build --filter=desktop
               env:
                 TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
 
