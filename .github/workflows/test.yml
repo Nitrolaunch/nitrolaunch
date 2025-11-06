@@ -30,12 +30,12 @@ jobs:
           sudo sh -c 'echo "Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg" >> /etc/apt/sources.list.d/ubuntu.sources' &&
           cat /etc/apt/sources.list.d/ubuntu.sources &&
           sudo apt update &&
-          sudo apt install libwebkit2gtk-4.0-dev \
+          sudo apt install libwebkit2gtk-4.1-dev \
               build-essential \
               curl \
               wget \
               libssl-dev \
-              libgtk-3-dev \
+              libxdo-dev \
               libayatana-appindicator3-dev \
               librsvg2-dev
       - name: Run tests
