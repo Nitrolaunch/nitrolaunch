@@ -37,12 +37,13 @@ jobs:
               uses: raftario/setup-rust-action@v1.0.0
               env:
                   ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+            - name: Setup Tauri
+              run: cargo install tauri-cli --version "^2.9.3" --locked
 
             - if: ${{ matrix.os == 'ubuntu-latest'}}
               name: Install Ubuntu Dependencies
               run: |
                   cd gui &&
-                  cargo install tauri-cli --version "^2.9.3" --locked
                   echo " \
                   deb http://gb.archive.ubuntu.com/ubuntu jammy main" | sudo tee -a /etc/apt/sources.list &&
                   sudo apt update &&
@@ -58,7 +59,6 @@ jobs:
               name: Install MacOS Dependencies
               run: |
                   cd gui &&
-                  cargo install tauri-cli --version "^2.9.3" --locked &&
                   rustup target add aarch64-apple-darwin &&
                   rustup target add x86_64-apple-darwin
             - run: cd gui && npm i
