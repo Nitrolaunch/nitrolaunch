@@ -114,7 +114,7 @@
 #browse-gradient {
 	position: absolute;
 	top: 0;
-	width: 100vw;
+	width: 100%;
 	height: 12rem;
 	z-index: -2;
 	background-image: linear-gradient(var(--repo-color), transparent);
