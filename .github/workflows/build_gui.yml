@@ -42,7 +42,7 @@ jobs:
               name: Install Ubuntu Dependencies
               run: |
                   cd gui &&
-                  npm i @tauri-apps/cli-linux-x64-gnu@2.9.3 &&
+                  npm i -g @tauri-apps/cli-linux-x64-gnu@2.9.3 &&
                   echo " \
                   deb http://gb.archive.ubuntu.com/ubuntu jammy main" | sudo tee -a /etc/apt/sources.list &&
                   sudo apt update &&
@@ -58,7 +58,7 @@ jobs:
               name: Install MacOS Dependencies
               run: |
                   cd gui &&
-                  npm i @tauri-apps/cli-darwin-arm64@2.9.3 && 
+                  npm i -g @tauri-apps/cli-darwin-arm64@2.9.3 && 
                   rustup target add aarch64-apple-darwin &&
                   rustup target add x86_64-apple-darwin
             - run: cd gui && npm i
