@@ -299,6 +299,24 @@ Handles custom instructions in script packages.
 
 ## User Hooks
 
+### `add_user_types`
+
+Adds new custom user types
+
+- Argument: None
+
+- Result:
+```
+[
+	{
+		"id": string,
+		"name": string,
+		"color": string
+	},
+	...
+]
+```
+
 ### `handle_auth`
 
 Handles authentication with custom user types

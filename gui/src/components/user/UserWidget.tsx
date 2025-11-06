@@ -20,31 +20,12 @@ import Dropdown from "../input/select/Dropdown";
 import { clearInputError, inputError } from "../../errors";
 import { useNavigate } from "@solidjs/router";
 import Modal from "../dialog/Modal";
+import { UserTypeInfo } from "../../types";
 
 export default function UserWidget(props: UserWidgetProps) {
 	let navigate = useNavigate();
 
-	let [userData, methods] = createResource(updateUsers);
-
-	let [isOpen, setIsOpen] = createSignal(false);
-
-	let [isCreatingUser, setIsCreatingUser] = createSignal(false);
-	let [newUserId, setNewUserId] = createSignal("");
-	let [newUserType, setNewUserType] = createSignal("microsoft");
-
-	let [eventUnlisten, _] = createResource(async () => {
-		return await listen("refresh_users", () => {
-			methods.refetch();
-		});
-	});
-
-	onCleanup(() => {
-		if (eventUnlisten() != undefined) {
-			eventUnlisten()!();
-		}
-	});
-
-	async function updateUsers() {
+	let [userData, methods] = createResource(async () => {
 		try {
 			let [currentUser, users] = (await invoke("get_users")) as [
 				string | undefined,
@@ -70,7 +51,40 @@ export default function UserWidget(props: UserWidgetProps) {
 			errorToast("Failed to get users: " + e);
 			return undefined;
 		}
-	}
+	});
+
+	let [isOpen, setIsOpen] = createSignal(false);
+
+	let [isCreatingUser, setIsCreatingUser] = createSignal(false);
+	let [newUserId, setNewUserId] = createSignal("");
+	let [newUserType, setNewUserType] = createSignal("microsoft");
+
+	let [eventUnlisten, _] = createResource(async () => {
+		return await listen("refresh_users", () => {
+			methods.refetch();
+		});
+	});
+
+	onCleanup(() => {
+		if (eventUnlisten() != undefined) {
+			eventUnlisten()!();
+		}
+	});
+
+	let [availableUserTypes, __] = createResource(async () => {
+		let pluginTypes = await invoke("get_supported_user_types") as UserTypeInfo[];
+
+		let out: UserTypeInfo[] = [
+			{
+				id: "microsoft",
+				name: "Microsoft",
+				color: "#00a2ed"
+			}
+		];
+		out = out.concat(pluginTypes);
+
+		return out;
+	}, { initialValue: [] });
 
 	return (
 		<div id="user-widget" onmouseleave={() => setIsOpen(false)}>
@@ -204,7 +218,13 @@ export default function UserWidget(props: UserWidgetProps) {
 					TYPE
 				</label>
 				<Dropdown
-					options={[{ value: "microsoft", contents: "Microsoft" }]}
+					options={availableUserTypes().map((x) => {
+						return {
+							value: x.id,
+							contents: x.name,
+							color: x.color,
+						};
+					})}
 					selected={newUserType()}
 					onChange={setNewUserType}
 					zIndex="200"

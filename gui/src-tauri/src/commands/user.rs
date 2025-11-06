@@ -8,6 +8,7 @@ use nitrolaunch::{
 	},
 	config_crate::user::{UserConfig, UserVariant},
 	core::user::UserKind,
+	plugin_crate::hooks::{AddUserTypes, UserTypeInfo},
 	shared::output::NoOp,
 };
 use serde::{Deserialize, Serialize};
@@ -169,4 +170,30 @@ pub async fn remove_user(state: tauri::State<'_, State>, user: &str) -> Result<(
 	)?;
 
 	Ok(())
+}
+
+#[tauri::command]
+pub async fn get_supported_user_types(
+	state: tauri::State<'_, State>,
+) -> Result<Vec<UserTypeInfo>, String> {
+	let config = fmt_err(
+		load_config(&state.paths, &mut NoOp)
+			.await
+			.context("Failed to load config"),
+	)?;
+
+	let results = fmt_err(
+		config
+			.plugins
+			.call_hook(AddUserTypes, &(), &state.paths, &mut NoOp)
+			.await
+			.context("Failed to get new user types from plugins"),
+	)?;
+	let mut out = Vec::with_capacity(results.len());
+	for result in results {
+		let result = fmt_err(result.result(&mut NoOp).await)?;
+		out.extend(result);
+	}
+
+	Ok(out)
 }

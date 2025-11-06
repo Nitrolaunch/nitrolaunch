@@ -189,6 +189,7 @@ impl CustomPlugin {
 		"get_loader_versions",
 		GetLoaderVersions
 	);
+	hook_interface!(add_user_types, "add_user_types", AddUserTypes);
 
 	/// Handle a hook
 	fn handle_hook<H: Hook>(

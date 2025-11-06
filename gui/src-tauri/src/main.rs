@@ -189,6 +189,7 @@ fn main() {
 			commands::user::logout_user,
 			commands::user::create_user,
 			commands::user::remove_user,
+			commands::user::get_supported_user_types,
 			commands::settings::get_settings,
 			commands::settings::write_settings,
 			commands::transfer::get_instance_transfer_formats,

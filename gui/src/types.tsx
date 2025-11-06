@@ -93,3 +93,9 @@ export interface Theme {
 	css: string;
 	color: string;
 }
+
+export interface UserTypeInfo {
+	id: string;
+	name: string;
+	color: string;
+}

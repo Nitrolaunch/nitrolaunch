@@ -874,3 +874,24 @@ pub struct GetLoaderVersionsArg {
 	/// The Minecraft version of the instance
 	pub minecraft_version: String,
 }
+
+def_hook!(
+	AddUserTypes,
+	"add_user_types",
+	"Adds new available user types",
+	(),
+	Vec<UserTypeInfo>,
+	1,
+);
+
+/// Information about a user type
+#[derive(Serialize, Deserialize, Default)]
+#[serde(default)]
+pub struct UserTypeInfo {
+	/// The ID of the user type
+	pub id: String,
+	/// The display name of the user type
+	pub name: String,
+	/// CSS color of the user type
+	pub color: String,
+}
