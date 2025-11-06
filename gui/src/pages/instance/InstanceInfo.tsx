@@ -43,7 +43,7 @@ import {
 } from "../../icons";
 import "./InstanceInfo.css";
 import IconTextButton from "../../components/input/button/IconTextButton";
-import { invoke } from "@tauri-apps/api";
+import { invoke } from "@tauri-apps/api/core";
 import InstanceConsole from "../../components/launch/InstanceConsole";
 import PackagesConfig, {
 	PackageConfig,
@@ -51,11 +51,10 @@ import PackagesConfig, {
 } from "./PackagesConfig";
 import { FooterData } from "../../App";
 import { FooterMode, launchInstance } from "../../components/navigation/Footer";
-import ModalBase from "../../components/dialog/ModalBase";
 import { canonicalizeListOrSingle } from "../../utils/values";
 import { Event, listen, UnlistenFn } from "@tauri-apps/api/event";
 import { RunningInstancesEvent } from "../../components/launch/RunningInstanceList";
-import { convertFileSrc } from "@tauri-apps/api/tauri";
+import { convertFileSrc } from "@tauri-apps/api/core";
 import Dropdown, { Option } from "../../components/input/select/Dropdown";
 import IconAndText from "../../components/utility/IconAndText";
 import InstanceTransferPrompt from "../../components/instance/InstanceTransferPrompt";

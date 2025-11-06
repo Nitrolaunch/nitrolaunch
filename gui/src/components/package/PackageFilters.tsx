@@ -25,7 +25,7 @@ import {
 	packageCategoryIcon,
 } from "../../package";
 import InlineSelect from "../input/select/InlineSelect";
-import { invoke } from "@tauri-apps/api";
+import { invoke } from "@tauri-apps/api/core";
 import { PackageType } from "../../package";
 import Dropdown from "../input/select/Dropdown";
 import { beautifyString, fixCenter } from "../../utils";

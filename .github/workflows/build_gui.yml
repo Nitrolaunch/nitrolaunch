@@ -42,15 +42,15 @@ jobs:
               name: Install Ubuntu Dependencies
               run: |
                   cd gui &&
-                  npm i @tauri-apps/cli-linux-x64-gnu@1.6.3 &&
+                  npm i @tauri-apps/cli-linux-x64-gnu@2.9.3 &&
                   echo " \
                   deb http://gb.archive.ubuntu.com/ubuntu jammy main" | sudo tee -a /etc/apt/sources.list &&
                   sudo apt update &&
-                  sudo apt install libwebkit2gtk-4.0-dev \
+                  sudo apt install libwebkit2gtk-4.1-dev \
                       build-essential \
                       curl \
                       wget \
-                      libssl-dev \
+                      libxdo-dev \
                       libgtk-3-dev \
                       libayatana-appindicator3-dev \
                       librsvg2-dev
@@ -58,7 +58,7 @@ jobs:
               name: Install MacOS Dependencies
               run: |
                   cd gui &&
-                  npm i @tauri-apps/cli-darwin-arm64@1.6.3 && 
+                  npm i @tauri-apps/cli-darwin-arm64@2.9.3 && 
                   rustup target add aarch64-apple-darwin &&
                   rustup target add x86_64-apple-darwin
             - run: cd gui && npm i
@@ -66,13 +66,13 @@ jobs:
               name: Build App MacOS
               run: cd gui && npm run tauri build --filter=desktop -- --target universal-apple-darwin
               env:
-                TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+                TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
 
             - if: ${{ matrix.os != 'macos-latest'}}
               name: Build App
               run: cd gui && npm run tauri build --filter=desktop
               env:
-                TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+                TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
 
             - name: Upload a Build Artifact
               uses: actions/upload-artifact@v4

@@ -13,14 +13,17 @@
   "license": "MIT",
   "dependencies": {
     "@solidjs/router": "^0.15.3",
-    "@tauri-apps/api": "^1",
+    "@tauri-apps/api": "^2.9.0",
+    "@tauri-apps/plugin-clipboard-manager": "^2.3.2",
+    "@tauri-apps/plugin-dialog": "^2.4.2",
+    "@tauri-apps/plugin-shell": "^2.3.3",
+    "@tauri-apps/plugin-updater": "^2.9.0",
     "@thisbeyond/solid-select": "^0.15.0",
     "marked": "^15.0.11",
     "solid-js": "^1.7.8",
     "vite-plugin-solid-svg": "^0.8.1"
   },
   "devDependencies": {
-    "@tauri-apps/cli": "^1",
     "typescript": "^5.0.2",
     "vite": "^5.0.0",
     "vite-plugin-solid": "^2.8.0"

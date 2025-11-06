@@ -32,7 +32,7 @@ import { searchPackages } from "../../utils/package";
 import Tip from "../../components/dialog/Tip";
 import IconTextButton from "../../components/input/button/IconTextButton";
 import { Download, Honeycomb, Refresh } from "../../icons";
-import { invoke } from "@tauri-apps/api";
+import { invoke } from "@tauri-apps/api/core";
 import { loadPagePlugins } from "../../plugins";
 import Icon from "../../components/Icon";
 

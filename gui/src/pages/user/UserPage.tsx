@@ -7,7 +7,7 @@ import { beautifyString, getUserIcon } from "../../utils";
 import { Delete, Lock, LockOpen } from "../../icons";
 import "./UserPage.css";
 import IconTextButton from "../../components/input/button/IconTextButton";
-import { invoke } from "@tauri-apps/api";
+import { invoke } from "@tauri-apps/api/core";
 import { UserInfo } from "../../components/user/UserWidget";
 import { emit } from "@tauri-apps/api/event";
 

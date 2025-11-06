@@ -11,7 +11,7 @@ use std::collections::HashSet;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
-use tauri::{AppHandle, Manager};
+use tauri::{AppHandle, Emitter};
 use tokio::sync::Mutex;
 
 use super::{fmt_err, load_config};
@@ -139,7 +139,7 @@ async fn launch_game_impl(
 			}
 
 			println!("Game closed");
-			app.emit_all("game_finished", instance_id.to_string())?;
+			app.emit("game_finished", instance_id.to_string())?;
 
 			Ok::<(), anyhow::Error>(())
 		})
@@ -235,7 +235,7 @@ async fn emit_instance_stdio_changes(
 	loop {
 		if let Ok(Some(bytes_read)) = file.try_read(&mut buf).await {
 			if bytes_read > 0 {
-				let _ = app.emit_all("update_instance_stdio", &instance_id);
+				let _ = app.emit("update_instance_stdio", &instance_id);
 			}
 		}
 

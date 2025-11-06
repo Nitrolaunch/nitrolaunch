@@ -8,7 +8,7 @@ import {
 } from "solid-js";
 import "./Footer.css";
 import { UnlistenFn, listen, Event, emit } from "@tauri-apps/api/event";
-import { invoke } from "@tauri-apps/api";
+import { invoke } from "@tauri-apps/api/core";
 import { PasswordPrompt } from "../input/PasswordPrompt";
 import {
 	Box,

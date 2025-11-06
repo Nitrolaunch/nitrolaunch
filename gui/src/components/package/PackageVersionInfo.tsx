@@ -14,7 +14,7 @@ import { PackageMeta } from "../../types";
 import "./PackageVersionInfo.css";
 import { StabilityIndicator } from "./PackageVersions";
 import { canonicalizeListOrSingle } from "../../utils/values";
-import { invoke } from "@tauri-apps/api";
+import { invoke } from "@tauri-apps/api/core";
 import Icon, { HasWidthHeight } from "../Icon";
 import PackageLabels from "./PackageLabels";
 import { useNavigate } from "@solidjs/router";

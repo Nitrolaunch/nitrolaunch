@@ -1,4 +1,4 @@
-import { invoke } from "@tauri-apps/api";
+import { invoke } from "@tauri-apps/api/core";
 import { createResource, createSignal, For, Match, onMount, Show, Switch } from "solid-js";
 import "./Plugins.css";
 import IconTextButton from "../../components/input/button/IconTextButton";

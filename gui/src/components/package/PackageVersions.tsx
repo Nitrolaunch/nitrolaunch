@@ -8,7 +8,7 @@ import {
 } from "solid-js";
 import { PackageProperties } from "../../types";
 import "./PackageVersions.css";
-import { invoke } from "@tauri-apps/api";
+import { invoke } from "@tauri-apps/api/core";
 import {
 	DeclarativePackage,
 	getAllLoaders,

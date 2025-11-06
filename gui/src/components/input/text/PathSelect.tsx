@@ -1,4 +1,4 @@
-import { open } from "@tauri-apps/api/dialog";
+import { open } from "@tauri-apps/plugin-dialog";
 import { Folder } from "../../../icons";
 import IconTextButton from "../button/IconTextButton";
 import "./PathSelect.css";

@@ -1,6 +1,6 @@
 import { createResource, createSignal, Match, Switch } from "solid-js";
 import ModalBase from "../dialog/ModalBase";
-import { invoke } from "@tauri-apps/api";
+import { invoke } from "@tauri-apps/api/core";
 import "./TemplateDeletePrompt.css";
 import InlineSelect from "../input/select/InlineSelect";
 import IconTextButton from "../input/button/IconTextButton";

@@ -1,6 +1,6 @@
 import { createResource, For, Match, Switch } from "solid-js";
 import "./InstanceTiles.css";
-import { invoke } from "@tauri-apps/api";
+import { invoke } from "@tauri-apps/api/core";
 import { stringCompare } from "../../utils";
 
 export default function InstanceTiles(props: InstanceTilesProps) {

@@ -9,7 +9,7 @@ import {
 import "./Sidebar.css";
 import { Box, Gear, Home, Jigsaw, Menu } from "../../icons";
 import { Location, useNavigate } from "@solidjs/router";
-import { invoke } from "@tauri-apps/api";
+import { invoke } from "@tauri-apps/api/core";
 import { getInstanceIconSrc, stringCompare } from "../../utils";
 import { listen, UnlistenFn } from "@tauri-apps/api/event";
 import { InstanceInfo, InstanceOrTemplate } from "../../types";

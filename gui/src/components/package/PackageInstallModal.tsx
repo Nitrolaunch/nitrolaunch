@@ -16,7 +16,7 @@ import {
 import Icon from "../Icon";
 import InlineSelect from "../input/select/InlineSelect";
 import { InstanceInfo, InstanceOrTemplate } from "../../types";
-import { invoke } from "@tauri-apps/api";
+import { invoke } from "@tauri-apps/api/core";
 import { errorToast, successToast } from "../dialog/Toasts";
 import {
 	addPackage,

@@ -1,5 +1,5 @@
-import { clipboard, invoke } from "@tauri-apps/api";
-import { WebviewWindow } from "@tauri-apps/api/window";
+import {  invoke } from "@tauri-apps/api/core";
+import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { errorToast, messageToast, successToast, warningToast } from "./components/dialog/Toasts";
 import { Option } from "./components/input/select/Dropdown";
 import IconAndText from "./components/utility/IconAndText";
@@ -8,6 +8,7 @@ import { clearInputError, inputError } from "./errors";
 import { emit } from "@tauri-apps/api/event";
 import { sanitizeInstanceId } from "./pages/instance/InstanceConfig";
 import { updateInstanceList } from "./pages/instance/InstanceList";
+import * as clipboard from "@tauri-apps/plugin-clipboard-manager"
 
 // Loads plugins on a page
 export function loadPagePlugins(page: string, object?: string) {

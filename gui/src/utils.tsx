@@ -1,4 +1,4 @@
-import { convertFileSrc, invoke } from "@tauri-apps/api/tauri";
+import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { InstanceIcon, PkgRequest } from "./types";
 
 // Gets the src of an instance icon

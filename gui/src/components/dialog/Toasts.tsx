@@ -14,7 +14,7 @@ import "./Toasts.css";
 import Icon from "../Icon";
 import { Check, Copy, Delete, Error, Notification, Warning } from "../../icons";
 import IconAndText from "../utility/IconAndText";
-import { clipboard } from "@tauri-apps/api";
+import * as clipboard from "@tauri-apps/plugin-clipboard-manager"
 
 export default function Toasts() {
 	let [toasts, setToasts] = createSignal<ToastProps[]>([]);

@@ -13,7 +13,7 @@ import { searchPackages } from "../../utils/package";
 import "./PackageQuickAdd.css";
 import SearchBar from "../input/text/SearchBar";
 import { parsePkgRequest } from "../../utils";
-import { invoke } from "@tauri-apps/api";
+import { invoke } from "@tauri-apps/api/core";
 import { PackageMeta, PackageProperties } from "../../types";
 import LoadingSpinner from "../utility/LoadingSpinner";
 import { marked } from "marked";

@@ -1,4 +1,4 @@
-import { invoke } from "@tauri-apps/api";
+import { invoke } from "@tauri-apps/api/core";
 import { getPackageConfigRequest, PackageConfig } from "./PackagesConfig";
 import { canonicalizeListOrSingle } from "../../utils/values";
 import { Loader } from "../../package";

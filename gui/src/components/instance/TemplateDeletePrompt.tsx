@@ -1,5 +1,5 @@
 import { createResource, For, Match, Suspense, Switch } from "solid-js";
-import { invoke } from "@tauri-apps/api";
+import { invoke } from "@tauri-apps/api/core";
 import { InstanceOrTemplate } from "../../types";
 import { beautifyString } from "../../utils";
 import "./TemplateDeletePrompt.css";

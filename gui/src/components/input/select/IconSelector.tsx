@@ -1,10 +1,10 @@
 import { createResource, For } from "solid-js";
 import "./IconSelector.css";
-import { invoke } from "@tauri-apps/api";
+import { invoke } from "@tauri-apps/api/core";
 import { getInstanceIconSrc } from "../../../utils";
 import Icon from "../../Icon";
 import { Folder } from "../../../icons";
-import { open } from "@tauri-apps/api/dialog";
+import { open } from "@tauri-apps/plugin-dialog";
 import { errorToast } from "../../dialog/Toasts";
 
 export default function IconSelector(props: IconSelectorProps) {

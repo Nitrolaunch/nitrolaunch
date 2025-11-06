@@ -16,7 +16,7 @@ import {
 	warningToast,
 } from "./dialog/Toasts";
 import { beautifyString } from "../utils";
-import { invoke } from "@tauri-apps/api";
+import { invoke } from "@tauri-apps/api/core";
 import IconButton from "./input/button/IconButton";
 import ProgressBar from "./ProgressBar";
 import { ResolutionErrorEvent } from "../types";

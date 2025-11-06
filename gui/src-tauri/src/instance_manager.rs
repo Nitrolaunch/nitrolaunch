@@ -3,7 +3,7 @@ use std::{collections::HashSet, sync::Arc, time::Duration};
 use anyhow::Context;
 use nitrolaunch::{instance::tracking::RunningInstanceRegistry, io::paths::Paths};
 use serde::{Deserialize, Serialize};
-use tauri::{AppHandle, Manager};
+use tauri::{AppHandle, Emitter};
 use tokio::sync::Mutex;
 
 /// Manager for running instances
@@ -68,7 +68,7 @@ impl RunningInstanceManager {
 
 	/// Sends out an event to update running instances
 	pub fn emit_update_event(&self) {
-		let _ = self.app_handle.emit_all(
+		let _ = self.app_handle.emit(
 			"nitro_update_running_instances",
 			RunningInstancesEvent {
 				running_instances: self.get_running_instances(),

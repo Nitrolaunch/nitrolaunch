@@ -4,7 +4,7 @@ import ModalBase from "./ModalBase";
 import "./WelcomePrompt.css";
 import IconTextButton from "../input/button/IconTextButton";
 import { AngleLeft, AngleRight, Check, Delete } from "../../icons";
-import { invoke } from "@tauri-apps/api";
+import { invoke } from "@tauri-apps/api/core";
 import { errorToast, successToast } from "./Toasts";
 import Icon from "../Icon";
 import { MigratePromptContents } from "../instance/MigratePrompt";

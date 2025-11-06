@@ -12,7 +12,7 @@ import {
 import InlineSelect from "../../components/input/select/InlineSelect";
 import "./PackagesConfig.css";
 import { PackageMeta, PackageProperties, PkgRequest } from "../../types";
-import { invoke } from "@tauri-apps/api";
+import { invoke } from "@tauri-apps/api/core";
 import {
 	parsePkgRequest,
 	pkgRequestToString,

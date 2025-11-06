@@ -1,6 +1,6 @@
 import { useLocation, useParams } from "@solidjs/router";
 import "./ViewPackage.css";
-import { invoke } from "@tauri-apps/api";
+import { invoke } from "@tauri-apps/api/core";
 import {
 	createEffect,
 	createResource,
@@ -39,9 +39,9 @@ import PackageInstallModal from "../../components/package/PackageInstallModal";
 import { canonicalizeListOrSingle } from "../../utils/values";
 import LoadingSpinner from "../../components/utility/LoadingSpinner";
 import { PackageFilterOptions } from "../../components/package/PackageFilters";
-import { open } from "@tauri-apps/api/shell";
+import { open } from "@tauri-apps/plugin-shell";
 import IconButton from "../../components/input/button/IconButton";
-import { WebviewWindow } from "@tauri-apps/api/window";
+import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 import PackageGallery from "../../components/package/PackageGallery";
 
 export default function ViewPackage(props: ViewPackageProps) {

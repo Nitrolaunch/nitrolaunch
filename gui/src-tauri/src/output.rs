@@ -6,7 +6,7 @@ use nitrolaunch::shared::lang::translate::TranslationKey;
 use nitrolaunch::shared::output::{Message, MessageContents, MessageLevel, NitroOutput};
 use nitrolaunch::shared::pkg::{ArcPkgReq, ResolutionError};
 use serde::{Deserialize, Serialize};
-use tauri::{AppHandle, Manager};
+use tauri::{AppHandle, Emitter};
 use tokio::sync::{mpsc::Sender, Mutex};
 
 /// Response to a prompt in the frontend, shared with a mutex
@@ -30,7 +30,7 @@ impl LauncherOutput {
 	}
 
 	pub fn set_task(&mut self, task: &str) {
-		let _ = self.inner.app.emit_all("nitro_output_create_task", task);
+		let _ = self.inner.app.emit("nitro_output_create_task", task);
 		self.task = Some(task.to_string());
 	}
 
@@ -40,7 +40,7 @@ impl LauncherOutput {
 
 	pub fn finish_task(&self) {
 		if let Some(task) = &self.task {
-			let _ = self.inner.app.emit_all("nitro_output_finish_task", task);
+			let _ = self.inner.app.emit("nitro_output_finish_task", task);
 		}
 	}
 }
@@ -65,7 +65,7 @@ impl NitroOutput for LauncherOutput {
 		match message.contents {
 			MessageContents::Associated(assoc, msg) => match *assoc {
 				MessageContents::Progress { current, total } => {
-					let _ = self.inner.app.emit_all(
+					let _ = self.inner.app.emit(
 						"nitro_output_progress",
 						AssociatedProgressEvent {
 							current,
@@ -82,7 +82,7 @@ impl NitroOutput for LauncherOutput {
 				)),
 			},
 			MessageContents::Header(text) => {
-				let _ = self.inner.app.emit_all(
+				let _ = self.inner.app.emit(
 					"nitro_output_message",
 					MessageEvent {
 						message: text,
@@ -92,7 +92,7 @@ impl NitroOutput for LauncherOutput {
 				);
 			}
 			MessageContents::StartProcess(text) => {
-				let _ = self.inner.app.emit_all(
+				let _ = self.inner.app.emit(
 					"nitro_output_message",
 					MessageEvent {
 						message: text,
@@ -102,7 +102,7 @@ impl NitroOutput for LauncherOutput {
 				);
 			}
 			MessageContents::Warning(text) => {
-				let _ = self.inner.app.emit_all(
+				let _ = self.inner.app.emit(
 					"nitro_output_message",
 					MessageEvent {
 						message: text,
@@ -113,7 +113,7 @@ impl NitroOutput for LauncherOutput {
 			}
 			MessageContents::Error(text) => {
 				eprintln!("Error: {text}");
-				let _ = self.inner.app.emit_all(
+				let _ = self.inner.app.emit(
 					"nitro_output_message",
 					MessageEvent {
 						message: text,
@@ -148,7 +148,7 @@ impl NitroOutput for LauncherOutput {
 		println!("Starting password prompt");
 		self.inner
 			.app
-			.emit_all("nitro_display_password_prompt", message.default_format())
+			.emit("nitro_display_password_prompt", message.default_format())
 			.context("Failed to display password prompt to user")?;
 
 		// Block this thread, checking every interval if the prompt has been filled
@@ -168,7 +168,7 @@ impl NitroOutput for LauncherOutput {
 
 	fn display_special_ms_auth(&mut self, url: &str, code: &str) {
 		self.display_text("Showing auth info".into(), MessageLevel::Important);
-		let _ = self.inner.app.emit_all(
+		let _ = self.inner.app.emit(
 			"nitro_display_auth_info",
 			AuthDisplayEvent {
 				url: url.to_owned(),
@@ -186,20 +186,16 @@ impl NitroOutput for LauncherOutput {
 			instance: instance_id.to_string(),
 		};
 
-		self.inner.app.trigger_global(
-			"nitro_display_resolution_error",
-			Some(serde_json::to_string(&payload).unwrap()),
-		);
 		let _ = self
 			.inner
 			.app
-			.emit_all("nitro_display_resolution_error", payload);
+			.emit("nitro_display_resolution_error", payload);
 	}
 
 	fn translate(&self, key: TranslationKey) -> &str {
 		// Emit an event for certain keys as they notify us of progress in the launch
 		if let TranslationKey::AuthenticationSuccessful = key {
-			let _ = self.inner.app.emit_all("nitro_close_auth_info", ());
+			let _ = self.inner.app.emit("nitro_close_auth_info", ());
 		}
 
 		key.get_default()
@@ -209,35 +205,29 @@ impl NitroOutput for LauncherOutput {
 		let _ = self
 			.inner
 			.app
-			.emit_all("nitro_output_start_process", &self.task);
+			.emit("nitro_output_start_process", &self.task);
 	}
 
 	fn end_process(&mut self) {
-		let _ = self
-			.inner
-			.app
-			.emit_all("nitro_output_end_process", &self.task);
+		let _ = self.inner.app.emit("nitro_output_end_process", &self.task);
 	}
 
 	fn start_section(&mut self) {
 		let _ = self
 			.inner
 			.app
-			.emit_all("nitro_output_start_section", &self.task);
+			.emit("nitro_output_start_section", &self.task);
 	}
 
 	fn end_section(&mut self) {
-		let _ = self
-			.inner
-			.app
-			.emit_all("nitro_output_end_section", &self.task);
+		let _ = self.inner.app.emit("nitro_output_end_section", &self.task);
 	}
 }
 
 impl LauncherOutput {
 	fn disp(&mut self, text: String) {
 		println!("{text}");
-		let _ = self.inner.app.emit_all(
+		let _ = self.inner.app.emit(
 			"nitro_output_message",
 			MessageEvent {
 				message: text,

@@ -1,6 +1,6 @@
 use std::{sync::Arc, time::Duration};
 
-use tauri::{AppHandle, Manager};
+use tauri::{AppHandle, Emitter};
 use tokio::{sync::Mutex, task::JoinHandle};
 
 use crate::output::{MessageEvent, MessageType};
@@ -47,7 +47,7 @@ impl TaskManager {
 					let result = join_handle.await;
 					if let Ok(Err(error)) = result {
 						eprintln!("Error: {error:?}");
-						let _ = self.app_handle.emit_all(
+						let _ = self.app_handle.emit(
 							"nitro_output_message",
 							MessageEvent {
 								message: format!("{error:?}"),
@@ -72,9 +72,7 @@ impl TaskManager {
 				if let Some(join_handle) = &task.join_handle {
 					join_handle.abort();
 				}
-				let _ = self
-					.app_handle
-					.emit_all("nitro_output_finish_task", task_id);
+				let _ = self.app_handle.emit("nitro_output_finish_task", task_id);
 
 				println!("Task {task_id} cancelled");
 

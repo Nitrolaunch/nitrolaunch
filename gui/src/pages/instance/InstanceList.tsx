@@ -15,7 +15,7 @@ import { FooterMode } from "../../components/navigation/Footer";
 import { getInstanceIconSrc } from "../../utils";
 import { GroupInfo, InstanceInfo, InstanceMap, InstanceOrTemplate } from "../../types";
 import { errorToast } from "../../components/dialog/Toasts";
-import { invoke } from "@tauri-apps/api";
+import { invoke } from "@tauri-apps/api/core";
 import IconButton from "../../components/input/button/IconButton";
 import {
 	Box,

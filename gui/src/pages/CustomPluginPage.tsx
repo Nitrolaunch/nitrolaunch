@@ -1,5 +1,5 @@
 import { useParams } from "@solidjs/router";
-import { invoke } from "@tauri-apps/api";
+import { invoke } from "@tauri-apps/api/core";
 import { createEffect, createResource } from "solid-js";
 import { setupPluginFunctions } from "../plugins";
 

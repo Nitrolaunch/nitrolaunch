@@ -20,7 +20,7 @@ use std::fmt::Debug;
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
-use tauri::Manager;
+use tauri::Emitter;
 
 use super::{fmt_err, load_config};
 
@@ -559,7 +559,7 @@ pub async fn set_last_opened_instance(
 
 	fmt_err(data.write(&state.paths))?;
 
-	let _ = app_handle.emit_all("nitro_update_last_opened_instance", "");
+	let _ = app_handle.emit("nitro_update_last_opened_instance", "");
 
 	Ok(())
 }

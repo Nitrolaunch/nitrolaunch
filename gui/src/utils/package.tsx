@@ -1,4 +1,4 @@
-import { invoke } from "@tauri-apps/api";
+import { invoke } from "@tauri-apps/api/core";
 import { Loader, PackageCategory, PackageType } from "../package";
 import { PackageMeta, PackageProperties, PackageSearchResults } from "../types";
 import { parsePkgRequest, pkgRequestToString } from "../utils";

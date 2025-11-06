@@ -13,7 +13,7 @@ rust-version.workspace = true
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [build-dependencies]
-tauri-build = { version = "1", features = [] }
+tauri-build = { version = "2", features = [] }
 
 [dependencies]
 always_send = { workspace = true }
@@ -24,9 +24,15 @@ nitrolaunch = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 showfile = { workspace = true }
-tauri = { version = "1", features = [ "window-close", "shell-open", "protocol-asset", "clipboard-all", "window-create", "updater", "dialog-open", "dialog-save" ] }
+tauri = { version = "2", features = ["protocol-asset"] }
+tauri-plugin-clipboard-manager = "2"
+tauri-plugin-dialog = "2"
+tauri-plugin-shell = "2"
 tokio = { workspace = true }
 
 [features]
 # This feature is used for production builds or when a dev server is not specified, DO NOT REMOVE!!
 custom-protocol = ["tauri/custom-protocol"]
+
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
+tauri-plugin-updater = "2"

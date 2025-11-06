@@ -24,9 +24,9 @@ use nitrolaunch::io::logging::Logger;
 use nitrolaunch::io::paths::Paths;
 use nitrolaunch::shared::output::Message;
 use output::{OutputInner, PromptResponse};
-use tauri::api::process::restart;
 use tauri::async_runtime::{Mutex, Sender};
-use tauri::{AppHandle, Manager};
+use tauri::process::restart;
+use tauri::{AppHandle, Emitter, Listener, Manager};
 
 use crate::commands::misc::update_version_manifest;
 use crate::instance_manager::RunningInstanceManager;
@@ -46,6 +46,10 @@ fn main() {
 	let state2 = state.clone();
 
 	tauri::Builder::default()
+		.plugin(tauri_plugin_clipboard_manager::init())
+		.plugin(tauri_plugin_dialog::init())
+		.plugin(tauri_plugin_updater::Builder::new().build())
+		.plugin(tauri_plugin_shell::init())
 		.setup(move |app| {
 			// Setup logging
 			let mut logger = Logger::new(&paths, "gui")?;
@@ -63,7 +67,7 @@ fn main() {
 			});
 
 			// Setup task manager
-			let task_manager = TaskManager::new(app.app_handle());
+			let task_manager = TaskManager::new(app.app_handle().clone());
 
 			let _ = state2.task_manager.set(Arc::new(Mutex::new(task_manager)));
 
@@ -72,8 +76,9 @@ fn main() {
 			tauri::async_runtime::spawn(task);
 
 			// Setup running instance manager
-			let running_instance_manager = RunningInstanceManager::new(&paths, app.app_handle())
-				.expect("Failed to setup running instance manager");
+			let running_instance_manager =
+				RunningInstanceManager::new(&paths, app.app_handle().clone())
+					.expect("Failed to setup running instance manager");
 
 			let _ = state2
 				.running_instances
@@ -88,12 +93,12 @@ fn main() {
 			// Perform inital start tasks
 			{
 				let state = state2.clone();
-				let app_handle = app.app_handle();
-				let app_handle2 = app.app_handle();
+				let app_handle = app.app_handle().clone();
+				let app_handle2 = app.app_handle().clone();
 				tauri::async_runtime::spawn(async move {
 					let result = update_version_manifest(app_handle, &state).await;
 					if let Err(e) = result {
-						let _ = app_handle2.emit_all(
+						let _ = app_handle2.emit(
 							"nitro_output_message",
 							MessageEvent {
 								message: format!("{e:?}"),
@@ -106,13 +111,12 @@ fn main() {
 			}
 
 			// Save package resolution errors so that they can be displayed on the instance
-			app.listen_global("nitro_display_resolution_error", move |event| {
+			app.listen_any("nitro_display_resolution_error", move |event| {
 				let paths = paths.clone();
 				let data = data.clone();
 				tauri::async_runtime::spawn(async move {
 					let payload: ResolutionErrorEvent =
-						serde_json::from_str(event.payload().expect("Event should have payload"))
-							.expect("Failed to deserialize");
+						serde_json::from_str(event.payload()).expect("Failed to deserialize");
 
 					let mut data = data.lock().await;
 					data.last_resolution_errors
@@ -122,7 +126,7 @@ fn main() {
 			});
 
 			let env = app.env();
-			app.listen_global("manual_restart", move |_| {
+			app.listen_any("manual_restart", move |_| {
 				restart(&env);
 			});
 

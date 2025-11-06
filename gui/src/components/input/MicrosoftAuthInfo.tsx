@@ -2,11 +2,11 @@ import { createSignal } from "solid-js";
 import { AuthDisplayEvent } from "../../types";
 import "./MicrosoftAuthInfo.css";
 import IconTextButton from "./button/IconTextButton";
-import { clipboard } from "@tauri-apps/api";
 import { Check, Copy, Globe, Lock } from "../../icons";
-import { WebviewWindow } from "@tauri-apps/api/window";
-import { open } from "@tauri-apps/api/shell";
+import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
+import { open } from "@tauri-apps/plugin-shell";
 import Modal from "../dialog/Modal";
+import * as clipboard from "@tauri-apps/plugin-clipboard-manager"
 
 export default function MicrosoftAuthInfo(props: MicrosoftAuthInfoProps) {
 	return (

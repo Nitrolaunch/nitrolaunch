@@ -21,7 +21,7 @@ import Settings from "./pages/Settings";
 import "./components/package/PackageDescription.css";
 import ModalBase from "./components/dialog/ModalBase";
 import WelcomePrompt from "./components/dialog/WelcomePrompt";
-import { invoke } from "@tauri-apps/api";
+import { invoke } from "@tauri-apps/api/core";
 
 export default function App() {
 	const [footerData, setFooterData] = createSignal<FooterData>({

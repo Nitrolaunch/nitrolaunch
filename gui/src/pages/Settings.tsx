@@ -1,4 +1,4 @@
-import { invoke } from "@tauri-apps/api";
+import { invoke } from "@tauri-apps/api/core";
 import { createEffect, createResource, createSignal, Show } from "solid-js";
 import { Theme } from "../types";
 import Tip from "../components/dialog/Tip";

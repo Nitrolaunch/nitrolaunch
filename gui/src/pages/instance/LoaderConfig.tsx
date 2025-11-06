@@ -3,7 +3,7 @@ import Tip from "../../components/dialog/Tip";
 import { getLoaderColor, getLoaderDisplayName, getLoaderImage, getLoaderSide, Loader } from "../../package";
 import { getConfiguredLoader, getDerivedValue, InstanceConfig } from "./read_write";
 import { Side } from "../../types";
-import { invoke } from "@tauri-apps/api";
+import { invoke } from "@tauri-apps/api/core";
 import Dropdown from "../../components/input/select/Dropdown";
 import DeriveIndicator from "./DeriveIndicator";
 import InlineSelect from "../../components/input/select/InlineSelect";

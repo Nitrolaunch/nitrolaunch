@@ -1,11 +1,11 @@
 import { createResource, createSignal, Match, Show, Switch } from "solid-js";
-import { invoke } from "@tauri-apps/api";
+import { invoke } from "@tauri-apps/api/core";
 import "./TemplateDeletePrompt.css";
 import InlineSelect from "../input/select/InlineSelect";
 import { Delete, Download, Popout } from "../../icons";
 import { errorToast, successToast } from "../dialog/Toasts";
 import { clearInputError, inputError } from "../../errors";
-import { open, save } from "@tauri-apps/api/dialog";
+import { open, save } from "@tauri-apps/plugin-dialog";
 import Tip from "../dialog/Tip";
 import { sanitizeInstanceId } from "../../pages/instance/InstanceConfig";
 import { updateInstanceList } from "../../pages/instance/InstanceList";

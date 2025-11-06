@@ -1,4 +1,4 @@
-import { invoke } from "@tauri-apps/api";
+import { invoke } from "@tauri-apps/api/core";
 import { Event, listen, UnlistenFn } from "@tauri-apps/api/event";
 import { createResource, createSignal, onCleanup } from "solid-js";
 import { Theme } from "./types";

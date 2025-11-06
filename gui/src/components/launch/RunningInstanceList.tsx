@@ -8,7 +8,7 @@ import {
 } from "solid-js";
 import "./RunningInstanceList.css";
 import { Event, listen } from "@tauri-apps/api/event";
-import { invoke } from "@tauri-apps/api";
+import { invoke } from "@tauri-apps/api/core";
 import { InstanceInfo } from "../../types";
 import { getInstanceIconSrc } from "../../utils";
 import { useNavigate } from "@solidjs/router";
