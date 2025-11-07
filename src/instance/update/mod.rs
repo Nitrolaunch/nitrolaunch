@@ -4,6 +4,7 @@ pub mod manager;
 pub mod packages;
 
 use crate::config::preferences::ConfigPreferences;
+use crate::instance::setup::setup_core;
 #[cfg(not(feature = "disable_instance_update_packages"))]
 use crate::pkg::eval::EvalConstants;
 use crate::plugin::PluginManager;
@@ -70,13 +71,27 @@ impl Instance {
 			MessageLevel::Important,
 		);
 
-		manager.set_version(&self.config.version);
-		manager.add_requirements(self.get_requirements());
-		manager
-			.fulfill_requirements(ctx.users, ctx.plugins, ctx.paths, ctx.client, ctx.output)
+		let mut core = setup_core(
+			None,
+			&manager.settings,
+			ctx.client,
+			ctx.users,
+			ctx.plugins,
+			ctx.paths,
+			ctx.output,
+		)
+		.await
+		.context("Failed to configure core")?;
+
+		let version = core
+			.get_version(&self.config.version, ctx.output)
 			.await
-			.context("Failed to fulfill update manager")?;
-		let mc_version = manager.version_info.get().version.clone();
+			.context("Failed to set up core version")?;
+
+		let version_info = version.get_version_info();
+		let mc_version = version_info.version.clone();
+
+		std::mem::drop(version);
 
 		ctx.lock
 			.finish(ctx.paths)
@@ -84,6 +99,8 @@ impl Instance {
 
 		self.setup(
 			&mut manager,
+			&mut core,
+			&version_info,
 			ctx.plugins,
 			ctx.paths,
 			ctx.users,
@@ -106,7 +123,7 @@ impl Instance {
 				let constants = EvalConstants {
 					version: mc_version.to_string(),
 					loader: self.config.loader.clone(),
-					version_list: manager.version_info.get().versions.clone(),
+					version_list: version_info.versions.clone(),
 					language: ctx.prefs.language,
 					template_stability: self.config.package_stability,
 				};
@@ -142,7 +159,7 @@ impl Instance {
 			id: self.id.to_string(),
 			side: Some(self.get_side()),
 			game_dir: self.dirs.get().game_dir.to_string_lossy().to_string(),
-			version_info: manager.version_info.get().clone(),
+			version_info: version_info.clone(),
 			loader: self.config.loader.clone(),
 			config: self
 				.config

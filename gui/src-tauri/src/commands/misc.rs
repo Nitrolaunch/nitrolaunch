@@ -6,13 +6,12 @@ use nitrolaunch::{
 	core::{
 		io::json_from_file,
 		net::game_files::{assets::AssetIndex, version_manifest::VersionType},
-		util::versions::MinecraftVersion,
 	},
-	instance::update::manager::UpdateManager,
+	instance::{setup::setup_core, update::manager::UpdateSettings},
 	plugin_crate::hooks::{
 		AddInstanceIcons, AddSupportedLoaders, GetLoaderVersions, GetLoaderVersionsArg,
 	},
-	shared::{id::InstanceID, later::Later, loaders::Loader, output::NoOp, UpdateDepth},
+	shared::{id::InstanceID, loaders::Loader, output::NoOp, UpdateDepth},
 };
 
 use super::{fmt_err, load_config};
@@ -86,24 +85,23 @@ pub async fn get_minecraft_versions(
 			.context("Failed to load config"),
 	)?;
 
-	// Use the UpdateManager and then take the version info from it
-	let mut manager = UpdateManager::new(UpdateDepth::Shallow);
-	manager.set_version(&MinecraftVersion::Latest);
-	fmt_err(
-		manager
-			.fulfill_requirements(
-				&config.users,
-				&config.plugins,
-				&state.paths,
-				&state.client,
-				&mut NoOp,
-			)
-			.await,
+	let mut core = fmt_err(
+		setup_core(
+			None,
+			&UpdateSettings {
+				depth: UpdateDepth::Shallow,
+				offline_auth: false,
+			},
+			&state.client,
+			&config.users,
+			&config.plugins,
+			&state.paths,
+			&mut NoOp,
+		)
+		.await,
 	)?;
 
-	let Later::Full(version_manifest) = manager.version_manifest else {
-		return Err("Version manifest not fulfilled".into());
-	};
+	let version_manifest = fmt_err(core.get_version_manifest(None, &mut NoOp).await)?;
 
 	if releases_only {
 		Ok(version_manifest
@@ -139,20 +137,23 @@ pub async fn update_version_manifest(
 	let mut output = LauncherOutput::new(state.get_output(app_handle));
 	output.set_task("update_versions");
 
-	// Use the UpdateManager and then take the version info from it
-	let mut manager = UpdateManager::new(UpdateDepth::Full);
-	manager.set_version(&MinecraftVersion::Latest);
-	fmt_err(
-		manager
-			.fulfill_requirements(
-				&config.users,
-				&config.plugins,
-				&state.paths,
-				&state.client,
-				&mut output,
-			)
-			.await,
+	let mut core = fmt_err(
+		setup_core(
+			None,
+			&UpdateSettings {
+				depth: UpdateDepth::Shallow,
+				offline_auth: false,
+			},
+			&state.client,
+			&config.users,
+			&config.plugins,
+			&state.paths,
+			&mut output,
+		)
+		.await,
 	)?;
+
+	fmt_err(core.get_version_manifest(None, &mut output).await)?;
 
 	Ok(())
 }

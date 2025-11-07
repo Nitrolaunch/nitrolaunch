@@ -38,7 +38,7 @@ use net::game_files::version_manifest::{make_version_list, VersionEntry, Version
 use nitro_shared::output::{self, NitroOutput};
 use nitro_shared::versions::VersionInfo;
 use user::UserManager;
-use util::versions::{MinecraftVersion, VersionName};
+use util::versions::MinecraftVersion;
 use version::{
 	InstalledVersion, LoadVersionManifestParameters, LoadVersionParameters, VersionParameters,
 	VersionRegistry,
@@ -185,20 +185,21 @@ impl NitroCore {
 	/// Get just the VersionInfo for a version, without creating the version.
 	/// This is useful for doing your own installation of things. This will download
 	/// the version manifest if it is not downloaded already
-	pub async fn get_version_info(&mut self, version: String) -> anyhow::Result<VersionInfo> {
+	pub async fn get_version_info(
+		&mut self,
+		version: &MinecraftVersion,
+	) -> anyhow::Result<VersionInfo> {
 		let mut o = output::NoOp;
 		let manifest = self
-			.get_version_manifest(
-				Some(&MinecraftVersion::Version(VersionName::from(
-					version.clone(),
-				))),
-				&mut o,
-			)
+			.get_version_manifest(Some(version), &mut o)
 			.await
 			.context("Failed to get version manifest")?;
+		let version = version
+			.get_version(&manifest.manifest)
+			.context("Version does not exist")?;
 		let list = make_version_list(&manifest.manifest);
 		Ok(VersionInfo {
-			version,
+			version: version.to_string(),
 			versions: list,
 		})
 	}

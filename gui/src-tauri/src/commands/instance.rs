@@ -8,6 +8,7 @@ use nitrolaunch::config_crate::instance::InstanceConfig;
 use nitrolaunch::config_crate::template::TemplateConfig;
 use nitrolaunch::core::io::json_to_file_pretty;
 use nitrolaunch::instance::delete_instance_files;
+use nitrolaunch::instance::setup::setup_core;
 use nitrolaunch::instance::update::manager::UpdateManager;
 use nitrolaunch::instance::update::InstanceUpdateContext;
 use nitrolaunch::io::lock::Lockfile;
@@ -394,15 +395,24 @@ pub async fn update_instance_packages(
 				output: &mut output,
 			};
 
-			let mut manager = UpdateManager::new(UpdateDepth::Shallow);
+			let manager = UpdateManager::new(UpdateDepth::Shallow);
 
-			manager.set_version(&instance.get_config().version);
-			manager.add_requirements(instance.get_requirements());
-			manager
-				.fulfill_requirements(ctx.users, ctx.plugins, ctx.paths, ctx.client, ctx.output)
-				.await
-				.context("Failed to fulfill update manager")?;
-			let mc_version = manager.version_info.get().version.clone();
+			let mut core = setup_core(
+				None,
+				&manager.settings,
+				ctx.client,
+				ctx.users,
+				ctx.plugins,
+				ctx.paths,
+				ctx.output,
+			)
+			.await?;
+
+			let version = core
+				.get_version(&instance.get_config().version, ctx.output)
+				.await?;
+			let version_info = version.get_version_info();
+			let mc_version = version_info.version.clone();
 
 			ctx.lock
 				.finish(ctx.paths)
@@ -411,7 +421,7 @@ pub async fn update_instance_packages(
 			let constants = EvalConstants {
 				version: mc_version.to_string(),
 				loader: instance.get_config().loader.clone(),
-				version_list: manager.version_info.get().versions.clone(),
+				version_list: version_info.versions.clone(),
 				language: ctx.prefs.language,
 				template_stability: instance.get_config().package_stability,
 			};

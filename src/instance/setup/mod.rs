@@ -3,56 +3,52 @@ mod client;
 /// Creation of the server
 mod server;
 
-use std::collections::HashSet;
 use std::fs;
 use std::ops::DerefMut;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 use anyhow::{bail, Context};
 use nitro_config::instance::QuickPlay;
+use nitro_core::auth_crate::mc::ClientId;
+use nitro_core::config::BrandingProperties;
 use nitro_core::instance::WindowResolution;
 use nitro_core::io::java::classpath::Classpath;
 use nitro_core::io::json_to_file;
 use nitro_core::launch::LaunchConfiguration;
+use nitro_core::net::minecraft::MinecraftUserProfile;
 use nitro_core::user::uuid::hyphenate_uuid;
-use nitro_core::user::{User, UserManager};
+use nitro_core::user::{CustomAuthFunction, User, UserManager};
 use nitro_core::version::InstalledVersion;
-use nitro_core::QuickPlayType;
-use nitro_plugin::hooks::{OnInstanceSetup, OnInstanceSetupArg, RemoveLoader};
-use nitro_shared::output::OutputProcess;
+use nitro_core::{NitroCore, QuickPlayType};
+use nitro_plugin::hooks::{
+	AddVersions, HandleAuth, HandleAuthArg, OnInstanceSetup, OnInstanceSetupArg, RemoveLoader,
+};
 use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
+use nitro_shared::output::{NoOp, OutputProcess};
 use nitro_shared::translate;
+use nitro_shared::versions::VersionInfo;
 use nitro_shared::Side;
+use reqwest::Client;
 
+use crate::instance::update::manager::UpdateSettings;
 use crate::io::lock::Lockfile;
 use crate::io::paths::Paths;
 use crate::plugin::PluginManager;
 
-use super::update::manager::{UpdateManager, UpdateMethodResult, UpdateRequirement};
+use super::update::manager::{UpdateManager, UpdateMethodResult};
 use super::{InstKind, Instance};
 
 /// The default main class for the server
 pub const DEFAULT_SERVER_MAIN_CLASS: &str = "net.minecraft.server.Main";
 
 impl Instance {
-	/// Get the requirements for this instance
-	pub fn get_requirements(&self) -> HashSet<UpdateRequirement> {
-		let mut out = HashSet::new();
-		match &self.kind {
-			InstKind::Client { .. } => {
-				if self.config.launch.use_log4j_config {
-					out.insert(UpdateRequirement::ClientLoggingConfig);
-				}
-			}
-			InstKind::Server { .. } => {}
-		}
-		out
-	}
-
 	/// Setup the data and folders for the instance, preparing it for launch
 	pub async fn setup(
 		&mut self,
 		manager: &mut UpdateManager,
+		core: &mut NitroCore,
+		version_info: &VersionInfo,
 		plugins: &PluginManager,
 		paths: &Paths,
 		users: &UserManager,
@@ -90,14 +86,10 @@ impl Instance {
 		self.ensure_dirs(paths)?;
 
 		let update_depth = manager.settings.depth;
-		let version_info = manager.version_info.get_clone();
 
 		// Get the Java installation and game JAR ahead of time for plugins to use
 
-		let mut version = manager
-			.get_core_version(o)
-			.await
-			.context("Failed to get manager version")?;
+		let mut version = core.get_version(&self.config.version, o).await?;
 
 		let jvm_path = version
 			.get_java_installation(self.config.launch.java.clone(), o)
@@ -444,5 +436,86 @@ impl ModificationData {
 impl Default for ModificationData {
 	fn default() -> Self {
 		Self::new()
+	}
+}
+
+/// Sets up and configures a NitroCore according to Nitrolaunch's features
+pub async fn setup_core(
+	client_id: Option<&ClientId>,
+	settings: &UpdateSettings,
+	client: &Client,
+	users: &UserManager,
+	plugins: &PluginManager,
+	paths: &Paths,
+	o: &mut impl NitroOutput,
+) -> anyhow::Result<NitroCore> {
+	let mut core_config = nitro_core::ConfigBuilder::new()
+		.update_depth(settings.depth)
+		.branding(BrandingProperties::new(
+			"Nitrolaunch".into(),
+			crate::VERSION.into(),
+		));
+	if let Some(client_id) = client_id {
+		core_config = core_config.ms_client_id(client_id.clone());
+	}
+	let core_config = core_config.build();
+	let mut core = NitroCore::with_config(core_config).context("Failed to initialize core")?;
+
+	// Set up user manager along with custom auth function that handles using plugins
+	core.get_users().steal_users(users);
+	core.get_users().set_offline(settings.offline_auth);
+	{
+		let plugins = plugins.clone();
+		let paths = paths.clone();
+
+		core.get_users()
+			.set_custom_auth_function(Arc::new(AuthFunction { plugins, paths }));
+	}
+
+	core.set_client(client.clone());
+
+	// Add extra versions to manifest from plugins
+	let results = plugins
+		.call_hook(AddVersions, &settings.depth, paths, o)
+		.await
+		.context("Failed to call add_versions hook")?;
+	for result in results {
+		let result = result.result(o).await?;
+		core.add_additional_versions(result);
+	}
+
+	Ok(core)
+}
+
+/// CustomAuthFunction implementation for user types using plugins
+struct AuthFunction {
+	plugins: PluginManager,
+	paths: Paths,
+}
+
+#[async_trait::async_trait]
+impl CustomAuthFunction for AuthFunction {
+	async fn auth(
+		&self,
+		id: &str,
+		user_type: &str,
+	) -> anyhow::Result<Option<MinecraftUserProfile>> {
+		let arg = HandleAuthArg {
+			user_id: id.to_string(),
+			user_type: user_type.to_string(),
+		};
+		let results = self
+			.plugins
+			.call_hook(HandleAuth, &arg, &self.paths, &mut NoOp)
+			.await
+			.context("Failed to call handle auth hook")?;
+		for result in results {
+			let result = result.result(&mut NoOp).await?;
+			if result.handled {
+				return Ok(result.profile);
+			}
+		}
+
+		Ok(None)
 	}
 }

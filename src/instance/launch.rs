@@ -21,6 +21,8 @@ use tokio::io::{AsyncWriteExt, Stdin, Stdout};
 
 use super::tracking::RunningInstanceRegistry;
 use super::update::manager::UpdateManager;
+use crate::instance::setup::setup_core;
+use crate::instance::update::manager::UpdateSettings;
 use crate::instance::world_files::WorldFilesWatcher;
 use crate::io::lock::Lockfile;
 use crate::io::paths::Paths;
@@ -43,22 +45,40 @@ impl Instance {
 			MessageLevel::Important,
 		);
 
-		let mut manager = UpdateManager::new(UpdateDepth::Shallow);
+		let mut manager = UpdateManager::from_settings(UpdateSettings {
+			depth: UpdateDepth::Shallow,
+			offline_auth: settings.offline_auth,
+		});
 		let client = Client::new();
-		manager.set_version(&self.config.version);
-		manager.add_requirements(self.get_requirements());
-		manager.set_client_id(settings.ms_client_id);
-		if settings.offline_auth {
-			manager.offline_auth();
-		}
-		manager
-			.fulfill_requirements(users, plugins, paths, &client, o)
-			.await
-			.context("Update failed")?;
+
+		let mut core = setup_core(
+			Some(&settings.ms_client_id),
+			&manager.settings,
+			&client,
+			users,
+			plugins,
+			paths,
+			o,
+		)
+		.await
+		.context("Failed to configure core")?;
+
+		let core_version = core.get_version(&self.config.version, o).await?;
+		let version_info = core_version.get_version_info();
+		std::mem::drop(core_version);
 
 		let mut lock = Lockfile::open(paths).context("Failed to open lockfile")?;
 		let result = self
-			.setup(&mut manager, plugins, paths, users, &mut lock, o)
+			.setup(
+				&mut manager,
+				&mut core,
+				&version_info,
+				plugins,
+				paths,
+				users,
+				&mut lock,
+				o,
+			)
 			.await
 			.context("Failed to update instance")?;
 		manager.add_result(result);
@@ -68,7 +88,7 @@ impl Instance {
 			side: Some(self.get_side()),
 			dir: self.dirs.get().inst_dir.to_string_lossy().into(),
 			game_dir: self.dirs.get().game_dir.to_string_lossy().into(),
-			version_info: manager.version_info.get_clone(),
+			version_info: version_info.clone(),
 			config: self
 				.config
 				.original_config_with_templates_and_plugins
@@ -78,13 +98,10 @@ impl Instance {
 			stdin_path: None,
 		};
 
-		let mut installed_version = manager
-			.get_core_version(o)
-			.await
-			.context("Failed to get core version")?;
+		let mut core_version = core.get_version(&self.config.version, o).await?;
 
 		let mut instance = self
-			.create_core_instance(&mut installed_version, paths, o)
+			.create_core_instance(&mut core_version, paths, o)
 			.await
 			.context("Failed to create core instance")?;
 
