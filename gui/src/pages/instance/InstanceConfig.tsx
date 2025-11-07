@@ -37,6 +37,7 @@ import {
 	undefinedEmpty,
 } from "../../utils/values";
 import {
+	ConfiguredLoaders,
 	createConfiguredPackages,
 	getConfigPackages,
 	getConfiguredLoader,
@@ -431,7 +432,7 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 			name: undefinedEmpty(name()),
 			icon: undefinedEmpty(icon()),
 			version: undefinedEmpty(version()),
-			loader: loader() as Loader | undefined,
+			loader: loader() as ConfiguredLoaders | undefined,
 			packages: packages,
 			launch: {
 				memory: launchMemory,

@@ -6,6 +6,7 @@ import {
 	getPackageTypeColor,
 	getPackageTypeDisplayName,
 	getPackageTypeIcon,
+	Loader,
 	PackageCategory,
 	packageCategoryDisplayName,
 	packageCategoryIcon,
@@ -13,6 +14,7 @@ import {
 } from "../../package";
 import Icon from "../Icon";
 import "./PackageLabels.css";
+import { parseVersionedString } from "../../utils";
 
 export default function PackageLabels(props: PackageLabelsProps) {
 	let small = props.small == undefined ? false : props.small;
@@ -22,7 +24,7 @@ export default function PackageLabels(props: PackageLabelsProps) {
 	let isLimited = () =>
 		props.limit != undefined &&
 		allLoaders().length + props.packageTypes.length + props.categories.length >
-			props.limit;
+		props.limit;
 
 	return (
 		<div class={`cont package-labels ${small ? "small" : ""}`}>
@@ -70,21 +72,22 @@ export default function PackageLabels(props: PackageLabelsProps) {
 			</For>
 			<For each={allLoaders()}>
 				{(loader, i) => {
+					let [loader2, _] = parseVersionedString(loader) as [Loader, string];
 					if (
 						props.limit != undefined &&
 						i() + props.packageTypes.length + props.categories.length >=
-							props.limit
+						props.limit
 					) {
 						return undefined;
 					} else {
 						return (
 							<div class={`cont package-loader ${small ? "small" : ""}`}>
 								<div class="cont package-loader-icon">
-									<img src={getLoaderImage(loader)} />
+									<img src={getLoaderImage(loader2)} />
 								</div>
 								<Show when={!small}>
 									<div class="cont package-category-label">
-										{getLoaderDisplayName(loader)}
+										{getLoaderDisplayName(loader2)}
 									</div>
 								</Show>
 							</div>

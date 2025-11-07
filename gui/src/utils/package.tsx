@@ -1,7 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { Loader, PackageCategory, PackageType } from "../package";
 import { PackageMeta, PackageProperties, PackageSearchResults } from "../types";
-import { parsePkgRequest, pkgRequestToString } from "../utils";
+import { parsePkgRequest, parseVersionedString, pkgRequestToString } from "../utils";
 
 export async function searchPackages(
 	repo: string | undefined,
@@ -9,7 +9,7 @@ export async function searchPackages(
 	search: string | undefined,
 	packageKinds: PackageType[],
 	minecraftVersions: string[],
-	loaders: Loader[],
+	loaders: string[],
 	categories: PackageCategory[]
 ): Promise<ExpandedPackageSearchResults | undefined> {
 	try {
@@ -19,7 +19,7 @@ export async function searchPackages(
 			search: search,
 			packageKinds: packageKinds,
 			minecraftVersions: minecraftVersions,
-			loaders: loaders,
+			loaders: loaders.map((x) => parseVersionedString(x)[0]),
 			categories: categories,
 		});
 
@@ -32,8 +32,8 @@ export async function searchPackages(
 				pkg.id in results.previews
 					? results.previews[pkg.id]
 					: pkgRequestToString(pkg) in results.previews
-					? results.previews[pkgRequestToString(pkg)]
-					: undefined;
+						? results.previews[pkgRequestToString(pkg)]
+						: undefined;
 			if (preview != undefined) {
 				packages.push({
 					id: pkgRequestToString(pkg),

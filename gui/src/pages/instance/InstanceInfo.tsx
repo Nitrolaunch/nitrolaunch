@@ -23,7 +23,7 @@ import {
 } from "./read_write";
 import { errorToast, successToast } from "../../components/dialog/Toasts";
 import LoadingSpinner from "../../components/utility/LoadingSpinner";
-import { getInstanceIconSrc } from "../../utils";
+import { getInstanceIconSrc, parseVersionedString } from "../../utils";
 import PackageLabels from "../../components/package/PackageLabels";
 import { Loader } from "../../package";
 import Icon from "../../components/Icon";
@@ -349,7 +349,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 											loaders={
 												instance()!.loader == undefined
 													? []
-													: [instance()!.loader! as Loader]
+													: [instance()!.loader! as string]
 											}
 											packageTypes={[]}
 										/>
@@ -612,7 +612,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 										setClientPackages={() => { }}
 										setServerPackages={() => { }}
 										minecraftVersion={instance()!.version}
-										loader={instance()!.loader as Loader}
+										loader={parseVersionedString(instance()!.loader as string)[0] as Loader}
 										showBrowseButton={true}
 										parentConfigs={parentConfigs()}
 										onChange={setDirty}
