@@ -523,9 +523,12 @@ pub async fn search_projects(
 					serde_json::to_string(&x).unwrap().replace("\"", "")
 				)
 			})
-			.collect::<Vec<_>>()
-			.join(",");
-		format!(",[{loaders}]")
+			.collect::<Vec<_>>();
+		if loaders.is_empty() {
+			String::new()
+		} else {
+			format!(",[{}]", loaders.join(","))
+		}
 	};
 
 	let categories = if params.categories.is_empty() {
