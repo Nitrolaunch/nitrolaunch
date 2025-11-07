@@ -88,8 +88,7 @@ impl PackageConfig {
 /// Reads configuration for a package
 pub fn read_package_config(
 	config: PackageConfigDeser,
-	template_stability: PackageStability,
-	// source: PackageConfigSource,
+	default_stability: PackageStability,
 ) -> PackageConfig {
 	let id = config.get_pkg_id();
 
@@ -98,7 +97,7 @@ pub fn read_package_config(
 		features: config.get_features(),
 		use_default_features: config.get_use_default_features(),
 		permissions: config.get_permissions(),
-		stability: config.get_stability(template_stability),
+		stability: config.get_stability(default_stability),
 		worlds: config.get_worlds().into_owned(),
 		content_version: None,
 		optional: config.get_optional(),

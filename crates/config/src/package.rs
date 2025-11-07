@@ -109,10 +109,10 @@ impl PackageConfigDeser {
 	}
 
 	/// Get the stability of the config
-	pub fn get_stability(&self, template_stability: PackageStability) -> PackageStability {
+	pub fn get_stability(&self, default_stability: PackageStability) -> PackageStability {
 		match &self {
-			Self::Basic(..) => template_stability,
-			Self::Full(cfg) => cfg.stability.unwrap_or(template_stability),
+			Self::Basic(..) => default_stability,
+			Self::Full(cfg) => cfg.stability.unwrap_or(default_stability),
 		}
 	}
 

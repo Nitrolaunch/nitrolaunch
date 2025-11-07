@@ -125,7 +125,7 @@ impl Instance {
 					loader: self.config.loader.clone(),
 					version_list: version_info.versions.clone(),
 					language: ctx.prefs.language,
-					template_stability: self.config.package_stability,
+					default_stability: self.config.package_stability,
 				};
 
 				let packages = update_instance_packages(

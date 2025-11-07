@@ -423,7 +423,7 @@ pub async fn update_instance_packages(
 				loader: instance.get_config().loader.clone(),
 				version_list: version_info.versions.clone(),
 				language: ctx.prefs.language,
-				template_stability: instance.get_config().package_stability,
+				default_stability: instance.get_config().package_stability,
 			};
 
 			nitrolaunch::instance::update::packages::update_instance_packages(
