@@ -634,7 +634,7 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 											}
 										}
 										if (!isIconDirty()) {
-											setIcon(getLoaderImage(autofillLoader as Loader));
+											setIcon("builtin:" + getLoaderImage(autofillLoader as Loader));
 										}
 									}
 
