@@ -191,7 +191,6 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 								<div
 									class="cont"
 									style="position:absolute; top: calc(100% + 1rem);z-index:15"
-									onmouseleave={() => setShowQuickAdd(false)}
 								>
 									<PackageQuickAdd
 										onAdd={(pkg) => props.onAdd(pkg, "global")}
