@@ -15,6 +15,10 @@ name = "nitro_plugin_args"
 path = "plugins/args/main.rs"
 
 [[bin]]
+name = "nitro_plugin_auto_mcs"
+path = "plugins/auto_mcs/main.rs"
+
+[[bin]]
 name = "nitro_plugin_automate"
 path = "plugins/automate/main.rs"
 

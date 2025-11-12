@@ -17,6 +17,7 @@ package_zips.platform_dependent:
 	@mkdir -p release
 	
 	@rm -f release/args-${OS}.zip
+	@rm -f release/auto_mcs-${OS}.zip
 	@rm -f release/automate-${OS}.zip
 	@rm -f release/backup-${OS}.zip
 	@rm -f release/beet-${OS}.zip
@@ -49,6 +50,7 @@ package_zips.platform_dependent:
 	@rm -f release/xmcl_transfer-${OS}.zip
 
 	@zip -j release/args-${OS}.zip $(TARGET_DIR)/nitro_plugin_args${EXTENSION} plugins/args/plugin.json
+	@zip -j release/auto_mcs-${OS}.zip $(TARGET_DIR)/nitro_plugin_auto_mcs${EXTENSION} plugins/auto_mcs/plugin.json
 	@zip -j release/automate-${OS}.zip $(TARGET_DIR)/nitro_plugin_automate${EXTENSION} plugins/automate/plugin.json
 	@zip -j release/backup-${OS}.zip $(TARGET_DIR)/nitro_plugin_backup${EXTENSION} plugins/backup/plugin.json
 	@zip -j release/beet-${OS}.zip $(TARGET_DIR)/nitro_plugin_beet${EXTENSION} plugins/beet/plugin.json
@@ -85,7 +87,11 @@ build.weld:
 install.args:
 	@cargo install --path . --bin nitro_plugin_args --offline
 	@cat plugins/args/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/args.json
-	
+
+install.auto_mcs:
+	@cargo install --path . --bin nitro_plugin_auto_mcs --offline
+	@cat plugins/auto_mcs/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/auto_mcs.json
+
 install.automate:
 	@cargo install --path . --bin nitro_plugin_automate --offline
 	@cat plugins/automate/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/automate.json

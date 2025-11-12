@@ -1,0 +1,20 @@
+{
+	"name": "auto-mcs",
+	"description": "Full integration with auto-mcs",
+	"protocol_version": 3,
+	"hooks": {
+		"add_instance_transfer_formats": {
+			"constant": [
+				{
+					"id": "auto_mcs",
+					"name": "auto-mcs",
+					"color": "#0efba1",
+					"import": {}
+				}
+			]
+		},
+		"import_instance": {
+			"executable": "${PLUGIN_DIR}/nitro_plugin_auto_mcs${EXE_EXTENSION}"
+		}
+	}
+}

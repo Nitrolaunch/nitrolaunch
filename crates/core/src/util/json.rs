@@ -1,3 +1,4 @@
+use serde::Serialize;
 use serde_json::{json, Value};
 
 /// A JSON map of strings to values
@@ -39,4 +40,13 @@ pub fn merge_objects(a: &mut serde_json::Map<String, Value>, b: serde_json::Map<
 			merge(a.entry(k).or_insert(Value::Null), v);
 		}
 	}
+}
+
+/// `to_string` using the serde_json representation without quotes
+pub fn to_string_json(v: &impl Serialize) -> String {
+	serde_json::to_string(v)
+		.unwrap()
+		.trim_start_matches("\"")
+		.trim_end_matches("\"")
+		.to_string()
 }
