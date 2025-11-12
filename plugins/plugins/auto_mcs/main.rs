@@ -3,9 +3,21 @@ use std::{collections::HashMap, fs::File, path::PathBuf};
 use anyhow::Context;
 use nitro_core::util::{json::to_string_json, versions::MinecraftVersionDeser};
 use nitro_plugin::{api::CustomPlugin, hooks::ImportInstanceResult};
-use nitro_shared::{loaders::Loader, Side};
-use nitrolaunch::config_crate::instance::{CommonInstanceConfig, InstanceConfig};
+use nitro_shared::{
+	id::InstanceID,
+	loaders::Loader,
+	output::{MessageContents, MessageLevel, NitroOutput},
+	Side,
+};
+use nitrolaunch::config_crate::instance::{
+	make_valid_instance_id, CommonInstanceConfig, InstanceConfig,
+};
 use zip::ZipArchive;
+
+#[cfg(not(target_os = "linux"))]
+static INI_FILENAME: &str = "auto-mcs.ini";
+#[cfg(target_os = "linux")]
+static INI_FILENAME: &str = ".auto-mcs.ini";
 
 fn main() -> anyhow::Result<()> {
 	let mut plugin = CustomPlugin::from_manifest_file("auto_mcs", include_str!("plugin.json"))?;
@@ -18,7 +30,7 @@ fn main() -> anyhow::Result<()> {
 
 		// Read the INI file
 		let mut ini_file = zip
-			.by_name("auto-mcs.ini")
+			.by_name(INI_FILENAME)
 			.context("INI file is missing in instance")?;
 		let ini =
 			std::io::read_to_string(&mut ini_file).context("Failed to read instance config")?;
@@ -46,6 +58,53 @@ fn main() -> anyhow::Result<()> {
 			format: arg.format,
 			config,
 		})
+	})?;
+
+	plugin.add_instances(|mut ctx, _| {
+		let auto_mcs_dir = get_auto_mcs_dir().context("Failed to get auto-mcs data directory")?;
+		let servers_dir = auto_mcs_dir.join("Servers");
+
+		let mut instances = HashMap::new();
+		for entry in servers_dir.read_dir()? {
+			let Ok(entry) = entry else {
+				ctx.get_output().display(
+					MessageContents::Error("Failed to load auto-mcs server".into()),
+					MessageLevel::Important,
+				);
+				continue;
+			};
+
+			let path = entry.path();
+
+			// Read the INI
+			let ini_path = path.join(INI_FILENAME);
+			let Ok(ini) = std::fs::read_to_string(ini_path) else {
+				ctx.get_output().display(
+					MessageContents::Error(format!("Failed to load auto-mcs server ({path:?})")),
+					MessageLevel::Important,
+				);
+				continue;
+			};
+			let ini = read_ini(&ini);
+
+			let Ok(mut config) = create_config(ini) else {
+				continue;
+			};
+
+			config.common.game_dir = Some(path.to_string_lossy().to_string());
+
+			let id = make_valid_instance_id(
+				&config
+					.name
+					.clone()
+					.unwrap_or_else(|| path.file_name().unwrap().to_string_lossy().to_string()),
+			);
+			let id = format!("auto-mcs-{id}");
+
+			instances.insert(InstanceID::from(id), config);
+		}
+
+		Ok(instances)
 	})?;
 
 	Ok(())
@@ -107,4 +166,18 @@ fn read_ini(contents: &str) -> HashMap<&str, HashMap<&str, &str>> {
 	}
 
 	sections
+}
+
+fn get_auto_mcs_dir() -> anyhow::Result<PathBuf> {
+	#[cfg(target_os = "linux")]
+	let data_folder = format!("{}/.auto-mcs", std::env::var("HOME")?);
+	#[cfg(target_os = "windows")]
+	let data_folder = format!("{}/Roaming/.auto-mcs", std::env::var("%APPDATA%")?);
+	#[cfg(target_os = "macos")]
+	let data_folder = format!(
+		"{}/Library/Application Support/.auto-mcs",
+		std::env::var("HOME")?
+	);
+
+	Ok(PathBuf::from(data_folder))
 }

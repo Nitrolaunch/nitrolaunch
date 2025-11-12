@@ -362,6 +362,22 @@ pub fn is_valid_instance_id(id: &str) -> bool {
 	true
 }
 
+/// Converts a string into a valid instance ID
+/// Special characters will be converted into hyphens
+pub fn make_valid_instance_id(string: &str) -> String {
+	let string = string.to_lowercase();
+	string
+		.chars()
+		.map(|c| {
+			if !c.is_ascii_alphanumeric() && c != '.' && c != ':' {
+				'-'
+			} else {
+				c
+			}
+		})
+		.collect()
+}
+
 /// Check if a loader can be installed by Nitrolaunch
 pub fn can_install_loader(loader: &Loader) -> bool {
 	matches!(loader, Loader::Vanilla)
