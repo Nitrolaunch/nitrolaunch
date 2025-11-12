@@ -47,8 +47,10 @@ fn main() {
 	add_file!(zip, "plugins/plugins/index.md");
 
 	add_file!(zip, "plugins/plugins/args.md");
+	add_file!(zip, "plugins/plugins/auto_mcs.md");
 	add_file!(zip, "plugins/plugins/automate.md");
 	add_file!(zip, "plugins/plugins/backup.md");
+	add_file!(zip, "plugins/plugins/beet.md");
 	add_file!(zip, "plugins/plugins/better_jsons.md");
 	add_file!(zip, "plugins/plugins/cleanup.md");
 	add_file!(zip, "plugins/plugins/config_split.md");
