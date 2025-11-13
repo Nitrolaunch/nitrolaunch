@@ -6,9 +6,10 @@ use clap::Subcommand;
 use color_print::{cprint, cprintln};
 use inquire::Select;
 use itertools::Itertools;
-use nitrolaunch::config::builder::InstanceBuilder;
 use nitrolaunch::config::modifications::{apply_modifications_and_write, ConfigModification};
 use nitrolaunch::config::Config;
+use nitrolaunch::config_crate::instance::{CommonInstanceConfig, InstanceConfig};
+use nitrolaunch::core::util::json::to_string_json;
 use nitrolaunch::core::util::versions::{MinecraftLatestVersion, MinecraftVersionDeser};
 use nitrolaunch::instance::transfer::load_formats;
 use nitrolaunch::instance::update::InstanceUpdateContext;
@@ -387,9 +388,6 @@ async fn add(data: &mut CmdData<'_>) -> anyhow::Result<()> {
 	let side =
 		inquire::Select::new("What side should the instance be on?", side_options).prompt()?;
 
-	let mut instance = InstanceBuilder::new(id.clone(), side);
-	instance.version(version);
-
 	let loader_options = match side {
 		Side::Client => {
 			vec![Loader::Vanilla, Loader::Fabric, Loader::Quilt]
@@ -407,9 +405,16 @@ async fn add(data: &mut CmdData<'_>) -> anyhow::Result<()> {
 	};
 	let loader =
 		inquire::Select::new("What loader should the instance use?", loader_options).prompt()?;
-	instance.loader(serde_json::to_string(&loader)?.replace("\"", ""));
 
-	let instance_config = instance.build_config();
+	let instance_config = InstanceConfig {
+		side: Some(side),
+		common: CommonInstanceConfig {
+			version: Some(version),
+			loader: Some(to_string_json(&loader)),
+			..Default::default()
+		},
+		..Default::default()
+	};
 
 	apply_modifications_and_write(
 		&mut config,

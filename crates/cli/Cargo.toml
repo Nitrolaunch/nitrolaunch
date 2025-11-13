@@ -23,7 +23,7 @@ clap = { workspace = true }
 color-print = { workspace = true }
 inquire = { workspace = true }
 itertools = { workspace = true }
-nitrolaunch = { workspace = true, features = ["builder"] }
+nitrolaunch = { workspace = true }
 reqwest = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }

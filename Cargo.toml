@@ -53,8 +53,6 @@ members = [
 ]
 
 [features]
-default = ["builder"]
-builder = []
 disable_instance_update_packages = []
 schema = [
 	"dep:schemars",

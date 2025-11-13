@@ -1,6 +1,3 @@
-/// Easy programatic creation of config
-#[cfg(feature = "builder")]
-pub mod builder;
 /// Configuring instances
 pub mod instance;
 /// Configuring instance modifications
