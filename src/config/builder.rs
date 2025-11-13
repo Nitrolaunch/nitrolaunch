@@ -195,6 +195,7 @@ impl<'parent> InstanceBuilder<'parent> {
 			common: Default::default(),
 			window: Default::default(),
 			from_plugin: false,
+			disable_loader_update: false,
 		};
 
 		Self { id, config, parent }

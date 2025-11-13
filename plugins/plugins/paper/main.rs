@@ -26,6 +26,10 @@ fn main() -> anyhow::Result<()> {
 			bail!("Instance side is empty");
 		};
 
+		if arg.config.disable_loader_update {
+			return Ok(OnInstanceSetupResult::default());
+		}
+
 		// Make sure this is a Paper or Folia server instance
 		if side != Side::Server || (arg.loader != Loader::Paper && arg.loader != Loader::Folia) {
 			return Ok(OnInstanceSetupResult::default());

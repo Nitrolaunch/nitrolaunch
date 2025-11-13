@@ -13,6 +13,10 @@ fn main() -> anyhow::Result<()> {
 			bail!("Instance side is empty");
 		};
 
+		if arg.config.disable_loader_update {
+			return Ok(OnInstanceSetupResult::default());
+		}
+
 		// Make sure this is a Fabric or Quilt instance
 		if arg.loader != Loader::Fabric && arg.loader != Loader::Quilt {
 			return Ok(OnInstanceSetupResult::default());

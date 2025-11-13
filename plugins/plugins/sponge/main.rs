@@ -11,6 +11,10 @@ fn main() -> anyhow::Result<()> {
 			bail!("Instance side is empty");
 		};
 
+		if arg.config.disable_loader_update {
+			return Ok(OnInstanceSetupResult::default());
+		}
+
 		// Make sure this is a Sponge server instance
 		if side != Side::Server || arg.loader != Loader::Sponge {
 			return Ok(OnInstanceSetupResult::default());

@@ -16,6 +16,10 @@ fn main() -> anyhow::Result<()> {
 			bail!("Instance side is empty");
 		};
 
+		if arg.config.disable_loader_update {
+			return Ok(OnInstanceSetupResult::default());
+		}
+
 		if arg.loader != Loader::NeoForged {
 			return Ok(OnInstanceSetupResult::default());
 		}

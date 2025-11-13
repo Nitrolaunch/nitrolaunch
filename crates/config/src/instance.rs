@@ -43,6 +43,10 @@ pub struct InstanceConfig {
 	#[serde(default)]
 	#[serde(skip_serializing_if = "DefaultExt::is_default")]
 	pub from_plugin: bool,
+	/// Whether to disable installing and updating loaders on this instance
+	#[serde(default)]
+	#[serde(skip_serializing_if = "DefaultExt::is_default")]
+	pub disable_loader_update: bool,
 }
 
 impl InstanceConfig {
