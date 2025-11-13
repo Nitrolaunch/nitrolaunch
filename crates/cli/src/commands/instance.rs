@@ -4,7 +4,7 @@ use std::sync::Arc;
 use anyhow::{bail, Context};
 use clap::Subcommand;
 use color_print::{cprint, cprintln};
-use inquire::Select;
+use inquire::{Confirm, Select};
 use itertools::Itertools;
 use nitrolaunch::config::modifications::{apply_modifications_and_write, ConfigModification};
 use nitrolaunch::config::Config;
@@ -98,6 +98,11 @@ pub enum InstanceSubcommand {
 		#[arg(short, long)]
 		output: Option<String>,
 	},
+	#[command(about = "Delete an instance and its files forever")]
+	Delete {
+		/// The instance to delete
+		instance: String,
+	},
 	#[clap(external_subcommand)]
 	External(Vec<String>),
 }
@@ -130,6 +135,7 @@ pub async fn run(command: InstanceSubcommand, mut data: CmdData<'_>) -> anyhow::
 			format,
 			output,
 		} => export(&mut data, instance, format, output).await,
+		InstanceSubcommand::Delete { instance } => delete(&mut data, &instance).await,
 		InstanceSubcommand::External(args) => {
 			call_plugin_subcommand(args, Some("instance"), &mut data).await
 		}
@@ -539,6 +545,35 @@ async fn export(
 		)
 		.await
 		.context("Failed to export instance")?;
+
+	Ok(())
+}
+
+async fn delete(data: &mut CmdData<'_>, id: &str) -> anyhow::Result<()> {
+	data.ensure_config(true).await?;
+	let config = data.config.get_mut();
+
+	let instance = config
+		.instances
+		.get_mut(id)
+		.with_context(|| format!("Unknown instance '{id}'"))?;
+
+	let prompt = Confirm::new(
+		"Are you SURE you want to delete this instance? This will remove world saves as well! (y/n)",
+	);
+	if !prompt.prompt()? {
+		cprintln!("<r>Cancelled.");
+		return Ok(());
+	}
+
+	cprintln!("<r>Deleting...");
+
+	instance
+		.delete_files(&data.paths)
+		.await
+		.context("Failed to delete instance")?;
+
+	cprintln!("<g>Instance deleted.");
 
 	Ok(())
 }
