@@ -1,17 +1,21 @@
 use std::fs::File;
+use std::path::PathBuf;
 
 use zip::{write::FileOptions, CompressionMethod, ZipWriter};
 
 macro_rules! add_file {
 	($zip:expr, $path:literal) => {
-		let path = concat!("../docs/", $path);
+		let path = PathBuf::from(concat!("../docs/", $path));
+		if !path.exists() {
+			panic!("Doc file {path:?} does not exist");
+		}
 		$zip.start_file(
 			$path,
 			FileOptions::<()>::default().compression_method(CompressionMethod::Deflated),
 		)
 		.unwrap();
-		std::io::copy(&mut File::open(path).unwrap(), &mut $zip).unwrap();
-		println!("cargo::rerun-if-changed={path}");
+		std::io::copy(&mut File::open(&path).unwrap(), &mut $zip).unwrap();
+		println!("cargo::rerun-if-changed={path:?}");
 	};
 }
 
@@ -50,7 +54,6 @@ fn main() {
 	add_file!(zip, "plugins/plugins/auto_mcs.md");
 	add_file!(zip, "plugins/plugins/automate.md");
 	add_file!(zip, "plugins/plugins/backup.md");
-	add_file!(zip, "plugins/plugins/beet.md");
 	add_file!(zip, "plugins/plugins/better_jsons.md");
 	add_file!(zip, "plugins/plugins/cleanup.md");
 	add_file!(zip, "plugins/plugins/config_split.md");
