@@ -160,8 +160,8 @@ impl Config {
 		let results = plugins.call_hook(AddInstances, &arg, paths, o).await;
 
 		match results {
-			Ok(results) => {
-				for result in results {
+			Ok(mut results) => {
+				while let Some(result) = results.next() {
 					let result = skip_fail!(result.result(o).await);
 					for (id, mut instance) in result.into_iter() {
 						if config.instances.contains_key(&id) {
@@ -183,8 +183,8 @@ impl Config {
 		// Add templates from plugins
 		let results = plugins.call_hook(AddTemplates, &arg, paths, o).await;
 		match results {
-			Ok(results) => {
-				for result in results {
+			Ok(mut results) => {
+				while let Some(result) = results.next() {
 					let result = skip_fail!(result.result(o).await);
 					for (id, mut template) in result.into_iter() {
 						if config.templates.contains_key(&id) {
@@ -216,8 +216,8 @@ impl Config {
 		let results = plugins.call_hook(AddSupportedLoaders, &(), paths, o).await;
 
 		match results {
-			Ok(results) => {
-				for result in results {
+			Ok(mut results) => {
+				while let Some(result) = results.next() {
 					let result = skip_fail!(result.result(o).await);
 					supported_loaders.extend(result);
 				}

@@ -34,11 +34,7 @@ pub async fn get_instance_transfer_formats(
 			.await,
 	)?;
 
-	let mut out = Vec::new();
-	for result in results {
-		let result = fmt_err(result.result(&mut output).await)?;
-		out.extend(result);
-	}
+	let out = fmt_err(results.flatten_all_results(&mut output).await)?;
 
 	Ok(out)
 }

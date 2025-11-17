@@ -9,7 +9,7 @@ use crate::config::plugin::{PluginConfig, PluginsConfig};
 use crate::io::paths::Paths;
 use anyhow::Context;
 use nitro_core::io::{json_from_file, json_to_file_pretty};
-use nitro_plugin::hook::call::HookHandle;
+use nitro_plugin::hook::call::{HookHandle, HookHandles};
 use nitro_plugin::hook::Hook;
 use nitro_plugin::plugin::{Plugin, PluginManifest};
 use nitro_plugin::CorePluginManager;
@@ -279,7 +279,7 @@ impl PluginManager {
 		arg: &H::Arg,
 		paths: &Paths,
 		o: &mut impl NitroOutput,
-	) -> anyhow::Result<Vec<HookHandle<H>>> {
+	) -> anyhow::Result<HookHandles<H>> {
 		let inner = self.inner.lock().await;
 		inner.manager.call_hook(hook, arg, &paths.core, o).await
 	}

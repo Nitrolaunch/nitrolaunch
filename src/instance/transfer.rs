@@ -258,14 +258,14 @@ pub async fn load_formats(
 	paths: &Paths,
 	o: &mut impl NitroOutput,
 ) -> anyhow::Result<Formats> {
-	let results = plugins
+	let mut results = plugins
 		.call_hook(AddInstanceTransferFormats, &(), paths, o)
 		.await
 		.context("Failed to get transfer formats from plugins")?;
 	let mut formats = HashMap::with_capacity(results.len());
-	for result in results {
-		let plugin_id = result.get_id().to_owned();
-		let result = result.result(o).await?;
+	while let Some(handle) = results.next() {
+		let plugin_id = handle.get_id().to_owned();
+		let result = handle.result(o).await?;
 		for result in result {
 			formats.insert(
 				result.id.clone(),

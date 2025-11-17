@@ -138,7 +138,12 @@ pub(crate) async fn call_executable<H: Hook + Sized>(
 			plugin_id: arg.plugin_id.to_string(),
 		};
 
-		let handle = HookHandle::executable(handle_inner, arg.plugin_id.to_string(), start_time);
+		let handle = HookHandle::executable(
+			handle_inner,
+			arg.plugin_id.to_string(),
+			start_time,
+			arg.persistence,
+		);
 
 		Ok(handle)
 	}

@@ -209,7 +209,7 @@ impl<'a> CmdData<'a> {
 		}
 
 		// Update the translation map from plugins
-		let results = self
+		let mut results = self
 			.config
 			.get()
 			.plugins
@@ -217,8 +217,7 @@ impl<'a> CmdData<'a> {
 			.await
 			.context("Failed to get extra translations from plugins")?;
 
-		for result in results {
-			let mut result = result.result(self.output).await?;
+		while let Some(mut result) = results.next_result(self.output).await? {
 			let map = result.remove(&self.config.get().prefs.language);
 			if let Some(map) = map {
 				self.output.set_translation_map(map);
@@ -349,9 +348,7 @@ async fn call_plugin_subcommand(
 		.call_hook(hooks::Subcommand, &args, &data.paths, data.output)
 		.await
 		.context("Plugin subcommand failed")?;
-	for result in results {
-		result.result(data.output).await?;
-	}
+	results.all_results(data.output).await?;
 
 	Ok(())
 }

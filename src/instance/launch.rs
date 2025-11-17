@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::io::Read;
 use std::path::PathBuf;
 use std::time::Duration;
@@ -9,7 +9,7 @@ use nitro_core::auth_crate::mc::ClientId;
 use nitro_core::io::java::args::MemoryNum;
 use nitro_core::io::java::install::JavaInstallationKind;
 use nitro_core::user::UserManager;
-use nitro_plugin::hook::call::HookHandle;
+use nitro_plugin::hook::call::HookHandles;
 use nitro_plugin::hook::hooks::{
 	InstanceLaunchArg, OnInstanceLaunch, OnInstanceStop, WhileInstanceLaunch,
 };
@@ -118,9 +118,7 @@ impl Instance {
 			.call_hook(OnInstanceLaunch, &hook_arg, paths, o)
 			.await
 			.context("Failed to call on launch hook")?;
-		for result in results {
-			result.result(o).await?;
-		}
+		results.all_results(o).await?;
 
 		// Launch the instance using core
 		let mut handle = instance
@@ -206,7 +204,7 @@ pub struct InstanceHandle {
 	/// The ID of the instance
 	instance_id: InstanceID,
 	/// Handles for hooks running while the instance is running
-	hook_handles: Vec<HookHandle<WhileInstanceLaunch>>,
+	hook_handles: HookHandles<WhileInstanceLaunch>,
 	/// Arg to pass to the stop hook when the instance is stopped
 	hook_arg: InstanceLaunchArg,
 	/// Whether to redirect stdin and stdout to the process stdin and stdout
@@ -230,20 +228,10 @@ impl InstanceHandle {
 		let pid = self.get_pid();
 
 		// Wait for the process to complete while polling plugins and stdio
-		let mut completed_hooks = HashSet::with_capacity(self.hook_handles.len());
 		let mut stdio_buf = [0u8; 512];
 		let status = loop {
 			// Plugins
-			for handle in &mut self.hook_handles {
-				if completed_hooks.contains(handle.get_id()) {
-					continue;
-				}
-
-				let finished = handle.poll(o).await;
-				if finished.is_err() || finished.is_ok_and(|x| x) {
-					completed_hooks.insert(handle.get_id().clone());
-				}
-			}
+			let _ = self.hook_handles.poll_all(o).await;
 
 			// Instance stdio
 			if !self.is_silent {
@@ -276,9 +264,7 @@ impl InstanceHandle {
 		};
 
 		// Terminate any sibling processes now that the main one is complete
-		for handle in self.hook_handles {
-			handle.terminate().await;
-		}
+		self.hook_handles.terminate().await;
 
 		Self::on_stop(&self.instance_id, pid, &self.hook_arg, plugins, paths, o).await?;
 
@@ -294,9 +280,7 @@ impl InstanceHandle {
 	) -> anyhow::Result<()> {
 		let pid = self.get_pid();
 
-		for handle in self.hook_handles {
-			let _ = handle.kill(o).await;
-		}
+		let _ = self.hook_handles.kill(o).await;
 		let _ = self.inner.kill();
 
 		Self::on_stop(&self.instance_id, pid, &self.hook_arg, plugins, paths, o).await?;
@@ -351,9 +335,7 @@ impl InstanceHandle {
 			.call_hook(OnInstanceStop, arg, paths, o)
 			.await
 			.context("Failed to call on stop hook")?;
-		for result in results {
-			result.result(o).await?;
-		}
+		results.all_results(o).await?;
 
 		Ok(())
 	}

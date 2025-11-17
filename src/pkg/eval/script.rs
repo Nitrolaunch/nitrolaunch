@@ -183,7 +183,7 @@ impl ScriptEvaluatorTrait for ScriptEvaluator {
 			command,
 			args,
 		};
-		let results = shared
+		let mut results = shared
 			.eval
 			.plugins
 			.call_hook(CustomPackageInstruction, &arg, shared.paths, &mut NoOp)
@@ -193,8 +193,7 @@ impl ScriptEvaluatorTrait for ScriptEvaluator {
 			shared.eval.uses_custom_instructions = true;
 		}
 
-		for result in results {
-			let result = result.result(&mut NoOp).await?;
+		while let Some(result) = results.next_result(&mut NoOp).await? {
 			if !result.handled {
 				shared.eval.uses_custom_instructions = true;
 			}

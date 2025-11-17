@@ -173,9 +173,7 @@ impl Instance {
 			.plugins
 			.call_hook(AfterPackagesInstalled, &arg, ctx.paths, ctx.output)
 			.await?;
-		for result in results {
-			result.result(ctx.output).await?;
-		}
+		results.all_results(ctx.output).await?;
 
 		ctx.lock.update_instance_has_done_first_update(&self.id);
 		let _ = ctx.lock.finish(ctx.paths);

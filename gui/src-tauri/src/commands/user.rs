@@ -189,11 +189,7 @@ pub async fn get_supported_user_types(
 			.await
 			.context("Failed to get new user types from plugins"),
 	)?;
-	let mut out = Vec::with_capacity(results.len());
-	for result in results {
-		let result = fmt_err(result.result(&mut NoOp).await)?;
-		out.extend(result);
-	}
+	let out = fmt_err(results.flatten_all_results(&mut NoOp).await)?;
 
 	Ok(out)
 }

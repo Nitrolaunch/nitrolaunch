@@ -200,7 +200,7 @@ pub async fn get_page_inject_script(
 	)?;
 
 	let arg = InjectPageScriptArg { page, object };
-	let results = fmt_err(
+	let mut results = fmt_err(
 		config
 			.plugins
 			.call_hook(InjectPageScript, &arg, &state.paths, &mut output)
@@ -208,8 +208,7 @@ pub async fn get_page_inject_script(
 	)?;
 
 	let mut out = String::new();
-	for result in results {
-		let result = fmt_err(result.result(&mut output).await)?;
+	while let Some(result) = fmt_err(results.next_result(&mut output).await)? {
 		out.push_str(&result);
 	}
 
@@ -235,12 +234,7 @@ pub async fn get_sidebar_buttons(
 			.call_hook(AddSidebarButtons, &(), &state.paths, &mut output)
 			.await,
 	)?;
-
-	let mut out = Vec::new();
-	for result in results {
-		let result = fmt_err(result.result(&mut output).await)?;
-		out.extend(result);
-	}
+	let out = fmt_err(results.flatten_all_results(&mut output).await)?;
 
 	Ok(out)
 }
@@ -259,15 +253,14 @@ pub async fn get_plugin_page(
 			.context("Failed to load config"),
 	)?;
 
-	let results = fmt_err(
+	let mut results = fmt_err(
 		config
 			.plugins
 			.call_hook(GetPage, &page.to_string(), &state.paths, &mut output)
 			.await,
 	)?;
 
-	for result in results {
-		let result = fmt_err(result.result(&mut output).await)?;
+	while let Some(result) = fmt_err(results.next_result(&mut output).await)? {
 		if let Some(result) = result {
 			return Ok(Some(result));
 		}
@@ -296,11 +289,7 @@ pub async fn get_themes(
 			.await,
 	)?;
 
-	let mut out = Vec::new();
-	for result in results {
-		let result = fmt_err(result.result(&mut output).await)?;
-		out.extend(result);
-	}
+	let out = fmt_err(results.flatten_all_results(&mut output).await)?;
 
 	Ok(out)
 }
@@ -361,7 +350,7 @@ pub async fn get_dropdown_buttons(
 			.context("Failed to load config"),
 	)?;
 
-	let results = fmt_err(
+	let mut results = fmt_err(
 		config
 			.plugins
 			.call_hook(AddDropdownButtons, &(), &state.paths, &mut output)
@@ -369,8 +358,7 @@ pub async fn get_dropdown_buttons(
 	)?;
 
 	let mut out = Vec::new();
-	for result in results {
-		let result = fmt_err(result.result(&mut output).await)?;
+	while let Some(result) = fmt_err(results.next_result(&mut output).await)? {
 		out.extend(result.into_iter().filter(|x| x.location == location));
 	}
 
@@ -398,11 +386,7 @@ pub async fn get_instance_tiles(
 			.await,
 	)?;
 
-	let mut out = Vec::new();
-	for result in results {
-		let result = fmt_err(result.result(&mut output).await)?;
-		out.extend(result);
-	}
+	let out = fmt_err(results.flatten_all_results(&mut output).await)?;
 
 	Ok(out)
 }

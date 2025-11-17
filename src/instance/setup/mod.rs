@@ -154,14 +154,12 @@ impl Instance {
 			if let Some(current_version) = &current_version {
 				arg.version_info.version = current_version.clone();
 			}
+
 			let results = plugins
 				.call_hook(RemoveLoader, &arg, paths, process.deref_mut())
 				.await
 				.context("Failed to call remove loader hook")?;
-
-			for result in results {
-				result.result(process.deref_mut()).await?;
-			}
+			results.all_results(process.deref_mut()).await?;
 
 			// The current loader version is no longer valid as it is referring to the old loader
 			arg.current_loader_version = None;
@@ -173,14 +171,13 @@ impl Instance {
 			process.display(message, MessageLevel::Important);
 		}
 
-		let results = plugins
+		let mut results = plugins
 			.call_hook(OnInstanceSetup, &arg, paths, o)
 			.await
 			.context("Failed to call instance setup hook")?;
 
 		let mut loader_version_set = false;
-		for result in results {
-			let result = result.result(o).await?;
+		while let Some(result) = results.next_result(o).await? {
 			self.modification_data
 				.classpath_extension
 				.add_multiple(result.classpath_extension.iter());
@@ -475,12 +472,11 @@ pub async fn setup_core(
 	core.set_client(client.clone());
 
 	// Add extra versions to manifest from plugins
-	let results = plugins
+	let mut results = plugins
 		.call_hook(AddVersions, &settings.depth, paths, o)
 		.await
 		.context("Failed to call add_versions hook")?;
-	for result in results {
-		let result = result.result(o).await?;
+	while let Some(result) = results.next_result(o).await? {
 		core.add_additional_versions(result);
 	}
 
@@ -504,18 +500,19 @@ impl CustomAuthFunction for AuthFunction {
 			user_id: id.to_string(),
 			user_type: user_type.to_string(),
 		};
-		let results = self
+		let mut results = self
 			.plugins
 			.call_hook(HandleAuth, &arg, &self.paths, &mut NoOp)
 			.await
 			.context("Failed to call handle auth hook")?;
-		for result in results {
-			let result = result.result(&mut NoOp).await?;
+
+		let mut out = None;
+		while let Some(result) = results.next_result(&mut NoOp).await? {
 			if result.handled {
-				return Ok(result.profile);
+				out = result.profile;
 			}
 		}
 
-		Ok(None)
+		Ok(out)
 	}
 }

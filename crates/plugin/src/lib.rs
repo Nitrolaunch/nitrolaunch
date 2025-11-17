@@ -3,6 +3,8 @@
 //! This library is used by both Nitrolaunch to load plugins, and as a framework for defining
 //! Rust plugins for Nitrolaunch to use
 
+use std::collections::VecDeque;
+
 use anyhow::{bail, Context};
 use hook::call::HookHandle;
 use hook::hooks::OnLoad;
@@ -26,6 +28,8 @@ pub mod plugin;
 pub mod try_read;
 
 pub use nitro_shared as shared;
+
+use crate::hook::call::HookHandles;
 
 /// Environment variable that debugs plugins when set
 pub static PLUGIN_DEBUG_ENV: &str = "NITRO_PLUGIN_DEBUG";
@@ -131,8 +135,8 @@ impl CorePluginManager {
 		arg: &H::Arg,
 		paths: &Paths,
 		o: &mut impl NitroOutput,
-	) -> anyhow::Result<Vec<HookHandle<H>>> {
-		let mut out = Vec::new();
+	) -> anyhow::Result<HookHandles<H>> {
+		let mut out = VecDeque::new();
 		for plugin in self.plugins.iter().sorted_by_key(|x| PluginSort {
 			priority: x.get_hook_priority(&hook),
 			id: x.get_id().clone(),
@@ -144,7 +148,7 @@ impl CorePluginManager {
 			out.extend(result);
 		}
 
-		Ok(out)
+		Ok(HookHandles::new(out))
 	}
 
 	/// Call a plugin hook on the manager on a specific plugin

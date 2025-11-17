@@ -143,8 +143,8 @@ impl WorldFilesWatcher {
 			.plugins
 			.call_hook(UpdateWorldFiles, plugin_arg, paths, o)
 			.await;
-		if let Ok(result) = result {
-			for result in result {
+		if let Ok(mut result) = result {
+			while let Some(result) = result.next() {
 				let result = result.result(o).await;
 				if let Err(e) = result {
 					o.display(

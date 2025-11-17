@@ -72,13 +72,13 @@ pub async fn read_instance_config(
 		.collect();
 
 	// Loader
-	let template_loaders =
-		templates
-			.iter()
-			.fold(TemplateLoaderConfiguration::default(), |mut acc, template| {
-				acc.merge(&template.loader);
-				acc
-			});
+	let template_loaders = templates.iter().fold(
+		TemplateLoaderConfiguration::default(),
+		|mut acc, template| {
+			acc.merge(&template.loader);
+			acc
+		},
+	);
 
 	let loader = match side {
 		Side::Client => config
@@ -99,12 +99,11 @@ pub async fn read_instance_config(
 	let arg = ModifyInstanceConfigArgument {
 		config: config.clone(),
 	};
-	let results = plugins
+	let mut results = plugins
 		.call_hook(ModifyInstanceConfig, &arg, paths, o)
 		.await
 		.context("Failed to apply plugin instance modifications")?;
-	for result in results {
-		let result = result.result(o).await?;
+	while let Some(result) = results.next_result(o).await? {
 		config.merge(result.config);
 	}
 

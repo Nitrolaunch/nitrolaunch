@@ -52,6 +52,8 @@ pub struct HookHandle<H: Hook> {
 	plugin_id: String,
 	command_results: VecDeque<CommandResult>,
 	start_time: Option<Instant>,
+	/// Whether poll() has returned true
+	is_finished: bool,
 }
 
 impl<H: Hook> HookHandle<H> {
@@ -63,6 +65,7 @@ impl<H: Hook> HookHandle<H> {
 			plugin_id,
 			command_results: VecDeque::new(),
 			start_time: None,
+			is_finished: true,
 		}
 	}
 
@@ -71,13 +74,15 @@ impl<H: Hook> HookHandle<H> {
 		inner: ExecutableHookHandle<H>,
 		plugin_id: String,
 		start_time: Option<Instant>,
+		plugin_persistence: Arc<Mutex<PluginPersistence>>,
 	) -> Self {
 		Self {
 			inner: HookHandleInner::Executable(inner),
-			plugin_persistence: None,
+			plugin_persistence: Some(plugin_persistence),
 			plugin_id,
 			command_results: VecDeque::new(),
 			start_time,
+			is_finished: false,
 		}
 	}
 
@@ -88,6 +93,10 @@ impl<H: Hook> HookHandle<H> {
 
 	/// Poll the handle, returning true if the handle is ready
 	pub async fn poll(&mut self, o: &mut impl NitroOutput) -> anyhow::Result<bool> {
+		if self.is_finished {
+			return Ok(true);
+		}
+
 		let finished = match &mut self.inner {
 			HookHandleInner::Executable(inner) => {
 				inner
@@ -98,6 +107,8 @@ impl<H: Hook> HookHandle<H> {
 		};
 
 		if finished {
+			self.is_finished = true;
+
 			if let Some(start_time) = &self.start_time {
 				let now = Instant::now();
 				let delta = now.duration_since(*start_time);
@@ -179,4 +190,103 @@ enum HookHandleInner<H: Hook> {
 	Executable(ExecutableHookHandle<H>),
 	/// Result is a constant, either from a constant hook or a takeover hook
 	Constant(H::Result),
+}
+
+/// A collection of HookHandles that can be run. Ensures that proper ordering of results is upheld.
+pub struct HookHandles<H: Hook> {
+	handles: VecDeque<HookHandle<H>>,
+}
+
+impl<H: Hook> HookHandles<H> {
+	pub(crate) fn new(handles: VecDeque<HookHandle<H>>) -> Self {
+		Self { handles }
+	}
+
+	/// Gets whether there are any handles in the queue
+	pub fn is_empty(&self) -> bool {
+		self.handles.is_empty()
+	}
+
+	/// Gets the number of handles still in the queue
+	pub fn len(&self) -> usize {
+		self.handles.len()
+	}
+
+	/// Gets the next handle in the queue
+	pub fn next(&mut self) -> Option<HookHandle<H>> {
+		self.handles.pop_front()
+	}
+
+	/// Gets the result from the next handle in the queue, returning None if empty
+	pub async fn next_result(
+		&mut self,
+		o: &mut impl NitroOutput,
+	) -> anyhow::Result<Option<H::Result>> {
+		let Some(next) = self.next() else {
+			return Ok(None);
+		};
+
+		next.result(o).await.map(Some)
+	}
+
+	/// Gets the results from all handles, storing them in a vec
+	pub async fn all_results(mut self, o: &mut impl NitroOutput) -> anyhow::Result<Vec<H::Result>> {
+		let mut out = Vec::with_capacity(self.len());
+		while let Some(result) = self.next_result(o).await? {
+			out.push(result);
+		}
+
+		Ok(out)
+	}
+
+	/// Polls all the hooks in the queue.
+	/// Note that this is only valid behavior for certain hooks that are long-running such as WhileInstanceLaunch.
+	pub async fn poll_all(&mut self, o: &mut impl NitroOutput) -> anyhow::Result<()> {
+		for handle in &mut self.handles {
+			handle.poll(o).await?;
+		}
+
+		Ok(())
+	}
+
+	/// Terminates all the handles in the queue
+	pub async fn terminate(self) {
+		for handle in self.handles {
+			handle.terminate().await;
+		}
+	}
+
+	/// Kills all the handles in the queue
+	pub async fn kill(self, o: &mut impl NitroOutput) -> anyhow::Result<Vec<H::Result>> {
+		// We store the error throughout to ensure that all of the handles are still killed
+		let mut error = None;
+		let mut out = Vec::new();
+		for handle in self.handles {
+			match handle.kill(o).await {
+				Ok(result) => out.extend(result),
+				Err(e) => error = Some(e),
+			}
+		}
+
+		if let Some(error) = error {
+			Err(error)
+		} else {
+			Ok(out)
+		}
+	}
+}
+
+impl<H: Hook, T> HookHandles<H>
+where
+	H::Result: IntoIterator<Item = T>,
+{
+	/// Gets the results from all handles, flattening them from lists and storing them in a vec
+	pub async fn flatten_all_results(mut self, o: &mut impl NitroOutput) -> anyhow::Result<Vec<T>> {
+		let mut out = Vec::new();
+		while let Some(result) = self.next_result(o).await? {
+			out.extend(result);
+		}
+
+		Ok(out)
+	}
 }

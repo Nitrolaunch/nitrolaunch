@@ -31,11 +31,7 @@ pub async fn get_supported_loaders(state: tauri::State<'_, State>) -> Result<Vec
 			.await
 			.context("Failed to get supported loaders from plugins"),
 	)?;
-	let mut out = Vec::with_capacity(results.len());
-	for result in results {
-		let result = fmt_err(result.result(&mut NoOp).await)?;
-		out.extend(result);
-	}
+	let out = fmt_err(results.flatten_all_results(&mut NoOp).await)?;
 
 	Ok(out)
 }
@@ -64,11 +60,7 @@ pub async fn get_loader_versions(
 			.await
 			.context("Failed to get loader versions from plugins"),
 	)?;
-	let mut out = Vec::with_capacity(results.len());
-	for result in results {
-		let result = fmt_err(result.result(&mut NoOp).await)?;
-		out.extend(result);
-	}
+	let out = fmt_err(results.flatten_all_results(&mut NoOp).await)?;
 
 	Ok(out)
 }
@@ -285,7 +277,7 @@ pub async fn get_available_icons(
 		return Ok(saved);
 	};
 
-	let Ok(results) = config
+	let Ok(mut results) = config
 		.plugins
 		.call_hook(AddInstanceIcons, &(), &state.paths, &mut NoOp)
 		.await
@@ -294,7 +286,7 @@ pub async fn get_available_icons(
 	};
 
 	let mut out = Vec::with_capacity(results.len());
-	for result in results {
+	while let Some(result) = results.next() {
 		let Ok(result) = result.result(&mut NoOp).await else {
 			continue;
 		};

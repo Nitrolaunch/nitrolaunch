@@ -45,8 +45,8 @@ impl ConfigPreferences {
 			.call_hook(AddCustomPackageRepositories, &(), paths, o)
 			.await;
 		match results {
-			Ok(results) => {
-				for result in results {
+			Ok(mut results) => {
+				while let Some(result) = results.next() {
 					let plugin_id = result.get_id().clone();
 					let Ok(results) = result.result(o).await else {
 						continue;
