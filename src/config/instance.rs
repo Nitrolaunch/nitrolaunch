@@ -12,7 +12,7 @@ use nitro_config::template::{TemplateConfig, TemplateLoaderConfiguration};
 use nitro_core::io::java::args::MemoryNum;
 use nitro_core::io::java::install::JavaInstallationKind;
 use nitro_pkg::{PkgRequest, PkgRequestSource};
-use nitro_plugin::hooks::{ModifyInstanceConfig, ModifyInstanceConfigArgument};
+use nitro_plugin::hook::hooks::{ModifyInstanceConfig, ModifyInstanceConfigArgument};
 use nitro_shared::id::{InstanceID, TemplateID};
 use nitro_shared::loaders::Loader;
 use nitro_shared::output::NitroOutput;

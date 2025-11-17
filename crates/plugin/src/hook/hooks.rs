@@ -14,48 +14,10 @@ use nitro_shared::loaders::Loader;
 use nitro_shared::pkg::{PackageID, PackageSearchParameters};
 use nitro_shared::versions::VersionPattern;
 use nitro_shared::UpdateDepth;
-use nitro_shared::{output::NitroOutput, versions::VersionInfo, Side};
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use nitro_shared::{versions::VersionInfo, Side};
+use serde::{Deserialize, Serialize};
 
-use crate::hook_call::HookCallArg;
-use crate::HookHandle;
-
-/// Trait for a hook that can be called
-pub trait Hook {
-	/// The type for the argument that goes into the hook
-	type Arg: Serialize + DeserializeOwned;
-	/// The type for the result from the hook
-	type Result: DeserializeOwned + Serialize + Default;
-
-	/// Get the name of the hook
-	fn get_name(&self) -> &'static str {
-		Self::get_name_static()
-	}
-
-	/// Get the name of the hook statically
-	fn get_name_static() -> &'static str;
-
-	/// Get whether the hook should forward all output to the terminal
-	fn get_takes_over() -> bool {
-		false
-	}
-
-	/// Get the version number of the hook
-	fn get_version() -> u16;
-
-	/// Call the hook using the specified program
-	#[allow(async_fn_in_trait)]
-	async fn call(
-		&self,
-		arg: HookCallArg<'_, Self>,
-		o: &mut impl NitroOutput,
-	) -> anyhow::Result<HookHandle<Self>>
-	where
-		Self: Sized,
-	{
-		crate::hook_call::call(self, arg, o).await
-	}
-}
+use super::Hook;
 
 macro_rules! def_hook {
 	($struct:ident, $name:literal, $desc:literal, $arg:ty, $res:ty, $version:literal, $($extra:tt)*) => {

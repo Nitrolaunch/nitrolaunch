@@ -1,7 +1,7 @@
 use anyhow::{bail, Context};
 use nitro_core::Paths;
 use nitro_mods::sponge;
-use nitro_plugin::{api::CustomPlugin, hooks::OnInstanceSetupResult};
+use nitro_plugin::{api::CustomPlugin, hook::hooks::OnInstanceSetupResult};
 use nitro_shared::{loaders::Loader, Side};
 
 fn main() -> anyhow::Result<()> {

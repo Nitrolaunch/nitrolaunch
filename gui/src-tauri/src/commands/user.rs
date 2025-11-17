@@ -8,7 +8,7 @@ use nitrolaunch::{
 	},
 	config_crate::user::{UserConfig, UserVariant},
 	core::user::UserKind,
-	plugin_crate::hooks::{AddUserTypes, UserTypeInfo},
+	plugin_crate::hook::hooks::{AddUserTypes, UserTypeInfo},
 	shared::output::NoOp,
 };
 use serde::{Deserialize, Serialize};

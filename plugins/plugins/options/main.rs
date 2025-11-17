@@ -7,7 +7,7 @@ use nitro_options::{
 };
 use nitro_plugin::{
 	api::{CustomPlugin, HookContext},
-	hooks::{Hook, OnInstanceSetupResult},
+	hook::{hooks::OnInstanceSetupResult, Hook},
 };
 use nitro_shared::Side;
 

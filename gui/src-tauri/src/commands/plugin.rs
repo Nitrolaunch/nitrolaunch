@@ -3,7 +3,7 @@ use crate::State;
 use anyhow::Context;
 use itertools::Itertools;
 use nitrolaunch::plugin::PluginManager;
-use nitrolaunch::plugin_crate::hooks::{
+use nitrolaunch::plugin_crate::hook::hooks::{
 	AddDropdownButtons, AddInstanceTiles, AddSidebarButtons, AddThemes, CustomAction,
 	CustomActionArg, DropdownButton, DropdownButtonLocation, GetPage, InjectPageScript,
 	InjectPageScriptArg, InstanceTile, SidebarButton, Theme,

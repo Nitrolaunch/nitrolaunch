@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use anyhow::{bail, Context};
 use nitro_core::io::update::UpdateManager;
 use nitro_mods::fabric_quilt;
-use nitro_plugin::{api::CustomPlugin, hooks::OnInstanceSetupResult};
+use nitro_plugin::{api::CustomPlugin, hook::hooks::OnInstanceSetupResult};
 use nitro_shared::{loaders::Loader, versions::VersionPattern, UpdateDepth};
 
 fn main() -> anyhow::Result<()> {

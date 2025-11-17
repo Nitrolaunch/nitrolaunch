@@ -4,8 +4,10 @@
 //! Rust plugins for Nitrolaunch to use
 
 use anyhow::{bail, Context};
-use hook_call::HookHandle;
-use hooks::{Hook, OnLoad};
+use hook::call::HookHandle;
+use hook::hooks::OnLoad;
+use hook::hooks::StartWorker;
+use hook::Hook;
 use itertools::Itertools;
 use nitro_core::Paths;
 use nitro_shared::output::NitroOutput;
@@ -14,10 +16,8 @@ use plugin::{HookPriority, Plugin, DEFAULT_PROTOCOL_VERSION, NEWEST_PROTOCOL_VER
 /// API for Rust-based plugins to use
 #[cfg(feature = "api")]
 pub mod api;
-/// Implementation for calling hooks
-pub mod hook_call;
-/// Plugin hooks and their definitions
-pub mod hooks;
+/// Plugin hooks and calling them
+pub mod hook;
 /// Serialized output format for plugins
 pub mod input_output;
 /// Plugins
@@ -26,8 +26,6 @@ pub mod plugin;
 pub mod try_read;
 
 pub use nitro_shared as shared;
-
-use crate::hooks::StartWorker;
 
 /// Environment variable that debugs plugins when set
 pub static PLUGIN_DEBUG_ENV: &str = "NITRO_PLUGIN_DEBUG";

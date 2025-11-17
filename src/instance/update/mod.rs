@@ -9,7 +9,7 @@ use crate::instance::setup::setup_core;
 use crate::pkg::eval::EvalConstants;
 use crate::plugin::PluginManager;
 use nitro_core::user::UserManager;
-use nitro_plugin::hooks::{AfterPackagesInstalled, AfterPackagesInstalledArg};
+use nitro_plugin::hook::hooks::{AfterPackagesInstalled, AfterPackagesInstalledArg};
 use nitro_shared::{translate, UpdateDepth};
 #[cfg(not(feature = "disable_instance_update_packages"))]
 use packages::print_package_support_messages;

@@ -9,8 +9,8 @@ use nitro_core::auth_crate::mc::ClientId;
 use nitro_core::io::java::args::MemoryNum;
 use nitro_core::io::java::install::JavaInstallationKind;
 use nitro_core::user::UserManager;
-use nitro_plugin::hook_call::HookHandle;
-use nitro_plugin::hooks::{
+use nitro_plugin::hook::call::HookHandle;
+use nitro_plugin::hook::hooks::{
 	InstanceLaunchArg, OnInstanceLaunch, OnInstanceStop, WhileInstanceLaunch,
 };
 use nitro_shared::id::InstanceID;

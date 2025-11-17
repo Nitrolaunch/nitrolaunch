@@ -15,7 +15,7 @@ use nitro_pkg_gen::relation_substitution::{
 };
 use nitro_plugin::{
 	api::{utils::PackageSearchCache, CustomPlugin},
-	hooks::CustomRepoQueryResult,
+	hook::hooks::CustomRepoQueryResult,
 };
 use serde::{Deserialize, Serialize};
 

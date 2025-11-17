@@ -4,7 +4,7 @@ use std::{collections::HashMap, path::Path};
 
 use anyhow::{bail, Context};
 use nitro_config::instance::InstanceConfig;
-use nitro_plugin::hooks::{
+use nitro_plugin::hook::hooks::{
 	AddInstanceTransferFormats, ExportInstance, ExportInstanceArg, ImportInstance,
 	ImportInstanceArg, InstanceTransferFeatureSupport, InstanceTransferFormat,
 	InstanceTransferFormatDirection, MigrateInstances,

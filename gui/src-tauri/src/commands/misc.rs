@@ -8,7 +8,7 @@ use nitrolaunch::{
 		net::game_files::{assets::AssetIndex, version_manifest::VersionType},
 	},
 	instance::{setup::setup_core, update::manager::UpdateSettings},
-	plugin_crate::hooks::{
+	plugin_crate::hook::hooks::{
 		AddInstanceIcons, AddSupportedLoaders, GetLoaderVersions, GetLoaderVersionsArg,
 	},
 	shared::{id::InstanceID, loaders::Loader, output::NoOp, UpdateDepth},

@@ -12,11 +12,11 @@ use anyhow::{bail, Context};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
-use crate::hook_call::{
+use crate::hook::executable::{
 	CONFIG_DIR_ENV, CUSTOM_CONFIG_ENV, DATA_DIR_ENV, HOOK_VERSION_ENV, PLUGIN_LIST_ENV,
 	PLUGIN_STATE_ENV,
 };
-use crate::hooks::Hook;
+use crate::hook::Hook;
 use crate::input_output::{InputAction, OutputAction};
 use crate::plugin::{PluginManifest, NEWEST_PROTOCOL_VERSION};
 
@@ -40,11 +40,11 @@ macro_rules! hook_interface {
 		pub fn $name(
 			&mut self,
 			f: impl FnOnce(
-				HookContext<$crate::hooks::$hook>,
-				<$crate::hooks::$hook as Hook>::Arg,
-			) -> anyhow::Result<<$crate::hooks::$hook as Hook>::Result>,
+				HookContext<$crate::hook::hooks::$hook>,
+				<$crate::hook::hooks::$hook as Hook>::Arg,
+			) -> anyhow::Result<<$crate::hook::hooks::$hook as Hook>::Result>,
 		) -> anyhow::Result<()> {
-			self.handle_hook::<$crate::hooks::$hook>($arg, f)
+			self.handle_hook::<$crate::hook::hooks::$hook>($arg, f)
 		}
 	};
 

@@ -20,7 +20,7 @@ use nitro_pkg_gen::{
 };
 use nitro_plugin::{
 	api::{utils::PackageSearchCache, CustomPlugin},
-	hooks::CustomRepoQueryResult,
+	hook::hooks::CustomRepoQueryResult,
 };
 use serde::{Deserialize, Serialize};
 use tokio::sync::Mutex;

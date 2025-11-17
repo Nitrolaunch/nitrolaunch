@@ -10,11 +10,11 @@ use nitro_shared::output::NitroOutput;
 use serde::{Deserialize, Deserializer};
 use tokio::sync::Mutex;
 
-use crate::hook_call::HookCallArg;
-use crate::hook_call::PLUGIN_DIR_TOKEN;
-use crate::hooks::Hook;
-use crate::hooks::StartWorker;
-use crate::HookHandle;
+use crate::hook::call::HookCallArg;
+use crate::hook::call::HookHandle;
+use crate::hook::executable::PLUGIN_DIR_TOKEN;
+use crate::hook::hooks::StartWorker;
+use crate::hook::Hook;
 
 /// The newest protocol version for plugin communication
 pub const NEWEST_PROTOCOL_VERSION: u16 = 3;

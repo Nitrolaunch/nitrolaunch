@@ -9,7 +9,7 @@ use backup::{get_backup_directory, BackupAutoHook, Config, Index, DEFAULT_GROUP}
 use clap::Parser;
 use color_print::cprintln;
 use nitro_plugin::api::{CustomPlugin, HookContext};
-use nitro_plugin::hooks::{self, Hook};
+use nitro_plugin::hook::{Hook, hooks};
 use nitro_plugin::input_output::InputAction;
 use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
 

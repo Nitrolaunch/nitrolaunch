@@ -3,7 +3,7 @@ use std::{ops::DerefMut, path::PathBuf};
 use anyhow::{bail, Context};
 use nitro_mods::forge::{self, Mode};
 use nitro_net::neoforge;
-use nitro_plugin::{api::CustomPlugin, hooks::OnInstanceSetupResult};
+use nitro_plugin::{api::CustomPlugin, hook::hooks::OnInstanceSetupResult};
 use nitro_shared::{
 	loaders::Loader,
 	output::{MessageContents, MessageLevel, NitroOutput},

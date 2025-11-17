@@ -8,7 +8,7 @@ use nitrolaunch::config::modifications::{apply_modifications_and_write, ConfigMo
 use nitrolaunch::config::Config;
 use nitrolaunch::instance::{transfer, Instance};
 use nitrolaunch::io::lock::Lockfile;
-use nitrolaunch::plugin_crate::hooks::{AddInstanceTransferFormats, InstanceTransferFormat};
+use nitrolaunch::plugin_crate::hook::hooks::{AddInstanceTransferFormats, InstanceTransferFormat};
 use nitrolaunch::shared::id::InstanceID;
 use nitrolaunch::shared::output::NoOp;
 

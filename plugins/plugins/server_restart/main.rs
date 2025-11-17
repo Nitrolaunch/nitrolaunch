@@ -6,7 +6,7 @@ use std::path::{Path, PathBuf};
 
 use anyhow::Context;
 use nitro_plugin::api::CustomPlugin;
-use nitro_plugin::hooks::OnInstanceSetupResult;
+use nitro_plugin::hook::hooks::OnInstanceSetupResult;
 use nitro_shared::Side;
 use serde::Deserialize;
 

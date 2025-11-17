@@ -2,7 +2,7 @@ use std::{collections::HashMap, fs::File, path::PathBuf};
 
 use anyhow::Context;
 use nitro_core::util::{json::to_string_json, versions::MinecraftVersionDeser};
-use nitro_plugin::{api::CustomPlugin, hooks::ImportInstanceResult};
+use nitro_plugin::{api::CustomPlugin, hook::hooks::ImportInstanceResult};
 use nitro_shared::{
 	id::InstanceID,
 	loaders::Loader,

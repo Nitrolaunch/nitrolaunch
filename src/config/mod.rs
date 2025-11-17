@@ -19,7 +19,7 @@ use nitro_config::ConfigDeser;
 use nitro_core::auth_crate::mc::ClientId;
 use nitro_core::io::{json_from_file, json_to_file_pretty};
 use nitro_core::user::UserManager;
-use nitro_plugin::hooks::{AddInstances, AddInstancesArg, AddSupportedLoaders, AddTemplates};
+use nitro_plugin::hook::hooks::{AddInstances, AddInstancesArg, AddSupportedLoaders, AddTemplates};
 use nitro_shared::id::{InstanceID, TemplateID};
 use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
 use nitro_shared::util::is_valid_identifier;

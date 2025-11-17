@@ -1,6 +1,6 @@
 use anyhow::Context;
 use nitro_net::download::{self, Client};
-use nitro_plugin::{api::CustomPlugin, hooks::OnInstanceSetupResult};
+use nitro_plugin::{api::CustomPlugin, hook::hooks::OnInstanceSetupResult};
 use nitro_shared::{
 	output::{MessageContents, MessageLevel, NitroOutput},
 	UpdateDepth,

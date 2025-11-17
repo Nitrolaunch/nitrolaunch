@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use clap::Parser;
 use color_print::cprintln;
-use nitro_plugin::{api::CustomPlugin, hooks::SidebarButton};
+use nitro_plugin::{api::CustomPlugin, hook::hooks::SidebarButton};
 use nitro_shared::util::open_link;
 
 fn main() -> anyhow::Result<()> {

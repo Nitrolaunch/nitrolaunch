@@ -12,7 +12,7 @@ use nitro_core::{
 use nitro_pkg::PkgRequest;
 use nitro_plugin::{
 	api::CustomPlugin,
-	hooks::{ImportInstanceResult, MigrateInstancesResult, MigratedAddon, MigratedPackage},
+	hook::hooks::{ImportInstanceResult, MigrateInstancesResult, MigratedAddon, MigratedPackage},
 };
 use nitro_shared::{addon::AddonKind, loaders::Loader, Side};
 use nitrolaunch::config_crate::{

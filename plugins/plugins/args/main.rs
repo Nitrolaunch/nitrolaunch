@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use anyhow::bail;
 use nitro_plugin::api::CustomPlugin;
-use nitro_plugin::hooks::ModifyInstanceConfigResult;
+use nitro_plugin::hook::hooks::ModifyInstanceConfigResult;
 use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
 use nitrolaunch::config_crate::instance::{
 	CommonInstanceConfig, InstanceConfig, LaunchArgs, LaunchConfig,

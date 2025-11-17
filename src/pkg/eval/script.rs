@@ -7,7 +7,7 @@ use nitro_pkg::script_eval::{
 	AddonInstructionData, ScriptEvalConfig, ScriptEvaluator as ScriptEvaluatorTrait,
 };
 use nitro_pkg::RecommendedPackage;
-use nitro_plugin::hooks::{CustomPackageInstruction, CustomPackageInstructionArg};
+use nitro_plugin::hook::hooks::{CustomPackageInstruction, CustomPackageInstructionArg};
 use nitro_shared::output::NoOp;
 use nitro_shared::pkg::PackageID;
 

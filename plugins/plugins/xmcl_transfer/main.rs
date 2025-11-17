@@ -6,7 +6,7 @@ use std::{
 
 use anyhow::{bail, Context};
 use nitro_core::{io::java::install::JavaInstallationKind, util::versions::MinecraftVersionDeser};
-use nitro_plugin::{api::CustomPlugin, hooks::ImportInstanceResult};
+use nitro_plugin::{api::CustomPlugin, hook::hooks::ImportInstanceResult};
 use nitro_shared::{
 	loaders::Loader,
 	output::{MessageContents, MessageLevel, NitroOutput},

@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use anyhow::Context;
 use nitro_core::io::files::{create_leading_dirs, update_link};
 use nitro_plugin::api::CustomPlugin;
-use nitro_plugin::hooks::OnInstanceSetupResult;
+use nitro_plugin::hook::hooks::OnInstanceSetupResult;
 use serde::{Deserialize, Serialize};
 
 fn main() -> anyhow::Result<()> {

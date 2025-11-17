@@ -10,7 +10,7 @@ use nitro_core::{
 };
 use nitro_mods::paper::{self, BuildInfoResponse};
 use nitro_net::download::Client;
-use nitro_plugin::{api::CustomPlugin, hooks::OnInstanceSetupResult};
+use nitro_plugin::{api::CustomPlugin, hook::hooks::OnInstanceSetupResult};
 use nitro_shared::{
 	loaders::Loader,
 	output::{MessageContents, MessageLevel, NitroOutput, OutputProcess},

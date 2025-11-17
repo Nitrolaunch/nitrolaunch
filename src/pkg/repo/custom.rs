@@ -3,8 +3,8 @@ use std::{collections::HashSet, sync::Arc};
 use anyhow::Context;
 use nitro_pkg::{repo::RepoMetadata, PackageSearchResults};
 use nitro_plugin::{
-	hook_call::HookHandle,
-	hooks::{
+	hook::call::HookHandle,
+	hook::hooks::{
 		PreloadPackages, PreloadPackagesArg, QueryCustomPackageRepository,
 		QueryCustomPackageRepositoryArg, SearchCustomPackageRepository,
 		SearchCustomPackageRepositoryArg, SyncCustomPackageRepository,

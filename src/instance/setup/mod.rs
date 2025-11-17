@@ -21,7 +21,7 @@ use nitro_core::user::uuid::hyphenate_uuid;
 use nitro_core::user::{CustomAuthFunction, User, UserManager};
 use nitro_core::version::InstalledVersion;
 use nitro_core::{NitroCore, QuickPlayType};
-use nitro_plugin::hooks::{
+use nitro_plugin::hook::hooks::{
 	AddVersions, HandleAuth, HandleAuthArg, OnInstanceSetup, OnInstanceSetupArg, RemoveLoader,
 };
 use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};

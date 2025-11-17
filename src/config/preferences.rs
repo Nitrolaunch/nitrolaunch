@@ -14,7 +14,7 @@ use nitro_config::preferences::{PrefDeser, RepoDeser};
 use nitro_core::net::download::validate_url;
 
 use anyhow::{bail, Context};
-use nitro_plugin::hooks::AddCustomPackageRepositories;
+use nitro_plugin::hook::hooks::AddCustomPackageRepositories;
 use nitro_shared::{
 	lang::Language,
 	output::{MessageContents, MessageLevel, NitroOutput},

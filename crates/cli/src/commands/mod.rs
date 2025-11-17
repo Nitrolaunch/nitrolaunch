@@ -17,7 +17,7 @@ use nitrolaunch::instance::transfer::{load_formats, migrate_instances};
 use nitrolaunch::io::lock::Lockfile;
 use nitrolaunch::io::paths::Paths;
 use nitrolaunch::plugin::PluginManager;
-use nitrolaunch::plugin_crate::hooks::{self, AddTranslations};
+use nitrolaunch::plugin_crate::hook::hooks::{self, AddTranslations};
 use nitrolaunch::plugin_crate::plugin::PluginProvidedSubcommand;
 use nitrolaunch::shared::id::InstanceID;
 use nitrolaunch::shared::lang::translate::TranslationKey;
