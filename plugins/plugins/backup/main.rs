@@ -8,7 +8,7 @@ use anyhow::Context;
 use backup::{get_backup_directory, BackupAutoHook, Config, Index, DEFAULT_GROUP};
 use clap::Parser;
 use color_print::cprintln;
-use nitro_plugin::api::{CustomPlugin, HookContext};
+use nitro_plugin::api::executable::{ExecutablePlugin, HookContext};
 use nitro_plugin::hook::{Hook, hooks};
 use nitro_plugin::input_output::InputAction;
 use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
@@ -16,7 +16,7 @@ use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
 use crate::backup::BackupSource;
 
 fn main() -> anyhow::Result<()> {
-	let mut plugin = CustomPlugin::from_manifest_file("backup", include_str!("plugin.json"))?;
+	let mut plugin = ExecutablePlugin::from_manifest_file("backup", include_str!("plugin.json"))?;
 	plugin.subcommand(|ctx, args| {
 		let Some(subcommand) = args.first() else {
 			return Ok(());

@@ -16,7 +16,6 @@ use nitro_shared::output::NitroOutput;
 use plugin::{HookPriority, Plugin, DEFAULT_PROTOCOL_VERSION, NEWEST_PROTOCOL_VERSION};
 
 /// API for Rust-based plugins to use
-#[cfg(feature = "api")]
 pub mod api;
 /// Plugin hooks and calling them
 pub mod hook;

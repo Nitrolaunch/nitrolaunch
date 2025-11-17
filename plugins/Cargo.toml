@@ -148,7 +148,7 @@ nitro_core = { workspace = true }
 nitro_mods = { workspace = true }
 nitro_net = { workspace = true }
 nitro_options = { workspace = true }
-nitro_plugin = { workspace = true, features = ["api"] }
+nitro_plugin = { workspace = true, features = ["executable_api"] }
 nitro_pkg = { workspace = true }
 nitro_pkg_gen = { workspace = true }
 nitro_shared = { workspace = true }

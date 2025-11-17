@@ -6,13 +6,13 @@ use nitro_options::{
 	client::write_options_txt, read_options, server::write_server_properties, Options,
 };
 use nitro_plugin::{
-	api::{CustomPlugin, HookContext},
+	api::executable::{ExecutablePlugin, HookContext},
 	hook::{hooks::OnInstanceSetupResult, Hook},
 };
 use nitro_shared::Side;
 
 fn main() -> anyhow::Result<()> {
-	let mut plugin = CustomPlugin::from_manifest_file("options", include_str!("plugin.json"))?;
+	let mut plugin = ExecutablePlugin::from_manifest_file("options", include_str!("plugin.json"))?;
 	plugin.on_instance_setup(|ctx, arg| {
 		// Consolidate the options from all the sources
 		let mut keys = HashMap::new();

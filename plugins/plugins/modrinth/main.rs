@@ -19,14 +19,14 @@ use nitro_pkg_gen::{
 	relation_substitution::{PackageAndVersion, RelationSubFunction, RelationSubNone},
 };
 use nitro_plugin::{
-	api::{utils::PackageSearchCache, CustomPlugin},
+	api::executable::{utils::PackageSearchCache, ExecutablePlugin},
 	hook::hooks::CustomRepoQueryResult,
 };
 use serde::{Deserialize, Serialize};
 use tokio::sync::Mutex;
 
 fn main() -> anyhow::Result<()> {
-	let mut plugin = CustomPlugin::from_manifest_file("modrinth", include_str!("plugin.json"))?;
+	let mut plugin = ExecutablePlugin::from_manifest_file("modrinth", include_str!("plugin.json"))?;
 
 	plugin.query_custom_package_repository(|ctx, arg| {
 		if arg.repository != "modrinth" {

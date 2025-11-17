@@ -9,10 +9,10 @@ use anyhow::Context;
 use clap::Parser;
 use color_print::cprintln;
 use nitro_core::{io::json_from_file, net::game_files::assets::AssetIndex};
-use nitro_plugin::api::CustomPlugin;
+use nitro_plugin::api::executable::ExecutablePlugin;
 
 fn main() -> anyhow::Result<()> {
-	let mut plugin = CustomPlugin::from_manifest_file("cleanup", include_str!("plugin.json"))?;
+	let mut plugin = ExecutablePlugin::from_manifest_file("cleanup", include_str!("plugin.json"))?;
 	plugin.subcommand(|ctx, args| {
 		let Some(subcommand) = args.first() else {
 			return Ok(());

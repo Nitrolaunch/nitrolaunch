@@ -4,11 +4,11 @@ use std::net::{TcpListener, TcpStream};
 use std::path::PathBuf;
 
 use anyhow::Context;
-use nitro_plugin::api::CustomPlugin;
+use nitro_plugin::api::executable::ExecutablePlugin;
 use serde::Deserialize;
 
 fn main() -> anyhow::Result<()> {
-	let mut plugin = CustomPlugin::from_manifest_file("packhost", include_str!("plugin.json"))?;
+	let mut plugin = ExecutablePlugin::from_manifest_file("packhost", include_str!("plugin.json"))?;
 	plugin.while_instance_launch(|_, arg| {
 		let config = arg.config.common.plugin_config.get("packhost");
 		let Some(config) = config else {

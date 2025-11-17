@@ -1,6 +1,6 @@
 use anyhow::Context;
 use nitro_net::download::{self, Client};
-use nitro_plugin::{api::CustomPlugin, hook::hooks::OnInstanceSetupResult};
+use nitro_plugin::{api::executable::ExecutablePlugin, hook::hooks::OnInstanceSetupResult};
 use nitro_shared::{
 	output::{MessageContents, MessageLevel, NitroOutput},
 	UpdateDepth,
@@ -8,7 +8,7 @@ use nitro_shared::{
 use serde_json::Value;
 
 fn main() -> anyhow::Result<()> {
-	let mut plugin = CustomPlugin::from_manifest_file("glfw_fix", include_str!("plugin.json"))?;
+	let mut plugin = ExecutablePlugin::from_manifest_file("glfw_fix", include_str!("plugin.json"))?;
 	plugin.on_instance_setup(|mut ctx, arg| {
 		let enabled = arg
 			.config

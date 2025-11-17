@@ -3,7 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { createEffect, createResource } from "solid-js";
 import { setupPluginFunctions } from "../plugins";
 
-export default function CustomPluginPage() {
+export default function ExecutablePluginPage() {
 	let params = useParams();
 
 	let [html, _] = createResource(

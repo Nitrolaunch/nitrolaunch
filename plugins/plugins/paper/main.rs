@@ -10,7 +10,7 @@ use nitro_core::{
 };
 use nitro_mods::paper::{self, BuildInfoResponse};
 use nitro_net::download::Client;
-use nitro_plugin::{api::CustomPlugin, hook::hooks::OnInstanceSetupResult};
+use nitro_plugin::{api::executable::ExecutablePlugin, hook::hooks::OnInstanceSetupResult};
 use nitro_shared::{
 	loaders::Loader,
 	output::{MessageContents, MessageLevel, NitroOutput, OutputProcess},
@@ -20,7 +20,7 @@ use nitro_shared::{
 use tokio::runtime::Runtime;
 
 fn main() -> anyhow::Result<()> {
-	let mut plugin = CustomPlugin::from_manifest_file("paper", include_str!("plugin.json"))?;
+	let mut plugin = ExecutablePlugin::from_manifest_file("paper", include_str!("plugin.json"))?;
 	plugin.on_instance_setup(|mut ctx, arg| {
 		let Some(side) = arg.side else {
 			bail!("Instance side is empty");

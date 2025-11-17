@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use anyhow::{bail, Context};
-use nitro_plugin::api::CustomPlugin;
+use nitro_plugin::api::executable::ExecutablePlugin;
 use nitro_shared::id::InstanceID;
 use nitrolaunch::config_crate::instance::InstanceConfig;
 use serde::{Deserialize, Serialize};
@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 static INDEX_TOKEN: &str = "$n";
 
 fn main() -> anyhow::Result<()> {
-	let mut plugin = CustomPlugin::from_manifest_file("multiply", include_str!("plugin.json"))?;
+	let mut plugin = ExecutablePlugin::from_manifest_file("multiply", include_str!("plugin.json"))?;
 
 	plugin.add_instances(|ctx, _| {
 		let Some(config) = ctx.get_custom_config() else {

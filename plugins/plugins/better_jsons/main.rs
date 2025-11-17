@@ -4,14 +4,14 @@ use nitro_core::{
 	net::game_files::version_manifest::VersionManifest,
 };
 use nitro_net::download::{self, Client};
-use nitro_plugin::api::CustomPlugin;
+use nitro_plugin::api::executable::ExecutablePlugin;
 use nitro_shared::{
 	output::{MessageContents, MessageLevel, NitroOutput},
 	UpdateDepth,
 };
 
 fn main() -> anyhow::Result<()> {
-	let mut plugin = CustomPlugin::from_manifest_file("better_jsons", include_str!("plugin.json"))?;
+	let mut plugin = ExecutablePlugin::from_manifest_file("better_jsons", include_str!("plugin.json"))?;
 	plugin.add_versions(|mut ctx, update_depth| {
 		let versions_file = ctx
 			.get_data_dir()?

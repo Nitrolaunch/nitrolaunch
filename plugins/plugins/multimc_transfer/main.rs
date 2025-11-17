@@ -11,7 +11,7 @@ use nitro_core::{
 };
 use nitro_pkg::PkgRequest;
 use nitro_plugin::{
-	api::CustomPlugin,
+	api::executable::ExecutablePlugin,
 	hook::hooks::{ImportInstanceResult, MigrateInstancesResult, MigratedAddon, MigratedPackage},
 };
 use nitro_shared::{addon::AddonKind, loaders::Loader, Side};
@@ -24,7 +24,7 @@ use zip::ZipArchive;
 
 fn main() -> anyhow::Result<()> {
 	let mut plugin =
-		CustomPlugin::from_manifest_file("multimc_transfer", include_str!("plugin.json"))?;
+		ExecutablePlugin::from_manifest_file("multimc_transfer", include_str!("plugin.json"))?;
 
 	plugin.import_instance(|_, arg| {
 		let source_path = PathBuf::from(arg.source_path);

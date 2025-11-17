@@ -5,14 +5,14 @@ use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 
 use anyhow::Context;
-use nitro_plugin::api::CustomPlugin;
+use nitro_plugin::api::executable::ExecutablePlugin;
 use nitro_plugin::hook::hooks::OnInstanceSetupResult;
 use nitro_shared::Side;
 use serde::Deserialize;
 
 fn main() -> anyhow::Result<()> {
 	let mut plugin =
-		CustomPlugin::from_manifest_file("server_restart", include_str!("plugin.json"))?;
+		ExecutablePlugin::from_manifest_file("server_restart", include_str!("plugin.json"))?;
 	plugin.on_instance_setup(|_, arg| {
 		if !arg.side.is_some_and(|x| x == Side::Server) {
 			return Ok(OnInstanceSetupResult::default());

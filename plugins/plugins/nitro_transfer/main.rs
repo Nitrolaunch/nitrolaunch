@@ -5,7 +5,7 @@ use std::{
 };
 
 use anyhow::Context;
-use nitro_plugin::{api::CustomPlugin, hook::hooks::ImportInstanceResult};
+use nitro_plugin::{api::executable::ExecutablePlugin, hook::hooks::ImportInstanceResult};
 use nitro_shared::Side;
 use nitrolaunch::config_crate::instance::InstanceConfig;
 use serde::{Deserialize, Serialize};
@@ -13,7 +13,7 @@ use zip::{write::FileOptions, ZipArchive, ZipWriter};
 
 fn main() -> anyhow::Result<()> {
 	let mut plugin =
-		CustomPlugin::from_manifest_file("nitro_transfer", include_str!("plugin.json"))?;
+		ExecutablePlugin::from_manifest_file("nitro_transfer", include_str!("plugin.json"))?;
 
 	plugin.export_instance(|_, arg| {
 		let game_dir = PathBuf::from(arg.game_dir);

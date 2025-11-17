@@ -2,11 +2,11 @@ use std::{collections::HashMap, path::Path, sync::Arc};
 
 use anyhow::Context;
 use nitro_core::io::json_from_file;
-use nitro_plugin::api::CustomPlugin;
+use nitro_plugin::api::executable::ExecutablePlugin;
 use serde::de::DeserializeOwned;
 
 fn main() -> anyhow::Result<()> {
-	let mut plugin = CustomPlugin::from_manifest_file("config_split", include_str!("plugin.json"))?;
+	let mut plugin = ExecutablePlugin::from_manifest_file("config_split", include_str!("plugin.json"))?;
 
 	plugin.add_instances(|ctx, _| {
 		let config_dir = ctx.get_config_dir()?;

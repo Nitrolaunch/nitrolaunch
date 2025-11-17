@@ -3,12 +3,12 @@ use std::process::Command;
 use anyhow::Context;
 use clap::Parser;
 use nitro_core::auth_crate::mc::ClientId;
-use nitro_plugin::api::CustomPlugin;
+use nitro_plugin::api::executable::ExecutablePlugin;
 use nitro_shared::{id::InstanceID, output::NoOp};
 use nitrolaunch::{config::Config, io::paths::Paths, plugin::PluginManager};
 
 fn main() -> anyhow::Result<()> {
-	let mut plugin = CustomPlugin::from_manifest_file("beet", include_str!("plugin.json"))?;
+	let mut plugin = ExecutablePlugin::from_manifest_file("beet", include_str!("plugin.json"))?;
 	plugin.subcommand(|_, args| {
 		let Some(subcommand) = args.first() else {
 			return Ok(());

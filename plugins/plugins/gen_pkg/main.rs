@@ -5,7 +5,7 @@ use std::io::stdout;
 use clap::Parser;
 use nitro_pkg_gen::relation_substitution::RelationSubMap;
 use nitro_pkg_gen::{modrinth, smithed};
-use nitro_plugin::api::CustomPlugin;
+use nitro_plugin::api::executable::ExecutablePlugin;
 use serde::{Deserialize, Serialize};
 use serde_json::ser::PrettyFormatter;
 use serde_json::Serializer;
@@ -14,7 +14,7 @@ use serde_json::Serializer;
 pub mod batched;
 
 fn main() -> anyhow::Result<()> {
-	let mut plugin = CustomPlugin::from_manifest_file("gen_pkg", include_str!("plugin.json"))?;
+	let mut plugin = ExecutablePlugin::from_manifest_file("gen_pkg", include_str!("plugin.json"))?;
 	plugin.subcommand(|_, args| {
 		let Some(subcommand) = args.first() else {
 			return Ok(());

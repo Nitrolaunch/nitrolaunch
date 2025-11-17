@@ -6,14 +6,14 @@ use crate::{input_output::OutputAction, plugin::NEWEST_PROTOCOL_VERSION};
 
 /// Struct that implements the NitroOutput trait for printing serialized messages
 /// to stdout for the plugin runner to read
-pub struct PluginOutput {
+pub struct ExecutablePluginOutput {
 	use_base64: bool,
 	protocol_version: u16,
 	stdout: Stdout,
 }
 
-impl PluginOutput {
-	/// Create a new PluginOutput
+impl ExecutablePluginOutput {
+	/// Create a new ExecutableExecutablePluginOutput
 	pub fn new(use_base64: bool, protocol_version: u16) -> Self {
 		Self {
 			use_base64,
@@ -23,13 +23,13 @@ impl PluginOutput {
 	}
 }
 
-impl Default for PluginOutput {
+impl Default for ExecutablePluginOutput {
 	fn default() -> Self {
 		Self::new(true, NEWEST_PROTOCOL_VERSION)
 	}
 }
 
-impl NitroOutput for PluginOutput {
+impl NitroOutput for ExecutablePluginOutput {
 	fn display_text(&mut self, text: String, level: MessageLevel) {
 		let action = OutputAction::Text(text, level);
 		if let Ok(text) = action.serialize(self.use_base64, self.protocol_version) {

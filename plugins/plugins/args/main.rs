@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 use anyhow::bail;
-use nitro_plugin::api::CustomPlugin;
+use nitro_plugin::api::executable::ExecutablePlugin;
 use nitro_plugin::hook::hooks::ModifyInstanceConfigResult;
 use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
 use nitrolaunch::config_crate::instance::{
@@ -9,7 +9,7 @@ use nitrolaunch::config_crate::instance::{
 };
 
 fn main() -> anyhow::Result<()> {
-	let mut plugin = CustomPlugin::from_manifest_file("args", include_str!("plugin.json"))?;
+	let mut plugin = ExecutablePlugin::from_manifest_file("args", include_str!("plugin.json"))?;
 	plugin.modify_instance_config(|mut ctx, arg| {
 		let args = if let Some(preset) = arg.config.common.plugin_config.get("args_preset") {
 			if let Some(preset) = preset.as_str() {

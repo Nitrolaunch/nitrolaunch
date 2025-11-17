@@ -3,14 +3,14 @@ use std::{ops::DerefMut, path::PathBuf};
 use anyhow::{bail, Context};
 use nitro_mods::forge::{self, Mode};
 use nitro_net::neoforge;
-use nitro_plugin::{api::CustomPlugin, hook::hooks::OnInstanceSetupResult};
+use nitro_plugin::{api::executable::ExecutablePlugin, hook::hooks::OnInstanceSetupResult};
 use nitro_shared::{
 	loaders::Loader,
 	output::{MessageContents, MessageLevel, NitroOutput},
 };
 
 fn main() -> anyhow::Result<()> {
-	let mut plugin = CustomPlugin::from_manifest_file("forge", include_str!("plugin.json"))?;
+	let mut plugin = ExecutablePlugin::from_manifest_file("forge", include_str!("plugin.json"))?;
 	plugin.on_instance_setup(|mut ctx, arg| {
 		let Some(side) = arg.side else {
 			bail!("Instance side is empty");

@@ -6,7 +6,7 @@ use std::{
 
 use anyhow::{bail, Context};
 use nitro_core::{io::java::install::JavaInstallationKind, util::versions::MinecraftVersionDeser};
-use nitro_plugin::{api::CustomPlugin, hook::hooks::ImportInstanceResult};
+use nitro_plugin::{api::executable::ExecutablePlugin, hook::hooks::ImportInstanceResult};
 use nitro_shared::{
 	loaders::Loader,
 	output::{MessageContents, MessageLevel, NitroOutput},
@@ -21,7 +21,7 @@ use zip::{write::FileOptions, ZipArchive, ZipWriter};
 
 fn main() -> anyhow::Result<()> {
 	let mut plugin =
-		CustomPlugin::from_manifest_file("xmcl_transfer", include_str!("plugin.json"))?;
+		ExecutablePlugin::from_manifest_file("xmcl_transfer", include_str!("plugin.json"))?;
 
 	plugin.export_instance(|_, arg| {
 		if arg.config.side == Some(Side::Server) {

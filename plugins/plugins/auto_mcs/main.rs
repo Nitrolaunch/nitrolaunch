@@ -2,7 +2,7 @@ use std::{collections::HashMap, fs::File, path::PathBuf};
 
 use anyhow::Context;
 use nitro_core::util::{json::to_string_json, versions::MinecraftVersionDeser};
-use nitro_plugin::{api::CustomPlugin, hook::hooks::ImportInstanceResult};
+use nitro_plugin::{api::executable::ExecutablePlugin, hook::hooks::ImportInstanceResult};
 use nitro_shared::{
 	id::InstanceID,
 	loaders::Loader,
@@ -20,7 +20,7 @@ static INI_FILENAME: &str = "auto-mcs.ini";
 static INI_FILENAME: &str = ".auto-mcs.ini";
 
 fn main() -> anyhow::Result<()> {
-	let mut plugin = CustomPlugin::from_manifest_file("auto_mcs", include_str!("plugin.json"))?;
+	let mut plugin = ExecutablePlugin::from_manifest_file("auto_mcs", include_str!("plugin.json"))?;
 
 	plugin.import_instance(|_, arg| {
 		let source_path = PathBuf::from(arg.source_path);

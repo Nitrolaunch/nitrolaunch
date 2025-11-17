@@ -2,11 +2,11 @@ use std::str::FromStr;
 
 use clap::Parser;
 use color_print::cprintln;
-use nitro_plugin::{api::CustomPlugin, hook::hooks::SidebarButton};
+use nitro_plugin::{api::executable::ExecutablePlugin, hook::hooks::SidebarButton};
 use nitro_shared::util::open_link;
 
 fn main() -> anyhow::Result<()> {
-	let mut plugin = CustomPlugin::from_manifest_file("webtools", include_str!("plugin.json"))?;
+	let mut plugin = ExecutablePlugin::from_manifest_file("webtools", include_str!("plugin.json"))?;
 	plugin.subcommand(|_, args| {
 		let Some(subcommand) = args.first() else {
 			return Ok(());

@@ -4,10 +4,10 @@ use anyhow::{bail, Context};
 use clap::Parser;
 use color_print::{cprint, cprintln};
 use docs::Docs;
-use nitro_plugin::api::CustomPlugin;
+use nitro_plugin::api::executable::ExecutablePlugin;
 
 fn main() -> anyhow::Result<()> {
-	let mut plugin = CustomPlugin::from_manifest_file("docs", include_str!("plugin.json"))?;
+	let mut plugin = ExecutablePlugin::from_manifest_file("docs", include_str!("plugin.json"))?;
 	plugin.subcommand(|_, args| {
 		let Some(subcommand) = args.first() else {
 			return Ok(());

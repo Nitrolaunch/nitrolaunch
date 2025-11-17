@@ -6,7 +6,7 @@ use base64::{
 use clap::Parser;
 use color_print::cprintln;
 use nitro_net::{download::Client, filebin};
-use nitro_plugin::api::CustomPlugin;
+use nitro_plugin::api::executable::ExecutablePlugin;
 use nitro_shared::id::TemplateID;
 use nitrolaunch::{
 	config::{
@@ -23,7 +23,7 @@ static FILENAME: &str = "template.json";
 
 fn main() -> anyhow::Result<()> {
 	let mut plugin =
-		CustomPlugin::from_manifest_file("template_share", include_str!("plugin.json"))?;
+		ExecutablePlugin::from_manifest_file("template_share", include_str!("plugin.json"))?;
 	plugin.subcommand(|_, args| {
 		let Some(subcommand) = args.first() else {
 			return Ok(());

@@ -8,7 +8,7 @@ use clap::Parser;
 use color_print::cprintln;
 use itertools::Itertools;
 use nitro_core::io::{json_from_file, json_to_file};
-use nitro_plugin::api::{CustomPlugin, HookContext};
+use nitro_plugin::api::executable::{ExecutablePlugin, HookContext};
 use nitro_plugin::hook::hooks::{InstanceTile, InstanceTileSize, Subcommand};
 use nitro_plugin::hook::Hook;
 use nitro_shared::util::utc_timestamp;
@@ -16,7 +16,7 @@ use serde::{Deserialize, Serialize};
 use sysinfo::{Pid, ProcessesToUpdate, System};
 
 fn main() -> anyhow::Result<()> {
-	let mut plugin = CustomPlugin::from_manifest_file("stats", include_str!("plugin.json"))?;
+	let mut plugin = ExecutablePlugin::from_manifest_file("stats", include_str!("plugin.json"))?;
 	plugin.subcommand(|ctx, args| {
 		let Some(subcommand) = args.first() else {
 			return Ok(());

@@ -1,11 +1,11 @@
 use anyhow::Context;
 use clap::Parser;
 use nitro_core::net::download::Client;
-use nitro_plugin::api::CustomPlugin;
+use nitro_plugin::api::executable::ExecutablePlugin;
 
 fn main() -> anyhow::Result<()> {
 	let mut plugin =
-		CustomPlugin::from_manifest_file("curseforge_api", include_str!("plugin.json"))?;
+		ExecutablePlugin::from_manifest_file("curseforge_api", include_str!("plugin.json"))?;
 	plugin.subcommand(|_, args| {
 		let Some(subcommand) = args.first() else {
 			return Ok(());
