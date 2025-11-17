@@ -7,8 +7,10 @@ use crate::hook::call::{HookCallArg, HookHandle};
 pub mod call;
 /// Calling hooks with executables
 pub mod executable;
-/// Plugin hooks and their definitions
+/// Hook definitions
 pub mod hooks;
+/// WASM hook execution
+pub mod wasm;
 
 /// Trait for a hook that can be called
 pub trait Hook {
