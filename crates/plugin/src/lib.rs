@@ -148,7 +148,11 @@ impl CorePluginManager {
 			out.extend(result);
 		}
 
-		Ok(HookHandles::new(out))
+		let handles = HookHandles::new(out, o)
+			.await
+			.context("Failed to start hook handles")?;
+
+		Ok(handles)
 	}
 
 	/// Call a plugin hook on the manager on a specific plugin

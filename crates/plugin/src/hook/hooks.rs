@@ -20,7 +20,7 @@ use serde::{Deserialize, Serialize};
 use super::Hook;
 
 macro_rules! def_hook {
-	($struct:ident, $name:literal, $desc:literal, $arg:ty, $res:ty, $version:literal, $($extra:tt)*) => {
+	($struct:ident, $name:literal, $desc:literal, $arg:ty, $res:ty, $version:literal, $asynchronous:literal, $($extra:tt)*) => {
 		#[doc = $desc]
 		pub struct $struct;
 
@@ -36,10 +36,18 @@ macro_rules! def_hook {
 				$version
 			}
 
+			fn is_asynchronous() -> bool {
+				$asynchronous
+			}
+
 			$(
 				$extra
 			)*
 		}
+	};
+
+	($struct:ident, $name:literal, $desc:literal, $arg:ty, $res:ty, $version:literal, $($extra:tt)*) => {
+		def_hook!($struct, $name, $desc, $arg, $res, $version, false, $($extra)*);
 	};
 }
 
@@ -50,6 +58,7 @@ def_hook!(
 	(),
 	(),
 	1,
+	true,
 );
 
 def_hook!(
@@ -59,6 +68,7 @@ def_hook!(
 	(),
 	(),
 	1,
+	true,
 );
 
 def_hook!(
@@ -80,6 +90,7 @@ def_hook!(
 	ModifyInstanceConfigArgument,
 	ModifyInstanceConfigResult,
 	2,
+	true,
 );
 
 /// Argument to the ModifyInstanceConfig hook
@@ -105,6 +116,7 @@ def_hook!(
 	UpdateDepth,
 	Vec<VersionEntry>,
 	2,
+	true,
 );
 
 def_hook!(
@@ -220,6 +232,7 @@ def_hook!(
 	InstanceLaunchArg,
 	(),
 	2,
+	true,
 );
 
 def_hook!(
@@ -271,6 +284,7 @@ def_hook!(
 	CustomPackageInstructionArg,
 	CustomPackageInstructionResult,
 	1,
+	true,
 );
 
 /// Argument for the CustomPackageInstruction hook
@@ -345,6 +359,7 @@ def_hook!(
 	(),
 	LanguageMap,
 	1,
+	true,
 );
 
 def_hook!(
@@ -520,6 +535,7 @@ def_hook!(
 	AddInstancesArg,
 	HashMap<InstanceID, InstanceConfig>,
 	1,
+	true,
 );
 
 /// Argument for the AddInstances hook
@@ -534,6 +550,7 @@ def_hook!(
 	AddInstancesArg,
 	HashMap<TemplateID, TemplateConfig>,
 	1,
+	true,
 );
 
 def_hook!(
@@ -543,6 +560,7 @@ def_hook!(
 	InjectPageScriptArg,
 	String,
 	1,
+	true,
 );
 
 /// Argument for the InjectPageScript hook
@@ -562,6 +580,7 @@ def_hook!(
 	(),
 	Vec<SidebarButton>,
 	1,
+	true,
 );
 
 /// Data for a GUI sidebar button
@@ -698,6 +717,7 @@ def_hook!(
 	(),
 	Vec<Theme>,
 	1,
+	true,
 );
 
 /// Data for a GUI theme
@@ -786,6 +806,7 @@ def_hook!(
 	String,
 	Vec<InstanceTile>,
 	1,
+	true,
 );
 
 /// Tile on the GUI instance page
@@ -816,6 +837,7 @@ def_hook!(
 	(),
 	Vec<String>,
 	1,
+	true,
 );
 
 def_hook!(
@@ -825,6 +847,7 @@ def_hook!(
 	GetLoaderVersionsArg,
 	Vec<String>,
 	1,
+	true,
 );
 
 /// Argument for the GetLoaderVersions hook

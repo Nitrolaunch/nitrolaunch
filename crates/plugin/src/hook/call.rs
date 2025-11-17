@@ -6,10 +6,9 @@ use std::{
 };
 
 use crate::hook::{executable::ExecutableHookHandle, Hook};
-use anyhow::Context;
 use nitro_core::Paths;
 use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput, NoOp};
-use tokio::{io::AsyncWriteExt, sync::Mutex};
+use tokio::sync::Mutex;
 
 use crate::{
 	input_output::{CommandResult, InputAction},
@@ -73,7 +72,6 @@ impl<H: Hook> HookHandle<H> {
 	pub(super) fn executable(
 		inner: ExecutableHookHandle<H>,
 		plugin_id: String,
-		start_time: Option<Instant>,
 		plugin_persistence: Arc<Mutex<PluginPersistence>>,
 	) -> Self {
 		Self {
@@ -81,7 +79,7 @@ impl<H: Hook> HookHandle<H> {
 			plugin_persistence: Some(plugin_persistence),
 			plugin_id,
 			command_results: VecDeque::new(),
-			start_time,
+			start_time: None,
 			is_finished: false,
 		}
 	}
@@ -89,6 +87,22 @@ impl<H: Hook> HookHandle<H> {
 	/// Get the ID of the plugin that returned this handle
 	pub fn get_id(&self) -> &String {
 		&self.plugin_id
+	}
+
+	/// Ensures that this hook has started
+	pub async fn ensure_started(&mut self, o: &mut impl NitroOutput) -> anyhow::Result<()> {
+		if let HookHandleInner::Executable(inner) = &mut self.inner {
+			inner
+				.ensure_started(
+					&mut self.plugin_persistence,
+					&mut self.command_results,
+					&mut self.start_time,
+					o,
+				)
+				.await?;
+		}
+
+		Ok(())
 	}
 
 	/// Poll the handle, returning true if the handle is ready
@@ -100,7 +114,12 @@ impl<H: Hook> HookHandle<H> {
 		let finished = match &mut self.inner {
 			HookHandleInner::Executable(inner) => {
 				inner
-					.poll(&mut self.plugin_persistence, &mut self.command_results, o)
+					.poll(
+						&mut self.plugin_persistence,
+						&mut self.command_results,
+						&mut self.start_time,
+						o,
+					)
 					.await?
 			}
 			HookHandleInner::Constant(..) => true,
@@ -129,15 +148,7 @@ impl<H: Hook> HookHandle<H> {
 	/// Sends an action to the plugin
 	pub async fn send_input_action(&mut self, action: InputAction) -> anyhow::Result<()> {
 		if let HookHandleInner::Executable(inner) = &mut self.inner {
-			let action = action
-				.serialize(inner.protocol_version)
-				.context("Failed to serialize input action")?;
-
-			inner
-				.stdin
-				.write(action.as_bytes())
-				.await
-				.context("Failed to write input action to plugin")?;
+			inner.send_input_action(action).await?;
 		}
 
 		Ok(())
@@ -198,8 +209,18 @@ pub struct HookHandles<H: Hook> {
 }
 
 impl<H: Hook> HookHandles<H> {
-	pub(crate) fn new(handles: VecDeque<HookHandle<H>>) -> Self {
-		Self { handles }
+	pub(crate) async fn new(
+		mut handles: VecDeque<HookHandle<H>>,
+		o: &mut impl NitroOutput,
+	) -> anyhow::Result<Self> {
+		// Asynchronous hooks can all be started so that they run at the same time
+		if H::is_asynchronous() {
+			for handle in &mut handles {
+				handle.ensure_started(o).await?;
+			}
+		}
+
+		Ok(Self { handles })
 	}
 
 	/// Gets whether there are any handles in the queue

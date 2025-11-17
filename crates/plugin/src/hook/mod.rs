@@ -30,6 +30,11 @@ pub trait Hook {
 		false
 	}
 
+	/// Get whether the hook can be run asynchronously
+	fn is_asynchronous() -> bool {
+		false
+	}
+
 	/// Get the version number of the hook
 	fn get_version() -> u16;
 
