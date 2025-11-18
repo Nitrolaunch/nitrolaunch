@@ -3,6 +3,7 @@ use std::path::{Path, PathBuf};
 
 use anyhow::{bail, Context};
 use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
+use nitro_shared::versions::VersionName;
 use nitro_shared::{translate, Side};
 
 use crate::config::BrandingProperties;
@@ -18,7 +19,6 @@ use crate::net::game_files::client_meta::ClientMeta;
 use crate::net::game_files::version_manifest::VersionManifestAndList;
 use crate::net::game_files::{game_jar, libraries};
 use crate::user::UserManager;
-use crate::util::versions::VersionName;
 use crate::version::{ClientAssetsAndLibraries, ClientAssetsAndLibsParameters};
 use crate::InstanceHandle;
 

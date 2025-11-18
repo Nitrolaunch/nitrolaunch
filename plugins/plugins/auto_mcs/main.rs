@@ -1,12 +1,13 @@
 use std::{collections::HashMap, fs::File, path::PathBuf};
 
 use anyhow::Context;
-use nitro_core::util::{json::to_string_json, versions::MinecraftVersionDeser};
+use nitro_core::util::json::to_string_json;
 use nitro_plugin::{api::executable::ExecutablePlugin, hook::hooks::ImportInstanceResult};
 use nitro_shared::{
 	id::InstanceID,
 	loaders::Loader,
 	output::{MessageContents, MessageLevel, NitroOutput},
+	versions::MinecraftVersionDeser,
 	Side,
 };
 use nitrolaunch::config_crate::instance::{

@@ -1,6 +1,7 @@
 use std::io::{Cursor, Read};
 
 use anyhow::{bail, Context};
+use nitro_shared::minecraft::VersionManifest;
 use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
 use nitro_shared::util::DeserListOrSingle;
 use nitro_shared::{translate, UpdateDepth};
@@ -13,8 +14,6 @@ use crate::io::java::JavaMajorVersion;
 use crate::io::json_from_file;
 use crate::io::update::UpdateManager;
 use crate::net::download::ProgressiveDownload;
-
-use super::version_manifest::VersionManifest;
 
 /// The client metadata, which is used for information about
 /// how to set up and launch the client for every version of the game.

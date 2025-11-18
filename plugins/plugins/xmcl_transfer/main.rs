@@ -5,12 +5,12 @@ use std::{
 };
 
 use anyhow::{bail, Context};
-use nitro_core::{io::java::install::JavaInstallationKind, util::versions::MinecraftVersionDeser};
+use nitro_core::io::java::install::JavaInstallationKind;
 use nitro_plugin::{api::executable::ExecutablePlugin, hook::hooks::ImportInstanceResult};
 use nitro_shared::{
 	loaders::Loader,
 	output::{MessageContents, MessageLevel, NitroOutput},
-	versions::parse_versioned_string,
+	versions::{parse_versioned_string, MinecraftVersionDeser},
 	Side,
 };
 use nitrolaunch::config_crate::instance::{

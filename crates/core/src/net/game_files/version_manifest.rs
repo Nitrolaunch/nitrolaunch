@@ -1,73 +1,14 @@
 use anyhow::Context;
+use nitro_shared::minecraft::VersionManifest;
 use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
-use nitro_shared::{translate, util::DefaultExt, UpdateDepth};
+use nitro_shared::{translate, UpdateDepth};
 use reqwest::Client;
-use serde::{Deserialize, Serialize};
 
 use crate::io::files::{self, paths::Paths};
 use crate::io::update::UpdateManager;
 use crate::io::{json_from_file, json_to_file};
 use crate::net::download::ProgressiveDownload;
-use crate::util::versions::{MinecraftVersion, VersionName};
-
-/// JSON format for the version manifest that contains all available Minecraft versions
-#[derive(Deserialize, Serialize, Debug, Clone)]
-pub struct VersionManifest {
-	/// The latest available versions
-	#[serde(default)]
-	pub latest: Option<LatestVersions>,
-	/// The list of available versions, from newest to oldest
-	pub versions: Vec<VersionEntry>,
-}
-
-/// Entry for a version in the version manifest
-#[derive(Deserialize, Serialize, Debug, Clone)]
-pub struct VersionEntry {
-	/// The identifier for the version (e.g. "1.19.2" or "22w13a")
-	pub id: String,
-	/// What type of version this is
-	#[serde(rename = "type")]
-	#[serde(default)]
-	pub ty: VersionType,
-	/// The URL to the client version meta for this version
-	pub url: String,
-	/// Whether the client meta needs to be unzipped first
-	#[serde(default)]
-	#[serde(skip_serializing_if = "DefaultExt::is_default")]
-	pub is_zipped: bool,
-	/// The name of the source for this version, which can be used by plugins
-	/// to show that the version is from that plugin
-	#[serde(default)]
-	#[serde(skip_serializing_if = "DefaultExt::is_default")]
-	pub source: Option<String>,
-}
-
-/// Type of a version in the version manifest
-#[derive(Deserialize, Serialize, Debug, Clone, Default)]
-#[serde(rename_all = "snake_case")]
-pub enum VersionType {
-	/// A release version
-	#[default]
-	Release,
-	/// A snapshot / development version
-	Snapshot,
-	/// An old alpha version
-	OldAlpha,
-	/// An old beta version
-	OldBeta,
-	/// An unknown version type
-	#[serde(untagged)]
-	Other(String),
-}
-
-/// Latest available Minecraft versions in the version manifest
-#[derive(Deserialize, Serialize, Debug, Clone)]
-pub struct LatestVersions {
-	/// The latest release version
-	pub release: VersionName,
-	/// The latest snapshot version
-	pub snapshot: VersionName,
-}
+use crate::util::versions::MinecraftVersion;
 
 /// Get the version manifest
 pub async fn get(

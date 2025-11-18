@@ -5,8 +5,10 @@ use std::{
 	time::{Duration, Instant},
 };
 
-use crate::hook::{executable::ExecutableHookHandle, Hook};
-use nitro_core::Paths;
+use crate::{
+	hook::{executable::ExecutableHookHandle, wasm::WASMHookHandle, Hook},
+	PluginPaths,
+};
 use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput, NoOp};
 use tokio::sync::Mutex;
 
@@ -17,7 +19,7 @@ use crate::{
 
 /// Argument struct for the hook call function
 pub struct HookCallArg<'a, H: Hook> {
-	/// The command to run
+	/// The command or WASM file to run
 	pub cmd: &'a str,
 	/// The argument to the hook
 	pub arg: &'a H::Arg,
@@ -32,7 +34,7 @@ pub struct HookCallArg<'a, H: Hook> {
 	/// Persistent data for the plugin
 	pub persistence: Arc<Mutex<PluginPersistence>>,
 	/// Paths
-	pub paths: &'a Paths,
+	pub paths: &'a PluginPaths,
 	/// The version of Nitrolaunch
 	pub nitro_version: Option<&'a str>,
 	/// The ID of the plugin
@@ -84,6 +86,28 @@ impl<H: Hook> HookHandle<H> {
 		}
 	}
 
+	/// Create a new WASM handle
+	pub(super) fn wasm(
+		inner: WASMHookHandle<H>,
+		plugin_id: String,
+		plugin_persistence: Arc<Mutex<PluginPersistence>>,
+	) -> Self {
+		let start_time = if std::env::var("NITRO_PLUGIN_PROFILE").is_ok_and(|x| x == "1") {
+			Some(Instant::now())
+		} else {
+			None
+		};
+
+		Self {
+			inner: HookHandleInner::WASM(inner),
+			plugin_persistence: Some(plugin_persistence),
+			plugin_id,
+			command_results: VecDeque::new(),
+			start_time,
+			is_finished: false,
+		}
+	}
+
 	/// Get the ID of the plugin that returned this handle
 	pub fn get_id(&self) -> &String {
 		&self.plugin_id
@@ -122,6 +146,11 @@ impl<H: Hook> HookHandle<H> {
 					)
 					.await?
 			}
+			HookHandleInner::WASM(inner) => {
+				inner.run().await?;
+
+				true
+			}
 			HookHandleInner::Constant(..) => true,
 		};
 
@@ -156,7 +185,7 @@ impl<H: Hook> HookHandle<H> {
 
 	/// Get the result of the hook by waiting for it
 	pub async fn result(mut self, o: &mut impl NitroOutput) -> anyhow::Result<H::Result> {
-		if let HookHandleInner::Executable(..) = &self.inner {
+		if let HookHandleInner::Executable(..) | HookHandleInner::WASM(..) = &self.inner {
 			loop {
 				let result = self.poll(o).await?;
 				if result {
@@ -169,6 +198,7 @@ impl<H: Hook> HookHandle<H> {
 		match self.inner {
 			HookHandleInner::Constant(result) => Ok(result),
 			HookHandleInner::Executable(inner) => inner.result().await,
+			HookHandleInner::WASM(inner) => Ok(inner.result().expect("Hook has not been polled")),
 		}
 	}
 
@@ -178,6 +208,7 @@ impl<H: Hook> HookHandle<H> {
 		match self.inner {
 			HookHandleInner::Constant(result) => Ok(Some(result)),
 			HookHandleInner::Executable(inner) => inner.kill().await,
+			HookHandleInner::WASM(inner) => Ok(inner.result()),
 		}
 	}
 
@@ -199,6 +230,8 @@ impl<H: Hook> HookHandle<H> {
 enum HookHandleInner<H: Hook> {
 	/// Result is coming from an executable
 	Executable(ExecutableHookHandle<H>),
+	/// Result is coming from WASM code
+	WASM(WASMHookHandle<H>),
 	/// Result is a constant, either from a constant hook or a takeover hook
 	Constant(H::Result),
 }

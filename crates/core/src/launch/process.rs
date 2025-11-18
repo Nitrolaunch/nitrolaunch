@@ -8,10 +8,10 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use anyhow::Context;
 use nitro_auth::mc::AccessToken;
 use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
+use nitro_shared::versions::VersionName;
 use nitro_shared::{no_window, translate};
 
 use crate::instance::InstanceKind;
-use crate::util::versions::VersionName;
 use crate::{InstanceHandle, Paths, WrapperCommand};
 
 use super::LaunchConfiguration;

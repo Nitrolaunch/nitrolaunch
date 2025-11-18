@@ -4,6 +4,7 @@ use std::sync::Arc;
 
 use anyhow::Context;
 use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
+use nitro_shared::versions::VersionName;
 use nitro_shared::versions::VersionPattern;
 use nitro_shared::{translate, try_3, UpdateDepth};
 use reqwest::Client;
@@ -14,7 +15,6 @@ use crate::io::files::{self, paths::Paths};
 use crate::io::update::{UpdateManager, UpdateMethodResult};
 use crate::io::{json_from_file, json_to_file};
 use crate::net::{download, get_transfer_limit};
-use crate::util::versions::VersionName;
 
 use super::client_meta::ClientMeta;
 

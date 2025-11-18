@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::{fmt::Display, sync::Arc};
 
 #[cfg(feature = "schema")]
 use schemars::JsonSchema;
@@ -273,6 +273,34 @@ pub fn parse_versioned_string(string: &str) -> (&str, VersionPattern) {
 		(string, VersionPattern::Any)
 	}
 }
+
+/// Used for deserializing a Minecraft version
+#[derive(Deserialize, Serialize, Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
+#[serde(rename_all = "snake_case")]
+#[serde(untagged)]
+pub enum MinecraftVersionDeser {
+	/// One of the latest version matchers
+	Latest(MinecraftLatestVersion),
+	/// A generic version
+	Version(VersionName),
+}
+
+/// Matches for the latest Minecraft version.
+/// We have to separate this so that deserialization works
+#[derive(Deserialize, Serialize, Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
+pub enum MinecraftLatestVersion {
+	#[serde(rename = "latest")]
+	/// A release version of Minecraft
+	Release,
+	#[serde(rename = "latest_snapshot")]
+	/// A snapshot version of Minecraft
+	Snapshot,
+}
+
+/// String name for a Minecraft version
+pub type VersionName = Arc<str>;
 
 #[cfg(test)]
 mod tests {

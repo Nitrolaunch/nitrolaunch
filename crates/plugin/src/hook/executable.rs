@@ -14,34 +14,15 @@ use tokio::{
 use crate::{
 	hook::{
 		call::{HookCallArg, HookHandle},
-		Hook,
+		Hook, CONFIG_DIR_ENV, CUSTOM_CONFIG_ENV, DATA_DIR_ENV, EXE_EXTENSION_TOKEN,
+		HOOK_VERSION_ENV, NITRO_PLUGIN_ENV, NITRO_VERSION_ENV, PLUGIN_DIR_TOKEN, PLUGIN_LIST_ENV,
+		PLUGIN_STATE_ENV,
 	},
 	input_output::{CommandResult, InputAction, OutputAction},
 	plugin::PluginPersistence,
 	plugin_debug_enabled,
 	try_read::TryLineReader,
 };
-
-/// The substitution token for the plugin directory in the command
-pub static PLUGIN_DIR_TOKEN: &str = "${PLUGIN_DIR}";
-/// The substitution token for the executable file extension in the command
-pub static EXE_EXTENSION_TOKEN: &str = "${EXE_EXTENSION}";
-/// The environment variable for custom config passed to a hook
-pub static CUSTOM_CONFIG_ENV: &str = "NITRO_CUSTOM_CONFIG";
-/// The environment variable for the data directory passed to a hook
-pub static DATA_DIR_ENV: &str = "NITRO_DATA_DIR";
-/// The environment variable for the config directory passed to a hook
-pub static CONFIG_DIR_ENV: &str = "NITRO_CONFIG_DIR";
-/// The environment variable for the plugin state passed to a hook
-pub static PLUGIN_STATE_ENV: &str = "NITRO_PLUGIN_STATE";
-/// The environment variable for the version of Nitrolaunch
-pub static NITRO_VERSION_ENV: &str = "NITRO_VERSION";
-/// The environment variable that tells the executable it is running as a plugin
-pub static NITRO_PLUGIN_ENV: &str = "NITRO_PLUGIN";
-/// The environment variable that tells what version of the hook this is
-pub static HOOK_VERSION_ENV: &str = "NITRO_HOOK_VERSION";
-/// The environment variable with the list of plugins
-pub static PLUGIN_LIST_ENV: &str = "NITRO_PLUGIN_LIST";
 
 /// Calls an executable hook handler
 pub(crate) async fn call_executable<H: Hook + Sized>(
@@ -70,8 +51,8 @@ pub(crate) async fn call_executable<H: Hook + Sized>(
 	if let Some(custom_config) = arg.custom_config {
 		cmd.env(CUSTOM_CONFIG_ENV, custom_config);
 	}
-	cmd.env(DATA_DIR_ENV, &arg.paths.data);
-	cmd.env(CONFIG_DIR_ENV, &arg.paths.config);
+	cmd.env(DATA_DIR_ENV, &arg.paths.data_dir);
+	cmd.env(CONFIG_DIR_ENV, &arg.paths.config_dir);
 	if let Some(nitro_version) = arg.nitro_version {
 		cmd.env(NITRO_VERSION_ENV, nitro_version);
 	}

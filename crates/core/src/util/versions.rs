@@ -1,43 +1,17 @@
-use std::{fmt::Display, sync::Arc};
+use std::fmt::Display;
 
-#[cfg(feature = "schema")]
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
+use nitro_shared::{
+	minecraft::VersionManifest,
+	versions::{MinecraftLatestVersion, MinecraftVersionDeser, VersionName},
+};
 
-use crate::net::game_files::version_manifest::VersionManifest;
-
-/// Matches for the latest Minecraft version.
-/// We have to separate this so that deserialization works
-#[derive(Deserialize, Serialize, Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "schema", derive(JsonSchema))]
-pub enum MinecraftLatestVersion {
-	#[serde(rename = "latest")]
-	/// A release version of Minecraft
-	Release,
-	#[serde(rename = "latest_snapshot")]
-	/// A snapshot version of Minecraft
-	Snapshot,
-}
-
-#[derive(Deserialize, Serialize, Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "schema", derive(JsonSchema))]
-#[serde(rename_all = "snake_case")]
-#[serde(untagged)]
-/// Used for deserializing a Minecraft version
-pub enum MinecraftVersionDeser {
-	/// One of the latest version matchers
-	Latest(MinecraftLatestVersion),
-	/// A generic version
-	Version(VersionName),
-}
-
-impl MinecraftVersionDeser {
-	/// Convert to a Minecraft version
-	pub fn to_mc_version(&self) -> MinecraftVersion {
-		match self {
-			Self::Version(version) => MinecraftVersion::Version(version.clone()),
-			Self::Latest(MinecraftLatestVersion::Release) => MinecraftVersion::Latest,
-			Self::Latest(MinecraftLatestVersion::Snapshot) => MinecraftVersion::LatestSnapshot,
+/// Convert to a Minecraft version
+pub fn mc_version_from_deser(version: &MinecraftVersionDeser) -> MinecraftVersion {
+	match version {
+		MinecraftVersionDeser::Version(version) => MinecraftVersion::Version(version.clone()),
+		MinecraftVersionDeser::Latest(MinecraftLatestVersion::Release) => MinecraftVersion::Latest,
+		MinecraftVersionDeser::Latest(MinecraftLatestVersion::Snapshot) => {
+			MinecraftVersion::LatestSnapshot
 		}
 	}
 }
@@ -87,11 +61,10 @@ impl Display for MinecraftVersion {
 	}
 }
 
-/// String name for a Minecraft version
-pub type VersionName = Arc<str>;
-
 #[cfg(test)]
 mod tests {
+	use serde::Deserialize;
+
 	use super::*;
 
 	#[test]

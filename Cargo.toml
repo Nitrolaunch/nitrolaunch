@@ -48,8 +48,9 @@ members = [
 	"crates/plugin",
 	"crates/shared",
 	"crates/tools",
-	"plugins",
 	"gui/src-tauri",
+	"plugins",
+	"plugins/plugins/args",
 ]
 
 [features]
@@ -92,7 +93,9 @@ nitro_options = { path = "crates/options", version = "0.27.0" }
 nitro_parse = { path = "crates/parse", version = "0.27.0" }
 nitro_pkg = { path = "crates/pkg", version = "0.27.0" }
 nitro_pkg_gen = { path = "crates/pkg_gen", version = "0.27.0" }
-nitro_plugin = { path = "crates/plugin", version = "0.27.0", default-features = false }
+nitro_plugin = { path = "crates/plugin", version = "0.27.0", default-features = false, features = [
+	"host",
+] }
 nitro_shared = { path = "crates/shared", version = "0.27.0" }
 nutype = { version = "0.4.0", features = ["serde"] }
 oauth2 = "4.4.2"
@@ -122,6 +125,7 @@ termimad = "0.31.1"
 thiserror = "1.0.61"
 tokio = { version = "1.37.0", features = ["rt-multi-thread"] }
 version-compare = "0.2.0"
+wasmer = { version = "6.1.0", default-features = false, features = ["wamr"] }
 which = "6.0.1"
 zip = { version = "3.0.0", default-features = false, features = ["deflate"] }
 

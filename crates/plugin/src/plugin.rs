@@ -5,16 +5,18 @@ use std::sync::Arc;
 
 use anyhow::bail;
 use anyhow::Context;
-use nitro_core::Paths;
 use nitro_shared::output::NitroOutput;
 use serde::{Deserialize, Deserializer};
 use tokio::sync::Mutex;
 
 use crate::hook::call::HookCallArg;
 use crate::hook::call::HookHandle;
-use crate::hook::executable::PLUGIN_DIR_TOKEN;
 use crate::hook::hooks::StartWorker;
+use crate::hook::wasm::call_wasm;
 use crate::hook::Hook;
+use crate::hook::PLUGIN_DIR_TOKEN;
+use crate::hook::WASM_FILE_NAME;
+use crate::PluginPaths;
 
 /// The newest protocol version for plugin communication
 pub const NEWEST_PROTOCOL_VERSION: u16 = 3;
@@ -64,7 +66,7 @@ impl Plugin {
 		&self,
 		hook: &H,
 		arg: &H::Arg,
-		paths: &Paths,
+		paths: &PluginPaths,
 		nitro_version: Option<&str>,
 		plugin_list: &[String],
 		o: &mut impl NitroOutput,
@@ -83,12 +85,40 @@ impl Plugin {
 		hook: &H,
 		handler: &HookHandler,
 		arg: &H::Arg,
-		paths: &Paths,
+		paths: &PluginPaths,
 		nitro_version: Option<&str>,
 		plugin_list: &[String],
 		o: &mut impl NitroOutput,
 	) -> anyhow::Result<Option<HookHandle<H>>> {
 		match handler {
+			HookHandler::Wasm { .. } => {
+				let file = self
+					.working_dir
+					.as_ref()
+					.context("WASM handler without working dir")?
+					.join(WASM_FILE_NAME)
+					.to_string_lossy()
+					.to_string();
+
+				let arg = HookCallArg {
+					cmd: &file,
+					arg,
+					additional_args: &[],
+					working_dir: self.working_dir.as_deref(),
+					use_base64: !self.manifest.raw_transfer,
+					custom_config: self.custom_config.clone(),
+					persistence: self.persistence.clone(),
+					paths,
+					nitro_version,
+					plugin_id: &self.id,
+					plugin_list,
+					protocol_version: self
+						.manifest
+						.protocol_version
+						.unwrap_or(DEFAULT_PROTOCOL_VERSION),
+				};
+				call_wasm(hook, arg, o).await.map(Some)
+			}
 			HookHandler::Execute {
 				executable,
 				args,
@@ -231,7 +261,8 @@ impl Plugin {
 			return HookPriority::Any;
 		};
 		match handler {
-			HookHandler::Execute { priority, .. }
+			HookHandler::Wasm { priority, .. }
+			| HookHandler::Execute { priority, .. }
 			| HookHandler::Constant { priority, .. }
 			| HookHandler::File { priority, .. }
 			| HookHandler::Match { priority, .. }
@@ -292,6 +323,14 @@ pub enum PluginProvidedSubcommand {
 #[serde(untagged)]
 #[serde(rename_all = "snake_case")]
 pub enum HookHandler {
+	/// Handle this hook by running WASM
+	Wasm {
+		/// Marker thingy
+		wasm: bool,
+		/// The priority for the hook
+		#[serde(default)]
+		priority: HookPriority,
+	},
 	/// Handle this hook by running an executable
 	Execute {
 		/// The executable to run

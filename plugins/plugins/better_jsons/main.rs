@@ -1,17 +1,16 @@
 use anyhow::Context;
-use nitro_core::{
-	io::{json_from_file, json_to_file},
-	net::game_files::version_manifest::VersionManifest,
-};
+use nitro_core::io::{json_from_file, json_to_file};
 use nitro_net::download::{self, Client};
 use nitro_plugin::api::executable::ExecutablePlugin;
 use nitro_shared::{
+	minecraft::VersionManifest,
 	output::{MessageContents, MessageLevel, NitroOutput},
 	UpdateDepth,
 };
 
 fn main() -> anyhow::Result<()> {
-	let mut plugin = ExecutablePlugin::from_manifest_file("better_jsons", include_str!("plugin.json"))?;
+	let mut plugin =
+		ExecutablePlugin::from_manifest_file("better_jsons", include_str!("plugin.json"))?;
 	plugin.add_versions(|mut ctx, update_depth| {
 		let versions_file = ctx
 			.get_data_dir()?

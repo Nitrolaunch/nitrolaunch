@@ -287,7 +287,7 @@ pub async fn batched_gen(mut config: BatchedConfig, filter: Vec<String>) {
 			serde_json::value::to_value(package).expect("Failed to convert package to value");
 		let merge = serde_json::value::to_value(pkg_config.merge)
 			.expect("Failed to convert merged config to value");
-		nitro_core::util::json::merge(&mut package, merge);
+		nitro_shared::util::merge(&mut package, merge);
 
 		// Write out the package
 		let path = PathBuf::from(&config.output_dir)

@@ -9,11 +9,12 @@ use anyhow::{bail, ensure, Context};
 use nitro_config::instance::{is_valid_instance_id, InstanceConfig, LaunchConfig, LaunchMemory};
 use nitro_config::package::PackageConfigDeser;
 use nitro_config::template::{TemplateConfig, TemplateLoaderConfiguration};
-use nitro_core::io::java::args::MemoryNum;
 use nitro_core::io::java::install::JavaInstallationKind;
+use nitro_core::util::versions::mc_version_from_deser;
 use nitro_pkg::{PkgRequest, PkgRequestSource};
 use nitro_plugin::hook::hooks::{ModifyInstanceConfig, ModifyInstanceConfigArgument};
 use nitro_shared::id::{InstanceID, TemplateID};
+use nitro_shared::java_args::MemoryNum;
 use nitro_shared::loaders::Loader;
 use nitro_shared::output::NitroOutput;
 use nitro_shared::versions::parse_versioned_string;
@@ -123,12 +124,13 @@ pub async fn read_instance_config(
 		(Loader::Vanilla, None)
 	};
 
-	let version = config
-		.common
-		.version
-		.clone()
-		.context("Instance is missing a Minecraft version")?
-		.to_mc_version();
+	let version = mc_version_from_deser(
+		&config
+			.common
+			.version
+			.clone()
+			.context("Instance is missing a Minecraft version")?,
+	);
 
 	let stored_config = InstanceStoredConfig {
 		name: config.name,

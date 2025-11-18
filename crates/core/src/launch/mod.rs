@@ -11,7 +11,9 @@ use std::fs::File;
 use std::path::{Path, PathBuf};
 
 use anyhow::{bail, Context};
+use nitro_shared::java_args::MemoryArg;
 use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
+use nitro_shared::versions::VersionName;
 use nitro_shared::{translate, Side};
 
 use self::client::create_quick_play_args;
@@ -19,14 +21,12 @@ use self::process::{launch_game_process, LaunchGameProcessParameters};
 use crate::config::BrandingProperties;
 use crate::instance::InstanceKind;
 use crate::io::files::paths::Paths;
-use crate::io::java::args::MemoryArg;
 use crate::io::java::classpath::Classpath;
 use crate::io::java::install::JavaInstallation;
 use crate::net::game_files::client_meta::ClientMeta;
 use crate::net::game_files::version_manifest::VersionManifestAndList;
 use crate::user::auth::check_game_ownership;
 use crate::user::UserManager;
-use crate::util::versions::VersionName;
 
 pub use self::configuration::{
 	LaunchConfigBuilder, LaunchConfiguration, QuickPlayType, WrapperCommand,

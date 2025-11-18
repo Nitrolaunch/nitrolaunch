@@ -2,8 +2,6 @@ use std::collections::{HashMap, HashSet};
 
 use nitro_config::instance::InstanceConfig;
 use nitro_config::template::TemplateConfig;
-use nitro_core::net::game_files::version_manifest::VersionEntry;
-use nitro_core::net::minecraft::MinecraftUserProfile;
 use nitro_pkg::repo::{PackageFlag, RepoMetadata};
 use nitro_pkg::script_eval::AddonInstructionData;
 use nitro_pkg::{PackageContentType, PackageSearchResults, RecommendedPackage, RequiredPackage};
@@ -11,6 +9,8 @@ use nitro_shared::addon::AddonKind;
 use nitro_shared::id::{InstanceID, TemplateID};
 use nitro_shared::lang::translate::LanguageMap;
 use nitro_shared::loaders::Loader;
+use nitro_shared::minecraft::MinecraftUserProfile;
+use nitro_shared::minecraft::VersionEntry;
 use nitro_shared::pkg::{PackageID, PackageSearchParameters};
 use nitro_shared::versions::VersionPattern;
 use nitro_shared::UpdateDepth;

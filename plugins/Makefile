@@ -1,22 +1,29 @@
+TARGET_DIR ?= "../target/release"
+
 package: package.platform_dependent package.cross_platform
 
-package.cross_platform: build.weld
+package.cross_platform: build.cross_platform
 	@mkdir -p release
+
+	@rm -f release/args-universal.zip
+
+	@zip -j release/args-universal.zip ../target/wasm32-unknown-unknown/release/nitro_plugin_args.wasm plugins/args/plugin.json
+
 	@rm -f release/weld-universal.zip && zip -j release/weld-universal.zip plugins/weld/plugin.json plugins/weld/weld.pyz
 	@cp plugins/extra_versions/plugin.json release/extra_versions-universal.json
 	@cp plugins/lang/plugin.json release/lang-universal.json
+
+build.cross_platform: build.weld
+	@cargo build -p nitro_plugin_args --release --target wasm32-unknown-unknown
 
 package.platform_dependent: build.platform_dependent package_zips.platform_dependent
 
 build.platform_dependent:
 	@cargo build --release --bins
 
-TARGET_DIR ?= "../target/release"
-
 package_zips.platform_dependent:
 	@mkdir -p release
 	
-	@rm -f release/args-${OS}.zip
 	@rm -f release/auto_mcs-${OS}.zip
 	@rm -f release/automate-${OS}.zip
 	@rm -f release/backup-${OS}.zip
@@ -49,7 +56,6 @@ package_zips.platform_dependent:
 	@rm -f release/weld-${OS}.zip
 	@rm -f release/xmcl_transfer-${OS}.zip
 
-	@zip -j release/args-${OS}.zip $(TARGET_DIR)/nitro_plugin_args${EXTENSION} plugins/args/plugin.json
 	@zip -j release/auto_mcs-${OS}.zip $(TARGET_DIR)/nitro_plugin_auto_mcs${EXTENSION} plugins/auto_mcs/plugin.json
 	@zip -j release/automate-${OS}.zip $(TARGET_DIR)/nitro_plugin_automate${EXTENSION} plugins/automate/plugin.json
 	@zip -j release/backup-${OS}.zip $(TARGET_DIR)/nitro_plugin_backup${EXTENSION} plugins/backup/plugin.json
@@ -85,8 +91,9 @@ build.weld:
 	@shiv -o plugins/weld/weld.pyz -e nitro_weld.main --site-packages plugins/weld smithed
 
 install.args:
-	@cargo install --path . --bin nitro_plugin_args --offline
-	@cat plugins/args/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/args.json
+	@cargo build -p nitro_plugin_args --release --target wasm32-unknown-unknown
+	@cp -r plugins/args ~/.local/share/nitro/plugins
+	@cp -r ../target/wasm32-unknown-unknown/release/nitro_plugin_args.wasm ~/.local/share/nitro/plugins/args/plugin.wasm
 
 install.auto_mcs:
 	@cargo install --path . --bin nitro_plugin_auto_mcs --offline

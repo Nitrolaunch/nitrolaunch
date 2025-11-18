@@ -2,8 +2,6 @@ use std::fmt::Display;
 
 use serde::{Deserialize, Serialize};
 
-/// Operating Java memory arguments
-pub mod args;
 /// Use of Java's classpath format
 pub mod classpath;
 /// Installation of Java for Nitrolaunch

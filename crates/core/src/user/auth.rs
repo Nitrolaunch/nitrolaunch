@@ -2,11 +2,11 @@ use std::sync::Arc;
 
 use anyhow::{bail, Context};
 use nitro_auth::RsaPrivateKey;
+use nitro_shared::minecraft::MinecraftUserProfile;
 use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
 use nitro_shared::translate;
 use nitro_shared::util::utc_timestamp;
 
-use crate::net::minecraft::MinecraftUserProfile;
 use crate::Paths;
 use nitro_auth::db::{AuthDatabase, DatabaseUser, SensitiveUserInfo};
 use nitro_auth::mc::Keypair;

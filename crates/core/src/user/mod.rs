@@ -7,10 +7,10 @@ use std::{collections::HashMap, ops::Deref, sync::Arc};
 
 use anyhow::{bail, Context};
 use nitro_auth::mc::{AccessToken, ClientId, Keypair};
-use nitro_shared::output::NitroOutput;
+use nitro_shared::{minecraft::MinecraftUserProfile, output::NitroOutput};
 use reqwest::Client;
 
-use crate::{net::minecraft::MinecraftUserProfile, Paths};
+use crate::Paths;
 
 use self::auth::AuthParameters;
 

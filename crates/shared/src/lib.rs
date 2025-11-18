@@ -8,10 +8,14 @@
 
 /// Common addon constructs
 pub mod addon;
+/// Operating Java memory arguments
+pub mod java_args;
 /// Tools for languages and language detection
 pub mod lang;
 /// Enums for modifications to the game
 pub mod loaders;
+/// Common Mojang / Microsoft API types
+pub mod minecraft;
 /// Nitrolaunch output
 pub mod output;
 /// Common package constructs

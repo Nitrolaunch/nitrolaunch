@@ -4,8 +4,6 @@ use std::fmt::Display;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use nitro_core::user::{User, UserKind};
-
 #[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(untagged)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
@@ -33,27 +31,6 @@ pub enum UserVariant {
 	/// An unknown user
 	#[cfg_attr(not(feature = "schema"), serde(untagged))]
 	Unknown(String),
-}
-
-impl UserVariant {
-	fn to_user_kind(&self) -> UserKind {
-		match self {
-			Self::Microsoft { .. } => UserKind::Microsoft { xbox_uid: None },
-			Self::Demo { .. } => UserKind::Demo,
-			Self::Unknown(id) => UserKind::Unknown(id.clone()),
-		}
-	}
-}
-
-impl UserConfig {
-	/// Creates a user from this user config
-	pub fn to_user(&self, id: &str) -> User {
-		match self {
-			Self::Simple(variant) | Self::Advanced { variant } => {
-				User::new(variant.to_user_kind(), id.into())
-			}
-		}
-	}
 }
 
 impl Display for UserVariant {

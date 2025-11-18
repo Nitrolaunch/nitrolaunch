@@ -5,16 +5,13 @@ use std::{
 };
 
 use anyhow::{bail, Context};
-use nitro_core::{
-	io::{extract_zip_dir, json_from_file},
-	util::versions::MinecraftVersionDeser,
-};
+use nitro_core::io::{extract_zip_dir, json_from_file};
 use nitro_pkg::PkgRequest;
 use nitro_plugin::{
 	api::executable::ExecutablePlugin,
 	hook::hooks::{ImportInstanceResult, MigrateInstancesResult, MigratedAddon, MigratedPackage},
 };
-use nitro_shared::{addon::AddonKind, loaders::Loader, Side};
+use nitro_shared::{addon::AddonKind, loaders::Loader, versions::MinecraftVersionDeser, Side};
 use nitrolaunch::config_crate::{
 	instance::{CommonInstanceConfig, InstanceConfig},
 	package::PackageConfigDeser,

@@ -6,11 +6,12 @@ pub mod print;
 use std::process::{Command, Stdio};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use cfg_match::cfg_match;
+use cfg_match::cfg_match as cfg_match2;
+use serde_json::Value;
 
 macro_rules! def_matched_item {
 	($cfg:ident, $doc:literal, $name:ident, $err:literal, $($k:literal: $v: literal);* $(;)?) => {
-		cfg_match! {
+		cfg_match2! {
 			$(
 				$cfg = $k => {
 					#[doc = $doc]
@@ -18,7 +19,7 @@ macro_rules! def_matched_item {
 				}
 			)*
 			_ => {
-				compile_error!($err)
+				compile_error!($err);
 				pub const $name: &str = "";
 			}
 		}
@@ -37,9 +38,9 @@ def_matched_item! {
 	"android": "android";
 	"freebsd": "freebsd";
 	"dragonfly": "dragonfly";
-	"bitrig": "bitrig";
 	"netbsd": "netbsd";
 	"openbsd": "openbsd";
+	"unknown": "unknown";
 }
 
 def_matched_item! {
@@ -57,9 +58,10 @@ def_matched_item! {
 	"mips64": "mips64";
 	"powerpc": "powerpc";
 	"powerpc64": "powerpc64";
+	"wasm32": "wasm32";
 }
 
-cfg_match! {
+cfg_match2! {
 	target_os = "linux" => {
 		/// String of the preferred archive file extension
 		pub const PREFERRED_ARCHIVE: &str = "tar.gz";
@@ -75,7 +77,7 @@ pub fn preferred_archive_extension() -> String {
 	format!(".{PREFERRED_ARCHIVE}")
 }
 
-cfg_match! {
+cfg_match2! {
 	target_pointer_width = "64" => {
 		/// String representing the current pointer width
 		pub const TARGET_BITS_STR: &str = "64";
@@ -169,7 +171,7 @@ impl ToInt for bool {
 }
 
 // Command for opening links
-cfg_match! {
+cfg_match2! {
 	target_os = "linux" => {
 		const URL_OPEN_CMD: Option<&str> = Some("xdg-open");
 	}
@@ -232,6 +234,30 @@ pub fn is_valid_identifier(id: &str) -> bool {
 	}
 
 	true
+}
+
+/// Utility function to merge serde_json objects
+pub fn merge_json_objects(
+	a: &mut serde_json::Map<String, Value>,
+	b: serde_json::Map<String, Value>,
+) {
+	for (k, v) in b {
+		if !v.is_null() {
+			merge(a.entry(k).or_insert(Value::Null), v);
+		}
+	}
+}
+
+/// Utility function to merge serde_json values
+pub fn merge(a: &mut Value, b: Value) {
+	if let Value::Object(a) = a {
+		if let Value::Object(b) = b {
+			merge_json_objects(a, b);
+			return;
+		}
+	}
+
+	*a = b;
 }
 
 /// Utility enum for deserialization that lets you do a list that can be one item

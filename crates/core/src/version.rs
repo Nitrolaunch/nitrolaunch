@@ -4,9 +4,10 @@ use std::sync::Arc;
 
 use anyhow::Context;
 use nitro_shared::later::Later;
+use nitro_shared::minecraft::{VersionEntry, VersionManifest};
 use nitro_shared::output::NitroOutput;
 use nitro_shared::output::{MessageContents, MessageLevel};
-use nitro_shared::versions::VersionInfo;
+use nitro_shared::versions::{VersionInfo, VersionName};
 use nitro_shared::Side;
 
 use crate::config::BrandingProperties;
@@ -17,12 +18,10 @@ use crate::io::java::JavaMajorVersion;
 use crate::io::persistent::PersistentData;
 use crate::io::update::UpdateManager;
 use crate::net::game_files::client_meta::{self, ClientMeta};
-use crate::net::game_files::version_manifest::{
-	self, VersionEntry, VersionManifest, VersionManifestAndList,
-};
+use crate::net::game_files::version_manifest::{self, VersionManifestAndList};
 use crate::net::game_files::{assets, game_jar, libraries};
 use crate::user::UserManager;
-use crate::util::versions::{MinecraftVersion, VersionName};
+use crate::util::versions::MinecraftVersion;
 
 /// An installed version of the game. This cannot be constructed directly,
 /// only from the NitroCore struct by using the `get_version()` method

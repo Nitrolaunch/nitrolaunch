@@ -1,10 +1,10 @@
 use std::{
 	collections::HashMap,
+	fs::File,
 	path::{Path, PathBuf},
 };
 
 use anyhow::Context;
-use nitro_core::io::{json_from_file, json_to_file};
 use nitro_shared::{pkg::PackageSearchParameters, util::utc_timestamp};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
@@ -19,10 +19,10 @@ impl PackageSearchCache {
 	/// Opens the cache at the given JSON file given the max age for an entry in seconds
 	pub fn open(path: impl AsRef<Path>, max_age: u64) -> anyhow::Result<Self> {
 		let contents = if path.as_ref().exists() {
-			json_from_file(path.as_ref()).unwrap_or_default()
+			serde_json::from_reader(File::open(path.as_ref())?).unwrap_or_default()
 		} else {
 			let default = CacheContents::default();
-			let _ = json_to_file(path.as_ref(), &default);
+			let _ = serde_json::to_writer(File::create(path.as_ref())?, &default);
 			default
 		};
 
@@ -67,7 +67,8 @@ impl PackageSearchCache {
 			.entries
 			.insert(search, CacheEntry { timestamp, results });
 
-		json_to_file(&self.path, &self.contents).context("Failed to write to cache")
+		serde_json::to_writer(File::create(&self.path)?, &self.contents)
+			.context("Failed to write to cache")
 	}
 }
 

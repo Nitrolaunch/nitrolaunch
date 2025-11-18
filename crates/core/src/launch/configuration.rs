@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
-use crate::io::java::args::MemoryNum;
 use crate::io::java::install::JavaInstallationKind;
+use nitro_shared::java_args::MemoryNum;
 
 /// Options for launching an instance
 #[derive(Debug)]

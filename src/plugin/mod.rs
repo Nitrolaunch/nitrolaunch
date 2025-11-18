@@ -11,8 +11,9 @@ use anyhow::Context;
 use nitro_core::io::{json_from_file, json_to_file_pretty};
 use nitro_plugin::hook::call::{HookHandle, HookHandles};
 use nitro_plugin::hook::Hook;
+use nitro_plugin::host::CorePluginManager;
 use nitro_plugin::plugin::{Plugin, PluginManifest};
-use nitro_plugin::CorePluginManager;
+use nitro_plugin::PluginPaths;
 use nitro_shared::output::NitroOutput;
 use nitro_shared::output::{MessageContents, MessageLevel};
 use nitro_shared::translate;
@@ -145,7 +146,7 @@ impl PluginManager {
 
 		inner
 			.manager
-			.add_plugin(plugin, &paths.core, o)
+			.add_plugin(plugin, &make_paths(paths), o)
 			.await
 			.with_context(|| format!("Failed to add plugin '{id}'"))?;
 
@@ -281,7 +282,10 @@ impl PluginManager {
 		o: &mut impl NitroOutput,
 	) -> anyhow::Result<HookHandles<H>> {
 		let inner = self.inner.lock().await;
-		inner.manager.call_hook(hook, arg, &paths.core, o).await
+		inner
+			.manager
+			.call_hook(hook, arg, &make_paths(paths), o)
+			.await
 	}
 
 	/// Call a plugin hook on a specific plugin
@@ -296,7 +300,7 @@ impl PluginManager {
 		let inner = self.inner.lock().await;
 		inner
 			.manager
-			.call_hook_on_plugin(hook, plugin_id, arg, &paths.core, o)
+			.call_hook_on_plugin(hook, plugin_id, arg, &make_paths(paths), o)
 			.await
 	}
 
@@ -340,5 +344,12 @@ impl PluginManager {
 impl Default for PluginManager {
 	fn default() -> Self {
 		Self::new()
+	}
+}
+
+fn make_paths(paths: &Paths) -> PluginPaths {
+	PluginPaths {
+		data_dir: paths.data.clone(),
+		config_dir: paths.config.clone(),
 	}
 }

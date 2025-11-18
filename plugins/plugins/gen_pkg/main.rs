@@ -101,7 +101,7 @@ impl PackageGenerationConfig {
 	/// Merge this config with another one to be placed over top of it
 	#[must_use]
 	pub fn merge(mut self, other: Self) -> Self {
-		nitro_core::util::json::merge(&mut self.merge, other.merge);
+		nitro_shared::util::merge(&mut self.merge, other.merge);
 		self.relation_substitutions
 			.extend(other.relation_substitutions);
 		self.force_extensions.extend(other.force_extensions);
@@ -143,7 +143,7 @@ pub async fn gen(source: PackageSource, config: Option<PackageGenerationConfig>,
 
 	// Merge with config
 	let mut pkg = serde_json::value::to_value(pkg).expect("Failed to convert package to value");
-	nitro_core::util::json::merge(&mut pkg, config.merge);
+	nitro_shared::util::merge(&mut pkg, config.merge);
 
 	let mut serializer = Serializer::with_formatter(stdout(), PrettyFormatter::with_indent(b"\t"));
 	pkg.serialize(&mut serializer)

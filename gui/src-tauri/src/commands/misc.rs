@@ -3,15 +3,12 @@ use std::{path::PathBuf, time::Duration};
 use crate::{data::InstanceIcon, output::LauncherOutput, State};
 use anyhow::{bail, Context};
 use nitrolaunch::{
-	core::{
-		io::json_from_file,
-		net::game_files::{assets::AssetIndex, version_manifest::VersionType},
-	},
+	core::{io::json_from_file, net::game_files::assets::AssetIndex},
 	instance::{setup::setup_core, update::manager::UpdateSettings},
 	plugin_crate::hook::hooks::{
 		AddInstanceIcons, AddSupportedLoaders, GetLoaderVersions, GetLoaderVersionsArg,
 	},
-	shared::{id::InstanceID, loaders::Loader, output::NoOp, UpdateDepth},
+	shared::{id::InstanceID, loaders::Loader, minecraft::VersionType, output::NoOp, UpdateDepth},
 };
 
 use super::{fmt_err, load_config};

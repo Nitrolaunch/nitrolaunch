@@ -15,10 +15,11 @@ use self::instance::read_instance_config;
 use crate::plugin::PluginManager;
 use anyhow::Context;
 use nitro_config::template::TemplateConfig;
+use nitro_config::user::{UserConfig, UserVariant};
 use nitro_config::ConfigDeser;
 use nitro_core::auth_crate::mc::ClientId;
 use nitro_core::io::{json_from_file, json_to_file_pretty};
-use nitro_core::user::UserManager;
+use nitro_core::user::{User, UserKind, UserManager};
 use nitro_plugin::hook::hooks::{AddInstances, AddInstancesArg, AddSupportedLoaders, AddTemplates};
 use nitro_shared::id::{InstanceID, TemplateID};
 use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
@@ -115,7 +116,7 @@ impl Config {
 				);
 				continue;
 			}
-			let user = user_config.to_user(user_id);
+			let user = read_user_config(user_config, user_id);
 			// Disabled until we can verify game ownership.
 			// We don't want to be a cracked launcher.
 			if user.is_demo() {
@@ -373,6 +374,20 @@ pub fn check_nitro_version(paths: &Paths, o: &mut impl NitroOutput) -> anyhow::R
 	}
 
 	Ok(())
+}
+
+/// Creates a user from a user config
+pub fn read_user_config(config: &UserConfig, id: &str) -> User {
+	match config {
+		UserConfig::Simple(variant) | UserConfig::Advanced { variant } => {
+			let kind = match variant {
+				UserVariant::Microsoft { .. } => UserKind::Microsoft { xbox_uid: None },
+				UserVariant::Demo { .. } => UserKind::Demo,
+				UserVariant::Unknown(id) => UserKind::Unknown(id.clone()),
+			};
+			User::new(kind, id.into())
+		}
+	}
 }
 
 #[cfg(test)]

@@ -16,7 +16,6 @@ use nitro_core::instance::WindowResolution;
 use nitro_core::io::java::classpath::Classpath;
 use nitro_core::io::json_to_file;
 use nitro_core::launch::LaunchConfiguration;
-use nitro_core::net::minecraft::MinecraftUserProfile;
 use nitro_core::user::uuid::hyphenate_uuid;
 use nitro_core::user::{CustomAuthFunction, User, UserManager};
 use nitro_core::version::InstalledVersion;
@@ -24,6 +23,7 @@ use nitro_core::{NitroCore, QuickPlayType};
 use nitro_plugin::hook::hooks::{
 	AddVersions, HandleAuth, HandleAuthArg, OnInstanceSetup, OnInstanceSetupArg, RemoveLoader,
 };
+use nitro_shared::minecraft::MinecraftUserProfile;
 use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
 use nitro_shared::output::{NoOp, OutputProcess};
 use nitro_shared::translate;

@@ -19,7 +19,6 @@ schema = ["dep:schemars"]
 [dependencies]
 anyhow = { workspace = true }
 cfg-match = { workspace = true }
-nitro_core = { workspace = true }
 nitro_pkg = { workspace = true }
 nitro_shared = { workspace = true }
 schemars = { workspace = true, optional = true }

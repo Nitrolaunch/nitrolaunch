@@ -1,33 +1,24 @@
 use std::str::FromStr;
 
 use anyhow::bail;
-use nitro_plugin::api::executable::ExecutablePlugin;
+use nitro_config::instance::{CommonInstanceConfig, InstanceConfig, LaunchArgs, LaunchConfig};
+use nitro_plugin::api::wasm::WASMPlugin;
 use nitro_plugin::hook::hooks::ModifyInstanceConfigResult;
-use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
-use nitrolaunch::config_crate::instance::{
-	CommonInstanceConfig, InstanceConfig, LaunchArgs, LaunchConfig,
-};
+use nitro_plugin::nitro_wasm_plugin;
 
-fn main() -> anyhow::Result<()> {
-	let mut plugin = ExecutablePlugin::from_manifest_file("args", include_str!("plugin.json"))?;
-	plugin.modify_instance_config(|mut ctx, arg| {
+nitro_wasm_plugin!(main, "args");
+
+fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
+	plugin.modify_instance_config(|arg| {
 		let args = if let Some(preset) = arg.config.common.plugin_config.get("args_preset") {
 			if let Some(preset) = preset.as_str() {
 				if let Ok(preset) = ArgsPreset::from_str(preset) {
 					preset.generate_args()
 				} else {
-					ctx.get_output().display(
-						MessageContents::Error("Invalid args preset".into()),
-						MessageLevel::Important,
-					);
-					Vec::new()
+					bail!("Invalid args preset")
 				}
 			} else {
-				ctx.get_output().display(
-					MessageContents::Error("Args preset must be a string".into()),
-					MessageLevel::Important,
-				);
-				Vec::new()
+				bail!("Args preset must be a string")
 			}
 		} else {
 			Vec::new()
@@ -38,7 +29,7 @@ fn main() -> anyhow::Result<()> {
 				common: CommonInstanceConfig {
 					launch: LaunchConfig {
 						args: LaunchArgs {
-							jvm: nitrolaunch::config_crate::instance::Args::List(args),
+							jvm: nitro_config::instance::Args::List(args),
 							..Default::default()
 						},
 						..Default::default()
