@@ -11,7 +11,7 @@ import Plugins from "./pages/plugin/Plugins";
 import Docs from "./pages/Docs";
 import { loadPagePlugins } from "./plugins";
 import { listen } from "@tauri-apps/api/event";
-import ExecutablePluginPage from "./pages/ExecutablePluginPage";
+import CustomPluginPage from "./pages/CustomPluginPage";
 import Footer, { FooterMode } from "./components/navigation/Footer";
 import { InstanceConfigMode } from "./pages/instance/read_write";
 import InstanceInfo from "./pages/instance/InstanceInfo";
@@ -125,7 +125,7 @@ export default function App() {
 					component={() => <Settings setFooterData={setFooterData} />}
 				/>
 				<Route path="/docs" component={() => <Docs />} />
-				<Route path="/custom/:page" component={() => <ExecutablePluginPage />} />
+				<Route path="/custom/:page" component={() => <CustomPluginPage />} />
 			</Router>
 		</Show>
 	);
