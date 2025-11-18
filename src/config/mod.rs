@@ -399,11 +399,12 @@ mod tests {
 	#[tokio::test]
 	async fn test_default_config() {
 		let deser = serde_json::from_value(default_config()).unwrap();
+		let paths = Paths::new_no_create().unwrap();
 		Config::load_from_deser(
 			deser,
-			PluginManager::new(),
+			PluginManager::new(&paths),
 			true,
-			&Paths::new_no_create().unwrap(),
+			&paths,
 			ClientId::new(String::new()),
 			&mut output::Simple(output::MessageLevel::Debug),
 		)

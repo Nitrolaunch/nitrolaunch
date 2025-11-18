@@ -341,7 +341,10 @@ mod tests {
 	use nitro_shared::util::DeserListOrSingle;
 	use nitro_shared::Side;
 
-	use crate::pkg::eval::{EvalConstants, EvalParameters, RequiredPackage};
+	use crate::{
+		io::paths::Paths,
+		pkg::eval::{EvalConstants, EvalParameters, RequiredPackage},
+	};
 
 	use super::*;
 
@@ -411,7 +414,7 @@ mod tests {
 			params: EvalParameters::new(Side::Client),
 		};
 
-		let plugins = PluginManager::new();
+		let plugins = PluginManager::new(&Paths::new_no_create().unwrap());
 		let eval = eval_declarative_package(
 			PackageID::from("foo"),
 			&pkg,

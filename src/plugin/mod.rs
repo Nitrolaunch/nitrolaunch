@@ -54,7 +54,7 @@ impl PluginManager {
 	pub async fn load(paths: &Paths, o: &mut impl NitroOutput) -> anyhow::Result<Self> {
 		let config = Self::open_config(paths).context("Failed to open plugins config")?;
 
-		let mut out = Self::new();
+		let mut out = Self::new(paths);
 
 		for plugin_id in config.plugins {
 			let config = config.config.get(&plugin_id).cloned();
@@ -91,8 +91,8 @@ impl PluginManager {
 	}
 
 	/// Create a new PluginManager with no plugins
-	pub fn new() -> Self {
-		let mut manager = CorePluginManager::new();
+	pub fn new(paths: &Paths) -> Self {
+		let mut manager = CorePluginManager::new(&make_paths(paths));
 		manager.set_nitro_version(crate::VERSION);
 		Self {
 			inner: Arc::new(Mutex::new(PluginManagerInner {
@@ -338,12 +338,6 @@ impl PluginManager {
 	/// Gets the mutex lock for the inner part of this plugin manager
 	pub async fn get_lock(&self) -> tokio::sync::MutexGuard<'_, PluginManagerInner> {
 		self.inner.lock().await
-	}
-}
-
-impl Default for PluginManager {
-	fn default() -> Self {
-		Self::new()
 	}
 }
 

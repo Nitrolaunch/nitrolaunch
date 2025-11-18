@@ -1,15 +1,18 @@
 use std::collections::VecDeque;
+use std::sync::Arc;
 
 use crate::hook::call::HookHandle;
 use crate::hook::call::HookHandles;
 use crate::hook::hooks::OnLoad;
 use crate::hook::hooks::StartWorker;
+use crate::hook::wasm::loader::WASMLoader;
 use crate::hook::Hook;
 use crate::plugin::{HookPriority, Plugin, DEFAULT_PROTOCOL_VERSION, NEWEST_PROTOCOL_VERSION};
 use crate::PluginPaths;
 use anyhow::{bail, Context};
 use itertools::Itertools;
 use nitro_shared::output::NitroOutput;
+use tokio::sync::Mutex;
 
 /// A manager for plugins that is used to call their hooks.
 /// Does not handle actually loading the plugins from files
@@ -17,21 +20,19 @@ pub struct CorePluginManager {
 	plugins: Vec<Plugin>,
 	plugin_list: Vec<String>,
 	nitro_version: Option<&'static str>,
-}
-
-impl Default for CorePluginManager {
-	fn default() -> Self {
-		Self::new()
-	}
+	wasm_loader: Arc<Mutex<WASMLoader>>,
 }
 
 impl CorePluginManager {
 	/// Construct a new PluginManager
-	pub fn new() -> Self {
+	pub fn new(paths: &PluginPaths) -> Self {
 		Self {
 			plugins: Vec::new(),
 			plugin_list: Vec::new(),
 			nitro_version: None,
+			wasm_loader: Arc::new(Mutex::new(WASMLoader::new(
+				paths.data_dir.join("internal/wasm_cache"),
+			))),
 		}
 	}
 
@@ -68,6 +69,7 @@ impl CorePluginManager {
 				paths,
 				self.nitro_version,
 				&self.plugin_list,
+				self.wasm_loader.clone(),
 				o,
 			)
 			.await
@@ -84,6 +86,7 @@ impl CorePluginManager {
 				paths,
 				self.nitro_version,
 				&self.plugin_list,
+				self.wasm_loader.clone(),
 				o,
 			)
 			.await
@@ -114,7 +117,15 @@ impl CorePluginManager {
 			id: x.get_id().clone(),
 		}) {
 			let result = plugin
-				.call_hook(&hook, arg, paths, self.nitro_version, &self.plugin_list, o)
+				.call_hook(
+					&hook,
+					arg,
+					paths,
+					self.nitro_version,
+					&self.plugin_list,
+					self.wasm_loader.clone(),
+					o,
+				)
 				.await
 				.with_context(|| format!("Hook failed for plugin {}", plugin.get_id()))?;
 			out.extend(result);
@@ -139,7 +150,15 @@ impl CorePluginManager {
 		for plugin in &self.plugins {
 			if plugin.get_id() == plugin_id {
 				let result = plugin
-					.call_hook(&hook, arg, paths, self.nitro_version, &self.plugin_list, o)
+					.call_hook(
+						&hook,
+						arg,
+						paths,
+						self.nitro_version,
+						&self.plugin_list,
+						self.wasm_loader.clone(),
+						o,
+					)
 					.await
 					.context("Plugin hook failed")?;
 				return Ok(result);

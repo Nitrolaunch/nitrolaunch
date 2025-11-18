@@ -6,7 +6,11 @@ use std::{
 };
 
 use crate::{
-	hook::{executable::ExecutableHookHandle, wasm::WASMHookHandle, Hook},
+	hook::{
+		executable::ExecutableHookHandle,
+		wasm::{loader::WASMLoader, WASMHookHandle},
+		Hook,
+	},
 	PluginPaths,
 };
 use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput, NoOp};
@@ -43,6 +47,8 @@ pub struct HookCallArg<'a, H: Hook> {
 	pub plugin_list: &'a [String],
 	/// The protocol version
 	pub protocol_version: u16,
+	/// The WASM file loader
+	pub wasm_loader: Arc<Mutex<WASMLoader>>,
 }
 
 /// Handle returned by running a hook. Make sure to await it if you need to.

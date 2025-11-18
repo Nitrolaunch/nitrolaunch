@@ -13,6 +13,7 @@ use crate::hook::call::HookCallArg;
 use crate::hook::call::HookHandle;
 use crate::hook::hooks::StartWorker;
 use crate::hook::wasm::call_wasm;
+use crate::hook::wasm::loader::WASMLoader;
 use crate::hook::Hook;
 use crate::hook::PLUGIN_DIR_TOKEN;
 use crate::hook::WASM_FILE_NAME;
@@ -69,14 +70,24 @@ impl Plugin {
 		paths: &PluginPaths,
 		nitro_version: Option<&str>,
 		plugin_list: &[String],
+		wasm_loader: Arc<Mutex<WASMLoader>>,
 		o: &mut impl NitroOutput,
 	) -> anyhow::Result<Option<HookHandle<H>>> {
 		let Some(handler) = self.manifest.hooks.get(hook.get_name()) else {
 			return Ok(None);
 		};
 
-		self.call_hook_handler(hook, handler, arg, paths, nitro_version, plugin_list, o)
-			.await
+		self.call_hook_handler(
+			hook,
+			handler,
+			arg,
+			paths,
+			nitro_version,
+			plugin_list,
+			wasm_loader,
+			o,
+		)
+		.await
 	}
 
 	/// Call a hook handler on the plugin
@@ -88,6 +99,7 @@ impl Plugin {
 		paths: &PluginPaths,
 		nitro_version: Option<&str>,
 		plugin_list: &[String],
+		wasm_loader: Arc<Mutex<WASMLoader>>,
 		o: &mut impl NitroOutput,
 	) -> anyhow::Result<Option<HookHandle<H>>> {
 		match handler {
@@ -116,6 +128,7 @@ impl Plugin {
 						.manifest
 						.protocol_version
 						.unwrap_or(DEFAULT_PROTOCOL_VERSION),
+					wasm_loader,
 				};
 				call_wasm(hook, arg, o).await.map(Some)
 			}
@@ -140,6 +153,7 @@ impl Plugin {
 						.manifest
 						.protocol_version
 						.unwrap_or(DEFAULT_PROTOCOL_VERSION),
+					wasm_loader,
 				};
 				hook.call(arg, o).await.map(Some)
 			}
@@ -209,6 +223,7 @@ impl Plugin {
 							paths,
 							nitro_version,
 							plugin_list,
+							wasm_loader,
 							o,
 						))
 						.await;

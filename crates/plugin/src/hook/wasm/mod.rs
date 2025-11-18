@@ -1,11 +1,16 @@
-use std::{marker::PhantomData, sync::Arc};
+/// Manager for loading and caching WASM efficiently
+pub mod loader;
+
+use std::{marker::PhantomData, path::PathBuf, sync::Arc, time::Instant};
 
 use anyhow::{bail, Context};
 use nitro_shared::output::NitroOutput;
-use wasmer::{imports, Module, Store, TypedFunction};
+use tokio::sync::Mutex;
+use wasmer::{imports, Store, TypedFunction};
 
 use crate::hook::{
 	call::{HookCallArg, HookHandle},
+	wasm::loader::WASMLoader,
 	Hook, WASM_HOOK_ENTRYPOINT,
 };
 
@@ -18,16 +23,13 @@ pub(crate) async fn call_wasm<H: Hook + Sized>(
 	let _ = hook;
 	let _ = o;
 
-	let data = tokio::fs::read(arg.cmd)
-		.await
-		.context("Failed to read WASM file")?;
-
 	Ok(HookHandle::wasm(
 		WASMHookHandle {
 			plugin_id: arg.plugin_id.to_string(),
-			code: data.into(),
+			wasm_path: PathBuf::from(arg.cmd),
 			arg: serde_json::to_string(&arg.arg)?,
 			result: None,
+			wasm_loader: arg.wasm_loader,
 			_phantom: PhantomData,
 		},
 		arg.plugin_id.to_string(),
@@ -38,9 +40,10 @@ pub(crate) async fn call_wasm<H: Hook + Sized>(
 /// Hook handler internals for a WASM hook
 pub(super) struct WASMHookHandle<H: Hook> {
 	pub plugin_id: String,
-	code: Arc<[u8]>,
+	wasm_path: PathBuf,
 	arg: String,
 	result: Option<H::Result>,
+	wasm_loader: Arc<Mutex<WASMLoader>>,
 	_phantom: PhantomData<H>,
 }
 
@@ -51,13 +54,43 @@ impl<H: Hook> WASMHookHandle<H> {
 			return Ok(());
 		}
 
-		// Initialize the module
+		let mut start_time = if std::env::var("NITRO_PLUGIN_PROFILE").is_ok_and(|x| x == "1") {
+			Some(Instant::now())
+		} else {
+			None
+		};
+
 		let mut store = Store::default();
-		let module = Module::new(&store, &self.code).context("Failed to compile WASM module")?;
+
+		if let Some(start_time) = &mut start_time {
+			let now = Instant::now();
+			println!("Engine initialization: {:?}", now - *start_time);
+			*start_time = now;
+		}
+
+		// Initialize the module
+		let mut lock = self.wasm_loader.lock().await;
+		let module = lock
+			.load(self.plugin_id.clone(), &self.wasm_path)
+			.await
+			.context("Failed to load WASM module")?;
+		std::mem::drop(lock);
+
+		if let Some(start_time) = &mut start_time {
+			let now = Instant::now();
+			println!("Module initialization: {:?}", now - *start_time);
+			*start_time = now;
+		}
 
 		let imports = imports! {};
 		let instance = wasmer::Instance::new(&mut store, &module, &imports)
 			.context("Failed to construct WASM instance")?;
+
+		if let Some(start_time) = &mut start_time {
+			let now = Instant::now();
+			println!("Instance initialization: {:?}", now - *start_time);
+			*start_time = now;
+		}
 
 		// Grab functions from the module
 		let entrypoint: TypedFunction<(u32, u32, u32, u32, u16), u16> = instance
@@ -103,6 +136,12 @@ impl<H: Hook> WASMHookHandle<H> {
 		let view = memory.view(&store);
 		view.write(arg_ptr_offset as u64, self.arg.as_bytes())?;
 
+		if let Some(start_time) = &mut start_time {
+			let now = Instant::now();
+			println!("Function and input setup: {:?}", now - *start_time);
+			*start_time = now;
+		}
+
 		let result_code = entrypoint
 			.call(
 				&mut store,
@@ -113,6 +152,12 @@ impl<H: Hook> WASMHookHandle<H> {
 				H::get_version(),
 			)
 			.context("Failed to call plugin entrypoint")?;
+
+		if let Some(start_time) = &mut start_time {
+			let now = Instant::now();
+			println!("Hook runtime: {:?}", now - *start_time);
+			*start_time = now;
+		}
 
 		// Deallocate inputs
 		let _ = dealloc_fn.call(&mut store, hook_ptr_offset, hook_len);
@@ -134,6 +179,12 @@ impl<H: Hook> WASMHookHandle<H> {
 			.context("Failed to deserialize hook result")?;
 
 		self.result = Some(result);
+
+		if let Some(start_time) = &mut start_time {
+			let now = Instant::now();
+			println!("Result handling: {:?}", now - *start_time);
+			*start_time = now;
+		}
 
 		Ok(())
 	}
