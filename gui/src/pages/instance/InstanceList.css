@@ -93,6 +93,24 @@
 	overflow-y: hidden;
 }
 
+.instance-list-item-upper-details {
+	max-width: 10rem;
+	text-wrap: nowrap;
+	overflow-x: hidden;
+}
+
+.instance-list-item-lower-details {
+	color: var(--fg3);
+	gap: 0.7rem;
+	font-size: 0.9rem;
+}
+
+.instance-list-item-plugin {
+	color: var(--fg);
+	margin-right: -0.3rem;
+	transform: translateY(-1px);
+}
+
 .instance-list-item:hover {
 	background-color: var(--bg3);
 	border-right-color: var(--bg4);
