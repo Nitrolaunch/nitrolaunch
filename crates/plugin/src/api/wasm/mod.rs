@@ -1,10 +1,12 @@
+/// ABI for host functions that the plugin can call
+mod abi;
+/// General utilities for the API
+pub mod util;
+
 use anyhow::{bail, Context};
 use serde::de::DeserializeOwned;
 
 use crate::hook::Hook;
-
-/// General utilities for the API
-pub mod util;
 
 /// Static where the hook result data is placed
 pub static mut HOOK_RESULT: String = String::new();

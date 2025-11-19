@@ -4,9 +4,11 @@ pub mod loader;
 use std::{marker::PhantomData, path::PathBuf, sync::Arc, time::Instant};
 
 use anyhow::{bail, Context};
-use nitro_shared::output::NitroOutput;
+use nitro_shared::{later::Later, output::NitroOutput};
 use tokio::sync::Mutex;
-use wasmer::{imports, Store, TypedFunction};
+use wasmer::{
+	imports, Function, FunctionEnv, FunctionEnvMut, Imports, Memory, Store, TypedFunction,
+};
 
 use crate::hook::{
 	call::{HookCallArg, HookHandle},
@@ -29,6 +31,7 @@ pub(crate) async fn call_wasm<H: Hook + Sized>(
 			wasm_path: PathBuf::from(arg.cmd),
 			arg: serde_json::to_string(&arg.arg)?,
 			result: None,
+			custom_config: arg.custom_config,
 			wasm_loader: arg.wasm_loader,
 			_phantom: PhantomData,
 		},
@@ -43,6 +46,7 @@ pub(super) struct WASMHookHandle<H: Hook> {
 	wasm_path: PathBuf,
 	arg: String,
 	result: Option<H::Result>,
+	custom_config: Option<String>,
 	wasm_loader: Arc<Mutex<WASMLoader>>,
 	_phantom: PhantomData<H>,
 }
@@ -82,7 +86,16 @@ impl<H: Hook> WASMHookHandle<H> {
 			*start_time = now;
 		}
 
-		let imports = imports! {};
+		let env = FunctionEnv::new(
+			&mut store,
+			Env {
+				memory: Later::new(),
+				alloc_fn: Later::new(),
+				custom_config: self.custom_config.clone(),
+			},
+		);
+
+		let imports = create_imports(&mut store, &env).context("Failed to create imports")?;
 		let instance = wasmer::Instance::new(&mut store, &module, &imports)
 			.context("Failed to construct WASM instance")?;
 
@@ -122,6 +135,10 @@ impl<H: Hook> WASMHookHandle<H> {
 			.exports
 			.get_memory("memory")
 			.context("WASM memory missing!")?;
+
+		// Prepare the env
+		env.as_mut(&mut store).memory.fill(memory.clone());
+		env.as_mut(&mut store).alloc_fn.fill(alloc_fn.clone());
 
 		// Prepare the inputs by allocating strings in the module
 		let hook_len = H::get_name_static().len() as u32;
@@ -193,4 +210,42 @@ impl<H: Hook> WASMHookHandle<H> {
 	pub fn result(self) -> Option<H::Result> {
 		self.result
 	}
+}
+
+/// Host function environment
+struct Env {
+	memory: Later<Memory>,
+	alloc_fn: Later<TypedFunction<u32, u32>>,
+	custom_config: Option<String>,
+}
+
+fn create_imports(store: &mut Store, env: &FunctionEnv<Env>) -> anyhow::Result<Imports> {
+	let get_custom_config = move |mut env: FunctionEnvMut<Env>| {
+		let (env, mut store) = env.data_and_store_mut();
+
+		if let Some(custom_config) = &env.custom_config {
+			let Ok(ptr) = env
+				.alloc_fn
+				.get()
+				.call(&mut store, custom_config.len() as u32)
+			else {
+				return (0, 0);
+			};
+
+			let view = env.memory.get().view(&store);
+			if view.write(ptr as u64, custom_config.as_bytes()).is_err() {
+				return (0, 0);
+			}
+
+			(ptr as u64, custom_config.len() as u64)
+		} else {
+			(0, 0)
+		}
+	};
+
+	Ok(imports! {
+		"nitro" => {
+			"get_custom_config" => Function::new_typed_with_env(store, env, get_custom_config),
+		}
+	})
 }

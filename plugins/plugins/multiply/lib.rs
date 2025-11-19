@@ -1,19 +1,22 @@
 use std::collections::HashMap;
 
 use anyhow::{bail, Context};
-use nitro_plugin::api::executable::ExecutablePlugin;
+use nitro_config::instance::InstanceConfig;
+use nitro_plugin::{
+	api::wasm::{util::get_custom_config, WASMPlugin},
+	nitro_wasm_plugin,
+};
 use nitro_shared::id::InstanceID;
-use nitrolaunch::config_crate::instance::InstanceConfig;
 use serde::{Deserialize, Serialize};
 
 /// Replacement token for the index of the current multiplied instance
 static INDEX_TOKEN: &str = "$n";
 
-fn main() -> anyhow::Result<()> {
-	let mut plugin = ExecutablePlugin::from_manifest_file("multiply", include_str!("plugin.json"))?;
+nitro_wasm_plugin!(main, "multiply");
 
-	plugin.add_instances(|ctx, _| {
-		let Some(config) = ctx.get_custom_config() else {
+fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
+	plugin.add_instances(|_| {
+		let Some(config) = get_custom_config() else {
 			return Ok(HashMap::new());
 		};
 

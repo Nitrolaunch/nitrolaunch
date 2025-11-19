@@ -51,6 +51,7 @@ members = [
 	"gui/src-tauri",
 	"plugins",
 	"plugins/plugins/args",
+	"plugins/plugins/multiply",
 ]
 
 [features]

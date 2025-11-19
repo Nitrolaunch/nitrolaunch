@@ -6,8 +6,10 @@ package.cross_platform: build.cross_platform
 	@mkdir -p release
 
 	@rm -f release/args-universal.zip
+	@rm -f release/multiply-universal.zip
 
 	@zip -j release/args-universal.zip ../target/wasm32-unknown-unknown/release/nitro_plugin_args.wasm plugins/args/plugin.json
+	@zip -j release/multiply-universal.zip ../target/wasm32-unknown-unknown/release/nitro_plugin_multiply.wasm plugins/multiply/plugin.json
 
 	@rm -f release/weld-universal.zip && zip -j release/weld-universal.zip plugins/weld/plugin.json plugins/weld/weld.pyz
 	@cp plugins/extra_versions/plugin.json release/extra_versions-universal.json
@@ -41,7 +43,6 @@ package_zips.platform_dependent:
 	@rm -f release/modrinth-${OS}.zip
 	@rm -f release/modrinth_api-${OS}.zip
 	@rm -f release/multimc_transfer-${OS}.zip
-	@rm -f release/multiply-${OS}.zip
 	@rm -f release/nitro_transfer-${OS}.zip
 	@rm -f release/options-${OS}.zip
 	@rm -f release/packhost-${OS}.zip
@@ -73,7 +74,6 @@ package_zips.platform_dependent:
 	@zip -j release/modrinth-${OS}.zip $(TARGET_DIR)/nitro_plugin_modrinth${EXTENSION} plugins/modrinth/plugin.json
 	@zip -j release/modrinth_api-${OS}.zip $(TARGET_DIR)/nitro_plugin_modrinth_api${EXTENSION} plugins/modrinth_api/plugin.json plugins/modrinth_api/page.html
 	@zip -j release/multimc_transfer-${OS}.zip $(TARGET_DIR)/nitro_plugin_multimc_transfer${EXTENSION} plugins/multimc_transfer/plugin.json
-	@zip -j release/multiply-${OS}.zip $(TARGET_DIR)/nitro_plugin_multiply${EXTENSION} plugins/multiply/plugin.json
 	@zip -j release/nitro_transfer-${OS}.zip $(TARGET_DIR)/nitro_plugin_nitro_transfer${EXTENSION} plugins/nitro_transfer/plugin.json
 	@zip -j release/options-${OS}.zip $(TARGET_DIR)/nitro_plugin_options${EXTENSION} plugins/options/plugin.json
 	@zip -j release/packhost-${OS}.zip $(TARGET_DIR)/nitro_plugin_packhost${EXTENSION} plugins/packhost/plugin.json
@@ -171,8 +171,9 @@ install.multimc_transfer:
 	@cat plugins/multimc_transfer/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/multimc_transfer.json
 
 install.multiply:
-	@cargo install --path . --bin nitro_plugin_multiply --offline
-	@cat plugins/multiply/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/multiply.json
+	@cargo build -p nitro_plugin_multiply --release --target wasm32-unknown-unknown
+	@cp -r plugins/multiply ~/.local/share/nitro/plugins
+	@cp -r ../target/wasm32-unknown-unknown/release/nitro_plugin_multiply.wasm ~/.local/share/nitro/plugins/multiply/plugin.wasm
 
 install.nitro_transfer:
 	@cargo install --path . --bin nitro_plugin_nitro_transfer --offline
