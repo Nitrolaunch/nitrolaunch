@@ -5,6 +5,7 @@ pub mod executable;
 #[cfg(any(feature = "wasm_api", target_family = "wasm"))]
 pub mod wasm;
 
+#[cfg(any(feature = "executable_api", feature = "wasm_api"))]
 use crate::hook::Hook;
 #[cfg(feature = "executable_api")]
 use executable::{ExecutablePlugin, HookContext};
