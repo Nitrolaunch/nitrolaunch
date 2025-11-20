@@ -18,6 +18,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+      - name: Setup dependencies
+        run: sudo apt-get update && sudo apt-get install binutils
       - name: Build CLI
         run: cargo build -p nitro_cli --release --verbose --locked
       - uses: actions/upload-artifact@v4
