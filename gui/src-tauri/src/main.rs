@@ -298,7 +298,6 @@ const fn get_raw_ms_client_id() -> &'static str {
 fn fix_compatability() {
 	// Fix for Wayland causing the app to crash
 	if std::env::var("WAYLAND_DISPLAY").is_ok() {
-		std::env::set_var("WEBKIT_DISABLE_DMABUF_RENDERER", "1");
 		std::env::set_var("GTK_OVERLAY_SCROLLING", "0");
 	}
 }
