@@ -79,6 +79,11 @@ export default function UserWidget(props: UserWidgetProps) {
 				id: "microsoft",
 				name: "Microsoft",
 				color: "#00a2ed"
+			},
+			{
+				id: "demo",
+				name: "Demo",
+				color: "#dddddd"
 			}
 		];
 		out = out.concat(pluginTypes);
