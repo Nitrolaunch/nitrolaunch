@@ -170,7 +170,7 @@ async fn query_package(
 		storage_dir,
 	};
 
-	let package = nitro_pkg_gen::smithed::gen(
+	let mut package = nitro_pkg_gen::smithed::gen(
 		pack_info.pack,
 		pack_info.body,
 		relation_sub_function,
@@ -179,6 +179,10 @@ async fn query_package(
 	)
 	.await
 	.context("Failed to generate Nitrolaunch package")?;
+
+	package.improve_generation();
+	package.optimize();
+
 	let package = serde_json::to_string_pretty(&package).context("Failed to serialized package")?;
 
 	Ok(Some(CustomRepoQueryResult {

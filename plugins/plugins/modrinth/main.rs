@@ -181,7 +181,7 @@ async fn query_package(
 			let id = project_info.project.id.clone();
 			let slug = project_info.project.slug.clone();
 
-			let package = nitro_pkg_gen::modrinth::gen(
+			let mut package = nitro_pkg_gen::modrinth::gen(
 				project_info.project,
 				&project_info.versions,
 				&project_info.members,
@@ -193,6 +193,10 @@ async fn query_package(
 			)
 			.await
 			.context("Failed to generate Nitrolaunch package")?;
+
+			package.improve_generation();
+			package.optimize();
+
 			let package =
 				serde_json::to_string_pretty(&package).context("Failed to serialized package")?;
 
