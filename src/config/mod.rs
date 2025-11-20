@@ -117,16 +117,6 @@ impl Config {
 				continue;
 			}
 			let user = read_user_config(user_config, user_id);
-			// Disabled until we can verify game ownership.
-			// We don't want to be a cracked launcher.
-			if user.is_demo() {
-				o.display(
-					MessageContents::Error(
-						"Unverified and Demo users are currently disabled".into(),
-					),
-					MessageLevel::Important,
-				);
-			}
 
 			users.add_user(user);
 		}
