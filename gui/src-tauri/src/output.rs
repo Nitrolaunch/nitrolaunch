@@ -277,13 +277,6 @@ pub struct AuthDisplayEvent {
 	device_code: String,
 }
 
-/// Event for a yes-no prompt
-#[derive(Clone, Serialize)]
-pub struct YesNoPromptEvent {
-	default: bool,
-	message: String,
-}
-
 /// Event for a package resolution error
 #[derive(Clone, Serialize, Deserialize)]
 pub struct ResolutionErrorEvent {

@@ -53,10 +53,10 @@ impl InstalledVersion<'_, '_> {
 	/// Create an instance and its files using this version,
 	/// ready to be launched
 	pub async fn get_instance(
-		&mut self,
+		&'_ mut self,
 		config: InstanceConfiguration,
 		o: &mut impl NitroOutput,
-	) -> anyhow::Result<Instance> {
+	) -> anyhow::Result<Instance<'_>> {
 		let params = InstanceParameters {
 			version: &self.inner.version,
 			version_manifest: &self.inner.version_manifest,

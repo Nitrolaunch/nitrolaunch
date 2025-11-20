@@ -117,7 +117,7 @@ impl PackageConfigDeser {
 	}
 
 	/// Get the worlds of the config
-	pub fn get_worlds(&self) -> Cow<[String]> {
+	pub fn get_worlds(&'_ self) -> Cow<'_, [String]> {
 		match &self {
 			Self::Basic(..) => Cow::Owned(Vec::new()),
 			Self::Full(cfg) => Cow::Borrowed(&cfg.worlds),

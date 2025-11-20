@@ -171,11 +171,11 @@ impl PackageRepository {
 
 	/// Get the repo's metadata
 	pub async fn get_metadata(
-		&mut self,
+		&'_ mut self,
 		paths: &Paths,
 		client: &Client,
 		o: &mut impl NitroOutput,
-	) -> anyhow::Result<Cow<RepoMetadata>> {
+	) -> anyhow::Result<Cow<'_, RepoMetadata>> {
 		match self {
 			Self::Basic(repo) => repo.get_metadata(paths, client, o).await.map(Cow::Borrowed),
 			Self::Core => Ok(Cow::Owned(RepoMetadata {

@@ -146,10 +146,10 @@ impl NitroCore {
 
 	/// Load or install a version of the game
 	pub async fn get_version(
-		&mut self,
+		&'_ mut self,
 		version: &MinecraftVersion,
 		o: &mut impl NitroOutput,
-	) -> anyhow::Result<InstalledVersion> {
+	) -> anyhow::Result<InstalledVersion<'_, '_>> {
 		let version_manifest = self
 			.get_version_manifest(Some(version), o)
 			.await

@@ -38,7 +38,7 @@ pub trait NitroOutput: Send {
 	fn end_section(&mut self) {}
 
 	/// Gets an OutputProcess object for this output
-	fn get_process(&mut self) -> OutputProcess<Self>
+	fn get_process(&'_ mut self) -> OutputProcess<'_, Self>
 	where
 		Self: Sized,
 	{
@@ -46,7 +46,7 @@ pub trait NitroOutput: Send {
 	}
 
 	/// Gets an OutputSection object for this output
-	fn get_section(&mut self) -> OutputSection<Self>
+	fn get_section(&'_ mut self) -> OutputSection<'_, Self>
 	where
 		Self: Sized,
 	{
