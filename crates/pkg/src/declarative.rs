@@ -276,7 +276,7 @@ impl DeclarativePackage {
 				}
 			}
 
-			if all_same && addon.conditions.is_empty() {
+			if all_same && addon.conditions.is_empty() && !addon.optional {
 				self.relations
 					.dependencies
 					.extend(first.expect("Length of versions is > 0").iter().cloned());
