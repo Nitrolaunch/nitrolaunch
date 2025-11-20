@@ -1,7 +1,8 @@
 use std::collections::HashMap;
-use std::io::Read;
+use std::io::{Read, Write};
 use std::path::PathBuf;
 use std::time::Duration;
+use tokio::sync::mpsc::{Receiver, Sender};
 
 use anyhow::Context;
 use nitro_config::instance::{QuickPlay, WrapperCommand};
@@ -17,7 +18,7 @@ use nitro_shared::java_args::MemoryNum;
 use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
 use nitro_shared::{translate, Side, UpdateDepth};
 use reqwest::Client;
-use tokio::io::{AsyncWriteExt, Stdin, Stdout};
+use tokio::io::{AsyncWriteExt, Stdout};
 
 use super::tracking::RunningInstanceRegistry;
 use super::update::manager::UpdateManager;
@@ -145,6 +146,10 @@ impl Instance {
 			None
 		};
 
+		let (stdin_tx, stdin_rx) = tokio::sync::mpsc::channel::<Vec<u8>>(150);
+
+		std::thread::spawn(stdin_thread(stdin_tx));
+
 		let handle = InstanceHandle {
 			inner: handle,
 			instance_id: self.id.clone(),
@@ -152,7 +157,7 @@ impl Instance {
 			hook_arg,
 			is_silent: false,
 			stdout: tokio::io::stdout(),
-			stdin: tokio::io::stdin(),
+			stdin_rx,
 			world_files,
 		};
 
@@ -211,8 +216,8 @@ pub struct InstanceHandle {
 	is_silent: bool,
 	/// Global stdout
 	stdout: Stdout,
-	/// Global stdin
-	stdin: Stdin,
+	/// Receiver for stdin data chunks
+	stdin_rx: Receiver<Vec<u8>>,
 	/// Shared world file watcher
 	world_files: Option<WorldFilesWatcher>,
 }
@@ -241,12 +246,10 @@ impl InstanceHandle {
 					let _ = self.stdout.write(&stdio_buf[0..bytes_read]).await;
 				}
 
-				// TODO: Stdin support
-				let _ = self.stdin;
-				// let (inst_stdin, _) = self.inner.stdin();
-				// if let Ok(Some(bytes_read)) = self.stdin.try_read(&mut stdio_buf).await {
-				// 	let _ = inst_stdin.write_all(&stdio_buf[0..bytes_read]);
-				// }
+				let (inst_stdin, _) = self.inner.stdin();
+				if let Ok(chunk) = self.stdin_rx.try_recv() {
+					let _ = inst_stdin.write_all(&chunk);
+				}
 			}
 
 			// Update world files
@@ -338,5 +341,19 @@ impl InstanceHandle {
 		results.all_results(o).await?;
 
 		Ok(())
+	}
+}
+
+/// Logic for the stdin reader thread
+fn stdin_thread(tx: Sender<Vec<u8>>) -> impl Fn() {
+	move || {
+		let mut stdin = std::io::stdin();
+		let mut buffer = [0; 128];
+		while !tx.is_closed() {
+			if let Ok(bytes_read) = stdin.read(&mut buffer) {
+				let chunk = buffer[0..bytes_read].to_vec();
+				let _ = tx.blocking_send(chunk);
+			}
+		}
 	}
 }
