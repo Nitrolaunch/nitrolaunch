@@ -8,7 +8,7 @@ Follow the [Tauri guide](https://v1.tauri.app/v1/guides/getting-started/prerequi
 
 ## 2. Install Tauri CLI
 
-Install npm if you haven't already, then `cd` into the `gui` directory and run `npm install --save-dev @tauri-apps/cli@"1.6.3"` in your terminal. Note that you might have to use a different npm package depending on what system you are on.
+Install npm if you haven't already, then `cd` into the `gui` directory and run `cargo install tauri-cli --version "^2.9.3" --locked"` in your terminal.
 
 ## 3. Build / Debug
 
