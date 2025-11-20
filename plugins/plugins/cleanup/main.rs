@@ -104,6 +104,20 @@ async fn cleanup_version(data_dir: &Path, version: &str) -> anyhow::Result<()> {
 	// Remove the index so it doesn't affect other indexes anymore
 	std::fs::remove_file(version_index_path).context("Failed to remove asset index")?;
 
+	// Remove the game jar
+	let jars_path = data_dir.join("internal/jars");
+	let client_file_stub = format!("{version}_client");
+	let server_file_stub = format!("{version}_server");
+	for entry in jars_path.read_dir()? {
+		let entry = entry?;
+		if entry.file_type()?.is_file() {
+			let filename = entry.file_name().to_string_lossy().to_string();
+			if filename.contains(&client_file_stub) || filename.contains(&server_file_stub) {
+				let _ = std::fs::remove_file(entry.path());
+			}
+		}
+	}
+
 	cprintln!("<s><g>Done.");
 
 	Ok(())
