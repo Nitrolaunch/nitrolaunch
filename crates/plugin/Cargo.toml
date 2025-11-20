@@ -20,7 +20,7 @@ host = [
 	"tokio/fs",
 	"tokio/rt-multi-thread",
 	"tokio/io-std",
-	"dep:wasmer",
+	"dep:wasmtime",
 ]
 executable_api = []
 wasm_api = []
@@ -38,4 +38,4 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 simd-json = { workspace = true }
 tokio = { version = "1.37.0", features = ["rt", "sync"] }
-wasmer = { workspace = true, optional = true }
+wasmtime = { workspace = true, optional = true }

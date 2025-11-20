@@ -6,9 +6,7 @@ use std::{marker::PhantomData, path::PathBuf, sync::Arc, time::Instant};
 use anyhow::{bail, Context};
 use nitro_shared::{later::Later, output::NitroOutput};
 use tokio::sync::Mutex;
-use wasmer::{
-	imports, Function, FunctionEnv, FunctionEnvMut, Imports, Memory, Store, TypedFunction,
-};
+use wasmtime::{Caller, Linker, Memory, Store, TypedFunc};
 
 use crate::hook::{
 	call::{HookCallArg, HookHandle},
@@ -64,20 +62,13 @@ impl<H: Hook> WASMHookHandle<H> {
 			None
 		};
 
-		let mut store = Store::default();
-
-		if let Some(start_time) = &mut start_time {
-			let now = Instant::now();
-			println!("Engine initialization: {:?}", now - *start_time);
-			*start_time = now;
-		}
-
 		// Initialize the module
 		let mut lock = self.wasm_loader.lock().await;
 		let module = lock
 			.load(self.plugin_id.clone(), &self.wasm_path)
 			.await
 			.context("Failed to load WASM module")?;
+		let engine = lock.engine();
 		std::mem::drop(lock);
 
 		if let Some(start_time) = &mut start_time {
@@ -86,17 +77,21 @@ impl<H: Hook> WASMHookHandle<H> {
 			*start_time = now;
 		}
 
-		let env = FunctionEnv::new(
-			&mut store,
-			Env {
+		let mut linker = Linker::new(&engine);
+
+		let mut store = Store::new(
+			&engine,
+			State {
 				memory: Later::new(),
 				alloc_fn: Later::new(),
 				custom_config: self.custom_config.clone(),
 			},
 		);
 
-		let imports = create_imports(&mut store, &env).context("Failed to create imports")?;
-		let instance = wasmer::Instance::new(&mut store, &module, &imports)
+		create_imports(&mut linker).context("Failed to create imports")?;
+
+		let instance = linker
+			.instantiate(&mut store, &module)
 			.context("Failed to construct WASM instance")?;
 
 		if let Some(start_time) = &mut start_time {
@@ -106,52 +101,48 @@ impl<H: Hook> WASMHookHandle<H> {
 		}
 
 		// Grab functions from the module
-		let entrypoint: TypedFunction<(u32, u32, u32, u32, u16), u16> = instance
-			.exports
-			.get_typed_function(&store, WASM_HOOK_ENTRYPOINT)
+		let entrypoint: TypedFunc<(u32, u32, u32, u32, u32), u32> = instance
+			.get_typed_func(&mut store, WASM_HOOK_ENTRYPOINT)
 			.context("WASM module does not export an entrypoint")?;
 
-		let alloc_fn: TypedFunction<u32, u32> = instance
-			.exports
-			.get_typed_function(&store, "nitro_plugin_alloc")
+		let alloc_fn: TypedFunc<u32, u32> = instance
+			.get_typed_func(&mut store, "nitro_plugin_alloc")
 			.context("WASM module is missing alloc function")?;
 
-		let dealloc_fn: TypedFunction<(u32, u32), ()> = instance
-			.exports
-			.get_typed_function(&store, "nitro_plugin_dealloc")
+		let dealloc_fn: TypedFunc<(u32, u32), ()> = instance
+			.get_typed_func(&mut store, "nitro_plugin_dealloc")
 			.context("WASM module is missing dealloc function")?;
 
-		let get_result_fn: TypedFunction<(), u32> = instance
-			.exports
-			.get_typed_function(&store, "nitro_plugin_get_hook_result")
+		let get_result_fn: TypedFunc<(), u32> = instance
+			.get_typed_func(&mut store, "nitro_plugin_get_hook_result")
 			.context("WASM module is missing get_result function")?;
 
-		let get_result_len_fn: TypedFunction<(), u32> = instance
-			.exports
-			.get_typed_function(&store, "nitro_plugin_get_hook_result_len")
+		let get_result_len_fn: TypedFunc<(), u32> = instance
+			.get_typed_func(&mut store, "nitro_plugin_get_hook_result_len")
 			.context("WASM module is missing get_result_len function")?;
 
 		let memory = instance
-			.exports
-			.get_memory("memory")
+			.get_memory(&mut store, "memory")
 			.context("WASM memory missing!")?;
 
 		// Prepare the env
-		env.as_mut(&mut store).memory.fill(memory.clone());
-		env.as_mut(&mut store).alloc_fn.fill(alloc_fn.clone());
+		store.data_mut().memory.fill(memory.clone());
+		store.data_mut().alloc_fn.fill(alloc_fn.clone());
 
 		// Prepare the inputs by allocating strings in the module
 		let hook_len = H::get_name_static().len() as u32;
 		let hook_ptr_offset = alloc_fn.call(&mut store, hook_len)?;
 
-		let view = memory.view(&store);
-		view.write(hook_ptr_offset as u64, H::get_name_static().as_bytes())?;
+		memory.write(
+			&mut store,
+			hook_ptr_offset as usize,
+			H::get_name_static().as_bytes(),
+		)?;
 
 		let arg_len = self.arg.len() as u32;
 		let arg_ptr_offset = alloc_fn.call(&mut store, arg_len)?;
 
-		let view = memory.view(&store);
-		view.write(arg_ptr_offset as u64, self.arg.as_bytes())?;
+		memory.write(&mut store, arg_ptr_offset as usize, self.arg.as_bytes())?;
 
 		if let Some(start_time) = &mut start_time {
 			let now = Instant::now();
@@ -162,11 +153,13 @@ impl<H: Hook> WASMHookHandle<H> {
 		let result_code = entrypoint
 			.call(
 				&mut store,
-				hook_ptr_offset,
-				hook_len,
-				arg_ptr_offset,
-				arg_len,
-				H::get_version(),
+				(
+					hook_ptr_offset,
+					hook_len,
+					arg_ptr_offset,
+					arg_len,
+					H::get_version() as u32,
+				),
 			)
 			.context("Failed to call plugin entrypoint")?;
 
@@ -177,16 +170,15 @@ impl<H: Hook> WASMHookHandle<H> {
 		}
 
 		// Deallocate inputs
-		let _ = dealloc_fn.call(&mut store, hook_ptr_offset, hook_len);
-		let _ = dealloc_fn.call(&mut store, arg_ptr_offset, arg_len);
+		let _ = dealloc_fn.call(&mut store, (hook_ptr_offset, hook_len));
+		let _ = dealloc_fn.call(&mut store, (arg_ptr_offset, arg_len));
 
 		// Read the result from the memory
-		let result_ptr_offset = get_result_fn.call(&mut store)?;
-		let result_len = get_result_len_fn.call(&mut store)?;
+		let result_ptr_offset = get_result_fn.call(&mut store, ())?;
+		let result_len = get_result_len_fn.call(&mut store, ())?;
 
-		let view = memory.view(&store);
 		let mut result: String = std::iter::repeat_n('0', result_len as usize).collect();
-		unsafe { view.read(result_ptr_offset as u64, result.as_bytes_mut())? };
+		unsafe { memory.read(&store, result_ptr_offset as usize, result.as_bytes_mut())? };
 
 		if result_code == 1 {
 			bail!("Plugin '{}' returned an error: {result}", self.plugin_id);
@@ -213,27 +205,28 @@ impl<H: Hook> WASMHookHandle<H> {
 }
 
 /// Host function environment
-struct Env {
+struct State {
 	memory: Later<Memory>,
-	alloc_fn: Later<TypedFunction<u32, u32>>,
+	alloc_fn: Later<TypedFunc<u32, u32>>,
 	custom_config: Option<String>,
 }
 
-fn create_imports(store: &mut Store, env: &FunctionEnv<Env>) -> anyhow::Result<Imports> {
-	let get_custom_config = move |mut env: FunctionEnvMut<Env>| {
-		let (env, mut store) = env.data_and_store_mut();
+fn create_imports(linker: &mut Linker<State>) -> anyhow::Result<()> {
+	let get_custom_config = move |mut caller: Caller<State>| {
+		let state = caller.data_mut();
+		let custom_config = state.custom_config.clone();
+		let memory = state.memory.get_clone();
+		let alloc_fn = state.alloc_fn.get_clone();
 
-		if let Some(custom_config) = &env.custom_config {
-			let Ok(ptr) = env
-				.alloc_fn
-				.get()
-				.call(&mut store, custom_config.len() as u32)
-			else {
+		if let Some(custom_config) = &custom_config {
+			let Ok(ptr) = alloc_fn.call(&mut caller, custom_config.len() as u32) else {
 				return (0, 0);
 			};
 
-			let view = env.memory.get().view(&store);
-			if view.write(ptr as u64, custom_config.as_bytes()).is_err() {
+			if memory
+				.write(&mut caller, ptr as usize, custom_config.as_bytes())
+				.is_err()
+			{
 				return (0, 0);
 			}
 
@@ -243,9 +236,7 @@ fn create_imports(store: &mut Store, env: &FunctionEnv<Env>) -> anyhow::Result<I
 		}
 	};
 
-	Ok(imports! {
-		"nitro" => {
-			"get_custom_config" => Function::new_typed_with_env(store, env, get_custom_config),
-		}
-	})
+	linker.func_wrap("nitro", "get_custom_config", get_custom_config)?;
+
+	Ok(())
 }

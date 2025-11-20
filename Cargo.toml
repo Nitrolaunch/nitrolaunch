@@ -16,7 +16,7 @@ edition = "2021"
 license = "GPL-3.0-or-later"
 authors = ["CarbonSmasher"]
 repository = "https://github.com/Nitrolaunch/nitrolaunch"
-rust-version = "1.81.0"
+rust-version = "1.89.0"
 categories = ["games"]
 
 [workspace.lints.rust]
@@ -126,7 +126,7 @@ termimad = "0.31.1"
 thiserror = "1.0.61"
 tokio = { version = "1.37.0", features = ["rt-multi-thread"] }
 version-compare = "0.2.0"
-wasmer = { version = "6.1.0", default-features = false, features = ["wamr"] }
+wasmtime = "39.0.0"
 which = "6.0.1"
 zip = { version = "3.0.0", default-features = false, features = ["deflate"] }
 

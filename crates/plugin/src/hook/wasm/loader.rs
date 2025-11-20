@@ -5,7 +5,7 @@ use std::{
 };
 
 use anyhow::{bail, Context};
-use wasmer::{Module, Store};
+use wasmtime::{Engine, Module};
 
 /// Manager for loading and caching WASM efficiently
 pub struct WASMLoader {
@@ -13,6 +13,8 @@ pub struct WASMLoader {
 	cache_dir: PathBuf,
 	/// Map of plugin IDs to already loaded modules
 	module_cache: HashMap<String, Module>,
+	/// The engine used for this loader
+	engine: Engine,
 }
 
 impl WASMLoader {
@@ -21,6 +23,7 @@ impl WASMLoader {
 		Self {
 			cache_dir,
 			module_cache: HashMap::new(),
+			engine: Engine::default(),
 		}
 	}
 
@@ -39,7 +42,7 @@ impl WASMLoader {
 		}
 
 		// Check the WASM last modified timestamp with a stored one to see if we need to recompile
-		let cached_file_path = self.cache_dir.join(format!("{plugin_id}.wasmr"));
+		let cached_file_path = self.cache_dir.join(format!("{plugin_id}.wasmtime"));
 		let timestamp_path = self.cache_dir.join(format!("{plugin_id}.timestamp"));
 
 		let metadata = tokio::fs::metadata(wasm_file).await?;
@@ -65,23 +68,21 @@ impl WASMLoader {
 			}
 		};
 
-		let store = Store::default();
-
 		// Recompile the module if needed, otherwise read the assembly from the file
 		let module = if recomp_needed {
 			let contents = tokio::fs::read(wasm_file)
 				.await
 				.context("Failed to read WASM file")?;
-			let module = tokio::task::spawn_blocking(move || {
-				let store = Store::default();
-				Module::new(&store, contents)
-			})
-			.await
-			.context("Failed to compile WASM file")??;
+			let engine = self.engine.clone();
+			let module = tokio::task::spawn_blocking(move || Module::new(&engine, contents))
+				.await
+				.context("Failed to compile WASM file")??;
 
-			if module.serialize_to_file(&cached_file_path).is_ok() {
-				if let Some(last_modified) = last_modified {
-					tokio::fs::write(timestamp_path, last_modified.to_string()).await?;
+			if let Ok(bytes) = module.serialize() {
+				if tokio::fs::write(cached_file_path, bytes).await.is_ok() {
+					if let Some(last_modified) = last_modified {
+						tokio::fs::write(timestamp_path, last_modified.to_string()).await?;
+					}
 				}
 			}
 
@@ -89,7 +90,7 @@ impl WASMLoader {
 		} else {
 			// SAFETY: None really
 			unsafe {
-				Module::deserialize_from_file(&store, &cached_file_path)
+				Module::deserialize_file(&self.engine, &cached_file_path)
 					.context("Failed to deserialize compiled file")?
 			}
 		};
@@ -97,5 +98,10 @@ impl WASMLoader {
 		self.module_cache.insert(plugin_id, module.clone());
 
 		Ok(module)
+	}
+
+	/// Gets this loader's engine
+	pub fn engine(&self) -> Engine {
+		self.engine.clone()
 	}
 }

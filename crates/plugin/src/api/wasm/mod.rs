@@ -22,8 +22,8 @@ macro_rules! nitro_wasm_plugin {
 			hook_len: usize,
 			arg: *const u8,
 			arg_len: usize,
-			hook_version: u16,
-		) -> u8 {
+			hook_version: u32,
+		) -> u32 {
 			let hook = unsafe { $crate::api::wasm::util::read_wasm_string(hook, hook_len) };
 			let arg = unsafe { $crate::api::wasm::util::read_wasm_string(arg, arg_len) };
 
@@ -58,7 +58,7 @@ pub struct WASMPlugin {
 	/// The argument to the hook that is being run
 	pub arg: &'static str,
 	/// The version of the hook that is being run
-	pub hook_version: u16,
+	pub hook_version: u32,
 }
 
 impl WASMPlugin {
@@ -74,7 +74,7 @@ impl WASMPlugin {
 		}
 
 		// Check that the hook version of Nitrolaunch matches our hook version
-		if self.hook_version != H::get_version() {
+		if self.hook_version != H::get_version() as u32 {
 			bail!("Hook version does not match. Try updating the plugin or Nitrolaunch.");
 		}
 
