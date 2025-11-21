@@ -7,11 +7,13 @@ package.cross_platform: build.cross_platform
 
 	@rm -f release/args-universal.zip
 	@rm -f release/multiply-universal.zip
+	@rm -f release/weld-universal.zip
 
 	@zip -j release/args-universal.zip ../target/wasm32-unknown-unknown/release/nitro_plugin_args.wasm plugins/args/plugin.json
 	@zip -j release/multiply-universal.zip ../target/wasm32-unknown-unknown/release/nitro_plugin_multiply.wasm plugins/multiply/plugin.json
 
-	@rm -f release/weld-universal.zip && zip -j release/weld-universal.zip plugins/weld/plugin.json plugins/weld/weld.pyz
+	@zip -j release/gamepad-universal.zip plugins/gamepad/plugin.json plugins/gamepad/gamepad.js
+	@zip -j release/weld-universal.zip plugins/weld/plugin.json plugins/weld/weld.pyz
 	@cp plugins/extra_versions/plugin.json release/extra_versions-universal.json
 	@cp plugins/lang/plugin.json release/lang-universal.json
 
@@ -145,6 +147,9 @@ install.fabric_quilt:
 install.forge:
 	@cargo install --path . --bin nitro_plugin_forge --offline
 	@cat plugins/forge/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/forge.json
+
+install.gamepad:
+	@cp -r plugins/gamepad ~/.local/share/nitro/plugins
 
 install.gen_pkg:
 	@cargo install --path . --bin nitro_plugin_gen_pkg --offline

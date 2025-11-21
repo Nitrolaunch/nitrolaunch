@@ -52,6 +52,11 @@ export function setupPluginFunctions() {
 
 		global[id2] = setInterval(f, interval);
 	};
+	global.addStyle = (css: string) => {
+		let elem = document.createElement("style");
+		elem.innerText = css;
+		document.getElementsByTagName("head")[0].appendChild(elem);
+	};
 
 	global.showMessageToast = messageToast;
 	global.showSuccessToast = successToast;

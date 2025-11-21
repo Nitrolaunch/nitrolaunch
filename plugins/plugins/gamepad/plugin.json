@@ -1,0 +1,14 @@
+{
+	"name": "Gamepad",
+	"description": "Adds better gamepad and arrow key support for the GUI",
+	"hooks": {
+		"inject_page_script": {
+			"property": "page",
+			"cases": {
+				"\"\"": {
+					"file": "gamepad.js"
+				}
+			}
+		}
+	}
+}

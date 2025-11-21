@@ -347,7 +347,7 @@ function Section(props: SectionProps) {
 				</Show>
 				<div class="instance-list-section">
 					<For each={props.items}>
-						{(item) => (
+						{(item, i) => (
 							<Item
 								instance={item}
 								selected={
@@ -367,6 +367,8 @@ function Section(props: SectionProps) {
 								}}
 								sectionKind={props.kind}
 								itemKind={props.itemType}
+								index={i()}
+								section={props.id}
 								updateList={props.updateList}
 							/>
 						)}
@@ -382,6 +384,8 @@ function Section(props: SectionProps) {
 										: "create_template";
 								navigate(target);
 							}}
+							data-section={props.id}
+							data-index={props.items == undefined ? 0 : props.items.length}
 						>
 							<div class="cont instance-list-icon">
 								<Icon icon={Plus} size="1.5rem" />
@@ -454,6 +458,10 @@ function Item(props: ItemProps) {
 			}}
 			onMouseEnter={() => setIsHovered(true)}
 			onMouseLeave={() => setIsHovered(false)}
+			data-id={props.instance.id}
+			data-kind={props.itemKind}
+			data-index={props.index}
+			data-section={props.section}
 		>
 			{/* Don't show the pin button when the instance is already pinned and we aren't in the pinned section */}
 			<Show
@@ -544,7 +552,9 @@ interface ItemProps {
 	instance: InstanceInfo;
 	selected: boolean;
 	sectionKind: SectionKind;
+	section: string;
 	itemKind: InstanceOrTemplate;
+	index: number;
 	onSelect: () => void;
 	updateList: () => void;
 }

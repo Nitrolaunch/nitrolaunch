@@ -5,6 +5,7 @@ import IconTextButton from "../../components/input/button/IconTextButton";
 import {
 	Book,
 	Box,
+	Controller,
 	CurlyBraces,
 	Cycle,
 	Download,
@@ -292,6 +293,8 @@ function getPluginIcon(plugin: string) {
 			return Book;
 		} else if (plugin == "extra_versions" || plugin == "better_jsons") {
 			return CurlyBraces;
+		} else if (plugin == "gamepad") {
+			return Controller;
 		} else if (plugin == "glfw_fix") {
 			return Heart;
 		} else if (plugin == "lang") {
