@@ -78,7 +78,7 @@ fn main() -> anyhow::Result<()> {
 					let options_path = PathBuf::from(arg.game_dir).join("options.txt");
 					let paths = Paths::new()?;
 					let data_version =
-						nitro_core::io::minecraft::get_data_version(&arg.version_info, &paths);
+						nitro_core::io::minecraft::get_data_version(&arg.version_info, &paths.jars);
 					write_options_txt(keys, &options_path, &data_version)
 						.context("Failed to write options.txt")?;
 				}

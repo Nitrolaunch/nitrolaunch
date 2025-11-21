@@ -1,16 +1,17 @@
-use std::{fs::File, path::PathBuf};
+use std::{
+	fs::File,
+	path::{Path, PathBuf},
+};
 
 use anyhow::{bail, Context};
 use nitro_shared::{versions::VersionInfo, Side};
 use serde::Deserialize;
 use zip::ZipArchive;
 
-use super::files::paths::Paths;
-
 /// Interacting with the game JAR file
 /// and storing your own JAR files
 pub mod game_jar {
-	use std::io::BufReader;
+	use std::{io::BufReader, path::Path};
 
 	use nitro_shared::versions::VersionPattern;
 
@@ -25,8 +26,8 @@ pub mod game_jar {
 	}
 
 	/// Extract the version.json file from the game jar
-	pub fn extract_version_json(mc_version: &str, paths: &Paths) -> anyhow::Result<VersionJson> {
-		let path = get_existing_path(mc_version, paths)
+	pub fn extract_version_json(mc_version: &str, jars_dir: &Path) -> anyhow::Result<VersionJson> {
+		let path = get_existing_path(mc_version, jars_dir)
 			.context("Failed to get a game jar to extract the version.json file from")?;
 		let file = File::open(path).context("Failed to open game jar file")?;
 		let file = BufReader::new(file);
@@ -40,10 +41,10 @@ pub mod game_jar {
 	/// Extract the version.json file optionally, only if the version has the file in there
 	pub fn extract_version_json_optional(
 		version_info: &VersionInfo,
-		paths: &Paths,
+		jars_dir: &Path,
 	) -> anyhow::Result<Option<VersionJson>> {
 		if VersionPattern::After("18w47b".into()).matches_info(version_info) {
-			Ok(Some(extract_version_json(&version_info.version, paths)?))
+			Ok(Some(extract_version_json(&version_info.version, jars_dir)?))
 		} else {
 			Ok(None)
 		}
@@ -57,7 +58,7 @@ pub mod game_jar {
 		side: Side,
 		version: &str,
 		custom_specifier: Option<&str>,
-		paths: &Paths,
+		jars_dir: &Path,
 	) -> PathBuf {
 		let side_str = side.to_string();
 		let filename = if let Some(specifier) = custom_specifier {
@@ -65,15 +66,15 @@ pub mod game_jar {
 		} else {
 			format!("{version}_{side_str}.jar")
 		};
-		paths.jars.join(filename)
+		jars_dir.join(filename)
 	}
 
 	/// Get the path to either the client or server jar. If the client path doesn't exist,
 	/// then the server path will be chosen
-	pub fn get_existing_path(mc_version: &str, paths: &Paths) -> anyhow::Result<PathBuf> {
-		let mut path = get_path(Side::Client, mc_version, None, paths);
+	pub fn get_existing_path(mc_version: &str, jars_dir: &Path) -> anyhow::Result<PathBuf> {
+		let mut path = get_path(Side::Client, mc_version, None, jars_dir);
 		if !path.exists() {
-			path = get_path(Side::Server, mc_version, None, paths);
+			path = get_path(Side::Server, mc_version, None, jars_dir);
 		}
 		if !path.exists() {
 			bail!("An existing game jar for this Minecraft version does not exist");
@@ -84,11 +85,11 @@ pub mod game_jar {
 }
 
 /// Get the game data version either from the game jar or the known map
-pub fn get_data_version(version_info: &VersionInfo, paths: &Paths) -> Option<i32> {
+pub fn get_data_version(version_info: &VersionInfo, jars_dir: &Path) -> Option<i32> {
 	if let Some(version) = get_old_data_version(&version_info.version) {
 		Some(version)
 	} else {
-		game_jar::extract_version_json_optional(version_info, paths)
+		game_jar::extract_version_json_optional(version_info, jars_dir)
 			.ok()
 			.flatten()
 			.map(|x| x.data_version)

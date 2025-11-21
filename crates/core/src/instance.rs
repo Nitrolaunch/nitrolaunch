@@ -97,7 +97,7 @@ impl<'params> Instance<'params> {
 				config.side.get_side(),
 				params.version,
 				None,
-				params.paths,
+				&params.paths.jars,
 			)
 		};
 		if !jar_path.exists() {

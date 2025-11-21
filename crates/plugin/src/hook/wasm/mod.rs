@@ -34,6 +34,8 @@ pub(crate) async fn call_wasm<H: Hook + Sized>(
 			result: None,
 			custom_config: arg.custom_config,
 			wasm_loader: arg.wasm_loader,
+			data_dir: arg.paths.data_dir.to_string_lossy().to_string(),
+			config_dir: arg.paths.config_dir.to_string_lossy().to_string(),
 			_phantom: PhantomData,
 		},
 		arg.plugin_id.to_string(),
@@ -49,6 +51,8 @@ pub(super) struct WASMHookHandle<H: Hook> {
 	result: Option<H::Result>,
 	custom_config: Option<String>,
 	wasm_loader: Arc<Mutex<WASMLoader>>,
+	data_dir: String,
+	config_dir: String,
 	_phantom: PhantomData<H>,
 }
 
@@ -88,6 +92,8 @@ impl<H: Hook> WASMHookHandle<H> {
 				memory: Later::new(),
 				alloc_fn: Later::new(),
 				custom_config: self.custom_config.clone(),
+				data_dir: self.data_dir.clone(),
+				config_dir: self.config_dir.clone(),
 			},
 		);
 
@@ -212,6 +218,8 @@ struct State {
 	memory: Later<Memory>,
 	alloc_fn: Later<TypedFunc<u32, u32>>,
 	custom_config: Option<String>,
+	data_dir: String,
+	config_dir: String,
 }
 
 fn create_imports(linker: &mut Linker<State>) -> anyhow::Result<()> {
@@ -237,6 +245,30 @@ fn create_imports(linker: &mut Linker<State>) -> anyhow::Result<()> {
 		} else {
 			PtrAndLength::null().tuple()
 		}
+	};
+
+	let get_data_dir = move |mut caller: Caller<State>| {
+		let state = caller.data_mut();
+		let data_dir = state.data_dir.clone();
+		let memory = state.memory.get_clone();
+		let alloc_fn = state.alloc_fn.get_clone();
+
+		let ptr = alloc_fn.call(&mut caller, data_dir.len() as u32).unwrap();
+		let _ = memory.write(&mut caller, ptr as usize, data_dir.as_bytes());
+
+		(ptr, data_dir.len() as u32)
+	};
+
+	let get_config_dir = move |mut caller: Caller<State>| {
+		let state = caller.data_mut();
+		let config_dir = state.config_dir.clone();
+		let memory = state.memory.get_clone();
+		let alloc_fn = state.alloc_fn.get_clone();
+
+		let ptr = alloc_fn.call(&mut caller, config_dir.len() as u32).unwrap();
+		let _ = memory.write(&mut caller, ptr as usize, config_dir.as_bytes());
+
+		(ptr, config_dir.len() as u32)
 	};
 
 	let path_exists = move |mut caller: Caller<State>, path_ptr: u32, path_len: u32| {
@@ -379,6 +411,8 @@ fn create_imports(linker: &mut Linker<State>) -> anyhow::Result<()> {
 	};
 
 	linker.func_wrap("nitro", "get_custom_config", get_custom_config)?;
+	linker.func_wrap("nitro", "get_data_dir", get_data_dir)?;
+	linker.func_wrap("nitro", "get_config_dir", get_config_dir)?;
 	linker.func_wrap("nitro", "path_exists", path_exists)?;
 	linker.func_wrap("nitro", "create_file", create_file)?;
 	linker.func_wrap("nitro", "remove_file", remove_file)?;

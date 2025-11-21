@@ -152,7 +152,7 @@ impl InstalledVersion<'_, '_> {
 			side,
 			&self.inner.version,
 			None,
-			self.params.paths,
+			&self.params.paths.jars,
 		))
 	}
 }

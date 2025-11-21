@@ -113,5 +113,10 @@ pub struct Asset {
 
 /// Get the path to the stored Sponge JAR file
 pub fn get_local_jar_path(mode: Mode, version: &str, paths: &Paths) -> PathBuf {
-	nitro_core::io::minecraft::game_jar::get_path(Side::Server, version, Some(mode.to_str()), paths)
+	nitro_core::io::minecraft::game_jar::get_path(
+		Side::Server,
+		version,
+		Some(mode.to_str()),
+		&paths.jars,
+	)
 }

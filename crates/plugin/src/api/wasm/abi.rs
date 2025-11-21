@@ -4,7 +4,8 @@ use crate::PtrAndLength;
 extern "C" {
 	/// 0 if null
 	pub fn get_custom_config() -> PtrAndLength;
-	/// Checks whether a path exists
+	pub fn get_data_dir() -> PtrAndLength;
+	pub fn get_config_dir() -> PtrAndLength;
 	pub fn path_exists(path: u32, path_len: u32) -> u32;
 	/// Returns error pointer
 	pub fn create_file(path: u32, path_len: u32) -> PtrAndLength;

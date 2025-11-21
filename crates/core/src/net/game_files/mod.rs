@@ -36,7 +36,7 @@ pub mod game_jar {
 		o: &mut impl NitroOutput,
 	) -> anyhow::Result<()> {
 		let side_str = side.to_string();
-		let path = crate::io::minecraft::game_jar::get_path(side, version, None, paths);
+		let path = crate::io::minecraft::game_jar::get_path(side, version, None, &paths.jars);
 		if !manager.should_update_file(&path) {
 			return Ok(());
 		}

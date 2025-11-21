@@ -83,7 +83,6 @@ pub fn create_abi_buffer(buf: Vec<u8>) -> PtrAndLength {
 
 /// Gets the custom config for this plugin
 pub fn get_custom_config() -> Option<&'static str> {
-	// Some("{\"instances\":{}}")
 	let ptr_and_length = unsafe { super::abi::get_custom_config() };
 	if ptr_and_length.ptr == 0 {
 		None

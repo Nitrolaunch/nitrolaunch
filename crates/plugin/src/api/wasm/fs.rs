@@ -1,9 +1,23 @@
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use crate::{
-	api::wasm::util::{create_abi_buffer, create_abi_string, read_result_wasm_string},
+	api::wasm::util::{
+		create_abi_buffer, create_abi_string, read_result_wasm_string, read_wasm_string_2,
+	},
 	PtrAndLength,
 };
+
+/// Gets the Nitrolaunch data dir
+pub fn get_data_dir() -> PathBuf {
+	let path = unsafe { read_wasm_string_2(super::abi::get_data_dir()) };
+	PathBuf::from(path)
+}
+
+/// Gets the Nitrolaunch config dir
+pub fn get_config_dir() -> PathBuf {
+	let path = unsafe { read_wasm_string_2(super::abi::get_config_dir()) };
+	PathBuf::from(path)
+}
 
 /// Checks whether a path exists
 pub fn path_exists(path: impl AsRef<Path>) -> bool {
