@@ -1,17 +1,20 @@
 /// Manager for loading and caching WASM efficiently
 pub mod loader;
 
-use std::{marker::PhantomData, path::PathBuf, sync::Arc, time::Instant};
+use std::{error::Error, io::Write, marker::PhantomData, path::PathBuf, sync::Arc, time::Instant};
 
 use anyhow::{bail, Context};
 use nitro_shared::{later::Later, output::NitroOutput};
 use tokio::sync::Mutex;
-use wasmtime::{Caller, Linker, Memory, Store, TypedFunc};
+use wasmtime::{AsContext, AsContextMut, Caller, Linker, Memory, Store, TypedFunc};
 
-use crate::hook::{
-	call::{HookCallArg, HookHandle},
-	wasm::loader::WASMLoader,
-	Hook, WASM_HOOK_ENTRYPOINT,
+use crate::{
+	hook::{
+		call::{HookCallArg, HookHandle},
+		wasm::loader::WASMLoader,
+		Hook, WASM_HOOK_ENTRYPOINT,
+	},
+	PtrAndLength,
 };
 
 /// Calls a WASM hook handler
@@ -220,23 +223,209 @@ fn create_imports(linker: &mut Linker<State>) -> anyhow::Result<()> {
 
 		if let Some(custom_config) = &custom_config {
 			let Ok(ptr) = alloc_fn.call(&mut caller, custom_config.len() as u32) else {
-				return (0, 0);
+				return PtrAndLength::null().tuple();
 			};
 
 			if memory
 				.write(&mut caller, ptr as usize, custom_config.as_bytes())
 				.is_err()
 			{
-				return (0, 0);
+				return PtrAndLength::null().tuple();
 			}
 
-			(ptr as u64, custom_config.len() as u64)
+			(ptr as u32, custom_config.len() as u32)
 		} else {
-			(0, 0)
+			PtrAndLength::null().tuple()
 		}
 	};
 
+	let path_exists = move |mut caller: Caller<State>, path_ptr: u32, path_len: u32| {
+		let state = caller.data_mut();
+		let memory = state.memory.get_clone();
+
+		let path = PathBuf::from(read_string(path_ptr, path_len, &memory, &caller));
+
+		path.exists() as u32
+	};
+
+	let create_file = move |mut caller: Caller<State>, path_ptr: u32, path_len: u32| {
+		let state = caller.data_mut();
+		let memory = state.memory.get_clone();
+		let alloc_fn = state.alloc_fn.get_clone();
+
+		let path = PathBuf::from(read_string(path_ptr, path_len, &memory, &caller));
+
+		let result = std::fs::File::create(path);
+		let result = create_result(result.map(|_| ()), &memory, &mut caller, &alloc_fn);
+
+		result.tuple()
+	};
+
+	let remove_file = move |mut caller: Caller<State>, path_ptr: u32, path_len: u32| {
+		let state = caller.data_mut();
+		let memory = state.memory.get_clone();
+		let alloc_fn = state.alloc_fn.get_clone();
+
+		let path = PathBuf::from(read_string(path_ptr, path_len, &memory, &caller));
+
+		let result = std::fs::remove_file(path);
+		let result = create_result(result.map(|_| ()), &memory, &mut caller, &alloc_fn);
+
+		result.tuple()
+	};
+
+	let write_file = move |mut caller: Caller<State>,
+	                       path_ptr: u32,
+	                       path_len: u32,
+	                       data_ptr: u32,
+	                       data_len: u32| {
+		let state = caller.data_mut();
+		let memory = state.memory.get_clone();
+		let alloc_fn = state.alloc_fn.get_clone();
+
+		let path = PathBuf::from(read_string(path_ptr, path_len, &memory, &caller));
+
+		let result = std::fs::File::create(path);
+		let mut file = match result {
+			Ok(file) => file,
+			Err(e) => return create_result(Err(e), &memory, &mut caller, &alloc_fn).tuple(),
+		};
+
+		let data = read_buf(data_ptr, data_len, &memory, &caller);
+		let result = file.write_all(&data);
+
+		let result = create_result(result.map(|_| ()), &memory, &mut caller, &alloc_fn);
+
+		result.tuple()
+	};
+
+	let read_file = move |mut caller: Caller<State>, path_ptr: u32, path_len: u32| {
+		let state = caller.data_mut();
+		let memory = state.memory.get_clone();
+		let alloc_fn = state.alloc_fn.get_clone();
+
+		let path = PathBuf::from(read_string(path_ptr, path_len, &memory, &caller));
+
+		let result = std::fs::read(path);
+		match result {
+			Ok(data) => {
+				let len = data.len() as u32;
+				let ptr = alloc_fn.call(&mut caller, len).unwrap();
+				memory.write(&mut caller, ptr as usize, &data).unwrap();
+
+				(len, ptr, 0, 0)
+			}
+			Err(e) => {
+				let result = create_result(Err(e), &memory, &mut caller, &alloc_fn);
+				(0, 0, result.ptr, result.len)
+			}
+		};
+	};
+
+	let create_dir = move |mut caller: Caller<State>, path_ptr: u32, path_len: u32| {
+		let state = caller.data_mut();
+		let memory = state.memory.get_clone();
+		let alloc_fn = state.alloc_fn.get_clone();
+
+		let path = PathBuf::from(read_string(path_ptr, path_len, &memory, &caller));
+
+		let result = std::fs::create_dir(path);
+		let result = create_result(result.map(|_| ()), &memory, &mut caller, &alloc_fn);
+
+		result.tuple()
+	};
+
+	let create_dir_all = move |mut caller: Caller<State>, path_ptr: u32, path_len: u32| {
+		let state = caller.data_mut();
+		let memory = state.memory.get_clone();
+		let alloc_fn = state.alloc_fn.get_clone();
+
+		let path = PathBuf::from(read_string(path_ptr, path_len, &memory, &caller));
+
+		let result = std::fs::create_dir_all(path);
+		let result = create_result(result.map(|_| ()), &memory, &mut caller, &alloc_fn);
+
+		result.tuple()
+	};
+
+	let create_leading_dirs = move |mut caller: Caller<State>, path_ptr: u32, path_len: u32| {
+		let state = caller.data_mut();
+		let memory = state.memory.get_clone();
+		let alloc_fn = state.alloc_fn.get_clone();
+
+		let path = PathBuf::from(read_string(path_ptr, path_len, &memory, &caller));
+
+		if let Some(parent) = path.parent() {
+			let result = std::fs::create_dir_all(parent);
+			let result = create_result(result.map(|_| ()), &memory, &mut caller, &alloc_fn);
+
+			result.tuple()
+		} else {
+			PtrAndLength::null().tuple()
+		}
+	};
+
+	let remove_dir = move |mut caller: Caller<State>, path_ptr: u32, path_len: u32| {
+		let state = caller.data_mut();
+		let memory = state.memory.get_clone();
+		let alloc_fn = state.alloc_fn.get_clone();
+
+		let path = PathBuf::from(read_string(path_ptr, path_len, &memory, &caller));
+
+		let result = std::fs::remove_dir(path);
+		let result = create_result(result.map(|_| ()), &memory, &mut caller, &alloc_fn);
+
+		result.tuple()
+	};
+
 	linker.func_wrap("nitro", "get_custom_config", get_custom_config)?;
+	linker.func_wrap("nitro", "path_exists", path_exists)?;
+	linker.func_wrap("nitro", "create_file", create_file)?;
+	linker.func_wrap("nitro", "remove_file", remove_file)?;
+	linker.func_wrap("nitro", "write_file", write_file)?;
+	linker.func_wrap("nitro", "read_file", read_file)?;
+	linker.func_wrap("nitro", "create_dir", create_dir)?;
+	linker.func_wrap("nitro", "create_dir_all", create_dir_all)?;
+	linker.func_wrap("nitro", "create_leading_dirs", create_leading_dirs)?;
+	linker.func_wrap("nitro", "remove_dir", remove_dir)?;
 
 	Ok(())
+}
+
+fn read_string(ptr: u32, len: u32, memory: &Memory, store: impl AsContext) -> String {
+	let mut buf: String = std::iter::repeat_n('0', len as usize).collect();
+	unsafe {
+		memory
+			.read(store, ptr as usize, buf.as_bytes_mut())
+			.unwrap()
+	};
+
+	buf
+}
+
+fn read_buf(ptr: u32, len: u32, memory: &Memory, store: impl AsContext) -> Vec<u8> {
+	let mut buf: Vec<u8> = std::iter::repeat_n(0, len as usize).collect();
+	memory.read(store, ptr as usize, &mut buf).unwrap();
+
+	buf
+}
+
+fn create_result<E: Error>(
+	result: Result<(), E>,
+	memory: &Memory,
+	mut store: impl AsContextMut,
+	alloc_fn: &TypedFunc<u32, u32>,
+) -> PtrAndLength {
+	match result {
+		Ok(..) => PtrAndLength::null(),
+		Err(e) => {
+			let e = e.to_string();
+			let len = e.len() as u32;
+			let ptr = alloc_fn.call(store.as_context_mut(), len).unwrap();
+
+			memory.write(store, ptr as usize, e.as_bytes()).unwrap();
+
+			PtrAndLength { ptr, len }
+		}
+	}
 }

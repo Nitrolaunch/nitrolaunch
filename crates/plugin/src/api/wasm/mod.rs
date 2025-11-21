@@ -2,6 +2,8 @@
 mod abi;
 /// General utilities for the API
 pub mod util;
+/// Filesystem access
+pub mod fs;
 
 use anyhow::{bail, Context};
 use serde::de::DeserializeOwned;

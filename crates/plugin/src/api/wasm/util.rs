@@ -1,23 +1,6 @@
 use std::alloc::Layout;
 
-use crate::api::wasm::HOOK_RESULT;
-
-/// A pointer and length, usually a string
-#[repr(C)]
-#[derive(Clone, Copy)]
-pub struct PtrAndLength {
-	/// The WASM memory pointer
-	pub ptr: u64,
-	/// The buffer length
-	pub len: u64,
-}
-
-impl PtrAndLength {
-	/// Returns a null pointer
-	pub fn null() -> Self {
-		Self { ptr: 0, len: 0 }
-	}
-}
+use crate::{api::wasm::HOOK_RESULT, PtrAndLength};
 
 /// Allocates a buffer in WASM
 #[no_mangle]
@@ -62,6 +45,40 @@ pub unsafe fn read_wasm_string(ptr: *const u8, size: usize) -> &'static str {
 /// Reads a string pointer passed through WASM from a PtrAndLength struct. Remember to free it later!
 pub unsafe fn read_wasm_string_2(ptr_and_length: PtrAndLength) -> &'static str {
 	read_wasm_string(ptr_and_length.ptr as *const u8, ptr_and_length.len as usize)
+}
+
+/// Reads an optional string pointer passed through WASM from a PtrAndLength struct. Remember to free it later!
+pub unsafe fn read_optional_wasm_string(ptr_and_length: PtrAndLength) -> Option<&'static str> {
+	if ptr_and_length.ptr == 0 {
+		None
+	} else {
+		Some(read_wasm_string_2(ptr_and_length))
+	}
+}
+
+/// Reads an result string pointer passed through WASM from a PtrAndLength struct. Remember to free it later!
+pub unsafe fn read_result_wasm_string(ptr_and_length: PtrAndLength) -> Result<(), &'static str> {
+	if ptr_and_length.ptr == 0 {
+		Ok(())
+	} else {
+		Err(read_wasm_string_2(ptr_and_length))
+	}
+}
+
+/// Creates an abi-compatible string by making it static and returning the pointer and length
+pub fn create_abi_string(string: String) -> PtrAndLength {
+	let (ptr, len) = (string.as_ptr() as u32, string.len() as u32);
+	std::mem::forget(string);
+
+	PtrAndLength { ptr, len }
+}
+
+/// Creates an abi-compatible buffer by making it static and returning the pointer and length
+pub fn create_abi_buffer(buf: Vec<u8>) -> PtrAndLength {
+	let (ptr, len) = (buf.as_ptr() as u32, buf.len() as u32);
+	std::mem::forget(buf);
+
+	PtrAndLength { ptr, len }
 }
 
 /// Gets the custom config for this plugin

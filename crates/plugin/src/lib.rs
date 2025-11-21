@@ -37,3 +37,25 @@ pub struct PluginPaths {
 	/// Config directory
 	pub config_dir: PathBuf,
 }
+
+/// A pointer and length, usually a string or byte buffer, used for WASM code
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct PtrAndLength {
+	/// The WASM memory pointer
+	pub ptr: u32,
+	/// The buffer length
+	pub len: u32,
+}
+
+impl PtrAndLength {
+	/// Returns a null pointer
+	pub fn null() -> Self {
+		Self { ptr: 0, len: 0 }
+	}
+
+	/// Gets this pointer and length as a tuple
+	pub fn tuple(&self) -> (u32, u32) {
+		(self.ptr, self.len)
+	}
+}
