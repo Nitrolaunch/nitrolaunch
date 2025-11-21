@@ -1,124 +1,136 @@
 name: Build Plugins
 on:
-    workflow_dispatch:
-    push:
-        branches:
-            - main
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - dev
 
 jobs:
-    cross_platform:
-      runs-on: ubuntu-latest
+  cross_platform:
+    runs-on: ubuntu-latest
 
-      steps:
-          - uses: actions/checkout@v3
-          - name: Use Python
-            uses: actions/setup-python@v5
-            with:
-                python-version: "3.13"
-          - name: Install Python dependencies
-            run: pip install shiv
-          - name: Build plugins
-            run: cd plugins && make package.cross_platform
-          - name: Upload a Build Artifact
-            uses: actions/upload-artifact@v4
-            with:
-              name: universal
-              path: plugins/release/**
-    platform_dependent:
-        runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Use Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install Python dependencies
+        run: pip install shiv
+      - name: Cache Cargo Deps
+        id: cache-cargo-deps
+        uses: actions/cache@v4
+        with:
+          path: |
+            target/release
+          key: ${{ matrix.target }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      - name: Setup Rust environment
+        uses: raftario/setup-rust-action@v1.0.0
+      - name: Set Rust toolchain
+        run: rustup target add wasm32-unknown-unknown
+      - name: Build plugins
+        run: cd plugins && make package.cross_platform
+      - name: Upload a Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: universal
+          path: plugins/release/**
+  platform_dependent:
+    runs-on: ubuntu-latest
 
-        strategy:
-            fail-fast: false
-            matrix:
-              include:
-              # 32 bit targets are disabled for now because of simd_json failures
-              - target: x86_64-unknown-linux-gnu
-                filename: linux-x86_64
-                extension: ""
-              # - target: i686-unknown-linux-gnu
-              #   filename: linux-x86-32bit
-              - target: x86_64-pc-windows-gnu
-                filename: windows-x86_64
-                extension: ".exe"
-              # - target: i686-pc-windows-msvc
-              #   filename: windows-x86-32bit
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # 32 bit targets are disabled for now because of simd_json failures
+          - target: x86_64-unknown-linux-gnu
+            filename: linux-x86_64
+            extension: ""
+          # - target: i686-unknown-linux-gnu
+          #   filename: linux-x86-32bit
+          - target: x86_64-pc-windows-gnu
+            filename: windows-x86_64
+            extension: ".exe"
+        # - target: i686-pc-windows-msvc
+        #   filename: windows-x86-32bit
 
-        steps:
-            - uses: actions/checkout@v3
-            - name: Cache Cargo Deps
-              id: cache-cargo-deps
-              uses: actions/cache@v3
-              with:
-                  path: |
-                      target/release
-                  key: ${{ matrix.target }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-            - name: Setup Rust environment
-              uses: raftario/setup-rust-action@v1.0.0
-              env:
-                  ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+    steps:
+      - uses: actions/checkout@v3
+      - name: Cache Cargo Deps
+        id: cache-cargo-deps
+        uses: actions/cache@v4
+        with:
+          path: |
+            target/release
+          key: ${{ matrix.target }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      - name: Setup Rust environment
+        uses: raftario/setup-rust-action@v1.0.0
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: true
 
-            # Install libraries
-            - run: sudo apt-get update
-            - if: ${{ matrix.target == 'i686-unknown-linux-gnu' || matrix.target == 'i686-pc-windows-msvc' }}
-              name: Install 32bit libs
-              run: sudo apt-get install gcc-multilib
-            - if: ${{ matrix.target == 'x86_64-pc-windows-gnu' || matrix.target == 'i686-pc-windows-msvc' }}
-              name: Install MinGW
-              run: sudo apt-get install g++-mingw-w64-x86-64 gcc-mingw-w64-x86-64
-            - name: Set Rust toolchain
-              run: rustup target add ${{ matrix.target }}
+      # Install libraries
+      - run: sudo apt-get update
+      - if: ${{ matrix.target == 'i686-unknown-linux-gnu' || matrix.target == 'i686-pc-windows-msvc' }}
+        name: Install 32bit libs
+        run: sudo apt-get install gcc-multilib
+      - if: ${{ matrix.target == 'x86_64-pc-windows-gnu' || matrix.target == 'i686-pc-windows-msvc' }}
+        name: Install MinGW
+        run: sudo apt-get install g++-mingw-w64-x86-64 gcc-mingw-w64-x86-64
+      - name: Set Rust toolchain
+        run: rustup target add ${{ matrix.target }}
 
-            - name: Build Plugins
-              run: cd plugins && CARGO_BUILD_TARGET="${{ matrix.target }}" OS="${{ matrix.filename }}" EXTENSION=${{ matrix.extension }} TARGET_DIR="../target/${{ matrix.target }}/release" make package.platform_dependent
-            - name: Upload a Build Artifact
-              uses: actions/upload-artifact@v4
-              with:
-                name: ${{ matrix.target }}
-                path: plugins/release/**
-    platform_dependent_macos:
-        runs-on: macos-latest
+      - name: Build Plugins
+        run: cd plugins && CARGO_BUILD_TARGET="${{ matrix.target }}" OS="${{ matrix.filename }}" EXTENSION=${{ matrix.extension }} TARGET_DIR="../target/${{ matrix.target }}/release" make package.platform_dependent
+      - name: Upload a Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target }}
+          path: plugins/release/**
+  platform_dependent_macos:
+    runs-on: macos-latest
 
-        strategy:
-            fail-fast: false
-            matrix:
-              include:
-              - target: aarch64-apple-darwin
-                filename: macos-aarch64
-              - target: x86_64-apple-darwin
-                filename: macos-x86_64
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: aarch64-apple-darwin
+            filename: macos-aarch64
+          - target: x86_64-apple-darwin
+            filename: macos-x86_64
 
-        steps:
-            - uses: actions/checkout@v3
-            - name: Cache Cargo Deps
-              id: cache-cargo-deps
-              uses: actions/cache@v3
-              with:
-                  path: |
-                      target/release
-                  key: ${{ matrix.target }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-            - name: Setup Rust environment
-              uses: raftario/setup-rust-action@v1.0.0
-              env:
-                  ACTIONS_ALLOW_UNSECURE_COMMANDS: true
-            # - name: Use Python
-            #   uses: actions/setup-python@v5
-            #   with:
-            #       python-version: "3.13"
-            # - name: Install Python dependencies
-            #   run: pip install py-make && git clone https://github.com/aureliojargas/replace.git
+    steps:
+      - uses: actions/checkout@v3
+      - name: Cache Cargo Deps
+        id: cache-cargo-deps
+        uses: actions/cache@v3
+        with:
+          path: |
+            target/release
+          key: ${{ matrix.target }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      - name: Setup Rust environment
+        uses: raftario/setup-rust-action@v1.0.0
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+      # - name: Use Python
+      #   uses: actions/setup-python@v5
+      #   with:
+      #       python-version: "3.13"
+      # - name: Install Python dependencies
+      #   run: pip install py-make && git clone https://github.com/aureliojargas/replace.git
 
-            - name: Set Rust toolchain
-              run: rustup target add ${{ matrix.target }}
+      - name: Set Rust toolchain
+        run: rustup target add ${{ matrix.target }}
 
-            # - name: Update Makefile
-            #   run: cd replace &&
-            #     git reset --hard ad148213e50e13f7a46a357e6e5bb451216fa501 &&
-            #     ./replace.py --from "\${OS}" --to "${{ matrix.filename }}" -i ../plugins/Makefile 
+      # - name: Update Makefile
+      #   run: cd replace &&
+      #     git reset --hard ad148213e50e13f7a46a357e6e5bb451216fa501 &&
+      #     ./replace.py --from "\${OS}" --to "${{ matrix.filename }}" -i ../plugins/Makefile
 
-            - name: Build Plugins
-              run: cd plugins && OS="${{ matrix.filename }}" make package.platform_dependent
-            - name: Upload a Build Artifact
-              uses: actions/upload-artifact@v4
-              with:
-                name: ${{ matrix.target }}
-                path: plugins/release/**
+      - name: Build Plugins
+        run: cd plugins && OS="${{ matrix.filename }}" make package.platform_dependent
+      - name: Upload a Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target }}
+          path: plugins/release/**
