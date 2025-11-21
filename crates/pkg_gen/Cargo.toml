@@ -19,7 +19,6 @@ nitro_core = { workspace = true }
 nitro_net = { workspace = true }
 nitro_pkg = { workspace = true }
 nitro_shared = { workspace = true }
-regex = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 tokio = { workspace = true }

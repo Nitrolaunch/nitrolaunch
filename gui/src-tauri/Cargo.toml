@@ -16,7 +16,6 @@ rust-version.workspace = true
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-always_send = { workspace = true }
 anyhow = { workspace = true }
 async-trait = { workspace = true }
 itertools = { workspace = true }

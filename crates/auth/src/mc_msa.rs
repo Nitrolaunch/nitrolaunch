@@ -4,7 +4,6 @@
 use std::collections::HashMap;
 use std::fmt::Debug;
 
-use nutype::nutype;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -16,11 +15,15 @@ const XBOX_USER_AUTHENTICATE: &str = "https://user.auth.xboxlive.com/user/authen
 const XBOX_XSTS_AUTHORIZE: &str = "https://xsts.auth.xboxlive.com/xsts/authorize";
 
 /// Represents a Minecraft access token
-#[nutype(
-	validate(not_empty),
-	derive(Clone, PartialEq, Eq, Hash, Deserialize, Serialize, AsRef, Into)
-)]
+#[derive(Clone, PartialEq, Eq, Hash, Deserialize, Serialize)]
 pub struct MinecraftAccessToken(String);
+
+impl MinecraftAccessToken {
+	/// Gets the internal access token
+	pub fn into_inner(self) -> String {
+		self.0
+	}
+}
 
 impl Debug for MinecraftAccessToken {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

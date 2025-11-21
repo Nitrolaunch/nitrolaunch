@@ -21,7 +21,6 @@ bytes = { workspace = true }
 cfg-match = { workspace = true }
 hex = { workspace = true }
 nitro_shared = { workspace = true }
-nutype = { workspace = true }
 oauth2 = { workspace = true }
 rand = { workspace = true }
 rand_chacha = { workspace = true }

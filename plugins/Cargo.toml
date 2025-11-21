@@ -145,7 +145,6 @@ nitro_pkg = { workspace = true }
 nitro_pkg_gen = { workspace = true }
 nitro_shared = { workspace = true }
 rand = { workspace = true }
-regex = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 shellexpand = { workspace = true }

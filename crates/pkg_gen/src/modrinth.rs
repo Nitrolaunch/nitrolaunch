@@ -462,15 +462,6 @@ fn get_supported_sides(project: &Project) -> Vec<Side> {
 
 /// Cleanup a version name to remove things like loaders
 pub fn cleanup_version_name(version: &str) -> String {
-	// static MODLOADER_REGEX: OnceLock<Regex> = OnceLock::new();
-	// let regex = MODLOADER_REGEX.get_or_init(|| {
-	// 	RegexBuilder::new("(-|_|\\+)?(fabric|forge|quilt)")
-	// 		.case_insensitive(true)
-	// 		.build()
-	// 		.expect("Failed to create regex")
-	// });
-	// let version = regex.replace_all(version, "");
-
 	version.replace("+", "-")
 }
 

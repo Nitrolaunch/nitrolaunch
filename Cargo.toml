@@ -65,7 +65,6 @@ schema = [
 ]
 
 [workspace.dependencies]
-always_send = "0.1.1"
 anyhow = "1.0.86"
 async-trait = "0.1.73"
 base64 = "0.22.0"
@@ -98,12 +97,10 @@ nitro_plugin = { path = "crates/plugin", version = "0.27.0", default-features = 
 	"host",
 ] }
 nitro_shared = { path = "crates/shared", version = "0.27.0" }
-nutype = { version = "0.4.0", features = ["serde"] }
 oauth2 = "4.4.2"
 pin-project-lite = "0.2.16"
 rand = "0.8.5"
 rand_chacha = "0.3.1"
-regex = "1.10.5"
 reqwest = { version = "0.12.15", default-features = false, features = [
 	"json",
 	"rustls-tls",
@@ -126,7 +123,11 @@ termimad = "0.31.1"
 thiserror = "1.0.61"
 tokio = { version = "1.37.0", features = ["rt-multi-thread"] }
 version-compare = "0.2.0"
-wasmtime = "39.0.0"
+wasmtime = { version = "39.0.0", default-features = false, features = [
+	"runtime",
+	"cranelift",
+	"async",
+] }
 which = "6.0.1"
 zip = { version = "3.0.0", default-features = false, features = ["deflate"] }
 
