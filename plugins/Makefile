@@ -16,7 +16,7 @@ package.cross_platform: build.cross_platform
 	@cp plugins/lang/plugin.json release/lang-universal.json
 
 build.cross_platform: build.weld
-	@cargo build -p nitro_plugin_args --release --target wasm32-unknown-unknown
+	@cargo build -p "nitro_plugin_*" --release --target wasm32-unknown-unknown
 
 package.platform_dependent: build.platform_dependent package_zips.platform_dependent
 
