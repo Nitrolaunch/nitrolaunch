@@ -101,68 +101,82 @@ install.args:
 
 install.auto_mcs:
 	@cargo install --path . --bin nitro_plugin_auto_mcs --offline
-	@cat plugins/auto_mcs/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/auto_mcs.json
+	@mkdir -p ~/.local/share/nitro/plugins/auto_mcs
+	@cat plugins/auto_mcs/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/auto_mcs/plugin.json
 
 install.automate:
 	@cargo install --path . --bin nitro_plugin_automate --offline
-	@cat plugins/automate/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/automate.json
+	@mkdir -p ~/.local/share/nitro/plugins/automate
+	@cat plugins/automate/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/automate/plugin.json
 
 install.backup:
 	@cargo install --path . --bin nitro_plugin_backup --offline
-	@cat plugins/backup/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/backup.json
+	@mkdir -p ~/.local/share/nitro/plugins/backup
+	@cat plugins/backup/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/backup/plugin.json
 
 install.beet:
 	@cargo install --path . --bin nitro_plugin_beet --offline
-	@cat plugins/beet/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/beet.json
+	@mkdir -p ~/.local/share/nitro/plugins/beet
+	@cat plugins/beet/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/beet/plugin.json
 
 install.better_jsons:
 	@cargo install --path . --bin nitro_plugin_better_jsons --offline
-	@cat plugins/better_jsons/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/better_jsons.json
+	@mkdir -p ~/.local/share/nitro/plugins/better_jsons
+	@cat plugins/better_jsons/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/better_jsons/plugin.json
 
 install.cleanup:
 	@cargo install --path . --bin nitro_plugin_cleanup --offline
-	@cat plugins/cleanup/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/cleanup.json
+	@mkdir -p ~/.local/share/nitro/plugins/cleanup
+	@cat plugins/cleanup/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/cleanup/plugin.json
 
 install.config_split:
 	@cargo install --path . --bin nitro_plugin_config_split --offline
-	@cat plugins/config_split/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/config_split.json
+	@mkdir -p ~/.local/share/nitro/plugins/config_split
+	@cat plugins/config_split/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/config_split/plugin.json
 
 install.curseforge_api:
 	@cargo install --path . --bin nitro_plugin_curseforge_api --offline
-	@cat plugins/curseforge_api/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/curseforge_api.json
+	@mkdir -p ~/.local/share/nitro/plugins/curseforge_api
+	@cat plugins/curseforge_api/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/curseforge_api/plugin.json
 
 install.custom_files:
 	@cargo install --path . --bin nitro_plugin_custom_files --offline
-	@cat plugins/custom_files/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/custom_files.json
+	@mkdir -p ~/.local/share/nitro/plugins/custom_files
+	@cat plugins/custom_files/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/custom_files/plugin.json
 
 install.docs:
 	@cargo install --path . --bin nitro_plugin_docs --offline
-	@cat plugins/docs/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/docs.json
+	@mkdir -p ~/.local/share/nitro/plugins/docs
+	@cat plugins/docs/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/docs/plugin.json
 	
 install.extra_versions:
-	@cp plugins/extra_versions/plugin.json ~/.local/share/nitro/plugins/extra_versions.json
+	@cp -r plugins/extra_versions ~/.local/share/nitro/plugins
 
 install.fabric_quilt:
 	@cargo install --path . --bin nitro_plugin_fabric_quilt --offline
-	@cat plugins/fabric_quilt/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/fabric_quilt.json
+	@mkdir -p ~/.local/share/nitro/plugins/fabric_quilt
+	@cat plugins/fabric_quilt/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/fabric_quilt/plugin.json
 
 install.forge:
 	@cargo install --path . --bin nitro_plugin_forge --offline
-	@cat plugins/forge/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/forge.json
+	@mkdir -p ~/.local/share/nitro/plugins/forge
+	@cat plugins/forge/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/forge/plugin.json
 
 install.gamepad:
 	@cp -r plugins/gamepad ~/.local/share/nitro/plugins
 
 install.gen_pkg:
 	@cargo install --path . --bin nitro_plugin_gen_pkg --offline
-	@cat plugins/gen_pkg/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/gen_pkg.json
+	@mkdir -p ~/.local/share/nitro/plugins/gen_pkg
+	@cat plugins/gen_pkg/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/gen_pkg/plugin.json
 
 install.glfw_fix:
 	@cargo install --path . --bin nitro_plugin_glfw_fix --offline
-	@cat plugins/glfw_fix/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/glfw_fix.json
+	@mkdir -p ~/.local/share/nitro/plugins/glfw_fix
+	@cat plugins/glfw_fix/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/glfw_fix/plugin.json
 
 install.lang:
-	@cp plugins/lang/plugin.json ~/.local/share/nitro/plugins/lang.json
+	@cp -r plugins/lang ~/.local/share/nitro/plugins
 
 install.modrinth:
 	@cargo install --path . --bin nitro_plugin_modrinth --offline
@@ -171,7 +185,8 @@ install.modrinth:
 
 install.modrinth_api:
 	@cargo install --path . --bin nitro_plugin_modrinth_api --offline
-	@cat plugins/modrinth_api/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/modrinth_api.json
+	@mkdir -p ~/.local/share/nitro/plugins/modrinth_api
+	@cat plugins/modrinth_api/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/modrinth_api/plugin.json
 
 install.mojang_transfer:
 	@cargo build -p nitro_plugin_mojang_transfer --release --target wasm32-unknown-unknown
@@ -180,7 +195,8 @@ install.mojang_transfer:
 
 install.multimc_transfer:
 	@cargo install --path . --bin nitro_plugin_multimc_transfer --offline
-	@cat plugins/multimc_transfer/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/multimc_transfer.json
+	@mkdir -p ~/.local/share/nitro/plugins/multimc_transfer
+	@cat plugins/multimc_transfer/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/multimc_transfer/plugin.json
 
 install.multiply:
 	@cargo build -p nitro_plugin_multiply --release --target wasm32-unknown-unknown
@@ -189,19 +205,23 @@ install.multiply:
 
 install.nitro_transfer:
 	@cargo install --path . --bin nitro_plugin_nitro_transfer --offline
-	@cat plugins/nitro_transfer/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/nitro_transfer.json
+	@mkdir -p ~/.local/share/nitro/plugins/nitro_transfer
+	@cat plugins/nitro_transfer/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/nitro_transfer/plugin.json
 
 install.options:
 	@cargo install --path . --bin nitro_plugin_options --offline
-	@cat plugins/options/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/options.json
+	@mkdir -p ~/.local/share/nitro/plugins/options
+	@cat plugins/options/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/options/plugin.json
 
 install.packhost:
 	@cargo install --path . --bin nitro_plugin_packhost --offline
-	@cat plugins/packhost/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/packhost.json
+	@mkdir -p ~/.local/share/nitro/plugins/packhost
+	@cat plugins/packhost/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/packhost/plugin.json
 
 install.paper:
 	@cargo install --path . --bin nitro_plugin_paper --offline
-	@cat plugins/paper/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/paper.json
+	@mkdir -p ~/.local/share/nitro/plugins/paper
+	@cat plugins/paper/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/paper/plugin.json
 
 install.template_share:
 	@cargo install --path . --bin nitro_plugin_template_share --offline
@@ -212,7 +232,8 @@ install.template_share:
 
 install.server_restart:
 	@cargo install --path . --bin nitro_plugin_server_restart --offline
-	@cat plugins/server_restart/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/server_restart.json
+	@mkdir -p ~/.local/share/nitro/plugins/server_restart
+	@cat plugins/server_restart/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/server_restart/plugin.json
 
 install.smithed:
 	@cargo install --path . --bin nitro_plugin_smithed --offline
@@ -221,15 +242,18 @@ install.smithed:
 
 install.smithed_api:
 	@cargo install --path . --bin nitro_plugin_smithed_api --offline
-	@cat plugins/smithed_api/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/smithed_api.json
+	@mkdir -p ~/.local/share/nitro/plugins/smithed_api
+	@cat plugins/smithed_api/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/smithed_api/plugin.json
 
 install.sponge:
 	@cargo install --path . --bin nitro_plugin_sponge --offline
-	@cat plugins/sponge/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/sponge.json
+	@mkdir -p ~/.local/share/nitro/plugins/sponge
+	@cat plugins/sponge/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/sponge/plugin.json
 
 install.stats:
 	@cargo install --path . --bin nitro_plugin_stats --offline
-	@cat plugins/stats/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/stats.json
+	@mkdir -p ~/.local/share/nitro/plugins/stats
+	@cat plugins/stats/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/stats/plugin.json
 
 install.webtools:
 	@cargo install --path . --bin nitro_plugin_webtools --offline
@@ -243,4 +267,5 @@ install.weld:
 
 install.xmcl_transfer:
 	@cargo install --path . --bin nitro_plugin_xmcl_transfer --offline
-	@cat plugins/xmcl_transfer/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/xmcl_transfer.json
+	@mkdir -p ~/.local/share/nitro/plugins/xmcl_transfer
+	@cat plugins/xmcl_transfer/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/xmcl_transfer/plugin.json
