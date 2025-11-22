@@ -5,7 +5,7 @@ use nitro_config::instance::{
 	make_valid_instance_id, Args, CommonInstanceConfig, InstanceConfig, LaunchArgs, LaunchConfig,
 };
 use nitro_plugin::{
-	api::wasm::{fs, WASMPlugin},
+	api::wasm::{fs, sys::get_os_string, WASMPlugin},
 	hook::hooks::MigrateInstancesResult,
 	nitro_wasm_plugin,
 };
@@ -19,15 +19,16 @@ nitro_wasm_plugin!(main, "mojang_transfer");
 
 fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 	plugin.migrate_instances(|arg| {
-		#[cfg(target_os = "linux")]
-		let data_folder = format!("{}/.local/share/.minecraft", std::env::var("HOME")?);
-		#[cfg(target_os = "windows")]
-		let data_folder = format!("{}/Roaming/.minecraft", std::env::var("%APPDATA%")?);
-		#[cfg(target_os = "macos")]
-		let data_folder = format!(
-			"{}/Library/Application Support/.minecraft",
-			std::env::var("HOME")?
-		);
+		let os = get_os_string();
+		let data_folder = match os {
+			"linux" => format!("{}/.local/share/.minecraft", std::env::var("HOME")?),
+			"windows" => format!("{}/Roaming/.minecraft", std::env::var("%APPDATA%")?),
+			"macos" => format!(
+				"{}/Library/Application Support/.minecraft",
+				std::env::var("HOME")?
+			),
+			_ => bail!("Unsupported OS"),
+		};
 
 		let data_folder = PathBuf::from(data_folder);
 		let launcher_profiles = data_folder.join("launcher_profiles.json");

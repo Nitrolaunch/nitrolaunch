@@ -4,7 +4,11 @@ pub mod loader;
 use std::{error::Error, io::Write, marker::PhantomData, path::PathBuf, sync::Arc, time::Instant};
 
 use anyhow::{bail, Context};
-use nitro_shared::{later::Later, output::NitroOutput};
+use nitro_shared::{
+	later::Later,
+	output::NitroOutput,
+	util::{ARCH_STRING, OS_STRING},
+};
 use tokio::sync::Mutex;
 use wasmtime::{AsContext, AsContextMut, Caller, Linker, Memory, Store, TypedFunc};
 
@@ -410,6 +414,37 @@ fn create_imports(linker: &mut Linker<State>) -> anyhow::Result<()> {
 		result.tuple()
 	};
 
+	let get_os_string = move |mut caller: Caller<State>| {
+		let state = caller.data_mut();
+		let memory = state.memory.get_clone();
+		let alloc_fn = state.alloc_fn.get_clone();
+
+		let ptr = alloc_fn.call(&mut caller, OS_STRING.len() as u32).unwrap();
+		let _ = memory.write(&mut caller, ptr as usize, OS_STRING.as_bytes());
+
+		(ptr, OS_STRING.len() as u32)
+	};
+
+	let get_arch_string = move |mut caller: Caller<State>| {
+		let state = caller.data_mut();
+		let memory = state.memory.get_clone();
+		let alloc_fn = state.alloc_fn.get_clone();
+
+		let ptr = alloc_fn
+			.call(&mut caller, ARCH_STRING.len() as u32)
+			.unwrap();
+		let _ = memory.write(&mut caller, ptr as usize, ARCH_STRING.as_bytes());
+
+		(ptr, ARCH_STRING.len() as u32)
+	};
+
+	let get_pointer_width = move || {
+		#[cfg(target_pointer_width = "32")]
+		return 32;
+		#[cfg(target_pointer_width = "64")]
+		return 64;
+	};
+
 	linker.func_wrap("nitro", "get_custom_config", get_custom_config)?;
 	linker.func_wrap("nitro", "get_data_dir", get_data_dir)?;
 	linker.func_wrap("nitro", "get_config_dir", get_config_dir)?;
@@ -422,6 +457,9 @@ fn create_imports(linker: &mut Linker<State>) -> anyhow::Result<()> {
 	linker.func_wrap("nitro", "create_dir_all", create_dir_all)?;
 	linker.func_wrap("nitro", "create_leading_dirs", create_leading_dirs)?;
 	linker.func_wrap("nitro", "remove_dir", remove_dir)?;
+	linker.func_wrap("nitro", "get_os_string", get_os_string)?;
+	linker.func_wrap("nitro", "get_arch_string", get_arch_string)?;
+	linker.func_wrap("nitro", "get_pointer_width", get_pointer_width)?;
 
 	Ok(())
 }

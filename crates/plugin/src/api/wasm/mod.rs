@@ -1,9 +1,11 @@
 /// ABI for host functions that the plugin can call
 mod abi;
-/// General utilities for the API
-pub mod util;
 /// Filesystem access
 pub mod fs;
+/// System access
+pub mod sys;
+/// General utilities for the API
+pub mod util;
 
 use anyhow::{bail, Context};
 use serde::de::DeserializeOwned;

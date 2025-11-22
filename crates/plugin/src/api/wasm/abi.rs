@@ -24,4 +24,7 @@ extern "C" {
 	pub fn create_leading_dirs(path: u32, path_len: u32) -> PtrAndLength;
 	/// Returns error pointer
 	pub fn remove_dir(path: u32, path_len: u32) -> PtrAndLength;
+	pub fn get_os_string() -> PtrAndLength;
+	pub fn get_arch_string() -> PtrAndLength;
+	pub fn get_pointer_width() -> u32;
 }
