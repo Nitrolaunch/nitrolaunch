@@ -1,0 +1,20 @@
+{
+	"name": "Mojang Transfer",
+	"description": "Instance transfer for the Official Launcher",
+	"protocol_version": 3,
+	"hooks": {
+		"add_instance_transfer_formats": {
+			"constant": [
+				{
+					"id": "mojang",
+					"name": "Mojang",
+					"color": "#6cc349",
+					"migrate": {}
+				}
+			]
+		},
+		"migrate_instances": {
+			"wasm": true
+		}
+	}
+}

@@ -65,6 +65,7 @@ fn main() {
 	add_file!(zip, "plugins/plugins/lang.md");
 	add_file!(zip, "plugins/plugins/modrinth.md");
 	add_file!(zip, "plugins/plugins/modrinth_api.md");
+	add_file!(zip, "plugins/plugins/mojang_transfer.md");
 	add_file!(zip, "plugins/plugins/multimc_transfer.md");
 	add_file!(zip, "plugins/plugins/options.md");
 	add_file!(zip, "plugins/plugins/template_share.md");

@@ -6,11 +6,13 @@ package.cross_platform: build.cross_platform
 	@mkdir -p release
 
 	@rm -f release/args-universal.zip
+	@rm -f release/mojang_transfer-universal.zip
 	@rm -f release/multiply-universal.zip
 	@rm -f release/weld-universal.zip
 
-	@zip -j release/args-universal.zip ../target/wasm32-unknown-unknown/release/nitro_plugin_args.wasm plugins/args/plugin.json
-	@zip -j release/multiply-universal.zip ../target/wasm32-unknown-unknown/release/nitro_plugin_multiply.wasm plugins/multiply/plugin.json
+	@zip -j release/args-universal.zip plugin.wasm=../target/wasm32-unknown-unknown/release/nitro_plugin_args.wasm plugins/args/plugin.json
+	@zip -j release/mojang_transfer-universal.zip plugin.wasm=../target/wasm32-unknown-unknown/release/nitro_plugin_mojang_transfer.wasm plugins/mojang_transfer/plugin.json
+	@zip -j release/multiply-universal.zip plugin.wasm=../target/wasm32-unknown-unknown/release/nitro_plugin_multiply.wasm plugins/multiply/plugin.json
 
 	@zip -j release/gamepad-universal.zip plugins/gamepad/plugin.json plugins/gamepad/gamepad.js
 	@zip -j release/weld-universal.zip plugins/weld/plugin.json plugins/weld/weld.pyz
@@ -170,6 +172,11 @@ install.modrinth:
 install.modrinth_api:
 	@cargo install --path . --bin nitro_plugin_modrinth_api --offline
 	@cat plugins/modrinth_api/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/modrinth_api.json
+
+install.mojang_transfer:
+	@cargo build -p nitro_plugin_mojang_transfer --release --target wasm32-unknown-unknown
+	@cp -r plugins/mojang_transfer ~/.local/share/nitro/plugins
+	@cp -r ../target/wasm32-unknown-unknown/release/nitro_plugin_mojang_transfer.wasm ~/.local/share/nitro/plugins/mojang_transfer/plugin.wasm
 
 install.multimc_transfer:
 	@cargo install --path . --bin nitro_plugin_multimc_transfer --offline

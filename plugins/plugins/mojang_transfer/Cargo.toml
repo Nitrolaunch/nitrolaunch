@@ -1,0 +1,20 @@
+[package]
+name = "nitro_plugin_mojang_transfer"
+version = "0.1.0"
+rust-version.workspace = true
+edition.workspace = true
+
+[lib]
+name = "nitro_plugin_mojang_transfer"
+path = "lib.rs"
+crate-type = ["cdylib"]
+
+[dependencies]
+anyhow = { workspace = true }
+nitro_config = { workspace = true }
+nitro_plugin = { version = "0.27.0", path = "../../../crates/plugin", default-features = false, features = [
+	"wasm_api",
+] }
+nitro_shared = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }

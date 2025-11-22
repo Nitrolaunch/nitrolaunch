@@ -1,5 +1,5 @@
 use std::{
-	collections::{HashMap, HashSet},
+	collections::HashMap,
 	fs::File,
 	path::{Path, PathBuf},
 };
@@ -13,7 +13,7 @@ use nitro_plugin::{
 };
 use nitro_shared::{addon::AddonKind, loaders::Loader, versions::MinecraftVersionDeser, Side};
 use nitrolaunch::config_crate::{
-	instance::{CommonInstanceConfig, InstanceConfig},
+	instance::{make_valid_instance_id, CommonInstanceConfig, InstanceConfig},
 	package::PackageConfigDeser,
 };
 use serde::{Deserialize, Serialize};
@@ -168,26 +168,7 @@ fn main() -> anyhow::Result<()> {
 			let mut config =
 				create_config(cfg, &mmc_pack, Vec::new()).context("Failed to create config")?;
 
-			let mut id = config
-				.name
-				.as_ref()
-				.context("Instance has no name")?
-				.to_lowercase()
-				.replace(" ", "-")
-				.replace("_", "-");
-			let mut to_remove = HashSet::new();
-			for (i, c) in id.chars().enumerate() {
-				if !c.is_ascii() {
-					to_remove.insert(i);
-				}
-			}
-
-			let mut i = 0;
-			id.retain(|_| {
-				let out = !to_remove.contains(&i);
-				i += 1;
-				out
-			});
+			let id = make_valid_instance_id(config.name.as_ref().context("Instance has no name")?);
 
 			config.common.game_dir = Some(mc_dir.to_string_lossy().to_string());
 
