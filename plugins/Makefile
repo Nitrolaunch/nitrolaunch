@@ -6,6 +6,9 @@ package.cross_platform: build.cross_platform
 	@mkdir -p release
 
 	@rm -f release/args-universal.zip
+	@rm -f release/extra_versions-universal.zip
+	@rm -f release/gamepad-universal.zip
+	@rm -f release/lang-universal.zip
 	@rm -f release/mojang_transfer-universal.zip
 	@rm -f release/multiply-universal.zip
 	@rm -f release/weld-universal.zip
