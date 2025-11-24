@@ -177,6 +177,13 @@ impl PluginManager {
 		// Get the path for the manifest
 		let path = paths.plugins.join(format!("{}.json", plugin.id));
 		let (path, plugin_dir) = if path.exists() {
+			o.display(
+				MessageContents::Warning(format!(
+					"Plugin '{}' is using outdated JSON-only format",
+					plugin.id
+				)),
+				MessageLevel::Important,
+			);
 			(path, None)
 		} else {
 			let dir = paths.plugins.join(&plugin.id);

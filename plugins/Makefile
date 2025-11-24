@@ -14,10 +14,10 @@ package.cross_platform: build.cross_platform
 	@zip -j release/mojang_transfer-universal.zip plugin.wasm=../target/wasm32-unknown-unknown/release/nitro_plugin_mojang_transfer.wasm plugins/mojang_transfer/plugin.json
 	@zip -j release/multiply-universal.zip plugin.wasm=../target/wasm32-unknown-unknown/release/nitro_plugin_multiply.wasm plugins/multiply/plugin.json
 
+	@zip -j release/extra_versions-universal.zip plugins/extra_versions/plugin.json
 	@zip -j release/gamepad-universal.zip plugins/gamepad/plugin.json plugins/gamepad/gamepad.js
+	@zip -j release/lang-universal.zip plugins/lang/plugin.json
 	@zip -j release/weld-universal.zip plugins/weld/plugin.json plugins/weld/weld.pyz
-	@cp plugins/extra_versions/plugin.json release/extra_versions-universal.json
-	@cp plugins/lang/plugin.json release/lang-universal.json
 
 build.cross_platform: build.weld
 	@cargo build -p "nitro_plugin_*" --release --target wasm32-unknown-unknown
