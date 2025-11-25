@@ -49,6 +49,7 @@ members = [
 	"crates/shared",
 	"crates/tools",
 	"gui/src-tauri",
+	"gui2",
 	"plugins",
 	"plugins/plugins/args",
 	"plugins/plugins/mojang_transfer",
