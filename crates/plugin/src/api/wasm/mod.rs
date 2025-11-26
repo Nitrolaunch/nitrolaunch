@@ -37,7 +37,7 @@ macro_rules! nitro_wasm_plugin {
 
 				if let Err(e) = result {
 					unsafe {
-						$crate::api::wasm::_set_hook_result(e.to_string());
+						$crate::api::wasm::_set_hook_result(format!("{e:?}"));
 					}
 					1
 				} else {

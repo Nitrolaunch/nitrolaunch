@@ -3546,7 +3546,6 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "nitro_config",
- "nitro_core",
  "nitro_plugin",
  "nitro_shared",
  "zip 3.0.0",

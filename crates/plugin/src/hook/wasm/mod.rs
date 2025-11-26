@@ -5,7 +5,7 @@ use std::{marker::PhantomData, path::PathBuf, sync::Arc, time::Instant};
 
 use anyhow::{bail, Context};
 use nitro_shared::{
-	output::NitroOutput,
+	output::{MessageContents, MessageLevel, NitroOutput},
 	util::{ARCH_STRING, OS_STRING},
 };
 use tokio::sync::Mutex;
@@ -13,12 +13,17 @@ use wasmtime::{
 	component::{HasSelf, Linker},
 	Store,
 };
-use wasmtime_wasi::{ResourceTable, WasiCtx, WasiCtxBuilder, WasiCtxView, WasiView};
+use wasmtime_wasi::{
+	DirPerms, FilePerms, ResourceTable, WasiCtx, WasiCtxBuilder, WasiCtxView, WasiView,
+};
 
-use crate::hook::{
-	call::{HookCallArg, HookHandle},
-	wasm::loader::WASMLoader,
-	Hook,
+use crate::{
+	hook::{
+		call::{HookCallArg, HookHandle},
+		wasm::loader::WASMLoader,
+		Hook,
+	},
+	plugin_debug_enabled,
 };
 
 #[allow(missing_docs)]
@@ -71,9 +76,20 @@ pub(super) struct WASMHookHandle<H: Hook> {
 
 impl<H: Hook> WASMHookHandle<H> {
 	/// Runs this hook to completion
-	pub async fn run(&mut self) -> anyhow::Result<()> {
+	pub async fn run(&mut self, o: &mut impl NitroOutput) -> anyhow::Result<()> {
 		if self.result.is_some() {
 			return Ok(());
+		}
+
+		if plugin_debug_enabled() {
+			o.display(
+				MessageContents::Simple(format!(
+					"Running hook '{}' on plugin '{}'",
+					H::get_name_static(),
+					self.plugin_id
+				)),
+				MessageLevel::Important,
+			);
 		}
 
 		let mut start_time = if std::env::var("NITRO_PLUGIN_PROFILE").is_ok_and(|x| x == "1") {
@@ -99,7 +115,15 @@ impl<H: Hook> WASMHookHandle<H> {
 
 		let mut linker = Linker::new(&engine);
 
-		let wasi_ctx = WasiCtxBuilder::new().inherit_stdio().build();
+		let mut wasi_ctx = WasiCtxBuilder::new();
+		let wasi_ctx = wasi_ctx.inherit_stdio().inherit_env().inherit_network();
+
+		#[cfg(not(target_os = "windows"))]
+		let wasi_ctx = wasi_ctx.preopened_dir("/", "/", DirPerms::all(), FilePerms::all())?;
+		#[cfg(target_os = "windows")]
+		let wasi_ctx = wasi_ctx.preopened_dir("C:\\", "C:\\", DirPerms::all(), FilePerms::all())?;
+
+		let wasi_ctx = wasi_ctx.build();
 		wasmtime_wasi::p2::add_to_linker_async(&mut linker)
 			.context("Failed to add WASI functions to linker")?;
 

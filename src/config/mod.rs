@@ -153,7 +153,18 @@ impl Config {
 		match results {
 			Ok(mut results) => {
 				while let Some(result) = results.next() {
-					let result = skip_fail!(result.result(o).await);
+					let result = match result.result(o).await {
+						Ok(result) => result,
+						Err(e) => {
+							o.display(
+								MessageContents::Error(format!(
+									"Failed to add instances from plugin: {e:?}"
+								)),
+								MessageLevel::Important,
+							);
+							continue;
+						}
+					};
 					for (id, mut instance) in result.into_iter() {
 						if config.instances.contains_key(&id) {
 							continue;
@@ -176,7 +187,18 @@ impl Config {
 		match results {
 			Ok(mut results) => {
 				while let Some(result) = results.next() {
-					let result = skip_fail!(result.result(o).await);
+					let result = match result.result(o).await {
+						Ok(result) => result,
+						Err(e) => {
+							o.display(
+								MessageContents::Error(format!(
+									"Failed to add templates from plugin: {e:?}"
+								)),
+								MessageLevel::Important,
+							);
+							continue;
+						}
+					};
 					for (id, mut template) in result.into_iter() {
 						if config.templates.contains_key(&id) {
 							continue;

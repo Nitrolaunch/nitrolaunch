@@ -9,12 +9,12 @@ use itertools::Itertools;
 use nitrolaunch::config::modifications::{apply_modifications_and_write, ConfigModification};
 use nitrolaunch::config::Config;
 use nitrolaunch::config_crate::instance::{CommonInstanceConfig, InstanceConfig};
-use nitrolaunch::core::util::json::to_string_json;
 use nitrolaunch::instance::transfer::load_formats;
 use nitrolaunch::instance::update::InstanceUpdateContext;
 use nitrolaunch::instance::Instance;
 use nitrolaunch::io::lock::Lockfile;
 use nitrolaunch::shared::id::InstanceID;
+use nitrolaunch::shared::util::to_string_json;
 use nitrolaunch::shared::versions::{MinecraftLatestVersion, MinecraftVersionDeser};
 
 use nitrolaunch::instance::launch::LaunchSettings;

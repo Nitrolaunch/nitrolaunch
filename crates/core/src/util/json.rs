@@ -1,4 +1,3 @@
-use serde::Serialize;
 use serde_json::{json, Value};
 
 /// A JSON map of strings to values
@@ -17,13 +16,4 @@ pub fn format_json(text: &str) -> Result<String, serde_json::Error> {
 	let into: Value = serde_json::from_str(text)?;
 	let out = serde_json::to_string_pretty(&into)?;
 	Ok(out)
-}
-
-/// `to_string` using the serde_json representation without quotes
-pub fn to_string_json(v: &impl Serialize) -> String {
-	serde_json::to_string(v)
-		.unwrap()
-		.trim_start_matches("\"")
-		.trim_end_matches("\"")
-		.to_string()
 }

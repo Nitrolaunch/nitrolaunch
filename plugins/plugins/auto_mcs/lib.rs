@@ -2,12 +2,12 @@ use std::{collections::HashMap, fs::File, path::PathBuf};
 
 use anyhow::Context;
 use nitro_config::instance::{make_valid_instance_id, CommonInstanceConfig, InstanceConfig};
-use nitro_core::util::json::to_string_json;
 use nitro_plugin::{
 	api::wasm::{sys::get_os_string, WASMPlugin},
 	hook::hooks::ImportInstanceResult,
 	nitro_wasm_plugin,
 };
+use nitro_shared::util::to_string_json;
 use nitro_shared::{id::InstanceID, loaders::Loader, versions::MinecraftVersionDeser, Side};
 use zip::ZipArchive;
 

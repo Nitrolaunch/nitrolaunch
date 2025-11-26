@@ -153,7 +153,7 @@ impl<H: Hook> HookHandle<H> {
 					.await?
 			}
 			HookHandleInner::WASM(inner) => {
-				inner.run().await?;
+				inner.run(o).await?;
 
 				true
 			}

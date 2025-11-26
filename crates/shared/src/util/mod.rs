@@ -261,6 +261,15 @@ pub fn merge(a: &mut Value, b: Value) {
 	*a = b;
 }
 
+/// `to_string` using the serde_json representation without quotes
+pub fn to_string_json(v: &impl Serialize) -> String {
+	serde_json::to_string(v)
+		.unwrap()
+		.trim_start_matches("\"")
+		.trim_end_matches("\"")
+		.to_string()
+}
+
 /// Utility enum for deserialization that lets you do a list that can be one item
 /// without the braces
 #[derive(Deserialize, Debug, Clone, Eq)]
