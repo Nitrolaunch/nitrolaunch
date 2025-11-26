@@ -32,7 +32,7 @@ jobs:
       - name: Build plugins
         run: cd plugins && make package.cross_platform
       - name: Debug
-        run: ls target/wasm32-wasip2
+        run: ls target/wasm32-wasip2/release
       - name: Upload a Build Artifact
         uses: actions/upload-artifact@v4
         with:
