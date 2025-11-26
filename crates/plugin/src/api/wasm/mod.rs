@@ -1,7 +1,7 @@
-/// ABI for host functions that the plugin can call
-mod abi;
-/// Filesystem access
-pub mod fs;
+#![allow(missing_docs)]
+
+/// Interfacing code
+pub mod interface;
 /// System access
 pub mod sys;
 /// General utilities for the API
@@ -12,44 +12,45 @@ use serde::de::DeserializeOwned;
 
 use crate::hook::Hook;
 
+pub use interface::export;
+pub use interface::Guest;
+
 /// Static where the hook result data is placed
-pub static mut HOOK_RESULT: String = String::new();
+static mut HOOK_RESULT: String = String::new();
 
 /// Generates the exported functions for the entrypoint to your plugin
 #[macro_export]
 macro_rules! nitro_wasm_plugin {
 	($func:ident, $id: literal) => {
-		/// Returns a 0 on success, and a 1 on error
-		#[no_mangle]
-		pub extern "C" fn nitro_run_plugin(
-			hook: *const u8,
-			hook_len: usize,
-			arg: *const u8,
-			arg_len: usize,
-			hook_version: u32,
-		) -> u32 {
-			let hook = unsafe { $crate::api::wasm::util::read_wasm_string(hook, hook_len) };
-			let arg = unsafe { $crate::api::wasm::util::read_wasm_string(arg, arg_len) };
+		struct ExportedWASMPlugin;
 
-			let mut plugin = $crate::api::wasm::WASMPlugin {
-				id: $id.to_string(),
-				hook,
-				arg,
-				hook_version,
-			};
+		impl $crate::api::wasm::Guest for ExportedWASMPlugin {
+			fn run_plugin(hook: String, arg: String, hook_version: u32) -> u32 {
+				let mut plugin = $crate::api::wasm::WASMPlugin {
+					id: $id.to_string(),
+					hook: hook.to_string(),
+					arg: arg.to_string(),
+					hook_version,
+				};
 
-			let result = $func(&mut plugin);
-			let result_code = if let Err(e) = result {
-				unsafe {
-					$crate::api::wasm::set_hook_result(e.to_string());
+				let result = $func(&mut plugin);
+
+				if let Err(e) = result {
+					unsafe {
+						$crate::api::wasm::_set_hook_result(e.to_string());
+					}
+					1
+				} else {
+					0
 				}
-				1
-			} else {
-				0
-			};
+			}
 
-			result_code
+			fn get_result() -> String {
+				unsafe { $crate::api::wasm::_get_hook_result() }
+			}
 		}
+
+		$crate::api::wasm::export!(ExportedWASMPlugin with_types_in $crate::api::wasm::interface);
 	};
 }
 
@@ -58,9 +59,9 @@ pub struct WASMPlugin {
 	/// The ID of the plugin
 	pub id: String,
 	/// The ID of the hook that is being run
-	pub hook: &'static str,
+	pub hook: String,
 	/// The argument to the hook that is being run
-	pub arg: &'static str,
+	pub arg: String,
 	/// The version of the hook that is being run
 	pub hook_version: u32,
 }
@@ -100,7 +101,7 @@ impl WASMPlugin {
 		if !H::get_takes_over() {
 			// Output result last as it will make the plugin runner stop listening
 			let serialized = serde_json::to_string(&result)?;
-			unsafe { set_hook_result(serialized) };
+			unsafe { _set_hook_result(serialized) };
 		}
 
 		Ok(())
@@ -108,11 +109,17 @@ impl WASMPlugin {
 
 	/// Deserialize the main plugin arg as the hook input
 	pub(crate) fn get_hook_arg<Arg: DeserializeOwned>(&self) -> anyhow::Result<Arg> {
-		serde_json::from_str(self.arg).context("Failed to deserialize hook argument")
+		serde_json::from_str(&self.arg).context("Failed to deserialize hook argument")
 	}
 }
 
 /// Sets the result / error of the plugin hook
-pub unsafe fn set_hook_result(result: String) {
+pub unsafe fn _set_hook_result(result: String) {
 	HOOK_RESULT = result;
+}
+
+/// Get the result from the hook that was run. Internal function only used by the ABI.
+pub unsafe fn _get_hook_result() -> String {
+	#[allow(static_mut_refs)]
+	HOOK_RESULT.clone()
 }

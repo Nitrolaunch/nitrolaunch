@@ -83,5 +83,3 @@ pub static PLUGIN_LIST_ENV: &str = "NITRO_PLUGIN_LIST";
 
 /// Filename for a plugin's WASM code
 pub static WASM_FILE_NAME: &str = "plugin.wasm";
-/// Function name for the main entrypoint to a WASM plugin's hooks
-pub static WASM_HOOK_ENTRYPOINT: &str = "nitro_run_plugin";

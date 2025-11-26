@@ -5,14 +5,14 @@ use std::{
 };
 
 use anyhow::{bail, Context};
-use wasmtime::{Engine, Module};
+use wasmtime::{component::Component, Config, Engine};
 
 /// Manager for loading and caching WASM efficiently
 pub struct WASMLoader {
 	/// Directory where WASM will be cached
 	cache_dir: PathBuf,
-	/// Map of plugin IDs to already loaded modules
-	module_cache: HashMap<String, Module>,
+	/// Map of plugin IDs to already loaded components
+	component_cache: HashMap<String, Component>,
 	/// The engine used for this loader
 	engine: Engine,
 }
@@ -20,17 +20,19 @@ pub struct WASMLoader {
 impl WASMLoader {
 	/// Creates a new WASMLoader with the given cache directory path
 	pub fn new(cache_dir: PathBuf) -> Self {
+		let engine =
+			Engine::new(Config::new().async_support(true)).expect("Failed to create engine");
 		Self {
 			cache_dir,
-			module_cache: HashMap::new(),
-			engine: Engine::default(),
+			component_cache: HashMap::new(),
+			engine,
 		}
 	}
 
 	/// Loads the WASM for a plugin
-	pub async fn load(&mut self, plugin_id: String, wasm_file: &Path) -> anyhow::Result<Module> {
-		if let Some(module) = self.module_cache.get(&plugin_id) {
-			return Ok(module.clone());
+	pub async fn load(&mut self, plugin_id: String, wasm_file: &Path) -> anyhow::Result<Component> {
+		if let Some(component) = self.component_cache.get(&plugin_id) {
+			return Ok(component.clone());
 		}
 
 		if !wasm_file.exists() {
@@ -68,17 +70,17 @@ impl WASMLoader {
 			}
 		};
 
-		// Recompile the module if needed, otherwise read the assembly from the file
-		let module = if recomp_needed {
+		// Recompile the component if needed, otherwise read the assembly from the file
+		let component = if recomp_needed {
 			let contents = tokio::fs::read(wasm_file)
 				.await
 				.context("Failed to read WASM file")?;
 			let engine = self.engine.clone();
-			let module = tokio::task::spawn_blocking(move || Module::new(&engine, contents))
+			let component = tokio::task::spawn_blocking(move || Component::new(&engine, contents))
 				.await
 				.context("Failed to compile WASM file")??;
 
-			if let Ok(bytes) = module.serialize() {
+			if let Ok(bytes) = component.serialize() {
 				if tokio::fs::write(cached_file_path, bytes).await.is_ok() {
 					if let Some(last_modified) = last_modified {
 						tokio::fs::write(timestamp_path, last_modified.to_string()).await?;
@@ -86,18 +88,18 @@ impl WASMLoader {
 				}
 			}
 
-			module
+			component
 		} else {
 			// SAFETY: None really
 			unsafe {
-				Module::deserialize_file(&self.engine, &cached_file_path)
+				Component::deserialize_file(&self.engine, &cached_file_path)
 					.context("Failed to deserialize compiled file")?
 			}
 		};
 
-		self.module_cache.insert(plugin_id, module.clone());
+		self.component_cache.insert(plugin_id, component.clone());
 
-		Ok(module)
+		Ok(component)
 	}
 
 	/// Gets this loader's engine

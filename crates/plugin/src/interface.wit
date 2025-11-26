@@ -1,0 +1,13 @@
+package nitro:plugin;
+
+world interface-world {
+	export run-plugin: func(hook: string, arg: string, hook-version: u32) -> u32;
+	export get-result: func() -> string;
+
+	import get-custom-config: func() -> option<string>;
+	import get-data-dir: func() -> string;
+	import get-config-dir: func() -> string;
+	import get-os-string: func() -> string;
+	import get-arch-string: func() -> string;
+	import get-pointer-width: func() -> u32;
+}

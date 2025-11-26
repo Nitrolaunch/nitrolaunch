@@ -41,6 +41,7 @@ def_matched_item! {
 	"netbsd": "netbsd";
 	"openbsd": "openbsd";
 	"unknown": "unknown";
+	"wasi": "wasi";
 }
 
 def_matched_item! {

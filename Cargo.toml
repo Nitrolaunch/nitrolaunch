@@ -129,6 +129,8 @@ wasmtime = { version = "39.0.0", default-features = false, features = [
 	"cranelift",
 	"async",
 ] }
+wasmtime-wasi = "39.0.1"
+wit-bindgen = "0.48.1"
 which = "6.0.1"
 zip = { version = "3.0.0", default-features = false, features = ["deflate"] }
 

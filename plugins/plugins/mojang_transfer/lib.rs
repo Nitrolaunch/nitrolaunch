@@ -5,7 +5,7 @@ use nitro_config::instance::{
 	make_valid_instance_id, Args, CommonInstanceConfig, InstanceConfig, LaunchArgs, LaunchConfig,
 };
 use nitro_plugin::{
-	api::wasm::{fs, sys::get_os_string, WASMPlugin},
+	api::wasm::{sys::get_os_string, WASMPlugin},
 	hook::hooks::MigrateInstancesResult,
 	nitro_wasm_plugin,
 };
@@ -20,7 +20,7 @@ nitro_wasm_plugin!(main, "mojang_transfer");
 fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 	plugin.migrate_instances(|arg| {
 		let os = get_os_string();
-		let data_folder = match os {
+		let data_folder = match os.as_str() {
 			"linux" => format!("{}/.local/share/.minecraft", std::env::var("HOME")?),
 			"windows" => format!("{}/Roaming/.minecraft", std::env::var("%APPDATA%")?),
 			"macos" => format!(
@@ -39,13 +39,13 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 			});
 		}
 
-		let data = match fs::read(&launcher_profiles) {
+		let data = match std::fs::read(&launcher_profiles) {
 			Ok(data) => data,
 			Err(e) => bail!("Failed to read launcher profiles: {e:#?}"),
 		};
 
 		let profiles: LauncherProfiles =
-			serde_json::from_slice(data).context("Failed to deserialize launcher profiles")?;
+			serde_json::from_slice(&data).context("Failed to deserialize launcher profiles")?;
 
 		let mut instances = HashMap::new();
 

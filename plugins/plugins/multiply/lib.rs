@@ -21,7 +21,7 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 		};
 
 		let config: MultiplyConfig =
-			serde_json::from_str(config).context("Invalid Multiply config")?;
+			serde_json::from_str(&config).context("Invalid Multiply config")?;
 
 		let mut out = HashMap::new();
 

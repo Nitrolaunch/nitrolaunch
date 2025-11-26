@@ -21,9 +21,11 @@ host = [
 	"tokio/rt-multi-thread",
 	"tokio/io-std",
 	"dep:wasmtime",
+	"dep:wasmtime-wasi",
+	"dep:wit-bindgen",
 ]
 executable_api = []
-wasm_api = []
+wasm_api = ["dep:wit-bindgen"]
 
 [dependencies]
 async-trait = { workspace = true }
@@ -39,3 +41,5 @@ serde_json = { workspace = true }
 simd-json = { workspace = true }
 tokio = { version = "1.37.0", features = ["rt", "sync"] }
 wasmtime = { workspace = true, optional = true }
+wasmtime-wasi = { workspace = true, optional = true }
+wit-bindgen = { workspace = true, optional = true }

@@ -13,9 +13,9 @@ package.cross_platform: build.cross_platform
 	@rm -f release/multiply-universal.zip
 	@rm -f release/weld-universal.zip
 
-	@zip -j release/args-universal.zip plugin.wasm=../target/wasm32-unknown-unknown/release/nitro_plugin_args.wasm plugins/args/plugin.json
-	@zip -j release/mojang_transfer-universal.zip plugin.wasm=../target/wasm32-unknown-unknown/release/nitro_plugin_mojang_transfer.wasm plugins/mojang_transfer/plugin.json
-	@zip -j release/multiply-universal.zip plugin.wasm=../target/wasm32-unknown-unknown/release/nitro_plugin_multiply.wasm plugins/multiply/plugin.json
+	@zip -j release/args-universal.zip plugin.wasm=../target/wasm32-wasip2/release/nitro_plugin_args.wasm plugins/args/plugin.json
+	@zip -j release/mojang_transfer-universal.zip plugin.wasm=../target/wasm32-wasip2/release/nitro_plugin_mojang_transfer.wasm plugins/mojang_transfer/plugin.json
+	@zip -j release/multiply-universal.zip plugin.wasm=../target/wasm32-wasip2/release/nitro_plugin_multiply.wasm plugins/multiply/plugin.json
 
 	@zip -j release/extra_versions-universal.zip plugins/extra_versions/plugin.json
 	@zip -j release/gamepad-universal.zip plugins/gamepad/plugin.json plugins/gamepad/gamepad.js
@@ -23,7 +23,7 @@ package.cross_platform: build.cross_platform
 	@zip -j release/weld-universal.zip plugins/weld/plugin.json plugins/weld/weld.pyz
 
 build.cross_platform: build.weld
-	@cargo build -p "nitro_plugin_*" --release --target wasm32-unknown-unknown
+	@cargo build -p "nitro_plugin_*" --release --target wasm32-wasip2
 
 package.platform_dependent: build.platform_dependent package_zips.platform_dependent
 
@@ -98,9 +98,9 @@ build.weld:
 	@shiv -o plugins/weld/weld.pyz -e nitro_weld.main --site-packages plugins/weld smithed
 
 install.args:
-	@cargo build -p nitro_plugin_args --release --target wasm32-unknown-unknown
+	@cargo build -p nitro_plugin_args --release --target wasm32-wasip2
 	@cp -r plugins/args ~/.local/share/nitro/plugins
-	@cp -r ../target/wasm32-unknown-unknown/release/nitro_plugin_args.wasm ~/.local/share/nitro/plugins/args/plugin.wasm
+	@cp -r ../target/wasm32-wasip2/release/nitro_plugin_args.wasm ~/.local/share/nitro/plugins/args/plugin.wasm
 
 install.auto_mcs:
 	@cargo install --path . --bin nitro_plugin_auto_mcs --offline
@@ -192,9 +192,9 @@ install.modrinth_api:
 	@cat plugins/modrinth_api/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/modrinth_api/plugin.json
 
 install.mojang_transfer:
-	@cargo build -p nitro_plugin_mojang_transfer --release --target wasm32-unknown-unknown
+	@cargo build -p nitro_plugin_mojang_transfer --release --target wasm32-wasip2
 	@cp -r plugins/mojang_transfer ~/.local/share/nitro/plugins
-	@cp -r ../target/wasm32-unknown-unknown/release/nitro_plugin_mojang_transfer.wasm ~/.local/share/nitro/plugins/mojang_transfer/plugin.wasm
+	@cp -r ../target/wasm32-wasip2/release/nitro_plugin_mojang_transfer.wasm ~/.local/share/nitro/plugins/mojang_transfer/plugin.wasm
 
 install.multimc_transfer:
 	@cargo install --path . --bin nitro_plugin_multimc_transfer --offline
@@ -202,9 +202,9 @@ install.multimc_transfer:
 	@cat plugins/multimc_transfer/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/multimc_transfer/plugin.json
 
 install.multiply:
-	@cargo build -p nitro_plugin_multiply --release --target wasm32-unknown-unknown
+	@cargo build -p nitro_plugin_multiply --release --target wasm32-wasip2
 	@cp -r plugins/multiply ~/.local/share/nitro/plugins
-	@cp -r ../target/wasm32-unknown-unknown/release/nitro_plugin_multiply.wasm ~/.local/share/nitro/plugins/multiply/plugin.wasm
+	@cp -r ../target/wasm32-wasip2/release/nitro_plugin_multiply.wasm ~/.local/share/nitro/plugins/multiply/plugin.wasm
 
 install.nitro_transfer:
 	@cargo install --path . --bin nitro_plugin_nitro_transfer --offline
