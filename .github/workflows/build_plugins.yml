@@ -28,7 +28,7 @@ jobs:
       - name: Setup Rust environment
         uses: raftario/setup-rust-action@v1.0.0
       - name: Set Rust toolchain
-        run: rustup target add wasm32-unknown-unknown
+        run: rustup target add wasm32-wasip2
       - name: Build plugins
         run: cd plugins && make package.cross_platform
       - name: Upload a Build Artifact
