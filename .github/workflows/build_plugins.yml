@@ -29,10 +29,10 @@ jobs:
         uses: raftario/setup-rust-action@v1.0.0
       - name: Set Rust toolchain
         run: rustup target add wasm32-wasip2
-      - name: Debug
-        run: ls target
       - name: Build plugins
         run: cd plugins && make package.cross_platform
+      - name: Debug
+        run: ls target
       - name: Upload a Build Artifact
         uses: actions/upload-artifact@v4
         with:
