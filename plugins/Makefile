@@ -15,7 +15,7 @@ package.cross_platform: build.cross_platform
 	@rm -f release/weld-universal.zip
 
 	@zip -j release/args-universal.zip plugin.wasm=../target/wasm32-wasip2/release/nitro_plugin_args.wasm plugins/args/plugin.json
-	@zip -j release/auto_mcs-universal.zip plugin.wasm=../target/wasm32-wasip2/release/nitro_plugin_args.wasm plugins/auto_mcs/plugin.json
+	@zip -j release/auto_mcs-universal.zip plugin.wasm=../target/wasm32-wasip2/release/nitro_plugin_auto_mcs.wasm plugins/auto_mcs/plugin.json
 	@zip -j release/mojang_transfer-universal.zip plugin.wasm=../target/wasm32-wasip2/release/nitro_plugin_mojang_transfer.wasm plugins/mojang_transfer/plugin.json
 	@zip -j release/multiply-universal.zip plugin.wasm=../target/wasm32-wasip2/release/nitro_plugin_multiply.wasm plugins/multiply/plugin.json
 
