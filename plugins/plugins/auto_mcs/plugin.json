@@ -14,10 +14,10 @@
 			]
 		},
 		"import_instance": {
-			"executable": "${PLUGIN_DIR}/nitro_plugin_auto_mcs${EXE_EXTENSION}"
+			"wasm": true
 		},
 		"add_instances": {
-			"executable": "${PLUGIN_DIR}/nitro_plugin_auto_mcs${EXE_EXTENSION}"
+			"wasm": true
 		}
 	}
 }

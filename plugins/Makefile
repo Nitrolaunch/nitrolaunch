@@ -6,6 +6,7 @@ package.cross_platform: build.cross_platform
 	@mkdir -p release
 
 	@rm -f release/args-universal.zip
+	@rm -f release/auto_mcs-universal.zip
 	@rm -f release/extra_versions-universal.zip
 	@rm -f release/gamepad-universal.zip
 	@rm -f release/lang-universal.zip
@@ -14,6 +15,7 @@ package.cross_platform: build.cross_platform
 	@rm -f release/weld-universal.zip
 
 	@zip -j release/args-universal.zip plugin.wasm=../target/wasm32-wasip2/release/nitro_plugin_args.wasm plugins/args/plugin.json
+	@zip -j release/auto_mcs-universal.zip plugin.wasm=../target/wasm32-wasip2/release/nitro_plugin_args.wasm plugins/auto_mcs/plugin.json
 	@zip -j release/mojang_transfer-universal.zip plugin.wasm=../target/wasm32-wasip2/release/nitro_plugin_mojang_transfer.wasm plugins/mojang_transfer/plugin.json
 	@zip -j release/multiply-universal.zip plugin.wasm=../target/wasm32-wasip2/release/nitro_plugin_multiply.wasm plugins/multiply/plugin.json
 
@@ -33,7 +35,6 @@ build.platform_dependent:
 package_zips.platform_dependent:
 	@mkdir -p release
 	
-	@rm -f release/auto_mcs-${OS}.zip
 	@rm -f release/automate-${OS}.zip
 	@rm -f release/backup-${OS}.zip
 	@rm -f release/beet-${OS}.zip
@@ -64,7 +65,6 @@ package_zips.platform_dependent:
 	@rm -f release/weld-${OS}.zip
 	@rm -f release/xmcl_transfer-${OS}.zip
 
-	@zip -j release/auto_mcs-${OS}.zip $(TARGET_DIR)/nitro_plugin_auto_mcs${EXTENSION} plugins/auto_mcs/plugin.json
 	@zip -j release/automate-${OS}.zip $(TARGET_DIR)/nitro_plugin_automate${EXTENSION} plugins/automate/plugin.json
 	@zip -j release/backup-${OS}.zip $(TARGET_DIR)/nitro_plugin_backup${EXTENSION} plugins/backup/plugin.json
 	@zip -j release/beet-${OS}.zip $(TARGET_DIR)/nitro_plugin_beet${EXTENSION} plugins/beet/plugin.json
@@ -103,9 +103,9 @@ install.args:
 	@cp -r ../target/wasm32-wasip2/release/nitro_plugin_args.wasm ~/.local/share/nitro/plugins/args/plugin.wasm
 
 install.auto_mcs:
-	@cargo install --path . --bin nitro_plugin_auto_mcs --offline
-	@mkdir -p ~/.local/share/nitro/plugins/auto_mcs
-	@cat plugins/auto_mcs/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/auto_mcs/plugin.json
+	@cargo build -p nitro_plugin_auto_mcs --release --target wasm32-wasip2
+	@cp -r plugins/auto_mcs ~/.local/share/nitro/plugins
+	@cp -r ../target/wasm32-wasip2/release/nitro_plugin_auto_mcs.wasm ~/.local/share/nitro/plugins/auto_mcs/plugin.wasm
 
 install.automate:
 	@cargo install --path . --bin nitro_plugin_automate --offline

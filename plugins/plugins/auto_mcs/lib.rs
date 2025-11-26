@@ -1,29 +1,20 @@
 use std::{collections::HashMap, fs::File, path::PathBuf};
 
 use anyhow::Context;
+use nitro_config::instance::{make_valid_instance_id, CommonInstanceConfig, InstanceConfig};
 use nitro_core::util::json::to_string_json;
-use nitro_plugin::{api::executable::ExecutablePlugin, hook::hooks::ImportInstanceResult};
-use nitro_shared::{
-	id::InstanceID,
-	loaders::Loader,
-	output::{MessageContents, MessageLevel, NitroOutput},
-	versions::MinecraftVersionDeser,
-	Side,
+use nitro_plugin::{
+	api::wasm::{sys::get_os_string, WASMPlugin},
+	hook::hooks::ImportInstanceResult,
+	nitro_wasm_plugin,
 };
-use nitrolaunch::config_crate::instance::{
-	make_valid_instance_id, CommonInstanceConfig, InstanceConfig,
-};
+use nitro_shared::{id::InstanceID, loaders::Loader, versions::MinecraftVersionDeser, Side};
 use zip::ZipArchive;
 
-#[cfg(not(target_os = "linux"))]
-static INI_FILENAME: &str = "auto-mcs.ini";
-#[cfg(target_os = "linux")]
-static INI_FILENAME: &str = ".auto-mcs.ini";
+nitro_wasm_plugin!(main, "auto_mcs");
 
-fn main() -> anyhow::Result<()> {
-	let mut plugin = ExecutablePlugin::from_manifest_file("auto_mcs", include_str!("plugin.json"))?;
-
-	plugin.import_instance(|_, arg| {
+fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
+	plugin.import_instance(|arg| {
 		let source_path = PathBuf::from(arg.source_path);
 		let target_path = PathBuf::from(arg.result_path);
 
@@ -31,7 +22,7 @@ fn main() -> anyhow::Result<()> {
 
 		// Read the INI file
 		let mut ini_file = zip
-			.by_name(INI_FILENAME)
+			.by_name(ini_filename())
 			.context("INI file is missing in instance")?;
 		let ini =
 			std::io::read_to_string(&mut ini_file).context("Failed to read instance config")?;
@@ -61,29 +52,23 @@ fn main() -> anyhow::Result<()> {
 		})
 	})?;
 
-	plugin.add_instances(|mut ctx, _| {
+	plugin.add_instances(|_| {
 		let auto_mcs_dir = get_auto_mcs_dir().context("Failed to get auto-mcs data directory")?;
 		let servers_dir = auto_mcs_dir.join("Servers");
 
 		let mut instances = HashMap::new();
 		for entry in servers_dir.read_dir()? {
 			let Ok(entry) = entry else {
-				ctx.get_output().display(
-					MessageContents::Error("Failed to load auto-mcs server".into()),
-					MessageLevel::Important,
-				);
+				eprintln!("Failed to load auto-mcs server");
 				continue;
 			};
 
 			let path = entry.path();
 
 			// Read the INI
-			let ini_path = path.join(INI_FILENAME);
+			let ini_path = path.join(ini_filename());
 			let Ok(ini) = std::fs::read_to_string(ini_path) else {
-				ctx.get_output().display(
-					MessageContents::Error(format!("Failed to load auto-mcs server ({path:?})")),
-					MessageLevel::Important,
-				);
+				eprintln!("Failed to load auto-mcs server ({path:?})");
 				continue;
 			};
 			let ini = read_ini(&ini);
@@ -143,6 +128,14 @@ fn create_config(mut ini: HashMap<&str, HashMap<&str, &str>>) -> anyhow::Result<
 	})
 }
 
+/// Gets the filename for the .ini file in the server dir
+fn ini_filename() -> &'static str {
+	match get_os_string().as_str() {
+		"linux" => ".auto-mcs.ini",
+		_ => "auto-mcs-ini",
+	}
+}
+
 /// Reads the auto-mcs.ini file for a server
 fn read_ini(contents: &str) -> HashMap<&str, HashMap<&str, &str>> {
 	let mut sections: HashMap<&str, HashMap<&str, &str>> = HashMap::new();
@@ -170,15 +163,15 @@ fn read_ini(contents: &str) -> HashMap<&str, HashMap<&str, &str>> {
 }
 
 fn get_auto_mcs_dir() -> anyhow::Result<PathBuf> {
-	#[cfg(target_os = "linux")]
-	let data_folder = format!("{}/.auto-mcs", std::env::var("HOME")?);
-	#[cfg(target_os = "windows")]
-	let data_folder = format!("{}/Roaming/.auto-mcs", std::env::var("%APPDATA%")?);
-	#[cfg(target_os = "macos")]
-	let data_folder = format!(
-		"{}/Library/Application Support/.auto-mcs",
-		std::env::var("HOME")?
-	);
+	let data_folder = match get_os_string().as_str() {
+		"linux" => format!("{}/.auto-mcs", std::env::var("HOME")?),
+		"windows" => format!("{}/Roaming/.auto-mcs", std::env::var("%APPDATA%")?),
+		"macos" => format!(
+			"{}/Library/Application Support/.auto-mcs",
+			std::env::var("HOME")?
+		),
+		_ => format!("{}/.auto-mcs", std::env::var("HOME")?),
+	};
 
 	Ok(PathBuf::from(data_folder))
 }

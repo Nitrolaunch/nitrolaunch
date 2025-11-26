@@ -3541,6 +3541,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "nitro_plugin_auto_mcs"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "nitro_config",
+ "nitro_core",
+ "nitro_plugin",
+ "nitro_shared",
+ "zip 3.0.0",
+]
+
+[[package]]
 name = "nitro_plugin_mojang_transfer"
 version = "0.1.0"
 dependencies = [
