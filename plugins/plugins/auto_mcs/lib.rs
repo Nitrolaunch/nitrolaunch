@@ -85,7 +85,7 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 					.clone()
 					.unwrap_or_else(|| path.file_name().unwrap().to_string_lossy().to_string()),
 			);
-			let id = format!("auto-mcs-{id}");
+			let id = format!("auto-mcs:{id}");
 
 			instances.insert(InstanceID::from(id), config);
 		}
