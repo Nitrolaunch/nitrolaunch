@@ -14,10 +14,14 @@ package.cross_platform: build.cross_platform
 	@rm -f release/multiply-universal.zip
 	@rm -f release/weld-universal.zip
 
-	@zip -j release/args-universal.zip plugin.wasm=../target/wasm32-wasip2/release/nitro_plugin_args.wasm plugins/args/plugin.json
-	@zip -j release/auto_mcs-universal.zip plugin.wasm=../target/wasm32-wasip2/release/nitro_plugin_auto_mcs.wasm plugins/auto_mcs/plugin.json
-	@zip -j release/mojang_transfer-universal.zip plugin.wasm=../target/wasm32-wasip2/release/nitro_plugin_mojang_transfer.wasm plugins/mojang_transfer/plugin.json
-	@zip -j release/multiply-universal.zip plugin.wasm=../target/wasm32-wasip2/release/nitro_plugin_multiply.wasm plugins/multiply/plugin.json
+	@zip -j release/args-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_args.wasm plugins/args/plugin.json
+	@printf "@ nitro_plugin_args.wasm\\n@=plugin.wasm\\n" | zipnote -w release/args-universal.zip
+	@zip -j release/auto_mcs-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_auto_mcs.wasm plugins/auto_mcs/plugin.json
+	@printf "@ nitro_plugin_auto_mcs.wasm\\n@=plugin.wasm\\n" | zipnote -w release/auto_mcs-universal.zip
+	@zip -j release/mojang_transfer-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_mojang_transfer.wasm plugins/mojang_transfer/plugin.json
+	@printf "@ nitro_plugin_mojang_transfer.wasm\\n@=plugin.wasm\\n" | zipnote -w release/mojang_transfer-universal.zip
+	@zip -j release/multiply-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_multiply.wasm plugins/multiply/plugin.json
+	@printf "@ nitro_plugin_multiply.wasm\\n@=plugin.wasm\\n" | zipnote -w release/multiply-universal.zip
 
 	@zip -j release/extra_versions-universal.zip plugins/extra_versions/plugin.json
 	@zip -j release/gamepad-universal.zip plugins/gamepad/plugin.json plugins/gamepad/gamepad.js
