@@ -4,6 +4,7 @@ pub mod loader;
 use std::{marker::PhantomData, path::PathBuf, sync::Arc, time::Instant};
 
 use anyhow::{bail, Context};
+use nitro_net::download::{self, Client};
 use nitro_shared::{
 	output::{MessageContents, MessageLevel, NitroOutput},
 	util::{ARCH_STRING, OS_STRING},
@@ -143,6 +144,7 @@ impl<H: Hook> WASMHookHandle<H> {
 				custom_config: self.custom_config.clone(),
 				data_dir: self.data_dir.clone(),
 				config_dir: self.config_dir.clone(),
+				client: Client::new(),
 			},
 		);
 
@@ -205,6 +207,7 @@ struct State {
 	custom_config: Option<String>,
 	data_dir: String,
 	config_dir: String,
+	client: Client,
 }
 
 impl WasiView for State {
@@ -242,5 +245,29 @@ impl bindings::InterfaceWorldImports for State {
 		return 32;
 		#[cfg(target_pointer_width = "64")]
 		return 64;
+	}
+
+	async fn download_bytes(&mut self, url: String) -> Result<Vec<u8>, String> {
+		let result = download::bytes(url, &self.client).await;
+		match result {
+			Ok(result) => Ok(result.to_vec()),
+			Err(e) => Err(format!("{e:?}")),
+		}
+	}
+
+	async fn download_text(&mut self, url: String) -> Result<String, String> {
+		let result = download::text(url, &self.client).await;
+		match result {
+			Ok(result) => Ok(result),
+			Err(e) => Err(format!("{e:?}")),
+		}
+	}
+
+	async fn download_file(&mut self, url: String, path: String) -> Result<(), String> {
+		let result = download::file(url, path, &self.client).await;
+		match result {
+			Ok(..) => Ok(()),
+			Err(e) => Err(format!("{e:?}")),
+		}
 	}
 }

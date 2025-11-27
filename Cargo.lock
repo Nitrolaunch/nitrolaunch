@@ -3518,6 +3518,7 @@ dependencies = [
  "base64 0.22.1",
  "itertools 0.11.0",
  "nitro_config",
+ "nitro_net",
  "nitro_pkg",
  "nitro_shared",
  "pin-project-lite",

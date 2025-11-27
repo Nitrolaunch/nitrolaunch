@@ -2,6 +2,8 @@
 
 /// Interfacing code
 pub mod interface;
+/// Basic networking
+pub mod net;
 /// System access
 pub mod sys;
 /// General utilities for the API
