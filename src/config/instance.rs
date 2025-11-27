@@ -180,7 +180,7 @@ pub fn launch_config_to_options(config: LaunchConfig) -> anyhow::Result<LaunchOp
 		game_args: config.args.game.parse(),
 		min_mem,
 		max_mem,
-		java: JavaInstallationKind::parse(&config.java),
+		java: JavaInstallationKind::parse(config.java.as_deref().unwrap_or("auto")),
 		env: config.env,
 		wrapper: config.wrapper,
 		quick_play: config.quick_play,

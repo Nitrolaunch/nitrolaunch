@@ -100,7 +100,7 @@ fn create_config(profile: Profile) -> anyhow::Result<InstanceConfig> {
 		common: CommonInstanceConfig {
 			version: Some(version),
 			launch: LaunchConfig {
-				java: profile.java_dir,
+				java: Some(profile.java_dir),
 				args,
 				..Default::default()
 			},

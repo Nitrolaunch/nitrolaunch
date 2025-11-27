@@ -203,10 +203,6 @@ impl LaunchMemory {
 	}
 }
 
-fn default_java() -> String {
-	"auto".into()
-}
-
 /// Options for the Minecraft QuickPlay feature
 #[derive(Deserialize, Serialize, Debug, PartialEq, Default, Clone)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
@@ -248,8 +244,8 @@ pub struct LaunchConfig {
 	#[serde(skip_serializing_if = "DefaultExt::is_default")]
 	pub memory: LaunchMemory,
 	/// The java installation to use
-	#[serde(default = "default_java")]
-	pub java: String,
+	#[serde(default)]
+	pub java: Option<String>,
 	/// Environment variables
 	#[serde(default)]
 	#[serde(skip_serializing_if = "HashMap::is_empty")]
@@ -276,7 +272,9 @@ impl LaunchConfig {
 		if !matches!(other.memory, LaunchMemory::None) {
 			self.memory = other.memory;
 		}
-		self.java = other.java;
+		if other.java.is_some() {
+			self.java = other.java;
+		}
 		self.env.extend(other.env);
 		if other.wrapper.is_some() {
 			self.wrapper = other.wrapper;
@@ -297,7 +295,7 @@ impl Default for LaunchConfig {
 				game: Args::default(),
 			},
 			memory: LaunchMemory::default(),
-			java: default_java(),
+			java: None,
 			env: HashMap::new(),
 			wrapper: None,
 			quick_play: QuickPlay::default(),

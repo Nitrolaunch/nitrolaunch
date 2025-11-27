@@ -79,10 +79,10 @@ fn main() -> anyhow::Result<()> {
 			}
 		}
 
-		let java = if let JavaInstallationKind::Custom { .. } =
-			JavaInstallationKind::parse(&arg.config.common.launch.java)
+		let java = if let JavaInstallationKind::Custom(path) =
+			JavaInstallationKind::parse(arg.config.common.launch.java.as_deref().unwrap_or("auto"))
 		{
-			arg.config.common.launch.java.clone()
+			path
 		} else {
 			String::new()
 		};
@@ -219,9 +219,9 @@ fn main() -> anyhow::Result<()> {
 							game: Args::List(meta.mc_options),
 						},
 						java: if meta.java.is_empty() {
-							"auto".into()
+							None
 						} else {
-							meta.java
+							Some(meta.java)
 						},
 						quick_play,
 						..Default::default()
