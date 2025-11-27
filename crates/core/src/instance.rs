@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 use anyhow::{bail, Context};
 use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
@@ -10,7 +11,9 @@ use crate::config::BrandingProperties;
 use crate::io::files::paths::Paths;
 use crate::io::files::update_link;
 use crate::io::java::classpath::Classpath;
-use crate::io::java::install::{JavaInstallParameters, JavaInstallation, JavaInstallationKind};
+use crate::io::java::install::{
+	CustomJavaFunction, JavaInstallParameters, JavaInstallation, JavaInstallationKind,
+};
 use crate::io::java::JavaMajorVersion;
 use crate::io::persistent::PersistentData;
 use crate::io::update::UpdateManager;
@@ -56,6 +59,7 @@ impl<'params> Instance<'params> {
 			update_manager: params.update_manager,
 			persistent: params.persistent,
 			req_client: params.req_client,
+			custom_install_func: params.custom_java_fn,
 		};
 
 		let java_key = (config.launch.java.clone(), *java_vers);
@@ -394,6 +398,7 @@ pub(crate) struct InstanceParameters<'a> {
 	pub users: &'a mut UserManager,
 	pub java_installations:
 		&'a mut HashMap<(JavaInstallationKind, JavaMajorVersion), JavaInstallation>,
+	pub custom_java_fn: Option<&'a Arc<dyn CustomJavaFunction>>,
 	pub client_assets_and_libs: &'a mut ClientAssetsAndLibraries,
 	pub censor_secrets: bool,
 	pub disable_hardlinks: bool,

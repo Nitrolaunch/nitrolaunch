@@ -8,6 +8,7 @@ use std::io::{BufReader, Read, Seek};
 #[cfg(target_family = "unix")]
 use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 use anyhow::{bail, Context};
 use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
@@ -39,11 +40,7 @@ pub enum JavaInstallationKind {
 	/// GraalVM
 	GraalVM,
 	/// A user-specified installation
-	Custom {
-		/// The path to the installation. The JVM must live at
-		/// `{path}/bin/java`
-		path: PathBuf,
-	},
+	Custom(String),
 }
 
 impl JavaInstallationKind {
@@ -55,9 +52,7 @@ impl JavaInstallationKind {
 			"adoptium" => Self::Adoptium,
 			"zulu" => Self::Zulu,
 			"graalvm" => Self::GraalVM,
-			path => Self::Custom {
-				path: PathBuf::from(path),
-			},
+			path => Self::Custom(path.to_string()),
 		}
 	}
 }
@@ -93,7 +88,22 @@ impl JavaInstallation {
 			JavaInstallationKind::Adoptium => install_adoptium(&vers_str, &mut params, o).await?,
 			JavaInstallationKind::Zulu => install_zulu(&vers_str, &mut params, o).await?,
 			JavaInstallationKind::GraalVM => install_graalvm(&vers_str, &mut params, o).await?,
-			JavaInstallationKind::Custom { path } => path.clone(),
+			JavaInstallationKind::Custom(id) => {
+				// Check if the custom function handles this installation. If it doesn't, assume it's a custom path instead.
+				if let Some(func) = params.custom_install_func {
+					let result = func
+						.install(&vers_str, params.update_manager.update_depth)
+						.await
+						.context("Custom Java install failed")?;
+					if let Some(result) = result {
+						result.path
+					} else {
+						PathBuf::from(id)
+					}
+				} else {
+					PathBuf::from(id)
+				}
+			}
 		};
 
 		o.display(
@@ -174,6 +184,7 @@ pub(crate) struct JavaInstallParameters<'a> {
 	pub update_manager: &'a mut UpdateManager,
 	pub persistent: &'a mut PersistentData,
 	pub req_client: &'a reqwest::Client,
+	pub custom_install_func: Option<&'a Arc<dyn CustomJavaFunction>>,
 }
 
 async fn install_auto(
@@ -461,6 +472,23 @@ async fn update_graalvm(
 	);
 
 	Ok(extracted_dir)
+}
+
+/// Function for custom Java handling
+#[async_trait::async_trait]
+pub trait CustomJavaFunction: Send + Sync {
+	/// Call the custom install function
+	async fn install(
+		&self,
+		major_version: &str,
+		update_depth: UpdateDepth,
+	) -> anyhow::Result<Option<CustomJavaFunctionResult>>;
+}
+
+/// Result from the custom Java function
+pub struct CustomJavaFunctionResult {
+	/// Path to the new installation
+	pub path: PathBuf,
 }
 
 /// Extracts the archive file

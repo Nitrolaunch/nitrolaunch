@@ -14,6 +14,7 @@ use nitro_core::auth_crate::mc::ClientId;
 use nitro_core::config::BrandingProperties;
 use nitro_core::instance::WindowResolution;
 use nitro_core::io::java::classpath::Classpath;
+use nitro_core::io::java::install::{CustomJavaFunction, CustomJavaFunctionResult};
 use nitro_core::io::json_to_file;
 use nitro_core::launch::LaunchConfiguration;
 use nitro_core::user::uuid::hyphenate_uuid;
@@ -21,14 +22,15 @@ use nitro_core::user::{CustomAuthFunction, User, UserManager};
 use nitro_core::version::InstalledVersion;
 use nitro_core::{NitroCore, QuickPlayType};
 use nitro_plugin::hook::hooks::{
-	AddVersions, HandleAuth, HandleAuthArg, OnInstanceSetup, OnInstanceSetupArg, RemoveLoader,
+	AddVersions, HandleAuth, HandleAuthArg, InstallCustomJava, InstallCustomJavaArg,
+	OnInstanceSetup, OnInstanceSetupArg, RemoveLoader,
 };
 use nitro_shared::minecraft::MinecraftUserProfile;
 use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
 use nitro_shared::output::{NoOp, OutputProcess};
-use nitro_shared::translate;
 use nitro_shared::versions::VersionInfo;
 use nitro_shared::Side;
+use nitro_shared::{translate, UpdateDepth};
 use reqwest::Client;
 
 use crate::instance::update::manager::UpdateSettings;
@@ -458,16 +460,20 @@ pub async fn setup_core(
 	let core_config = core_config.build();
 	let mut core = NitroCore::with_config(core_config).context("Failed to initialize core")?;
 
-	// Set up user manager along with custom auth function that handles using plugins
+	// Set up user manager along
 	core.get_users().steal_users(users);
 	core.get_users().set_offline(settings.offline_auth);
-	{
-		let plugins = plugins.clone();
-		let paths = paths.clone();
 
-		core.get_users()
-			.set_custom_auth_function(Arc::new(AuthFunction { plugins, paths }));
-	}
+	// Set up custom plugin integrations
+	core.get_users()
+		.set_custom_auth_function(Arc::new(AuthFunction {
+			plugins: plugins.clone(),
+			paths: paths.clone(),
+		}));
+	core.set_custom_java_install_fn(Arc::new(JavaFunction {
+		plugins: plugins.clone(),
+		paths: paths.clone(),
+	}));
 
 	core.set_client(client.clone());
 
@@ -514,5 +520,45 @@ impl CustomAuthFunction for AuthFunction {
 		}
 
 		Ok(out)
+	}
+}
+
+/// CustomJavaFunction implementation using plugins
+struct JavaFunction {
+	plugins: PluginManager,
+	paths: Paths,
+}
+
+#[async_trait::async_trait]
+impl CustomJavaFunction for JavaFunction {
+	async fn install(
+		&self,
+		major_version: &str,
+		update_depth: UpdateDepth,
+	) -> anyhow::Result<Option<CustomJavaFunctionResult>> {
+		let arg = InstallCustomJavaArg {
+			major_version: major_version.to_string(),
+			update_depth,
+		};
+		let mut results = self
+			.plugins
+			.call_hook(InstallCustomJava, &arg, &self.paths, &mut NoOp)
+			.await
+			.context("Failed to call install custom Java hook")?;
+
+		let mut out = None;
+		while let Some(result) = results.next_result(&mut NoOp).await? {
+			if result.is_some() {
+				out = result;
+			}
+		}
+
+		if let Some(out) = out {
+			Ok(Some(CustomJavaFunctionResult {
+				path: PathBuf::from(out.path),
+			}))
+		} else {
+			Ok(None)
+		}
 	}
 }

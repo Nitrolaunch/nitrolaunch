@@ -13,7 +13,9 @@ use nitro_shared::Side;
 use crate::config::BrandingProperties;
 use crate::instance::{Instance, InstanceConfiguration, InstanceParameters};
 use crate::io::files::paths::Paths;
-use crate::io::java::install::{JavaInstallParameters, JavaInstallation, JavaInstallationKind};
+use crate::io::java::install::{
+	CustomJavaFunction, JavaInstallParameters, JavaInstallation, JavaInstallationKind,
+};
 use crate::io::java::JavaMajorVersion;
 use crate::io::persistent::PersistentData;
 use crate::io::update::UpdateManager;
@@ -67,6 +69,7 @@ impl InstalledVersion<'_, '_> {
 			client_meta: &self.inner.client_meta,
 			users: self.params.users,
 			java_installations: self.params.java_installations,
+			custom_java_fn: self.params.custom_java_fn,
 			client_assets_and_libs: &mut self.inner.client_assets_and_libs,
 			censor_secrets: self.params.censor_secrets,
 			disable_hardlinks: self.params.disable_hardlinks,
@@ -111,6 +114,7 @@ impl InstalledVersion<'_, '_> {
 				update_manager: self.params.update_manager,
 				persistent: self.params.persistent,
 				req_client: self.params.req_client,
+				custom_install_func: self.params.custom_java_fn,
 			};
 
 			let java = JavaInstallation::install(
@@ -299,6 +303,7 @@ pub(crate) struct VersionParameters<'a> {
 	pub users: &'a mut UserManager,
 	pub java_installations:
 		&'a mut HashMap<(JavaInstallationKind, JavaMajorVersion), JavaInstallation>,
+	pub custom_java_fn: Option<&'a Arc<dyn CustomJavaFunction>>,
 	pub censor_secrets: bool,
 	pub disable_hardlinks: bool,
 	pub branding: &'a BrandingProperties,

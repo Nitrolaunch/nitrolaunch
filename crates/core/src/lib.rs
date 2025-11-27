@@ -50,6 +50,8 @@ pub use instance::{ClientWindowConfig, Instance, InstanceConfiguration, Instance
 pub use io::files::paths::Paths;
 pub use launch::{InstanceHandle, QuickPlayType, WrapperCommand};
 
+use crate::io::java::install::CustomJavaFunction;
+
 /// Wrapper around all usage of `nitro_core`
 pub struct NitroCore {
 	config: Configuration,
@@ -60,6 +62,7 @@ pub struct NitroCore {
 	versions: VersionRegistry,
 	users: UserManager,
 	java_installations: HashMap<(JavaInstallationKind, JavaMajorVersion), JavaInstallation>,
+	custom_java_fn: Option<Arc<dyn CustomJavaFunction>>,
 }
 
 impl NitroCore {
@@ -86,6 +89,7 @@ impl NitroCore {
 			users: UserManager::new(config.ms_client_id.clone()),
 			config,
 			java_installations: HashMap::new(),
+			custom_java_fn: None,
 		};
 		Ok(out)
 	}
@@ -179,6 +183,7 @@ impl NitroCore {
 			censor_secrets: self.config.censor_secrets,
 			disable_hardlinks: self.config.disable_hardlinks,
 			branding: &self.config.branding,
+			custom_java_fn: self.custom_java_fn.as_ref(),
 		};
 		Ok(InstalledVersion { inner, params })
 	}
@@ -223,6 +228,7 @@ impl NitroCore {
 			update_manager: &mut self.update_manager,
 			persistent: &mut self.persistent,
 			req_client: &self.req_client,
+			custom_install_func: self.custom_java_fn.as_ref(),
 		};
 		let java = JavaInstallation::install(kind.clone(), major_version, java_params, o)
 			.await
@@ -237,5 +243,10 @@ impl NitroCore {
 	/// including before creating any versions
 	pub fn add_additional_versions(&mut self, versions: Vec<VersionEntry>) {
 		self.versions.add_additional_versions(versions);
+	}
+
+	/// Set a custom Java installation function for unknown installations
+	pub fn set_custom_java_install_fn(&mut self, func: Arc<dyn CustomJavaFunction>) {
+		self.custom_java_fn = Some(func);
 	}
 }

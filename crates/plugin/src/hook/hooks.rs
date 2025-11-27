@@ -880,3 +880,52 @@ pub struct UserTypeInfo {
 	/// CSS color of the user type
 	pub color: String,
 }
+
+def_hook!(
+	AddJavaTypes,
+	"get_java_types",
+	"Adds new available Java types",
+	(),
+	Vec<JavaTypeInfo>,
+	1,
+);
+
+/// Information about a Java type
+#[derive(Serialize, Deserialize, Default)]
+#[serde(default)]
+pub struct JavaTypeInfo {
+	/// The ID of the Java type
+	pub id: String,
+	/// The display name of the Java type
+	pub name: String,
+	/// CSS color of the Java type
+	pub color: String,
+}
+
+def_hook!(
+	InstallCustomJava,
+	"install_custom_java",
+	"Installs a custom Java type",
+	InstallCustomJavaArg,
+	Option<InstallCustomJavaResult>,
+	1,
+	true,
+);
+
+/// Argument for the InstallCustomJava hook
+#[derive(Serialize, Deserialize, Default)]
+#[serde(default)]
+pub struct InstallCustomJavaArg {
+	/// The major version of Java to install
+	pub major_version: String,
+	/// Update depth for the install
+	pub update_depth: UpdateDepth,
+}
+
+/// Result from the InstallCustomJava hook
+#[derive(Serialize, Deserialize, Default)]
+#[serde(default)]
+pub struct InstallCustomJavaResult {
+	/// The path to the Java installation, containing a bin/java(.exe) executable
+	pub path: String,
+}
