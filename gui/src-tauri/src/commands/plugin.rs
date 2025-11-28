@@ -210,6 +210,7 @@ pub async fn get_page_inject_script(
 	let mut out = String::new();
 	while let Some(result) = fmt_err(results.next_result(&mut output).await)? {
 		out.push_str(&result);
+		out.push('\n');
 	}
 
 	Ok(Some(out))
