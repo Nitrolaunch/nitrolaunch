@@ -126,38 +126,25 @@ impl VerifiedPlugin {
 		};
 
 		// Actually download and install
-		let manifest = if asset.content_type.contains("zip") {
-			let zip = download::bytes(asset.browser_download_url, client)
-				.await
-				.context("Failed to download zipped plugin")?;
+		if !asset.content_type.contains("zip") {
+			bail!("Plugin asset is not a ZIP file");
+		}
+		let zip = download::bytes(asset.browser_download_url, client)
+			.await
+			.context("Failed to download zipped plugin")?;
 
-			let mut zip =
-				ZipArchive::new(Cursor::new(zip)).context("Failed to read zip archive")?;
+		let mut zip = ZipArchive::new(Cursor::new(zip)).context("Failed to read zip archive")?;
 
-			PluginManager::remove_plugin(&self.id, paths)
-				.context("Failed to remove existing plugin")?;
-			let dir = paths.plugins.join(&self.id);
-			std::fs::create_dir_all(&dir).context("Failed to create plugin directory")?;
+		PluginManager::remove_plugin(&self.id, paths)
+			.context("Failed to remove existing plugin")?;
+		let dir = paths.plugins.join(&self.id);
+		std::fs::create_dir_all(&dir).context("Failed to create plugin directory")?;
 
-			zip.extract(&dir)
-				.context("Failed to extract plugin files")?;
+		zip.extract(&dir)
+			.context("Failed to extract plugin files")?;
 
-			json_from_file::<PluginManifest>(dir.join("plugin.json"))
-				.context("Failed to read plugin manifest")?
-		} else if asset.content_type.contains("json") {
-			let bytes = download::bytes(asset.browser_download_url, client)
-				.await
-				.context("Failed to download plugin JSON")?;
-
-			PluginManager::uninstall_plugin(&self.id, paths)
-				.context("Failed to remove existing plugin")?;
-			let path = paths.plugins.join(format!("{}.json", &self.id));
-			std::fs::write(path, &bytes).context("Failed to write plugin JSON")?;
-
-			serde_json::from_slice(&bytes).context("Failed to read plugin manifest")?
-		} else {
-			bail!("Plugin files are not of the correct type");
-		};
+		let manifest: PluginManifest =
+			json_from_file(dir.join("plugin.json")).context("Failed to read plugin manifest")?;
 
 		if let Some(install_message) = manifest.install_message {
 			o.display(
