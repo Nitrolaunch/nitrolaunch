@@ -3577,6 +3577,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "nitro_plugin_zulu"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "libflate",
+ "nitro_config",
+ "nitro_plugin",
+ "nitro_shared",
+ "serde",
+ "serde_json",
+ "tar",
+ "zip 3.0.0",
+]
+
+[[package]]
 name = "nitro_plugins"
 version = "0.1.0"
 dependencies = [

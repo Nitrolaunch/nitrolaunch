@@ -533,10 +533,12 @@ struct JavaFunction {
 impl CustomJavaFunction for JavaFunction {
 	async fn install(
 		&self,
+		java: &str,
 		major_version: &str,
 		update_depth: UpdateDepth,
 	) -> anyhow::Result<Option<CustomJavaFunctionResult>> {
 		let arg = InstallCustomJavaArg {
+			kind: java.to_string(),
 			major_version: major_version.to_string(),
 			update_depth,
 		};
@@ -556,6 +558,7 @@ impl CustomJavaFunction for JavaFunction {
 		if let Some(out) = out {
 			Ok(Some(CustomJavaFunctionResult {
 				path: PathBuf::from(out.path),
+				version: out.version,
 			}))
 		} else {
 			Ok(None)

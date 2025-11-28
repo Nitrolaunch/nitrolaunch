@@ -17,38 +17,15 @@ pub struct PersistentData {
 #[derive(Serialize, Deserialize, Default, Debug)]
 #[serde(default)]
 struct PersistentDataContents {
-	java: PersistentDataJava,
-	versions: HashMap<String, PersistentDataVersionInfo>,
+	/// Maps of Java types to maps between major version and installation info
+	java: HashMap<String, HashMap<String, PersistentDataJavaVersion>>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-struct PersistentDataVersionInfo {
-	version: String,
-}
-
+/// Info about an installed major version for a Java type
 #[derive(Serialize, Deserialize, Debug)]
 struct PersistentDataJavaVersion {
 	version: String,
 	path: String,
-}
-
-/// Contains maps of major versions to information about installations
-#[derive(Serialize, Deserialize, Default, Debug)]
-#[serde(default)]
-struct PersistentDataJava {
-	adoptium: HashMap<String, PersistentDataJavaVersion>,
-	zulu: HashMap<String, PersistentDataJavaVersion>,
-	graalvm: HashMap<String, PersistentDataJavaVersion>,
-}
-
-/// Used as a function argument
-pub(crate) enum PersistentDataJavaInstallation {
-	/// Adoptium Java
-	Adoptium,
-	/// Zulu Java
-	Zulu,
-	/// GraalVM Java
-	GraalVM,
 }
 
 impl PersistentDataContents {
@@ -86,19 +63,17 @@ impl PersistentData {
 	/// Updates a Java installation with a new version. Returns true if the version has changed.
 	pub(crate) fn update_java_installation(
 		&mut self,
-		installation: PersistentDataJavaInstallation,
+		java: &str,
 		major_version: &str,
 		version: &str,
 		path: &Path,
 	) -> anyhow::Result<bool> {
-		let installation = match installation {
-			PersistentDataJavaInstallation::Adoptium => &mut self.contents.java.adoptium,
-			PersistentDataJavaInstallation::Zulu => &mut self.contents.java.zulu,
-			PersistentDataJavaInstallation::GraalVM => &mut self.contents.java.graalvm,
-		};
+		let installation = self.contents.java.entry(java.to_string()).or_default();
 		let path_str = path.to_string_lossy().to_string();
 		if let Some(current_version) = installation.get_mut(major_version) {
 			if current_version.version == version {
+				// Even if the version is the same we want to update the path to prevent infinite installations (since the dir might not exist)
+				current_version.path = path_str;
 				Ok(false)
 			} else {
 				// Remove the old installation, if it exists
@@ -124,16 +99,8 @@ impl PersistentData {
 	}
 
 	/// Gets the path to a Java installation
-	pub(crate) fn get_java_path(
-		&self,
-		installation: PersistentDataJavaInstallation,
-		version: &str,
-	) -> Option<PathBuf> {
-		let installation = match installation {
-			PersistentDataJavaInstallation::Adoptium => &self.contents.java.adoptium,
-			PersistentDataJavaInstallation::Zulu => &self.contents.java.zulu,
-			PersistentDataJavaInstallation::GraalVM => &self.contents.java.graalvm,
-		};
+	pub(crate) fn get_java_path(&self, installation: &str, version: &str) -> Option<PathBuf> {
+		let installation = self.contents.java.get(installation)?;
 		let version = installation.get(version)?;
 		Some(PathBuf::from(version.path.clone()))
 	}

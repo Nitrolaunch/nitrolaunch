@@ -54,6 +54,7 @@ members = [
 	"plugins/plugins/auto_mcs",
 	"plugins/plugins/mojang_transfer",
 	"plugins/plugins/multiply",
+	"plugins/plugins/zulu",
 ]
 
 [features]

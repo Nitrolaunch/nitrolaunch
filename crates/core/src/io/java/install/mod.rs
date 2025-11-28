@@ -17,7 +17,7 @@ use tar::Archive;
 use zip::ZipArchive;
 
 use crate::io::files::{self, paths::Paths};
-use crate::io::persistent::{PersistentData, PersistentDataJavaInstallation};
+use crate::io::persistent::PersistentData;
 use crate::io::update::UpdateManager;
 use crate::net::{self, download};
 use nitro_shared::util::preferred_archive_extension;
@@ -35,8 +35,6 @@ pub enum JavaInstallationKind {
 	System,
 	/// Adoptium
 	Adoptium,
-	/// Azul Zulu
-	Zulu,
 	/// GraalVM
 	GraalVM,
 	/// A user-specified installation
@@ -50,7 +48,6 @@ impl JavaInstallationKind {
 			"auto" => Self::Auto,
 			"system" => Self::System,
 			"adoptium" => Self::Adoptium,
-			"zulu" => Self::Zulu,
 			"graalvm" => Self::GraalVM,
 			path => Self::Custom(path.to_string()),
 		}
@@ -86,22 +83,53 @@ impl JavaInstallation {
 			JavaInstallationKind::Auto => install_auto(&vers_str, params, o).await?,
 			JavaInstallationKind::System => system::install(&vers_str)?,
 			JavaInstallationKind::Adoptium => install_adoptium(&vers_str, &mut params, o).await?,
-			JavaInstallationKind::Zulu => install_zulu(&vers_str, &mut params, o).await?,
 			JavaInstallationKind::GraalVM => install_graalvm(&vers_str, &mut params, o).await?,
 			JavaInstallationKind::Custom(id) => {
-				// Check if the custom function handles this installation. If it doesn't, assume it's a custom path instead.
-				if let Some(func) = params.custom_install_func {
-					let result = func
-						.install(&vers_str, params.update_manager.update_depth)
-						.await
-						.context("Custom Java install failed")?;
-					if let Some(result) = result {
-						result.path
+				// Check if we need to update the install
+				let existing_dir = get_existing_dir(
+					id,
+					&vers_str,
+					&params.persistent,
+					params.update_manager.get_depth(),
+				);
+
+				if let Some(existing_dir) = existing_dir {
+					o.display(
+						MessageContents::Simple(format!("Using existing Java installation")),
+						MessageLevel::Debug,
+					);
+					existing_dir
+				} else {
+					if params.custom_install_func.is_some() {
+						println!("Install func available");
+					}
+					// Check if the custom function handles this installation. If it doesn't, assume it's a custom path instead.
+					if let Some(func) = params.custom_install_func {
+						let result = func
+							.install(id, &vers_str, params.update_manager.update_depth)
+							.await
+							.context("Custom Java install failed")?;
+
+						if let Some(result) = result {
+							// Save the version in the persistence file
+							params
+								.persistent
+								.update_java_installation(
+									id,
+									&vers_str,
+									&result.version,
+									&result.path,
+								)
+								.context("Failed to update persistent Java version")?;
+							params.persistent.dump(params.paths).await?;
+
+							result.path
+						} else {
+							PathBuf::from(id)
+						}
 					} else {
 						PathBuf::from(id)
 					}
-				} else {
-					PathBuf::from(id)
 				}
 			}
 		};
@@ -155,7 +183,7 @@ impl JavaInstallation {
 	/// Verifies that this installation is set up correctly
 	pub fn verify(&self) -> anyhow::Result<()> {
 		let jvm_path = self.get_jvm_path();
-		if !jvm_path.exists() || !jvm_path.is_file() {
+		if !jvm_path.exists() || jvm_path.is_dir() {
 			bail!(
 				"Java executable (path {:?}) does not exist or is a folder",
 				jvm_path
@@ -164,13 +192,14 @@ impl JavaInstallation {
 		#[cfg(target_family = "unix")]
 		{
 			// Check if JVM is executable
-			let mode = jvm_path
+			let mut permissions = jvm_path
 				.metadata()
 				.context("Failed to get JVM metadata")?
-				.permissions()
-				.mode();
-			if mode & 0o111 == 0 {
-				bail!("Java binary is not executable");
+				.permissions();
+			if permissions.mode() & 0o111 == 0 {
+				permissions.set_mode(0o775);
+				std::fs::set_permissions(jvm_path, permissions)
+					.context("Failed to make Java executable")?;
 			}
 		}
 
@@ -185,6 +214,25 @@ pub(crate) struct JavaInstallParameters<'a> {
 	pub persistent: &'a mut PersistentData,
 	pub req_client: &'a reqwest::Client,
 	pub custom_install_func: Option<&'a Arc<dyn CustomJavaFunction>>,
+}
+
+/// Gets the existing dir of a Java installation from the persistent file
+fn get_existing_dir(
+	java: &str,
+	major_version: &str,
+	persistent: &PersistentData,
+	update_depth: UpdateDepth,
+) -> Option<PathBuf> {
+	if update_depth != UpdateDepth::Shallow {
+		return None;
+	}
+
+	let directory = persistent.get_java_path(java, major_version)?;
+	if directory.exists() {
+		None
+	} else {
+		Some(directory)
+	}
 }
 
 async fn install_auto(
@@ -204,10 +252,6 @@ async fn install_auto(
 	if let Ok(out) = out {
 		return Ok(out);
 	}
-	let out = install_zulu(major_version, &mut params, o).await;
-	if let Ok(out) = out {
-		return Ok(out);
-	}
 	bail!("Failed to automatically install Java")
 }
 
@@ -217,10 +261,7 @@ async fn install_adoptium(
 	o: &mut impl NitroOutput,
 ) -> anyhow::Result<PathBuf> {
 	if params.update_manager.update_depth == UpdateDepth::Shallow {
-		if let Some(directory) = params
-			.persistent
-			.get_java_path(PersistentDataJavaInstallation::Adoptium, major_version)
-		{
+		if let Some(directory) = params.persistent.get_java_path("adoptium", major_version) {
 			if directory.exists() {
 				Ok(directory)
 			} else {
@@ -240,39 +281,13 @@ async fn install_adoptium(
 	}
 }
 
-async fn install_zulu(
-	major_version: &str,
-	params: &mut JavaInstallParameters<'_>,
-	o: &mut impl NitroOutput,
-) -> anyhow::Result<PathBuf> {
-	if params.update_manager.update_depth == UpdateDepth::Shallow {
-		if let Some(directory) = params
-			.persistent
-			.get_java_path(PersistentDataJavaInstallation::Zulu, major_version)
-		{
-			Ok(directory)
-		} else {
-			update_zulu(major_version, params, o)
-				.await
-				.context("Failed to update Zulu Java")
-		}
-	} else {
-		update_zulu(major_version, params, o)
-			.await
-			.context("Failed to update Zulu Java")
-	}
-}
-
 async fn install_graalvm(
 	major_version: &str,
 	params: &mut JavaInstallParameters<'_>,
 	o: &mut impl NitroOutput,
 ) -> anyhow::Result<PathBuf> {
 	if params.update_manager.update_depth == UpdateDepth::Shallow {
-		if let Some(directory) = params
-			.persistent
-			.get_java_path(PersistentDataJavaInstallation::GraalVM, major_version)
-		{
+		if let Some(directory) = params.persistent.get_java_path("graalvm", major_version) {
 			Ok(directory)
 		} else {
 			update_graalvm(major_version, params, o)
@@ -305,12 +320,7 @@ async fn update_adoptium(
 
 	if !params
 		.persistent
-		.update_java_installation(
-			PersistentDataJavaInstallation::Adoptium,
-			major_version,
-			&release_name,
-			&extracted_bin_dir,
-		)
+		.update_java_installation("adoptium", major_version, &release_name, &extracted_bin_dir)
 		.context("Failed to update Java in lockfile")?
 	{
 		return Ok(extracted_bin_dir);
@@ -362,66 +372,6 @@ async fn update_adoptium(
 	Ok(final_dir)
 }
 
-/// Updates Zulu and returns the path to the installation
-async fn update_zulu(
-	major_version: &str,
-	params: &mut JavaInstallParameters<'_>,
-	o: &mut impl NitroOutput,
-) -> anyhow::Result<PathBuf> {
-	let out_dir = params.paths.java.join("zulu");
-	files::create_dir(&out_dir)?;
-
-	let package = net::java::zulu::get_latest(major_version, params.req_client)
-		.await
-		.context("Failed to get the latest Zulu version")?;
-
-	let extracted_dir = out_dir.join(net::java::zulu::extract_dir_name(&package.name));
-
-	if !params
-		.persistent
-		.update_java_installation(
-			PersistentDataJavaInstallation::Zulu,
-			major_version,
-			&package.name,
-			&extracted_dir,
-		)
-		.context("Failed to update Java in lockfile")?
-	{
-		return Ok(extracted_dir);
-	}
-
-	params.persistent.dump(params.paths).await?;
-
-	let arc_path = out_dir.join(&package.name);
-
-	o.display(
-		MessageContents::StartProcess(translate!(o, DownloadingZulu, "version" = &package.name)),
-		MessageLevel::Important,
-	);
-	download::file(&package.download_url, &arc_path, params.req_client)
-		.await
-		.context("Failed to download JRE binaries")?;
-
-	// Extraction
-	o.display(
-		MessageContents::StartProcess(translate!(o, StartExtractingJava)),
-		MessageLevel::Important,
-	);
-	extract_archive_file(&arc_path, &out_dir).context("Failed to extract")?;
-	o.display(
-		MessageContents::StartProcess(translate!(o, StartRemovingJavaArchive)),
-		MessageLevel::Important,
-	);
-	std::fs::remove_file(arc_path).context("Failed to remove archive")?;
-
-	o.display(
-		MessageContents::Success(translate!(o, FinishJavaInstallation)),
-		MessageLevel::Important,
-	);
-
-	Ok(extracted_dir)
-}
-
 /// Updates GraalVM and returns the path to the installation
 async fn update_graalvm(
 	major_version: &str,
@@ -453,12 +403,7 @@ async fn update_graalvm(
 
 	if !params
 		.persistent
-		.update_java_installation(
-			PersistentDataJavaInstallation::GraalVM,
-			major_version,
-			&version,
-			&extracted_dir,
-		)
+		.update_java_installation("graalvm", major_version, &version, &extracted_dir)
 		.context("Failed to update Java in lockfile")?
 	{
 		return Ok(extracted_dir);
@@ -480,6 +425,7 @@ pub trait CustomJavaFunction: Send + Sync {
 	/// Call the custom install function
 	async fn install(
 		&self,
+		java: &str,
 		major_version: &str,
 		update_depth: UpdateDepth,
 	) -> anyhow::Result<Option<CustomJavaFunctionResult>>;
@@ -489,6 +435,8 @@ pub trait CustomJavaFunction: Send + Sync {
 pub struct CustomJavaFunctionResult {
 	/// Path to the new installation
 	pub path: PathBuf,
+	/// Version of the new installation
+	pub version: String,
 }
 
 /// Extracts the archive file

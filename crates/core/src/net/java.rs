@@ -1,7 +1,7 @@
 use crate::net::download;
-use nitro_shared::util::{ARCH_STRING, OS_STRING, PREFERRED_ARCHIVE};
+use nitro_shared::util::{ARCH_STRING, OS_STRING};
 
-use anyhow::{anyhow, Context};
+use anyhow::Context;
 use reqwest::Client;
 
 /// Downloading Adoptium JDK
@@ -73,59 +73,6 @@ pub mod adoptium {
 	pub struct BinaryPackage {
 		/// Link to the JRE download
 		pub link: String,
-	}
-}
-
-/// Downloading Azul Zulu
-pub mod zulu {
-	use super::*;
-
-	use nitro_shared::util::preferred_archive_extension;
-	use serde::Deserialize;
-
-	/// Gets the newest Zulu package for a major Java version
-	pub async fn get_latest(major_version: &str, client: &Client) -> anyhow::Result<PackageFormat> {
-		let url = json_url(major_version);
-		let manifest = download::json::<Vec<PackageFormat>>(&url, client)
-			.await
-			.context("Failed to download manifest of Zulu versions")?;
-		let package = manifest
-			.first()
-			.ok_or(anyhow!("A valid installation was not found"))?;
-
-		Ok(package.to_owned())
-	}
-
-	/// Gets the URL to the JSON file for a major Java version
-	fn json_url(major_version: &str) -> String {
-		format!(
-			"https://api.azul.com/metadata/v1/zulu/packages/?java_version={major_version}&os={OS_STRING}&arch={ARCH_STRING}&archive_type={PREFERRED_ARCHIVE}&java_package_type=jre&latest=true&java_package_features=headfull&release_status=ga&availability_types=CA&certifications=tck&page=1&page_size=100"
-		)
-	}
-
-	/// Format of the metadata JSON with download info for Zulu
-	#[derive(Deserialize, Clone)]
-	pub struct PackageFormat {
-		/// Name of the Zulu version
-		pub name: String,
-		/// Download URL for the package
-		pub download_url: String,
-	}
-
-	/// Gets the name of the extracted directory by removing the archive file extension
-	pub fn extract_dir_name(name: &str) -> String {
-		name.replacen(&preferred_archive_extension(), "", 1)
-	}
-
-	#[cfg(test)]
-	mod tests {
-		use super::*;
-
-		#[test]
-		fn test_extract_dir_name() {
-			let name = format!("hello.{PREFERRED_ARCHIVE}");
-			assert_eq!(extract_dir_name(&name), "hello");
-		}
 	}
 }
 

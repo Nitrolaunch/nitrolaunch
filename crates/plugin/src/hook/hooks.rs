@@ -916,6 +916,8 @@ def_hook!(
 #[derive(Serialize, Deserialize, Default)]
 #[serde(default)]
 pub struct InstallCustomJavaArg {
+	/// The Java that is being installed
+	pub kind: String,
 	/// The major version of Java to install
 	pub major_version: String,
 	/// Update depth for the install
@@ -928,4 +930,6 @@ pub struct InstallCustomJavaArg {
 pub struct InstallCustomJavaResult {
 	/// The path to the Java installation, containing a bin/java(.exe) executable
 	pub path: String,
+	/// The version of the resulting installation
+	pub version: String,
 }

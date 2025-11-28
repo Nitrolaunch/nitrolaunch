@@ -13,6 +13,7 @@ package.cross_platform: build.cross_platform
 	@rm -f release/mojang_transfer-universal.zip
 	@rm -f release/multiply-universal.zip
 	@rm -f release/weld-universal.zip
+	@rm -f release/zulu-universal.zip
 
 	@zip -j release/args-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_args.wasm plugins/args/plugin.json
 	@printf "@ nitro_plugin_args.wasm\\n@=plugin.wasm\\n" | zipnote -w release/args-universal.zip
@@ -22,6 +23,8 @@ package.cross_platform: build.cross_platform
 	@printf "@ nitro_plugin_mojang_transfer.wasm\\n@=plugin.wasm\\n" | zipnote -w release/mojang_transfer-universal.zip
 	@zip -j release/multiply-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_multiply.wasm plugins/multiply/plugin.json
 	@printf "@ nitro_plugin_multiply.wasm\\n@=plugin.wasm\\n" | zipnote -w release/multiply-universal.zip
+	@zip -j release/zulu-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_zulu.wasm plugins/zulu/plugin.json
+	@printf "@ nitro_plugin_zulu.wasm\\n@=plugin.wasm\\n" | zipnote -w release/zulu-universal.zip
 
 	@zip -j release/extra_versions-universal.zip plugins/extra_versions/plugin.json
 	@zip -j release/gamepad-universal.zip plugins/gamepad/plugin.json plugins/gamepad/gamepad.js
@@ -276,3 +279,8 @@ install.xmcl_transfer:
 	@cargo install --path . --bin nitro_plugin_xmcl_transfer --offline
 	@mkdir -p ~/.local/share/nitro/plugins/xmcl_transfer
 	@cat plugins/xmcl_transfer/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/xmcl_transfer/plugin.json
+
+install.zulu:
+	@cargo build -p nitro_plugin_zulu --release --target wasm32-wasip2
+	@cp -r plugins/zulu ~/.local/share/nitro/plugins
+	@cp -r ../target/wasm32-wasip2/release/nitro_plugin_zulu.wasm ~/.local/share/nitro/plugins/zulu/plugin.wasm

@@ -1,0 +1,19 @@
+{
+	"name": "Zulu",
+	"description": "Azul Zulu Java installation",
+	"protocol_version": 3,
+	"hooks": {
+		"add_java_types": {
+			"constant": [
+				{
+					"id": "zulu",
+					"name": "Zulu",
+					"color": "#006588"
+				}
+			]
+		},
+		"install_custom_java": {
+			"wasm": true
+		}
+	}
+}

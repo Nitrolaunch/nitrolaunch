@@ -208,5 +208,12 @@
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Adds better gamepad and arrow key support for the GUI"
+	},
+	"zulu": {
+		"id": "zulu",
+		"name": "Zulu",
+		"github_owner": "Nitrolaunch",
+		"github_repo": "plugins",
+		"description": "Azul Zulu Java installation"
 	}
 }

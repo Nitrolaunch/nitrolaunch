@@ -136,3 +136,9 @@ hook_interface!(
 	GetLoaderVersions
 );
 hook_interface!(add_user_types, "add_user_types", AddUserTypes);
+hook_interface!(add_java_types, "add_java_types", AddJavaTypes);
+hook_interface!(
+	install_custom_java,
+	"install_custom_java",
+	InstallCustomJava
+);
