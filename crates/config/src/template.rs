@@ -296,8 +296,8 @@ pub fn consolidate_template_configs(
 
 		i += 1;
 		if i > max_iterations {
-			panic!(
-				"Max iterations exceeded while resolving templates. This is a bug in Nitrolaunch."
+			bail!(
+				"Max iterations exceeded while resolving templates. You likely have cyclic templates."
 			);
 		}
 	}
