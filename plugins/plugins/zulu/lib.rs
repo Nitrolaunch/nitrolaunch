@@ -49,7 +49,7 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 
 		Ok(Some(InstallCustomJavaResult {
 			path: extracted_dir.to_string_lossy().to_string(),
-			version,
+			version: version.replace("zulu", ""),
 		}))
 	})?;
 
