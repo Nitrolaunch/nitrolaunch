@@ -215,5 +215,12 @@
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Azul Zulu Java installation"
+	},
+	"graalvm": {
+		"id": "graalvm",
+		"name": "GraalVM",
+		"github_owner": "Nitrolaunch",
+		"github_repo": "plugins",
+		"description": "Oracle GraalVM Java installation"
 	}
 }

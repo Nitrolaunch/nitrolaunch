@@ -62,6 +62,7 @@ fn main() {
 	add_file!(zip, "plugins/plugins/extra_versions.md");
 	add_file!(zip, "plugins/plugins/gen_pkg.md");
 	add_file!(zip, "plugins/plugins/glfw_fix.md");
+	add_file!(zip, "plugins/plugins/graalvm.md");
 	add_file!(zip, "plugins/plugins/lang.md");
 	add_file!(zip, "plugins/plugins/modrinth.md");
 	add_file!(zip, "plugins/plugins/modrinth_api.md");
@@ -76,4 +77,5 @@ fn main() {
 	add_file!(zip, "plugins/plugins/webtools.md");
 	add_file!(zip, "plugins/plugins/weld.md");
 	add_file!(zip, "plugins/plugins/xmcl_transfer.md");
+	add_file!(zip, "plugins/plugins/zulu.md");
 }

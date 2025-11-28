@@ -1,0 +1,19 @@
+{
+	"name": "GraalVM",
+	"description": "Oracle GraalVM Java installation",
+	"protocol_version": 3,
+	"hooks": {
+		"add_java_types": {
+			"constant": [
+				{
+					"id": "graalvm",
+					"name": "GraalVM",
+					"color": "#dd830c"
+				}
+			]
+		},
+		"install_custom_java": {
+			"wasm": true
+		}
+	}
+}

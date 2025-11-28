@@ -9,6 +9,7 @@ package.cross_platform: build.cross_platform
 	@rm -f release/auto_mcs-universal.zip
 	@rm -f release/extra_versions-universal.zip
 	@rm -f release/gamepad-universal.zip
+	@rm -f release/graalvm-universal.zip
 	@rm -f release/lang-universal.zip
 	@rm -f release/mojang_transfer-universal.zip
 	@rm -f release/multiply-universal.zip
@@ -19,6 +20,8 @@ package.cross_platform: build.cross_platform
 	@printf "@ nitro_plugin_args.wasm\\n@=plugin.wasm\\n" | zipnote -w release/args-universal.zip
 	@zip -j release/auto_mcs-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_auto_mcs.wasm plugins/auto_mcs/plugin.json
 	@printf "@ nitro_plugin_auto_mcs.wasm\\n@=plugin.wasm\\n" | zipnote -w release/auto_mcs-universal.zip
+	@zip -j release/graalvm-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_graalvm.wasm plugins/graalvm/plugin.json
+	@printf "@ nitro_plugin_graalvm.wasm\\n@=plugin.wasm\\n" | zipnote -w release/graalvm-universal.zip
 	@zip -j release/mojang_transfer-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_mojang_transfer.wasm plugins/mojang_transfer/plugin.json
 	@printf "@ nitro_plugin_mojang_transfer.wasm\\n@=plugin.wasm\\n" | zipnote -w release/mojang_transfer-universal.zip
 	@zip -j release/multiply-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_multiply.wasm plugins/multiply/plugin.json
@@ -184,6 +187,11 @@ install.glfw_fix:
 	@cargo install --path . --bin nitro_plugin_glfw_fix --offline
 	@mkdir -p ~/.local/share/nitro/plugins/glfw_fix
 	@cat plugins/glfw_fix/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/glfw_fix/plugin.json
+
+install.graalvm:
+	@cargo build -p nitro_plugin_graalvm --release --target wasm32-wasip2
+	@cp -r plugins/graalvm ~/.local/share/nitro/plugins
+	@cp -r ../target/wasm32-wasip2/release/nitro_plugin_graalvm.wasm ~/.local/share/nitro/plugins/graalvm/plugin.wasm
 
 install.lang:
 	@cp -r plugins/lang ~/.local/share/nitro/plugins

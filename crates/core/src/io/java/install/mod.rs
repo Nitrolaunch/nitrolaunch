@@ -35,8 +35,6 @@ pub enum JavaInstallationKind {
 	System,
 	/// Adoptium
 	Adoptium,
-	/// GraalVM
-	GraalVM,
 	/// A user-specified installation
 	Custom(String),
 }
@@ -48,7 +46,6 @@ impl JavaInstallationKind {
 			"auto" => Self::Auto,
 			"system" => Self::System,
 			"adoptium" => Self::Adoptium,
-			"graalvm" => Self::GraalVM,
 			path => Self::Custom(path.to_string()),
 		}
 	}
@@ -83,7 +80,6 @@ impl JavaInstallation {
 			JavaInstallationKind::Auto => install_auto(&vers_str, params, o).await?,
 			JavaInstallationKind::System => system::install(&vers_str)?,
 			JavaInstallationKind::Adoptium => install_adoptium(&vers_str, &mut params, o).await?,
-			JavaInstallationKind::GraalVM => install_graalvm(&vers_str, &mut params, o).await?,
 			JavaInstallationKind::Custom(id) => {
 				// Check if we need to update the install
 				let existing_dir = get_existing_dir(
@@ -248,10 +244,6 @@ async fn install_auto(
 	if let Ok(out) = out {
 		return Ok(out);
 	}
-	let out = install_graalvm(major_version, &mut params, o).await;
-	if let Ok(out) = out {
-		return Ok(out);
-	}
 	bail!("Failed to automatically install Java")
 }
 
@@ -278,26 +270,6 @@ async fn install_adoptium(
 		update_adoptium(major_version, params, o)
 			.await
 			.context("Failed to update Adoptium Java")
-	}
-}
-
-async fn install_graalvm(
-	major_version: &str,
-	params: &mut JavaInstallParameters<'_>,
-	o: &mut impl NitroOutput,
-) -> anyhow::Result<PathBuf> {
-	if params.update_manager.update_depth == UpdateDepth::Shallow {
-		if let Some(directory) = params.persistent.get_java_path("graalvm", major_version) {
-			Ok(directory)
-		} else {
-			update_graalvm(major_version, params, o)
-				.await
-				.context("Failed to update GraalVM Java")
-		}
-	} else {
-		update_graalvm(major_version, params, o)
-			.await
-			.context("Failed to update GraalVM Java")
 	}
 }
 
@@ -370,53 +342,6 @@ async fn update_adoptium(
 	let final_dir = extracted_bin_dir.join("Contents/Home");
 
 	Ok(final_dir)
-}
-
-/// Updates GraalVM and returns the path to the installation
-async fn update_graalvm(
-	major_version: &str,
-	params: &mut JavaInstallParameters<'_>,
-	o: &mut impl NitroOutput,
-) -> anyhow::Result<PathBuf> {
-	let out_dir = params.paths.java.join("graalvm");
-	files::create_dir(&out_dir)?;
-
-	o.display(
-		MessageContents::StartProcess(translate!(o, DownloadingGraalVM)),
-		MessageLevel::Important,
-	);
-	let archive = net::java::graalvm::get_latest(major_version, params.req_client)
-		.await
-		.context("Failed to download the latest GraalVM version")?;
-
-	// We have to extract now since we need the extracted dir
-	o.display(
-		MessageContents::StartProcess(translate!(o, StartExtractingJava)),
-		MessageLevel::Important,
-	);
-	let dir_name = extract_archive(std::io::Cursor::new(archive), &out_dir)
-		.context("Failed to extract GraalVM archive")?;
-
-	let extracted_dir = out_dir.join(&dir_name);
-
-	let version = dir_name.replace("graalvm-jdk-", "");
-
-	if !params
-		.persistent
-		.update_java_installation("graalvm", major_version, &version, &extracted_dir)
-		.context("Failed to update Java in lockfile")?
-	{
-		return Ok(extracted_dir);
-	}
-
-	params.persistent.dump(params.paths).await?;
-
-	o.display(
-		MessageContents::Success(translate!(o, FinishJavaInstallation)),
-		MessageLevel::Important,
-	);
-
-	Ok(extracted_dir)
 }
 
 /// Function for custom Java handling
