@@ -279,12 +279,16 @@ pub fn consolidate_template_configs(
 			} else {
 				for parent in template.instance.common.from.iter() {
 					// If the parent is already in the map (already consolidated) then we can derive from it and add to the map
-					if let Some(parent) = out.get(&TemplateID::from(parent.clone())) {
+					let parent_id = TemplateID::from(parent.clone());
+					if let Some(parent) = out.get(&parent_id) {
 						let mut new = parent.clone();
 						new.merge(template.clone());
 						out.insert(id.clone(), new);
 					} else {
-						bail!("Parent template '{parent}' does not exist");
+						// Check if the parent template actually doesn't exist or if we just haven't consolidated it yet
+						if !templates.contains_key(&parent_id) {
+							bail!("Parent template '{parent}' does not exist");
+						}
 					}
 				}
 			}
@@ -299,4 +303,41 @@ pub fn consolidate_template_configs(
 	}
 
 	Ok(out)
+}
+
+#[cfg(test)]
+mod tests {
+	use nitro_shared::util::DeserListOrSingle;
+
+	use crate::instance::CommonInstanceConfig;
+
+	use super::*;
+
+	/// Make sure that consolidated templates are not removed
+	#[test]
+	fn test_consolidated_still_exists() {
+		let mut templates = HashMap::new();
+		templates.insert(TemplateID::from("foo"), TemplateConfig::default());
+		templates.insert(
+			TemplateID::from("bar"),
+			TemplateConfig {
+				instance: InstanceConfig {
+					common: CommonInstanceConfig {
+						from: DeserListOrSingle::Single("foo".into()),
+						..Default::default()
+					},
+					..Default::default()
+				},
+				..Default::default()
+			},
+		);
+
+		// Ensure determinism
+		for _ in 0..30 {
+			let consolidated = consolidate_template_configs(templates.clone(), None)
+				.expect("Failed to consolidte");
+			assert!(consolidated.contains_key(&TemplateID::from("foo")));
+			assert!(consolidated.contains_key(&TemplateID::from("bar")));
+		}
+	}
 }
