@@ -16,6 +16,10 @@ fn main() -> anyhow::Result<()> {
 			bail!("Instance side is empty");
 		};
 
+		let Some(game_dir) = arg.game_dir else {
+			return Ok(OnInstanceSetupResult::default());
+		};
+
 		if arg.config.disable_loader_update {
 			return Ok(OnInstanceSetupResult::default());
 		}
@@ -60,7 +64,7 @@ fn main() -> anyhow::Result<()> {
 						side,
 						mode,
 						version,
-						PathBuf::from(arg.game_dir),
+						PathBuf::from(game_dir),
 						&PathBuf::from(arg.jvm_path),
 						&PathBuf::from(arg.game_jar_path),
 						process.deref_mut(),

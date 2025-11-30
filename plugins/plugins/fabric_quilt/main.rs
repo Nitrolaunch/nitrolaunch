@@ -7,10 +7,15 @@ use nitro_plugin::{api::executable::ExecutablePlugin, hook::hooks::OnInstanceSet
 use nitro_shared::{loaders::Loader, versions::VersionPattern, UpdateDepth};
 
 fn main() -> anyhow::Result<()> {
-	let mut plugin = ExecutablePlugin::from_manifest_file("fabric_quilt", include_str!("plugin.json"))?;
+	let mut plugin =
+		ExecutablePlugin::from_manifest_file("fabric_quilt", include_str!("plugin.json"))?;
 	plugin.on_instance_setup(|mut ctx, arg| {
 		let Some(side) = arg.side else {
 			bail!("Instance side is empty");
+		};
+
+		if arg.game_dir.is_none() {
+			return Ok(OnInstanceSetupResult::default());
 		};
 
 		if arg.config.disable_loader_update {

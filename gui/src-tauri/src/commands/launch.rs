@@ -120,10 +120,14 @@ async fn launch_game_impl(
 			let _ = data.write(&paths);
 			std::mem::drop(data);
 
-			*stdio_paths.lock().await = Some((handle.stdout(), handle.stdin()));
+			*stdio_paths.lock().await =
+				Some((handle.stdout().to_owned(), handle.stdin().to_owned()));
 
-			let update_output_task =
-				emit_instance_stdio_changes(app.clone(), instance_id.to_string(), handle.stdout());
+			let update_output_task = emit_instance_stdio_changes(
+				app.clone(),
+				instance_id.to_string(),
+				handle.stdout().to_owned(),
+			);
 
 			let launch_task = {
 				let paths = paths.clone();

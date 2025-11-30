@@ -1,7 +1,7 @@
 /// Use of Nitrolaunch's configured system directories
 pub mod paths;
 
-use std::fs::{self, File};
+use std::fs::{self, File, OpenOptions};
 use std::io::{BufWriter, Write};
 use std::path::Path;
 
@@ -175,4 +175,12 @@ pub fn write_buffered<P: AsRef<Path>, C: AsRef<[u8]>>(path: P, contents: C) -> s
 		file.write_all(contents)
 	}
 	inner(path.as_ref(), contents.as_ref())
+}
+
+/// Opens a file in append mode
+pub fn open_file_append(path: impl AsRef<Path>) -> std::io::Result<File> {
+	let mut options = OpenOptions::new();
+	let options = options.write(true).append(true).create(true);
+
+	options.open(path)
 }

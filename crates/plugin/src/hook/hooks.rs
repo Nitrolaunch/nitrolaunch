@@ -125,7 +125,7 @@ def_hook!(
 	"Hook for doing work when setting up an instance for update or launch",
 	OnInstanceSetupArg,
 	OnInstanceSetupResult,
-	3,
+	4,
 );
 
 /// Argument for the OnInstanceSetup hook
@@ -137,7 +137,7 @@ pub struct OnInstanceSetupArg {
 	/// The side of the instance
 	pub side: Option<Side>,
 	/// Path to the instance's game dir
-	pub game_dir: String,
+	pub game_dir: Option<String>,
 	/// Version info for the instance
 	pub version_info: VersionInfo,
 	/// The loader of the instance
@@ -191,7 +191,7 @@ def_hook!(
 	"Hook for doing work on an instance after packages are installed on that instance",
 	AfterPackagesInstalledArg,
 	(),
-	1,
+	2,
 );
 
 /// Argument for the AfterPackagesInstalled hook
@@ -203,7 +203,7 @@ pub struct AfterPackagesInstalledArg {
 	/// The side of the instance
 	pub side: Option<Side>,
 	/// Path to the instance's game dir
-	pub game_dir: String,
+	pub game_dir: Option<String>,
 	/// Version info for the instance
 	pub version_info: VersionInfo,
 	/// The loader of the instance
@@ -245,6 +245,23 @@ def_hook!(
 );
 
 def_hook!(
+	ReplaceInstanceLaunch,
+	"replace_instance_launch",
+	"Hook for replacing the launch behavior of an instance without a game dir",
+	InstanceLaunchArg,
+	Option<ReplaceInstanceLaunchResult>,
+	1,
+);
+
+/// Result from the ReplaceInstanceLaunch hook
+#[derive(Serialize, Deserialize, Default)]
+#[serde(default)]
+pub struct ReplaceInstanceLaunchResult {
+	/// The PID of the newly spawned instance process
+	pub pid: u32,
+}
+
+def_hook!(
 	UpdateWorldFiles,
 	"update_world_files",
 	"Hook for when shared world files are updated",
@@ -264,7 +281,7 @@ pub struct InstanceLaunchArg {
 	/// Path to the instance's dir
 	pub dir: String,
 	/// Path to the instance's game dir
-	pub game_dir: String,
+	pub game_dir: Option<String>,
 	/// Version info for the instance
 	pub version_info: VersionInfo,
 	/// The instance's configuration

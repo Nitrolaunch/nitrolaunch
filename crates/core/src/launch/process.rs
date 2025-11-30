@@ -12,6 +12,7 @@ use nitro_shared::versions::VersionName;
 use nitro_shared::{no_window, translate};
 
 use crate::instance::InstanceKind;
+use crate::io::files::open_file_append;
 use crate::{InstanceHandle, Paths, WrapperCommand};
 
 use super::LaunchConfiguration;
@@ -61,7 +62,7 @@ pub(crate) fn launch_game_process(
 	let child = cmd.spawn().context("Failed to spawn child process")?;
 
 	let stdout_file = File::open(&stdout)?;
-	let stdin_file = File::open(&stdin)?;
+	let stdin_file = open_file_append(&stdin)?;
 
 	Ok(InstanceHandle::new(
 		child,
@@ -205,7 +206,7 @@ fn wrap_single(command: Command, wrapper: &WrapperCommand) -> Command {
 }
 
 /// Gets the path to an instance stdout / stdin file
-fn get_stdio_file_path(paths: &Paths, is_stdin: bool) -> PathBuf {
+pub fn get_stdio_file_path(paths: &Paths, is_stdin: bool) -> PathBuf {
 	// We just use the timestamp to keep it unique
 	let now = SystemTime::now()
 		.duration_since(UNIX_EPOCH)

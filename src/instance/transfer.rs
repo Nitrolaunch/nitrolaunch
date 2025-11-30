@@ -52,6 +52,9 @@ impl Instance {
 
 		self.ensure_dirs(paths)
 			.context("Failed to ensure instance directories")?;
+		if self.dirs.get().game_dir.is_none() {
+			bail!("This instance has no game directory and cannot be exported");
+		}
 
 		o.display(
 			MessageContents::StartProcess(translate!(
@@ -75,7 +78,14 @@ impl Instance {
 			config: self.config.original_config_with_templates.clone(),
 			minecraft_version: lock_instance.version.clone(),
 			loader_version: lock_instance.loader_version.clone(),
-			game_dir: self.dirs.get().game_dir.to_string_lossy().to_string(),
+			game_dir: self
+				.dirs
+				.get()
+				.game_dir
+				.as_ref()
+				.unwrap()
+				.to_string_lossy()
+				.to_string(),
 			result_path: result_path.to_string_lossy().to_string(),
 		};
 		let result = plugins

@@ -102,6 +102,10 @@ def run():
 	})
 
 	# Figure out the paths to load packs into
+	if arg["game_dir"] is None:
+		set_result(hook)
+		return
+	
 	game_dir = Path(arg["game_dir"])
 	datapack_dirs = []
 	datapack_folder = arg["config"]["datapack_folder"] if "datapack_folder" in arg["config"] else None

@@ -1,17 +1,23 @@
+use nitro_core::io::files::open_file_append;
+use nitro_core::launch::get_stdio_file_path;
+use nitro_core::NitroCore;
 use std::collections::HashMap;
+use std::fs::File;
 use std::io::{Read, Write};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+use std::process::ExitStatus;
 use std::time::Duration;
+use sysinfo::{Pid, System};
 use tokio::sync::mpsc::{Receiver, Sender};
 
-use anyhow::Context;
+use anyhow::{bail, Context};
 use nitro_config::instance::{QuickPlay, WrapperCommand};
 use nitro_core::auth_crate::mc::ClientId;
 use nitro_core::io::java::install::JavaInstallationKind;
 use nitro_core::user::UserManager;
 use nitro_plugin::hook::call::HookHandles;
 use nitro_plugin::hook::hooks::{
-	InstanceLaunchArg, OnInstanceLaunch, OnInstanceStop, WhileInstanceLaunch,
+	InstanceLaunchArg, OnInstanceLaunch, OnInstanceStop, ReplaceInstanceLaunch, WhileInstanceLaunch,
 };
 use nitro_shared::id::InstanceID;
 use nitro_shared::java_args::MemoryNum;
@@ -23,6 +29,7 @@ use tokio::io::{AsyncWriteExt, Stdout};
 use super::tracking::RunningInstanceRegistry;
 use super::update::manager::UpdateManager;
 use crate::instance::setup::setup_core;
+use crate::instance::tracking::is_process_alive;
 use crate::instance::update::manager::UpdateSettings;
 use crate::instance::world_files::WorldFilesWatcher;
 use crate::io::lock::Lockfile;
@@ -84,11 +91,16 @@ impl Instance {
 			.context("Failed to update instance")?;
 		manager.add_result(result);
 
-		let mut hook_arg = InstanceLaunchArg {
+		let hook_arg = InstanceLaunchArg {
 			id: self.id.to_string(),
 			side: Some(self.get_side()),
 			dir: self.dirs.get().inst_dir.to_string_lossy().into(),
-			game_dir: self.dirs.get().game_dir.to_string_lossy().into(),
+			game_dir: self
+				.dirs
+				.get()
+				.game_dir
+				.as_ref()
+				.map(|x| x.to_string_lossy().into()),
 			version_info: version_info.clone(),
 			config: self
 				.config
@@ -98,13 +110,6 @@ impl Instance {
 			stdout_path: None,
 			stdin_path: None,
 		};
-
-		let mut core_version = core.get_version(&self.config.version, o).await?;
-
-		let mut instance = self
-			.create_core_instance(&mut core_version, paths, o)
-			.await
-			.context("Failed to create core instance")?;
 
 		// Make sure that any fluff from the update gets ended
 		o.end_process();
@@ -121,15 +126,39 @@ impl Instance {
 			.context("Failed to call on launch hook")?;
 		results.all_results(o).await?;
 
+		if self.dirs.get().game_dir.is_some() {
+			self.launch_standard(core, hook_arg, paths, plugins, o)
+				.await
+		} else {
+			self.launch_custom(hook_arg, paths, plugins, o).await
+		}
+	}
+
+	/// Standard Java launch
+	async fn launch_standard(
+		&mut self,
+		mut core: NitroCore,
+		mut hook_arg: InstanceLaunchArg,
+		paths: &Paths,
+		plugins: &PluginManager,
+		o: &mut impl NitroOutput,
+	) -> anyhow::Result<InstanceHandle> {
+		let mut core_version = core.get_version(&self.config.version, o).await?;
+
+		let mut instance = self
+			.create_core_instance(&mut core_version, paths, o)
+			.await
+			.context("Failed to create core instance")?;
+
 		// Launch the instance using core
-		let mut handle = instance
+		let handle = instance
 			.launch_with_handle(o)
 			.await
 			.context("Failed to launch core instance")?;
 
 		hook_arg.pid = Some(handle.get_pid());
-		hook_arg.stdout_path = Some(handle.stdout().1.to_string_lossy().to_string());
-		hook_arg.stdin_path = Some(handle.stdin().1.to_string_lossy().to_string());
+		hook_arg.stdout_path = Some(handle.stdout_path().to_string_lossy().to_string());
+		hook_arg.stdin_path = Some(handle.stdin_path().to_string_lossy().to_string());
 
 		// Run while_instance_launch hooks alongside
 		let hook_handles = plugins
@@ -139,7 +168,7 @@ impl Instance {
 
 		let world_files = if self.get_side() == Side::Client {
 			Some(
-				WorldFilesWatcher::new(&self.dirs.get().game_dir, plugins.clone())
+				WorldFilesWatcher::new(self.dirs.get().game_dir.as_ref().unwrap(), plugins.clone())
 					.context("Failed to setup world files watcher")?,
 			)
 		} else {
@@ -151,20 +180,85 @@ impl Instance {
 		std::thread::spawn(stdin_thread(stdin_tx));
 
 		let handle = InstanceHandle {
-			inner: handle,
 			instance_id: self.id.clone(),
 			hook_handles,
 			hook_arg,
-			is_silent: false,
-			stdout: tokio::io::stdout(),
 			stdin_rx,
-			world_files,
+			stdout: tokio::io::stdout(),
+			is_silent: false,
+			inner: InstanceHandleInner::Standard {
+				inner: handle,
+				world_files,
+			},
 		};
 
 		// Update the running instance registry
 		let mut running_instance_registry = RunningInstanceRegistry::open(paths)
 			.context("Failed to open registry of running instances")?;
-		running_instance_registry.add_instance(handle.get_pid(), &self.id);
+		running_instance_registry.add_instance(handle.get_pid(), &self.id, true);
+		let _ = running_instance_registry.write();
+
+		Ok(handle)
+	}
+
+	/// Custom launch using a plugin
+	async fn launch_custom(
+		&mut self,
+		mut hook_arg: InstanceLaunchArg,
+		paths: &Paths,
+		plugins: &PluginManager,
+		o: &mut impl NitroOutput,
+	) -> anyhow::Result<InstanceHandle> {
+		// Set up stdio
+		let stdout_path = get_stdio_file_path(&paths.core, false);
+		let stdin_path = get_stdio_file_path(&paths.core, true);
+		hook_arg.stdout_path = Some(stdout_path.to_string_lossy().to_string());
+		hook_arg.stdin_path = Some(stdin_path.to_string_lossy().to_string());
+
+		let result = plugins
+			.call_hook(ReplaceInstanceLaunch, &hook_arg, paths, o)
+			.await
+			.context("Failed to call custom launch hook")?;
+
+		let Some(result) = result.first_some(o).await? else {
+			bail!("No plugins handled custom launch for this instance");
+		};
+
+		hook_arg.pid = Some(result.pid);
+
+		// Run while_instance_launch hooks alongside
+		let hook_handles = plugins
+			.call_hook(WhileInstanceLaunch, &hook_arg, paths, o)
+			.await
+			.context("Failed to call while launch hook")?;
+
+		let stdout_file = File::open(&stdout_path)?;
+		let stdin_file = open_file_append(&stdin_path)?;
+
+		let (stdin_tx, stdin_rx) = tokio::sync::mpsc::channel::<Vec<u8>>(150);
+
+		std::thread::spawn(stdin_thread(stdin_tx));
+
+		let handle = InstanceHandle {
+			instance_id: self.id.clone(),
+			hook_handles,
+			hook_arg,
+			stdin_rx,
+			stdout: tokio::io::stdout(),
+			is_silent: false,
+			inner: InstanceHandleInner::Plugin {
+				pid: result.pid,
+				stdout_file,
+				stdin_file,
+				stdout_path,
+				stdin_path,
+			},
+		};
+
+		// Update the running instance registry
+		let mut running_instance_registry = RunningInstanceRegistry::open(paths)
+			.context("Failed to open registry of running instances")?;
+		running_instance_registry.add_instance(handle.get_pid(), &self.id, true);
 		let _ = running_instance_registry.write();
 
 		Ok(handle)
@@ -204,22 +298,43 @@ pub struct LaunchOptions {
 
 /// A handle for an instance
 pub struct InstanceHandle {
-	/// Core InstanceHandle with the process
-	inner: nitro_core::InstanceHandle,
 	/// The ID of the instance
 	instance_id: InstanceID,
 	/// Handles for hooks running while the instance is running
 	hook_handles: HookHandles<WhileInstanceLaunch>,
 	/// Arg to pass to the stop hook when the instance is stopped
 	hook_arg: InstanceLaunchArg,
-	/// Whether to redirect stdin and stdout to the process stdin and stdout
-	is_silent: bool,
-	/// Global stdout
-	stdout: Stdout,
 	/// Receiver for stdin data chunks
 	stdin_rx: Receiver<Vec<u8>>,
-	/// Shared world file watcher
-	world_files: Option<WorldFilesWatcher>,
+	/// Global stdout
+	stdout: Stdout,
+	/// Whether to redirect stdin and stdout to the process stdin and stdout
+	is_silent: bool,
+	/// Inner implementation
+	inner: InstanceHandleInner,
+}
+
+/// Inner implementation for an InstanceHandle,
+/// depending on whether this is a normal launch or a plugin launch
+enum InstanceHandleInner {
+	Standard {
+		/// Core InstanceHandle with the process
+		inner: nitro_core::InstanceHandle,
+		/// Shared world file watcher
+		world_files: Option<WorldFilesWatcher>,
+	},
+	Plugin {
+		/// PID of the instance process
+		pid: u32,
+		/// Stdout file for the process
+		stdout_file: File,
+		/// Stdin file for the process
+		stdin_file: File,
+		/// Stdout file path
+		stdout_path: PathBuf,
+		/// Stdin file path
+		stdin_path: PathBuf,
+	},
 }
 
 impl InstanceHandle {
@@ -231,6 +346,7 @@ impl InstanceHandle {
 		o: &mut impl NitroOutput,
 	) -> anyhow::Result<std::process::ExitStatus> {
 		let pid = self.get_pid();
+		let mut system = System::new_all();
 
 		// Wait for the process to complete while polling plugins and stdio
 		let mut stdio_buf = [0u8; 512];
@@ -240,30 +356,39 @@ impl InstanceHandle {
 
 			// Instance stdio
 			if !self.is_silent {
-				let (inst_stdout, _) = self.inner.stdout();
+				let inst_stdout = match &mut self.inner {
+					InstanceHandleInner::Standard { inner, .. } => inner.stdout(),
+					InstanceHandleInner::Plugin { stdout_file, .. } => stdout_file,
+				};
+
 				// This is non-blocking as the stdout file will have an EoF
 				if let Ok(bytes_read) = inst_stdout.read(&mut stdio_buf) {
 					let _ = self.stdout.write(&stdio_buf[0..bytes_read]).await;
 				}
 
-				let (inst_stdin, _) = self.inner.stdin();
+				let inst_stdin = match &mut self.inner {
+					InstanceHandleInner::Standard { inner, .. } => inner.stdin(),
+					InstanceHandleInner::Plugin { stdin_file, .. } => stdin_file,
+				};
 				if let Ok(chunk) = self.stdin_rx.try_recv() {
 					let _ = inst_stdin.write_all(&chunk);
 				}
 			}
 
 			// Update world files
-			if let Some(world_files) = &mut self.world_files {
-				let _ = world_files.watch(&self.hook_arg, paths, o).await;
+			if let InstanceHandleInner::Standard { world_files, .. } = &mut self.inner {
+				if let Some(world_files) = world_files {
+					let _ = world_files.watch(&self.hook_arg, paths, o).await;
+				}
 			}
 
 			// Check if the instance has exited
-			let result = self.inner.try_wait();
-			if let Ok(Some(status)) = result {
-				break status;
+			system.refresh_processes(sysinfo::ProcessesToUpdate::All, true);
+			if !is_process_alive(pid, &system, false) {
+				break ExitStatus::default();
 			}
 
-			tokio::time::sleep(Duration::from_micros(100)).await;
+			tokio::time::sleep(Duration::from_millis(5)).await;
 		};
 
 		// Terminate any sibling processes now that the main one is complete
@@ -276,7 +401,7 @@ impl InstanceHandle {
 
 	/// Kills the process early
 	pub async fn kill(
-		mut self,
+		self,
 		plugins: &PluginManager,
 		paths: &Paths,
 		o: &mut impl NitroOutput,
@@ -284,7 +409,18 @@ impl InstanceHandle {
 		let pid = self.get_pid();
 
 		let _ = self.hook_handles.kill(o).await;
-		let _ = self.inner.kill();
+		match self.inner {
+			InstanceHandleInner::Standard { mut inner, .. } => {
+				let _ = inner.kill();
+			}
+			InstanceHandleInner::Plugin { pid, .. } => {
+				let mut system = System::new_all();
+				system.refresh_processes(sysinfo::ProcessesToUpdate::All, true);
+				if let Some(proc) = system.process(Pid::from(pid as usize)) {
+					proc.kill();
+				}
+			}
+		}
 
 		Self::on_stop(&self.instance_id, pid, &self.hook_arg, plugins, paths, o).await?;
 
@@ -293,13 +429,19 @@ impl InstanceHandle {
 
 	/// Gets the internal child process for the game, consuming the
 	/// InstanceHandle
-	pub fn get_process(self) -> std::process::Child {
-		self.inner.get_process()
+	pub fn get_process(self) -> Option<std::process::Child> {
+		match self.inner {
+			InstanceHandleInner::Standard { inner, .. } => Some(inner.get_process()),
+			InstanceHandleInner::Plugin { .. } => None,
+		}
 	}
 
 	/// Gets the PID of the instance process
 	pub fn get_pid(&self) -> u32 {
-		self.inner.get_pid()
+		match &self.inner {
+			InstanceHandleInner::Standard { inner, .. } => inner.get_pid(),
+			InstanceHandleInner::Plugin { pid, .. } => *pid,
+		}
 	}
 
 	/// Set whether the stdio of the instance should be redirected to this process
@@ -308,13 +450,19 @@ impl InstanceHandle {
 	}
 
 	/// Get the stdout file path for this instance
-	pub fn stdout(&mut self) -> PathBuf {
-		self.inner.stdout().1.clone()
+	pub fn stdout(&self) -> &Path {
+		match &self.inner {
+			InstanceHandleInner::Standard { inner, .. } => inner.stdout_path(),
+			InstanceHandleInner::Plugin { stdout_path, .. } => stdout_path,
+		}
 	}
 
 	/// Get the stdin file path for this instance
-	pub fn stdin(&mut self) -> PathBuf {
-		self.inner.stdin().1.clone()
+	pub fn stdin(&self) -> &Path {
+		match &self.inner {
+			InstanceHandleInner::Standard { inner, .. } => inner.stdin_path(),
+			InstanceHandleInner::Plugin { stdin_path, .. } => stdin_path,
+		}
 	}
 
 	/// Function that should be run whenever the instance stops

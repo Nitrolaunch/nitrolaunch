@@ -304,7 +304,11 @@ async fn dir(data: &mut CmdData<'_>, instance: Option<String>) -> anyhow::Result
 		.context("Instance does not exist")?;
 	instance.ensure_dirs(&data.paths)?;
 
-	println!("{}", &instance.get_dirs().get().game_dir.to_string_lossy());
+	if let Some(game_dir) = &instance.get_dirs().get().game_dir {
+		println!("{game_dir:?}");
+	} else {
+		bail!("Instance has no game dir");
+	}
 
 	Ok(())
 }

@@ -11,6 +11,10 @@ fn main() -> anyhow::Result<()> {
 			bail!("Instance side is empty");
 		};
 
+		if arg.game_dir.is_none() {
+			return Ok(OnInstanceSetupResult::default());
+		};
+
 		if arg.config.disable_loader_update {
 			return Ok(OnInstanceSetupResult::default());
 		}

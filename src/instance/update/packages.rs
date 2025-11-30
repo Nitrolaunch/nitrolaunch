@@ -61,10 +61,18 @@ pub async fn update_instance_packages<O: NitroOutput>(
 	for adddon_kind in addon_kinds {
 		for instance in instances.iter_mut() {
 			instance.ensure_dirs(ctx.paths)?;
+			if instance.get_dirs().get().game_dir.is_none() {
+				continue;
+			}
 
 			let Ok(dirs) = get_addon_paths(
 				&instance.config.original_config_with_templates_and_plugins,
-				&instance.get_dirs().get().game_dir,
+				instance
+					.get_dirs()
+					.get()
+					.game_dir
+					.as_ref()
+					.expect("Game dir should exist"),
 				adddon_kind,
 				&[],
 				&VersionInfo {

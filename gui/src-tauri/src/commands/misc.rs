@@ -254,6 +254,9 @@ pub async fn open_instance_dir(
 	let _ = instance.ensure_dirs(&state.paths);
 
 	let path = instance.get_dirs().get().game_dir.clone();
+	let Some(path) = path else {
+		return Err("Instance has no game dir".into());
+	};
 
 	tokio::task::spawn_blocking(move || {
 		showfile::show_path_in_file_manager(&path);

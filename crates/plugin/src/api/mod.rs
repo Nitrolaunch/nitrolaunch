@@ -142,3 +142,8 @@ hook_interface!(
 	"install_custom_java",
 	InstallCustomJava
 );
+hook_interface!(
+	replace_instance_launch,
+	"replace_instance_launch",
+	ReplaceInstanceLaunch
+);

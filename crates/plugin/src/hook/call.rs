@@ -350,3 +350,34 @@ where
 		Ok(out)
 	}
 }
+
+impl<H: Hook, T> HookHandles<H>
+where
+	H::Result: OptionLike<Type = T>,
+{
+	/// Gets the results from handles, returning the first non-None value
+	pub async fn first_some(mut self, o: &mut impl NitroOutput) -> anyhow::Result<Option<T>> {
+		while let Some(result) = self.next_result(o).await? {
+			if let Some(result) = result.into_option() {
+				return Ok(Some(result));
+			}
+		}
+
+		Ok(None)
+	}
+}
+
+/// Utitlity trait for Option<T>
+pub trait OptionLike {
+	/// T
+	type Type;
+	/// Converts to an Option<T>
+	fn into_option(self) -> Option<Self::Type>;
+}
+
+impl<T> OptionLike for Option<T> {
+	type Type = T;
+	fn into_option(self) -> Option<Self::Type> {
+		self
+	}
+}

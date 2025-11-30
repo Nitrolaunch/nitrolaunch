@@ -41,14 +41,17 @@ impl Instance {
 		version_info: &VersionInfo,
 	) -> anyhow::Result<Vec<PathBuf>> {
 		self.ensure_dirs(paths)?;
-		let game_dir = &self.dirs.get().game_dir;
-		get_addon_paths(
-			&self.config.original_config_with_templates_and_plugins,
-			game_dir,
-			addon.kind,
-			selected_worlds,
-			version_info,
-		)
+		if let Some(game_dir) = &self.dirs.get().game_dir {
+			get_addon_paths(
+				&self.config.original_config_with_templates_and_plugins,
+				game_dir,
+				addon.kind,
+				selected_worlds,
+				version_info,
+			)
+		} else {
+			Ok(Vec::new())
+		}
 	}
 
 	/// Hardlinks the addon from the path in addon storage to the correct in the instance,

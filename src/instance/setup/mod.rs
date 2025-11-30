@@ -111,7 +111,12 @@ impl Instance {
 		let mut arg = OnInstanceSetupArg {
 			id: self.id.to_string(),
 			side: Some(self.get_side()),
-			game_dir: self.dirs.get().game_dir.to_string_lossy().to_string(),
+			game_dir: self
+				.dirs
+				.get()
+				.game_dir
+				.as_ref()
+				.map(|x| x.to_string_lossy().to_string()),
 			version_info: version_info.clone(),
 			loader: self.config.loader.clone(),
 			current_loader_version,
@@ -222,9 +227,12 @@ impl Instance {
 		lock.finish(paths)
 			.context("Failed to finish using lockfile")?;
 
-		self.create_core_instance(&mut version, paths, o)
-			.await
-			.context("Failed to create core instance")?;
+		// Create the core instance only if this is a local instance
+		if self.dirs.get().game_dir.is_some() {
+			self.create_core_instance(&mut version, paths, o)
+				.await
+				.context("Failed to create core instance")?;
+		}
 
 		o.end_section();
 
@@ -300,9 +308,15 @@ impl Instance {
 			quick_play,
 			use_log4j_config: self.config.launch.use_log4j_config,
 		};
+		let game_dir = self
+			.dirs
+			.get()
+			.game_dir
+			.clone()
+			.unwrap_or(self.dirs.get().inst_dir.clone());
 		let config = nitro_core::InstanceConfiguration {
 			side,
-			path: self.dirs.get().game_dir.clone(),
+			path: game_dir,
 			launch: launch_config,
 			jar_path: self.modification_data.jar_path_override.clone(),
 			main_class: self.modification_data.main_class_override.clone(),
@@ -318,19 +332,19 @@ impl Instance {
 	/// Removes files such as the game jar for when the template version changes
 	pub fn teardown(&mut self, paths: &Paths) -> anyhow::Result<()> {
 		self.ensure_dirs(paths)?;
-		match self.kind {
-			InstKind::Client { .. } => {
-				let inst_dir = &self.dirs.get().inst_dir;
-				let jar_path = inst_dir.join("client.jar");
-				if jar_path.exists() {
-					fs::remove_file(jar_path).context("Failed to remove client.jar")?;
+		if let Some(game_dir) = &self.dirs.get().game_dir {
+			match self.kind {
+				InstKind::Client { .. } => {
+					let jar_path = game_dir.join("client.jar");
+					if jar_path.exists() {
+						fs::remove_file(jar_path).context("Failed to remove client.jar")?;
+					}
 				}
-			}
-			InstKind::Server { .. } => {
-				let game_dir = &self.dirs.get().game_dir;
-				let jar_path = game_dir.join("server.jar");
-				if jar_path.exists() {
-					fs::remove_file(jar_path).context("Failed to remove server.jar")?;
+				InstKind::Server { .. } => {
+					let jar_path = game_dir.join("server.jar");
+					if jar_path.exists() {
+						fs::remove_file(jar_path).context("Failed to remove server.jar")?;
+					}
 				}
 			}
 		}
@@ -351,12 +365,15 @@ impl Instance {
 		if let Some(uuid) = user.get_uuid() {
 			if let Some(keypair) = user.get_keypair() {
 				self.ensure_dirs(paths)?;
-				let keys_dir = self.dirs.get().game_dir.join("profilekeys");
-				let hyphenated_uuid = hyphenate_uuid(uuid).context("Failed to hyphenate UUID")?;
-				let path = keys_dir.join(format!("{hyphenated_uuid}.json"));
-				nitro_core::io::files::create_leading_dirs(&path)?;
+				if let Some(game_dir) = &self.dirs.get().game_dir {
+					let keys_dir = game_dir.join("profilekeys");
+					let hyphenated_uuid =
+						hyphenate_uuid(uuid).context("Failed to hyphenate UUID")?;
+					let path = keys_dir.join(format!("{hyphenated_uuid}.json"));
+					nitro_core::io::files::create_leading_dirs(&path)?;
 
-				json_to_file(path, keypair).context("Failed to write keypair to file")?;
+					json_to_file(path, keypair).context("Failed to write keypair to file")?;
+				}
 			}
 		}
 
@@ -369,8 +386,9 @@ impl Instance {
 pub struct InstanceDirs {
 	/// The base instance directory
 	pub inst_dir: PathBuf,
-	/// The game directory, such as .minecraft, relative to the instance directory
-	pub game_dir: PathBuf,
+	/// The game directory, such as .minecraft, relative to the instance directory.
+	/// Will be None if the instance is not configured to have one (it is a remote instance)
+	pub game_dir: Option<PathBuf>,
 }
 
 impl InstanceDirs {
@@ -384,11 +402,16 @@ impl InstanceDirs {
 		let inst_dir = paths.data.join("instances").join(instance_id);
 
 		let game_dir = if let Some(game_dir) = game_dir_override {
-			game_dir.to_owned()
+			// 'none' can be used to specify a missing game dir
+			if game_dir.to_string_lossy() == "none" {
+				None
+			} else {
+				Some(game_dir.to_owned())
+			}
 		} else {
 			match side {
-				Side::Client => inst_dir.join(".minecraft"),
-				Side::Server => inst_dir.clone(),
+				Side::Client => Some(inst_dir.join(".minecraft")),
+				Side::Server => Some(inst_dir.clone()),
 			}
 		};
 
@@ -398,8 +421,10 @@ impl InstanceDirs {
 	/// Make sure the directories exist
 	pub fn ensure_exist(&self) -> anyhow::Result<()> {
 		std::fs::create_dir_all(&self.inst_dir).context("Failed to create instance directory")?;
-		std::fs::create_dir_all(&self.game_dir)
-			.context("Failed to create instance game directory")?;
+		if let Some(game_dir) = &self.game_dir {
+			std::fs::create_dir_all(game_dir)
+				.context("Failed to create instance game directory")?;
+		}
 		Ok(())
 	}
 }

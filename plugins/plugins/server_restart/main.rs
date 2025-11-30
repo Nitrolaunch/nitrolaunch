@@ -18,6 +18,10 @@ fn main() -> anyhow::Result<()> {
 			return Ok(OnInstanceSetupResult::default());
 		}
 
+		let Some(game_dir) = arg.game_dir else {
+			return Ok(OnInstanceSetupResult::default());
+		};
+
 		let config = if let Some(config) = arg.config.common.plugin_config.get("restart") {
 			serde_json::from_value(config.clone()).context("Failed to deserialize config")?
 		} else {
@@ -28,7 +32,7 @@ fn main() -> anyhow::Result<()> {
 		let filename = "start.bat";
 		#[cfg(not(target_os = "windows"))]
 		let filename = "start.sh";
-		let path = PathBuf::from(&arg.game_dir).join(filename);
+		let path = PathBuf::from(&game_dir).join(filename);
 		create_script(&path, &arg.id, config)
 			.context("Failed to create startup script for instance")?;
 

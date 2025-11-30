@@ -89,7 +89,7 @@ impl RunningInstanceRegistry {
 		let original_lenth = self.data.instances.len();
 		self.data
 			.instances
-			.retain(|x| is_process_alive(x.pid, &self.system).unwrap_or(true));
+			.retain(|x| is_process_alive(x.pid, &self.system, x.is_java));
 
 		if original_lenth != self.data.instances.len() {
 			self.is_dirty = true;
@@ -97,11 +97,12 @@ impl RunningInstanceRegistry {
 	}
 
 	/// Adds an instance to the registry
-	pub fn add_instance(&mut self, pid: u32, instance: &str) {
+	pub fn add_instance(&mut self, pid: u32, instance: &str, is_java: bool) {
 		let entry = RunningInstanceEntry {
 			pid,
 			parent_pid: std::process::id(),
 			instance_id: instance.to_string(),
+			is_java,
 		};
 		self.data.instances.push(entry);
 		self.is_dirty = true;
@@ -143,8 +144,8 @@ impl RunningInstanceRegistry {
 	}
 
 	/// Tries to check if an instance is alive
-	pub fn is_instance_alive(&self, entry: &RunningInstanceEntry) -> anyhow::Result<bool> {
-		is_process_alive(entry.pid, &self.system)
+	pub fn is_instance_alive(&self, entry: &RunningInstanceEntry) -> bool {
+		is_process_alive(entry.pid, &self.system, entry.is_java)
 	}
 
 	/// Iterates over the entries in the registry
@@ -173,27 +174,36 @@ pub struct RunningInstanceEntry {
 	pub instance_id: String,
 	/// The PID of the process that launched this instance
 	pub parent_pid: u32,
+	/// Whether this is a Java instance
+	#[serde(default = "default_is_java")]
+	pub is_java: bool,
+}
+
+fn default_is_java() -> bool {
+	true
 }
 
 /// Checks if an instance process is alive
-fn is_process_alive(pid: u32, system: &System) -> anyhow::Result<bool> {
+pub fn is_process_alive(pid: u32, system: &System, is_java: bool) -> bool {
 	let pid = Pid::from_u32(pid);
 
 	let process = system.process(pid);
 	// The process doesn't exist
 	let Some(process) = process else {
-		return Ok(false);
+		return false;
 	};
 
-	// If there is no Java it probably isn't our process
-	if !process.name().to_string_lossy().contains("java")
-		&& !process
-			.cmd()
-			.iter()
-			.any(|x| x.to_string_lossy().contains("java"))
-	{
-		return Ok(false);
+	// If there is no Java, and it should be, it probably isn't our process
+	if is_java {
+		if !process.name().to_string_lossy().contains("java")
+			&& !process
+				.cmd()
+				.iter()
+				.any(|x| x.to_string_lossy().contains("java"))
+		{
+			return false;
+		}
 	}
 
-	Ok(true)
+	true
 }

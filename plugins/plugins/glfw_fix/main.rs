@@ -10,6 +10,10 @@ use serde_json::Value;
 fn main() -> anyhow::Result<()> {
 	let mut plugin = ExecutablePlugin::from_manifest_file("glfw_fix", include_str!("plugin.json"))?;
 	plugin.on_instance_setup(|mut ctx, arg| {
+		if arg.game_dir.is_none() {
+			return Ok(OnInstanceSetupResult::default());
+		};
+
 		let enabled = arg
 			.config
 			.common

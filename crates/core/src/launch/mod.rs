@@ -32,6 +32,7 @@ pub use self::configuration::{
 	LaunchConfigBuilder, LaunchConfiguration, QuickPlayType, WrapperCommand,
 };
 
+pub use self::process::get_stdio_file_path;
 pub use self::process::launch_process;
 pub use self::process::{LaunchProcessParameters, LaunchProcessProperties};
 
@@ -227,13 +228,23 @@ impl InstanceHandle {
 		self.process.id()
 	}
 
-	/// Gets the stdout of the instance process
-	pub fn stdout(&mut self) -> (&mut File, PathBuf) {
-		(&mut self.stdout, self.stdout_path.clone())
+	/// Gets the stdout file of the instance process
+	pub fn stdout(&mut self) -> &mut File {
+		&mut self.stdout
 	}
 
-	/// Gets the stdin of the instance process
-	pub fn stdin(&mut self) -> (&mut File, PathBuf) {
-		(&mut self.stdin, self.stdin_path.clone())
+	/// Gets the stdout path of the instance process
+	pub fn stdout_path(&self) -> &Path {
+		&self.stdout_path
+	}
+
+	/// Gets the stdin file of the instance process
+	pub fn stdin(&mut self) -> &mut File {
+		&mut self.stdin
+	}
+
+	/// Gets the stdin path of the instance process
+	pub fn stdin_path(&self) -> &Path {
+		&self.stdin_path
 	}
 }

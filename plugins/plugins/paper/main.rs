@@ -26,6 +26,10 @@ fn main() -> anyhow::Result<()> {
 			bail!("Instance side is empty");
 		};
 
+		let Some(game_dir) = arg.game_dir else {
+			return Ok(OnInstanceSetupResult::default());
+		};
+
 		if arg.config.disable_loader_update {
 			return Ok(OnInstanceSetupResult::default());
 		}
@@ -127,7 +131,7 @@ fn main() -> anyhow::Result<()> {
 				.context("Failed to get old version build info")?;
 
 				remove_paper(
-					&PathBuf::from(arg.game_dir),
+					&PathBuf::from(game_dir),
 					build_info.downloads.application.name,
 				)
 				.with_context(|| format!("Failed to remove {mode} from the instance"))?;
