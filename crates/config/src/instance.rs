@@ -18,6 +18,7 @@ use super::package::PackageConfigDeser;
 
 /// Configuration for an instance
 #[derive(Deserialize, Serialize, Clone, Debug, Default)]
+#[serde(default)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 pub struct InstanceConfig {
 	/// One or more templates to use
@@ -27,21 +28,18 @@ pub struct InstanceConfig {
 	#[serde(rename = "type")]
 	pub side: Option<Side>,
 	/// The display name of this instance
-	#[serde(default)]
 	#[serde(skip_serializing_if = "Option::is_none")]
 	pub name: Option<String>,
 	/// A path to an icon file for this instance
-	#[serde(default)]
 	#[serde(skip_serializing_if = "Option::is_none")]
 	pub icon: Option<String>,
 	/// The Minecraft version
+	#[serde(skip_serializing_if = "Option::is_none")]
 	pub version: Option<MinecraftVersionDeser>,
 	/// Configured loader
-	#[serde(default)]
 	#[serde(skip_serializing_if = "DefaultExt::is_default")]
 	pub loader: Option<String>,
 	/// Default stability setting of packages on this instance
-	#[serde(default)]
 	#[serde(skip_serializing_if = "DefaultExt::is_default")]
 	pub package_stability: Option<PackageStability>,
 	/// Launch configuration
@@ -60,19 +58,15 @@ pub struct InstanceConfig {
 	#[serde(skip_serializing_if = "Option::is_none")]
 	pub game_dir: Option<String>,
 	/// Window configuration
-	#[serde(default)]
 	#[serde(skip_serializing_if = "DefaultExt::is_default")]
 	pub window: ClientWindowConfig,
 	/// Whether this config was created by a plugin
-	#[serde(default)]
 	#[serde(skip_serializing_if = "DefaultExt::is_default")]
 	pub from_plugin: bool,
 	/// Whether to disable installing and updating loaders on this instance
-	#[serde(default)]
 	#[serde(skip_serializing_if = "DefaultExt::is_default")]
 	pub disable_loader_update: bool,
 	/// Config for plugins
-	#[serde(flatten)]
 	#[serde(skip_serializing_if = "serde_json::Map::is_empty")]
 	pub plugin_config: serde_json::Map<String, serde_json::Value>,
 }
