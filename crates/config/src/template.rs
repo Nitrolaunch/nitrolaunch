@@ -267,7 +267,7 @@ pub fn consolidate_template_configs(
 				continue;
 			}
 
-			if template.instance.common.from.is_empty() {
+			if template.instance.from.is_empty() {
 				// Templates with no ancestor can just be added directly to the output, after deriving from the base template
 				let mut template = template.clone();
 				if let Some(base_template) = base_template {
@@ -277,7 +277,7 @@ pub fn consolidate_template_configs(
 				}
 				out.insert(id.clone(), template);
 			} else {
-				for parent in template.instance.common.from.iter() {
+				for parent in template.instance.from.iter() {
 					// If the parent is already in the map (already consolidated) then we can derive from it and add to the map
 					let parent_id = TemplateID::from(parent.clone());
 					if let Some(parent) = out.get(&parent_id) {
@@ -309,8 +309,6 @@ pub fn consolidate_template_configs(
 mod tests {
 	use nitro_shared::util::DeserListOrSingle;
 
-	use crate::instance::CommonInstanceConfig;
-
 	use super::*;
 
 	/// Make sure that consolidated templates are not removed
@@ -322,10 +320,7 @@ mod tests {
 			TemplateID::from("bar"),
 			TemplateConfig {
 				instance: InstanceConfig {
-					common: CommonInstanceConfig {
-						from: DeserListOrSingle::Single("foo".into()),
-						..Default::default()
-					},
+					from: DeserListOrSingle::Single("foo".into()),
 					..Default::default()
 				},
 				..Default::default()

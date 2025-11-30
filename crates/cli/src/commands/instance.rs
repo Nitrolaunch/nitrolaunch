@@ -8,7 +8,7 @@ use inquire::{Confirm, Select};
 use itertools::Itertools;
 use nitrolaunch::config::modifications::{apply_modifications_and_write, ConfigModification};
 use nitrolaunch::config::Config;
-use nitrolaunch::config_crate::instance::{CommonInstanceConfig, InstanceConfig};
+use nitrolaunch::config_crate::instance::InstanceConfig;
 use nitrolaunch::instance::transfer::load_formats;
 use nitrolaunch::instance::update::InstanceUpdateContext;
 use nitrolaunch::instance::Instance;
@@ -418,11 +418,8 @@ async fn add(data: &mut CmdData<'_>) -> anyhow::Result<()> {
 
 	let instance_config = InstanceConfig {
 		side: Some(side),
-		common: CommonInstanceConfig {
-			version: Some(version),
-			loader: Some(to_string_json(&loader)),
-			..Default::default()
-		},
+		version: Some(version),
+		loader: Some(to_string_json(&loader)),
 		..Default::default()
 	};
 

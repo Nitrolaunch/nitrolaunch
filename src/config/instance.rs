@@ -37,7 +37,6 @@ pub async fn read_instance_config(
 
 	// Get the parent template if it is specified
 	let templates: anyhow::Result<Vec<_>> = config
-		.common
 		.from
 		.iter()
 		.map(|x| {
@@ -64,12 +63,12 @@ pub async fn read_instance_config(
 	// Consolidate all of the package configs into the instance package config list
 	let packages = consolidate_package_configs(&templates, &config, side);
 
-	original_config_with_templates.common.packages = packages.clone();
+	original_config_with_templates.packages = packages.clone();
 
 	let read_packages = packages
 		.clone()
 		.into_iter()
-		.map(|x| read_package_config(x, config.common.package_stability.unwrap_or_default()))
+		.map(|x| read_package_config(x, config.package_stability.unwrap_or_default()))
 		.collect();
 
 	// Loader
@@ -82,19 +81,11 @@ pub async fn read_instance_config(
 	);
 
 	let loader = match side {
-		Side::Client => config
-			.common
-			.loader
-			.clone()
-			.or(template_loaders.client().cloned()),
-		Side::Server => config
-			.common
-			.loader
-			.clone()
-			.or(template_loaders.server().cloned()),
+		Side::Client => config.loader.clone().or(template_loaders.client().cloned()),
+		Side::Server => config.loader.clone().or(template_loaders.server().cloned()),
 	};
 
-	original_config_with_templates.common.loader = loader.clone();
+	original_config_with_templates.loader = loader.clone();
 
 	// Apply plugins
 	let arg = ModifyInstanceConfigArgument {
@@ -109,8 +100,8 @@ pub async fn read_instance_config(
 	}
 
 	let mut original_config_with_templates_and_plugins = config.clone();
-	original_config_with_templates_and_plugins.common.loader = loader.clone();
-	original_config_with_templates_and_plugins.common.packages = packages.clone();
+	original_config_with_templates_and_plugins.loader = loader.clone();
+	original_config_with_templates_and_plugins.packages = packages.clone();
 
 	let kind = match side {
 		Side::Client => InstKind::client(config.window),
@@ -126,7 +117,6 @@ pub async fn read_instance_config(
 
 	let version = mc_version_from_deser(
 		&config
-			.common
 			.version
 			.clone()
 			.context("Instance is missing a Minecraft version")?,
@@ -138,16 +128,16 @@ pub async fn read_instance_config(
 		version,
 		loader,
 		loader_version,
-		launch: launch_config_to_options(config.common.launch)?,
-		datapack_folder: config.common.datapack_folder,
+		launch: launch_config_to_options(config.launch)?,
+		datapack_folder: config.datapack_folder,
 		packages: read_packages,
-		package_stability: config.common.package_stability.unwrap_or_default(),
-		package_overrides: config.common.overrides,
-		game_dir: config.common.game_dir.map(PathBuf::from),
+		package_stability: config.package_stability.unwrap_or_default(),
+		package_overrides: config.overrides,
+		game_dir: config.game_dir.map(PathBuf::from),
 		original_config,
 		original_config_with_templates,
 		original_config_with_templates_and_plugins,
-		plugin_config: config.common.plugin_config,
+		plugin_config: config.plugin_config,
 	};
 
 	let instance = Instance::new(kind, id, stored_config);
@@ -212,7 +202,7 @@ pub fn consolidate_package_configs(
 			);
 		}
 	}
-	for pkg in &instance.common.packages {
+	for pkg in &instance.packages {
 		map.insert(
 			PkgRequest::parse(pkg.get_pkg_id(), PkgRequestSource::UserRequire).id,
 			pkg.clone(),

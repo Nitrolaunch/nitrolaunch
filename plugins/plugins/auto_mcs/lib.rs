@@ -1,7 +1,7 @@
 use std::{collections::HashMap, fs::File, path::PathBuf};
 
 use anyhow::Context;
-use nitro_config::instance::{make_valid_instance_id, CommonInstanceConfig, InstanceConfig};
+use nitro_config::instance::{make_valid_instance_id, InstanceConfig};
 use nitro_plugin::{
 	api::wasm::{sys::get_os_string, WASMPlugin},
 	hook::hooks::ImportInstanceResult,
@@ -77,7 +77,7 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 				continue;
 			};
 
-			config.common.game_dir = Some(path.to_string_lossy().to_string());
+			config.game_dir = Some(path.to_string_lossy().to_string());
 
 			let id = make_valid_instance_id(
 				&config
@@ -119,11 +119,8 @@ fn create_config(mut ini: HashMap<&str, HashMap<&str, &str>>) -> anyhow::Result<
 	Ok(InstanceConfig {
 		name: name.map(|x| x.to_string()),
 		side: Some(Side::Server),
-		common: CommonInstanceConfig {
-			version: Some(MinecraftVersionDeser::Version(version.into())),
-			loader: Some(loader),
-			..Default::default()
-		},
+		version: Some(MinecraftVersionDeser::Version(version.into())),
+		loader: Some(loader),
 		..Default::default()
 	})
 }

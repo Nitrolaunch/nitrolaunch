@@ -80,7 +80,6 @@ pub async fn get_templates(state: tauri::State<'_, State>) -> Result<Vec<Instanc
 				from_plugin: template.instance.from_plugin,
 				version: template
 					.instance
-					.common
 					.version
 					.as_ref()
 					.map(|x| mc_version_from_deser(x).to_string()),
@@ -535,13 +534,13 @@ pub async fn get_template_users(
 	let mut out = Vec::new();
 
 	for (id, config) in &configuration.instances {
-		if config.common.from.contains(&template) {
+		if config.from.contains(&template) {
 			out.push((id.clone(), InstanceOrTemplate::Instance));
 		}
 	}
 
 	for (id, config) in &configuration.templates {
-		if config.instance.common.from.contains(&template) {
+		if config.instance.from.contains(&template) {
 			out.push((id.clone(), InstanceOrTemplate::Template));
 		}
 	}

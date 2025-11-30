@@ -13,7 +13,7 @@ use nitro_plugin::{
 };
 use nitro_shared::{addon::AddonKind, loaders::Loader, versions::MinecraftVersionDeser, Side};
 use nitrolaunch::config_crate::{
-	instance::{make_valid_instance_id, CommonInstanceConfig, InstanceConfig},
+	instance::{make_valid_instance_id, InstanceConfig},
 	package::PackageConfigDeser,
 };
 use serde::{Deserialize, Serialize};
@@ -170,7 +170,7 @@ fn main() -> anyhow::Result<()> {
 
 			let id = make_valid_instance_id(config.name.as_ref().context("Instance has no name")?);
 
-			config.common.game_dir = Some(mc_dir.to_string_lossy().to_string());
+			config.game_dir = Some(mc_dir.to_string_lossy().to_string());
 
 			let id = if instances.contains_key(&id) {
 				id + "2"
@@ -248,15 +248,12 @@ fn create_config(
 	Ok(InstanceConfig {
 		name: name.map(|x| x.to_string()),
 		side: Some(Side::Client),
-		common: CommonInstanceConfig {
-			version: Some(MinecraftVersionDeser::Version(version.into())),
-			loader: Some(loader.to_string().to_lowercase()),
-			packages: packages
-				.into_iter()
-				.map(|x| PackageConfigDeser::Basic(x.into()))
-				.collect(),
-			..Default::default()
-		},
+		version: Some(MinecraftVersionDeser::Version(version.into())),
+		loader: Some(loader.to_string().to_lowercase()),
+		packages: packages
+			.into_iter()
+			.map(|x| PackageConfigDeser::Basic(x.into()))
+			.collect(),
 		..Default::default()
 	})
 }

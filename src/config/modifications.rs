@@ -49,7 +49,7 @@ pub fn apply_modifications(
 					.instances
 					.get_mut(&instance_id)
 					.ok_or(anyhow!("Unknown instance '{instance_id}'"))?;
-				instance.common.packages.push(package);
+				instance.packages.push(package);
 			}
 			ConfigModification::RemoveUser(user) => {
 				config.users.remove(&user);

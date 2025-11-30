@@ -25,7 +25,7 @@ pub fn consolidate_template_configs(
 				continue;
 			}
 
-			if template.instance.common.from.is_empty() {
+			if template.instance.from.is_empty() {
 				// Templates with no ancestor can just be added directly to the output, after deriving from the base template
 				let mut template = template.clone();
 				if let Some(base_template) = base_template {
@@ -35,7 +35,7 @@ pub fn consolidate_template_configs(
 				}
 				out.insert(id.clone(), template);
 			} else {
-				for parent in template.instance.common.from.iter() {
+				for parent in template.instance.from.iter() {
 					// If the parent is already in the map (already consolidated) then we can derive from it and add to the map
 					if let Some(parent) = out.get(&TemplateID::from(parent.clone())) {
 						let mut new = parent.clone();

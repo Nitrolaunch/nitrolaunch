@@ -20,6 +20,9 @@ use super::package::PackageConfigDeser;
 #[derive(Deserialize, Serialize, Clone, Debug, Default)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 pub struct InstanceConfig {
+	/// One or more templates to use
+	#[serde(skip_serializing_if = "DeserListOrSingle::is_empty")]
+	pub from: DeserListOrSingle<String>,
 	/// The type or side of this instance
 	#[serde(rename = "type")]
 	pub side: Option<Side>,
@@ -31,45 +34,6 @@ pub struct InstanceConfig {
 	#[serde(default)]
 	#[serde(skip_serializing_if = "Option::is_none")]
 	pub icon: Option<String>,
-	/// The common config of this instance
-	#[serde(flatten)]
-	pub common: CommonInstanceConfig,
-	/// Window configuration
-	#[serde(default)]
-	#[serde(skip_serializing_if = "DefaultExt::is_default")]
-	pub window: ClientWindowConfig,
-	/// Whether this config was created by a plugin
-	#[serde(default)]
-	#[serde(skip_serializing_if = "DefaultExt::is_default")]
-	pub from_plugin: bool,
-	/// Whether to disable installing and updating loaders on this instance
-	#[serde(default)]
-	#[serde(skip_serializing_if = "DefaultExt::is_default")]
-	pub disable_loader_update: bool,
-}
-
-impl InstanceConfig {
-	/// Merge this config with another one, with right side taking precendence
-	pub fn merge(&mut self, other: Self) {
-		self.common.merge(other.common);
-		if other.name.is_some() {
-			self.name = other.name;
-		}
-		self.icon = other.icon.or(self.icon.clone());
-		self.side = other.side.or(self.side);
-		self.window.merge(other.window);
-		self.from_plugin = other.from_plugin;
-	}
-}
-
-/// Common full instance config for both client and server
-#[derive(Deserialize, Serialize, Clone, Default, Debug)]
-#[cfg_attr(feature = "schema", derive(JsonSchema))]
-#[serde(default)]
-pub struct CommonInstanceConfig {
-	/// One or more templates to use
-	#[serde(skip_serializing_if = "DeserListOrSingle::is_empty")]
-	pub from: DeserListOrSingle<String>,
 	/// The Minecraft version
 	pub version: Option<MinecraftVersionDeser>,
 	/// Configured loader
@@ -95,16 +59,31 @@ pub struct CommonInstanceConfig {
 	/// Override for the game file directory for this instance
 	#[serde(skip_serializing_if = "Option::is_none")]
 	pub game_dir: Option<String>,
+	/// Window configuration
+	#[serde(default)]
+	#[serde(skip_serializing_if = "DefaultExt::is_default")]
+	pub window: ClientWindowConfig,
+	/// Whether this config was created by a plugin
+	#[serde(default)]
+	#[serde(skip_serializing_if = "DefaultExt::is_default")]
+	pub from_plugin: bool,
+	/// Whether to disable installing and updating loaders on this instance
+	#[serde(default)]
+	#[serde(skip_serializing_if = "DefaultExt::is_default")]
+	pub disable_loader_update: bool,
 	/// Config for plugins
 	#[serde(flatten)]
 	#[serde(skip_serializing_if = "serde_json::Map::is_empty")]
 	pub plugin_config: serde_json::Map<String, serde_json::Value>,
 }
 
-impl CommonInstanceConfig {
-	/// Merge multiple common configs
-	pub fn merge(&mut self, other: Self) -> &mut Self {
+impl InstanceConfig {
+	/// Merge this config with another one, with right side taking precendence
+	pub fn merge(&mut self, other: Self) {
 		self.from.merge(other.from);
+		if other.name.is_some() {
+			self.name = other.name;
+		}
 		self.version = other.version.or(self.version.clone());
 		self.loader = other.loader.or(self.loader.clone());
 		self.package_stability = other.package_stability.or(self.package_stability);
@@ -113,8 +92,10 @@ impl CommonInstanceConfig {
 		self.packages.extend(other.packages);
 		self.overrides.suppress.extend(other.overrides.suppress);
 		nitro_shared::util::merge_json_objects(&mut self.plugin_config, other.plugin_config);
-
-		self
+		self.icon = other.icon.or(self.icon.clone());
+		self.side = other.side.or(self.side);
+		self.window.merge(other.window);
+		self.from_plugin = other.from_plugin;
 	}
 }
 
@@ -424,7 +405,7 @@ pub fn get_addon_paths(
 			}
 		}
 		AddonKind::Datapack => {
-			if let Some(datapack_folder) = &instance.common.datapack_folder {
+			if let Some(datapack_folder) = &instance.datapack_folder {
 				vec![game_dir.join(datapack_folder)]
 			} else {
 				match side {

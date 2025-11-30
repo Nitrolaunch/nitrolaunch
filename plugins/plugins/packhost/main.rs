@@ -10,7 +10,7 @@ use serde::Deserialize;
 fn main() -> anyhow::Result<()> {
 	let mut plugin = ExecutablePlugin::from_manifest_file("packhost", include_str!("plugin.json"))?;
 	plugin.while_instance_launch(|_, arg| {
-		let config = arg.config.common.plugin_config.get("packhost");
+		let config = arg.config.plugin_config.get("packhost");
 		let Some(config) = config else {
 			return Ok(());
 		};

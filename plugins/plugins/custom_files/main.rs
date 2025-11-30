@@ -14,7 +14,7 @@ fn main() -> anyhow::Result<()> {
 			return Ok(OnInstanceSetupResult::default());
 		};
 
-		let Some(config) = args.config.common.plugin_config.get("custom_files") else {
+		let Some(config) = args.config.plugin_config.get("custom_files") else {
 			return Ok(OnInstanceSetupResult::default());
 		};
 		let config: Config = serde_json::from_value(config.clone())

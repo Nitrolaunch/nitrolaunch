@@ -16,7 +16,6 @@ fn main() -> anyhow::Result<()> {
 
 		let enabled = arg
 			.config
-			.common
 			.plugin_config
 			.get("fix_glfw")
 			.is_some_and(|x| x == &Value::Bool(true));

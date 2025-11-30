@@ -2,7 +2,7 @@ use std::{collections::HashMap, path::PathBuf};
 
 use anyhow::{bail, Context};
 use nitro_config::instance::{
-	make_valid_instance_id, Args, CommonInstanceConfig, InstanceConfig, LaunchArgs, LaunchConfig,
+	make_valid_instance_id, Args, InstanceConfig, LaunchArgs, LaunchConfig,
 };
 use nitro_plugin::{
 	api::wasm::{sys::get_os_string, WASMPlugin},
@@ -97,16 +97,13 @@ fn create_config(profile: Profile) -> anyhow::Result<InstanceConfig> {
 	Ok(InstanceConfig {
 		name: Some(profile.name),
 		side: Some(Side::Client),
-		common: CommonInstanceConfig {
-			version: Some(version),
-			launch: LaunchConfig {
-				java: Some(profile.java_dir),
-				args,
-				..Default::default()
-			},
-			game_dir: Some(profile.game_dir),
+		version: Some(version),
+		launch: LaunchConfig {
+			java: Some(profile.java_dir),
+			args,
 			..Default::default()
 		},
+		game_dir: Some(profile.game_dir),
 		..Default::default()
 	})
 }

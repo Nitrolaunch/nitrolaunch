@@ -14,7 +14,7 @@ use nitro_shared::{
 	Side,
 };
 use nitrolaunch::config_crate::instance::{
-	Args, CommonInstanceConfig, InstanceConfig, LaunchArgs, LaunchConfig, LaunchMemory, QuickPlay,
+	Args, InstanceConfig, LaunchArgs, LaunchConfig, LaunchMemory, QuickPlay,
 };
 use serde::{Deserialize, Serialize};
 use zip::{write::FileOptions, ZipArchive, ZipWriter};
@@ -65,7 +65,7 @@ fn main() -> anyhow::Result<()> {
 		zip.start_file("instance.json", FileOptions::<()>::default())
 			.context("Failed to create metadata file in export")?;
 
-		let (min_mem, max_mem) = arg.config.common.launch.memory.to_min_max();
+		let (min_mem, max_mem) = arg.config.launch.memory.to_min_max();
 
 		fn get_loader_version(
 			actual_loader: Option<&Loader>,
@@ -80,29 +80,27 @@ fn main() -> anyhow::Result<()> {
 		}
 
 		let java = if let JavaInstallationKind::Custom(path) =
-			JavaInstallationKind::parse(arg.config.common.launch.java.as_deref().unwrap_or("auto"))
+			JavaInstallationKind::parse(arg.config.launch.java.as_deref().unwrap_or("auto"))
 		{
 			path
 		} else {
 			String::new()
 		};
 
-		let server =
-			if let QuickPlay::Server { server, port } = &arg.config.common.launch.quick_play {
-				Server {
-					host: server.clone(),
-					port: port.unwrap_or(25565),
-				}
-			} else {
-				Server {
-					host: String::new(),
-					port: 0,
-				}
-			};
+		let server = if let QuickPlay::Server { server, port } = &arg.config.launch.quick_play {
+			Server {
+				host: server.clone(),
+				port: port.unwrap_or(25565),
+			}
+		} else {
+			Server {
+				host: String::new(),
+				port: 0,
+			}
+		};
 
 		let loader = arg
 			.config
-			.common
 			.loader
 			.as_ref()
 			.map(|x| Loader::parse_from_str(parse_versioned_string(x).0));
@@ -111,8 +109,8 @@ fn main() -> anyhow::Result<()> {
 			name: arg.config.name.unwrap_or_default(),
 			min_memory: min_mem.unwrap_or_default().to_bytes(),
 			max_memory: max_mem.unwrap_or_default().to_bytes(),
-			vm_options: arg.config.common.launch.args.jvm.parse(),
-			mc_options: arg.config.common.launch.args.game.parse(),
+			vm_options: arg.config.launch.args.jvm.parse(),
+			mc_options: arg.config.launch.args.game.parse(),
 			runtime: RuntimeMetadata {
 				minecraft: arg.minecraft_version,
 				forge: get_loader_version(loader.as_ref(), Loader::Forge, &arg.loader_version),
@@ -206,26 +204,23 @@ fn main() -> anyhow::Result<()> {
 			config: InstanceConfig {
 				name: Some(meta.name),
 				side: Some(Side::Client),
-				common: CommonInstanceConfig {
-					loader: Some(loader),
-					version: Some(MinecraftVersionDeser::Version(meta.version.into())),
-					launch: LaunchConfig {
-						memory: LaunchMemory::Both {
-							min: meta.min_memory.to_string(),
-							max: meta.max_memory.to_string(),
-						},
-						args: LaunchArgs {
-							jvm: Args::List(meta.vm_options),
-							game: Args::List(meta.mc_options),
-						},
-						java: if meta.java.is_empty() {
-							None
-						} else {
-							Some(meta.java)
-						},
-						quick_play,
-						..Default::default()
+				loader: Some(loader),
+				version: Some(MinecraftVersionDeser::Version(meta.version.into())),
+				launch: LaunchConfig {
+					memory: LaunchMemory::Both {
+						min: meta.min_memory.to_string(),
+						max: meta.max_memory.to_string(),
 					},
+					args: LaunchArgs {
+						jvm: Args::List(meta.vm_options),
+						game: Args::List(meta.mc_options),
+					},
+					java: if meta.java.is_empty() {
+						None
+					} else {
+						Some(meta.java)
+					},
+					quick_play,
 					..Default::default()
 				},
 				..Default::default()

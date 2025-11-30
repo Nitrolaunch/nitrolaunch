@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 use anyhow::bail;
-use nitro_config::instance::{CommonInstanceConfig, InstanceConfig, LaunchArgs, LaunchConfig};
+use nitro_config::instance::{InstanceConfig, LaunchArgs, LaunchConfig};
 use nitro_plugin::api::wasm::WASMPlugin;
 use nitro_plugin::hook::hooks::ModifyInstanceConfigResult;
 use nitro_plugin::nitro_wasm_plugin;
@@ -10,7 +10,7 @@ nitro_wasm_plugin!(main, "args");
 
 fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 	plugin.modify_instance_config(|arg| {
-		let args = if let Some(preset) = arg.config.common.plugin_config.get("args_preset") {
+		let args = if let Some(preset) = arg.config.plugin_config.get("args_preset") {
 			if let Some(preset) = preset.as_str() {
 				if let Ok(preset) = ArgsPreset::from_str(preset) {
 					preset.generate_args()
@@ -26,12 +26,9 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 
 		Ok(ModifyInstanceConfigResult {
 			config: InstanceConfig {
-				common: CommonInstanceConfig {
-					launch: LaunchConfig {
-						args: LaunchArgs {
-							jvm: nitro_config::instance::Args::List(args),
-							..Default::default()
-						},
+				launch: LaunchConfig {
+					args: LaunchArgs {
+						jvm: nitro_config::instance::Args::List(args),
 						..Default::default()
 					},
 					..Default::default()
