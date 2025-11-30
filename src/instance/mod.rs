@@ -109,6 +109,8 @@ pub struct InstanceStoredConfig {
 	pub package_overrides: PackageOverrides,
 	/// Game dir override
 	pub game_dir: Option<PathBuf>,
+	/// Whether custom launch behavior is enabled
+	pub custom_launch: bool,
 	/// The original instance configuration before applying templates
 	pub original_config: InstanceConfig,
 	/// The original instance configuration after applying templates

@@ -126,7 +126,7 @@ impl Instance {
 			.context("Failed to call on launch hook")?;
 		results.all_results(o).await?;
 
-		if self.dirs.get().game_dir.is_some() {
+		if self.dirs.get().game_dir.is_some() && !self.config.custom_launch {
 			self.launch_standard(core, hook_arg, paths, plugins, o)
 				.await
 		} else {

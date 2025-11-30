@@ -20,7 +20,7 @@ fn main() -> anyhow::Result<()> {
 			return Ok(OnInstanceSetupResult::default());
 		};
 
-		if arg.config.disable_loader_update {
+		if arg.config.custom_launch {
 			return Ok(OnInstanceSetupResult::default());
 		}
 

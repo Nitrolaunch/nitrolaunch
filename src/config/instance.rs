@@ -134,6 +134,7 @@ pub async fn read_instance_config(
 		package_stability: config.package_stability.unwrap_or_default(),
 		package_overrides: config.overrides,
 		game_dir: config.game_dir.map(PathBuf::from),
+		custom_launch: config.custom_launch,
 		original_config,
 		original_config_with_templates,
 		original_config_with_templates_and_plugins,

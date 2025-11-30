@@ -63,9 +63,9 @@ pub struct InstanceConfig {
 	/// Whether this config was created by a plugin
 	#[serde(skip_serializing_if = "DefaultExt::is_default")]
 	pub from_plugin: bool,
-	/// Whether to disable installing and updating loaders on this instance
+	/// Whether to use a plugin to custom launch this instance. Should only be set by plugins.
 	#[serde(skip_serializing_if = "DefaultExt::is_default")]
-	pub disable_loader_update: bool,
+	pub custom_launch: bool,
 	/// Config for plugins
 	#[serde(skip_serializing_if = "serde_json::Map::is_empty")]
 	pub plugin_config: serde_json::Map<String, serde_json::Value>,
