@@ -6,7 +6,9 @@ pub mod print;
 use std::process::{Command, Stdio};
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use anyhow::Context;
 use cfg_match::cfg_match as cfg_match2;
+use serde::de::DeserializeOwned;
 use serde_json::Value;
 
 macro_rules! def_matched_item {
@@ -268,6 +270,11 @@ pub fn to_string_json(v: &impl Serialize) -> String {
 		.trim_start_matches("\"")
 		.trim_end_matches("\"")
 		.to_string()
+}
+
+/// `from_string` using the serde_json representation without quotes
+pub fn from_string_json<D: DeserializeOwned>(v: &str) -> anyhow::Result<D> {
+	serde_json::from_str(&format!("\"{v}\"")).context("Failed to deserialize value")
 }
 
 /// Utility enum for deserialization that lets you do a list that can be one item

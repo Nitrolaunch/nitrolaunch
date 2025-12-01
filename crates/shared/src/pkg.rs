@@ -1,9 +1,11 @@
+use anyhow::bail;
 use itertools::Itertools;
 #[cfg(feature = "schema")]
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;
 use std::hash::Hash;
+use std::str::FromStr;
 use std::sync::Arc;
 
 use crate::addon::AddonKind;
@@ -300,6 +302,22 @@ impl PackageKind {
 			Self::Plugin => Some(AddonKind::Plugin),
 			Self::Shader => Some(AddonKind::Shader),
 			Self::Bundle => None,
+		}
+	}
+}
+
+impl FromStr for PackageKind {
+	type Err = anyhow::Error;
+
+	fn from_str(s: &str) -> Result<Self, Self::Err> {
+		match s {
+			"mod" => Ok(Self::Mod),
+			"resource_pack" => Ok(Self::ResourcePack),
+			"datapack" => Ok(Self::Datapack),
+			"plugin" => Ok(Self::Plugin),
+			"shader" => Ok(Self::Shader),
+			"bundle" => Ok(Self::Bundle),
+			other => bail!("Unknown package type '{other}'"),
 		}
 	}
 }

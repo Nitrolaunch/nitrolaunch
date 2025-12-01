@@ -1,3 +1,4 @@
+use std::str::FromStr;
 use std::{collections::HashMap, sync::Arc};
 
 use super::CmdData;
@@ -9,12 +10,14 @@ use nitrolaunch::pkg_crate::metadata::PackageMetadata;
 use nitrolaunch::pkg_crate::properties::PackageProperties;
 use nitrolaunch::pkg_crate::{PackageContentType, PkgRequest, PkgRequestSource};
 use nitrolaunch::shared::id::{InstanceID, TemplateID};
+use nitrolaunch::shared::loaders::Loader;
 use nitrolaunch::shared::util::print::ReplPrinter;
 
 use anyhow::{bail, Context};
 use clap::Subcommand;
 use color_print::{cformat, cprint, cprintln};
-use nitrolaunch::shared::pkg::{PackageID, PackageSearchParameters};
+use nitrolaunch::shared::pkg::{PackageID, PackageKind, PackageSearchParameters};
+use nitrolaunch::shared::util::from_string_json;
 use reqwest::Client;
 use serde::Serialize;
 
@@ -95,9 +98,21 @@ This package does not need to be installed, it just has to be in the index."
 	Search {
 		/// The query to search for in package ID's, names, and descriptions. Can be omitted.
 		query: Option<String>,
-		/// The maximum number of packages to search
+		/// The number of packages to search for
 		#[arg(short = 'n', long)]
-		limit: Option<u8>,
+		count: Option<u8>,
+		/// The package types to search for
+		#[arg(short = 't', long = "type")]
+		types: Vec<String>,
+		/// The Minecraft versions to search for
+		#[arg(short = 'v', long = "version")]
+		versions: Vec<String>,
+		/// The loaders to search for
+		#[arg(short = 'l', long = "loader")]
+		loaders: Vec<String>,
+		/// The categories to search for
+		#[arg(short = 'c', long = "category")]
+		categories: Vec<String>,
 	},
 	#[clap(external_subcommand)]
 	External(Vec<String>),
@@ -130,17 +145,39 @@ pub async fn run(subcommand: PackageSubcommand, data: &mut CmdData<'_>) -> anyho
 		PackageSubcommand::ListAll {} => list_all(data).await,
 		PackageSubcommand::Browse {} => browse(data).await,
 		PackageSubcommand::Add { package, instance } => add(data, package, instance).await,
-		PackageSubcommand::Search { query, limit } => {
+		PackageSubcommand::Search {
+			query,
+			count,
+			types,
+			versions,
+			loaders,
+			categories,
+		} => {
+			let types = types
+				.into_iter()
+				.filter_map(|x| PackageKind::from_str(&x).ok())
+				.collect();
+
+			let loaders = loaders
+				.into_iter()
+				.map(|x| Loader::parse_from_str(&x))
+				.collect();
+
+			let categories = categories
+				.into_iter()
+				.filter_map(|x| from_string_json(&x).ok())
+				.collect();
+
 			search(
 				data,
 				PackageSearchParameters {
-					count: limit.unwrap_or(5),
+					count: count.unwrap_or(5),
 					skip: 0,
 					search: query,
-					types: Vec::new(),
-					minecraft_versions: Vec::new(),
-					loaders: Vec::new(),
-					categories: Vec::new(),
+					types,
+					minecraft_versions: versions,
+					loaders,
+					categories,
 				},
 			)
 			.await
