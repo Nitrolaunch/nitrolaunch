@@ -7,6 +7,7 @@ package.cross_platform: build.cross_platform
 
 	@rm -f release/args-universal.zip
 	@rm -f release/auto_mcs-universal.zip
+	@rm -f release/config_split-universal.zip
 	@rm -f release/extra_versions-universal.zip
 	@rm -f release/gamepad-universal.zip
 	@rm -f release/graalvm-universal.zip
@@ -20,6 +21,8 @@ package.cross_platform: build.cross_platform
 	@printf "@ nitro_plugin_args.wasm\\n@=plugin.wasm\\n" | zipnote -w release/args-universal.zip
 	@zip -j release/auto_mcs-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_auto_mcs.wasm plugins/auto_mcs/plugin.json
 	@printf "@ nitro_plugin_auto_mcs.wasm\\n@=plugin.wasm\\n" | zipnote -w release/auto_mcs-universal.zip
+	@zip -j release/config_split-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_config_split.wasm plugins/config_split/plugin.json
+	@printf "@ nitro_plugin_config_split.wasm\\n@=plugin.wasm\\n" | zipnote -w release/config_split-universal.zip
 	@zip -j release/graalvm-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_graalvm.wasm plugins/graalvm/plugin.json
 	@printf "@ nitro_plugin_graalvm.wasm\\n@=plugin.wasm\\n" | zipnote -w release/graalvm-universal.zip
 	@zip -j release/mojang_transfer-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_mojang_transfer.wasm plugins/mojang_transfer/plugin.json
@@ -50,7 +53,6 @@ package_zips.platform_dependent:
 	@rm -f release/beet-${OS}.zip
 	@rm -f release/better_jsons-${OS}.zip
 	@rm -f release/cleanup-${OS}.zip
-	@rm -f release/config_split-${OS}.zip
 	@rm -f release/curseforge_api-${OS}.zip
 	@rm -f release/custom_files-${OS}.zip
 	@rm -f release/docs-${OS}.zip
@@ -80,7 +82,6 @@ package_zips.platform_dependent:
 	@zip -j release/beet-${OS}.zip $(TARGET_DIR)/nitro_plugin_beet${EXTENSION} plugins/beet/plugin.json
 	@zip -j release/better_jsons-${OS}.zip $(TARGET_DIR)/nitro_plugin_better_jsons${EXTENSION} plugins/better_jsons/plugin.json
 	@zip -j release/cleanup-${OS}.zip $(TARGET_DIR)/nitro_plugin_cleanup${EXTENSION} plugins/cleanup/plugin.json
-	@zip -j release/config_split-${OS}.zip $(TARGET_DIR)/nitro_plugin_config_split${EXTENSION} plugins/config_split/plugin.json
 	@zip -j release/curseforge_api-${OS}.zip $(TARGET_DIR)/nitro_plugin_curseforge_api${EXTENSION} plugins/curseforge_api/plugin.json
 	@zip -j release/custom_files-${OS}.zip $(TARGET_DIR)/nitro_plugin_custom_files${EXTENSION} plugins/custom_files/plugin.json
 	@zip -j release/docs-${OS}.zip $(TARGET_DIR)/nitro_plugin_docs${EXTENSION} plugins/docs/plugin.json
@@ -143,9 +144,9 @@ install.cleanup:
 	@cat plugins/cleanup/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/cleanup/plugin.json
 
 install.config_split:
-	@cargo install --path . --bin nitro_plugin_config_split --offline
-	@mkdir -p ~/.local/share/nitro/plugins/config_split
-	@cat plugins/config_split/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/config_split/plugin.json
+	@cargo build -p nitro_plugin_config_split --release --target wasm32-wasip2
+	@cp -r plugins/config_split ~/.local/share/nitro/plugins
+	@cp -r ../target/wasm32-wasip2/release/nitro_plugin_config_split.wasm ~/.local/share/nitro/plugins/config_split/plugin.wasm
 
 install.curseforge_api:
 	@cargo install --path . --bin nitro_plugin_curseforge_api --offline

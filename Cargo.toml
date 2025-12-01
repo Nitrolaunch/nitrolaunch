@@ -52,6 +52,7 @@ members = [
 	"plugins",
 	"plugins/plugins/args",
 	"plugins/plugins/auto_mcs",
+	"plugins/plugins/config_split",
 	"plugins/plugins/graalvm",
 	"plugins/plugins/mojang_transfer",
 	"plugins/plugins/multiply",

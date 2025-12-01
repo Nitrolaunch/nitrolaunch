@@ -1,15 +1,17 @@
 use std::{collections::HashMap, path::Path, sync::Arc};
 
 use anyhow::Context;
-use nitro_core::io::json_from_file;
-use nitro_plugin::api::executable::ExecutablePlugin;
+use nitro_plugin::{
+	api::wasm::{sys::get_config_dir, WASMPlugin},
+	nitro_wasm_plugin,
+};
 use serde::de::DeserializeOwned;
 
-fn main() -> anyhow::Result<()> {
-	let mut plugin = ExecutablePlugin::from_manifest_file("config_split", include_str!("plugin.json"))?;
+nitro_wasm_plugin!(main, "config_split");
 
-	plugin.add_instances(|ctx, _| {
-		let config_dir = ctx.get_config_dir()?;
+fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
+	plugin.add_instances(|_| {
+		let config_dir = get_config_dir();
 		let dir = config_dir.join("instances");
 		if !dir.exists() {
 			let _ = std::fs::create_dir_all(&dir);
@@ -17,8 +19,8 @@ fn main() -> anyhow::Result<()> {
 
 		get_config_files(&dir)
 	})?;
-	plugin.add_templates(|ctx, _| {
-		let config_dir = ctx.get_config_dir()?;
+	plugin.add_templates(|_| {
+		let config_dir = get_config_dir();
 		let dir = config_dir.join("templates");
 		if !dir.exists() {
 			let _ = std::fs::create_dir_all(&dir);
@@ -51,8 +53,11 @@ fn get_config_files<D: DeserializeOwned>(directory: &Path) -> anyhow::Result<Has
 		}
 		let name = &name[0..name.len() - 6];
 
-		let contents = json_from_file(entry.path())
+		let contents = std::fs::read(entry.path())
 			.with_context(|| format!("Failed to read config file '{name}'"))?;
+		let contents = serde_json::from_slice(&contents)
+			.with_context(|| format!("Failed to read config file '{name}'"))?;
+
 		out.insert(Arc::from(name), contents);
 	}
 
