@@ -467,6 +467,8 @@ pub async fn search_projects(
 		String::new()
 	};
 
+	let mut facets = Vec::new();
+
 	let types = params
 		.types
 		.into_iter()
@@ -481,23 +483,21 @@ pub async fn search_projects(
 		.map(|x| format!("\"project_types={x}\""))
 		.collect::<Vec<_>>()
 		.join(",");
-	let types = format!("[{types}]");
+	if !types.is_empty() {
+		facets.push(format!("[{types}]"));
+	}
 
-	let versions = if params.minecraft_versions.is_empty() {
-		String::new()
-	} else {
+	if !params.minecraft_versions.is_empty() {
 		let versions = params
 			.minecraft_versions
 			.into_iter()
 			.map(|x| format!("\"versions={x}\""))
 			.collect::<Vec<_>>()
 			.join(",");
-		format!(",[{versions}]")
+		facets.push(format!("[{versions}]"));
 	};
 
-	let loaders = if params.loaders.is_empty() {
-		String::new()
-	} else {
+	if !params.loaders.is_empty() {
 		let loaders = params
 			.loaders
 			.into_iter()
@@ -524,16 +524,12 @@ pub async fn search_projects(
 				)
 			})
 			.collect::<Vec<_>>();
-		if loaders.is_empty() {
-			String::new()
-		} else {
-			format!(",[{}]", loaders.join(","))
+		if !loaders.is_empty() {
+			facets.push(format!("[{}]", loaders.join(",")));
 		}
 	};
 
-	let categories = if params.categories.is_empty() {
-		String::new()
-	} else {
+	if !params.categories.is_empty() {
 		let categories = params
 			.categories
 			.into_iter()
@@ -545,17 +541,20 @@ pub async fn search_projects(
 				)
 			})
 			.collect::<Vec<_>>();
-		if categories.is_empty() {
-			String::new()
-		} else {
+		if !categories.is_empty() {
 			let categories = categories.join(",");
-			format!(",[{categories}]")
+			facets.push(format!("[{categories}]"));
 		}
 	};
 
-	let facets = format!("facets=[{types}{versions}{loaders}{categories}]",);
+	let facets_inside = facets.join(",");
+	let facets = if facets_inside.is_empty() {
+		String::new()
+	} else {
+		format!("&facets=[{facets_inside}]")
+	};
 	let url = format!(
-		"https://api.modrinth.com/v2/search?limit={limit}{search}&{facets}&offset={}",
+		"https://api.modrinth.com/v2/search?limit={limit}{search}{facets}&offset={}",
 		params.skip
 	);
 

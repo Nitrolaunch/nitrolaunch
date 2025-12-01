@@ -98,6 +98,9 @@ This package does not need to be installed, it just has to be in the index."
 	Search {
 		/// The query to search for in package ID's, names, and descriptions. Can be omitted.
 		query: Option<String>,
+		/// The repository to search in. If empty, searches all of them.
+		#[arg(short = 'r', long)]
+		repo: Option<String>,
 		/// The number of packages to search for
 		#[arg(short = 'n', long)]
 		count: Option<u8>,
@@ -147,6 +150,7 @@ pub async fn run(subcommand: PackageSubcommand, data: &mut CmdData<'_>) -> anyho
 		PackageSubcommand::Add { package, instance } => add(data, package, instance).await,
 		PackageSubcommand::Search {
 			query,
+			repo,
 			count,
 			types,
 			versions,
@@ -179,6 +183,7 @@ pub async fn run(subcommand: PackageSubcommand, data: &mut CmdData<'_>) -> anyho
 					loaders,
 					categories,
 				},
+				repo,
 			)
 			.await
 		}
@@ -720,14 +725,18 @@ async fn add(
 	Ok(())
 }
 
-async fn search(data: &mut CmdData<'_>, params: PackageSearchParameters) -> anyhow::Result<()> {
+async fn search(
+	data: &mut CmdData<'_>,
+	params: PackageSearchParameters,
+	repo: Option<String>,
+) -> anyhow::Result<()> {
 	data.ensure_config(true).await?;
 	let config = data.config.get_mut();
 
 	let client = Client::new();
 	let results = config
 		.packages
-		.search(params, None, &data.paths, &client, data.output)
+		.search(params, repo.as_deref(), &data.paths, &client, data.output)
 		.await
 		.context("Failed to search packages")?;
 

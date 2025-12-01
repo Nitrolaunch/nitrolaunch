@@ -116,6 +116,10 @@ pub async fn search_packs(
 	params: PackageSearchParameters,
 	client: &Client,
 ) -> anyhow::Result<Vec<PackSearchResult>> {
+	if params.count == 0 {
+		return Ok(Vec::new());
+	}
+
 	let limit = if params.count > 100 {
 		100
 	} else {
