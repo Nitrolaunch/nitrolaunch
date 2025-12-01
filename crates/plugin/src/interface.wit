@@ -11,6 +11,8 @@ world interface-world {
 	import get-arch-string: func() -> string;
 	import get-pointer-width: func() -> u32;
 
+	import update-hardlink: func(src: string, tgt: string) -> result<_, string>;
+
 	import download-bytes: func(url: string) -> result<list<u8>, string>;
 	import download-text: func(url: string) -> result<string, string>;
 	import download-file: func(url: string, path: string) -> result<_, string>;

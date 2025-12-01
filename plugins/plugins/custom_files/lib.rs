@@ -1,15 +1,16 @@
 use std::path::PathBuf;
 
 use anyhow::Context;
-use nitro_core::io::files::{create_leading_dirs, update_link};
-use nitro_plugin::api::executable::ExecutablePlugin;
+use nitro_plugin::api::wasm::sys::update_hardlink;
+use nitro_plugin::api::wasm::WASMPlugin;
 use nitro_plugin::hook::hooks::OnInstanceSetupResult;
+use nitro_plugin::nitro_wasm_plugin;
 use serde::{Deserialize, Serialize};
 
-fn main() -> anyhow::Result<()> {
-	let mut plugin =
-		ExecutablePlugin::from_manifest_file("custom_files", include_str!("plugin.json"))?;
-	plugin.on_instance_setup(|_, args| {
+nitro_wasm_plugin!(main, "custom_files");
+
+fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
+	plugin.on_instance_setup(|args| {
 		let Some(game_dir) = args.game_dir else {
 			return Ok(OnInstanceSetupResult::default());
 		};
@@ -27,10 +28,13 @@ fn main() -> anyhow::Result<()> {
 			let src = PathBuf::from(shellexpand::tilde(&file.source).to_string());
 			let target = game_dir.join(PathBuf::from(file.target));
 
-			create_leading_dirs(&target).context("Failed to create leading directories to file")?;
+			if let Some(parent) = target.parent() {
+				std::fs::create_dir_all(&parent)
+					.context("Failed to create leading directories to file")?;
+			}
 
 			if file.link {
-				update_link(&src, &target)
+				update_hardlink(&src, &target)
 					.with_context(|| format!("Failed to link custom file {}", file.source))?;
 			} else {
 				std::fs::copy(src, target)

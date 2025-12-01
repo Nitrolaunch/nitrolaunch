@@ -8,6 +8,7 @@ package.cross_platform: build.cross_platform
 	@rm -f release/args-universal.zip
 	@rm -f release/auto_mcs-universal.zip
 	@rm -f release/config_split-universal.zip
+	@rm -f release/custom_files-universal.zip
 	@rm -f release/extra_versions-universal.zip
 	@rm -f release/gamepad-universal.zip
 	@rm -f release/graalvm-universal.zip
@@ -23,6 +24,8 @@ package.cross_platform: build.cross_platform
 	@printf "@ nitro_plugin_auto_mcs.wasm\\n@=plugin.wasm\\n" | zipnote -w release/auto_mcs-universal.zip
 	@zip -j release/config_split-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_config_split.wasm plugins/config_split/plugin.json
 	@printf "@ nitro_plugin_config_split.wasm\\n@=plugin.wasm\\n" | zipnote -w release/config_split-universal.zip
+	@zip -j release/custom_files-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_custom_files.wasm plugins/custom_files/plugin.json
+	@printf "@ nitro_plugin_custom_files.wasm\\n@=plugin.wasm\\n" | zipnote -w release/custom_files-universal.zip
 	@zip -j release/graalvm-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_graalvm.wasm plugins/graalvm/plugin.json
 	@printf "@ nitro_plugin_graalvm.wasm\\n@=plugin.wasm\\n" | zipnote -w release/graalvm-universal.zip
 	@zip -j release/mojang_transfer-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_mojang_transfer.wasm plugins/mojang_transfer/plugin.json
@@ -54,7 +57,6 @@ package_zips.platform_dependent:
 	@rm -f release/better_jsons-${OS}.zip
 	@rm -f release/cleanup-${OS}.zip
 	@rm -f release/curseforge_api-${OS}.zip
-	@rm -f release/custom_files-${OS}.zip
 	@rm -f release/docs-${OS}.zip
 	@rm -f release/fabric_quilt-${OS}.zip
 	@rm -f release/forge-${OS}.zip
@@ -83,7 +85,6 @@ package_zips.platform_dependent:
 	@zip -j release/better_jsons-${OS}.zip $(TARGET_DIR)/nitro_plugin_better_jsons${EXTENSION} plugins/better_jsons/plugin.json
 	@zip -j release/cleanup-${OS}.zip $(TARGET_DIR)/nitro_plugin_cleanup${EXTENSION} plugins/cleanup/plugin.json
 	@zip -j release/curseforge_api-${OS}.zip $(TARGET_DIR)/nitro_plugin_curseforge_api${EXTENSION} plugins/curseforge_api/plugin.json
-	@zip -j release/custom_files-${OS}.zip $(TARGET_DIR)/nitro_plugin_custom_files${EXTENSION} plugins/custom_files/plugin.json
 	@zip -j release/docs-${OS}.zip $(TARGET_DIR)/nitro_plugin_docs${EXTENSION} plugins/docs/plugin.json
 	@zip -j release/fabric_quilt-${OS}.zip $(TARGET_DIR)/nitro_plugin_fabric_quilt${EXTENSION} plugins/fabric_quilt/plugin.json
 	@zip -j release/forge-${OS}.zip $(TARGET_DIR)/nitro_plugin_forge${EXTENSION} plugins/forge/plugin.json
@@ -154,9 +155,9 @@ install.curseforge_api:
 	@cat plugins/curseforge_api/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/curseforge_api/plugin.json
 
 install.custom_files:
-	@cargo install --path . --bin nitro_plugin_custom_files --offline
-	@mkdir -p ~/.local/share/nitro/plugins/custom_files
-	@cat plugins/custom_files/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/custom_files/plugin.json
+	@cargo build -p nitro_plugin_custom_files --release --target wasm32-wasip2
+	@cp -r plugins/custom_files ~/.local/share/nitro/plugins
+	@cp -r ../target/wasm32-wasip2/release/nitro_plugin_custom_files.wasm ~/.local/share/nitro/plugins/custom_files/plugin.wasm
 
 install.docs:
 	@cargo install --path . --bin nitro_plugin_docs --offline

@@ -247,6 +247,18 @@ impl bindings::InterfaceWorldImports for State {
 		return 64;
 	}
 
+	async fn update_hardlink(&mut self, src: String, tgt: String) -> Result<(), String> {
+		let result = if !PathBuf::from(&tgt).exists() {
+			tokio::fs::hard_link(src, tgt).await
+		} else {
+			Ok(())
+		};
+		match result {
+			Ok(..) => Ok(()),
+			Err(e) => Err(format!("{e:?}")),
+		}
+	}
+
 	async fn download_bytes(&mut self, url: String) -> Result<Vec<u8>, String> {
 		let result = download::bytes(url, &self.client).await;
 		match result {

@@ -3565,6 +3565,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "nitro_plugin_custom_files"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "nitro_config",
+ "nitro_plugin",
+ "nitro_shared",
+ "serde",
+ "serde_json",
+ "shellexpand",
+]
+
+[[package]]
 name = "nitro_plugin_graalvm"
 version = "0.1.0"
 dependencies = [

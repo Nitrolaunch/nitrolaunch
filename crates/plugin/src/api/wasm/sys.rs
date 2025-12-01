@@ -1,4 +1,6 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+
+use anyhow::anyhow;
 
 /// Gets the Nitrolaunch data directory
 pub fn get_data_dir() -> PathBuf {
@@ -23,4 +25,13 @@ pub fn get_arch_string() -> String {
 /// Gets the system pointer width
 pub fn get_pointer_width() -> u32 {
 	super::interface::get_pointer_width()
+}
+
+/// Updates a hardlink between two files
+pub fn update_hardlink(src: impl AsRef<Path>, tgt: impl AsRef<Path>) -> anyhow::Result<()> {
+	super::interface::update_hardlink(
+		&src.as_ref().to_string_lossy(),
+		&tgt.as_ref().to_string_lossy(),
+	)
+	.map_err(|e| anyhow!("{e:?}"))
 }
