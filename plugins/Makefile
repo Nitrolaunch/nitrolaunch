@@ -7,6 +7,7 @@ package.cross_platform: build.cross_platform
 
 	@rm -f release/args-universal.zip
 	@rm -f release/auto_mcs-universal.zip
+	@rm -f release/automate-universal.zip
 	@rm -f release/config_split-universal.zip
 	@rm -f release/custom_files-universal.zip
 	@rm -f release/extra_versions-universal.zip
@@ -23,6 +24,8 @@ package.cross_platform: build.cross_platform
 	@printf "@ nitro_plugin_args.wasm\\n@=plugin.wasm\\n" | zipnote -w release/args-universal.zip
 	@zip -j release/auto_mcs-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_auto_mcs.wasm plugins/auto_mcs/plugin.json
 	@printf "@ nitro_plugin_auto_mcs.wasm\\n@=plugin.wasm\\n" | zipnote -w release/auto_mcs-universal.zip
+	@zip -j release/automate-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_automate.wasm plugins/automate/plugin.json
+	@printf "@ nitro_plugin_automate.wasm\\n@=plugin.wasm\\n" | zipnote -w release/automate-universal.zip
 	@zip -j release/config_split-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_config_split.wasm plugins/config_split/plugin.json
 	@printf "@ nitro_plugin_config_split.wasm\\n@=plugin.wasm\\n" | zipnote -w release/config_split-universal.zip
 	@zip -j release/custom_files-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_custom_files.wasm plugins/custom_files/plugin.json
@@ -54,7 +57,6 @@ build.platform_dependent:
 package_zips.platform_dependent:
 	@mkdir -p release
 	
-	@rm -f release/automate-${OS}.zip
 	@rm -f release/backup-${OS}.zip
 	@rm -f release/beet-${OS}.zip
 	@rm -f release/better_jsons-${OS}.zip
@@ -81,7 +83,6 @@ package_zips.platform_dependent:
 	@rm -f release/weld-${OS}.zip
 	@rm -f release/xmcl_transfer-${OS}.zip
 
-	@zip -j release/automate-${OS}.zip $(TARGET_DIR)/nitro_plugin_automate${EXTENSION} plugins/automate/plugin.json
 	@zip -j release/backup-${OS}.zip $(TARGET_DIR)/nitro_plugin_backup${EXTENSION} plugins/backup/plugin.json
 	@zip -j release/beet-${OS}.zip $(TARGET_DIR)/nitro_plugin_beet${EXTENSION} plugins/beet/plugin.json
 	@zip -j release/better_jsons-${OS}.zip $(TARGET_DIR)/nitro_plugin_better_jsons${EXTENSION} plugins/better_jsons/plugin.json
