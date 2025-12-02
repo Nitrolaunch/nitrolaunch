@@ -135,7 +135,6 @@ nitro_shared = { workspace = true }
 rand = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
-shellexpand = { workspace = true }
 sysinfo = { workspace = true }
 termimad = { workspace = true }
 tokio = { workspace = true }

@@ -5,6 +5,7 @@ use nitro_plugin::api::wasm::sys::update_hardlink;
 use nitro_plugin::api::wasm::WASMPlugin;
 use nitro_plugin::hook::hooks::OnInstanceSetupResult;
 use nitro_plugin::nitro_wasm_plugin;
+use nitro_shared::util::io::replace_tilde;
 use serde::{Deserialize, Serialize};
 
 nitro_wasm_plugin!(main, "custom_files");
@@ -25,7 +26,7 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 
 		// Copy all of the files
 		for file in config.files {
-			let src = PathBuf::from(shellexpand::tilde(&file.source).to_string());
+			let src = replace_tilde(&file.source);
 			let target = game_dir.join(PathBuf::from(file.target));
 
 			if let Some(parent) = target.parent() {

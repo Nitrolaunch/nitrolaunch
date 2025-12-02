@@ -344,17 +344,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "bstr"
-version = "1.12.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "63044e1ae8e69f3b5a92c736ca6269b8d12fa7efe39bf34ddb06d102cf0e2cab"
-dependencies = [
- "memchr",
- "regex-automata",
- "serde",
-]
-
-[[package]]
 name = "bumpalo"
 version = "3.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3574,7 +3563,6 @@ dependencies = [
  "nitro_shared",
  "serde",
  "serde_json",
- "shellexpand",
 ]
 
 [[package]]
@@ -3655,7 +3643,6 @@ dependencies = [
  "rand 0.8.5",
  "serde",
  "serde_json",
- "shellexpand",
  "sysinfo",
  "termimad",
  "tokio",
@@ -3718,7 +3705,6 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2",
- "shellexpand",
  "simd-json",
  "sysinfo",
  "tokio",
@@ -4217,15 +4203,6 @@ checksum = "7d8fae84b431384b68627d0f9b3b1245fcf9f46f6c0e3dc902e9dce64edd1967"
 dependencies = [
  "libc",
  "windows-sys 0.61.2",
-]
-
-[[package]]
-name = "os_str_bytes"
-version = "6.6.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e2355d85b9a3786f481747ced0e0ff2ba35213a1f9bd406ed906554d7af805a1"
-dependencies = [
- "memchr",
 ]
 
 [[package]]
@@ -5595,17 +5572,6 @@ dependencies = [
  "libc",
  "sigchld",
  "windows-sys 0.60.2",
-]
-
-[[package]]
-name = "shellexpand"
-version = "3.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8b1fdf65dd6331831494dd616b30351c38e96e45921a27745cf98490458b90bb"
-dependencies = [
- "bstr",
- "dirs",
- "os_str_bytes",
 ]
 
 [[package]]

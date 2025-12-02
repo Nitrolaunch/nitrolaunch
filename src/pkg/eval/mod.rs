@@ -34,6 +34,7 @@ use nitro_shared::output::NitroOutput;
 use nitro_shared::output::Simple;
 use nitro_shared::pkg::ArcPkgReq;
 use nitro_shared::pkg::PackageID;
+use nitro_shared::util::io::replace_tilde;
 use nitro_shared::util::is_valid_identifier;
 use reqwest::Client;
 
@@ -53,8 +54,6 @@ use crate::util::hash::{
 };
 use nitro_shared::pkg::PackageStability;
 use nitro_shared::Side;
-
-use std::path::PathBuf;
 
 /// Max notice instructions per package
 const MAX_NOTICE_INSTRUCTIONS: usize = 10;
@@ -415,8 +414,7 @@ pub fn create_valid_addon_request(
 	} else if let Some(path) = data.path {
 		match eval_input.params.perms {
 			EvalPermissions::Elevated => {
-				let path = shellexpand::tilde(&path).to_string();
-				let path = PathBuf::from(path);
+				let path = replace_tilde(&path);
 				let location = AddonLocation::Local(path);
 				Ok(AddonRequest::new(addon, location))
 			}
