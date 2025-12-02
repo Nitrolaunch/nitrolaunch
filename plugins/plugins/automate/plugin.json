@@ -4,10 +4,10 @@
 	"protocol_version": 3,
 	"hooks": {
 		"on_instance_launch": {
-			"executable": "${PLUGIN_DIR}/nitro_plugin_automate${EXE_EXTENSION}"
+			"wasm": true
 		},
 		"on_instance_stop": {
-			"executable": "${PLUGIN_DIR}/nitro_plugin_automate${EXE_EXTENSION}"
+			"wasm": true
 		}
 	}
 }

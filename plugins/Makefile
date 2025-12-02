@@ -121,9 +121,9 @@ install.auto_mcs:
 	@cp -r ../target/wasm32-wasip2/release/nitro_plugin_auto_mcs.wasm ~/.local/share/nitro/plugins/auto_mcs/plugin.wasm
 
 install.automate:
-	@cargo install --path . --bin nitro_plugin_automate --offline
-	@mkdir -p ~/.local/share/nitro/plugins/automate
-	@cat plugins/automate/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/automate/plugin.json
+	@cargo build -p nitro_plugin_automate --release --target wasm32-wasip2
+	@cp -r plugins/automate ~/.local/share/nitro/plugins
+	@cp -r ../target/wasm32-wasip2/release/nitro_plugin_automate.wasm ~/.local/share/nitro/plugins/automate/plugin.wasm
 
 install.backup:
 	@cargo install --path . --bin nitro_plugin_backup --offline

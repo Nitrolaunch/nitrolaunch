@@ -52,6 +52,7 @@ members = [
 	"plugins",
 	"plugins/plugins/args",
 	"plugins/plugins/auto_mcs",
+	"plugins/plugins/automate",
 	"plugins/plugins/config_split",
 	"plugins/plugins/custom_files",
 	"plugins/plugins/glfw_fix",
