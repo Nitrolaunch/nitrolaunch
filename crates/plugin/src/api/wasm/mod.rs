@@ -92,7 +92,7 @@ impl WASMPlugin {
 			Ok(result) => result,
 			Err(e) => {
 				if H::get_takes_over() {
-					eprintln!("Error in hook: {e:?}");
+					eprintln!("{e:?}");
 					return Ok(());
 				} else {
 					return Err(e);
