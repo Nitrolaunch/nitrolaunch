@@ -3566,6 +3566,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "nitro_plugin_glfw_fix"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "nitro_config",
+ "nitro_plugin",
+ "nitro_shared",
+ "serde_json",
+]
+
+[[package]]
 name = "nitro_plugin_graalvm"
 version = "0.1.0"
 dependencies = [

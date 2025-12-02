@@ -11,6 +11,7 @@ package.cross_platform: build.cross_platform
 	@rm -f release/custom_files-universal.zip
 	@rm -f release/extra_versions-universal.zip
 	@rm -f release/gamepad-universal.zip
+	@rm -f release/glfw_fix-universal.zip
 	@rm -f release/graalvm-universal.zip
 	@rm -f release/lang-universal.zip
 	@rm -f release/mojang_transfer-universal.zip
@@ -26,6 +27,8 @@ package.cross_platform: build.cross_platform
 	@printf "@ nitro_plugin_config_split.wasm\\n@=plugin.wasm\\n" | zipnote -w release/config_split-universal.zip
 	@zip -j release/custom_files-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_custom_files.wasm plugins/custom_files/plugin.json
 	@printf "@ nitro_plugin_custom_files.wasm\\n@=plugin.wasm\\n" | zipnote -w release/custom_files-universal.zip
+	@zip -j release/glfw_fix-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_glfw_fix.wasm plugins/glfw_fix/plugin.json
+	@printf "@ nitro_plugin_glfw_fix.wasm\\n@=plugin.wasm\\n" | zipnote -w release/glfw_fix-universal.zip
 	@zip -j release/graalvm-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_graalvm.wasm plugins/graalvm/plugin.json
 	@printf "@ nitro_plugin_graalvm.wasm\\n@=plugin.wasm\\n" | zipnote -w release/graalvm-universal.zip
 	@zip -j release/mojang_transfer-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_mojang_transfer.wasm plugins/mojang_transfer/plugin.json
@@ -61,7 +64,6 @@ package_zips.platform_dependent:
 	@rm -f release/fabric_quilt-${OS}.zip
 	@rm -f release/forge-${OS}.zip
 	@rm -f release/gen_pkg-${OS}.zip
-	@rm -f release/glfw_fix-${OS}.zip
 	@rm -f release/modrinth-${OS}.zip
 	@rm -f release/modrinth_api-${OS}.zip
 	@rm -f release/multimc_transfer-${OS}.zip
@@ -89,7 +91,6 @@ package_zips.platform_dependent:
 	@zip -j release/fabric_quilt-${OS}.zip $(TARGET_DIR)/nitro_plugin_fabric_quilt${EXTENSION} plugins/fabric_quilt/plugin.json
 	@zip -j release/forge-${OS}.zip $(TARGET_DIR)/nitro_plugin_forge${EXTENSION} plugins/forge/plugin.json
 	@zip -j release/gen_pkg-${OS}.zip $(TARGET_DIR)/nitro_plugin_gen_pkg${EXTENSION} plugins/gen_pkg/plugin.json
-	@zip -j release/glfw_fix-${OS}.zip $(TARGET_DIR)/nitro_plugin_glfw_fix${EXTENSION} plugins/glfw_fix/plugin.json
 	@zip -j release/modrinth-${OS}.zip $(TARGET_DIR)/nitro_plugin_modrinth${EXTENSION} plugins/modrinth/plugin.json
 	@zip -j release/modrinth_api-${OS}.zip $(TARGET_DIR)/nitro_plugin_modrinth_api${EXTENSION} plugins/modrinth_api/plugin.json plugins/modrinth_api/page.html
 	@zip -j release/multimc_transfer-${OS}.zip $(TARGET_DIR)/nitro_plugin_multimc_transfer${EXTENSION} plugins/multimc_transfer/plugin.json
@@ -186,9 +187,9 @@ install.gen_pkg:
 	@cat plugins/gen_pkg/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/gen_pkg/plugin.json
 
 install.glfw_fix:
-	@cargo install --path . --bin nitro_plugin_glfw_fix --offline
-	@mkdir -p ~/.local/share/nitro/plugins/glfw_fix
-	@cat plugins/glfw_fix/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/glfw_fix/plugin.json
+	@cargo build -p nitro_plugin_glfw_fix --release --target wasm32-wasip2
+	@cp -r plugins/glfw_fix ~/.local/share/nitro/plugins
+	@cp -r ../target/wasm32-wasip2/release/nitro_plugin_glfw_fix.wasm ~/.local/share/nitro/plugins/glfw_fix/plugin.wasm
 
 install.graalvm:
 	@cargo build -p nitro_plugin_graalvm --release --target wasm32-wasip2

@@ -54,6 +54,7 @@ members = [
 	"plugins/plugins/auto_mcs",
 	"plugins/plugins/config_split",
 	"plugins/plugins/custom_files",
+	"plugins/plugins/glfw_fix",
 	"plugins/plugins/graalvm",
 	"plugins/plugins/mojang_transfer",
 	"plugins/plugins/multiply",
