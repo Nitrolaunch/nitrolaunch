@@ -29,6 +29,12 @@ lto = true
 codegen-units = 1
 strip = true
 
+[profile.fast_release]
+inherits = "release"
+lto = "thin"
+codegen-units = 16
+strip = false
+
 [lib]
 name = "nitrolaunch"
 path = "src/lib.rs"

@@ -1,14 +1,15 @@
 use nitro_core::io::files::open_file_append;
 use nitro_core::launch::get_stdio_file_path;
 use nitro_core::NitroCore;
+use nitro_plugin::try_read::TryReadExt;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{Read, Write};
+use std::os::fd::{AsRawFd, FromRawFd};
 use std::path::{Path, PathBuf};
 use std::process::ExitStatus;
 use std::time::Duration;
 use sysinfo::{Pid, System};
-use tokio::sync::mpsc::{Receiver, Sender};
 
 use anyhow::{bail, Context};
 use nitro_config::instance::{QuickPlay, WrapperCommand};
@@ -175,16 +176,18 @@ impl Instance {
 			None
 		};
 
-		let (stdin_tx, stdin_rx) = tokio::sync::mpsc::channel::<Vec<u8>>(150);
-
-		std::thread::spawn(stdin_thread(stdin_tx));
+		let stdin = if self.get_side() == Side::Client {
+			None
+		} else {
+			Some(unsafe { tokio::fs::File::from_raw_fd(std::io::stdin().as_raw_fd()) })
+		};
 
 		let handle = InstanceHandle {
 			instance_id: self.id.clone(),
 			hook_handles,
 			hook_arg,
-			stdin_rx,
 			stdout: tokio::io::stdout(),
+			stdin,
 			is_silent: false,
 			inner: InstanceHandleInner::Standard {
 				inner: handle,
@@ -235,16 +238,12 @@ impl Instance {
 		let stdout_file = File::open(&stdout_path)?;
 		let stdin_file = open_file_append(&stdin_path)?;
 
-		let (stdin_tx, stdin_rx) = tokio::sync::mpsc::channel::<Vec<u8>>(150);
-
-		std::thread::spawn(stdin_thread(stdin_tx));
-
 		let handle = InstanceHandle {
 			instance_id: self.id.clone(),
 			hook_handles,
 			hook_arg,
-			stdin_rx,
 			stdout: tokio::io::stdout(),
+			stdin: Some(unsafe { tokio::fs::File::from_raw_fd(std::io::stdin().as_raw_fd()) }),
 			is_silent: false,
 			inner: InstanceHandleInner::Plugin {
 				pid: result.pid,
@@ -304,10 +303,10 @@ pub struct InstanceHandle {
 	hook_handles: HookHandles<WhileInstanceLaunch>,
 	/// Arg to pass to the stop hook when the instance is stopped
 	hook_arg: InstanceLaunchArg,
-	/// Receiver for stdin data chunks
-	stdin_rx: Receiver<Vec<u8>>,
 	/// Global stdout
 	stdout: Stdout,
+	/// Global stdin, only present if this isn't a standard client
+	stdin: Option<tokio::fs::File>,
 	/// Whether to redirect stdin and stdout to the process stdin and stdout
 	is_silent: bool,
 	/// Inner implementation
@@ -366,12 +365,14 @@ impl InstanceHandle {
 					let _ = self.stdout.write(&stdio_buf[0..bytes_read]).await;
 				}
 
-				let inst_stdin = match &mut self.inner {
-					InstanceHandleInner::Standard { inner, .. } => inner.stdin(),
-					InstanceHandleInner::Plugin { stdin_file, .. } => stdin_file,
-				};
-				if let Ok(chunk) = self.stdin_rx.try_recv() {
-					let _ = inst_stdin.write_all(&chunk);
+				if let Some(stdin) = &mut self.stdin {
+					let inst_stdin = match &mut self.inner {
+						InstanceHandleInner::Standard { inner, .. } => inner.stdin(),
+						InstanceHandleInner::Plugin { stdin_file, .. } => stdin_file,
+					};
+					if let Ok(Some(bytes_read)) = stdin.try_read(&mut stdio_buf).await {
+						let _ = inst_stdin.write_all(&stdio_buf[0..bytes_read]);
+					}
 				}
 			}
 
@@ -383,9 +384,18 @@ impl InstanceHandle {
 			}
 
 			// Check if the instance has exited
-			system.refresh_processes(sysinfo::ProcessesToUpdate::All, true);
-			if !is_process_alive(pid, &system, false) {
-				break ExitStatus::default();
+			match &mut self.inner {
+				InstanceHandleInner::Standard { inner, .. } => {
+					if let Ok(Some(status)) = inner.try_wait() {
+						break status;
+					}
+				}
+				InstanceHandleInner::Plugin { pid, .. } => {
+					system.refresh_processes(sysinfo::ProcessesToUpdate::All, true);
+					if !is_process_alive(*pid, &system, false) {
+						break ExitStatus::default();
+					}
+				}
 			}
 
 			tokio::time::sleep(Duration::from_millis(5)).await;
@@ -489,19 +499,5 @@ impl InstanceHandle {
 		results.all_results(o).await?;
 
 		Ok(())
-	}
-}
-
-/// Logic for the stdin reader thread
-fn stdin_thread(tx: Sender<Vec<u8>>) -> impl Fn() {
-	move || {
-		let mut stdin = std::io::stdin();
-		let mut buffer = [0; 128];
-		while !tx.is_closed() {
-			if let Ok(bytes_read) = stdin.read(&mut buffer) {
-				let chunk = buffer[0..bytes_read].to_vec();
-				let _ = tx.blocking_send(chunk);
-			}
-		}
 	}
 }
