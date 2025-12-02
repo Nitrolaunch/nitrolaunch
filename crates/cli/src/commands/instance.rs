@@ -4,7 +4,7 @@ use std::sync::Arc;
 use anyhow::{bail, Context};
 use clap::Subcommand;
 use color_print::{cprint, cprintln};
-use inquire::{Confirm, Select};
+use inquire::{Confirm, MultiSelect, Select};
 use itertools::Itertools;
 use nitrolaunch::config::modifications::{apply_modifications_and_write, ConfigModification};
 use nitrolaunch::config::Config;
@@ -53,7 +53,7 @@ pub enum InstanceSubcommand {
 		instance: Option<String>,
 	},
 	#[command(about = "Print useful information about an instance")]
-	Info { instance: String },
+	Info { instance: Option<String> },
 	Update {
 		/// Whether to force update files that have already been downloaded
 		#[arg(short, long)]
@@ -101,7 +101,7 @@ pub enum InstanceSubcommand {
 	#[command(about = "Delete an instance and its files forever")]
 	Delete {
 		/// The instance to delete
-		instance: String,
+		instance: Option<String>,
 	},
 	#[clap(external_subcommand)]
 	External(Vec<String>),
@@ -115,7 +115,7 @@ pub async fn run(command: InstanceSubcommand, mut data: CmdData<'_>) -> anyhow::
 			offline,
 			instance,
 		} => launch(instance, user, offline, data).await,
-		InstanceSubcommand::Info { instance } => info(&mut data, &instance).await,
+		InstanceSubcommand::Info { instance } => info(&mut data, instance).await,
 		InstanceSubcommand::Update {
 			force,
 			all,
@@ -135,7 +135,7 @@ pub async fn run(command: InstanceSubcommand, mut data: CmdData<'_>) -> anyhow::
 			format,
 			output,
 		} => export(&mut data, instance, format, output).await,
-		InstanceSubcommand::Delete { instance } => delete(&mut data, &instance).await,
+		InstanceSubcommand::Delete { instance } => delete(&mut data, instance).await,
 		InstanceSubcommand::External(args) => {
 			call_plugin_subcommand(args, Some("instance"), &mut data).await
 		}
@@ -166,9 +166,11 @@ async fn list(data: &mut CmdData<'_>, raw: bool, side: Option<Side>) -> anyhow::
 	Ok(())
 }
 
-async fn info(data: &mut CmdData<'_>, id: &str) -> anyhow::Result<()> {
+async fn info(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()> {
 	data.ensure_config(true).await?;
 	let config = data.config.get_mut();
+
+	let id = pick_instance(id, config)?;
 
 	fn print_indent() {
 		print!("   ");
@@ -176,7 +178,7 @@ async fn info(data: &mut CmdData<'_>, id: &str) -> anyhow::Result<()> {
 
 	let instance = config
 		.instances
-		.get(id)
+		.get(&id)
 		.with_context(|| format!("Unknown instance '{id}'"))?;
 
 	if icons_enabled() {
@@ -337,6 +339,10 @@ async fn update(
 			.get(&group)
 			.with_context(|| format!("Instance group '{group}' does not exist"))?;
 		ids.extend(group.clone());
+	}
+
+	if ids.is_empty() {
+		ids = pick_instances(config)?;
 	}
 
 	let client = Client::new();
@@ -550,13 +556,15 @@ async fn export(
 	Ok(())
 }
 
-async fn delete(data: &mut CmdData<'_>, id: &str) -> anyhow::Result<()> {
+async fn delete(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()> {
 	data.ensure_config(true).await?;
 	let config = data.config.get_mut();
 
+	let id = pick_instance(id, config)?;
+
 	let instance = config
 		.instances
-		.get_mut(id)
+		.get_mut(&id)
 		.with_context(|| format!("Unknown instance '{id}'"))?;
 
 	let prompt = Confirm::new(
@@ -591,4 +599,14 @@ pub fn pick_instance(instance: Option<String>, config: &Config) -> anyhow::Resul
 
 		Ok(selection.to_owned())
 	}
+}
+
+/// Pick which instances to use
+pub fn pick_instances(config: &Config) -> anyhow::Result<Vec<InstanceID>> {
+	let options = config.instances.keys().sorted().cloned().collect();
+	let selection = MultiSelect::new("Choose instances", options)
+		.prompt()
+		.context("Prompt failed")?;
+
+	Ok(selection)
 }
