@@ -1,4 +1,7 @@
-use std::path::{Path, PathBuf};
+use std::{
+	ffi::OsStr,
+	path::{Path, PathBuf},
+};
 
 use anyhow::anyhow;
 
@@ -32,6 +35,33 @@ pub fn update_hardlink(src: impl AsRef<Path>, tgt: impl AsRef<Path>) -> anyhow::
 	super::interface::update_hardlink(
 		&src.as_ref().to_string_lossy(),
 		&tgt.as_ref().to_string_lossy(),
+	)
+	.map_err(|e| anyhow!("{e:?}"))
+}
+
+/// Runs a command
+pub fn run_command(
+	cmd: impl AsRef<OsStr>,
+	args: Vec<impl AsRef<OsStr>>,
+	working_dir: Option<impl AsRef<OsStr>>,
+	suppress_command_window: bool,
+	silent: bool,
+	wait: bool,
+) -> anyhow::Result<i32> {
+	let args: Vec<_> = args
+		.into_iter()
+		.map(|x| x.as_ref().to_string_lossy().to_string())
+		.collect();
+
+	super::interface::run_command(
+		&cmd.as_ref().to_string_lossy(),
+		&args,
+		working_dir
+			.map(|x| x.as_ref().to_string_lossy().to_string())
+			.as_deref(),
+		suppress_command_window,
+		silent,
+		wait,
 	)
 	.map_err(|e| anyhow!("{e:?}"))
 }

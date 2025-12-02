@@ -3625,6 +3625,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "nitro_plugin_webtools"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "nitro_config",
+ "nitro_plugin",
+]
+
+[[package]]
 name = "nitro_plugin_zulu"
 version = "0.1.0"
 dependencies = [

@@ -12,6 +12,7 @@ world interface-world {
 	import get-pointer-width: func() -> u32;
 
 	import update-hardlink: func(src: string, tgt: string) -> result<_, string>;
+	import run-command: func(cmd: string, args: list<string>, working-dir: option<string>, suppress-command-window: bool, silent: bool, wait: bool) -> result<s32, string>;
 
 	import download-bytes: func(url: string) -> result<list<u8>, string>;
 	import download-text: func(url: string) -> result<string, string>;

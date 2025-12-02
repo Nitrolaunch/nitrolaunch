@@ -1,15 +1,16 @@
 /// Manager for loading and caching WASM efficiently
 pub mod loader;
 
-use std::{marker::PhantomData, path::PathBuf, sync::Arc, time::Instant};
+use std::{marker::PhantomData, path::PathBuf, process::Stdio, sync::Arc, time::Instant};
 
 use anyhow::{bail, Context};
 use nitro_net::download::{self, Client};
 use nitro_shared::{
+	no_window,
 	output::{MessageContents, MessageLevel, NitroOutput},
 	util::{ARCH_STRING, OS_STRING},
 };
-use tokio::sync::Mutex;
+use tokio::{process::Command, sync::Mutex};
 use wasmtime::{
 	component::{HasSelf, Linker},
 	Store,
@@ -280,6 +281,40 @@ impl bindings::InterfaceWorldImports for State {
 		match result {
 			Ok(..) => Ok(()),
 			Err(e) => Err(format!("{e:?}")),
+		}
+	}
+
+	async fn run_command(
+		&mut self,
+		cmd: String,
+		args: Vec<String>,
+		working_dir: Option<String>,
+		suppress_command_window: bool,
+		silent: bool,
+		wait: bool,
+	) -> Result<i32, String> {
+		let mut command = Command::new(cmd);
+		command.args(args);
+		if let Some(working_dir) = working_dir {
+			command.current_dir(working_dir);
+		}
+		if suppress_command_window {
+			no_window!(command);
+		}
+
+		if silent {
+			command.stdin(Stdio::null());
+			command.stdout(Stdio::null());
+			command.stderr(Stdio::null());
+		}
+
+		let mut child = command.spawn().map_err(|e| format!("{e:?}"))?;
+
+		if wait {
+			let status = child.wait().await.map_err(|e| format!("{e:?}"))?;
+			Ok(status.code().unwrap_or_default())
+		} else {
+			Ok(0)
 		}
 	}
 }

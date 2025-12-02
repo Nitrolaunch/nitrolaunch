@@ -59,6 +59,7 @@ members = [
 	"plugins/plugins/graalvm",
 	"plugins/plugins/mojang_transfer",
 	"plugins/plugins/multiply",
+	"plugins/plugins/webtools",
 	"plugins/plugins/zulu",
 ]
 

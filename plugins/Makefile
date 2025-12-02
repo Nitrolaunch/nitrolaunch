@@ -17,6 +17,7 @@ package.cross_platform: build.cross_platform
 	@rm -f release/lang-universal.zip
 	@rm -f release/mojang_transfer-universal.zip
 	@rm -f release/multiply-universal.zip
+	@rm -f release/webtools-universal.zip
 	@rm -f release/weld-universal.zip
 	@rm -f release/zulu-universal.zip
 
@@ -38,6 +39,8 @@ package.cross_platform: build.cross_platform
 	@printf "@ nitro_plugin_mojang_transfer.wasm\\n@=plugin.wasm\\n" | zipnote -w release/mojang_transfer-universal.zip
 	@zip -j release/multiply-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_multiply.wasm plugins/multiply/plugin.json
 	@printf "@ nitro_plugin_multiply.wasm\\n@=plugin.wasm\\n" | zipnote -w release/multiply-universal.zip
+	@zip -j release/webtools-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_webtools.wasm plugins/webtools/plugin.json
+	@printf "@ nitro_plugin_webtools.wasm\\n@=plugin.wasm\\n" | zipnote -w release/webtools-universal.zip
 	@zip -j release/zulu-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_zulu.wasm plugins/zulu/plugin.json
 	@printf "@ nitro_plugin_zulu.wasm\\n@=plugin.wasm\\n" | zipnote -w release/zulu-universal.zip
 
@@ -79,7 +82,6 @@ package_zips.platform_dependent:
 	@rm -f release/smithed_api-${OS}.zip
 	@rm -f release/sponge-${OS}.zip
 	@rm -f release/stats-${OS}.zip
-	@rm -f release/webtools-${OS}.zip
 	@rm -f release/weld-${OS}.zip
 	@rm -f release/xmcl_transfer-${OS}.zip
 
@@ -105,7 +107,6 @@ package_zips.platform_dependent:
 	@zip -j release/smithed_api-${OS}.zip $(TARGET_DIR)/nitro_plugin_smithed_api${EXTENSION} plugins/smithed_api/plugin.json
 	@zip -j release/sponge-${OS}.zip $(TARGET_DIR)/nitro_plugin_sponge${EXTENSION} plugins/sponge/plugin.json
 	@zip -j release/stats-${OS}.zip $(TARGET_DIR)/nitro_plugin_stats${EXTENSION} plugins/stats/plugin.json
-	@zip -j release/webtools-${OS}.zip $(TARGET_DIR)/nitro_plugin_webtools${EXTENSION} plugins/webtools/plugin.json
 	@zip -j release/xmcl_transfer-${OS}.zip $(TARGET_DIR)/nitro_plugin_xmcl_transfer${EXTENSION} plugins/xmcl_transfer/plugin.json
 
 build.weld:
@@ -278,9 +279,9 @@ install.stats:
 	@cat plugins/stats/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/stats/plugin.json
 
 install.webtools:
-	@cargo install --path . --bin nitro_plugin_webtools --offline
+	@cargo build -p nitro_plugin_webtools --release --target wasm32-wasip2
 	@cp -r plugins/webtools ~/.local/share/nitro/plugins
-	@cat plugins/webtools/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/webtools/plugin.json
+	@cp -r ../target/wasm32-wasip2/release/nitro_plugin_webtools.wasm ~/.local/share/nitro/plugins/webtools/plugin.wasm
 
 install.weld:
 	@mkdir -p ~/.local/share/nitro/plugins/weld

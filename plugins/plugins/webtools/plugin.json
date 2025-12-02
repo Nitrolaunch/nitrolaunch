@@ -4,13 +4,13 @@
 	"protocol_version": 3,
 	"hooks": {
 		"subcommand": {
-			"executable": "${PLUGIN_DIR}/nitro_plugin_webtools${EXE_EXTENSION}"
+			"wasm": true
 		},
 		"add_sidebar_buttons": {
-			"executable": "${PLUGIN_DIR}/nitro_plugin_webtools${EXE_EXTENSION}"
+			"wasm": true
 		},
 		"get_page": {
-			"executable": "${PLUGIN_DIR}/nitro_plugin_webtools${EXE_EXTENSION}"
+			"wasm": true
 		}
 	},
 	"subcommands": {

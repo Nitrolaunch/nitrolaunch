@@ -1,13 +1,19 @@
 use std::str::FromStr;
 
 use clap::Parser;
-use color_print::cprintln;
-use nitro_plugin::{api::executable::ExecutablePlugin, hook::hooks::SidebarButton};
-use nitro_shared::util::open_link;
+use nitro_plugin::{
+	api::wasm::{
+		sys::{get_os_string, run_command},
+		WASMPlugin,
+	},
+	hook::hooks::SidebarButton,
+	nitro_wasm_plugin,
+};
 
-fn main() -> anyhow::Result<()> {
-	let mut plugin = ExecutablePlugin::from_manifest_file("webtools", include_str!("plugin.json"))?;
-	plugin.subcommand(|_, args| {
+nitro_wasm_plugin!(main, "webtools");
+
+fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
+	plugin.subcommand(|args| {
 		let Some(subcommand) = args.first() else {
 			return Ok(());
 		};
@@ -25,7 +31,7 @@ fn main() -> anyhow::Result<()> {
 		Ok(())
 	})?;
 
-	plugin.get_page(|_, page| {
+	plugin.get_page(|page| {
 		if !page.contains("webtools") {
 			return Ok(None);
 		}
@@ -62,7 +68,7 @@ fn main() -> anyhow::Result<()> {
 		Ok(Some(page))
 	})?;
 
-	plugin.add_sidebar_buttons(|_, _| {
+	plugin.add_sidebar_buttons(|_| {
 		let icon = include_str!("gear.svg");
 		Ok(vec![SidebarButton {
 			html: format!("<div style=\"margin-top:0.3rem;margin-right:-0.2rem\">{icon}</div><div>Webtools</div>"),
@@ -96,13 +102,26 @@ enum Subcommand {
 
 fn list() {
 	for tool in ALL_WEBTOOLS {
-		cprintln!("<s> - {tool} ({})", tool.name());
+		println!(" - {tool} ({})", tool.name());
 	}
 }
 
 fn open(webtool: &WebTool) {
-	cprintln!("<s>Opening <b>{webtool}</> at <m>{}</>...", webtool.url());
-	let _ = open_link(webtool.url());
+	let cmd = match get_os_string().as_str() {
+		"linux" => "xdg-open",
+		"windows" => "start",
+		"macos" => "open",
+		_ => {
+			println!("Link: {}", webtool.url());
+			return;
+		}
+	};
+
+	println!("Opening {}...", webtool.url());
+
+	if run_command(cmd, vec![webtool.url()], None::<&str>, true, true, false).is_err() {
+		println!("Link: {}", webtool.url());
+	}
 }
 
 macro_rules! define_webtools {
