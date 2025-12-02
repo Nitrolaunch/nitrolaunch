@@ -1,93 +1,105 @@
 name: Build GUI
 on:
-    workflow_dispatch:
-    push:
-        branches:
-            - main
-            - dev
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - dev
 
 jobs:
-    publish:
-        runs-on: ${{ matrix.os }}
-        environment: github-actions
+  publish:
+    runs-on: ${{ matrix.os }}
+    environment: github-actions
 
-        strategy:
-            fail-fast: false
-            matrix:
-                os: [ubuntu-latest, windows-latest, macos-latest]
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-2022, macos-latest]
 
-        steps:
-            - uses: actions/checkout@v3
-            - name: Cache Cargo Deps
-              id: cache-cargo-deps
-              uses: actions/cache@v4
-              with:
-                  path: |
-                      target/release
-                  key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-            - name: Use Node.js
-              uses: actions/setup-node@v6
-              with:
-                  cache: "npm"
-                  cache-dependency-path: "gui/package.json"
-                  node-version: 18
-            - name: Setup Rust environment
-              # You may pin to the exact commit or the version.
-              # uses: raftario/setup-rust-action@f74294776374514bbcc27b4623c1b220ef9394bf
-              uses: raftario/setup-rust-action@v1.0.0
-              env:
-                  ACTIONS_ALLOW_UNSECURE_COMMANDS: true
-            - name: Setup Tauri
-              run: cargo install tauri-cli --version "^2.9.3" --locked
+    steps:
+      - uses: actions/checkout@v3
+      - name: Cache Cargo Deps
+        id: cache-cargo-deps
+        uses: actions/cache@v4
+        with:
+          path: |
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      - name: Use Node.js
+        uses: actions/setup-node@v6
+        with:
+          cache: "npm"
+          cache-dependency-path: "gui/package.json"
+          node-version: 18
+      - name: Setup Rust environment
+        # You may pin to the exact commit or the version.
+        # uses: raftario/setup-rust-action@f74294776374514bbcc27b4623c1b220ef9394bf
+        uses: raftario/setup-rust-action@v1.0.0
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+      - name: Setup Tauri
+        run: cargo install tauri-cli --version "^2.9.3" --locked
 
-            - if: ${{ matrix.os == 'ubuntu-latest'}}
-              name: Install Ubuntu Dependencies
-              run: |
-                  cd gui &&
-                  echo " \
-                  deb http://gb.archive.ubuntu.com/ubuntu jammy main" | sudo tee -a /etc/apt/sources.list &&
-                  sudo apt update &&
-                  sudo apt install libwebkit2gtk-4.1-dev \
-                      build-essential \
-                      curl \
-                      wget \
-                      libxdo-dev \
-                      libgtk-3-dev \
-                      libayatana-appindicator3-dev \
-                      librsvg2-dev
-            - if: ${{ matrix.os == 'macos-latest'}}
-              name: Install MacOS Dependencies
-              run: |
-                  cd gui &&
-                  rustup target add aarch64-apple-darwin &&
-                  rustup target add x86_64-apple-darwin
-            - run: cd gui && npm i
-            - if: ${{ matrix.os == 'macos-latest'}}
-              name: Build App MacOS
-              run: cd gui && cargo tauri build --target universal-apple-darwin
-              env:
-                TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+      - if: ${{ matrix.os == 'ubuntu-latest'}}
+        name: Install Ubuntu Dependencies
+        run: |
+          cd gui &&
+          echo " \
+          deb http://gb.archive.ubuntu.com/ubuntu jammy main" | sudo tee -a /etc/apt/sources.list &&
+          sudo apt update &&
+          sudo apt install libwebkit2gtk-4.1-dev \
+              build-essential \
+              curl \
+              wget \
+              libxdo-dev \
+              libgtk-3-dev \
+              libayatana-appindicator3-dev \
+              librsvg2-dev
+      - if: ${{ matrix.os == 'macos-latest'}}
+        name: Install MacOS Dependencies
+        run: |
+          cd gui &&
+          rustup target add aarch64-apple-darwin &&
+          rustup target add x86_64-apple-darwin
+      - run: cd gui && npm i
+      - if: ${{ matrix.os == 'macos-latest'}}
+        name: Build App MacOS
+        run: cd gui && cargo tauri build --target universal-apple-darwin
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
 
-            - if: ${{ matrix.os != 'macos-latest'}}
-              name: Build App
-              run: cd gui && cargo tauri build
-              env:
-                TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+      - if: ${{ matrix.os != 'macos-latest'}}
+        name: Build App
+        run: cd gui && cargo tauri build
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+      - if: ${{ matrix.os == 'windows-2022' }}
+        name: Install MSVC ARM64 Build Tools
+        shell: powershell
+        run: |
+          $installerPath = "C:\\Program Files (x86)\\Microsoft Visual Studio\\Installer\\setup.exe"
+          $installPath = "C:\\Program Files\\Microsoft Visual Studio\\2022\\Enterprise" # Default VS 2022 install path                
+          Start-Process $installerPath -ArgumentList "modify --installPath ""$installPath"" --quiet --add Microsoft.VisualStudio.Component.VC.ARM64.BuildTools.Latest" -Wait -PassThru
+      - if: ${{ matrix.os == 'windows-2022' }}
+        name: Build App ARM64
+        run: cd gui &&
+          rustup target add aarch64-pc-windows-msvc &&
+          cargo tauri build -- --target aarch64-pc-windows-msvc --bundles nsis
 
-            - name: Upload a Build Artifact
-              uses: actions/upload-artifact@v4
-              with:
-                  # Artifact name
-                  name: ${{ matrix.os }}
-                  # A file, directory or wildcard pattern that describes what to upload
-                  if-no-files-found: ignore
-                  path: |
-                      target/release/bundle/appimage/*.AppImage*
-                      target/release/bundle/deb/*.deb*
-                      target/release/bundle/msi/*.msi*
-                      target/release/*.exe*
-                      target/release/bundle/macos/*.app*
-                      target/release/bundle/dmg/*.dmg*
-                      target/release/bundle/osx/*.app*
-                      target/universal-apple-darwin/release/bundle/macos/*.app*
-                      target/universal-apple-darwin/release/bundle/dmg/*.dmg*
+      - name: Upload a Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          # Artifact name
+          name: ${{ matrix.os }}
+          # A file, directory or wildcard pattern that describes what to upload
+          if-no-files-found: ignore
+          path: |
+            target/release/bundle/appimage/*.AppImage*
+            target/release/bundle/deb/*.deb*
+            target/release/bundle/msi/*.msi*
+            target/release/*.exe*
+            target/release/bundle/macos/*.app*
+            target/release/bundle/dmg/*.dmg*
+            target/release/bundle/osx/*.app*
+            target/universal-apple-darwin/release/bundle/macos/*.app*
+            target/universal-apple-darwin/release/bundle/dmg/*.dmg*
