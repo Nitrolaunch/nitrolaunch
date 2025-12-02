@@ -175,14 +175,18 @@ impl<H: Hook> WASMHookHandle<H> {
 			*start_time = now;
 		}
 
-		let mut result = instance.call_get_result(&mut store).await?;
+		let result = if H::get_takes_over() {
+			H::Result::default()
+		} else {
+			let mut result = instance.call_get_result(&mut store).await?;
 
-		if result_code == 1 {
-			bail!("Plugin '{}' returned an error: {result}", self.plugin_id);
-		}
+			if result_code == 1 {
+				bail!("Plugin '{}' returned an error: {result}", self.plugin_id);
+			}
 
-		let result = unsafe { simd_json::from_str(&mut result) }
-			.context("Failed to deserialize hook result")?;
+			unsafe { simd_json::from_str(&mut result) }
+				.context("Failed to deserialize hook result")?
+		};
 
 		self.result = Some(result);
 
