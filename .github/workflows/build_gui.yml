@@ -24,6 +24,8 @@ jobs:
         with:
           path: |
             target
+            ~/.cargo/registry
+            ~/.cargo/git
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
       - name: Use Node.js
         uses: actions/setup-node@v6
@@ -68,11 +70,6 @@ jobs:
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
 
-      - if: ${{ matrix.os != 'macos-latest'}}
-        name: Build App
-        run: cd gui && cargo tauri build
-        env:
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
       - if: ${{ matrix.os == 'windows-2022' }}
         name: Install MSVC ARM64 Build Tools
         shell: powershell
@@ -85,6 +82,13 @@ jobs:
         run: cd gui &&
           rustup target add aarch64-pc-windows-msvc &&
           cargo tauri build --target aarch64-pc-windows-msvc
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+      - if: ${{ matrix.os != 'macos-latest'}}
+        name: Build App
+        run: cd gui && cargo tauri build
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
 
       - name: Upload a Build Artifact
         uses: actions/upload-artifact@v4

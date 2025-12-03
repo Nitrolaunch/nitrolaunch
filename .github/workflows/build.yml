@@ -18,6 +18,15 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+      - name: Cache Cargo Deps
+        id: cache-cargo-deps
+        uses: actions/cache@v4
+        with:
+          path: |
+            target
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ matrix.target }}-cargo-${{ hashFiles('**/Cargo.lock') }}
       - name: Build CLI
         run: cargo build -p nitro_cli --release --verbose --locked
       - uses: actions/upload-artifact@v4
