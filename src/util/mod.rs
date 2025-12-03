@@ -34,8 +34,7 @@ extern "system" {
 pub fn get_stdin_file() -> ManuallyDrop<File> {
 	#[cfg(target_os = "windows")]
 	{
-		use std::os::windows::io::FromRawHandle;
-		let handle = unsafe { GetStdHandle(STD_OUTPUT_HANDLE) };
+		let handle = unsafe { GetStdHandle(0xFFFFFFF6) };
 		unsafe { ManuallyDrop::new(File::from_raw_handle(handle)) }
 	}
 	#[cfg(target_family = "unix")]
