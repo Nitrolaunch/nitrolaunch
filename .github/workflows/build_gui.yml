@@ -102,6 +102,9 @@ jobs:
             target/release/bundle/deb/*.deb*
             target/release/bundle/msi/*.msi*
             target/release/*.exe*
+            target/aarch64-pc-windows-msvc/release/bundle/deb/*.deb*
+            target/aarch64-pc-windows-msvc/release/bundle/msi/*.msi*
+            target/aarch64-pc-windows-msvc/release/*.exe*
             target/release/bundle/macos/*.app*
             target/release/bundle/dmg/*.dmg*
             target/release/bundle/osx/*.app*
