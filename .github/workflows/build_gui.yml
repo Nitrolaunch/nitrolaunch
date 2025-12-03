@@ -84,7 +84,7 @@ jobs:
         name: Build App ARM64
         run: cd gui &&
           rustup target add aarch64-pc-windows-msvc &&
-          cargo tauri build -- --target aarch64-pc-windows-msvc
+          cargo tauri build --target aarch64-pc-windows-msvc
 
       - name: Upload a Build Artifact
         uses: actions/upload-artifact@v4
