@@ -5,7 +5,7 @@ use nitro_plugin::try_read::TryReadExt;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{Read, Write};
-use std::os::fd::{AsRawFd, FromRawFd};
+use std::mem::ManuallyDrop;
 use std::path::{Path, PathBuf};
 use std::process::ExitStatus;
 use std::time::Duration;
@@ -36,6 +36,7 @@ use crate::instance::world_files::WorldFilesWatcher;
 use crate::io::lock::Lockfile;
 use crate::io::paths::Paths;
 use crate::plugin::PluginManager;
+use crate::util::get_stdin_file;
 
 use super::Instance;
 
@@ -179,7 +180,7 @@ impl Instance {
 		let stdin = if self.get_side() == Side::Client {
 			None
 		} else {
-			Some(unsafe { tokio::fs::File::from_raw_fd(std::io::stdin().as_raw_fd()) })
+			Some(get_stdin_file())
 		};
 
 		let handle = InstanceHandle {
@@ -243,7 +244,7 @@ impl Instance {
 			hook_handles,
 			hook_arg,
 			stdout: tokio::io::stdout(),
-			stdin: Some(unsafe { tokio::fs::File::from_raw_fd(std::io::stdin().as_raw_fd()) }),
+			stdin: Some(get_stdin_file()),
 			is_silent: false,
 			inner: InstanceHandleInner::Plugin {
 				pid: result.pid,
@@ -306,7 +307,7 @@ pub struct InstanceHandle {
 	/// Global stdout
 	stdout: Stdout,
 	/// Global stdin, only present if this isn't a standard client
-	stdin: Option<tokio::fs::File>,
+	stdin: Option<ManuallyDrop<tokio::fs::File>>,
 	/// Whether to redirect stdin and stdout to the process stdin and stdout
 	is_silent: bool,
 	/// Inner implementation
