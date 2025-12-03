@@ -4,7 +4,6 @@ pub mod hash;
 use std::mem::ManuallyDrop;
 
 use rand::Rng;
-use tokio::fs::File;
 
 /// Selects a random set of n elements from a list. The return slice will not necessarily be of n length
 pub fn select_random_n_items_from_list<T>(list: &[T], n: usize) -> Vec<&T> {
@@ -31,15 +30,19 @@ extern "system" {
 }
 
 /// Creates a tokio file from the stdin of this process
-pub fn get_stdin_file() -> ManuallyDrop<File> {
+pub fn get_stdin_file() -> ManuallyDrop<tokio::fs::File> {
 	#[cfg(target_os = "windows")]
 	{
 		let handle = unsafe { GetStdHandle(0xFFFFFFF6) };
-		unsafe { ManuallyDrop::new(File::from_raw_handle(handle)) }
+		unsafe {
+			ManuallyDrop::new(tokio::fs::File::from_std(std::fs::File::from_raw_handle(
+				handle,
+			)))
+		}
 	}
 	#[cfg(target_family = "unix")]
 	{
 		use std::os::fd::FromRawFd;
-		unsafe { ManuallyDrop::new(File::from_raw_fd(0)) }
+		unsafe { ManuallyDrop::new(tokio::fs::File::from_raw_fd(0)) }
 	}
 }
