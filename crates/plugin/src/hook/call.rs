@@ -13,6 +13,7 @@ use crate::{
 	},
 	PluginPaths,
 };
+use anyhow::Context;
 use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput, NoOp};
 use tokio::sync::Mutex;
 
@@ -142,16 +143,15 @@ impl<H: Hook> HookHandle<H> {
 		}
 
 		let finished = match &mut self.inner {
-			HookHandleInner::Executable(inner) => {
-				inner
-					.poll(
-						&mut self.plugin_persistence,
-						&mut self.command_results,
-						&mut self.start_time,
-						o,
-					)
-					.await?
-			}
+			HookHandleInner::Executable(inner) => inner
+				.poll(
+					&mut self.plugin_persistence,
+					&mut self.command_results,
+					&mut self.start_time,
+					o,
+				)
+				.await
+				.context("Failed to poll executable hook")?,
 			HookHandleInner::WASM(inner) => {
 				inner.run(o).await?;
 

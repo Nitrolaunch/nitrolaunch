@@ -156,7 +156,7 @@ impl<H: Hook> ExecutableHookHandle<H> {
 	) -> anyhow::Result<bool> {
 		match &mut self.inner {
 			ExecutableHookHandleInner::NotStarted(command) => {
-				let mut child = command.spawn()?;
+				let mut child = command.spawn().context("Failed to spawn command")?;
 
 				let stdout = child.stdout.take().unwrap();
 				let stdout = TryLineReader::new(stdout);
