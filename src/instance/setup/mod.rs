@@ -118,6 +118,7 @@ impl Instance {
 				.as_ref()
 				.map(|x| x.to_string_lossy().to_string()),
 			version_info: version_info.clone(),
+			old_version: current_version.clone(),
 			loader: self.config.loader.clone(),
 			current_loader_version,
 			desired_loader_version: self.config.loader_version.clone(),

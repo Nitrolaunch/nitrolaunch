@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use anyhow::{bail, Context};
 use nitro_core::io::update::UpdateManager;
@@ -14,7 +14,7 @@ fn main() -> anyhow::Result<()> {
 			bail!("Instance side is empty");
 		};
 
-		if arg.game_dir.is_none() {
+		let Some(game_dir) = &arg.game_dir else {
 			return Ok(OnInstanceSetupResult::default());
 		};
 
@@ -92,6 +92,11 @@ fn main() -> anyhow::Result<()> {
 			.get_main_class_string(side)
 			.to_string();
 
+		// Cleanup files when the version changes
+		if arg.old_version != Some(arg.version_info.version.clone()) {
+			cleanup_files(&PathBuf::from(game_dir));
+		}
+
 		Ok(OnInstanceSetupResult {
 			main_class_override: Some(main_class),
 			classpath_extension: classpath.get_entries().to_vec(),
@@ -137,4 +142,12 @@ fn main() -> anyhow::Result<()> {
 	})?;
 
 	Ok(())
+}
+
+// Remove files on version change to prevent loading errors
+fn cleanup_files(game_dir: &Path) {
+	let cache_path = game_dir.join(".fabric");
+	if cache_path.exists() {
+		let _ = std::fs::remove_dir_all(&cache_path);
+	}
 }

@@ -159,12 +159,15 @@ resulting from installing a certain modification
 		"version": string,
 		"versions": [string]
 	},
+	"old_version": string,
 	"loader": Loader,
 	"current_loader_version": string | null,
 	"desired_loader_version": string | null,
 	"config": InstanceConfig,
 	"internal_dir": string,
-	"update_depth": "shallow" | "full" | "force"
+	"update_depth": "shallow" | "full" | "force",
+	"jvm_path": string,
+	"game_jar_path": string
 }
 ```
 

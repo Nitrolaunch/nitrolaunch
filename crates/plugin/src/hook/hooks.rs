@@ -140,6 +140,8 @@ pub struct OnInstanceSetupArg {
 	pub game_dir: Option<String>,
 	/// Version info for the instance
 	pub version_info: VersionInfo,
+	/// The current version of the instance before being updated to the one in version_info. Can be used to detect version changes.
+	pub old_version: Option<String>,
 	/// The loader of the instance
 	pub loader: Loader,
 	/// The current version of the loader, as stored in the lockfile. Can be used to detect version changes.
