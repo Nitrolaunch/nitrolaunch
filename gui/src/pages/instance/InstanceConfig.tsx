@@ -520,6 +520,7 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 							onclick={() => {
 								setTab("general");
 							}}
+							style="border-top-left-radius:var(--round2);border-bottom-left-radius:var(--round2);"
 						>
 							General
 						</div>
@@ -539,6 +540,7 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 						onclick={() => {
 							setTab("launch");
 						}}
+						style="border-top-right-radius:var(--round2);border-bottom-right-radius:var(--round2);"
 					>
 						Launch Settings
 					</div>

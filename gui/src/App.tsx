@@ -27,7 +27,7 @@ export default function App() {
 	const [footerData, setFooterData] = createSignal<FooterData>({
 		selectedItem: undefined,
 		mode: FooterMode.Instance,
-		action: () => {},
+		action: () => { },
 	});
 
 	let [selectedUser, setSelectedUser] = createSignal<string>();
@@ -137,7 +137,7 @@ function Layout(props: LayoutProps) {
 	let [pluginModalContents, setPluginModalContents] = createSignal<
 		string | undefined
 	>();
-	let [showWelcomePrompt, setShowWelcomePrompt] = createSignal(true);
+	let [showWelcomePrompt, setShowWelcomePrompt] = createSignal(false);
 
 	(window as any).__setPluginModalContents = (x: any) => {
 		setPluginModalContents(x);
@@ -158,10 +158,11 @@ function Layout(props: LayoutProps) {
 	});
 
 	// Fix for Webkitgtk scrolling
-	onMount(async() => {
+	onMount(async () => {
 		if (await invoke("custom_scrollbar_needed")) {
 			let elem = document.getElementById("root")!;
-			elem.style.overflowX = "scroll";
+			elem.style.overflowY = "auto";
+			elem.style.overflowX = "hidden";
 			elem.style.maxHeight = "100vh";
 		}
 	})

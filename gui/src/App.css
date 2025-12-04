@@ -112,7 +112,7 @@ h2 {
 }
 
 input {
-	border-radius: var(--round);
+	border-radius: var(--round2);
 	padding: 0.5rem 1rem;
 	height: var(--input-height);
 	background-color: var(--bg0);
