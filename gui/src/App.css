@@ -127,7 +127,8 @@ input {
 input,
 button,
 .shadow {
-	box-shadow: var(--shadow-offset) var(--shadow-offset) var(--shadow-blur) var(--shadow);
+	box-shadow: var(--shadow-offset) var(--shadow-offset) var(--shadow-blur)
+		var(--shadow);
 }
 
 input:focus {

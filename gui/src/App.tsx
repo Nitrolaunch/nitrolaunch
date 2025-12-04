@@ -27,7 +27,7 @@ export default function App() {
 	const [footerData, setFooterData] = createSignal<FooterData>({
 		selectedItem: undefined,
 		mode: FooterMode.Instance,
-		action: () => { },
+		action: () => {},
 	});
 
 	let [selectedUser, setSelectedUser] = createSignal<string>();
@@ -134,10 +134,15 @@ export default function App() {
 function Layout(props: LayoutProps) {
 	let [showSidebar, setShowSidebar] = createSignal(false);
 	// Modal for plugins to use
-	let [pluginModalContents, setPluginModalContents] = createSignal<string | undefined>();
+	let [pluginModalContents, setPluginModalContents] = createSignal<
+		string | undefined
+	>();
 	let [showWelcomePrompt, setShowWelcomePrompt] = createSignal(false);
 
-	(window as any).__setPluginModalContents = (x: any) => { setPluginModalContents(x); console.log("Ok"); };
+	(window as any).__setPluginModalContents = (x: any) => {
+		setPluginModalContents(x);
+		console.log("Ok");
+	};
 
 	onMount(() => loadPagePlugins(""));
 
@@ -151,6 +156,15 @@ function Layout(props: LayoutProps) {
 			console.error(e);
 		}
 	});
+
+	// Fix for Webkitgtk scrolling
+	onMount(async() => {
+		if (await invoke("custom_scrollbar_needed")) {
+			let elem = document.getElementById("root")!;
+			elem.style.overflowX = "scroll";
+			elem.style.maxHeight = "100vh";
+		}
+	})
 
 	return (
 		<>
@@ -182,10 +196,17 @@ function Layout(props: LayoutProps) {
 				itemFromPlugin={props.footerData.fromPlugin}
 				selectedPackageGallery={props.footerData.selectedPackageGallery}
 			/>
-			<ModalBase visible={pluginModalContents() != undefined} onClose={() => setPluginModalContents(undefined)} width="40rem">
+			<ModalBase
+				visible={pluginModalContents() != undefined}
+				onClose={() => setPluginModalContents(undefined)}
+				width="40rem"
+			>
 				<div class="cont col fullwidth" innerHTML={pluginModalContents()}></div>
 			</ModalBase>
-			<WelcomePrompt visible={showWelcomePrompt()} onClose={() => setShowWelcomePrompt(false)} />
+			<WelcomePrompt
+				visible={showWelcomePrompt()}
+				onClose={() => setShowWelcomePrompt(false)}
+			/>
 		</>
 	);
 }

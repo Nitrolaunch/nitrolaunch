@@ -314,3 +314,16 @@ pub async fn save_icon(state: tauri::State<'_, State>, icon: String) -> Result<(
 
 	Ok(())
 }
+
+/// Gets whether a custom scrollbar is needed for the frontend
+#[tauri::command]
+pub async fn custom_scrollbar_needed() -> Result<bool, String> {
+	#[cfg(target_os = "linux")]
+	{
+		Ok(true)
+	}
+	#[cfg(not(target_os = "linux"))]
+	{
+		Ok(false)
+	}
+}

@@ -210,6 +210,7 @@ fn main() {
 			commands::misc::open_instance_dir,
 			commands::misc::get_available_icons,
 			commands::misc::save_icon,
+			commands::misc::custom_scrollbar_needed,
 			commands::cancel_task,
 		])
 		.run(tauri::generate_context!())
@@ -298,6 +299,8 @@ const fn get_raw_ms_client_id() -> &'static str {
 fn fix_compatability() {
 	// Fix for Wayland causing the app to crash
 	if std::env::var("WAYLAND_DISPLAY").is_ok() {
-		std::env::set_var("GTK_OVERLAY_SCROLLING", "0");
+		unsafe {
+			std::env::set_var("GTK_OVERLAY_SCROLLING", "0");
+		}
 	}
 }
