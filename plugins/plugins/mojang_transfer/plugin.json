@@ -15,6 +15,9 @@
 		},
 		"migrate_instances": {
 			"wasm": true
+		},
+		"check_migration": {
+			"wasm": true
 		}
 	}
 }

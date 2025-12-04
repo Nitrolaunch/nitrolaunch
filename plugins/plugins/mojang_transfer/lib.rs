@@ -6,7 +6,7 @@ use nitro_config::instance::{
 };
 use nitro_plugin::{
 	api::wasm::{sys::get_os_string, WASMPlugin},
-	hook::hooks::MigrateInstancesResult,
+	hook::hooks::{CheckMigrationResult, MigrateInstancesResult},
 	nitro_wasm_plugin,
 };
 use nitro_shared::{
@@ -18,23 +18,34 @@ use serde::{Deserialize, Serialize};
 nitro_wasm_plugin!(main, "mojang_transfer");
 
 fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
-	plugin.migrate_instances(|arg| {
-		let os = get_os_string();
-		let data_folder = match os.as_str() {
-			"linux" => format!("{}/.local/share/.minecraft", std::env::var("HOME")?),
-			"windows" => format!("{}/Roaming/.minecraft", std::env::var("%APPDATA%")?),
-			"macos" => format!(
-				"{}/Library/Application Support/.minecraft",
-				std::env::var("HOME")?
-			),
-			_ => bail!("Unsupported OS"),
-		};
+	plugin.check_migration(|_| {
+		let data_folder = get_data_dir()?;
+		let launcher_profiles = data_folder.join("launcher_profiles.json");
 
-		let data_folder = PathBuf::from(data_folder);
+		if !launcher_profiles.exists() {
+			Ok(None)
+		} else {
+			let data = match std::fs::read(&launcher_profiles) {
+				Ok(data) => data,
+				Err(e) => bail!("Failed to read launcher profiles: {e:#?}"),
+			};
+
+			let profiles: LauncherProfiles =
+				serde_json::from_slice(&data).context("Failed to deserialize launcher profiles")?;
+
+			let instances = profiles.profiles.into_values().map(|x| x.name).collect();
+
+			Ok(Some(CheckMigrationResult { instances }))
+		}
+	})?;
+
+	plugin.migrate_instances(|arg| {
+		let data_folder = get_data_dir()?;
+
 		let launcher_profiles = data_folder.join("launcher_profiles.json");
 		if !launcher_profiles.exists() {
 			return Ok(MigrateInstancesResult {
-				format: arg,
+				format: arg.format,
 				..Default::default()
 			});
 		}
@@ -50,6 +61,12 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 		let mut instances = HashMap::new();
 
 		for profile in profiles.profiles.into_values() {
+			if let Some(requested_instances) = &arg.instances {
+				if !requested_instances.contains(&profile.name) {
+					continue;
+				}
+			}
+
 			let id = make_valid_instance_id(&profile.name);
 
 			let id = if instances.contains_key(&id) {
@@ -64,7 +81,7 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 		}
 
 		Ok(MigrateInstancesResult {
-			format: arg,
+			format: arg.format,
 			instances,
 			packages: HashMap::new(),
 		})
@@ -134,4 +151,19 @@ enum ProfileType {
 	Custom,
 	LatestRelease,
 	LatestSnapshot,
+}
+
+/// Gets the .minecraft dir
+fn get_data_dir() -> anyhow::Result<PathBuf> {
+	let out = match get_os_string().as_str() {
+		"linux" => format!("{}/.local/share/.minecraft", std::env::var("HOME")?),
+		"windows" => format!("{}/Roaming/.minecraft", std::env::var("%APPDATA%")?),
+		"macos" => format!(
+			"{}/Library/Application Support/.minecraft",
+			std::env::var("HOME")?
+		),
+		_ => bail!("Unsupported OS"),
+	};
+
+	Ok(PathBuf::from(out))
 }

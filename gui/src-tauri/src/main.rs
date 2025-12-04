@@ -199,6 +199,7 @@ fn main() {
 			commands::transfer::get_instance_transfer_formats,
 			commands::transfer::import_instance,
 			commands::transfer::export_instance,
+			commands::transfer::check_migration,
 			commands::transfer::migrate_instances,
 			commands::misc::get_supported_loaders,
 			commands::misc::get_loader_versions,

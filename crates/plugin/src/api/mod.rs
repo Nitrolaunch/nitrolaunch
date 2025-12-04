@@ -79,6 +79,7 @@ hook_interface!(
 );
 hook_interface!(export_instance, "export_instance", ExportInstance);
 hook_interface!(import_instance, "import_instance", ImportInstance);
+hook_interface!(check_migration, "check_migration", CheckMigration);
 hook_interface!(migrate_instances, "migrate_instances", MigrateInstances);
 hook_interface!(
 	add_supported_loaders,

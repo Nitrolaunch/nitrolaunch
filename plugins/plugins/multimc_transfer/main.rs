@@ -9,7 +9,10 @@ use nitro_core::io::{extract_zip_dir, json_from_file};
 use nitro_pkg::PkgRequest;
 use nitro_plugin::{
 	api::executable::ExecutablePlugin,
-	hook::hooks::{ImportInstanceResult, MigrateInstancesResult, MigratedAddon, MigratedPackage},
+	hook::hooks::{
+		CheckMigrationResult, ImportInstanceResult, MigrateInstancesResult, MigratedAddon,
+		MigratedPackage,
+	},
 };
 use nitro_shared::{addon::AddonKind, loaders::Loader, versions::MinecraftVersionDeser, Side};
 use nitrolaunch::config_crate::{
@@ -93,41 +96,44 @@ fn main() -> anyhow::Result<()> {
 		})
 	})?;
 
-	plugin.migrate_instances(|_, arg| {
-		let data_folder = if arg == "multimc" {
-			#[cfg(target_os = "linux")]
-			let data_folder = format!("{}/.local/share/multimc", std::env::var("HOME")?);
-			#[cfg(target_os = "windows")]
-			let data_folder = format!("{}/Roaming/MultiMC", std::env::var("%APPDATA%")?);
-			#[cfg(target_os = "macos")]
-			let data_folder = format!(
-				"{}/Library/Application Support/MultiMC",
-				std::env::var("HOME")?
-			);
+	plugin.check_migration(|_, arg| {
+		let data_folder = data_folder(&arg)?;
+		let instances_folder = data_folder.join("instances");
+		if instances_folder.exists() {
+			let mut instances = Vec::new();
 
-			data_folder
-		} else if arg == "prism" {
-			#[cfg(target_os = "linux")]
-			let data_folder = format!("{}/.local/share/PrismLauncher", std::env::var("HOME")?);
-			#[cfg(target_os = "windows")]
-			let data_folder = format!("{}/Roaming/PrismLauncher", std::env::var("%APPDATA%")?);
-			#[cfg(target_os = "macos")]
-			let data_folder = format!(
-				"{}/Library/Application Support/PrismLauncher",
-				std::env::var("HOME")?
-			);
+			let read = instances_folder
+				.read_dir()
+				.context("Failed to read instances")?;
+			for entry in read {
+				let entry = entry?;
 
-			data_folder
+				if entry.file_type()?.is_file() {
+					continue;
+				}
+
+				let name = entry.file_name().to_string_lossy().to_string();
+				if name == "_LAUNCHER_TEMP" {
+					continue;
+				}
+
+				instances.push(name);
+			}
+
+			Ok(Some(CheckMigrationResult { instances }))
 		} else {
-			bail!("Unsupported format");
-		};
+			Ok(None)
+		}
+	})?;
 
-		let data_folder = PathBuf::from(data_folder);
+	plugin.migrate_instances(|_, arg| {
+		let data_folder = data_folder(&arg.format)?;
+
 		let instances_folder = data_folder.join("instances");
 
 		if !instances_folder.exists() {
 			return Ok(MigrateInstancesResult {
-				format: arg,
+				format: arg.format,
 				instances: HashMap::new(),
 				packages: HashMap::new(),
 			});
@@ -144,6 +150,16 @@ fn main() -> anyhow::Result<()> {
 
 			if entry.file_type()?.is_file() {
 				continue;
+			}
+
+			let name = entry.file_name().to_string_lossy().to_string();
+			if name == "_LAUNCHER_TEMP" {
+				continue;
+			}
+			if let Some(requested_instances) = &arg.instances {
+				if !requested_instances.contains(&name) {
+					continue;
+				}
 			}
 
 			let path = entry.path();
@@ -215,7 +231,7 @@ fn main() -> anyhow::Result<()> {
 		}
 
 		Ok(MigrateInstancesResult {
-			format: arg,
+			format: arg.format,
 			instances,
 			packages,
 		})
@@ -355,4 +371,35 @@ fn read_pw_toml(contents: &str) -> HashMap<&str, HashMap<&str, &str>> {
 	}
 
 	sections
+}
+
+/// Gets the data folder depending on the format and operating system
+fn data_folder(format: &str) -> anyhow::Result<PathBuf> {
+	if format == "multimc" {
+		#[cfg(target_os = "linux")]
+		let data_folder = format!("{}/.local/share/multimc", std::env::var("HOME")?);
+		#[cfg(target_os = "windows")]
+		let data_folder = format!("{}/Roaming/MultiMC", std::env::var("%APPDATA%")?);
+		#[cfg(target_os = "macos")]
+		let data_folder = format!(
+			"{}/Library/Application Support/MultiMC",
+			std::env::var("HOME")?
+		);
+
+		Ok(PathBuf::from(data_folder))
+	} else if format == "prism" {
+		#[cfg(target_os = "linux")]
+		let data_folder = format!("{}/.local/share/PrismLauncher", std::env::var("HOME")?);
+		#[cfg(target_os = "windows")]
+		let data_folder = format!("{}/Roaming/PrismLauncher", std::env::var("%APPDATA%")?);
+		#[cfg(target_os = "macos")]
+		let data_folder = format!(
+			"{}/Library/Application Support/PrismLauncher",
+			std::env::var("HOME")?
+		);
+
+		Ok(PathBuf::from(data_folder))
+	} else {
+		bail!("Unsupported format")
+	}
 }

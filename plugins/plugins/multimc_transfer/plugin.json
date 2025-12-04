@@ -26,6 +26,9 @@
 		},
 		"migrate_instances": {
 			"executable": "${PLUGIN_DIR}/nitro_plugin_multimc_transfer${EXE_EXTENSION}"
+		},
+		"check_migration": {
+			"executable": "${PLUGIN_DIR}/nitro_plugin_multimc_transfer${EXE_EXTENSION}"
 		}
 	}
 }

@@ -137,7 +137,7 @@ function Layout(props: LayoutProps) {
 	let [pluginModalContents, setPluginModalContents] = createSignal<
 		string | undefined
 	>();
-	let [showWelcomePrompt, setShowWelcomePrompt] = createSignal(false);
+	let [showWelcomePrompt, setShowWelcomePrompt] = createSignal(true);
 
 	(window as any).__setPluginModalContents = (x: any) => {
 		setPluginModalContents(x);

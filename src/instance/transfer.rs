@@ -7,7 +7,7 @@ use nitro_config::instance::InstanceConfig;
 use nitro_plugin::hook::hooks::{
 	AddInstanceTransferFormats, ExportInstance, ExportInstanceArg, ImportInstance,
 	ImportInstanceArg, InstanceTransferFeatureSupport, InstanceTransferFormat,
-	InstanceTransferFormatDirection, MigrateInstances,
+	InstanceTransferFormatDirection, MigrateInstances, MigrateInstancesArg,
 };
 use nitro_shared::addon::Addon;
 use nitro_shared::lang::translate::TranslationKey;
@@ -183,6 +183,7 @@ impl Instance {
 /// Migrates all instances from another launcher using a plugin
 pub async fn migrate_instances(
 	format: &str,
+	instances: Option<Vec<String>>,
 	formats: &Formats,
 	plugins: &PluginManager,
 	paths: &Paths,
@@ -212,8 +213,12 @@ pub async fn migrate_instances(
 		MessageLevel::Important,
 	);
 
+	let arg = MigrateInstancesArg {
+		format: format.info.id.clone(),
+		instances,
+	};
 	let result = plugins
-		.call_hook_on_plugin(MigrateInstances, &format.plugin, &format.info.id, paths, o)
+		.call_hook_on_plugin(MigrateInstances, &format.plugin, &arg, paths, o)
 		.await
 		.context("Failed to import instances using plugin")?;
 

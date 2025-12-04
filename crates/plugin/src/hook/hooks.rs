@@ -496,13 +496,40 @@ pub struct ImportInstanceResult {
 }
 
 def_hook!(
+	CheckMigration,
+	"check_migration",
+	"Hook for checking for presence of a launcher for migration",
+	String,
+	Option<CheckMigrationResult>,
+	1,
+);
+
+/// Result from the CheckMigration hook
+#[derive(Serialize, Deserialize, Default)]
+#[serde(default)]
+pub struct CheckMigrationResult {
+	/// Available instances from this launcher
+	pub instances: Vec<String>,
+}
+
+def_hook!(
 	MigrateInstances,
 	"migrate_instances",
 	"Hook for migrating all instances from another launcher",
-	String,
+	MigrateInstancesArg,
 	MigrateInstancesResult,
-	1,
+	2,
 );
+
+/// Argument for the MigrateInstances hook
+#[derive(Serialize, Deserialize, Default)]
+#[serde(default)]
+pub struct MigrateInstancesArg {
+	/// The ID of the transfer format being used
+	pub format: String,
+	/// The names of the instances to migrate, empty to migrate all of them
+	pub instances: Option<Vec<String>>,
+}
 
 /// Result from the MigrateInstances hook
 #[derive(Serialize, Deserialize, Default)]

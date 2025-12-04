@@ -1,6 +1,6 @@
 #welcome-prompt {
 	width: 100%;
-	height: 25rem;
+	height: 30rem;
 }
 
 #welcome-prompt-tabs {
@@ -35,6 +35,7 @@
 
 #welcome-prompt-contents {
 	height: 75%;
+	overflow-y: auto;
 }
 
 #welcome-prompt-navigation {

@@ -86,6 +86,9 @@ pub enum Command {
 	Migrate {
 		/// Which format to use
 		format: Option<String>,
+		/// Specific instances to migrate. Will migrate all if none are specified
+		#[arg(short = 'i', long)]
+		instances: Vec<String>,
 	},
 	#[clap(external_subcommand)]
 	External(Vec<String>),
@@ -142,7 +145,7 @@ pub async fn run_cli() -> anyhow::Result<()> {
 			Command::Plugin { command } => plugin::run(command, &mut data).await,
 			Command::Config { command } => config::run(command, &mut data).await,
 			Command::Template { command } => template::run(command, &mut data).await,
-			Command::Migrate { format } => migrate(format, &mut data).await,
+			Command::Migrate { format, instances } => migrate(format, instances, &mut data).await,
 			Command::External(args) => call_plugin_subcommand(args, None, &mut data).await,
 		}
 	};
@@ -245,7 +248,11 @@ fn print_version() {
 }
 
 /// Runs instance migration
-async fn migrate(format: Option<String>, data: &mut CmdData<'_>) -> anyhow::Result<()> {
+async fn migrate(
+	format: Option<String>,
+	instances: Vec<String>,
+	data: &mut CmdData<'_>,
+) -> anyhow::Result<()> {
 	data.ensure_config(true).await?;
 	let config = data.config.get();
 
@@ -271,6 +278,7 @@ async fn migrate(format: Option<String>, data: &mut CmdData<'_>) -> anyhow::Resu
 
 	let new_configs = migrate_instances(
 		&format,
+		Some(instances).filter(|x| !x.is_empty()),
 		&formats,
 		&config.plugins,
 		&data.paths,

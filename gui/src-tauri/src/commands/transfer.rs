@@ -8,7 +8,9 @@ use nitrolaunch::config::modifications::{apply_modifications_and_write, ConfigMo
 use nitrolaunch::config::Config;
 use nitrolaunch::instance::{transfer, Instance};
 use nitrolaunch::io::lock::Lockfile;
-use nitrolaunch::plugin_crate::hook::hooks::{AddInstanceTransferFormats, InstanceTransferFormat};
+use nitrolaunch::plugin_crate::hook::hooks::{
+	AddInstanceTransferFormats, CheckMigration, CheckMigrationResult, InstanceTransferFormat,
+};
 use nitrolaunch::shared::id::InstanceID;
 use nitrolaunch::shared::output::NoOp;
 
@@ -127,10 +129,41 @@ pub async fn export_instance(
 }
 
 #[tauri::command]
+pub async fn check_migration(
+	state: tauri::State<'_, State>,
+	app_handle: tauri::AppHandle,
+	format: &str,
+) -> Result<Option<CheckMigrationResult>, String> {
+	let mut output = LauncherOutput::new(state.get_output(app_handle));
+
+	let config = fmt_err(
+		load_config(&state.paths, &mut NoOp)
+			.await
+			.context("Failed to load config"),
+	)?;
+
+	let result = fmt_err(
+		config
+			.plugins
+			.call_hook(
+				CheckMigration,
+				&format.to_string(),
+				&state.paths,
+				&mut output,
+			)
+			.await,
+	)?;
+	let result = fmt_err(result.first_some(&mut output).await)?;
+
+	Ok(result)
+}
+
+#[tauri::command]
 pub async fn migrate_instances(
 	state: tauri::State<'_, State>,
 	app_handle: tauri::AppHandle,
 	format: &str,
+	instances: Option<Vec<String>>,
 ) -> Result<usize, String> {
 	let mut output = LauncherOutput::new(state.get_output(app_handle));
 	output.set_task("migrate_instances");
@@ -152,6 +185,7 @@ pub async fn migrate_instances(
 	let instances = fmt_err(
 		nitrolaunch::instance::transfer::migrate_instances(
 			format,
+			instances,
 			&formats,
 			&config.plugins,
 			&state.paths,
