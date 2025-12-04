@@ -4,7 +4,7 @@ import { invoke } from "@tauri-apps/api/core";
 import "./TemplateDeletePrompt.css";
 import InlineSelect from "../input/select/InlineSelect";
 import IconTextButton from "../input/button/IconTextButton";
-import { Box, Cycle } from "../../icons";
+import { Box, Copy, Cycle, Link, Properties } from "../../icons";
 import { errorToast, successToast } from "../dialog/Toasts";
 import { clearInputError, inputError } from "../../errors";
 import Icon from "../Icon";
@@ -14,7 +14,7 @@ import { updateInstanceList } from "../../pages/instance/InstanceList";
 
 export default function MigratePrompt(props: MigratePromptProps) {
 	return (
-		<ModalBase visible={props.visible} onClose={props.onClose} width="25rem">
+		<ModalBase visible={props.visible} onClose={props.onClose} width="35rem">
 			<MigratePromptContents {...props} />
 		</ModalBase>
 	);
@@ -40,6 +40,7 @@ export function MigratePromptContents(props: MigratePromptProps) {
 	let [selectedFormat, setSelectedFormat] = createSignal<string | undefined>();
 	let [instanceMode, setInstanceMode] = createSignal<"all" | "select">("all");
 	let [selectedInstances, setSelectedInstances] = createSignal<string[]>([]);
+	let [method, setMethod] = createSignal<"link" | "copy">("link");
 
 	// Info about the launcher and available instances grabbed from the plugin
 	let [launcherInfo, __] = createResource(
@@ -60,7 +61,7 @@ export function MigratePromptContents(props: MigratePromptProps) {
 	);
 
 	return (
-		<div class="cont col" style="padding:2rem">
+		<div class="cont col fullwidth" style="padding:2rem;box-sizing:border-box">
 			<div class="cont bold">
 				<Icon icon={Cycle} size="1rem" />
 				Migrate from Launcher
@@ -134,7 +135,7 @@ export function MigratePromptContents(props: MigratePromptProps) {
 											value: "select",
 											contents: (
 												<div class="cont">
-													<Icon icon={Box} size="1rem" />
+													<Icon icon={Properties} size="1rem" />
 													Select Instances
 												</div>
 											),
@@ -164,6 +165,52 @@ export function MigratePromptContents(props: MigratePromptProps) {
 								/>
 							</div>
 						</Show>
+						<div class="cont start label">
+							<label>METHOD</label>
+						</div>
+						<Tip
+							fullwidth
+							tip="How do you want to migrate the instances?"
+							side="top"
+						>
+							<div class="fullwidth" id="instance-transfer-instances">
+								<InlineSelect
+									options={[
+										{
+											value: "link",
+											contents: (
+												<div class="cont">
+													<Icon icon={Link} size="1rem" />
+													Link
+												</div>
+											),
+											color: "var(--template)",
+											tip: "Use the existing instance files without copying.",
+											tipSide: "bottom"
+										},
+										{
+											value: "copy",
+											contents: (
+												<div class="cont">
+													<Icon icon={Copy} size="1rem" />
+													Copy
+												</div>
+											),
+											color: "var(--instance)",
+											tip: "Copy all the instance files",
+											tipSide: "bottom"
+										},
+									]}
+									selected={method()}
+									onChange={setMethod}
+									connected
+									columns={2}
+								/>
+							</div>
+						</Tip>
+						<div></div>
+						<div></div>
+						<div></div>
 					</Match>
 				</Switch>
 			</div>
@@ -186,9 +233,12 @@ export function MigratePromptContents(props: MigratePromptProps) {
 						try {
 							let instances =
 								instanceMode() == "all" ? undefined : selectedInstances();
+							let link = method() == "link";
+
 							let count: number = await invoke("migrate_instances", {
 								format: selectedFormat(),
 								instances: instances,
+								link: link,
 							});
 							successToast(`Migrated ${count} instances`);
 							updateInstanceList();

@@ -184,6 +184,7 @@ impl Instance {
 pub async fn migrate_instances(
 	format: &str,
 	instances: Option<Vec<String>>,
+	link: bool,
 	formats: &Formats,
 	plugins: &PluginManager,
 	paths: &Paths,
@@ -216,6 +217,7 @@ pub async fn migrate_instances(
 	let arg = MigrateInstancesArg {
 		format: format.info.id.clone(),
 		instances,
+		link,
 	};
 	let result = plugins
 		.call_hook_on_plugin(MigrateInstances, &format.plugin, &arg, paths, o)

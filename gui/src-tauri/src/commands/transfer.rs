@@ -164,6 +164,7 @@ pub async fn migrate_instances(
 	app_handle: tauri::AppHandle,
 	format: &str,
 	instances: Option<Vec<String>>,
+	link: bool,
 ) -> Result<usize, String> {
 	let mut output = LauncherOutput::new(state.get_output(app_handle));
 	output.set_task("migrate_instances");
@@ -186,6 +187,7 @@ pub async fn migrate_instances(
 		nitrolaunch::instance::transfer::migrate_instances(
 			format,
 			instances,
+			link,
 			&formats,
 			&config.plugins,
 			&state.paths,

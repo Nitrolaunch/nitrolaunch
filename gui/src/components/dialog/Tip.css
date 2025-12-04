@@ -110,5 +110,5 @@
 	left: 0px;
 	--width: unset;
 	text-wrap: nowrap;
-	flex-direction: column;
+	flex-direction: column-reverse;
 }

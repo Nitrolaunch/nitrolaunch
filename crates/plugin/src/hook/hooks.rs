@@ -529,6 +529,8 @@ pub struct MigrateInstancesArg {
 	pub format: String,
 	/// The names of the instances to migrate, empty to migrate all of them
 	pub instances: Option<Vec<String>>,
+	/// Whether to copy the instance files or link the game dirs
+	pub link: bool,
 }
 
 /// Result from the MigrateInstances hook

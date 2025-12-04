@@ -1,6 +1,6 @@
 import { createSignal, For, JSX, Show } from "solid-js";
 import "./InlineSelect.css";
-import Tip from "../../dialog/Tip";
+import Tip, { TipSide } from "../../dialog/Tip";
 import Icon from "../../Icon";
 import { Check } from "../../../icons";
 
@@ -161,7 +161,7 @@ function InlineSelectOption(props: OptionProps) {
 		return (
 			<Tip
 				tip={<div style="color:var(--fg)">{props.option.tip}</div>}
-				side="top"
+				side={props.option.tipSide == undefined ? "top" : props.option.tipSide}
 			>
 				{contents}
 			</Tip>
@@ -187,4 +187,5 @@ export interface Option {
 	color?: string;
 	selectedTextColor?: string;
 	tip?: JSX.Element;
+	tipSide?: TipSide;
 }

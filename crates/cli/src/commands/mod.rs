@@ -89,6 +89,9 @@ pub enum Command {
 		/// Specific instances to migrate. Will migrate all if none are specified
 		#[arg(short = 'i', long)]
 		instances: Vec<String>,
+		/// Whether to copy the instance files. By default, will link to the existing ones instead.
+		#[arg(short = 'c', long)]
+		copy: bool,
 	},
 	#[clap(external_subcommand)]
 	External(Vec<String>),
@@ -145,7 +148,11 @@ pub async fn run_cli() -> anyhow::Result<()> {
 			Command::Plugin { command } => plugin::run(command, &mut data).await,
 			Command::Config { command } => config::run(command, &mut data).await,
 			Command::Template { command } => template::run(command, &mut data).await,
-			Command::Migrate { format, instances } => migrate(format, instances, &mut data).await,
+			Command::Migrate {
+				format,
+				instances,
+				copy,
+			} => migrate(format, instances, copy, &mut data).await,
 			Command::External(args) => call_plugin_subcommand(args, None, &mut data).await,
 		}
 	};
@@ -251,6 +258,7 @@ fn print_version() {
 async fn migrate(
 	format: Option<String>,
 	instances: Vec<String>,
+	copy: bool,
 	data: &mut CmdData<'_>,
 ) -> anyhow::Result<()> {
 	data.ensure_config(true).await?;
@@ -279,6 +287,7 @@ async fn migrate(
 	let new_configs = migrate_instances(
 		&format,
 		Some(instances).filter(|x| !x.is_empty()),
+		!copy,
 		&formats,
 		&config.plugins,
 		&data.paths,
