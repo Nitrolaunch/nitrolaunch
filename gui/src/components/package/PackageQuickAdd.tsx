@@ -184,7 +184,7 @@ export default function PackageQuickAdd(props: PackageQuickAddProps) {
 
 							return (
 								<div
-									class={`package-quick-add-option ${isSelected() ? "selected" : ""
+									class={`package-quick-add-option bubble-hover ${isSelected() ? "selected" : ""
 										}`}
 									onclick={() => {
 										setPreviewedPackage(pkg.id);

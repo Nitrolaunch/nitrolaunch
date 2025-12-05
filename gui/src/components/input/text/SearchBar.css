@@ -13,7 +13,7 @@
 	background-color: var(--bg0);
 	padding: 0.2rem 0.6rem;
 	border: var(--border) solid var(--bg3);
-	border-radius: var(--round);
+	border-radius: var(--round2);
 	height: var(--input-height);
 	box-sizing: border-box;
 }

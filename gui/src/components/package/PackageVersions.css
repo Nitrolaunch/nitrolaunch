@@ -26,7 +26,7 @@
 
 	box-sizing: border-box;
 	border: var(--border) solid var(--bg3);
-	border-radius: var(--round);
+	border-radius: var(--round2);
 
 	cursor: pointer;
 
@@ -72,7 +72,7 @@
 	width: 1rem;
 	height: 1rem;
 	border: var(--border) solid;
-	border-radius: var(--round);
+	border-radius: var(--round2);
 	font-size: 0.9rem;
 	font-weight: bold;
 }

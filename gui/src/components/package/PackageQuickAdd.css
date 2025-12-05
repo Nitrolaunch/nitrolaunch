@@ -17,6 +17,8 @@
 	padding: 1rem;
 	box-sizing: border-box;
 
+	align-items: flex-start;
+
 	border-bottom: var(--border) solid var(--bg3);
 }
 
@@ -38,6 +40,8 @@
 	height: 100%;
 	overflow-y: auto;
 
+	background-color: var(--bg);
+
 	border-right: var(--border) solid var(--bg3);
 }
 
@@ -52,6 +56,12 @@
 
 	user-select: none;
 	-webkit-user-select: none;
+
+	transition: background-color 0.2s, transform var(--bubble);
+}
+
+.package-quick-add-option:hover {
+	background-color: var(--bg2);
 }
 
 .package-quick-add-option-icon > img {
@@ -66,11 +76,17 @@
 }
 
 .package-quick-add-option.selected {
-	background-color: var(--bg);
+	background-color: var(--bg2);
+}
+
+.package-quick-add-option.selected:hover {
+	background-color: var(--bg3);
 }
 
 .package-quick-add-preview {
 	padding: 0.5rem;
+
+	background-color: var(--bg);
 
 	overflow-y: auto;
 }
