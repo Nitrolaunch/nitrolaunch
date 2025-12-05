@@ -7,7 +7,7 @@ use nitrolaunch::config::Config;
 use nitrolaunch::config_crate::instance::InstanceConfig;
 use nitrolaunch::config_crate::template::TemplateConfig;
 use nitrolaunch::core::io::json_to_file_pretty;
-use nitrolaunch::core::util::versions::mc_version_from_deser;
+use nitrolaunch::core::util::versions::MinecraftVersion;
 use nitrolaunch::instance::delete_instance_files;
 use nitrolaunch::instance::setup::setup_core;
 use nitrolaunch::instance::update::manager::UpdateManager;
@@ -82,7 +82,7 @@ pub async fn get_templates(state: tauri::State<'_, State>) -> Result<Vec<Instanc
 					.instance
 					.version
 					.as_ref()
-					.map(|x| mc_version_from_deser(x).to_string()),
+					.map(|x| MinecraftVersion::from_deser(x).to_string()),
 			}
 		})
 		.collect();

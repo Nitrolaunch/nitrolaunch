@@ -10,7 +10,7 @@ use nitro_config::instance::{is_valid_instance_id, InstanceConfig, LaunchConfig,
 use nitro_config::package::PackageConfigDeser;
 use nitro_config::template::{TemplateConfig, TemplateLoaderConfiguration};
 use nitro_core::io::java::install::JavaInstallationKind;
-use nitro_core::util::versions::mc_version_from_deser;
+use nitro_core::util::versions::MinecraftVersion;
 use nitro_pkg::{PkgRequest, PkgRequestSource};
 use nitro_plugin::hook::hooks::{ModifyInstanceConfig, ModifyInstanceConfigArgument};
 use nitro_shared::id::{InstanceID, TemplateID};
@@ -115,7 +115,7 @@ pub async fn read_instance_config(
 		(Loader::Vanilla, None)
 	};
 
-	let version = mc_version_from_deser(
+	let version = MinecraftVersion::from_deser(
 		&config
 			.version
 			.clone()

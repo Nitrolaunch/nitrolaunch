@@ -5,17 +5,6 @@ use nitro_shared::{
 	versions::{MinecraftLatestVersion, MinecraftVersionDeser, VersionName},
 };
 
-/// Convert to a Minecraft version
-pub fn mc_version_from_deser(version: &MinecraftVersionDeser) -> MinecraftVersion {
-	match version {
-		MinecraftVersionDeser::Version(version) => MinecraftVersion::Version(version.clone()),
-		MinecraftVersionDeser::Latest(MinecraftLatestVersion::Release) => MinecraftVersion::Latest,
-		MinecraftVersionDeser::Latest(MinecraftLatestVersion::Snapshot) => {
-			MinecraftVersion::LatestSnapshot
-		}
-	}
-}
-
 /// User-supplied Minecraft version pattern
 #[derive(Debug, Clone)]
 pub enum MinecraftVersion {
@@ -28,6 +17,15 @@ pub enum MinecraftVersion {
 }
 
 impl MinecraftVersion {
+	/// Converts a deserialized version to a version
+	pub fn from_deser(version: &MinecraftVersionDeser) -> Self {
+		match version {
+			MinecraftVersionDeser::Version(version) => Self::Version(version.clone()),
+			MinecraftVersionDeser::Latest(MinecraftLatestVersion::Release) => Self::Latest,
+			MinecraftVersionDeser::Latest(MinecraftLatestVersion::Snapshot) => Self::LatestSnapshot,
+		}
+	}
+
 	/// Get the correct version from the version manifest
 	pub fn get_version(&self, manifest: &VersionManifest) -> Option<VersionName> {
 		match self {
@@ -55,7 +53,7 @@ impl Display for MinecraftVersion {
 			match self {
 				Self::Version(version) => version,
 				Self::Latest => "Latest",
-				Self::LatestSnapshot => "Latest Snaphot",
+				Self::LatestSnapshot => "Latest Snapshot",
 			}
 		)
 	}
