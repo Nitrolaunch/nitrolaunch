@@ -83,7 +83,7 @@ async fn get_contents(
 	path.push("manifest.json");
 
 	if let Some(requested_version) = requested_version {
-		if !force && manager.update_depth < UpdateDepth::Force && path.exists() {
+		if !force && manager.update_depth < UpdateDepth::Full && path.exists() {
 			let contents: VersionManifest =
 				json_from_file(&path).context("Failed to read manifest contents from file")?;
 			let version = requested_version.get_version(&contents);
