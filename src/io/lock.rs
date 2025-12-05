@@ -1,16 +1,18 @@
 use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::PathBuf;
+use std::sync::Arc;
 
 use anyhow::{anyhow, bail, Context};
 use nitro_core::io::{json_from_file, json_to_file_pretty};
+use nitro_pkg::{PkgRequest, PkgRequestSource};
 use nitro_shared::loaders::Loader;
 use nitro_shared::output::{MessageContents, NitroOutput};
 use nitro_shared::translate;
 use serde::{Deserialize, Serialize};
 
 use nitro_shared::addon::{Addon, AddonKind};
-use nitro_shared::pkg::{PackageAddonOptionalHashes, PackageID};
+use nitro_shared::pkg::{ArcPkgReq, PackageAddonOptionalHashes, PackageID};
 
 use super::paths::Paths;
 
@@ -246,14 +248,24 @@ impl Lockfile {
 	pub fn remove_unused_packages(
 		&mut self,
 		instance: &str,
-		used_packages: &[PackageID],
+		used_packages: &[ArcPkgReq],
 	) -> anyhow::Result<Vec<PathBuf>> {
 		if let Some(inst) = self.contents.packages.get_mut(instance) {
 			let mut pkgs_to_remove = Vec::new();
-			for (pkg, ..) in inst.iter() {
-				if !used_packages.contains(&PackageID::from(pkg.clone())) {
-					pkgs_to_remove.push(pkg.clone());
+			for (req, pkg) in inst.iter() {
+				if used_packages.contains(&Arc::new(PkgRequest::parse(
+					req,
+					PkgRequestSource::UserRequire,
+				))) {
+					continue;
 				}
+
+				// Backwards compatability fix to prevent removing packages that add a repository
+				if inst.values().any(|x| x.addons == pkg.addons) {
+					continue;
+				}
+
+				pkgs_to_remove.push(req.clone());
 			}
 
 			let mut files_to_remove = Vec::new();

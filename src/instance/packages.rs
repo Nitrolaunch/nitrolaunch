@@ -98,7 +98,7 @@ impl Instance {
 	) -> anyhow::Result<()> {
 		// Get the configuration for the package or the default if it is not configured by the user
 		let pkg_config = self
-			.get_package_config(&pkg.id)
+			.get_package_config(pkg)
 			.cloned()
 			.unwrap_or_else(|| PackageConfig::from_id(pkg.id.clone()));
 
@@ -150,10 +150,12 @@ impl Instance {
 	}
 
 	/// Gets the configuration for a specific package on this instance
-	pub fn get_package_config(&self, package: &str) -> Option<&PackageConfig> {
+	pub fn get_package_config(&self, package: &ArcPkgReq) -> Option<&PackageConfig> {
 		let configured_packages = self.get_configured_packages();
 
-		configured_packages.iter().find(|x| x.id == package.into())
+		configured_packages
+			.iter()
+			.find(|x| x.get_request() == *package)
 	}
 }
 

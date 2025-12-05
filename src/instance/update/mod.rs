@@ -128,13 +128,9 @@ impl Instance {
 					default_stability: self.config.package_stability,
 				};
 
-				let packages = update_instance_packages(
-					&mut [self],
-					&constants,
-					ctx,
-					depth == UpdateDepth::Force,
-				)
-				.await?;
+				let packages =
+					update_instance_packages(self, &constants, ctx, depth == UpdateDepth::Force)
+						.await?;
 
 				ctx.output.display(
 					MessageContents::Success(translate!(ctx.output, FinishUpdatingPackages)),
