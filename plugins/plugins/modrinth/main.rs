@@ -331,9 +331,7 @@ async fn get_cached_project(
 ) -> anyhow::Result<Option<ProjectInfo>> {
 	let project_path = storage_dirs.projects.join(project_id);
 	// If a project does not exist, we create a dummy file so that we know not to fetch it again
-	let does_not_exist_path = storage_dirs
-		.projects
-		.join(format!("__missing__{project_id}"));
+	let does_not_exist_path = storage_dirs.get_missing_path(project_id);
 	if does_not_exist_path.exists() {
 		return Ok(None);
 	}
@@ -402,21 +400,22 @@ async fn download_multiple_projects(
 	download_dependencies: bool,
 ) -> anyhow::Result<Vec<ProjectInfo>> {
 	// Filter out projects that are already cached
-	let projects: Vec<_> = projects
+	let project_ids: Vec<_> = projects
 		.iter()
 		.filter(|x| {
 			let path = storage_dirs.projects.join(x);
 			let path2 = storage_dirs.packages.join(x);
-			!path.exists() && !path2.exists()
+			let path3 = storage_dirs.get_missing_path(&x);
+			!path.exists() && !path2.exists() && !path3.exists()
 		})
 		.cloned()
 		.collect();
 
-	if projects.is_empty() {
+	if project_ids.is_empty() {
 		return Ok(Vec::new());
 	}
 
-	let projects = modrinth::get_multiple_projects(&projects, client)
+	let projects = modrinth::get_multiple_projects(&project_ids, client)
 		.await
 		.context("Failed to download projects")?;
 
@@ -483,6 +482,20 @@ async fn download_multiple_projects(
 		.iter()
 		.map(|x| (x.id.clone(), x.clone()))
 		.collect::<HashMap<_, _>>();
+
+	// Create missing placeholder files for projects that weren't in the response
+	for project in project_ids {
+		if !projects
+			.iter()
+			.any(|x| x.id == project || x.slug == project)
+		{
+			let path = storage_dirs.get_missing_path(&project);
+			if !path.exists() {
+				let file = std::fs::File::create(path);
+				std::mem::drop(file);
+			}
+		}
+	}
 
 	let project_infos: anyhow::Result<Vec<_>> = projects
 		.into_iter()
@@ -578,11 +591,16 @@ struct StorageDirs {
 }
 
 impl StorageDirs {
-	pub fn new(data_dir: &Path) -> Self {
+	fn new(data_dir: &Path) -> Self {
 		let modrinth_dir = data_dir.join("internal/modrinth");
 		Self {
 			projects: modrinth_dir.join("projects"),
 			packages: modrinth_dir.join("packages"),
 		}
+	}
+
+	/// Get the placeholder path for a project that does not exist
+	fn get_missing_path(&self, project_id: &str) -> PathBuf {
+		self.projects.join(format!("__missing__{project_id}"))
 	}
 }
