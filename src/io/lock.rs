@@ -44,6 +44,8 @@ pub(crate) struct LockfileInstance {
 pub struct LockfilePackage {
 	/// The addons of this package
 	pub addons: Vec<LockfileAddon>,
+	/// The selected content version of this package
+	pub content_version: Option<String>,
 }
 
 /// Format for an addon in the lockfile
@@ -165,6 +167,7 @@ impl Lockfile {
 		id: &str,
 		instance: &str,
 		addons: &[LockfileAddon],
+		content_version: Option<String>,
 		o: &mut impl NitroOutput,
 	) -> anyhow::Result<Vec<PathBuf>> {
 		let mut files_to_remove = Vec::new();
@@ -210,6 +213,7 @@ impl Lockfile {
 					id.to_owned(),
 					LockfilePackage {
 						addons: addons.to_vec(),
+						content_version,
 					},
 				);
 				new_files.extend(addons.iter().flat_map(|x| x.files.clone()));
@@ -218,7 +222,7 @@ impl Lockfile {
 			self.contents
 				.packages
 				.insert(instance.to_owned(), HashMap::new());
-			self.update_package(id, instance, addons, o)?;
+			self.update_package(id, instance, addons, content_version, o)?;
 		}
 
 		for file in &new_files {

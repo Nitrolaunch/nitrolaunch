@@ -128,7 +128,13 @@ impl Instance {
 			.context("Failed to convert addons to the lockfile format")?;
 
 		let files_to_remove = lock
-			.update_package(&pkg.id, &self.id, &lockfile_addons, o)
+			.update_package(
+				&pkg.id,
+				&self.id,
+				&lockfile_addons,
+				eval.selected_content_version.clone(),
+				o,
+			)
 			.context("Failed to update package in lockfile")?;
 
 		for addon in eval.addon_reqs.iter() {

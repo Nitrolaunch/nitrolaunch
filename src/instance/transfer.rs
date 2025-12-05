@@ -261,7 +261,7 @@ pub async fn migrate_instances(
 				})
 				.collect();
 
-			lock.update_package(&package.id, &inst, &addons, o)
+			lock.update_package(&package.id, &inst, &addons, None, o)
 				.context("Failed to add locked package")?;
 		}
 	}

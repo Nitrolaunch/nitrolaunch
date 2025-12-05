@@ -335,6 +335,14 @@ impl<T> DeserListOrSingle<T> {
 			}
 		}
 	}
+
+	/// Gets the first element of the list
+	pub fn first(&self) -> Option<&T> {
+		match self {
+			Self::Single(val) => Some(val),
+			Self::List(list) => list.first(),
+		}
+	}
 }
 
 impl<T: PartialEq> DeserListOrSingle<T> {

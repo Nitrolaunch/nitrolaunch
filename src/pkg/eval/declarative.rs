@@ -1,5 +1,3 @@
-use std::ops::Deref;
-
 use anyhow::bail;
 use itertools::Itertools;
 use nitro_pkg::declarative::{
@@ -75,9 +73,6 @@ fn eval_declarative_package_impl<'a>(
 		let version =
 			pick_best_addon_version(&addon.versions, &eval_data.input, &eval_data.properties);
 		if let Some(version) = version {
-			if "distanthorizons" == eval_data.id.deref() {
-				dbg!(&version.conditional_properties.content_versions);
-			}
 			// Bundle addons won't have an actual addon
 			let addon_kind = addon.kind.to_addon_kind();
 			if let Some(addon_kind) = addon_kind {
@@ -98,6 +93,14 @@ fn eval_declarative_package_impl<'a>(
 
 			relations.merge(version.relations.clone());
 			notices.extend(version.notices.iter().cloned());
+			if let Some(content_version) = version
+				.conditional_properties
+				.content_versions
+				.as_ref()
+				.and_then(|x| x.first())
+			{
+				eval_data.selected_content_version = Some(content_version.clone());
+			}
 		} else {
 			handle_no_matched_versions(addon)?;
 		}
