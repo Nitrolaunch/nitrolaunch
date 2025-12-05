@@ -159,6 +159,15 @@ impl PkgRequest {
 		self.debug_sources_inner(String::new())
 	}
 
+	/// Converts to repository:id or id
+	pub fn to_string_no_version(&self) -> String {
+		if let Some(repo) = &self.repository {
+			format!("{repo}:{}", self.id)
+		} else {
+			self.id.to_string()
+		}
+	}
+
 	/// Recursive inner function for debugging sources
 	fn debug_sources_inner(&self, list: String) -> String {
 		match &self.source {
