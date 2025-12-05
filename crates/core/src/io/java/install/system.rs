@@ -56,6 +56,13 @@ fn get_system_java_installation(#[allow(unused_variables)] major_version: &str) 
 fn scan_windows(major_version: &str) -> Option<PathBuf> {
 	// OpenJDK
 	scan!(&PathBuf::from("C:/Program Files/Java"), major_version);
+	// Winget Adoptium
+	let dir = PathBuf::from(format!(
+		"C:/Program Files/Eclipse Adoptium/jdk{major_version}/jre{major_version}"
+	));
+	if dir.exists() {
+		return Some(dir);
+	}
 
 	None
 }
