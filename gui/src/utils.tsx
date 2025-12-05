@@ -85,6 +85,11 @@ export function pkgRequestToString(request: PkgRequest) {
 	return `${repo}${request.id}${version}`;
 }
 
+// Checks if the ID and repo of two requests are the same
+export function pkgRequestsEqual(req1: PkgRequest, req2: PkgRequest) {
+	return req1.id == req2.id && req1.repository == req2.repository;
+}
+
 // Parses a versioned string (object@version) into parts
 export function parseVersionedString(
 	object: string
@@ -125,7 +130,12 @@ export function formatNumber(num: number) {
 
 // Creates a CSS translateY property to fix non-centered text based on the presence of descenders (p, g, q) and ascenders in the text
 export function fixCenter(text: string): string {
-	if (text.includes("p") || text.includes("g") || text.includes("q") || /[A-Z]/.test(text)) {
+	if (
+		text.includes("p") ||
+		text.includes("g") ||
+		text.includes("q") ||
+		/[A-Z]/.test(text)
+	) {
 		// Translate down the height of the character descent for the Rubik font
 		return "transform: translateY(0.1em)";
 	} else {

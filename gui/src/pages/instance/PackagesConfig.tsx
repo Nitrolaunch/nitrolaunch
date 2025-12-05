@@ -1,6 +1,5 @@
 import {
 	createEffect,
-	createMemo,
 	createResource,
 	createSignal,
 	For,
@@ -15,11 +14,22 @@ import { PackageMeta, PackageProperties, PkgRequest } from "../../types";
 import { invoke } from "@tauri-apps/api/core";
 import {
 	parsePkgRequest,
+	pkgRequestsEqual,
 	pkgRequestToString,
 	stringCompare,
 } from "../../utils";
 import IconButton from "../../components/input/button/IconButton";
-import { Delete, Edit, Error, Lock, Plus, Popout, Search, Trash, Upload } from "../../icons";
+import {
+	Delete,
+	Edit,
+	Error,
+	Lock,
+	Plus,
+	Popout,
+	Search,
+	Trash,
+	Upload,
+} from "../../icons";
 import { errorToast } from "../../components/dialog/Toasts";
 import LoadingSpinner from "../../components/utility/LoadingSpinner";
 import ResolutionError, {
@@ -46,8 +56,6 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 	let [sideFilter, setSideFilter] = createSignal("all");
 	let [search, setSearch] = createSignal<string | undefined>(undefined);
 
-	let [installedPackages, setInstalledPackages] = createSignal<string[]>([]);
-
 	let [packageMetas, setPackageMetas] = createSignal<
 		{ [key: string]: PackageMeta } | undefined
 	>();
@@ -57,38 +65,102 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 	let [errors, setErrors] = createSignal<{ [key: string]: boolean }>({});
 
 	let [allPackages, allPackagesMethods] = createResource(async () => {
-		let installedPackages: string[] = [];
+		let installedPackages: InstalledPackage[] = [];
 		if (!props.isTemplate && props.id != undefined) {
 			let map: { [key: string]: LockfilePackage } = await invoke(
 				"get_instance_packages",
 				{ instance: props.id }
 			);
-			installedPackages = installedPackages.concat(Object.keys(map));
+			for (let pkg of Object.keys(map)) {
+				let val = map[pkg];
+				installedPackages.push({
+					pkg: pkg,
+					req: parsePkgRequest(pkg),
+					contentVersion: val.content_version,
+					isInstalled: true,
+					// We can set these to defaults since they will be replaced
+					isConfigured: false,
+					isClient: false,
+					isServer: false,
+					isDerived: false,
+				});
+			}
 		}
-
-		setInstalledPackages(installedPackages);
 
 		// Get a list of all packages. We fetch and list all of the packages, and each one is then filtered by checking which groups it is in.
 		let allPackages = installedPackages.concat([]);
 
-		let configsToAdd: PackageConfig[] = [];
+		function addPackages(
+			list: PackageConfig[],
+			modifier: (pkg: InstalledPackage) => InstalledPackage
+		) {
+			for (let config of list) {
+				let req = getPackageConfigRequest(config);
+				let existingPackage = allPackages.find(
+					(x) => x.isInstalled && pkgRequestsEqual(x.req, req)
+				);
+				allPackages = allPackages.filter(
+					(x) => !packageConfigsEqual(x.req, req)
+				);
 
-		configsToAdd = configsToAdd.concat(props.derivedGlobalPackages);
-		configsToAdd = configsToAdd.concat(props.derivedClientPackages);
-		configsToAdd = configsToAdd.concat(props.derivedServerPackages);
-		configsToAdd = configsToAdd.concat(props.globalPackages);
-		configsToAdd = configsToAdd.concat(props.clientPackages);
-		configsToAdd = configsToAdd.concat(props.serverPackages);
+				let pkg: InstalledPackage = {
+					pkg: pkgRequestToString(req),
+					req: req,
+					contentVersion:
+						existingPackage == undefined
+							? undefined
+							: existingPackage.contentVersion,
+					config: config,
+					isInstalled: existingPackage != undefined,
+					isConfigured: true,
+					isClient: false,
+					isServer: false,
+					isDerived: false,
+				};
 
-		for (let pkg of configsToAdd.map(getPackageConfigRequest)) {
-			allPackages = allPackages.filter((x) => !packageConfigsEqual(x, pkg));
-			allPackages.push(pkgRequestToString(pkg));
+				pkg = modifier(pkg);
+
+				allPackages.push(pkg);
+			}
 		}
+
+		addPackages(props.derivedGlobalPackages, (x) => {
+			x.isDerived = true;
+			return x;
+		});
+		addPackages(props.derivedClientPackages, (x) => {
+			x.isDerived = true;
+			x.isClient = true;
+			return x;
+		});
+		addPackages(props.derivedServerPackages, (x) => {
+			x.isDerived = true;
+			x.isServer = true;
+			return x;
+		});
+		addPackages(props.globalPackages, (x) => x);
+		addPackages(props.clientPackages, (x) => {
+			x.isClient = true;
+			return x;
+		});
+		addPackages(props.serverPackages, (x) => {
+			x.isServer = true;
+			return x;
+		});
 
 		// Get metadata and properties
 		let metas: any = {};
 		let properties: any = {};
 		let errors: any = {};
+
+		try {
+			await invoke("preload_packages", {
+				packages: allPackages.map((pkg) => pkg.pkg),
+				repo: undefined,
+			});
+		} catch (e) {
+			console.error("Failed to preload: " + e);
+		}
 
 		let promises = [];
 		for (let pkg of allPackages) {
@@ -96,12 +168,12 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 				(async () => {
 					try {
 						return [
-							pkg,
-							await invoke("get_package_meta_and_props", { package: pkg }),
+							pkg.pkg,
+							await invoke("get_package_meta_and_props", { package: pkg.pkg }),
 						];
 					} catch (e) {
 						console.error("Failed to load package: " + e);
-						errors[pkg] = true;
+						errors[pkg.pkg] = true;
 						return undefined;
 					}
 				})()
@@ -130,9 +202,7 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 		setPackageProps(properties);
 		setErrors(errors);
 
-		allPackages.sort((a, b) =>
-			stringCompare(parsePkgRequest(a).id, parsePkgRequest(b).id)
-		);
+		allPackages.sort((a, b) => stringCompare(a.req.id, b.req.id));
 
 		return allPackages;
 	});
@@ -259,10 +329,7 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 			</div>
 			<div></div>
 			<div class="fullwidth split3" id="packages-config-header">
-				<div
-					class="cont start"
-					id="package-config-filters"
-				>
+				<div class="cont start" id="package-config-filters">
 					<InlineSelect
 						options={[
 							{
@@ -301,10 +368,7 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 				<div>
 					<SearchBar value={search()} method={setSearch} immediate />
 				</div>
-				<div
-					class="cont end"
-					id="package-config-sides"
-				>
+				<div class="cont end" id="package-config-sides">
 					<Show when={props.isTemplate}>
 						<InlineSelect
 							options={[
@@ -337,50 +401,25 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 				>
 					<For each={allPackages()}>
 						{(pkg) => {
-							let derivedGlobalIncludes = createMemo(() =>
-								props.derivedGlobalPackages.includes(pkg)
-							);
-							let derivedClientIncludes = createMemo(() =>
-								props.derivedClientPackages.includes(pkg)
-							);
-							let derivedServerIncludes = createMemo(() =>
-								props.derivedServerPackages.includes(pkg)
-							);
-
-							let isInstalled = createMemo(() =>
-								installedPackages()!.includes(pkg)
-							);
-							let isClient = createMemo(
-								() =>
-									props.clientPackages.includes(pkg) || derivedClientIncludes()
-							);
-							let isServer = createMemo(
-								() =>
-									props.serverPackages.includes(pkg) || derivedServerIncludes()
-							);
-							let isConfigured = createMemo(
-								() =>
-									isClient() ||
-									isServer() ||
-									props.globalPackages.includes(pkg) ||
-									derivedGlobalIncludes()
-							);
-
 							let isVisible = () => {
-								if (!isConfigured() && filter() == "user") {
+								if (!pkg.isConfigured && filter() == "user") {
 									return false;
 								} else if (filter() == "bundled") {
 									return false;
-								} else if (filter() == "dependencies" && isConfigured()) {
+								} else if (filter() == "dependencies" && pkg.isConfigured) {
 									return false;
-								} else if (sideFilter() == "client" && !isClient()) {
+								} else if (sideFilter() == "client" && !pkg.isClient) {
 									return false;
-								} else if (sideFilter() == "server" && !isServer()) {
+								} else if (sideFilter() == "server" && !pkg.isServer) {
 									return false;
 								} else if (
-									search() != undefined
-									&& !pkg.includes(search()!)
-									&& !(meta != undefined && meta.name != undefined && meta.name.includes(search()!))
+									search() != undefined &&
+									!pkg.req.id.includes(search()!) &&
+									!(
+										meta != undefined &&
+										meta.name != undefined &&
+										meta.name.includes(search()!)
+									)
 								) {
 									return false;
 								}
@@ -388,30 +427,23 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 							};
 
 							let meta =
-								packageMetas() == undefined ? undefined : packageMetas()![pkg];
+								packageMetas() == undefined
+									? undefined
+									: packageMetas()![pkg.pkg];
 							let properties =
-								packageProps() == undefined ? undefined : packageProps()![pkg];
+								packageProps() == undefined
+									? undefined
+									: packageProps()![pkg.pkg];
 
-							let isError = () => errors()[pkg] != undefined;
-
-							let isDerived = () =>
-								derivedGlobalIncludes() ||
-								derivedClientIncludes() ||
-								derivedServerIncludes();
+							let isError = () => errors()[pkg.pkg] != undefined;
 
 							return (
 								<Show when={isVisible()}>
 									<ConfiguredPackage
-										request={parsePkgRequest(pkg)}
+										pkg={pkg}
 										meta={meta}
 										props={properties}
-										isDerived={isDerived()}
-										isInstalled={isInstalled()}
-										isConfigured={isConfigured()}
 										isError={isError()}
-										category={
-											isClient() ? "client" : isServer() ? "server" : "global"
-										}
 										onRemove={props.onRemove}
 									/>
 								</Show>
@@ -431,7 +463,7 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 						text: "Close",
 						icon: Delete,
 						onClick: () => setShowOverridesModal(false),
-					}
+					},
 				]}
 			>
 				<div class="cont col fullwidth fields">
@@ -496,7 +528,7 @@ function ConfiguredPackage(props: ConfiguredPackageProps) {
 	let [isHovered, setIsHovered] = createSignal(false);
 	let name =
 		props.meta == undefined || props.meta.name == undefined
-			? props.request.id
+			? props.pkg.req.id
 			: props.meta.name;
 
 	let icon =
@@ -528,21 +560,31 @@ function ConfiguredPackage(props: ConfiguredPackageProps) {
 			<div class="cont col configured-package-details">
 				<div class="cont configured-package-details-top">
 					<div class="configured-package-name">{name}</div>
-					<Show when={props.request.version != undefined}>
-						<Tip tip={`Version locked at ${props.request.version}`} side="top">
+					<Switch>
+						<Match when={props.pkg.req.version != undefined}>
+							<Tip
+								tip={`Version locked at ${props.pkg.req.version}`}
+								side="top"
+							>
+								<div class="cont start configured-package-version">
+									<Icon icon={Lock} size="1rem" />
+									{props.pkg.req.version}
+								</div>
+							</Tip>
+						</Match>
+						<Match when={props.pkg.contentVersion != undefined}>
 							<div class="cont start configured-package-version">
-								<Icon icon={Lock} size="1rem" />
-								{props.request.version}
+								{props.pkg.contentVersion}
 							</div>
-						</Tip>
-					</Show>
+						</Match>
+					</Switch>
 				</div>
-				<Show when={props.request.repository != undefined}>
-					<div class="configured-package-repo">{props.request.repository}</div>
+				<Show when={props.pkg.req.repository != undefined}>
+					<div class="configured-package-repo">{props.pkg.req.repository}</div>
 				</Show>
 			</div>
 			<div>
-				<Show when={props.isDerived}>
+				<Show when={props.pkg.isDerived}>
 					<div class="cont configured-package-derive-indicator">DERIVED</div>
 				</Show>
 			</div>
@@ -557,13 +599,11 @@ function ConfiguredPackage(props: ConfiguredPackageProps) {
 						onClick={(e) => {
 							e.preventDefault();
 							e.stopPropagation();
-							navigate(
-								`/packages/package/${pkgRequestToString(props.request)}`
-							);
+							navigate(`/packages/package/${props.pkg.pkg}`);
 						}}
 						selected={false}
 					/>
-					<Show when={props.isConfigured && !props.isDerived}>
+					<Show when={props.pkg.isConfigured && !props.pkg.isDerived}>
 						<IconButton
 							icon={Trash}
 							size="24px"
@@ -574,11 +614,12 @@ function ConfiguredPackage(props: ConfiguredPackageProps) {
 							onClick={(e) => {
 								e.preventDefault();
 								e.stopPropagation();
-								console.log(props.category);
-								props.onRemove(
-									pkgRequestToString(props.request),
-									props.category
-								);
+								let category: ConfiguredPackageCategory = props.pkg.isClient
+									? "client"
+									: props.pkg.isServer
+									? "server"
+									: "global";
+								props.onRemove(props.pkg.pkg, category);
 								(e.target! as any).parentElement.parentElement.remove();
 							}}
 							selected={false}
@@ -591,22 +632,18 @@ function ConfiguredPackage(props: ConfiguredPackageProps) {
 }
 
 interface ConfiguredPackageProps {
-	request: PkgRequest;
+	pkg: InstalledPackage;
 	meta?: PackageMeta;
 	props?: PackageProperties;
-	isDerived: boolean;
-	isInstalled: boolean;
-	isConfigured: boolean;
 	isError: boolean;
-	category: ConfiguredPackageCategory;
 	onRemove: (pkg: string, category: ConfiguredPackageCategory) => void;
 }
 
 export type PackageConfig =
 	| string
 	| {
-		id: string;
-	};
+			id: string;
+	  };
 
 // Gets the PkgRequest from a PackageConfig
 export function getPackageConfigRequest(config: PackageConfig) {
@@ -624,13 +661,28 @@ export function packageConfigsEqual(
 ) {
 	let req1 = getPackageConfigRequest(config1);
 	let req2 = getPackageConfigRequest(config2);
-	return req1.id == req2.id && req1.repository == req2.repository;
+	return pkgRequestsEqual(req1, req2);
 }
 
 interface LockfilePackage {
 	addons: LockfileAddon[];
+	content_version?: string;
 }
 
-interface LockfileAddon { }
+interface InstalledPackage {
+	pkg: string;
+	req: PkgRequest;
+	// The currently installed content version
+	contentVersion?: string;
+	config?: PackageConfig;
+	// Whether this package is currently installed
+	isInstalled: boolean;
+	isConfigured: boolean;
+	isClient: boolean;
+	isServer: boolean;
+	isDerived: boolean;
+}
+
+interface LockfileAddon {}
 
 export type ConfiguredPackageCategory = "global" | "client" | "server";

@@ -65,7 +65,7 @@ pub async fn preload_packages(
 	state: tauri::State<'_, State>,
 	app_handle: tauri::AppHandle,
 	packages: Vec<String>,
-	repo: &str,
+	repo: Option<&str>,
 ) -> Result<(), String> {
 	let mut config = fmt_err(
 		load_config(&state.paths, &mut NoOp)
@@ -73,28 +73,38 @@ pub async fn preload_packages(
 			.context("Failed to load config"),
 	)?;
 
-	let repo = config
-		.packages
-		.repos
-		.iter_mut()
-		.find(|x| x.get_id() == repo);
-	let Some(repo) = repo else {
-		return Err("Repository does not exist".into());
-	};
-
-	let mut output = LauncherOutput::new(state.get_output(app_handle));
-	output.set_task("load_packages");
-
 	let packages = packages
 		.into_iter()
 		.map(|x| Arc::new(PkgRequest::parse(x, PkgRequestSource::UserRequire)))
 		.collect();
 
-	fmt_err(
-		repo.preload(packages, &state.paths, &config.plugins, &mut output)
-			.await
-			.context("Failed to preload packages from repository"),
-	)?;
+	let mut output = LauncherOutput::new(state.get_output(app_handle));
+	output.set_task("load_packages");
+
+	if let Some(repo) = repo {
+		let repo = config
+			.packages
+			.repos
+			.iter_mut()
+			.find(|x| x.get_id() == repo);
+		let Some(repo) = repo else {
+			return Err("Repository does not exist".into());
+		};
+
+		fmt_err(
+			repo.preload(packages, &state.paths, &config.plugins, &mut output)
+				.await
+				.context("Failed to preload packages from repository"),
+		)?;
+	} else {
+		fmt_err(
+			config
+				.packages
+				.preload_packages(packages.iter(), &state.paths, &state.client, &mut output)
+				.await
+				.context("Failed to preload packages from repositories"),
+		)?;
+	}
 
 	Ok(())
 }

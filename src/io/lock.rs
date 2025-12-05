@@ -208,6 +208,7 @@ impl Lockfile {
 				}
 
 				pkg.addons = addons.to_vec();
+				pkg.content_version = content_version;
 			} else {
 				instance.insert(
 					id.to_owned(),
