@@ -258,16 +258,16 @@ impl Lockfile {
 		if let Some(inst) = self.contents.packages.get_mut(instance) {
 			let mut pkgs_to_remove = Vec::new();
 			for (req, pkg) in inst.iter() {
-				if used_packages.contains(&Arc::new(PkgRequest::parse(
-					req,
-					PkgRequestSource::UserRequire,
-				))) {
+				let req2 = Arc::new(PkgRequest::parse(req, PkgRequestSource::UserRequire));
+				if used_packages.contains(&req2) {
 					continue;
 				}
 
 				// Backwards compatability fix to prevent removing packages that add a repository
-				if inst.values().any(|x| x.addons == pkg.addons) {
-					continue;
+				if req2.repository.is_some() {
+					if inst.values().any(|x| x.addons == pkg.addons) {
+						continue;
+					}
 				}
 
 				pkgs_to_remove.push(req.clone());
