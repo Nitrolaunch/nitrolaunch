@@ -9,7 +9,12 @@ import {
 	Show,
 	Switch,
 } from "solid-js";
-import { dropdownButtonToOption, getDropdownButtons, loadPagePlugins, runDropdownButtonClick } from "../../plugins";
+import {
+	dropdownButtonToOption,
+	getDropdownButtons,
+	loadPagePlugins,
+	runDropdownButtonClick,
+} from "../../plugins";
 import {
 	createConfiguredPackages,
 	getConfigPackages,
@@ -48,6 +53,7 @@ import InstanceConsole from "../../components/launch/InstanceConsole";
 import PackagesConfig, {
 	PackageConfig,
 	packageConfigsEqual,
+	packageConfigsFullyEqual,
 } from "./PackagesConfig";
 import { FooterData } from "../../App";
 import { FooterMode, launchInstance } from "../../components/navigation/Footer";
@@ -91,7 +97,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 				id: id,
 				instanceOrTemplate: "instance",
 			});
-		} catch (e) { }
+		} catch (e) {}
 	});
 
 	let [from, setFrom] = createSignal<string[] | undefined>();
@@ -172,7 +178,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 	);
 
 	let [isRunning, setIsRunning] = createSignal(false);
-	let [unlisten, setUnlisten] = createSignal<UnlistenFn>(() => { });
+	let [unlisten, setUnlisten] = createSignal<UnlistenFn>(() => {});
 	createEffect(async () => {
 		let unlisten = await listen(
 			"nitro_update_running_instances",
@@ -187,7 +193,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 	});
 
 	// Gets whether the currently selected instance is launchable (it has been updated before)
-	let [unlisten2, setUnlisten2] = createSignal<UnlistenFn>(() => { });
+	let [unlisten2, setUnlisten2] = createSignal<UnlistenFn>(() => {});
 	let [isInstanceLaunchable, methods] = createResource(async () => {
 		let unlisten = await listen(
 			"nitro_output_finish_task",
@@ -210,17 +216,26 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 		unlisten2()();
 	});
 
-	let [launchDropdownButtons, _1] = createResource(async () => {
-		return getDropdownButtons("instance_launch")
-	}, { initialValue: [] });
+	let [launchDropdownButtons, _1] = createResource(
+		async () => {
+			return getDropdownButtons("instance_launch");
+		},
+		{ initialValue: [] }
+	);
 
-	let [updateDropdownButtons, _2] = createResource(async () => {
-		return getDropdownButtons("instance_update")
-	}, { initialValue: [] });
+	let [updateDropdownButtons, _2] = createResource(
+		async () => {
+			return getDropdownButtons("instance_update");
+		},
+		{ initialValue: [] }
+	);
 
-	let [moreDropdownButtons, _3] = createResource(async () => {
-		return getDropdownButtons("instance_more_options")
-	}, { initialValue: [] });
+	let [moreDropdownButtons, _3] = createResource(
+		async () => {
+			return getDropdownButtons("instance_more_options");
+		},
+		{ initialValue: [] }
+	);
 
 	let [packageOverrides, setPackageOverrides] = createSignal<PackageOverrides>(
 		{}
@@ -253,7 +268,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 				props.setFooterData({
 					selectedItem: undefined,
 					mode: FooterMode.SaveInstanceConfig,
-					action: () => { },
+					action: () => {},
 				});
 			} catch (e) {
 				errorToast("Failed to save: " + e);
@@ -274,7 +289,12 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 			{
 				value: "launch",
 				contents: (
-					<IconAndText icon={Play} size="1.25rem" text="Launch" color="var(--instance)" />
+					<IconAndText
+						icon={Play}
+						size="1.25rem"
+						text="Launch"
+						color="var(--instance)"
+					/>
 				),
 			},
 			{
@@ -363,7 +383,12 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 												previewText={
 													<Switch>
 														<Match when={!isRunning()}>
-															<IconAndText icon={Play} size="1.25rem" text="Launch" centered />
+															<IconAndText
+																icon={Play}
+																size="1.25rem"
+																text="Launch"
+																centered
+															/>
 														</Match>
 														<Match when={isRunning()}>
 															<IconAndText
@@ -419,30 +444,42 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 									/>
 									<div style="width:9rem;font-weight:bold">
 										<Dropdown
-											options={([
-												{
-													value: "update",
-													contents: <IconAndText icon={Upload} text="Update" />,
-													tip: "Update the packages and files on this instance",
-												},
-												{
-													value: "force_update",
-													contents: (
-														<IconAndText
-															icon={Upload}
-															text="Force Update"
-															color="var(--error)"
-														/>
-													),
-													backgroundColor: "var(--errorbg)",
-													tip: "Update while replacing already cached files. Should only be done if something is broken.",
-												},
-											] as Option[]).concat(updateDropdownButtons().map(dropdownButtonToOption))}
-											previewText={<IconAndText icon={Upload} text="Update" centered />}
+											options={(
+												[
+													{
+														value: "update",
+														contents: (
+															<IconAndText icon={Upload} text="Update" />
+														),
+														tip: "Update the packages and files on this instance",
+													},
+													{
+														value: "force_update",
+														contents: (
+															<IconAndText
+																icon={Upload}
+																text="Force Update"
+																color="var(--error)"
+															/>
+														),
+														backgroundColor: "var(--errorbg)",
+														tip: "Update while replacing already cached files. Should only be done if something is broken.",
+													},
+												] as Option[]
+											).concat(
+												updateDropdownButtons().map(dropdownButtonToOption)
+											)}
+											previewText={
+												<IconAndText icon={Upload} text="Update" centered />
+											}
 											onChange={async (selection) => {
-												if (selection == "update" || selection == "force_update") {
+												if (
+													selection == "update" ||
+													selection == "force_update"
+												) {
 													try {
-														let depth = selection == "update" ? "full" : "force";
+														let depth =
+															selection == "update" ? "full" : "force";
 
 														await invoke("update_instance", {
 															instanceId: id,
@@ -472,25 +509,41 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 									</div>
 									<div style="width:9rem;font-weight:bold">
 										<Dropdown
-											options={([
-												{
-													value: "export",
-													contents: <IconAndText icon={Popout} text="Export" />,
-													tip: "Export this instance to another launcher",
-												},
-												{
-													value: "open_dir",
-													contents: <IconAndText icon={Folder} text="Open Folder" />,
-													tip: "Open this instance's files in your explorer"
-												},
-												{
-													value: "delete",
-													contents: <IconAndText icon={Trash} text="Delete" color="var(--error)" />,
-													tip: "Delete this instance forever",
-													backgroundColor: "var(--errorbg)",
-												},
-											] as Option[]).concat(moreDropdownButtons().map(dropdownButtonToOption))}
-											previewText={<IconAndText icon={Elipsis} text="More" centered />}
+											options={(
+												[
+													{
+														value: "export",
+														contents: (
+															<IconAndText icon={Popout} text="Export" />
+														),
+														tip: "Export this instance to another launcher",
+													},
+													{
+														value: "open_dir",
+														contents: (
+															<IconAndText icon={Folder} text="Open Folder" />
+														),
+														tip: "Open this instance's files in your explorer",
+													},
+													{
+														value: "delete",
+														contents: (
+															<IconAndText
+																icon={Trash}
+																text="Delete"
+																color="var(--error)"
+															/>
+														),
+														tip: "Delete this instance forever",
+														backgroundColor: "var(--errorbg)",
+													},
+												] as Option[]
+											).concat(
+												moreDropdownButtons().map(dropdownButtonToOption)
+											)}
+											previewText={
+												<IconAndText icon={Elipsis} text="More" centered />
+											}
 											onChange={async (selection) => {
 												if (selection == "export") {
 													setShowExportPrompt(true);
@@ -534,24 +587,27 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 								style={`grid-template-columns:repeat(3,minmax(0,1fr))`}
 							>
 								<div
-									class={`cont instance-tab ${selectedTab() == "general" ? "selected" : ""
-										}`}
+									class={`cont instance-tab ${
+										selectedTab() == "general" ? "selected" : ""
+									}`}
 									onclick={() => setSelectedTab("general")}
 								>
 									<Icon icon={Gear} size="1rem" />
 									General
 								</div>
 								<div
-									class={`cont instance-tab ${selectedTab() == "packages" ? "selected" : ""
-										}`}
+									class={`cont instance-tab ${
+										selectedTab() == "packages" ? "selected" : ""
+									}`}
 									onclick={() => setSelectedTab("packages")}
 								>
 									<Icon icon={Box} size="1rem" />
 									Packages
 								</div>
 								<div
-									class={`cont instance-tab ${selectedTab() == "console" ? "selected" : ""
-										}`}
+									class={`cont instance-tab ${
+										selectedTab() == "console" ? "selected" : ""
+									}`}
 									onclick={() => setSelectedTab("console")}
 								>
 									<Icon icon={Text} size="1rem" />
@@ -589,7 +645,9 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 										onAdd={(pkg, category) => {
 											let func = (packages: PackageConfig[]) => {
 												if (
-													!packages.some((x) => packageConfigsEqual(x, pkg))
+													!packages.some((x) =>
+														packageConfigsFullyEqual(x, pkg)
+													)
 												) {
 													packages.push(pkg);
 													// Force update
@@ -608,11 +666,15 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 
 											setDirty();
 										}}
-										setGlobalPackages={() => { }}
-										setClientPackages={() => { }}
-										setServerPackages={() => { }}
+										setGlobalPackages={() => {}}
+										setClientPackages={() => {}}
+										setServerPackages={() => {}}
 										minecraftVersion={instance()!.version}
-										loader={parseVersionedString(instance()!.loader as string)[0] as Loader}
+										loader={
+											parseVersionedString(
+												instance()!.loader as string
+											)[0] as Loader
+										}
 										showBrowseButton={true}
 										parentConfigs={parentConfigs()}
 										onChange={setDirty}
@@ -658,17 +720,20 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 									errorToast("Failed to delete instance: " + e);
 									setShowDeleteConfirm(false);
 								}
-							}
-						}
-					]
-					}
+							},
+						},
+					]}
 				>
 					<h3>Are you sure you want to delete this instance?</h3>
 					<div class="cont bold" style="font-size:0.9rem;color:var(--fg2)">
 						This will delete ALL of your worlds and data for the instance!
 					</div>
 				</Modal>
-				<InstanceTransferPrompt visible={showExportPrompt()} onClose={() => setShowExportPrompt(false)} exportedInstance={id} />
+				<InstanceTransferPrompt
+					visible={showExportPrompt()}
+					onClose={() => setShowExportPrompt(false)}
+					exportedInstance={id}
+				/>
 				<br />
 				<br />
 				<br />

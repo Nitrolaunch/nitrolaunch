@@ -40,15 +40,19 @@
 .configured-package {
 	height: 4.5rem;
 	width: 100%;
+
 	display: grid;
-	grid-template-columns: minmax(0, 0.4fr) minmax(0, 2fr) minmax(0, 1fr) minmax(
+	grid-template-columns: minmax(0, 0.3fr) minmax(0, 2fr) minmax(0, 0.5fr) minmax(
 			0,
 			1fr
 		);
+
 	background-color: var(--bg0);
 	border: var(--border) solid var(--bg3);
 	border-radius: var(--round2);
 	box-sizing: border-box;
+
+	cursor: pointer;
 }
 
 .configured-package-icon {
@@ -79,18 +83,7 @@
 	margin-top: -0.4rem;
 }
 
-.configured-package-version {
-	gap: 0.2rem;
-
-	font-size: 0.8rem;
-	font-weight: bold;
-	color: var(--fg3);
-}
-
 .configured-package-derive-indicator {
-	width: 100%;
-	height: 100%;
-
 	color: var(--template);
 	font-size: 0.8rem;
 	font-weight: bold;

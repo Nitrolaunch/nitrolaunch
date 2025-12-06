@@ -23,7 +23,6 @@ import {
 	Delete,
 	Edit,
 	Error,
-	Lock,
 	Plus,
 	Popout,
 	Search,
@@ -48,6 +47,8 @@ import { useNavigate } from "@solidjs/router";
 import Icon from "../../components/Icon";
 import SearchBar from "../../components/input/text/SearchBar";
 import Modal from "../../components/dialog/Modal";
+import ConfiguredPackageModal from "./ConfiguredPackageModal";
+import PackageVersion from "../../components/input/text/PackageVersion";
 
 export default function PackagesConfig(props: PackagesConfigProps) {
 	let navigate = useNavigate();
@@ -62,7 +63,12 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 	let [packageProps, setPackageProps] = createSignal<
 		{ [key: string]: PackageProperties } | undefined
 	>();
-	let [errors, setErrors] = createSignal<{ [key: string]: boolean }>({});
+	let [errors, setErrors] = createSignal<{ [key: string]: string | undefined }>(
+		{}
+	);
+	let [selectedPackage, setSelectedPackage] = createSignal<
+		ConfiguredPackageProps | undefined
+	>();
 
 	let [allPackages, allPackagesMethods] = createResource(async () => {
 		let installedPackages: InstalledPackage[] = [];
@@ -173,7 +179,7 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 						];
 					} catch (e) {
 						console.error("Failed to load package: " + e);
-						errors[pkg.pkg] = true;
+						errors[pkg.pkg] = e;
 						return undefined;
 					}
 				})()
@@ -435,16 +441,29 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 									? undefined
 									: packageProps()![pkg.pkg];
 
-							let isError = () => errors()[pkg.pkg] != undefined;
-
 							return (
 								<Show when={isVisible()}>
 									<ConfiguredPackage
 										pkg={pkg}
 										meta={meta}
 										props={properties}
-										isError={isError()}
+										error={errors()[pkg.pkg]}
+										onClick={setSelectedPackage}
 										onRemove={props.onRemove}
+										onVersionChange={(version) => {
+											let category: ConfiguredPackageCategory = pkg.isClient
+												? "client"
+												: pkg.isServer
+												? "server"
+												: "global";
+											let req: PkgRequest = {
+												id: pkg.req.id,
+												repository: pkg.req.repository,
+												version: version,
+											};
+											console.log("Here");
+											props.onAdd(pkgRequestToString(req), category);
+										}}
 									/>
 								</Show>
 							);
@@ -452,6 +471,10 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 					</For>
 				</Show>
 			</div>
+			<ConfiguredPackageModal
+				onClose={() => setSelectedPackage(undefined)}
+				props={selectedPackage()}
+			/>
 			<Modal
 				visible={showOverridesModal()}
 				onClose={setShowOverridesModal}
@@ -538,13 +561,14 @@ function ConfiguredPackage(props: ConfiguredPackageProps) {
 
 	return (
 		<div
-			class="shadow configured-package"
+			class="shadow bubble-hover-small configured-package"
 			onmouseenter={() => setIsHovered(true)}
 			onmouseleave={() => setIsHovered(false)}
+			onclick={() => props.onClick(props)}
 		>
 			<div class="cont">
 				<Switch>
-					<Match when={props.isError}>
+					<Match when={props.error != undefined}>
 						<div class="cont" style="color:var(--error)">
 							<Icon icon={Error} size="1.5rem" />
 						</div>
@@ -560,24 +584,10 @@ function ConfiguredPackage(props: ConfiguredPackageProps) {
 			<div class="cont col configured-package-details">
 				<div class="cont configured-package-details-top">
 					<div class="configured-package-name">{name}</div>
-					<Switch>
-						<Match when={props.pkg.req.version != undefined}>
-							<Tip
-								tip={`Version locked at ${props.pkg.req.version}`}
-								side="top"
-							>
-								<div class="cont start configured-package-version">
-									<Icon icon={Lock} size="1rem" />
-									{props.pkg.req.version}
-								</div>
-							</Tip>
-						</Match>
-						<Match when={props.pkg.contentVersion != undefined}>
-							<div class="cont start configured-package-version">
-								{props.pkg.contentVersion}
-							</div>
-						</Match>
-					</Switch>
+					<PackageVersion
+						configuredVersion={props.pkg.req.version}
+						installedVersion={props.pkg.contentVersion}
+					/>
 				</div>
 				<Show when={props.pkg.req.repository != undefined}>
 					<div class="configured-package-repo">{props.pkg.req.repository}</div>
@@ -585,7 +595,9 @@ function ConfiguredPackage(props: ConfiguredPackageProps) {
 			</div>
 			<div>
 				<Show when={props.pkg.isDerived}>
-					<div class="cont configured-package-derive-indicator">DERIVED</div>
+					<div class="cont col fullwidth fullheight">
+						<div class="cont configured-package-derive-indicator">DERIVED</div>
+					</div>
 				</Show>
 			</div>
 			<div class="cont configured-package-controls">
@@ -631,12 +643,14 @@ function ConfiguredPackage(props: ConfiguredPackageProps) {
 	);
 }
 
-interface ConfiguredPackageProps {
+export interface ConfiguredPackageProps {
 	pkg: InstalledPackage;
 	meta?: PackageMeta;
 	props?: PackageProperties;
-	isError: boolean;
+	error?: string;
+	onClick: (props: ConfiguredPackageProps) => void;
 	onRemove: (pkg: string, category: ConfiguredPackageCategory) => void;
+	onVersionChange: (version: string | undefined) => void;
 }
 
 export type PackageConfig =
@@ -664,12 +678,22 @@ export function packageConfigsEqual(
 	return pkgRequestsEqual(req1, req2);
 }
 
+// Checks if two PackageConfigs are referring to the same package and version
+export function packageConfigsFullyEqual(
+	config1: PackageConfig,
+	config2: PackageConfig
+) {
+	let req1 = getPackageConfigRequest(config1);
+	let req2 = getPackageConfigRequest(config2);
+	return pkgRequestsEqual(req1, req2) && req1.version == req2.version;
+}
+
 interface LockfilePackage {
 	addons: LockfileAddon[];
 	content_version?: string;
 }
 
-interface InstalledPackage {
+export interface InstalledPackage {
 	pkg: string;
 	req: PkgRequest;
 	// The currently installed content version

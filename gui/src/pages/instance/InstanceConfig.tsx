@@ -23,14 +23,12 @@ import { FooterMode } from "../../components/navigation/Footer";
 import PackagesConfig, {
 	PackageConfig,
 	packageConfigsEqual,
+	packageConfigsFullyEqual,
 } from "./PackagesConfig";
 import Tip from "../../components/dialog/Tip";
 import { errorToast, successToast } from "../../components/dialog/Toasts";
 import DisplayShow from "../../components/utility/DisplayShow";
-import {
-	getLoaderImage,
-	Loader,
-} from "../../package";
+import { getLoaderImage, Loader } from "../../package";
 import {
 	canonicalizeListOrSingle,
 	emptyUndefined,
@@ -77,16 +75,16 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 	let id = isInstance
 		? params.instanceId
 		: isBaseTemplate
-			? "Base Template"
-			: params.TemplateID;
+		? "Base Template"
+		: params.TemplateID;
 
 	onMount(() =>
 		loadPagePlugins(
 			isInstance
 				? "instance_config"
 				: isTemplate
-					? "template_config"
-					: "base_template_config",
+				? "template_config"
+				: "base_template_config",
 			id
 		)
 	);
@@ -105,7 +103,7 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 				id: id,
 				instanceOrTemplate: props.mode,
 			});
-		} catch (e) { }
+		} catch (e) {}
 	});
 
 	let [from, setFrom] = createSignal<string[] | undefined>();
@@ -135,18 +133,20 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 
 	let [releaseVersionsOnly, setReleaseVersionsOnly] = createSignal(true);
 
-	let [supportedMinecraftVersions, supportedVersionsMethods] = createResource(async () => {
-		let availableVersions = (await invoke("get_minecraft_versions", {
-			releasesOnly: releaseVersionsOnly(),
-		})) as string[];
+	let [supportedMinecraftVersions, supportedVersionsMethods] = createResource(
+		async () => {
+			let availableVersions = (await invoke("get_minecraft_versions", {
+				releasesOnly: releaseVersionsOnly(),
+			})) as string[];
 
-		availableVersions.reverse();
-		if (releaseVersionsOnly()) {
-			return ["latest"].concat(availableVersions);
-		} else {
-			return ["latest", "latest_snapshot"].concat(availableVersions);
+			availableVersions.reverse();
+			if (releaseVersionsOnly()) {
+				return ["latest"].concat(availableVersions);
+			} else {
+				return ["latest", "latest_snapshot"].concat(availableVersions);
+			}
 		}
-	});
+	);
 
 	createEffect(() => {
 		releaseVersionsOnly();
@@ -419,9 +419,9 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 			jvmArgs() == undefined && gameArgs() == undefined
 				? undefined
 				: {
-					jvm: jvmArgs(),
-					game: gameArgs(),
-				};
+						jvm: jvmArgs(),
+						game: gameArgs(),
+				  };
 
 		let overrides =
 			packageOverrides().suppress == undefined ? undefined : packageOverrides();
@@ -563,14 +563,14 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 									templates() == undefined
 										? []
 										: templates()!.map((x) => {
-											return {
-												value: x.id,
-												contents: (
-													<div>{x.name == undefined ? x.id : x.name}</div>
-												),
-												color: "var(--template)",
-											};
-										})
+												return {
+													value: x.id,
+													contents: (
+														<div>{x.name == undefined ? x.id : x.name}</div>
+													),
+													color: "var(--template)",
+												};
+										  })
 								}
 								selected={from()}
 								onChangeMulti={(x) => {
@@ -621,7 +621,10 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 									let autofillLoader = undefined;
 									if (supportedLoaders() != undefined) {
 										for (let loader of supportedLoaders()!) {
-											if (loader != undefined && lowercaseName.includes(loader)) {
+											if (
+												loader != undefined &&
+												lowercaseName.includes(loader)
+											) {
 												autofillLoader = loader;
 												break;
 											}
@@ -636,7 +639,9 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 											}
 										}
 										if (!isIconDirty()) {
-											setIcon("builtin:" + getLoaderImage(autofillLoader as Loader));
+											setIcon(
+												"builtin:" + getLoaderImage(autofillLoader as Loader)
+											);
 										}
 									}
 
@@ -687,9 +692,7 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 					</Show>
 					<Show when={!isBaseTemplate}>
 						<div class="cont start label">
-							<label for="side">
-								ICON
-							</label>
+							<label for="side">ICON</label>
 							<DeriveIndicator
 								parentConfigs={parentConfigs()}
 								currentValue={icon()}
@@ -732,12 +735,20 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 								options={[
 									{
 										value: "client",
-										contents: <div class="cont"><Icon icon={Controller} size="1.2rem" /> Client</div>,
+										contents: (
+											<div class="cont">
+												<Icon icon={Controller} size="1.2rem" /> Client
+											</div>
+										),
 										color: "var(--instance)",
 									},
 									{
 										value: "server",
-										contents: <div class="cont"><Icon icon={Server} size="1rem" /> Server</div>,
+										contents: (
+											<div class="cont">
+												<Icon icon={Server} size="1rem" /> Server
+											</div>
+										),
 										color: "var(--template)",
 									},
 								]}
@@ -790,32 +801,41 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 								<div class="cont">
 									<SlideSwitch
 										enabled={!releaseVersionsOnly()}
-										onToggle={() => setReleaseVersionsOnly(!releaseVersionsOnly())}
+										onToggle={() =>
+											setReleaseVersionsOnly(!releaseVersionsOnly())
+										}
 										enabledColor="var(--instance)"
 										disabledColor="var(--fg3)"
 									/>
-									<span class="bold" style={`color:${releaseVersionsOnly() ? "var(--fg3)" : "var(--instance)"}`}>Include Snapshots</span>
+									<span
+										class="bold"
+										style={`color:${
+											releaseVersionsOnly() ? "var(--fg3)" : "var(--instance)"
+										}`}
+									>
+										Include Snapshots
+									</span>
 								</div>
 							</div>
 						</Tip>
 					</Show>
 					<LoaderConfig
-						minecraftVersion={version() == undefined ? getDerivedValue(parentConfigs(), (x) => x.version) : version()}
+						minecraftVersion={
+							version() == undefined
+								? getDerivedValue(parentConfigs(), (x) => x.version)
+								: version()
+						}
 						side={side()}
 						isTemplate={isTemplate}
-
 						clientLoader={clientLoader()}
 						serverLoader={serverLoader()}
 						clientLoaderVersion={clientLoaderVersion()}
 						serverLoaderVersion={serverLoaderVersion()}
-
 						setClientLoader={setClientLoader}
 						setServerLoader={setServerLoader}
 						setClientLoaderVersion={setClientLoaderVersion}
 						setServerLoaderVersion={setServerLoaderVersion}
-
 						supportedLoaders={supportedLoaders()}
-
 						parentConfigs={parentConfigs()}
 						setDirty={setDirty}
 						setLoaderDirty={() => setIsLoaderDirty(true)}
@@ -881,7 +901,7 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 					}}
 					onAdd={(pkg, category) => {
 						let func = (packages: PackageConfig[]) => {
-							if (!packages.some((x) => packageConfigsEqual(x, pkg))) {
+							if (!packages.some((x) => packageConfigsFullyEqual(x, pkg))) {
 								packages.push(pkg);
 								// Force update
 								packages = packages.concat([]);

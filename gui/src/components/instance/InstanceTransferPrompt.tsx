@@ -48,18 +48,6 @@ export default function InstanceTransferPrompt(
 		<Modal
 			visible={props.visible}
 			onClose={props.onClose}
-			// title={
-			// 	<Switch>
-			// 		<Match when={isImporting()}>
-			// 			<Icon icon={Download} size="1.2rem" />
-			// 			Import Instance
-			// 		</Match>
-			// 		<Match when={!isImporting()}>
-			// 			<Icon icon={Popout} size="1.2rem" />
-			// 			Export Instance
-			// 		</Match>
-			// 	</Switch>
-			// }
 			title={isImporting() ? "Import Instance" : "Export Instance"}
 			titleIcon={isImporting() ? Download : Popout}
 			buttons={[
@@ -151,10 +139,6 @@ export default function InstanceTransferPrompt(
 			]
 			}
 		>
-			<div class="cont bold">
-
-			</div>
-			<div></div>
 			<div class="cont fields" style="width:100%">
 				<div class="cont start label">
 					<label>FORMAT</label>

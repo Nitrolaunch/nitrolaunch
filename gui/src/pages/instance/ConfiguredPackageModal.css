@@ -1,0 +1,18 @@
+#configured-package-modal-header {
+	display: grid;
+	grid-template-columns: 1fr 5fr;
+}
+
+#configured-package-modal-icon {
+	width: 100%;
+	aspect-ratio: 1;
+
+	border: var(--border) solid var(--bg3);
+	border-radius: var(--round2);
+}
+
+#configured-package-modal-description {
+	color: var(--fg3);
+	text-align: left;
+	justify-content: flex-start;
+}

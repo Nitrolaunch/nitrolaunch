@@ -1,0 +1,22 @@
+.package-content-version {
+	gap: 0.2rem;
+
+	font-size: 0.8rem;
+	font-weight: bold;
+	color: var(--fg3);
+	background-color: var(--bg2);
+
+	border: var(--border) solid var(--bg3);
+	border-radius: var(--round2);
+
+	height: 1.5rem;
+	padding: 0rem 0.5rem;
+	box-sizing: border-box;
+
+	cursor: pointer;
+}
+
+.package-content-version-edit {
+	text-align: center;
+	width: 8rem;
+}
