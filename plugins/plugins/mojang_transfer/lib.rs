@@ -25,10 +25,8 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 		if !launcher_profiles.exists() {
 			Ok(None)
 		} else {
-			let data = match std::fs::read(&launcher_profiles) {
-				Ok(data) => data,
-				Err(e) => bail!("Failed to read launcher profiles: {e:#?}"),
-			};
+			let data =
+				std::fs::read(&launcher_profiles).context("Failed to read launcher profiles")?;
 
 			let profiles: LauncherProfiles =
 				serde_json::from_slice(&data).context("Failed to deserialize launcher profiles")?;
@@ -50,10 +48,7 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 			});
 		}
 
-		let data = match std::fs::read(&launcher_profiles) {
-			Ok(data) => data,
-			Err(e) => bail!("Failed to read launcher profiles: {e:#?}"),
-		};
+		let data = std::fs::read(&launcher_profiles).context("Failed to read launcher profiles")?;
 
 		let profiles: LauncherProfiles =
 			serde_json::from_slice(&data).context("Failed to deserialize launcher profiles")?;

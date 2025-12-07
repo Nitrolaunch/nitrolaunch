@@ -265,7 +265,7 @@ impl Config {
 							o,
 							InvalidInstanceConfig,
 							"instance" = &instance_id,
-							"error" = &format!("{e:#?}")
+							"error" = &format!("{e:?}")
 						)),
 						MessageLevel::Important,
 					);
