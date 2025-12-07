@@ -81,6 +81,8 @@ pub async fn update_instance_packages<O: NitroOutput>(
 
 		params.required_content_versions = package.required_content_versions.clone();
 		params.preferred_content_versions = package.preferred_content_versions.clone();
+		params.force =
+			is_package_overridden(&package.req, &instance.config.package_overrides.force);
 
 		let input = EvalInput { constants, params };
 		let (eval, new_tasks) = instance

@@ -499,7 +499,7 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 			>
 				<div class="cont col fullwidth fields">
 					<div class="cont start label">
-						<label for="launch-env">SUPPRESSED PACKAGES</label>
+						<label>SUPPRESSED PACKAGES</label>
 						<DeriveIndicator
 							parentConfigs={props.parentConfigs}
 							currentValue={props.overrides.suppress}
@@ -509,7 +509,7 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 						/>
 					</div>
 					<Tip
-						tip="These packages will still be installed, but none of their files or relationships will be applied. Perfect for removing or manually replacing packages."
+						tip="These packages will still be installed, but none of their files or relationships will be applied. Perfect for removing or replacing packages."
 						fullwidth
 					>
 						<EditableList
@@ -517,6 +517,31 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 							setItems={(x) => {
 								props.setOverrides((overrides) => {
 									overrides.suppress = x;
+									return overrides;
+								});
+								props.onChange();
+							}}
+						/>
+					</Tip>
+					<div class="cont start label">
+						<label>FORCED PACKAGES</label>
+						<DeriveIndicator
+							parentConfigs={props.parentConfigs}
+							currentValue={props.overrides.force}
+							property={(x) =>
+								x.overrides == undefined ? undefined : x.overrides.force
+							}
+						/>
+					</div>
+					<Tip
+						tip="These packages will be installed even if they are incompatible, but you must request a specific version for them"
+						fullwidth
+					>
+						<EditableList
+							items={canonicalizeListOrSingle(props.overrides.force)}
+							setItems={(x) => {
+								props.setOverrides((overrides) => {
+									overrides.force = x;
 									return overrides;
 								});
 								props.onChange();

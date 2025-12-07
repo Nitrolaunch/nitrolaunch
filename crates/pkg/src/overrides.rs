@@ -10,6 +10,8 @@ use serde::{Deserialize, Serialize};
 pub struct PackageOverrides {
 	/// Packages to not install
 	pub suppress: Vec<String>,
+	/// Packages to force installation of
+	pub force: Vec<String>,
 }
 
 /// Checks if a package is overridden in a list

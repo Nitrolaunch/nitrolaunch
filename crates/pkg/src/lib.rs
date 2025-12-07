@@ -134,6 +134,9 @@ pub trait EvalInput {
 		required_versions: Vec<String>,
 		preferred_versions: Vec<String>,
 	);
+
+	/// Set whether this package is forced to be installed at the required version
+	fn set_force(&mut self, force: bool);
 }
 
 /// Trait for a user-configured package

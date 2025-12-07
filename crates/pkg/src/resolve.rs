@@ -264,6 +264,7 @@ async fn resolve_eval_package<'a, E: PackageEvaluator<'a>>(
 		&resolver.constant_input,
 		required_content_versions,
 		preferred_content_versions,
+		is_package_overridden(&package, &resolver.overrides.force),
 		config,
 	)?;
 
@@ -366,12 +367,14 @@ fn override_eval_input<'a, E: PackageEvaluator<'a>>(
 	constant_eval_input: &E::EvalInput<'a>,
 	required_content_versions: Vec<String>,
 	preferred_content_versions: Vec<String>,
+	force: bool,
 	config: Option<&E::ConfiguredPackage>,
 ) -> Result<E::EvalInput<'a>, ResolutionError> {
 	let input = {
 		let mut constant_eval_input = constant_eval_input.clone();
 		constant_eval_input
 			.set_content_versions(required_content_versions, preferred_content_versions);
+		constant_eval_input.set_force(force);
 
 		if let Some(config) = config {
 			if let Err(e) =

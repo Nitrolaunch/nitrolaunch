@@ -96,6 +96,7 @@ export interface LaunchArgs {
 
 export interface PackageOverrides {
 	suppress?: string[];
+	force?: string[];
 }
 
 // Mode for editing instance-like configs

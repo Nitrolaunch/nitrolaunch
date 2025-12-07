@@ -105,6 +105,10 @@ impl EvalInputTrait for EvalInput<'_> {
 		self.params.required_content_versions = required_versions;
 		self.params.preferred_content_versions = preferred_versions;
 	}
+
+	fn set_force(&mut self, force: bool) {
+		self.params.force = force;
+	}
 }
 
 /// Constants for the evaluation that will be the same across every package
@@ -139,6 +143,8 @@ pub struct EvalParameters {
 	pub required_content_versions: Vec<String>,
 	/// Preferred content versions for this package
 	pub preferred_content_versions: Vec<String>,
+	/// Whether to force installation of the requested content version
+	pub force: bool,
 }
 
 impl EvalParameters {
@@ -152,6 +158,7 @@ impl EvalParameters {
 			worlds: Vec::new(),
 			required_content_versions: Vec::new(),
 			preferred_content_versions: Vec::new(),
+			force: false,
 		}
 	}
 
@@ -258,14 +265,16 @@ impl Package {
 
 		// Check properties
 		let properties = self.get_properties(paths, client).await?.clone();
-		if eval_check_properties(&input, &properties)? {
-			return Ok(EvalData::new(
-				input,
-				self.id.clone(),
-				properties,
-				&routine,
-				plugins,
-			));
+		if !input.params.force {
+			if eval_check_properties(&input, &properties)? {
+				return Ok(EvalData::new(
+					input,
+					self.id.clone(),
+					properties,
+					&routine,
+					plugins,
+				));
+			}
 		}
 
 		match self.content_type {

@@ -92,7 +92,8 @@ Instances are defined in the id-value format underneath the `instances` object o
 	"datapack_folder": string,
 	"packages": [ ... ],
 	"overrides": {
-		"suppress": [string]
+		"suppress": [string],
+		"force": [string]
 	},
 	"game_dir": string
 }
@@ -118,6 +119,7 @@ All fields are optional unless stated otherwise.
 - `packages`: Packages to install on this instance.
 - `overrides`: Manual overrides made to packages installed on this instance to give you more control in case something goes wrong
 - `overrides.suppress`: Packages in this list will not be installed. Nitrolaunch may say that it was installed at the end, but these packages will never be evaluated. Useful if you want to install a package dependency manually.
+- `overrides.force`: Packages in this list will be forcefully installed, even if the Minecraft version, loader, other packages, etc. are not compatible. However, you must also specify a content version for these packages.
 - `game_dir`: Override for the game file directory (.minecraft or the server directory). By default, is stored in the `instances` dir in the Nitro data folder.
 
 ## Templates

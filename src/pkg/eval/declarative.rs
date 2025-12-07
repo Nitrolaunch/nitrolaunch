@@ -50,6 +50,10 @@ fn eval_declarative_package_impl<'a>(
 	let mut relations = contents.relations.clone();
 	let mut notices = Vec::new();
 
+	if eval_data.input.params.force && eval_data.input.params.required_content_versions.is_empty() {
+		bail!("Force override set on package without specifying a version");
+	}
+
 	// Apply conditional rules
 	for rule in &contents.conditional_rules {
 		for condition in &rule.conditions {
@@ -164,9 +168,20 @@ pub fn pick_best_addon_version<'a>(
 	properties: &PackageProperties,
 ) -> Option<&'a DeclarativeAddonVersion> {
 	// Filter versions that are not allowed
-	let versions = versions
-		.iter()
-		.filter(|x| check_condition_set(&x.conditional_properties, input));
+	let versions = versions.iter().filter(|x| {
+		// If a specific version is forced, check if this version matches the requested one
+		if input.params.force {
+			if let Some(content_versions) = &x.conditional_properties.content_versions {
+				content_versions
+					.iter()
+					.any(|x| input.params.required_content_versions.contains(x))
+			} else {
+				false
+			}
+		} else {
+			check_condition_set(&x.conditional_properties, input)
+		}
+	});
 
 	// Sort so that versions with less loader matches come first
 	fn get_matches(version: &DeclarativeAddonVersion) -> u16 {
