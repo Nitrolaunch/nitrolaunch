@@ -741,6 +741,7 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 											</div>
 										),
 										color: "var(--instance)",
+										selectedBgColor: "var(--instancebg)",
 									},
 									{
 										value: "server",
@@ -749,7 +750,8 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 												<Icon icon={Server} size="1rem" /> Server
 											</div>
 										),
-										color: "var(--template)",
+										color: "var(--instance)",
+										selectedBgColor: "var(--instancebg)",
 									},
 								]}
 								columns={isInstance ? 2 : 3}

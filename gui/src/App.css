@@ -31,17 +31,17 @@
 	--transparent-dark: #111111bb;
 
 	--instance: #7ee91b;
-	--template: #1be9e9;
+	--template: #1be9ce;
 	--package: #e9671b;
 	--plugin: #5b65ff;
 	--warning: #e9ca1b;
 	--error: #d40e3d;
 
-	--instancebg: #051d0d;
-	--templatebg: #0d1f24;
-	--packagebg: #311705;
+	--instancebg: #051d1d;
+	--templatebg: #0d1624;
+	--packagebg: #270707;
 	--pluginfg: #8b93ff;
-	--pluginbg: #11143f;
+	--pluginbg: #180e31;
 	--errorbg: #2b0e14;
 
 	/* Other values */

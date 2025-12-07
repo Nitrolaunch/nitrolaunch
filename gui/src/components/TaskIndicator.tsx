@@ -11,10 +11,7 @@ import {
 } from "solid-js";
 import "./TaskIndicator.css";
 import { Delete, Spinner } from "../icons";
-import {
-	errorToast,
-	warningToast,
-} from "./dialog/Toasts";
+import { errorToast, warningToast } from "./dialog/Toasts";
 import { beautifyString } from "../utils";
 import { invoke } from "@tauri-apps/api/core";
 import IconButton from "./input/button/IconButton";
@@ -34,7 +31,9 @@ export default function TaskIndicator(props: TaskIndicatorProps) {
 		undefined
 	);
 
-	let [selectedTaskProgress, setSelectedTaskProgress] = createSignal<number | undefined>(undefined);
+	let [selectedTaskProgress, setSelectedTaskProgress] = createSignal<
+		number | undefined
+	>(undefined);
 
 	function createTask(task: string) {
 		if (messages()[task] == undefined) {
@@ -209,7 +208,8 @@ export default function TaskIndicator(props: TaskIndicatorProps) {
 				if (event.payload.task != undefined) {
 					setMessages((messages) => {
 						if (messages[event.payload.task!] != undefined) {
-							messages[event.payload.task!]!.progressBar = event.payload.current / event.payload.total;
+							messages[event.payload.task!]!.progressBar =
+								event.payload.current / event.payload.total;
 						}
 
 						return messages;
@@ -266,10 +266,15 @@ export default function TaskIndicator(props: TaskIndicatorProps) {
 	}
 
 	return (
-		<div id="task-indicator" style={`border-color:${getColors(color())[0]}`}>
+		<div
+			id="task-indicator"
+			style={`border-color:${getColors(color())[0]};background-color:${
+				getColors(color())[2]
+			}`}
+		>
 			<div
 				id="task-indicator-preview"
-				style={`color:${getColors(color())[1]}`}
+				style={`color:${getColors(color())[1]};`}
 				onclick={() => {
 					// Cycle through the selected task when clicking
 					if (taskCount() > 0) {
@@ -311,8 +316,9 @@ export default function TaskIndicator(props: TaskIndicatorProps) {
 				<div class="cont">
 					<Show
 						when={taskCount() == 1}
-						fallback={`${taskCount()} ${taskCount() == 1 ? "task" : "tasks"
-							} running`}
+						fallback={`${taskCount()} ${
+							taskCount() == 1 ? "task" : "tasks"
+						} running`}
 					>
 						{taskName()}
 					</Show>
@@ -322,14 +328,16 @@ export default function TaskIndicator(props: TaskIndicatorProps) {
 				<div
 					class="cont col"
 					id="task-indicator-popup"
-					style={`border-color:${getColors(getTaskColor(selectedTaskData()!.id))[0]
-						}`}
+					style={`border-color:${
+						getColors(getTaskColor(selectedTaskData()!.id))[0]
+					}`}
 					onclick={() => setSelectedTask(undefined)}
 				>
 					<div
 						class="cont bold"
-						style={`color:${getColors(getTaskColor(selectedTaskData()!.id))[1]
-							}`}
+						style={`color:${
+							getColors(getTaskColor(selectedTaskData()!.id))[1]
+						}`}
 					>
 						{getTaskDisplayName(selectedTaskData()!.id)}
 					</div>
@@ -382,7 +390,7 @@ export default function TaskIndicator(props: TaskIndicatorProps) {
 	);
 }
 
-export interface TaskIndicatorProps { }
+export interface TaskIndicatorProps {}
 
 function Message(props: MessageProps) {
 	return (
@@ -476,13 +484,9 @@ function getTaskDisplayName(task: string) {
 function getTaskColor(task: string) {
 	if (task == "get_plugins" || task == "install_plugins") {
 		return "plugin";
-	} else if (task.startsWith("launch_instance")) {
+	} else if (task.startsWith("launch_instance") || task == "update_instance") {
 		return "instance";
-	} else if (
-		task == "update_instance" ||
-		task == "login_user" ||
-		task == "update_versions"
-	) {
+	} else if (task == "login_user" || task == "update_versions") {
 		return "template";
 	} else if (
 		task == "search_packages" ||
@@ -512,18 +516,18 @@ type Color =
 	| "package"
 	| "plugin";
 
-// Gets the border and text colors of a color preset
+// Gets the border, text, and background colors of a color preset
 function getColors(color: Color) {
 	if (color == "running") {
-		return ["lightgray", "lightgray"];
+		return ["lightgray", "lightgray", "var(--bg-1)"];
 	} else if (color == "instance") {
-		return ["var(--instance)", "var(--instance)"];
+		return ["var(--instance)", "var(--instance)", "var(--instancebg)"];
 	} else if (color == "template") {
-		return ["var(--template)", "var(--template)"];
+		return ["var(--template)", "var(--template)", "var(--templatebg)"];
 	} else if (color == "package") {
-		return ["var(--package)", "var(--package)"];
+		return ["var(--package)", "var(--package)", "var(--packagebg)"];
 	} else if (color == "plugin") {
-		return ["var(--plugin)", "var(--pluginfg)"];
+		return ["var(--plugin)", "var(--pluginfg)", "var(--pluginbg)"];
 	}
-	return ["var(--bg3)", "var(--fg3)"];
+	return ["var(--bg3)", "var(--fg3)", "var(--bg-1)"];
 }

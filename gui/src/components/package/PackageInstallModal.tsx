@@ -30,9 +30,8 @@ import Modal from "../dialog/Modal";
 export default function PackageInstallModal(props: PackageInstallModalProps) {
 	let [selectedTab, setSelectedTab] = createSignal("instance");
 
-	let [selectedInstanceOrTemplate, setSelectedInstanceOrTemplate] = createSignal<
-		string | undefined
-	>(undefined);
+	let [selectedInstanceOrTemplate, setSelectedInstanceOrTemplate] =
+		createSignal<string | undefined>(undefined);
 	let [selectedTemplateLocation, setSelectedTemplateLocation] =
 		createSignal("all");
 
@@ -76,7 +75,7 @@ export default function PackageInstallModal(props: PackageInstallModalProps) {
 		let mode = selectedTab() as InstanceConfigMode;
 		let location =
 			selectedTemplateLocation() == undefined ||
-				mode == InstanceConfigMode.Instance
+			mode == InstanceConfigMode.Instance
 				? "all"
 				: (selectedTemplateLocation() as "client" | "server" | "all");
 
@@ -121,9 +120,7 @@ export default function PackageInstallModal(props: PackageInstallModalProps) {
 			title={
 				<>
 					Installing package
-					<div style="color:var(--fg3)">
-						{props.packageId}
-					</div>
+					<div style="color:var(--fg3)">{props.packageId}</div>
 				</>
 			}
 			titleIcon={Download}
@@ -138,8 +135,8 @@ export default function PackageInstallModal(props: PackageInstallModalProps) {
 					icon: Download,
 					onClick: install,
 					color: "var(--package)",
-					bgColor: "var(--packagebg)"
-				}
+					bgColor: "var(--packagebg)",
+				},
 			]}
 		>
 			<div id="package-install-inner">
@@ -192,18 +189,33 @@ export default function PackageInstallModal(props: PackageInstallModalProps) {
 							options={[
 								{
 									value: "instance",
-									contents: <div class="cont"><Icon icon={Box} size="1rem" /> Instance</div>,
+									contents: (
+										<div class="cont">
+											<Icon icon={Box} size="1rem" /> Instance
+										</div>
+									),
 									color: "var(--instance)",
+									selectedBgColor: "var(--instancebg)",
 								},
 								{
 									value: "template",
-									contents: <div class="cont"><Icon icon={Diagram} size="1rem" /> Template</div>,
+									contents: (
+										<div class="cont">
+											<Icon icon={Diagram} size="1rem" /> Template
+										</div>
+									),
 									color: "var(--template)",
+									selectedBgColor: "var(--templatebg)",
 								},
 								{
 									value: "base_template",
-									contents: <div class="cont"><Icon icon={Globe} size="1rem" />  Globally</div>,
-									color: "var(--pluginfg)",
+									contents: (
+										<div class="cont">
+											<Icon icon={Globe} size="1rem" /> Globally
+										</div>
+									),
+									color: "var(--template)",
+									selectedBgColor: "var(--templatebg)",
 								},
 							]}
 							selected={selectedTab()}
@@ -232,11 +244,10 @@ export default function PackageInstallModal(props: PackageInstallModalProps) {
 									return {
 										value: item.id,
 										contents: (
-											<div>
-												{item.name == undefined ? item.id : item.name}
-											</div>
+											<div>{item.name == undefined ? item.id : item.name}</div>
 										),
 										color: `var(--${selectedTab()})`,
+										selectedBgColor: `var(--${selectedTab()}bg)`,
 									};
 								})}
 								selected={selectedInstanceOrTemplate()}
@@ -260,18 +271,33 @@ export default function PackageInstallModal(props: PackageInstallModalProps) {
 								options={[
 									{
 										value: "all",
-										contents: <div class="cont"><Icon icon={Globe} size="1rem" />  All of them</div>,
-										color: "var(--fg2)",
+										contents: (
+											<div class="cont">
+												<Icon icon={Globe} size="1rem" /> All of them
+											</div>
+										),
+										color: "var(--package)",
+										selectedBgColor: "var(--packagebg)",
 									},
 									{
 										value: "client",
-										contents: <div class="cont"><Icon icon={Controller} size="1.2rem" /> Clients</div>,
-										color: "var(--instance)",
+										contents: (
+											<div class="cont">
+												<Icon icon={Controller} size="1.2rem" /> Clients
+											</div>
+										),
+										color: "var(--package)",
+										selectedBgColor: "var(--packagebg)",
 									},
 									{
 										value: "server",
-										contents: <div class="cont"><Icon icon={Server} size="1rem" /> Servers</div>,
-										color: "var(--template)",
+										contents: (
+											<div class="cont">
+												<Icon icon={Server} size="1rem" /> Servers
+											</div>
+										),
+										color: "var(--package)",
+										selectedBgColor: "var(--packagebg)",
 									},
 								]}
 								selected={selectedTemplateLocation()}

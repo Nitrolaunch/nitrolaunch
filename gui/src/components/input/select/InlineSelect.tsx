@@ -32,10 +32,12 @@ export default function InlineSelect(props: InlineSelectProps) {
 
 	return (
 		<div
-			class={`${connected ? "shadow" : ""} inline-select ${connected ? "connected" : "disconnected"
-				}`}
-			style={`display:${grid ? "grid" : "flex"
-				};grid-template-columns:repeat(${columns()}, minmax(0, 1fr))`}
+			class={`${connected ? "shadow" : ""} inline-select ${
+				connected ? "connected" : "disconnected"
+			}`}
+			style={`display:${
+				grid ? "grid" : "flex"
+			};grid-template-columns:repeat(${columns()}, minmax(0, 1fr))`}
 		>
 			<Show when={props.allowEmpty == undefined ? false : props.allowEmpty}>
 				<InlineSelectOption
@@ -119,7 +121,9 @@ function InlineSelectOption(props: OptionProps) {
 
 	let backgroundColor = () => {
 		if (isSelected()) {
-			if (props.solidSelect) {
+			if (props.option.selectedBgColor != undefined) {
+				return props.option.selectedBgColor;
+			} else if (props.solidSelect) {
 				return color;
 			} else {
 				return "var(--bg0)";
@@ -128,14 +132,18 @@ function InlineSelectOption(props: OptionProps) {
 			return "var(--bg2)";
 		}
 	};
-	let borderColor = () => isSelected() ? color : isHovered() ? "var(--bg4)" : "var(--bg3)";
+	let borderColor = () =>
+		isSelected() ? color : isHovered() ? "var(--bg4)" : "var(--bg3)";
 
 	let contents = (
 		<div
-			class={`cont inline-select-option ${props.connected ? "connected" : "disconnected shadow bubble-hover"
-				} ${props.class == undefined ? "" : props.class} ${isSelected() ? "selected" : ""
-				} ${props.isLast ? "last" : "not-last"} ${props.isFirst ? "" : "not-first"
-				}`}
+			class={`cont inline-select-option ${
+				props.connected ? "connected" : "disconnected shadow bubble-hover"
+			} ${props.class == undefined ? "" : props.class} ${
+				isSelected() ? "selected" : ""
+			} ${props.isLast ? "last" : "not-last"} ${
+				props.isFirst ? "" : "not-first"
+			}`}
 			style={`border-color:${borderColor()};color:${textColor()};background-color:${backgroundColor()}`}
 			onclick={() => props.onSelect(props.option.value)}
 			onmouseenter={() => setIsHovered(true)}
@@ -144,7 +152,11 @@ function InlineSelectOption(props: OptionProps) {
 			<Show when={props.checkboxes}>
 				<div
 					class="cont inline-select-checkbox"
-					style={isSelected() ? `background-color:${borderColor()}` : `border-color:${borderColor()}`}
+					style={
+						isSelected()
+							? `background-color:${borderColor()}`
+							: `border-color:${borderColor()}`
+					}
 				>
 					<Show when={isSelected()}>
 						<Icon icon={Check} size="0.75rem" />
@@ -186,6 +198,7 @@ export interface Option {
 	contents: JSX.Element;
 	color?: string;
 	selectedTextColor?: string;
+	selectedBgColor?: string;
 	tip?: JSX.Element;
 	tipSide?: TipSide;
 }

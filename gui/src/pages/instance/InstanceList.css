@@ -1,5 +1,5 @@
 #instance-list {
-	width: 80%;
+	width: 90%;
 }
 
 #instance-list-top {
@@ -49,19 +49,19 @@
 	width: 100%;
 }
 
-.instance-list-section-header>svg {
+.instance-list-section-header > svg {
 	margin-bottom: 0.05rem;
 	margin-left: 1.3rem;
 }
 
-.instance-list-section-header>h2 {
+.instance-list-section-header > h2 {
 	line-height: 0;
 	font-size: 1.2rem;
 }
 
 .instance-list-section {
 	display: grid;
-	grid-template-columns: repeat(3, minmax(0, 1fr));
+	grid-template-columns: repeat(4, minmax(0, 1fr));
 	width: 100%;
 }
 
@@ -83,7 +83,8 @@
 	border-top-color: var(--bg4);
 	border-left-color: var(--bg4);
 
-	transition: background-color 0.15s, border-color 0.25s, transform var(--bubble);
+	transition: background-color 0.15s, border-color 0.25s,
+		transform var(--bubble);
 }
 
 .instance-list-item-details {

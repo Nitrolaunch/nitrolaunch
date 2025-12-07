@@ -1,8 +1,4 @@
-import {
-	useLocation,
-	useNavigate,
-	useParams,
-} from "@solidjs/router";
+import { useLocation, useNavigate, useParams } from "@solidjs/router";
 import "./BrowsePackages.css";
 import {
 	createEffect,
@@ -50,7 +46,7 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 		props.setFooterData({
 			mode: FooterMode.PreviewPackage,
 			selectedItem: undefined,
-			action: () => { },
+			action: () => {},
 		});
 	});
 
@@ -253,7 +249,7 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 						availablePackageTypes={repoPackageTypes()}
 						filteringVersions={false}
 						features={[]}
-						setFeatures={() => { }}
+						setFeatures={() => {}}
 						availableCategories={repoCategories()}
 					/>
 				</div>
@@ -268,13 +264,17 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 						}}
 					/>
 					<div class="cont end">
-						<Tip tip="Refetches packages and their new versions" side="left" zIndex="10">
+						<Tip
+							tip="Refetches packages and their new versions"
+							side="left"
+							zIndex="10"
+						>
 							<IconTextButton
 								icon={Refresh}
 								text="Sync Packages"
 								size="1.5rem"
 								color="var(--package)"
-								bgColor="var(--bg-1)"
+								bgColor="var(--packagebg)"
 								onClick={async () => {
 									try {
 										await invoke("sync_packages");
@@ -304,10 +304,11 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 											selected={selectedPackage()}
 											onSelect={(pkg) => {
 												setSelectedPackage(pkg);
-												let url = `/packages/package/${data.id
-													}?filters=${JSON.stringify(
-														createPackageFiltersObject()
-													)}`;
+												let url = `/packages/package/${
+													data.id
+												}?filters=${JSON.stringify(
+													createPackageFiltersObject()
+												)}`;
 
 												props.setFooterData({
 													mode: FooterMode.PreviewPackage,
@@ -358,7 +359,9 @@ function Package(props: PackageProps) {
 
 	return (
 		<div
-			class={`cont col shadow bubble-hover-small package ${isSelected() ? "selected" : ""}`}
+			class={`cont col shadow bubble-hover-small package ${
+				isSelected() ? "selected" : ""
+			}`}
 			style="cursor:pointer"
 			onclick={() => {
 				// Double click to open
@@ -386,7 +389,10 @@ function Package(props: PackageProps) {
 					<div class="cont start package-name">
 						{props.meta.name}
 						<Show when={props.meta.downloads != undefined}>
-							<div class="cont" style="color: var(--fg3);gap:0.2rem;font-size:0.95rem">
+							<div
+								class="cont"
+								style="color: var(--fg3);gap:0.2rem;font-size:0.95rem"
+							>
 								<Icon icon={Download} size="1rem" />
 								{formatNumber(props.meta.downloads!)}
 							</div>

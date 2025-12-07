@@ -129,7 +129,8 @@ export function MigratePromptContents(props: MigratePromptProps) {
 													All Instances
 												</div>
 											),
-											color: "var(--template)",
+											color: "var(--instance)",
+											selectedBgColor: "var(--instancebg)",
 										},
 										{
 											value: "select",
@@ -140,6 +141,7 @@ export function MigratePromptContents(props: MigratePromptProps) {
 												</div>
 											),
 											color: "var(--instance)",
+											selectedBgColor: "var(--instancebg)",
 										},
 									]}
 									selected={instanceMode()}
@@ -156,6 +158,8 @@ export function MigratePromptContents(props: MigratePromptProps) {
 										return {
 											value: instance,
 											contents: <div class="cont">{instance}</div>,
+											color: "var(--instance)",
+											selectedBgColor: "var(--instancebg)",
 										};
 									})}
 									selected={selectedInstances()}
@@ -184,9 +188,10 @@ export function MigratePromptContents(props: MigratePromptProps) {
 													Link
 												</div>
 											),
-											color: "var(--template)",
+											color: "var(--instance)",
+											selectedBgColor: "var(--instancebg)",
 											tip: "Use the existing instance files without copying.",
-											tipSide: "bottom"
+											tipSide: "bottom",
 										},
 										{
 											value: "copy",
@@ -197,8 +202,9 @@ export function MigratePromptContents(props: MigratePromptProps) {
 												</div>
 											),
 											color: "var(--instance)",
+											selectedBgColor: "var(--instancebg)",
 											tip: "Copy all the instance files",
-											tipSide: "bottom"
+											tipSide: "bottom",
 										},
 									]}
 									selected={method()}

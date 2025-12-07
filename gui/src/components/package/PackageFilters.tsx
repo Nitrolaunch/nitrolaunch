@@ -16,7 +16,6 @@ import {
 	getLoaderColor,
 	getLoaderDisplayName,
 	getLoaderImage,
-	getPackageTypeColor,
 	getPackageTypeDisplayName,
 	getPackageTypeIcon,
 	Loader,
@@ -67,13 +66,13 @@ export default function PackageFilters(props: PackageFiltersProps) {
 	let availablePackageTypes = () =>
 		props.availablePackageTypes == undefined
 			? ([
-				"mod",
-				"resource_pack",
-				"datapack",
-				"plugin",
-				"shader",
-				"bundle",
-			] as PackageType[])
+					"mod",
+					"resource_pack",
+					"datapack",
+					"plugin",
+					"shader",
+					"bundle",
+			  ] as PackageType[])
 			: props.availablePackageTypes;
 
 	return (
@@ -81,8 +80,9 @@ export default function PackageFilters(props: PackageFiltersProps) {
 			<div class="cont package-filters-tabs">
 				<Show when={!props.filteringVersions}>
 					<div
-						class={`cont package-filter-tab ${tab() == "types" ? "selected" : ""
-							}`}
+						class={`cont package-filter-tab ${
+							tab() == "types" ? "selected" : ""
+						}`}
 						onclick={() => setTab("types")}
 					>
 						<Icon icon={Jigsaw} size="0.8rem" />
@@ -90,29 +90,29 @@ export default function PackageFilters(props: PackageFiltersProps) {
 					</div>
 				</Show>
 				<div
-					class={`cont package-filter-tab ${tab() == "minecraft_versions" ? "selected" : ""
-						}`}
+					class={`cont package-filter-tab ${
+						tab() == "minecraft_versions" ? "selected" : ""
+					}`}
 					onclick={() => setTab("minecraft_versions")}
-					style="color:var(--instance)"
 				>
 					<Icon icon={Minecraft} size="0.8rem" />
 					Version
 				</div>
 				<div
-					class={`cont package-filter-tab ${tab() == "loaders" ? "selected" : ""
-						}`}
+					class={`cont package-filter-tab ${
+						tab() == "loaders" ? "selected" : ""
+					}`}
 					onclick={() => setTab("loaders")}
-					style="color:var(--package)"
 				>
 					<Icon icon={Download} size="0.8rem" />
 					Loader
 				</div>
 				<Show when={!props.filteringVersions}>
 					<div
-						class={`cont package-filter-tab ${tab() == "categories" ? "selected" : ""
-							}`}
+						class={`cont package-filter-tab ${
+							tab() == "categories" ? "selected" : ""
+						}`}
 						onclick={() => setTab("categories")}
-						style="color:var(--template)"
 					>
 						<Icon icon={Tag} size="0.8rem" />
 						Category
@@ -120,10 +120,10 @@ export default function PackageFilters(props: PackageFiltersProps) {
 				</Show>
 				<Show when={props.filteringVersions}>
 					<div
-						class={`cont package-filter-tab ${tab() == "stability" ? "selected" : ""
-							}`}
+						class={`cont package-filter-tab ${
+							tab() == "stability" ? "selected" : ""
+						}`}
 						onclick={() => setTab("stability")}
-						style="color:var(--template)"
 					>
 						<Icon icon={Lock} size="0.8rem" />
 						Stability
@@ -131,10 +131,10 @@ export default function PackageFilters(props: PackageFiltersProps) {
 				</Show>
 				<Show when={props.filteringVersions}>
 					<div
-						class={`cont package-filter-tab ${tab() == "features" ? "selected" : ""
-							}`}
+						class={`cont package-filter-tab ${
+							tab() == "features" ? "selected" : ""
+						}`}
 						onclick={() => setTab("features")}
-						style="color:var(--pluginfg)"
 					>
 						<Icon icon={Properties} size="0.8rem" />
 						Features
@@ -143,7 +143,6 @@ export default function PackageFilters(props: PackageFiltersProps) {
 				<div
 					class={`cont package-filter-tab ${tab() == "more" ? "selected" : ""}`}
 					onclick={() => setTab("more")}
-					style="color:var(--fg3)"
 				>
 					<Icon icon={Plus} size="0.8rem" />
 					More
@@ -162,14 +161,18 @@ export default function PackageFilters(props: PackageFiltersProps) {
 												icon={getPackageTypeIcon(packageType)}
 												size="1.2rem"
 											/>
-											<div class="cont" style={fixCenter(getPackageTypeDisplayName(packageType))}>
-												{`${getPackageTypeDisplayName(
-													packageType
-												)}s`}
+											<div
+												class="cont"
+												style={fixCenter(
+													getPackageTypeDisplayName(packageType)
+												)}
+											>
+												{`${getPackageTypeDisplayName(packageType)}s`}
 											</div>
 										</div>
 									),
-									color: getPackageTypeColor(packageType),
+									color: "var(--package)",
+									selectedBgColor: "var(--packagebg)",
 									tip: packageType == "bundle" ? "AKA Modpacks" : undefined,
 								};
 							})}
@@ -257,7 +260,8 @@ export default function PackageFilters(props: PackageFiltersProps) {
 													</div>
 												</div>
 											),
-											color: "var(--template)",
+											color: "var(--package)",
+											selectedBgColor: "var(--packagebg)",
 										};
 									})}
 								connected={false}
@@ -286,7 +290,7 @@ export default function PackageFilters(props: PackageFiltersProps) {
 													text={packageCategoryDisplayName(category)}
 												/>
 											),
-											color: "var(--template)",
+											color: "var(--package)",
 										};
 									})}
 								selected={props.categories}
@@ -350,7 +354,8 @@ export default function PackageFilters(props: PackageFiltersProps) {
 								return {
 									value: feature,
 									contents: <div class="cont">{beautifyString(feature)}</div>,
-									color: "var(--pluginfg)",
+									color: "var(--package)",
+									selectedBgColor: "var(--packagebg)",
 								};
 							})}
 							selected={props.features}
@@ -421,11 +426,15 @@ function MinecraftVersionsTab(props: MinecraftVersionsTabProps) {
 						return {
 							value: version,
 							contents: (
-								<span class="cont" style="font-size:0.9rem;font-weight:bold;overflow-x:auto;text-wrap:nowrap;transform:translateY(0.1rem)">
+								<span
+									class="cont"
+									style="font-size:0.9rem;font-weight:bold;overflow-x:auto;text-wrap:nowrap;transform:translateY(0.1rem)"
+								>
 									{version}
 								</span>
 							),
-							color: "var(--instance)",
+							color: "var(--package)",
+							selectedBgColor: "var(--packagebg)",
 						};
 					})}
 					selected={props.selectedVersions}
@@ -439,17 +448,18 @@ function MinecraftVersionsTab(props: MinecraftVersionsTabProps) {
 			</div>
 			<div
 				class="cont"
-				style={`${props.options.length > 5
-					? "width:calc(100%/7*1)"
-					: "width:calc(100%/5*1)"
-					};height:100%`}
+				style={`${
+					props.options.length > 5
+						? "width:calc(100%/7*1)"
+						: "width:calc(100%/5*1)"
+				};height:100%`}
 			>
 				<Dropdown
 					options={props.extraOptions.map((version) => {
 						return {
 							value: version,
 							contents: <div>{version}</div>,
-							color: "var(--instance)",
+							color: "var(--package)",
 						};
 					})}
 					selected={props.selectedVersions}

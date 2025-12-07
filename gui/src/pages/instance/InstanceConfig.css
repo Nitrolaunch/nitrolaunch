@@ -30,14 +30,17 @@
 
 #general-tab.selected {
 	border-color: var(--instance);
+	background-color: var(--instancebg);
 }
 
 #packages-tab.selected {
 	border-color: var(--package);
+	background-color: var(--packagebg);
 }
 
 #launch-tab.selected {
-	border-color: var(--template);
+	border-color: var(--instance);
+	background-color: var(--instancebg);
 }
 
 .fields {

@@ -332,7 +332,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 				</div>
 			}
 		>
-			<div class="cont col" style="width:100%">
+			<div class="cont col fullwidth">
 				<div class="cont col" id="instance-container">
 					<div class="cont" id="instance-header-container">
 						<div class="shadow" id="instance-header">

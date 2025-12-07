@@ -46,17 +46,20 @@ export default function LaunchConfig(props: LaunchConfigProps) {
 							value: x,
 							contents: (
 								<div
-									class={`cont ${props.java == undefined &&
+									class={`cont ${
+										props.java == undefined &&
 										getDerivedValue(props.parentConfigs, (x) =>
 											x.launch == undefined ? undefined : x.launch.java
 										) == x
-										? "derived-option"
-										: ""
-										}`}
+											? "derived-option"
+											: ""
+									}`}
 								>
 									{x == undefined ? "Unset" : getJavaDisplayName(x)}
 								</div>
 							),
+							color: "var(--instance)",
+							selectedBgColor: "var(--instancebg)",
 							tip: x == undefined ? "Inherit from the template" : getJavaTip(x),
 						};
 					})}
@@ -65,10 +68,18 @@ export default function LaunchConfig(props: LaunchConfigProps) {
 					connected={false}
 				/>
 			</Tip>
-			<Show when={!JAVA_OPTIONS.includes(props.java) && props.java != undefined}>
+			<Show
+				when={!JAVA_OPTIONS.includes(props.java) && props.java != undefined}
+			>
 				<Tip tip="Path to custom Java installation" fullwidth side="right">
 					<div class="cont fullwidth" id="launch-custom-java">
-						<PathSelect path={props.java == "custom" ? "" : props.java} setPath={(path) => { props.setJava(path); props.onChange() }} />
+						<PathSelect
+							path={props.java == "custom" ? "" : props.java}
+							setPath={(path) => {
+								props.setJava(path);
+								props.onChange();
+							}}
+						/>
 					</div>
 				</Tip>
 			</Show>

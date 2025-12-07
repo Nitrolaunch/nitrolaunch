@@ -341,13 +341,15 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 							{
 								value: "all",
 								contents: <div>ALL</div>,
-								color: "var(--fg)",
+								color: "var(--package)",
+								selectedBgColor: "var(--packagebg)",
 								tip: "All packages",
 							},
 							{
 								value: "user",
 								contents: <div>USER</div>,
-								color: "var(--instance)",
+								color: "var(--package)",
+								selectedBgColor: "var(--packagebg)",
 								tip: "Only packages you have set. No dependencies",
 							},
 							// {
@@ -359,7 +361,8 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 							{
 								value: "dependencies",
 								contents: <div>DEPENDENCIES</div>,
-								color: "var(--plugin)",
+								color: "var(--package)",
+								selectedBgColor: "var(--packagebg)",
 								tip: "Dependencies of other packages",
 							},
 						]}
@@ -368,7 +371,6 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 						onChange={setFilter}
 						grid={false}
 						connected={false}
-						solidSelect={true}
 					/>
 				</div>
 				<div>
@@ -378,16 +380,23 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 					<Show when={props.isTemplate}>
 						<InlineSelect
 							options={[
-								{ value: "all", contents: <div>ALL</div>, color: "var(--fg)" },
+								{
+									value: "all",
+									contents: <div>ALL</div>,
+									color: "var(--package)",
+									selectedBgColor: "var(--packagebg)",
+								},
 								{
 									value: "client",
 									contents: <div>CLIENT</div>,
-									color: "var(--instance)",
+									color: "var(--package)",
+									selectedBgColor: "var(--packagebg)",
 								},
 								{
 									value: "server",
 									contents: <div>SERVER</div>,
-									color: "var(--template)",
+									color: "var(--package)",
+									selectedBgColor: "var(--packagebg)",
 								},
 							]}
 							optionClass="package-config-filter"
@@ -395,7 +404,6 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 							onChange={setSideFilter}
 							grid={false}
 							connected={false}
-							solidSelect={true}
 						/>
 					</Show>
 				</div>
