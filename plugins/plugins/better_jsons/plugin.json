@@ -4,7 +4,7 @@
 	"protocol_version": 3,
 	"hooks": {
 		"add_versions": {
-			"executable": "${PLUGIN_DIR}/nitro_plugin_better_jsons${EXE_EXTENSION}"
+			"wasm": true
 		}
 	}
 }

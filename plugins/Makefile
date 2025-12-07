@@ -8,6 +8,7 @@ package.cross_platform: build.cross_platform
 	@rm -f release/args-universal.zip
 	@rm -f release/auto_mcs-universal.zip
 	@rm -f release/automate-universal.zip
+	@rm -f release/better_jsons-universal.zip
 	@rm -f release/config_split-universal.zip
 	@rm -f release/custom_files-universal.zip
 	@rm -f release/extra_versions-universal.zip
@@ -27,6 +28,8 @@ package.cross_platform: build.cross_platform
 	@printf "@ nitro_plugin_auto_mcs.wasm\\n@=plugin.wasm\\n" | zipnote -w release/auto_mcs-universal.zip
 	@zip -j release/automate-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_automate.wasm plugins/automate/plugin.json
 	@printf "@ nitro_plugin_automate.wasm\\n@=plugin.wasm\\n" | zipnote -w release/automate-universal.zip
+	@zip -j release/better_jsons-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_better_jsons.wasm plugins/better_jsons/plugin.json
+	@printf "@ nitro_plugin_better_jsons.wasm\\n@=plugin.wasm\\n" | zipnote -w release/better_jsons-universal.zip
 	@zip -j release/config_split-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_config_split.wasm plugins/config_split/plugin.json
 	@printf "@ nitro_plugin_config_split.wasm\\n@=plugin.wasm\\n" | zipnote -w release/config_split-universal.zip
 	@zip -j release/custom_files-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_custom_files.wasm plugins/custom_files/plugin.json
@@ -62,7 +65,6 @@ package_zips.platform_dependent:
 	
 	@rm -f release/backup-${OS}.zip
 	@rm -f release/beet-${OS}.zip
-	@rm -f release/better_jsons-${OS}.zip
 	@rm -f release/cleanup-${OS}.zip
 	@rm -f release/curseforge_api-${OS}.zip
 	@rm -f release/docs-${OS}.zip
@@ -87,7 +89,6 @@ package_zips.platform_dependent:
 
 	@zip -j release/backup-${OS}.zip $(TARGET_DIR)/nitro_plugin_backup${EXTENSION} plugins/backup/plugin.json
 	@zip -j release/beet-${OS}.zip $(TARGET_DIR)/nitro_plugin_beet${EXTENSION} plugins/beet/plugin.json
-	@zip -j release/better_jsons-${OS}.zip $(TARGET_DIR)/nitro_plugin_better_jsons${EXTENSION} plugins/better_jsons/plugin.json
 	@zip -j release/cleanup-${OS}.zip $(TARGET_DIR)/nitro_plugin_cleanup${EXTENSION} plugins/cleanup/plugin.json
 	@zip -j release/curseforge_api-${OS}.zip $(TARGET_DIR)/nitro_plugin_curseforge_api${EXTENSION} plugins/curseforge_api/plugin.json
 	@zip -j release/docs-${OS}.zip $(TARGET_DIR)/nitro_plugin_docs${EXTENSION} plugins/docs/plugin.json
@@ -138,9 +139,9 @@ install.beet:
 	@cat plugins/beet/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/beet/plugin.json
 
 install.better_jsons:
-	@cargo install --path . --bin nitro_plugin_better_jsons --offline
-	@mkdir -p ~/.local/share/nitro/plugins/better_jsons
-	@cat plugins/better_jsons/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/better_jsons/plugin.json
+	@cargo build -p nitro_plugin_better_jsons --release --target wasm32-wasip2
+	@cp -r plugins/better_jsons ~/.local/share/nitro/plugins
+	@cp -r ../target/wasm32-wasip2/release/nitro_plugin_better_jsons.wasm ~/.local/share/nitro/plugins/better_jsons/plugin.wasm
 
 install.cleanup:
 	@cargo install --path . --bin nitro_plugin_cleanup --offline
