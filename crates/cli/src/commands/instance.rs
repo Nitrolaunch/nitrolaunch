@@ -49,6 +49,9 @@ pub enum InstanceSubcommand {
 		/// if you have authenticated at least once
 		#[arg(short, long)]
 		offline: bool,
+		/// Whether to skip updating on the first launch. Can cause problems!
+		#[arg(long)]
+		skip_update: bool,
 		/// The instance to launch
 		instance: Option<String>,
 	},
@@ -113,8 +116,9 @@ pub async fn run(command: InstanceSubcommand, mut data: CmdData<'_>) -> anyhow::
 		InstanceSubcommand::Launch {
 			user,
 			offline,
+			skip_update,
 			instance,
-		} => launch(instance, user, offline, data).await,
+		} => launch(instance, user, offline, skip_update, data).await,
 		InstanceSubcommand::Info { instance } => info(&mut data, instance).await,
 		InstanceSubcommand::Update {
 			force,
@@ -224,6 +228,7 @@ pub async fn launch(
 	instance: Option<String>,
 	user: Option<String>,
 	offline: bool,
+	skip_update: bool,
 	mut data: CmdData<'_>,
 ) -> anyhow::Result<()> {
 	data.ensure_config(true).await?;
@@ -237,26 +242,28 @@ pub async fn launch(
 		.context("Instance does not exist")?;
 
 	// Perform first update if needed
-	let mut lock = Lockfile::open(&data.paths).context("Failed to open lockfile")?;
-	if !lock.has_instance_done_first_update(&instance_id) {
-		cprintln!("<s>Performing first update of instance...");
+	if !skip_update {
+		let mut lock = Lockfile::open(&data.paths).context("Failed to open lockfile")?;
+		if !lock.has_instance_done_first_update(&instance_id) {
+			cprintln!("<s>Performing first update of instance...");
 
-		let client = Client::new();
-		let mut ctx = InstanceUpdateContext {
-			packages: &mut config.packages,
-			users: &config.users,
-			plugins: &config.plugins,
-			prefs: &config.prefs,
-			paths: &data.paths,
-			lock: &mut lock,
-			client: &client,
-			output: data.output,
-		};
+			let client = Client::new();
+			let mut ctx = InstanceUpdateContext {
+				packages: &mut config.packages,
+				users: &config.users,
+				plugins: &config.plugins,
+				prefs: &config.prefs,
+				paths: &data.paths,
+				lock: &mut lock,
+				client: &client,
+				output: data.output,
+			};
 
-		instance
-			.update(true, UpdateDepth::Full, &mut ctx)
-			.await
-			.context("Failed to perform first update for instance")?;
+			instance
+				.update(true, UpdateDepth::Full, &mut ctx)
+				.await
+				.context("Failed to perform first update for instance")?;
+		}
 	}
 
 	if let Some(user) = user {
