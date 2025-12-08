@@ -50,10 +50,14 @@ pub(crate) fn launch_game_process(
 
 	// Stdio files
 	let stdout = get_stdio_file_path(params.paths, false);
-	let stdin = get_stdio_file_path(params.paths, true);
+	let stdin = if params.pipe_stdin {
+		None
+	} else {
+		Some(get_stdio_file_path(params.paths, true))
+	};
 
 	// Get the command and output it
-	let mut cmd = get_process_launch_command(proc_params, &stdout, &stdin)
+	let mut cmd = get_process_launch_command(proc_params, &stdout, stdin.as_deref())
 		.context("Failed to create process launch command")?;
 
 	output_launch_command(&cmd, params.user_access_token, params.censor_secrets, o)?;
@@ -62,7 +66,11 @@ pub(crate) fn launch_game_process(
 	let child = cmd.spawn().context("Failed to spawn child process")?;
 
 	let stdout_file = File::open(&stdout)?;
-	let stdin_file = open_file_append(&stdin)?;
+	let stdin_file = if let Some(stdin) = &stdin {
+		Some(open_file_append(stdin)?)
+	} else {
+		None
+	};
 
 	Ok(InstanceHandle::new(
 		child,
@@ -77,7 +85,7 @@ pub(crate) fn launch_game_process(
 pub fn launch_process(
 	params: LaunchProcessParameters<'_>,
 	stdout_path: &Path,
-	stdin_path: &Path,
+	stdin_path: Option<&Path>,
 ) -> anyhow::Result<Child> {
 	let mut cmd = get_process_launch_command(params, stdout_path, stdin_path)
 		.context("Failed to create process launch command")?;
@@ -89,7 +97,7 @@ pub fn launch_process(
 pub fn get_process_launch_command(
 	params: LaunchProcessParameters<'_>,
 	stdout_path: &Path,
-	stdin_path: &Path,
+	stdin_path: Option<&Path>,
 ) -> anyhow::Result<Command> {
 	// Create the base command based on wrapper settings
 	let mut cmd = create_wrapped_command(params.command, &params.launch_config.wrappers);
@@ -109,9 +117,13 @@ pub fn get_process_launch_command(
 
 	// Capture stdio
 	let stdout = File::create_new(stdout_path).context("Failed to open stdout")?;
-	let stdin = File::create_new(stdin_path).context("Failed to open stdin")?;
 	cmd.stdout(std::process::Stdio::from(stdout));
-	cmd.stdin(std::process::Stdio::from(stdin));
+	if let Some(stdin_path) = stdin_path {
+		let stdin = File::create_new(stdin_path).context("Failed to open stdin")?;
+		cmd.stdin(std::process::Stdio::from(stdin));
+	} else {
+		cmd.stdin(std::process::Stdio::inherit());
+	}
 
 	no_window!(cmd);
 
@@ -235,6 +247,7 @@ pub(crate) struct LaunchGameProcessParameters<'a> {
 	pub side: &'a InstanceKind,
 	pub user_access_token: Option<&'a AccessToken>,
 	pub censor_secrets: bool,
+	pub pipe_stdin: bool,
 }
 
 /// Container struct for parameters for launching a generic Java process

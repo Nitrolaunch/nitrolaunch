@@ -36,6 +36,7 @@ pub struct Instance<'params> {
 	jar_path: PathBuf,
 	classpath: Classpath,
 	main_class: String,
+	pipe_stdin: bool,
 }
 
 impl<'params> Instance<'params> {
@@ -202,6 +203,7 @@ impl<'params> Instance<'params> {
 			jar_path,
 			classpath,
 			main_class,
+			pipe_stdin: false,
 		})
 	}
 
@@ -234,11 +236,17 @@ impl<'params> Instance<'params> {
 			users: self.params.users,
 			censor_secrets: self.params.censor_secrets,
 			branding: self.params.branding,
+			pipe_stdin: self.pipe_stdin,
 		};
 		let handle = crate::launch::launch(params, o)
 			.await
 			.context("Failed to run launch routine")?;
 		Ok(handle)
+	}
+
+	/// Set whether to pipe stdin for the instance
+	pub fn pipe_stdin(&mut self, pipe: bool) {
+		self.pipe_stdin = pipe;
 	}
 
 	/// Get the JAR path of the instance

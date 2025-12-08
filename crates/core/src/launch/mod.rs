@@ -8,6 +8,7 @@ mod process;
 mod server;
 
 use std::fs::File;
+use std::io::Write;
 use std::path::{Path, PathBuf};
 
 use anyhow::{bail, Context};
@@ -92,6 +93,7 @@ pub(crate) async fn launch(
 		side: params.side,
 		user_access_token,
 		censor_secrets: params.censor_secrets,
+		pipe_stdin: params.pipe_stdin,
 	};
 
 	launch_game_process(proc_params, o).context("Failed to launch game process")
@@ -113,6 +115,7 @@ pub(crate) struct LaunchParameters<'a> {
 	pub users: &'a mut UserManager,
 	pub censor_secrets: bool,
 	pub branding: &'a BrandingProperties,
+	pub pipe_stdin: bool,
 }
 
 impl LaunchConfiguration {
@@ -179,9 +182,9 @@ pub struct InstanceHandle {
 	/// The stdout path of the process
 	stdout_path: PathBuf,
 	/// The stdin file of the process
-	stdin: File,
+	stdin: Option<File>,
 	/// The stdin path of the process
-	stdin_path: PathBuf,
+	stdin_path: Option<PathBuf>,
 }
 
 impl InstanceHandle {
@@ -190,8 +193,8 @@ impl InstanceHandle {
 		process: std::process::Child,
 		stdout: File,
 		stdout_path: PathBuf,
-		stdin: File,
-		stdin_path: PathBuf,
+		stdin: Option<File>,
+		stdin_path: Option<PathBuf>,
 	) -> Self {
 		Self {
 			process,
@@ -238,13 +241,22 @@ impl InstanceHandle {
 		&self.stdout_path
 	}
 
-	/// Gets the stdin file of the instance process
-	pub fn stdin(&mut self) -> &mut File {
-		&mut self.stdin
+	/// Gets the stdin file of the instance process. Empty if it is piped.
+	pub fn stdin(&mut self) -> Option<&mut File> {
+		self.stdin.as_mut()
 	}
 
-	/// Gets the stdin path of the instance process
-	pub fn stdin_path(&self) -> &Path {
-		&self.stdin_path
+	/// Gets the stdin path of the instance process. Empty if it is piped.
+	pub fn stdin_path(&self) -> Option<&Path> {
+		self.stdin_path.as_deref()
+	}
+
+	/// Writes to stdin
+	pub fn write_stdin(&mut self, data: &[u8]) -> std::io::Result<()> {
+		if let Some(stdin) = &mut self.stdin {
+			stdin.write_all(data)
+		} else {
+			Ok(())
+		}
 	}
 }

@@ -57,7 +57,7 @@ async fn launch_game_impl(
 	user: Option<&str>,
 	state: Arc<tauri::State<'_, State>>,
 	app: Arc<AppHandle>,
-	stdio_paths: Arc<Mutex<Option<(PathBuf, PathBuf)>>>,
+	stdio_paths: Arc<Mutex<Option<(PathBuf, Option<PathBuf>)>>>,
 	data: Arc<Mutex<LauncherData>>,
 	mut o: LauncherOutput,
 ) -> anyhow::Result<()> {
@@ -121,8 +121,10 @@ async fn launch_game_impl(
 			let _ = data.write(&paths);
 			std::mem::drop(data);
 
-			*stdio_paths.lock().await =
-				Some((handle.stdout().to_owned(), handle.stdin().to_owned()));
+			*stdio_paths.lock().await = Some((
+				handle.stdout().to_owned(),
+				handle.stdin().map(|x| x.to_owned()),
+			));
 
 			let update_output_task = emit_instance_stdio_changes(
 				app.clone(),

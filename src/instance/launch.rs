@@ -1,11 +1,9 @@
 use nitro_core::io::files::open_file_append;
 use nitro_core::launch::get_stdio_file_path;
 use nitro_core::NitroCore;
-use nitro_plugin::try_read::TryReadExt;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{Read, Write};
-use std::mem::ManuallyDrop;
 use std::path::{Path, PathBuf};
 use std::process::ExitStatus;
 use std::time::Duration;
@@ -36,7 +34,6 @@ use crate::instance::world_files::WorldFilesWatcher;
 use crate::io::lock::Lockfile;
 use crate::io::paths::Paths;
 use crate::plugin::PluginManager;
-use crate::util::get_stdin_file;
 
 use super::Instance;
 
@@ -132,8 +129,7 @@ impl Instance {
 			self.launch_standard(core, hook_arg, paths, plugins, settings, o)
 				.await
 		} else {
-			self.launch_custom(hook_arg, paths, plugins, settings, o)
-				.await
+			self.launch_custom(hook_arg, paths, plugins, o).await
 		}
 	}
 
@@ -154,6 +150,8 @@ impl Instance {
 			.await
 			.context("Failed to create core instance")?;
 
+		instance.pipe_stdin(settings.pipe_stdin);
+
 		// Launch the instance using core
 		let handle = instance
 			.launch_with_handle(o)
@@ -162,7 +160,7 @@ impl Instance {
 
 		hook_arg.pid = Some(handle.get_pid());
 		hook_arg.stdout_path = Some(handle.stdout_path().to_string_lossy().to_string());
-		hook_arg.stdin_path = Some(handle.stdin_path().to_string_lossy().to_string());
+		hook_arg.stdin_path = handle.stdin_path().map(|x| x.to_string_lossy().to_string());
 
 		// Run while_instance_launch hooks alongside
 		let hook_handles = plugins
@@ -179,18 +177,11 @@ impl Instance {
 			None
 		};
 
-		let stdin = if self.get_side() == Side::Client || !settings.pipe_stdin {
-			None
-		} else {
-			Some(get_stdin_file())
-		};
-
 		let handle = InstanceHandle {
 			instance_id: self.id.clone(),
 			hook_handles,
 			hook_arg,
 			stdout: tokio::io::stdout(),
-			stdin,
 			is_silent: false,
 			inner: InstanceHandleInner::Standard {
 				inner: handle,
@@ -213,7 +204,6 @@ impl Instance {
 		mut hook_arg: InstanceLaunchArg,
 		paths: &Paths,
 		plugins: &PluginManager,
-		settings: LaunchSettings,
 		o: &mut impl NitroOutput,
 	) -> anyhow::Result<InstanceHandle> {
 		// Set up stdio
@@ -242,18 +232,11 @@ impl Instance {
 		let stdout_file = File::open(&stdout_path)?;
 		let stdin_file = open_file_append(&stdin_path)?;
 
-		let stdin = if settings.pipe_stdin && self.get_side() == Side::Server {
-			Some(get_stdin_file())
-		} else {
-			None
-		};
-
 		let handle = InstanceHandle {
 			instance_id: self.id.clone(),
 			hook_handles,
 			hook_arg,
 			stdout: tokio::io::stdout(),
-			stdin,
 			is_silent: false,
 			inner: InstanceHandleInner::Plugin {
 				pid: result.pid,
@@ -317,8 +300,6 @@ pub struct InstanceHandle {
 	hook_arg: InstanceLaunchArg,
 	/// Global stdout
 	stdout: Stdout,
-	/// Global stdin, only present if this isn't a standard client
-	stdin: Option<ManuallyDrop<tokio::fs::File>>,
 	/// Whether to redirect stdin and stdout to the process stdin and stdout
 	is_silent: bool,
 	/// Inner implementation
@@ -375,16 +356,6 @@ impl InstanceHandle {
 				// This is non-blocking as the stdout file will have an EoF
 				if let Ok(bytes_read) = inst_stdout.read(&mut stdio_buf) {
 					let _ = self.stdout.write(&stdio_buf[0..bytes_read]).await;
-				}
-			}
-
-			if let Some(stdin) = &mut self.stdin {
-				let inst_stdin = match &mut self.inner {
-					InstanceHandleInner::Standard { inner, .. } => inner.stdin(),
-					InstanceHandleInner::Plugin { stdin_file, .. } => stdin_file,
-				};
-				if let Ok(Some(bytes_read)) = stdin.try_read(&mut stdio_buf).await {
-					let _ = inst_stdin.write_all(&stdio_buf[0..bytes_read]);
 				}
 			}
 
@@ -480,10 +451,22 @@ impl InstanceHandle {
 	}
 
 	/// Get the stdin file path for this instance
-	pub fn stdin(&self) -> &Path {
+	pub fn stdin(&self) -> Option<&Path> {
 		match &self.inner {
 			InstanceHandleInner::Standard { inner, .. } => inner.stdin_path(),
-			InstanceHandleInner::Plugin { stdin_path, .. } => stdin_path,
+			InstanceHandleInner::Plugin { stdin_path, .. } => Some(stdin_path),
+		}
+	}
+
+	/// Writes to stdin
+	pub fn write_stdin(&mut self, data: &[u8]) -> anyhow::Result<()> {
+		match &mut self.inner {
+			InstanceHandleInner::Standard { inner, .. } => inner
+				.write_stdin(data)
+				.context("Failed to write to inner stdin"),
+			InstanceHandleInner::Plugin { stdin_file, .. } => stdin_file
+				.write_all(data)
+				.context("Failed to write to stdin file"),
 		}
 	}
 
