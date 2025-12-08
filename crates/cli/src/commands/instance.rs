@@ -269,6 +269,7 @@ pub async fn launch(
 	let launch_settings = LaunchSettings {
 		ms_client_id: get_ms_client_id(),
 		offline_auth: offline,
+		pipe_stdin: true,
 	};
 	let instance_handle = instance
 		.launch(

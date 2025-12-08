@@ -129,10 +129,11 @@ impl Instance {
 		results.all_results(o).await?;
 
 		if self.dirs.get().game_dir.is_some() && !self.config.custom_launch {
-			self.launch_standard(core, hook_arg, paths, plugins, o)
+			self.launch_standard(core, hook_arg, paths, plugins, settings, o)
 				.await
 		} else {
-			self.launch_custom(hook_arg, paths, plugins, o).await
+			self.launch_custom(hook_arg, paths, plugins, settings, o)
+				.await
 		}
 	}
 
@@ -143,6 +144,7 @@ impl Instance {
 		mut hook_arg: InstanceLaunchArg,
 		paths: &Paths,
 		plugins: &PluginManager,
+		settings: LaunchSettings,
 		o: &mut impl NitroOutput,
 	) -> anyhow::Result<InstanceHandle> {
 		let mut core_version = core.get_version(&self.config.version, o).await?;
@@ -177,7 +179,7 @@ impl Instance {
 			None
 		};
 
-		let stdin = if self.get_side() == Side::Client {
+		let stdin = if self.get_side() == Side::Client || !settings.pipe_stdin {
 			None
 		} else {
 			Some(get_stdin_file())
@@ -211,6 +213,7 @@ impl Instance {
 		mut hook_arg: InstanceLaunchArg,
 		paths: &Paths,
 		plugins: &PluginManager,
+		settings: LaunchSettings,
 		o: &mut impl NitroOutput,
 	) -> anyhow::Result<InstanceHandle> {
 		// Set up stdio
@@ -239,12 +242,18 @@ impl Instance {
 		let stdout_file = File::open(&stdout_path)?;
 		let stdin_file = open_file_append(&stdin_path)?;
 
+		let stdin = if settings.pipe_stdin && self.get_side() == Side::Server {
+			Some(get_stdin_file())
+		} else {
+			None
+		};
+
 		let handle = InstanceHandle {
 			instance_id: self.id.clone(),
 			hook_handles,
 			hook_arg,
 			stdout: tokio::io::stdout(),
-			stdin: Some(get_stdin_file()),
+			stdin,
 			is_silent: false,
 			inner: InstanceHandleInner::Plugin {
 				pid: result.pid,
@@ -271,6 +280,8 @@ pub struct LaunchSettings {
 	pub ms_client_id: ClientId,
 	/// Whether to do offline auth
 	pub offline_auth: bool,
+	/// Whether to pipe the stdin of this process into the instance process
+	pub pipe_stdin: bool,
 }
 
 /// Options for launching after conversion from the deserialized version
@@ -365,15 +376,15 @@ impl InstanceHandle {
 				if let Ok(bytes_read) = inst_stdout.read(&mut stdio_buf) {
 					let _ = self.stdout.write(&stdio_buf[0..bytes_read]).await;
 				}
+			}
 
-				if let Some(stdin) = &mut self.stdin {
-					let inst_stdin = match &mut self.inner {
-						InstanceHandleInner::Standard { inner, .. } => inner.stdin(),
-						InstanceHandleInner::Plugin { stdin_file, .. } => stdin_file,
-					};
-					if let Ok(Some(bytes_read)) = stdin.try_read(&mut stdio_buf).await {
-						let _ = inst_stdin.write_all(&stdio_buf[0..bytes_read]);
-					}
+			if let Some(stdin) = &mut self.stdin {
+				let inst_stdin = match &mut self.inner {
+					InstanceHandleInner::Standard { inner, .. } => inner.stdin(),
+					InstanceHandleInner::Plugin { stdin_file, .. } => stdin_file,
+				};
+				if let Ok(Some(bytes_read)) = stdin.try_read(&mut stdio_buf).await {
+					let _ = inst_stdin.write_all(&stdio_buf[0..bytes_read]);
 				}
 			}
 

@@ -99,6 +99,7 @@ async fn launch_game_impl(
 			let settings = LaunchSettings {
 				ms_client_id: crate::get_ms_client_id(),
 				offline_auth: offline,
+				pipe_stdin: false,
 			};
 			let mut handle = instance
 				.launch(&paths, &mut config.users, &plugins, settings, &mut o)
