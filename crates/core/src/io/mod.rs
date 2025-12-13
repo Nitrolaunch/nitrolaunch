@@ -1,3 +1,4 @@
+use std::ffi::CString;
 use std::fs::File;
 use std::io::{BufReader, BufWriter, Read, Seek};
 use std::path::{Path, PathBuf};
@@ -125,7 +126,6 @@ extern "system" {
 pub fn create_named_pipe(path: impl AsRef<Path>) -> std::io::Result<std::process::Stdio> {
 	#[cfg(target_family = "unix")]
 	{
-		use std::ffi::CString;
 		use std::os::fd::FromRawFd;
 
 		const O_NONBLOCK: i32 = 0o4000;
@@ -158,7 +158,7 @@ pub fn create_named_pipe(path: impl AsRef<Path>) -> std::io::Result<std::process
 	}
 	#[cfg(target_os = "windows")]
 	{
-		use std::os::windows::io::AsRawHandle;
+		use std::os::windows::io::FromRawHandle;
 
 		const BUFFER_SIZE: u32 = 512;
 
