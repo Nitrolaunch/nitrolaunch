@@ -1,0 +1,16 @@
+{
+	"name": "Addon Share",
+	"description": "Share instance addons as a zip file",
+	"protocol_version": 3,
+	"hooks": {
+		"subcommand": {
+			"wasm": true
+		}
+	},
+	"subcommands": {
+		"share-addons": {
+			"supercommand": "instance",
+			"description": "Share addons as a zip file"
+		}
+	}
+}

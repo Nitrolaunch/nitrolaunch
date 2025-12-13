@@ -6,6 +6,8 @@ mod plugin;
 mod template;
 mod user;
 
+use std::collections::HashMap;
+
 use anyhow::{bail, Context};
 use clap::{Parser, Subcommand};
 use color_print::{cformat, cprintln};
@@ -17,7 +19,7 @@ use nitrolaunch::instance::transfer::{load_formats, migrate_instances};
 use nitrolaunch::io::lock::Lockfile;
 use nitrolaunch::io::paths::Paths;
 use nitrolaunch::plugin::PluginManager;
-use nitrolaunch::plugin_crate::hook::hooks::{self, AddTranslations};
+use nitrolaunch::plugin_crate::hook::hooks::{self, AddTranslations, SubcommandArg};
 use nitrolaunch::plugin_crate::plugin::PluginProvidedSubcommand;
 use nitrolaunch::shared::id::InstanceID;
 use nitrolaunch::shared::lang::translate::TranslationKey;
@@ -362,9 +364,25 @@ async fn call_plugin_subcommand(
 		}
 	}
 
+	let mut instance_configs = HashMap::new();
+	for (id, instance) in &config.instances {
+		instance_configs.insert(
+			id.clone(),
+			instance
+				.get_config()
+				.original_config_with_templates_and_plugins
+				.clone(),
+		);
+	}
+
+	let arg = SubcommandArg {
+		args,
+		instances: instance_configs,
+	};
+
 	let results = config
 		.plugins
-		.call_hook(hooks::Subcommand, &args, &data.paths, data.output)
+		.call_hook(hooks::Subcommand, &arg, &data.paths, data.output)
 		.await
 		.context("Plugin subcommand failed")?;
 	results.all_results(data.output).await?;

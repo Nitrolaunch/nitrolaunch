@@ -15,14 +15,15 @@ pub mod batched;
 
 fn main() -> anyhow::Result<()> {
 	let mut plugin = ExecutablePlugin::from_manifest_file("gen_pkg", include_str!("plugin.json"))?;
-	plugin.subcommand(|_, args| {
-		let Some(subcommand) = args.first() else {
+	plugin.subcommand(|_, arg| {
+		let Some(subcommand) = arg.args.first() else {
 			return Ok(());
 		};
 		let subcommand = subcommand.to_owned();
 
 		// Trick the parser to give it the right bin name
-		let it = std::iter::once(format!("nitro {subcommand}")).chain(args.into_iter().skip(1));
+		let it =
+			std::iter::once(format!("nitro {subcommand}")).chain(arg.args.into_iter().skip(1));
 
 		let runtime = tokio::runtime::Runtime::new()?;
 		runtime.block_on(async move {

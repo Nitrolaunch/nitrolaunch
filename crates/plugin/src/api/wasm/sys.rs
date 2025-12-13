@@ -15,6 +15,11 @@ pub fn get_config_dir() -> PathBuf {
 	PathBuf::from(super::interface::get_config_dir())
 }
 
+/// Gets the current working directory
+pub fn get_current_dir() -> PathBuf {
+	PathBuf::from(super::interface::get_current_dir())
+}
+
 /// Gets the operating system as a lowercase string
 pub fn get_os_string() -> String {
 	super::interface::get_os_string()

@@ -13,15 +13,16 @@ use nitro_plugin::{
 nitro_wasm_plugin!(main, "webtools");
 
 fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
-	plugin.subcommand(|args| {
-		let Some(subcommand) = args.first() else {
+	plugin.subcommand(|arg| {
+		let Some(subcommand) = arg.args.first() else {
 			return Ok(());
 		};
 		if subcommand != "webtool" {
 			return Ok(());
 		}
 		// Trick the parser to give it the right bin name
-		let it = std::iter::once(format!("nitro {subcommand}")).chain(args.into_iter().skip(1));
+		let it =
+			std::iter::once(format!("nitro {subcommand}")).chain(arg.args.into_iter().skip(1));
 		let cli = Cli::try_parse_from(it)?;
 		match cli.subcommand {
 			Subcommand::List => list(),

@@ -22,9 +22,18 @@ Called when this plugin is loaded. Can be used to set up state and such.
 
 ### `subcommand`
 
-Called whenever one of the subcommands that this hook registers are run. The argument is the list of arguments that were provided to the subcommand, _including_ the subcommand itself. Note that this hook also takes over output, meaning anything coming from stdout will be output to the console instead.
+Called whenever one of the subcommands that this hook registers are run. The arguments are the list of arguments that were provided to the subcommand, _including_ the subcommand itself. Note that this hook also takes over output, meaning anything coming from stdout will be output to the console instead.
 
-- Argument: `[string]`
+- Argument:
+```
+{
+	"args": string[],
+	"instances": {
+		"id": InstanceConfig,
+		...
+	}
+}
+```
 - Result: None
 
 ### `add_versions`

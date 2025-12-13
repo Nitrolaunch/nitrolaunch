@@ -9,7 +9,7 @@ use backup::{get_backup_directory, BackupAutoHook, Config, Index, DEFAULT_GROUP}
 use clap::Parser;
 use color_print::cprintln;
 use nitro_plugin::api::executable::{ExecutablePlugin, HookContext};
-use nitro_plugin::hook::{Hook, hooks};
+use nitro_plugin::hook::{hooks, Hook};
 use nitro_plugin::input_output::InputAction;
 use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
 
@@ -17,15 +17,16 @@ use crate::backup::BackupSource;
 
 fn main() -> anyhow::Result<()> {
 	let mut plugin = ExecutablePlugin::from_manifest_file("backup", include_str!("plugin.json"))?;
-	plugin.subcommand(|ctx, args| {
-		let Some(subcommand) = args.first() else {
+	plugin.subcommand(|ctx, arg| {
+		let Some(subcommand) = arg.args.first() else {
 			return Ok(());
 		};
 		if subcommand != "backup" && subcommand != "back" {
 			return Ok(());
 		}
 		// Trick the parser to give it the right bin name
-		let it = std::iter::once(format!("nitro {subcommand}")).chain(args.into_iter().skip(1));
+		let it =
+			std::iter::once(format!("nitro {subcommand}")).chain(arg.args.into_iter().skip(1));
 		let cli = Cli::parse_from(it);
 		let result = match cli.command {
 			Subcommand::List {

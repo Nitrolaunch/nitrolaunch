@@ -75,13 +75,23 @@ def_hook!(
 	Subcommand,
 	"subcommand",
 	"Hook for when a command's subcommands are run",
-	Vec<String>,
+	SubcommandArg,
 	(),
-	1,
+	2,
 	fn get_takes_over() -> bool {
 		true
 	}
 );
+
+/// Argument to the Subcommand hook
+#[derive(Serialize, Deserialize, Default)]
+#[serde(default)]
+pub struct SubcommandArg {
+	/// Arguments for the subcommand, with the first element being the subcommand itself
+	pub args: Vec<String>,
+	/// Finalized instance configs
+	pub instances: HashMap<InstanceID, InstanceConfig>,
+}
 
 def_hook!(
 	ModifyInstanceConfig,

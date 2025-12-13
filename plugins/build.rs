@@ -50,6 +50,7 @@ fn main() {
 	add_file!(zip, "plugins/development/hooks.md");
 	add_file!(zip, "plugins/plugins/index.md");
 
+	add_file!(zip, "plugins/plugins/addon_share.md");
 	add_file!(zip, "plugins/plugins/args.md");
 	add_file!(zip, "plugins/plugins/auto_mcs.md");
 	add_file!(zip, "plugins/plugins/automate.md");

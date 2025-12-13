@@ -237,6 +237,13 @@ impl bindings::InterfaceWorldImports for State {
 		self.config_dir.clone()
 	}
 
+	async fn get_current_dir(&mut self) -> String {
+		std::env::current_dir()
+			.unwrap_or(PathBuf::new())
+			.to_string_lossy()
+			.to_string()
+	}
+
 	async fn get_os_string(&mut self) -> String {
 		OS_STRING.to_string()
 	}

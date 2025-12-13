@@ -24,15 +24,15 @@ static FILENAME: &str = "template.json";
 fn main() -> anyhow::Result<()> {
 	let mut plugin =
 		ExecutablePlugin::from_manifest_file("template_share", include_str!("plugin.json"))?;
-	plugin.subcommand(|_, args| {
-		let Some(subcommand) = args.first() else {
+	plugin.subcommand(|_, arg| {
+		let Some(subcommand) = arg.args.first() else {
 			return Ok(());
 		};
 		let subcommand = subcommand.clone();
 
 		// Trick the parser to give it the right bin name
-		let it =
-			std::iter::once(format!("nitro template {subcommand}")).chain(args.into_iter().skip(1));
+		let it = std::iter::once(format!("nitro template {subcommand}"))
+			.chain(arg.args.into_iter().skip(1));
 
 		let client = Client::new();
 		let runtime = tokio::runtime::Runtime::new()?;

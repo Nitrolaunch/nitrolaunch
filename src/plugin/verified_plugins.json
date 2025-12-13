@@ -222,5 +222,12 @@
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Oracle GraalVM Java installation"
+	},
+	"addon_share": {
+		"id": "addon_share",
+		"name": "Addon Share",
+		"github_owner": "Nitrolaunch",
+		"github_repo": "plugins",
+		"description": "Share instance addons as a zip file"
 	}
 }

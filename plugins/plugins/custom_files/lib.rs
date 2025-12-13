@@ -11,12 +11,12 @@ use serde::{Deserialize, Serialize};
 nitro_wasm_plugin!(main, "custom_files");
 
 fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
-	plugin.on_instance_setup(|args| {
-		let Some(game_dir) = args.game_dir else {
+	plugin.on_instance_setup(|arg| {
+		let Some(game_dir) = arg.game_dir else {
 			return Ok(OnInstanceSetupResult::default());
 		};
 
-		let Some(config) = args.config.plugin_config.get("custom_files") else {
+		let Some(config) = arg.config.plugin_config.get("custom_files") else {
 			return Ok(OnInstanceSetupResult::default());
 		};
 		let config: Config = serde_json::from_value(config.clone())

@@ -3521,6 +3521,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "nitro_plugin_addon_share"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "nitro_config",
+ "nitro_plugin",
+ "nitro_shared",
+ "zip 3.0.0",
+]
+
+[[package]]
 name = "nitro_plugin_args"
 version = "0.1.0"
 dependencies = [

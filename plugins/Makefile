@@ -5,6 +5,7 @@ package: package.platform_dependent package.cross_platform
 package.cross_platform: build.cross_platform
 	@mkdir -p release
 
+	@rm -f release/addon_share-universal.zip
 	@rm -f release/args-universal.zip
 	@rm -f release/auto_mcs-universal.zip
 	@rm -f release/automate-universal.zip
@@ -24,6 +25,8 @@ package.cross_platform: build.cross_platform
 
 	@zip -j release/args-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_args.wasm plugins/args/plugin.json
 	@printf "@ nitro_plugin_args.wasm\\n@=plugin.wasm\\n" | zipnote -w release/args-universal.zip
+	@zip -j release/addon_share-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_addon_share.wasm plugins/addon_share/plugin.json
+	@printf "@ nitro_plugin_addon_share.wasm\\n@=plugin.wasm\\n" | zipnote -w release/addon_share-universal.zip
 	@zip -j release/auto_mcs-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_auto_mcs.wasm plugins/auto_mcs/plugin.json
 	@printf "@ nitro_plugin_auto_mcs.wasm\\n@=plugin.wasm\\n" | zipnote -w release/auto_mcs-universal.zip
 	@zip -j release/automate-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_automate.wasm plugins/automate/plugin.json
@@ -112,6 +115,11 @@ package_zips.platform_dependent:
 
 build.weld:
 	@shiv -o plugins/weld/weld.pyz -e nitro_weld.main --site-packages plugins/weld smithed
+
+install.addon_share:
+	@cargo build -p nitro_plugin_addon_share --release --target wasm32-wasip2
+	@cp -r plugins/addon_share ~/.local/share/nitro/plugins
+	@cp -r ../target/wasm32-wasip2/release/nitro_plugin_addon_share.wasm ~/.local/share/nitro/plugins/addon_share/plugin.wasm
 
 install.args:
 	@cargo build -p nitro_plugin_args --release --target wasm32-wasip2

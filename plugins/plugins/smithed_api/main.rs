@@ -4,16 +4,18 @@ use nitro_core::net::download::Client;
 use nitro_plugin::api::executable::ExecutablePlugin;
 
 fn main() -> anyhow::Result<()> {
-	let mut plugin = ExecutablePlugin::from_manifest_file("smithed_api", include_str!("plugin.json"))?;
-	plugin.subcommand(|_, args| {
-		let Some(subcommand) = args.first() else {
+	let mut plugin =
+		ExecutablePlugin::from_manifest_file("smithed_api", include_str!("plugin.json"))?;
+	plugin.subcommand(|_, arg| {
+		let Some(subcommand) = arg.args.first() else {
 			return Ok(());
 		};
 		if subcommand != "smithed" {
 			return Ok(());
 		}
 		// Trick the parser to give it the right bin name
-		let it = std::iter::once(format!("nitro {subcommand}")).chain(args.into_iter().skip(1));
+		let it =
+			std::iter::once(format!("nitro {subcommand}")).chain(arg.args.into_iter().skip(1));
 		let cli = Cli::parse_from(it);
 
 		let runtime = tokio::runtime::Runtime::new()?;
