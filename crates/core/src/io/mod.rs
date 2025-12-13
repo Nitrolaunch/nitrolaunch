@@ -106,7 +106,7 @@ extern "C" {
 }
 
 #[cfg(target_os = "windows")]
-use std::os::windows::RawHandle;
+use std::os::windows::prelude::RawHandle;
 
 #[cfg(target_os = "windows")]
 #[link(name = "kernel32")]
