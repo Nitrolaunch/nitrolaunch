@@ -106,6 +106,9 @@ extern "C" {
 }
 
 #[cfg(target_os = "windows")]
+use std::os::windows::RawHandle;
+
+#[cfg(target_os = "windows")]
 #[link(name = "kernel32")]
 extern "system" {
 	fn CreateNamedPipeA(
