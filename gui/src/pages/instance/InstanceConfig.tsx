@@ -60,8 +60,9 @@ import IconSelector from "../../components/input/select/IconSelector";
 import { updateInstanceList } from "./InstanceList";
 import SlideSwitch from "../../components/input/SlideSwitch";
 import Icon from "../../components/Icon";
-import { Controller, Server } from "../../icons";
+import { Box, Controller, Gear, Play, Server } from "../../icons";
 import LoaderConfig from "./LoaderConfig";
+import FloatingTabs from "../../components/input/select/FloatingTabs";
 
 export default function InstanceConfigPage(props: InstanceConfigProps) {
 	let navigate = useNavigate();
@@ -75,16 +76,16 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 	let id = isInstance
 		? params.instanceId
 		: isBaseTemplate
-		? "Base Template"
-		: params.TemplateID;
+			? "Base Template"
+			: params.TemplateID;
 
 	onMount(() =>
 		loadPagePlugins(
 			isInstance
 				? "instance_config"
 				: isTemplate
-				? "template_config"
-				: "base_template_config",
+					? "template_config"
+					: "base_template_config",
 			id
 		)
 	);
@@ -103,7 +104,7 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 				id: id,
 				instanceOrTemplate: props.mode,
 			});
-		} catch (e) {}
+		} catch (e) { }
 	});
 
 	let [from, setFrom] = createSignal<string[] | undefined>();
@@ -419,9 +420,9 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 			jvmArgs() == undefined && gameArgs() == undefined
 				? undefined
 				: {
-						jvm: jvmArgs(),
-						game: gameArgs(),
-				  };
+					jvm: jvmArgs(),
+					game: gameArgs(),
+				};
 
 		let overrides =
 			packageOverrides().suppress == undefined ? undefined : packageOverrides();
@@ -511,40 +512,34 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 					{displayName()}
 				</h3>
 			</Show>
-			<div class="cont">
-				<div class="shadow" id="config-tabs">
-					<Tip tip="General settings" side="top">
-						<div
-							class={`config-tab ${tab() == "general" ? "selected" : ""}`}
-							id="general-tab"
-							onclick={() => {
-								setTab("general");
-							}}
-							style="border-top-left-radius:var(--round2);border-bottom-left-radius:var(--round2);"
-						>
-							General
-						</div>
-					</Tip>
-					<div
-						class={`config-tab ${tab() == "packages" ? "selected" : ""}`}
-						id="packages-tab"
-						onclick={() => {
-							setTab("packages");
-						}}
-					>
-						Packages
-					</div>
-					<div
-						class={`config-tab ${tab() == "launch" ? "selected" : ""}`}
-						id="launch-tab"
-						onclick={() => {
-							setTab("launch");
-						}}
-						style="border-top-right-radius:var(--round2);border-bottom-right-radius:var(--round2);"
-					>
-						Launch Settings
-					</div>
-				</div>
+			<div class="cont" style="width:35rem">
+				<FloatingTabs
+					tabs={[
+						{
+							id: "general",
+							title: "General",
+							icon: Gear,
+							color: "var(--instance)",
+							bgColor: "var(--instancebg)",
+						},
+						{
+							id: "packages",
+							title: "Packages",
+							icon: Box,
+							color: "var(--package)",
+							bgColor: "var(--packagebg)",
+						},
+						{
+							id: "launch",
+							title: "Launch",
+							icon: Play,
+							color: "var(--template)",
+							bgColor: "var(--templatebg)",
+						}
+					]}
+					selectedTab={tab()}
+					setTab={setTab}
+				/>
 			</div>
 			<br />
 			<DisplayShow when={tab() == "general"}>
@@ -563,14 +558,14 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 									templates() == undefined
 										? []
 										: templates()!.map((x) => {
-												return {
-													value: x.id,
-													contents: (
-														<div>{x.name == undefined ? x.id : x.name}</div>
-													),
-													color: "var(--template)",
-												};
-										  })
+											return {
+												value: x.id,
+												contents: (
+													<div>{x.name == undefined ? x.id : x.name}</div>
+												),
+												color: "var(--template)",
+											};
+										})
 								}
 								selected={from()}
 								onChangeMulti={(x) => {
@@ -811,9 +806,8 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 									/>
 									<span
 										class="bold"
-										style={`color:${
-											releaseVersionsOnly() ? "var(--fg3)" : "var(--instance)"
-										}`}
+										style={`color:${releaseVersionsOnly() ? "var(--fg3)" : "var(--instance)"
+											}`}
 									>
 										Include Snapshots
 									</span>

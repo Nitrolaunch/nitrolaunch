@@ -42,6 +42,7 @@ import IconAndText from "../../components/utility/IconAndText";
 import { useNavigate } from "@solidjs/router";
 import MigratePrompt from "../../components/instance/MigratePrompt";
 import Tip from "../../components/dialog/Tip";
+import FloatingTabs from "../../components/input/select/FloatingTabs";
 
 export default function InstanceList(props: InstanceListProps) {
 	let navigate = useNavigate();
@@ -203,30 +204,27 @@ export default function InstanceList(props: InstanceListProps) {
 								/>
 							</div>
 						</div>
-						<div class="cont">
-							<div
-								class={`cont instance-list-header-item bubble-hover instances ${instancesOrTemplates() == "instance" ? "selected" : ""
-									}`}
-								onclick={() => {
-									setInstancesOrTemplates("instance");
-								}}
-							>
-								<Icon icon={Honeycomb} size="1rem" />
-								Instances
-							</div>
-						</div>
-						<div class="cont end" style="padding-right:0.5rem">
-							<div
-								class={`cont instance-list-header-item bubble-hover templates ${instancesOrTemplates() == "template" ? "selected" : ""
-									}`}
-								style="width:18rem"
-								onclick={() => {
-									setInstancesOrTemplates("template");
-								}}
-							>
-								<Icon icon={Diagram} size="1rem" />
-								Instance Templates
-							</div>
+						<div class="cont fullwidth">
+							<FloatingTabs
+								tabs={[
+									{
+										id: "instance",
+										title: "Instances",
+										icon: Honeycomb,
+										color: "var(--instance)",
+										bgColor: "var(--instancebg)"
+									},
+									{
+										id: "template",
+										title: "Instance Templates",
+										icon: Diagram,
+										color: "var(--template)",
+										bgColor: "var(--templatebg)"
+									}
+								]}
+								selectedTab={instancesOrTemplates()}
+								setTab={setInstancesOrTemplates}
+							/>
 						</div>
 					</div>
 				</div>

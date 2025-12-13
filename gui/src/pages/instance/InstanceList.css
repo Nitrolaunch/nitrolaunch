@@ -7,36 +7,6 @@
 	grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr) minmax(0, 1fr);
 }
 
-.instance-list-header-item {
-	font-size: 1.5rem;
-	font-weight: bold;
-	border-style: solid;
-	border-width: 0px;
-	cursor: pointer;
-	width: 12rem;
-}
-
-.instance-list-header-item.instances {
-	border-color: var(--instance);
-}
-
-.instance-list-header-item.templates {
-	border-color: var(--template);
-}
-
-.instance-list-header-item.selected {
-	border-bottom-width: 0.2rem;
-	padding-bottom: 0.4rem;
-}
-
-.instance-list-header-item.instances.selected {
-	color: var(--instance);
-}
-
-.instance-list-header-item.templates.selected {
-	color: var(--template);
-}
-
 .instance-list-section-container {
 	width: 100%;
 	margin-bottom: 2.6rem;

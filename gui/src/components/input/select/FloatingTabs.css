@@ -1,0 +1,38 @@
+.floating-tabs {
+	width: 100%;
+	height: 2.5rem;
+	display: grid;
+
+	background-color: var(--bg0);
+	border: var(--border) solid var(--bg3);
+	border-radius: var(--round2);
+}
+
+.floating-tab {
+	font-size: 1.2rem;
+
+	outline-offset: 0.1rem;
+
+	transition: outline-offset 0.1s;
+
+	cursor: pointer;
+}
+
+.floating-tab:hover {
+	outline-offset: 0.2rem;
+}
+
+.floating-tab:hover,
+.floating-tab.selected {
+	outline: var(--border) solid transparent;
+}
+
+.floating-tab.first {
+	border-top-left-radius: var(--round2);
+	border-bottom-left-radius: var(--round2);
+}
+
+.floating-tab.last {
+	border-top-right-radius: var(--round2);
+	border-bottom-right-radius: var(--round2);
+}
