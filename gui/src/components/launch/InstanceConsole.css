@@ -1,15 +1,25 @@
 .instance-console {
+	position: relative;
 	width: 100%;
 	height: 35rem;
 
 	background-color: var(--bg);
 	border: var(--border) solid var(--bg3);
 	border-radius: var(--round2);
+	box-sizing: border-box;
+}
+
+.instance-console-header {
+	height: 10%;
+	padding: 1rem;
+	padding-bottom: 0rem;
+	box-sizing: border-box;
 }
 
 .instance-console-output {
+	position: relative;
 	width: 100%;
-	height: 30rem;
+	height: 90%;
 }
 
 .instance-console-text {
@@ -17,6 +27,7 @@
 	height: 100%;
 	box-sizing: border-box;
 	padding: 1rem;
+	padding-bottom: 0;
 
 	justify-content: flex-start;
 	align-items: flex-start;
@@ -44,4 +55,42 @@
 .console-line.error {
 	color: var(--error);
 	font-weight: bold;
+}
+
+.instance-console-scroll {
+	position: absolute;
+	bottom: 3rem;
+	right: 1rem;
+
+	padding: 0.25rem;
+
+	background-color: var(--bg2);
+	border: var(--border) solid var(--bg3);
+	border-radius: var(--round2);
+
+	cursor: pointer;
+}
+
+.instance-console-input {
+	position: relative;
+	height: 2.5rem;
+
+	box-sizing: border-box;
+}
+
+.instance-console-input input {
+	border-left: none;
+	border-right: none;
+	border-top-left-radius: 0;
+	border-top-right-radius: 0;
+	box-shadow: none;
+
+	padding-left: 2rem;
+}
+
+.instance-console-input-prompt {
+	height: 100%;
+	position: absolute;
+	left: 0.5rem;
+	top: 0;
 }

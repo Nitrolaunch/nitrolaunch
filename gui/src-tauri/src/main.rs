@@ -140,6 +140,7 @@ fn main() {
 			commands::launch::update_running_instances,
 			commands::launch::kill_instance,
 			commands::launch::get_instance_output,
+			commands::launch::write_instance_input,
 			commands::instance::get_instances,
 			commands::instance::get_templates,
 			commands::instance::get_instance_groups,

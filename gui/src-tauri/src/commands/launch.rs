@@ -2,12 +2,14 @@ use crate::commands::instance::update_instance_impl;
 use crate::data::{InstanceLaunch, LauncherData};
 use crate::{output::LauncherOutput, State};
 use anyhow::{bail, Context};
+use nitrolaunch::core::io::open_named_pipe;
 use nitrolaunch::instance::launch::LaunchSettings;
 use nitrolaunch::io::lock::Lockfile;
 use nitrolaunch::plugin_crate::try_read::TryReadExt;
 use nitrolaunch::shared::id::InstanceID;
 use nitrolaunch::shared::UpdateDepth;
 use std::collections::HashSet;
+use std::io::Write;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
@@ -116,6 +118,7 @@ async fn launch_game_impl(
 				instance_id.to_string(),
 				InstanceLaunch {
 					stdout: handle.stdout().to_string_lossy().to_string(),
+					stdin: handle.stdin().map(|x| x.to_string_lossy().to_string()),
 				},
 			);
 			let _ = data.write(&paths);
@@ -229,6 +232,31 @@ pub async fn get_instance_output(
 	)?;
 
 	Ok(Some(contents))
+}
+
+#[tauri::command]
+pub async fn write_instance_input(
+	state: tauri::State<'_, State>,
+	instance_id: &str,
+	input: &str,
+) -> Result<(), String> {
+	let path = {
+		let data = state.data.lock().await;
+		if let Some(last_launch) = data.last_launches.get(instance_id) {
+			if let Some(stdin) = &last_launch.stdin {
+				PathBuf::from(stdin)
+			} else {
+				return Ok(());
+			}
+		} else {
+			return Ok(());
+		}
+	};
+
+	let mut file = fmt_err(open_named_pipe(path))?;
+	fmt_err(file.write_all(input.as_bytes()))?;
+
+	Ok(())
 }
 
 async fn emit_instance_stdio_changes(

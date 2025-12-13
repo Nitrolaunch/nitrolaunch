@@ -7,19 +7,23 @@ import {
 	For,
 	Match,
 	onCleanup,
+	Show,
 	Switch,
 } from "solid-js";
 import "./InstanceConsole.css";
 import InlineSelect from "../input/select/InlineSelect";
 import SearchBar from "../input/text/SearchBar";
 import Icon from "../Icon";
-import { Error, Info, Text, Warning } from "../../icons";
+import { AngleDown, AngleRight, Error, Info, Text, Warning } from "../../icons";
+import { errorToast } from "../dialog/Toasts";
 
 export default function InstanceConsole(props: InstanceConsoleProps) {
 	let outputElem!: HTMLDivElement;
 
 	let [filter, setFilter] = createSignal("all");
 	let [search, setSearch] = createSignal("");
+
+	let [input, setInput] = createSignal("");
 
 	let [output, outputMethods] = createResource(async () => {
 		let output = (await invoke("get_instance_output", {
@@ -31,12 +35,10 @@ export default function InstanceConsole(props: InstanceConsoleProps) {
 		}
 
 		// Format the output into lines
-
-		if (outputElem != undefined) {
-			outputElem.scrollTop = outputElem.scrollHeight;
-		}
-
 		let lines = output.split("\n");
+
+		scrollToBottom();
+
 		return lines;
 	});
 
@@ -61,46 +63,57 @@ export default function InstanceConsole(props: InstanceConsoleProps) {
 		}
 	});
 
+	function scrollToBottom() {
+		if (outputElem != undefined) {
+			outputElem.scrollTop = outputElem.scrollHeight;
+		}
+	}
+
 	return (
 		<div class="cont col instance-console">
-			<div
-				class="cont split fullwidth"
-				style="padding: 1rem;padding-bottom:0;padding-top:0; box-sizing:border-box"
-			>
+			<div class="cont split fullwidth instance-console-header">
 				<InlineSelect
 					options={[
 						{
 							value: "all",
-							contents: <div class="cont">
-								<Icon icon={Text} size="1rem" />
-								ALL
-							</div>,
+							contents: (
+								<div class="cont">
+									<Icon icon={Text} size="1rem" />
+									ALL
+								</div>
+							),
 							tip: "Show all messages",
 						},
 						{
 							value: "error",
-							contents: <div class="cont">
-								<Icon icon={Error} size="1rem" />
-								ERRORS
-							</div>,
+							contents: (
+								<div class="cont">
+									<Icon icon={Error} size="1rem" />
+									ERRORS
+								</div>
+							),
 							color: "var(--error)",
 							tip: "Show only errors",
 						},
 						{
 							value: "warning",
-							contents: <div class="cont">
-								<Icon icon={Warning} size="1rem" />
-								WARNINGS
-							</div>,
+							contents: (
+								<div class="cont">
+									<Icon icon={Warning} size="1rem" />
+									WARNINGS
+								</div>
+							),
 							color: "var(--warning)",
 							tip: "Show only warnings",
 						},
 						{
 							value: "info",
-							contents: <div class="cont">
-								<Icon icon={Info} size="1rem" />
-								INFO
-							</div>,
+							contents: (
+								<div class="cont">
+									<Icon icon={Info} size="1rem" />
+									INFO
+								</div>
+							),
 							color: "var(--fg3)",
 							tip: "Show only info messages",
 						},
@@ -124,10 +137,10 @@ export default function InstanceConsole(props: InstanceConsoleProps) {
 									let cls = line.includes("INFO")
 										? "info"
 										: line.includes("WARN")
-											? "warning"
-											: line.includes("ERROR")
-												? "error"
-												: "";
+										? "warning"
+										: line.includes("ERROR")
+										? "error"
+										: "";
 
 									let isVisible = createMemo((input) => {
 										let filter2 = filter();
@@ -165,6 +178,42 @@ export default function InstanceConsole(props: InstanceConsoleProps) {
 								}}
 							</For>
 						</div>
+						<div
+							class="cont shadow bubble-hover instance-console-scroll"
+							onclick={() => {
+								scrollToBottom();
+							}}
+						>
+							<Icon icon={AngleDown} size="1.5rem" />
+						</div>
+						<Show when={props.isServer}>
+							<div class="fullwidth instance-console-input">
+								<form
+									onsubmit={async (e) => {
+										e.preventDefault();
+
+										try {
+											await invoke("write_instance_input", {
+												instanceId: props.instanceId,
+												input: input() + "\n",
+											});
+											setInput("");
+										} catch (e) {
+											errorToast("Failed to send: " + e);
+										}
+									}}
+								>
+									<input
+										class="fullwidth"
+										value={input()}
+										onchange={(e) => setInput(e.target.value)}
+									/>
+								</form>
+								<div class="cont instance-console-input-prompt">
+									<Icon icon={AngleRight} size="1rem" />
+								</div>
+							</div>
+						</Show>
 					</Match>
 					<Match when={output.error != undefined}>
 						Failed to load: {output.error}
@@ -179,4 +228,5 @@ export default function InstanceConsole(props: InstanceConsoleProps) {
 
 export interface InstanceConsoleProps {
 	instanceId: string;
+	isServer: boolean;
 }

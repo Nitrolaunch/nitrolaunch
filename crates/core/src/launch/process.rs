@@ -12,6 +12,7 @@ use nitro_shared::versions::VersionName;
 use nitro_shared::{no_window, translate};
 
 use crate::instance::InstanceKind;
+use crate::io::create_named_pipe;
 use crate::io::files::open_file_append;
 use crate::{InstanceHandle, Paths, WrapperCommand};
 
@@ -119,8 +120,8 @@ pub fn get_process_launch_command(
 	let stdout = File::create_new(stdout_path).context("Failed to open stdout")?;
 	cmd.stdout(std::process::Stdio::from(stdout));
 	if let Some(stdin_path) = stdin_path {
-		let stdin = File::create_new(stdin_path).context("Failed to open stdin")?;
-		cmd.stdin(std::process::Stdio::from(stdin));
+		let stdin = create_named_pipe(stdin_path)?;
+		cmd.stdin(stdin);
 	} else {
 		cmd.stdin(std::process::Stdio::inherit());
 	}

@@ -70,4 +70,7 @@ pub enum InstanceIcon {
 pub struct InstanceLaunch {
 	/// The stdout file of the instance
 	pub stdout: String,
+	/// The stdin file of the instance
+	#[serde(default)]
+	pub stdin: Option<String>,
 }

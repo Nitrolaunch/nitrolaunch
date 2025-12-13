@@ -685,7 +685,12 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 								</Show>
 								<Show when={selectedTab() == "console"}>
 									<div class="cont" style="width: 100%">
-										<InstanceConsole instanceId={id} />
+										<InstanceConsole
+											instanceId={id}
+											isServer={
+												instance() != undefined && instance()!.type == "server"
+											}
+										/>
 									</div>
 								</Show>
 							</div>

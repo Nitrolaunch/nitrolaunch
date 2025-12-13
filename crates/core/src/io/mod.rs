@@ -94,3 +94,107 @@ pub fn home_dir() -> anyhow::Result<PathBuf> {
 
 	Ok(PathBuf::from(path))
 }
+
+#[cfg(target_family = "unix")]
+extern "C" {
+	fn mkfifo(path: *const i8, mode: u32) -> i32;
+
+	fn open(path: *const i8, flags: i32, mode: u32) -> i32;
+
+	fn fcntl(file: i32, op: i32, mode: i32) -> i32;
+}
+
+#[cfg(target_os = "windows")]
+#[link(name = "kernel32")]
+extern "system" {
+	fn CreateNamedPipeA(
+		lpName: *const i8,
+		dwOpenMode: u32,
+		dwPipeMode: u32,
+		dwMaxInstances: u32,
+		dwOutBufferSize: u32,
+		dwInBufferSize: u32,
+		dwDefaultTimeOut: u32,
+		lpSecurityAttributes: *mut std::ffi::c_void,
+	) -> RawHandle;
+
+	fn ConnectNamedPipe(hNamedPipe: RawHandle, lpOverlapped: *mut std::ffi::c_void) -> i32;
+}
+
+/// Creates a named pipe at the given path to give to a Command
+pub fn create_named_pipe(path: impl AsRef<Path>) -> std::io::Result<std::process::Stdio> {
+	#[cfg(target_family = "unix")]
+	{
+		use std::ffi::CString;
+		use std::os::fd::FromRawFd;
+
+		const O_NONBLOCK: i32 = 0o4000;
+
+		let c_path = CString::new(path.as_ref().to_string_lossy().as_bytes()).unwrap();
+		unsafe {
+			// Read / write mode
+			if mkfifo(c_path.as_ptr(), 0o600) != 0 {
+				return Err(std::io::Error::last_os_error());
+			}
+		}
+
+		// Open the file in nonblocking mode
+
+		// O_RDONLY | O_NONBLOCK
+		let open_flags = 0 | O_NONBLOCK;
+
+		let file = unsafe { open(c_path.as_ptr(), open_flags, 0) };
+		if file == -1 {
+			return Err(std::io::Error::last_os_error());
+		}
+
+		// Make the file blocking again after opening it
+		// F_SETFL
+		unsafe { fcntl(file, 4, !O_NONBLOCK) };
+
+		let out = unsafe { std::process::Stdio::from_raw_fd(file) };
+
+		Ok(out)
+	}
+	#[cfg(target_os = "windows")]
+	{
+		use std::os::windows::io::AsRawHandle;
+
+		const BUFFER_SIZE: u32 = 512;
+
+		// Open the named pipe if it doesn't already exist
+		let c_path = CString::new(path.as_ref().to_string_lossy().as_bytes()).unwrap();
+		let pipe_handle = unsafe {
+			CreateNamedPipeA(
+				c_path.as_ptr(),
+				0x00000003, // PIPE_ACCESS_DUPLEX
+				0x00000000, // PIPE_TYPE_BYTE | PIPE_READMODE_BYTE
+				1,          // Max instances
+				BUFFER_SIZE,
+				BUFFER_SIZE,
+				0,
+				std::ptr::null_mut(),
+			)
+		};
+
+		if pipe_handle.is_null() {
+			return Err(std::io::Error::last_os_error());
+		}
+
+		unsafe {
+			if ConnectNamedPipe(pipe_handle, std::ptr::null_mut()) == 0 {
+				return Err(std::io::Error::last_os_error());
+			}
+		}
+
+		Ok(std::process::Stdio::from_raw_handle(pipe_handle))
+	}
+}
+
+/// Opens a writeable named pipe at the given path
+pub fn open_named_pipe(path: impl AsRef<Path>) -> std::io::Result<File> {
+	std::fs::OpenOptions::new()
+		.append(true)
+		.create(true)
+		.open(path)
+}
