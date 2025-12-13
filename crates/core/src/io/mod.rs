@@ -190,7 +190,7 @@ pub fn create_named_pipe(path: impl AsRef<Path>) -> std::io::Result<std::process
 			}
 		}
 
-		Ok(std::process::Stdio::from_raw_handle(pipe_handle))
+		unsafe { Ok(std::process::Stdio::from_raw_handle(pipe_handle)) }
 	}
 }
 
