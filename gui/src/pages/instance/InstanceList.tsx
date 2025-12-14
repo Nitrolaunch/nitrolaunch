@@ -290,32 +290,15 @@ export default function InstanceList(props: InstanceListProps) {
 						/>
 					</Match>
 					<Match when={instancesOrTemplates() == "template"}>
-						<div class="cont fullwidth" id="instance-list-templates-header">
-							<div class="cont start fullwidth">
-								<Tip
-									tip="Edit the template that all instances and templates inherit from"
-									fullwidth
-									side="top"
-								>
-									<IconTextButton
-										icon={Globe}
-										text="Edit Base Template"
-										size="1.5rem"
-										onClick={() => {
-											navigate("/base_template_config");
-										}}
-									/>
-								</Tip>
-							</div>
-							<div
-								class="cont end bold fullwidth"
-								style="color:var(--fg3);text-align:right;text-wrap:nowrap"
-							>
-								<Icon icon={Info} size="1rem" />
-								Templates let you share settings between multiple instances
-							</div>
+						<div
+							class="cont bold fullwidth"
+							style="color:var(--fg3);text-align:right;text-wrap:nowrap"
+						>
+							<Icon icon={Info} size="1rem" />
+							Templates let you share settings with multiple instances
 						</div>
 						<div></div>
+						<br />
 						<Section
 							id="templates"
 							kind="templates"
@@ -372,6 +355,30 @@ function Section(props: SectionProps) {
 					</div>
 				</Show>
 				<div class="instance-list-section">
+					{/* Button for the global template */}
+					<Show when={props.kind == "templates"}>
+						<Tip
+							tip="Settings that all templates and instances inherit"
+							side="top"
+						>
+							<div
+								class="shadow instance-list-item bubble-hover-small"
+								style="background-color:var(--bg)"
+								onclick={() => {
+									navigate("/base_template_config");
+								}}
+								data-section={props.id}
+								data-index={props.items == undefined ? 0 : props.items.length}
+							>
+								<div class="cont instance-list-icon">
+									<Icon icon={Globe} size="1.5rem" />
+								</div>
+								<div style="" class="bold">
+									Base Template
+								</div>
+							</div>
+						</Tip>
+					</Show>
 					<For each={props.items}>
 						{(item, i) => (
 							<Item
@@ -393,7 +400,8 @@ function Section(props: SectionProps) {
 								}}
 								sectionKind={props.kind}
 								itemKind={props.itemType}
-								index={i()}
+								// Because of the base template button at the beginning
+								index={props.kind == "templates" ? i() + 1 : i()}
 								section={props.id}
 								updateList={props.updateList}
 							/>
@@ -403,6 +411,7 @@ function Section(props: SectionProps) {
 					<Show when={props.kind == "all" || props.kind == "templates"}>
 						<div
 							class="shadow instance-list-item bubble-hover-small noselect"
+							style="background-color:var(--bg)"
 							onclick={() => {
 								let target =
 									props.itemType == "instance"
