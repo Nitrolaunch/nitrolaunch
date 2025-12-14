@@ -94,6 +94,9 @@ export default function RepoSelector(props: RepoSelectorProps) {
 						return {
 							value: "std",
 							contents: <Icon icon={Home} size="1rem" />,
+							color: "var(--package)",
+							selectedBgColor: "var(--packagebg)",
+							selectedTextColor: "var(--package)",
 						};
 					}
 					return {

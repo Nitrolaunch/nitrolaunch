@@ -5,17 +5,30 @@ import "./IconTextButton.css";
 export default function IconTextButton(props: IconTextButtonProps) {
 	let [isHovered, setIsHovered] = createSignal(false);
 
-	let color = () => props.color == undefined ? isHovered() ? "var(--bg4)" : "var(--bg3)" : props.color;
-	let bgColor = () => props.bgColor == undefined ? isHovered() ? "var(--bg3)" : "var(--bg2)" : props.bgColor;
-	let textColor = () => props.color == undefined ? "var(--fg)" : props.color;
+	let color = () =>
+		props.color == undefined
+			? isHovered()
+				? "var(--bg4)"
+				: "var(--bg3)"
+			: props.color;
+	let bgColor = () =>
+		props.bgColor == undefined
+			? isHovered()
+				? "var(--bg3)"
+				: "var(--bg2)"
+			: props.bgColor;
+	let textColor = () => (props.color == undefined ? "var(--fg)" : props.color);
 
-	const colorStyle = () => `background-color:${bgColor()};border-color:${color()};color:${textColor()}`;
+	const colorStyle = () =>
+		`background-color:${bgColor()};border-color:${color()};color:${textColor()}`;
 
 	let shadow = props.shadow == undefined ? true : props.shadow;
 
 	return (
 		<button
-			class={`${shadow ? "shadow" : ""} bubble-hover icon-text-button bold`}
+			class={`cont ${
+				shadow ? "shadow" : ""
+			} bubble-hover icon-text-button bold`}
 			style={`${colorStyle()};${props.style == undefined ? "" : props.style}`}
 			onClick={props.onClick}
 			onmouseenter={() => setIsHovered(true)}
@@ -23,13 +36,16 @@ export default function IconTextButton(props: IconTextButtonProps) {
 		>
 			<Show when={props.icon != undefined}>
 				<div
-					class={`icon-text-button-icon center ${props.animate == true ? "rotating" : ""
-						}`}
+					class={`icon-text-button-icon ${
+						props.animate == true ? "rotating" : ""
+					}`}
 				>
 					<Icon icon={props.icon!} size={`calc(${props.size} * 0.7)`} />
 				</div>
 			</Show>
-			<div class="icon-text-button-text">{props.text}</div>
+			<Show when={props.text.length > 0}>
+				<div class="icon-text-button-text">{props.text}</div>
+			</Show>
 		</button>
 	);
 }
