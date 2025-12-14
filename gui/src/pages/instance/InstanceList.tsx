@@ -45,7 +45,6 @@ import {
 	Tag,
 } from "../../icons";
 import Icon from "../../components/Icon";
-import IconTextButton from "../../components/input/button/IconTextButton";
 import InstanceTransferPrompt from "../../components/instance/InstanceTransferPrompt";
 import Dropdown, { Option } from "../../components/input/select/Dropdown";
 import IconAndText from "../../components/utility/IconAndText";

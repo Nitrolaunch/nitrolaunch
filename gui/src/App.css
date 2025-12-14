@@ -20,13 +20,13 @@
 	--fg2: #d3d3d3;
 	--fg3: #777777;
 	--bg-1: #000000;
-	--bg0: #101010;
-	--bg: #161616;
+	--bg0: #0b0b0b;
+	--bg: #131313;
 	--bg2: #1d1d1d;
 	--bg3: #2b2b2b;
 	--bg4: #3a3a3a;
 	--bg2disabled: #1b1b1b;
-	--shadow: #121212;
+	--shadow: #0d0d0d;
 	--text: var(--fg);
 	--transparent-dark: #111111bb;
 
@@ -47,8 +47,8 @@
 	/* Other values */
 	--round: 0.2rem;
 	--round2: 0.6rem;
-	--border: 0.15rem;
-	--input-height: 2.2rem;
+	--border: 2px;
+	--input-height: 2.3rem;
 	--shadow-offset: 0.35rem;
 	--shadow-blur: 0.2rem;
 
