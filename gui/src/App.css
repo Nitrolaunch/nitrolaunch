@@ -226,6 +226,18 @@ button {
 	grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+/* For tags in details sections specifying some property */
+.tag {
+	height: 1.75rem;
+	padding: 0.5rem;
+	box-sizing: border-box;
+
+	font-weight: bold;
+
+	border: var(--border) solid;
+	border-radius: var(--round2);
+}
+
 /* Animations */
 
 .rotating {

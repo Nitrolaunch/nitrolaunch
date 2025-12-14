@@ -86,7 +86,7 @@
 	filter: saturate(150%);
 }
 
-#instance-banner > img {
+#instance-banner>img {
 	width: 50%;
 	aspect-ratio: 1;
 }

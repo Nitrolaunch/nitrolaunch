@@ -16,6 +16,7 @@ export interface InstanceConfig {
 	datapack_folder?: string;
 	packages?: ConfiguredPackages;
 	launch?: LaunchConfig;
+	imported?: boolean;
 	overrides?: PackageOverrides;
 	[extraKey: string]: any;
 }

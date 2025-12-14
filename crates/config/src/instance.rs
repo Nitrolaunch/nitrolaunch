@@ -66,6 +66,9 @@ pub struct InstanceConfig {
 	/// Whether to use a plugin to custom launch this instance. Should only be set by plugins.
 	#[serde(skip_serializing_if = "DefaultExt::is_default")]
 	pub custom_launch: bool,
+	/// Whether this instance was imported
+	#[serde(skip_serializing_if = "DefaultExt::is_default")]
+	pub imported: bool,
 	/// Config for plugins
 	#[serde(skip_serializing_if = "serde_json::Map::is_empty")]
 	pub plugin_config: serde_json::Map<String, serde_json::Value>,

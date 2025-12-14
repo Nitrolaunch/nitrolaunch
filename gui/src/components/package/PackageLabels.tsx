@@ -1,6 +1,7 @@
-import { createMemo, For, Show } from "solid-js";
+import { createMemo, createSignal, For, Show } from "solid-js";
 import {
 	getAllLoaders,
+	getLoaderColor,
 	getLoaderDisplayName,
 	getLoaderImage,
 	getPackageTypeColor,
@@ -18,6 +19,7 @@ import { parseVersionedString } from "../../utils";
 
 export default function PackageLabels(props: PackageLabelsProps) {
 	let small = props.small == undefined ? false : props.small;
+	let tiny = () => props.tiny == undefined ? false : props.tiny;
 
 	let allLoaders = createMemo(() => getAllLoaders(props.loaders));
 
@@ -33,12 +35,14 @@ export default function PackageLabels(props: PackageLabelsProps) {
 					if (props.limit != undefined && i() >= props.limit) {
 						return undefined;
 					} else {
+						let color = getPackageTypeColor(type);
+						let style = props.tags ? `color:${color};border-color:${color}` : "";
 						return (
-							<div class={`cont package-type ${small ? "small" : ""}`}>
-								<div
-									class="cont package-type-icon"
-									style={`color:${getPackageTypeColor(type)}`}
-								>
+							<div
+								class={`cont package-type ${props.tags ? "tag" : ""} ${small ? "small" : ""}`}
+								style={style}
+							>
+								<div class="cont package-type-icon">
 									<Icon icon={getPackageTypeIcon(type)} size="1rem" />
 								</div>
 								<div class="cont package-type-label">
@@ -57,14 +61,24 @@ export default function PackageLabels(props: PackageLabelsProps) {
 					) {
 						return undefined;
 					} else {
+						let [isHovered, setIsHovered] = createSignal(false);
+						let style = props.tags ? "color:var(--package);border-color:var(--package);background-color:var(--packagebg)" : "";
+
 						return (
-							<div class={`cont package-category ${small ? "small" : ""}`}>
+							<div
+								class={`cont package-category ${props.tags ? "tag" : ""} ${small ? "small" : ""}`}
+								style={style}
+								onmouseenter={() => setIsHovered(true)}
+								onmouseleave={() => setIsHovered(false)}
+							>
 								<div class="cont package-category-icon">
 									<Icon icon={packageCategoryIcon(category)} size="1rem" />
 								</div>
-								<div class="cont package-category-label">
-									{packageCategoryDisplayName(category)}
-								</div>
+								<Show when={!tiny() || isHovered()}>
+									<div class="cont package-category-label">
+										{packageCategoryDisplayName(category)}
+									</div>
+								</Show>
 							</div>
 						);
 					}
@@ -80,12 +94,21 @@ export default function PackageLabels(props: PackageLabelsProps) {
 					) {
 						return undefined;
 					} else {
+						let [isHovered, setIsHovered] = createSignal(false);
+						let color = getLoaderColor(loader);
+						let style = props.tags ? `color:${color};border-color:${color}` : "";
+
 						return (
-							<div class={`cont package-loader ${small ? "small" : ""}`}>
+							<div
+								class={`cont package-loader ${props.tags ? "tag" : ""} ${small ? "small" : ""}`}
+								style={style}
+								onmouseenter={() => setIsHovered(true)}
+								onmouseleave={() => setIsHovered(false)}
+							>
 								<div class="cont package-loader-icon">
 									<img src={getLoaderImage(loader2)} />
 								</div>
-								<Show when={!small}>
+								<Show when={(!small && !tiny()) || (tiny() && isHovered())}>
 									<div class="cont package-category-label">
 										{getLoaderDisplayName(loader2)}
 									</div>
@@ -107,5 +130,7 @@ export interface PackageLabelsProps {
 	// The maximum number of labels to include
 	limit?: number;
 	small?: boolean;
+	tags?: boolean;
+	tiny?: boolean;
 	reverse?: boolean;
 }

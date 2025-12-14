@@ -35,6 +35,7 @@ import Icon from "../../components/Icon";
 import {
 	Box,
 	Delete,
+	Download,
 	Elipsis,
 	Folder,
 	Gear,
@@ -97,7 +98,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 				id: id,
 				instanceOrTemplate: "instance",
 			});
-		} catch (e) {}
+		} catch (e) { }
 	});
 
 	let [from, setFrom] = createSignal<string[] | undefined>();
@@ -178,7 +179,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 	);
 
 	let [isRunning, setIsRunning] = createSignal(false);
-	let [unlisten, setUnlisten] = createSignal<UnlistenFn>(() => {});
+	let [unlisten, setUnlisten] = createSignal<UnlistenFn>(() => { });
 	createEffect(async () => {
 		let unlisten = await listen(
 			"nitro_update_running_instances",
@@ -193,7 +194,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 	});
 
 	// Gets whether the currently selected instance is launchable (it has been updated before)
-	let [unlisten2, setUnlisten2] = createSignal<UnlistenFn>(() => {});
+	let [unlisten2, setUnlisten2] = createSignal<UnlistenFn>(() => { });
 	let [isInstanceLaunchable, methods] = createResource(async () => {
 		let unlisten = await listen(
 			"nitro_output_finish_task",
@@ -268,7 +269,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 				props.setFooterData({
 					selectedItem: undefined,
 					mode: FooterMode.SaveInstanceConfig,
-					action: () => {},
+					action: () => { },
 				});
 			} catch (e) {
 				errorToast("Failed to save: " + e);
@@ -360,7 +361,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 										</Show>
 									</div>
 									<div class="cont start" id="instance-lower-details">
-										<div class="cont start" id="instance-version">
+										<div class="cont start tag" id="instance-version">
 											<Icon icon={Tag} size="0.75rem" />
 											{instance()!.version}
 										</div>
@@ -372,7 +373,17 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 													: [instance()!.loader! as string]
 											}
 											packageTypes={[]}
+											tags
 										/>
+										<Show when={instance()!.imported == true}>
+											<div
+												class="cont tag"
+												style="background-color:var(--instancebg);border-color:var(--instance);color:var(--instance)"
+											>
+												<Icon icon={Download} size="1rem" />
+												Imported
+											</div>
+										</Show>
 									</div>
 								</div>
 								<div class="cont end" style="margin-right:1rem">
@@ -587,27 +598,24 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 								style={`grid-template-columns:repeat(3,minmax(0,1fr))`}
 							>
 								<div
-									class={`cont instance-tab ${
-										selectedTab() == "general" ? "selected" : ""
-									}`}
+									class={`cont instance-tab ${selectedTab() == "general" ? "selected" : ""
+										}`}
 									onclick={() => setSelectedTab("general")}
 								>
 									<Icon icon={Gear} size="1rem" />
 									General
 								</div>
 								<div
-									class={`cont instance-tab ${
-										selectedTab() == "packages" ? "selected" : ""
-									}`}
+									class={`cont instance-tab ${selectedTab() == "packages" ? "selected" : ""
+										}`}
 									onclick={() => setSelectedTab("packages")}
 								>
 									<Icon icon={Box} size="1rem" />
 									Packages
 								</div>
 								<div
-									class={`cont instance-tab ${
-										selectedTab() == "console" ? "selected" : ""
-									}`}
+									class={`cont instance-tab ${selectedTab() == "console" ? "selected" : ""
+										}`}
 									onclick={() => setSelectedTab("console")}
 								>
 									<Icon icon={Text} size="1rem" />
@@ -666,9 +674,9 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 
 											setDirty();
 										}}
-										setGlobalPackages={() => {}}
-										setClientPackages={() => {}}
-										setServerPackages={() => {}}
+										setGlobalPackages={() => { }}
+										setClientPackages={() => { }}
+										setServerPackages={() => { }}
 										minecraftVersion={instance()!.version}
 										loader={
 											parseVersionedString(

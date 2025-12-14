@@ -178,34 +178,31 @@ export default function ViewPackage(props: ViewPackageProps) {
 									</Show>
 									<Show when={properties()!.types != undefined}>
 										<PackageLabels
-											categories={[]}
-											loaders={[]}
+											categories={
+												meta()!.categories == undefined ? [] : meta()!.categories!
+											}
+											loaders={
+												properties()!.supported_loaders == undefined
+													? []
+													: properties()!.supported_loaders!
+											}
 											packageTypes={canonicalizeListOrSingle(
 												properties()!.types
 											)}
+											tags
+											tiny={canonicalizeListOrSingle(properties()!.supported_loaders).length > 3}
 										/>
-									</Show>
-									<Show when={meta()!.downloads != undefined}>
-										<div class="cont bold" style="color: var(--fg3);gap:0.2rem">
-											<Icon icon={Download} size="1rem" />
-											{formatNumber(meta()!.downloads!)}
-										</div>
 									</Show>
 								</div>
 								<div class="cont" id="package-short-description">
 									{shortDescription()}
 								</div>
-								<PackageLabels
-									categories={
-										meta()!.categories == undefined ? [] : meta()!.categories!
-									}
-									loaders={
-										properties()!.supported_loaders == undefined
-											? []
-											: properties()!.supported_loaders!
-									}
-									packageTypes={[]}
-								/>
+								<Show when={meta()!.downloads != undefined}>
+									<div class="cont start bold" style="color: var(--fg3);gap:0.2rem">
+										<Icon icon={Download} size="1rem" />
+										{formatNumber(meta()!.downloads!)}
+									</div>
+								</Show>
 							</div>
 						</div>
 					</div>

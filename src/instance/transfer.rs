@@ -170,11 +170,13 @@ impl Instance {
 			bail!("Import plugin did not return a result");
 		};
 
-		let result = result.result(o).await?;
+		let mut result = result.result(o).await?;
 		o.display(
 			MessageContents::Success(o.translate(TranslationKey::FinishImporting).into()),
 			MessageLevel::Important,
 		);
+
+		result.config.imported = true;
 
 		Ok(result.config)
 	}
@@ -233,7 +235,7 @@ pub async fn migrate_instances(
 		bail!("Migration plugin did not return a result");
 	};
 
-	let result = result.result(o).await?;
+	let mut result = result.result(o).await?;
 	o.display(
 		MessageContents::Success(o.translate(TranslationKey::FinishMigrating).into()),
 		MessageLevel::Important,
@@ -264,6 +266,10 @@ pub async fn migrate_instances(
 			lock.update_package(&package.id, &inst, &addons, None, o)
 				.context("Failed to add locked package")?;
 		}
+	}
+
+	for inst in result.instances.values_mut() {
+		inst.imported = true;
 	}
 
 	Ok(result.instances)
