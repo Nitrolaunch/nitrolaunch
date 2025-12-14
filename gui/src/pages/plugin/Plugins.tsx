@@ -38,6 +38,7 @@ import Tip from "../../components/dialog/Tip";
 import IconButton from "../../components/input/button/IconButton";
 import { loadPagePlugins } from "../../plugins";
 import SlideSwitch from "../../components/input/SlideSwitch";
+import FloatingTabs from "../../components/input/select/FloatingTabs";
 
 export default function Plugins() {
 	onMount(() => loadPagePlugins("plugins"));
@@ -72,29 +73,29 @@ export default function Plugins() {
 				<div></div>
 			</div>
 			<div class="cont">
-				<div id="plugins-subheader">
-					<div
-						class={`cont plugins-header-item bubble-hover ${
-							isRemote() ? "" : " selected"
-						}`}
-						onclick={() => {
-							setIsRemote(false);
+				<div class="cont" style="width:40rem">
+					<FloatingTabs
+						tabs={[
+							{
+								id: "local",
+								title: "Installed",
+								icon: Download,
+								color: "var(--plugin)",
+								bgColor: "var(--pluginbg)",
+							},
+							{
+								id: "remote",
+								title: "Available",
+								icon: Globe,
+								color: "var(--plugin)",
+								bgColor: "var(--pluginbg)",
+							}
+						]}
+						selectedTab={isRemote() ? "remote" : "local"}
+						setTab={(tab) => {
+							setIsRemote(tab == "remote");
 						}}
-					>
-						<Icon icon={Download} size="1rem" />
-						Installed
-					</div>
-					<div
-						class={`cont plugins-header-item bubble-hover ${
-							isRemote() ? " selected" : ""
-						}`}
-						onclick={() => {
-							setIsRemote(true);
-						}}
-					>
-						<Icon icon={Globe} size="1rem" />
-						Available
-					</div>
+					/>
 				</div>
 			</div>
 			<br />
@@ -219,8 +220,8 @@ function Plugin(props: PluginProps) {
 							props.info.installed
 								? "Uninstall"
 								: inProgress()
-								? "Installing..."
-								: "Install"
+									? "Installing..."
+									: "Install"
 						}
 						side="top"
 					>
