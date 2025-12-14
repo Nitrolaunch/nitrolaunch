@@ -4,7 +4,7 @@ import "./FloatingTabs.css";
 
 export default function FloatingTabs(props: FloatingTabsProps) {
 	return <div
-		class="floating-tabs"
+		class="shadow floating-tabs"
 		style={`grid-template-columns:repeat(${props.tabs.length}, 1fr)`}
 	>
 		<For each={props.tabs}>

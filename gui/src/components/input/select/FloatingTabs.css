@@ -13,7 +13,7 @@
 
 	outline-offset: 0.1rem;
 
-	transition: outline-offset 0.1s;
+	transition: outline-offset 0.1s, background-color 0.25s;
 
 	cursor: pointer;
 }

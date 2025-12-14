@@ -386,9 +386,7 @@ function ActionButton(props: ActionButtonProps) {
 				props.mode == FooterMode.SaveSettings
 			) {
 				return "var(--templatebg)";
-			} else if (props.mode == FooterMode.PreviewPackage) {
-				return "var(--bg-1)";
-			} else if (props.mode == FooterMode.InstallPackage) {
+			} else if (props.mode == FooterMode.PreviewPackage || props.mode == FooterMode.InstallPackage) {
 				return "var(--packagebg)";
 			}
 		}
