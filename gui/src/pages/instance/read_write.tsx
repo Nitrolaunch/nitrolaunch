@@ -17,6 +17,7 @@ export interface InstanceConfig {
 	packages?: ConfiguredPackages;
 	launch?: LaunchConfig;
 	imported?: boolean;
+	from_plugin?: boolean;
 	overrides?: PackageOverrides;
 	[extraKey: string]: any;
 }
@@ -24,9 +25,9 @@ export interface InstanceConfig {
 export type ConfiguredLoaders =
 	| Loader
 	| {
-		client?: Loader;
-		server?: Loader;
-	};
+			client?: Loader;
+			server?: Loader;
+	  };
 
 export function getConfiguredLoader(
 	loaders: ConfiguredLoaders | undefined,
@@ -40,18 +41,18 @@ export function getConfiguredLoader(
 		return side == "client"
 			? loaders.client
 			: side == "server"
-				? loaders.server
-				: undefined;
+			? loaders.server
+			: undefined;
 	}
 }
 
 export type ConfiguredPackages =
 	| PackageConfig[]
 	| {
-		global?: PackageConfig[];
-		client?: PackageConfig[];
-		server?: PackageConfig[];
-	};
+			global?: PackageConfig[];
+			client?: PackageConfig[];
+			server?: PackageConfig[];
+	  };
 
 export interface LaunchConfig {
 	memory?: string | LaunchMemory;
@@ -115,8 +116,8 @@ export async function readInstanceConfig(
 		mode == InstanceConfigMode.Instance
 			? "get_instance_config"
 			: mode == InstanceConfigMode.Template
-				? "get_template_config"
-				: "get_base_template";
+			? "get_template_config"
+			: "get_base_template";
 	try {
 		return (await invoke(method, { id: id })) as InstanceConfig;
 	} catch (e) {
@@ -133,8 +134,8 @@ export async function readEditableInstanceConfig(
 		mode == InstanceConfigMode.Instance
 			? "get_editable_instance_config"
 			: mode == InstanceConfigMode.Template
-				? "get_editable_template_config"
-				: "get_base_template";
+			? "get_editable_template_config"
+			: "get_base_template";
 	try {
 		return (await invoke(method, { id: id })) as InstanceConfig;
 	} catch (e) {
@@ -147,12 +148,16 @@ export async function saveInstanceConfig(
 	config: InstanceConfig,
 	mode: InstanceConfigMode
 ) {
+	if (config.from_plugin == true) {
+		throw "Instance or template is from a plugin and cannot be edited";
+	}
+
 	let method =
 		mode == InstanceConfigMode.Instance
 			? "write_instance_config"
 			: mode == InstanceConfigMode.Template
-				? "write_template_config"
-				: "write_base_template";
+			? "write_template_config"
+			: "write_base_template";
 
 	try {
 		await invoke(method, {

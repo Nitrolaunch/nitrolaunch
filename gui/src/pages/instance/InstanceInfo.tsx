@@ -452,14 +452,6 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 											/>
 										</div>
 									</Show>
-									<IconTextButton
-										icon={Gear}
-										size="1.35rem"
-										text=""
-										onClick={() => {
-											navigate(`/instance_config/${id}`);
-										}}
-									/>
 									<div style="width:4.5rem;font-weight:bold">
 										<Dropdown
 											options={(
@@ -530,6 +522,16 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 											zIndex="5"
 										/>
 									</div>
+									<Show when={instance()!.from_plugin != true}>
+										<IconTextButton
+											icon={Gear}
+											size="1.35rem"
+											text=""
+											onClick={() => {
+												navigate(`/instance_config/${id}`);
+											}}
+										/>
+									</Show>
 									<div style="width:2.5rem;font-weight:bold">
 										<Dropdown
 											options={(

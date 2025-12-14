@@ -9,11 +9,21 @@ import {
 	Show,
 	Switch,
 } from "solid-js";
-import { dropdownButtonToOption, getDropdownButtons, loadPagePlugins, runDropdownButtonClick } from "../../plugins";
+import {
+	dropdownButtonToOption,
+	getDropdownButtons,
+	loadPagePlugins,
+	runDropdownButtonClick,
+} from "../../plugins";
 import { FooterData } from "../../App";
 import { FooterMode } from "../../components/navigation/Footer";
 import { getInstanceIconSrc } from "../../utils";
-import { GroupInfo, InstanceInfo, InstanceMap, InstanceOrTemplate } from "../../types";
+import {
+	GroupInfo,
+	InstanceInfo,
+	InstanceMap,
+	InstanceOrTemplate,
+} from "../../types";
 import { errorToast } from "../../components/dialog/Toasts";
 import { invoke } from "@tauri-apps/api/core";
 import IconButton from "../../components/input/button/IconButton";
@@ -131,7 +141,7 @@ export default function InstanceList(props: InstanceListProps) {
 		props.setFooterData({
 			selectedItem: item.id,
 			mode: item.type as FooterMode,
-			action: () => { },
+			action: () => {},
 			fromPlugin: item.fromPlugin,
 		});
 	}
@@ -140,13 +150,16 @@ export default function InstanceList(props: InstanceListProps) {
 		props.setFooterData({
 			mode: FooterMode.Instance,
 			selectedItem: undefined,
-			action: () => { },
+			action: () => {},
 		});
 	});
 
-	let [dropdownButtons, _] = createResource(async () => {
-		return getDropdownButtons("add_template_or_instance")
-	}, { initialValue: [] });
+	let [dropdownButtons, _] = createResource(
+		async () => {
+			return getDropdownButtons("add_template_or_instance");
+		},
+		{ initialValue: [] }
+	);
 
 	return (
 		<div class="cont col">
@@ -157,32 +170,37 @@ export default function InstanceList(props: InstanceListProps) {
 						<div class="cont start" style="padding-left:0.5rem">
 							<div style="width:7rem">
 								<Dropdown
-									options={([
-										{
-											value: "create_instance",
-											contents: (
-												<IconAndText icon={Box} text="Create Instance" />
-											),
-										},
-										{
-											value: "create_template",
-											contents: (
-												<IconAndText icon={Properties} text="Create Template" />
-											),
-										},
-										{
-											value: "import_instance",
-											contents: (
-												<IconAndText icon={Download} text="Import Instance" />
-											),
-										},
-										{
-											value: "migrate_instances",
-											contents: (
-												<IconAndText icon={Cycle} text="Migrate Instances" />
-											),
-										},
-									] as Option[]).concat(dropdownButtons().map(dropdownButtonToOption))}
+									options={(
+										[
+											{
+												value: "create_instance",
+												contents: (
+													<IconAndText icon={Box} text="Create Instance" />
+												),
+											},
+											{
+												value: "create_template",
+												contents: (
+													<IconAndText
+														icon={Properties}
+														text="Create Template"
+													/>
+												),
+											},
+											{
+												value: "import_instance",
+												contents: (
+													<IconAndText icon={Download} text="Import Instance" />
+												),
+											},
+											{
+												value: "migrate_instances",
+												contents: (
+													<IconAndText icon={Cycle} text="Migrate Instances" />
+												),
+											},
+										] as Option[]
+									).concat(dropdownButtons().map(dropdownButtonToOption))}
 									previewText={<IconAndText icon={Plus} text="Add" centered />}
 									onChange={(selection) => {
 										if (selection == "create_instance") {
@@ -212,15 +230,15 @@ export default function InstanceList(props: InstanceListProps) {
 										title: "Instances",
 										icon: Honeycomb,
 										color: "var(--instance)",
-										bgColor: "var(--instancebg)"
+										bgColor: "var(--instancebg)",
 									},
 									{
 										id: "template",
 										title: "Instance Templates",
 										icon: Diagram,
 										color: "var(--template)",
-										bgColor: "var(--templatebg)"
-									}
+										bgColor: "var(--templatebg)",
+									},
 								]}
 								selectedTab={instancesOrTemplates()}
 								setTab={setInstancesOrTemplates}
@@ -274,7 +292,11 @@ export default function InstanceList(props: InstanceListProps) {
 					<Match when={instancesOrTemplates() == "template"}>
 						<div class="cont fullwidth" id="instance-list-templates-header">
 							<div class="cont start fullwidth">
-								<Tip tip="Edit the template that all instances and templates inherit from" fullwidth side="top">
+								<Tip
+									tip="Edit the template that all instances and templates inherit from"
+									fullwidth
+									side="top"
+								>
 									<IconTextButton
 										icon={Globe}
 										text="Edit Base Template"
@@ -285,7 +307,10 @@ export default function InstanceList(props: InstanceListProps) {
 									/>
 								</Tip>
 							</div>
-							<div class="cont end bold fullwidth" style="color:var(--fg3);text-align:right;text-wrap:nowrap">
+							<div
+								class="cont end bold fullwidth"
+								style="color:var(--fg3);text-align:right;text-wrap:nowrap"
+							>
 								<Icon icon={Info} size="1rem" />
 								Templates let you share settings between multiple instances
 							</div>
@@ -310,7 +335,10 @@ export default function InstanceList(props: InstanceListProps) {
 				visible={importPromptVisible()}
 				onClose={() => setImportPromptVisible(false)}
 			/>
-			<MigratePrompt visible={migratePromptVisible()} onClose={() => setMigratePromptVisible(false)} />
+			<MigratePrompt
+				visible={migratePromptVisible()}
+				onClose={() => setMigratePromptVisible(false)}
+			/>
 			<br />
 		</div>
 	);
@@ -389,8 +417,9 @@ function Section(props: SectionProps) {
 								<Icon icon={Plus} size="1.5rem" />
 							</div>
 							<div style="" class="bold">
-								{`Create ${props.itemType == "instance" ? "Instance" : "Template"
-									}`}
+								{`Create ${
+									props.itemType == "instance" ? "Instance" : "Template"
+								}`}
 							</div>
 						</div>
 					</Show>
@@ -438,17 +467,18 @@ function Item(props: ItemProps) {
 
 	return (
 		<div
-			class={`shadow bubble-hover-small instance-list-item noselect ${props.selected ? "selected" : ""
-				} ${props.itemKind}`}
+			class={`shadow bubble-hover-small instance-list-item noselect ${
+				props.selected ? "selected" : ""
+			} ${props.itemKind}`}
 			onClick={() => {
 				// Double click to edit
 				if (props.selected) {
-					if (!props.instance.from_plugin) {
-						let url =
-							props.itemKind == "instance"
-								? `/instance/${props.instance.id}`
-								: `/template_config/${props.instance.id}`;
-						navigate(url);
+					if (props.itemKind == "instance") {
+						navigate(`/instance/${props.instance.id}`);
+					} else {
+						if (!props.instance.from_plugin) {
+							navigate(`/template_config/${props.instance.id}`);
+						}
 					}
 				} else {
 					props.onSelect();
@@ -503,7 +533,9 @@ function Item(props: ItemProps) {
 							: props.instance.id}
 					</span>
 					<Show when={props.instance.name !== null}>
-						<div class="cont start" style="color:var(--fg3)">{props.instance.id}</div>
+						<div class="cont start" style="color:var(--fg3)">
+							{props.instance.id}
+						</div>
 					</Show>
 				</div>
 				<div class="cont start bold instance-list-item-lower-details">
@@ -519,15 +551,11 @@ function Item(props: ItemProps) {
 							<Switch>
 								<Match when={props.instance.side == "client"}>
 									<Icon icon={Controller} size="1.2rem" />
-									<span style="transform:translateY(0.1em)">
-										Client
-									</span>
+									<span style="transform:translateY(0.1em)">Client</span>
 								</Match>
 								<Match when={props.instance.side == "server"}>
 									<Icon icon={Server} size="1rem" />
-									<span style="transform:translateY(0.1em)">
-										Server
-									</span>
+									<span style="transform:translateY(0.1em)">Server</span>
 								</Match>
 							</Switch>
 						</div>
