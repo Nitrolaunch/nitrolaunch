@@ -34,7 +34,7 @@ export default function LinkedInputs(props: LinkedInputsProps) {
 				</div>
 			</div>
 			<div class="fullwidth linked-inputs-inputs">
-				<div class="cont col linked-input-container">
+				<div class="cont start linked-input-container">
 					<div class={`cont linked-input ${suffix}`}>
 						<input
 							type="number"
@@ -61,7 +61,7 @@ export default function LinkedInputs(props: LinkedInputsProps) {
 						</Match>
 					</Switch>
 				</div>
-				<div class="cont col linked-input-container">
+				<div class="cont end linked-input-container">
 					<div class={`cont linked-input ${suffix}`}>
 						<input
 							type="number"

@@ -1,4 +1,4 @@
-import { useNavigate, useParams } from "@solidjs/router";
+import { useNavigate } from "@solidjs/router";
 import "./InstanceConfig.css";
 import { invoke } from "@tauri-apps/api/core";
 import {
@@ -6,20 +6,16 @@ import {
 	createMemo,
 	createResource,
 	createSignal,
-	onMount,
 	Show,
 } from "solid-js";
 import "@thisbeyond/solid-select/style.css";
 import InlineSelect from "../../components/input/select/InlineSelect";
-import { loadPagePlugins } from "../../plugins";
 import { clearInputError, inputError } from "../../errors";
 import {
 	beautifyString,
 	getSupportedLoaders,
 	parseVersionedString,
 } from "../../utils";
-import { FooterData } from "../../App";
-import { FooterMode } from "../../components/navigation/Footer";
 import PackagesConfig, {
 	PackageConfig,
 	packageConfigsEqual,
@@ -60,62 +56,63 @@ import IconSelector from "../../components/input/select/IconSelector";
 import { updateInstanceList } from "./InstanceList";
 import SlideSwitch from "../../components/input/SlideSwitch";
 import Icon from "../../components/Icon";
-import { Box, Controller, Gear, Play, Server } from "../../icons";
+import {
+	Box,
+	Check,
+	Controller,
+	Delete,
+	Gear,
+	Play,
+	Server,
+} from "../../icons";
 import LoaderConfig from "./LoaderConfig";
 import FloatingTabs from "../../components/input/select/FloatingTabs";
+import Modal from "../../components/dialog/Modal";
 
-export default function InstanceConfigPage(props: InstanceConfigProps) {
+export default function InstanceConfigModal(props: InstanceConfigProps) {
 	let navigate = useNavigate();
 
-	let params = useParams();
+	let isInstance = () =>
+		props.params == undefined
+			? true
+			: props.params.mode == InstanceConfigMode.Instance;
+	let isTemplate = () =>
+		props.params == undefined
+			? false
+			: props.params.mode == InstanceConfigMode.Template;
+	let isBaseTemplate = () =>
+		props.params == undefined
+			? false
+			: props.params.mode == InstanceConfigMode.GlobalTemplate;
 
-	let isInstance = props.mode == InstanceConfigMode.Instance;
-	let isTemplate = props.mode == InstanceConfigMode.Template;
-	let isBaseTemplate = props.mode == InstanceConfigMode.GlobalTemplate;
+	let id = () => (props.params == undefined ? undefined : props.params.id);
 
-	let id = isInstance
-		? params.instanceId
-		: isBaseTemplate
-			? "Base Template"
-			: params.TemplateID;
+	// True is a better default since it expects ID to be undefined
+	let isCreating = () =>
+		props.params == undefined ? true : props.params.creating;
 
-	onMount(() =>
-		loadPagePlugins(
-			isInstance
-				? "instance_config"
-				: isTemplate
-					? "template_config"
-					: "base_template_config",
-			id
-		)
-	);
-
-	createEffect(async () => {
-		props.setFooterData({
-			selectedItem: props.creating ? "" : undefined,
-			mode: isInstance
-				? FooterMode.SaveInstanceConfig
-				: FooterMode.SaveTemplateConfig,
-			action: saveConfig,
-		});
-
-		try {
-			await invoke("set_last_opened_instance", {
-				id: id,
-				instanceOrTemplate: props.mode,
-			});
-		} catch (e) { }
-	});
+	let [isDirty, setIsDirty] = createSignal(false);
 
 	let [from, setFrom] = createSignal<string[] | undefined>();
 
 	let [config, configOperations] = createResource(async () => {
-		if (props.creating) {
+		if (props.params == undefined || isCreating()) {
 			return undefined;
 		}
+
 		// Get the instance or template
 		try {
-			let configuration = await readEditableInstanceConfig(id, props.mode);
+			let configuration = await readEditableInstanceConfig(
+				id(),
+				props.params.mode
+			);
+			if (configuration == undefined) {
+				errorToast(
+					"Could not find instance or template. Please report this issue."
+				);
+				return undefined;
+			}
+
 			setFrom(canonicalizeListOrSingle(configuration.from));
 			console.log(configuration);
 			return configuration;
@@ -127,10 +124,34 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 	let [parentConfigs, parentConfigOperations] = createResource(
 		() => from(),
 		async () => {
-			return await getParentTemplates(from(), props.mode);
+			if (props.params == undefined) {
+				return [];
+			} else {
+				return await getParentTemplates(from(), props.params.mode);
+			}
 		},
 		{ initialValue: [] }
 	);
+
+	createEffect(async () => {
+		if (props.params != undefined) {
+			setIsDirty(false);
+
+			configOperations.refetch();
+			parentConfigOperations.refetch();
+			setReleaseVersionsOnly(true);
+			setTab("general");
+
+			if (!isBaseTemplate()) {
+				try {
+					await invoke("set_last_opened_instance", {
+						id: id(),
+						instanceOrTemplate: props.params.mode,
+					});
+				} catch (e) {}
+			}
+		}
+	});
 
 	let [releaseVersionsOnly, setReleaseVersionsOnly] = createSignal(true);
 
@@ -169,11 +190,11 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 	// Input / convenience signals
 
 	// Used to check if we can automatically fill out the ID with the name. We don't want to do this if the user already typed an ID.
-	let [isIdDirty, setIsIdDirty] = createSignal(!props.creating);
-	let [isTypeDirty, setIsTypeDirty] = createSignal(!props.creating);
-	let [isIconDirty, setIsIconDirty] = createSignal(!props.creating);
-	let [isVersionDirty, setIsVersionDirty] = createSignal(!props.creating);
-	let [isLoaderDirty, setIsLoaderDirty] = createSignal(!props.creating);
+	let [isIdDirty, setIsIdDirty] = createSignal(!isCreating());
+	let [isTypeDirty, setIsTypeDirty] = createSignal(!isCreating());
+	let [isIconDirty, setIsIconDirty] = createSignal(!isCreating());
+	let [isVersionDirty, setIsVersionDirty] = createSignal(!isCreating());
+	let [isLoaderDirty, setIsLoaderDirty] = createSignal(!isCreating());
 
 	// Config signals
 	let [newId, setNewId] = createSignal<string | undefined>();
@@ -206,14 +227,18 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 		{}
 	);
 
-	let [displayName, setDisplayName] = createSignal("");
 	let message = () =>
-		isInstance ? `INSTANCE` : isBaseTemplate ? "BASE TEMPLATE" : `TEMPLATE`;
+		isInstance()
+			? `Instance ${id()}`
+			: isBaseTemplate()
+			? "Base Template"
+			: `Template ${id()}`;
 
 	let derivedPackages = createMemo(() => {
 		return getDerivedPackages(parentConfigs());
 	});
 
+	// Initialize config signals from config
 	createEffect(() => {
 		if (config() != undefined) {
 			setName(config()!.name);
@@ -299,19 +324,21 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 			setPackageOverrides(
 				config()!.overrides == undefined ? {} : config()!.overrides!
 			);
-
-			setDisplayName(config()!.name == undefined ? id : config()!.name!);
 		}
 
 		// Default side
-		if (props.creating && props.mode == "instance") {
+		if (isCreating() && isInstance()) {
 			setSide("client");
 		}
 	});
 
 	// Writes configuration to disk
 	async function saveConfig() {
-		let configId = props.creating ? newId() : id;
+		if (props.params == undefined) {
+			return;
+		}
+
+		let configId = isCreating() ? newId() : id();
 
 		if (!isBaseTemplate && configId == undefined) {
 			inputError("id");
@@ -319,8 +346,8 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 		} else {
 			clearInputError("id");
 		}
-		if (props.creating) {
-			if (await idExists(configId!, props.mode)) {
+		if (isCreating()) {
+			if (await idExists(configId!, props.params.mode)) {
 				inputError("id");
 				return;
 			} else {
@@ -328,7 +355,7 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 			}
 		}
 
-		if (isInstance && side() == undefined) {
+		if (isInstance() && side() == undefined) {
 			inputError("side");
 			return;
 		} else {
@@ -339,7 +366,7 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 			version() == undefined
 				? getDerivedValue(parentConfigs(), (x) => x.version)
 				: version();
-		if (isInstance && finalVersion == undefined) {
+		if (isInstance() && finalVersion == undefined) {
 			inputError("version");
 			return;
 		} else {
@@ -370,7 +397,7 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 			if (clientLoader() == undefined && serverLoader() == undefined) {
 				return undefined;
 			} else {
-				if (isInstance) {
+				if (isInstance()) {
 					if (side() == "client") {
 						return formatLoader(clientLoader(), clientLoaderVersion());
 					} else {
@@ -397,7 +424,7 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 			globalPackages(),
 			clientPackages(),
 			serverPackages(),
-			isInstance
+			isInstance()
 		);
 
 		// Launch
@@ -420,9 +447,9 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 			jvmArgs() == undefined && gameArgs() == undefined
 				? undefined
 				: {
-					jvm: jvmArgs(),
-					game: gameArgs(),
-				};
+						jvm: jvmArgs(),
+						game: gameArgs(),
+				  };
 
 		let overrides =
 			packageOverrides().suppress == undefined ? undefined : packageOverrides();
@@ -462,21 +489,15 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 		}
 
 		try {
-			await saveInstanceConfig(configId, newConfig, props.mode);
+			await saveInstanceConfig(configId, newConfig, props.params.mode);
 
 			successToast("Changes saved");
 
-			props.setFooterData({
-				selectedItem: undefined,
-				mode: isInstance
-					? FooterMode.SaveInstanceConfig
-					: FooterMode.SaveTemplateConfig,
-				action: saveConfig,
-			});
+			setIsDirty(false);
 
 			updateInstanceList();
 
-			if (props.creating) {
+			if (isCreating()) {
 				navigate("/");
 			}
 
@@ -487,32 +508,49 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 		}
 	}
 
-	let createMessage = isInstance ? "INSTANCE" : "TEMPLATE";
+	let createMessage = () => (isInstance() ? "instance" : "template");
 
-	// Highlights the save button when config changes
-	function setDirty() {
-		props.setFooterData({
-			selectedItem: "",
-			mode: isInstance
-				? FooterMode.SaveInstanceConfig
-				: FooterMode.SaveTemplateConfig,
-			action: saveConfig,
-		});
-	}
+	let saveButtonColor = () =>
+		isDirty()
+			? isInstance()
+				? "var(--instance)"
+				: "var(--template)"
+			: "var(--bg4)";
+	let saveButtonBgColor = () =>
+		isDirty()
+			? isInstance()
+				? "var(--instancebg)"
+				: "var(--templatebg)"
+			: "var(--bg2)";
 
 	return (
-		<div class="cont col" style="width:100%">
-			<h2 id="head" class="noselect">
-				{props.creating
-					? `CREATING NEW ${createMessage}`
-					: `CONFIGURE ${message()}`}
-			</h2>
-			<Show when={!props.creating}>
-				<h3 id="subheader" class="noselect">
-					{displayName()}
-				</h3>
-			</Show>
-			<div class="cont" style="width:35rem">
+		<Modal
+			visible={props.params != undefined}
+			onClose={props.onClose}
+			width="65rem"
+			height="40rem"
+			title={
+				isCreating()
+					? `Creating new ${createMessage()}`
+					: `Configure ${message()}`
+			}
+			titleIcon={Gear}
+			buttons={[
+				{
+					text: "Cancel",
+					icon: Delete,
+					onClick: props.onClose,
+				},
+				{
+					text: "Save",
+					icon: Check,
+					onClick: saveConfig,
+					color: saveButtonColor(),
+					bgColor: saveButtonBgColor(),
+				},
+			]}
+		>
+			<div class="cont fullwidth">
 				<FloatingTabs
 					tabs={[
 						{
@@ -535,22 +573,165 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 							icon: Play,
 							color: "var(--template)",
 							bgColor: "var(--templatebg)",
-						}
+						},
 					]}
 					selectedTab={tab()}
 					setTab={setTab}
 				/>
 			</div>
-			<br />
-			<DisplayShow when={tab() == "general"}>
+			<div></div>
+			<DisplayShow when={tab() == "general"} style="width:100%">
+				<div id="general-fields-header">
+					<div class="cont col fullwidth" style="align-items:flex-start">
+						<Show when={!isBaseTemplate()}>
+							<div class="cont start label">
+								<label for="side">ICON</label>
+								<DeriveIndicator
+									parentConfigs={parentConfigs()}
+									currentValue={icon()}
+									property={(x) => x.icon}
+								/>
+							</div>
+							<IconSelector
+								icon={icon()}
+								setIcon={(x) => {
+									setIcon(x);
+									setIsDirty(true);
+									setIsIconDirty(true);
+								}}
+								derivedIcon={getDerivedValue(parentConfigs(), (x) => x.icon)}
+							/>
+						</Show>
+					</div>
+					<div class="fields">
+						<Show when={!isBaseTemplate()}>
+							<label for="name" class="label">
+								DISPLAY NAME
+							</label>
+							<Tip
+								tip={`The name of the ${beautifyString(props.params!.mode)}`}
+								side="top"
+								fullwidth
+							>
+								<input
+									type="text"
+									id="name"
+									name="name"
+									placeholder={id()}
+									value={emptyUndefined(name())}
+									onChange={(e) => {
+										setName(e.target.value);
+										setIsDirty(true);
+									}}
+									onKeyUp={(e: any) => {
+										// Autofill other fields based on the name
+										if (!isIdDirty()) {
+											let value = sanitizeInstanceId(e.target.value);
+											(document.getElementById("id")! as any).value = value;
+											setNewId(value);
+										}
+
+										let lowercaseName = e.target.value.toLocaleLowerCase();
+
+										if (!isTypeDirty()) {
+											if (lowercaseName.includes("client")) {
+												setSide("client");
+											} else if (lowercaseName.includes("server")) {
+												setSide("server");
+											}
+										}
+
+										let autofillLoader = undefined;
+										if (supportedLoaders() != undefined) {
+											for (let loader of supportedLoaders()!) {
+												if (
+													loader != undefined &&
+													lowercaseName.includes(loader)
+												) {
+													autofillLoader = loader;
+													break;
+												}
+											}
+										}
+										if (autofillLoader != undefined) {
+											if (!isLoaderDirty()) {
+												if (side() == "client") {
+													setClientLoader(autofillLoader);
+												} else if (side() == "server") {
+													setServerLoader(autofillLoader);
+												}
+											}
+											if (!isIconDirty()) {
+												setIcon(
+													"builtin:" + getLoaderImage(autofillLoader as Loader)
+												);
+											}
+										}
+
+										let autofillVersion = undefined;
+										if (supportedMinecraftVersions() != undefined) {
+											// By going through in forward order, we should catch 1.xx.x before 1.xx
+											for (let version of supportedMinecraftVersions()!) {
+												if (lowercaseName.includes(version)) {
+													autofillVersion = version;
+													break;
+												}
+											}
+										}
+
+										if (autofillVersion != undefined && !isVersionDirty()) {
+											setVersion(autofillVersion);
+										}
+									}}
+								></input>
+							</Tip>
+						</Show>
+						<Show when={isCreating() && !isBaseTemplate()}>
+							<label for="id" class="label">
+								ID
+							</label>
+							<Tip
+								tip="A unique name used to identify the instance"
+								fullwidth
+								side="top"
+							>
+								<input
+									type="text"
+									id="id"
+									name="id"
+									onChange={(e) => {
+										setNewId();
+										e.target.value = sanitizeInstanceId(e.target.value);
+										setNewId(e.target.value);
+										setIsDirty(true);
+									}}
+									onKeyUp={(e: any) => {
+										if (
+											e.target.value == undefined ||
+											e.target.value.length == 0
+										) {
+											setIsIdDirty(false);
+										} else {
+											setIsIdDirty(true);
+										}
+										e.target.value = sanitizeInstanceId(e.target.value);
+									}}
+								></input>
+							</Tip>
+						</Show>
+					</div>
+				</div>
+				<br />
+				<hr />
 				<div class="fields">
 					{/* <h3>Basic Settings</h3> */}
-					<Show when={!isBaseTemplate}>
+					<Show when={!isBaseTemplate()}>
 						<div class="cont start label">
 							<label for="from">INHERIT CONFIG</label>
 						</div>
 						<Tip
 							tip="A list of templates to inherit configuration from"
+							side="top"
 							fullwidth
 						>
 							<Dropdown
@@ -558,154 +739,28 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 									templates() == undefined
 										? []
 										: templates()!.map((x) => {
-											return {
-												value: x.id,
-												contents: (
-													<div>{x.name == undefined ? x.id : x.name}</div>
-												),
-												color: "var(--template)",
-											};
-										})
+												return {
+													value: x.id,
+													contents: (
+														<div>{x.name == undefined ? x.id : x.name}</div>
+													),
+													color: "var(--template)",
+												};
+										  })
 								}
 								selected={from()}
 								onChangeMulti={(x) => {
 									setFrom(x);
-									setDirty();
+									setIsDirty(true);
 								}}
 								isSearchable={false}
 								zIndex="50"
 							/>
 						</Tip>
 					</Show>
-					<Show when={!isBaseTemplate}>
-						<label for="name" class="label">
-							DISPLAY NAME
-						</label>
-						<Tip
-							tip={`The name of the ${beautifyString(props.mode)}`}
-							fullwidth
-						>
-							<input
-								type="text"
-								id="name"
-								name="name"
-								placeholder={id}
-								value={emptyUndefined(name())}
-								onChange={(e) => {
-									setName(e.target.value);
-									setDirty();
-								}}
-								onKeyUp={(e: any) => {
-									// Autofill other fields based on the name
-									if (!isIdDirty()) {
-										let value = sanitizeInstanceId(e.target.value);
-										(document.getElementById("id")! as any).value = value;
-										setNewId(value);
-									}
-
-									let lowercaseName = e.target.value.toLocaleLowerCase();
-
-									if (!isTypeDirty()) {
-										if (lowercaseName.includes("client")) {
-											setSide("client");
-										} else if (lowercaseName.includes("server")) {
-											setSide("server");
-										}
-									}
-
-									let autofillLoader = undefined;
-									if (supportedLoaders() != undefined) {
-										for (let loader of supportedLoaders()!) {
-											if (
-												loader != undefined &&
-												lowercaseName.includes(loader)
-											) {
-												autofillLoader = loader;
-												break;
-											}
-										}
-									}
-									if (autofillLoader != undefined) {
-										if (!isLoaderDirty()) {
-											if (side() == "client") {
-												setClientLoader(autofillLoader);
-											} else if (side() == "server") {
-												setServerLoader(autofillLoader);
-											}
-										}
-										if (!isIconDirty()) {
-											setIcon(
-												"builtin:" + getLoaderImage(autofillLoader as Loader)
-											);
-										}
-									}
-
-									let autofillVersion = undefined;
-									if (supportedMinecraftVersions() != undefined) {
-										// By going through in forward order, we should catch 1.xx.x before 1.xx
-										for (let version of supportedMinecraftVersions()!) {
-											if (lowercaseName.includes(version)) {
-												autofillVersion = version;
-												break;
-											}
-										}
-									}
-
-									if (autofillVersion != undefined && !isVersionDirty()) {
-										setVersion(autofillVersion);
-									}
-								}}
-							></input>
-						</Tip>
-					</Show>
-					<Show when={props.creating && !isBaseTemplate}>
-						<label for="id" class="label">{`${createMessage} ID`}</label>
-						<Tip tip="A unique name used to identify the instance" fullwidth>
-							<input
-								type="text"
-								id="id"
-								name="id"
-								onChange={(e) => {
-									setNewId();
-									e.target.value = sanitizeInstanceId(e.target.value);
-									setNewId(e.target.value);
-									setDirty();
-								}}
-								onKeyUp={(e: any) => {
-									if (
-										e.target.value == undefined ||
-										e.target.value.length == 0
-									) {
-										setIsIdDirty(false);
-									} else {
-										setIsIdDirty(true);
-									}
-									e.target.value = sanitizeInstanceId(e.target.value);
-								}}
-							></input>
-						</Tip>
-					</Show>
-					<Show when={!isBaseTemplate}>
-						<div class="cont start label">
-							<label for="side">ICON</label>
-							<DeriveIndicator
-								parentConfigs={parentConfigs()}
-								currentValue={icon()}
-								property={(x) => x.icon}
-							/>
-						</div>
-						<IconSelector
-							icon={icon()}
-							setIcon={(x) => {
-								setIcon(x);
-								setDirty();
-								setIsIconDirty(true);
-							}}
-							derivedIcon={getDerivedValue(parentConfigs(), (x) => x.icon)}
-						/>
-					</Show>
-					<hr />
-					<Show when={props.creating || isTemplate || isBaseTemplate}>
+					<Show
+						when={props.params!.creating || isTemplate() || isBaseTemplate()}
+					>
 						<div class="cont start">
 							<label for="side" class="label">
 								TYPE
@@ -718,12 +773,13 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 						</div>
 						<Tip
 							tip="Whether this is a normal instance or a dedicated server"
+							side="top"
 							fullwidth
 						>
 							<InlineSelect
 								onChange={(x) => {
 									setSide(x as "client" | "server" | undefined);
-									setDirty();
+									setIsDirty(true);
 									setIsTypeDirty(true);
 								}}
 								selected={side()}
@@ -749,8 +805,8 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 										selectedBgColor: "var(--instancebg)",
 									},
 								]}
-								columns={isInstance ? 2 : 3}
-								allowEmpty={!isInstance}
+								columns={isInstance() ? 2 : 3}
+								allowEmpty={!isInstance()}
 							/>
 						</Tip>
 					</Show>
@@ -768,7 +824,11 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 						when={supportedMinecraftVersions() != undefined}
 						fallback={<LoadingSpinner size="var(--input-height)" />}
 					>
-						<Tip tip="The Minecraft version of this instance" fullwidth>
+						<Tip
+							tip="The Minecraft version of this instance"
+							fullwidth
+							side="top"
+						>
 							<div class="fullwidth split">
 								<div class="fullwidth" id="version">
 									<Dropdown
@@ -788,7 +848,7 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 										selected={version()}
 										onChange={(x) => {
 											setVersion(x);
-											setDirty();
+											setIsDirty(true);
 											setIsVersionDirty(true);
 										}}
 										allowEmpty
@@ -806,8 +866,9 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 									/>
 									<span
 										class="bold"
-										style={`color:${releaseVersionsOnly() ? "var(--fg3)" : "var(--instance)"
-											}`}
+										style={`color:${
+											releaseVersionsOnly() ? "var(--fg3)" : "var(--instance)"
+										}`}
 									>
 										Include Snapshots
 									</span>
@@ -822,7 +883,7 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 								: version()
 						}
 						side={side()}
-						isTemplate={isTemplate}
+						isTemplate={isTemplate()}
 						clientLoader={clientLoader()}
 						serverLoader={serverLoader()}
 						clientLoaderVersion={clientLoaderVersion()}
@@ -833,7 +894,7 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 						setServerLoaderVersion={setServerLoaderVersion}
 						supportedLoaders={supportedLoaders()}
 						parentConfigs={parentConfigs()}
-						setDirty={setDirty}
+						setDirty={() => setIsDirty(true)}
 						setLoaderDirty={() => setIsLoaderDirty(true)}
 					/>
 					<hr />
@@ -848,6 +909,7 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 					</div>
 					<Tip
 						tip="The folder, relative to the instance folder, to put datapacks in. Useful if you have a global datapack mod."
+						side="top"
 						fullwidth
 					>
 						<input
@@ -858,7 +920,7 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 							value={emptyUndefined(datapackFolder())}
 							onChange={(e) => {
 								setDatapackFolder(e.target.value);
-								setDirty();
+								setIsDirty(true);
 							}}
 							placeholder={getDerivedValue(
 								parentConfigs(),
@@ -871,10 +933,10 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 				<br />
 				<br />
 			</DisplayShow>
-			<DisplayShow when={tab() == "packages"}>
+			<DisplayShow when={tab() == "packages"} style="width:100%">
 				<PackagesConfig
-					id={id}
-					isTemplate={isTemplate}
+					id={id()}
+					isTemplate={isTemplate()}
 					globalPackages={globalPackages()}
 					clientPackages={clientPackages()}
 					serverPackages={serverPackages()}
@@ -893,7 +955,7 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 							setServerPackages(func);
 						}
 
-						setDirty();
+						setIsDirty(true);
 					}}
 					onAdd={(pkg, category) => {
 						let func = (packages: PackageConfig[]) => {
@@ -913,19 +975,19 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 							setServerPackages(func);
 						}
 
-						setDirty();
+						setIsDirty(true);
 					}}
 					setGlobalPackages={(packages) => {
 						setGlobalPackages(packages);
-						setDirty();
+						setIsDirty(true);
 					}}
 					setClientPackages={(packages) => {
 						setClientPackages(packages);
-						setDirty();
+						setIsDirty(true);
 					}}
 					setServerPackages={(packages) => {
 						setServerPackages(packages);
-						setDirty();
+						setIsDirty(true);
 					}}
 					minecraftVersion={
 						version() == undefined
@@ -955,13 +1017,13 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 					})()}
 					showBrowseButton={true}
 					parentConfigs={parentConfigs()}
-					onChange={setDirty}
+					onChange={() => setIsDirty(true)}
 					overrides={packageOverrides()}
 					setOverrides={setPackageOverrides}
 					beforeUpdate={saveConfig}
 				/>
 			</DisplayShow>
-			<DisplayShow when={tab() == "launch"}>
+			<DisplayShow when={tab() == "launch"} style="width:100%">
 				<LaunchConfig
 					java={javaType()}
 					setJava={setJavaType}
@@ -976,21 +1038,27 @@ export default function InstanceConfigPage(props: InstanceConfigProps) {
 					setJvmArgs={setJvmArgs}
 					setGameArgs={setGameArgs}
 					parentConfigs={parentConfigs()}
-					onChange={setDirty}
+					onChange={() => setIsDirty(true)}
 				/>
 			</DisplayShow>
 			<br />
 			<br />
 			<br />
-		</div>
+		</Modal>
 	);
 }
 
 export interface InstanceConfigProps {
+	params: InstanceConfigParams | undefined;
+	onClose: () => void;
+}
+
+// Parameters for the instance config modal
+export interface InstanceConfigParams {
+	id?: string;
 	mode: InstanceConfigMode;
 	/* Whether we are creating a new instance or template */
 	creating: boolean;
-	setFooterData: (data: FooterData) => void;
 }
 
 // Sanitizes a string so that it is a valid instance ID

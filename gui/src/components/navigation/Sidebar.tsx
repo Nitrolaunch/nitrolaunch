@@ -15,6 +15,8 @@ import { listen, UnlistenFn } from "@tauri-apps/api/event";
 import { InstanceInfo, InstanceOrTemplate } from "../../types";
 import Icon from "../Icon";
 import IconButton from "../input/button/IconButton";
+import { setInstanceConfigModal } from "../../App";
+import { InstanceConfigMode } from "../../pages/instance/read_write";
 
 export default function Sidebar(props: SidebarProps) {
 	let [extraButtons, _] = createResource(async () => {
@@ -41,10 +43,10 @@ export default function Sidebar(props: SidebarProps) {
 			invoke("get_templates"),
 			invoke("get_last_opened_instance"),
 		])) as [
-				InstanceInfo[],
-				InstanceInfo[],
-				[string, InstanceOrTemplate] | undefined
-			];
+			InstanceInfo[],
+			InstanceInfo[],
+			[string, InstanceOrTemplate] | undefined
+		];
 
 		let allInstances: [InstanceInfo, InstanceOrTemplate][] = [];
 
@@ -96,14 +98,15 @@ export default function Sidebar(props: SidebarProps) {
 	return (
 		<div
 			id="sidebar"
-			style={`${props.visible ? "" : "width:0px;border-right-color:var(--bg);opacity:0%"}`}
+			style={`${
+				props.visible ? "" : "width:0px;border-right-color:var(--bg);opacity:0%"
+			}`}
 			onmouseleave={() => props.setVisible(false)}
 		>
 			<div
 				class="cont"
 				style="padding:0.25rem;width:var(--width);box-sizing:border-box"
-			>
-			</div>
+			></div>
 			<div class="cont start">
 				<a
 					href="/settings"
@@ -116,7 +119,7 @@ export default function Sidebar(props: SidebarProps) {
 						size="1.75rem"
 						color="var(--bg0)"
 						selectedColor="var(--accent)"
-						onClick={() => { }}
+						onClick={() => {}}
 						selected={false}
 						circle
 						hoverBackground="var(--bg2)"
@@ -194,10 +197,7 @@ export default function Sidebar(props: SidebarProps) {
 				<div class="cont sidebar-divider">INSTANCES</div>
 				<For each={instanceButtons()}>
 					{([info, type]) => {
-						let url =
-							type == "instance"
-								? `/instance/${info.id}`
-								: `/template_config/${info.id}`;
+						let url = type == "instance" ? `/instance/${info.id}` : "";
 
 						let icon =
 							info.icon == null ? (
@@ -209,6 +209,17 @@ export default function Sidebar(props: SidebarProps) {
 						return (
 							<SidebarItem
 								href={url}
+								onClick={
+									type == "instance"
+										? undefined
+										: () => {
+												setInstanceConfigModal(
+													info.id,
+													InstanceConfigMode.Template,
+													false
+												);
+										  }
+								}
 								location={props.location}
 								selectedPath={url}
 								color={`var(--${type})`}
@@ -223,8 +234,8 @@ export default function Sidebar(props: SidebarProps) {
 						);
 					}}
 				</For>
-			</div >
-		</div >
+			</div>
+		</div>
 	);
 }
 
@@ -260,7 +271,11 @@ function SidebarItem(props: SidebarItemProps) {
 			class={`cont bubble-hover sidebar-item ${selected() ? "selected" : ""}`}
 			style={`border-right-color:${props.color};${color()};${bgColor()}`}
 			onclick={() => {
-				navigate(props.href);
+				if (props.onClick != undefined) {
+					props.onClick();
+				} else {
+					navigate(props.href);
+				}
 				props.closeSidebar();
 			}}
 			innerHTML={props.innerhtml}
@@ -274,6 +289,7 @@ interface SidebarItemProps {
 	children?: JSX.Element;
 	innerhtml?: string;
 	href: string;
+	onClick?: () => void;
 	location: Location;
 	// What the current URL should equal to select this item
 	selectedPath?: string;

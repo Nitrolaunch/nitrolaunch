@@ -21,6 +21,7 @@ import {
 	getParentTemplates,
 	InstanceConfig,
 	InstanceConfigMode,
+	InstanceOrTemplateChangedEvent,
 	PackageOverrides,
 	readEditableInstanceConfig,
 	readInstanceConfig,
@@ -56,7 +57,7 @@ import PackagesConfig, {
 	packageConfigsEqual,
 	packageConfigsFullyEqual,
 } from "./PackagesConfig";
-import { FooterData } from "../../App";
+import { FooterData, setInstanceConfigModal } from "../../App";
 import { FooterMode, launchInstance } from "../../components/navigation/Footer";
 import { canonicalizeListOrSingle } from "../../utils/values";
 import { Event, listen, UnlistenFn } from "@tauri-apps/api/event";
@@ -103,7 +104,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 
 	let [from, setFrom] = createSignal<string[] | undefined>();
 	let [editableConfig, setEditableConfig] = createSignal<InstanceConfig>();
-	let [instance, _] = createResource(async () => {
+	let [instance, instanceMethods] = createResource(async () => {
 		// Get the instance or template
 		try {
 			let [configuration, editableConfiguration] = await Promise.all([
@@ -150,7 +151,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 		}
 	});
 
-	let [parentConfigs, __] = createResource(
+	let [parentConfigs, _] = createResource(
 		() => from(),
 		async () => {
 			return await getParentTemplates(from(), InstanceConfigMode.Instance);
@@ -158,7 +159,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 		{ initialValue: [] }
 	);
 
-	let [bannerImages, ___] = createResource(
+	let [bannerImages, __] = createResource(
 		() => instance(),
 		async () => {
 			if (instance() == undefined) {
@@ -212,9 +213,25 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 		});
 	});
 
+	// Update the page when the config changes
+	let [unlisten3, ___] = createResource(
+		async () => {
+			return await listen(
+				"instance_or_template_changed",
+				(e: Event<InstanceOrTemplateChangedEvent>) => {
+					if (e.payload.id == id && e.payload.type == "instance") {
+						instanceMethods.refetch();
+					}
+				}
+			);
+		},
+		{ initialValue: () => {} }
+	);
+
 	onCleanup(() => {
 		unlisten()();
 		unlisten2()();
+		unlisten3()();
 	});
 
 	let [launchDropdownButtons, _1] = createResource(
@@ -528,7 +545,11 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 											size="1.35rem"
 											text=""
 											onClick={() => {
-												navigate(`/instance_config/${id}`);
+												setInstanceConfigModal(
+													id,
+													InstanceConfigMode.Instance,
+													false
+												);
 											}}
 										/>
 									</Show>

@@ -2,8 +2,9 @@ import { invoke } from "@tauri-apps/api/core";
 import { getPackageConfigRequest, PackageConfig } from "./PackagesConfig";
 import { canonicalizeListOrSingle } from "../../utils/values";
 import { Loader } from "../../package";
-import { Side } from "../../types";
+import { InstanceOrTemplate, Side } from "../../types";
 import { beautifyString } from "../../utils";
+import { emit } from "@tauri-apps/api/event";
 
 // Stored configuration for an instance
 export interface InstanceConfig {
@@ -167,6 +168,15 @@ export async function saveInstanceConfig(
 	} catch (e) {
 		throw "Failed to save instance config: " + e;
 	}
+
+	if (mode != InstanceConfigMode.GlobalTemplate) {
+		emit("instance_or_template_changed", { id: id, type: mode } as InstanceOrTemplateChangedEvent);
+	}
+}
+
+export interface InstanceOrTemplateChangedEvent {
+	id: string;
+	type: InstanceOrTemplate;
 }
 
 // Gets parent template configs for a config

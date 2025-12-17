@@ -32,6 +32,8 @@ import TemplateDeletePrompt from "../instance/TemplateDeletePrompt";
 import RunningInstanceList from "../launch/RunningInstanceList";
 import { useNavigate } from "@solidjs/router";
 import Icon from "../Icon";
+import { setInstanceConfigModal } from "../../App";
+import { InstanceConfigMode } from "../../pages/instance/read_write";
 
 export default function Footer(props: FooterProps) {
 	let navigate = useNavigate();
@@ -156,7 +158,12 @@ export default function Footer(props: FooterProps) {
 	>();
 
 	return (
-		<div id="footer" class="footer" data-mode={props.mode} data-selected-item={props.selectedItem}>
+		<div
+			id="footer"
+			class="footer"
+			data-mode={props.mode}
+			data-selected-item={props.selectedItem}
+		>
 			<div id="footer-left" class="footer-section">
 				<div class="cont" id="footer-selection-indicator">
 					<Show
@@ -278,7 +285,8 @@ export default function Footer(props: FooterProps) {
 						selected={
 							props.selectedItem != undefined &&
 							!(
-								props.itemFromPlugin == true && props.mode == FooterMode.Template
+								props.itemFromPlugin == true &&
+								props.mode == FooterMode.Template
 							) &&
 							!(
 								props.mode == FooterMode.Instance &&
@@ -309,7 +317,11 @@ export default function Footer(props: FooterProps) {
 								props.itemFromPlugin != true
 							) {
 								if (props.selectedItem != undefined) {
-									navigate(`/template_config/${props.selectedItem}`);
+									setInstanceConfigModal(
+										props.selectedItem,
+										InstanceConfigMode.Template,
+										false
+									);
 								}
 							} else {
 								props.action();
@@ -325,7 +337,9 @@ export default function Footer(props: FooterProps) {
 							)} is from a plugin and cannot be edited`}
 							side="top"
 						>
-							<div class="cont footer-plugin-indicator"><Icon icon={Jigsaw} size="1rem" /></div>
+							<div class="cont footer-plugin-indicator">
+								<Icon icon={Jigsaw} size="1rem" />
+							</div>
 						</Tip>
 					</Show>
 				</div>
@@ -386,7 +400,10 @@ function ActionButton(props: ActionButtonProps) {
 				props.mode == FooterMode.SaveSettings
 			) {
 				return "var(--templatebg)";
-			} else if (props.mode == FooterMode.PreviewPackage || props.mode == FooterMode.InstallPackage) {
+			} else if (
+				props.mode == FooterMode.PreviewPackage ||
+				props.mode == FooterMode.InstallPackage
+			) {
 				return "var(--packagebg)";
 			}
 		}

@@ -8,6 +8,8 @@
 	border-radius: var(--round2);
 
 	box-shadow: var(--shadow-offset) var(--shadow-offset) var(--transparent-dark);
+
+	overflow: hidden;
 }
 
 .package-quick-add-header {

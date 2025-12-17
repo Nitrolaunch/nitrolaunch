@@ -15,7 +15,7 @@ import {
 	loadPagePlugins,
 	runDropdownButtonClick,
 } from "../../plugins";
-import { FooterData } from "../../App";
+import { FooterData, setInstanceConfigModal } from "../../App";
 import { FooterMode } from "../../components/navigation/Footer";
 import { getInstanceIconSrc } from "../../utils";
 import {
@@ -52,10 +52,9 @@ import { useNavigate } from "@solidjs/router";
 import MigratePrompt from "../../components/instance/MigratePrompt";
 import Tip from "../../components/dialog/Tip";
 import FloatingTabs from "../../components/input/select/FloatingTabs";
+import { InstanceConfigMode } from "./read_write";
 
 export default function InstanceList(props: InstanceListProps) {
-	let navigate = useNavigate();
-
 	onMount(() => loadPagePlugins("instances"));
 
 	const [instances, setInstances] = createSignal<InstanceInfo[]>([]);
@@ -203,9 +202,17 @@ export default function InstanceList(props: InstanceListProps) {
 									previewText={<IconAndText icon={Plus} text="Add" centered />}
 									onChange={(selection) => {
 										if (selection == "create_instance") {
-											navigate("create_instance");
+											setInstanceConfigModal(
+												undefined,
+												InstanceConfigMode.Instance,
+												true
+											);
 										} else if (selection == "create_template") {
-											navigate("create_template");
+											setInstanceConfigModal(
+												undefined,
+												InstanceConfigMode.Template,
+												true
+											);
 										} else if (selection == "import_instance") {
 											setImportPromptVisible(true);
 										} else if (selection == "migrate_instances") {
@@ -328,8 +335,6 @@ export default function InstanceList(props: InstanceListProps) {
 
 // A section of items, like pinned or an Nitrolaunch instance group
 function Section(props: SectionProps) {
-	let navigate = useNavigate();
-
 	const HeaderIcon = () => (
 		<Switch>
 			<Match when={props.kind == "all" || props.kind == "templates"}>
@@ -364,7 +369,11 @@ function Section(props: SectionProps) {
 								class="shadow instance-list-item bubble-hover-small"
 								style="background-color:var(--bg)"
 								onclick={() => {
-									navigate("/base_template_config");
+									setInstanceConfigModal(
+										undefined,
+										InstanceConfigMode.GlobalTemplate,
+										false
+									);
 								}}
 								data-section={props.id}
 								data-index={props.items == undefined ? 0 : props.items.length}
@@ -412,11 +421,11 @@ function Section(props: SectionProps) {
 							class="shadow instance-list-item bubble-hover-small noselect"
 							style="background-color:var(--bg)"
 							onclick={() => {
-								let target =
-									props.itemType == "instance"
-										? "create_instance"
-										: "create_template";
-								navigate(target);
+								setInstanceConfigModal(
+									undefined,
+									props.itemType as InstanceConfigMode,
+									true
+								);
 							}}
 							data-section={props.id}
 							data-index={props.items == undefined ? 0 : props.items.length}
@@ -485,7 +494,11 @@ function Item(props: ItemProps) {
 						navigate(`/instance/${props.instance.id}`);
 					} else {
 						if (!props.instance.from_plugin) {
-							navigate(`/template_config/${props.instance.id}`);
+							setInstanceConfigModal(
+								props.instance.id,
+								InstanceConfigMode.Template,
+								false
+							);
 						}
 					}
 				} else {

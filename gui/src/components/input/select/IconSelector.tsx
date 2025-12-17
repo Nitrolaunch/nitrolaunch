@@ -1,4 +1,4 @@
-import { createResource, For } from "solid-js";
+import { createResource, createSignal, For, Show } from "solid-js";
 import "./IconSelector.css";
 import { invoke } from "@tauri-apps/api/core";
 import { getInstanceIconSrc } from "../../../utils";
@@ -9,10 +9,21 @@ import { errorToast } from "../../dialog/Toasts";
 
 export default function IconSelector(props: IconSelectorProps) {
 	let selectedIcon = () =>
-		props.icon == undefined ? "builtin:/icons/default_instance.png" : props.icon;
+		props.icon == undefined
+			? "builtin:/icons/default_instance.png"
+			: props.icon;
+
+	let selectedOrDerivedIcon = () =>
+		props.icon == undefined
+			? props.derivedIcon == undefined
+				? "builtin:/icons/default_instance.png"
+				: props.derivedIcon
+			: props.icon;
+
+	let [isOpen, setIsOpen] = createSignal(false);
 
 	let [availableIcons, iconMethods] = createResource(
-		() => props.derivedIcon == undefined ? "" : props.derivedIcon,
+		() => (props.derivedIcon == undefined ? "" : props.derivedIcon),
 		async () => {
 			let availableIcons: string[];
 			try {
@@ -46,19 +57,22 @@ export default function IconSelector(props: IconSelectorProps) {
 			}
 
 			return out;
-		});
+		}
+	);
 
 	async function addIcon() {
 		try {
-			let file = await open({
+			let file = (await open({
 				directory: false,
 				title: "Select Icon",
-				filters: [{
-					name: "Image",
-					extensions: ["png", "jpeg", "gif", "ico", "webp", "tiff", "svg"]
-				}],
+				filters: [
+					{
+						name: "Image",
+						extensions: ["png", "jpeg", "gif", "ico", "webp", "tiff", "svg"],
+					},
+				],
 				multiple: false,
-			}) as string;
+			})) as string;
 
 			props.setIcon(file);
 
@@ -70,44 +84,63 @@ export default function IconSelector(props: IconSelectorProps) {
 	}
 
 	return (
-		<div class="fullwidth">
-			<div class="fullwidth icon-selector">
-				<For each={availableIcons()}>
-					{(icon) => (
-						<SelectableIcon
-							icon={icon}
-							onSelect={() => {
-								if (icon == "builtin:/icons/default_instance.png") {
-									props.setIcon(undefined);
-								} else {
-									props.setIcon(icon);
-								}
-							}}
-							isSelected={icon == selectedIcon()}
-							isDerived={icon == props.derivedIcon && props.icon == undefined}
-						/>
-					)}
-				</For>
-				<div
-					class={`cont bubble-hover shadow icon-selector-icon`}
-					onclick={addIcon}
-				>
-					<Icon icon={Folder} size="2rem" />
-				</div>
+		<div class="icon-selector">
+			<div class="cont" style="width: 10rem">
+				<SelectableIcon
+					icon={selectedOrDerivedIcon()}
+					onSelect={() => setIsOpen(!isOpen())}
+					isSelected={false}
+					isDerived={props.derivedIcon != undefined && props.icon == undefined}
+				/>
 			</div>
+			<Show when={isOpen()}>
+				<div
+					class="cont col start shadow icon-selector-panel"
+					onmouseleave={() => setIsOpen(false)}
+				>
+					<div class="fullwidth icon-selector-grid">
+						<For each={availableIcons()}>
+							{(icon) => (
+								<SelectableIcon
+									icon={icon}
+									onSelect={() => {
+										if (icon == "builtin:/icons/default_instance.png") {
+											props.setIcon(undefined);
+										} else {
+											props.setIcon(icon);
+										}
+									}}
+									isSelected={icon == selectedIcon()}
+									isDerived={
+										icon == props.derivedIcon && props.icon == undefined
+									}
+								/>
+							)}
+						</For>
+						<div
+							class={`cont bubble-hover shadow icon-selector-icon`}
+							onclick={addIcon}
+						>
+							<Icon icon={Folder} size="2rem" />
+						</div>
+					</div>
+				</div>
+			</Show>
 		</div>
 	);
 }
 
 function SelectableIcon(props: SelectableIconProps) {
-	let src = getInstanceIconSrc(props.icon);
+	let src = () => getInstanceIconSrc(props.icon);
 
 	return (
 		<div
-			class={`cont bubble-hover shadow icon-selector-icon ${props.isSelected ? "selected" : ""} ${props.isDerived ? "derived" : ""}`}
+			class={`cont bubble-hover shadow icon-selector-icon ${
+				props.isSelected ? "selected" : ""
+			} ${props.isDerived ? "derived" : ""}`}
 			onclick={props.onSelect}
 		>
-			<img src={src} class="icon-selector-icon-image" />
+			<img src={src()} class="icon-selector-icon-image" />
 		</div>
 	);
 }

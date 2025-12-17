@@ -1,6 +1,29 @@
 .icon-selector {
+	position: relative;
+}
+
+.icon-selector-panel {
+	position: absolute;
+	top: 0px;
+	left: calc(100% + 1rem);
+
+	width: 30rem;
+	height: 20rem;
+
+	padding: 0.5rem;
+
+	background-color: var(--bg);
+	border: var(--border) solid var(--bg3);
+	border-radius: var(--round2);
+
+	overflow-y: auto;
+
+	z-index: 10;
+}
+
+.icon-selector-grid {
 	display: grid;
-	grid-template-columns: repeat(7, minmax(0, 1fr));
+	grid-template-columns: repeat(6, minmax(0, 1fr));
 	gap: 0.5rem;
 }
 
@@ -15,7 +38,8 @@
 
 	cursor: pointer;
 
-	transition: background-color 0.25s, border-color 0.25s, transform var(--bubble);
+	transition: background-color 0.25s, border-color 0.25s,
+		transform var(--bubble);
 }
 
 .icon-selector-icon:hover {

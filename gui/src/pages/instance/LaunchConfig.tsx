@@ -34,7 +34,11 @@ export default function LaunchConfig(props: LaunchConfigProps) {
 					}}
 				/>
 			</div>
-			<Tip tip="The Java installation to use. Defaults to 'Auto'" fullwidth>
+			<Tip
+				tip="The Java installation to use. Defaults to 'Auto'"
+				side="top"
+				fullwidth
+			>
 				<InlineSelect
 					onChange={(x) => {
 						props.setJava(x);
@@ -71,7 +75,7 @@ export default function LaunchConfig(props: LaunchConfigProps) {
 			<Show
 				when={!JAVA_OPTIONS.includes(props.java) && props.java != undefined}
 			>
-				<Tip tip="Path to custom Java installation" fullwidth side="right">
+				<Tip tip="Path to custom Java installation" fullwidth side="top">
 					<div class="cont fullwidth" id="launch-custom-java">
 						<PathSelect
 							path={props.java == "custom" ? "" : props.java}
@@ -95,6 +99,7 @@ export default function LaunchConfig(props: LaunchConfigProps) {
 			</div>
 			<Tip
 				tip="The amount of memory to allocate to the JVM, in megabytes"
+				side="top"
 				fullwidth
 			>
 				<LinkedInputs
@@ -119,6 +124,7 @@ export default function LaunchConfig(props: LaunchConfigProps) {
 			</div>
 			<Tip
 				tip="Environment variables for the game. Each entry should look like KEY=value"
+				side="top"
 				fullwidth
 			>
 				<EditableList
@@ -141,7 +147,7 @@ export default function LaunchConfig(props: LaunchConfigProps) {
 					}
 				/>
 			</div>
-			<Tip tip="Arguments for the JVM" fullwidth>
+			<Tip tip="Arguments for the JVM" side="top" fullwidth>
 				<EditableList
 					items={props.jvmArgs}
 					setItems={(x) => {
@@ -164,6 +170,7 @@ export default function LaunchConfig(props: LaunchConfigProps) {
 			</div>
 			<Tip
 				tip="Arguments for Minecraft. Most arguments are for the JVM instead."
+				side="top"
 				fullwidth
 			>
 				<EditableList

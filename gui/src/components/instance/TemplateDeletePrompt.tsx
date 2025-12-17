@@ -7,6 +7,8 @@ import { Delete, Trash } from "../../icons";
 import { errorToast, successToast } from "../dialog/Toasts";
 import { useNavigate } from "@solidjs/router";
 import Modal, { ModalButton } from "../dialog/Modal";
+import { setInstanceConfigModal } from "../../App";
+import { InstanceConfigMode } from "../../pages/instance/read_write";
 
 export default function TemplateDeletePrompt(props: TemplateDeletePromptProps) {
 	let navigate = useNavigate();
@@ -24,42 +26,43 @@ export default function TemplateDeletePrompt(props: TemplateDeletePromptProps) {
 		}
 	);
 
-	let canDelete = () => templateUsers() != undefined && templateUsers()!.length == 0;
+	let canDelete = () =>
+		templateUsers() != undefined && templateUsers()!.length == 0;
 
 	let buttons = () => {
-		let out: ModalButton[] = [{
-			text: "Cancel",
-			icon: Delete,
-			color: "var(--instance)",
-			bgColor: "var(--instancebg)",
-			onClick: props.onClose,
-		}];
+		let out: ModalButton[] = [
+			{
+				text: "Cancel",
+				icon: Delete,
+				color: "var(--instance)",
+				bgColor: "var(--instancebg)",
+				onClick: props.onClose,
+			},
+		];
 
 		if (canDelete()) {
-			out.push(
-				{
-					text: "Delete template",
-					icon: Trash,
-					color: "var(--fg3)",
-					onClick: async () => {
-						try {
-							await invoke("delete_template", {
-								template: props.template,
-							});
-							successToast("Template deleted");
-							props.onClose();
-							navigate("/");
-						} catch (e) {
-							errorToast("Failed to delete template: " + e);
-							props.onClose();
-						}
+			out.push({
+				text: "Delete template",
+				icon: Trash,
+				color: "var(--fg3)",
+				onClick: async () => {
+					try {
+						await invoke("delete_template", {
+							template: props.template,
+						});
+						successToast("Template deleted");
+						props.onClose();
+						navigate("/");
+					} catch (e) {
+						errorToast("Failed to delete template: " + e);
+						props.onClose();
 					}
-				}
-			);
+				},
+			});
 		}
 
 		return out;
-	}
+	};
 
 	return (
 		<Modal
@@ -71,9 +74,7 @@ export default function TemplateDeletePrompt(props: TemplateDeletePromptProps) {
 		>
 			<Suspense>
 				<Switch>
-					<Match
-						when={!canDelete()}
-					>
+					<Match when={!canDelete()}>
 						<h3>
 							Cannot delete this template as there are instances or templates
 							using it
@@ -84,7 +85,11 @@ export default function TemplateDeletePrompt(props: TemplateDeletePromptProps) {
 									class="template-delete-prompt-entry"
 									onclick={() => {
 										props.onClose();
-										navigate(`/${item[1]}_config/${item[0]}`);
+										setInstanceConfigModal(
+											item[0],
+											item[1] as InstanceConfigMode,
+											false
+										);
 									}}
 								>
 									<div
@@ -100,9 +105,7 @@ export default function TemplateDeletePrompt(props: TemplateDeletePromptProps) {
 							)}
 						</For>
 					</Match>
-					<Match
-						when={canDelete()}
-					>
+					<Match when={canDelete()}>
 						<h3>Are you sure you want to delete this template?</h3>
 					</Match>
 				</Switch>

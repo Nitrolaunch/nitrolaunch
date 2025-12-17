@@ -13,7 +13,7 @@
 	flex-direction: column;
 	align-items: start;
 	gap: 0.8rem;
-	width: 35rem;
+	width: 100%;
 }
 
 .fields input {
@@ -40,4 +40,10 @@ hr {
 .derived-option {
 	color: var(--template);
 	font-weight: bold;
+}
+
+#general-fields-header {
+	display: grid;
+	grid-template-columns: 1fr 4fr;
+	width: 100%;
 }

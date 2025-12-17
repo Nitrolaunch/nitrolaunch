@@ -16,6 +16,7 @@
 
 .linked-input {
 	position: relative;
+	width: 100%;
 }
 
 .linked-input::after {

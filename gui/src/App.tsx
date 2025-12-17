@@ -3,7 +3,6 @@ import "./App.css";
 import LaunchPage from "./pages/instance/InstanceList";
 import NavBar from "./components/navigation/NavBar";
 import { createSignal, ErrorBoundary, onMount, Show } from "solid-js";
-import InstanceConfig from "./pages/instance/InstanceConfig";
 import BrowsePackages from "./pages/package/BrowsePackages";
 import ViewPackage from "./pages/package/ViewPackage";
 import Sidebar from "./components/navigation/Sidebar";
@@ -13,7 +12,6 @@ import { loadPagePlugins } from "./plugins";
 import { listen } from "@tauri-apps/api/event";
 import CustomPluginPage from "./pages/CustomPluginPage";
 import Footer, { FooterMode } from "./components/navigation/Footer";
-import { InstanceConfigMode } from "./pages/instance/read_write";
 import InstanceInfo from "./pages/instance/InstanceInfo";
 import UserPage from "./pages/user/UserPage";
 import Global from "./Global";
@@ -22,12 +20,16 @@ import "./components/package/PackageDescription.css";
 import ModalBase from "./components/dialog/ModalBase";
 import WelcomePrompt from "./components/dialog/WelcomePrompt";
 import { invoke } from "@tauri-apps/api/core";
+import { InstanceConfigMode } from "./pages/instance/read_write";
+import InstanceConfigModal, {
+	InstanceConfigParams,
+} from "./pages/instance/InstanceConfig";
 
 export default function App() {
 	const [footerData, setFooterData] = createSignal<FooterData>({
 		selectedItem: undefined,
 		mode: FooterMode.Instance,
-		action: () => { },
+		action: () => {},
 	});
 
 	let [selectedUser, setSelectedUser] = createSignal<string>();
@@ -61,56 +63,6 @@ export default function App() {
 					component={() => <InstanceInfo setFooterData={setFooterData} />}
 				/>
 				<Route
-					path="/instance_config/:instanceId"
-					component={() => (
-						<InstanceConfig
-							mode={InstanceConfigMode.Instance}
-							creating={false}
-							setFooterData={setFooterData}
-						/>
-					)}
-				/>
-				<Route
-					path="/template_config/:TemplateID"
-					component={() => (
-						<InstanceConfig
-							mode={InstanceConfigMode.Template}
-							creating={false}
-							setFooterData={setFooterData}
-						/>
-					)}
-				/>
-				<Route
-					path="/create_instance"
-					component={() => (
-						<InstanceConfig
-							mode={InstanceConfigMode.Instance}
-							creating={true}
-							setFooterData={setFooterData}
-						/>
-					)}
-				/>
-				<Route
-					path="/create_template"
-					component={() => (
-						<InstanceConfig
-							mode={InstanceConfigMode.Template}
-							creating={true}
-							setFooterData={setFooterData}
-						/>
-					)}
-				/>
-				<Route
-					path="/base_template_config"
-					component={() => (
-						<InstanceConfig
-							mode={InstanceConfigMode.GlobalTemplate}
-							creating={false}
-							setFooterData={setFooterData}
-						/>
-					)}
-				/>
-				<Route
 					path="/packages/:page"
 					component={() => <BrowsePackages setFooterData={setFooterData} />}
 				/>
@@ -138,11 +90,18 @@ function Layout(props: LayoutProps) {
 		string | undefined
 	>();
 	let [showWelcomePrompt, setShowWelcomePrompt] = createSignal(false);
+	let [instanceConfigParams, setInstanceConfigParams] = createSignal<
+		InstanceConfigParams | undefined
+	>();
 
 	(window as any).__setPluginModalContents = (x: any) => {
 		setPluginModalContents(x);
 		console.log("Ok");
 	};
+
+	onMount(() => {
+		(window as any).__setInstanceConfigModal = setInstanceConfigParams;
+	});
 
 	onMount(() => loadPagePlugins(""));
 
@@ -165,7 +124,7 @@ function Layout(props: LayoutProps) {
 			elem.style.overflowX = "hidden";
 			elem.style.maxHeight = "100vh";
 		}
-	})
+	});
 
 	return (
 		<>
@@ -208,6 +167,10 @@ function Layout(props: LayoutProps) {
 				visible={showWelcomePrompt()}
 				onClose={() => setShowWelcomePrompt(false)}
 			/>
+			<InstanceConfigModal
+				params={instanceConfigParams()}
+				onClose={() => setInstanceConfigParams(undefined)}
+			/>
 		</>
 	);
 }
@@ -227,4 +190,16 @@ export interface FooterData {
 	// Whether a selected instance or template was created by a plugin
 	fromPlugin?: boolean;
 	selectedPackageGallery?: string[];
+}
+
+export function setInstanceConfigModal(
+	id: string | undefined,
+	mode: InstanceConfigMode,
+	creating: boolean
+) {
+	(window as any).__setInstanceConfigModal({
+		id: id,
+		mode: mode,
+		creating: creating,
+	});
 }
