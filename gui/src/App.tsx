@@ -122,7 +122,7 @@ function Layout(props: LayoutProps) {
 			let elem = document.getElementById("root")!;
 			elem.style.overflowY = "auto";
 			elem.style.overflowX = "hidden";
-			elem.style.maxHeight = "100vh";
+			elem.style.height = "100vh";
 		}
 	});
 
