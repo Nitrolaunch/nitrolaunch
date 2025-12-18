@@ -164,7 +164,7 @@ export default function Footer(props: FooterProps) {
 			data-mode={props.mode}
 			data-selected-item={props.selectedItem}
 		>
-			<div id="footer-left" class="footer-section">
+			<div id="footer-left" class="footer-section split fullheight">
 				<div class="cont" id="footer-selection-indicator">
 					<Show
 						when={props.selectedItem != undefined && props.selectedItem != ""}
@@ -203,75 +203,50 @@ export default function Footer(props: FooterProps) {
 					</Show>
 				</div>
 			</div>
-			<div id="footer-center" class="cont footer-section">
-				<div id="footer-center-inner">
-					<div class="cont" id="footer-left-buttons">
-						<Show
-							when={
-								props.mode == FooterMode.Instance &&
-								props.selectedItem != undefined
-							}
-							fallback={<div></div>}
-						>
-							<div class="cont footer-update">
-								<Tip tip="Update instance" side="top">
-									<IconButton
-										icon={Upload}
-										size="1.5rem"
-										color="var(--bg0)"
-										selectedColor="var(--accent)"
-										onClick={async () => {
-											if (props.selectedItem != undefined) {
-												try {
-													await invoke("update_instance", {
-														instanceId: props.selectedItem,
-														depth: "full",
-													});
-												} catch (e) {
-													errorToast("Failed to update instance: " + e);
-												}
+			<div id="footer-center" class="footer-section split3 fullwidth">
+				<div class="cont end" id="footer-left-buttons">
+					<Show
+						when={
+							props.mode == FooterMode.Instance &&
+							props.selectedItem != undefined
+						}
+						fallback={<div></div>}
+					>
+						<div class="cont footer-update">
+							<Tip tip="Update instance" side="top">
+								<IconButton
+									icon={Upload}
+									size="1.5rem"
+									color="var(--bg0)"
+									selectedColor="var(--accent)"
+									onClick={async () => {
+										if (props.selectedItem != undefined) {
+											try {
+												await invoke("update_instance", {
+													instanceId: props.selectedItem,
+													depth: "full",
+												});
+											} catch (e) {
+												errorToast("Failed to update instance: " + e);
 											}
-										}}
-										selected={false}
-										circle
-										hoverBackground="var(--bg3)"
-									/>
-								</Tip>
-							</div>
-							<Show when={props.itemFromPlugin != true}>
-								<div class="cont footer-config">
-									<Tip tip="View instance" side="top">
-										<IconButton
-											icon={Properties}
-											size="1.5rem"
-											color="var(--bg0)"
-											selectedColor="var(--accent)"
-											onClick={() => {
-												navigate(`/instance/${props.selectedItem}`);
-											}}
-											selected={false}
-											circle
-											hoverBackground="var(--bg3)"
-										/>
-									</Tip>
-								</div>
-							</Show>
-						</Show>
-						<Show
-							when={
-								props.mode == FooterMode.Template &&
-								props.selectedItem != undefined
-							}
-						>
-							<div class="cont">
-								<Tip tip="Delete template" side="top">
+										}
+									}}
+									selected={false}
+									circle
+									hoverBackground="var(--bg3)"
+								/>
+							</Tip>
+						</div>
+						<Show when={props.itemFromPlugin != true}>
+							<div class="cont footer-config">
+								<Tip tip="View instance" side="top">
 									<IconButton
-										icon={Trash}
+										icon={Properties}
 										size="1.5rem"
 										color="var(--bg0)"
 										selectedColor="var(--accent)"
 										onClick={() => {
-											setShowTemplateDeletePrompt(true);
+											navigate(`/instance/${props.selectedItem}`);
 										}}
 										selected={false}
 										circle
@@ -280,55 +255,77 @@ export default function Footer(props: FooterProps) {
 								</Tip>
 							</div>
 						</Show>
-					</div>
-					<ActionButton
-						selected={
-							props.selectedItem != undefined &&
-							!(
-								props.itemFromPlugin == true &&
-								props.mode == FooterMode.Template
-							) &&
-							!(
-								props.mode == FooterMode.Instance &&
-								isInstanceLaunchable() == undefined
-							)
+					</Show>
+					<Show
+						when={
+							props.mode == FooterMode.Template &&
+							props.selectedItem != undefined
 						}
-						mode={props.mode}
-						isInstanceLaunchable={isInstanceLaunchable() == true}
-						onClick={async () => {
-							if (props.mode == FooterMode.Instance) {
-								if (props.selectedItem != undefined) {
-									if (isInstanceLaunchable() == undefined) {
-									} else if (isInstanceLaunchable()) {
-										launch(props.selectedItem, false);
-									} else {
-										try {
-											await invoke("update_instance", {
-												instanceId: props.selectedItem,
-												depth: "full",
-											});
-										} catch (e) {
-											errorToast("Failed to update instance: " + e);
-										}
+					>
+						<div class="cont">
+							<Tip tip="Delete template" side="top">
+								<IconButton
+									icon={Trash}
+									size="1.5rem"
+									color="var(--bg0)"
+									selectedColor="var(--accent)"
+									onClick={() => {
+										setShowTemplateDeletePrompt(true);
+									}}
+									selected={false}
+									circle
+									hoverBackground="var(--bg3)"
+								/>
+							</Tip>
+						</div>
+					</Show>
+				</div>
+				<ActionButton
+					selected={
+						props.selectedItem != undefined &&
+						!(
+							props.itemFromPlugin == true && props.mode == FooterMode.Template
+						) &&
+						!(
+							props.mode == FooterMode.Instance &&
+							isInstanceLaunchable() == undefined
+						)
+					}
+					mode={props.mode}
+					isInstanceLaunchable={isInstanceLaunchable() == true}
+					onClick={async () => {
+						if (props.mode == FooterMode.Instance) {
+							if (props.selectedItem != undefined) {
+								if (isInstanceLaunchable() == undefined) {
+								} else if (isInstanceLaunchable()) {
+									launch(props.selectedItem, false);
+								} else {
+									try {
+										await invoke("update_instance", {
+											instanceId: props.selectedItem,
+											depth: "full",
+										});
+									} catch (e) {
+										errorToast("Failed to update instance: " + e);
 									}
 								}
-							} else if (
-								props.mode == FooterMode.Template &&
-								props.itemFromPlugin != true
-							) {
-								if (props.selectedItem != undefined) {
-									setInstanceConfigModal(
-										props.selectedItem,
-										InstanceConfigMode.Template,
-										false
-									);
-								}
-							} else {
-								props.action();
 							}
-						}}
-					/>
-				</div>
+						} else if (
+							props.mode == FooterMode.Template &&
+							props.itemFromPlugin != true
+						) {
+							if (props.selectedItem != undefined) {
+								setInstanceConfigModal(
+									props.selectedItem,
+									InstanceConfigMode.Template,
+									false
+								);
+							}
+						} else {
+							props.action();
+						}
+					}}
+				/>
 				<div class="cont">
 					<Show when={props.itemFromPlugin == true}>
 						<Tip
@@ -344,11 +341,11 @@ export default function Footer(props: FooterProps) {
 					</Show>
 				</div>
 			</div>
-			<div id="footer-right" class="footer-section fullheight">
+			<div id="footer-right" class="split fullwidth">
 				<div class="cont">
 					<TaskIndicator />
 				</div>
-				<div class="cont fullheight">
+				<div class="cont">
 					<RunningInstanceList />
 				</div>
 			</div>
@@ -474,55 +471,16 @@ function ActionButton(props: ActionButtonProps) {
 		}
 	};
 
-	let backgroundStyle = () => `background-color:${backgroundColor()}`;
-	let borderStyle = () => `border-color:${borderColor()}`;
-
 	return (
-		<div id="footer-action-button-container">
-			<div class="footer-action-button-decorations">
-				<div
-					class="footer-action-button-decoration left"
-					style={`${backgroundStyle()};${borderStyle()}`}
-				></div>
-				<div
-					class="footer-action-button-decoration right"
-					style={borderStyle()}
-				></div>
-				<div
-					class="footer-action-button-decoration left"
-					style={`${backgroundStyle()};${borderStyle()}`}
-				></div>
-				<div
-					class="footer-action-button-decoration right"
-					style={borderStyle()}
-				></div>
-			</div>
+		<div class="cont fullwidth">
 			<div
 				id="footer-action-button"
-				class="cont"
+				class="cont fullheight bubble-hover"
 				onclick={props.onClick}
-				style={`background-color:${backgroundColor()};border-color:${borderColor()};color:${borderColor()};border-top: var(--border) solid`}
+				style={`background-color:${backgroundColor()};border-color:${borderColor()};color:${borderColor()}`}
 			>
 				{ButtonIcon()}
 				{message()}
-			</div>
-			<div class="footer-action-button-decorations">
-				<div
-					class="footer-action-button-decoration left"
-					style={`border-top-width:0px;border-top-left-radius:0px;${borderStyle()}`}
-				></div>
-				<div
-					class="footer-action-button-decoration right"
-					style={`${backgroundStyle()};${borderStyle()}`}
-				></div>
-				<div
-					class="footer-action-button-decoration left"
-					style={borderStyle()}
-				></div>
-				<div
-					class="footer-action-button-decoration right"
-					style={`${backgroundStyle()};${borderStyle()}`}
-				></div>
 			</div>
 		</div>
 	);
