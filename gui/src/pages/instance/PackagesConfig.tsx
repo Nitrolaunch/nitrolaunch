@@ -486,7 +486,7 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 			<Modal
 				visible={showOverridesModal()}
 				onClose={setShowOverridesModal}
-				width="40rem"
+				width="50rem"
 				title="Package Overrides"
 				titleIcon={Edit}
 				buttons={[
@@ -508,22 +508,22 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 							}
 						/>
 					</div>
-					<Tip
-						tip="These packages will still be installed, but none of their files or relationships will be applied. Perfect for removing or replacing packages."
-						fullwidth
-					>
-						<EditableList
-							items={canonicalizeListOrSingle(props.overrides.suppress)}
-							setItems={(x) => {
-								props.setOverrides((overrides) => {
-									overrides.suppress = x;
-									return overrides;
-								});
-								props.onChange();
-							}}
-						/>
-					</Tip>
-					<div class="cont start label">
+					<div class="cont start" style="color:var(--fg3);margin-left:0.2rem">
+						These packages will still be installed, but none of their files or
+						relationships will be applied. Perfect for removing or replacing
+						packages.
+					</div>
+					<EditableList
+						items={canonicalizeListOrSingle(props.overrides.suppress)}
+						setItems={(x) => {
+							props.setOverrides((overrides) => {
+								overrides.suppress = x;
+								return { ...overrides };
+							});
+							props.onChange();
+						}}
+					/>
+					<div class="cont label">
 						<label>FORCED PACKAGES</label>
 						<DeriveIndicator
 							parentConfigs={props.parentConfigs}
@@ -533,21 +533,20 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 							}
 						/>
 					</div>
-					<Tip
-						tip="These packages will be installed even if they are incompatible, but you must request a specific version for them"
-						fullwidth
-					>
-						<EditableList
-							items={canonicalizeListOrSingle(props.overrides.force)}
-							setItems={(x) => {
-								props.setOverrides((overrides) => {
-									overrides.force = x;
-									return overrides;
-								});
-								props.onChange();
-							}}
-						/>
-					</Tip>
+					<div class="cont start" style="color:var(--fg3);margin-left:0.2rem">
+						These packages will be installed even if they are incompatible, but
+						you must request a specific version for them
+					</div>
+					<EditableList
+						items={canonicalizeListOrSingle(props.overrides.force)}
+						setItems={(x) => {
+							props.setOverrides((overrides) => {
+								overrides.force = x;
+								return { ...overrides };
+							});
+							props.onChange();
+						}}
+					/>
 				</div>
 			</Modal>
 		</div>
