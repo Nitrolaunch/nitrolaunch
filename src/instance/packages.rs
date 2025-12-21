@@ -129,7 +129,7 @@ impl Instance {
 
 		let files_to_remove = lock
 			.update_package(
-				&pkg.to_string_no_version(),
+				&pkg,
 				&self.id,
 				&lockfile_addons,
 				eval.selected_content_version.clone(),

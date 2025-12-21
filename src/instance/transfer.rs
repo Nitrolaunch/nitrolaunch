@@ -4,6 +4,7 @@ use std::{collections::HashMap, path::Path};
 
 use anyhow::{bail, Context};
 use nitro_config::instance::InstanceConfig;
+use nitro_pkg::PkgRequest;
 use nitro_plugin::hook::hooks::{
 	AddInstanceTransferFormats, ExportInstance, ExportInstanceArg, ImportInstance,
 	ImportInstanceArg, InstanceTransferFeatureSupport, InstanceTransferFormat,
@@ -263,8 +264,14 @@ pub async fn migrate_instances(
 				})
 				.collect();
 
-			lock.update_package(&package.id, &inst, &addons, None, o)
-				.context("Failed to add locked package")?;
+			lock.update_package(
+				&PkgRequest::parse(&package.id, nitro_pkg::PkgRequestSource::UserRequire),
+				&inst,
+				&addons,
+				None,
+				o,
+			)
+			.context("Failed to add locked package")?;
 		}
 	}
 

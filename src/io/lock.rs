@@ -164,66 +164,68 @@ impl Lockfile {
 	/// Returns a list of addon files to be removed
 	pub fn update_package(
 		&mut self,
-		id: &str,
+		req: &PkgRequest,
 		instance: &str,
 		addons: &[LockfileAddon],
 		content_version: Option<String>,
 		o: &mut impl NitroOutput,
 	) -> anyhow::Result<Vec<PathBuf>> {
-		let mut files_to_remove = Vec::new();
-		let mut new_files = Vec::new();
-		if let Some(instance) = self.contents.packages.get_mut(instance) {
-			if let Some(pkg) = instance.get_mut(id) {
-				let mut indices = Vec::new();
-				// Check for addons that need to be removed
-				for (i, current) in pkg.addons.iter().enumerate() {
-					if !addons.iter().any(|x| x.id == current.id) {
-						indices.push(i);
-						files_to_remove.extend(current.files.iter().map(PathBuf::from));
-					}
-				}
-				for i in indices {
-					pkg.addons.remove(i);
-				}
-				// Check for addons that need to be updated
-				for requested in addons {
-					if let Some(current) = pkg.addons.iter().find(|x| x.id == requested.id) {
-						files_to_remove.extend(
-							current
-								.files
-								.iter()
-								.filter(|x| !requested.files.contains(x))
-								.map(PathBuf::from),
-						);
-						new_files.extend(
-							requested
-								.files
-								.iter()
-								.filter(|x| !current.files.contains(x))
-								.cloned(),
-						);
-					} else {
-						new_files.extend(requested.files.clone());
-					};
-				}
-
-				pkg.addons = addons.to_vec();
-				pkg.content_version = content_version;
-			} else {
-				instance.insert(
-					id.to_owned(),
-					LockfilePackage {
-						addons: addons.to_vec(),
-						content_version,
-					},
-				);
-				new_files.extend(addons.iter().flat_map(|x| x.files.clone()));
-			}
-		} else {
+		if !self.contents.packages.contains_key(instance) {
 			self.contents
 				.packages
-				.insert(instance.to_owned(), HashMap::new());
-			self.update_package(id, instance, addons, content_version, o)?;
+				.insert(instance.to_string(), HashMap::new());
+		}
+
+		let mut files_to_remove = Vec::new();
+		let mut new_files = Vec::new();
+
+		let instance = self.contents.packages.get_mut(instance).unwrap();
+		let req = req.to_string();
+		if let Some(pkg) = instance.get_mut(&req) {
+			let mut indices = Vec::new();
+			// Check for addons that need to be removed
+			for (i, current) in pkg.addons.iter().enumerate() {
+				if !addons.iter().any(|x| x.id == current.id) {
+					indices.push(i);
+					files_to_remove.extend(current.files.iter().map(PathBuf::from));
+				}
+			}
+			for i in indices {
+				pkg.addons.remove(i);
+			}
+			// Check for addons that need to be updated
+			for requested in addons {
+				if let Some(current) = pkg.addons.iter().find(|x| x.id == requested.id) {
+					files_to_remove.extend(
+						current
+							.files
+							.iter()
+							.filter(|x| !requested.files.contains(x))
+							.map(PathBuf::from),
+					);
+					new_files.extend(
+						requested
+							.files
+							.iter()
+							.filter(|x| !current.files.contains(x))
+							.cloned(),
+					);
+				} else {
+					new_files.extend(requested.files.clone());
+				};
+			}
+
+			pkg.addons = addons.to_vec();
+			pkg.content_version = content_version;
+		} else {
+			instance.insert(
+				req.clone(),
+				LockfilePackage {
+					addons: addons.to_vec(),
+					content_version,
+				},
+			);
+			new_files.extend(addons.iter().flat_map(|x| x.files.clone()));
 		}
 
 		for file in &new_files {
