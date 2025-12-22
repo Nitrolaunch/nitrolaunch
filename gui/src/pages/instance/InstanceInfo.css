@@ -82,7 +82,7 @@
 }
 
 #instance-banner {
-	width: 100vw;
+	width: 100%;
 	filter: saturate(150%);
 }
 
