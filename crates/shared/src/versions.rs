@@ -155,7 +155,9 @@ impl VersionPattern {
 
 				if let Some(last) = text.chars().last() {
 					// Check for escape
-					if !text.chars().nth(text.len() - 2).is_some_and(|x| x == '\\') {
+					if !(text.len() > 1
+						&& text.chars().nth(text.len() - 2).is_some_and(|x| x == '\\'))
+					{
 						match last {
 							'-' => return Self::Before(text[..text.len() - 1].to_string()),
 							'+' => return Self::After(text[..text.len() - 1].to_string()),
@@ -372,6 +374,10 @@ mod tests {
 		assert_eq!(
 			VersionPattern::from("1.17.1..1.19.3"),
 			VersionPattern::Range("1.17.1".into(), "1.19.3".into())
+		);
+		assert_eq!(
+			VersionPattern::from("o"),
+			VersionPattern::Single("o".into())
 		);
 	}
 
