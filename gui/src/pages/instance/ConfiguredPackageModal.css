@@ -11,6 +11,10 @@
 	border-radius: var(--round2);
 }
 
+#configured-package-modal-controls {
+	align-items: flex-start;
+}
+
 #configured-package-modal-description {
 	color: var(--fg3);
 	text-align: left;

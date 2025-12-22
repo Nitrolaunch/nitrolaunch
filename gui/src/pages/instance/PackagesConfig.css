@@ -16,11 +16,11 @@
 	background-color: var(--errorbg);
 }
 
-#package-config-filters > div {
+#package-config-filters>div {
 	justify-content: flex-start;
 }
 
-#package-config-sides > div {
+#package-config-sides>div {
 	justify-content: flex-end;
 }
 
@@ -42,10 +42,8 @@
 	width: 100%;
 
 	display: grid;
-	grid-template-columns: minmax(0, 0.3fr) minmax(0, 2fr) minmax(0, 0.5fr) minmax(
-			0,
-			1fr
-		);
+	grid-template-columns: minmax(0, 4rem) minmax(0, 2fr) minmax(0, 2fr) minmax(0,
+			0.5fr);
 
 	background-color: var(--bg0);
 	border: var(--border) solid var(--bg3);

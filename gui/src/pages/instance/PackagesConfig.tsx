@@ -1,4 +1,5 @@
 import {
+	Accessor,
 	createEffect,
 	createResource,
 	createSignal,
@@ -21,6 +22,7 @@ import {
 import IconButton from "../../components/input/button/IconButton";
 import {
 	Delete,
+	Dumbbell,
 	Edit,
 	Error,
 	Plus,
@@ -456,22 +458,25 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 										meta={meta}
 										props={properties}
 										error={errors()[pkg.pkg]}
+										suppressed={() => props.overrides.suppress != undefined && props.overrides.suppress.includes(pkg.pkg)}
+										forced={() => props.overrides.force != undefined && props.overrides.force.includes(pkg.pkg)}
 										onClick={setSelectedPackage}
 										onRemove={props.onRemove}
 										onVersionChange={(version) => {
 											let category: ConfiguredPackageCategory = pkg.isClient
 												? "client"
 												: pkg.isServer
-												? "server"
-												: "global";
+													? "server"
+													: "global";
 											let req: PkgRequest = {
 												id: pkg.req.id,
 												repository: pkg.req.repository,
 												version: version,
 											};
-											console.log("Here");
 											props.onAdd(pkgRequestToString(req), category);
 										}}
+										setOverrides={props.setOverrides}
+										setDirty={props.onChange}
 									/>
 								</Show>
 							);
@@ -625,10 +630,20 @@ function ConfiguredPackage(props: ConfiguredPackageProps) {
 					<div class="configured-package-repo">{props.pkg.req.repository}</div>
 				</Show>
 			</div>
-			<div>
+			<div class="cont fullwidth fullheight">
 				<Show when={props.pkg.isDerived}>
-					<div class="cont col fullwidth fullheight">
-						<div class="cont configured-package-derive-indicator">DERIVED</div>
+					<div class="cont configured-package-derive-indicator">DERIVED</div>
+				</Show>
+				<Show when={props.suppressed()}>
+					<div class="cont tag" style="color:var(--warning);border-color:var(--warning);background-color:var(--packagebg);font-size:0.8rem;height:1.5rem">
+						<Icon icon={Delete} size="0.75rem" />
+						SUPPRESSED
+					</div>
+				</Show>
+				<Show when={props.forced()}>
+					<div class="cont tag" style="color:var(--error);border-color:var(--error);background-color:var(--errorbg);font-size:0.8rem;height:1.5rem">
+						<Icon icon={Dumbbell} size="0.75rem" />
+						FORCED
 					</div>
 				</Show>
 			</div>
@@ -661,8 +676,8 @@ function ConfiguredPackage(props: ConfiguredPackageProps) {
 								let category: ConfiguredPackageCategory = props.pkg.isClient
 									? "client"
 									: props.pkg.isServer
-									? "server"
-									: "global";
+										? "server"
+										: "global";
 								props.onRemove(props.pkg.pkg, category);
 								(e.target! as any).parentElement.parentElement.remove();
 							}}
@@ -680,16 +695,20 @@ export interface ConfiguredPackageProps {
 	meta?: PackageMeta;
 	props?: PackageProperties;
 	error?: string;
+	suppressed: Accessor<boolean>;
+	forced: Accessor<boolean>;
 	onClick: (props: ConfiguredPackageProps) => void;
 	onRemove: (pkg: string, category: ConfiguredPackageCategory) => void;
 	onVersionChange: (version: string | undefined) => void;
+	setOverrides: Setter<PackageOverrides>;
+	setDirty: () => void;
 }
 
 export type PackageConfig =
 	| string
 	| {
-			id: string;
-	  };
+		id: string;
+	};
 
 // Gets the PkgRequest from a PackageConfig
 export function getPackageConfigRequest(config: PackageConfig) {
@@ -739,6 +758,6 @@ export interface InstalledPackage {
 	isDerived: boolean;
 }
 
-interface LockfileAddon {}
+interface LockfileAddon { }
 
 export type ConfiguredPackageCategory = "global" | "client" | "server";

@@ -92,7 +92,7 @@ export default function PackageVersion(props: PackageVersionProps) {
 						}
 					}}
 				>
-					Any Version
+					Any Version{isEditable ? " - Click to edit" : ""}
 				</div>
 			</Match>
 		</Switch>
