@@ -148,7 +148,7 @@ export default function InstanceConfigModal(props: InstanceConfigProps) {
 						id: id(),
 						instanceOrTemplate: props.params.mode,
 					});
-				} catch (e) {}
+				} catch (e) { }
 			}
 		}
 	});
@@ -231,8 +231,8 @@ export default function InstanceConfigModal(props: InstanceConfigProps) {
 		isInstance()
 			? `Instance ${id()}`
 			: isBaseTemplate()
-			? "Base Template"
-			: `Template ${id()}`;
+				? "Base Template"
+				: `Template ${id()}`;
 
 	let derivedPackages = createMemo(() => {
 		return getDerivedPackages(parentConfigs());
@@ -341,6 +341,7 @@ export default function InstanceConfigModal(props: InstanceConfigProps) {
 		let configId = isCreating() ? newId() : id();
 
 		if (!isBaseTemplate && configId == undefined) {
+			setTab("general");
 			inputError("id");
 			return;
 		} else {
@@ -348,7 +349,9 @@ export default function InstanceConfigModal(props: InstanceConfigProps) {
 		}
 		if (isCreating()) {
 			if (await idExists(configId!, props.params.mode)) {
+				setTab("general");
 				inputError("id");
+				errorToast(`${beautifyString(props.params.mode)} with this ID already exists`);
 				return;
 			} else {
 				clearInputError("id");
@@ -356,6 +359,7 @@ export default function InstanceConfigModal(props: InstanceConfigProps) {
 		}
 
 		if (isInstance() && side() == undefined) {
+			setTab("general");
 			inputError("side");
 			return;
 		} else {
@@ -367,6 +371,7 @@ export default function InstanceConfigModal(props: InstanceConfigProps) {
 				? getDerivedValue(parentConfigs(), (x) => x.version)
 				: version();
 		if (isInstance() && finalVersion == undefined) {
+			setTab("general");
 			inputError("version");
 			return;
 		} else {
@@ -375,12 +380,11 @@ export default function InstanceConfigModal(props: InstanceConfigProps) {
 
 		// The user selected custom Java but didn't pick anything
 		if (javaType() == "" || javaType() == "custom") {
+			setTab("launch");
 			inputError("launch-custom-java");
-			inputError("launch-tab");
 			return;
 		} else {
 			clearInputError("launch-custom-java");
-			clearInputError("launch-tab");
 		}
 
 		// Loaders
@@ -447,9 +451,9 @@ export default function InstanceConfigModal(props: InstanceConfigProps) {
 			jvmArgs() == undefined && gameArgs() == undefined
 				? undefined
 				: {
-						jvm: jvmArgs(),
-						game: gameArgs(),
-				  };
+					jvm: jvmArgs(),
+					game: gameArgs(),
+				};
 
 		let overrides =
 			packageOverrides().suppress == undefined ? undefined : packageOverrides();
@@ -739,14 +743,14 @@ export default function InstanceConfigModal(props: InstanceConfigProps) {
 									templates() == undefined
 										? []
 										: templates()!.map((x) => {
-												return {
-													value: x.id,
-													contents: (
-														<div>{x.name == undefined ? x.id : x.name}</div>
-													),
-													color: "var(--template)",
-												};
-										  })
+											return {
+												value: x.id,
+												contents: (
+													<div>{x.name == undefined ? x.id : x.name}</div>
+												),
+												color: "var(--template)",
+											};
+										})
 								}
 								selected={from()}
 								onChangeMulti={(x) => {
@@ -866,9 +870,8 @@ export default function InstanceConfigModal(props: InstanceConfigProps) {
 									/>
 									<span
 										class="bold"
-										style={`color:${
-											releaseVersionsOnly() ? "var(--fg3)" : "var(--instance)"
-										}`}
+										style={`color:${releaseVersionsOnly() ? "var(--fg3)" : "var(--instance)"
+											}`}
 									>
 										Include Snapshots
 									</span>
