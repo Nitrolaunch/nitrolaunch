@@ -14,12 +14,14 @@ pub mod template;
 use self::instance::read_instance_config;
 use crate::plugin::PluginManager;
 use anyhow::Context;
+use nitro_config::instance::InstanceConfig;
 use nitro_config::template::TemplateConfig;
 use nitro_config::user::{UserConfig, UserVariant};
 use nitro_config::ConfigDeser;
 use nitro_core::auth_crate::mc::ClientId;
 use nitro_core::io::{json_from_file, json_to_file_pretty};
 use nitro_core::user::{User, UserKind, UserManager};
+use nitro_pkg::PkgRequest;
 use nitro_plugin::hook::hooks::{AddInstances, AddInstancesArg, AddSupportedLoaders, AddTemplates};
 use nitro_shared::id::{InstanceID, TemplateID};
 use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
@@ -106,6 +108,8 @@ impl Config {
 			ConfigPreferences::read(&config.preferences, &plugins, paths, o).await;
 
 		let packages = PkgRegistry::new(repositories, &plugins);
+
+		check_configured_packages(&config.instances, &config.templates, o);
 
 		// Users
 		for (user_id, user_config) in config.users.iter() {
@@ -386,6 +390,41 @@ pub fn check_nitro_version(paths: &Paths, o: &mut impl NitroOutput) -> anyhow::R
 	}
 
 	Ok(())
+}
+
+/// Checks packages configured on instances and templates
+fn check_configured_packages(
+	instances: &HashMap<InstanceID, InstanceConfig>,
+	templates: &HashMap<TemplateID, TemplateConfig>,
+	o: &mut impl NitroOutput,
+) {
+	for inst in instances.values() {
+		if inst.packages.iter().any(|x| {
+			PkgRequest::parse(x.get_pkg_id(), nitro_pkg::PkgRequestSource::UserRequire)
+				.repository
+				.is_none()
+		}) {
+			o.display(
+				MessageContents::Warning("An instance uses deprecated generic packages".into()),
+				MessageLevel::Important,
+			);
+			return;
+		}
+	}
+
+	for temp in templates.values() {
+		if temp.instance.packages.iter().any(|x| {
+			PkgRequest::parse(x.get_pkg_id(), nitro_pkg::PkgRequestSource::UserRequire)
+				.repository
+				.is_none()
+		}) {
+			o.display(
+				MessageContents::Warning("A template uses deprecated generic packages".into()),
+				MessageLevel::Important,
+			);
+			return;
+		}
+	}
 }
 
 /// Creates a user from a user config

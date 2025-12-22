@@ -10,7 +10,6 @@ import IconTextButton from "../../components/input/button/IconTextButton";
 import { invoke } from "@tauri-apps/api/core";
 import { UserInfo } from "../../components/user/UserWidget";
 import { emit, Event, listen } from "@tauri-apps/api/event";
-import { event } from "@tauri-apps/api";
 
 export default function UserPage() {
 	let navigate = useNavigate();
