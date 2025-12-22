@@ -7,10 +7,16 @@ import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { open } from "@tauri-apps/plugin-shell";
 import Modal from "../dialog/Modal";
 import * as clipboard from "@tauri-apps/plugin-clipboard-manager"
+import { invoke } from "@tauri-apps/api/core";
 
 export default function MicrosoftAuthInfo(props: MicrosoftAuthInfoProps) {
+	let onClose = async () => {
+		await invoke("cancel_task", { task: "login_user" });
+		props.onCancel();
+	}
+
 	return (
-		<Modal visible={props.visible} onClose={() => { }} title="Microsoft Authentication" titleIcon={Lock} buttons={[]}>
+		<Modal visible={props.visible} onClose={onClose} title="Microsoft Authentication" titleIcon={Lock} buttons={[]}>
 			Copy this code:
 			<CopyCodeButton code={props.event.device_code} />
 			Then paste it into the login page:

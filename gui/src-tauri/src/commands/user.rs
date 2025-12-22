@@ -107,12 +107,20 @@ pub async fn login_user(
 	let mut output = LauncherOutput::new(state.get_output(app_handle));
 	output.set_task("login_user");
 
-	fmt_err(
+	let user = user.to_string();
+	let paths = state.paths.clone();
+	let client = state.client.clone();
+	let task = async move {
+		let mut output = output;
 		config
 			.users
-			.authenticate_user(user, &state.paths.core, &state.client, &mut output)
-			.await,
-	)?;
+			.authenticate_user(&user, &paths.core, &client, &mut output)
+			.await?;
+
+		Ok::<(), anyhow::Error>(())
+	};
+
+	state.register_task("login_user", tokio::spawn(task)).await;
 
 	Ok(())
 }

@@ -9,7 +9,8 @@ import "./UserPage.css";
 import IconTextButton from "../../components/input/button/IconTextButton";
 import { invoke } from "@tauri-apps/api/core";
 import { UserInfo } from "../../components/user/UserWidget";
-import { emit } from "@tauri-apps/api/event";
+import { emit, Event, listen } from "@tauri-apps/api/event";
+import { event } from "@tauri-apps/api";
 
 export default function UserPage() {
 	let navigate = useNavigate();
@@ -81,9 +82,16 @@ export default function UserPage() {
 												onClick={async () => {
 													try {
 														await invoke("login_user", { user: id });
-														successToast("Logged in");
-														userOperations.refetch();
-														emit("refresh_users");
+
+														let unlisten = await listen("nitro_output_finish_task", (e: Event<string>) => {
+															if (e.payload == "login_user") {
+																successToast("Logged in");
+																userOperations.refetch();
+																emit("refresh_users");
+															}
+														});
+
+														unlisten();
 													} catch (e) {
 														errorToast("Failed to log in: " + e);
 													}
