@@ -23,6 +23,7 @@ export default function MicrosoftAuthInfo(props: MicrosoftAuthInfoProps) {
 			<LoginWindowButton url={props.event.url} inBrowser={false} />
 			If that link doesn't work, trying opening in your browser instead:
 			<LoginWindowButton url={props.event.url} inBrowser={true} />
+			<span style="color:var(--fg3);-webkit-user-select:text">{props.event.url}</span>
 		</Modal>
 	);
 }

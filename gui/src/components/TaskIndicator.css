@@ -19,10 +19,7 @@
 	display: grid;
 	grid-template-columns: minmax(0, 0.2fr) minmax(0, 1fr);
 	height: 100%;
-	overflow-x: hidden;
-
-	user-select: none;
-	-webkit-user-select: none;
+	overflow: hidden;
 }
 
 #task-indicator-dot {
