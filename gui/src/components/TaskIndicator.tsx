@@ -287,7 +287,6 @@ export default function TaskIndicator(props: TaskIndicatorProps) {
 						}
 
 						let index = selectedTask() == undefined ? 0 : selectedTask()! + 1;
-						console.log(index);
 						setSelectedTask(index);
 					}
 				}}

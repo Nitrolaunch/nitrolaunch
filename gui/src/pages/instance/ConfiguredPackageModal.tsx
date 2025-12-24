@@ -70,7 +70,6 @@ export default function ConfiguredPackageModal(
 	let selectedOverrides = createMemo(() => {
 		let out: string[] = [];
 		if (props.props == undefined) {
-			console.log("Foo");
 			return out;
 		}
 		if (props.props!.suppressed()) {

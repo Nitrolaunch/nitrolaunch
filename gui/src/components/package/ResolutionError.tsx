@@ -7,8 +7,6 @@ import "./ResolutionError.css";
 export default function ResolutionError(props: ResolutionErrorProps) {
 	let data = () => props.error.data as any;
 
-	console.log(data());
-
 	return (
 		<div class="cont col package-resolution-error">
 			<Switch>
@@ -83,38 +81,38 @@ export interface ResolutionErrorProps {
 // Data for the actual error
 export type ResolutionErrorData =
 	| {
-			type: "package_context";
-			data: [PkgRequest, ResolutionErrorData];
-	  }
+		type: "package_context";
+		data: [PkgRequest, ResolutionErrorData];
+	}
 	| {
-			type: "failed_to_preload";
-			data: string;
-	  }
+		type: "failed_to_preload";
+		data: string;
+	}
 	| {
-			type: "failed_to_get_properties";
-			data: [PkgRequest, string];
-	  }
+		type: "failed_to_get_properties";
+		data: [PkgRequest, string];
+	}
 	| {
-			type: "no_valid_versions_found";
-			data: PkgRequest;
-	  }
+		type: "no_valid_versions_found";
+		data: PkgRequest;
+	}
 	| {
-			type: "extension_not_fulfilled";
-			data: [PkgRequest | undefined, PkgRequest];
-	  }
+		type: "extension_not_fulfilled";
+		data: [PkgRequest | undefined, PkgRequest];
+	}
 	| {
-			type: "explicit_require_not_fulfilled";
-			data: [PkgRequest, PkgRequest];
-	  }
+		type: "explicit_require_not_fulfilled";
+		data: [PkgRequest, PkgRequest];
+	}
 	| {
-			type: "incompatible_package";
-			data: [PkgRequest, string[]];
-	  }
+		type: "incompatible_package";
+		data: [PkgRequest, string[]];
+	}
 	| {
-			type: "failed_to_evaluate";
-			data: [PkgRequest, string];
-	  }
+		type: "failed_to_evaluate";
+		data: [PkgRequest, string];
+	}
 	| {
-			type: "misc";
-			data: string;
-	  };
+		type: "misc";
+		data: string;
+	};

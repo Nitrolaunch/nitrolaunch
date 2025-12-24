@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { Loader, PackageCategory, PackageType } from "../package";
+import { PackageCategory, PackageType } from "../package";
 import { PackageMeta, PackageProperties, PackageSearchResults } from "../types";
 import { parsePkgRequest, parseVersionedString, pkgRequestToString } from "../utils";
 
@@ -13,7 +13,7 @@ export async function searchPackages(
 	categories: PackageCategory[]
 ): Promise<ExpandedPackageSearchResults | undefined> {
 	try {
-		let results: PackageSearchResults = await invoke("get_packages", {
+		let params = {
 			repo: repo,
 			page: page,
 			search: search,
@@ -21,7 +21,9 @@ export async function searchPackages(
 			minecraftVersions: minecraftVersions,
 			loaders: loaders.map((x) => parseVersionedString(x)[0]),
 			categories: categories,
-		});
+		};
+		console.log(params);
+		let results: PackageSearchResults = await invoke("get_packages", params);
 
 		let packages: (PackageData | "error")[] = [];
 

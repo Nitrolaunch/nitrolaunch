@@ -46,7 +46,7 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 		props.setFooterData({
 			mode: FooterMode.PreviewPackage,
 			selectedItem: undefined,
-			action: () => {},
+			action: () => { },
 		});
 	});
 
@@ -159,7 +159,6 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 				return result.packages;
 			}
 		} catch (e) {
-			console.log(e);
 			errorToast(`${e}`);
 		}
 	}
@@ -188,7 +187,6 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 							selectedRepo={repo()}
 							onSelect={(x) => {
 								setRepo(x);
-								console.log(repo());
 								setPage(0);
 								updateFilters();
 							}}
@@ -249,7 +247,7 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 						availablePackageTypes={repoPackageTypes()}
 						filteringVersions={false}
 						features={[]}
-						setFeatures={() => {}}
+						setFeatures={() => { }}
 						availableCategories={repoCategories()}
 					/>
 				</div>
@@ -304,11 +302,10 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 											selected={selectedPackage()}
 											onSelect={(pkg) => {
 												setSelectedPackage(pkg);
-												let url = `/packages/package/${
-													data.id
-												}?filters=${JSON.stringify(
-													createPackageFiltersObject()
-												)}`;
+												let url = `/packages/package/${data.id
+													}?filters=${JSON.stringify(
+														createPackageFiltersObject()
+													)}`;
 
 												props.setFooterData({
 													mode: FooterMode.PreviewPackage,
@@ -359,9 +356,8 @@ function Package(props: PackageProps) {
 
 	return (
 		<div
-			class={`cont col shadow bubble-hover-small package ${
-				isSelected() ? "selected" : ""
-			}`}
+			class={`cont col shadow bubble-hover-small package ${isSelected() ? "selected" : ""
+				}`}
 			style="cursor:pointer"
 			onclick={() => {
 				// Double click to open

@@ -47,7 +47,6 @@ export default function InstanceConsole(props: InstanceConsoleProps) {
 		let unlisten = await listen(
 			"update_instance_stdio",
 			(event: Event<string>) => {
-				console.log(event);
 				if (event.payload == props.instanceId) {
 					outputMethods.refetch();
 				}

@@ -29,7 +29,7 @@ export default function App() {
 	const [footerData, setFooterData] = createSignal<FooterData>({
 		selectedItem: undefined,
 		mode: FooterMode.Instance,
-		action: () => {},
+		action: () => { },
 	});
 
 	let [selectedUser, setSelectedUser] = createSignal<string>();
@@ -96,7 +96,6 @@ function Layout(props: LayoutProps) {
 
 	(window as any).__setPluginModalContents = (x: any) => {
 		setPluginModalContents(x);
-		console.log("Ok");
 	};
 
 	onMount(() => {

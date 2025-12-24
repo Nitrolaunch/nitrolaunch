@@ -240,7 +240,6 @@ export default function PackageVersions(props: PackageVersionsProps) {
 							}
 
 							if (filteredStability() != undefined) {
-								console.log(filteredStability(), version.stability);
 								if (version.stability != filteredStability()) {
 									return false;
 								}

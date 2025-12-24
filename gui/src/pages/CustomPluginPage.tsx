@@ -28,9 +28,7 @@ export default function ExecutablePluginPage() {
 
 		let scripts = page.getElementsByTagName("script");
 		if (scripts != undefined) {
-			console.log("not undefined");
 			for (let oldScriptEl of scripts) {
-				console.log("script");
 				const newScriptEl = document.createElement("script");
 
 				Array.from(oldScriptEl.attributes).forEach((attr) => {

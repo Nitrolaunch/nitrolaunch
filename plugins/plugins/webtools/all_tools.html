@@ -34,7 +34,6 @@
 	for (let elem of document.getElementsByClassName("webtool")) {
 		elem.addEventListener("click", (e) => {
 			let url = e.target.dataset.url;
-			console.log(url);
 			let id = e.target.dataset.id;
 			if (url == "") {
 				window.location.href = `/custom/webtools-${id}`;

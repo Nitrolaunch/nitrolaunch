@@ -49,8 +49,8 @@ export default function LoaderConfig(props: LoaderConfigProps) {
 				props.side == "client"
 					? props.clientLoader
 					: props.side == "server"
-					? props.serverLoader
-					: undefined;
+						? props.serverLoader
+						: undefined;
 			if (loader == undefined) {
 				if (props.side == "client") {
 					setClientLoaderVersions([]);
@@ -66,7 +66,6 @@ export default function LoaderConfig(props: LoaderConfigProps) {
 						loader: loader,
 						minecraftVersion: props.minecraftVersion,
 					});
-					console.log(versions);
 
 					setSupportedLoaderVersions((map) => {
 						map[loader] = versions;
@@ -106,9 +105,8 @@ export default function LoaderConfig(props: LoaderConfigProps) {
 				}
 			>
 				<div class="cont start label">
-					<label for="client-type">{`${
-						props.isTemplate ? "CLIENT " : ""
-					}LOADER`}</label>
+					<label for="client-type">{`${props.isTemplate ? "CLIENT " : ""
+						}LOADER`}</label>
 					<DeriveIndicator
 						parentConfigs={props.parentConfigs}
 						currentValue={props.clientLoader}
@@ -143,14 +141,13 @@ export default function LoaderConfig(props: LoaderConfigProps) {
 									value: x,
 									contents: (
 										<div
-											class={`cont ${
-												props.clientLoader == undefined &&
+											class={`cont ${props.clientLoader == undefined &&
 												getDerivedValue(props.parentConfigs, (x) =>
 													getConfiguredLoader(x.loader, "client")
 												) == x
-													? "derived-option"
-													: ""
-											}`}
+												? "derived-option"
+												: ""
+												}`}
 										>
 											<Show when={x != undefined}>
 												<img
@@ -180,9 +177,8 @@ export default function LoaderConfig(props: LoaderConfigProps) {
 				}
 			>
 				<div class="cont start label">
-					<label for="server-type">{`${
-						props.isTemplate ? "SERVER " : ""
-					}LOADER`}</label>
+					<label for="server-type">{`${props.isTemplate ? "SERVER " : ""
+						}LOADER`}</label>
 					<DeriveIndicator
 						parentConfigs={props.parentConfigs}
 						currentValue={props.clientLoader}
@@ -217,14 +213,13 @@ export default function LoaderConfig(props: LoaderConfigProps) {
 									value: x,
 									contents: (
 										<div
-											class={`cont ${
-												props.serverLoader == undefined &&
+											class={`cont ${props.serverLoader == undefined &&
 												getDerivedValue(props.parentConfigs, (x) =>
 													getConfiguredLoader(x.loader, "server")
 												) == x
-													? "derived-option"
-													: ""
-											}`}
+												? "derived-option"
+												: ""
+												}`}
 										>
 											<Show when={x != undefined}>
 												<img
@@ -270,9 +265,8 @@ export default function LoaderConfig(props: LoaderConfigProps) {
 							</label>
 						</div>
 						<Tip
-							tip={`The version for the${
-								props.isTemplate ? " client" : ""
-							} loader. Leave empty to select the best version automatically.`}
+							tip={`The version for the${props.isTemplate ? " client" : ""
+								} loader. Leave empty to select the best version automatically.`}
 							side="top"
 							fullwidth
 						>
@@ -306,9 +300,8 @@ export default function LoaderConfig(props: LoaderConfigProps) {
 							</label>
 						</div>
 						<Tip
-							tip={`The version for the${
-								props.isTemplate ? " server" : ""
-							} loader. Leave empty to select the best version automatically.`}
+							tip={`The version for the${props.isTemplate ? " server" : ""
+								} loader. Leave empty to select the best version automatically.`}
 							side="top"
 							fullwidth
 						>
