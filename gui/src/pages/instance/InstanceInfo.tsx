@@ -69,6 +69,7 @@ import InstanceTransferPrompt from "../../components/instance/InstanceTransferPr
 import { updateInstanceList } from "./InstanceList";
 import InstanceTiles from "../../components/instance/InstanceTiles";
 import Modal from "../../components/dialog/Modal";
+import Tip from "../../components/dialog/Tip";
 
 export default function InstanceInfo(props: InstanceInfoProps) {
 	let navigate = useNavigate();
@@ -99,7 +100,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 				id: id,
 				instanceOrTemplate: "instance",
 			});
-		} catch (e) {}
+		} catch (e) { }
 	});
 
 	let [from, setFrom] = createSignal<string[] | undefined>();
@@ -180,7 +181,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 	);
 
 	let [isRunning, setIsRunning] = createSignal(false);
-	let [unlisten, setUnlisten] = createSignal<UnlistenFn>(() => {});
+	let [unlisten, setUnlisten] = createSignal<UnlistenFn>(() => { });
 	createEffect(async () => {
 		let unlisten = await listen(
 			"nitro_update_running_instances",
@@ -195,7 +196,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 	});
 
 	// Gets whether the currently selected instance is launchable (it has been updated before)
-	let [unlisten2, setUnlisten2] = createSignal<UnlistenFn>(() => {});
+	let [unlisten2, setUnlisten2] = createSignal<UnlistenFn>(() => { });
 	let [isInstanceLaunchable, methods] = createResource(async () => {
 		let unlisten = await listen(
 			"nitro_output_finish_task",
@@ -225,7 +226,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 				}
 			);
 		},
-		{ initialValue: () => {} }
+		{ initialValue: () => { } }
 	);
 
 	onCleanup(() => {
@@ -286,7 +287,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 				props.setFooterData({
 					selectedItem: undefined,
 					mode: FooterMode.SaveInstanceConfig,
-					action: () => {},
+					action: () => { },
 				});
 			} catch (e) {
 				errorToast("Failed to save: " + e);
@@ -413,197 +414,208 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 								<div class="cont end" style="margin-right:1rem">
 									<Show when={isInstanceLaunchable()}>
 										<div style="width:4.5rem;font-weight:bold">
+											<Tip tip="Launch" side="top">
+
+												<Dropdown
+													options={launchOptions()}
+													previewText={
+														<Switch>
+															<Match when={!isRunning()}>
+																<div
+																	class="cont start fullwidth"
+																	style="padding-left:0.75rem"
+																>
+																	<Icon icon={Play} size="1.25rem" />
+																</div>
+															</Match>
+															<Match when={isRunning()}>
+																<div
+																	class="cont start fullwidth"
+																	style="padding-left:0.75rem"
+																>
+																	<Icon icon={Stop} size="0.85rem" />
+																</div>
+															</Match>
+														</Switch>
+													}
+													onChange={async (selection) => {
+														if (selection == "launch") {
+															launchInstance(id, false);
+														} else if (selection == "launch_offline") {
+															launchInstance(id, true);
+														} else if (selection == "kill") {
+															try {
+																await invoke("kill_instance", { instance: id });
+																await invoke("update_running_instances");
+															} catch (e) {
+																errorToast("Failed to kill instance: " + e);
+															}
+														} else {
+															runDropdownButtonClick(selection!);
+														}
+													}}
+													onHeaderClick={async () => {
+														if (isRunning()) {
+															try {
+																await invoke("kill_instance", { instance: id });
+																await invoke("update_running_instances");
+															} catch (e) {
+																errorToast("Failed to kill instance: " + e);
+															}
+														} else {
+															launchInstance(id, false);
+														}
+													}}
+													optionsWidth="12rem"
+													isSearchable={false}
+													zIndex="5"
+												/>
+											</Tip>
+										</div>
+									</Show>
+									<div style="width:4.5rem;font-weight:bold">
+										<Tip tip="Update the instance" side="top">
+
 											<Dropdown
-												options={launchOptions()}
+												options={(
+													[
+														{
+															value: "update",
+															contents: (
+																<IconAndText icon={Upload} text="Update" />
+															),
+															tip: "Update the packages and files on this instance",
+														},
+														{
+															value: "force_update",
+															contents: (
+																<IconAndText
+																	icon={Upload}
+																	text="Force Update"
+																	color="var(--error)"
+																/>
+															),
+															backgroundColor: "var(--errorbg)",
+															tip: "Update while replacing already cached files. Should only be done if something is broken.",
+														},
+													] as Option[]
+												).concat(
+													updateDropdownButtons().map(dropdownButtonToOption)
+												)}
 												previewText={
-													<Switch>
-														<Match when={!isRunning()}>
-															<div
-																class="cont start fullwidth"
-																style="padding-left:0.75rem"
-															>
-																<Icon icon={Play} size="1.25rem" />
-															</div>
-														</Match>
-														<Match when={isRunning()}>
-															<div
-																class="cont start fullwidth"
-																style="padding-left:0.75rem"
-															>
-																<Icon icon={Stop} size="0.85rem" />
-															</div>
-														</Match>
-													</Switch>
+													<div
+														class="cont start fullwidth"
+														style="padding-left:0.75rem"
+													>
+														<Icon icon={Upload} size="1rem" />
+													</div>
 												}
 												onChange={async (selection) => {
-													if (selection == "launch") {
-														launchInstance(id, false);
-													} else if (selection == "launch_offline") {
-														launchInstance(id, true);
-													} else if (selection == "kill") {
+													if (
+														selection == "update" ||
+														selection == "force_update"
+													) {
 														try {
-															await invoke("kill_instance", { instance: id });
-															await invoke("update_running_instances");
+															let depth =
+																selection == "update" ? "full" : "force";
+
+															await invoke("update_instance", {
+																instanceId: id,
+																depth: depth,
+															});
 														} catch (e) {
-															errorToast("Failed to kill instance: " + e);
+															errorToast("Failed to update instance: " + e);
 														}
 													} else {
 														runDropdownButtonClick(selection!);
 													}
 												}}
 												onHeaderClick={async () => {
-													if (isRunning()) {
-														try {
-															await invoke("kill_instance", { instance: id });
-															await invoke("update_running_instances");
-														} catch (e) {
-															errorToast("Failed to kill instance: " + e);
-														}
-													} else {
-														launchInstance(id, false);
+													try {
+														await invoke("update_instance", {
+															instanceId: id,
+															depth: "full",
+														});
+													} catch (e) {
+														errorToast("Failed to update instance: " + e);
 													}
 												}}
 												optionsWidth="12rem"
 												isSearchable={false}
 												zIndex="5"
 											/>
-										</div>
-									</Show>
-									<div style="width:4.5rem;font-weight:bold">
-										<Dropdown
-											options={(
-												[
-													{
-														value: "update",
-														contents: (
-															<IconAndText icon={Upload} text="Update" />
-														),
-														tip: "Update the packages and files on this instance",
-													},
-													{
-														value: "force_update",
-														contents: (
-															<IconAndText
-																icon={Upload}
-																text="Force Update"
-																color="var(--error)"
-															/>
-														),
-														backgroundColor: "var(--errorbg)",
-														tip: "Update while replacing already cached files. Should only be done if something is broken.",
-													},
-												] as Option[]
-											).concat(
-												updateDropdownButtons().map(dropdownButtonToOption)
-											)}
-											previewText={
-												<div
-													class="cont start fullwidth"
-													style="padding-left:0.75rem"
-												>
-													<Icon icon={Upload} size="1rem" />
-												</div>
-											}
-											onChange={async (selection) => {
-												if (
-													selection == "update" ||
-													selection == "force_update"
-												) {
-													try {
-														let depth =
-															selection == "update" ? "full" : "force";
-
-														await invoke("update_instance", {
-															instanceId: id,
-															depth: depth,
-														});
-													} catch (e) {
-														errorToast("Failed to update instance: " + e);
-													}
-												} else {
-													runDropdownButtonClick(selection!);
-												}
-											}}
-											onHeaderClick={async () => {
-												try {
-													await invoke("update_instance", {
-														instanceId: id,
-														depth: "full",
-													});
-												} catch (e) {
-													errorToast("Failed to update instance: " + e);
-												}
-											}}
-											optionsWidth="12rem"
-											isSearchable={false}
-											zIndex="5"
-										/>
+										</Tip>
 									</div>
 									<Show when={instance()!.from_plugin != true}>
-										<IconTextButton
-											icon={Gear}
-											size="1.35rem"
-											text=""
-											onClick={() => {
-												setInstanceConfigModal(
-													id,
-													InstanceConfigMode.Instance,
-													false
-												);
-											}}
-										/>
+										<Tip tip="Configure" side="top">
+											<IconTextButton
+												icon={Gear}
+												size="1.35rem"
+												text=""
+												onClick={() => {
+													setInstanceConfigModal(
+														id,
+														InstanceConfigMode.Instance,
+														false
+													);
+												}}
+											/>
+										</Tip>
 									</Show>
 									<div style="width:2.5rem;font-weight:bold">
-										<Dropdown
-											options={(
-												[
-													{
-														value: "export",
-														contents: (
-															<IconAndText icon={Popout} text="Export" />
-														),
-														tip: "Export this instance to another launcher",
-													},
-													{
-														value: "open_dir",
-														contents: (
-															<IconAndText icon={Folder} text="Open Folder" />
-														),
-														tip: "Open this instance's files in your explorer",
-													},
-													{
-														value: "delete",
-														contents: (
-															<IconAndText
-																icon={Trash}
-																text="Delete"
-																color="var(--error)"
-															/>
-														),
-														tip: "Delete this instance forever",
-														backgroundColor: "var(--errorbg)",
-													},
-												] as Option[]
-											).concat(
-												moreDropdownButtons().map(dropdownButtonToOption)
-											)}
-											previewText={<Icon icon={Elipsis} size="1rem" />}
-											onChange={async (selection) => {
-												if (selection == "export") {
-													setShowExportPrompt(true);
-												} else if (selection == "open_dir") {
-													await invoke("open_instance_dir", { instance: id });
-												} else if (selection == "delete") {
-													setShowDeleteConfirm(true);
-												} else {
-													runDropdownButtonClick(selection!);
-												}
-											}}
-											optionsWidth="11rem"
-											isSearchable={false}
-											zIndex="5"
-											showArrow={false}
-										/>
+										<Tip tip="More" side="top">
+
+											<Dropdown
+												options={(
+													[
+														{
+															value: "export",
+															contents: (
+																<IconAndText icon={Popout} text="Export" />
+															),
+															tip: "Export this instance to another launcher",
+														},
+														{
+															value: "open_dir",
+															contents: (
+																<IconAndText icon={Folder} text="Open Folder" />
+															),
+															tip: "Open this instance's files in your explorer",
+														},
+														{
+															value: "delete",
+															contents: (
+																<IconAndText
+																	icon={Trash}
+																	text="Delete"
+																	color="var(--error)"
+																/>
+															),
+															tip: "Delete this instance forever",
+															backgroundColor: "var(--errorbg)",
+														},
+													] as Option[]
+												).concat(
+													moreDropdownButtons().map(dropdownButtonToOption)
+												)}
+												previewText={<Icon icon={Elipsis} size="1rem" />}
+												onChange={async (selection) => {
+													if (selection == "export") {
+														setShowExportPrompt(true);
+													} else if (selection == "open_dir") {
+														await invoke("open_instance_dir", { instance: id });
+													} else if (selection == "delete") {
+														setShowDeleteConfirm(true);
+													} else {
+														runDropdownButtonClick(selection!);
+													}
+												}}
+												optionsWidth="11rem"
+												isSearchable={false}
+												zIndex="5"
+												showArrow={false}
+											/>
+										</Tip>
 									</div>
 								</div>
 							</div>
@@ -632,27 +644,24 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 								style={`grid-template-columns:repeat(3,minmax(0,1fr))`}
 							>
 								<div
-									class={`cont instance-tab ${
-										selectedTab() == "general" ? "selected" : ""
-									}`}
+									class={`cont instance-tab ${selectedTab() == "general" ? "selected" : ""
+										}`}
 									onclick={() => setSelectedTab("general")}
 								>
 									<Icon icon={Gear} size="1rem" />
 									General
 								</div>
 								<div
-									class={`cont instance-tab ${
-										selectedTab() == "packages" ? "selected" : ""
-									}`}
+									class={`cont instance-tab ${selectedTab() == "packages" ? "selected" : ""
+										}`}
 									onclick={() => setSelectedTab("packages")}
 								>
 									<Icon icon={Box} size="1rem" />
 									Packages
 								</div>
 								<div
-									class={`cont instance-tab ${
-										selectedTab() == "console" ? "selected" : ""
-									}`}
+									class={`cont instance-tab ${selectedTab() == "console" ? "selected" : ""
+										}`}
 									onclick={() => setSelectedTab("console")}
 								>
 									<Icon icon={Text} size="1rem" />
@@ -711,9 +720,9 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 
 											setDirty();
 										}}
-										setGlobalPackages={() => {}}
-										setClientPackages={() => {}}
-										setServerPackages={() => {}}
+										setGlobalPackages={() => { }}
+										setClientPackages={() => { }}
+										setServerPackages={() => { }}
 										minecraftVersion={instance()!.version}
 										loader={
 											parseVersionedString(
