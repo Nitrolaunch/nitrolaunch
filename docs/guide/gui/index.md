@@ -20,13 +20,13 @@ Start the app and install the default set of plugins when prompted. This will in
 
 Click the `Create Instance` button to make a new instance to launch.
 
-![](../../../assets/screenshots/create_instance.png)
+![](../../assets/screenshots/create_instance.png)
 
 ## 4. Creating an Instance
 
 Making an instance is easy.
 
-![](../../../assets/screenshots/instance_config.png)
+![](../../assets/screenshots/instance_config.png)
 
 Fill out the field for the display name, and the unique ID will fill in automatically. This ID is used to differentiate instances from each other.
 
@@ -38,7 +38,7 @@ Finally, click save to finish making the new instance and return to the instance
 
 Before we launch, we must update the instance to download the necessary files and set up the instance. Select the instance from the list and click update. If this is the first time, it will probably take a couple minutes to complete.
 
-![](../../../assets/screenshots/update_button.png)
+![](../../assets/screenshots/update_button.png)
 
 Looks like we are ready to launch. Click the launch button to start playing! You will also be prompted to log in with your Microsoft account. Simply follow the prompts on screen.
 

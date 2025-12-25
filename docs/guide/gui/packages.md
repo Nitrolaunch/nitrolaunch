@@ -2,7 +2,7 @@
 
 Packages in Nitrolaunch allow easy installation of mods, resource packs, and more. By using them, you don't have to worry about dependencies, downloading, what folders to use, or mod conflicts. Everything just works.
 
-![](../../../assets/screenshots/gui_packages.png)
+![](../../assets/screenshots/gui_packages.png)
 
 ## 1. Syncing
 
@@ -18,15 +18,15 @@ There are also filters and a search bar at the top to further narrow down your r
 
 ## 3. Adding packages to an instance
 
-![](../../../assets/screenshots/package_page.png)
+![](../../assets/screenshots/package_page.png)
 
 Click the install button at the bottom of the package page or on one of the versions in the versions tab. Then pick where you want to install it.
 
-![](../../../assets/screenshots/package_install.png)
+![](../../assets/screenshots/package_install.png)
 
 ## 4. Viewing and editing packages
 
-![](../../../assets/screenshots/instance_packages.png)
+![](../../assets/screenshots/instance_packages.png)
 
 By navigating to an instance's page, you can edit and remove packages on that instance.
 

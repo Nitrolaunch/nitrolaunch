@@ -90,9 +90,9 @@ Properties for the package that do have a meaning to Nitrolaunch and other packa
 
 - `features`: A list of available features for this package. Features can be enabled or disabled by the user to configure how the package is installed.
 - `default_features`: The features that will be enabled by default.
-- `modrinth_id`: ID of the project for this package on Modrinth, if applicable. See [the purpose of host ID instructions](Packages.md#the-purpose-of-host-id-instructions).
-- `curseforge_id`: ID of the project for this package on CurseForge, if applicable. See [the purpose of host ID instructions](Packages.md#the-purpose-of-host-id-instructions).
-- `smithed_id`: ID of the project for this package on Smithed, if applicable. See [the purpose of host ID instructions](Packages.md#the-purpose-of-host-id-instructions).
+- `modrinth_id`: ID of the project for this package on Modrinth, if applicable. See [the purpose of host ID instructions](index.md#the-purpose-of-host-id-instructions).
+- `curseforge_id`: ID of the project for this package on CurseForge, if applicable. See [the purpose of host ID instructions](index.md#the-purpose-of-host-id-instructions).
+- `smithed_id`: ID of the project for this package on Smithed, if applicable. See [the purpose of host ID instructions](index.md#the-purpose-of-host-id-instructions).
 - `content_versions`: The content versions that are available for this package, ordered from oldest to newest.
 - `supported_versions`: Minecraft versions supported by this package. Defaults to all of them.
 - `supported_loaders`: Loaders supported by this package. Defaults to all of them.
