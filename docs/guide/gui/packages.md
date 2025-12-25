@@ -6,7 +6,7 @@ Packages in Nitrolaunch allow easy installation of mods, resource packs, and mor
 
 ## 1. Syncing
 
-Whenever new versions come out for the packages you use, you need to synchronize with the repositories by clicking the `Sync Packages` button at the bottom of the packages page.
+Whenever new versions come out for the packages you use, you need to synchronize with the repositories by clicking the `Sync Packages` button at the bottom of the packages page. This lets you update to new package versions only when you want.
 
 ## 2. Finding the packages you want
 
@@ -30,7 +30,7 @@ Click the install button at the bottom of the package page or on one of the vers
 
 By navigating to an instance's page, you can edit and remove packages on that instance.
 
-You can also click `Browse Packages` to browse for packages that are compatible with this instance.
+You can also click the plus or search buttons to browse for packages that are compatible with this instance.
 
 ## 4. Updating packages
 
