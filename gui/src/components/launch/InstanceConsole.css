@@ -33,7 +33,7 @@
 	align-items: flex-start;
 	gap: 0.3rem;
 
-	overflow: scroll;
+	overflow: auto;
 	overscroll-behavior: contain;
 
 	font-family: "Courier New", Courier, monospace;

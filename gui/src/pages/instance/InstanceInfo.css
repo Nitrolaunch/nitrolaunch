@@ -18,7 +18,7 @@
 	grid-template-columns: minmax(0, 0.075fr) minmax(0, 1fr);
 	margin-top: 1rem;
 	padding: 0.5rem;
-	background-color: var(--bg2);
+	background-color: var(--bg);
 	border: var(--border) solid var(--bg3);
 	border-top-color: var(--bg4);
 	border-left-color: var(--bg4);
@@ -127,15 +127,15 @@
 }
 
 .instance-tab.selected {
-	background-color: var(--bg2);
+	background-color: var(--bg);
 	border: var(--border) solid var(--bg3);
 	border-top-color: var(--bg4);
 	border-left-color: var(--bg4);
-	border-bottom: var(--border) solid var(--bg2);
+	border-bottom: var(--border) solid var(--bg);
 }
 
 #instance-tab-contents {
-	background-color: var(--bg2);
+	background-color: var(--bg);
 
 	border: var(--border) solid var(--bg3);
 	border-top-color: var(--bg4);
