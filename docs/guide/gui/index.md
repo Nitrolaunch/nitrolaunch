@@ -26,7 +26,7 @@ Click the `Create Instance` button to make a new instance to launch.
 
 Making an instance is easy.
 
-![](../../../assets/screenshots/create_instance_page.png)
+![](../../../assets/screenshots/instance_config.png)
 
 Fill out the field for the display name, and the unique ID will fill in automatically. This ID is used to differentiate instances from each other.
 
