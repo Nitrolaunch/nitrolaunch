@@ -116,11 +116,15 @@ impl WASMPlugin {
 }
 
 /// Sets the result / error of the plugin hook
+///
+/// SAFETY: Do not call from multiple threads
 pub unsafe fn _set_hook_result(result: String) {
 	HOOK_RESULT = result;
 }
 
 /// Get the result from the hook that was run. Internal function only used by the ABI.
+///
+/// SAFETY: Do not call from multiple threads
 pub unsafe fn _get_hook_result() -> String {
 	#[allow(static_mut_refs)]
 	HOOK_RESULT.clone()

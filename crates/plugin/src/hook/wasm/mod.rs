@@ -239,7 +239,7 @@ impl bindings::InterfaceWorldImports for State {
 
 	async fn get_current_dir(&mut self) -> String {
 		std::env::current_dir()
-			.unwrap_or(PathBuf::new())
+			.unwrap_or_default()
 			.to_string_lossy()
 			.to_string()
 	}

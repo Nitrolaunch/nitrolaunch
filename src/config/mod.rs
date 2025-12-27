@@ -432,8 +432,8 @@ pub fn read_user_config(config: &UserConfig, id: &str) -> User {
 	match config {
 		UserConfig::Simple(variant) | UserConfig::Advanced { variant } => {
 			let kind = match variant {
-				UserVariant::Microsoft { .. } => UserKind::Microsoft { xbox_uid: None },
-				UserVariant::Demo { .. } => UserKind::Demo,
+				UserVariant::Microsoft => UserKind::Microsoft { xbox_uid: None },
+				UserVariant::Demo => UserKind::Demo,
 				UserVariant::Unknown(id) => UserKind::Unknown(id.clone()),
 			};
 			User::new(kind, id.into())

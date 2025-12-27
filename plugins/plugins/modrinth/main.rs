@@ -405,7 +405,7 @@ async fn download_multiple_projects(
 		.filter(|x| {
 			let path = storage_dirs.projects.join(x);
 			let path2 = storage_dirs.packages.join(x);
-			let path3 = storage_dirs.get_missing_path(&x);
+			let path3 = storage_dirs.get_missing_path(x);
 			!path.exists() && !path2.exists() && !path3.exists()
 		})
 		.cloned()

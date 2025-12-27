@@ -18,9 +18,9 @@ macro_rules! no_window {
 /// Replaces a tilde in a string path
 pub fn replace_tilde(path: &str) -> PathBuf {
 	#[cfg(target_family = "unix")]
-	let path = if path.starts_with("~") {
+	let path = if let Some(stripped) = path.strip_prefix("~") {
 		if let Ok(home) = std::env::var("HOME") {
-			home + &path[1..]
+			home + stripped
 		} else {
 			path.to_string()
 		}

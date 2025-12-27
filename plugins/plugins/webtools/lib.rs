@@ -21,8 +21,7 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 			return Ok(());
 		}
 		// Trick the parser to give it the right bin name
-		let it =
-			std::iter::once(format!("nitro {subcommand}")).chain(arg.args.into_iter().skip(1));
+		let it = std::iter::once(format!("nitro {subcommand}")).chain(arg.args.into_iter().skip(1));
 		let cli = Cli::try_parse_from(it)?;
 		match cli.subcommand {
 			Subcommand::List => list(),

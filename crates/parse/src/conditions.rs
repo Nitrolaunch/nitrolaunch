@@ -299,11 +299,7 @@ fn check_enum_condition_argument<T>(
 	match arg {
 		Some(val) => Ok(val),
 		None => {
-			bail!(
-				"Unknown condition argument '{}' {}",
-				ident.to_string(),
-				pos.clone()
-			);
+			bail!("Unknown condition argument '{}' {}", ident, pos.clone());
 		}
 	}
 }

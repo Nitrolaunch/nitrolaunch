@@ -61,7 +61,7 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 					versions: vec!["foo".into(), "13w24a".into()],
 				};
 				dirs.extend(get_addon_paths(
-					&instance,
+					instance,
 					&game_dir,
 					kind,
 					&[],
@@ -72,7 +72,7 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 					versions: vec!["13w24a".into(), "foo".into()],
 				};
 				dirs.extend(get_addon_paths(
-					&instance,
+					instance,
 					&game_dir,
 					kind,
 					&[],
@@ -84,7 +84,7 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 					versions: Vec::new(),
 				};
 				dirs.extend(get_addon_paths(
-					&instance,
+					instance,
 					&game_dir,
 					kind,
 					&[],
@@ -189,7 +189,7 @@ impl FromStr for AddonType {
 }
 
 impl AddonType {
-	fn to_addon_kind(&self) -> AddonKind {
+	fn to_addon_kind(self) -> AddonKind {
 		match self {
 			Self::Mods => AddonKind::Mod,
 			Self::ResourcePacks => AddonKind::ResourcePack,

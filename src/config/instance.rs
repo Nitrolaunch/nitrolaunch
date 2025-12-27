@@ -32,7 +32,7 @@ pub async fn read_instance_config(
 	o: &mut impl NitroOutput,
 ) -> anyhow::Result<Instance> {
 	if !is_valid_instance_id(&id) {
-		bail!("Invalid instance ID '{}'", id.to_string());
+		bail!("Invalid instance ID '{}'", id);
 	}
 
 	// Get the parent template if it is specified

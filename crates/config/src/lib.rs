@@ -8,10 +8,10 @@ use std::{collections::HashMap, sync::Arc};
 use instance::InstanceConfig;
 use nitro_shared::id::{InstanceID, TemplateID};
 use preferences::PrefDeser;
-use template::TemplateConfig;
 #[cfg(feature = "schema")]
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use template::TemplateConfig;
 use user::UserConfig;
 
 /// Instance configuration

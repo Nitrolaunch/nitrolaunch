@@ -338,7 +338,7 @@ pub fn get_backup_directory(base_dir: &Path, inst_id: &str) -> PathBuf {
 /// Generates a random backup ID
 pub fn generate_random_id() -> String {
 	let mut rng = rand::thread_rng();
-	let num = rng.gen_range(0..std::u64::MAX);
+	let num = rng.gen_range(0..u64::MAX);
 	format!("{num:x}")
 }
 

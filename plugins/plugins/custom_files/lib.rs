@@ -30,7 +30,7 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 			let target = game_dir.join(PathBuf::from(file.target));
 
 			if let Some(parent) = target.parent() {
-				std::fs::create_dir_all(&parent)
+				std::fs::create_dir_all(parent)
 					.context("Failed to create leading directories to file")?;
 			}
 

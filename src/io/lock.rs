@@ -266,10 +266,8 @@ impl Lockfile {
 				}
 
 				// Backwards compatability fix to prevent removing packages that add a repository
-				if req2.repository.is_some() {
-					if inst.values().any(|x| x.addons == pkg.addons) {
-						continue;
-					}
+				if req2.repository.is_some() && inst.values().any(|x| x.addons == pkg.addons) {
+					continue;
 				}
 
 				pkgs_to_remove.push(req.clone());

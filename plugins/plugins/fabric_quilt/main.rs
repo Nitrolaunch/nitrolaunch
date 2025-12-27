@@ -111,7 +111,7 @@ fn main() -> anyhow::Result<()> {
 		}
 
 		let runtime = tokio::runtime::Runtime::new()?;
-		let internal_dir = PathBuf::from(ctx.get_data_dir()?.join("internal"));
+		let internal_dir = ctx.get_data_dir()?.join("internal");
 		let manager = UpdateManager::new(UpdateDepth::Full);
 		let client = nitro_net::download::Client::new();
 

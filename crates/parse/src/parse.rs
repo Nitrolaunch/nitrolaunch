@@ -264,7 +264,7 @@ pub fn parse<'a>(tokens: impl Iterator<Item = &'a TokenAndPos>) -> anyhow::Resul
 								_ => {
 									bail!(
 										"Unknown key {} for 'addon' instruction {}",
-										name.to_string(),
+										name,
 										pos.clone()
 									);
 								}

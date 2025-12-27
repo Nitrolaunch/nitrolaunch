@@ -85,13 +85,13 @@ impl JavaInstallation {
 				let existing_dir = get_existing_dir(
 					id,
 					&vers_str,
-					&params.persistent,
+					params.persistent,
 					params.update_manager.get_depth(),
 				);
 
 				if let Some(existing_dir) = existing_dir {
 					o.display(
-						MessageContents::Simple(format!("Using existing Java installation")),
+						MessageContents::Simple("Using existing Java installation".to_string()),
 						MessageLevel::Debug,
 					);
 					existing_dir

@@ -265,16 +265,14 @@ impl Package {
 
 		// Check properties
 		let properties = self.get_properties(paths, client).await?.clone();
-		if !input.params.force {
-			if eval_check_properties(&input, &properties)? {
-				return Ok(EvalData::new(
-					input,
-					self.id.clone(),
-					properties,
-					&routine,
-					plugins,
-				));
-			}
+		if !input.params.force && eval_check_properties(&input, &properties)? {
+			return Ok(EvalData::new(
+				input,
+				self.id.clone(),
+				properties,
+				&routine,
+				plugins,
+			));
 		}
 
 		match self.content_type {

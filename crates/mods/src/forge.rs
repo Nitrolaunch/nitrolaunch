@@ -368,7 +368,7 @@ fn run_processors(
 		});
 	}
 
-	for result in results {
+	if let Some(result) = results.into_iter().next() {
 		return Err(result);
 	}
 

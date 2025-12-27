@@ -25,8 +25,7 @@ fn main() -> anyhow::Result<()> {
 			return Ok(());
 		}
 		// Trick the parser to give it the right bin name
-		let it =
-			std::iter::once(format!("nitro {subcommand}")).chain(arg.args.into_iter().skip(1));
+		let it = std::iter::once(format!("nitro {subcommand}")).chain(arg.args.into_iter().skip(1));
 		Cli::parse_from(it);
 		print_stats(ctx)?;
 
@@ -267,9 +266,8 @@ fn format_stat_card(stats: &InstanceStats) -> String {
 	let out = out.replace("{{playtime}}", &format_time(stats.calculate_playtime()));
 
 	let last_launch = get_last_launch_difference(stats.last_launch).unwrap_or("Never".into());
-	let out = out.replace("{{last_played}}", &last_launch);
 
-	out
+	out.replace("{{last_played}}", &last_launch)
 }
 
 fn get_last_launch_difference(last_launch: Option<u64>) -> Option<String> {

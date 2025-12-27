@@ -108,7 +108,7 @@ pub async fn export_instance(
 		return Err("Instance does not exist".into());
 	};
 
-	let mut lock = fmt_err(Lockfile::open(&state.paths).context("Failed to open lockfile"))?;
+	let lock = fmt_err(Lockfile::open(&state.paths).context("Failed to open lockfile"))?;
 
 	fmt_err(
 		instance
@@ -117,7 +117,7 @@ pub async fn export_instance(
 				&PathBuf::from(path),
 				&formats,
 				&config.plugins,
-				&mut lock,
+				&lock,
 				&state.paths,
 				&mut output,
 			)

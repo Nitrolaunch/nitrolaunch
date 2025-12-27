@@ -213,10 +213,7 @@ pub async fn eval_instr<E: ScriptEvaluator>(
 				InstrKind::Fail(reason) => {
 					out.finish = true;
 					let reason = reason.as_ref().unwrap_or(&FailReason::None).clone();
-					bail!(
-						"Package script failed explicitly with reason: {}",
-						reason.to_string(),
-					);
+					bail!("Package script failed explicitly with reason: {}", reason,);
 				}
 				InstrKind::Require(deps) => {
 					if let EvalReason::Resolve = config.reason {

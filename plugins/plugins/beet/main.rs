@@ -17,8 +17,7 @@ fn main() -> anyhow::Result<()> {
 			return Ok(());
 		}
 		// Trick the parser to give it the right bin name
-		let it =
-			std::iter::once(format!("nitro {subcommand}")).chain(arg.args.into_iter().skip(1));
+		let it = std::iter::once(format!("nitro {subcommand}")).chain(arg.args.into_iter().skip(1));
 		let cli = Cli::parse_from(it);
 
 		let runtime = tokio::runtime::Runtime::new()?;

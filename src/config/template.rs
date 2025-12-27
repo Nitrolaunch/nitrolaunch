@@ -43,7 +43,7 @@ pub fn consolidate_template_configs(
 						out.insert(id.clone(), new);
 					} else {
 						let message = if templates.contains_key(parent.as_str()) {
-							format!("Cyclic template structure found")
+							"Cyclic template structure found".to_string()
 						} else {
 							format!("Parent template '{parent}' does not exist")
 						};

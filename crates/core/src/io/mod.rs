@@ -144,7 +144,7 @@ pub fn create_named_pipe(path: impl AsRef<Path>) -> std::io::Result<std::process
 		// Open the file in nonblocking mode
 
 		// O_RDONLY | O_NONBLOCK
-		let open_flags = 0 | O_NONBLOCK;
+		let open_flags = O_NONBLOCK;
 
 		let file = unsafe { open(c_path.as_ptr(), open_flags, 0) };
 		if file == -1 {

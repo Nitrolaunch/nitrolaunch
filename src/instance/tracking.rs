@@ -194,15 +194,14 @@ pub fn is_process_alive(pid: u32, system: &System, is_java: bool) -> bool {
 	};
 
 	// If there is no Java, and it should be, it probably isn't our process
-	if is_java {
-		if !process.name().to_string_lossy().contains("java")
-			&& !process
-				.cmd()
-				.iter()
-				.any(|x| x.to_string_lossy().contains("java"))
-		{
-			return false;
-		}
+	if is_java
+		&& !process.name().to_string_lossy().contains("java")
+		&& !process
+			.cmd()
+			.iter()
+			.any(|x| x.to_string_lossy().contains("java"))
+	{
+		return false;
 	}
 
 	true

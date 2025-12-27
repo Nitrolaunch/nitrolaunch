@@ -122,7 +122,7 @@ fn export_template(
 	let code = generate_code();
 
 	runtime
-		.block_on(filebin::upload(data, &code, FILENAME, &client))
+		.block_on(filebin::upload(data, &code, FILENAME, client))
 		.context("Failed to upload template")?;
 
 	Ok(code)
@@ -147,7 +147,7 @@ fn import_template(
 	}
 
 	let data = runtime
-		.block_on(filebin::download(code, FILENAME, &client))
+		.block_on(filebin::download(code, FILENAME, client))
 		.context("Failed to download template. Is the code correct and still valid?")?;
 
 	let template: TemplateConfig =
@@ -155,7 +155,7 @@ fn import_template(
 
 	let modifications = vec![ConfigModification::AddTemplate(id, template)];
 
-	apply_modifications_and_write(config, modifications, &paths)
+	apply_modifications_and_write(config, modifications, paths)
 		.context("Failed to write config")?;
 
 	Ok(())

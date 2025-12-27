@@ -360,10 +360,12 @@ impl InstanceHandle {
 			}
 
 			// Update world files
-			if let InstanceHandleInner::Standard { world_files, .. } = &mut self.inner {
-				if let Some(world_files) = world_files {
-					let _ = world_files.watch(&self.hook_arg, paths, o).await;
-				}
+			if let InstanceHandleInner::Standard {
+				world_files: Some(world_files),
+				..
+			} = &mut self.inner
+			{
+				let _ = world_files.watch(&self.hook_arg, paths, o).await;
 			}
 
 			// Check if the instance has exited

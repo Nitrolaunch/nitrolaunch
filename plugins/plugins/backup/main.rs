@@ -25,8 +25,7 @@ fn main() -> anyhow::Result<()> {
 			return Ok(());
 		}
 		// Trick the parser to give it the right bin name
-		let it =
-			std::iter::once(format!("nitro {subcommand}")).chain(arg.args.into_iter().skip(1));
+		let it = std::iter::once(format!("nitro {subcommand}")).chain(arg.args.into_iter().skip(1));
 		let cli = Cli::parse_from(it);
 		let result = match cli.command {
 			Subcommand::List {
@@ -301,7 +300,7 @@ fn get_backup_config<H: Hook>(instance: &str, ctx: &HookContext<'_, H>) -> anyho
 	let config = ctx.get_custom_config().unwrap_or("{}");
 	let mut config: HashMap<String, Config> =
 		serde_json::from_str(config).context("Failed to deserialize custom config")?;
-	let config = config.remove(&instance.to_string()).unwrap_or_default();
+	let config = config.remove(instance).unwrap_or_default();
 	Ok(config)
 }
 

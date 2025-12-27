@@ -74,7 +74,7 @@ fn main() -> anyhow::Result<()> {
 		json_to_file(stored_versions_path, &versions)
 			.context("Failed to write versions to file")?;
 
-		if !versions.iter().any(|x| *x == arg.version_info.version) {
+		if !versions.contains(&arg.version_info.version) {
 			bail!("Could not find a Paper version for the given Minecraft version");
 		}
 

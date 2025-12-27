@@ -289,7 +289,7 @@ async fn migrate(
 	let mut lock = Lockfile::open(&data.paths).context("Failed to open lockfile")?;
 
 	let new_configs = migrate_instances(
-		&format,
+		format,
 		Some(instances).filter(|x| !x.is_empty()),
 		!copy,
 		&formats,

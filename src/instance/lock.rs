@@ -142,15 +142,14 @@ impl InstanceLockfile {
 			}
 
 			// Backwards compatability fix to prevent removing packages that add a repository
-			if req2.repository.is_some() {
-				if self
+			if req2.repository.is_some()
+				&& self
 					.contents
 					.packages
 					.values()
 					.any(|x| x.addons == pkg.addons)
-				{
-					continue;
-				}
+			{
+				continue;
 			}
 
 			pkgs_to_remove.push(req.clone());
