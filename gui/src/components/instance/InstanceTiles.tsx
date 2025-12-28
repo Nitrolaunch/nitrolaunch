@@ -4,58 +4,106 @@ import { invoke } from "@tauri-apps/api/core";
 import { stringCompare } from "../../utils";
 
 export default function InstanceTiles(props: InstanceTilesProps) {
-	let [rows, _] = createResource(async () => {
-		let tiles: TileData[] = await invoke("get_instance_tiles", { instanceId: props.instanceId });
+	let [rows, _] = createResource(
+		async () => {
+			let tiles: TileData[] = await invoke("get_instance_tiles", {
+				instanceId: props.instanceId,
+			});
 
-		// Sort by ID, then move each tile into a bucket of large or small
-		let smallTiles = [];
-		let largeTiles = [];
-		for (let tile of tiles.sort((x, y) => stringCompare(x.id, y.id))) {
-			if (tile.size == "small") {
-				smallTiles.push(tile);
-			} else {
-				largeTiles.push(tile);
+			// Sort by ID, then move each tile into a bucket of large or small
+			let smallTiles = [];
+			let largeTiles = [];
+			for (let tile of tiles.sort((x, y) => stringCompare(x.id, y.id))) {
+				if (tile.size == "small") {
+					smallTiles.push(tile);
+				} else {
+					largeTiles.push(tile);
+				}
 			}
-		}
 
-		// Now make the rows
-		let rows: (TileData | undefined)[][] = [];
-		let count = Math.max(smallTiles.length, largeTiles.length);
-		for (let i = 0; i < count; i++) {
-			if (i >= smallTiles.length) {
-				rows.push([undefined, largeTiles[i]]);
-			} else if (i >= largeTiles.length) {
-				rows.push([smallTiles[i], undefined]);
-			} else {
-				rows.push([smallTiles[i], largeTiles[i]]);
+			// Now make the rows
+			let rows: (TileData | undefined)[][] = [];
+			let count = Math.max(smallTiles.length, largeTiles.length);
+			for (let i = 0; i < count; i++) {
+				if (i >= smallTiles.length) {
+					rows.push([undefined, largeTiles[i]]);
+				} else if (i >= largeTiles.length) {
+					// Double-small rows
+					if (smallTiles.length - i >= 2) {
+						// Add two and skip
+						rows.push([smallTiles[i], smallTiles[i + 1]]);
+						i++;
+					} else {
+						rows.push([smallTiles[i], undefined]);
+					}
+				} else {
+					rows.push([smallTiles[i], largeTiles[i]]);
+				}
 			}
-		}
 
-		return rows;
-	}, { initialValue: [] })
+			return [];
+			return rows;
+		},
+		{ initialValue: [] }
+	);
 
-	return <div class="cont col instance-tiles">
-		<For each={rows()}>
-			{(row, i) => {
-				let smallTile = <div class="cont instance-tile" innerHTML={row[0] == undefined ? "" : row[0].contents}></div>;
-				let largeTile = <div class="cont instance-tile" innerHTML={row[1] == undefined ? "" : row[1].contents}></div>;
+	return (
+		<Switch>
+			<Match when={rows().length == 0}>
+				<div class="cont col fullwidth fullheight" style="color: var(--fg3)">
+					Nothing to see here. Plugins can add custom tiles in this box.
+				</div>
+			</Match>
+			<Match when={rows().length > 0}>
+				<div class="cont col instance-tiles">
+					<For each={rows()}>
+						{(row, i) => {
+							let smallTile = (
+								<div
+									class="cont instance-tile"
+									innerHTML={row[0] == undefined ? "" : row[0].contents}
+								></div>
+							);
+							let largeTile = (
+								<div
+									class="cont instance-tile"
+									innerHTML={row[1] == undefined ? "" : row[1].contents}
+								></div>
+							);
 
-				let cls = i() % 2 == 0 ? "small-large" : "large-small";
+							let bothSmall =
+								row[0] != undefined &&
+								row[0].size == "small" &&
+								row[1] != undefined &&
+								row[1].size == "small";
 
-				// Alternate the order of small and large tiles for more variety
-				return <div class={`instance-tile-row ${cls}`}>
-					<Switch>
-						<Match when={i() % 2 == 0}>
-							{smallTile}{largeTile}
-						</Match>
-						<Match when={i() % 2 == 1}>
-							{largeTile}{smallTile}
-						</Match>
-					</Switch>
-				</div>;
-			}}
-		</For>
-	</div>;
+							let cls = bothSmall
+								? "small-small"
+								: i() % 2 == 0
+								? "small-large"
+								: "large-small";
+
+							// Alternate the order of small and large tiles for more variety
+							return (
+								<div class={`instance-tile-row ${cls}`}>
+									<Switch>
+										<Match when={i() % 2 == 0}>
+											{smallTile}
+											{largeTile}
+										</Match>
+										<Match when={i() % 2 == 1}>
+											{largeTile}
+											{smallTile}
+										</Match>
+									</Switch>
+								</div>
+							);
+						}}
+					</For>
+				</div>
+			</Match>
+		</Switch>
+	);
 }
 
 export interface InstanceTilesProps {

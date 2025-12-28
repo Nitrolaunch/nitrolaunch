@@ -19,6 +19,10 @@
 	grid-template-columns: 2fr 1fr;
 }
 
+.instance-tile-row.small-small {
+	grid-template-columns: 1fr 1fr;
+}
+
 .instance-tile {
 	border: var(--border) solid var(--bg3);
 	border-radius: var(--round2);
