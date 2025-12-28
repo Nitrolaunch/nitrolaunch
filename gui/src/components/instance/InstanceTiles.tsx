@@ -41,7 +41,6 @@ export default function InstanceTiles(props: InstanceTilesProps) {
 				}
 			}
 
-			return [];
 			return rows;
 		},
 		{ initialValue: [] }
