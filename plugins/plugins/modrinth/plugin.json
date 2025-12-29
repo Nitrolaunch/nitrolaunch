@@ -1,6 +1,7 @@
 {
 	"name": "Modrinth",
 	"description": "Install Modrinth packs on templates and instances",
+	"version": "v4",
 	"protocol_version": 3,
 	"raw_transfer": true,
 	"hooks": {

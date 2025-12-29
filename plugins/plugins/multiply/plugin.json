@@ -1,6 +1,7 @@
 {
 	"name": "Multiply",
 	"description": "Create many instances easily",
+	"version": "v4",
 	"protocol_version": 3,
 	"hooks": {
 		"add_instances": {

@@ -4,6 +4,7 @@ import Icon from "../../Icon";
 
 import "./PackageVersion.css";
 import { Lock } from "../../../icons";
+import Dropdown from "../select/Dropdown";
 
 // An editable / lockable package version
 export default function PackageVersion(props: PackageVersionProps) {
@@ -13,41 +14,72 @@ export default function PackageVersion(props: PackageVersionProps) {
 	let inputElement!: HTMLInputElement;
 
 	createEffect(() => {
-		if (newVersion() != undefined && inputElement != undefined) {
-			inputElement.focus();
+		if (newVersion() != undefined) {
+			if (props.onStartEdit != undefined) {
+				console.log("Here 5");
+				props.onStartEdit!();
+			}
+
+			if (inputElement != undefined) {
+				inputElement.focus();
+			}
 		}
 	});
 
 	return (
 		<Switch>
 			<Match when={newVersion() != undefined}>
-				<form
-					onsubmit={(e) => {
-						e.preventDefault();
+				<Switch>
+					<Match when={props.versionOptions == undefined}>
+						<form
+							onsubmit={(e) => {
+								e.preventDefault();
 
-						if (newVersion()!.length == 0) {
-							props.onEdit!(undefined);
-						} else {
-							props.onEdit!(newVersion());
-						}
-						setNewVersion(undefined);
-					}}
-				>
-					<input
-						class="cont package-content-version package-content-version-edit"
-						value={newVersion()}
-						onchange={(e) => setNewVersion(e.target.value)}
-						onkeydown={(e: any) => {
-							// Unfocus on escape
-							if (e.keyCode == 27) {
-								e.target.blur();
+								if (newVersion()!.length == 0) {
+									props.onEdit!(undefined);
+								} else {
+									props.onEdit!(newVersion());
+								}
 								setNewVersion(undefined);
-							}
-						}}
-						onfocusout={() => setNewVersion(undefined)}
-						ref={inputElement}
-					/>
-				</form>
+							}}
+						>
+							<input
+								class="cont package-content-version package-content-version-edit"
+								value={newVersion()}
+								onchange={(e) => setNewVersion(e.target.value)}
+								onkeydown={(e: any) => {
+									// Unfocus on escape
+									if (e.keyCode == 27) {
+										e.target.blur();
+										setNewVersion(undefined);
+									}
+								}}
+								onfocusout={() => setNewVersion(undefined)}
+								ref={inputElement}
+							/>
+						</form>
+					</Match>
+					<Match when={props.versionOptions != undefined}>
+						<div class="cont" style="width:8rem">
+							<Dropdown
+								options={props.versionOptions!.map((x) => {
+									return {
+										value: x,
+										contents: x,
+									};
+								})}
+								startOpen
+								selected={props.installedVersion}
+								onChange={(version) => {
+									props.onEdit!(version);
+									setNewVersion(undefined);
+								}}
+								zIndex="5"
+								onClose={() => setNewVersion(undefined)}
+							/>
+						</div>
+					</Match>
+				</Switch>
 			</Match>
 			<Match when={props.configuredVersion != undefined}>
 				<Tip
@@ -103,4 +135,6 @@ export interface PackageVersionProps {
 	installedVersion?: string;
 	configuredVersion?: string;
 	onEdit?: (version: string | undefined) => void;
+	onStartEdit?: () => void;
+	versionOptions?: string[];
 }

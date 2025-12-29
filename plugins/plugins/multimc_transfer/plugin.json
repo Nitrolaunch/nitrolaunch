@@ -1,6 +1,7 @@
 {
 	"name": "MultiMC Transfer",
 	"description": "Instance transfer for MultiMC and PrismLauncher",
+	"version": "v4",
 	"protocol_version": 3,
 	"hooks": {
 		"add_instance_transfer_formats": {

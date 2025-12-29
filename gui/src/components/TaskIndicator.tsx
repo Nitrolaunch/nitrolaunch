@@ -19,7 +19,7 @@ import ProgressBar from "./ProgressBar";
 import { ResolutionErrorEvent } from "../types";
 import ResolutionError from "./package/ResolutionError";
 
-export default function TaskIndicator(props: TaskIndicatorProps) {
+export default function TaskIndicator() {
 	// Map of tasks to messages
 	let [messages, setMessages] = createSignal<TaskMap>({});
 	let [taskCount, setTaskCount] = createSignal(0);
@@ -268,9 +268,8 @@ export default function TaskIndicator(props: TaskIndicatorProps) {
 	return (
 		<div
 			id="task-indicator"
-			style={`border-color:${getColors(color())[0]};background-color:${
-				getColors(color())[2]
-			}`}
+			style={`border-color:${getColors(color())[0]};background-color:${getColors(color())[2]
+				}`}
 		>
 			<div
 				id="task-indicator-preview"
@@ -315,9 +314,8 @@ export default function TaskIndicator(props: TaskIndicatorProps) {
 				<div class="cont">
 					<Show
 						when={taskCount() == 1}
-						fallback={`${taskCount()} ${
-							taskCount() == 1 ? "task" : "tasks"
-						} running`}
+						fallback={`${taskCount()} ${taskCount() == 1 ? "task" : "tasks"
+							} running`}
 					>
 						{taskName()}
 					</Show>
@@ -327,16 +325,14 @@ export default function TaskIndicator(props: TaskIndicatorProps) {
 				<div
 					class="cont col"
 					id="task-indicator-popup"
-					style={`border-color:${
-						getColors(getTaskColor(selectedTaskData()!.id))[0]
-					}`}
+					style={`border-color:${getColors(getTaskColor(selectedTaskData()!.id))[0]
+						}`}
 					onclick={() => setSelectedTask(undefined)}
 				>
 					<div
 						class="cont bold"
-						style={`color:${
-							getColors(getTaskColor(selectedTaskData()!.id))[1]
-						}`}
+						style={`color:${getColors(getTaskColor(selectedTaskData()!.id))[1]
+							}`}
 					>
 						{getTaskDisplayName(selectedTaskData()!.id)}
 					</div>
@@ -388,8 +384,6 @@ export default function TaskIndicator(props: TaskIndicatorProps) {
 		</div>
 	);
 }
-
-export interface TaskIndicatorProps {}
 
 function Message(props: MessageProps) {
 	return (
@@ -458,6 +452,8 @@ enum MessageType {
 function getTaskDisplayName(task: string) {
 	if (task == "get_plugins") {
 		return "Getting plugins";
+	} else if (task == "get_plugin_versions") {
+		return "Fetching versions";
 	} else if (task == "update_instance") {
 		return "Updating instance";
 	} else if (task == "update_instance_packages") {
@@ -481,7 +477,7 @@ function getTaskDisplayName(task: string) {
 }
 
 function getTaskColor(task: string) {
-	if (task == "get_plugins" || task == "install_plugins") {
+	if (task == "get_plugins" || task == "install_plugins" || task == "get_plugin_versions") {
 		return "plugin";
 	} else if (task.startsWith("launch_instance") || task == "update_instance") {
 		return "instance";

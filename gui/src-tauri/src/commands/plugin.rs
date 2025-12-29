@@ -8,7 +8,7 @@ use nitrolaunch::plugin_crate::hook::hooks::{
 	CustomActionArg, DropdownButton, DropdownButtonLocation, GetPage, InjectPageScript,
 	InjectPageScriptArg, InstanceTile, SidebarButton, Theme,
 };
-use nitrolaunch::shared::output::{MessageContents, MessageLevel, NitroOutput};
+use nitrolaunch::plugin_crate::plugin::PluginMetadata;
 use nitrolaunch::{plugin::install::get_verified_plugins, shared::output::NoOp};
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
@@ -32,9 +32,10 @@ pub async fn get_local_plugins(state: tauri::State<'_, State>) -> Result<Vec<Plu
 		Some(PluginInfo {
 			enabled: config.plugins.contains(&id),
 			id,
-			name: manifest.name,
-			description: manifest.description,
+			version: manifest.version,
+			meta: manifest.meta,
 			installed: true,
+			is_official: false,
 		})
 	});
 
@@ -45,30 +46,34 @@ pub async fn get_local_plugins(state: tauri::State<'_, State>) -> Result<Vec<Plu
 pub async fn get_remote_plugins(
 	state: tauri::State<'_, State>,
 	app_handle: tauri::AppHandle,
+	offline: bool,
 ) -> Result<Vec<PluginInfo>, String> {
-	let mut output = LauncherOutput::new(state.get_output(app_handle));
-	output.set_task("get_plugins");
-	let mut process = output.get_process();
-	process.display(
-		MessageContents::StartProcess("Getting plugins".into()),
-		MessageLevel::Important,
-	);
-	let verified_plugins = fmt_err(
-		get_verified_plugins(&state.client)
-			.await
-			.context("Failed to get verified plugins"),
-	)?;
-	process.display(
-		MessageContents::Success("Plugins Acquired".into()),
-		MessageLevel::Important,
-	);
+	let verified_plugins = if offline {
+		fmt_err(
+			get_verified_plugins(&state.client, true)
+				.await
+				.context("Failed to get verified plugins"),
+		)?
+	} else {
+		let mut output = LauncherOutput::new(state.get_output(app_handle));
+		output.set_task("get_plugins");
+
+		let verified_plugins = fmt_err(
+			get_verified_plugins(&state.client, false)
+				.await
+				.context("Failed to get verified plugins"),
+		)?;
+
+		verified_plugins
+	};
 
 	let verified_plugins = verified_plugins.into_values().map(|x| PluginInfo {
 		id: x.id,
-		name: x.name,
-		description: Some(x.description),
+		meta: x.meta,
+		version: x.version,
 		enabled: false,
 		installed: false,
+		is_official: x.github_owner == "Nitrolaunch",
 	});
 
 	Ok(verified_plugins
@@ -79,10 +84,13 @@ pub async fn get_remote_plugins(
 #[derive(Serialize, Deserialize, Debug)]
 pub struct PluginInfo {
 	pub id: String,
-	pub name: Option<String>,
-	pub description: Option<String>,
+	pub version: Option<String>,
+	#[serde(flatten)]
+	pub meta: PluginMetadata,
 	pub enabled: bool,
 	pub installed: bool,
+	/// Whether this is an official Nitrolaunch plugin
+	pub is_official: bool,
 }
 
 #[tauri::command]
@@ -109,12 +117,13 @@ pub async fn install_plugin(
 	state: tauri::State<'_, State>,
 	app_handle: tauri::AppHandle,
 	plugin: &str,
+	version: Option<&str>,
 ) -> Result<(), String> {
 	let mut output = LauncherOutput::new(state.get_output(app_handle));
 	output.set_task("install_plugins");
 
 	let verified_list = fmt_err(
-		get_verified_plugins(&state.client)
+		get_verified_plugins(&state.client, false)
 			.await
 			.context("Failed to get verified plugin list"),
 	)?;
@@ -125,12 +134,43 @@ pub async fn install_plugin(
 
 	fmt_err(
 		plugin
-			.install(None, &state.paths, &state.client, &mut NoOp)
+			.install(version, &state.paths, &state.client, &mut NoOp)
 			.await
 			.context("Failed to install plugin"),
 	)?;
 
 	Ok(())
+}
+
+#[tauri::command]
+pub async fn get_plugin_versions(
+	state: tauri::State<'_, State>,
+	app_handle: tauri::AppHandle,
+	plugin: &str,
+) -> Result<Vec<String>, String> {
+	let mut output = LauncherOutput::new(state.get_output(app_handle));
+	output.set_task("get_plugin_versions");
+
+	let verified_list = fmt_err(
+		get_verified_plugins(&state.client, true)
+			.await
+			.context("Failed to get verified plugin list"),
+	)?;
+
+	let Some(plugin) = verified_list.get(plugin) else {
+		return Err(format!("Unknown plugin '{plugin}'"));
+	};
+
+	let assets = fmt_err(
+		plugin
+			.get_candidate_assets(None, &state.client)
+			.await
+			.context("Failed to install plugin"),
+	)?;
+
+	let versions = assets.into_iter().map(|x| x.version).unique().collect();
+
+	Ok(versions)
 }
 
 #[tauri::command]
@@ -161,7 +201,7 @@ pub async fn install_default_plugins(
 	];
 
 	let verified_list = fmt_err(
-		get_verified_plugins(&state.client)
+		get_verified_plugins(&state.client, false)
 			.await
 			.context("Failed to get verified plugin list"),
 	)?;

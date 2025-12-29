@@ -1,6 +1,7 @@
 {
 	"name": "Automate",
 	"description": "Run commands at different parts of the instance lifecycle with no coding knowledge",
+	"version": "v4",
 	"protocol_version": 3,
 	"hooks": {
 		"on_instance_launch": {

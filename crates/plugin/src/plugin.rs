@@ -6,6 +6,7 @@ use std::sync::Arc;
 use anyhow::bail;
 use anyhow::Context;
 use nitro_shared::output::NitroOutput;
+use serde::Serialize;
 use serde::{Deserialize, Deserializer};
 use tokio::sync::Mutex;
 
@@ -290,10 +291,11 @@ impl Plugin {
 #[derive(Deserialize, Debug, Default)]
 #[serde(default)]
 pub struct PluginManifest {
-	/// The display name of the plugin
-	pub name: Option<String>,
-	/// The short description of the plugin
-	pub description: Option<String>,
+	/// Metadata for the plugin
+	#[serde(flatten)]
+	pub meta: PluginMetadata,
+	/// The current version of the plugin
+	pub version: Option<String>,
 	/// The Nitrolaunch version this plugin is for
 	#[serde(alias = "mcvm_version")]
 	pub nitro_version: Option<String>,
@@ -316,6 +318,16 @@ impl PluginManifest {
 	pub fn new() -> Self {
 		Self::default()
 	}
+}
+
+/// Optional metadata for a plugin
+#[derive(Serialize, Deserialize, Default, Debug)]
+#[serde(default)]
+pub struct PluginMetadata {
+	/// The display name of the plugin
+	pub name: Option<String>,
+	/// The short description of the plugin
+	pub description: Option<String>,
 }
 
 /// A CLI subcommand provided by a plugin

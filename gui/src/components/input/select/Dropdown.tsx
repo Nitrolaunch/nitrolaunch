@@ -18,7 +18,7 @@ export default function Dropdown(props: DropdownProps) {
 	let [isOpen, setIsOpen] = createSignal(props.startOpen == true);
 
 	// Hovering behavior
-	let [isHeaderHovered, setIsHeaderHovered] = createSignal(false);
+	let [isHeaderHovered, setIsHeaderHovered] = createSignal(isOpen());
 	let [isGapHovered, setIsGapHovered] = createSignal(false);
 	let [areOptionsHovered, setAreOptionsHovered] = createSignal(false);
 
@@ -29,16 +29,23 @@ export default function Dropdown(props: DropdownProps) {
 			// We need to set a timeout since when we switch between elements there is an instant where nothing is hovered
 			setTimeout(() => {
 				if (!anyPartHovered()) {
-					setIsOpen(false);
+					close();
 				}
 			}, 250);
 		}
 	});
 
+	function close() {
+		setIsOpen(false);
+		if (props.onClose != undefined) {
+			props.onClose!();
+		}
+	}
+
 	let selectFunction = (value: string | undefined) => {
 		if (props.onChange != undefined) {
 			props.onChange(value);
-			setIsOpen(false);
+			close();
 		}
 		if (props.onChangeMulti != undefined) {
 			if (Array.isArray(props.selected)) {
@@ -112,7 +119,11 @@ export default function Dropdown(props: DropdownProps) {
 					if (props.onHeaderClick != undefined && !isOpen()) {
 						props.onHeaderClick();
 					} else {
-						setIsOpen(!isOpen());
+						if (isOpen()) {
+							close();
+						} else {
+							setIsOpen(true);
+						}
 					}
 				}}
 				style={`${isOpen() && isSearchable ? "justify-content:flex-start" : ""
@@ -143,6 +154,11 @@ export default function Dropdown(props: DropdownProps) {
 									e.target.blur();
 								}
 							}}
+							onfocusout={() => {
+								if (props.startOpen == true) {
+									close();
+								}
+							}}
 							ref={searchElement}
 						/>
 						<div class="cont dropdown-search-icon">
@@ -155,7 +171,11 @@ export default function Dropdown(props: DropdownProps) {
 						class={`cont dropdown-arrow ${isOpen() ? "open" : ""}`}
 						onclick={(e) => {
 							if (props.onHeaderClick != undefined) {
-								setIsOpen(!isOpen());
+								if (isOpen()) {
+									close();
+								} else {
+									setIsOpen(true);
+								}
 								e.preventDefault();
 								e.stopPropagation();
 							}
@@ -242,6 +262,7 @@ export interface DropdownProps {
 	optionsWidth?: string;
 	showArrow?: boolean;
 	onHeaderClick?: () => void;
+	onClose?: () => void;
 }
 
 function DropdownOption(props: OptionProps) {

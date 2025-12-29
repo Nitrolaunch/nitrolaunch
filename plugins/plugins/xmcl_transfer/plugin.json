@@ -1,6 +1,7 @@
 {
 	"name": "XMCL Transfer",
 	"description": "Instance transfer for XMCL",
+	"version": "v4",
 	"protocol_version": 3,
 	"hooks": {
 		"add_instance_transfer_formats": {

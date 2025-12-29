@@ -1,6 +1,7 @@
 {
 	"name": "Stats",
 	"description": "Track and view playtime stats",
+	"version": "v4",
 	"protocol_version": 3,
 	"hooks": {
 		"subcommand": {

@@ -1,6 +1,7 @@
 {
 	"name": "Cleanup",
 	"description": "Clean up old files",
+	"version": "v4",
 	"protocol_version": 3,
 	"hooks": {
 		"subcommand": {

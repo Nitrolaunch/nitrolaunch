@@ -1,6 +1,7 @@
 {
 	"name": "Modrinth API",
 	"description": "Make simple Modrinth API calls to query project versions",
+	"version": "v4",
 	"protocol_version": 3,
 	"hooks": {
 		"subcommand": {

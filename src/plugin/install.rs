@@ -6,8 +6,8 @@ use std::{
 
 use anyhow::{bail, Context};
 use nitro_core::{io::json_from_file, net::download};
-use nitro_net::github::get_github_releases;
-use nitro_plugin::plugin::PluginManifest;
+use nitro_net::github::{get_github_releases, GithubAsset};
+use nitro_plugin::plugin::{PluginManifest, PluginMetadata};
 use nitro_shared::{
 	output::{MessageContents, MessageLevel, NitroOutput},
 	util::TARGET_BITS_STR,
@@ -25,62 +25,61 @@ use super::PluginManager;
 pub struct VerifiedPlugin {
 	/// The ID of the plugin
 	pub id: String,
-	/// The display name of the plugin
-	pub name: Option<String>,
+	/// The current version of the plugin
+	pub version: Option<String>,
+	/// Metadata for the plugin
+	#[serde(flatten)]
+	pub meta: PluginMetadata,
 	/// The organization / user that owns the repo where this plugin is
 	pub github_owner: String,
 	/// The name of the GitHub repo where this plugin is
 	pub github_repo: String,
-	/// Short description of the plugin
-	pub description: String,
 }
 
 /// Gets the verified plugin list
 pub async fn get_verified_plugins(
 	client: &Client,
+	offline: bool,
 ) -> anyhow::Result<HashMap<String, VerifiedPlugin>> {
 	let mut list: HashMap<String, VerifiedPlugin> =
 		serde_json::from_str(include_str!("verified_plugins.json"))
 			.context("Failed to deserialize core verified list")?;
 
-	if let Ok(remote_list) = download::json::<HashMap<String, VerifiedPlugin>>(
-		"https://github.com/Nitrolaunch/nitrolaunch/blob/main/src/plugin/verified_plugins.json",
-		client,
-	)
-	.await
-	{
-		list.extend(remote_list);
+	if !offline {
+		if let Ok(remote_list) = download::json::<HashMap<String, VerifiedPlugin>>(
+			"https://github.com/Nitrolaunch/nitrolaunch/blob/main/src/plugin/verified_plugins.json",
+			client,
+		)
+		.await
+		{
+			list.extend(remote_list);
+		}
 	}
 
 	Ok(list)
 }
 
 impl VerifiedPlugin {
-	/// Install or update this plugin
-	pub async fn install(
+	/// Gets the list of candidate GitHub assets for this plugin, ordered from newest to oldest
+	pub async fn get_candidate_assets(
 		&self,
 		version: Option<&str>,
-		paths: &Paths,
 		client: &Client,
-		o: &mut impl NitroOutput,
-	) -> anyhow::Result<()> {
+	) -> anyhow::Result<Vec<CandidateAsset>> {
 		// Get releases
 		let releases = get_github_releases(&self.github_owner, &self.github_repo, client)
 			.await
 			.context("Failed to get GitHub releases")?;
 
-		let mut selected_asset = None;
-		'outer: for release in releases {
+		let mut assets = Vec::new();
+
+		for release in releases {
 			// Only get releases that are tagged correctly
 			if !release.tag_name.contains("plugin") {
 				continue;
 			}
 
-			// Grab the version from the tag, skipping past the 'plugin' and the id
-			let mut tag_parts = release.tag_name.split('-');
-			tag_parts.next();
-			tag_parts.next();
-			let Some(release_version) = tag_parts.next() else {
+			let Some(release_version) = extract_release_plugin_version(&release.tag_name) else {
 				continue;
 			};
 
@@ -116,20 +115,35 @@ impl VerifiedPlugin {
 					continue;
 				}
 
-				selected_asset = Some(asset);
-				break 'outer;
+				assets.push(CandidateAsset {
+					asset,
+					version: release_version.to_string(),
+				});
 			}
 		}
 
-		let Some(asset) = selected_asset else {
+		Ok(assets)
+	}
+
+	/// Install or update this plugin
+	pub async fn install(
+		&self,
+		version: Option<&str>,
+		paths: &Paths,
+		client: &Client,
+		o: &mut impl NitroOutput,
+	) -> anyhow::Result<()> {
+		let assets = self.get_candidate_assets(version, client).await?;
+
+		let Some(asset) = assets.first() else {
 			bail!("Could not find a release that matches your system");
 		};
 
 		// Actually download and install
-		if !asset.content_type.contains("zip") {
+		if !asset.asset.content_type.contains("zip") {
 			bail!("Plugin asset is not a ZIP file");
 		}
-		let zip = download::bytes(asset.browser_download_url, client)
+		let zip = download::bytes(&asset.asset.browser_download_url, client)
 			.await
 			.context("Failed to download zipped plugin")?;
 
@@ -157,4 +171,19 @@ impl VerifiedPlugin {
 
 		Ok(())
 	}
+}
+
+/// Asset for a plugin that matches the system and version requirements
+pub struct CandidateAsset {
+	/// The asset
+	pub asset: GithubAsset,
+	/// The version name of the release this asset is from
+	pub version: String,
+}
+
+/// Splits the parts of a release name to extract the plugin version
+pub fn extract_release_plugin_version(tag_name: &str) -> Option<&str> {
+	// Format is plugin-<id>-<version>
+	let mut tag_parts = tag_name.split('-');
+	tag_parts.nth(2)
 }

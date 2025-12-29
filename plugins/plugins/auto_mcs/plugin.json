@@ -1,6 +1,7 @@
 {
 	"name": "auto-mcs",
 	"description": "Full integration with auto-mcs",
+	"version": "v4",
 	"protocol_version": 3,
 	"hooks": {
 		"add_instance_transfer_formats": {

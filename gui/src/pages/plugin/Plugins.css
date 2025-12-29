@@ -44,6 +44,10 @@
 	font-weight: bold;
 }
 
+.plugin-official {
+	color: var(--instance);
+}
+
 .plugin-id {
 	color: var(--fg3);
 	font-weight: bold;
@@ -56,4 +60,5 @@
 
 .plugin-buttons {
 	justify-content: flex-end;
+	position: relative;
 }

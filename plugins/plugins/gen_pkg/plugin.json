@@ -1,6 +1,7 @@
 {
 	"name": "Gen Package",
 	"description": "Automatically generate packages from existing websites",
+	"version": "v4",
 	"protocol_version": 3,
 	"hooks": {
 		"subcommand": {

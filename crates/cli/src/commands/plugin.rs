@@ -111,11 +111,12 @@ async fn info(data: &mut CmdData<'_>, plugin: String) -> anyhow::Result<()> {
 		"<s>Plugin <b>{}</>:",
 		plugin
 			.get_manifest()
+			.meta
 			.name
 			.as_ref()
 			.unwrap_or(plugin.get_id())
 	);
-	if let Some(description) = &plugin.get_manifest().description {
+	if let Some(description) = &plugin.get_manifest().meta.description {
 		cprintln!("{}", description);
 	}
 	cprintln!("{}<s>ID:</> {}", HYPHEN_POINT, plugin.get_id());
@@ -134,7 +135,7 @@ async fn install(
 
 	let client = Client::new();
 
-	let verified_list = get_verified_plugins(&client)
+	let verified_list = get_verified_plugins(&client, false)
 		.await
 		.context("Failed to get verified plugin list")?;
 
@@ -196,7 +197,7 @@ async fn browse(data: &mut CmdData<'_>) -> anyhow::Result<()> {
 
 	let client = Client::new();
 
-	let verified_list = get_verified_plugins(&client)
+	let verified_list = get_verified_plugins(&client, false)
 		.await
 		.context("Failed to get verified plugin list")?;
 
@@ -205,12 +206,11 @@ async fn browse(data: &mut CmdData<'_>) -> anyhow::Result<()> {
 		.values()
 		.sorted_by_cached_key(|x| x.id.clone())
 	{
-		cprintln!(
-			"{}<s>{}</> - {}",
-			HYPHEN_POINT,
-			plugin.id,
-			plugin.description
-		);
+		if let Some(description) = &plugin.meta.description {
+			cprintln!("{}<s>{}</> - {}", HYPHEN_POINT, plugin.id, description);
+		} else {
+			cprintln!("{}<s>{}</>", HYPHEN_POINT, plugin.id);
+		}
 	}
 
 	Ok(())

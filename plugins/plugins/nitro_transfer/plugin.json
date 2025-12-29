@@ -1,6 +1,7 @@
 {
 	"name": "Nitrolaunch Transfer",
 	"description": "Instance transfer support that supports everything in Nitrolaunch instances",
+	"version": "v4",
 	"protocol_version": 3,
 	"hooks": {
 		"add_instance_transfer_formats": {

@@ -179,6 +179,7 @@ fn main() {
 			commands::plugin::get_remote_plugins,
 			commands::plugin::enable_disable_plugin,
 			commands::plugin::install_plugin,
+			commands::plugin::get_plugin_versions,
 			commands::plugin::uninstall_plugin,
 			commands::plugin::install_default_plugins,
 			commands::plugin::get_page_inject_script,

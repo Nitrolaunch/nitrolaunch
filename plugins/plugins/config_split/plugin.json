@@ -1,6 +1,7 @@
 {
 	"name": "Config Split",
 	"description": "Split configuration into multiple files",
+	"version": "v4",
 	"protocol_version": 3,
 	"hooks": {
 		"add_instances": {

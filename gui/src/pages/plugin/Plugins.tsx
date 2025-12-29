@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import {
+	createEffect,
 	createResource,
 	createSignal,
 	For,
@@ -13,6 +14,7 @@ import IconTextButton from "../../components/input/button/IconTextButton";
 import {
 	Book,
 	Box,
+	Check,
 	Controller,
 	CurlyBraces,
 	Cycle,
@@ -39,6 +41,7 @@ import IconButton from "../../components/input/button/IconButton";
 import { loadPagePlugins } from "../../plugins";
 import SlideSwitch from "../../components/input/SlideSwitch";
 import FloatingTabs from "../../components/input/select/FloatingTabs";
+import PackageVersion from "../../components/input/text/PackageVersion";
 
 export default function Plugins() {
 	onMount(() => loadPagePlugins("plugins"));
@@ -47,10 +50,45 @@ export default function Plugins() {
 		async () => (await invoke("get_local_plugins")) as PluginInfo[]
 	);
 	let [remotePlugins, remoteMethods] = createResource(
-		async () => (await invoke("get_remote_plugins")) as PluginInfo[]
+		async () => (await invoke("get_remote_plugins", { offline: false })) as PluginInfo[]
+	);
+	let [noDownloadRemotePlugins, _] = createResource(
+		async () => (await invoke("get_remote_plugins", { offline: true })) as PluginInfo[]
 	);
 	let [isRemote, setIsRemote] = createSignal(false);
 	let [restartNeeded, setRestartNeeded] = createSignal(false);
+
+	// Current plugin that we are showing a versions dropdown for
+	let [pluginSelectedForVersions, setPluginSelectedForVersions] = createSignal<string | undefined>();
+	// Cache map of plugin to available versions
+	let [pluginVersions, setPluginVersions] = createSignal<{ [plugin: string]: string[] }>({});
+
+	createEffect(async () => {
+		if (pluginSelectedForVersions() == undefined) {
+			return;
+		}
+		if (pluginVersions()[pluginSelectedForVersions()!] != undefined) {
+			return;
+		}
+
+		try {
+			let versions: string[] = await invoke("get_plugin_versions", { plugin: pluginSelectedForVersions()! });
+			setPluginVersions((versionsMap) => {
+				versionsMap[pluginSelectedForVersions()!] = versions;
+				return { ...versionsMap };
+			})
+		} catch (e) {
+			errorToast("Failed to fetch available plugin versions: " + e);
+		}
+	});
+
+	function getAvailableVersions(plugin: string) {
+		if (pluginVersions()[plugin] == undefined) {
+			return [];
+		} else {
+			return pluginVersions()[plugin];
+		}
+	}
 
 	return (
 		<div id="plugins">
@@ -102,6 +140,8 @@ export default function Plugins() {
 			<div class="cont col" id="plugin-list">
 				<For each={localPlugins()}>
 					{(info) => {
+						let isOfficial = () => noDownloadRemotePlugins() != undefined && noDownloadRemotePlugins()!.some((x) => x.is_official);
+
 						return (
 							<Show when={!isRemote()}>
 								<Plugin
@@ -112,6 +152,9 @@ export default function Plugins() {
 										setRestartNeeded(true);
 									}}
 									setDirty={() => setRestartNeeded(true)}
+									isOfficial={isOfficial()}
+									onChangeVersion={() => setPluginSelectedForVersions(info.id)}
+									availableVersions={() => getAvailableVersions(info.id)}
 								/>
 							</Show>
 						);
@@ -134,6 +177,9 @@ export default function Plugins() {
 											setRestartNeeded(true);
 										}}
 										setDirty={() => setRestartNeeded(true)}
+										isOfficial={info.is_official}
+										onChangeVersion={() => setPluginSelectedForVersions(info.id)}
+										availableVersions={() => getAvailableVersions(info.id)}
 									/>
 								</Show>
 							);
@@ -162,11 +208,41 @@ function Plugin(props: PluginProps) {
 					<div class="cont plugin-icon">{getPluginIcon(props.info.id)}</div>
 					<div class="plugin-name">{props.info.name}</div>
 					<div class="plugin-id">{props.info.id}</div>
+					<div class="cont plugin-official">
+						<Show when={props.isOfficial}>
+							<Tip tip="Official Nitrolaunch plugin" side="top" cont>
+								<Icon icon={Check} size="1rem" />
+							</Tip>
+						</Show>
+					</div>
 				</div>
 				<div class="cont plugin-buttons">
 					<Show when={props.info.installed}>
+						<PackageVersion
+							configuredVersion={undefined}
+							installedVersion={props.info.version}
+							onEdit={(version) => {
+								setInProgress(true);
+								invoke("install_plugin", {
+									plugin: props.info.id,
+									version: version,
+								}).then(
+									() => {
+										setInProgress(false);
+										successToast("Plugin updated");
+										props.updatePluginList();
+									},
+									(e) => {
+										setInProgress(false);
+										errorToast(`Failed to update plugin: ${e}`);
+									}
+								);
+							}}
+							onStartEdit={props.onChangeVersion}
+							versionOptions={props.availableVersions()}
+						/>
 						<Tip
-							tip={isEnabled() ? "Plugin Enabled" : "Plugin Disabled"}
+							tip={isEnabled() ? "Plugin is enabled" : "Plugin is disabled"}
 							side="top"
 						>
 							<SlideSwitch
@@ -200,6 +276,7 @@ function Plugin(props: PluginProps) {
 									setInProgress(true);
 									invoke("install_plugin", {
 										plugin: props.info.id,
+										version: undefined,
 									}).then(
 										() => {
 											setInProgress(false);
@@ -263,6 +340,7 @@ function Plugin(props: PluginProps) {
 										setInProgress(true);
 										invoke("install_plugin", {
 											plugin: props.info.id,
+											version: undefined,
 										}).then(
 											() => {
 												setInProgress(false);
@@ -292,14 +370,19 @@ interface PluginProps {
 	info: PluginInfo;
 	updatePluginList: () => void;
 	setDirty: () => void;
+	isOfficial: boolean;
+	onChangeVersion: () => void;
+	availableVersions: () => string[];
 }
 
 interface PluginInfo {
 	id: string;
+	version?: string;
 	name?: string;
 	description?: string;
 	enabled: boolean;
 	installed: boolean;
+	is_official: boolean;
 }
 
 function getPluginIcon(plugin: string) {

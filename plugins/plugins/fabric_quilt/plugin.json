@@ -1,6 +1,7 @@
 {
 	"name": "Fabric Quilt",
 	"description": "Install Fabric and Quilt instances",
+	"version": "v4",
 	"protocol_version": 3,
 	"hooks": {
 		"on_instance_setup": {

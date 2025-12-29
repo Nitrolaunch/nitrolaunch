@@ -1,6 +1,7 @@
 {
 	"name": "Sponge",
 	"description": "Install Sponge server instances",
+	"version": "v4",
 	"protocol_version": 3,
 	"hooks": {
 		"on_instance_setup": {
