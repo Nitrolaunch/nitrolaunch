@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Nitrolaunch
+Comment=A fast, extensible, and powerful Minecraft Launcher
+Exec=Nitrolaunch
+Icon=nitrolaunch
+Terminal=false
+Type=Application
+Categories=Game;
