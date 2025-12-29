@@ -58,4 +58,5 @@ To get started with Nitrolaunch, view our [user guide](https://nitrolaunch.githu
 - BubbleFish for [icons](https://github.com/bbfh-dev/eyecons), Nitrolaunch logo, and UX help
 - Pika for the AUR package
 - Squawkykaka for the Nix package
+- TheNuclearNexus and Kaleb Efflandt for partnerships and design help
 - Everyone helping with testing and design
