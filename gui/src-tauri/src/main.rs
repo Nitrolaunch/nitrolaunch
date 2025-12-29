@@ -13,6 +13,7 @@ mod output;
 mod task_manager;
 
 use std::collections::HashMap;
+use std::path::Path;
 use std::sync::{Arc, OnceLock};
 use std::time::Duration;
 
@@ -300,6 +301,13 @@ const fn get_raw_ms_client_id() -> &'static str {
 
 /// Runs functions to enhance compatability with different systems
 fn fix_compatability() {
+	// Nvidia blank screen
+	if Path::new("/proc/driver/nvidia").exists() {
+		unsafe {
+			std::env::set_var("WEBKIT_DISABLE_COMPOSITING_MODE", "1");
+		}
+	}
+
 	// Fix for Wayland causing the app to crash
 	if std::env::var("WAYLAND_DISPLAY").is_ok() {
 		unsafe {
