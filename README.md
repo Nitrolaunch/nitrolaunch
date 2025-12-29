@@ -53,6 +53,9 @@ Install mods, datapacks, shaders, and more from sources like Modrinth and Smithe
 
 To get started with Nitrolaunch, view our [user guide](https://nitrolaunch.github.io/nitrolaunch/guide/).
 
-## Credits
+## Thanks
 
-- Thanks to [Eyecons](https://github.com/bbfh-dev/eyecons) for icons
+- BubbleFish for [icons](https://github.com/bbfh-dev/eyecons), Nitrolaunch logo, and UX help
+- Pikafan123 for the AUR package
+- Squawkykaka for the Nix package
+- Everyone helping with testing and design
