@@ -1,7 +1,7 @@
 {
 	"name": "CurseForge API",
 	"description": "Make simple CurseForge API calls to query mod versions",
-	"version": "v4",
+	"version": "v5",
 	"protocol_version": 3,
 	"hooks": {
 		"subcommand": {

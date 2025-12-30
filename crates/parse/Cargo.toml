@@ -1,6 +1,6 @@
 [package]
 name = "nitro_parse"
-version = "0.27.0"
+version = "0.28.0"
 description = "Package script lexing, parsing, and basic evaluation for Nitrolaunch"
 keywords = ["minecraft", "launcher", "game", "mc", "parse"]
 categories.workspace = true

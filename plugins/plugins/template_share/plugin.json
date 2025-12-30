@@ -1,7 +1,7 @@
 {
 	"name": "Template Share",
 	"description": "Easily share instance templates with friends",
-	"version": "v4",
+	"version": "v5",
 	"protocol_version": 3,
 	"hooks": {
 		"subcommand": {

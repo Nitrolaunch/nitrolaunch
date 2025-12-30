@@ -1,6 +1,6 @@
 [package]
 name = "nitro_pkg"
-version = "0.27.0"
+version = "0.28.0"
 description = "Package standard for Nitrolaunch"
 keywords = ["minecraft", "launcher", "game", "mc"]
 categories.workspace = true

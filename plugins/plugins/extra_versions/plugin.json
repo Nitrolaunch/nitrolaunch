@@ -1,7 +1,7 @@
 {
 	"name": "Extra Versions",
 	"description": "Add versions of Minecraft that are not normally available",
-	"version": "v4",
+	"version": "v5",
 	"hooks": {
 		"add_versions": {
 			"constant": [

@@ -1,7 +1,7 @@
 {
 	"name": "Weld",
 	"description": "Weld data and resource packs together for better compatability",
-	"version": "v4",
+	"version": "v5",
 	"protocol_version": 3,
 	"raw_transfer": true,
 	"hooks": {

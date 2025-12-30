@@ -1,7 +1,7 @@
 {
 	"name": "WebTools",
 	"description": "Launch online Minecraft tools",
-	"version": "v4",
+	"version": "v5",
 	"protocol_version": 3,
 	"hooks": {
 		"subcommand": {

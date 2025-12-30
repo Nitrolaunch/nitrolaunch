@@ -1,7 +1,7 @@
 {
 	"name": "Zulu",
 	"description": "Azul Zulu Java installation",
-	"version": "v4",
+	"version": "v5",
 	"protocol_version": 3,
 	"hooks": {
 		"add_java_types": {

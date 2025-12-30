@@ -1,7 +1,7 @@
 {
 	"name": "Mojang Transfer",
 	"description": "Instance transfer for the Official Launcher",
-	"version": "v4",
+	"version": "v5",
 	"protocol_version": 3,
 	"hooks": {
 		"add_instance_transfer_formats": {

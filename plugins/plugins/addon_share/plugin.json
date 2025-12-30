@@ -1,7 +1,7 @@
 {
 	"name": "Addon Share",
 	"description": "Share instance addons as a zip file",
-	"version": "v4",
+	"version": "v5",
 	"protocol_version": 3,
 	"hooks": {
 		"subcommand": {

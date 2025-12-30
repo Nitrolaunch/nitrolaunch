@@ -1,7 +1,7 @@
 {
 	"name": "BetterJSONs",
 	"description": "Uses BetterJSONs versions for improved compatability",
-	"version": "v4",
+	"version": "v5",
 	"protocol_version": 3,
 	"hooks": {
 		"add_versions": {

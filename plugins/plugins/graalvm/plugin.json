@@ -2,7 +2,7 @@
 	"name": "GraalVM",
 	"description": "Oracle GraalVM Java installation",
 	"protocol_version": 3,
-	"version": "v4",
+	"version": "v5",
 	"hooks": {
 		"add_java_types": {
 			"constant": [

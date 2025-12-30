@@ -1,6 +1,6 @@
 [package]
 name = "nitrolaunch"
-version = "0.27.0"
+version = "0.28.0"
 description = "A fast, extensible, and powerful Minecraft launcher"
 keywords = ["minecraft", "launcher", "game", "mc"]
 exclude = ["/docs", "/tools"]
@@ -100,20 +100,20 @@ inquire = { version = "0.6.2", default-features = false, features = [
 iso8601-timestamp = "0.2.17"
 itertools = "0.11.0"
 libflate = "2.1.0"
-nitrolaunch = { path = ".", version = "0.27.0" }
-nitro_auth = { path = "crates/auth", version = "0.27.0" }
-nitro_core = { path = "crates/core", version = "0.27.0" }
-nitro_config = { path = "crates/config", version = "0.27.0" }
-nitro_mods = { path = "crates/mods", version = "0.27.0" }
-nitro_net = { path = "crates/net", version = "0.27.0" }
-nitro_options = { path = "crates/options", version = "0.27.0" }
-nitro_parse = { path = "crates/parse", version = "0.27.0" }
-nitro_pkg = { path = "crates/pkg", version = "0.27.0" }
-nitro_pkg_gen = { path = "crates/pkg_gen", version = "0.27.0" }
-nitro_plugin = { path = "crates/plugin", version = "0.27.0", default-features = false, features = [
+nitrolaunch = { path = ".", version = "0.28.0" }
+nitro_auth = { path = "crates/auth", version = "0.28.0" }
+nitro_core = { path = "crates/core", version = "0.28.0" }
+nitro_config = { path = "crates/config", version = "0.28.0" }
+nitro_mods = { path = "crates/mods", version = "0.28.0" }
+nitro_net = { path = "crates/net", version = "0.28.0" }
+nitro_options = { path = "crates/options", version = "0.28.0" }
+nitro_parse = { path = "crates/parse", version = "0.28.0" }
+nitro_pkg = { path = "crates/pkg", version = "0.28.0" }
+nitro_pkg_gen = { path = "crates/pkg_gen", version = "0.28.0" }
+nitro_plugin = { path = "crates/plugin", version = "0.28.0", default-features = false, features = [
 	"host",
 ] }
-nitro_shared = { path = "crates/shared", version = "0.27.0" }
+nitro_shared = { path = "crates/shared", version = "0.28.0" }
 oauth2 = "4.4.2"
 pin-project-lite = "0.2.16"
 rand = "0.8.5"

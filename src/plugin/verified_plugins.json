@@ -2,7 +2,7 @@
 	"args": {
 		"id": "args",
 		"name": "Args",
-		"version": "v4",
+		"version": "v5",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Use argument presets to improve game performance"
@@ -10,7 +10,7 @@
 	"backup": {
 		"id": "backup",
 		"name": "Backup",
-		"version": "v4",
+		"version": "v5",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Create backups of instances"
@@ -18,7 +18,7 @@
 	"docs": {
 		"id": "docs",
 		"name": "Docs",
-		"version": "v4",
+		"version": "v5",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "View Nitrolaunch's documentation straight from the command line"
@@ -26,7 +26,7 @@
 	"extra_versions": {
 		"id": "extra_versions",
 		"name": "Extra Versions",
-		"version": "v4",
+		"version": "v5",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Add versions of Minecraft that are not normally available"
@@ -34,7 +34,7 @@
 	"gen_pkg": {
 		"id": "gen_pkg",
 		"name": "Gen Package",
-		"version": "v4",
+		"version": "v5",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Automatically generate packages from existing websites"
@@ -42,7 +42,7 @@
 	"lang": {
 		"id": "lang",
 		"name": "Lang",
-		"version": "v4",
+		"version": "v5",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Language translations for Nitrolaunch"
@@ -50,7 +50,7 @@
 	"modrinth_api": {
 		"id": "modrinth_api",
 		"name": "Modrinth API",
-		"version": "v4",
+		"version": "v5",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Make simple Modrinth API calls to query project versions"
@@ -58,7 +58,7 @@
 	"options": {
 		"id": "options",
 		"name": "Options",
-		"version": "v4",
+		"version": "v5",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Manage game options for client and server"
@@ -66,7 +66,7 @@
 	"server_restart": {
 		"id": "server_restart",
 		"name": "Server Restart",
-		"version": "v4",
+		"version": "v5",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Manage restart behavior for Spigot and Paper servers"
@@ -74,7 +74,7 @@
 	"stats": {
 		"id": "stats",
 		"name": "Stats",
-		"version": "v4",
+		"version": "v5",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Track and view playtime stats"
@@ -82,7 +82,7 @@
 	"nitro_transfer": {
 		"id": "nitro_transfer",
 		"name": "Nitrolaunch Transfer",
-		"version": "v4",
+		"version": "v5",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Import and export Nitrolaunch instances"
@@ -90,7 +90,7 @@
 	"fabric_quilt": {
 		"id": "fabric_quilt",
 		"name": "Fabric Quilt",
-		"version": "v4",
+		"version": "v5",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Install Fabric and Quilt instances"
@@ -98,7 +98,7 @@
 	"custom_files": {
 		"id": "custom_files",
 		"name": "Custom Files",
-		"version": "v4",
+		"version": "v5",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Share custom files across multiple instances"
@@ -106,7 +106,7 @@
 	"paper": {
 		"id": "paper",
 		"name": "Paper",
-		"version": "v4",
+		"version": "v5",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Install Paper and Folia server instances"
@@ -114,7 +114,7 @@
 	"automate": {
 		"id": "automate",
 		"name": "Automate",
-		"version": "v4",
+		"version": "v5",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Run commands at different parts of the instance lifecycle with no coding knowledge"
@@ -122,7 +122,7 @@
 	"config_split": {
 		"id": "config_split",
 		"name": "Config Split",
-		"version": "v4",
+		"version": "v5",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Split parts of your configuration into multiple files"
@@ -130,7 +130,7 @@
 	"smithed_api": {
 		"id": "smithed_api",
 		"name": "Smithed API",
-		"version": "v4",
+		"version": "v5",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Make simple Smithed API calls to query project versions"
@@ -138,7 +138,7 @@
 	"smithed": {
 		"id": "smithed",
 		"name": "Smithed",
-		"version": "v4",
+		"version": "v5",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Install Smithed packs on templates and instances"
@@ -146,7 +146,7 @@
 	"modrinth": {
 		"id": "modrinth",
 		"name": "Modrinth",
-		"version": "v4",
+		"version": "v5",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Install Modrinth projects on templates and instances"
@@ -154,7 +154,7 @@
 	"weld": {
 		"id": "weld",
 		"name": "Weld",
-		"version": "v4",
+		"version": "v5",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Weld data and resource packs together for better compatability"
@@ -162,7 +162,7 @@
 	"xmcl_transfer": {
 		"id": "xmcl_transfer",
 		"name": "XMCL Transfer",
-		"version": "v4",
+		"version": "v5",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Instance transfer for XMCL"
@@ -170,7 +170,7 @@
 	"cleanup": {
 		"id": "cleanup",
 		"name": "Cleanup",
-		"version": "v4",
+		"version": "v5",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Clean up old files"
@@ -178,7 +178,7 @@
 	"glfw_fix": {
 		"id": "glfw_fix",
 		"name": "GLFW Fix",
-		"version": "v4",
+		"version": "v5",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Fixes crashes from a bad GLFW version"
@@ -186,7 +186,7 @@
 	"multimc_transfer": {
 		"id": "multimc_transfer",
 		"name": "MultiMC Transfer",
-		"version": "v4",
+		"version": "v5",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Instance transfer for MultiMC and PrismLauncher"
@@ -194,7 +194,7 @@
 	"better_jsons": {
 		"id": "better_jsons",
 		"name": "BetterJSONs",
-		"version": "v4",
+		"version": "v5",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Uses BetterJSONs versions for improved compatability"
@@ -202,7 +202,7 @@
 	"template_share": {
 		"id": "template_share",
 		"name": "Template Share",
-		"version": "v4",
+		"version": "v5",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Easily share templates with friends"
@@ -210,7 +210,7 @@
 	"multiply": {
 		"id": "multiply",
 		"name": "Multiply",
-		"version": "v4",
+		"version": "v5",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Create many instances easily"
@@ -218,7 +218,7 @@
 	"curseforge_api": {
 		"id": "curseforge_api",
 		"name": "CurseForge API",
-		"version": "v4",
+		"version": "v5",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Make simple CurseForge API calls to query mod versions"
@@ -226,7 +226,7 @@
 	"beet": {
 		"id": "beet",
 		"name": "Beet",
-		"version": "v4",
+		"version": "v5",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Tools for Beet developers"
@@ -234,7 +234,7 @@
 	"gamepad": {
 		"id": "gamepad",
 		"name": "Gamepad",
-		"version": "v4",
+		"version": "v5",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Adds better gamepad and arrow key support for the GUI"
@@ -242,7 +242,7 @@
 	"zulu": {
 		"id": "zulu",
 		"name": "Zulu",
-		"version": "v4",
+		"version": "v5",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Azul Zulu Java installation"
@@ -250,7 +250,7 @@
 	"graalvm": {
 		"id": "graalvm",
 		"name": "GraalVM",
-		"version": "v4",
+		"version": "v5",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Oracle GraalVM Java installation"
@@ -258,7 +258,7 @@
 	"addon_share": {
 		"id": "addon_share",
 		"name": "Addon Share",
-		"version": "v4",
+		"version": "v5",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Share instance addons as a zip file"

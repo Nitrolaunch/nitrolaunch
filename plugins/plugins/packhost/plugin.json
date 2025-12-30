@@ -1,7 +1,7 @@
 {
 	"name": "Resource Pack Host",
 	"description": "Host a resource pack locally for servers",
-	"version": "v4",
+	"version": "v5",
 	"protocol_version": 3,
 	"hooks": {
 		"on_instance_setup": {

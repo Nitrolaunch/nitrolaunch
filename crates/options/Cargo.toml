@@ -1,6 +1,6 @@
 [package]
 name = "nitro_options"
-version = "0.27.0"
+version = "0.28.0"
 description = "Game options generation for Minecraft"
 keywords = ["minecraft", "launcher", "game", "mc", "options"]
 categories.workspace = true

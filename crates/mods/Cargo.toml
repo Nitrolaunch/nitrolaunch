@@ -1,6 +1,6 @@
 [package]
 name = "nitro_mods"
-version = "0.27.0"
+version = "0.28.0"
 description = "Installation of loaders for use with nitro_core"
 keywords = ["minecraft", "launcher", "game", "mc", "modification"]
 categories.workspace = true
