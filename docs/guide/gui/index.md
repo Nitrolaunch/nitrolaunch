@@ -6,9 +6,13 @@ This guide will show you how to use the Nitrolaunch desktop app from the basics 
 
 Download the latest version of the launcher for your system from the [releases page](https://github.com/Nitrolaunch/nitrolaunch/releases). Make sure you choose a file labeled `gui`.
 
-### Dev Builds
+### Package manager
 
-To install from one of the prebuilt development binaries, visit [nightly.link](https://nightly.link/nitrolaunch/nitrolaunch/workflows/build/dev) and download and extract the artifacts for your operating system. Note that these builds may be unstable.
+The package `nitrolaunch-gui` is available on the AUR and Nix package repositories.
+
+### Releases
+
+Download the correct package for your system from [the latest release](https://github.com/Nitrolaunch/nitrolaunch/releases/latest). On Windows, you probably want the `.msi` as it will install with a desktop shortcut. Use the `.exe` for a portable executable.
 
 ## 2. Instances
 
