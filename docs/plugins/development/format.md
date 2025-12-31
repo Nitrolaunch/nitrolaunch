@@ -6,7 +6,7 @@ Your plugin needs a unique ID to distinguish it from others. Check the official 
 
 ## Files
 
-The plugin file format is pretty simple. Inside the plugins directory (`NITRO_DATA/plugins`), all you need is a **manifest** file, located either at `plugins/plugin_id.json` or `plugins/plugin_id/plugin.json`. The nested location allows you to bundle other assets along with your plugin easily, but both locations work exactly the same.
+The plugin file format is pretty simple. Inside the plugins directory (`NITRO_DATA/plugins`), all you need is a **manifest** file inside a folder for your plugin, located at `plugins/plugin_id/plugin.json`.
 
 If your plugin needs to run an executable, you can bundle your executable in your plugin directory, or install it on the system.
 
