@@ -24,7 +24,6 @@
 						},
 						"modrinth:datapack-injector"
 					],
-					"is_editable": true,
 					"datapack_folder": "datapacks"
 				}
 			}

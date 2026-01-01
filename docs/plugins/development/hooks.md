@@ -152,6 +152,7 @@ Adds or updates config for an editable custom instance from this plugin, whateve
 
 ```
 {
+	"id": string,
 	"config": InstanceConfig
 }
 ```
@@ -166,6 +167,7 @@ Adds or updates config for an editable custom template from this plugin, whateve
 
 ```
 {
+	"id": string,
 	"config": TemplateConfig
 }
 ```

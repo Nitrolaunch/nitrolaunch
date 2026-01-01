@@ -9,6 +9,12 @@
 		},
 		"add_templates": {
 			"wasm": true
+		},
+		"save_instance_config": {
+			"wasm": true
+		},
+		"save_template_config": {
+			"wasm": true
 		}
 	}
 }

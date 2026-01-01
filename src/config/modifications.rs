@@ -55,7 +55,10 @@ pub async fn apply_modifications(
 						.call_hook_on_plugin(
 							SaveInstanceConfig,
 							&plugin.clone(),
-							&SaveInstanceConfigArg { config: instance },
+							&SaveInstanceConfigArg {
+								id: instance_id.to_string(),
+								config: instance,
+							},
 							paths,
 							&mut NoOp,
 						)
@@ -77,7 +80,10 @@ pub async fn apply_modifications(
 						.call_hook_on_plugin(
 							SaveTemplateConfig,
 							&plugin.clone(),
-							&SaveTemplateConfigArg { config: template },
+							&SaveTemplateConfigArg {
+								id: template_id.to_string(),
+								config: template,
+							},
 							paths,
 							&mut NoOp,
 						)

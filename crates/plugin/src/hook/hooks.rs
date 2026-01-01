@@ -1006,6 +1006,8 @@ def_hook!(
 #[derive(Serialize, Deserialize, Default)]
 #[serde(default)]
 pub struct SaveInstanceConfigArg {
+	/// The ID of the instance
+	pub id: String,
 	/// The configuration to save
 	pub config: InstanceConfig,
 }
@@ -1024,6 +1026,8 @@ def_hook!(
 #[derive(Serialize, Deserialize, Default)]
 #[serde(default)]
 pub struct SaveTemplateConfigArg {
+	/// The ID of the template
+	pub id: String,
 	/// The configuration to save
 	pub config: TemplateConfig,
 }

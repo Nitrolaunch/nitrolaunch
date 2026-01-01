@@ -1,11 +1,12 @@
 use std::{collections::HashMap, path::Path, sync::Arc};
 
 use anyhow::Context;
+use nitro_config::{instance::InstanceConfig, template::TemplateConfig};
 use nitro_plugin::{
 	api::wasm::{sys::get_config_dir, WASMPlugin},
 	nitro_wasm_plugin,
 };
-use serde::de::DeserializeOwned;
+use serde::{de::DeserializeOwned, Serialize};
 
 nitro_wasm_plugin!(main, "config_split");
 
@@ -17,8 +18,15 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 			let _ = std::fs::create_dir_all(&dir);
 		}
 
-		get_config_files(&dir)
+		let mut configs = get_config_files::<InstanceConfig>(&dir)?;
+
+		for config in configs.values_mut() {
+			config.is_editable = true;
+		}
+
+		Ok(configs)
 	})?;
+
 	plugin.add_templates(|_| {
 		let config_dir = get_config_dir();
 		let dir = config_dir.join("templates");
@@ -26,7 +34,41 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 			let _ = std::fs::create_dir_all(&dir);
 		}
 
-		get_config_files(&dir)
+		let mut configs = get_config_files::<TemplateConfig>(&dir)?;
+
+		for config in configs.values_mut() {
+			config.instance.is_editable = true;
+		}
+
+		Ok(configs)
+	})?;
+
+	plugin.save_instance_config(|mut arg| {
+		let config_dir = get_config_dir();
+		let dir = config_dir.join("instances");
+		if !dir.exists() {
+			let _ = std::fs::create_dir_all(&dir);
+		}
+
+		// We don't want to serialize these
+		arg.config.source_plugin = None;
+		arg.config.is_editable = false;
+
+		save_config_file(&dir, &arg.id, arg.config)
+	})?;
+
+	plugin.save_template_config(|mut arg| {
+		let config_dir = get_config_dir();
+		let dir = config_dir.join("templates");
+		if !dir.exists() {
+			let _ = std::fs::create_dir_all(&dir);
+		}
+
+		// We don't want to serialize these
+		arg.config.instance.source_plugin = None;
+		arg.config.instance.is_editable = false;
+
+		save_config_file(&dir, &arg.id, arg.config)
 	})?;
 
 	Ok(())
@@ -51,7 +93,7 @@ fn get_config_files<D: DeserializeOwned>(directory: &Path) -> anyhow::Result<Has
 		if !name.ends_with(".json") {
 			continue;
 		}
-		let name = &name[0..name.len() - 6];
+		let name = &name[0..name.len() - 5];
 
 		let contents = std::fs::read(entry.path())
 			.with_context(|| format!("Failed to read config file '{name}'"))?;
@@ -62,4 +104,13 @@ fn get_config_files<D: DeserializeOwned>(directory: &Path) -> anyhow::Result<Has
 	}
 
 	Ok(out)
+}
+
+/// Saves a config file in the given directory
+fn save_config_file<S: Serialize>(directory: &Path, id: &str, config: S) -> anyhow::Result<()> {
+	let path = directory.join(format!("{id}.json"));
+
+	let data = serde_json::to_vec_pretty(&config)?;
+
+	std::fs::write(path, data).context("Failed to write config file")
 }
