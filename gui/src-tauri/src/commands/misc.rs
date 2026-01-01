@@ -6,7 +6,8 @@ use nitrolaunch::{
 	core::{io::json_from_file, net::game_files::assets::AssetIndex},
 	instance::{setup::setup_core, update::manager::UpdateSettings},
 	plugin_crate::hook::hooks::{
-		AddInstanceIcons, AddSupportedLoaders, GetLoaderVersions, GetLoaderVersionsArg,
+		AddInstanceIcons, AddJavaTypes, AddSupportedLoaders, GetLoaderVersions,
+		GetLoaderVersionsArg, JavaTypeInfo,
 	},
 	shared::{id::InstanceID, loaders::Loader, minecraft::VersionType, output::NoOp, UpdateDepth},
 };
@@ -313,6 +314,28 @@ pub async fn save_icon(state: tauri::State<'_, State>, icon: String) -> Result<(
 	fmt_err(data.write(&state.paths))?;
 
 	Ok(())
+}
+
+#[tauri::command]
+pub async fn get_supported_java_types(
+	state: tauri::State<'_, State>,
+) -> Result<Vec<JavaTypeInfo>, String> {
+	let config = fmt_err(
+		load_config(&state.paths, &mut NoOp)
+			.await
+			.context("Failed to load config"),
+	)?;
+
+	let results = fmt_err(
+		config
+			.plugins
+			.call_hook(AddJavaTypes, &(), &state.paths, &mut NoOp)
+			.await
+			.context("Failed to get supported Java types from plugins"),
+	)?;
+	let out = fmt_err(results.flatten_all_results(&mut NoOp).await)?;
+
+	Ok(out)
 }
 
 /// Gets whether a custom scrollbar is needed for the frontend

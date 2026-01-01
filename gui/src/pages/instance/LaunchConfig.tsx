@@ -1,27 +1,36 @@
 import Tip from "../../components/dialog/Tip";
 import LinkedInputs from "../../components/input/text/LinkedInputs";
 import DeriveIndicator from "./DeriveIndicator";
-import {
-	getDerivedValue,
-	getJavaDisplayName,
-	InstanceConfig,
-	JavaType,
-} from "./read_write";
+import { getDerivedValue, InstanceConfig, JavaType } from "./read_write";
 import EditableList from "../../components/input/text/EditableList";
 import InlineSelect from "../../components/input/select/InlineSelect";
 import PathSelect from "../../components/input/text/PathSelect";
-import { Show } from "solid-js";
-
-const JAVA_OPTIONS = [
-	undefined,
-	"auto",
-	"system",
-	"adoptium",
-	"zulu",
-	"graalvm",
-];
+import { createResource, Show } from "solid-js";
+import { invoke } from "@tauri-apps/api/core";
+import { errorToast } from "../../components/dialog/Toasts";
 
 export default function LaunchConfig(props: LaunchConfigProps) {
+	let [javaTypes, _] = createResource(
+		async () => {
+			let baseTypes: JavaTypeInfo[] = [
+				{ id: undefined, name: "Unset", color: "var(--fg)" },
+				{ id: "auto", name: "Auto", color: "var(--fg)" },
+				{ id: "system", name: "System", color: "var(--fg)" },
+				{ id: "adoptium", name: "Adoptium", color: "var(--fg)" },
+			];
+			try {
+				let pluginTypes: JavaTypeInfo[] = await invoke(
+					"get_supported_java_types"
+				);
+				return baseTypes.concat(pluginTypes);
+			} catch (e) {
+				errorToast("Failed to get available Java types: " + e);
+				return baseTypes;
+			}
+		},
+		{ initialValue: [] }
+	);
+
 	return (
 		<div class="fields">
 			<div class="cont start label">
@@ -34,46 +43,47 @@ export default function LaunchConfig(props: LaunchConfigProps) {
 					}}
 				/>
 			</div>
-			<Tip
-				tip="The Java installation to use. Defaults to 'Auto'"
-				side="top"
-				fullwidth
-			>
-				<InlineSelect
-					onChange={(x) => {
-						props.setJava(x);
-						props.onChange();
-					}}
-					selected={props.java}
-					options={JAVA_OPTIONS.concat("custom").map((x) => {
+			<InlineSelect
+				onChange={(x) => {
+					props.setJava(x);
+					props.onChange();
+				}}
+				selected={props.java}
+				options={javaTypes()
+					.concat({ id: "custom", name: "Custom", color: "var(--fg)" })
+					.map((x) => {
 						return {
-							value: x,
+							value: x.id,
 							contents: (
 								<div
 									class={`cont ${
 										props.java == undefined &&
 										getDerivedValue(props.parentConfigs, (x) =>
 											x.launch == undefined ? undefined : x.launch.java
-										) == x
+										) == x.id
 											? "derived-option"
 											: ""
 									}`}
 								>
-									{x == undefined ? "Unset" : getJavaDisplayName(x)}
+									{x.name}
 								</div>
 							),
-							color: "var(--instance)",
-							selectedBgColor: "var(--instancebg)",
-							tip: x == undefined ? "Inherit from the template" : getJavaTip(x),
+							color: x.color,
+							tip:
+								x.id == undefined
+									? "Inherit from the template"
+									: getJavaTip(x.id),
 						};
 					})}
-					columns={4}
-					allowEmpty={false}
-					connected={false}
-				/>
-			</Tip>
+				columns={4}
+				allowEmpty={false}
+				connected={false}
+			/>
 			<Show
-				when={!JAVA_OPTIONS.includes(props.java) && props.java != undefined}
+				when={
+					!javaTypes().some((x) => x.id == props.java) &&
+					props.java != undefined
+				}
 			>
 				<Tip tip="Path to custom Java installation" fullwidth side="top">
 					<div class="cont fullwidth" id="launch-custom-java">
@@ -213,7 +223,15 @@ function getJavaTip(x: JavaType) {
 		return "Downloads Azul Zulu JDK";
 	} else if (x == "graalvm") {
 		return "Downloads GraalVM JDK";
+	} else if (x == "custom") {
+		return "Select a custom path on your system";
 	} else {
 		return undefined;
 	}
+}
+
+interface JavaTypeInfo {
+	id?: string;
+	name: string;
+	color: string;
 }

@@ -214,6 +214,7 @@ fn main() {
 			commands::misc::open_instance_dir,
 			commands::misc::get_available_icons,
 			commands::misc::save_icon,
+			commands::misc::get_supported_java_types,
 			commands::misc::custom_scrollbar_needed,
 			commands::cancel_task,
 		])
