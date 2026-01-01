@@ -941,7 +941,7 @@ pub struct UserTypeInfo {
 
 def_hook!(
 	AddJavaTypes,
-	"get_java_types",
+	"add_java_types",
 	"Adds new available Java types",
 	(),
 	Vec<JavaTypeInfo>,

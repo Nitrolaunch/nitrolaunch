@@ -25,6 +25,7 @@ Called when this plugin is loaded. Can be used to set up state and such.
 Called whenever one of the subcommands that this hook registers are run. The arguments are the list of arguments that were provided to the subcommand, _including_ the subcommand itself. Note that this hook also takes over output, meaning anything coming from stdout will be output to the console instead.
 
 - Argument:
+
 ```
 {
 	"args": string[],
@@ -34,6 +35,7 @@ Called whenever one of the subcommands that this hook registers are run. The arg
 	}
 }
 ```
+
 - Result: None
 
 ### `add_versions`
@@ -77,13 +79,15 @@ Adds extra translations to Nitrolaunch
 Runs an arbitrary custom action, basically allowing you to define your own hooks. Used often by the GUI.
 
 - Argument:
+
 ```
 {
 	"id": string,
 	"payload": any
 }
 ```
-- Result: any
+
+- Result: `any`
 
 - `id`: The custom identifier for this action (can be whatever you want)
 - `payload` The custom argument for this action run (can also be whatever you want)
@@ -139,6 +143,34 @@ Adds new templates to the config
 	...
 }
 ```
+
+### `save_instance_config`
+
+Adds or updates config for an editable custom instance from this plugin, whatever that means for your custom instance
+
+- Argument:
+
+```
+{
+	"config": InstanceConfig
+}
+```
+
+- Result: None
+
+### `save_template_config`
+
+Adds or updates config for an editable custom template from this plugin, whatever that means for your custom template
+
+- Argument:
+
+```
+{
+	"config": TemplateConfig
+}
+```
+
+- Result: None
 
 ### `add_instance_icons`
 
@@ -196,7 +228,22 @@ Adds extra loaders to the list of supported ones for installation. This should b
 if you plan to install these loaders with your plugin.
 
 - Argument: None
-- Result: Loader[]
+- Result: `Loader[]`
+
+### `get_loader_versions`
+
+Gets a list of available versions for a loader. Feel free to make network requests if you need.
+
+- Argument:
+
+```
+{
+	"loader": string,
+	"minecraft_version": string
+}
+```
+
+- Result: `string[]`
 
 ### `remove_loader`
 
@@ -318,6 +365,7 @@ Adds new custom user types
 - Argument: None
 
 - Result:
+
 ```
 [
 	{
@@ -635,11 +683,11 @@ Adds custom buttons to the sidebar
 
 Lets you add custom pages. The page will be available at `/custom/yourcustompagedata`. You can include custom data like a specific ID in the data section of the URL as well.
 
-- Argument: string
+- Argument: `string`
 
 This is the custom page data in the URL
 
-- Result: string | null
+- Result: `string | null`
 
 This is the resulting page as HTML. Only include things that would be in a `<body>` tag.
 
@@ -663,6 +711,117 @@ Adds custom themes for the GUI
 	...
 ]
 ```
+
+### `add_dropdown_buttons`
+
+Adds custom buttons to certain dropdowns in the UI
+
+- Argument: None
+
+- Result:
+
+```
+[
+	{
+		"plugin": string,
+		"location": "add_template_or_instance" | "instance_launch" | "instance_update" | "instance_more_options",
+		"icon": string,
+		"text": string,
+		"color": string | null,
+		"tip": string | null,
+		"action": string | null,
+		"on_click": string | null
+	},
+	...
+]
+```
+
+- `plugin`: The plugin this button is from
+- `location`: Which dropdown to add the button to
+- `icon`: SVG icon for this button
+- `tip`: An optional tooltip for this option
+- `action`: A custom plugin action to run when this button is clicked
+- `on_click`: JavaScript to run when this button is clicked
+
+### `add_instance_tiles`
+
+Adds custom tiles to the instance page in the GUI
+
+- Argument: None
+
+- Result:
+
+```
+[
+	{
+		"id": string,
+		"contents": string,
+		"size": "small" | "large"
+	},
+	...
+]
+```
+
+- `id`: A unique ID for this tile. Ensures consistent location.
+- `contents`: The HTML contents of the tile. Script tags will not be called, so it is important to include a page script as well to hook into the tile if you want functionality.
+- `size`: About how much space this tile needs to take up. Will be taken into account by the layout algorithm.
+
+### `add_instance_icons`
+
+Adds extra options for instance icons for the user to choose from. Returns a list of absolute image file paths.
+
+- Argument: None
+
+- Result: `string[]`
+
+## Java Hooks
+
+### `add_java_types`
+
+Adds new Java types that will be installed with `install_custom_java`
+
+- Argument: None
+
+- Result:
+
+```
+[
+	{
+		"id": string,
+		"name": string,
+		"color": string
+	},
+	...
+]
+```
+
+### `install_custom_java`
+
+Installs a custom Java installation added with `add_java_types`.
+
+- Argument:
+
+```
+{
+	"kind": string,
+	"major_version": string,
+	"update_depth": UpdateDepth
+}
+```
+
+- Result:
+
+```
+{
+	"path": string,
+	"version": string
+}
+```
+
+- `kind`: The ID of the Java matching the one from `add_java_types`
+- `major_version`: The major version of Java that is being installed
+- `path`: Path to the resulting installation, which contains a `bin` directory with the `java` executable in it
+- `version`: The version of the resulting installation of whatever Java flavor you are using
 
 ## Common Types
 
