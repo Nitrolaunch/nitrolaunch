@@ -14,6 +14,7 @@ use nitrolaunch::instance::update::manager::UpdateManager;
 use nitrolaunch::instance::update::InstanceUpdateContext;
 use nitrolaunch::io::lock::Lockfile;
 use nitrolaunch::pkg::eval::EvalConstants;
+use nitrolaunch::plugin::PluginManager;
 use nitrolaunch::shared::id::{InstanceID, TemplateID};
 use nitrolaunch::shared::output::NoOp;
 use nitrolaunch::shared::{Side, UpdateDepth};
@@ -48,8 +49,18 @@ pub async fn get_instances(state: tauri::State<'_, State>) -> Result<Vec<Instanc
 				id,
 				name: instance.get_config().name.clone(),
 				side: Some(instance.get_side()),
-				from_plugin: instance.get_config().original_config.from_plugin,
+				from_plugin: instance
+					.get_config()
+					.original_config
+					.source_plugin
+					.is_some(),
 				version: Some(instance.get_config().version.to_string()),
+				is_editable: instance.get_config().original_config.is_editable
+					|| instance
+						.get_config()
+						.original_config
+						.source_plugin
+						.is_none(),
 			}
 		})
 		.collect();
@@ -77,12 +88,14 @@ pub async fn get_templates(state: tauri::State<'_, State>) -> Result<Vec<Instanc
 				id,
 				name: template.instance.name.clone(),
 				side: template.instance.side,
-				from_plugin: template.instance.from_plugin,
+				from_plugin: template.instance.source_plugin.is_some(),
 				version: template
 					.instance
 					.version
 					.as_ref()
 					.map(|x| MinecraftVersion::from_deser(x).to_string()),
+				is_editable: template.instance.is_editable
+					|| template.instance.source_plugin.is_none(),
 			}
 		})
 		.collect();
@@ -99,6 +112,7 @@ pub struct InstanceInfo {
 	pub pinned: bool,
 	pub from_plugin: bool,
 	pub version: Option<String>,
+	pub is_editable: bool,
 }
 
 #[tauri::command]
@@ -244,9 +258,12 @@ pub async fn write_instance_config(
 	let mut configuration =
 		fmt_err(Config::open(&Config::get_path(&state.paths)).context("Failed to load config"))?;
 
+	let plugins = fmt_err(PluginManager::load(&state.paths, &mut NoOp).await)?;
+
 	let modifications = vec![ConfigModification::AddInstance(id.into(), config)];
 	fmt_err(
-		apply_modifications_and_write(&mut configuration, modifications, &state.paths)
+		apply_modifications_and_write(&mut configuration, modifications, &state.paths, &plugins)
+			.await
 			.context("Failed to modify and write config"),
 	)?;
 
@@ -262,9 +279,12 @@ pub async fn write_template_config(
 	let mut configuration =
 		fmt_err(Config::open(&Config::get_path(&state.paths)).context("Failed to load config"))?;
 
+	let plugins = fmt_err(PluginManager::load(&state.paths, &mut NoOp).await)?;
+
 	let modifications = vec![ConfigModification::AddTemplate(id.into(), config)];
 	fmt_err(
-		apply_modifications_and_write(&mut configuration, modifications, &state.paths)
+		apply_modifications_and_write(&mut configuration, modifications, &state.paths, &plugins)
+			.await
 			.context("Failed to modify and write config"),
 	)?;
 
@@ -494,9 +514,12 @@ pub async fn delete_instance(state: tauri::State<'_, State>, instance: &str) -> 
 	let mut configuration =
 		fmt_err(Config::open(&Config::get_path(&state.paths)).context("Failed to load config"))?;
 
+	let plugins = fmt_err(PluginManager::load(&state.paths, &mut NoOp).await)?;
+
 	let modifications = vec![ConfigModification::RemoveInstance(instance.into())];
 	fmt_err(
-		apply_modifications_and_write(&mut configuration, modifications, &state.paths)
+		apply_modifications_and_write(&mut configuration, modifications, &state.paths, &plugins)
+			.await
 			.context("Failed to modify and write config"),
 	)?;
 
@@ -508,9 +531,12 @@ pub async fn delete_template(state: tauri::State<'_, State>, template: &str) -> 
 	let mut configuration =
 		fmt_err(Config::open(&Config::get_path(&state.paths)).context("Failed to load config"))?;
 
+	let plugins = fmt_err(PluginManager::load(&state.paths, &mut NoOp).await)?;
+
 	let modifications = vec![ConfigModification::RemoveTemplate(template.into())];
 	fmt_err(
-		apply_modifications_and_write(&mut configuration, modifications, &state.paths)
+		apply_modifications_and_write(&mut configuration, modifications, &state.paths, &plugins)
+			.await
 			.context("Failed to modify and write config"),
 	)?;
 

@@ -303,10 +303,10 @@ async fn migrate(
 
 	lock.finish(&data.paths)?;
 
-	let mut config = data.get_raw_config()?;
+	let mut config2 = data.get_raw_config()?;
 
 	for key in new_configs.keys() {
-		if config
+		if config2
 			.instances
 			.contains_key(&InstanceID::from(key.clone()))
 		{
@@ -315,13 +315,15 @@ async fn migrate(
 	}
 
 	apply_modifications_and_write(
-		&mut config,
+		&mut config2,
 		new_configs
 			.into_iter()
 			.map(|(id, config)| ConfigModification::AddInstance(id.into(), config))
 			.collect(),
 		&data.paths,
+		&config.plugins,
 	)
+	.await
 	.context("Failed to write modified config")?;
 
 	Ok(())

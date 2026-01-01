@@ -157,6 +157,7 @@ impl Config {
 		match results {
 			Ok(mut results) => {
 				while let Some(result) = results.next() {
+					let plugin_id = result.get_id().clone();
 					let result = match result.result(o).await {
 						Ok(result) => result,
 						Err(e) => {
@@ -174,7 +175,7 @@ impl Config {
 							continue;
 						}
 
-						instance.from_plugin = true;
+						instance.source_plugin = Some(plugin_id.clone());
 						config.instances.insert(id, instance);
 					}
 				}
@@ -191,6 +192,7 @@ impl Config {
 		match results {
 			Ok(mut results) => {
 				while let Some(result) = results.next() {
+					let plugin_id = result.get_id().clone();
 					let result = match result.result(o).await {
 						Ok(result) => result,
 						Err(e) => {
@@ -208,7 +210,7 @@ impl Config {
 							continue;
 						}
 
-						template.instance.from_plugin = true;
+						template.instance.source_plugin = Some(plugin_id.clone());
 						config.templates.insert(id, template);
 					}
 				}

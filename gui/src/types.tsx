@@ -13,6 +13,7 @@ export interface InstanceInfo {
 	pinned: boolean;
 	from_plugin: boolean;
 	version: string;
+	is_editable: boolean;
 }
 
 export type InstanceMap = {

@@ -717,7 +717,9 @@ async fn add(
 			PackageConfigDeser::Basic(package),
 		)],
 		&data.paths,
+		&data.config.get().plugins,
 	)
+	.await
 	.context("Failed to write modified config")?;
 
 	cprintln!("<g>Package added.");

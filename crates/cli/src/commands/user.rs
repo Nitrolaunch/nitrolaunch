@@ -192,7 +192,9 @@ async fn add(data: &mut CmdData<'_>) -> anyhow::Result<()> {
 		&mut config,
 		vec![ConfigModification::AddUser(id, user)],
 		&data.paths,
+		&data.config.get().plugins,
 	)
+	.await
 	.context("Failed to write modified config")?;
 
 	cprintln!("<g>User added.");

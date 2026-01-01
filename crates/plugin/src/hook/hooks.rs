@@ -991,3 +991,39 @@ pub struct InstallCustomJavaResult {
 	/// The version of the resulting installation
 	pub version: String,
 }
+
+def_hook!(
+	SaveInstanceConfig,
+	"save_instance_config",
+	"Creates or updates config for a plugin instance",
+	SaveInstanceConfigArg,
+	(),
+	1,
+	true,
+);
+
+/// Argument for the SaveInstanceConfig hook
+#[derive(Serialize, Deserialize, Default)]
+#[serde(default)]
+pub struct SaveInstanceConfigArg {
+	/// The configuration to save
+	pub config: InstanceConfig,
+}
+
+def_hook!(
+	SaveTemplateConfig,
+	"save_template_config",
+	"Creates or updates config for a plugin template",
+	SaveTemplateConfigArg,
+	(),
+	1,
+	true,
+);
+
+/// Argument for the SaveTemplateConfig hook
+#[derive(Serialize, Deserialize, Default)]
+#[serde(default)]
+pub struct SaveTemplateConfigArg {
+	/// The configuration to save
+	pub config: TemplateConfig,
+}

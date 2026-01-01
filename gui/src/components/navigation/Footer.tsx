@@ -24,7 +24,6 @@ import {
 import IconButton from "../input/button/IconButton";
 import { AuthDisplayEvent } from "../../types";
 import MicrosoftAuthInfo from "../input/MicrosoftAuthInfo";
-import { beautifyString } from "../../utils";
 import TaskIndicator from "../TaskIndicator";
 import { errorToast } from "../dialog/Toasts";
 import Tip from "../dialog/Tip";
@@ -237,24 +236,22 @@ export default function Footer(props: FooterProps) {
 								/>
 							</Tip>
 						</div>
-						<Show when={props.itemFromPlugin != true}>
-							<div class="cont footer-config">
-								<Tip tip="View instance" side="top">
-									<IconButton
-										icon={Properties}
-										size="1.5rem"
-										color="var(--bg0)"
-										selectedColor="var(--accent)"
-										onClick={() => {
-											navigate(`/instance/${props.selectedItem}`);
-										}}
-										selected={false}
-										circle
-										hoverBackground="var(--bg3)"
-									/>
-								</Tip>
-							</div>
-						</Show>
+						<div class="cont footer-config">
+							<Tip tip="View instance" side="top">
+								<IconButton
+									icon={Properties}
+									size="1.5rem"
+									color="var(--bg0)"
+									selectedColor="var(--accent)"
+									onClick={() => {
+										navigate(`/instance/${props.selectedItem}`);
+									}}
+									selected={false}
+									circle
+									hoverBackground="var(--bg3)"
+								/>
+							</Tip>
+						</div>
 					</Show>
 					<Show
 						when={
@@ -284,7 +281,7 @@ export default function Footer(props: FooterProps) {
 					selected={
 						props.selectedItem != undefined &&
 						!(
-							props.itemFromPlugin == true && props.mode == FooterMode.Template
+							props.itemEditable == false && props.mode == FooterMode.Template
 						) &&
 						!(
 							props.mode == FooterMode.Instance &&
@@ -312,7 +309,7 @@ export default function Footer(props: FooterProps) {
 							}
 						} else if (
 							props.mode == FooterMode.Template &&
-							props.itemFromPlugin != true
+							props.itemEditable == true
 						) {
 							if (props.selectedItem != undefined) {
 								setInstanceConfigModal(
@@ -329,9 +326,9 @@ export default function Footer(props: FooterProps) {
 				<div class="cont">
 					<Show when={props.itemFromPlugin == true}>
 						<Tip
-							tip={`This ${beautifyString(
-								props.mode
-							)} is from a plugin and cannot be edited`}
+							tip={`This ${props.mode} is from a plugin ${
+								props.itemEditable == true ? "" : "and cannot be edited"
+							}`}
 							side="top"
 						>
 							<div class="cont footer-plugin-indicator">
@@ -380,6 +377,7 @@ export interface FooterProps {
 	selectedUser?: string;
 	action: () => void;
 	itemFromPlugin?: boolean;
+	itemEditable?: boolean;
 	selectedPackageGallery?: string[];
 }
 

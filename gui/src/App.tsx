@@ -29,7 +29,7 @@ export default function App() {
 	const [footerData, setFooterData] = createSignal<FooterData>({
 		selectedItem: undefined,
 		mode: FooterMode.Instance,
-		action: () => { },
+		action: () => {},
 	});
 
 	let [selectedUser, setSelectedUser] = createSignal<string>();
@@ -153,6 +153,7 @@ function Layout(props: LayoutProps) {
 				selectedUser={props.selectedUser}
 				action={props.footerData.action}
 				itemFromPlugin={props.footerData.fromPlugin}
+				itemEditable={props.footerData.isEditable}
 				selectedPackageGallery={props.footerData.selectedPackageGallery}
 			/>
 			<ModalBase
@@ -188,6 +189,7 @@ export interface FooterData {
 	action: () => void;
 	// Whether a selected instance or template was created by a plugin
 	fromPlugin?: boolean;
+	isEditable?: boolean;
 	selectedPackageGallery?: string[];
 }
 

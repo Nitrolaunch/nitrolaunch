@@ -198,7 +198,7 @@ pub async fn migrate_instances(
 		.context("Failed to migrate instances"),
 	)?;
 
-	let mut config =
+	let mut config2 =
 		fmt_err(Config::open(&Config::get_path(&state.paths)).context("Failed to load config"))?;
 
 	let count = instances.len();
@@ -209,7 +209,8 @@ pub async fn migrate_instances(
 		.collect();
 
 	fmt_err(
-		apply_modifications_and_write(&mut config, modifications, &state.paths)
+		apply_modifications_and_write(&mut config2, modifications, &state.paths, &config.plugins)
+			.await
 			.context("Failed to modify and write config"),
 	)?;
 

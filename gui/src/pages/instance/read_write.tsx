@@ -18,7 +18,8 @@ export interface InstanceConfig {
 	packages?: ConfiguredPackages;
 	launch?: LaunchConfig;
 	imported?: boolean;
-	from_plugin?: boolean;
+	source_plugin?: string;
+	is_editable?: boolean;
 	overrides?: PackageOverrides;
 	[extraKey: string]: any;
 }
@@ -149,10 +150,6 @@ export async function saveInstanceConfig(
 	config: InstanceConfig,
 	mode: InstanceConfigMode
 ) {
-	if (config.from_plugin == true) {
-		throw "Instance or template is from a plugin and cannot be edited";
-	}
-
 	let method =
 		mode == InstanceConfigMode.Instance
 			? "write_instance_config"

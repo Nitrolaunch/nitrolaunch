@@ -60,9 +60,12 @@ pub struct InstanceConfig {
 	/// Window configuration
 	#[serde(skip_serializing_if = "DefaultExt::is_default")]
 	pub window: ClientWindowConfig,
-	/// Whether this config was created by a plugin
+	/// The plugin this config was created by
 	#[serde(skip_serializing_if = "DefaultExt::is_default")]
-	pub from_plugin: bool,
+	pub source_plugin: Option<String>,
+	/// Whether the config of this plugin instance is editable. Does nothing if this instance was not created by a plugin
+	#[serde(skip_serializing_if = "DefaultExt::is_default")]
+	pub is_editable: bool,
 	/// Whether to use a plugin to custom launch this instance. Should only be set by plugins.
 	#[serde(skip_serializing_if = "DefaultExt::is_default")]
 	pub custom_launch: bool,
@@ -92,7 +95,12 @@ impl InstanceConfig {
 		self.icon = other.icon.or(self.icon.clone());
 		self.side = other.side.or(self.side);
 		self.window.merge(other.window);
-		self.from_plugin = other.from_plugin;
+
+		// These properties are not derived an instead just overrided
+		self.source_plugin = other.source_plugin;
+		self.is_editable = other.is_editable;
+		self.custom_launch = other.custom_launch;
+		self.imported = other.imported;
 	}
 }
 

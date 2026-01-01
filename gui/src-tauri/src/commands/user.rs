@@ -8,6 +8,7 @@ use nitrolaunch::{
 	},
 	config_crate::user::{UserConfig, UserVariant},
 	core::user::UserKind,
+	plugin::PluginManager,
 	plugin_crate::hook::hooks::{AddUserTypes, UserTypeInfo},
 	shared::output::NoOp,
 };
@@ -153,9 +154,12 @@ pub async fn create_user(
 
 	let user = UserConfig::Simple(kind);
 
+	let plugins = fmt_err(PluginManager::load(&state.paths, &mut NoOp).await)?;
+
 	let modifications = vec![ConfigModification::AddUser(id.into(), user)];
 	fmt_err(
-		apply_modifications_and_write(&mut configuration, modifications, &state.paths)
+		apply_modifications_and_write(&mut configuration, modifications, &state.paths, &plugins)
+			.await
 			.context("Failed to modify and write config"),
 	)?;
 
@@ -171,9 +175,12 @@ pub async fn remove_user(state: tauri::State<'_, State>, user: &str) -> Result<(
 	let mut configuration =
 		fmt_err(Config::open(&Config::get_path(&paths)).context("Failed to load config"))?;
 
+	let plugins = fmt_err(PluginManager::load(&paths, &mut NoOp).await)?;
+
 	let modifications = vec![ConfigModification::RemoveUser(user.into())];
 	fmt_err(
-		apply_modifications_and_write(&mut configuration, modifications, &paths)
+		apply_modifications_and_write(&mut configuration, modifications, &paths, &plugins)
+			.await
 			.context("Failed to modify and write config"),
 	)?;
 

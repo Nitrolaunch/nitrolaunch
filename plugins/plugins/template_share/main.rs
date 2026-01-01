@@ -7,7 +7,7 @@ use clap::Parser;
 use color_print::cprintln;
 use nitro_net::{download::Client, filebin};
 use nitro_plugin::api::executable::ExecutablePlugin;
-use nitro_shared::id::TemplateID;
+use nitro_shared::{id::TemplateID, output::NoOp};
 use nitrolaunch::{
 	config::{
 		modifications::{apply_modifications_and_write, ConfigModification},
@@ -15,6 +15,7 @@ use nitrolaunch::{
 	},
 	config_crate::{instance::is_valid_instance_id, template::TemplateConfig, ConfigDeser},
 	io::paths::Paths,
+	plugin::PluginManager,
 };
 use rand::{rngs::StdRng, RngCore, SeedableRng};
 
@@ -146,6 +147,8 @@ fn import_template(
 		bail!("Template ID '{id}' already exists. Try using another ID");
 	}
 
+	let plugins = runtime.block_on(PluginManager::load(paths, &mut NoOp))?;
+
 	let data = runtime
 		.block_on(filebin::download(code, FILENAME, client))
 		.context("Failed to download template. Is the code correct and still valid?")?;
@@ -155,7 +158,13 @@ fn import_template(
 
 	let modifications = vec![ConfigModification::AddTemplate(id, template)];
 
-	apply_modifications_and_write(config, modifications, paths)
+	runtime
+		.block_on(apply_modifications_and_write(
+			config,
+			modifications,
+			paths,
+			&plugins,
+		))
 		.context("Failed to write config")?;
 
 	Ok(())

@@ -441,7 +441,9 @@ async fn add(data: &mut CmdData<'_>) -> anyhow::Result<()> {
 		&mut config,
 		vec![ConfigModification::AddInstance(id, instance_config)],
 		&data.paths,
+		&data.config.get().plugins,
 	)
+	.await
 	.context("Failed to write modified config")?;
 
 	cprintln!("<g>Instance added.");
@@ -493,15 +495,17 @@ async fn import(
 	.await
 	.context("Failed to import the new instance")?;
 
-	let mut config = data.get_raw_config()?;
+	let mut config2 = data.get_raw_config()?;
 	apply_modifications_and_write(
-		&mut config,
+		&mut config2,
 		vec![ConfigModification::AddInstance(
 			instance,
 			new_instance_config,
 		)],
 		&data.paths,
+		&config.plugins,
 	)
+	.await
 	.context("Failed to write modified config")?;
 
 	Ok(())

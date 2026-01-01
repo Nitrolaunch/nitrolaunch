@@ -141,6 +141,7 @@ export default function InstanceList(props: InstanceListProps) {
 			mode: item.type as FooterMode,
 			action: () => {},
 			fromPlugin: item.fromPlugin,
+			isEditable: item.isEditable,
 		});
 	}
 
@@ -402,6 +403,7 @@ function Section(props: SectionProps) {
 											id: item.id,
 											type: props.itemType,
 											fromPlugin: item.from_plugin,
+											isEditable: item.is_editable,
 										},
 										props.id
 									);
@@ -493,7 +495,7 @@ function Item(props: ItemProps) {
 					if (props.itemKind == "instance") {
 						navigate(`/instance/${props.instance.id}`);
 					} else {
-						if (!props.instance.from_plugin) {
+						if (props.instance.is_editable) {
 							setInstanceConfigModal(
 								props.instance.id,
 								InstanceConfigMode.Template,
@@ -610,6 +612,7 @@ interface SelectedItem {
 	id?: string;
 	type: InstanceOrTemplate;
 	fromPlugin: boolean;
+	isEditable: boolean;
 }
 
 export interface InstanceListProps {

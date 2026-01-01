@@ -148,3 +148,13 @@ hook_interface!(
 	"replace_instance_launch",
 	ReplaceInstanceLaunch
 );
+hook_interface!(
+	save_instance_config,
+	"save_instance_config",
+	SaveInstanceConfig
+);
+hook_interface!(
+	save_template_config,
+	"save_template_config",
+	SaveTemplateConfig
+);
