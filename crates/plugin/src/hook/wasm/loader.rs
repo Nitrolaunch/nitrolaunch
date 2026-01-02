@@ -81,18 +81,20 @@ impl WASMLoader {
 				.await
 				.context("Failed to read WASM file")?;
 			let engine = self.engine.clone();
-			println!("Start compilation");
 			let component = tokio::task::spawn_blocking(move || Component::new(&engine, contents))
 				.await
 				.context("Failed to compile WASM file")??;
-			println!("Finish compilation");
 
 			if let Ok(bytes) = component.serialize() {
-				if tokio::fs::write(cached_file_path, bytes).await.is_ok() {
-					if let Some(last_modified) = last_modified {
-						tokio::fs::write(timestamp_path, last_modified.to_string()).await?;
+				// Don't block the load on writing the compiled file
+				tokio::spawn(async move {
+					if tokio::fs::write(cached_file_path, bytes).await.is_ok() {
+						if let Some(last_modified) = last_modified {
+							let _ =
+								tokio::fs::write(timestamp_path, last_modified.to_string()).await;
+						}
 					}
-				}
+				});
 			}
 
 			component
