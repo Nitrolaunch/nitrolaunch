@@ -91,9 +91,16 @@ impl WASMLoader {
 			component
 		} else {
 			// SAFETY: None really
-			unsafe {
-				Component::deserialize_file(&self.engine, &cached_file_path)
-					.context("Failed to deserialize compiled file")?
+			let component = unsafe { Component::deserialize_file(&self.engine, &cached_file_path) };
+
+			// Recompile the component if it is malformed
+			if let Ok(component) = component {
+				component
+			} else {
+				if cached_file_path.exists() {
+					std::fs::remove_file(&cached_file_path)?;
+				}
+				return Box::pin(self.load(plugin_id, wasm_file)).await;
 			}
 		};
 
