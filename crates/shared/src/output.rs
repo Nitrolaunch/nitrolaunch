@@ -103,6 +103,20 @@ pub trait NitroOutput: Send {
 		let _ = user_id;
 		self.prompt_password(message).await
 	}
+
+	/// Gets a copy of this output that may technically be used in asynchronous tasks,
+	/// but will most likely be used for something synchronous like the output of a plugin command
+	fn get_greater_copy(&self) -> impl NitroOutput {
+		self.get_lesser_copy()
+	}
+
+	/// Gets a copy of this output that can be used for asynchronous tasks.
+	/// Note that this does not have to be an exact copy.
+	/// If multiple sources writing to your output at the same time would mess up the formatting (like for a terminal),
+	/// this copy can be a lesser version that just saves to logging, for example.
+	fn get_lesser_copy(&self) -> impl NitroOutput {
+		NoOp
+	}
 }
 
 /// Displays the default Microsoft authentication messages
@@ -230,6 +244,7 @@ impl MessageLevel {
 }
 
 /// Dummy NitroOutput that doesn't print anything
+#[derive(Clone, Copy)]
 pub struct NoOp;
 
 impl NitroOutput for NoOp {
@@ -237,6 +252,7 @@ impl NitroOutput for NoOp {
 }
 
 /// NitroOutput with simple terminal printing
+#[derive(Clone, Copy)]
 pub struct Simple(pub MessageLevel);
 
 impl NitroOutput for Simple {
@@ -246,6 +262,10 @@ impl NitroOutput for Simple {
 		}
 
 		println!("{text}");
+	}
+
+	fn get_lesser_copy(&self) -> impl NitroOutput {
+		Self(self.0)
 	}
 }
 

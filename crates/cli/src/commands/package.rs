@@ -718,6 +718,7 @@ async fn add(
 		)],
 		&data.paths,
 		&data.config.get().plugins,
+		data.output,
 	)
 	.await
 	.context("Failed to write modified config")?;

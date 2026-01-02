@@ -11,7 +11,7 @@ use crate::io::paths::Paths;
 
 /// A logging struct used to write output messages to log files
 pub struct Logger {
-	log_file: File,
+	log_file: Option<File>,
 	latest_log_file: Option<File>,
 }
 
@@ -24,9 +24,17 @@ impl Logger {
 		let latest_log_file = File::create(get_latest_log_file_path(paths)).ok();
 
 		Ok(Self {
-			log_file,
+			log_file: Some(log_file),
 			latest_log_file,
 		})
+	}
+
+	/// Creates a dummy logger that doesn't log anything
+	pub fn dummy() -> Self {
+		Self {
+			log_file: None,
+			latest_log_file: None,
+		}
 	}
 
 	/// Writes a log message
@@ -37,7 +45,9 @@ impl Logger {
 	) -> anyhow::Result<()> {
 		let message = format_log_message(&format_log_message_contents(message), level) + "\n";
 
-		self.log_file.write_all(message.as_bytes())?;
+		if let Some(log_file) = &mut self.log_file {
+			log_file.write_all(message.as_bytes())?;
+		}
 		if let Some(latest_log_file) = &mut self.latest_log_file {
 			latest_log_file.write_all(message.as_bytes())?;
 		}

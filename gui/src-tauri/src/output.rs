@@ -222,6 +222,10 @@ impl NitroOutput for LauncherOutput {
 	fn end_section(&mut self) {
 		let _ = self.inner.app.emit("nitro_output_end_section", &self.task);
 	}
+
+	fn get_lesser_copy(&self) -> impl NitroOutput {
+		Self::new(&self.inner)
+	}
 }
 
 impl LauncherOutput {

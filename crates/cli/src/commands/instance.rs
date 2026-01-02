@@ -442,6 +442,7 @@ async fn add(data: &mut CmdData<'_>) -> anyhow::Result<()> {
 		vec![ConfigModification::AddInstance(id, instance_config)],
 		&data.paths,
 		&data.config.get().plugins,
+		data.output,
 	)
 	.await
 	.context("Failed to write modified config")?;
@@ -504,6 +505,7 @@ async fn import(
 		)],
 		&data.paths,
 		&config.plugins,
+		data.output,
 	)
 	.await
 	.context("Failed to write modified config")?;

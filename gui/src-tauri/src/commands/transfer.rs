@@ -49,7 +49,7 @@ pub async fn import_instance(
 	path: String,
 	id: String,
 ) -> Result<(), String> {
-	let mut output = LauncherOutput::new(state.get_output(app_handle));
+	let mut output = LauncherOutput::new(state.get_output(app_handle.clone()));
 	output.set_task("import_instance");
 
 	let config = fmt_err(
@@ -78,7 +78,7 @@ pub async fn import_instance(
 		.context("Failed to import instance"),
 	)?;
 
-	write_instance_config(state, id, config).await
+	write_instance_config(state, id, config, app_handle).await
 }
 
 #[tauri::command]
@@ -209,9 +209,15 @@ pub async fn migrate_instances(
 		.collect();
 
 	fmt_err(
-		apply_modifications_and_write(&mut config2, modifications, &state.paths, &config.plugins)
-			.await
-			.context("Failed to modify and write config"),
+		apply_modifications_and_write(
+			&mut config2,
+			modifications,
+			&state.paths,
+			&config.plugins,
+			&mut NoOp,
+		)
+		.await
+		.context("Failed to modify and write config"),
 	)?;
 
 	Ok(count)

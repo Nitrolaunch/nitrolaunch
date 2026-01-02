@@ -164,6 +164,7 @@ fn import_template(
 			modifications,
 			paths,
 			&plugins,
+			&mut NoOp,
 		))
 		.context("Failed to write config")?;
 

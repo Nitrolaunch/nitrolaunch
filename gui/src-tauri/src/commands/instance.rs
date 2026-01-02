@@ -254,7 +254,11 @@ pub async fn write_instance_config(
 	state: tauri::State<'_, State>,
 	id: String,
 	config: InstanceConfig,
+	app_handle: tauri::AppHandle,
 ) -> Result<(), String> {
+	let mut output = LauncherOutput::new(state.get_output(app_handle));
+	output.set_task("save_instance_config");
+
 	let mut configuration =
 		fmt_err(Config::open(&Config::get_path(&state.paths)).context("Failed to load config"))?;
 
@@ -262,9 +266,15 @@ pub async fn write_instance_config(
 
 	let modifications = vec![ConfigModification::AddInstance(id.into(), config)];
 	fmt_err(
-		apply_modifications_and_write(&mut configuration, modifications, &state.paths, &plugins)
-			.await
-			.context("Failed to modify and write config"),
+		apply_modifications_and_write(
+			&mut configuration,
+			modifications,
+			&state.paths,
+			&plugins,
+			&mut output,
+		)
+		.await
+		.context("Failed to modify and write config"),
 	)?;
 
 	Ok(())
@@ -275,7 +285,11 @@ pub async fn write_template_config(
 	state: tauri::State<'_, State>,
 	id: String,
 	config: TemplateConfig,
+	app_handle: tauri::AppHandle,
 ) -> Result<(), String> {
+	let mut output = LauncherOutput::new(state.get_output(app_handle));
+	output.set_task("save_template_config");
+
 	let mut configuration =
 		fmt_err(Config::open(&Config::get_path(&state.paths)).context("Failed to load config"))?;
 
@@ -283,9 +297,15 @@ pub async fn write_template_config(
 
 	let modifications = vec![ConfigModification::AddTemplate(id.into(), config)];
 	fmt_err(
-		apply_modifications_and_write(&mut configuration, modifications, &state.paths, &plugins)
-			.await
-			.context("Failed to modify and write config"),
+		apply_modifications_and_write(
+			&mut configuration,
+			modifications,
+			&state.paths,
+			&plugins,
+			&mut output,
+		)
+		.await
+		.context("Failed to modify and write config"),
 	)?;
 
 	Ok(())
@@ -504,7 +524,14 @@ pub async fn get_instance_resolution_error(
 }
 
 #[tauri::command]
-pub async fn delete_instance(state: tauri::State<'_, State>, instance: &str) -> Result<(), String> {
+pub async fn delete_instance(
+	state: tauri::State<'_, State>,
+	app_handle: tauri::AppHandle,
+	instance: &str,
+) -> Result<(), String> {
+	let mut output = LauncherOutput::new(state.get_output(app_handle));
+	output.set_task("delete_instance");
+
 	fmt_err(
 		delete_instance_files(instance, &state.paths)
 			.await
@@ -518,16 +545,29 @@ pub async fn delete_instance(state: tauri::State<'_, State>, instance: &str) -> 
 
 	let modifications = vec![ConfigModification::RemoveInstance(instance.into())];
 	fmt_err(
-		apply_modifications_and_write(&mut configuration, modifications, &state.paths, &plugins)
-			.await
-			.context("Failed to modify and write config"),
+		apply_modifications_and_write(
+			&mut configuration,
+			modifications,
+			&state.paths,
+			&plugins,
+			&mut output,
+		)
+		.await
+		.context("Failed to modify and write config"),
 	)?;
 
 	Ok(())
 }
 
 #[tauri::command]
-pub async fn delete_template(state: tauri::State<'_, State>, template: &str) -> Result<(), String> {
+pub async fn delete_template(
+	state: tauri::State<'_, State>,
+	app_handle: tauri::AppHandle,
+	template: &str,
+) -> Result<(), String> {
+	let mut output = LauncherOutput::new(state.get_output(app_handle));
+	output.set_task("delete_template");
+
 	let mut configuration =
 		fmt_err(Config::open(&Config::get_path(&state.paths)).context("Failed to load config"))?;
 
@@ -535,9 +575,15 @@ pub async fn delete_template(state: tauri::State<'_, State>, template: &str) -> 
 
 	let modifications = vec![ConfigModification::RemoveTemplate(template.into())];
 	fmt_err(
-		apply_modifications_and_write(&mut configuration, modifications, &state.paths, &plugins)
-			.await
-			.context("Failed to modify and write config"),
+		apply_modifications_and_write(
+			&mut configuration,
+			modifications,
+			&state.paths,
+			&plugins,
+			&mut output,
+		)
+		.await
+		.context("Failed to modify and write config"),
 	)?;
 
 	Ok(())

@@ -158,9 +158,15 @@ pub async fn create_user(
 
 	let modifications = vec![ConfigModification::AddUser(id.into(), user)];
 	fmt_err(
-		apply_modifications_and_write(&mut configuration, modifications, &state.paths, &plugins)
-			.await
-			.context("Failed to modify and write config"),
+		apply_modifications_and_write(
+			&mut configuration,
+			modifications,
+			&state.paths,
+			&plugins,
+			&mut NoOp,
+		)
+		.await
+		.context("Failed to modify and write config"),
 	)?;
 
 	Ok(())
@@ -179,9 +185,15 @@ pub async fn remove_user(state: tauri::State<'_, State>, user: &str) -> Result<(
 
 	let modifications = vec![ConfigModification::RemoveUser(user.into())];
 	fmt_err(
-		apply_modifications_and_write(&mut configuration, modifications, &paths, &plugins)
-			.await
-			.context("Failed to modify and write config"),
+		apply_modifications_and_write(
+			&mut configuration,
+			modifications,
+			&paths,
+			&plugins,
+			&mut NoOp,
+		)
+		.await
+		.context("Failed to modify and write config"),
 	)?;
 
 	Ok(())

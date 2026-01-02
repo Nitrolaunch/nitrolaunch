@@ -7,7 +7,7 @@ use nitro_core::io::json_to_file_pretty;
 use nitro_plugin::hook::hooks::{
 	SaveInstanceConfig, SaveInstanceConfigArg, SaveTemplateConfig, SaveTemplateConfigArg,
 };
-use nitro_shared::output::NoOp;
+use nitro_shared::output::NitroOutput;
 
 use crate::io::paths::Paths;
 use crate::plugin::PluginManager;
@@ -39,6 +39,7 @@ pub async fn apply_modifications(
 	modifications: Vec<ConfigModification>,
 	paths: &Paths,
 	plugins: &PluginManager,
+	o: &mut impl NitroOutput,
 ) -> anyhow::Result<()> {
 	for modification in modifications {
 		match modification {
@@ -60,11 +61,11 @@ pub async fn apply_modifications(
 								config: instance,
 							},
 							paths,
-							&mut NoOp,
+							o,
 						)
 						.await?;
 					if let Some(result) = result {
-						result.result(&mut NoOp).await?;
+						result.result(o).await?;
 					}
 				} else {
 					config.instances.insert(instance_id, instance);
@@ -85,11 +86,11 @@ pub async fn apply_modifications(
 								config: template,
 							},
 							paths,
-							&mut NoOp,
+							o,
 						)
 						.await?;
 					if let Some(result) = result {
-						result.result(&mut NoOp).await?;
+						result.result(o).await?;
 					}
 				} else {
 					config.templates.insert(template_id, template);
@@ -122,8 +123,9 @@ pub async fn apply_modifications_and_write(
 	modifications: Vec<ConfigModification>,
 	paths: &Paths,
 	plugins: &PluginManager,
+	o: &mut impl NitroOutput,
 ) -> anyhow::Result<()> {
-	apply_modifications(config, modifications, paths, plugins).await?;
+	apply_modifications(config, modifications, paths, plugins, o).await?;
 	let path = Config::get_path(paths);
 	// Backup the contents first
 	std::fs::copy(&path, paths.config.join("nitro_write_backup.json"))
@@ -150,7 +152,7 @@ mod tests {
 		let paths = Paths::new_no_create().unwrap();
 		let plugins = PluginManager::new(&paths);
 
-		apply_modifications(&mut config, modifications, &paths, &plugins)
+		apply_modifications(&mut config, modifications, &paths, &plugins, &mut NoOp)
 			.await
 			.unwrap();
 		assert!(config.users.contains_key("bob"));

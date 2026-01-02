@@ -322,6 +322,7 @@ async fn migrate(
 			.collect(),
 		&data.paths,
 		&config.plugins,
+		data.output,
 	)
 	.await
 	.context("Failed to write modified config")?;

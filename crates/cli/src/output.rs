@@ -116,6 +116,17 @@ impl NitroOutput for TerminalOutput {
 		let _ = nitrolaunch::shared::util::open_link(url);
 		default_special_ms_auth(self, url, code);
 	}
+
+	fn get_greater_copy(&self) -> impl NitroOutput {
+		Self {
+			printer: ReplPrinter::new(true),
+			level: MessageLevel::Important,
+			in_process: false,
+			indent_level: 0,
+			logger: Logger::dummy(),
+			translation_map: None,
+		}
+	}
 }
 
 impl TerminalOutput {
