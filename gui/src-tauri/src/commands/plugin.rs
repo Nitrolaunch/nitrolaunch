@@ -234,7 +234,7 @@ pub async fn get_page_inject_script(
 	let mut output = LauncherOutput::new(state.get_output(app_handle));
 
 	let config = fmt_err(
-		load_config(&state.paths, &mut NoOp)
+		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
 			.await
 			.context("Failed to load config"),
 	)?;
@@ -264,7 +264,7 @@ pub async fn get_sidebar_buttons(
 	let mut output = LauncherOutput::new(state.get_output(app_handle));
 
 	let config = fmt_err(
-		load_config(&state.paths, &mut NoOp)
+		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
 			.await
 			.context("Failed to load config"),
 	)?;
@@ -289,7 +289,7 @@ pub async fn get_plugin_page(
 	let mut output = LauncherOutput::new(state.get_output(app_handle));
 
 	let config = fmt_err(
-		load_config(&state.paths, &mut NoOp)
+		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
 			.await
 			.context("Failed to load config"),
 	)?;
@@ -318,7 +318,7 @@ pub async fn get_themes(
 	let mut output = LauncherOutput::new(state.get_output(app_handle));
 
 	let config = fmt_err(
-		load_config(&state.paths, &mut NoOp)
+		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
 			.await
 			.context("Failed to load config"),
 	)?;
@@ -346,7 +346,7 @@ pub async fn run_custom_action(
 	let mut output = LauncherOutput::new(state.get_output(app_handle));
 
 	let config = fmt_err(
-		load_config(&state.paths, &mut NoOp)
+		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
 			.await
 			.context("Failed to load config"),
 	)?;
@@ -386,7 +386,7 @@ pub async fn get_dropdown_buttons(
 	let mut output = LauncherOutput::new(state.get_output(app_handle));
 
 	let config = fmt_err(
-		load_config(&state.paths, &mut NoOp)
+		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
 			.await
 			.context("Failed to load config"),
 	)?;
@@ -415,7 +415,7 @@ pub async fn get_instance_tiles(
 	let mut output = LauncherOutput::new(state.get_output(app_handle));
 
 	let config = fmt_err(
-		load_config(&state.paths, &mut NoOp)
+		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
 			.await
 			.context("Failed to load config"),
 	)?;

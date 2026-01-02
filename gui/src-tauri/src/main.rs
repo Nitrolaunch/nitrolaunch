@@ -23,6 +23,7 @@ use nitrolaunch::core::auth_crate::mc::ClientId;
 use nitrolaunch::core::{net::download::Client, user::UserManager};
 use nitrolaunch::io::logging::Logger;
 use nitrolaunch::io::paths::Paths;
+use nitrolaunch::plugin_crate::hook::wasm::loader::WASMLoader;
 use nitrolaunch::shared::output::Message;
 use output::{OutputInner, PromptResponse};
 use tauri::async_runtime::{Mutex, Sender};
@@ -237,6 +238,7 @@ pub struct State {
 	pub password_prompt: PromptResponse,
 	pub output_inner: Arc<OnceLock<OutputInner>>,
 	pub logging_sender: Sender<Message>,
+	pub wasm_loader: Arc<Mutex<WASMLoader>>,
 }
 
 impl State {
@@ -246,6 +248,7 @@ impl State {
 			data: Arc::new(Mutex::new(
 				LauncherData::open(&paths).context("Failed to open launcher data")?,
 			)),
+			wasm_loader: Arc::new(Mutex::new(WASMLoader::new(&paths.data))),
 			running_instances: Arc::new(OnceLock::new()),
 			task_manager: Arc::new(OnceLock::new()),
 			paths,

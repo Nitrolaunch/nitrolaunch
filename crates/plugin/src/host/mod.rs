@@ -30,15 +30,18 @@ impl CorePluginManager {
 			plugins: Vec::new(),
 			plugin_list: Vec::new(),
 			nitro_version: None,
-			wasm_loader: Arc::new(Mutex::new(WASMLoader::new(
-				paths.data_dir.join("internal/wasm_cache"),
-			))),
+			wasm_loader: Arc::new(Mutex::new(WASMLoader::new(&paths.data_dir))),
 		}
 	}
 
 	/// Set the Nitrolaunch version of the manager
 	pub fn set_nitro_version(&mut self, version: &'static str) {
 		self.nitro_version = Some(version);
+	}
+
+	/// Set the WASM loader of the manager
+	pub fn set_wasm_loader(&mut self, loader: Arc<Mutex<WASMLoader>>) {
+		self.wasm_loader = loader;
 	}
 
 	/// Add a plugin to the manager

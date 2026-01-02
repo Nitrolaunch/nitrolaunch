@@ -34,7 +34,7 @@ pub async fn get_packages(
 	let mut output = LauncherOutput::new(state.get_output(app_handle));
 	output.set_task("search_packages");
 	let mut config = fmt_err(
-		load_config(&state.paths, &mut NoOp)
+		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
 			.await
 			.context("Failed to load config"),
 	)?;
@@ -68,7 +68,7 @@ pub async fn preload_packages(
 	repo: Option<&str>,
 ) -> Result<(), String> {
 	let mut config = fmt_err(
-		load_config(&state.paths, &mut NoOp)
+		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
 			.await
 			.context("Failed to load config"),
 	)?;
@@ -116,7 +116,7 @@ pub async fn get_package_meta(
 	package: &str,
 ) -> Result<PackageMetadata, String> {
 	let mut config = fmt_err(
-		load_config(&state.paths, &mut NoOp)
+		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
 			.await
 			.context("Failed to load config"),
 	)?;
@@ -146,7 +146,7 @@ pub async fn get_package_props(
 	package: &str,
 ) -> Result<PackageProperties, String> {
 	let mut config = fmt_err(
-		load_config(&state.paths, &mut NoOp)
+		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
 			.await
 			.context("Failed to load config"),
 	)?;
@@ -176,7 +176,7 @@ pub async fn get_package_meta_and_props(
 	package: &str,
 ) -> Result<(PackageMetadata, PackageProperties), String> {
 	let mut config = fmt_err(
-		load_config(&state.paths, &mut NoOp)
+		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
 			.await
 			.context("Failed to load config"),
 	)?;
@@ -213,7 +213,7 @@ pub async fn get_declarative_package_contents(
 	package: &str,
 ) -> Result<Option<DeclarativePackage>, String> {
 	let mut config = fmt_err(
-		load_config(&state.paths, &mut NoOp)
+		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
 			.await
 			.context("Failed to load config"),
 	)?;
@@ -239,7 +239,7 @@ pub async fn get_declarative_package_contents(
 #[tauri::command]
 pub async fn get_package_repos(state: tauri::State<'_, State>) -> Result<Vec<RepoInfo>, String> {
 	let mut config = fmt_err(
-		load_config(&state.paths, &mut NoOp)
+		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
 			.await
 			.context("Failed to load config"),
 	)?;
@@ -286,7 +286,7 @@ pub async fn sync_packages(
 	app_handle: tauri::AppHandle,
 ) -> Result<(), String> {
 	let mut config = fmt_err(
-		load_config(&state.paths, &mut NoOp)
+		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
 			.await
 			.context("Failed to load config"),
 	)?;

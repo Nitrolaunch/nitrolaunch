@@ -27,7 +27,7 @@ pub async fn get_users(
 	let mut output = LauncherOutput::new(state.get_output(app_handle));
 
 	let mut config = fmt_err(
-		load_config(&state.paths, &mut NoOp)
+		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
 			.await
 			.context("Failed to load config"),
 	)?;
@@ -100,7 +100,7 @@ pub async fn login_user(
 	user: &str,
 ) -> Result<(), String> {
 	let mut config = fmt_err(
-		load_config(&state.paths, &mut NoOp)
+		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
 			.await
 			.context("Failed to load config"),
 	)?;
@@ -129,7 +129,7 @@ pub async fn login_user(
 #[tauri::command]
 pub async fn logout_user(state: tauri::State<'_, State>, user: &str) -> Result<(), String> {
 	let mut config = fmt_err(
-		load_config(&state.paths, &mut NoOp)
+		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
 			.await
 			.context("Failed to load config"),
 	)?;
@@ -192,7 +192,7 @@ pub async fn get_supported_user_types(
 	state: tauri::State<'_, State>,
 ) -> Result<Vec<UserTypeInfo>, String> {
 	let config = fmt_err(
-		load_config(&state.paths, &mut NoOp)
+		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
 			.await
 			.context("Failed to load config"),
 	)?;

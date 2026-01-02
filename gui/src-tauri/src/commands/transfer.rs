@@ -24,7 +24,7 @@ pub async fn get_instance_transfer_formats(
 	let mut output = LauncherOutput::new(state.get_output(app_handle));
 
 	let config = fmt_err(
-		load_config(&state.paths, &mut NoOp)
+		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
 			.await
 			.context("Failed to load config"),
 	)?;
@@ -53,7 +53,7 @@ pub async fn import_instance(
 	output.set_task("import_instance");
 
 	let config = fmt_err(
-		load_config(&state.paths, &mut NoOp)
+		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
 			.await
 			.context("Failed to load config"),
 	)?;
@@ -93,7 +93,7 @@ pub async fn export_instance(
 	output.set_task("export_instance");
 
 	let mut config = fmt_err(
-		load_config(&state.paths, &mut NoOp)
+		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
 			.await
 			.context("Failed to load config"),
 	)?;
@@ -137,7 +137,7 @@ pub async fn check_migration(
 	let mut output = LauncherOutput::new(state.get_output(app_handle));
 
 	let config = fmt_err(
-		load_config(&state.paths, &mut NoOp)
+		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
 			.await
 			.context("Failed to load config"),
 	)?;
@@ -170,7 +170,7 @@ pub async fn migrate_instances(
 	output.set_task("migrate_instances");
 
 	let config = fmt_err(
-		load_config(&state.paths, &mut NoOp)
+		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
 			.await
 			.context("Failed to load config"),
 	)?;

@@ -30,7 +30,7 @@ use super::{fmt_err, load_config};
 #[tauri::command]
 pub async fn get_instances(state: tauri::State<'_, State>) -> Result<Vec<InstanceInfo>, String> {
 	let config = fmt_err(
-		load_config(&state.paths, &mut NoOp)
+		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
 			.await
 			.context("Failed to load config"),
 	)?;
@@ -71,7 +71,7 @@ pub async fn get_instances(state: tauri::State<'_, State>) -> Result<Vec<Instanc
 #[tauri::command]
 pub async fn get_templates(state: tauri::State<'_, State>) -> Result<Vec<InstanceInfo>, String> {
 	let config = fmt_err(
-		load_config(&state.paths, &mut NoOp)
+		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
 			.await
 			.context("Failed to load config"),
 	)?;
@@ -137,7 +137,7 @@ pub async fn get_instance_groups(
 	state: tauri::State<'_, State>,
 ) -> Result<Vec<InstanceGroupInfo>, String> {
 	let config = fmt_err(
-		load_config(&state.paths, &mut NoOp)
+		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
 			.await
 			.context("Failed to load config"),
 	)?;
@@ -167,7 +167,7 @@ pub async fn get_instance_config(
 	id: String,
 ) -> Result<Option<InstanceConfig>, String> {
 	let config = fmt_err(
-		load_config(&state.paths, &mut NoOp)
+		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
 			.await
 			.context("Failed to load config"),
 	)?;
@@ -190,7 +190,7 @@ pub async fn get_editable_instance_config(
 	id: String,
 ) -> Result<Option<InstanceConfig>, String> {
 	let config = fmt_err(
-		load_config(&state.paths, &mut NoOp)
+		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
 			.await
 			.context("Failed to load config"),
 	)?;
@@ -208,7 +208,7 @@ pub async fn get_template_config(
 	id: String,
 ) -> Result<Option<TemplateConfig>, String> {
 	let config = fmt_err(
-		load_config(&state.paths, &mut NoOp)
+		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
 			.await
 			.context("Failed to load config"),
 	)?;
@@ -226,7 +226,7 @@ pub async fn get_editable_template_config(
 	id: String,
 ) -> Result<Option<TemplateConfig>, String> {
 	let config = fmt_err(
-		load_config(&state.paths, &mut NoOp)
+		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
 			.await
 			.context("Failed to load config"),
 	)?;
@@ -241,7 +241,7 @@ pub async fn get_editable_template_config(
 #[tauri::command]
 pub async fn get_base_template(state: tauri::State<'_, State>) -> Result<TemplateConfig, String> {
 	let config = fmt_err(
-		load_config(&state.paths, &mut NoOp)
+		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
 			.await
 			.context("Failed to load config"),
 	)?;
@@ -325,7 +325,7 @@ pub async fn update_instance_impl(
 	depth: UpdateDepth,
 ) -> Result<(), String> {
 	let mut config = fmt_err(
-		load_config(&state.paths, &mut NoOp)
+		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
 			.await
 			.context("Failed to load config"),
 	)?;
@@ -383,7 +383,7 @@ pub async fn update_instance_packages(
 	instance_id: String,
 ) -> Result<(), String> {
 	let mut config = fmt_err(
-		load_config(&state.paths, &mut NoOp)
+		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
 			.await
 			.context("Failed to load config"),
 	)?;

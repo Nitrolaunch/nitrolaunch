@@ -18,8 +18,13 @@ pub struct WASMLoader {
 }
 
 impl WASMLoader {
+	/// Creates a new WASMLoader with the default cache directory
+	pub fn new(data_dir: &Path) -> Self {
+		Self::with_cache_dir(data_dir.join("internal/wasm_cache"))
+	}
+
 	/// Creates a new WASMLoader with the given cache directory path
-	pub fn new(cache_dir: PathBuf) -> Self {
+	pub fn with_cache_dir(cache_dir: PathBuf) -> Self {
 		let engine =
 			Engine::new(Config::new().async_support(true)).expect("Failed to create engine");
 		Self {
@@ -76,9 +81,11 @@ impl WASMLoader {
 				.await
 				.context("Failed to read WASM file")?;
 			let engine = self.engine.clone();
+			println!("Start compilation");
 			let component = tokio::task::spawn_blocking(move || Component::new(&engine, contents))
 				.await
 				.context("Failed to compile WASM file")??;
+			println!("Finish compilation");
 
 			if let Ok(bytes) = component.serialize() {
 				if tokio::fs::write(cached_file_path, bytes).await.is_ok() {

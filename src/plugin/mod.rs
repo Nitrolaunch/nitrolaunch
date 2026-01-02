@@ -10,6 +10,7 @@ use crate::io::paths::Paths;
 use anyhow::Context;
 use nitro_core::io::{json_from_file, json_to_file_pretty};
 use nitro_plugin::hook::call::{HookHandle, HookHandles};
+use nitro_plugin::hook::wasm::loader::WASMLoader;
 use nitro_plugin::hook::Hook;
 use nitro_plugin::host::CorePluginManager;
 use nitro_plugin::plugin::{Plugin, PluginManifest};
@@ -340,6 +341,11 @@ impl PluginManager {
 	/// Checks whether a plugin is present in the manager
 	pub fn has_plugin(&self, plugin: &str) -> bool {
 		self.plugins.contains(plugin)
+	}
+
+	/// Sets the WASM loader of the internal plugin manager, to share resources
+	pub async fn set_wasm_loader(&self, loader: Arc<Mutex<WASMLoader>>) {
+		self.inner.lock().await.manager.set_wasm_loader(loader);
 	}
 
 	/// Gets the mutex lock for the inner part of this plugin manager

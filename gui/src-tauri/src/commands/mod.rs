@@ -2,8 +2,11 @@ use anyhow::Context;
 use nitrolaunch::config::Config;
 use nitrolaunch::io::paths::Paths;
 use nitrolaunch::plugin::PluginManager;
+use nitrolaunch::plugin_crate::hook::wasm::loader::WASMLoader;
 use nitrolaunch::shared::output::NitroOutput;
 use std::fmt::Debug;
+use std::sync::Arc;
+use tokio::sync::Mutex;
 
 use crate::State;
 
@@ -16,10 +19,17 @@ pub mod settings;
 pub mod transfer;
 pub mod user;
 
-async fn load_config(paths: &Paths, o: &mut impl NitroOutput) -> anyhow::Result<Config> {
+async fn load_config(
+	paths: &Paths,
+	wasm_loader: &Arc<Mutex<WASMLoader>>,
+	o: &mut impl NitroOutput,
+) -> anyhow::Result<Config> {
 	let plugins = PluginManager::load(paths, o)
 		.await
 		.context("Failed to load plugin manager")?;
+
+	plugins.set_wasm_loader(wasm_loader.clone()).await;
+
 	Config::load(
 		&Config::get_path(paths),
 		plugins,

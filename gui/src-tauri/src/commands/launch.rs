@@ -65,7 +65,7 @@ async fn launch_game_impl(
 ) -> anyhow::Result<()> {
 	println!("Launching game!");
 
-	let mut config = load_config(&state.paths, &mut o)
+	let mut config = load_config(&state.paths, &state.wasm_loader, &mut o)
 		.await
 		.context("Failed to load config")?;
 	if let Some(user) = user {

@@ -17,7 +17,7 @@ use super::{fmt_err, load_config};
 #[tauri::command]
 pub async fn get_supported_loaders(state: tauri::State<'_, State>) -> Result<Vec<Loader>, String> {
 	let config = fmt_err(
-		load_config(&state.paths, &mut NoOp)
+		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
 			.await
 			.context("Failed to load config"),
 	)?;
@@ -41,7 +41,7 @@ pub async fn get_loader_versions(
 	minecraft_version: String,
 ) -> Result<Vec<String>, String> {
 	let config = fmt_err(
-		load_config(&state.paths, &mut NoOp)
+		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
 			.await
 			.context("Failed to load config"),
 	)?;
@@ -70,7 +70,7 @@ pub async fn get_minecraft_versions(
 	releases_only: bool,
 ) -> Result<Vec<String>, String> {
 	let config = fmt_err(
-		load_config(&state.paths, &mut NoOp)
+		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
 			.await
 			.context("Failed to load config"),
 	)?;
@@ -119,7 +119,7 @@ pub async fn update_version_manifest(
 	state: &State,
 ) -> Result<(), String> {
 	let config = fmt_err(
-		load_config(&state.paths, &mut NoOp)
+		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
 			.await
 			.context("Failed to load config"),
 	)?;
@@ -243,7 +243,7 @@ pub async fn open_instance_dir(
 	instance: &str,
 ) -> Result<(), String> {
 	let mut config = fmt_err(
-		load_config(&state.paths, &mut NoOp)
+		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
 			.await
 			.context("Failed to load config"),
 	)?;
@@ -274,7 +274,7 @@ pub async fn get_available_icons(
 	let data = state.data.lock().await;
 	let saved = data.saved_instance_icons.clone();
 
-	let Ok(config) = load_config(&state.paths, &mut NoOp).await else {
+	let Ok(config) = load_config(&state.paths, &state.wasm_loader, &mut NoOp).await else {
 		return Ok(saved);
 	};
 
@@ -321,7 +321,7 @@ pub async fn get_supported_java_types(
 	state: tauri::State<'_, State>,
 ) -> Result<Vec<JavaTypeInfo>, String> {
 	let config = fmt_err(
-		load_config(&state.paths, &mut NoOp)
+		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
 			.await
 			.context("Failed to load config"),
 	)?;
