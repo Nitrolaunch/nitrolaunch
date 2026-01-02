@@ -174,6 +174,23 @@ Adds or updates config for an editable custom template from this plugin, whateve
 
 - Result: None
 
+### `delete_instance`
+
+Deletes a plugin instance
+
+- Argument: `string`
+
+- Result: None
+
+### `delete_template`
+
+Deletes a plugin template
+
+- Argument: `string`
+
+- Result: None
+
+
 ### `add_instance_icons`
 
 Adds new options for instance and template icons in the UI

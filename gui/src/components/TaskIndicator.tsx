@@ -268,8 +268,9 @@ export default function TaskIndicator() {
 	return (
 		<div
 			id="task-indicator"
-			style={`border-color:${getColors(color())[0]};background-color:${getColors(color())[2]
-				}`}
+			style={`border-color:${getColors(color())[0]};background-color:${
+				getColors(color())[2]
+			}`}
 		>
 			<div
 				id="task-indicator-preview"
@@ -314,8 +315,9 @@ export default function TaskIndicator() {
 				<div class="cont">
 					<Show
 						when={taskCount() == 1}
-						fallback={`${taskCount()} ${taskCount() == 1 ? "task" : "tasks"
-							} running`}
+						fallback={`${taskCount()} ${
+							taskCount() == 1 ? "task" : "tasks"
+						} running`}
 					>
 						{taskName()}
 					</Show>
@@ -325,14 +327,16 @@ export default function TaskIndicator() {
 				<div
 					class="cont col"
 					id="task-indicator-popup"
-					style={`border-color:${getColors(getTaskColor(selectedTaskData()!.id))[0]
-						}`}
+					style={`border-color:${
+						getColors(getTaskColor(selectedTaskData()!.id))[0]
+					}`}
 					onclick={() => setSelectedTask(undefined)}
 				>
 					<div
 						class="cont bold"
-						style={`color:${getColors(getTaskColor(selectedTaskData()!.id))[1]
-							}`}
+						style={`color:${
+							getColors(getTaskColor(selectedTaskData()!.id))[1]
+						}`}
 					>
 						{getTaskDisplayName(selectedTaskData()!.id)}
 					</div>
@@ -472,16 +476,38 @@ function getTaskDisplayName(task: string) {
 		return "Installing plugins";
 	} else if (task == "update_versions") {
 		return "Updating versions";
+	} else if (task == "save_instance_config") {
+		return "Saving instance";
+	} else if (task == "save_template_config") {
+		return "Saving template";
+	} else if (task == "delete_instance") {
+		return "Deleting instance";
+	} else if (task == "delete_template") {
+		return "Deleting template";
 	}
 	return beautifyString(task);
 }
 
 function getTaskColor(task: string) {
-	if (task == "get_plugins" || task == "install_plugins" || task == "get_plugin_versions") {
+	if (
+		task == "get_plugins" ||
+		task == "install_plugins" ||
+		task == "get_plugin_versions"
+	) {
 		return "plugin";
-	} else if (task.startsWith("launch_instance") || task == "update_instance") {
+	} else if (
+		task.startsWith("launch_instance") ||
+		task == "update_instance" ||
+		task == "save_instance_config" ||
+		task == "delete_instance"
+	) {
 		return "instance";
-	} else if (task == "login_user" || task == "update_versions") {
+	} else if (
+		task == "login_user" ||
+		task == "update_versions" ||
+		task == "save_template_config" ||
+		task == "delete_template"
+	) {
 		return "template";
 	} else if (
 		task == "search_packages" ||

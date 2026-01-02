@@ -13,6 +13,7 @@ use nitrolaunch::instance::transfer::load_formats;
 use nitrolaunch::instance::update::InstanceUpdateContext;
 use nitrolaunch::instance::Instance;
 use nitrolaunch::io::lock::Lockfile;
+use nitrolaunch::plugin_crate::hook::hooks::DeleteInstance;
 use nitrolaunch::shared::id::InstanceID;
 use nitrolaunch::shared::util::to_string_json;
 use nitrolaunch::shared::versions::{MinecraftLatestVersion, MinecraftVersionDeser};
@@ -572,6 +573,7 @@ async fn export(
 
 async fn delete(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()> {
 	data.ensure_config(true).await?;
+	let mut raw_config = data.get_raw_config()?;
 	let config = data.config.get_mut();
 
 	let id = pick_instance(id, config)?;
@@ -595,6 +597,37 @@ async fn delete(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()
 		.delete_files(&data.paths)
 		.await
 		.context("Failed to delete instance")?;
+
+	if let Some(source_plugin) = &instance.get_config().original_config.source_plugin {
+		if !instance.get_config().original_config.is_deletable {
+			bail!("Plugin instance does not support deletion");
+		}
+
+		let result = config
+			.plugins
+			.call_hook_on_plugin(
+				DeleteInstance,
+				source_plugin,
+				&id.to_string(),
+				&data.paths,
+				data.output,
+			)
+			.await?;
+		if let Some(result) = result {
+			result.result(data.output).await?;
+		}
+	} else {
+		let modifications = vec![ConfigModification::RemoveInstance(id.into())];
+		apply_modifications_and_write(
+			&mut raw_config,
+			modifications,
+			&data.paths,
+			&config.plugins,
+			data.output,
+		)
+		.await
+		.context("Failed to modify and write config")?;
+	}
 
 	cprintln!("<g>Instance deleted.");
 

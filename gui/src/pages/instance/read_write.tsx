@@ -20,6 +20,7 @@ export interface InstanceConfig {
 	imported?: boolean;
 	source_plugin?: string;
 	is_editable?: boolean;
+	is_deletable?: boolean;
 	overrides?: PackageOverrides;
 	[extraKey: string]: any;
 }

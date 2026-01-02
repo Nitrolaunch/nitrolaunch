@@ -1031,3 +1031,23 @@ pub struct SaveTemplateConfigArg {
 	/// The configuration to save
 	pub config: TemplateConfig,
 }
+
+def_hook!(
+	DeleteInstance,
+	"delete_instance",
+	"Deletes a plugin instance",
+	String,
+	(),
+	1,
+	false,
+);
+
+def_hook!(
+	DeleteTemplate,
+	"delete_template",
+	"Deletes a plugin template",
+	String,
+	(),
+	1,
+	false,
+);

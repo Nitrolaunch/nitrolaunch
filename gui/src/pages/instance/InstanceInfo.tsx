@@ -266,6 +266,16 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 		);
 	};
 
+	let isDeletable = () => {
+		if (instance() == undefined) {
+			return true;
+		}
+
+		return (
+			instance()!.source_plugin == undefined || instance()!.is_deletable == true
+		);
+	};
+
 	let [packageOverrides, setPackageOverrides] = createSignal<PackageOverrides>(
 		{}
 	);
@@ -354,7 +364,39 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 			});
 		}
 
-		options.concat(launchDropdownButtons().map(dropdownButtonToOption));
+		options = options.concat(
+			launchDropdownButtons().map(dropdownButtonToOption)
+		);
+
+		return options;
+	};
+
+	let moreOptions = () => {
+		let options: Option[] = [
+			{
+				value: "export",
+				contents: <IconAndText icon={Popout} text="Export" />,
+				tip: "Export this instance to another launcher",
+			},
+			{
+				value: "open_dir",
+				contents: <IconAndText icon={Folder} text="Open Folder" />,
+				tip: "Open this instance's files in your explorer",
+			},
+		];
+
+		if (isDeletable()) {
+			options.push({
+				value: "delete",
+				contents: (
+					<IconAndText icon={Trash} text="Delete" color="var(--error)" />
+				),
+				tip: "Delete this instance forever",
+				backgroundColor: "var(--errorbg)",
+			});
+		}
+
+		options = options.concat(moreDropdownButtons().map(dropdownButtonToOption));
 
 		return options;
 	};
@@ -573,38 +615,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 									<div style="width:2.5rem;font-weight:bold">
 										<Tip tip="More" side="top">
 											<Dropdown
-												options={(
-													[
-														{
-															value: "export",
-															contents: (
-																<IconAndText icon={Popout} text="Export" />
-															),
-															tip: "Export this instance to another launcher",
-														},
-														{
-															value: "open_dir",
-															contents: (
-																<IconAndText icon={Folder} text="Open Folder" />
-															),
-															tip: "Open this instance's files in your explorer",
-														},
-														{
-															value: "delete",
-															contents: (
-																<IconAndText
-																	icon={Trash}
-																	text="Delete"
-																	color="var(--error)"
-																/>
-															),
-															tip: "Delete this instance forever",
-															backgroundColor: "var(--errorbg)",
-														},
-													] as Option[]
-												).concat(
-													moreDropdownButtons().map(dropdownButtonToOption)
-												)}
+												options={moreOptions()}
 												previewText={<Icon icon={Elipsis} size="1rem" />}
 												onChange={async (selection) => {
 													if (selection == "export") {
@@ -618,6 +629,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 													}
 												}}
 												optionsWidth="11rem"
+												optionsOffset="-8.5rem"
 												isSearchable={false}
 												zIndex="5"
 												showArrow={false}

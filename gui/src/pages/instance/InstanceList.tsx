@@ -142,6 +142,7 @@ export default function InstanceList(props: InstanceListProps) {
 			action: () => {},
 			fromPlugin: item.fromPlugin,
 			isEditable: item.isEditable,
+			isDeletable: item.isDeletable,
 		});
 	}
 
@@ -404,6 +405,7 @@ function Section(props: SectionProps) {
 											type: props.itemType,
 											fromPlugin: item.from_plugin,
 											isEditable: item.is_editable,
+											isDeletable: item.is_deletable,
 										},
 										props.id
 									);
@@ -613,6 +615,7 @@ interface SelectedItem {
 	type: InstanceOrTemplate;
 	fromPlugin: boolean;
 	isEditable: boolean;
+	isDeletable: boolean;
 }
 
 export interface InstanceListProps {

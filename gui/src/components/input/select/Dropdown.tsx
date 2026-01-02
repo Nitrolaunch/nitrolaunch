@@ -10,7 +10,10 @@ import {
 } from "solid-js";
 import "./Dropdown.css";
 import Tip from "../../dialog/Tip";
-import { canonicalizeListOrSingle, undefinedEmpty } from "../../../utils/values";
+import {
+	canonicalizeListOrSingle,
+	undefinedEmpty,
+} from "../../../utils/values";
 import Icon from "../../Icon";
 import { AngleRight, Search } from "../../../icons";
 
@@ -114,7 +117,9 @@ export default function Dropdown(props: DropdownProps) {
 				onmouseleave={() => setIsGapHovered(false)}
 			></div>
 			<div
-				class={`cont shadow ${isOpen() ? "" : "bubble-hover"} dropdown-header ${isOpen() ? "open" : ""}`}
+				class={`cont shadow ${isOpen() ? "" : "bubble-hover"} dropdown-header ${
+					isOpen() ? "open" : ""
+				}`}
 				onclick={() => {
 					if (props.onHeaderClick != undefined && !isOpen()) {
 						props.onHeaderClick();
@@ -126,8 +131,9 @@ export default function Dropdown(props: DropdownProps) {
 						}
 					}
 				}}
-				style={`${isOpen() && isSearchable ? "justify-content:flex-start" : ""
-					}`}
+				style={`${
+					isOpen() && isSearchable ? "justify-content:flex-start" : ""
+				}`}
 				onmouseenter={() => setIsHeaderHovered(true)}
 				onmouseleave={() => setIsHeaderHovered(false)}
 			>
@@ -192,11 +198,18 @@ export default function Dropdown(props: DropdownProps) {
 			</div>
 			<div
 				class="dropdown-options"
-				style={`${!isOpen()
-					? "max-height:0px;border-top-width:0px;border-bottom-width:0px;outline-width:0;transition: max-height 0.25s, border-width 0.25s step-end"
-					: `max-height:${openedHeight()}`
-					};${zIndex};${props.optionsWidth != undefined ? `width:${props.optionsWidth}` : ""
-					}`}
+				style={`${
+					!isOpen()
+						? "max-height:0px;border-top-width:0px;border-bottom-width:0px;outline-width:0;transition: max-height 0.25s, border-width 0.25s step-end"
+						: `max-height:${openedHeight()}`
+				};${zIndex};${
+					props.optionsWidth != undefined ? `width:${props.optionsWidth};` : ""
+				}
+				${
+					props.optionsOffset != undefined
+						? `transform:translateX(${props.optionsOffset})`
+						: ""
+				}`}
 				onmouseenter={() => setAreOptionsHovered(true)}
 				onmouseleave={() => setAreOptionsHovered(false)}
 			>
@@ -260,6 +273,7 @@ export interface DropdownProps {
 	startOpen?: boolean;
 	previewText?: JSX.Element;
 	optionsWidth?: string;
+	optionsOffset?: string;
 	showArrow?: boolean;
 	onHeaderClick?: () => void;
 	onClose?: () => void;
@@ -297,16 +311,20 @@ function DropdownOption(props: OptionProps) {
 
 	let contents = (
 		<div
-			class={`cont bubble-hover dropdown-option ${props.class == undefined ? "" : props.class
-				} ${props.isSelected ? "selected" : ""} ${props.isLast ? "last" : "not-last"
-				}`}
-			style={`color:${textColor()};background-color:${backgroundColor()};${props.isFirst
-				? "border-top-left-radius:var(--round2);border-top-right-radius:var(--round2)"
-				: ""
-				}${props.isLast
+			class={`cont bubble-hover dropdown-option ${
+				props.class == undefined ? "" : props.class
+			} ${props.isSelected ? "selected" : ""} ${
+				props.isLast ? "last" : "not-last"
+			}`}
+			style={`color:${textColor()};background-color:${backgroundColor()};${
+				props.isFirst
+					? "border-top-left-radius:var(--round2);border-top-right-radius:var(--round2)"
+					: ""
+			}${
+				props.isLast
 					? "border-bottom-left-radius:var(--round2);border-bottom-right-radius:var(--round2)"
 					: ""
-				}`}
+			}`}
 			onclick={() => {
 				if (
 					props.option.isSelectable == undefined ||

@@ -15,6 +15,7 @@ use nitrolaunch::instance::update::InstanceUpdateContext;
 use nitrolaunch::io::lock::Lockfile;
 use nitrolaunch::pkg::eval::EvalConstants;
 use nitrolaunch::plugin::PluginManager;
+use nitrolaunch::plugin_crate::hook::hooks::{DeleteInstance, DeleteTemplate};
 use nitrolaunch::shared::id::{InstanceID, TemplateID};
 use nitrolaunch::shared::output::NoOp;
 use nitrolaunch::shared::{Side, UpdateDepth};
@@ -43,24 +44,19 @@ pub async fn get_instances(state: tauri::State<'_, State>) -> Result<Vec<Instanc
 		.sorted_by_key(|x| x.0)
 		.map(|(id, instance)| {
 			let id = id.to_string();
+			let config = instance.get_config();
 			InstanceInfo {
-				icon: instance.get_config().icon.clone(),
+				icon: config.icon.clone(),
 				pinned: data.pinned.contains(&id),
 				id,
-				name: instance.get_config().name.clone(),
+				name: config.name.clone(),
 				side: Some(instance.get_side()),
-				from_plugin: instance
-					.get_config()
-					.original_config
-					.source_plugin
-					.is_some(),
-				version: Some(instance.get_config().version.to_string()),
-				is_editable: instance.get_config().original_config.is_editable
-					|| instance
-						.get_config()
-						.original_config
-						.source_plugin
-						.is_none(),
+				from_plugin: config.original_config.source_plugin.is_some(),
+				version: Some(config.version.to_string()),
+				is_editable: config.original_config.is_editable
+					|| config.original_config.source_plugin.is_none(),
+				is_deletable: config.original_config.is_deletable
+					|| config.original_config.source_plugin.is_none(),
 			}
 		})
 		.collect();
@@ -96,6 +92,8 @@ pub async fn get_templates(state: tauri::State<'_, State>) -> Result<Vec<Instanc
 					.map(|x| MinecraftVersion::from_deser(x).to_string()),
 				is_editable: template.instance.is_editable
 					|| template.instance.source_plugin.is_none(),
+				is_deletable: template.instance.is_deletable
+					|| template.instance.source_plugin.is_none(),
 			}
 		})
 		.collect();
@@ -113,6 +111,7 @@ pub struct InstanceInfo {
 	pub from_plugin: bool,
 	pub version: Option<String>,
 	pub is_editable: bool,
+	pub is_deletable: bool,
 }
 
 #[tauri::command]
@@ -538,24 +537,51 @@ pub async fn delete_instance(
 			.context("Failed to delete instance files"),
 	)?;
 
-	let mut configuration =
-		fmt_err(Config::open(&Config::get_path(&state.paths)).context("Failed to load config"))?;
+	let config = fmt_err(load_config(&state.paths, &state.wasm_loader, &mut NoOp).await)?;
 
-	let plugins = fmt_err(PluginManager::load(&state.paths, &mut NoOp).await)?;
+	let instance_id = instance;
+	let Some(instance) = config.instances.get(instance) else {
+		return Err("Instance does not exist".into());
+	};
 
-	let modifications = vec![ConfigModification::RemoveInstance(instance.into())];
-	fmt_err(
-		apply_modifications_and_write(
-			&mut configuration,
-			modifications,
-			&state.paths,
-			&plugins,
-			&mut output,
-		)
-		.await
-		.context("Failed to modify and write config"),
-	)?;
+	if let Some(source_plugin) = &instance.get_config().original_config.source_plugin {
+		if !instance.get_config().original_config.is_deletable {
+			return Err("Plugin instance does not support deletion".into());
+		}
 
+		let result = fmt_err(
+			config
+				.plugins
+				.call_hook_on_plugin(
+					DeleteInstance,
+					source_plugin,
+					&instance_id.to_string(),
+					&state.paths,
+					&mut output,
+				)
+				.await,
+		)?;
+		if let Some(result) = result {
+			fmt_err(result.result(&mut output).await)?;
+		}
+	} else {
+		let mut raw_config = fmt_err(
+			Config::open(&Config::get_path(&state.paths)).context("Failed to load config"),
+		)?;
+
+		let modifications = vec![ConfigModification::RemoveInstance(instance_id.into())];
+		fmt_err(
+			apply_modifications_and_write(
+				&mut raw_config,
+				modifications,
+				&state.paths,
+				&config.plugins,
+				&mut output,
+			)
+			.await
+			.context("Failed to modify and write config"),
+		)?;
+	}
 	Ok(())
 }
 
@@ -568,23 +594,51 @@ pub async fn delete_template(
 	let mut output = LauncherOutput::new(state.get_output(app_handle));
 	output.set_task("delete_template");
 
-	let mut configuration =
-		fmt_err(Config::open(&Config::get_path(&state.paths)).context("Failed to load config"))?;
+	let config = fmt_err(load_config(&state.paths, &state.wasm_loader, &mut NoOp).await)?;
 
-	let plugins = fmt_err(PluginManager::load(&state.paths, &mut NoOp).await)?;
+	let template_id = template;
+	let Some(template) = config.templates.get(template) else {
+		return Err("Template does not exist".into());
+	};
 
-	let modifications = vec![ConfigModification::RemoveTemplate(template.into())];
-	fmt_err(
-		apply_modifications_and_write(
-			&mut configuration,
-			modifications,
-			&state.paths,
-			&plugins,
-			&mut output,
-		)
-		.await
-		.context("Failed to modify and write config"),
-	)?;
+	if let Some(source_plugin) = &template.instance.source_plugin {
+		if !template.instance.is_deletable {
+			return Err("Plugin template does not support deletion".into());
+		}
+
+		let result = fmt_err(
+			config
+				.plugins
+				.call_hook_on_plugin(
+					DeleteTemplate,
+					source_plugin,
+					&template_id.to_string(),
+					&state.paths,
+					&mut output,
+				)
+				.await,
+		)?;
+		if let Some(result) = result {
+			fmt_err(result.result(&mut output).await)?;
+		}
+	} else {
+		let mut raw_config = fmt_err(
+			Config::open(&Config::get_path(&state.paths)).context("Failed to load config"),
+		)?;
+
+		let modifications = vec![ConfigModification::RemoveTemplate(template_id.into())];
+		fmt_err(
+			apply_modifications_and_write(
+				&mut raw_config,
+				modifications,
+				&state.paths,
+				&config.plugins,
+				&mut output,
+			)
+			.await
+			.context("Failed to modify and write config"),
+		)?;
+	}
 
 	Ok(())
 }

@@ -66,6 +66,9 @@ pub struct InstanceConfig {
 	/// Whether the config of this plugin instance is editable. Does nothing if this instance was not created by a plugin
 	#[serde(skip_serializing_if = "DefaultExt::is_default")]
 	pub is_editable: bool,
+	/// Whether this plugin instance is able to be deleted. Does nothing if this instance was not created by a plugin
+	#[serde(skip_serializing_if = "DefaultExt::is_default")]
+	pub is_deletable: bool,
 	/// Whether to use a plugin to custom launch this instance. Should only be set by plugins.
 	#[serde(skip_serializing_if = "DefaultExt::is_default")]
 	pub custom_launch: bool,

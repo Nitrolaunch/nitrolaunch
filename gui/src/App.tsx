@@ -154,6 +154,7 @@ function Layout(props: LayoutProps) {
 				action={props.footerData.action}
 				itemFromPlugin={props.footerData.fromPlugin}
 				itemEditable={props.footerData.isEditable}
+				itemDeletable={props.footerData.isDeletable}
 				selectedPackageGallery={props.footerData.selectedPackageGallery}
 			/>
 			<ModalBase
@@ -190,6 +191,7 @@ export interface FooterData {
 	// Whether a selected instance or template was created by a plugin
 	fromPlugin?: boolean;
 	isEditable?: boolean;
+	isDeletable?: boolean;
 	selectedPackageGallery?: string[];
 }
 

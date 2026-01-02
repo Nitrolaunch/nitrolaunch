@@ -158,3 +158,13 @@ hook_interface!(
 	"save_template_config",
 	SaveTemplateConfig
 );
+hook_interface!(
+	delete_instance,
+	"delete_instance",
+	DeleteInstance
+);
+hook_interface!(
+	delete_template,
+	"delete_template",
+	DeleteTemplate
+);

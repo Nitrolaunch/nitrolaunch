@@ -15,6 +15,12 @@
 		},
 		"save_template_config": {
 			"wasm": true
+		},
+		"delete_instance": {
+			"wasm": true
+		},
+		"delete_template": {
+			"wasm": true
 		}
 	}
 }

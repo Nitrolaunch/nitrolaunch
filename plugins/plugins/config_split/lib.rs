@@ -22,6 +22,7 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 
 		for config in configs.values_mut() {
 			config.is_editable = true;
+			config.is_deletable = true;
 		}
 
 		Ok(configs)
@@ -38,6 +39,7 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 
 		for config in configs.values_mut() {
 			config.instance.is_editable = true;
+			config.instance.is_deletable = true;
 		}
 
 		Ok(configs)
@@ -53,6 +55,7 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 		// We don't want to serialize these
 		arg.config.source_plugin = None;
 		arg.config.is_editable = false;
+		arg.config.is_deletable = false;
 
 		save_config_file(&dir, &arg.id, arg.config)
 	})?;
@@ -67,8 +70,29 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 		// We don't want to serialize these
 		arg.config.instance.source_plugin = None;
 		arg.config.instance.is_editable = false;
+		arg.config.instance.is_deletable = false;
 
 		save_config_file(&dir, &arg.id, arg.config)
+	})?;
+
+	plugin.delete_instance(|arg| {
+		let config_dir = get_config_dir();
+		let dir = config_dir.join("instances");
+		if !dir.exists() {
+			return Ok(());
+		}
+
+		remove_config_file(&dir, &arg)
+	})?;
+
+	plugin.delete_template(|arg| {
+		let config_dir = get_config_dir();
+		let dir = config_dir.join("templates");
+		if !dir.exists() {
+			return Ok(());
+		}
+
+		remove_config_file(&dir, &arg)
 	})?;
 
 	Ok(())
@@ -113,4 +137,11 @@ fn save_config_file<S: Serialize>(directory: &Path, id: &str, config: S) -> anyh
 	let data = serde_json::to_vec_pretty(&config)?;
 
 	std::fs::write(path, data).context("Failed to write config file")
+}
+
+/// Removes a config file in the given directory
+fn remove_config_file(directory: &Path, id: &str) -> anyhow::Result<()> {
+	let path = directory.join(format!("{id}.json"));
+
+	std::fs::remove_file(path).context("Failed to remove config file")
 }

@@ -5,29 +5,38 @@ use crate::{
 
 use super::CmdData;
 
-use anyhow::Context;
+use anyhow::{bail, Context};
 use clap::Subcommand;
 use color_print::{cprint, cprintln};
-use inquire::Select;
+use inquire::{Confirm, Select};
 use itertools::Itertools;
 use nitrolaunch::{
-	config::Config,
+	config::{
+		modifications::{apply_modifications_and_write, ConfigModification},
+		Config,
+	},
 	config_crate::template::TemplateLoaderConfiguration,
 	core::util::versions::MinecraftVersion,
+	plugin_crate::hook::hooks::DeleteTemplate,
 	shared::{id::TemplateID, Side},
 };
 
 #[derive(Debug, Subcommand)]
 pub enum TemplateSubcommand {
-	#[command(about = "List all instances")]
+	#[command(about = "List all templates")]
 	#[clap(alias = "ls")]
 	List {
 		/// Whether to remove formatting and warnings from the output
 		#[arg(short, long)]
 		raw: bool,
 	},
-	#[command(about = "Print useful information about an instance")]
-	Info { instance: Option<String> },
+	#[command(about = "Print useful information about a template")]
+	Info { template: Option<String> },
+	#[command(about = "Delete a template forever")]
+	Delete {
+		/// The template to delete
+		template: Option<String>,
+	},
 	#[clap(external_subcommand)]
 	External(Vec<String>),
 }
@@ -35,7 +44,8 @@ pub enum TemplateSubcommand {
 pub async fn run(subcommand: TemplateSubcommand, data: &mut CmdData<'_>) -> anyhow::Result<()> {
 	match subcommand {
 		TemplateSubcommand::List { raw } => list(data, raw).await,
-		TemplateSubcommand::Info { instance } => info(data, instance).await,
+		TemplateSubcommand::Info { template } => info(data, template).await,
+		TemplateSubcommand::Delete { template } => delete(data, template).await,
 		TemplateSubcommand::External(args) => {
 			call_plugin_subcommand(args, Some("template"), data).await
 		}
@@ -141,6 +151,62 @@ async fn info(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()> 
 		cprint!("<b!>{}<g!>", pkg.get_pkg_id());
 		cprintln!();
 	}
+
+	Ok(())
+}
+
+async fn delete(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()> {
+	data.ensure_config(true).await?;
+	let mut raw_config = data.get_raw_config()?;
+	let config = data.config.get_mut();
+
+	let id = pick_template(id, config)?;
+
+	let template = config
+		.templates
+		.get(&id)
+		.with_context(|| format!("Unknown template '{id}'"))?;
+
+	let prompt = Confirm::new("Are you SURE you want to delete this template? (y/n)");
+	if !prompt.prompt()? {
+		cprintln!("<r>Cancelled.");
+		return Ok(());
+	}
+
+	cprintln!("<r>Deleting...");
+
+	if let Some(source_plugin) = &template.instance.source_plugin {
+		if !template.instance.is_deletable {
+			bail!("Plugin template does not support deletion");
+		}
+
+		let result = config
+			.plugins
+			.call_hook_on_plugin(
+				DeleteTemplate,
+				source_plugin,
+				&id.to_string(),
+				&data.paths,
+				data.output,
+			)
+			.await?;
+		if let Some(result) = result {
+			result.result(data.output).await?;
+		}
+	} else {
+		let modifications = vec![ConfigModification::RemoveTemplate(id.into())];
+		apply_modifications_and_write(
+			&mut raw_config,
+			modifications,
+			&data.paths,
+			&config.plugins,
+			data.output,
+		)
+		.await
+		.context("Failed to modify and write config")?;
+	}
+
+	cprintln!("<g>Template deleted.");
 
 	Ok(())
 }

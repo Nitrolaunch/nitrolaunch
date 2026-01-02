@@ -256,7 +256,8 @@ export default function Footer(props: FooterProps) {
 					<Show
 						when={
 							props.mode == FooterMode.Template &&
-							props.selectedItem != undefined
+							props.selectedItem != undefined &&
+							props.itemDeletable == true
 						}
 					>
 						<div class="cont">
@@ -378,6 +379,7 @@ export interface FooterProps {
 	action: () => void;
 	itemFromPlugin?: boolean;
 	itemEditable?: boolean;
+	itemDeletable?: boolean;
 	selectedPackageGallery?: string[];
 }
 

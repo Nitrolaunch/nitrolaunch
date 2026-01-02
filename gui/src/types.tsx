@@ -14,6 +14,7 @@ export interface InstanceInfo {
 	from_plugin: boolean;
 	version: string;
 	is_editable: boolean;
+	is_deletable: boolean;
 }
 
 export type InstanceMap = {

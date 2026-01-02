@@ -138,6 +138,7 @@ pub async fn apply_modifications_and_write(
 #[cfg(test)]
 mod tests {
 	use nitro_config::user::UserVariant;
+	use nitro_shared::output::NoOp;
 
 	use super::*;
 
