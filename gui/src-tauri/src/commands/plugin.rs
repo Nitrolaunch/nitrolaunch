@@ -108,6 +108,7 @@ pub async fn enable_disable_plugin(
 			PluginManager::disable_plugin(plugin, &state.paths).context("Failed to disable plugin"),
 		)?;
 	}
+	state.remove_from_wasm_cache(plugin).await;
 
 	Ok(())
 }
@@ -128,6 +129,8 @@ pub async fn install_plugin(
 			.context("Failed to get verified plugin list"),
 	)?;
 
+	let plugin_id = plugin;
+
 	let Some(plugin) = verified_list.get(plugin) else {
 		return Err(format!("Unknown plugin '{plugin}'"));
 	};
@@ -138,6 +141,8 @@ pub async fn install_plugin(
 			.await
 			.context("Failed to install plugin"),
 	)?;
+
+	state.remove_from_wasm_cache(plugin_id).await;
 
 	Ok(())
 }

@@ -132,6 +132,14 @@ fn main() {
 				restart(&env);
 			});
 
+			{
+				let state = state2.clone();
+				app.listen_any("refresh_window", move |_| {
+					let state = state.clone();
+					tauri::async_runtime::spawn(async move { state.reset_wasm_cache().await });
+				});
+			}
+
 			Ok(())
 		})
 		.manage(state)
@@ -286,6 +294,18 @@ impl State {
 			.lock()
 			.await
 			.register_task(task_id.to_string(), join_handle);
+	}
+
+	/// Resets the cache of the WASM loader, called when plugins change
+	pub async fn reset_wasm_cache(&self) {
+		let mut lock = self.wasm_loader.lock().await;
+		lock.reset_cache();
+	}
+
+	/// Removes one plugin from the cache of the WASM loader, called when plugins change
+	pub async fn remove_from_wasm_cache(&self, plugin_id: &str) {
+		let mut lock = self.wasm_loader.lock().await;
+		lock.remove_from_cache(plugin_id);
 	}
 }
 

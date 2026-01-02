@@ -122,4 +122,14 @@ impl WASMLoader {
 	pub fn engine(&self) -> Engine {
 		self.engine.clone()
 	}
+
+	/// Resets the in-memory cache of the loader
+	pub fn reset_cache(&mut self) {
+		self.component_cache.clear();
+	}
+
+	/// Removes a single plugin from the in-memory cache
+	pub fn remove_from_cache(&mut self, plugin_id: &str) {
+		self.component_cache.remove(plugin_id);
+	}
 }
