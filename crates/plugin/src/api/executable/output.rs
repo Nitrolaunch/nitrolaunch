@@ -13,7 +13,7 @@ pub struct ExecutablePluginOutput {
 }
 
 impl ExecutablePluginOutput {
-	/// Create a new ExecutableExecutablePluginOutput
+	/// Create a new ExecutablePluginOutput
 	pub fn new(use_base64: bool, protocol_version: u16) -> Self {
 		Self {
 			use_base64,

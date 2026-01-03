@@ -148,16 +148,19 @@ impl NitroOutput for TerminalOutput {
 		default_special_ms_auth(self, url, code);
 	}
 
-	fn get_greater_copy(&self) -> impl NitroOutput {
-		Self {
-			printer: ReplPrinter::new(true),
+	fn get_greater_copy(&self) -> Box<dyn NitroOutput + Sync> {
+		let mut printer = self.printer.clone();
+		printer.force_finished();
+
+		Box::new(Self {
+			printer,
 			level: MessageLevel::Important,
 			in_process: false,
 			indent_level: 0,
 			logger: Logger::dummy(),
 			translation_map: None,
 			process_spinner_task: None,
-		}
+		})
 	}
 }
 

@@ -2,12 +2,14 @@ use anyhow::{bail, Context};
 use nitro_plugin::{
 	api::wasm::{
 		net::download_file,
+		output::WASMPluginOutput,
 		sys::{get_data_dir, get_os_string},
 		WASMPlugin,
 	},
 	hook::hooks::OnInstanceSetupResult,
 	nitro_wasm_plugin,
 };
+use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
 use nitro_shared::UpdateDepth;
 use serde_json::Value;
 
@@ -55,18 +57,20 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 			return Ok(output);
 		}
 
-		// let mut process = ctx.get_output().get_process();
-		// process.display(
-		// 	MessageContents::StartProcess("Downloading GLFW".into()),
-		// 	MessageLevel::Important,
-		// );
+		let mut o = WASMPluginOutput::new();
+
+		let mut process = o.get_process();
+		process.display(
+			MessageContents::StartProcess("Downloading GLFW".into()),
+			MessageLevel::Important,
+		);
 
 		download_file(url.to_string(), lib_path).context("Failed to download GLFW")?;
 
-		// process.display(
-		// 	MessageContents::Success("GLFW downloaded".into()),
-		// 	MessageLevel::Important,
-		// );
+		process.display(
+			MessageContents::Success("GLFW downloaded".into()),
+			MessageLevel::Important,
+		);
 
 		Ok(output)
 	})?;

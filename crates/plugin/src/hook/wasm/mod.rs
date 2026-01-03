@@ -50,11 +50,20 @@ pub(crate) async fn call_wasm<H: Hook + Sized>(
 	o: &mut impl NitroOutput,
 ) -> anyhow::Result<HookHandle<H>> {
 	let _ = hook;
-	let _ = o;
+
+	// Use a full output for synchronous hooks
+	let o = if !H::is_asynchronous() || H::get_takes_over() {
+		o.get_greater_copy()
+	} else {
+		o.get_lesser_copy()
+	};
+
+	let o = Arc::new(Mutex::new(o));
 
 	Ok(HookHandle::wasm(
 		WASMHookHandle {
 			plugin_id: arg.plugin_id.to_string(),
+			o,
 			wasm_path: PathBuf::from(arg.cmd),
 			arg: serde_json::to_string(&arg.arg)?,
 			result: None,
@@ -77,6 +86,7 @@ pub(crate) async fn call_wasm<H: Hook + Sized>(
 /// Hook handler internals for a WASM hook
 pub(super) struct WASMHookHandle<H: Hook> {
 	pub plugin_id: String,
+	o: Arc<Mutex<Box<dyn NitroOutput + Sync>>>,
 	wasm_path: PathBuf,
 	arg: String,
 	result: Option<H::Result>,
@@ -159,6 +169,7 @@ impl<H: Hook> WASMHookHandle<H> {
 				config_dir: self.config_dir.clone(),
 				plugin_dir: self.plugin_dir.clone(),
 				client: Client::new(),
+				o: self.o.clone(),
 			},
 		);
 
@@ -227,6 +238,7 @@ struct State {
 	config_dir: String,
 	plugin_dir: String,
 	client: Client,
+	o: Arc<Mutex<Box<dyn NitroOutput + Sync>>>,
 }
 
 impl WasiView for State {
@@ -345,5 +357,49 @@ impl bindings::InterfaceWorldImports for State {
 		} else {
 			Ok(0)
 		}
+	}
+
+	async fn output_display_text(&mut self, text: String, level: u8) {
+		let level = match level {
+			0 => MessageLevel::Important,
+			1 => MessageLevel::Extra,
+			2 => MessageLevel::Debug,
+			3 => MessageLevel::Trace,
+			_ => return,
+		};
+
+		self.o.lock().await.display_text(text, level);
+	}
+
+	async fn output_display_message(&mut self, message: String, level: u8) {
+		let Ok(message) = serde_json::from_str::<MessageContents>(&message) else {
+			return;
+		};
+
+		let level = match level {
+			0 => MessageLevel::Important,
+			1 => MessageLevel::Extra,
+			2 => MessageLevel::Debug,
+			3 => MessageLevel::Trace,
+			_ => return,
+		};
+
+		self.o.lock().await.display(message, level);
+	}
+
+	async fn output_start_process(&mut self) {
+		self.o.lock().await.start_process();
+	}
+
+	async fn output_end_process(&mut self) {
+		self.o.lock().await.end_process();
+	}
+
+	async fn output_start_section(&mut self) {
+		self.o.lock().await.start_section();
+	}
+
+	async fn output_end_section(&mut self) {
+		self.o.lock().await.end_section();
 	}
 }

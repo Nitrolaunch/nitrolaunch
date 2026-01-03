@@ -19,4 +19,11 @@ world interface-world {
 	import download-bytes: func(url: string) -> result<list<u8>, string>;
 	import download-text: func(url: string) -> result<string, string>;
 	import download-file: func(url: string, path: string) -> result<_, string>;
+
+	import output-display-text: func(text: string, level: u8);
+	import output-display-message: func(message: string, level: u8);
+	import output-start-process: func();
+	import output-end-process: func();
+	import output-start-section: func();
+	import output-end-section: func();
 }

@@ -106,7 +106,7 @@ pub trait NitroOutput: Send {
 
 	/// Gets a copy of this output that may technically be used in asynchronous tasks,
 	/// but will most likely be used for something synchronous like the output of a plugin command
-	fn get_greater_copy(&self) -> impl NitroOutput {
+	fn get_greater_copy(&self) -> Box<dyn NitroOutput + Sync> {
 		self.get_lesser_copy()
 	}
 
@@ -114,8 +114,8 @@ pub trait NitroOutput: Send {
 	/// Note that this does not have to be an exact copy.
 	/// If multiple sources writing to your output at the same time would mess up the formatting (like for a terminal),
 	/// this copy can be a lesser version that just saves to logging, for example.
-	fn get_lesser_copy(&self) -> impl NitroOutput {
-		NoOp
+	fn get_lesser_copy(&self) -> Box<dyn NitroOutput + Sync> {
+		Box::new(NoOp)
 	}
 }
 
@@ -264,8 +264,8 @@ impl NitroOutput for Simple {
 		println!("{text}");
 	}
 
-	fn get_lesser_copy(&self) -> impl NitroOutput {
-		Self(self.0)
+	fn get_lesser_copy(&self) -> Box<dyn NitroOutput + Sync> {
+		Box::new(Self(self.0))
 	}
 }
 
