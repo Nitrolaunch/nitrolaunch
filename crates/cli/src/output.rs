@@ -51,6 +51,7 @@ impl NitroOutput for TerminalOutput {
 	fn display_message(&mut self, message: Message) {
 		let _ = self.log_message(message.contents.clone(), message.level);
 		let is_process = matches!(&message.contents, MessageContents::StartProcess(..));
+		let is_error = matches!(&message.contents, MessageContents::Error(..));
 		let message_contents = self.format_message(message.contents);
 
 		// Loading spinner handling
@@ -61,6 +62,14 @@ impl NitroOutput for TerminalOutput {
 
 			tokio::spawn(async move { loading_spinner_task(message_contents, printer, rx).await });
 			self.process_spinner_task = Some(tx);
+		}
+
+		/*
+			If the message is an error it will span multiple lines and break the ReplPrinter,
+			plus the process is aborted anyway
+		*/
+		if is_error {
+			self.end_process();
 		}
 
 		self.display_text_impl(message_contents, message.level);
