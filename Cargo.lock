@@ -3660,6 +3660,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "nitro_plugin_nitro_transfer"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "nitro_config",
+ "nitro_plugin",
+ "nitro_shared",
+ "serde",
+ "serde_json",
+ "zip 3.0.0",
+]
+
+[[package]]
 name = "nitro_plugin_webtools"
 version = "0.1.0"
 dependencies = [

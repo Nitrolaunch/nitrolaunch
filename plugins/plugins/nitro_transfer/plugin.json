@@ -19,10 +19,10 @@
 			]
 		},
 		"import_instance": {
-			"executable": "${PLUGIN_DIR}/nitro_plugin_nitro_transfer${EXE_EXTENSION}"
+			"wasm": true
 		},
 		"export_instance": {
-			"executable": "${PLUGIN_DIR}/nitro_plugin_nitro_transfer${EXE_EXTENSION}"
+			"wasm": true
 		}
 	}
 }

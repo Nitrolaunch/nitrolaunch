@@ -5,19 +5,19 @@ use std::{
 };
 
 use anyhow::Context;
-use nitro_plugin::{api::executable::ExecutablePlugin, hook::hooks::ImportInstanceResult};
+use nitro_config::instance::InstanceConfig;
+use nitro_plugin::{api::wasm::WASMPlugin, hook::hooks::ImportInstanceResult, nitro_wasm_plugin};
 use nitro_shared::Side;
-use nitrolaunch::config_crate::instance::InstanceConfig;
 use serde::{Deserialize, Serialize};
 use zip::{write::FileOptions, ZipArchive, ZipWriter};
 
-fn main() -> anyhow::Result<()> {
-	let mut plugin =
-		ExecutablePlugin::from_manifest_file("nitro_transfer", include_str!("plugin.json"))?;
+nitro_wasm_plugin!(main, "nitro_transfer");
 
-	plugin.export_instance(|_, arg| {
+fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
+	plugin.export_instance(|arg| {
 		let game_dir = PathBuf::from(arg.game_dir);
 		let target_path = PathBuf::from(arg.result_path);
+		dbg!(&target_path);
 		let target_file = File::create(target_path).context("Failed to open target file")?;
 
 		// Write the instance files
@@ -63,7 +63,7 @@ fn main() -> anyhow::Result<()> {
 		Ok(())
 	})?;
 
-	plugin.import_instance(|_, arg| {
+	plugin.import_instance(|arg| {
 		let source_path = PathBuf::from(arg.source_path);
 		let target_path = PathBuf::from(arg.result_path);
 

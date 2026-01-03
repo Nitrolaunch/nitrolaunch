@@ -20,6 +20,7 @@ package.cross_platform: build.cross_platform
 	@rm -f release/lang-universal.zip
 	@rm -f release/mojang_transfer-universal.zip
 	@rm -f release/multiply-universal.zip
+	@rm -f release/nitro_transfer-universal.zip
 	@rm -f release/webtools-universal.zip
 	@rm -f release/weld-universal.zip
 	@rm -f release/zulu-universal.zip
@@ -50,6 +51,8 @@ package.cross_platform: build.cross_platform
 	@printf "@ nitro_plugin_mojang_transfer.wasm\\n@=plugin.wasm\\n" | zipnote -w release/mojang_transfer-universal.zip
 	@zip -j release/multiply-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_multiply.wasm plugins/multiply/plugin.json
 	@printf "@ nitro_plugin_multiply.wasm\\n@=plugin.wasm\\n" | zipnote -w release/multiply-universal.zip
+	@zip -j release/nitro_transfer-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_nitro_transfer.wasm plugins/nitro_transfer/plugin.json
+	@printf "@ nitro_plugin_nitro_transfer.wasm\\n@=plugin.wasm\\n" | zipnote -w release/nitro_transfer-universal.zip
 	@zip -j release/webtools-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_webtools.wasm plugins/webtools/plugin.json
 	@printf "@ nitro_plugin_webtools.wasm\\n@=plugin.wasm\\n" | zipnote -w release/webtools-universal.zip
 	@zip -j release/zulu-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_zulu.wasm plugins/zulu/plugin.json
@@ -246,9 +249,9 @@ install.multiply:
 	@cp -r ../target/wasm32-wasip2/release/nitro_plugin_multiply.wasm ~/.local/share/nitro/plugins/multiply/plugin.wasm
 
 install.nitro_transfer:
-	@cargo install --path . --bin nitro_plugin_nitro_transfer --offline
-	@mkdir -p ~/.local/share/nitro/plugins/nitro_transfer
-	@cat plugins/nitro_transfer/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/nitro_transfer/plugin.json
+	@cargo build -p nitro_plugin_nitro_transfer --release --target wasm32-wasip2
+	@cp -r plugins/nitro_transfer ~/.local/share/nitro/plugins
+	@cp -r ../target/wasm32-wasip2/release/nitro_plugin_nitro_transfer.wasm ~/.local/share/nitro/plugins/nitro_transfer/plugin.wasm
 
 install.options:
 	@cargo install --path . --bin nitro_plugin_options --offline

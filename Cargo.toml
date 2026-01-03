@@ -68,6 +68,7 @@ members = [
 	"plugins/plugins/graalvm",
 	"plugins/plugins/mojang_transfer",
 	"plugins/plugins/multiply",
+	"plugins/plugins/nitro_transfer",
 	"plugins/plugins/webtools",
 	"plugins/plugins/zulu",
 ]

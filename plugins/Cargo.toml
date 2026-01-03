@@ -55,10 +55,6 @@ name = "nitro_plugin_multimc_transfer"
 path = "plugins/multimc_transfer/main.rs"
 
 [[bin]]
-name = "nitro_plugin_nitro_transfer"
-path = "plugins/nitro_transfer/main.rs"
-
-[[bin]]
 name = "nitro_plugin_options"
 path = "plugins/options/main.rs"
 
