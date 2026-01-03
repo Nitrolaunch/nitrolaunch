@@ -21,6 +21,7 @@ use super::package::PackageConfigDeser;
 #[serde(default)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 pub struct InstanceConfig {
+	// General config
 	/// One or more templates to use
 	#[serde(skip_serializing_if = "DeserListOrSingle::is_empty")]
 	pub from: DeserListOrSingle<String>,
@@ -39,27 +40,33 @@ pub struct InstanceConfig {
 	/// Configured loader
 	#[serde(skip_serializing_if = "DefaultExt::is_default")]
 	pub loader: Option<String>,
-	/// Default stability setting of packages on this instance
-	#[serde(skip_serializing_if = "DefaultExt::is_default")]
-	pub package_stability: Option<PackageStability>,
+
+	// In-depth config
 	/// Launch configuration
 	#[serde(skip_serializing_if = "DefaultExt::is_default")]
 	pub launch: LaunchConfig,
-	/// The folder for global datapacks to be installed to
-	#[serde(skip_serializing_if = "Option::is_none")]
-	pub datapack_folder: Option<String>,
-	/// Packages for this instance
-	#[serde(skip_serializing_if = "Vec::is_empty")]
-	pub packages: Vec<PackageConfigDeser>,
-	/// Overrides for packages on this instance
-	#[serde(skip_serializing_if = "DefaultExt::is_default")]
-	pub overrides: PackageOverrides,
-	/// Override for the game file directory for this instance
-	#[serde(skip_serializing_if = "Option::is_none")]
-	pub game_dir: Option<String>,
 	/// Window configuration
 	#[serde(skip_serializing_if = "DefaultExt::is_default")]
 	pub window: ClientWindowConfig,
+
+	// Package config
+	/// Packages for this instance
+	#[serde(skip_serializing_if = "Vec::is_empty")]
+	pub packages: Vec<PackageConfigDeser>,
+	/// The folder for global datapacks to be installed to
+	#[serde(skip_serializing_if = "Option::is_none")]
+	pub datapack_folder: Option<String>,
+	/// Default stability setting of packages on this instance
+	#[serde(skip_serializing_if = "DefaultExt::is_default")]
+	pub package_stability: Option<PackageStability>,
+	/// Overrides for packages on this instance
+	#[serde(skip_serializing_if = "DefaultExt::is_default")]
+	pub overrides: PackageOverrides,
+
+	// Plugin-only config (Should not be edited by user)
+	/// Override for the game file directory for this instance
+	#[serde(skip_serializing_if = "Option::is_none")]
+	pub game_dir: Option<String>,
 	/// The plugin this config was created by
 	#[serde(skip_serializing_if = "DefaultExt::is_default")]
 	pub source_plugin: Option<String>,
@@ -75,6 +82,7 @@ pub struct InstanceConfig {
 	/// Whether this instance was imported
 	#[serde(skip_serializing_if = "DefaultExt::is_default")]
 	pub imported: bool,
+
 	/// Config for plugins
 	#[serde(skip_serializing_if = "serde_json::Map::is_empty")]
 	pub plugin_config: serde_json::Map<String, serde_json::Value>,
@@ -100,8 +108,10 @@ impl InstanceConfig {
 		self.window.merge(other.window);
 
 		// These properties are not derived an instead just overrided
+		self.game_dir = other.game_dir;
 		self.source_plugin = other.source_plugin;
 		self.is_editable = other.is_editable;
+		self.is_deletable = other.is_deletable;
 		self.custom_launch = other.custom_launch;
 		self.imported = other.imported;
 	}
