@@ -15,6 +15,11 @@ pub fn get_config_dir() -> PathBuf {
 	PathBuf::from(super::interface::get_config_dir())
 }
 
+/// Gets the working directory for this plugin
+pub fn get_plugin_dir() -> PathBuf {
+	PathBuf::from(super::interface::get_plugin_dir())
+}
+
 /// Gets the current working directory
 pub fn get_current_dir() -> PathBuf {
 	PathBuf::from(super::interface::get_current_dir())

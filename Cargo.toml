@@ -61,6 +61,7 @@ members = [
 	"plugins/plugins/auto_mcs",
 	"plugins/plugins/automate",
 	"plugins/plugins/better_jsons",
+	"plugins/plugins/completions",
 	"plugins/plugins/config_split",
 	"plugins/plugins/custom_files",
 	"plugins/plugins/glfw_fix",

@@ -1,0 +1,14 @@
+{
+	"name": "Completions",
+	"description": "Shell completions for zsh and other shells",
+	"version": "v5",
+	"protocol_version": 3,
+	"hooks": {
+		"subcommand": {
+			"wasm": true
+		}
+	},
+	"subcommands": {
+		"completions": "Install or get help with installing completions"
+	}
+}

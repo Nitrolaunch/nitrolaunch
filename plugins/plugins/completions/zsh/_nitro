@@ -1,0 +1,31 @@
+#compdef nitro
+
+args=(
+	'(-d --debug)[Show debug logs in output]'
+	'(-D --trace)[Show trace logs in output]'
+)
+
+_nitro() {
+	# if [[ $1 == "instance" ]];then
+	# 	_instance("$@");
+	# 	return;
+	# fi
+
+	local -a subcmds
+	subcmds=(
+		"instance: Manage instances"
+  	"user: Manage users and authentication"
+  	"launch: Launch instances to play the game"
+  	"package: Manage packages"
+  	"plugin: Manage plugins"
+  	"config: Manage configuration"
+  	"version: Print the Nitrolaunch version"
+  	"files: Deal with files created by Nitrolaunch"
+  	"template: Do operations with instance templates"
+  	"migrate: Import instances from another launcher"
+	)
+
+	_describe 'nitro' subcmds
+}
+
+_nitro("$@")

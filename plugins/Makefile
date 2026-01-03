@@ -10,6 +10,7 @@ package.cross_platform: build.cross_platform
 	@rm -f release/auto_mcs-universal.zip
 	@rm -f release/automate-universal.zip
 	@rm -f release/better_jsons-universal.zip
+	@rm -f release/completions-universal.zip
 	@rm -f release/config_split-universal.zip
 	@rm -f release/custom_files-universal.zip
 	@rm -f release/extra_versions-universal.zip
@@ -35,6 +36,10 @@ package.cross_platform: build.cross_platform
 	@printf "@ nitro_plugin_better_jsons.wasm\\n@=plugin.wasm\\n" | zipnote -w release/better_jsons-universal.zip
 	@zip -j release/config_split-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_config_split.wasm plugins/config_split/plugin.json
 	@printf "@ nitro_plugin_config_split.wasm\\n@=plugin.wasm\\n" | zipnote -w release/config_split-universal.zip
+
+	@zip -j release/completions-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_completions.wasm plugins/completions/plugin.json plugins/completions/zsh/_nitro
+	@printf "@ nitro_plugin_completions.wasm\\n@=plugin.wasm\\n" | zipnote -w release/completions-universal.zip
+	
 	@zip -j release/custom_files-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_custom_files.wasm plugins/custom_files/plugin.json
 	@printf "@ nitro_plugin_custom_files.wasm\\n@=plugin.wasm\\n" | zipnote -w release/custom_files-universal.zip
 	@zip -j release/glfw_fix-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_glfw_fix.wasm plugins/glfw_fix/plugin.json
@@ -155,6 +160,11 @@ install.cleanup:
 	@cargo install --path . --bin nitro_plugin_cleanup --offline
 	@mkdir -p ~/.local/share/nitro/plugins/cleanup
 	@cat plugins/cleanup/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/cleanup/plugin.json
+
+install.completions:
+	@cargo build -p nitro_plugin_completions --release --target wasm32-wasip2
+	@cp -r plugins/completions ~/.local/share/nitro/plugins
+	@cp -r ../target/wasm32-wasip2/release/nitro_plugin_completions.wasm ~/.local/share/nitro/plugins/completions/plugin.wasm
 
 install.config_split:
 	@cargo build -p nitro_plugin_config_split --release --target wasm32-wasip2

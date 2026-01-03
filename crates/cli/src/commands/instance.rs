@@ -58,6 +58,7 @@ pub enum InstanceSubcommand {
 	},
 	#[command(about = "Print useful information about an instance")]
 	Info { instance: Option<String> },
+	#[command(about = "Update versions, files, and packages of an instance")]
 	Update {
 		/// Whether to force update files that have already been downloaded
 		#[arg(short, long)]

@@ -3575,6 +3575,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "nitro_plugin_completions"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "nitro_config",
+ "nitro_plugin",
+ "nitro_shared",
+]
+
+[[package]]
 name = "nitro_plugin_config_split"
 version = "0.1.0"
 dependencies = [

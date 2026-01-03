@@ -1,7 +1,13 @@
 /// Manager for loading and caching WASM efficiently
 pub mod loader;
 
-use std::{marker::PhantomData, path::PathBuf, process::Stdio, sync::Arc, time::Instant};
+use std::{
+	marker::PhantomData,
+	path::{Path, PathBuf},
+	process::Stdio,
+	sync::Arc,
+	time::Instant,
+};
 
 use anyhow::{bail, Context};
 use nitro_net::download::{self, Client};
@@ -56,6 +62,11 @@ pub(crate) async fn call_wasm<H: Hook + Sized>(
 			wasm_loader: arg.wasm_loader,
 			data_dir: arg.paths.data_dir.to_string_lossy().to_string(),
 			config_dir: arg.paths.config_dir.to_string_lossy().to_string(),
+			plugin_dir: arg
+				.working_dir
+				.unwrap_or(Path::new(""))
+				.to_string_lossy()
+				.to_string(),
 			_phantom: PhantomData,
 		},
 		arg.plugin_id.to_string(),
@@ -73,6 +84,7 @@ pub(super) struct WASMHookHandle<H: Hook> {
 	wasm_loader: Arc<Mutex<WASMLoader>>,
 	data_dir: String,
 	config_dir: String,
+	plugin_dir: String,
 	_phantom: PhantomData<H>,
 }
 
@@ -145,6 +157,7 @@ impl<H: Hook> WASMHookHandle<H> {
 				custom_config: self.custom_config.clone(),
 				data_dir: self.data_dir.clone(),
 				config_dir: self.config_dir.clone(),
+				plugin_dir: self.plugin_dir.clone(),
 				client: Client::new(),
 			},
 		);
@@ -212,6 +225,7 @@ struct State {
 	custom_config: Option<String>,
 	data_dir: String,
 	config_dir: String,
+	plugin_dir: String,
 	client: Client,
 }
 
@@ -235,6 +249,10 @@ impl bindings::InterfaceWorldImports for State {
 
 	async fn get_config_dir(&mut self) -> String {
 		self.config_dir.clone()
+	}
+
+	async fn get_plugin_dir(&mut self) -> String {
+		self.plugin_dir.clone()
 	}
 
 	async fn get_current_dir(&mut self) -> String {

@@ -262,5 +262,13 @@
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Share instance addons as a zip file"
+	},
+	"completions": {
+		"id": "completions",
+		"name": "Completions",
+		"version": "v5",
+		"github_owner": "Nitrolaunch",
+		"github_repo": "plugins",
+		"description": "Shell completions for zsh and other shells"
 	}
 }
