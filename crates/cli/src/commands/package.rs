@@ -249,7 +249,7 @@ async fn sync(data: &mut CmdData<'_>, filter: Vec<String>) -> anyhow::Result<()>
 	data.ensure_config(true).await?;
 	let config = data.config.get_mut();
 
-	let mut printer = ReplPrinter::new(true);
+	let printer = ReplPrinter::new(true);
 	let client = Client::new();
 	for repo in config.packages.repos.iter_mut() {
 		// Skip repositories not in the filter

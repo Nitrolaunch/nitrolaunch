@@ -1,14 +1,15 @@
 use std::fmt::Debug;
-use std::io::{Stdout, Write};
+use std::io::Write;
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::Arc;
 
 /// String used program-wide for most indentation
 pub const INDENT_STR: &str = "    ";
 
 /// Used to print text that is replaced
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ReplPrinter {
-	stdout: Stdout,
-	chars_written: usize,
+	chars_written: Arc<AtomicUsize>,
 	finished: bool,
 	options: PrintOptions,
 }
@@ -23,8 +24,7 @@ impl ReplPrinter {
 	/// Make a new ReplPrinter using a set of print options
 	pub fn from_options(options: PrintOptions) -> Self {
 		Self {
-			stdout: std::io::stdout(),
-			chars_written: 0,
+			chars_written: Arc::new(AtomicUsize::new(0)),
 			finished: false,
 			options,
 		}
@@ -37,43 +37,49 @@ impl ReplPrinter {
 	}
 
 	/// Replace the current line with spaces
-	pub fn clearline(&mut self) {
-		if self.chars_written == 0 {
+	pub fn clearline(&self) {
+		let chars_written = self.chars_written.load(Ordering::Relaxed);
+		if chars_written == 0 {
 			return;
 		}
 
-		let _ = write!(self.stdout, "\r");
-		for _ in 0..self.chars_written {
-			let _ = write!(self.stdout, " ");
+		print!("\r");
+		for _ in 0..chars_written {
+			print!(" ");
 		}
-		self.chars_written = 0;
-		let _ = self.stdout.flush();
+		self.chars_written.store(0, Ordering::Relaxed);
+		let _ = std::io::stdout().flush();
 	}
 
 	/// Print text to the output, replacing the current line
-	pub fn print(&mut self, text: &str) {
+	pub fn print(&self, text: &str) {
 		if !self.options.verbose {
 			return;
 		}
 
 		// Write the text
-		let _ = write!(self.stdout, "\r{}{text}", self.options.indent_str);
+		print!("\r{}{text}", self.options.indent_str);
 
 		// Calculate the amount written
 		let written = get_terminal_width(text) + self.options.indent_str.chars().count();
 
 		// Clear leftover characters from the last print
-		let clear_count = self.chars_written.checked_sub(written).unwrap_or_default();
-		let _ = write!(self.stdout, "{}", " ".repeat(clear_count));
+		let chars_written = self.chars_written.load(Ordering::Relaxed);
+		let clear_count = if written > chars_written {
+			0
+		} else {
+			chars_written - written
+		};
+		print!("{}", " ".repeat(clear_count));
 
-		self.chars_written = written;
-		let _ = self.stdout.flush();
+		self.chars_written.store(written, Ordering::Relaxed);
+		let _ = std::io::stdout().flush();
 	}
 
 	/// Print text on a new line
-	pub fn println(&mut self, text: &str) {
-		self.chars_written = 0;
-		let _ = writeln!(self.stdout);
+	pub fn println(&self, text: &str) {
+		self.chars_written.store(0, Ordering::Relaxed);
+		println!();
 		self.print(text);
 	}
 
@@ -82,9 +88,14 @@ impl ReplPrinter {
 		if self.finished {
 			return;
 		}
-		if self.chars_written != 0 {
+		if self.chars_written.load(Ordering::Relaxed) != 0 {
 			self.newline();
 		}
+		self.finished = true;
+	}
+
+	/// Force this printer to not make a newline when it finishes
+	pub fn force_finished(&mut self) {
 		self.finished = true;
 	}
 

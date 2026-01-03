@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use anyhow::Context;
 use color_print::{cformat, cstr};
 use inquire::{Confirm, Password};
@@ -10,6 +12,7 @@ use nitrolaunch::shared::output::{
 	default_special_ms_auth, Message, MessageContents, MessageLevel, NitroOutput,
 };
 use nitrolaunch::shared::util::print::ReplPrinter;
+use tokio::sync::mpsc::{Receiver, Sender};
 
 /// A nice colored bullet point for terminal output
 pub const HYPHEN_POINT: &str = cstr!("<k!> - </k!>");
@@ -35,6 +38,7 @@ pub struct TerminalOutput {
 	indent_level: u8,
 	logger: Logger,
 	translation_map: Option<TranslationMap>,
+	process_spinner_task: Option<Sender<()>>,
 }
 
 #[async_trait::async_trait]
@@ -46,7 +50,20 @@ impl NitroOutput for TerminalOutput {
 
 	fn display_message(&mut self, message: Message) {
 		let _ = self.log_message(message.contents.clone(), message.level);
-		self.display_text_impl(self.format_message(message.contents), message.level);
+		let is_process = matches!(&message.contents, MessageContents::StartProcess(..));
+		let message_contents = self.format_message(message.contents);
+
+		// Loading spinner handling
+		if is_process {
+			let message_contents = message_contents.clone();
+			let printer = self.printer.clone();
+			let (tx, rx) = tokio::sync::mpsc::channel(2);
+
+			tokio::spawn(async move { loading_spinner_task(message_contents, printer, rx).await });
+			self.process_spinner_task = Some(tx);
+		}
+
+		self.display_text_impl(message_contents, message.level);
 	}
 
 	fn start_process(&mut self) {
@@ -62,6 +79,11 @@ impl NitroOutput for TerminalOutput {
 			self.printer.newline();
 		}
 		self.in_process = false;
+		if let Some(spinner) = self.process_spinner_task.take() {
+			tokio::spawn(async move {
+				let _ = spinner.send(()).await;
+			});
+		}
 	}
 
 	fn start_section(&mut self) {
@@ -125,6 +147,7 @@ impl NitroOutput for TerminalOutput {
 			indent_level: 0,
 			logger: Logger::dummy(),
 			translation_map: None,
+			process_spinner_task: None,
 		}
 	}
 }
@@ -140,6 +163,7 @@ impl TerminalOutput {
 			indent_level: 0,
 			logger,
 			translation_map: None,
+			process_spinner_task: None,
 		})
 	}
 
@@ -174,7 +198,9 @@ impl TerminalOutput {
 				self.translate(TranslationKey::Error),
 				text
 			),
-			MessageContents::Success(text) => cformat!("<g>{}", add_period(text)),
+			MessageContents::Success(text) => {
+				cformat!("{} <g>{}", format_loading_spinner(4), add_period(text))
+			}
 			MessageContents::Property(key, value) => {
 				cformat!("<s>{}:</> {}", key, self.format_message(*value))
 			}
@@ -291,6 +317,63 @@ fn add_period(string: String) -> String {
 	} else {
 		string + "."
 	}
+}
+
+/// Gets the async task for updating one of the loading spinners
+async fn loading_spinner_task(
+	message: String,
+	mut printer: ReplPrinter,
+	mut finished_rx: Receiver<()>,
+) {
+	printer.force_finished();
+	let mut stage = 0;
+
+	let loop_interval_ms = 1;
+	let spinner_interval_ms = 200;
+
+	// Initialized like this so we print as the very first thing
+	let mut loop_counter = spinner_interval_ms;
+
+	loop {
+		// Decide if we need to exit
+		if finished_rx.try_recv().is_ok() {
+			break;
+		}
+
+		// Decide if we need to print
+		if loop_counter * loop_interval_ms >= spinner_interval_ms {
+			loop_counter = 0;
+
+			stage += 1;
+			if stage > 3 {
+				stage = 0;
+			}
+
+			let spinner = format_loading_spinner(stage);
+
+			let message = format!("{spinner} {message}");
+
+			printer.print(&message);
+		} else {
+			loop_counter += 1;
+		}
+
+		tokio::time::sleep(Duration::from_millis(loop_interval_ms)).await;
+	}
+}
+
+/// Formats the loading spinner with a stage from 0-3, or 4 for a checkmark
+fn format_loading_spinner(stage: u8) -> String {
+	let icon = match stage {
+		0 => "⡈",
+		1 => "⠔",
+		2 => "⠢",
+		3 => "⢁",
+		4 => &cformat!("<g>✓"),
+		_ => ".",
+	};
+
+	cformat!("<s>[</><y>{icon}</><s>]</>")
 }
 
 /// Get whether icons are enabled
