@@ -2,7 +2,7 @@ use anyhow::{bail, Context};
 use clap::Subcommand;
 use color_print::cprintln;
 use itertools::Itertools;
-use nitrolaunch::core::io::{json_from_file, json_to_file_pretty};
+use nitrolaunch::core::io::json_from_file;
 use nitrolaunch::plugin::install::get_verified_plugins;
 use nitrolaunch::plugin::PluginManager;
 use nitrolaunch::plugin_crate::plugin::PluginManifest;
@@ -82,13 +82,17 @@ async fn list(data: &mut CmdData<'_>, raw: bool, loaded: bool) -> anyhow::Result
 		if raw {
 			println!("{}", plugin_id);
 		} else if is_loaded {
-			cprintln!("{}<s>{CHECK} {}</> [Enabled]", HYPHEN_POINT, plugin_id);
+			cprintln!(
+				"{}[<s><g>{CHECK}</>] {}</> [<g>Enabled</>]",
+				HYPHEN_POINT,
+				plugin_id
+			);
 		} else {
 			let is_valid = json_from_file::<PluginManifest>(plugin_path).is_ok();
 			if is_valid {
-				cprintln!("{}{} [Disabled]", HYPHEN_POINT, plugin_id);
+				cprintln!("{}[ ] {} [Disabled]", HYPHEN_POINT, plugin_id);
 			} else {
-				cprintln!("{}<r>{} [Invalid]", HYPHEN_POINT, plugin_id);
+				cprintln!("{}[ ] <r>{} [Invalid]", HYPHEN_POINT, plugin_id);
 			}
 		}
 	}
@@ -187,7 +191,10 @@ async fn uninstall(data: &mut CmdData<'_>, plugin: String) -> anyhow::Result<()>
 
 	PluginManager::uninstall_plugin(&plugin, &data.paths).context("Failed to remove plugin")?;
 
-	cprintln!("<g>Plugin removed.");
+	data.output.display(
+		MessageContents::Success("Plugin removed".into()),
+		MessageLevel::Important,
+	);
 
 	Ok(())
 }
@@ -201,7 +208,10 @@ async fn browse(data: &mut CmdData<'_>) -> anyhow::Result<()> {
 		.await
 		.context("Failed to get verified plugin list")?;
 
-	cprintln!("<s>Available plugins:");
+	data.output.display(
+		MessageContents::Header("Available plugins:".into()),
+		MessageLevel::Important,
+	);
 	for plugin in verified_list
 		.values()
 		.sorted_by_cached_key(|x| x.id.clone())
@@ -217,23 +227,23 @@ async fn browse(data: &mut CmdData<'_>) -> anyhow::Result<()> {
 }
 
 async fn enable(data: &mut CmdData<'_>, plugin: String) -> anyhow::Result<()> {
-	let mut config = PluginManager::open_config(&data.paths).context("Failed to open config")?;
-	config.plugins.insert(plugin);
-	json_to_file_pretty(PluginManager::get_config_path(&data.paths), &config)
-		.context("Failed to write modified config")?;
+	PluginManager::enable_plugin(&plugin, &data.paths)?;
 
-	cprintln!("<g>Plugin enabled.");
+	data.output.display(
+		MessageContents::Success("Plugin enabled".into()),
+		MessageLevel::Important,
+	);
 
 	Ok(())
 }
 
 async fn disable(data: &mut CmdData<'_>, plugin: String) -> anyhow::Result<()> {
-	let mut config = PluginManager::open_config(&data.paths).context("Failed to open config")?;
-	config.plugins.remove(&plugin);
-	json_to_file_pretty(PluginManager::get_config_path(&data.paths), &config)
-		.context("Failed to write modified config")?;
+	PluginManager::disable_plugin(&plugin, &data.paths)?;
 
-	cprintln!("<g>Plugin disabled.");
+	data.output.display(
+		MessageContents::Success("Plugin disabled".into()),
+		MessageLevel::Important,
+	);
 
 	Ok(())
 }

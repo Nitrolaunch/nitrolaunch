@@ -9,6 +9,7 @@ use nitrolaunch::core::user::UserKind;
 
 use clap::Subcommand;
 use color_print::{cprint, cprintln};
+use nitrolaunch::shared::output::{MessageContents, MessageLevel, NitroOutput};
 use reqwest::Client;
 
 #[derive(Debug, Subcommand)]
@@ -198,7 +199,10 @@ async fn add(data: &mut CmdData<'_>) -> anyhow::Result<()> {
 	.await
 	.context("Failed to write modified config")?;
 
-	cprintln!("<g>User added.");
+	data.output.display(
+		MessageContents::Success("User added".into()),
+		MessageLevel::Important,
+	);
 
 	Ok(())
 }

@@ -1,3 +1,4 @@
+use std::ops::DerefMut;
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -15,6 +16,7 @@ use nitrolaunch::instance::Instance;
 use nitrolaunch::io::lock::Lockfile;
 use nitrolaunch::plugin_crate::hook::hooks::DeleteInstance;
 use nitrolaunch::shared::id::InstanceID;
+use nitrolaunch::shared::output::{MessageContents, MessageLevel};
 use nitrolaunch::shared::util::to_string_json;
 use nitrolaunch::shared::versions::{MinecraftLatestVersion, MinecraftVersionDeser};
 
@@ -163,8 +165,8 @@ async fn list(data: &mut CmdData<'_>, raw: bool, side: Option<Side>) -> anyhow::
 			println!("{id}");
 		} else {
 			match instance.get_side() {
-				Side::Client => cprintln!("{}<y!>{}", HYPHEN_POINT, id),
-				Side::Server => cprintln!("{}<c!>{}", HYPHEN_POINT, id),
+				Side::Client => cprintln!("{}<g>{}", HYPHEN_POINT, id),
+				Side::Server => cprintln!("{}<b>{}", HYPHEN_POINT, id),
 			}
 		}
 	}
@@ -449,7 +451,10 @@ async fn add(data: &mut CmdData<'_>) -> anyhow::Result<()> {
 	.await
 	.context("Failed to write modified config")?;
 
-	cprintln!("<g>Instance added.");
+	data.output.display(
+		MessageContents::Success("Instance added".into()),
+		MessageLevel::Important,
+	);
 
 	Ok(())
 }
@@ -593,7 +598,11 @@ async fn delete(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()
 		return Ok(());
 	}
 
-	cprintln!("<r>Deleting...");
+	let mut process = data.output.get_process();
+	process.display(
+		MessageContents::StartProcess("Deleting instance".into()),
+		MessageLevel::Important,
+	);
 
 	instance
 		.delete_files(&data.paths)
@@ -612,11 +621,11 @@ async fn delete(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()
 				source_plugin,
 				&id.to_string(),
 				&data.paths,
-				data.output,
+				process.deref_mut(),
 			)
 			.await?;
 		if let Some(result) = result {
-			result.result(data.output).await?;
+			result.result(process.deref_mut()).await?;
 		}
 	} else {
 		let modifications = vec![ConfigModification::RemoveInstance(id.into())];
@@ -625,13 +634,16 @@ async fn delete(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()
 			modifications,
 			&data.paths,
 			&config.plugins,
-			data.output,
+			process.deref_mut(),
 		)
 		.await
 		.context("Failed to modify and write config")?;
 	}
 
-	cprintln!("<g>Instance deleted.");
+	process.display(
+		MessageContents::Success("Instance deleted".into()),
+		MessageLevel::Important,
+	);
 
 	Ok(())
 }

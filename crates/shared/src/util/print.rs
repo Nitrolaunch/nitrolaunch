@@ -38,17 +38,23 @@ impl ReplPrinter {
 
 	/// Replace the current line with spaces
 	pub fn clearline(&self) {
+		if !self.options.verbose {
+			return;
+		}
+
+		let mut lock = std::io::stdout().lock();
+
 		let chars_written = self.chars_written.load(Ordering::Relaxed);
 		if chars_written == 0 {
 			return;
 		}
 
-		print!("\r");
+		let _ = write!(&mut lock, "\r");
 		for _ in 0..chars_written {
-			print!(" ");
+			let _ = write!(&mut lock, " ");
 		}
 		self.chars_written.store(0, Ordering::Relaxed);
-		let _ = std::io::stdout().flush();
+		let _ = lock.flush();
 	}
 
 	/// Print text to the output, replacing the current line
@@ -56,30 +62,33 @@ impl ReplPrinter {
 		if !self.options.verbose {
 			return;
 		}
+		let mut lock = std::io::stdout().lock();
 
 		// Write the text
-		print!("\r{}{text}", self.options.indent_str);
+		let _ = write!(&mut lock, "\r{}{text}", self.options.indent_str);
 
 		// Calculate the amount written
 		let written = get_terminal_width(text) + self.options.indent_str.chars().count();
 
 		// Clear leftover characters from the last print
 		let chars_written = self.chars_written.load(Ordering::Relaxed);
-		let clear_count = if written > chars_written {
-			0
-		} else {
-			chars_written - written
-		};
-		print!("{}", " ".repeat(clear_count));
+		if written < chars_written {
+			let _ = write!(&mut lock, "{}", " ".repeat(chars_written - written));
+		}
 
 		self.chars_written.store(written, Ordering::Relaxed);
-		let _ = std::io::stdout().flush();
+		let _ = lock.flush();
 	}
 
 	/// Print text on a new line
 	pub fn println(&self, text: &str) {
+		let mut lock = std::io::stdout().lock();
+
 		self.chars_written.store(0, Ordering::Relaxed);
-		println!();
+
+		let _ = writeln!(&mut lock);
+		std::mem::drop(lock);
+
 		self.print(text);
 	}
 

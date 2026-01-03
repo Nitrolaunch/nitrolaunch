@@ -50,19 +50,24 @@ impl NitroOutput for TerminalOutput {
 
 	fn display_message(&mut self, message: Message) {
 		let _ = self.log_message(message.contents.clone(), message.level);
-		let is_process = matches!(&message.contents, MessageContents::StartProcess(..));
 		let is_error = matches!(&message.contents, MessageContents::Error(..));
-		let message_contents = self.format_message(message.contents);
 
 		// Loading spinner handling
-		if is_process {
-			let message_contents = message_contents.clone();
-			let printer = self.printer.clone();
-			let (tx, rx) = tokio::sync::mpsc::channel(2);
+		let message_contents =
+			if let MessageContents::StartProcess(inner_message) = &message.contents {
+				let inner_message = format!("{inner_message}...");
+				let start_message = format!("{} {inner_message}", format_loading_spinner(3));
 
-			tokio::spawn(async move { loading_spinner_task(message_contents, printer, rx).await });
-			self.process_spinner_task = Some(tx);
-		}
+				let printer = self.printer.clone();
+				let (tx, rx) = tokio::sync::mpsc::channel(2);
+
+				tokio::spawn(async move { loading_spinner_task(inner_message, printer, rx).await });
+				self.process_spinner_task = Some(tx);
+
+				start_message
+			} else {
+				self.format_message(message.contents)
+			};
 
 		/*
 			If the message is an error it will span multiple lines and break the ReplPrinter,
@@ -77,22 +82,23 @@ impl NitroOutput for TerminalOutput {
 
 	fn start_process(&mut self) {
 		if self.in_process {
-			self.printer.newline();
+			self.end_process();
 		} else {
 			self.in_process = true;
 		}
 	}
 
 	fn end_process(&mut self) {
-		if self.in_process {
-			self.printer.newline();
-		}
-		self.in_process = false;
 		if let Some(spinner) = self.process_spinner_task.take() {
 			tokio::spawn(async move {
 				let _ = spinner.send(()).await;
 			});
 		}
+
+		if self.in_process {
+			self.printer.newline();
+		}
+		self.in_process = false;
 	}
 
 	fn start_section(&mut self) {
@@ -251,9 +257,9 @@ impl TerminalOutput {
 					total,
 					ProgressBarSettings {
 						len: 25,
-						full: "=",
-						empty: "-",
-						end: ">",
+						full: "■",
+						empty: "□",
+						end: "⬢",
 					},
 				);
 				cformat!("<s>[</><g>{}</g><k!>{}</><s>]</>", full, empty)
@@ -341,10 +347,9 @@ async fn loading_spinner_task(
 	let mut stage = 0;
 
 	let loop_interval_ms = 1;
-	let spinner_interval_ms = 200;
+	let spinner_interval_ms = 150;
 
-	// Initialized like this so we print as the very first thing
-	let mut loop_counter = spinner_interval_ms;
+	let mut loop_counter = 0;
 
 	loop {
 		// Decide if we need to exit

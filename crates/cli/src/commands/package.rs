@@ -1,3 +1,4 @@
+use std::ops::DerefMut;
 use std::str::FromStr;
 use std::{collections::HashMap, sync::Arc};
 
@@ -11,7 +12,7 @@ use nitrolaunch::pkg_crate::properties::PackageProperties;
 use nitrolaunch::pkg_crate::{PackageContentType, PkgRequest, PkgRequestSource};
 use nitrolaunch::shared::id::{InstanceID, TemplateID};
 use nitrolaunch::shared::loaders::Loader;
-use nitrolaunch::shared::util::print::ReplPrinter;
+use nitrolaunch::shared::output::{MessageContents, MessageLevel, NitroOutput};
 
 use anyhow::{bail, Context};
 use clap::Subcommand;
@@ -249,7 +250,12 @@ async fn sync(data: &mut CmdData<'_>, filter: Vec<String>) -> anyhow::Result<()>
 	data.ensure_config(true).await?;
 	let config = data.config.get_mut();
 
-	let printer = ReplPrinter::new(true);
+	data.output.display(
+		MessageContents::Header("Syncing Repositories".into()),
+		MessageLevel::Important,
+	);
+	let mut section = data.output.get_section();
+
 	let client = Client::new();
 	for repo in config.packages.repos.iter_mut() {
 		// Skip repositories not in the filter
@@ -257,32 +263,57 @@ async fn sync(data: &mut CmdData<'_>, filter: Vec<String>) -> anyhow::Result<()>
 			continue;
 		}
 
-		printer.print(&cformat!("Syncing repository <b>{}</b>...", repo.get_id()));
-		match repo
-			.sync(&data.paths, &config.plugins, &client, data.output)
-			.await
-		{
+		let mut process = section.get_process();
+		process.display(
+			MessageContents::StartProcess(cformat!("Syncing repository <b>{}</b>", repo.get_id())),
+			MessageLevel::Important,
+		);
+
+		let result = repo
+			.sync(&data.paths, &config.plugins, &client, process.deref_mut())
+			.await;
+
+		match result {
 			Ok(..) => {
-				printer.print(&cformat!("<g>Synced repository <b!>{}</b!>", repo.get_id()));
+				process.display(
+					MessageContents::Success(cformat!(
+						"Synced repository <b>{}</b>",
+						repo.get_id()
+					)),
+					MessageLevel::Important,
+				);
 			}
 			Err(e) => {
-				printer.println(&cformat!("<r>{}", e));
-				printer.print(&cformat!(
-					"<r>Failed to sync repository <r!>{}</r!>",
-					repo.get_id()
-				));
+				process.display(
+					MessageContents::Error(format!(
+						"Failed to sync repository {}: {e}",
+						repo.get_id()
+					)),
+					MessageLevel::Important,
+				);
 				continue;
 			}
 		};
-		cprintln!();
 	}
-	printer.print(&cformat!("<s>Updating packages..."));
+
+	std::mem::drop(section);
+
+	let mut process = data.output.get_process();
+	process.display(
+		MessageContents::StartProcess("Updating packages".into()),
+		MessageLevel::Important,
+	);
+
 	config
 		.packages
-		.update_cached_packages(&data.paths, &client, data.output)
+		.update_cached_packages(&data.paths, &client, process.deref_mut())
 		.await
 		.context("Failed to update cached packages")?;
-	printer.println(&cformat!("<g>Packages updated."));
+
+	process.display(
+		MessageContents::Success("Packages updated".into()),
+		MessageLevel::Important,
+	);
 
 	Ok(())
 }
@@ -723,7 +754,10 @@ async fn add(
 	.await
 	.context("Failed to write modified config")?;
 
-	cprintln!("<g>Package added.");
+	data.output.display(
+		MessageContents::Success("Package added".into()),
+		MessageLevel::Important,
+	);
 
 	Ok(())
 }

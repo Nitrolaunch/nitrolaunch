@@ -120,6 +120,8 @@ impl Instance {
 					MessageLevel::Important,
 				);
 
+				ctx.output.start_section();
+
 				let constants = EvalConstants {
 					version: mc_version.to_string(),
 					loader: self.config.loader.clone(),
@@ -144,9 +146,9 @@ impl Instance {
 					.context("Failed to finish using lockfile")?;
 
 				let all_packages = Vec::from_iter(all_packages);
-				print_package_support_messages(&all_packages, ctx)
-					.await
-					.context("Failed to print support messages")?;
+				let _ = print_package_support_messages(&all_packages, ctx).await;
+
+				ctx.output.end_section();
 			}
 		}
 

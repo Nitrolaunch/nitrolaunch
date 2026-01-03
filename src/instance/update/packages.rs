@@ -53,7 +53,7 @@ pub async fn update_instance_packages<O: NitroOutput>(
 
 	// Evaluate first to install all of the addons
 	ctx.output.display(
-		MessageContents::StartProcess(translate!(ctx.output, StartAcquiringAddons)),
+		MessageContents::Header(translate!(ctx.output, StartAcquiringAddons)),
 		MessageLevel::Important,
 	);
 	let mut tasks = HashMap::new();
@@ -130,7 +130,7 @@ pub async fn update_instance_packages<O: NitroOutput>(
 
 	// Install each package one after another onto all of its instances
 	ctx.output.display(
-		MessageContents::StartProcess(translate!(ctx.output, StartInstallingPackages)),
+		MessageContents::Header(translate!(ctx.output, StartInstallingPackages)),
 		MessageLevel::Important,
 	);
 
@@ -207,22 +207,22 @@ async fn run_addon_tasks(
 		task_set.spawn(task);
 	}
 
-	o.start_process();
-	while let Some(result) = task_set.join_next().await {
-		result
-			.context("Failed to run addon acquire task")?
-			.context("Failed to acquire addon")?;
+	if !task_set.is_empty() {
+		let mut process = o.get_process();
+		while let Some(result) = task_set.join_next().await {
+			result
+				.context("Failed to run addon acquire task")?
+				.context("Failed to acquire addon")?;
 
-		// Update progress bar
-		let progress = MessageContents::Progress {
-			current: (total_count - task_set.len()) as u32,
-			total: total_count as u32,
-		};
+			// Update progress bar
+			let progress = MessageContents::Progress {
+				current: (total_count - task_set.len()) as u32,
+				total: total_count as u32,
+			};
 
-		o.display(progress, MessageLevel::Important);
+			process.display(progress, MessageLevel::Important);
+		}
 	}
-
-	o.end_process();
 
 	Ok(())
 }

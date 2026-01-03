@@ -2,6 +2,7 @@ use crate::{
 	commands::call_plugin_subcommand,
 	output::{icons_enabled, HYPHEN_POINT, INSTANCE, LOADER, PACKAGE, VERSION},
 };
+use std::ops::DerefMut;
 
 use super::CmdData;
 
@@ -18,7 +19,11 @@ use nitrolaunch::{
 	config_crate::template::TemplateLoaderConfiguration,
 	core::util::versions::MinecraftVersion,
 	plugin_crate::hook::hooks::DeleteTemplate,
-	shared::{id::TemplateID, Side},
+	shared::{
+		id::TemplateID,
+		output::{MessageContents, MessageLevel, NitroOutput},
+		Side,
+	},
 };
 
 #[derive(Debug, Subcommand)]
@@ -60,7 +65,7 @@ async fn list(data: &mut CmdData<'_>, raw: bool) -> anyhow::Result<()> {
 		if raw {
 			println!("{id}");
 		} else {
-			cprintln!("{}<y!>{}", HYPHEN_POINT, id);
+			cprintln!("{}<b>{}", HYPHEN_POINT, id);
 		}
 	}
 
@@ -173,7 +178,11 @@ async fn delete(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()
 		return Ok(());
 	}
 
-	cprintln!("<r>Deleting...");
+	let mut process = data.output.get_process();
+	process.display(
+		MessageContents::StartProcess("Deleting template".into()),
+		MessageLevel::Important,
+	);
 
 	if let Some(source_plugin) = &template.instance.source_plugin {
 		if !template.instance.is_deletable {
@@ -187,11 +196,11 @@ async fn delete(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()
 				source_plugin,
 				&id.to_string(),
 				&data.paths,
-				data.output,
+				process.deref_mut(),
 			)
 			.await?;
 		if let Some(result) = result {
-			result.result(data.output).await?;
+			result.result(process.deref_mut()).await?;
 		}
 	} else {
 		let modifications = vec![ConfigModification::RemoveTemplate(id.into())];
@@ -200,13 +209,16 @@ async fn delete(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()
 			modifications,
 			&data.paths,
 			&config.plugins,
-			data.output,
+			process.deref_mut(),
 		)
 		.await
 		.context("Failed to modify and write config")?;
 	}
 
-	cprintln!("<g>Template deleted.");
+	process.display(
+		MessageContents::Success("Template deleted".into()),
+		MessageLevel::Important,
+	);
 
 	Ok(())
 }

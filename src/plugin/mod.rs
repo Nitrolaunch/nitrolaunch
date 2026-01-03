@@ -265,7 +265,7 @@ impl PluginManager {
 		Ok(())
 	}
 
-	/// Enabled a plugin
+	/// Enables a plugin
 	pub fn enable_plugin(plugin: &str, paths: &Paths) -> anyhow::Result<()> {
 		let config_path = Self::get_config_path(paths);
 		let mut config = Self::open_config(paths).context("Failed to open plugin configuration")?;
