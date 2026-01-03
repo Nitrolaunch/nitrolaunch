@@ -5,7 +5,6 @@ rust-version.workspace = true
 edition.workspace = true
 
 [lib]
-name = "nitro_plugin_config_split"
 path = "lib.rs"
 crate-type = ["cdylib"]
 

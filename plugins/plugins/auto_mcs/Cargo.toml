@@ -5,7 +5,6 @@ rust-version.workspace = true
 edition.workspace = true
 
 [lib]
-name = "nitro_plugin_auto_mcs"
 path = "lib.rs"
 crate-type = ["cdylib"]
 

@@ -5,7 +5,6 @@ rust-version.workspace = true
 edition.workspace = true
 
 [lib]
-name = "nitro_plugin_mojang_transfer"
 path = "lib.rs"
 crate-type = ["cdylib"]
 
