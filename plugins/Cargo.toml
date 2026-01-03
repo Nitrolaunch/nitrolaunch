@@ -11,10 +11,6 @@ repository.workspace = true
 rust-version.workspace = true
 
 [[bin]]
-name = "nitro_plugin_backup"
-path = "plugins/backup/main.rs"
-
-[[bin]]
 name = "nitro_plugin_beet"
 path = "plugins/beet/main.rs"
 

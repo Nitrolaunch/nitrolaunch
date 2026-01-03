@@ -3,10 +3,10 @@ use std::fs::{self, File};
 use std::io::{BufReader, BufWriter, Read};
 use std::path::{Path, PathBuf};
 
-use anyhow::{anyhow, bail, Context};
-use nitro_core::io::{json_from_file, json_to_file};
+use anyhow::{anyhow, bail, ensure, Context};
+use base64::engine::GeneralPurposeConfig;
+use base64::Engine;
 use nitro_shared::util::utc_timestamp;
-use rand::Rng;
 use serde::{Deserialize, Serialize};
 use zip::{ZipArchive, ZipWriter};
 
@@ -115,7 +115,8 @@ impl Index {
 		fs::create_dir_all(backup_directory)?;
 		let path = Self::get_path(backup_directory);
 		let contents = if path.exists() {
-			json_from_file(&path).context("Failed to open backup index")?
+			let file = File::open(&path)?;
+			serde_json::from_reader(file).context("Failed to read backup index")?
 		} else {
 			IndexContents::default()
 		};
@@ -131,7 +132,8 @@ impl Index {
 	/// Finish using the index
 	pub fn finish(&self) -> anyhow::Result<()> {
 		let path = Self::get_path(&self.dir);
-		json_to_file(path, &self.contents)?;
+		let file = File::create(path)?;
+		serde_json::to_writer(file, &self.contents)?;
 
 		Ok(())
 	}
@@ -337,9 +339,11 @@ pub fn get_backup_directory(base_dir: &Path, inst_id: &str) -> PathBuf {
 
 /// Generates a random backup ID
 pub fn generate_random_id() -> String {
-	let mut rng = rand::thread_rng();
-	let num = rng.gen_range(0..u64::MAX);
-	format!("{num:x}")
+	let num = utc_timestamp().expect("Failed to get timestamp");
+
+	base64::engine::GeneralPurpose::new(&base64::alphabet::URL_SAFE, GeneralPurposeConfig::new())
+		.encode(num.to_ne_bytes())
+		.replace("=", "")
 }
 
 /// Gets all file paths from a user-provided path recursively
@@ -400,12 +404,17 @@ fn write_backup_files<R: Read>(
 ) -> anyhow::Result<()> {
 	match &group_config.common.storage_type {
 		StorageType::Archive => {
-			nitro_core::io::files::create_leading_dirs(backup_path)?;
+			if let Some(parent) = backup_path.parent() {
+				std::fs::create_dir_all(parent)?;
+			}
+
 			let file = File::create(backup_path).context("Failed to create archive file")?;
+
 			let mut file = BufWriter::new(file);
 			let mut arc = ZipWriter::new(&mut file);
 			let options = zip::write::FileOptions::<()>::default()
 				.compression_method(zip::CompressionMethod::Deflated);
+
 			for (path, mut reader) in readers {
 				arc.start_file(path, options)?;
 				std::io::copy(&mut reader, &mut arc).context("Failed to copy to archive file")?;
@@ -416,7 +425,9 @@ fn write_backup_files<R: Read>(
 		StorageType::Folder => {
 			for (path, mut reader) in readers {
 				let dest = backup_path.join(path);
-				nitro_core::io::files::create_leading_dirs(&dest)?;
+				if let Some(parent) = dest.parent() {
+					std::fs::create_dir_all(parent)?;
+				}
 				let file =
 					File::create(dest).context("Failed to create snapshot destination file")?;
 				let mut file = BufWriter::new(file);
@@ -444,9 +455,27 @@ fn restore_backup_files(
 				.context("Failed to extract backup archive")?;
 		}
 		StorageType::Folder => {
-			nitro_core::io::files::copy_dir_contents(backup_path, instance_dir)
-				.context("Failed to copy directory")?;
+			copy_dir_contents(backup_path, instance_dir).context("Failed to copy directory")?;
 		}
+	}
+
+	Ok(())
+}
+
+fn copy_dir_contents(src: &Path, dest: &Path) -> anyhow::Result<()> {
+	ensure!(src.is_dir());
+	ensure!(dest.is_dir());
+
+	for file in std::fs::read_dir(src)? {
+		let file = file?;
+		let src_path = file.path();
+		let rel = src_path.strip_prefix(src)?;
+		let dest_path = dest.join(rel);
+
+		let mut src_file = std::io::BufReader::new(std::fs::File::open(src_path)?);
+		let mut dest_file = std::io::BufWriter::new(std::fs::File::create(dest_path)?);
+
+		std::io::copy(&mut src_file, &mut dest_file)?;
 	}
 
 	Ok(())

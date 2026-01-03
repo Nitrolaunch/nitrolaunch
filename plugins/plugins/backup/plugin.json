@@ -5,16 +5,16 @@
 	"protocol_version": 3,
 	"hooks": {
 		"subcommand": {
-			"executable": "${PLUGIN_DIR}/nitro_plugin_backup${EXE_EXTENSION}"
+			"wasm": true
 		},
 		"on_instance_launch": {
-			"executable": "${PLUGIN_DIR}/nitro_plugin_backup${EXE_EXTENSION}"
+			"wasm": true
 		},
 		"on_instance_stop": {
-			"executable": "${PLUGIN_DIR}/nitro_plugin_backup${EXE_EXTENSION}"
+			"wasm": true
 		},
 		"while_instance_launch": {
-			"executable": "${PLUGIN_DIR}/nitro_plugin_backup${EXE_EXTENSION}"
+			"wasm": true
 		}
 	},
 	"subcommands": {

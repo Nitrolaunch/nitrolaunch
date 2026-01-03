@@ -9,6 +9,7 @@ package.cross_platform: build.cross_platform
 	@rm -f release/args-universal.zip
 	@rm -f release/auto_mcs-universal.zip
 	@rm -f release/automate-universal.zip
+	@rm -f release/backup-universal.zip
 	@rm -f release/better_jsons-universal.zip
 	@rm -f release/completions-universal.zip
 	@rm -f release/config_split-universal.zip
@@ -33,6 +34,8 @@ package.cross_platform: build.cross_platform
 	@printf "@ nitro_plugin_auto_mcs.wasm\\n@=plugin.wasm\\n" | zipnote -w release/auto_mcs-universal.zip
 	@zip -j release/automate-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_automate.wasm plugins/automate/plugin.json
 	@printf "@ nitro_plugin_automate.wasm\\n@=plugin.wasm\\n" | zipnote -w release/automate-universal.zip
+	@zip -j release/backup-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_backup.wasm plugins/backup/plugin.json
+	@printf "@ nitro_plugin_backup.wasm\\n@=plugin.wasm\\n" | zipnote -w release/backup-universal.zip
 	@zip -j release/better_jsons-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_better_jsons.wasm plugins/better_jsons/plugin.json
 	@printf "@ nitro_plugin_better_jsons.wasm\\n@=plugin.wasm\\n" | zipnote -w release/better_jsons-universal.zip
 	@zip -j release/config_split-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_config_split.wasm plugins/config_split/plugin.json
@@ -74,7 +77,6 @@ build.platform_dependent:
 package_zips.platform_dependent:
 	@mkdir -p release
 	
-	@rm -f release/backup-${OS}.zip
 	@rm -f release/beet-${OS}.zip
 	@rm -f release/cleanup-${OS}.zip
 	@rm -f release/curseforge_api-${OS}.zip
@@ -85,7 +87,6 @@ package_zips.platform_dependent:
 	@rm -f release/modrinth-${OS}.zip
 	@rm -f release/modrinth_api-${OS}.zip
 	@rm -f release/multimc_transfer-${OS}.zip
-	@rm -f release/nitro_transfer-${OS}.zip
 	@rm -f release/options-${OS}.zip
 	@rm -f release/packhost-${OS}.zip
 	@rm -f release/paper-${OS}.zip
@@ -98,7 +99,6 @@ package_zips.platform_dependent:
 	@rm -f release/weld-${OS}.zip
 	@rm -f release/xmcl_transfer-${OS}.zip
 
-	@zip -j release/backup-${OS}.zip $(TARGET_DIR)/nitro_plugin_backup${EXTENSION} plugins/backup/plugin.json
 	@zip -j release/beet-${OS}.zip $(TARGET_DIR)/nitro_plugin_beet${EXTENSION} plugins/beet/plugin.json
 	@zip -j release/cleanup-${OS}.zip $(TARGET_DIR)/nitro_plugin_cleanup${EXTENSION} plugins/cleanup/plugin.json
 	@zip -j release/curseforge_api-${OS}.zip $(TARGET_DIR)/nitro_plugin_curseforge_api${EXTENSION} plugins/curseforge_api/plugin.json
@@ -109,7 +109,6 @@ package_zips.platform_dependent:
 	@zip -j release/modrinth-${OS}.zip $(TARGET_DIR)/nitro_plugin_modrinth${EXTENSION} plugins/modrinth/plugin.json
 	@zip -j release/modrinth_api-${OS}.zip $(TARGET_DIR)/nitro_plugin_modrinth_api${EXTENSION} plugins/modrinth_api/plugin.json plugins/modrinth_api/page.html
 	@zip -j release/multimc_transfer-${OS}.zip $(TARGET_DIR)/nitro_plugin_multimc_transfer${EXTENSION} plugins/multimc_transfer/plugin.json
-	@zip -j release/nitro_transfer-${OS}.zip $(TARGET_DIR)/nitro_plugin_nitro_transfer${EXTENSION} plugins/nitro_transfer/plugin.json
 	@zip -j release/options-${OS}.zip $(TARGET_DIR)/nitro_plugin_options${EXTENSION} plugins/options/plugin.json
 	@zip -j release/packhost-${OS}.zip $(TARGET_DIR)/nitro_plugin_packhost${EXTENSION} plugins/packhost/plugin.json
 	@zip -j release/paper-${OS}.zip $(TARGET_DIR)/nitro_plugin_paper${EXTENSION} plugins/paper/plugin.json
@@ -145,9 +144,9 @@ install.automate:
 	@cp -r ../target/wasm32-wasip2/release/nitro_plugin_automate.wasm ~/.local/share/nitro/plugins/automate/plugin.wasm
 
 install.backup:
-	@cargo install --path . --bin nitro_plugin_backup --offline
-	@mkdir -p ~/.local/share/nitro/plugins/backup
-	@cat plugins/backup/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/backup/plugin.json
+	@cargo build -p nitro_plugin_backup --release --target wasm32-wasip2
+	@cp -r plugins/backup ~/.local/share/nitro/plugins
+	@cp -r ../target/wasm32-wasip2/release/nitro_plugin_backup.wasm ~/.local/share/nitro/plugins/backup/plugin.wasm
 
 install.beet:
 	@cargo install --path . --bin nitro_plugin_beet --offline
