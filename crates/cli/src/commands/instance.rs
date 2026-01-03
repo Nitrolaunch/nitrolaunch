@@ -546,7 +546,8 @@ async fn export(
 	let result_path = if let Some(output) = output {
 		PathBuf::from(output)
 	} else {
-		PathBuf::from(format!("./{instance}.zip"))
+		let current_dir = std::env::current_dir()?;
+		current_dir.join(format!("{instance}.zip"))
 	};
 
 	let instance = config
