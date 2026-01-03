@@ -86,15 +86,11 @@ impl WASMLoader {
 				.context("Failed to compile WASM file")??;
 
 			if let Ok(bytes) = component.serialize() {
-				// Don't block the load on writing the compiled file
-				tokio::spawn(async move {
-					if tokio::fs::write(cached_file_path, bytes).await.is_ok() {
-						if let Some(last_modified) = last_modified {
-							let _ =
-								tokio::fs::write(timestamp_path, last_modified.to_string()).await;
-						}
+				if tokio::fs::write(cached_file_path, bytes).await.is_ok() {
+					if let Some(last_modified) = last_modified {
+						let _ = tokio::fs::write(timestamp_path, last_modified.to_string()).await;
 					}
-				});
+				}
 			}
 
 			component
