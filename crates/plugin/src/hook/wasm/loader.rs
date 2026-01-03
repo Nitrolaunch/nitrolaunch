@@ -25,8 +25,8 @@ impl WASMLoader {
 
 	/// Creates a new WASMLoader with the given cache directory path
 	pub fn with_cache_dir(cache_dir: PathBuf) -> Self {
-		let engine =
-			Engine::new(Config::new().async_support(true)).expect("Failed to create engine");
+		let engine = Engine::new(Config::new().async_support(true).compiler_inlining(false))
+			.expect("Failed to create engine");
 		Self {
 			cache_dir,
 			component_cache: HashMap::new(),
