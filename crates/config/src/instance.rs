@@ -85,6 +85,7 @@ pub struct InstanceConfig {
 
 	/// Config for plugins
 	#[serde(skip_serializing_if = "serde_json::Map::is_empty")]
+	#[serde(flatten)]
 	pub plugin_config: serde_json::Map<String, serde_json::Value>,
 }
 
