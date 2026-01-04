@@ -125,6 +125,15 @@ extern "system" {
 	fn ConnectNamedPipe(hNamedPipe: RawHandle, lpOverlapped: *mut std::ffi::c_void) -> i32;
 }
 
+#[cfg(target_os = "windows")]
+#[repr(C)]
+#[allow(non_snake_case)]
+struct SECURITY_ATTRIBUTES {
+	nLength: u32,
+	lpSecurityDescriptor: *mut std::ffi::c_void,
+	bInheritHandle: i32,
+}
+
 /// Creates a named pipe at the given path to give to a Command
 pub fn create_named_pipe(path: impl AsRef<Path>) -> std::io::Result<std::process::Stdio> {
 	#[cfg(target_family = "unix")]
@@ -165,8 +174,23 @@ pub fn create_named_pipe(path: impl AsRef<Path>) -> std::io::Result<std::process
 
 		const BUFFER_SIZE: u32 = 512;
 
+		let path = format!(
+			"\\\\.\\pipe\\{}",
+			path.as_ref()
+				.file_name()
+				.unwrap_or_default()
+				.to_string_lossy()
+		);
+
+		let c_path = CString::new(path).unwrap();
+
+		let security_attributes = SECURITY_ATTRIBUTES {
+			nLength: std::mem::size_of::<SECURITY_ATTRIBUTES>() as u32,
+			lpSecurityDescriptor: std::ptr::null_mut(),
+			bInheritHandle: 1,
+		};
+
 		// Open the named pipe if it doesn't already exist
-		let c_path = CString::new(path.as_ref().to_string_lossy().as_bytes()).unwrap();
 		let pipe_handle = unsafe {
 			CreateNamedPipeA(
 				c_path.as_ptr(),
@@ -176,7 +200,7 @@ pub fn create_named_pipe(path: impl AsRef<Path>) -> std::io::Result<std::process
 				BUFFER_SIZE,
 				BUFFER_SIZE,
 				0,
-				std::ptr::null_mut(),
+				&mut security_attributes as *mut _ as *mut _,
 			)
 		};
 
@@ -184,11 +208,11 @@ pub fn create_named_pipe(path: impl AsRef<Path>) -> std::io::Result<std::process
 			return Err(std::io::Error::last_os_error());
 		}
 
-		unsafe {
-			if ConnectNamedPipe(pipe_handle, std::ptr::null_mut()) == 0 {
-				return Err(std::io::Error::last_os_error());
-			}
-		}
+		// unsafe {
+		// 	if ConnectNamedPipe(pipe_handle, std::ptr::null_mut()) == 0 {
+		// 		return Err(std::io::Error::last_os_error());
+		// 	}
+		// }
 
 		unsafe { Ok(std::process::Stdio::from_raw_handle(pipe_handle)) }
 	}
