@@ -391,11 +391,7 @@ function ActionButton(props: ActionButtonProps) {
 				props.mode == FooterMode.SaveInstanceConfig
 			) {
 				return "var(--instancebg)";
-			} else if (
-				props.mode == FooterMode.Template ||
-				props.mode == FooterMode.SaveTemplateConfig ||
-				props.mode == FooterMode.SaveSettings
-			) {
+			} else if (props.mode == FooterMode.Template) {
 				return "var(--templatebg)";
 			} else if (
 				props.mode == FooterMode.PreviewPackage ||
@@ -413,11 +409,7 @@ function ActionButton(props: ActionButtonProps) {
 				props.mode == FooterMode.SaveInstanceConfig
 			) {
 				return "var(--instance)";
-			} else if (
-				props.mode == FooterMode.Template ||
-				props.mode == FooterMode.SaveTemplateConfig ||
-				props.mode == FooterMode.SaveSettings
-			) {
+			} else if (props.mode == FooterMode.Template) {
 				return "var(--template)";
 			} else if (
 				props.mode == FooterMode.PreviewPackage ||
@@ -437,11 +429,7 @@ function ActionButton(props: ActionButtonProps) {
 			}
 		} else if (props.mode == FooterMode.Template) {
 			return "Edit";
-		} else if (
-			props.mode == FooterMode.SaveInstanceConfig ||
-			props.mode == FooterMode.SaveTemplateConfig ||
-			props.mode == FooterMode.SaveSettings
-		) {
+		} else if (props.mode == FooterMode.SaveInstanceConfig) {
 			return "Save";
 		} else if (props.mode == FooterMode.PreviewPackage) {
 			return "Open";
@@ -458,11 +446,7 @@ function ActionButton(props: ActionButtonProps) {
 			}
 		} else if (props.mode == FooterMode.Template) {
 			return <Gear />;
-		} else if (
-			props.mode == FooterMode.SaveInstanceConfig ||
-			props.mode == FooterMode.SaveTemplateConfig ||
-			props.mode == FooterMode.SaveSettings
-		) {
+		} else if (props.mode == FooterMode.SaveInstanceConfig) {
 			return <Check />;
 		} else if (props.mode == FooterMode.PreviewPackage) {
 			return <Box />;
@@ -498,10 +482,8 @@ export enum FooterMode {
 	Instance = "instance",
 	Template = "template",
 	SaveInstanceConfig = "save_instance_config",
-	SaveTemplateConfig = "save_template_config",
 	PreviewPackage = "preview_package",
 	InstallPackage = "install_package",
-	SaveSettings = "save_settings",
 }
 
 // Launches an instance

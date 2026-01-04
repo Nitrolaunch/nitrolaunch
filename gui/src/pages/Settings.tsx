@@ -3,23 +3,14 @@ import { createEffect, createResource, createSignal, Show } from "solid-js";
 import { Theme } from "../types";
 import Tip from "../components/dialog/Tip";
 import InlineSelect from "../components/input/select/InlineSelect";
-import { FooterData } from "../App";
-import { FooterMode } from "../components/navigation/Footer";
 import { errorToast, successToast } from "../components/dialog/Toasts";
 import { emit } from "@tauri-apps/api/event";
 import IconTextButton from "../components/input/button/IconTextButton";
-import { Folder } from "../icons";
+import { Check, Delete, Folder, Gear } from "../icons";
+import Modal, { ModalButton } from "../components/dialog/Modal";
 
 export default function Settings(props: SettingsProps) {
-	createEffect(() => {
-		props.setFooterData({
-			mode: FooterMode.SaveSettings,
-			selectedItem: undefined,
-			action: saveSettings,
-		});
-	});
-
-	let [settings, _] = createResource(
+	let [settings, settingsMethods] = createResource(
 		async () => (await invoke("get_settings")) as LauncherSettings
 	);
 
@@ -43,6 +34,15 @@ export default function Settings(props: SettingsProps) {
 		].concat(themes);
 
 		return themes;
+	});
+
+	let [isDirty, setIsDirty] = createSignal(false);
+
+	createEffect(() => {
+		if (props.isVisible) {
+			setIsDirty(false);
+			settingsMethods.refetch();
+		}
 	});
 
 	let [theme, setTheme] = createSignal<string>("dark");
@@ -69,11 +69,7 @@ export default function Settings(props: SettingsProps) {
 			await invoke("write_settings", { settings: newSettings });
 			successToast("Changes saved");
 
-			props.setFooterData({
-				mode: FooterMode.SaveSettings,
-				selectedItem: undefined,
-				action: saveSettings,
-			});
+			setIsDirty(false);
 
 			emit("update_theme", theme());
 		} catch (e) {
@@ -81,48 +77,64 @@ export default function Settings(props: SettingsProps) {
 		}
 	}
 
-	function setDirty() {
-		props.setFooterData({
-			mode: FooterMode.SaveSettings,
-			selectedItem: "",
-			action: saveSettings,
-		});
-	}
+	let buttons = () => {
+		let saveButton: ModalButton = {
+			text: "Save",
+			icon: Check,
+			color: isDirty() ? "var(--template)" : "var(--bg3)",
+			bgColor: isDirty() ? "var(--templatebg)" : undefined,
+			onClick: saveSettings,
+		};
+
+		return [
+			{
+				text: "Cancel",
+				icon: Delete,
+				onClick: props.onClose,
+			},
+			saveButton,
+		] as ModalButton[];
+	};
 
 	return (
-		<div id="plugins">
-			<h1 class="noselect">Settings</h1>
+		<Modal
+			width="60rem"
+			height="35rem"
+			titleIcon={Gear}
+			title="Settings"
+			visible={props.isVisible}
+			onClose={props.onClose}
+			buttons={buttons()}
+		>
 			<div class="cont fullwidth">
 				<div class="cont fields">
 					<div class="cont start label">
 						<label for="theme">THEME</label>
 					</div>
-					<Tip tip="The launcher theme to use" fullwidth>
-						<Show when={availableThemes() != undefined}>
-							<InlineSelect
-								onChange={(x) => {
-									setTheme(x as string);
-									setDirty();
-								}}
-								selected={theme()}
-								options={availableThemes()!.map((theme) => {
-									return {
-										value: theme.id,
-										contents: <div>{theme.name}</div>,
-										tip: theme.description,
-										color: theme.color,
-										selectedTextColor: "var(--fg)",
-									};
-								})}
-								columns={1}
-								allowEmpty={false}
-								connected={false}
-							/>
-						</Show>
-					</Tip>
+					<Show when={availableThemes() != undefined}>
+						<InlineSelect
+							onChange={(x) => {
+								setTheme(x as string);
+								setIsDirty(true);
+							}}
+							selected={theme()}
+							options={availableThemes()!.map((theme) => {
+								return {
+									value: theme.id,
+									contents: <div>{theme.name}</div>,
+									tip: theme.description,
+									color: theme.color,
+									selectedTextColor: "var(--fg)",
+								};
+							})}
+							columns={3}
+							allowEmpty={false}
+							connected={false}
+						/>
+					</Show>
 					<Tip
 						tip="Open the folder where Nitrolaunch stores its instances and data"
-						fullwidth
+						side="top"
 					>
 						<div class="cont">
 							<IconTextButton
@@ -135,16 +147,13 @@ export default function Settings(props: SettingsProps) {
 					</Tip>
 				</div>
 			</div>
-			<br />
-			<br />
-			<br />
-			<br />
-		</div>
+		</Modal>
 	);
 }
 
 export interface SettingsProps {
-	setFooterData: (data: FooterData) => void;
+	isVisible: boolean;
+	onClose: () => void;
 }
 
 // Global launcher settings

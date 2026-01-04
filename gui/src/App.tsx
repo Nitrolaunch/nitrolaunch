@@ -15,7 +15,6 @@ import Footer, { FooterMode } from "./components/navigation/Footer";
 import InstanceInfo from "./pages/instance/InstanceInfo";
 import UserPage from "./pages/user/UserPage";
 import Global from "./Global";
-import Settings from "./pages/Settings";
 import "./components/package/PackageDescription.css";
 import ModalBase from "./components/dialog/ModalBase";
 import WelcomePrompt from "./components/dialog/WelcomePrompt";
@@ -73,10 +72,6 @@ export default function App() {
 				/>
 				<Route path="/users/:userId" component={() => <UserPage />} />
 				<Route path="/plugins" component={() => <Plugins />} />
-				<Route
-					path="/settings"
-					component={() => <Settings setFooterData={setFooterData} />}
-				/>
 				<Route path="/docs" component={() => <Docs />} />
 				<Route path="/custom/:page" component={() => <CustomPluginPage />} />
 			</Router>

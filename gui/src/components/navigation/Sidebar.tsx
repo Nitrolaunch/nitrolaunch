@@ -17,6 +17,8 @@ import Icon from "../Icon";
 import IconButton from "../input/button/IconButton";
 import { setInstanceConfigModal } from "../../App";
 import { InstanceConfigMode } from "../../pages/instance/read_write";
+import Settings from "../../pages/Settings";
+import { Portal } from "solid-js/web";
 
 export default function Sidebar(props: SidebarProps) {
 	let [extraButtons, _] = createResource(async () => {
@@ -95,6 +97,8 @@ export default function Sidebar(props: SidebarProps) {
 		}
 	});
 
+	let [settingsVisible, setSettingsVisible] = createSignal(false);
+
 	return (
 		<div
 			id="sidebar"
@@ -108,23 +112,26 @@ export default function Sidebar(props: SidebarProps) {
 				style="padding:0.25rem;width:var(--width);box-sizing:border-box"
 			></div>
 			<div class="cont start">
-				<a
-					href="/settings"
+				<div
 					class="cont"
 					style="color:var(--fg);padding:0.55rem"
-					onclick={() => props.setVisible(false)}
+					onclick={() => {
+						setSettingsVisible(true);
+						props.setVisible(false);
+					}}
 				>
 					<IconButton
 						icon={Gear}
 						size="1.75rem"
-						color="var(--bg0)"
+						color="var(--bg2)"
 						selectedColor="var(--accent)"
 						onClick={() => {}}
 						selected={false}
-						circle
-						hoverBackground="var(--bg2)"
+						hoverBackground="var(--bg3)"
+						border="var(--bg3)"
+						hoverBorder="var(--bg4)"
 					/>
-				</a>
+				</div>
 			</div>
 			<div id="sidebar-items">
 				<SidebarItem
@@ -235,6 +242,12 @@ export default function Sidebar(props: SidebarProps) {
 					}}
 				</For>
 			</div>
+			<Portal>
+				<Settings
+					isVisible={settingsVisible()}
+					onClose={() => setSettingsVisible(false)}
+				/>
+			</Portal>
 		</div>
 	);
 }
