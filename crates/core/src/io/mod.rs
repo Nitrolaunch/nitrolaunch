@@ -122,7 +122,7 @@ extern "system" {
 		lpSecurityAttributes: *mut std::ffi::c_void,
 	) -> RawHandle;
 
-	fn ConnectNamedPipe(hNamedPipe: RawHandle, lpOverlapped: *mut std::ffi::c_void) -> i32;
+	// fn ConnectNamedPipe(hNamedPipe: RawHandle, lpOverlapped: *mut std::ffi::c_void) -> i32;
 }
 
 #[cfg(target_os = "windows")]
