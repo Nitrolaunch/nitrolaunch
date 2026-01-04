@@ -112,7 +112,7 @@ export async function getSupportedLoaders(): Promise<string[]> {
 export function getUserIcon(uuid?: string) {
 	return uuid == undefined
 		? "/default_skin.png"
-		: `https://crafatar.com/avatars/${uuid}?overlay`;
+		: `https://avatars.cloudhaven.gg/avatars/${uuid}?overlay`;
 }
 
 // Formats a big number
