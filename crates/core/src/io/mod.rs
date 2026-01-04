@@ -184,7 +184,7 @@ pub fn create_named_pipe(path: impl AsRef<Path>) -> std::io::Result<std::process
 
 		let c_path = CString::new(path).unwrap();
 
-		let security_attributes = SECURITY_ATTRIBUTES {
+		let mut security_attributes = SECURITY_ATTRIBUTES {
 			nLength: std::mem::size_of::<SECURITY_ATTRIBUTES>() as u32,
 			lpSecurityDescriptor: std::ptr::null_mut(),
 			bInheritHandle: 1,
