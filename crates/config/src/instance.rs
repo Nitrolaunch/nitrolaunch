@@ -108,13 +108,29 @@ impl InstanceConfig {
 		self.side = other.side.or(self.side);
 		self.window.merge(other.window);
 
-		// These properties are not derived an instead just overrided
+		// These properties are not derived and instead just overrided
 		self.game_dir = other.game_dir;
 		self.source_plugin = other.source_plugin;
 		self.is_editable = other.is_editable;
 		self.is_deletable = other.is_deletable;
 		self.custom_launch = other.custom_launch;
 		self.imported = other.imported;
+	}
+
+	/// Removes fields that only plugins should be able to edit, for when serializing to user config
+	pub fn remove_plugin_only_fields(&mut self) {
+		self.source_plugin = None;
+		self.is_editable = false;
+		self.is_deletable = false;
+		self.custom_launch = false;
+	}
+
+	/// Restores plugin-only fields to a config from a config with them
+	pub fn restore_plugin_only_fields(&mut self, original_config: &Self) {
+		self.source_plugin = original_config.source_plugin.clone();
+		self.is_editable = original_config.is_editable;
+		self.is_deletable = original_config.is_deletable;
+		self.custom_launch = original_config.custom_launch;
 	}
 }
 

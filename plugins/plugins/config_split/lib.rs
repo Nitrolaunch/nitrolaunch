@@ -52,10 +52,7 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 			let _ = std::fs::create_dir_all(&dir);
 		}
 
-		// We don't want to serialize these
-		arg.config.source_plugin = None;
-		arg.config.is_editable = false;
-		arg.config.is_deletable = false;
+		arg.config.remove_plugin_only_fields();
 
 		save_config_file(&dir, &arg.id, arg.config)
 	})?;
@@ -67,10 +64,7 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 			let _ = std::fs::create_dir_all(&dir);
 		}
 
-		// We don't want to serialize these
-		arg.config.instance.source_plugin = None;
-		arg.config.instance.is_editable = false;
-		arg.config.instance.is_deletable = false;
+		arg.config.instance.remove_plugin_only_fields();
 
 		save_config_file(&dir, &arg.id, arg.config)
 	})?;

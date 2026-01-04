@@ -1,5 +1,5 @@
 use crate::{
-	commands::call_plugin_subcommand,
+	commands::{call_plugin_subcommand, config::edit_temp_file},
 	output::{icons_enabled, HYPHEN_POINT, INSTANCE, LOADER, PACKAGE, VERSION},
 };
 use std::ops::DerefMut;
@@ -16,7 +16,7 @@ use nitrolaunch::{
 		modifications::{apply_modifications_and_write, ConfigModification},
 		Config,
 	},
-	config_crate::template::TemplateLoaderConfiguration,
+	config_crate::template::{TemplateConfig, TemplateLoaderConfiguration},
 	core::util::versions::MinecraftVersion,
 	plugin_crate::hook::hooks::DeleteTemplate,
 	shared::{
@@ -37,6 +37,11 @@ pub enum TemplateSubcommand {
 	},
 	#[command(about = "Print useful information about a template")]
 	Info { template: Option<String> },
+	#[command(about = "Edit configuration for a template")]
+	Edit {
+		/// The template to edit
+		template: Option<String>,
+	},
 	#[command(about = "Delete a template forever")]
 	Delete {
 		/// The template to delete
@@ -51,6 +56,7 @@ pub async fn run(subcommand: TemplateSubcommand, data: &mut CmdData<'_>) -> anyh
 		TemplateSubcommand::List { raw } => list(data, raw).await,
 		TemplateSubcommand::Info { template } => info(data, template).await,
 		TemplateSubcommand::Delete { template } => delete(data, template).await,
+		TemplateSubcommand::Edit { template } => edit(data, template).await,
 		TemplateSubcommand::External(args) => {
 			call_plugin_subcommand(args, Some("template"), data).await
 		}
@@ -217,6 +223,51 @@ async fn delete(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()
 
 	process.display(
 		MessageContents::Success("Template deleted".into()),
+		MessageLevel::Important,
+	);
+
+	Ok(())
+}
+
+async fn edit(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()> {
+	data.ensure_config(true).await?;
+	let mut raw_config = data.get_raw_config()?;
+	let config = data.config.get_mut();
+
+	let id = pick_template(id, config)?;
+
+	let template = config
+		.templates
+		.get_mut(&id)
+		.with_context(|| format!("Unknown template '{id}'"))?;
+
+	let mut temp_config = template.clone();
+	if temp_config.instance.source_plugin.is_some() && !temp_config.instance.is_editable {
+		bail!("This plugin template does not support editing");
+	}
+	temp_config.instance.remove_plugin_only_fields();
+
+	let text = serde_json::to_string_pretty(&temp_config).context("Failed to serialize config")?;
+	let edited = edit_temp_file(&text, &format!("Editing template {id}"), &data.paths)?;
+	let mut new_config: TemplateConfig = serde_json::from_str(&edited)
+		.context("Failed to serialize. Make sure your config is valid JSON")?;
+	new_config
+		.instance
+		.restore_plugin_only_fields(&temp_config.instance);
+
+	let modifications = vec![ConfigModification::AddTemplate(id.into(), new_config)];
+	apply_modifications_and_write(
+		&mut raw_config,
+		modifications,
+		&data.paths,
+		&config.plugins,
+		data.output,
+	)
+	.await
+	.context("Failed to modify and write config")?;
+
+	data.output.display(
+		MessageContents::Success("Changes saved".into()),
 		MessageLevel::Important,
 	);
 

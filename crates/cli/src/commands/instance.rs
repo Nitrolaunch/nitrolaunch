@@ -28,6 +28,7 @@ use reqwest::Client;
 
 use super::CmdData;
 use crate::commands::call_plugin_subcommand;
+use crate::commands::config::edit_temp_file;
 use crate::output::{icons_enabled, HYPHEN_POINT, INSTANCE, LOADER, PACKAGE, VERSION};
 use crate::secrets::get_ms_client_id;
 
@@ -43,6 +44,8 @@ pub enum InstanceSubcommand {
 		#[arg(short, long)]
 		side: Option<Side>,
 	},
+	#[command(about = "Print useful information about an instance")]
+	Info { instance: Option<String> },
 	#[command(about = "Launch instances to play the game")]
 	Launch {
 		/// An optional user to choose when launching
@@ -58,8 +61,6 @@ pub enum InstanceSubcommand {
 		/// The instance to launch
 		instance: Option<String>,
 	},
-	#[command(about = "Print useful information about an instance")]
-	Info { instance: Option<String> },
 	#[command(about = "Update versions, files, and packages of an instance")]
 	Update {
 		/// Whether to force update files that have already been downloaded
@@ -77,13 +78,18 @@ pub enum InstanceSubcommand {
 		/// The instances to update
 		instances: Vec<String>,
 	},
-	#[command(about = "Print the directory of an instance")]
-	Dir {
-		/// The instance to print the directory of
-		instance: Option<String>,
-	},
 	#[command(about = "Easily create a new instance")]
 	Add,
+	#[command(about = "Delete an instance and its files forever")]
+	Delete {
+		/// The instance to delete
+		instance: Option<String>,
+	},
+	#[command(about = "Edit configuration for an instance")]
+	Edit {
+		/// The instance to edit
+		instance: Option<String>,
+	},
 	#[command(about = "Import an instance from another launcher")]
 	Import {
 		/// The path to the instance
@@ -105,9 +111,9 @@ pub enum InstanceSubcommand {
 		#[arg(short, long)]
 		output: Option<String>,
 	},
-	#[command(about = "Delete an instance and its files forever")]
-	Delete {
-		/// The instance to delete
+	#[command(about = "Print the directory of an instance")]
+	Dir {
+		/// The instance to print the directory of
 		instance: Option<String>,
 	},
 	#[clap(external_subcommand)]
@@ -144,6 +150,7 @@ pub async fn run(command: InstanceSubcommand, mut data: CmdData<'_>) -> anyhow::
 			output,
 		} => export(&mut data, instance, format, output).await,
 		InstanceSubcommand::Delete { instance } => delete(&mut data, instance).await,
+		InstanceSubcommand::Edit { instance } => edit(&mut data, instance).await,
 		InstanceSubcommand::External(args) => {
 			call_plugin_subcommand(args, Some("instance"), &mut data).await
 		}
@@ -642,6 +649,49 @@ async fn delete(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()
 
 	process.display(
 		MessageContents::Success("Instance deleted".into()),
+		MessageLevel::Important,
+	);
+
+	Ok(())
+}
+
+async fn edit(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()> {
+	data.ensure_config(true).await?;
+	let mut raw_config = data.get_raw_config()?;
+	let config = data.config.get_mut();
+
+	let id = pick_instance(id, config)?;
+
+	let instance = config
+		.instances
+		.get_mut(&id)
+		.with_context(|| format!("Unknown instance '{id}'"))?;
+
+	let mut inst_config = instance.get_config().original_config.clone();
+	if inst_config.source_plugin.is_some() && !inst_config.is_editable {
+		bail!("This plugin instance does not support editing");
+	}
+	inst_config.remove_plugin_only_fields();
+
+	let text = serde_json::to_string_pretty(&inst_config).context("Failed to serialize config")?;
+	let edited = edit_temp_file(&text, &format!("Editing instance {id}"), &data.paths)?;
+	let mut new_config: InstanceConfig = serde_json::from_str(&edited)
+		.context("Failed to serialize. Make sure your config is valid JSON")?;
+	new_config.restore_plugin_only_fields(&inst_config);
+
+	let modifications = vec![ConfigModification::AddInstance(id.into(), new_config)];
+	apply_modifications_and_write(
+		&mut raw_config,
+		modifications,
+		&data.paths,
+		&config.plugins,
+		data.output,
+	)
+	.await
+	.context("Failed to modify and write config")?;
+
+	data.output.display(
+		MessageContents::Success("Changes saved".into()),
 		MessageLevel::Important,
 	);
 

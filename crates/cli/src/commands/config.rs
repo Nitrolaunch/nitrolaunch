@@ -4,8 +4,9 @@ use super::CmdData;
 
 use anyhow::Context;
 use clap::Subcommand;
-use nitrolaunch::config::Config;
+use nitrolaunch::core::io::files::create_leading_dirs;
 use nitrolaunch::plugin::PluginManager;
+use nitrolaunch::{config::Config, io::paths::Paths};
 
 use std::{path::PathBuf, process::Command};
 
@@ -68,6 +69,19 @@ async fn backup(data: &mut CmdData<'_>) -> anyhow::Result<()> {
 		.context("Failed to backup plugin config file")?;
 
 	Ok(())
+}
+
+/// Creates a temporary file with the given text and opens it in the user's editor,
+/// returning the resulting edited text
+pub fn edit_temp_file(text: &str, title: &str, paths: &Paths) -> anyhow::Result<String> {
+	let path = paths.config.join("temp").join(title);
+	create_leading_dirs(&path)?;
+
+	std::fs::write(&path, text).context("Failed to write to temp file")?;
+
+	edit_text(path.clone()).context("Failed to edit")?;
+
+	std::fs::read_to_string(&path).context("Failed to read resulting edit file")
 }
 
 /// Run the text editor on the user's system
