@@ -13,7 +13,7 @@ import "@thisbeyond/solid-select/style.css";
 import { PackageMeta, PackageProperties } from "../../types";
 import { marked } from "marked";
 import { errorToast } from "../../components/dialog/Toasts";
-import { FooterData } from "../../App";
+import { FooterData, replaceExternalLinks } from "../../App";
 import { FooterMode } from "../../components/navigation/Footer";
 import Icon, { HasWidthHeight } from "../../components/Icon";
 import {
@@ -33,7 +33,12 @@ import {
 } from "../../icons";
 import PackageLabels from "../../components/package/PackageLabels";
 import { RepoInfo } from "../../package";
-import { beautifyString, formatNumber, parsePkgRequest, parseQueryString } from "../../utils";
+import {
+	beautifyString,
+	formatNumber,
+	parsePkgRequest,
+	parseQueryString,
+} from "../../utils";
 import PackageVersions from "../../components/package/PackageVersions";
 import PackageInstallModal from "../../components/package/PackageInstallModal";
 import { canonicalizeListOrSingle } from "../../utils/values";
@@ -111,6 +116,7 @@ export default function ViewPackage(props: ViewPackageProps) {
 			let longDescriptionHtml = `<div>${await marked.parse(
 				longDescription
 			)}</div>`;
+			longDescriptionHtml = replaceExternalLinks(longDescriptionHtml);
 			setLongDescription(longDescriptionHtml);
 
 			setProperties(properties);
@@ -165,13 +171,15 @@ export default function ViewPackage(props: ViewPackageProps) {
 									<Show when={repoInfo() != undefined}>
 										<div
 											id="package-repo"
-											style={`background-color:${repoInfo()!.meta.color == undefined
-												? "var(--fg2)"
-												: repoInfo()!.meta.color
-												};color:${repoInfo()!.meta.text_color == undefined
+											style={`background-color:${
+												repoInfo()!.meta.color == undefined
+													? "var(--fg2)"
+													: repoInfo()!.meta.color
+											};color:${
+												repoInfo()!.meta.text_color == undefined
 													? "var(--bg)"
 													: repoInfo()!.meta.text_color
-												}`}
+											}`}
 										>
 											{beautifyString(repoInfo()!.id).toLocaleUpperCase()}
 										</div>
@@ -179,7 +187,9 @@ export default function ViewPackage(props: ViewPackageProps) {
 									<Show when={properties()!.types != undefined}>
 										<PackageLabels
 											categories={
-												meta()!.categories == undefined ? [] : meta()!.categories!
+												meta()!.categories == undefined
+													? []
+													: meta()!.categories!
 											}
 											loaders={
 												properties()!.supported_loaders == undefined
@@ -190,7 +200,11 @@ export default function ViewPackage(props: ViewPackageProps) {
 												properties()!.types
 											)}
 											tags
-											tiny={canonicalizeListOrSingle(properties()!.supported_loaders).length > 3}
+											tiny={
+												canonicalizeListOrSingle(
+													properties()!.supported_loaders
+												).length > 3
+											}
 										/>
 									</Show>
 								</div>
@@ -198,7 +212,10 @@ export default function ViewPackage(props: ViewPackageProps) {
 									{shortDescription()}
 								</div>
 								<Show when={meta()!.downloads != undefined}>
-									<div class="cont start bold" style="color: var(--fg3);gap:0.2rem">
+									<div
+										class="cont start bold"
+										style="color: var(--fg3);gap:0.2rem"
+									>
 										<Icon icon={Download} size="1rem" />
 										{formatNumber(meta()!.downloads!)}
 									</div>
@@ -210,24 +227,27 @@ export default function ViewPackage(props: ViewPackageProps) {
 						<div id="package-body">
 							<div class="package-shadow" id="package-tabs">
 								<div
-									class={`cont package-tab ${selectedTab() == "description" ? "selected" : ""
-										}`}
+									class={`cont package-tab ${
+										selectedTab() == "description" ? "selected" : ""
+									}`}
 									onclick={() => setSelectedTab("description")}
 								>
 									<Icon icon={Text} size="1rem" />
 									Description
 								</div>
 								<div
-									class={`cont package-tab ${selectedTab() == "versions" ? "selected" : ""
-										}`}
+									class={`cont package-tab ${
+										selectedTab() == "versions" ? "selected" : ""
+									}`}
 									onclick={() => setSelectedTab("versions")}
 								>
 									<Icon icon={Folder} size="1rem" />
 									Versions
 								</div>
 								<div
-									class={`cont package-tab ${selectedTab() == "gallery" ? "selected" : ""
-										}`}
+									class={`cont package-tab ${
+										selectedTab() == "gallery" ? "selected" : ""
+									}`}
 									onclick={() => setSelectedTab("gallery")}
 								>
 									<Icon icon={Picture} size="1rem" />
@@ -357,22 +377,24 @@ function Property(props: PropertyProps) {
 }
 
 function OpenButton({ url }: { url: string | undefined }) {
-	return <IconButton
-		icon={Popout}
-		size="1.5rem"
-		color="var(--bg2)"
-		hoverBackground="var(--bg3)"
-		onClick={async () => {
-			if (url != undefined) {
-				try {
-					await open(url);
-				} catch (e) {
-					console.error(e);
-					new WebviewWindow("external", { url: url, title: "External Site" });
+	return (
+		<IconButton
+			icon={Popout}
+			size="1.5rem"
+			color="var(--bg2)"
+			hoverBackground="var(--bg3)"
+			onClick={async () => {
+				if (url != undefined) {
+					try {
+						await open(url);
+					} catch (e) {
+						console.error(e);
+						new WebviewWindow("external", { url: url, title: "External Site" });
+					}
 				}
-			}
-		}}
-	/>;
+			}}
+		/>
+	);
 }
 
 interface PropertyProps {

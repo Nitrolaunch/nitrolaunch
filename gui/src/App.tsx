@@ -24,6 +24,7 @@ import { InstanceConfigMode } from "./pages/instance/read_write";
 import InstanceConfigModal, {
 	InstanceConfigParams,
 } from "./pages/instance/InstanceConfig";
+import { open } from "@tauri-apps/plugin-shell";
 
 export default function App() {
 	const [footerData, setFooterData] = createSignal<FooterData>({
@@ -125,6 +126,14 @@ function Layout(props: LayoutProps) {
 		}
 	});
 
+	// Function to fix links to external pages opening in the webview and bricking the app
+	onMount(() => {
+		(window as any).externalLinkOnClick = (e: PointerEvent) => {
+			e.preventDefault();
+			open((e.target as any).href);
+		};
+	});
+
 	return (
 		<>
 			<Global />
@@ -205,4 +214,9 @@ export function setInstanceConfigModal(
 		mode: mode,
 		creating: creating,
 	});
+}
+
+// Replaces external links with opens to the user's browser in the given HTML
+export function replaceExternalLinks(html: string): string {
+	return html.replace(/<a /g, '<a onclick="externalLinkOnClick(event)" ');
 }

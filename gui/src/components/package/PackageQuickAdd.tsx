@@ -21,6 +21,7 @@ import InlineSelect from "../input/select/InlineSelect";
 import Icon from "../Icon";
 import { Plus } from "../../icons";
 import IconTextButton from "../input/button/IconTextButton";
+import { replaceExternalLinks } from "../../App";
 
 export default function PackageQuickAdd(props: PackageQuickAddProps) {
 	let [search, setSearch] = createSignal<string | undefined>(undefined);
@@ -87,6 +88,7 @@ export default function PackageQuickAdd(props: PackageQuickAddProps) {
 				let longDescriptionHtml = `<div>${await marked.parse(
 					longDescription
 				)}</div>`;
+				longDescriptionHtml = replaceExternalLinks(longDescriptionHtml);
 				setLongDescription(longDescriptionHtml);
 
 				return [meta, props] as [PackageMeta, PackageProperties];
@@ -107,9 +109,9 @@ export default function PackageQuickAdd(props: PackageQuickAddProps) {
 							setFinalRepo(x);
 							packageMethods.refetch();
 						}}
-						setRepoCategories={() => { }}
-						setRepoPackageTypes={() => { }}
-						setRepoColor={() => { }}
+						setRepoCategories={() => {}}
+						setRepoPackageTypes={() => {}}
+						setRepoColor={() => {}}
 					/>
 				</div>
 				<div class="split fullwidth">
@@ -184,8 +186,9 @@ export default function PackageQuickAdd(props: PackageQuickAddProps) {
 
 							return (
 								<div
-									class={`package-quick-add-option bubble-hover ${isSelected() ? "selected" : ""
-										}`}
+									class={`package-quick-add-option bubble-hover ${
+										isSelected() ? "selected" : ""
+									}`}
 									onclick={() => {
 										setPreviewedPackage(pkg.id);
 									}}
