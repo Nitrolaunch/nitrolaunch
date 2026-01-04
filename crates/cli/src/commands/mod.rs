@@ -80,6 +80,7 @@ pub enum Command {
 		command: FilesSubcommand,
 	},
 	#[command(about = "Do operations with instance templates")]
+	#[clap(alias = "temp")]
 	Template {
 		#[command(subcommand)]
 		command: TemplateSubcommand,
