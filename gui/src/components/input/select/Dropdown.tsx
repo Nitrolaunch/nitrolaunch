@@ -162,7 +162,8 @@ export default function Dropdown(props: DropdownProps) {
 							}}
 							onfocusout={() => {
 								if (props.startOpen == true) {
-									close();
+									// Prevent this from overriding clicking an option
+									setTimeout(close, 100);
 								}
 							}}
 							ref={searchElement}
@@ -326,10 +327,7 @@ function DropdownOption(props: OptionProps) {
 					: ""
 			}`}
 			onclick={() => {
-				if (
-					props.option.isSelectable == undefined ||
-					props.option.isSelectable == true
-				) {
+				if (props.option.isSelectable != false) {
 					props.onSelect(props.option.value);
 				}
 			}}

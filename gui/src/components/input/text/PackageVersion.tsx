@@ -16,7 +16,6 @@ export default function PackageVersion(props: PackageVersionProps) {
 	createEffect(() => {
 		if (newVersion() != undefined) {
 			if (props.onStartEdit != undefined) {
-				console.log("Here 5");
 				props.onStartEdit!();
 			}
 

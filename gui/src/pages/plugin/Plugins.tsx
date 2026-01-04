@@ -50,18 +50,24 @@ export default function Plugins() {
 		async () => (await invoke("get_local_plugins")) as PluginInfo[]
 	);
 	let [remotePlugins, remoteMethods] = createResource(
-		async () => (await invoke("get_remote_plugins", { offline: false })) as PluginInfo[]
+		async () =>
+			(await invoke("get_remote_plugins", { offline: false })) as PluginInfo[]
 	);
 	let [noDownloadRemotePlugins, _] = createResource(
-		async () => (await invoke("get_remote_plugins", { offline: true })) as PluginInfo[]
+		async () =>
+			(await invoke("get_remote_plugins", { offline: true })) as PluginInfo[]
 	);
 	let [isRemote, setIsRemote] = createSignal(false);
 	let [restartNeeded, setRestartNeeded] = createSignal(false);
 
 	// Current plugin that we are showing a versions dropdown for
-	let [pluginSelectedForVersions, setPluginSelectedForVersions] = createSignal<string | undefined>();
+	let [pluginSelectedForVersions, setPluginSelectedForVersions] = createSignal<
+		string | undefined
+	>();
 	// Cache map of plugin to available versions
-	let [pluginVersions, setPluginVersions] = createSignal<{ [plugin: string]: string[] }>({});
+	let [pluginVersions, setPluginVersions] = createSignal<{
+		[plugin: string]: string[];
+	}>({});
 
 	createEffect(async () => {
 		if (pluginSelectedForVersions() == undefined) {
@@ -72,11 +78,13 @@ export default function Plugins() {
 		}
 
 		try {
-			let versions: string[] = await invoke("get_plugin_versions", { plugin: pluginSelectedForVersions()! });
+			let versions: string[] = await invoke("get_plugin_versions", {
+				plugin: pluginSelectedForVersions()!,
+			});
 			setPluginVersions((versionsMap) => {
 				versionsMap[pluginSelectedForVersions()!] = versions;
 				return { ...versionsMap };
-			})
+			});
 		} catch (e) {
 			errorToast("Failed to fetch available plugin versions: " + e);
 		}
@@ -127,7 +135,7 @@ export default function Plugins() {
 								icon: Globe,
 								color: "var(--plugin)",
 								bgColor: "var(--pluginbg)",
-							}
+							},
 						]}
 						selectedTab={isRemote() ? "remote" : "local"}
 						setTab={(tab) => {
@@ -140,7 +148,9 @@ export default function Plugins() {
 			<div class="cont col" id="plugin-list">
 				<For each={localPlugins()}>
 					{(info) => {
-						let isOfficial = () => noDownloadRemotePlugins() != undefined && noDownloadRemotePlugins()!.some((x) => x.is_official);
+						let isOfficial = () =>
+							noDownloadRemotePlugins() != undefined &&
+							noDownloadRemotePlugins()!.some((x) => x.is_official);
 
 						return (
 							<Show when={!isRemote()}>
@@ -178,7 +188,9 @@ export default function Plugins() {
 										}}
 										setDirty={() => setRestartNeeded(true)}
 										isOfficial={info.is_official}
-										onChangeVersion={() => setPluginSelectedForVersions(info.id)}
+										onChangeVersion={() =>
+											setPluginSelectedForVersions(info.id)
+										}
 										availableVersions={() => getAvailableVersions(info.id)}
 									/>
 								</Show>
@@ -297,8 +309,8 @@ function Plugin(props: PluginProps) {
 							props.info.installed
 								? "Uninstall"
 								: inProgress()
-									? "Installing..."
-									: "Install"
+								? "Installing..."
+								: "Install"
 						}
 						side="top"
 					>
