@@ -99,6 +99,10 @@ export default function Sidebar(props: SidebarProps) {
 
 	let [settingsVisible, setSettingsVisible] = createSignal(false);
 
+	let [nitroVersion, __] = createResource(async () => {
+		return (await invoke("get_nitro_version")) as string;
+	});
+
 	return (
 		<div
 			id="sidebar"
@@ -111,26 +115,32 @@ export default function Sidebar(props: SidebarProps) {
 				class="cont"
 				style="padding:0.25rem;width:var(--width);box-sizing:border-box"
 			></div>
-			<div class="cont start">
-				<div
-					class="cont"
-					style="color:var(--fg);padding:0.55rem"
-					onclick={() => {
-						setSettingsVisible(true);
-						props.setVisible(false);
-					}}
-				>
-					<IconButton
-						icon={Gear}
-						size="1.75rem"
-						color="var(--bg2)"
-						selectedColor="var(--accent)"
-						onClick={() => {}}
-						selected={false}
-						hoverBackground="var(--bg3)"
-						border="var(--bg3)"
-						hoverBorder="var(--bg4)"
-					/>
+			<div class="split fullwidth" style="padding:0.55rem;box-sizing:border-box">
+				<div class="cont start">
+					<div class="cont">
+						<IconButton
+							icon={Gear}
+							size="1.75rem"
+							color="var(--bg2)"
+							iconColor="var(--fg)"
+							selectedColor="var(--accent)"
+							onClick={() => {
+								setSettingsVisible(true);
+								props.setVisible(false);
+							}}
+							selected={false}
+							hoverBackground="var(--bg3)"
+							border="var(--bg3)"
+							hoverBorder="var(--bg4)"
+						/>
+					</div>
+				</div>
+				<div class="cont end">
+					<Show when={nitroVersion() != undefined}>
+						<div class="cont bold" style="color:var(--fg3)">
+							v{nitroVersion()}
+						</div>
+					</Show>
 				</div>
 			</div>
 			<div id="sidebar-items">

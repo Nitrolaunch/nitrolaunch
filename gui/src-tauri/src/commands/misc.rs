@@ -350,3 +350,9 @@ pub async fn custom_scrollbar_needed() -> Result<bool, String> {
 		Ok(false)
 	}
 }
+
+/// Gets the Nitrolaunch version
+#[tauri::command]
+pub async fn get_nitro_version() -> String {
+	nitrolaunch::VERSION.to_string()
+}

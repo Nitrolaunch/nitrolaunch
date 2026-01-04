@@ -225,6 +225,7 @@ fn main() {
 			commands::misc::save_icon,
 			commands::misc::get_supported_java_types,
 			commands::misc::custom_scrollbar_needed,
+			commands::misc::get_nitro_version,
 			commands::cancel_task,
 		])
 		.run(tauri::generate_context!())
