@@ -327,11 +327,11 @@ pub async fn sync_packages(
 		};
 	}
 
-	output.display(
+	let mut process = output.get_process();
+	process.display(
 		MessageContents::StartProcess("Updating standard packages".into()),
 		MessageLevel::Important,
 	);
-	let mut process = output.get_process();
 	fmt_err(
 		config
 			.packages

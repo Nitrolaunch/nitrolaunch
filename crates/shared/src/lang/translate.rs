@@ -105,6 +105,7 @@ define_translations! {
 	PluginDependencyMissing, "When a plugin dependency is missing", "Dependency %dependency is missing for plugin %plugin";
 	PluginForNewerVersion, "When a plugin is made for a newer version of Nitrolaunch", "Plugin %plugin is made for a newer version of Nitrolaunch";
 	StartAuthenticating, "When starting authentication", "Authenticating";
+	FinishAuthenticating, "When finishing authentication", "Authenticated";
 	AssetFailed, "When a single asset fails to download", "Asset failed to download:\n%error";
 	AssetsFailed, "When one or more assets fail to download", "%num assets failed to download. Minecraft may not load properly.";
 	StartUpdatingInstanceVersion, "When starting to update an instance version", "Updating instance from %version1 to %version2";

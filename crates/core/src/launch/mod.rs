@@ -9,6 +9,7 @@ mod server;
 
 use std::fs::File;
 use std::io::Write;
+use std::ops::DerefMut;
 use std::path::{Path, PathBuf};
 
 use anyhow::{bail, Context};
@@ -45,14 +46,16 @@ pub(crate) async fn launch(
 
 	// Make sure we are authenticated
 	if let InstanceKind::Client { .. } = &params.side {
-		o.display(
-			MessageContents::StartProcess(translate!(o, StartAuthenticating)),
+		let mut process = o.get_process();
+		let message = translate!(process, StartAuthenticating);
+		process.display(
+			MessageContents::StartProcess(message),
 			MessageLevel::Important,
 		);
 
 		params
 			.users
-			.authenticate(params.paths, params.req_client, o)
+			.authenticate(params.paths, params.req_client, process.deref_mut())
 			.await
 			.context("Failed to ensure authentication")?;
 
@@ -63,6 +66,9 @@ pub(crate) async fn launch(
 		if !owns_game {
 			bail!("Could not prove game ownership. If using an alternative auth system, like from a plugin, you must login with a Microsoft account that owns Minecraft first.");
 		}
+
+		let message = translate!(process, FinishAuthenticating);
+		process.display(MessageContents::Success(message), MessageLevel::Important);
 	}
 
 	// Deduplicate the classpath for common libraries

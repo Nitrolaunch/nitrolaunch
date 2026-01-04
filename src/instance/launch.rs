@@ -114,7 +114,7 @@ impl Instance {
 		o.end_process();
 
 		o.display(
-			MessageContents::StartProcess(translate!(o, PreparingLaunch)),
+			MessageContents::Simple(translate!(o, PreparingLaunch)),
 			MessageLevel::Important,
 		);
 

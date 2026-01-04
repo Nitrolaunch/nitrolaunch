@@ -73,6 +73,11 @@ fn main() -> anyhow::Result<()> {
 			}
 		};
 
+		process.display(
+			MessageContents::Success(format!("{mode} updated")),
+			MessageLevel::Important,
+		);
+
 		Ok(OnInstanceSetupResult {
 			classpath_extension: classpath.get_entries().to_vec(),
 			main_class_override: Some(main_class),

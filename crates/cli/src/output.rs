@@ -55,6 +55,10 @@ impl NitroOutput for TerminalOutput {
 		// Loading spinner handling
 		let message_contents =
 			if let MessageContents::StartProcess(inner_message) = &message.contents {
+				if let Some(existing_task) = self.process_spinner_task.take() {
+					tokio::spawn(async move { existing_task.send(()).await });
+				}
+
 				let inner_message = format!("{inner_message}...");
 				let start_message = format!("{} {inner_message}", format_loading_spinner(3));
 
@@ -81,11 +85,8 @@ impl NitroOutput for TerminalOutput {
 	}
 
 	fn start_process(&mut self) {
-		if self.in_process {
-			self.end_process();
-		} else {
-			self.in_process = true;
-		}
+		self.end_process();
+		self.in_process = true;
 	}
 
 	fn end_process(&mut self) {
