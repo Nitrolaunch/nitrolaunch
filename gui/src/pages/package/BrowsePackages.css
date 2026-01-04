@@ -25,7 +25,7 @@
 }
 
 .package {
-	background-color: var(--bg2);
+	background-color: var(--bg);
 	box-sizing: border-box;
 	height: 18rem;
 
@@ -36,16 +36,16 @@
 
 	overflow-x: hidden;
 
-	--package-hover-color: var(--bg2);
+	--package-hover-color: var(--bg);
 
 	transition: border-color 0.25s, transform var(--bubble),
 		--package-hover-color 0.25s;
 }
 
 .package:hover {
-	background-color: var(--bg3);
+	background-color: var(--bg2);
 	border-color: var(--bg4);
-	--package-hover-color: var(--bg3);
+	--package-hover-color: var(--bg2);
 }
 
 .package.selected {
