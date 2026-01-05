@@ -75,9 +75,9 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 	let navigate = useNavigate();
 
 	let params = useParams();
-	let id = params.instanceId;
+	let id = () => params.instanceId;
 
-	onMount(() => loadPagePlugins("instance", id));
+	onMount(() => loadPagePlugins("instance", id()));
 
 	// Global, client, and server packages for the instance
 	let [globalPackages, setGlobalPackages] = createSignal<PackageConfig[]>([]);
@@ -97,7 +97,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 	createEffect(async () => {
 		try {
 			await invoke("set_last_opened_instance", {
-				id: id,
+				id: id(),
 				instanceOrTemplate: "instance",
 			});
 		} catch (e) {}
@@ -105,12 +105,12 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 
 	let [from, setFrom] = createSignal<string[] | undefined>();
 	let [editableConfig, setEditableConfig] = createSignal<InstanceConfig>();
-	let [instance, instanceMethods] = createResource(async () => {
+	let [instance, instanceMethods] = createResource(id, async () => {
 		// Get the instance or template
 		try {
 			let [configuration, editableConfiguration] = await Promise.all([
-				readInstanceConfig(id, InstanceConfigMode.Instance),
-				readEditableInstanceConfig(id, InstanceConfigMode.Instance),
+				readInstanceConfig(id(), InstanceConfigMode.Instance),
+				readEditableInstanceConfig(id(), InstanceConfigMode.Instance),
 			]);
 
 			setFrom(canonicalizeListOrSingle(configuration.from));
@@ -183,10 +183,11 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 	let [isRunning, setIsRunning] = createSignal(false);
 	let [unlisten, setUnlisten] = createSignal<UnlistenFn>(() => {});
 	createEffect(async () => {
+		id();
 		let unlisten = await listen(
 			"nitro_update_running_instances",
 			(e: Event<RunningInstancesEvent>) => {
-				setIsRunning(e.payload.running_instances.includes(id));
+				setIsRunning(e.payload.running_instances.includes(id()));
 			}
 		);
 
@@ -197,7 +198,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 
 	// Gets whether the currently selected instance is launchable (it has been updated before)
 	let [unlisten2, setUnlisten2] = createSignal<UnlistenFn>(() => {});
-	let [isInstanceLaunchable, methods] = createResource(async () => {
+	let [isInstanceLaunchable, methods] = createResource(id, async () => {
 		let unlisten = await listen(
 			"nitro_output_finish_task",
 			(e: Event<string>) => {
@@ -210,17 +211,18 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 		setUnlisten2(() => unlisten);
 
 		return await invoke("get_instance_has_updated", {
-			instance: id,
+			instance: id(),
 		});
 	});
 
 	// Update the page when the config changes
 	let [unlisten3, ___] = createResource(
+		id,
 		async () => {
 			return await listen(
 				"instance_or_template_changed",
 				(e: Event<InstanceOrTemplateChangedEvent>) => {
-					if (e.payload.id == id && e.payload.type == "instance") {
+					if (e.payload.id == id() && e.payload.type == "instance") {
 						instanceMethods.refetch();
 					}
 				}
@@ -236,6 +238,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 	});
 
 	let [launchDropdownButtons, _1] = createResource(
+		id,
 		async () => {
 			return getDropdownButtons("instance_launch");
 		},
@@ -243,6 +246,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 	);
 
 	let [updateDropdownButtons, _2] = createResource(
+		id,
 		async () => {
 			return getDropdownButtons("instance_update");
 		},
@@ -250,6 +254,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 	);
 
 	let [moreDropdownButtons, _3] = createResource(
+		id,
 		async () => {
 			return getDropdownButtons("instance_more_options");
 		},
@@ -302,7 +307,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 			config.overrides = overrides;
 
 			try {
-				await saveInstanceConfig(id, config, InstanceConfigMode.Instance);
+				await saveInstanceConfig(id(), config, InstanceConfigMode.Instance);
 				successToast("Changes saved");
 				props.setFooterData({
 					selectedItem: undefined,
@@ -431,10 +436,10 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 								<div class="col" id="instance-details">
 									<div class="cont" id="instance-upper-details">
 										<div id="instance-name">
-											{instance()!.name == undefined ? id : instance()!.name}
+											{instance()!.name == undefined ? id() : instance()!.name}
 										</div>
 										<Show when={instance()!.name != undefined}>
-											<div id="instance-id">{id}</div>
+											<div id="instance-id">{id()}</div>
 										</Show>
 									</div>
 									<div class="cont start" id="instance-lower-details">
@@ -498,12 +503,14 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 													}
 													onChange={async (selection) => {
 														if (selection == "launch") {
-															launchInstance(id, false);
+															launchInstance(id(), false);
 														} else if (selection == "launch_offline") {
-															launchInstance(id, true);
+															launchInstance(id(), true);
 														} else if (selection == "kill") {
 															try {
-																await invoke("kill_instance", { instance: id });
+																await invoke("kill_instance", {
+																	instance: id(),
+																});
 																await invoke("update_running_instances");
 															} catch (e) {
 																errorToast("Failed to kill instance: " + e);
@@ -515,13 +522,15 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 													onHeaderClick={async () => {
 														if (isRunning()) {
 															try {
-																await invoke("kill_instance", { instance: id });
+																await invoke("kill_instance", {
+																	instance: id(),
+																});
 																await invoke("update_running_instances");
 															} catch (e) {
 																errorToast("Failed to kill instance: " + e);
 															}
 														} else {
-															launchInstance(id, false);
+															launchInstance(id(), false);
 														}
 													}}
 													optionsWidth="12rem"
@@ -577,7 +586,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 																selection == "update" ? "full" : "force";
 
 															await invoke("update_instance", {
-																instanceId: id,
+																instanceId: id(),
 																depth: depth,
 															});
 														} catch (e) {
@@ -590,7 +599,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 												onHeaderClick={async () => {
 													try {
 														await invoke("update_instance", {
-															instanceId: id,
+															instanceId: id(),
 															depth: "full",
 														});
 													} catch (e) {
@@ -611,7 +620,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 												text=""
 												onClick={() => {
 													setInstanceConfigModal(
-														id,
+														id(),
 														InstanceConfigMode.Instance,
 														false
 													);
@@ -628,7 +637,9 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 													if (selection == "export") {
 														setShowExportPrompt(true);
 													} else if (selection == "open_dir") {
-														await invoke("open_instance_dir", { instance: id });
+														await invoke("open_instance_dir", {
+															instance: id(),
+														});
 													} else if (selection == "delete") {
 														setShowDeleteConfirm(true);
 													} else {
@@ -699,11 +710,11 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 							</div>
 							<div class="cont col instance-shadow" id="instance-tab-contents">
 								<Show when={selectedTab() == "general"}>
-									<InstanceTiles instanceId={id} />
+									<InstanceTiles instanceId={id()} />
 								</Show>
 								<Show when={selectedTab() == "packages"}>
 									<PackagesConfig
-										id={id}
+										id={id()}
 										globalPackages={globalPackages()}
 										clientPackages={clientPackages()}
 										serverPackages={serverPackages()}
@@ -769,7 +780,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 								<Show when={selectedTab() == "console"}>
 									<div class="cont" style="width: 100%">
 										<InstanceConsole
-											instanceId={id}
+											instanceId={id()}
 											isServer={
 												instance() != undefined && instance()!.type == "server"
 											}
@@ -820,7 +831,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 				<InstanceTransferPrompt
 					visible={showExportPrompt()}
 					onClose={() => setShowExportPrompt(false)}
-					exportedInstance={id}
+					exportedInstance={id()}
 				/>
 				<br />
 				<br />

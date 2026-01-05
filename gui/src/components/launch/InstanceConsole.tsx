@@ -25,22 +25,25 @@ export default function InstanceConsole(props: InstanceConsoleProps) {
 
 	let [input, setInput] = createSignal("");
 
-	let [output, outputMethods] = createResource(async () => {
-		let output = (await invoke("get_instance_output", {
-			instanceId: props.instanceId,
-		})) as string | undefined;
+	let [output, outputMethods] = createResource(
+		() => props.instanceId,
+		async () => {
+			let output = (await invoke("get_instance_output", {
+				instanceId: props.instanceId,
+			})) as string | undefined;
 
-		if (output == undefined) {
-			return undefined;
+			if (output == undefined) {
+				return undefined;
+			}
+
+			// Format the output into lines
+			let lines = output.split("\n");
+
+			scrollToBottom();
+
+			return lines;
 		}
-
-		// Format the output into lines
-		let lines = output.split("\n");
-
-		scrollToBottom();
-
-		return lines;
-	});
+	);
 
 	// Listener for when the output updates
 	let [unlisten, _] = createResource(async () => {

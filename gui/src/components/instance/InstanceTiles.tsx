@@ -5,6 +5,7 @@ import { stringCompare } from "../../utils";
 
 export default function InstanceTiles(props: InstanceTilesProps) {
 	let [rows, _] = createResource(
+		() => props.instanceId,
 		async () => {
 			let tiles: TileData[] = await invoke("get_instance_tiles", {
 				instanceId: props.instanceId,
