@@ -152,6 +152,12 @@ export default function Plugins() {
 							noDownloadRemotePlugins() != undefined &&
 							noDownloadRemotePlugins()!.some((x) => x.is_official);
 
+						let isUpdateAvailable = () =>
+							noDownloadRemotePlugins() != undefined &&
+							noDownloadRemotePlugins()!.some(
+								(x) => x.id == info.id && x.version != info.version
+							);
+
 						return (
 							<Show when={!isRemote()}>
 								<Plugin
@@ -163,6 +169,7 @@ export default function Plugins() {
 									}}
 									setDirty={() => setRestartNeeded(true)}
 									isOfficial={isOfficial()}
+									isUpdateAvailable={isUpdateAvailable()}
 									onChangeVersion={() => setPluginSelectedForVersions(info.id)}
 									availableVersions={() => getAvailableVersions(info.id)}
 								/>
@@ -188,6 +195,7 @@ export default function Plugins() {
 										}}
 										setDirty={() => setRestartNeeded(true)}
 										isOfficial={info.is_official}
+										isUpdateAvailable={false}
 										onChangeVersion={() =>
 											setPluginSelectedForVersions(info.id)
 										}
@@ -230,6 +238,9 @@ function Plugin(props: PluginProps) {
 				</div>
 				<div class="cont plugin-buttons">
 					<Show when={props.info.installed}>
+						<Show when={props.isUpdateAvailable}>
+							<div class="cont plugin-update-indicator">Update Available!</div>
+						</Show>
 						<PackageVersion
 							configuredVersion={undefined}
 							installedVersion={props.info.version}
@@ -383,6 +394,7 @@ interface PluginProps {
 	updatePluginList: () => void;
 	setDirty: () => void;
 	isOfficial: boolean;
+	isUpdateAvailable: boolean;
 	onChangeVersion: () => void;
 	availableVersions: () => string[];
 }
