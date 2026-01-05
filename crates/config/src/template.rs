@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
-use anyhow::bail;
 use nitro_shared::id::TemplateID;
+use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
 use nitro_shared::Side;
 #[cfg(feature = "schema")]
 use schemars::JsonSchema;
@@ -253,7 +253,8 @@ impl TemplatePackageConfiguration {
 pub fn consolidate_template_configs(
 	templates: HashMap<TemplateID, TemplateConfig>,
 	base_template: Option<&TemplateConfig>,
-) -> anyhow::Result<HashMap<TemplateID, TemplateConfig>> {
+	o: &mut impl NitroOutput,
+) -> HashMap<TemplateID, TemplateConfig> {
 	let mut out: HashMap<_, TemplateConfig> = HashMap::with_capacity(templates.len());
 
 	let max_iterations = 10000;
@@ -287,7 +288,12 @@ pub fn consolidate_template_configs(
 					} else {
 						// Check if the parent template actually doesn't exist or if we just haven't consolidated it yet
 						if !templates.contains_key(&parent_id) {
-							bail!("Parent template '{parent}' does not exist");
+							o.display(
+								MessageContents::Error(format!(
+									"Parent template '{parent}' does not exist"
+								)),
+								MessageLevel::Important,
+							);
 						}
 					}
 				}
@@ -296,18 +302,18 @@ pub fn consolidate_template_configs(
 
 		i += 1;
 		if i > max_iterations {
-			bail!(
+			panic!(
 				"Max iterations exceeded while resolving templates. You likely have cyclic templates."
 			);
 		}
 	}
 
-	Ok(out)
+	out
 }
 
 #[cfg(test)]
 mod tests {
-	use nitro_shared::util::DeserListOrSingle;
+	use nitro_shared::{output::NoOp, util::DeserListOrSingle};
 
 	use super::*;
 
@@ -329,8 +335,7 @@ mod tests {
 
 		// Ensure determinism
 		for _ in 0..30 {
-			let consolidated = consolidate_template_configs(templates.clone(), None)
-				.expect("Failed to consolidte");
+			let consolidated = consolidate_template_configs(templates.clone(), None, &mut NoOp);
 			assert!(consolidated.contains_key(&TemplateID::from("foo")));
 			assert!(consolidated.contains_key(&TemplateID::from("bar")));
 		}

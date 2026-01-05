@@ -8,13 +8,12 @@ pub mod package;
 pub mod plugin;
 /// Configuring global preferences
 pub mod preferences;
-/// Configuring templates
-pub mod template;
 
 use self::instance::read_instance_config;
 use crate::plugin::PluginManager;
 use anyhow::Context;
 use nitro_config::instance::InstanceConfig;
+use nitro_config::template::consolidate_template_configs;
 use nitro_config::template::TemplateConfig;
 use nitro_config::user::{UserConfig, UserVariant};
 use nitro_config::ConfigDeser;
@@ -28,7 +27,6 @@ use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
 use nitro_shared::util::is_valid_identifier;
 use nitro_shared::{skip_fail, translate};
 use preferences::ConfigPreferences;
-use template::consolidate_template_configs;
 use version_compare::Version;
 
 use super::instance::Instance;
