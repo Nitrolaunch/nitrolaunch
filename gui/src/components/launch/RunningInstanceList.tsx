@@ -77,6 +77,9 @@ export default function RunningInstanceList(props: RunningInstanceListProps) {
 							}}
 							onmouseenter={() => setHoveredName(name)}
 							onmouseleave={() => setHoveredName(undefined)}
+							onerror={(e: any) =>
+								(e.target.src = "/icons/default_instance.png")
+							}
 						/>
 					);
 				}}
