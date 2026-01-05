@@ -2,17 +2,19 @@
 
 ## 🚀 **A Minecraft launcher for the future**
 
-[![](https://dcbadge.limes.pink/api/server/https://discord.gg/25fhkjeTvW)](https://discord.gg/25fhkjeTvW) | [Documentation](https://nitrolaunch.github.io/nitrolaunch)
+[![](https://dcbadge.limes.pink/api/server/https://discord.gg/25fhkjeTvW)](https://discord.gg/25fhkjeTvW)
 
-Nitrolaunch is a Minecraft launcher and ecosystem meant to reinvent the launcher as you know it, providing a plugin system and a better interface with custom content such as mods and datapacks.
+Nitrolaunch is a Minecraft launcher and ecosystem meant to reinvent the launcher as you know it, providing a one-of-a-kind plugin system, server management capabilities, and a new paradigm for package management.
 
-In the official launcher and many alternative ones, you have to waste time moving files in and out of folders, downloading mods from sketchy websites, setting up servers, and sharing your config to play with friends. Nitrolaunch hopes to alleviate some of these pains with its smart systems for configuration sharing and package management.
+Nitrolaunch is extremely modular, letting you configure it with exactly the features you need for your setup. It's perfect for server admins, developers, or people just wanting to play the game.
 
-In addition, Nitrolaunch is extremely modular, allowing you to build your perfect launcher by hand, or just use the amazing tools already built by the community.
+- [Discord](https://discord.gg/25fhkjeTvW)
+- [Website](https://Nitrolaunch.github.io)
+- [Documentation](https://Nitrolaunch.github.io/nitrolaunch)
 
 # ✨ Features
 
-## 💻 App or Command line
+## 💻 Desktop or Command line
 
 Nitrolaunch will work how you do, as an intuitive desktop app or CLI
 
@@ -22,7 +24,7 @@ Nitrolaunch will work how you do, as an intuitive desktop app or CLI
 
 ## 🔌 Plugin System
 
-Extend the launcher with features like new modloaders and sources for mods, translations for other languages, tools to enhance your productivity, and more!
+Almost every feature of the launcher can be extended with a revolutionary plugin system. Pick and choose the features you want.
 
 ![](docs/assets/screenshots/plugins.png)
 
