@@ -13,7 +13,7 @@ use anyhow::{bail, Context};
 use nitro_config::instance::{QuickPlay, WrapperCommand};
 use nitro_core::auth_crate::mc::ClientId;
 use nitro_core::io::java::install::JavaInstallationKind;
-use nitro_core::user::UserManager;
+use nitro_core::user::{UserID, UserManager};
 use nitro_plugin::hook::call::HookHandles;
 use nitro_plugin::hook::hooks::{
 	InstanceLaunchArg, OnInstanceLaunch, OnInstanceStop, ReplaceInstanceLaunch, WhileInstanceLaunch,
@@ -129,7 +129,11 @@ impl Instance {
 			self.launch_standard(core, hook_arg, paths, plugins, settings, o)
 				.await
 		} else {
-			self.launch_custom(hook_arg, paths, plugins, o).await
+			let user = core
+				.get_users()
+				.get_chosen_user()
+				.map(|x| x.get_id().clone());
+			self.launch_custom(hook_arg, user, paths, plugins, o).await
 		}
 	}
 
@@ -143,6 +147,10 @@ impl Instance {
 		settings: LaunchSettings,
 		o: &mut impl NitroOutput,
 	) -> anyhow::Result<InstanceHandle> {
+		let selected_user = core
+			.get_users()
+			.get_chosen_user()
+			.map(|x| x.get_id().clone());
 		let mut core_version = core.get_version(&self.config.version, o).await?;
 
 		let mut instance = self
@@ -192,7 +200,12 @@ impl Instance {
 		// Update the running instance registry
 		let mut running_instance_registry = RunningInstanceRegistry::open(paths)
 			.context("Failed to open registry of running instances")?;
-		running_instance_registry.add_instance(handle.get_pid(), &self.id, true);
+		running_instance_registry.add_instance(
+			handle.get_pid(),
+			&self.id,
+			true,
+			selected_user.map(|x| x.to_string()),
+		);
 		let _ = running_instance_registry.write();
 
 		Ok(handle)
@@ -202,6 +215,7 @@ impl Instance {
 	async fn launch_custom(
 		&mut self,
 		mut hook_arg: InstanceLaunchArg,
+		selected_user: Option<UserID>,
 		paths: &Paths,
 		plugins: &PluginManager,
 		o: &mut impl NitroOutput,
@@ -254,7 +268,12 @@ impl Instance {
 		// Update the running instance registry
 		let mut running_instance_registry = RunningInstanceRegistry::open(paths)
 			.context("Failed to open registry of running instances")?;
-		running_instance_registry.add_instance(handle.get_pid(), &self.id, true);
+		running_instance_registry.add_instance(
+			handle.get_pid(),
+			&self.id,
+			true,
+			selected_user.map(|x| x.to_string()),
+		);
 		let _ = running_instance_registry.write();
 
 		Ok(handle)

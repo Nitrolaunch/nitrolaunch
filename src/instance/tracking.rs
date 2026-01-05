@@ -97,12 +97,13 @@ impl RunningInstanceRegistry {
 	}
 
 	/// Adds an instance to the registry
-	pub fn add_instance(&mut self, pid: u32, instance: &str, is_java: bool) {
+	pub fn add_instance(&mut self, pid: u32, instance: &str, is_java: bool, user: Option<String>) {
 		let entry = RunningInstanceEntry {
 			pid,
 			parent_pid: std::process::id(),
 			instance_id: instance.to_string(),
 			is_java,
+			user,
 		};
 		self.data.instances.push(entry);
 		self.is_dirty = true;
@@ -177,6 +178,9 @@ pub struct RunningInstanceEntry {
 	/// Whether this is a Java instance
 	#[serde(default = "default_is_java")]
 	pub is_java: bool,
+	/// The user that launched this instance
+	#[serde(default)]
+	pub user: Option<String>,
 }
 
 fn default_is_java() -> bool {
