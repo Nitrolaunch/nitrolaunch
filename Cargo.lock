@@ -3550,6 +3550,8 @@ dependencies = [
  "nitro_config",
  "nitro_plugin",
  "nitro_shared",
+ "serde",
+ "serde_json",
  "zip 3.0.0",
 ]
 

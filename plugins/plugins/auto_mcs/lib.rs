@@ -1,15 +1,32 @@
-use std::{collections::HashMap, fs::File, path::PathBuf};
+use std::{
+	collections::HashMap,
+	fs::File,
+	path::{Path, PathBuf},
+	time::{Duration, SystemTime},
+};
 
-use anyhow::Context;
+use anyhow::{bail, Context};
 use nitro_config::instance::{make_valid_instance_id, InstanceConfig};
 use nitro_plugin::{
-	api::wasm::{sys::get_os_string, WASMPlugin},
-	hook::hooks::ImportInstanceResult,
+	api::wasm::{
+		output::WASMPluginOutput,
+		sys::{get_os_string, run_command},
+		util::get_custom_config,
+		WASMPlugin,
+	},
+	hook::hooks::{ImportInstanceResult, ReplaceInstanceLaunchResult},
 	nitro_wasm_plugin,
 };
-use nitro_shared::util::to_string_json;
 use nitro_shared::{id::InstanceID, loaders::Loader, versions::MinecraftVersionDeser, Side};
+use nitro_shared::{
+	output::{MessageContents, MessageLevel, NitroOutput},
+	util::to_string_json,
+};
+use serde::Deserialize;
 use zip::ZipArchive;
+
+/// Custom field on an instance for the auto-mcs server name
+static SERVER_NAME_CONFIG: &str = "auto_mcs_server_name";
 
 nitro_wasm_plugin!(main, "auto_mcs");
 
@@ -78,19 +95,100 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 			};
 
 			config.game_dir = Some(path.to_string_lossy().to_string());
+			config.custom_launch = true;
+			config.is_editable = false;
 
-			let id = make_valid_instance_id(
-				&config
-					.name
-					.clone()
-					.unwrap_or_else(|| path.file_name().unwrap().to_string_lossy().to_string()),
-			);
+			let server_name = config
+				.name
+				.clone()
+				.unwrap_or_else(|| path.file_name().unwrap().to_string_lossy().to_string());
+
+			let id = make_valid_instance_id(&server_name);
 			let id = format!("auto-mcs:{id}");
+
+			config.plugin_config.insert(
+				SERVER_NAME_CONFIG.into(),
+				serde_json::Value::String(server_name),
+			);
 
 			instances.insert(InstanceID::from(id), config);
 		}
 
 		Ok(instances)
+	})?;
+
+	plugin.replace_instance_launch(|arg| {
+		if arg.config.source_plugin.is_none_or(|x| x != "auto_mcs") {
+			return Ok(None);
+		}
+
+		let custom_config = get_custom_config().unwrap_or("{}".into());
+		let custom_config: GlobalConfig =
+			serde_json::from_str(&custom_config).context("Failed to deserialize custom config")?;
+		let auto_mcs_path = custom_config
+			.auto_mcs_path
+			.context("You must specify a path for the auto-mcs executable in your plugin config")?;
+		let auto_mcs_path = PathBuf::from(auto_mcs_path);
+
+		if !auto_mcs_path.exists() {
+			bail!("auto-mcs executable does not exist. Did you specify the path correctly?");
+		}
+
+		let server_name = arg
+			.config
+			.plugin_config
+			.get(SERVER_NAME_CONFIG)
+			.context("Server name is not present in instance")?;
+		let serde_json::Value::String(server_name) = server_name else {
+			bail!("Server name is not a string");
+		};
+
+		let _ = File::create(arg.stdout_path.unwrap());
+
+		// Get the log entries before the spawn to detect which one is the new one
+		let log_dir = get_auto_mcs_dir()?.join("Logs/application");
+		let original_logs = get_dir_file_timestamps(&log_dir).unwrap_or_default();
+
+		let (_, pid) = run_command(
+			auto_mcs_path,
+			vec!["--headless", "--launch", &server_name],
+			None::<String>,
+			None::<String>,
+			true,
+			true,
+			false,
+		)
+		.context("Failed to spawn auto-mcs server")?;
+
+		let mut o = WASMPluginOutput::new();
+		o.display(
+			MessageContents::Simple("Checking log file dir".into()),
+			MessageLevel::Debug,
+		);
+
+		// Keep checking for new log files, then pick the newest one when the entries change
+		let log_file_path = loop {
+			let logs = get_dir_file_timestamps(&log_dir).unwrap_or_default();
+			if original_logs != logs {
+				if let Some(result) = logs.into_iter().max_by_key(|x| x.1) {
+					break result.0;
+				}
+			}
+
+			std::thread::sleep(Duration::from_millis(50));
+		};
+
+		let log_file_path = log_file_path.to_string_lossy().to_string();
+
+		o.display(
+			MessageContents::Simple(format!("Found log file {log_file_path}")),
+			MessageLevel::Debug,
+		);
+
+		Ok(Some(ReplaceInstanceLaunchResult {
+			pid,
+			stdout_path: Some(log_file_path),
+		}))
 	})?;
 
 	Ok(())
@@ -171,4 +269,35 @@ fn get_auto_mcs_dir() -> anyhow::Result<PathBuf> {
 	};
 
 	Ok(PathBuf::from(data_folder))
+}
+
+/// Gets a list of files and their creation times in a directory, sorted by name
+pub fn get_dir_file_timestamps(dir: &Path) -> anyhow::Result<Vec<(PathBuf, SystemTime)>> {
+	if !dir.exists() {
+		return Ok(Vec::new());
+	}
+
+	let read = dir.read_dir().context("Failed to read directory")?;
+
+	let entries = read.filter_map(|x| {
+		let x = x.ok()?;
+		if !x.file_type().ok()?.is_file() {
+			return None;
+		}
+
+		let time = x.metadata().ok()?.created().ok()?;
+
+		Some((x.path(), time))
+	});
+
+	let mut entries: Vec<_> = entries.collect();
+	entries.sort_by_cached_key(|x| x.0.clone());
+
+	Ok(entries)
+}
+
+#[derive(Deserialize)]
+struct GlobalConfig {
+	#[serde(default)]
+	auto_mcs_path: Option<String>,
 }

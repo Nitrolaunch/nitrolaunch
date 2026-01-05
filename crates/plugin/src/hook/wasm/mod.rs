@@ -2,6 +2,7 @@
 pub mod loader;
 
 use std::{
+	fs::File,
 	marker::PhantomData,
 	path::{Path, PathBuf},
 	process::Stdio,
@@ -330,10 +331,11 @@ impl bindings::InterfaceWorldImports for State {
 		cmd: String,
 		args: Vec<String>,
 		working_dir: Option<String>,
+		stdout_file: Option<String>,
 		suppress_command_window: bool,
 		silent: bool,
 		wait: bool,
-	) -> Result<i32, String> {
+	) -> Result<(i32, u32), String> {
 		let mut command = Command::new(cmd);
 		command.args(args);
 		if let Some(working_dir) = working_dir {
@@ -349,13 +351,19 @@ impl bindings::InterfaceWorldImports for State {
 			command.stderr(Stdio::null());
 		}
 
+		if let Some(stdout_file) = stdout_file {
+			let file = File::create(stdout_file).map_err(|e| format!("{e:?}"))?;
+			command.stdout(Stdio::from(file));
+		}
+
 		let mut child = command.spawn().map_err(|e| format!("{e:?}"))?;
+		let pid = child.id().unwrap();
 
 		if wait {
 			let status = child.wait().await.map_err(|e| format!("{e:?}"))?;
-			Ok(status.code().unwrap_or_default())
+			Ok((status.code().unwrap_or_default(), pid))
 		} else {
-			Ok(0)
+			Ok((0, pid))
 		}
 	}
 

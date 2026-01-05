@@ -19,6 +19,9 @@
 		},
 		"add_instances": {
 			"wasm": true
+		},
+		"replace_instance_launch": {
+			"wasm": true
 		}
 	}
 }

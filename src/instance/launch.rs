@@ -229,7 +229,11 @@ impl Instance {
 			.await
 			.context("Failed to call while launch hook")?;
 
-		let stdout_file = File::open(&stdout_path)?;
+		// Use the result stdout path if it gives one
+		let stdout_path = result.stdout_path.map(PathBuf::from).unwrap_or(stdout_path);
+
+		let stdout_file =
+			File::open(&stdout_path).context("Launch hook did not open an stdout file")?;
 		let stdin_file = open_file_append(&stdin_path)?;
 
 		let handle = InstanceHandle {

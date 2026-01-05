@@ -54,10 +54,11 @@ pub fn run_command(
 	cmd: impl AsRef<OsStr>,
 	args: Vec<impl AsRef<OsStr>>,
 	working_dir: Option<impl AsRef<OsStr>>,
+	stdout_file: Option<impl AsRef<OsStr>>,
 	suppress_command_window: bool,
 	silent: bool,
 	wait: bool,
-) -> anyhow::Result<i32> {
+) -> anyhow::Result<(i32, u32)> {
 	let args: Vec<_> = args
 		.into_iter()
 		.map(|x| x.as_ref().to_string_lossy().to_string())
@@ -67,6 +68,9 @@ pub fn run_command(
 		&cmd.as_ref().to_string_lossy(),
 		&args,
 		working_dir
+			.map(|x| x.as_ref().to_string_lossy().to_string())
+			.as_deref(),
+		stdout_file
 			.map(|x| x.as_ref().to_string_lossy().to_string())
 			.as_deref(),
 		suppress_command_window,

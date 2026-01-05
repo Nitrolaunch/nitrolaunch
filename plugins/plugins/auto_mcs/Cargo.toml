@@ -15,4 +15,6 @@ nitro_plugin = { version = "0.28.0", path = "../../../crates/plugin", default-fe
 	"wasm_api",
 ] }
 nitro_shared = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
 zip = { workspace = true }

@@ -119,7 +119,17 @@ fn open(webtool: &WebTool) {
 
 	println!("Opening {}...", webtool.url());
 
-	if run_command(cmd, vec![webtool.url()], None::<&str>, true, true, false).is_err() {
+	if run_command(
+		cmd,
+		vec![webtool.url()],
+		None::<&str>,
+		None::<&str>,
+		true,
+		true,
+		false,
+	)
+	.is_err()
+	{
 		println!("Link: {}", webtool.url());
 	}
 }
