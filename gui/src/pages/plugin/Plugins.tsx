@@ -153,8 +153,8 @@ export default function Plugins() {
 							noDownloadRemotePlugins()!.some((x) => x.is_official);
 
 						let isUpdateAvailable = () =>
-							noDownloadRemotePlugins() != undefined &&
-							noDownloadRemotePlugins()!.some(
+							remotePlugins() != undefined &&
+							remotePlugins()!.some(
 								(x) => x.id == info.id && x.version != info.version
 							);
 
