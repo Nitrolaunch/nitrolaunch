@@ -476,7 +476,12 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 																	class="cont start fullwidth"
 																	style="padding-left:0.75rem"
 																>
-																	<Icon icon={Play} size="1.25rem" />
+																	<div
+																		class="cont"
+																		style="color:var(--instance)"
+																	>
+																		<Icon icon={Play} size="1.25rem" />
+																	</div>
 																</div>
 															</Match>
 															<Match when={isRunning()}>
@@ -484,7 +489,9 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 																	class="cont start fullwidth"
 																	style="padding-left:0.75rem"
 																>
-																	<Icon icon={Stop} size="0.85rem" />
+																	<div class="cont" style="color:var(--error)">
+																		<Icon icon={Stop} size="0.85rem" />
+																	</div>
 																</div>
 															</Match>
 														</Switch>
