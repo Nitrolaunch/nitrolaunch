@@ -15,7 +15,9 @@ use nitrolaunch::instance::update::InstanceUpdateContext;
 use nitrolaunch::io::lock::Lockfile;
 use nitrolaunch::pkg::eval::EvalConstants;
 use nitrolaunch::plugin::PluginManager;
-use nitrolaunch::plugin_crate::hook::hooks::{DeleteInstance, DeleteTemplate};
+use nitrolaunch::plugin_crate::hook::hooks::{
+	DeleteInstance, DeleteTemplate, SaveInstanceConfigArg, SaveTemplateConfigArg,
+};
 use nitrolaunch::shared::id::{InstanceID, TemplateID};
 use nitrolaunch::shared::output::NoOp;
 use nitrolaunch::shared::{Side, UpdateDepth};
@@ -549,13 +551,18 @@ pub async fn delete_instance(
 			return Err("Plugin instance does not support deletion".into());
 		}
 
+		let arg = SaveInstanceConfigArg {
+			id: instance_id.to_string(),
+			config: instance.get_config().original_config.clone(),
+		};
+
 		let result = fmt_err(
 			config
 				.plugins
 				.call_hook_on_plugin(
 					DeleteInstance,
 					source_plugin,
-					&instance_id.to_string(),
+					&arg,
 					&state.paths,
 					&mut output,
 				)
@@ -606,13 +613,18 @@ pub async fn delete_template(
 			return Err("Plugin template does not support deletion".into());
 		}
 
+		let arg = SaveTemplateConfigArg {
+			id: template_id.to_string(),
+			config: template.clone(),
+		};
+
 		let result = fmt_err(
 			config
 				.plugins
 				.call_hook_on_plugin(
 					DeleteTemplate,
 					source_plugin,
-					&template_id.to_string(),
+					&arg,
 					&state.paths,
 					&mut output,
 				)

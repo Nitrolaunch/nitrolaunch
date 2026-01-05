@@ -14,7 +14,7 @@ use nitrolaunch::instance::transfer::load_formats;
 use nitrolaunch::instance::update::InstanceUpdateContext;
 use nitrolaunch::instance::Instance;
 use nitrolaunch::io::lock::Lockfile;
-use nitrolaunch::plugin_crate::hook::hooks::DeleteInstance;
+use nitrolaunch::plugin_crate::hook::hooks::{DeleteInstance, SaveInstanceConfigArg};
 use nitrolaunch::shared::id::InstanceID;
 use nitrolaunch::shared::output::{MessageContents, MessageLevel};
 use nitrolaunch::shared::util::to_string_json;
@@ -621,12 +621,17 @@ async fn delete(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()
 			bail!("Plugin instance does not support deletion");
 		}
 
+		let arg = SaveInstanceConfigArg {
+			id: id.to_string(),
+			config: instance.get_config().original_config.clone(),
+		};
+
 		let result = config
 			.plugins
 			.call_hook_on_plugin(
 				DeleteInstance,
 				source_plugin,
-				&id.to_string(),
+				&arg,
 				&data.paths,
 				process.deref_mut(),
 			)

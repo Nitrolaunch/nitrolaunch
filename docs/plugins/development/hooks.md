@@ -178,7 +178,14 @@ Adds or updates config for an editable custom template from this plugin, whateve
 
 Deletes a plugin instance
 
-- Argument: `string`
+- Argument:
+
+```
+{
+	"id": string,
+	"config": InstanceConfig
+}
+```
 
 - Result: None
 
@@ -186,10 +193,16 @@ Deletes a plugin instance
 
 Deletes a plugin template
 
-- Argument: `string`
+- Argument:
+
+```
+{
+	"id": string,
+	"config": TemplateConfig
+}
+```
 
 - Result: None
-
 
 ### `add_instance_icons`
 

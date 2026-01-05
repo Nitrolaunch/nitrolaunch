@@ -18,7 +18,7 @@ use nitrolaunch::{
 	},
 	config_crate::template::{TemplateConfig, TemplateLoaderConfiguration},
 	core::util::versions::MinecraftVersion,
-	plugin_crate::hook::hooks::DeleteTemplate,
+	plugin_crate::hook::hooks::{DeleteTemplate, SaveTemplateConfigArg},
 	shared::{
 		id::TemplateID,
 		output::{MessageContents, MessageLevel, NitroOutput},
@@ -195,12 +195,17 @@ async fn delete(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()
 			bail!("Plugin template does not support deletion");
 		}
 
+		let arg = SaveTemplateConfigArg {
+			id: id.to_string(),
+			config: template.clone(),
+		};
+
 		let result = config
 			.plugins
 			.call_hook_on_plugin(
 				DeleteTemplate,
 				source_plugin,
-				&id.to_string(),
+				&arg,
 				&data.paths,
 				process.deref_mut(),
 			)

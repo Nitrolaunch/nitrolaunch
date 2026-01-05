@@ -76,7 +76,7 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 			return Ok(());
 		}
 
-		remove_config_file(&dir, &arg)
+		remove_config_file(&dir, &arg.id)
 	})?;
 
 	plugin.delete_template(|arg| {
@@ -86,7 +86,7 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 			return Ok(());
 		}
 
-		remove_config_file(&dir, &arg)
+		remove_config_file(&dir, &arg.id)
 	})?;
 
 	Ok(())
