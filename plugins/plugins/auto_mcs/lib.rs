@@ -191,6 +191,27 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 		}))
 	})?;
 
+	plugin.delete_instance(|arg| {
+		let server_name = arg
+			.config
+			.plugin_config
+			.get(SERVER_NAME_CONFIG)
+			.context("Server name is not present in instance")?;
+		let serde_json::Value::String(server_name) = server_name else {
+			bail!("Server name is not a string");
+		};
+
+		let auto_mcs_dir = get_auto_mcs_dir().context("Failed to get auto-mcs data directory")?;
+		let servers_dir = auto_mcs_dir.join("Servers");
+		let path = servers_dir.join(server_name);
+
+		if path.exists() {
+			std::fs::remove_dir_all(path).context("Failed to delete server")?;
+		}
+
+		Ok(())
+	})?;
+
 	Ok(())
 }
 

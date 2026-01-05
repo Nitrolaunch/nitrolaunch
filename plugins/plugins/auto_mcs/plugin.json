@@ -22,6 +22,9 @@
 		},
 		"replace_instance_launch": {
 			"wasm": true
+		},
+		"delete_instance": {
+			"wasm": true
 		}
 	}
 }
