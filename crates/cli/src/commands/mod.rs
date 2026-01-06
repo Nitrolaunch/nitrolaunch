@@ -1,6 +1,7 @@
 mod config;
 mod files;
 mod instance;
+mod log;
 mod package;
 mod plugin;
 mod template;
@@ -29,6 +30,7 @@ use nitrolaunch::shared::output::{MessageContents, MessageLevel, NitroOutput};
 use self::config::ConfigSubcommand;
 use self::files::FilesSubcommand;
 use self::instance::InstanceSubcommand;
+use self::log::LogSubcommand;
 use self::package::PackageSubcommand;
 use self::plugin::PluginSubcommand;
 use self::template::TemplateSubcommand;
@@ -96,6 +98,11 @@ pub enum Command {
 		#[arg(short = 'c', long)]
 		copy: bool,
 	},
+	#[command(about = "Manage global log files for the launcher")]
+	Log {
+		#[command(subcommand)]
+		command: LogSubcommand,
+	},
 	#[clap(external_subcommand)]
 	External(Vec<String>),
 }
@@ -158,6 +165,7 @@ pub async fn run_cli() -> anyhow::Result<()> {
 				instances,
 				copy,
 			} => migrate(format, instances, copy, &mut data).await,
+			Command::Log { command } => log::run(command, &mut data).await,
 			Command::External(args) => call_plugin_subcommand(args, None, &mut data).await,
 		}
 	};

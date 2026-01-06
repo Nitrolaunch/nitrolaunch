@@ -71,6 +71,35 @@ pub fn get_latest_log_file_path(paths: &Paths, client_id: &str) -> PathBuf {
 	paths.logs.join(client_id).join("latest.txt")
 }
 
+/// Gets all the log files for the given client ID, sorted so that the oldest are at the end
+pub fn get_log_files(paths: &Paths, client_id: &str) -> anyhow::Result<Vec<PathBuf>> {
+	let read = paths
+		.logs
+		.join(client_id)
+		.read_dir()
+		.context("Failed to read logs directory")?;
+
+	let mapped = read.filter_map(|x| {
+		let x = x.ok()?;
+		if !x.file_type().ok()?.is_file() {
+			return None;
+		}
+
+		let name = x.file_name();
+		if !name.to_string_lossy().contains("log-") {
+			return None;
+		}
+
+		let time = x.metadata().ok()?.created().ok()?;
+
+		Some((x.path(), time))
+	});
+
+	let sorted = mapped.sorted_by_key(|x| x.1).map(|x| x.0);
+
+	Ok(sorted.collect())
+}
+
 /// Formats a full log message
 pub fn format_log_message(text: &str, level: MessageLevel) -> String {
 	let level_indicator = match level {
