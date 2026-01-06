@@ -23,7 +23,7 @@ impl Logger {
 		let path = get_log_file_path(paths, client_id).context("Failed to get log file path")?;
 		let _ = create_leading_dirs(&path);
 		let log_file = File::create(path).context("Failed to open log file")?;
-		let latest_log_file = File::create(get_latest_log_file_path(paths)).ok();
+		let latest_log_file = File::create(get_latest_log_file_path(paths, client_id)).ok();
 
 		Ok(Self {
 			log_file: Some(log_file),
@@ -67,8 +67,8 @@ pub fn get_log_file_path(paths: &Paths, client_id: &str) -> anyhow::Result<PathB
 }
 
 /// Get the path to the latest log file
-pub fn get_latest_log_file_path(paths: &Paths) -> PathBuf {
-	paths.logs.join("latest.txt")
+pub fn get_latest_log_file_path(paths: &Paths, client_id: &str) -> PathBuf {
+	paths.logs.join(client_id).join("latest.txt")
 }
 
 /// Formats a full log message
