@@ -3,6 +3,7 @@ use std::time::Duration;
 use anyhow::Context;
 use color_print::{cformat, cstr};
 use inquire::{Confirm, Password};
+use itertools::Itertools;
 use nitrolaunch::core::io::config::IO_CONFIG;
 use nitrolaunch::io::logging::Logger;
 use nitrolaunch::io::paths::Paths;
@@ -173,7 +174,11 @@ impl NitroOutput for TerminalOutput {
 
 impl TerminalOutput {
 	pub fn new(paths: &Paths) -> anyhow::Result<Self> {
-		let logger = Logger::new(paths, "cli").context("Failed to create logger")?;
+		let mut logger = Logger::new(paths, "cli").context("Failed to create logger")?;
+
+		// Log the command
+		let args = std::env::args().join(" ");
+		let _ = logger.log_message(MessageContents::Simple(args), MessageLevel::Important);
 
 		Ok(Self {
 			printer: ReplPrinter::new(true),
