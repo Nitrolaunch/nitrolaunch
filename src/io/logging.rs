@@ -2,6 +2,7 @@ use std::{fs::File, io::Write, path::PathBuf};
 
 use anyhow::Context;
 use itertools::Itertools;
+use nitro_core::io::files::create_leading_dirs;
 use nitro_shared::{
 	output::{MessageContents, MessageLevel},
 	util::utc_timestamp,
@@ -18,8 +19,9 @@ pub struct Logger {
 impl Logger {
 	/// Opens this logger with a client ID (cli, gui, etc) to identify the log files
 	pub fn new(paths: &Paths, client_id: &str) -> anyhow::Result<Self> {
-		let _ = clear_old_logs(paths);
+		let _ = clear_old_logs(paths, client_id);
 		let path = get_log_file_path(paths, client_id).context("Failed to get log file path")?;
+		let _ = create_leading_dirs(&path);
 		let log_file = File::create(path).context("Failed to open log file")?;
 		let latest_log_file = File::create(get_latest_log_file_path(paths)).ok();
 
@@ -60,7 +62,8 @@ impl Logger {
 pub fn get_log_file_path(paths: &Paths, client_id: &str) -> anyhow::Result<PathBuf> {
 	Ok(paths
 		.logs
-		.join(format!("log-{client_id}-{}.txt", utc_timestamp()?)))
+		.join(client_id)
+		.join(format!("log-{}.txt", utc_timestamp()?)))
 }
 
 /// Get the path to the latest log file
@@ -113,14 +116,15 @@ pub fn format_log_message_contents(contents: MessageContents) -> String {
 }
 
 /// Clears out old log files
-pub fn clear_old_logs(paths: &Paths) -> anyhow::Result<()> {
-	let dir_reader = paths
+pub fn clear_old_logs(paths: &Paths, client_id: &str) -> anyhow::Result<()> {
+	let read = paths
 		.logs
+		.join(client_id)
 		.read_dir()
 		.context("Failed to read logs directory")?;
 
 	let mut count = 0;
-	let mapped = dir_reader.filter_map(|x| {
+	let mapped = read.filter_map(|x| {
 		let x = x.ok()?;
 		if !x.file_type().ok()?.is_file() {
 			return None;
