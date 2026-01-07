@@ -135,7 +135,7 @@ def_hook!(
 	"Hook for doing work when setting up an instance for update or launch",
 	OnInstanceSetupArg,
 	OnInstanceSetupResult,
-	4,
+	5,
 );
 
 /// Argument for the OnInstanceSetup hook
@@ -186,6 +186,8 @@ pub struct OnInstanceSetupResult {
 	pub jvm_args: Vec<String>,
 	/// Optional additional game args
 	pub game_args: Vec<String>,
+	/// Whether to skip adding the game JAR to the final classpath
+	pub exclude_game_jar: bool,
 }
 
 def_hook!(

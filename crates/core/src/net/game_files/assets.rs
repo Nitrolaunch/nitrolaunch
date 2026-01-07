@@ -57,8 +57,12 @@ pub async fn get(
 	let indexes_dir = paths.assets.join("indexes");
 	files::create_dir(&indexes_dir)?;
 
+	let Some(asset_info) = &client_meta.asset_index else {
+		return Ok(out);
+	};
+
 	let index_path = indexes_dir.join(version_string + ".json");
-	let index_url = &client_meta.asset_index.url;
+	let index_url = &asset_info.url;
 
 	let (objects_dir, virtual_dir) = create_dirs(paths, version, version_list)
 		.await

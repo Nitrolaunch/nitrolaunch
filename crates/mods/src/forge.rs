@@ -1,43 +1,30 @@
-use std::{
-	collections::HashMap,
-	fmt::Display,
-	fs::File,
-	io::{BufRead, BufReader},
-	ops::DerefMut,
-	path::{Path, PathBuf},
-	process::Command,
-};
+use std::{fmt::Display, ops::DerefMut, path::Path, process::Command};
 
-use anyhow::{anyhow, bail, Context};
-use itertools::Itertools;
+use anyhow::{bail, Context};
 use nitro_core::{
 	io::{
 		files::create_leading_dirs,
-		java::{
-			classpath::{Classpath, CLASSPATH_SEP},
-			maven::MavenLibraryParts,
-		},
-		update::UpdateManager,
+		java::classpath::{Classpath, CLASSPATH_SEP},
+		json_from_file,
 	},
 	net::game_files::{
 		client_meta::{
 			args::{ArgumentItem, Arguments},
-			libraries::Library,
+			ClientMeta,
 		},
-		libraries,
+		libraries::get_classpath,
 	},
 };
 use nitro_net::neoforge;
 use nitro_shared::{
+	no_window,
 	output::{MessageContents, MessageLevel, NitroOutput},
 	versions::VersionInfo,
 	Side, UpdateDepth,
 };
 use reqwest::Client;
-use serde::Deserialize;
-use zip::ZipArchive;
 
-/// Mode we are in (Fabric / Quilt)
+/// Mode we are in (Forge / NeoForge)
 /// This way we don't have to duplicate a lot of functions since these both
 /// have very similar download steps
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -67,7 +54,7 @@ impl Display for Mode {
 	}
 }
 
-/// Installs Forge or NeoForge from a version. Returns the classpath as well as JVM and game args
+/// Installs Forge or NeoForge from a version. Returns the classpath, main class, and JVM and game args
 pub async fn install(
 	client: &Client,
 	internal_dir: &Path,
@@ -76,14 +63,13 @@ pub async fn install(
 	side: Side,
 	mode: Mode,
 	forge_version: &str,
-	inst_dir: PathBuf,
 	jvm_path: &Path,
-	game_jar_path: &Path,
 	o: &mut impl NitroOutput,
-) -> anyhow::Result<(Classpath, String, (Vec<String>, Vec<String>))> {
-	let forge_dir = internal_dir.join("forge");
+) -> anyhow::Result<ForgeInstallResult> {
+	let forge_dir = internal_dir.join("forge").join(mode.to_str());
 
-	let installer_path = forge_dir.join(format!("{}-{forge_version}-installer.jar", mode.to_str()));
+	let installer_file_name = format!("{}-{forge_version}-installer.jar", mode.to_str());
+	let installer_path = forge_dir.join(&installer_file_name);
 	create_leading_dirs(&installer_path)?;
 
 	if !installer_path.exists() || update_depth == UpdateDepth::Force {
@@ -104,104 +90,148 @@ pub async fn install(
 		);
 	}
 
-	// let result = run_installer(&installer_path, side, inst_dir, jvm_path);
-	// if let Err(e) = result {
-	// 	// Prevents skipping the download
-	// 	let _ = std::fs::remove_file(installer_path);
-	// 	bail!("Failed to run installer: {e}");
-	// }
+	if side == Side::Client {
+		create_mojang_launcher_jsons(internal_dir)
+			.context("Failed to create Microsoft launcher JSONs")?;
+	}
 
-	let data = extract_installer_data(&installer_path, side)
-		.context("Failed to extract installer data")?;
+	let client_meta_path = internal_dir
+		.join("versions")
+		.join(format!("{}-{forge_version}", mode.to_str()))
+		.join(format!("{}-{forge_version}.json", mode.to_str()));
+
+	let server_jar_path = match mode {
+		Mode::NeoForge => internal_dir
+			.join("libraries")
+			.join("net/neoforged/neoforge/{forge_version}/neoforge-{forge_version}-server.jar"),
+	};
+
+	let already_installed = match side {
+		Side::Client => client_meta_path.exists(),
+		Side::Server => server_jar_path.exists(),
+	};
+	let already_installed = already_installed || update_depth == UpdateDepth::Force;
 
 	let mut process = o.get_process();
 	process.display(
-		MessageContents::StartProcess(format!("Installing {mode} libraries")),
+		MessageContents::StartProcess(format!("Checking {mode} version info")),
 		MessageLevel::Important,
 	);
 
-	let libraries: Vec<_> = data
-		.version_json
-		.libraries
-		.into_iter()
-		.chain(data.launcher_profile.libraries.clone())
-		.unique_by(|x| x.name.clone())
-		.collect();
+	// Run the installer if not not installed
+	if !already_installed {
+		process.display(
+			MessageContents::StartProcess(format!("Running {mode} installer")),
+			MessageLevel::Important,
+		);
 
-	libraries::get(
-		&libraries,
-		internal_dir,
-		&version_info.version,
-		&UpdateManager::new(update_depth),
-		client,
-		process.deref_mut(),
-	)
-	.await
-	.context("Failed to get libraries")?;
+		let result = run_installer(
+			&installer_path,
+			side,
+			internal_dir,
+			&forge_dir,
+			jvm_path,
+			process.deref_mut(),
+		);
+		if let Err(e) = result {
+			let log_file_name = installer_file_name + ".log";
+			if let Ok(log_text) = std::fs::read_to_string(forge_dir.join(log_file_name)) {
+				process.display(
+					MessageContents::Error(format!("Installer log:\n{log_text}")),
+					MessageLevel::Important,
+				);
+			}
+			bail!("Failed to run installer: {e}");
+		}
 
-	let classpath = libraries::get_classpath(&libraries, internal_dir)?;
+		process.display(
+			MessageContents::Success(format!("{mode} installer ran")),
+			MessageLevel::Important,
+		);
+	}
 
-	// Handle arguments
-	let (jvm_args, game_args) = match side {
+	// Get data based on the side
+
+	match side {
 		Side::Client => {
-			let Arguments::New(args) = data.version_json.arguments else {
-				bail!("Invalid arguments");
+			let client_meta: ClientMeta = json_from_file(&client_meta_path)
+				.context("Failed to read version JSON for Forge")?;
+
+			let Arguments::New(args) = client_meta.arguments else {
+				bail!("Arguments in incorrect format");
 			};
 
-			let mut jvm_args = Vec::new();
-			let mut game_args = Vec::new();
+			let libraries_dir = internal_dir.join("libraries");
 
-			let libs_dir = internal_dir.join("libraries").to_string_lossy().to_string();
-			let classpath_sep = CLASSPATH_SEP.to_string();
+			let jvm_args = args
+				.jvm
+				.into_iter()
+				.filter_map(|x| {
+					if let ArgumentItem::Simple(arg) = x {
+						Some(process_arg(&arg, &libraries_dir, &version_info.version))
+					} else {
+						None
+					}
+				})
+				.collect();
 
-			for arg in args.jvm {
-				if let ArgumentItem::Simple(arg) = arg {
-					let arg = arg.replace("${version_name}", &version_info.version);
-					let arg = arg.replace("${library_directory}", &libs_dir);
-					let arg = arg.replace("${classpath_separator}", &classpath_sep);
-					jvm_args.push(arg);
-				}
-			}
+			let game_args = args
+				.game
+				.into_iter()
+				.filter_map(|x| {
+					if let ArgumentItem::Simple(arg) = x {
+						Some(process_arg(&arg, &libraries_dir, &version_info.version))
+					} else {
+						None
+					}
+				})
+				.collect();
 
-			for arg in args.game {
-				if let ArgumentItem::Simple(arg) = arg {
-					game_args.push(arg);
-				}
-			}
+			let classpath = get_classpath(&client_meta.libraries, internal_dir)
+				.context("Failed to get classpath")?;
 
-			(jvm_args, game_args)
+			process.display(
+				MessageContents::Success(format!("{mode} installed")),
+				MessageLevel::Important,
+			);
+
+			Ok(ForgeInstallResult {
+				classpath,
+				main_class: client_meta.main_class,
+				jvm_args,
+				game_args,
+				exclude_game_jar: true,
+			})
 		}
-		Side::Server => (data.server_args, vec![]),
-	};
+		Side::Server => {
+			// libraries/net/neoforged/neoforge/20.2.93/unix_args.txt
+			bail!("Forge server is not currently supported");
+		}
+	}
+}
 
-	// Run setup tasks
-	run_processors(
-		&data.launcher_profile,
-		side,
-		jvm_path,
-		game_jar_path,
-		internal_dir,
-	)
-	.context("Failed to run processing tasks")?;
-
-	process.display(
-		MessageContents::Success(format!("{mode} installed")),
-		MessageLevel::Important,
-	);
-
-	Ok((
-		classpath,
-		data.version_json.main_class,
-		(jvm_args, game_args),
-	))
+/// Result from the Forge install() function, to be added to the defaults from the client meta.
+pub struct ForgeInstallResult {
+	/// Java classpath
+	pub classpath: Classpath,
+	/// Java main class
+	pub main_class: String,
+	/// Args for the JVM
+	pub jvm_args: Vec<String>,
+	/// Args for the game
+	pub game_args: Vec<String>,
+	/// Whether to skip adding the game JAR to the final classpath
+	pub exclude_game_jar: bool,
 }
 
 /// Runs the installer at the given path
 fn run_installer(
 	path: &Path,
 	side: Side,
-	inst_dir: PathBuf,
+	install_dir: &Path,
+	forge_dir: &Path,
 	jvm_path: &Path,
+	o: &mut impl NitroOutput,
 ) -> anyhow::Result<()> {
 	let mut command = Command::new(jvm_path);
 
@@ -213,7 +243,17 @@ fn run_installer(
 		Side::Server => command.arg("--installServer"),
 	};
 
-	command.arg(inst_dir);
+	command.arg(install_dir);
+
+	// This is where the log file will end up
+	command.current_dir(forge_dir);
+
+	no_window!(command);
+
+	o.display(
+		MessageContents::Simple(format!("{command:?}")),
+		MessageLevel::Debug,
+	);
 
 	let exit = command.spawn()?.wait()?;
 	if !exit.success() {
@@ -223,196 +263,18 @@ fn run_installer(
 	Ok(())
 }
 
-/// Extracts Forge data from the installer JAR
-fn extract_installer_data(installer_path: &Path, side: Side) -> anyhow::Result<InstallerData> {
-	let mut zip =
-		ZipArchive::new(File::open(installer_path)?).context("Failed to open zip archive")?;
-
-	// Client meta
-	let version_json: VersionJson = serde_json::from_reader(BufReader::new(
-		zip.by_name("version.json")
-			.context("Failed to get version file")?,
-	))
-	.context("Failed to deserialize version information")?;
-
-	// Launcher profile
-	let launcher_profile: LauncherProfile = serde_json::from_reader(BufReader::new(
-		zip.by_name("install_profile.json")
-			.context("Failed to get version file")?,
-	))
-	.context("Failed to deserialize launcher profile")?;
-
-	// Arguments for the server
-	let server_args = if let Side::Server = side {
-		#[cfg(target_os = "windows")]
-		let args_path = "data/win_args.txt";
-		#[cfg(not(target_os = "windows"))]
-		let args_path = "data/unix_args.txt";
-
-		let contents = zip
-			.by_name(args_path)
-			.context("Failed to get args file from zip")?;
-
-		let result: std::io::Result<Vec<_>> = BufReader::new(contents).lines().collect();
-		let result = result?;
-
-		// The text files sometimes put multiple args on the same line
-		let mut out = Vec::new();
-		for line in result {
-			out.extend(line.split(" ").map(|x| x.to_string()));
-		}
-
-		out.into_iter().collect()
-	} else {
-		vec![]
-	};
-
-	Ok(InstallerData {
-		version_json,
-		launcher_profile,
-		server_args,
-	})
-}
-
-/// Data extracted from the installer JAR
-struct InstallerData {
-	version_json: VersionJson,
-	launcher_profile: LauncherProfile,
-	server_args: Vec<String>,
-}
-
-/// Runs processors from the launcher profile
-fn run_processors(
-	launcher_profile: &LauncherProfile,
-	side: Side,
-	jvm_path: &Path,
-	game_jar_path: &Path,
-	internal_dir: &Path,
-) -> anyhow::Result<()> {
-	let mut children = Vec::new();
-
-	let game_jar_path = game_jar_path.to_string_lossy().to_string();
-	let internal_dir_string = internal_dir.to_string_lossy().to_string();
-
-	let libraries_dir = internal_dir.join("libraries");
-
-	for processor in &launcher_profile.processors {
-		if let Some(sides) = &processor.sides {
-			if !sides.contains(&side) {
-				continue;
-			}
-		}
-
-		// Skip the EXTRACT_FILES task
-		if processor.args.contains(&"EXTRACT_FILES".into()) {
-			continue;
-		}
-
-		let args = processor.args.iter().map(|arg| {
-			let arg = arg.replace("{ROOT}", &internal_dir_string);
-			let arg = arg.replace("{SIDE}", &side.to_string());
-			let mut arg = arg.replace("{MINECRAFT_JAR}", &game_jar_path);
-
-			for (data_key, data_entry) in &launcher_profile.data {
-				let value = match side {
-					Side::Client => &data_entry.client,
-					Side::Server => &data_entry.server,
-				};
-				arg = arg.replace(&format!("{{{data_key}}}"), value);
-			}
-
-			arg
-		});
-
-		let mut command = Command::new(jvm_path);
-
-		let mut classpath = Classpath::new();
-		classpath.add_multiple_paths(processor.classpath.iter().filter_map(|x| {
-			MavenLibraryParts::parse_from_str(x).map(|x| libraries_dir.join(x.get_dir()))
-		}));
-		command.env("CLASSPATH", classpath.get_str());
-
-		command.arg("-jar");
-		let maven = MavenLibraryParts::parse_from_str(&processor.jar)
-			.context("Task JAR was in incorrect format")?;
-		command.arg(libraries_dir.join(maven.get_dir()));
-
-		command.args(args);
-
-		eprintln!("{command:?}");
-
-		children.push(command.spawn()?);
-	}
-
-	let mut results = Vec::new();
-
-	while !children.is_empty() {
-		children.retain_mut(|child| {
-			let result = child.try_wait();
-
-			match result {
-				Ok(Some(result)) => {
-					if !result.success() {
-						results.push(anyhow!("Process returned non-zero exit status: {result}"));
-					}
-
-					false
-				}
-				Ok(None) => true,
-				Err(e) => {
-					results.push(anyhow!("Process failed to run: {e}"));
-
-					false
-				}
-			}
-		});
-	}
-
-	if let Some(result) = results.into_iter().next() {
-		return Err(result);
-	}
-
+/// Creates JSON files required for the installer to work
+fn create_mojang_launcher_jsons(dir: &Path) -> anyhow::Result<()> {
+	std::fs::write(dir.join("launcher_profiles.json"), "{}")?;
+	std::fs::write(dir.join("launcher_profiles_microsoft_store.json"), "{}")?;
 	Ok(())
 }
 
-/// Limited version of the client meta used inside of the Forge installer
-#[derive(Deserialize)]
-struct VersionJson {
-	/// Arguments for the client. Can have a different field name and format
-	/// depending on how new the file is in the manifest
-	#[serde(alias = "minecraftArguments")]
-	arguments: Arguments,
-	/// Libraries to download for the client
-	libraries: Vec<nitro_core::net::game_files::client_meta::libraries::Library>,
-	/// Java main class for the client
-	#[serde(rename = "mainClass")]
-	main_class: String,
-}
+/// Processes an argument from the version JSON to replace tokens
+fn process_arg(arg: &str, libraries_dir: &Path, version_name: &str) -> String {
+	let arg = arg.replace("${classpath_separator}", &format!("{CLASSPATH_SEP}"));
+	let arg = arg.replace("${library_directory}", &*libraries_dir.to_string_lossy());
+	let arg = arg.replace("${version_name}", version_name);
 
-/// Mojang launcher profile that we need install tasks from
-#[derive(Deserialize)]
-struct LauncherProfile {
-	/// Side-specific data inserted into task arguments
-	data: HashMap<String, DataEntry>,
-	/// Tasks to complete
-	processors: Vec<Processor>,
-	/// More libraries
-	libraries: Vec<Library>,
-}
-
-/// Entry for multiple-sided data
-#[derive(Deserialize)]
-struct DataEntry {
-	client: String,
-	server: String,
-}
-
-/// A single task to do
-#[derive(Deserialize)]
-struct Processor {
-	#[serde(default)]
-	sides: Option<Vec<Side>>,
-	jar: String,
-	classpath: Vec<String>,
-	args: Vec<String>,
+	arg
 }

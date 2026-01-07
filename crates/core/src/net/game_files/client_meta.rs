@@ -25,22 +25,27 @@ pub struct ClientMeta {
 	pub arguments: args::Arguments,
 	/// Info about the assets index
 	#[serde(rename = "assetIndex")]
-	pub asset_index: AssetIndexInfo,
+	#[serde(default)]
+	pub asset_index: Option<AssetIndexInfo>,
 	/// Assets version
 	#[serde(rename = "assets")]
-	pub assets_version: String,
+	#[serde(default)]
+	pub assets_version: Option<String>,
 	/// File downloads
-	pub downloads: Downloads,
+	#[serde(default)]
+	pub downloads: Option<Downloads>,
 	/// Java information
 	#[serde(rename = "javaVersion")]
-	pub java_info: JavaInfo,
+	#[serde(default)]
+	pub java_info: Option<JavaInfo>,
 	/// Libraries to download for the client
 	pub libraries: Vec<libraries::Library>,
 	/// Java main class for the client
 	#[serde(rename = "mainClass")]
 	pub main_class: String,
 	/// Logging information
-	pub logging: LogInfo,
+	#[serde(default)]
+	pub logging: Option<LogInfo>,
 }
 
 /// Information in the meta about the assets index

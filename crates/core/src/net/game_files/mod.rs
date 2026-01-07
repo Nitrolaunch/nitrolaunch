@@ -48,9 +48,13 @@ pub mod game_jar {
 			MessageLevel::Important,
 		);
 
+		let Some(downloads) = &client_meta.downloads else {
+			return Ok(());
+		};
+
 		let download = match side {
-			Side::Client => &client_meta.downloads.client,
-			Side::Server => &client_meta.downloads.server,
+			Side::Client => &downloads.client,
+			Side::Server => &downloads.server,
 		};
 
 		let mut download = ProgressiveDownload::file(&download.url, path, client).await?;
@@ -84,7 +88,7 @@ pub mod log_config {
 
 	use super::{client_meta::ClientMeta, *};
 
-	/// Get the logging configuration file and returns the path to it
+	/// Get the logging configuration file
 	pub async fn get(
 		client_meta: &ClientMeta,
 		version: &str,
@@ -98,7 +102,11 @@ pub mod log_config {
 			return Ok(());
 		}
 
-		let url = &client_meta.logging.client.file.url;
+		let Some(logging) = &client_meta.logging else {
+			return Ok(());
+		};
+
+		let url = &logging.client.file.url;
 		download::file(url, &path, client).await?;
 
 		Ok(())

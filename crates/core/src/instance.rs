@@ -54,7 +54,12 @@ impl<'params> Instance<'params> {
 		}
 
 		// Install Java
-		let java_vers = &params.client_meta.java_info.major_version;
+		let java_vers = &params
+			.client_meta
+			.java_info
+			.as_ref()
+			.context("Client meta Java info missing")?
+			.major_version;
 		let java_params = JavaInstallParameters {
 			paths: params.paths,
 			update_manager: params.update_manager,
@@ -83,21 +88,21 @@ impl<'params> Instance<'params> {
 		params.persistent.dump(params.paths).await?;
 
 		// Get the game jar
+		game_jar::get(
+			config.side.get_side(),
+			params.client_meta,
+			params.version,
+			params.paths,
+			params.update_manager,
+			params.req_client,
+			o,
+		)
+		.await
+		.context("Failed to get the game JAR file")?;
+
 		let mut jar_path = if let Some(jar_path) = &config.jar_path {
 			jar_path.clone()
 		} else {
-			game_jar::get(
-				config.side.get_side(),
-				params.client_meta,
-				params.version,
-				params.paths,
-				params.update_manager,
-				params.req_client,
-				o,
-			)
-			.await
-			.context("Failed to get the game JAR file")?;
-
 			crate::io::minecraft::game_jar::get_path(
 				config.side.get_side(),
 				params.version,
@@ -108,6 +113,7 @@ impl<'params> Instance<'params> {
 		if !jar_path.exists() {
 			bail!("Game JAR does not exist");
 		}
+
 		// For the server, the jar file has to be in the launch directory, so we hardlink it,
 		// or copy it if hardlinks are disabled
 		if let Side::Server = config.side.get_side() {
@@ -167,7 +173,9 @@ impl<'params> Instance<'params> {
 		for lib in &config.additional_libs {
 			classpath.add_path(lib)?;
 		}
-		classpath.add_path(&jar_path)?;
+		if !config.exclude_game_jar {
+			classpath.add_path(&jar_path)?;
+		}
 
 		// Main class
 		let main_class = if let Some(main_class) = &config.main_class {
@@ -268,7 +276,7 @@ pub struct InstanceConfiguration {
 	pub path: PathBuf,
 	/// Launch options for the instance
 	pub launch: LaunchConfiguration,
-	/// JAR path override. If this is set, the default JAR file will not be downloaded
+	/// JAR path override
 	pub jar_path: Option<PathBuf>,
 	/// Java main class override
 	pub main_class: Option<String>,
@@ -276,6 +284,10 @@ pub struct InstanceConfiguration {
 	/// These must be absolute paths to Java libraries already installed on the
 	/// system, and will not be installed automatically
 	pub additional_libs: Vec<PathBuf>,
+	/// Whether to skip adding the JAR path to the classpath.
+	/// Should only be set if your modifications add their own Minecraft jar
+	/// which conflicts with the default one
+	pub exclude_game_jar: bool,
 }
 
 impl InstanceConfiguration {
@@ -288,6 +300,7 @@ impl InstanceConfiguration {
 			jar_path: None,
 			main_class: None,
 			additional_libs: Vec::new(),
+			exclude_game_jar: false,
 		}
 	}
 }

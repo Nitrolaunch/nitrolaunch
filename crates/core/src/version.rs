@@ -106,7 +106,15 @@ impl InstalledVersion<'_, '_> {
 		kind: JavaInstallationKind,
 		o: &mut impl NitroOutput,
 	) -> anyhow::Result<JavaInstallation> {
-		let key = (kind.clone(), self.inner.client_meta.java_info.major_version);
+		let key = (
+			kind.clone(),
+			self.inner
+				.client_meta
+				.java_info
+				.as_ref()
+				.context("Client meta Java info missing")?
+				.major_version,
+		);
 
 		if !self.params.java_installations.contains_key(&key) {
 			let java_params = JavaInstallParameters {
@@ -117,14 +125,9 @@ impl InstalledVersion<'_, '_> {
 				custom_install_func: self.params.custom_java_fn,
 			};
 
-			let java = JavaInstallation::install(
-				kind,
-				self.inner.client_meta.java_info.major_version,
-				java_params,
-				o,
-			)
-			.await
-			.context("Failed to install or update Java")?;
+			let java = JavaInstallation::install(kind, key.1, java_params, o)
+				.await
+				.context("Failed to install or update Java")?;
 
 			self.params
 				.java_installations

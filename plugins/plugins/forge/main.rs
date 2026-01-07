@@ -16,10 +16,6 @@ fn main() -> anyhow::Result<()> {
 			bail!("Instance side is empty");
 		};
 
-		let Some(game_dir) = arg.game_dir else {
-			return Ok(OnInstanceSetupResult::default());
-		};
-
 		if arg.config.custom_launch {
 			return Ok(OnInstanceSetupResult::default());
 		}
@@ -45,7 +41,7 @@ fn main() -> anyhow::Result<()> {
 
 		let loader_version;
 
-		let (classpath, main_class, (jvm_args, game_args)) = match mode {
+		let result = match mode {
 			Mode::NeoForge => {
 				let versions = runtime.block_on(neoforge::get_versions(&client))?;
 
@@ -64,9 +60,7 @@ fn main() -> anyhow::Result<()> {
 						side,
 						mode,
 						version,
-						PathBuf::from(game_dir),
 						&PathBuf::from(arg.jvm_path),
-						&PathBuf::from(arg.game_jar_path),
 						process.deref_mut(),
 					))
 					.context("Failed to install NeoForge")?
@@ -79,11 +73,12 @@ fn main() -> anyhow::Result<()> {
 		);
 
 		Ok(OnInstanceSetupResult {
-			classpath_extension: classpath.get_entries().to_vec(),
-			main_class_override: Some(main_class),
-			jvm_args,
-			game_args,
+			classpath_extension: result.classpath.get_entries().to_vec(),
+			main_class_override: Some(result.main_class),
+			jvm_args: result.jvm_args,
+			game_args: result.game_args,
 			loader_version,
+			exclude_game_jar: true,
 			..Default::default()
 		})
 	})?;

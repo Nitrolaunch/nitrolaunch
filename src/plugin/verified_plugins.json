@@ -270,5 +270,13 @@
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Shell completions for zsh and other shells"
+	},
+	"forge": {
+		"id": "forge",
+		"name": "Forge",
+		"version": "v5",
+		"github_owner": "Nitrolaunch",
+		"github_repo": "plugins",
+		"description": "Install NeoForge on the client"
 	}
 }

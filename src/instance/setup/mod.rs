@@ -209,6 +209,8 @@ impl Instance {
 			self.modification_data.jvm_args.extend(result.jvm_args);
 			self.modification_data.game_args.extend(result.game_args);
 
+			self.modification_data.exclude_game_jar |= result.exclude_game_jar;
+
 			if let Some(loader_version) = result.loader_version {
 				if loader_version_set {
 					bail!("Multiple plugins attempted to modify the loader version");
@@ -322,6 +324,7 @@ impl Instance {
 			jar_path: self.modification_data.jar_path_override.clone(),
 			main_class: self.modification_data.main_class_override.clone(),
 			additional_libs: self.modification_data.classpath_extension.get_paths(),
+			exclude_game_jar: self.modification_data.exclude_game_jar,
 		};
 		let inst = version
 			.get_instance(config, o)
@@ -443,6 +446,8 @@ pub struct ModificationData {
 	pub jvm_args: Vec<String>,
 	/// Extra arguments for the game
 	pub game_args: Vec<String>,
+	/// Whether to skip adding the game JAR to the classpath
+	pub exclude_game_jar: bool,
 }
 
 impl ModificationData {
@@ -454,6 +459,7 @@ impl ModificationData {
 			classpath_extension: Classpath::new(),
 			jvm_args: Vec::new(),
 			game_args: Vec::new(),
+			exclude_game_jar: false,
 		}
 	}
 }
