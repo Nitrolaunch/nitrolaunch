@@ -128,7 +128,7 @@ async fn info(data: &mut CmdData<'_>, plugin: String) -> anyhow::Result<()> {
 	Ok(())
 }
 
-async fn install(
+pub(crate) async fn install(
 	data: &mut CmdData<'_>,
 	plugins: Vec<String>,
 	version: Option<String>,

@@ -14,7 +14,7 @@ use clap::{Parser, Subcommand};
 use color_print::{cformat, cprintln};
 
 use nitrolaunch::config::modifications::{apply_modifications_and_write, ConfigModification};
-use nitrolaunch::config::Config;
+use nitrolaunch::config::{is_first_run, Config};
 use nitrolaunch::config_crate::ConfigDeser;
 use nitrolaunch::instance::transfer::{load_formats, migrate_instances};
 use nitrolaunch::io::lock::Lockfile;
@@ -140,6 +140,56 @@ pub async fn run_cli() -> anyhow::Result<()> {
 		.await
 		.context("Failed to set up system paths")?;
 	let mut output = TerminalOutput::new(&paths).context("Failed to set up output")?;
+
+	// First launch message
+	if is_first_run(&paths) {
+		output.display(
+			MessageContents::Header("Welcome to Nitrolaunch!".into()),
+			MessageLevel::Important,
+		);
+
+		let install_default = output.prompt_yes_no(
+			true,
+			MessageContents::Simple(
+				"You probably want to install the default set of plugins, \
+which includes features like Modrinth, Fabric, and stats tracking. \
+Would you like to do that now?"
+					.into(),
+			),
+		)?;
+
+		if install_default {
+			let mut data = CmdData::new(paths.clone(), &mut output)?;
+			let log_level = get_log_level(&cli);
+			data.output.set_log_level(log_level);
+
+			plugin::install(
+				&mut data,
+				vec![
+					"fabric_quilt".into(),
+					"modrinth".into(),
+					"smithed".into(),
+					"stats".into(),
+					"docs".into(),
+					"multimc_transfer".into(),
+					"xmcl_transfer".into(),
+				],
+				None,
+			)
+			.await
+			.context("Failed to install default plugins")?;
+
+			output.display(
+				MessageContents::Header("Use the nitro migrate command to use instances from an existing launcher, and make sure to join the Discord!".into()),
+				MessageLevel::Important,
+			);
+			output.display(
+				MessageContents::Hyperlink("https://discord.gg/cgVapnVfZJ".into()),
+				MessageLevel::Important,
+			);
+		}
+	}
+
 	let res = {
 		let mut data = CmdData::new(paths, &mut output)?;
 		let log_level = get_log_level(&cli);

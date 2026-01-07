@@ -36,6 +36,7 @@ use crate::pkg::reg::PkgRegistry;
 use serde_json::json;
 
 use std::collections::HashMap;
+use std::fs::File;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -429,6 +430,18 @@ fn check_configured_packages(
 			return;
 		}
 	}
+}
+
+/// Checks whether this is the first time the launcher has been run.
+/// If it is, saves that info so that it will return false the next time
+pub fn is_first_run(paths: &Paths) -> bool {
+	let path = paths.internal.join("is_first_run");
+	let out = !path.exists();
+	if out {
+		let _ = File::create(path);
+	}
+
+	out
 }
 
 /// Creates a user from a user config
