@@ -97,7 +97,9 @@ impl Config {
 		client_id: ClientId,
 		o: &mut impl NitroOutput,
 	) -> Self {
-		let _ = check_nitro_version(paths, o);
+		if show_warnings {
+			let _ = check_nitro_version(paths, o);
+		}
 
 		let mut users = UserManager::new(client_id);
 		let mut instances = HashMap::with_capacity(config.instances.len());
@@ -107,7 +109,9 @@ impl Config {
 
 		let packages = PkgRegistry::new(repositories, &plugins);
 
-		check_configured_packages(&config.instances, &config.templates, o);
+		if show_warnings {
+			check_configured_packages(&config.instances, &config.templates, o);
+		}
 
 		// Users
 		for (user_id, user_config) in config.users.iter() {
