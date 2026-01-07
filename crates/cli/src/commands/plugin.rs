@@ -8,8 +8,10 @@ use nitrolaunch::plugin::PluginManager;
 use nitrolaunch::plugin_crate::plugin::PluginManifest;
 use nitrolaunch::shared::lang::translate::TranslationKey;
 use nitrolaunch::shared::output::{MessageContents, MessageLevel, NitroOutput};
+use nitrolaunch::shared::translate;
 use nitrolaunch::shared::versions::parse_single_versioned_string;
 use reqwest::Client;
+use std::ops::DerefMut;
 
 use super::CmdData;
 use crate::commands::call_plugin_subcommand;
@@ -152,34 +154,30 @@ pub(crate) async fn install(
 	}
 
 	for plugin in plugins {
-		let (plugin, version_override) = parse_single_versioned_string(&plugin);
+		let (plugin_id, version_override) = parse_single_versioned_string(&plugin);
 
 		let version = version_override.or(version.as_deref());
 
-		let Some(plugin) = verified_list.get(plugin) else {
-			bail!("Unknown plugin '{plugin}'");
+		let Some(plugin) = verified_list.get(plugin_id) else {
+			bail!("Unknown plugin '{plugin_id}'");
 		};
 
-		data.output.display(
-			MessageContents::StartProcess(
-				data.output
-					.translate(TranslationKey::StartInstallingPlugin)
-					.to_string(),
-			),
+		let mut process = data.output.get_process();
+
+		let message = translate!(process, StartInstallingPlugin, "plugin" = plugin_id);
+		process.display(
+			MessageContents::StartProcess(message),
 			MessageLevel::Important,
 		);
 		plugin
-			.install(version, &data.paths, &client, data.output)
+			.install(version, &data.paths, &client, process.deref_mut())
 			.await
 			.context("Failed to install plugin")?;
-		data.output.display(
-			MessageContents::Success(
-				data.output
-					.translate(TranslationKey::FinishInstallingPlugin)
-					.to_string(),
-			),
-			MessageLevel::Important,
-		);
+
+		let message = process
+			.translate(TranslationKey::FinishInstallingPlugin)
+			.to_string();
+		process.display(MessageContents::Success(message), MessageLevel::Important);
 	}
 
 	Ok(())
