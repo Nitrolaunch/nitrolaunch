@@ -276,6 +276,23 @@ pub fn parse_versioned_string(string: &str) -> (&str, VersionPattern) {
 	}
 }
 
+/// Parses a string of the format foo@bar, where foo is the object and bar is the optional
+/// single version. The @ and version can be omitted, which will return None
+pub fn parse_single_versioned_string(string: &str) -> (&str, Option<&str>) {
+	if let Some(index) = string.find('@') {
+		let (id, mut version) = string.split_at(index);
+		if index + 1 < string.len() {
+			// Cut off the at symbol
+			version = &version[1..];
+			(id, Some(version))
+		} else {
+			(id, None)
+		}
+	} else {
+		(string, None)
+	}
+}
+
 /// Used for deserializing a Minecraft version
 #[derive(Deserialize, Serialize, Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]

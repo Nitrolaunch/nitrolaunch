@@ -8,6 +8,7 @@ use nitrolaunch::plugin::PluginManager;
 use nitrolaunch::plugin_crate::plugin::PluginManifest;
 use nitrolaunch::shared::lang::translate::TranslationKey;
 use nitrolaunch::shared::output::{MessageContents, MessageLevel, NitroOutput};
+use nitrolaunch::shared::versions::parse_single_versioned_string;
 use reqwest::Client;
 
 use super::CmdData;
@@ -30,8 +31,11 @@ pub enum PluginSubcommand {
 	Info { plugin: String },
 	#[command(about = "Install one or more plugins from the verified list")]
 	Install {
+		/// The plugins to install
 		plugins: Vec<String>,
-		/// The version of the plugin to install
+		/// The version of the plugins to install. Defaults to the latest version.
+		/// You can also specify each plugin name with @version at the end to override
+		/// this global version per-plugin
 		#[arg(short, long)]
 		version: Option<String>,
 	},
@@ -148,7 +152,11 @@ pub(crate) async fn install(
 	}
 
 	for plugin in plugins {
-		let Some(plugin) = verified_list.get(&plugin) else {
+		let (plugin, version_override) = parse_single_versioned_string(&plugin);
+
+		let version = version_override.or(version.as_deref());
+
+		let Some(plugin) = verified_list.get(plugin) else {
 			bail!("Unknown plugin '{plugin}'");
 		};
 
@@ -161,7 +169,7 @@ pub(crate) async fn install(
 			MessageLevel::Important,
 		);
 		plugin
-			.install(version.as_deref(), &data.paths, &client, data.output)
+			.install(version, &data.paths, &client, data.output)
 			.await
 			.context("Failed to install plugin")?;
 		data.output.display(
