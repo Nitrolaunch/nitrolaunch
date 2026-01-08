@@ -89,10 +89,7 @@ impl ConfigPreferences {
 			}
 		}
 		repositories.extend(preferred_plugin_repositories);
-		repositories.extend(PackageRepository::default_repos(
-			prefs.repositories.enable_core,
-			prefs.repositories.enable_std,
-		));
+		repositories.extend(PackageRepository::default_repos());
 		repositories.extend(backup_plugin_repositories);
 		for repo in prefs.repositories.backup.iter() {
 			if !repo.disable {

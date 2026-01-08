@@ -49,10 +49,6 @@ pub struct RepositoriesDeser {
 	/// The backup repositories included after the default ones
 	#[serde(skip_serializing_if = "Vec::is_empty")]
 	pub backup: Vec<RepoDeser>,
-	/// Whether to enable the core repository
-	pub enable_core: bool,
-	/// Whether to enable the std repository
-	pub enable_std: bool,
 }
 
 impl Default for RepositoriesDeser {
@@ -60,8 +56,6 @@ impl Default for RepositoriesDeser {
 		Self {
 			preferred: Vec::new(),
 			backup: Vec::new(),
-			enable_core: true,
-			enable_std: true,
 		}
 	}
 }

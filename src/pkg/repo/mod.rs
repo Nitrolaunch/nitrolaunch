@@ -69,16 +69,8 @@ impl PackageRepository {
 	}
 
 	/// Get the default set of repositories
-	pub fn default_repos(enable_core: bool, enable_std: bool) -> Vec<Self> {
-		let mut out = Vec::new();
-		// We don't want std overriding core
-		if enable_core {
-			out.push(Self::core());
-		}
-		if enable_std {
-			out.push(Self::std());
-		}
-		out
+	pub fn default_repos() -> Vec<Self> {
+		vec![Self::core(), Self::std()]
 	}
 
 	/// Update cached packages
