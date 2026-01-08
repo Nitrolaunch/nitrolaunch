@@ -131,7 +131,7 @@ pub async fn update_version_manifest(
 		setup_core(
 			None,
 			&UpdateSettings {
-				depth: UpdateDepth::Shallow,
+				depth: UpdateDepth::Full,
 				offline_auth: false,
 			},
 			&state.client,

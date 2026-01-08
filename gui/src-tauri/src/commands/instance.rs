@@ -10,7 +10,7 @@ use nitrolaunch::core::io::json_to_file_pretty;
 use nitrolaunch::core::util::versions::MinecraftVersion;
 use nitrolaunch::instance::delete_instance_files;
 use nitrolaunch::instance::setup::setup_core;
-use nitrolaunch::instance::update::manager::UpdateManager;
+use nitrolaunch::instance::update::manager::{UpdateManager, UpdateSettings};
 use nitrolaunch::instance::update::InstanceUpdateContext;
 use nitrolaunch::io::lock::Lockfile;
 use nitrolaunch::pkg::eval::EvalConstants;
@@ -20,6 +20,7 @@ use nitrolaunch::plugin_crate::hook::hooks::{
 };
 use nitrolaunch::shared::id::{InstanceID, TemplateID};
 use nitrolaunch::shared::output::NoOp;
+use nitrolaunch::shared::versions::{MinecraftLatestVersion, MinecraftVersionDeser};
 use nitrolaunch::shared::{Side, UpdateDepth};
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
@@ -719,7 +720,71 @@ pub async fn get_instance_has_updated(
 	Ok(lock.has_instance_done_first_update(instance))
 }
 
-#[derive(Deserialize, Serialize, Clone, Copy)]
+/// Gets the Minecraft version of an instance or template from the lockfile, used for `latest` and `latest_snapshot`.
+/// If it is not in the lockfile, or is a template, returns the proper latest version
+#[tauri::command]
+pub async fn canonicalize_version(
+	state: tauri::State<'_, State>,
+	version: MinecraftVersionDeser,
+	id: Option<&str>,
+	instance_or_template: InstanceOrTemplate,
+) -> Result<String, String> {
+	if let MinecraftVersionDeser::Version(version) = &version {
+		return Ok(version.to_string());
+	}
+
+	if let Some(id) = id {
+		if instance_or_template == InstanceOrTemplate::Instance {
+			let lock = fmt_err(Lockfile::open(&state.paths).context("Failed to open lockfile"))?;
+			if let Some(version) = lock.get_instance_version(id) {
+				return Ok(version.to_string());
+			}
+		}
+	}
+
+	// Get the latest version
+
+	let config = fmt_err(
+		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
+			.await
+			.context("Failed to load config"),
+	)?;
+
+	let mut core = fmt_err(
+		setup_core(
+			None,
+			&UpdateSettings {
+				depth: UpdateDepth::Shallow,
+				offline_auth: true,
+			},
+			&state.client,
+			&config.users,
+			&config.plugins,
+			&state.paths,
+			&mut NoOp,
+		)
+		.await,
+	)?;
+
+	let manifest = fmt_err(core.get_version_manifest(None, &mut NoOp).await)?;
+	let Some(latest) = &manifest.manifest.latest else {
+		return Err("Latest versions missing".into());
+	};
+
+	let version = match version {
+		MinecraftVersionDeser::Latest(MinecraftLatestVersion::Release) => {
+			latest.release.to_string()
+		}
+		MinecraftVersionDeser::Latest(MinecraftLatestVersion::Snapshot) => {
+			latest.snapshot.to_string()
+		}
+		MinecraftVersionDeser::Version(..) => unreachable!(),
+	};
+
+	Ok(version)
+}
+
+#[derive(Deserialize, Serialize, Clone, Copy, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 pub enum InstanceOrTemplate {
 	Instance,

@@ -353,4 +353,12 @@ impl Lockfile {
 	) -> Option<&HashMap<String, LockfilePackage>> {
 		self.contents.packages.get(instance)
 	}
+
+	/// Get the locked version of an instance
+	pub fn get_instance_version(&self, instance: &str) -> Option<&str> {
+		self.contents
+			.instances
+			.get(instance)
+			.map(|x| x.version.as_str())
+	}
 }

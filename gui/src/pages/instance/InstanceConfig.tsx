@@ -148,7 +148,7 @@ export default function InstanceConfigModal(props: InstanceConfigProps) {
 						id: id(),
 						instanceOrTemplate: props.params.mode,
 					});
-				} catch (e) { }
+				} catch (e) {}
 			}
 		}
 	});
@@ -231,8 +231,8 @@ export default function InstanceConfigModal(props: InstanceConfigProps) {
 		isInstance()
 			? `Instance ${id()}`
 			: isBaseTemplate()
-				? "Base Template"
-				: `Template ${id()}`;
+			? "Base Template"
+			: `Template ${id()}`;
 
 	let derivedPackages = createMemo(() => {
 		return getDerivedPackages(parentConfigs());
@@ -351,7 +351,9 @@ export default function InstanceConfigModal(props: InstanceConfigProps) {
 			if (await idExists(configId!, props.params.mode)) {
 				setTab("general");
 				inputError("id");
-				errorToast(`${beautifyString(props.params.mode)} with this ID already exists`);
+				errorToast(
+					`${beautifyString(props.params.mode)} with this ID already exists`
+				);
 				return;
 			} else {
 				clearInputError("id");
@@ -451,9 +453,9 @@ export default function InstanceConfigModal(props: InstanceConfigProps) {
 			jvmArgs() == undefined && gameArgs() == undefined
 				? undefined
 				: {
-					jvm: jvmArgs(),
-					game: gameArgs(),
-				};
+						jvm: jvmArgs(),
+						game: gameArgs(),
+				  };
 
 		let overrides =
 			packageOverrides().suppress == undefined ? undefined : packageOverrides();
@@ -743,14 +745,14 @@ export default function InstanceConfigModal(props: InstanceConfigProps) {
 									templates() == undefined
 										? []
 										: templates()!.map((x) => {
-											return {
-												value: x.id,
-												contents: (
-													<div>{x.name == undefined ? x.id : x.name}</div>
-												),
-												color: "var(--template)",
-											};
-										})
+												return {
+													value: x.id,
+													contents: (
+														<div>{x.name == undefined ? x.id : x.name}</div>
+													),
+													color: "var(--template)",
+												};
+										  })
 								}
 								selected={from()}
 								onChangeMulti={(x) => {
@@ -870,8 +872,9 @@ export default function InstanceConfigModal(props: InstanceConfigProps) {
 									/>
 									<span
 										class="bold"
-										style={`color:${releaseVersionsOnly() ? "var(--fg3)" : "var(--instance)"
-											}`}
+										style={`color:${
+											releaseVersionsOnly() ? "var(--fg3)" : "var(--instance)"
+										}`}
 									>
 										Include Snapshots
 									</span>
@@ -1018,7 +1021,7 @@ export default function InstanceConfigModal(props: InstanceConfigProps) {
 							return undefined;
 						}
 					})()}
-					showBrowseButton={true}
+					showBrowseButton={!isCreating()}
 					parentConfigs={parentConfigs()}
 					onChange={() => setIsDirty(true)}
 					overrides={packageOverrides()}

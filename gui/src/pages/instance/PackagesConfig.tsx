@@ -72,6 +72,34 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 		ConfiguredPackageProps | undefined
 	>();
 
+	let [canonicalVersion, _] = createResource(
+		() => {
+			props.id;
+			if (props.minecraftVersion == undefined) {
+				return undefined;
+			} else {
+				return { id: props.id, version: props.minecraftVersion };
+			}
+		},
+		async () => {
+			if (props.minecraftVersion == undefined) {
+				return undefined;
+			}
+
+			try {
+				let out = (await invoke("canonicalize_version", {
+					id: props.id,
+					instanceOrTemplate: props.isTemplate ? "template" : "instance",
+					version: props.minecraftVersion,
+				})) as string;
+
+				return out;
+			} catch (e) {
+				errorToast("Failed to canonicalize Minecraft version: {e}");
+			}
+		}
+	);
+
 	let [allPackages, allPackagesMethods] = createResource(async () => {
 		let installedPackages: InstalledPackage[] = [];
 		if (!props.isTemplate && props.id != undefined) {
@@ -272,33 +300,39 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 								>
 									<PackageQuickAdd
 										onAdd={(pkg) => props.onAdd(pkg, "global")}
-										version={props.minecraftVersion}
+										version={canonicalVersion()}
 										loader={props.loader}
 									/>
 								</div>
 							</Show>
 						</div>
 					</Tip>
-					<Tip tip="Browse Packages" side="top">
-						<IconButton
-							icon={Search}
-							size="1.8rem"
-							color="var(--bg2)"
-							border="var(--bg3)"
-							onClick={() => {
-								navigate(
-									getBrowseUrl(0, undefined, "mod", undefined, {
-										minecraft_versions: canonicalizeListOrSingle(
-											props.minecraftVersion
-										),
-										loaders: canonicalizeListOrSingle(props.loader),
-										categories: [],
-									})
-								);
-							}}
-							shadow
-						/>
-					</Tip>
+					<Show when={props.showBrowseButton}>
+						<Tip tip="Browse Packages" side="top">
+							<IconButton
+								icon={Search}
+								size="1.8rem"
+								color="var(--bg2)"
+								border="var(--bg3)"
+								onClick={() => {
+									if (canonicalVersion.loading) {
+										return;
+									}
+
+									navigate(
+										getBrowseUrl(0, undefined, "mod", undefined, {
+											minecraft_versions: canonicalizeListOrSingle(
+												canonicalVersion()
+											),
+											loaders: canonicalizeListOrSingle(props.loader),
+											categories: [],
+										})
+									);
+								}}
+								shadow
+							/>
+						</Tip>
+					</Show>
 					<Tip tip="Edit Manual Overrides" side="top">
 						<IconButton
 							icon={Edit}
@@ -458,16 +492,22 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 										meta={meta}
 										props={properties}
 										error={errors()[pkg.pkg]}
-										suppressed={() => props.overrides.suppress != undefined && props.overrides.suppress.includes(pkg.pkg)}
-										forced={() => props.overrides.force != undefined && props.overrides.force.includes(pkg.pkg)}
+										suppressed={() =>
+											props.overrides.suppress != undefined &&
+											props.overrides.suppress.includes(pkg.pkg)
+										}
+										forced={() =>
+											props.overrides.force != undefined &&
+											props.overrides.force.includes(pkg.pkg)
+										}
 										onClick={setSelectedPackage}
 										onRemove={props.onRemove}
 										onVersionChange={(version) => {
 											let category: ConfiguredPackageCategory = pkg.isClient
 												? "client"
 												: pkg.isServer
-													? "server"
-													: "global";
+												? "server"
+												: "global";
 											let req: PkgRequest = {
 												id: pkg.req.id,
 												repository: pkg.req.repository,
@@ -635,13 +675,19 @@ function ConfiguredPackage(props: ConfiguredPackageProps) {
 					<div class="cont configured-package-derive-indicator">DERIVED</div>
 				</Show>
 				<Show when={props.suppressed()}>
-					<div class="cont tag" style="color:var(--warning);border-color:var(--warning);background-color:var(--packagebg);font-size:0.8rem;height:1.5rem">
+					<div
+						class="cont tag"
+						style="color:var(--warning);border-color:var(--warning);background-color:var(--packagebg);font-size:0.8rem;height:1.5rem"
+					>
 						<Icon icon={Delete} size="0.75rem" />
 						SUPPRESSED
 					</div>
 				</Show>
 				<Show when={props.forced()}>
-					<div class="cont tag" style="color:var(--error);border-color:var(--error);background-color:var(--errorbg);font-size:0.8rem;height:1.5rem">
+					<div
+						class="cont tag"
+						style="color:var(--error);border-color:var(--error);background-color:var(--errorbg);font-size:0.8rem;height:1.5rem"
+					>
 						<Icon icon={Dumbbell} size="0.75rem" />
 						FORCED
 					</div>
@@ -676,8 +722,8 @@ function ConfiguredPackage(props: ConfiguredPackageProps) {
 								let category: ConfiguredPackageCategory = props.pkg.isClient
 									? "client"
 									: props.pkg.isServer
-										? "server"
-										: "global";
+									? "server"
+									: "global";
 								props.onRemove(props.pkg.pkg, category);
 								(e.target! as any).parentElement.parentElement.remove();
 							}}
@@ -707,8 +753,8 @@ export interface ConfiguredPackageProps {
 export type PackageConfig =
 	| string
 	| {
-		id: string;
-	};
+			id: string;
+	  };
 
 // Gets the PkgRequest from a PackageConfig
 export function getPackageConfigRequest(config: PackageConfig) {
@@ -758,6 +804,6 @@ export interface InstalledPackage {
 	isDerived: boolean;
 }
 
-interface LockfileAddon { }
+interface LockfileAddon {}
 
 export type ConfiguredPackageCategory = "global" | "client" | "server";

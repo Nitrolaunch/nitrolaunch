@@ -172,6 +172,7 @@ fn main() {
 			commands::instance::get_last_opened_instance,
 			commands::instance::set_last_opened_instance,
 			commands::instance::get_instance_has_updated,
+			commands::instance::canonicalize_version,
 			commands::package::get_packages,
 			commands::package::preload_packages,
 			commands::package::get_package_meta,
