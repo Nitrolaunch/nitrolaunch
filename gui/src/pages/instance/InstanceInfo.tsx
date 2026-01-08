@@ -187,7 +187,9 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 		let unlisten = await listen(
 			"nitro_update_running_instances",
 			(e: Event<RunningInstancesEvent>) => {
-				setIsRunning(e.payload.running_instances.includes(id()));
+				setIsRunning(
+					e.payload.running_instances.some((x) => x.instance_id == id())
+				);
 			}
 		);
 

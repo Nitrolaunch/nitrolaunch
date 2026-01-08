@@ -4,11 +4,11 @@ use crate::{output::LauncherOutput, State};
 use anyhow::{bail, Context};
 use nitrolaunch::core::io::open_named_pipe;
 use nitrolaunch::instance::launch::LaunchSettings;
+use nitrolaunch::instance::tracking::RunningInstanceEntry;
 use nitrolaunch::io::lock::Lockfile;
 use nitrolaunch::plugin_crate::try_read::TryReadExt;
 use nitrolaunch::shared::id::InstanceID;
 use nitrolaunch::shared::UpdateDepth;
-use std::collections::HashSet;
 use std::io::Write;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -175,7 +175,7 @@ pub async fn answer_password_prompt(
 #[tauri::command]
 pub async fn get_running_instances(
 	state: tauri::State<'_, State>,
-) -> Result<HashSet<String>, String> {
+) -> Result<Vec<RunningInstanceEntry>, String> {
 	Ok(state
 		.running_instances
 		.get()
@@ -199,14 +199,18 @@ pub async fn update_running_instances(state: tauri::State<'_, State>) -> Result<
 }
 
 #[tauri::command]
-pub async fn kill_instance(state: tauri::State<'_, State>, instance: &str) -> Result<(), String> {
+pub async fn kill_instance(
+	state: tauri::State<'_, State>,
+	instance: &str,
+	user: Option<&str>,
+) -> Result<(), String> {
 	state
 		.running_instances
 		.get()
 		.unwrap()
 		.lock()
 		.await
-		.kill(instance);
+		.kill(instance, user);
 
 	Ok(())
 }

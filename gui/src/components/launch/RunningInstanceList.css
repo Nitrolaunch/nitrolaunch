@@ -31,8 +31,10 @@
 	bottom: calc(100% + 0.75rem);
 
 	padding: 0.5rem;
+	gap: 0.1rem;
 
 	background-color: var(--bg);
 	border: var(--border) solid var(--bg4);
 	border-radius: var(--round2);
+	box-shadow: var(--shadow-offset) var(--shadow-offset) var(--transparent-dark);
 }

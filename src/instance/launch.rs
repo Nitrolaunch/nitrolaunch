@@ -151,6 +151,8 @@ impl Instance {
 			.get_users()
 			.get_chosen_user()
 			.map(|x| x.get_id().clone());
+		let user = selected_user.map(|x| x.to_string());
+
 		let mut core_version = core.get_version(&self.config.version, o).await?;
 
 		let mut instance = self
@@ -191,6 +193,7 @@ impl Instance {
 			hook_arg,
 			stdout: tokio::io::stdout(),
 			is_silent: false,
+			user: user.clone(),
 			inner: InstanceHandleInner::Standard {
 				inner: handle,
 				world_files,
@@ -200,12 +203,7 @@ impl Instance {
 		// Update the running instance registry
 		let mut running_instance_registry = RunningInstanceRegistry::open(paths)
 			.context("Failed to open registry of running instances")?;
-		running_instance_registry.add_instance(
-			handle.get_pid(),
-			&self.id,
-			true,
-			selected_user.map(|x| x.to_string()),
-		);
+		running_instance_registry.add_instance(handle.get_pid(), &self.id, true, user);
 		let _ = running_instance_registry.write();
 
 		Ok(handle)
@@ -250,12 +248,15 @@ impl Instance {
 			File::open(&stdout_path).context("Launch hook did not open an stdout file")?;
 		let stdin_file = open_file_append(&stdin_path)?;
 
+		let user = selected_user.map(|x| x.to_string());
+
 		let handle = InstanceHandle {
 			instance_id: self.id.clone(),
 			hook_handles,
 			hook_arg,
 			stdout: tokio::io::stdout(),
 			is_silent: false,
+			user: user.clone(),
 			inner: InstanceHandleInner::Plugin {
 				pid: result.pid,
 				stdout_file,
@@ -268,12 +269,7 @@ impl Instance {
 		// Update the running instance registry
 		let mut running_instance_registry = RunningInstanceRegistry::open(paths)
 			.context("Failed to open registry of running instances")?;
-		running_instance_registry.add_instance(
-			handle.get_pid(),
-			&self.id,
-			true,
-			selected_user.map(|x| x.to_string()),
-		);
+		running_instance_registry.add_instance(handle.get_pid(), &self.id, true, user);
 		let _ = running_instance_registry.write();
 
 		Ok(handle)
@@ -325,6 +321,8 @@ pub struct InstanceHandle {
 	stdout: Stdout,
 	/// Whether to redirect stdin and stdout to the process stdin and stdout
 	is_silent: bool,
+	/// The user that launched this instance
+	user: Option<String>,
 	/// Inner implementation
 	inner: InstanceHandleInner,
 }
@@ -412,7 +410,16 @@ impl InstanceHandle {
 		// Terminate any sibling processes now that the main one is complete
 		self.hook_handles.terminate().await;
 
-		Self::on_stop(&self.instance_id, pid, &self.hook_arg, plugins, paths, o).await?;
+		Self::on_stop(
+			&self.instance_id,
+			pid,
+			self.user.as_deref(),
+			&self.hook_arg,
+			plugins,
+			paths,
+			o,
+		)
+		.await?;
 
 		Ok(status)
 	}
@@ -440,7 +447,16 @@ impl InstanceHandle {
 			}
 		}
 
-		Self::on_stop(&self.instance_id, pid, &self.hook_arg, plugins, paths, o).await?;
+		Self::on_stop(
+			&self.instance_id,
+			pid,
+			self.user.as_deref(),
+			&self.hook_arg,
+			plugins,
+			paths,
+			o,
+		)
+		.await?;
 
 		Ok(())
 	}
@@ -499,6 +515,7 @@ impl InstanceHandle {
 	async fn on_stop(
 		instance_id: &str,
 		pid: u32,
+		user: Option<&str>,
 		arg: &InstanceLaunchArg,
 		plugins: &PluginManager,
 		paths: &Paths,
@@ -507,7 +524,7 @@ impl InstanceHandle {
 		// Remove the instance from the registry
 		let running_instance_registry = RunningInstanceRegistry::open(paths);
 		if let Ok(mut running_instance_registry) = running_instance_registry {
-			running_instance_registry.remove_instance(pid, instance_id);
+			running_instance_registry.remove_instance(pid, instance_id, user);
 			let _ = running_instance_registry.write();
 		}
 

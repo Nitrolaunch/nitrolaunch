@@ -110,12 +110,16 @@ impl RunningInstanceRegistry {
 	}
 
 	/// Removes an instance from the registry
-	pub fn remove_instance(&mut self, pid: u32, instance: &str) {
-		let index = self
-			.data
-			.instances
-			.iter()
-			.position(|x| x.pid == pid && x.instance_id == instance);
+	pub fn remove_instance(&mut self, pid: u32, instance: &str, user: Option<&str>) {
+		let index = self.data.instances.iter().position(|x| {
+			if let Some(user) = user {
+				if !x.user.as_ref().is_some_and(|x| x == user) {
+					return false;
+				}
+			}
+
+			x.pid == pid && x.instance_id == instance
+		});
 
 		if let Some(index) = index {
 			self.data.instances.remove(index);
@@ -125,9 +129,15 @@ impl RunningInstanceRegistry {
 	}
 
 	/// Kills an instance in the registry
-	pub fn kill_instance(&mut self, instance: &str) {
+	pub fn kill_instance(&mut self, instance: &str, user: Option<&str>) {
 		let mut pids = Vec::new();
 		for entry in &self.data.instances {
+			if let Some(user) = user {
+				if !entry.user.as_ref().is_some_and(|x| x == user) {
+					continue;
+				}
+			}
+
 			if entry.instance_id == instance {
 				pids.push(entry.pid);
 			}
@@ -140,7 +150,7 @@ impl RunningInstanceRegistry {
 				process.kill();
 			}
 
-			self.remove_instance(pid, instance);
+			self.remove_instance(pid, instance, user);
 		}
 	}
 

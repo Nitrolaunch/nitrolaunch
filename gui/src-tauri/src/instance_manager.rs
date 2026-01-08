@@ -1,7 +1,10 @@
-use std::{collections::HashSet, sync::Arc, time::Duration};
+use std::{sync::Arc, time::Duration};
 
 use anyhow::Context;
-use nitrolaunch::{instance::tracking::RunningInstanceRegistry, io::paths::Paths};
+use nitrolaunch::{
+	instance::tracking::{RunningInstanceEntry, RunningInstanceRegistry},
+	io::paths::Paths,
+};
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter};
 use tokio::sync::Mutex;
@@ -53,16 +56,16 @@ impl RunningInstanceManager {
 	}
 
 	/// Kills an instance
-	pub fn kill(&mut self, instance: &str) {
-		self.running_instance_registry.kill_instance(instance);
+	pub fn kill(&mut self, instance: &str, user: Option<&str>) {
+		self.running_instance_registry.kill_instance(instance, user);
 		let _ = self.running_instance_registry.write();
 	}
 
-	/// Gets the list of running instance IDs
-	pub fn get_running_instances(&self) -> HashSet<String> {
+	/// Gets the list of running instances
+	pub fn get_running_instances(&self) -> Vec<RunningInstanceEntry> {
 		self.running_instance_registry
 			.iter_entries()
-			.map(|x| x.instance_id.clone())
+			.cloned()
 			.collect()
 	}
 
@@ -80,5 +83,5 @@ impl RunningInstanceManager {
 /// Event data for updating running instances
 #[derive(Serialize, Deserialize, Clone)]
 pub struct RunningInstancesEvent {
-	running_instances: HashSet<String>,
+	running_instances: Vec<RunningInstanceEntry>,
 }
