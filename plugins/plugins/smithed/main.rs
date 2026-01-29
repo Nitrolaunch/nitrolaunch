@@ -82,9 +82,10 @@ fn main() -> anyhow::Result<()> {
 		let runtime = tokio::runtime::Runtime::new()?;
 
 		let (packs, previews, total_results) = runtime.block_on(async move {
+			let cache_path = smithed_dir.join("search_cache.json");
+			create_leading_dirs(&cache_path)?;
 			let mut search_cache =
-				PackageSearchCache::open(smithed_dir.join("search_cache.json"), 300)
-					.context("Failed to open search cache")?;
+				PackageSearchCache::open(cache_path, 300).context("Failed to open search cache")?;
 
 			let (results, total_results) = if let Some(entry) =
 				search_cache.check::<(Vec<PackSearchResult>, usize)>(&arg.parameters)

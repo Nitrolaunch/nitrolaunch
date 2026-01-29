@@ -91,9 +91,10 @@ fn main() -> anyhow::Result<()> {
 		let data_dir = ctx.get_data_dir()?;
 
 		let (projects, previews, total_results) = runtime.block_on(async move {
+			let cache_path = data_dir.join("internal/modrinth/search_cache.json");
+			create_leading_dirs(&cache_path)?;
 			let mut search_cache =
-				PackageSearchCache::open(data_dir.join("internal/modrinth/search_cache.json"), 250)
-					.context("Failed to open search cache")?;
+				PackageSearchCache::open(cache_path, 250).context("Failed to open search cache")?;
 
 			let results =
 				if let Some(results) = search_cache.check::<SearchResults>(&arg.parameters) {
