@@ -27,6 +27,9 @@
 	right: 1rem;
 	top: 3rem;
 	width: 18rem;
+
+	max-height: 85vh;
+	overflow-y: auto;
 }
 
 .toast {

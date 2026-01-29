@@ -11,7 +11,7 @@ use nitro_shared::lang::translate::LanguageMap;
 use nitro_shared::loaders::Loader;
 use nitro_shared::minecraft::MinecraftUserProfile;
 use nitro_shared::minecraft::VersionEntry;
-use nitro_shared::pkg::{PackageID, PackageSearchParameters};
+use nitro_shared::pkg::{PackageID, PackageQueryDepth, PackageSearchParameters};
 use nitro_shared::versions::VersionPattern;
 use nitro_shared::UpdateDepth;
 use nitro_shared::{versions::VersionInfo, Side};
@@ -707,6 +707,8 @@ pub struct QueryCustomPackageRepositoryArg {
 	pub repository: String,
 	/// The package that is being asked for
 	pub package: String,
+	/// The depth of the package to be returned
+	pub depth: PackageQueryDepth,
 }
 
 /// Result from querying a custom package repository

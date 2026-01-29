@@ -2,6 +2,7 @@ use std::{
 	collections::{HashMap, HashSet},
 	path::{Path, PathBuf},
 	sync::Arc,
+	time::UNIX_EPOCH,
 };
 
 use anyhow::Context;
@@ -13,17 +14,17 @@ use nitro_net::{
 	download::Client,
 	modrinth::{self, Member, Project, SearchResults, Version},
 };
-use nitro_pkg::{declarative::DeclarativePackage, PackageSearchResults};
-use nitro_pkg_gen::{
-	modrinth::{cleanup_version_name, get_preview},
-	relation_substitution::{PackageAndVersion, RelationSubFunction, RelationSubNone},
-};
+use nitro_pkg::PackageSearchResults;
+use nitro_pkg_gen::{modrinth::get_preview, relation_substitution::RelationSubNone};
 use nitro_plugin::{
 	api::executable::{utils::PackageSearchCache, ExecutablePlugin},
 	hook::hooks::CustomRepoQueryResult,
 };
+use nitro_shared::util::utc_timestamp;
 use serde::{Deserialize, Serialize};
 use tokio::sync::Mutex;
+
+const PROJECT_CACHE_TIME_SECS: u64 = 3600;
 
 fn main() -> anyhow::Result<()> {
 	let mut plugin = ExecutablePlugin::from_manifest_file("modrinth", include_str!("plugin.json"))?;
@@ -56,19 +57,21 @@ fn main() -> anyhow::Result<()> {
 		runtime.block_on(async move {
 			if arg.packages.len() > 3 {
 				let _ =
-					download_multiple_projects(&arg.packages, &storage_dirs, &client, true).await;
-			}
+					download_multiple_projects(&arg.packages, &storage_dirs, &client, false).await;
+			} else {
+				let mut tasks = tokio::task::JoinSet::new();
+				for package in arg.packages {
+					let client = client.clone();
+					let storage_dirs = storage_dirs.clone();
 
-			let mut tasks = tokio::task::JoinSet::new();
-			for package in arg.packages {
-				let client = client.clone();
-				let storage_dirs = storage_dirs.clone();
+					tasks.spawn(
+						async move { query_package(&package, &client, &storage_dirs).await },
+					);
+				}
 
-				tasks.spawn(async move { query_package(&package, &client, &storage_dirs).await });
-			}
-
-			while let Some(task) = tasks.join_next().await {
-				let _ = task??;
+				while let Some(task) = tasks.join_next().await {
+					let _ = task??;
+				}
 			}
 
 			Ok::<(), anyhow::Error>(())
@@ -107,8 +110,8 @@ fn main() -> anyhow::Result<()> {
 			let mut previews = HashMap::with_capacity(results.hits.len());
 			let mut projects = Vec::with_capacity(results.hits.len());
 			for result in results.hits {
-				projects.push(result.slug.clone());
-				let slug = result.slug.clone();
+				projects.push(result.id.clone());
+				let id = result.id.clone();
 				let package = nitro_pkg_gen::modrinth::gen(
 					get_preview(result),
 					&[],
@@ -121,7 +124,7 @@ fn main() -> anyhow::Result<()> {
 				)
 				.await;
 				if let Ok(package) = package {
-					previews.insert(slug, (package.meta, package.properties));
+					previews.insert(id, (package.meta, package.properties));
 				}
 			}
 
@@ -163,164 +166,36 @@ async fn query_package(
 	client: &Client,
 	storage_dirs: &StorageDirs,
 ) -> anyhow::Result<Option<CustomRepoQueryResult>> {
-	let package_or_project = get_cached_package_or_project(id, storage_dirs, client)
+	let project_info = get_cached_project(id, storage_dirs, client)
 		.await
-		.with_context(|| format!("Failed to get cached package or project '{id}'"))?;
-	let Some(package_or_project) = package_or_project else {
+		.with_context(|| format!("Failed to get cached project '{id}'"))?;
+	let Some(project_info) = project_info else {
 		return Ok(None);
 	};
 
-	let package = match package_or_project {
-		PackageOrProjectInfo::Package { package, .. } => package,
-		PackageOrProjectInfo::ProjectInfo(project_info) => {
-			let relation_sub_function = RelationSub {
-				client: client.clone(),
-				storage_dirs: storage_dirs.clone(),
-			};
+	let mut package = nitro_pkg_gen::modrinth::gen(
+		project_info.project,
+		&project_info.versions,
+		&project_info.members,
+		RelationSubNone,
+		&[],
+		true,
+		true,
+		Some("modrinth"),
+	)
+	.await
+	.context("Failed to generate Nitrolaunch package")?;
 
-			let id = project_info.project.id.clone();
-			let slug = project_info.project.slug.clone();
+	package.improve_generation();
+	package.optimize();
 
-			let mut package = nitro_pkg_gen::modrinth::gen(
-				project_info.project,
-				&project_info.versions,
-				&project_info.members,
-				relation_sub_function,
-				&[],
-				true,
-				true,
-				Some("modrinth"),
-			)
-			.await
-			.context("Failed to generate Nitrolaunch package")?;
-
-			package.improve_generation();
-			package.optimize();
-
-			let package =
-				serde_json::to_string_pretty(&package).context("Failed to serialized package")?;
-
-			let package_data = format!("{id};{slug};{package}");
-
-			let id_path = storage_dirs.packages.join(&id);
-			let slug_path = storage_dirs.packages.join(&slug);
-			let _ = create_leading_dirs(&id_path);
-			let _ = std::fs::write(&id_path, &package_data);
-			let _ = update_link(&id_path, &slug_path);
-
-			package
-		}
-	};
+	let package = serde_json::to_string_pretty(&package).context("Failed to serialized package")?;
 
 	Ok(Some(CustomRepoQueryResult {
 		contents: package,
 		content_type: nitrolaunch::pkg_crate::PackageContentType::Declarative,
 		flags: HashSet::new(),
 	}))
-}
-
-#[derive(Clone)]
-struct RelationSub {
-	client: Client,
-	storage_dirs: StorageDirs,
-}
-
-impl RelationSubFunction for RelationSub {
-	async fn substitute(
-		&self,
-		relation: &str,
-		version: Option<&str>,
-	) -> anyhow::Result<PackageAndVersion> {
-		let package_or_project =
-			get_cached_package_or_project(relation, &self.storage_dirs, &self.client)
-				.await
-				.context("Failed to get cached data")?;
-		if let Some(package_or_project) = package_or_project {
-			let id = match &package_or_project {
-				PackageOrProjectInfo::Package { slug, .. } => slug.clone(),
-				PackageOrProjectInfo::ProjectInfo(info) => info.project.slug.clone(),
-			};
-
-			let version = if let Some(version) = version {
-				match package_or_project {
-					PackageOrProjectInfo::Package { package, .. } => {
-						let package: DeclarativePackage = serde_json::from_str(&package)?;
-						package
-							.addons
-							.into_values()
-							.find_map(|x| {
-								x.versions
-									.into_iter()
-									.find(|x| x.version.as_ref().is_some_and(|x| x == version))
-							})
-							.and_then(|x| {
-								x.conditional_properties
-									.content_versions
-									.unwrap_or_default()
-									.iter()
-									.next()
-									.cloned()
-							})
-					}
-					PackageOrProjectInfo::ProjectInfo(project_info) => project_info
-						.versions
-						.iter()
-						.find(|x| x.id == version)
-						.map(|x| cleanup_version_name(&x.version_number)),
-				}
-			} else {
-				None
-			};
-
-			// Only prefer the version
-			let version = version.map(|x| format!("~{x}"));
-
-			Ok((id, version))
-		} else {
-			// Theres a LOT of broken Modrinth projects
-			Ok(("none".into(), None))
-		}
-	}
-
-	async fn preload_substitutions(&mut self, relations: &[String]) -> anyhow::Result<()> {
-		// TODO: Save to internal map for quicker lookup
-		if relations.len() > 5 {
-			download_multiple_projects(relations, &self.storage_dirs, &self.client, false).await?;
-		}
-		Ok(())
-	}
-}
-
-/// Gets a cached package or project info
-async fn get_cached_package_or_project(
-	project_id: &str,
-	storage_dirs: &StorageDirs,
-	client: &Client,
-) -> anyhow::Result<Option<PackageOrProjectInfo>> {
-	let package_path = storage_dirs.packages.join(project_id);
-	// Packages are stored with their id, slug, and data separated by semicolons. This is so that we don't have to parse the full JSON.
-	if package_path.exists() {
-		if let Ok(data) = std::fs::read_to_string(&package_path) {
-			let mut elems = data.splitn(3, ";");
-			let id = elems.next().context("Missing ID in package file")?;
-			let slug = elems.next().context("Missing slug in package file")?;
-			let package = elems
-				.next()
-				.context("Missing package data in package file")?;
-			// Remove the projects to save space, we don't need it anymore
-			let _ = std::fs::remove_file(storage_dirs.projects.join(id));
-			let _ = std::fs::remove_file(storage_dirs.projects.join(slug));
-			return Ok(Some(PackageOrProjectInfo::Package {
-				id: id.to_string(),
-				slug: slug.to_string(),
-				package: package.to_string(),
-			}));
-		}
-	}
-
-	get_cached_project(project_id, storage_dirs, client)
-		.await
-		.map(|x| x.map(PackageOrProjectInfo::ProjectInfo))
 }
 
 /// Gets a cached Modrinth project and it's versions or downloads it
@@ -336,7 +211,10 @@ async fn get_cached_project(
 		return Ok(None);
 	}
 
-	let project_info = if project_path.exists() {
+	let project_info = if project_path.exists()
+		&& !project_needs_update(&project_path).unwrap_or(true)
+	{
+		// TODO: Add versions to partially loaded project infos
 		json_from_file(&project_path).context("Failed to read project info from file")?
 	} else {
 		let project_task = {
@@ -391,6 +269,23 @@ async fn get_cached_project(
 	Ok(Some(project_info))
 }
 
+/// Gets a cached Modrinth project and it's versions, but never downloads it
+fn get_known_cached_project(
+	project_id: &str,
+	storage_dirs: &StorageDirs,
+) -> anyhow::Result<Option<ProjectInfo>> {
+	let project_path = storage_dirs.projects.join(project_id);
+	// If a project does not exist, we create a dummy file so that we know not to fetch it again
+	let does_not_exist_path = storage_dirs.get_missing_path(project_id);
+	if does_not_exist_path.exists() {
+		return Ok(None);
+	}
+
+	Ok(Some(
+		json_from_file(&project_path).context("Failed to read project info from file")?,
+	))
+}
+
 /// Downloads multiple projects at once to save on API requests. Will have much higher latency, but is better for
 /// downloading lots of projects as we won't get ratelimited
 async fn download_multiple_projects(
@@ -399,14 +294,16 @@ async fn download_multiple_projects(
 	client: &Client,
 	download_dependencies: bool,
 ) -> anyhow::Result<Vec<ProjectInfo>> {
-	// Filter out projects that are already cached
+	// Filter out projects that are already cached and don't need updated
 	let project_ids: Vec<_> = projects
 		.iter()
 		.filter(|x| {
 			let path = storage_dirs.projects.join(x);
-			let path2 = storage_dirs.packages.join(x);
-			let path3 = storage_dirs.get_missing_path(x);
-			!path.exists() && !path2.exists() && !path3.exists()
+			if !path.exists() {
+				return true;
+			}
+
+			project_needs_update(&path).unwrap_or(true)
 		})
 		.cloned()
 		.collect();
@@ -415,17 +312,47 @@ async fn download_multiple_projects(
 		return Ok(Vec::new());
 	}
 
+	// Download the new projects
 	let projects = modrinth::get_multiple_projects(&project_ids, client)
 		.await
 		.context("Failed to download projects")?;
 
+	// List of existing and new projects to have new data applied to them
+	let mut project_needed_versions = Vec::new();
+	let projects: Vec<_> = projects
+		.into_iter()
+		.filter_map(|project| {
+			let path = storage_dirs.projects.join(&project.id);
+			if !path.exists() {
+				project_needed_versions.extend(project.versions.clone());
+				Some(ProjectInfo {
+					project,
+					versions: Vec::new(),
+					members: Vec::new(),
+				})
+			} else {
+				let mut existing_project = get_known_cached_project(&project.id, storage_dirs)
+					.ok()
+					.flatten();
+				if let Some(existing_project) = &mut existing_project {
+					let missing_versions = existing_project
+						.get_missing_versions(&project.versions)
+						.into_iter()
+						.map(|x| x.to_string());
+
+					project_needed_versions.extend(missing_versions);
+					existing_project.project = project;
+				}
+
+				existing_project
+			}
+		})
+		.collect();
+
 	// Collect Modrinth project versions. We have to batch these into multiple requests because there becomes
 	// just too many parameters for the URL to handle
 	let batch_limit = 215;
-	let version_ids: Vec<_> = projects
-		.iter()
-		.flat_map(|x| x.versions.iter().cloned())
-		.collect();
+	let version_ids: Vec<_> = project_needed_versions;
 
 	let chunks = version_ids.chunks(batch_limit);
 
@@ -452,7 +379,7 @@ async fn download_multiple_projects(
 	// Download teams at the same time
 	let mut team_ids = Vec::new();
 	for project in &projects {
-		team_ids.push(project.team.clone());
+		team_ids.push(project.project.team.clone());
 	}
 	let all_teams = Arc::new(Mutex::new(Vec::new()));
 	{
@@ -487,7 +414,7 @@ async fn download_multiple_projects(
 	for project in project_ids {
 		if !projects
 			.iter()
-			.any(|x| x.id == project || x.slug == project)
+			.any(|x| x.project.id == project || x.project.slug == project)
 		{
 			let path = storage_dirs.get_missing_path(&project);
 			if !path.exists() {
@@ -497,24 +424,31 @@ async fn download_multiple_projects(
 		}
 	}
 
+	// Apply new versions, and team members to the list of projects
 	let project_infos: anyhow::Result<Vec<_>> = projects
 		.into_iter()
 		.map(|project| {
-			let versions = project
+			// Combine existing and new versions
+			let versions: Vec<_> = project
+				.project
 				.versions
 				.iter()
-				.filter_map(|x| all_versions.remove(x))
+				.filter_map(|x| {
+					all_versions
+						.remove(x)
+						.or_else(|| project.versions.iter().find(|y| &y.id == x).cloned())
+				})
 				.rev()
 				.collect();
 
 			let team = all_teams
 				.iter()
-				.find(|x| x.iter().any(|x| x.team_id == project.team))
+				.find(|x| x.iter().any(|x| x.team_id == project.project.team))
 				.cloned()
 				.unwrap_or_default();
 
 			Ok(ProjectInfo {
-				project,
+				project: project.project,
 				versions,
 				members: team,
 			})
@@ -565,22 +499,38 @@ fn save_project_info(project_info: &ProjectInfo, storage_dirs: &StorageDirs) -> 
 	Ok(())
 }
 
-enum PackageOrProjectInfo {
-	Package {
-		#[allow(dead_code)]
-		id: String,
-		slug: String,
-		package: String,
-	},
-	ProjectInfo(ProjectInfo),
-}
-
 /// Project data, versions, and team members for a Modrinth project
 #[derive(Serialize, Deserialize)]
 struct ProjectInfo {
 	project: Project,
+	/// Key is the version ID, value is a Version struct, serialized as a string
+	/// to prevent extra serde_json time
 	versions: Vec<Version>,
 	members: Vec<Member>,
+}
+
+impl ProjectInfo {
+	/// Gets the versions of this project that are in the given version list but not the versions map
+	/// (haven't been downloaded yet)
+	pub fn get_missing_versions<'a>(&self, needed_versions: &'a [String]) -> Vec<&'a str> {
+		needed_versions
+			.iter()
+			.filter(|x| !self.versions.iter().any(|y| &&y.id == x))
+			.map(|x| x.as_str())
+			.collect()
+	}
+}
+
+fn project_needs_update(path: &Path) -> anyhow::Result<bool> {
+	let meta = path.metadata()?;
+	let last_update = meta.modified()?.duration_since(UNIX_EPOCH)?.as_secs();
+	let now = utc_timestamp()?;
+
+	if now < last_update {
+		Ok(true)
+	} else {
+		Ok(now - last_update >= PROJECT_CACHE_TIME_SECS)
+	}
 }
 
 /// Storage directories

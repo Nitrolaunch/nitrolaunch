@@ -9,9 +9,12 @@ use nitro_pkg::PackageContentType;
 use nitro_pkg::PackageSearchResults;
 use nitro_pkg::PkgRequest;
 use nitro_pkg::PkgRequestSource;
+use nitro_shared::output::MessageContents;
+use nitro_shared::output::MessageLevel;
 use nitro_shared::output::NitroOutput;
 use nitro_shared::pkg::ArcPkgReq;
 use nitro_shared::pkg::PackageSearchParameters;
+use nitro_shared::versions::VersionPattern;
 use reqwest::Client;
 use tokio::sync::Semaphore;
 use tokio::task::JoinSet;
@@ -223,15 +226,15 @@ impl PkgRegistry {
 
 	/// Evaluate a package
 	#[allow(clippy::too_many_arguments)]
-	pub async fn eval<'a>(
+	pub async fn eval(
 		&mut self,
 		req: &ArcPkgReq,
-		paths: &'a Paths,
+		paths: &Paths,
 		routine: Routine,
-		input: EvalInput<'a>,
+		input: EvalInput,
 		client: &Client,
 		o: &mut impl NitroOutput,
-	) -> anyhow::Result<EvalData<'a>> {
+	) -> anyhow::Result<EvalData> {
 		let plugins = self.plugins.clone();
 		let pkg = self.ensure_package_contents(req, paths, client, o).await?;
 		let eval = pkg.eval(paths, routine, input, client, plugins).await?;
@@ -260,6 +263,64 @@ impl PkgRegistry {
 	) -> anyhow::Result<&'a HashSet<PackageFlag>> {
 		let pkg = self.ensure_package_contents(req, paths, client, o).await?;
 		Ok(&pkg.flags)
+	}
+
+	/// Replaces the slug and version of a request if possible, to make it better for user display
+	pub async fn make_req_displayable(
+		&mut self,
+		req: &ArcPkgReq,
+		paths: &Paths,
+		client: &Client,
+		o: &mut impl NitroOutput,
+	) -> ArcPkgReq {
+		let Ok(pkg) = self.ensure_package_contents(req, paths, client, o).await else {
+			return req.clone();
+		};
+
+		if pkg.content_type != PackageContentType::Declarative {
+			return req.clone();
+		}
+
+		let pkg = match pkg.get_declarative_contents(paths, client).await {
+			Ok(pkg) => pkg.expect("Should be a declarative package"),
+			Err(e) => {
+				o.display(
+					MessageContents::Warning(format!("{e:?}")),
+					MessageLevel::Important,
+				);
+				return req.clone();
+			}
+		};
+
+		let slug = pkg.meta.slug.clone();
+		let version = match &req.content_version {
+			VersionPattern::Any => VersionPattern::Any,
+			VersionPattern::Single(x) => {
+				VersionPattern::Single(pkg.get_content_version_name(x).clone())
+			}
+			VersionPattern::Before(x) => {
+				VersionPattern::Before(pkg.get_content_version_name(x).clone())
+			}
+			VersionPattern::After(x) => {
+				VersionPattern::After(pkg.get_content_version_name(x).clone())
+			}
+			VersionPattern::Range(x, y) => VersionPattern::Range(
+				pkg.get_content_version_name(x).clone(),
+				pkg.get_content_version_name(y).clone(),
+			),
+			VersionPattern::Prefer(x) => {
+				VersionPattern::Prefer(pkg.get_content_version_name(x).clone())
+			}
+			VersionPattern::Latest(x) => VersionPattern::Latest(x.clone()),
+		};
+
+		Arc::new(PkgRequest {
+			source: req.source.clone(),
+			id: req.id.clone(),
+			repository: req.repository.clone(),
+			content_version: version,
+			slug,
+		})
 	}
 
 	/// Remove a cached package

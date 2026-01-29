@@ -178,7 +178,7 @@ impl NitroOutput for LauncherOutput {
 	}
 
 	fn display_special_resolution_error(&mut self, error: ResolutionError, instance_id: &str) {
-		eprintln!("Resolution error: {error:?}");
+		eprintln!("Resolution error: {error}");
 		let error = SerializableResolutionError::from_err(error);
 
 		let payload = ResolutionErrorEvent {
@@ -296,7 +296,7 @@ pub enum SerializableResolutionError {
 	PackageContext(ArcPkgReq, Box<SerializableResolutionError>),
 	FailedToPreload(String),
 	FailedToGetProperties(ArcPkgReq, String),
-	NoValidVersionsFound(ArcPkgReq),
+	NoValidVersionsFound(ArcPkgReq, Vec<String>),
 	ExtensionNotFulfilled(Option<ArcPkgReq>, ArcPkgReq),
 	ExplicitRequireNotFulfilled(ArcPkgReq, ArcPkgReq),
 	IncompatiblePackage(ArcPkgReq, Vec<Arc<str>>),
@@ -319,8 +319,11 @@ impl SerializableResolutionError {
 			ResolutionError::FailedToGetProperties(req, error) => {
 				SerializableResolutionError::FailedToGetProperties(req, format!("{error:?}"))
 			}
-			ResolutionError::NoValidVersionsFound(req) => {
-				SerializableResolutionError::NoValidVersionsFound(req)
+			ResolutionError::NoValidVersionsFound(req, constraints) => {
+				SerializableResolutionError::NoValidVersionsFound(
+					req,
+					constraints.into_iter().map(|x| x.to_string()).collect(),
+				)
 			}
 			ResolutionError::ExtensionNotFulfilled(req1, req2) => {
 				SerializableResolutionError::ExtensionNotFulfilled(req1, req2)

@@ -14,7 +14,7 @@ import "./PackageQuickAdd.css";
 import SearchBar from "../input/text/SearchBar";
 import { parsePkgRequest } from "../../utils";
 import { invoke } from "@tauri-apps/api/core";
-import { PackageMeta, PackageProperties } from "../../types";
+import { PackageMeta, PackageProperties, PkgRequest } from "../../types";
 import LoadingSpinner from "../utility/LoadingSpinner";
 import { marked } from "marked";
 import InlineSelect from "../input/select/InlineSelect";
@@ -49,7 +49,7 @@ export default function PackageQuickAdd(props: PackageQuickAddProps) {
 					[packageType()],
 					canonicalizeListOrSingle(props.version),
 					loaders,
-					[]
+					[],
 				);
 
 				if (result != undefined) {
@@ -62,7 +62,7 @@ export default function PackageQuickAdd(props: PackageQuickAddProps) {
 				return [];
 			}
 		},
-		{ initialValue: [] }
+		{ initialValue: [] },
 	);
 
 	let [previewedPackage, setPreviewedPackage] = createSignal<
@@ -86,7 +86,7 @@ export default function PackageQuickAdd(props: PackageQuickAddProps) {
 				let longDescription =
 					meta.long_description == undefined ? "" : meta.long_description;
 				let longDescriptionHtml = `<div>${await marked.parse(
-					longDescription
+					longDescription,
 				)}</div>`;
 				longDescriptionHtml = replaceExternalLinks(longDescriptionHtml);
 				setLongDescription(longDescriptionHtml);
@@ -95,7 +95,7 @@ export default function PackageQuickAdd(props: PackageQuickAddProps) {
 			} catch (e) {
 				errorToast("Failed to get package: " + e);
 			}
-		}
+		},
 	);
 
 	return (
@@ -227,7 +227,11 @@ export default function PackageQuickAdd(props: PackageQuickAddProps) {
 										color="var(--package)"
 										bgColor="var(--packagebg)"
 										onClick={() => {
-											props.onAdd(previewedPackage()!);
+											let req: PkgRequest = {
+												id: previewedPackage()!,
+												slug: previewedPackageData()![0].slug,
+											};
+											props.onAdd(req);
 										}}
 										shadow={false}
 									/>
@@ -258,7 +262,7 @@ export default function PackageQuickAdd(props: PackageQuickAddProps) {
 }
 
 export interface PackageQuickAddProps {
-	onAdd: (pkg: string) => void;
+	onAdd: (pkg: PkgRequest) => void;
 	version?: string;
 	loader?: Loader;
 }

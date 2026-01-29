@@ -57,7 +57,7 @@ export default function ViewPackage(props: ViewPackageProps) {
 
 	let [meta] = createResource(updateMetaAndProps);
 	let [properties, setProperties] = createSignal<PackageProperties | undefined>(
-		undefined
+		undefined,
 	);
 
 	let [repoInfo, setRepoInfo] = createSignal<RepoInfo | undefined>(undefined);
@@ -76,7 +76,7 @@ export default function ViewPackage(props: ViewPackageProps) {
 
 		try {
 			return JSON.parse(
-				decodeURIComponent(searchParams["filters"])
+				decodeURIComponent(searchParams["filters"]),
 			) as PackageFilterOptions;
 		} catch (e) {
 			console.error("Failed to parse filters: " + e);
@@ -114,7 +114,7 @@ export default function ViewPackage(props: ViewPackageProps) {
 			let longDescription =
 				meta.long_description == undefined ? "" : meta.long_description;
 			let longDescriptionHtml = `<div>${await marked.parse(
-				longDescription
+				longDescription,
 			)}</div>`;
 			longDescriptionHtml = replaceExternalLinks(longDescriptionHtml);
 			setLongDescription(longDescriptionHtml);
@@ -197,12 +197,12 @@ export default function ViewPackage(props: ViewPackageProps) {
 													: properties()!.supported_loaders!
 											}
 											packageTypes={canonicalizeListOrSingle(
-												properties()!.types
+												properties()!.types,
 											)}
 											tags
 											tiny={
 												canonicalizeListOrSingle(
-													properties()!.supported_loaders
+													properties()!.supported_loaders,
 												).length > 3
 											}
 										/>
@@ -349,6 +349,7 @@ export default function ViewPackage(props: ViewPackageProps) {
 			<PackageInstallModal
 				packageId={parsePkgRequest(packageId).id}
 				packageRepo={parsePkgRequest(packageId).repository}
+				packageSlug={meta() == undefined ? undefined : meta()!.slug}
 				selectedVersion={installVersion()}
 				visible={showInstallModal()}
 				onClose={() => setShowInstallModal(false)}

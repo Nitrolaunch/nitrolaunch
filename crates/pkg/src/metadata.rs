@@ -9,6 +9,9 @@ use serde::{Deserialize, Serialize};
 #[derive(Default, Debug, Deserialize, Serialize, Clone)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 pub struct PackageMetadata {
+	/// Slug for the package
+	#[serde(skip_serializing_if = "Option::is_none")]
+	pub slug: Option<String>,
 	/// The name of the package
 	#[serde(skip_serializing_if = "Option::is_none")]
 	pub name: Option<String>,

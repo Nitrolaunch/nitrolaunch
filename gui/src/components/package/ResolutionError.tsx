@@ -30,7 +30,8 @@ export default function ResolutionError(props: ResolutionErrorProps) {
 				</Match>
 				<Match when={props.error.type == "no_valid_versions_found"}>
 					<div class="cont">
-						No valid versions found for package {pkgRequestToString(data())}
+						No valid versions found for package {pkgRequestToString(data()[0])}
+						Requested versions: {data()[1].toString()}
 					</div>
 				</Match>
 				<Match when={props.error.type == "extension_not_fulfilled"}>
@@ -39,23 +40,23 @@ export default function ResolutionError(props: ResolutionErrorProps) {
 							? "A package"
 							: `The package ${pkgRequestToString(data()[0])}`}
 						{` extends the functionality of the package ${pkgRequestToString(
-							data()[1]
+							data()[1],
 						)}, which is not installed`}
 					</div>
 				</Match>
 				<Match when={props.error.type == "explicit_require_not_fulfilled"}>
 					<div class="cont">
 						{`Package ${pkgRequestToString(
-							data()[0]
+							data()[0],
 						)} has been explicitly required by package ${pkgRequestToString(
-							data()[1]
+							data()[1],
 						)}. This means it must be required by the user in their config.`}
 					</div>
 				</Match>
 				<Match when={props.error.type == "incompatible_package"}>
 					<div class="cont">
 						{`Package ${pkgRequestToString(
-							data()[0]
+							data()[0],
 						)} is incompatible with the packages ${data()[1].join(",")}`}
 					</div>
 				</Match>
@@ -81,38 +82,38 @@ export interface ResolutionErrorProps {
 // Data for the actual error
 export type ResolutionErrorData =
 	| {
-		type: "package_context";
-		data: [PkgRequest, ResolutionErrorData];
-	}
+			type: "package_context";
+			data: [PkgRequest, ResolutionErrorData];
+	  }
 	| {
-		type: "failed_to_preload";
-		data: string;
-	}
+			type: "failed_to_preload";
+			data: string;
+	  }
 	| {
-		type: "failed_to_get_properties";
-		data: [PkgRequest, string];
-	}
+			type: "failed_to_get_properties";
+			data: [PkgRequest, string];
+	  }
 	| {
-		type: "no_valid_versions_found";
-		data: PkgRequest;
-	}
+			type: "no_valid_versions_found";
+			data: [PkgRequest, string[]];
+	  }
 	| {
-		type: "extension_not_fulfilled";
-		data: [PkgRequest | undefined, PkgRequest];
-	}
+			type: "extension_not_fulfilled";
+			data: [PkgRequest | undefined, PkgRequest];
+	  }
 	| {
-		type: "explicit_require_not_fulfilled";
-		data: [PkgRequest, PkgRequest];
-	}
+			type: "explicit_require_not_fulfilled";
+			data: [PkgRequest, PkgRequest];
+	  }
 	| {
-		type: "incompatible_package";
-		data: [PkgRequest, string[]];
-	}
+			type: "incompatible_package";
+			data: [PkgRequest, string[]];
+	  }
 	| {
-		type: "failed_to_evaluate";
-		data: [PkgRequest, string];
-	}
+			type: "failed_to_evaluate";
+			data: [PkgRequest, string];
+	  }
 	| {
-		type: "misc";
-		data: string;
-	};
+			type: "misc";
+			data: string;
+	  };

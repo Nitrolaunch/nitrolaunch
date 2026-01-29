@@ -28,6 +28,7 @@ Metadata for a package is extra information about a package such as its display 
 
 ```
 {
+	"slug": string,
 	"name": string,
 	"description": string,
 	"long_description": string,
@@ -48,6 +49,7 @@ Metadata for a package is extra information about a package such as its display 
 }
 ```
 
+- `slug`: A more descriptive ID for the package, i.e. `fabric-api`
 - `name`: Display name of the package.
 - `description`: A short description of the package. Should be 1-2 sentences max.
 - `long_description`: A longer description of the package.

@@ -469,7 +469,10 @@ pub async fn update_instance_packages(
 			};
 
 			nitrolaunch::instance::update::packages::update_instance_packages(
-				instance, &constants, &mut ctx, false,
+				instance,
+				&Arc::new(constants),
+				&mut ctx,
+				false,
 			)
 			.await?;
 

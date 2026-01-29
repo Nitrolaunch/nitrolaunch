@@ -13,7 +13,7 @@ use nitro_plugin::{
 };
 use nitro_shared::{
 	output::NitroOutput,
-	pkg::{ArcPkgReq, PackageSearchParameters},
+	pkg::{ArcPkgReq, PackageQueryDepth, PackageSearchParameters},
 };
 
 use crate::{io::paths::Paths, pkg::PkgLocation, plugin::PluginManager};
@@ -46,11 +46,13 @@ impl CustomPackageRepository {
 		package: &str,
 		plugins: &PluginManager,
 		paths: &Paths,
+		depth: PackageQueryDepth,
 		o: &mut impl NitroOutput,
 	) -> anyhow::Result<Option<RepoQueryResult>> {
 		let arg = QueryCustomPackageRepositoryArg {
 			repository: self.id.clone(),
 			package: package.to_string(),
+			depth,
 		};
 		let result = plugins
 			.call_hook_on_plugin(QueryCustomPackageRepository, &self.plugin, &arg, paths, o)

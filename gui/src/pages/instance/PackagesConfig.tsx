@@ -66,7 +66,7 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 		{ [key: string]: PackageProperties } | undefined
 	>();
 	let [errors, setErrors] = createSignal<{ [key: string]: string | undefined }>(
-		{}
+		{},
 	);
 	let [selectedPackage, setSelectedPackage] = createSignal<
 		ConfiguredPackageProps | undefined
@@ -97,7 +97,7 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 			} catch (e) {
 				errorToast("Failed to canonicalize Minecraft version: {e}");
 			}
-		}
+		},
 	);
 
 	let [allPackages, allPackagesMethods] = createResource(async () => {
@@ -105,7 +105,7 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 		if (!props.isTemplate && props.id != undefined) {
 			let map: { [key: string]: LockfilePackage } = await invoke(
 				"get_instance_packages",
-				{ instance: props.id }
+				{ instance: props.id },
 			);
 			for (let pkg of Object.keys(map)) {
 				let val = map[pkg];
@@ -128,15 +128,15 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 
 		function addPackages(
 			list: PackageConfig[],
-			modifier: (pkg: InstalledPackage) => InstalledPackage
+			modifier: (pkg: InstalledPackage) => InstalledPackage,
 		) {
 			for (let config of list) {
 				let req = getPackageConfigRequest(config);
 				let existingPackage = allPackages.find(
-					(x) => x.isInstalled && pkgRequestsEqual(x.req, req)
+					(x) => x.isInstalled && pkgRequestsEqual(x.req, req),
 				);
 				allPackages = allPackages.filter(
-					(x) => !packageConfigsEqual(x.req, req)
+					(x) => !packageConfigsEqual(x.req, req),
 				);
 
 				let pkg: InstalledPackage = {
@@ -212,7 +212,7 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 						errors[pkg.pkg] = e;
 						return undefined;
 					}
-				})()
+				})(),
 			);
 		}
 
@@ -224,7 +224,7 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 
 			let [id, [meta, props]] = result as [
 				string,
-				[PackageMeta, PackageProperties]
+				[PackageMeta, PackageProperties],
 			];
 			metas[id] = meta;
 			properties[id] = props;
@@ -262,7 +262,7 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 		try {
 			let resolutionError: ResolutionErrorData = await invoke(
 				"get_instance_resolution_error",
-				{ id: props.id }
+				{ id: props.id },
 			);
 			return resolutionError;
 		} catch (e) {
@@ -299,7 +299,9 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 									style="position:absolute; top: calc(100% + 1rem);z-index:15"
 								>
 									<PackageQuickAdd
-										onAdd={(pkg) => props.onAdd(pkg, "global")}
+										onAdd={(pkg) =>
+											props.onAdd(pkgRequestToString(pkg), "global")
+										}
 										version={canonicalVersion()}
 										loader={props.loader}
 									/>
@@ -321,12 +323,11 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 
 									navigate(
 										getBrowseUrl(0, undefined, "mod", undefined, {
-											minecraft_versions: canonicalizeListOrSingle(
-												canonicalVersion()
-											),
+											minecraft_versions:
+												canonicalizeListOrSingle(canonicalVersion()),
 											loaders: canonicalizeListOrSingle(props.loader),
 											categories: [],
-										})
+										}),
 									);
 								}}
 								shadow
@@ -506,8 +507,8 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 											let category: ConfiguredPackageCategory = pkg.isClient
 												? "client"
 												: pkg.isServer
-												? "server"
-												: "global";
+													? "server"
+													: "global";
 											let req: PkgRequest = {
 												id: pkg.req.id,
 												repository: pkg.req.repository,
@@ -722,8 +723,8 @@ function ConfiguredPackage(props: ConfiguredPackageProps) {
 								let category: ConfiguredPackageCategory = props.pkg.isClient
 									? "client"
 									: props.pkg.isServer
-									? "server"
-									: "global";
+										? "server"
+										: "global";
 								props.onRemove(props.pkg.pkg, category);
 								(e.target! as any).parentElement.parentElement.remove();
 							}}
@@ -768,7 +769,7 @@ export function getPackageConfigRequest(config: PackageConfig) {
 // Checks if two PackageConfigs are referring to the same package
 export function packageConfigsEqual(
 	config1: PackageConfig,
-	config2: PackageConfig
+	config2: PackageConfig,
 ) {
 	let req1 = getPackageConfigRequest(config1);
 	let req2 = getPackageConfigRequest(config2);
@@ -778,7 +779,7 @@ export function packageConfigsEqual(
 // Checks if two PackageConfigs are referring to the same package and version
 export function packageConfigsFullyEqual(
 	config1: PackageConfig,
-	config2: PackageConfig
+	config2: PackageConfig,
 ) {
 	let req1 = getPackageConfigRequest(config1);
 	let req2 = getPackageConfigRequest(config2);

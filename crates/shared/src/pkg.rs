@@ -31,6 +31,9 @@ pub struct PkgRequest {
 	/// The requested content version of the package
 	#[serde(default)]
 	pub content_version: VersionPattern,
+	/// The optional slug specifier for this request. Just for display, and does not affect functionality
+	#[serde(default)]
+	pub slug: Option<String>,
 }
 
 /// Where a package was requested from
@@ -114,6 +117,7 @@ impl PkgRequest {
 			source,
 			content_version,
 			repository,
+			slug: None,
 		}
 	}
 
@@ -128,19 +132,25 @@ impl PkgRequest {
 		let string = string.as_ref();
 		let (id_and_repo, version) = parse_versioned_string(string);
 
-		let (id, repository) = if let Some(pos) = id_and_repo.find(":") {
-			let id = &id_and_repo[pos + 1..];
-			let repository = &id_and_repo[0..pos];
+		let (id, repository) = if let Some((repo, id)) = id_and_repo.split_once(":") {
 			// Empty repository should just be none
-			(id, Some(repository).filter(|x| !x.is_empty()))
+			(id, Some(repo).filter(|x| !x.is_empty()))
 		} else {
 			(id_and_repo, None)
 		};
+
+		let (id, slug) = if let Some((slug, id)) = id.split_once(".") {
+			(id, Some(slug))
+		} else {
+			(id, None)
+		};
+
 		Self {
 			source,
 			id: id.into(),
 			content_version: version,
 			repository: repository.map(|x| x.to_string()),
+			slug: slug.map(|x| x.to_string()),
 		}
 	}
 
@@ -151,6 +161,7 @@ impl PkgRequest {
 			id: self.id.clone(),
 			repository: self.repository.clone(),
 			content_version,
+			slug: self.slug.clone(),
 		}
 	}
 
@@ -198,6 +209,7 @@ impl Hash for PkgRequest {
 	fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
 		self.id.hash(state);
 		self.repository.hash(state);
+		self.slug.hash(state);
 	}
 }
 
@@ -206,7 +218,12 @@ impl Display for PkgRequest {
 		if let Some(repo) = &self.repository {
 			write!(f, "{repo}:")?;
 		}
-		write!(f, "{}", self.id)
+
+		if let Some(slug) = &self.slug {
+			write!(f, "{slug}.{}", self.id)
+		} else {
+			write!(f, "{}", self.id)
+		}
 	}
 }
 
@@ -350,6 +367,17 @@ pub struct PackageSearchParameters {
 	pub categories: Vec<PackageCategory>,
 }
 
+/// How much of a package we want to query depending on what operation we are doing.
+/// Allows lazy-loading parts of a package that we don't need
+#[derive(Serialize, Deserialize, Default, Clone, Copy, PartialEq, Eq)]
+pub enum PackageQueryDepth {
+	/// Metadata and partial properties only
+	MetaAndProps,
+	/// The whole package
+	#[default]
+	Full,
+}
+
 /// A category for a package
 #[allow(missing_docs)]
 #[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Eq)]
@@ -404,23 +432,23 @@ pub enum PackageCategory {
 #[derive(thiserror::Error, Debug)]
 pub enum ResolutionError {
 	/// Error that happens when resolving a single package
-	#[error("When resolving the package {0}: {1:?}")]
+	#[error("When resolving the package {0}:\n{1}")]
 	PackageContext(ArcPkgReq, Box<ResolutionError>),
 	#[error("Failed to preload packages")]
 	FailedToPreload(anyhow::Error),
-	#[error("Failed to get properties of package {0}: {1:?}")]
+	#[error("Failed to get properties of package {0}:\n{1}")]
 	FailedToGetProperties(ArcPkgReq, anyhow::Error),
-	#[error("No valid versions found for package {0}")]
-	NoValidVersionsFound(ArcPkgReq),
+	#[error("No valid versions found for package {0}. Constraints: {1:?}")]
+	NoValidVersionsFound(ArcPkgReq, Vec<VersionPattern>),
 	#[error("{pkg} extends the functionality of the package {1}, which is not installed", pkg = .0.as_ref().map(|x| format!("The package {}", x.debug_sources())).unwrap_or("A package".into()))]
 	ExtensionNotFulfilled(Option<ArcPkgReq>, ArcPkgReq),
 	#[error("Package {0} has been explicitly required by package {1}. This means it must be required by the user in their config.")]
 	ExplicitRequireNotFulfilled(ArcPkgReq, ArcPkgReq),
 	#[error("Package {0} is incompatible with the packages {refusers}", refusers = .1.iter().join(", "))]
 	IncompatiblePackage(ArcPkgReq, Vec<Arc<str>>),
-	#[error("Failed to evaluate package {0}: {1:?}")]
+	#[error("Failed to evaluate package {0}:\n{1:?}")]
 	FailedToEvaluate(ArcPkgReq, anyhow::Error),
-	#[error("Miscellaneous error: {0:?}")]
+	#[error("Miscellaneous error:\n{0:?}")]
 	Misc(anyhow::Error),
 }
 

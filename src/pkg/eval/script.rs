@@ -21,20 +21,20 @@ use super::{
 };
 
 struct SharedData<'a> {
-	eval: EvalData<'a>,
+	eval: EvalData,
 	paths: &'a Paths,
 }
 
 /// Evaluate a script package
-pub async fn eval_script_package<'a>(
+pub async fn eval_script_package(
 	pkg_id: PackageID,
 	parsed: &Parsed,
 	routine: Routine,
 	properties: PackageProperties,
-	input: EvalInput<'a>,
+	input: EvalInput,
 	plugins: PluginManager,
-	paths: &'a Paths,
-) -> anyhow::Result<EvalData<'a>> {
+	paths: &Paths,
+) -> anyhow::Result<EvalData> {
 	let mut eval = EvalData::new(input, pkg_id, properties, &routine, plugins);
 
 	eval.vars.set_reserved_constants(ReservedConstantVariables {

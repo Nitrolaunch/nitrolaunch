@@ -7,7 +7,7 @@ use nitro_pkg::PackageContentType;
 
 use anyhow::Context;
 use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
-use nitro_shared::pkg::ArcPkgReq;
+use nitro_shared::pkg::{ArcPkgReq, PackageQueryDepth};
 use nitro_shared::translate;
 use reqwest::Client;
 
@@ -111,7 +111,10 @@ impl PackageRepository {
 					Ok(None)
 				}
 			}
-			Self::Custom(repo) => repo.query(id, plugins, paths, o).await,
+			Self::Custom(repo) => {
+				repo.query(id, plugins, paths, PackageQueryDepth::Full, o)
+					.await
+			}
 		}
 	}
 

@@ -19,14 +19,14 @@ use super::{
 };
 
 /// Evaluate a declarative package
-pub fn eval_declarative_package<'a>(
+pub fn eval_declarative_package(
 	id: PackageID,
 	contents: &DeclarativePackage,
-	input: EvalInput<'a>,
+	input: EvalInput,
 	properties: PackageProperties,
 	routine: Routine,
 	plugins: PluginManager,
-) -> anyhow::Result<EvalData<'a>> {
+) -> anyhow::Result<EvalData> {
 	let eval_data =
 		eval_declarative_package_impl(id, contents, input, properties, routine, plugins)?;
 
@@ -34,14 +34,14 @@ pub fn eval_declarative_package<'a>(
 }
 
 /// Implementation for evaluating a declarative package
-fn eval_declarative_package_impl<'a>(
+fn eval_declarative_package_impl(
 	id: PackageID,
 	contents: &DeclarativePackage,
-	input: EvalInput<'a>,
+	input: EvalInput,
 	properties: PackageProperties,
 	routine: Routine,
 	plugins: PluginManager,
-) -> anyhow::Result<EvalData<'a>> {
+) -> anyhow::Result<EvalData> {
 	let pkg_id = id;
 
 	let mut eval_data = EvalData::new(input, pkg_id.clone(), properties, &routine, plugins);
@@ -57,7 +57,7 @@ fn eval_declarative_package_impl<'a>(
 	// Apply conditional rules
 	for rule in &contents.conditional_rules {
 		for condition in &rule.conditions {
-			if !check_condition_set(condition, &eval_data.input) {
+			if !check_condition_set(condition, &eval_data.input, false) {
 				continue;
 			}
 		}
@@ -164,23 +164,23 @@ fn eval_declarative_package_impl<'a>(
 /// Pick the best addon version from a list of declarative addon versions
 pub fn pick_best_addon_version<'a>(
 	versions: &'a [DeclarativeAddonVersion],
-	input: &'a EvalInput<'a>,
+	input: &'a EvalInput,
 	properties: &PackageProperties,
 ) -> Option<&'a DeclarativeAddonVersion> {
+	// If a specific version is forced, return that version no matter what
+	if input.params.force {
+		return versions
+			.iter()
+			.find(|x| x.content_versions_match(&input.params.required_content_versions));
+	}
+
 	// Filter versions that are not allowed
 	let versions = versions.iter().filter(|x| {
-		// If a specific version is forced, check if this version matches the requested one
-		if input.params.force {
-			if let Some(content_versions) = &x.conditional_properties.content_versions {
-				content_versions
-					.iter()
-					.any(|x| input.params.required_content_versions.contains(x))
-			} else {
-				false
-			}
-		} else {
-			check_condition_set(&x.conditional_properties, input)
-		}
+		let version_id_matches = x
+			.version
+			.as_ref()
+			.is_some_and(|version| input.params.required_content_versions.contains(version));
+		check_condition_set(&x.conditional_properties, input, version_id_matches)
 	});
 
 	// Sort so that versions with less loader matches come first
@@ -198,36 +198,25 @@ pub fn pick_best_addon_version<'a>(
 
 	// Check preferred content versions first
 	if !input.params.preferred_content_versions.is_empty() {
-		// Sort so newest comes first
-		let preferred_content_versions: Box<dyn Iterator<Item = &String>> =
-			if let Some(content_versions) = &properties.content_versions {
-				Box::new(
-					input
-						.params
-						.preferred_content_versions
-						.iter()
-						.sorted_by_cached_key(|x| {
-							content_versions
-								.iter()
-								.position(|candidate| &candidate == x)
-								.unwrap_or(content_versions.len())
-						})
-						.rev(),
-				)
-			} else {
-				Box::new(std::iter::empty())
-			};
+		if let Some(content_versions) = &properties.content_versions {
+			// Sort so newest comes first
+			let preferred_content_versions = match_ordering(
+				input.params.preferred_content_versions.iter(),
+				&content_versions,
+			)
+			.rev();
 
-		let default = DeserListOrSingle::default();
-		for version in preferred_content_versions {
-			if let Some(version) = versions.iter().find(|x| {
-				x.conditional_properties
-					.content_versions
-					.as_ref()
-					.unwrap_or(&default)
-					.contains(version)
-			}) {
-				return Some(*version);
+			let default = DeserListOrSingle::default();
+			for version in preferred_content_versions {
+				if let Some(version) = versions.iter().find(|x| {
+					x.conditional_properties
+						.content_versions
+						.as_ref()
+						.unwrap_or(&default)
+						.contains(version) || x.version.as_ref().is_some_and(|x| x == version)
+				}) {
+					return Some(*version);
+				}
 			}
 		}
 	}
@@ -256,15 +245,21 @@ pub fn pick_best_addon_version<'a>(
 }
 
 /// Check multiple sets of addon version conditions
-fn check_multiple_condition_sets<'a>(
+fn check_multiple_condition_sets(
 	conditions: &[DeclarativeConditionSet],
-	input: &'a EvalInput<'a>,
+	input: &EvalInput,
 ) -> bool {
-	conditions.iter().all(|x| check_condition_set(x, input))
+	conditions
+		.iter()
+		.all(|x| check_condition_set(x, input, false))
 }
 
 /// Filtering function for addon version picking and rule checking
-fn check_condition_set<'a>(conditions: &DeclarativeConditionSet, input: &'a EvalInput<'a>) -> bool {
+fn check_condition_set(
+	conditions: &DeclarativeConditionSet,
+	input: &EvalInput,
+	skip_content_versions: bool,
+) -> bool {
 	if let Some(stability) = &conditions.stability {
 		if stability > &input.params.stability {
 			return false;
@@ -318,13 +313,15 @@ fn check_condition_set<'a>(conditions: &DeclarativeConditionSet, input: &'a Eval
 		}
 	}
 
-	if let Some(content_versions) = &conditions.content_versions {
-		if !input.params.required_content_versions.is_empty()
-			&& !content_versions
-				.iter()
-				.any(|x| input.params.required_content_versions.contains(x))
-		{
-			return false;
+	if !skip_content_versions {
+		if let Some(content_versions) = &conditions.content_versions {
+			if !input.params.required_content_versions.is_empty()
+				&& !content_versions
+					.iter()
+					.any(|x| input.params.required_content_versions.contains(x))
+			{
+				return false;
+			}
 		}
 	}
 
@@ -350,8 +347,23 @@ fn get_loader_matches(loader: &LoaderMatch) -> u16 {
 	}
 }
 
+/// Matches the ordering of items in an iterator to a reference array
+fn match_ordering<'a, T: Ord + Eq + 'a>(
+	input: impl Iterator<Item = &'a T>,
+	reference: &[T],
+) -> impl Iterator + DoubleEndedIterator<Item = &'a T> {
+	input.sorted_by_cached_key(|x| {
+		reference
+			.iter()
+			.position(|candidate| &candidate == x)
+			.unwrap_or(reference.len())
+	})
+}
+
 #[cfg(test)]
 mod tests {
+	use std::sync::Arc;
+
 	use nitro_pkg::declarative::deserialize_declarative_package;
 	use nitro_shared::lang::Language;
 	use nitro_shared::loaders::Loader;
@@ -428,7 +440,7 @@ mod tests {
 
 		let constants = get_eval_constants();
 		let input = EvalInput {
-			constants: &constants,
+			constants: Arc::new(constants),
 			params: EvalParameters::new(Side::Client),
 		};
 
@@ -500,7 +512,7 @@ mod tests {
 
 		let constants = get_eval_constants();
 		let input = EvalInput {
-			constants: &constants,
+			constants: Arc::new(constants),
 			params: EvalParameters::new(Side::Client),
 		};
 

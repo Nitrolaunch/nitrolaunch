@@ -313,6 +313,21 @@ impl Package {
 			}
 		}
 	}
+
+	/// Get the declarative contents of the package
+	pub async fn get_declarative_contents<'a>(
+		&'a mut self,
+		paths: &Paths,
+		client: &Client,
+	) -> anyhow::Result<Option<&'a DeclarativePackage>> {
+		self.parse(paths, client).await.context("Failed to parse")?;
+		Ok(self
+			.data
+			.get()
+			.contents
+			.get()
+			.get_declarative_contents_optional())
+	}
 }
 
 #[cfg(test)]

@@ -5,6 +5,9 @@ pub mod declarative;
 /// Evaluating script packages
 pub mod script;
 
+use std::collections::HashMap;
+use std::sync::Arc;
+
 use anyhow::bail;
 use anyhow::Context;
 use async_trait::async_trait;
@@ -13,7 +16,6 @@ use nitro_parse::routine::INSTALL_ROUTINE;
 use nitro_parse::vars::HashMapVariableStore;
 use nitro_pkg::overrides::PackageOverrides;
 use nitro_pkg::properties::PackageProperties;
-use nitro_pkg::resolve::ResolutionResult;
 use nitro_pkg::script_eval::AddonInstructionData;
 use nitro_pkg::script_eval::EvalReason;
 use nitro_pkg::ConfiguredPackage;
@@ -21,7 +23,7 @@ use nitro_pkg::PackageContentType;
 use nitro_pkg::RecommendedPackage;
 use nitro_pkg::RequiredPackage;
 use nitro_pkg::{
-	EvalInput as EvalInputTrait, PackageEvalRelationsResult as EvalRelationsResultTrait,
+	EvalInput as EvalInputTrait, PackageEvalRelationsResult,
 	PackageEvaluator as PackageEvaluatorTrait,
 };
 use nitro_shared::addon::{is_addon_version_valid, is_filename_valid, Addon};
@@ -89,14 +91,14 @@ impl Routine {
 
 /// Combination of both EvalConstants and EvalParameters
 #[derive(Debug, Clone)]
-pub struct EvalInput<'a> {
+pub struct EvalInput {
 	/// Constant values
-	pub constants: &'a EvalConstants,
+	pub constants: Arc<EvalConstants>,
 	/// Changing values
 	pub params: EvalParameters,
 }
 
-impl EvalInputTrait for EvalInput<'_> {
+impl EvalInputTrait for EvalInput {
 	fn set_content_versions(
 		&mut self,
 		required_versions: Vec<String>,
@@ -183,9 +185,9 @@ impl EvalParameters {
 
 /// Persistent state for evaluation
 #[derive(Clone)]
-pub struct EvalData<'a> {
+pub struct EvalData {
 	/// Input to the evaluator
-	pub input: EvalInput<'a>,
+	pub input: EvalInput,
 	/// Plugins
 	pub plugins: PluginManager,
 	/// ID of the package we are evaluating
@@ -220,10 +222,10 @@ pub struct EvalData<'a> {
 	pub uses_custom_instructions: bool,
 }
 
-impl<'a> EvalData<'a> {
+impl EvalData {
 	/// Create a new EvalData
 	pub fn new(
-		input: EvalInput<'a>,
+		input: EvalInput,
 		id: PackageID,
 		properties: PackageProperties,
 		routine: &Routine,
@@ -253,14 +255,14 @@ impl<'a> EvalData<'a> {
 
 impl Package {
 	/// Evaluate a routine on a package
-	pub async fn eval<'a>(
+	pub async fn eval(
 		&mut self,
-		paths: &'a Paths,
+		paths: &Paths,
 		routine: Routine,
-		input: EvalInput<'a>,
+		input: EvalInput,
 		client: &Client,
 		plugins: PluginManager,
-	) -> anyhow::Result<EvalData<'a>> {
+	) -> anyhow::Result<EvalData> {
 		self.parse(paths, client).await?;
 
 		// Check properties
@@ -446,6 +448,7 @@ pub fn create_valid_addon_request(
 /// Evaluator used as an input for dependency resolution
 struct PackageEvaluator<'a> {
 	reg: &'a mut PkgRegistry,
+	results: &'a mut HashMap<ArcPkgReq, EvalData>,
 }
 
 /// Common argument for the evaluator
@@ -459,7 +462,7 @@ struct EvaluatorCommonInput<'a> {
 struct EvalPackageConfig(PackageConfig, ArcPkgReq);
 
 impl ConfiguredPackage for EvalPackageConfig {
-	type EvalInput<'a> = EvalInput<'a>;
+	type EvalInput = EvalInput;
 
 	fn get_package(&self) -> ArcPkgReq {
 		self.1.clone()
@@ -468,7 +471,7 @@ impl ConfiguredPackage for EvalPackageConfig {
 	fn override_configured_package_input(
 		&self,
 		properties: &PackageProperties,
-		input: &mut Self::EvalInput<'_>,
+		input: &mut Self::EvalInput,
 	) -> anyhow::Result<()> {
 		input
 			.params
@@ -483,53 +486,18 @@ impl ConfiguredPackage for EvalPackageConfig {
 	}
 }
 
-struct EvalRelationsResult {
-	pub deps: Vec<Vec<RequiredPackage>>,
-	pub conflicts: Vec<PackageID>,
-	pub recommendations: Vec<nitro_pkg::RecommendedPackage>,
-	pub bundled: Vec<PackageID>,
-	pub compats: Vec<(PackageID, PackageID)>,
-	pub extensions: Vec<PackageID>,
-}
-
-impl EvalRelationsResultTrait for EvalRelationsResult {
-	fn get_bundled(&self) -> Vec<PackageID> {
-		self.bundled.clone()
-	}
-
-	fn get_compats(&self) -> Vec<(PackageID, PackageID)> {
-		self.compats.clone()
-	}
-
-	fn get_conflicts(&self) -> Vec<PackageID> {
-		self.conflicts.clone()
-	}
-
-	fn get_deps(&self) -> Vec<Vec<RequiredPackage>> {
-		self.deps.clone()
-	}
-	fn get_extensions(&self) -> Vec<PackageID> {
-		self.extensions.clone()
-	}
-
-	fn get_recommendations(&self) -> Vec<nitro_pkg::RecommendedPackage> {
-		self.recommendations.clone()
-	}
-}
-
 #[async_trait]
 impl<'a> PackageEvaluatorTrait<'a> for PackageEvaluator<'a> {
 	type CommonInput = EvaluatorCommonInput<'a>;
 	type ConfiguredPackage = EvalPackageConfig;
-	type EvalInput<'b> = EvalInput<'b>;
-	type EvalRelationsResult<'b> = EvalRelationsResult;
+	type EvalInput = EvalInput;
 
 	async fn eval_package_relations(
 		&mut self,
 		pkg: &ArcPkgReq,
-		input: &Self::EvalInput<'a>,
+		input: &Self::EvalInput,
 		common_input: &Self::CommonInput,
-	) -> anyhow::Result<Self::EvalRelationsResult<'a>> {
+	) -> anyhow::Result<PackageEvalRelationsResult> {
 		let eval = self
 			.reg
 			.eval(
@@ -543,14 +511,16 @@ impl<'a> PackageEvaluatorTrait<'a> for PackageEvaluator<'a> {
 			.await
 			.context("Failed to evaluate package")?;
 
-		let result = EvalRelationsResult {
-			deps: eval.deps,
-			conflicts: eval.conflicts,
-			recommendations: eval.recommendations,
-			bundled: eval.bundled,
-			compats: eval.compats,
-			extensions: eval.extensions,
+		let result = PackageEvalRelationsResult {
+			deps: eval.deps.clone(),
+			conflicts: eval.conflicts.clone(),
+			recommendations: eval.recommendations.clone(),
+			bundled: eval.bundled.clone(),
+			compats: eval.compats.clone(),
+			extensions: eval.extensions.clone(),
 		};
+
+		self.results.insert(pkg.clone(), eval);
 
 		Ok(result)
 	}
@@ -586,6 +556,37 @@ impl<'a> PackageEvaluatorTrait<'a> for PackageEvaluator<'a> {
 			)
 			.await
 	}
+
+	async fn make_req_displayable<'b>(
+		&'b mut self,
+		req: &ArcPkgReq,
+		common_input: &Self::CommonInput,
+	) -> ArcPkgReq {
+		self.reg
+			.make_req_displayable(
+				req,
+				common_input.paths,
+				common_input.client,
+				&mut output::NoOp,
+			)
+			.await
+	}
+}
+
+/// Result from package resolution with package evaluations
+pub struct ResolutionAndEvalResult {
+	/// The list of packages to install
+	pub packages: Vec<ResolvedPackage>,
+	/// Package recommendations that were not satisfied
+	pub unfulfilled_recommendations: Vec<nitro_pkg::resolve::RecommendedPackage>,
+}
+
+/// Data from a package after resolution
+pub struct ResolvedPackage {
+	/// The package
+	pub req: ArcPkgReq,
+	/// Result from evaluation
+	pub eval: EvalData,
 }
 
 /// Resolve package dependencies
@@ -593,15 +594,19 @@ impl<'a> PackageEvaluatorTrait<'a> for PackageEvaluator<'a> {
 pub async fn resolve(
 	packages: &[PackageConfig],
 	instance_id: &str,
-	constants: &EvalConstants,
+	constants: Arc<EvalConstants>,
 	default_params: EvalParameters,
 	overrides: PackageOverrides,
 	paths: &Paths,
 	reg: &mut PkgRegistry,
 	client: &Client,
 	o: &mut impl NitroOutput,
-) -> anyhow::Result<ResolutionResult> {
-	let evaluator = PackageEvaluator { reg };
+) -> anyhow::Result<ResolutionAndEvalResult> {
+	let mut results = HashMap::new();
+	let evaluator = PackageEvaluator {
+		reg,
+		results: &mut results,
+	};
 
 	let input = EvalInput {
 		constants,
@@ -626,11 +631,25 @@ pub async fn resolve(
 			}
 		};
 
+	let mut packages = Vec::new();
+	for package in result.packages {
+		let eval = results
+			.remove(&package.req)
+			.with_context(|| format!("Evaluation for package {} not in map", package.req))?;
+		packages.push(ResolvedPackage {
+			req: package.req,
+			eval,
+		});
+	}
+
 	for package in &result.unfulfilled_recommendations {
 		print_recommendation_warning(package, o);
 	}
 
-	Ok(result)
+	Ok(ResolutionAndEvalResult {
+		packages,
+		unfulfilled_recommendations: result.unfulfilled_recommendations,
+	})
 }
 
 /// Prints an unfulfilled recommendation warning

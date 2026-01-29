@@ -50,6 +50,7 @@ export interface ResolutionErrorEvent {
 
 export interface PackageMeta {
 	name?: string;
+	slug?: string;
 	description?: string;
 	long_description?: string;
 	banner?: string;
@@ -80,6 +81,7 @@ export interface PkgRequest {
 	id: string;
 	repository?: string;
 	version?: string;
+	slug?: string;
 }
 
 export interface PackageSearchResults {

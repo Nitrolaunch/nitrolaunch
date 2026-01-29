@@ -6,10 +6,7 @@ use std::sync::Arc;
 use itertools::Itertools;
 use nitro_config::instance::get_addon_paths;
 use nitro_core::net::get_transfer_limit;
-use nitro_pkg::overrides::is_package_overridden;
-use nitro_pkg::properties::PackageProperties;
 use nitro_pkg::repo::PackageFlag;
-use nitro_pkg::resolve::ResolutionResult;
 use nitro_pkg::PkgRequest;
 use nitro_shared::addon::AddonKind;
 use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
@@ -20,7 +17,7 @@ use tokio::sync::Semaphore;
 use tokio::task::JoinSet;
 
 use crate::instance::Instance;
-use crate::pkg::eval::{resolve, EvalConstants, EvalInput, EvalParameters};
+use crate::pkg::eval::{resolve, EvalConstants, EvalParameters, ResolutionAndEvalResult};
 use crate::util::select_random_n_items_from_list;
 
 use super::InstanceUpdateContext;
@@ -30,7 +27,7 @@ use anyhow::Context;
 /// Install packages on an instance. Returns a set of all unique packages
 pub async fn update_instance_packages<O: NitroOutput>(
 	instance: &mut Instance,
-	constants: &EvalConstants,
+	constants: &Arc<EvalConstants>,
 	ctx: &mut InstanceUpdateContext<'_, O>,
 	force: bool,
 ) -> anyhow::Result<HashSet<ArcPkgReq>> {
@@ -57,7 +54,6 @@ pub async fn update_instance_packages<O: NitroOutput>(
 		MessageLevel::Important,
 	);
 	let mut tasks = HashMap::new();
-	let mut evals = HashMap::new();
 	for package in resolution.packages.iter().sorted_by_key(|x| x.req.clone()) {
 		// Check the package to display warnings
 		check_package(ctx, &package.req)
@@ -65,36 +61,8 @@ pub async fn update_instance_packages<O: NitroOutput>(
 			.with_context(|| format!("Failed to check package {}", package.req))?;
 
 		// Install the package on the instance
-
-		// Skip suppressed packages
-		if is_package_overridden(&package.req, &instance.config.package_overrides.suppress) {
-			continue;
-		}
-
-		let mut params = EvalParameters::new(instance.kind.to_side());
-		params.stability = instance.config.package_stability;
-		if let Some(config) = instance.get_package_config(&package.req) {
-			params
-				.apply_config(config, &PackageProperties::default())
-				.context("Failed to apply config")?;
-		}
-
-		params.required_content_versions = package.required_content_versions.clone();
-		params.preferred_content_versions = package.preferred_content_versions.clone();
-		params.force =
-			is_package_overridden(&package.req, &instance.config.package_overrides.force);
-
-		let input = EvalInput { constants, params };
-		let (eval, new_tasks) = instance
-			.get_package_addon_tasks(
-				&package.req,
-				input,
-				ctx.packages,
-				ctx.paths,
-				force,
-				ctx.client,
-				ctx.output,
-			)
+		let new_tasks = instance
+			.get_package_addon_tasks(&package.eval, ctx.paths, force, ctx.client)
 			.await
 			.with_context(|| {
 				format!(
@@ -105,7 +73,7 @@ pub async fn update_instance_packages<O: NitroOutput>(
 		tasks.extend(new_tasks);
 
 		// Display any notices from the installation
-		for notice in &eval.notices {
+		for notice in &package.eval.notices {
 			ctx.output.display(
 				format_package_update_message(
 					&package.req,
@@ -114,8 +82,6 @@ pub async fn update_instance_packages<O: NitroOutput>(
 				MessageLevel::Important,
 			);
 		}
-
-		evals.insert(package.req.clone(), eval);
 	}
 
 	// Run the acquire tasks
@@ -134,7 +100,7 @@ pub async fn update_instance_packages<O: NitroOutput>(
 		MessageLevel::Important,
 	);
 
-	for (package, eval) in evals {
+	for package in &resolution.packages {
 		ctx.output.start_process();
 
 		let version_info = VersionInfo {
@@ -144,8 +110,8 @@ pub async fn update_instance_packages<O: NitroOutput>(
 
 		instance
 			.install_eval_data(
-				&package,
-				&eval,
+				&package.req,
+				&package.eval,
 				&version_info,
 				ctx.paths,
 				ctx.lock,
@@ -156,7 +122,7 @@ pub async fn update_instance_packages<O: NitroOutput>(
 
 		ctx.output.display(
 			format_package_update_message(
-				&package,
+				&package.req,
 				MessageContents::Success(translate!(ctx.output, FinishInstallingPackage)),
 			),
 			MessageLevel::Important,
@@ -230,9 +196,9 @@ async fn run_addon_tasks(
 /// Resolve packages on an instance
 async fn resolve_instance<O: NitroOutput>(
 	instance: &mut Instance,
-	constants: &EvalConstants,
+	constants: &Arc<EvalConstants>,
 	ctx: &mut InstanceUpdateContext<'_, O>,
-) -> anyhow::Result<ResolutionResult> {
+) -> anyhow::Result<ResolutionAndEvalResult> {
 	let mut params = EvalParameters::new(instance.kind.to_side());
 	params.stability = instance.config.package_stability;
 
@@ -240,7 +206,7 @@ async fn resolve_instance<O: NitroOutput>(
 	let resolution = resolve(
 		instance_pkgs,
 		&instance.id,
-		constants,
+		constants.clone(),
 		params,
 		instance.config.package_overrides.clone(),
 		ctx.paths,

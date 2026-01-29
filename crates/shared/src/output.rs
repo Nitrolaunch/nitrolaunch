@@ -88,7 +88,7 @@ pub trait NitroOutput: Send {
 	fn display_special_resolution_error(&mut self, error: ResolutionError, instance_id: &str) {
 		self.display(
 			MessageContents::Error(format!(
-				"Failed to resolve packages for instance {instance_id}: {error:?}"
+				"Failed to resolve packages for instance {instance_id}: {error}"
 			)),
 			MessageLevel::Important,
 		)

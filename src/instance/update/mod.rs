@@ -113,6 +113,8 @@ impl Instance {
 		if update_packages {
 			#[cfg(not(feature = "disable_instance_update_packages"))]
 			{
+				use std::sync::Arc;
+
 				let mut all_packages = HashSet::new();
 
 				ctx.output.display(
@@ -130,9 +132,13 @@ impl Instance {
 					default_stability: self.config.package_stability,
 				};
 
-				let packages =
-					update_instance_packages(self, &constants, ctx, depth == UpdateDepth::Force)
-						.await?;
+				let packages = update_instance_packages(
+					self,
+					&Arc::new(constants),
+					ctx,
+					depth == UpdateDepth::Force,
+				)
+				.await?;
 
 				ctx.output.display(
 					MessageContents::Success(translate!(ctx.output, FinishUpdatingPackages)),

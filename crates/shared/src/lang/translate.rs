@@ -33,7 +33,7 @@ define_translations! {
 	Notice, "Header for a notice", "Notice";
 	Warning, "Header for a warning", "Warning";
 	Error, "Header for an error", "Error";
-	StartResolvingDependencies, "When starting to resolve package dependencies", "Resolving package dependencies";
+	StartResolvingDependencies, "When starting to resolve package dependencies", "Downloading packages and resolving dependencies";
 	FinishResolvingDependencies, "When finishing resolving package dependencies", "Dependencies resolved";
 	StartAcquiringAddons, "When starting to acquire addons", "Acquiring addons";
 	FinishAcquiringAddons, "When finishing acquiring addons", "Addons acquired";

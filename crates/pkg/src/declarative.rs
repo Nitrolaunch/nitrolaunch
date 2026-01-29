@@ -207,6 +207,25 @@ pub struct DeclarativeAddonVersion {
 	pub hashes: PackageAddonOptionalHashes,
 }
 
+impl DeclarativeAddonVersion {
+	/// Gets whether one of the given content versions matches this version's content versions or version ID
+	pub fn content_versions_match(&self, content_versions: &[String]) -> bool {
+		if let Some(id) = &self.version {
+			if content_versions.contains(id) {
+				return true;
+			}
+		}
+
+		if let Some(own_content_versions) = &self.conditional_properties.content_versions {
+			own_content_versions
+				.iter()
+				.any(|x| content_versions.contains(x))
+		} else {
+			false
+		}
+	}
+}
+
 /// Properties for declarative addon versions that can be changed with patches
 #[derive(Deserialize, Serialize, Debug, Default, Clone)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
@@ -241,6 +260,35 @@ pub fn validate_declarative_package(pkg: &DeclarativePackage) -> anyhow::Result<
 }
 
 impl DeclarativePackage {
+	/// Gets the real name of a content version given either an actual content version,
+	/// or a version ID
+	pub fn get_content_version_name<'a>(&'a self, version: &'a String) -> &'a String {
+		if let Some(content_versions) = &self.properties.content_versions {
+			if content_versions.contains(version) {
+				return version;
+			}
+		}
+
+		for addon in self.addons.values() {
+			for addon_version in &addon.versions {
+				if !addon_version.version.as_ref().is_some_and(|x| x == version) {
+					continue;
+				}
+
+				let Some(content_versions) = &addon_version.conditional_properties.content_versions
+				else {
+					continue;
+				};
+
+				if let Some(content_version) = content_versions.first() {
+					return content_version;
+				}
+			}
+		}
+
+		return version;
+	}
+
 	/// Improve a generated package by inferring certain fields
 	pub fn improve_generation(&mut self) {
 		// Infer issues link from a GitHub source link
@@ -323,5 +371,39 @@ mod tests {
 		let pkg = deserialize_declarative_package(contents).unwrap();
 
 		assert_eq!(pkg.meta.name, Some("Test Package".into()));
+	}
+
+	#[test]
+	fn test_declarative_content_version_name() {
+		let mut addons = HashMap::new();
+		addons.insert(
+			"foo".into(),
+			DeclarativeAddon {
+				kind: PackageKind::Mod,
+				versions: vec![DeclarativeAddonVersion {
+					version: Some("a".into()),
+					conditional_properties: DeclarativeConditionSet {
+						content_versions: Some(DeserListOrSingle::Single("1".into())),
+						..Default::default()
+					},
+					..Default::default()
+				}],
+				conditions: Vec::new(),
+				optional: false,
+			},
+		);
+
+		let pkg = DeclarativePackage {
+			properties: PackageProperties {
+				content_versions: Some(vec!["1".into(), "2".into()]),
+				..Default::default()
+			},
+			addons,
+			..Default::default()
+		};
+
+		assert_eq!(pkg.get_content_version_name(&"1".into()), "1");
+		assert_eq!(pkg.get_content_version_name(&"2".into()), "2");
+		assert_eq!(pkg.get_content_version_name(&"a".into()), "1");
 	}
 }

@@ -82,10 +82,11 @@ export default function PackageInstallModal(props: PackageInstallModalProps) {
 		try {
 			let config = await readEditableInstanceConfig(
 				selectedInstanceOrTemplate(),
-				mode
+				mode,
 			);
 			let pkg = pkgRequestToString({
 				id: props.packageId,
+				slug: props.packageSlug,
 				version: props.selectedVersion,
 				repository: props.packageRepo,
 			});
@@ -103,7 +104,7 @@ export default function PackageInstallModal(props: PackageInstallModalProps) {
 			successToast(
 				mode == InstanceConfigMode.Instance
 					? "Package added. Remember to update the instance to use it"
-					: "Package added"
+					: "Package added",
 			);
 			props.onClose();
 		} catch (e) {
@@ -314,6 +315,7 @@ export default function PackageInstallModal(props: PackageInstallModalProps) {
 export interface PackageInstallModalProps {
 	packageId: string;
 	packageRepo?: string;
+	packageSlug?: string;
 	selectedVersion?: string;
 	visible: boolean;
 	onClose: () => void;

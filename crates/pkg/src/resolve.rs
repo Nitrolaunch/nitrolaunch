@@ -7,7 +7,7 @@ use nitro_shared::versions::VersionPattern;
 
 use crate::overrides::{is_package_overridden, PackageOverrides};
 use crate::properties::PackageProperties;
-use crate::{ConfiguredPackage, EvalInput, PackageEvalRelationsResult, PackageEvaluator};
+use crate::{ConfiguredPackage, EvalInput, PackageEvaluator};
 
 use crate::{PkgRequest, PkgRequestSource};
 
@@ -15,13 +15,14 @@ use crate::{PkgRequest, PkgRequestSource};
 pub async fn resolve<'a, E: PackageEvaluator<'a>>(
 	packages: &[E::ConfiguredPackage],
 	mut evaluator: E,
-	constant_eval_input: E::EvalInput<'a>,
+	constant_eval_input: E::EvalInput,
 	common_input: &E::CommonInput,
 	overrides: PackageOverrides,
 ) -> Result<ResolutionResult, ResolutionError> {
 	let mut resolver = Resolver {
 		tasks: VecDeque::new(),
 		constraints: Vec::new(),
+		dependencies: HashMap::new(),
 		constant_input: constant_eval_input,
 		package_configs: HashMap::new(),
 		overrides,
@@ -53,12 +54,14 @@ pub async fn resolve<'a, E: PackageEvaluator<'a>>(
 	// Create the initial EvalPackage tasks and constraints from the installed packages
 	for config in packages.iter().sorted_by_key(|x| x.get_package()) {
 		let req = config.get_package();
-		let props = evaluator
-			.get_package_properties(&req, common_input)
-			.await
-			.map_err(|e| ResolutionError::FailedToGetProperties(req.clone(), e))?;
 
-		resolver.update_require_constraint(&req, props, RequireConstraint::UserRequire)?;
+		if let Err(mut e) = resolver
+			.update_dependency(&req, DependencyKind::UserRequire)
+			.await
+		{
+			make_err_reqs_displayable(&mut e, &mut evaluator, common_input).await;
+			return Err(e);
+		}
 		resolver.package_configs.insert(req.clone(), config.clone());
 	}
 
@@ -84,8 +87,16 @@ pub async fn resolve<'a, E: PackageEvaluator<'a>>(
 					}
 				}
 
-				resolve_task(task, common_input, &mut evaluator, &mut resolver).await?;
-				resolver.check_compats(&mut evaluator, common_input).await?;
+				if let Err(mut e) =
+					resolve_task(task, common_input, &mut evaluator, &mut resolver).await
+				{
+					make_err_reqs_displayable(&mut e, &mut evaluator, common_input).await;
+					return Err(e);
+				}
+				if let Err(mut e) = resolver.check_compats().await {
+					make_err_reqs_displayable(&mut e, &mut evaluator, common_input).await;
+					return Err(e);
+				}
 
 				// Reset the skip count since it is no longer valid
 				num_skipped = 0;
@@ -127,12 +138,14 @@ pub async fn resolve<'a, E: PackageEvaluator<'a>>(
 			ConstraintKind::Recommend(package, invert) => {
 				if *invert {
 					if resolver.is_required(package) {
+						let package = evaluator.make_req_displayable(package, common_input).await;
 						unfulfilled_recommendations.push(RecommendedPackage {
 							req: package.clone(),
 							invert: true,
 						});
 					}
 				} else if !resolver.is_required(package) {
+					let package = evaluator.make_req_displayable(package, common_input).await;
 					unfulfilled_recommendations.push(RecommendedPackage {
 						req: package.clone(),
 						invert: false,
@@ -141,7 +154,13 @@ pub async fn resolve<'a, E: PackageEvaluator<'a>>(
 			}
 			ConstraintKind::Extend(package) => {
 				if !resolver.is_required(package) {
+					let package = evaluator.make_req_displayable(package, common_input).await;
 					let source = package.source.get_source();
+					let source = if let Some(source) = source {
+						Some(evaluator.make_req_displayable(&source, common_input).await)
+					} else {
+						None
+					};
 					return Err(ResolutionError::ExtensionNotFulfilled(
 						source,
 						package.clone(),
@@ -173,10 +192,6 @@ pub struct ResolutionResult {
 pub struct ResolutionPackageResult {
 	/// The request for this package. The content version probably doesn't mean anything.
 	pub req: ArcPkgReq,
-	/// The required content versions for this package
-	pub required_content_versions: Vec<String>,
-	/// The preferred content versions for this package
-	pub preferred_content_versions: Vec<String>,
 }
 
 /// Recommended package that has a PkgRequest instead of a String
@@ -195,25 +210,14 @@ async fn resolve_task<'a, E: PackageEvaluator<'a>>(
 	resolver: &mut Resolver<'a, E>,
 ) -> Result<(), ResolutionError> {
 	match task {
-		Task::EvalPackage {
-			dest,
-			required_content_versions,
-			preferred_content_versions,
-		} => {
+		Task::EvalPackage { dest } => {
 			if resolver.overrides.suppress.contains(&dest.to_string()) {
 				return Ok(());
 			}
 
-			let result = resolve_eval_package(
-				dest.clone(),
-				required_content_versions,
-				preferred_content_versions,
-				common_input,
-				evaluator,
-				resolver,
-			)
-			.await
-			.map_err(|e| ResolutionError::PackageContext(dest.clone(), Box::new(e)));
+			let result = resolve_eval_package(dest.clone(), common_input, evaluator, resolver)
+				.await
+				.map_err(|e| ResolutionError::PackageContext(dest.clone(), Box::new(e)));
 
 			let config = resolver.package_configs.get(&dest);
 
@@ -244,8 +248,6 @@ async fn resolve_task<'a, E: PackageEvaluator<'a>>(
 /// Resolve an EvalPackage task
 async fn resolve_eval_package<'a, E: PackageEvaluator<'a>>(
 	package: ArcPkgReq,
-	required_content_versions: Vec<String>,
-	preferred_content_versions: Vec<String>,
 	common_input: &E::CommonInput,
 	evaluator: &mut E,
 	resolver: &mut Resolver<'a, E>,
@@ -253,11 +255,34 @@ async fn resolve_eval_package<'a, E: PackageEvaluator<'a>>(
 	// Make sure that this package fits the constraints as well
 	resolver.check_constraints(&package)?;
 
-	// Get the correct EvalInput
+	// Resolve versions
+	let default = Vec::new();
+	let dependency = resolver
+		.dependencies
+		.entry(package.clone())
+		.or_insert_with(|| Dependency::new(package.clone(), DependencyKind::Require));
+
+	dependency
+		.canonicalize_versions(evaluator, common_input)
+		.await;
+
 	let properties = evaluator
 		.get_package_properties(&package, common_input)
 		.await
 		.map_err(|e| ResolutionError::FailedToGetProperties(package.clone(), e))?;
+	let available_versions = properties.content_versions.as_ref().unwrap_or(&default);
+
+	let required_content_versions = dependency.get_versions(available_versions);
+	let preferred_content_versions = dependency.get_preferred_versions();
+	// We have overconstrained and no versions are left
+	if required_content_versions.is_empty() && !available_versions.is_empty() {
+		return Err(ResolutionError::NoValidVersionsFound(
+			package,
+			dependency.canonicalized_version_constraints.clone(),
+		));
+	}
+
+	// Get the correct EvalInput
 	let config = resolver.package_configs.get(&package);
 	let input = override_eval_input::<E>(
 		properties,
@@ -273,7 +298,7 @@ async fn resolve_eval_package<'a, E: PackageEvaluator<'a>>(
 		.await
 		.map_err(|e| ResolutionError::FailedToEvaluate(package.clone(), e))?;
 
-	for conflict in result.get_conflicts().iter().sorted() {
+	for conflict in result.conflicts.iter().sorted() {
 		let req = Arc::new(PkgRequest::parse(
 			conflict,
 			PkgRequestSource::Refused(package.clone()),
@@ -289,7 +314,7 @@ async fn resolve_eval_package<'a, E: PackageEvaluator<'a>>(
 		});
 	}
 
-	for dep in result.get_deps().iter().flatten().sorted() {
+	for dep in result.deps.iter().flatten().sorted() {
 		let req = Arc::new(PkgRequest::parse(
 			&dep.value,
 			PkgRequestSource::Dependency(package.clone()),
@@ -301,28 +326,24 @@ async fn resolve_eval_package<'a, E: PackageEvaluator<'a>>(
 			));
 		}
 		resolver.check_constraints(&req)?;
-		let props = evaluator
-			.get_package_properties(&req, common_input)
-			.await
-			.map_err(|e| ResolutionError::FailedToGetProperties(package.clone(), e))?;
-		resolver.update_require_constraint(&req, props, RequireConstraint::Require)?;
+		resolver
+			.update_dependency(&req, DependencyKind::Require)
+			.await?;
 	}
 
-	for bundled in result.get_bundled().iter().sorted() {
+	for bundled in result.bundled.iter().sorted() {
 		let req = Arc::new(PkgRequest::parse(
 			bundled,
 			PkgRequestSource::Bundled(package.clone()),
 		));
 		resolver.check_constraints(&req)?;
-		let props = evaluator
-			.get_package_properties(&req, common_input)
-			.await
-			.map_err(|e| ResolutionError::FailedToGetProperties(package.clone(), e))?;
 
-		resolver.update_require_constraint(&req, props, RequireConstraint::Bundle)?;
+		resolver
+			.update_dependency(&req, DependencyKind::Bundled)
+			.await?;
 	}
 
-	for (check_package, compat_package) in result.get_compats().iter().sorted() {
+	for (check_package, compat_package) in result.compats.iter().sorted() {
 		let check_package = Arc::new(PkgRequest::parse(
 			check_package,
 			PkgRequestSource::Dependency(package.clone()),
@@ -338,7 +359,7 @@ async fn resolve_eval_package<'a, E: PackageEvaluator<'a>>(
 		}
 	}
 
-	for extension in result.get_extensions().iter().sorted() {
+	for extension in result.extensions.iter().sorted() {
 		let req = Arc::new(PkgRequest::parse(
 			extension,
 			PkgRequestSource::Dependency(package.clone()),
@@ -348,7 +369,7 @@ async fn resolve_eval_package<'a, E: PackageEvaluator<'a>>(
 		});
 	}
 
-	for recommendation in result.get_recommendations().iter().sorted() {
+	for recommendation in result.recommendations.iter().sorted() {
 		let req = Arc::new(PkgRequest::parse(
 			&recommendation.value,
 			PkgRequestSource::Dependency(package.clone()),
@@ -364,12 +385,12 @@ async fn resolve_eval_package<'a, E: PackageEvaluator<'a>>(
 /// Overrides the EvalInput for a package with config
 fn override_eval_input<'a, E: PackageEvaluator<'a>>(
 	properties: &PackageProperties,
-	constant_eval_input: &E::EvalInput<'a>,
+	constant_eval_input: &E::EvalInput,
 	required_content_versions: Vec<String>,
 	preferred_content_versions: Vec<String>,
 	force: bool,
 	config: Option<&E::ConfiguredPackage>,
-) -> Result<E::EvalInput<'a>, ResolutionError> {
+) -> Result<E::EvalInput, ResolutionError> {
 	let input = {
 		let mut constant_eval_input = constant_eval_input.clone();
 		constant_eval_input
@@ -393,7 +414,8 @@ fn override_eval_input<'a, E: PackageEvaluator<'a>>(
 struct Resolver<'a, E: PackageEvaluator<'a>> {
 	tasks: VecDeque<Task>,
 	constraints: Vec<Constraint>,
-	constant_input: E::EvalInput<'a>,
+	dependencies: HashMap<ArcPkgReq, Dependency>,
+	constant_input: E::EvalInput,
 	package_configs: HashMap<ArcPkgReq, E::ConfiguredPackage>,
 	overrides: PackageOverrides,
 }
@@ -402,144 +424,45 @@ impl<'a, E> Resolver<'a, E>
 where
 	E: PackageEvaluator<'a>,
 {
-	fn is_required_fn(constraint: &Constraint, req: &ArcPkgReq) -> bool {
-		matches!(
-			&constraint.kind,
-			ConstraintKind::Require(dest, ..)
-			| ConstraintKind::UserRequire(dest, ..)
-			| ConstraintKind::Bundle(dest, ..) if dest == req
-		)
-	}
-
 	/// Whether a package has been required by an existing constraint
 	pub fn is_required(&self, req: &ArcPkgReq) -> bool {
-		self.constraints
-			.iter()
-			.any(|x| Self::is_required_fn(x, req))
+		self.dependencies.contains_key(req)
 	}
 
 	/// Whether a package has been required by the user
 	pub fn is_user_required(&self, req: &ArcPkgReq) -> bool {
-		self.constraints.iter().any(|x| {
-			matches!(&x.kind, ConstraintKind::UserRequire(dest, ..) if dest == req)
-				|| matches!(&x.kind, ConstraintKind::Bundle(dest, ..) if dest == req && dest.source.is_user_bundled())
-		})
+		self.dependencies
+			.values()
+			.any(|x| &x.pkg == req || x.pkg.source.is_user_bundled())
 	}
 
-	/// Remove the require constraint of a package if it exists
-	pub fn remove_require_constraint(&mut self, req: &ArcPkgReq) {
-		let index = self
-			.constraints
-			.iter()
-			.position(|x| matches!(&x.kind, ConstraintKind::Require(req2, ..) | ConstraintKind::UserRequire(req2, ..) | ConstraintKind::Bundle(req2, ..) if req2 == req));
-		if let Some(index) = index {
-			self.constraints.swap_remove(index);
-		}
-	}
-
-	/// Updates a require constraint, returning an error if the package is now overconstrained
-	pub fn update_require_constraint(
+	/// Updates a dependency
+	pub async fn update_dependency(
 		&mut self,
 		req: &ArcPkgReq,
-		properties: &PackageProperties,
-		kind: RequireConstraint,
+		kind: DependencyKind,
 	) -> Result<(), ResolutionError> {
-		fn find_constraint<'a>(
-			constraints: &'a mut [Constraint],
-			req: &ArcPkgReq,
-		) -> Option<(&'a mut Vec<String>, &'a mut Vec<String>)> {
-			constraints.iter_mut().find_map(|x| {
-				if let ConstraintKind::Require(req2, versions, preferred_versions)
-				| ConstraintKind::UserRequire(req2, versions, preferred_versions)
-				| ConstraintKind::Bundle(req2, versions, preferred_versions) = &mut x.kind
-				{
-					if req2 == req {
-						Some((versions, preferred_versions))
-					} else {
-						None
-					}
-				} else {
-					None
-				}
-			})
-		}
-
-		// Insert the constraint if it does not exist
-		let just_inserted = if find_constraint(&mut self.constraints, req).is_none() {
-			// Create a new constraint
-			let versions = properties.content_versions.clone().unwrap_or_default();
-			let kind = match kind {
-				RequireConstraint::Require => {
-					ConstraintKind::Require(req.clone(), versions, Vec::new())
-				}
-				RequireConstraint::UserRequire => {
-					ConstraintKind::UserRequire(req.clone(), versions, Vec::new())
-				}
-				RequireConstraint::Bundle => {
-					ConstraintKind::Bundle(req.clone(), versions, Vec::new())
-				}
-			};
-			self.constraints.push(Constraint { kind });
-
-			true
-		} else {
-			false
-		};
-
-		// Find existing constraint versions to update
-		let (required_versions, preferred_versions) =
-			find_constraint(&mut self.constraints, req).expect("Should have been inserted");
-
-		// Update the constraint with the new versions
-		// If the existing versions is already empty, that means this package just doesn't have any content versions
-		if required_versions.is_empty() {
+		if is_package_overridden(req, &self.overrides.suppress) {
 			return Ok(());
 		}
 
-		// Constrain the list of required versions or add to the list of preferred versions
-		let mut new_version_preferred = false;
-		let new_versions = if let VersionPattern::Prefer(preferred) = &req.content_version {
-			if !preferred_versions.contains(preferred) {
-				preferred_versions.push(preferred.clone());
-				new_version_preferred = true;
-			}
-			required_versions.clone()
+		let (dependency, just_inserted) = if let Some(dependency) = self.dependencies.get_mut(req) {
+			(dependency, false)
 		} else {
-			req.content_version.get_matches(required_versions)
+			self.dependencies
+				.insert(req.clone(), Dependency::new(req.clone(), kind));
+
+			(self.dependencies.get_mut(req).unwrap(), true)
 		};
 
-		// We have overconstrained to the point that there are no versions left
-		if new_versions.is_empty() {
-			return Err(ResolutionError::NoValidVersionsFound(req.clone()));
-		}
+		dependency.update_importance(kind);
 
-		// If the number of versions is now smaller, that means a different version could be selected and we need to re-evaluate.
-		// Also, if the best evaluable version has changed, we also need to re-evaluate
-		if (just_inserted || new_version_preferred || new_versions.len() != required_versions.len())
-			&& !is_package_overridden(req, &self.overrides.suppress)
-		{
-			self.tasks.push_back(Task::EvalPackage {
-				dest: req.clone(),
-				required_content_versions: new_versions.clone(),
-				preferred_content_versions: preferred_versions.clone(),
-			});
-		}
+		let version_changed = dependency.add_version_constraint(req.content_version.clone());
 
-		*required_versions = new_versions;
-
-		// Upgrade requires to bundles
-		let required_versions = required_versions.clone();
-		let preferred_versions = preferred_versions.clone();
-		if self
-			.constraints
-			.iter()
-			.any(|x| matches!(&x.kind, ConstraintKind::Require(req2, ..) if req2 == req))
-		{
-			self.remove_require_constraint(req);
-
-			self.constraints.push(Constraint {
-				kind: ConstraintKind::Bundle(req.clone(), required_versions, preferred_versions),
-			})
+		// Update the package if it changed
+		if just_inserted || version_changed {
+			self.tasks
+				.push_back(Task::EvalPackage { dest: req.clone() });
 		}
 
 		Ok(())
@@ -603,11 +526,7 @@ where
 	}
 
 	/// Checks compat constraints to see if new constraints are needed
-	pub async fn check_compats(
-		&mut self,
-		evaluator: &mut E,
-		common_input: &E::CommonInput,
-	) -> Result<(), ResolutionError> {
+	pub async fn check_compats(&mut self) -> Result<(), ResolutionError> {
 		let mut packages_to_require = Vec::new();
 		for constraint in &self.constraints {
 			if let ConstraintKind::Compat(package, compat_package) = &constraint.kind {
@@ -617,11 +536,8 @@ where
 			}
 		}
 		for package in packages_to_require {
-			let props = evaluator
-				.get_package_properties(&package, common_input)
-				.await
-				.map_err(|e| ResolutionError::FailedToGetProperties(package.clone(), e))?;
-			self.update_require_constraint(&package, props, RequireConstraint::Require)?;
+			self.update_dependency(&package, DependencyKind::Require)
+				.await?;
 		}
 
 		Ok(())
@@ -629,30 +545,9 @@ where
 
 	/// Collect all needed packages for final output
 	pub fn collect_packages(self) -> Vec<ResolutionPackageResult> {
-		self.constraints
-			.into_iter()
-			.filter_map(|x| match x.kind {
-				ConstraintKind::Require(
-					dest,
-					required_content_versions,
-					preferred_content_versions,
-				)
-				| ConstraintKind::UserRequire(
-					dest,
-					required_content_versions,
-					preferred_content_versions,
-				)
-				| ConstraintKind::Bundle(
-					dest,
-					required_content_versions,
-					preferred_content_versions,
-				) => Some(ResolutionPackageResult {
-					req: dest,
-					required_content_versions,
-					preferred_content_versions,
-				}),
-				_ => None,
-			})
+		self.dependencies
+			.into_values()
+			.map(|x| ResolutionPackageResult { req: x.pkg.clone() })
 			.collect()
 	}
 }
@@ -665,31 +560,171 @@ struct Constraint {
 
 #[derive(Debug, PartialEq, Eq)]
 enum ConstraintKind {
-	Require(ArcPkgReq, Vec<String>, Vec<String>),
-	UserRequire(ArcPkgReq, Vec<String>, Vec<String>),
 	Refuse(ArcPkgReq),
 	Recommend(ArcPkgReq, bool),
-	Bundle(ArcPkgReq, Vec<String>, Vec<String>),
 	Compat(ArcPkgReq, ArcPkgReq),
 	Extend(ArcPkgReq),
+}
+
+#[derive(Clone)]
+struct Dependency {
+	pkg: ArcPkgReq,
+	kind: DependencyKind,
+	/// Version pattern constraints imposed on the available versions, uncanonicalized
+	uncanonicalized_version_constraints: Vec<VersionPattern>,
+	/// Version pattern constraints that have been canonicalized to the actual names
+	canonicalized_version_constraints: Vec<VersionPattern>,
+	/// Copies of uncanonicalized constraints that have been added to the canonical list but we keep for later comparisons
+	already_canonicalized_version_constraints: Vec<VersionPattern>,
+}
+
+impl Dependency {
+	/// Creates a new dependency
+	pub fn new(pkg: ArcPkgReq, kind: DependencyKind) -> Self {
+		Self {
+			pkg,
+			kind,
+			uncanonicalized_version_constraints: Vec::new(),
+			canonicalized_version_constraints: Vec::new(),
+			already_canonicalized_version_constraints: Vec::new(),
+		}
+	}
+
+	/// Updates the kind of this dependency if the given kind is of higher importance.
+	pub fn update_importance(&mut self, kind: DependencyKind) {
+		if kind > self.kind {
+			self.kind = kind;
+		}
+	}
+
+	/// Adds a new version constraint to this dependency. Returns true if the constraints have changed
+	pub fn add_version_constraint(&mut self, constraint: VersionPattern) -> bool {
+		if constraint != VersionPattern::Any
+			&& !self
+				.uncanonicalized_version_constraints
+				.contains(&constraint)
+			&& !self.canonicalized_version_constraints.contains(&constraint)
+			&& !self
+				.already_canonicalized_version_constraints
+				.contains(&constraint)
+		{
+			self.uncanonicalized_version_constraints.push(constraint);
+			true
+		} else {
+			false
+		}
+	}
+
+	/// Canonicalizes content versions constraints to their actual names from the package
+	pub async fn canonicalize_versions<'a, E: PackageEvaluator<'a>>(
+		&mut self,
+		evaluator: &mut E,
+		common_input: &E::CommonInput,
+	) {
+		for constraint in std::mem::take(&mut self.uncanonicalized_version_constraints) {
+			let req = Arc::new(self.pkg.with_content_version(constraint.clone()));
+
+			let req = evaluator.make_req_displayable(&req, common_input).await;
+			self.canonicalized_version_constraints
+				.push(req.content_version.clone());
+			self.already_canonicalized_version_constraints
+				.push(constraint);
+		}
+	}
+
+	/// Gets the list of versions based on the canonicalized available versions and requirements
+	pub fn get_versions(&self, available_versions: &[String]) -> Vec<String> {
+		let mut out = available_versions.to_vec();
+		for constraint in &self.canonicalized_version_constraints {
+			out = constraint.get_matches(&out);
+		}
+
+		out
+	}
+
+	/// Gets the list of preferred versions from the constraints
+	pub fn get_preferred_versions(&self) -> Vec<String> {
+		self.canonicalized_version_constraints
+			.iter()
+			.filter_map(|x| {
+				if let VersionPattern::Prefer(version) = x {
+					Some(version.clone())
+				} else {
+					None
+				}
+			})
+			.collect()
+	}
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+enum DependencyKind {
+	Require,
+	Bundled,
+	UserRequire,
 }
 
 /// A task that needs to be completed for resolution
 enum Task {
 	/// Evaluate a package and its relationships
-	EvalPackage {
-		dest: Arc<PkgRequest>,
-		required_content_versions: Vec<String>,
-		preferred_content_versions: Vec<String>,
-	},
+	EvalPackage { dest: Arc<PkgRequest> },
 }
 
-/// Different types of require constraints
-pub enum RequireConstraint {
-	/// Require by a package
-	Require,
-	/// Require by the user
-	UserRequire,
-	/// A bundle dependency
-	Bundle,
+async fn make_err_reqs_displayable<'eval, E: PackageEvaluator<'eval>>(
+	err: &mut ResolutionError,
+	evaluator: &mut E,
+	common_input: &E::CommonInput,
+) {
+	match err {
+		ResolutionError::PackageContext(pkg_request, resolution_error) => {
+			*pkg_request = evaluator
+				.make_req_displayable(pkg_request, common_input)
+				.await;
+			Box::pin(make_err_reqs_displayable(
+				resolution_error,
+				evaluator,
+				common_input,
+			))
+			.await;
+		}
+		ResolutionError::FailedToPreload(..) | ResolutionError::Misc(..) => {}
+		ResolutionError::FailedToGetProperties(pkg_request, _) => {
+			*pkg_request = evaluator
+				.make_req_displayable(pkg_request, common_input)
+				.await;
+		}
+		ResolutionError::NoValidVersionsFound(pkg_request, _) => {
+			*pkg_request = evaluator
+				.make_req_displayable(pkg_request, common_input)
+				.await;
+		}
+		ResolutionError::ExtensionNotFulfilled(pkg_request, pkg_request1) => {
+			if let Some(pkg_request) = pkg_request {
+				*pkg_request = evaluator
+					.make_req_displayable(pkg_request, common_input)
+					.await;
+			}
+			*pkg_request1 = evaluator
+				.make_req_displayable(pkg_request1, common_input)
+				.await;
+		}
+		ResolutionError::ExplicitRequireNotFulfilled(pkg_request, pkg_request1) => {
+			*pkg_request = evaluator
+				.make_req_displayable(pkg_request, common_input)
+				.await;
+			*pkg_request1 = evaluator
+				.make_req_displayable(pkg_request1, common_input)
+				.await;
+		}
+		ResolutionError::IncompatiblePackage(pkg_request, _) => {
+			*pkg_request = evaluator
+				.make_req_displayable(pkg_request, common_input)
+				.await;
+		}
+		ResolutionError::FailedToEvaluate(pkg_request, _) => {
+			*pkg_request = evaluator
+				.make_req_displayable(pkg_request, common_input)
+				.await;
+		}
+	}
 }

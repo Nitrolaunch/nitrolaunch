@@ -55,7 +55,7 @@ pub fn parse_and_validate(contents: &str, content_type: PackageContentType) -> a
 }
 
 /// Content type of a package
-#[derive(Deserialize, Serialize, Debug, Copy, Clone, Default)]
+#[derive(Deserialize, Serialize, Debug, Copy, Clone, Default, PartialEq, Eq)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[serde(rename_all = "snake_case")]
 pub enum PackageContentType {
@@ -97,19 +97,17 @@ pub trait PackageEvaluator<'a> {
 	/// Type passed to most functions, used for common / cached values
 	type CommonInput;
 	/// Type passed to the evaluation function
-	type EvalInput<'b>: EvalInput + Clone;
-	/// Result from package relationship evaluation
-	type EvalRelationsResult<'b>: PackageEvalRelationsResult;
+	type EvalInput: EvalInput + Clone;
 	/// Configured package type
-	type ConfiguredPackage: ConfiguredPackage<EvalInput<'a> = Self::EvalInput<'a>>;
+	type ConfiguredPackage: ConfiguredPackage<EvalInput = Self::EvalInput>;
 
 	/// Evaluate the relationships of a package
 	async fn eval_package_relations(
 		&mut self,
 		pkg: &ArcPkgReq,
-		input: &Self::EvalInput<'a>,
+		input: &Self::EvalInput,
 		common_input: &Self::CommonInput,
-	) -> anyhow::Result<Self::EvalRelationsResult<'a>>;
+	) -> anyhow::Result<PackageEvalRelationsResult>;
 
 	/// Get the properties of a package
 	async fn get_package_properties<'b>(
@@ -124,6 +122,13 @@ pub trait PackageEvaluator<'a> {
 		packages: &[ArcPkgReq],
 		common_input: &Self::CommonInput,
 	) -> anyhow::Result<()>;
+
+	/// Replaces the slug and version of a request if possible, to make it better for user display
+	async fn make_req_displayable<'b>(
+		&'b mut self,
+		req: &ArcPkgReq,
+		common_input: &Self::CommonInput,
+	) -> ArcPkgReq;
 }
 
 /// Trait for an input passed to packages when evaluating their dependencies
@@ -142,7 +147,7 @@ pub trait EvalInput {
 /// Trait for a user-configured package
 pub trait ConfiguredPackage: Clone {
 	/// Type passed to your evaluation functions
-	type EvalInput<'a>: Clone;
+	type EvalInput: Clone;
 
 	/// Get the package ID
 	fn get_package(&self) -> ArcPkgReq;
@@ -151,7 +156,7 @@ pub trait ConfiguredPackage: Clone {
 	fn override_configured_package_input(
 		&self,
 		properties: &PackageProperties,
-		input: &mut Self::EvalInput<'_>,
+		input: &mut Self::EvalInput,
 	) -> anyhow::Result<()>;
 
 	/// Gets whether this package is optional to install
@@ -160,20 +165,20 @@ pub trait ConfiguredPackage: Clone {
 	}
 }
 
-/// Trait for the result from evaluating a package, used for resolution
-pub trait PackageEvalRelationsResult {
-	/// Get the evaluated dependencies
-	fn get_deps(&self) -> Vec<Vec<RequiredPackage>>;
-	/// Get the evaluated conflicts
-	fn get_conflicts(&self) -> Vec<PackageID>;
-	/// Get the evaluated recommendations
-	fn get_recommendations(&self) -> Vec<RecommendedPackage>;
-	/// Get the evaluated bundled packages
-	fn get_bundled(&self) -> Vec<PackageID>;
-	/// Get the evaluated compats
-	fn get_compats(&self) -> Vec<(PackageID, PackageID)>;
-	/// Get the evaluated extensions
-	fn get_extensions(&self) -> Vec<PackageID>;
+/// The result from evaluating a package, used for resolution
+pub struct PackageEvalRelationsResult {
+	/// The evaluated dependencies
+	pub deps: Vec<Vec<RequiredPackage>>,
+	/// The evaluated conflicts
+	pub conflicts: Vec<PackageID>,
+	/// The evaluated recommendations
+	pub recommendations: Vec<RecommendedPackage>,
+	/// The evaluated bundled packages
+	pub bundled: Vec<PackageID>,
+	/// The evaluated compats
+	pub compats: Vec<(PackageID, PackageID)>,
+	/// The evaluated extensions
+	pub extensions: Vec<PackageID>,
 }
 
 /// Checks if a package is open source

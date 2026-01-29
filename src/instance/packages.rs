@@ -8,8 +8,7 @@ use reqwest::Client;
 use crate::addon::AddonExt;
 use crate::io::lock::{Lockfile, LockfileAddon};
 use crate::io::paths::Paths;
-use crate::pkg::eval::{EvalData, EvalInput, Routine};
-use crate::pkg::reg::PkgRegistry;
+use crate::pkg::eval::EvalData;
 
 use super::Instance;
 use crate::config::package::PackageConfig;
@@ -20,24 +19,23 @@ use std::future::Future;
 impl Instance {
 	/// Installs a package on this instance
 	#[allow(clippy::too_many_arguments)]
-	pub async fn install_package<'a>(
+	pub async fn install_package(
 		&mut self,
 		pkg: &ArcPkgReq,
-		eval_input: EvalInput<'a>,
-		reg: &mut PkgRegistry,
-		paths: &'a Paths,
+		eval: &EvalData,
+		paths: &Paths,
 		lock: &mut Lockfile,
 		force: bool,
 		client: &Client,
 		o: &mut impl NitroOutput,
-	) -> anyhow::Result<EvalData<'a>> {
+	) -> anyhow::Result<()> {
 		let version_info = VersionInfo {
-			version: eval_input.constants.version.clone(),
-			versions: eval_input.constants.version_list.clone(),
+			version: eval.input.constants.version.clone(),
+			versions: eval.input.constants.version_list.clone(),
 		};
 
-		let (eval, tasks) = self
-			.get_package_addon_tasks(pkg, eval_input, reg, paths, force, client, o)
+		let tasks = self
+			.get_package_addon_tasks(eval, paths, force, client)
 			.await
 			.context("Failed to get download tasks for installing package")?;
 
@@ -49,29 +47,19 @@ impl Instance {
 			.await
 			.context("Failed to install evaluation data on instance")?;
 
-		Ok(eval)
+		Ok(())
 	}
 
-	/// Gets the tasks for installing addons for a package by evaluating it
+	/// Gets the tasks for installing addons for a package
 	#[allow(clippy::too_many_arguments)]
-	pub async fn get_package_addon_tasks<'a>(
+	pub async fn get_package_addon_tasks(
 		&mut self,
-		pkg: &ArcPkgReq,
-		eval_input: EvalInput<'a>,
-		reg: &mut PkgRegistry,
-		paths: &'a Paths,
+		eval: &EvalData,
+		paths: &Paths,
 		force: bool,
 		client: &Client,
-		o: &mut impl NitroOutput,
-	) -> anyhow::Result<(
-		EvalData<'a>,
-		HashMap<String, impl Future<Output = anyhow::Result<()>> + Send + 'static>,
-	)> {
-		let eval = reg
-			.eval(pkg, paths, Routine::Install, eval_input, client, o)
-			.await
-			.context("Failed to evaluate package")?;
-
+	) -> anyhow::Result<HashMap<String, impl Future<Output = anyhow::Result<()>> + Send + 'static>>
+	{
 		let mut tasks = HashMap::new();
 		for addon in eval.addon_reqs.iter() {
 			if addon.addon.should_update(paths, &self.id) || force {
@@ -82,7 +70,7 @@ impl Instance {
 			}
 		}
 
-		Ok((eval, tasks))
+		Ok(tasks)
 	}
 
 	/// Install the EvalData resulting from evaluating a package onto this instance
@@ -90,7 +78,7 @@ impl Instance {
 	pub async fn install_eval_data(
 		&mut self,
 		pkg: &ArcPkgReq,
-		eval: &EvalData<'_>,
+		eval: &EvalData,
 		version_info: &VersionInfo,
 		paths: &Paths,
 		lock: &mut Lockfile,

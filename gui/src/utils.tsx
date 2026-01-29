@@ -3,7 +3,7 @@ import { InstanceIcon, PkgRequest } from "./types";
 
 // Gets the src of an instance icon
 export function getInstanceIconSrc(
-	icon: InstanceIcon | null | undefined
+	icon: InstanceIcon | null | undefined,
 ): string {
 	if (icon === null || icon == undefined) {
 		return "/icons/default_instance.png";
@@ -75,14 +75,28 @@ export function parsePkgRequest(request: string) {
 
 	let split2 = right.split("@");
 	let version = split2.length > 1 ? split2[1] : undefined;
+
 	let id = split2[0];
-	return { id: id, repository: repo, version: version } as PkgRequest;
+	let split3 = id.split(".");
+	let slug = undefined;
+	if (split3.length > 1) {
+		slug = split3[0];
+		id = split3[1];
+	}
+	return {
+		id: id,
+		repository: repo,
+		version: version,
+		slug: slug,
+	} as PkgRequest;
 }
 
 export function pkgRequestToString(request: PkgRequest) {
 	let repo = request.repository == undefined ? "" : `${request.repository}:`;
 	let version = request.version == undefined ? "" : `@${request.version}`;
-	return `${repo}${request.id}${version}`;
+	let name =
+		request.slug == undefined ? request.id : `${request.slug}.${request.id}`;
+	return `${repo}${name}${version}`;
 }
 
 // Checks if the ID and repo of two requests are the same
@@ -92,7 +106,7 @@ export function pkgRequestsEqual(req1: PkgRequest, req2: PkgRequest) {
 
 // Parses a versioned string (object@version) into parts
 export function parseVersionedString(
-	object: string
+	object: string,
 ): [string, string | undefined] {
 	let split = object.split("@");
 	return [split[0], split.length > 1 ? split[1] : undefined];

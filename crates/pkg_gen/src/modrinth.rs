@@ -72,6 +72,7 @@ pub async fn gen(
 
 	// Fill out metadata
 	let mut meta = PackageMetadata {
+		slug: Some(project.slug),
 		name: Some(project.title),
 		description: Some(project.description),
 		downloads: Some(project.downloads),
@@ -316,7 +317,7 @@ pub async fn gen(
 				pkg_id
 			};
 			let req = if let Some(pkg_version) = pkg_version {
-				format!("{req}@{pkg_version}")
+				format!("{req}@~{pkg_version}")
 			} else {
 				req
 			};
