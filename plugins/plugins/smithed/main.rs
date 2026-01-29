@@ -1,7 +1,7 @@
 use std::{
 	collections::{HashMap, HashSet},
 	path::{Path, PathBuf},
-	time::UNIX_EPOCH,
+	time::SystemTime,
 };
 
 use anyhow::Context;
@@ -18,7 +18,7 @@ use nitro_plugin::{
 	api::executable::{utils::PackageSearchCache, ExecutablePlugin},
 	hook::hooks::CustomRepoQueryResult,
 };
-use nitro_shared::{util::utc_timestamp, versions::VersionPattern};
+use nitro_shared::versions::VersionPattern;
 use serde::{Deserialize, Serialize};
 
 const PROJECT_CACHE_TIME_SECS: u64 = 3600;
@@ -311,13 +311,13 @@ async fn get_cached_pack(
 
 fn pack_needs_update(path: &Path) -> anyhow::Result<bool> {
 	let meta = path.metadata()?;
-	let last_update = meta.modified()?.duration_since(UNIX_EPOCH)?.as_secs();
-	let now = utc_timestamp()?;
+	let last_update = meta.modified()?;
+	let now = SystemTime::now();
 
 	if now < last_update {
 		Ok(true)
 	} else {
-		Ok(now - last_update >= PROJECT_CACHE_TIME_SECS)
+		Ok(now.duration_since(last_update)?.as_secs() >= PROJECT_CACHE_TIME_SECS)
 	}
 }
 
