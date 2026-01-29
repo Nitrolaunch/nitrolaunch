@@ -14,13 +14,13 @@ use nitro_net::{
 	download::Client,
 	modrinth::{self, Member, Project, SearchResults, Version},
 };
-use nitro_pkg::PackageSearchResults;
+use nitro_pkg::{PackageSearchResults, PkgRequest, PkgRequestSource};
 use nitro_pkg_gen::{modrinth::get_preview, relation_substitution::RelationSubNone};
 use nitro_plugin::{
 	api::executable::{utils::PackageSearchCache, ExecutablePlugin},
 	hook::hooks::CustomRepoQueryResult,
 };
-use nitro_shared::util::utc_timestamp;
+use nitro_shared::{util::utc_timestamp, versions::VersionPattern};
 use serde::{Deserialize, Serialize};
 use tokio::sync::Mutex;
 
@@ -110,8 +110,16 @@ fn main() -> anyhow::Result<()> {
 			let mut previews = HashMap::with_capacity(results.hits.len());
 			let mut projects = Vec::with_capacity(results.hits.len());
 			for result in results.hits {
-				projects.push(result.id.clone());
-				let id = result.id.clone();
+				let req = PkgRequest {
+					source: PkgRequestSource::UserRequire,
+					id: result.id.clone().into(),
+					content_version: VersionPattern::Any,
+					repository: Some("modrinth".into()),
+					slug: Some(result.slug.clone()),
+				};
+				let req_str = req.to_string();
+
+				projects.push(req_str.clone());
 				let package = nitro_pkg_gen::modrinth::gen(
 					get_preview(result),
 					&[],
@@ -124,7 +132,7 @@ fn main() -> anyhow::Result<()> {
 				)
 				.await;
 				if let Ok(package) = package {
-					previews.insert(id, (package.meta, package.properties));
+					previews.insert(req_str, (package.meta, package.properties));
 				}
 			}
 

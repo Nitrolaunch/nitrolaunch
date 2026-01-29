@@ -47,6 +47,20 @@ pub struct Pack {
 	pub categories: Vec<String>,
 }
 
+/// Get a Smithed pack meta from the API
+pub async fn get_pack_meta(id: &str, client: &Client) -> anyhow::Result<PackMeta> {
+	let url = format!("{API_URL}/packs/{id}/meta");
+	download::json(url, client).await
+}
+
+/// Metadata for a pack
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct PackMeta {
+	/// The plaintext ID / slug of this pack
+	#[serde(rename = "rawId")]
+	pub raw_id: String,
+}
+
 /// Display info for a Smithed pack
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]

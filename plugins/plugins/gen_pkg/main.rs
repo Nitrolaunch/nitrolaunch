@@ -119,6 +119,7 @@ pub async fn gen(source: PackageSource, config: Option<PackageGenerationConfig>,
 		PackageSource::Smithed => smithed::gen_from_id(
 			id,
 			None,
+			None,
 			RelationSubMap(config.relation_substitutions),
 			&config.force_extensions,
 			None,

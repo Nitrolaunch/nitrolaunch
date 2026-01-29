@@ -12,7 +12,7 @@ use nitro_shared::pkg::{PackageCategory, PackageKind, PackageStability};
 use nitro_shared::util::DeserListOrSingle;
 use nitro_shared::versions::VersionPattern;
 
-use nitro_net::smithed::Pack;
+use nitro_net::smithed::{Pack, PackMeta};
 
 use crate::relation_substitution::{substitute_multiple, RelationSubFunction};
 
@@ -20,6 +20,7 @@ use crate::relation_substitution::{substitute_multiple, RelationSubFunction};
 pub async fn gen_from_id(
 	id: &str,
 	body: Option<String>,
+	meta: Option<PackMeta>,
 	relation_substitution: impl RelationSubFunction,
 	force_extensions: &[String],
 	repo: Option<&str>,
@@ -28,13 +29,22 @@ pub async fn gen_from_id(
 		.await
 		.expect("Failed to get pack");
 
-	gen(pack, body, relation_substitution, force_extensions, repo).await
+	gen(
+		pack,
+		body,
+		meta,
+		relation_substitution,
+		force_extensions,
+		repo,
+	)
+	.await
 }
 
 /// Generates a Smithed package from a Smithed pack
 pub async fn gen(
 	pack: Pack,
 	body: Option<String>,
+	meta: Option<PackMeta>,
 	relation_substitution: impl RelationSubFunction,
 	force_extensions: &[String],
 	repo: Option<&str>,
@@ -47,6 +57,7 @@ pub async fn gen(
 
 	let meta = PackageMetadata {
 		name: Some(pack.display.name),
+		slug: meta.map(|x| x.raw_id),
 		description: Some(pack.display.description),
 		long_description: body,
 		icon: Some(pack.display.icon),

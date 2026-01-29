@@ -530,10 +530,7 @@ impl PkgRegistry {
 				if result.results.len() <= params.count as usize {
 					params.count -= result.results.len() as u8;
 				}
-				let results = result
-					.results
-					.into_iter()
-					.map(|x| format!("{}:{x}", repo.get_id()));
+				let results = result.results.into_iter();
 
 				total_results += result.total_results;
 				if out.len() < original_count as usize {

@@ -237,6 +237,7 @@ pub async fn batched_gen(mut config: BatchedConfig, filter: Vec<String>) {
 				smithed::gen(
 					pack.clone(),
 					None,
+					None,
 					RelationSubMap(pkg_config.relation_substitutions),
 					&pkg_config.force_extensions,
 					None,

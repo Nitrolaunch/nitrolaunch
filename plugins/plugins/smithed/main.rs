@@ -1,15 +1,16 @@
 use std::{
 	collections::{HashMap, HashSet},
 	path::{Path, PathBuf},
+	time::UNIX_EPOCH,
 };
 
 use anyhow::Context;
 use nitro_core::io::{files::create_leading_dirs, json_from_file, json_to_file};
 use nitro_net::{
 	download::{self, Client},
-	smithed::{self, Pack, PackSearchResult},
+	smithed::{self, Pack, PackMeta, PackSearchResult},
 };
-use nitro_pkg::PackageSearchResults;
+use nitro_pkg::{PackageSearchResults, PkgRequest, PkgRequestSource};
 use nitro_pkg_gen::relation_substitution::{
 	PackageAndVersion, RelationSubFunction, RelationSubNone,
 };
@@ -17,7 +18,10 @@ use nitro_plugin::{
 	api::executable::{utils::PackageSearchCache, ExecutablePlugin},
 	hook::hooks::CustomRepoQueryResult,
 };
+use nitro_shared::{util::utc_timestamp, versions::VersionPattern};
 use serde::{Deserialize, Serialize};
+
+const PROJECT_CACHE_TIME_SECS: u64 = 3600;
 
 fn main() -> anyhow::Result<()> {
 	let mut plugin = ExecutablePlugin::from_manifest_file("smithed", include_str!("plugin.json"))?;
@@ -106,17 +110,30 @@ fn main() -> anyhow::Result<()> {
 			let mut previews = HashMap::with_capacity(results.len());
 			let mut packs = Vec::with_capacity(results.len());
 			for result in results {
-				packs.push(result.meta.raw_id.clone());
+				let req = PkgRequest {
+					source: PkgRequestSource::UserRequire,
+					id: result.id.clone().into(),
+					content_version: VersionPattern::Any,
+					repository: Some("smithed".into()),
+					slug: Some(result.meta.raw_id.clone()),
+				};
+				let req_str = req.to_string();
+
+				packs.push(req_str.clone());
+
 				let package = nitro_pkg_gen::smithed::gen(
 					result.data,
 					None,
+					Some(PackMeta {
+						raw_id: result.meta.raw_id.clone(),
+					}),
 					RelationSubNone,
 					&[],
 					Some("smithed"),
 				)
 				.await;
 				if let Ok(package) = package {
-					previews.insert(result.meta.raw_id, (package.meta, package.properties));
+					previews.insert(req_str, (package.meta, package.properties));
 				}
 			}
 
@@ -173,6 +190,7 @@ async fn query_package(
 	let mut package = nitro_pkg_gen::smithed::gen(
 		pack_info.pack,
 		pack_info.body,
+		pack_info.meta,
 		relation_sub_function,
 		&[],
 		Some("smithed"),
@@ -225,19 +243,19 @@ impl RelationSubFunction for RelationSub {
 
 /// Gets a cached Smithed pack or downloads it
 async fn get_cached_pack(
-	pack: &str,
+	pack_id: &str,
 	download_body: bool,
 	storage_dir: &Path,
 	client: &Client,
 ) -> anyhow::Result<Option<PackInfo>> {
-	let pack_path = storage_dir.join(pack);
+	let pack_path = storage_dir.join(pack_id);
 	// If a project does not exist, we create a dummy file so that we know not to fetch it again
-	let does_not_exist_path = storage_dir.join(format!("__missing__{pack}"));
+	let does_not_exist_path = storage_dir.join(format!("__missing__{pack_id}"));
 	if does_not_exist_path.exists() {
 		return Ok(None);
 	}
 
-	if pack_path.exists() {
+	if pack_path.exists() && !pack_needs_update(&pack_path).unwrap_or(true) {
 		let mut pack_info: PackInfo =
 			json_from_file(&pack_path).context("Failed to read pack info from file")?;
 
@@ -252,13 +270,19 @@ async fn get_cached_pack(
 
 		Ok(Some(pack_info))
 	} else {
-		let result = smithed::get_pack_optional(pack, client).await?;
+		let pack = smithed::get_pack_optional(pack_id, client);
+		let meta = smithed::get_pack_meta(pack_id, client);
 
-		let Some(pack) = result else {
+		let (pack, meta) = tokio::join!(pack, meta);
+
+		let pack = pack?;
+		let Some(pack) = pack else {
 			let file = std::fs::File::create(does_not_exist_path);
 			std::mem::drop(file);
 			return Ok(None);
 		};
+
+		let meta = meta?;
 
 		let body = if download_body {
 			if let Some(url) = pack.display.web_page.as_ref().filter(|x| !x.is_empty()) {
@@ -274,6 +298,7 @@ async fn get_cached_pack(
 			body_exists: pack.display.web_page.is_some(),
 			pack,
 			body,
+			meta: Some(meta),
 		};
 
 		let _ = create_leading_dirs(&pack_path);
@@ -284,9 +309,22 @@ async fn get_cached_pack(
 	}
 }
 
+fn pack_needs_update(path: &Path) -> anyhow::Result<bool> {
+	let meta = path.metadata()?;
+	let last_update = meta.modified()?.duration_since(UNIX_EPOCH)?.as_secs();
+	let now = utc_timestamp()?;
+
+	if now < last_update {
+		Ok(true)
+	} else {
+		Ok(now - last_update >= PROJECT_CACHE_TIME_SECS)
+	}
+}
+
 #[derive(Serialize, Deserialize)]
 struct PackInfo {
 	pack: Pack,
 	body: Option<String>,
 	body_exists: bool,
+	meta: Option<PackMeta>,
 }
