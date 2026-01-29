@@ -147,13 +147,15 @@
 .package-property {
 	width: 100%;
 	display: grid;
-	grid-template-columns: minmax(0, 1fr) minmax(0, 3fr) minmax(0, 4fr);
+	height: 1.5rem;
+	grid-template-columns: 1.5rem minmax(0, 3fr) minmax(0, 4fr);
 }
 
 .package-property-label {
 	justify-content: flex-start;
 	font-weight: bold;
 	text-wrap: nowrap;
+	padding-left: 0.5rem;
 }
 
 .package-property-value {

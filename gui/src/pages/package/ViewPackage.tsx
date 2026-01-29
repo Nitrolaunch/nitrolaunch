@@ -54,6 +54,7 @@ export default function ViewPackage(props: ViewPackageProps) {
 	let searchParams = parseQueryString(useLocation().search);
 
 	let packageId = params.id;
+	let packageReq = parsePkgRequest(packageId);
 
 	let [meta] = createResource(updateMetaAndProps);
 	let [properties, setProperties] = createSignal<PackageProperties | undefined>(
@@ -337,8 +338,13 @@ export default function ViewPackage(props: ViewPackageProps) {
 								)}
 							</Property>
 							<Property icon={Hashtag} label="ID">
-								{parsePkgRequest(packageId).id}
+								{packageReq.id}
 							</Property>
+							<Show when={meta()!.slug != undefined}>
+								<Property icon={Hashtag} label="Slug">
+									{meta()!.slug}
+								</Property>
+							</Show>
 						</div>
 					</div>
 				</div>
