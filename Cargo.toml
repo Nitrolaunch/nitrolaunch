@@ -142,12 +142,13 @@ termimad = "0.31.1"
 thiserror = "1.0.61"
 tokio = { version = "1.37.0", features = ["rt-multi-thread"] }
 version-compare = "0.2.0"
-wasmtime = { version = "39.0.0", default-features = false, features = [
+wasmtime = { version = "41.0.0", default-features = false, features = [
 	"runtime",
 	"cranelift",
 	"async",
+	"component-model"
 ] }
-wasmtime-wasi = "39.0.1"
+wasmtime-wasi = "41.0.0"
 wit-bindgen = "0.48.1"
 which = "6.0.1"
 zip = { version = "3.0.0", default-features = false, features = ["deflate"] }
