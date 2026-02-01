@@ -20,7 +20,7 @@ use std::time::Duration;
 use anyhow::Context;
 use data::LauncherData;
 use nitrolaunch::core::auth_crate::mc::ClientId;
-use nitrolaunch::core::{net::download::Client, user::UserManager};
+use nitrolaunch::core::{net::download::Client, account::AccountManager};
 use nitrolaunch::io::logging::Logger;
 use nitrolaunch::io::paths::Paths;
 use nitrolaunch::plugin_crate::hook::wasm::loader::WASMLoader;
@@ -200,13 +200,13 @@ fn main() {
 			commands::plugin::run_custom_action,
 			commands::plugin::get_dropdown_buttons,
 			commands::plugin::get_instance_tiles,
-			commands::user::get_users,
-			commands::user::select_user,
-			commands::user::login_user,
-			commands::user::logout_user,
-			commands::user::create_user,
-			commands::user::remove_user,
-			commands::user::get_supported_user_types,
+			commands::account::get_accounts,
+			commands::account::select_account,
+			commands::account::login_account,
+			commands::account::logout_account,
+			commands::account::create_account,
+			commands::account::remove_account,
+			commands::account::get_supported_account_types,
 			commands::settings::get_settings,
 			commands::settings::write_settings,
 			commands::transfer::get_instance_transfer_formats,
@@ -242,8 +242,8 @@ pub struct State {
 	pub task_manager: Arc<OnceLock<Arc<Mutex<TaskManager>>>>,
 	pub paths: Paths,
 	pub client: Client,
-	pub user_manager: Arc<Mutex<UserManager>>,
-	/// Map of users to their already entered passkeys
+	pub account_manager: Arc<Mutex<AccountManager>>,
+	/// Map of accounts to their already entered passkeys
 	pub passkeys: Arc<Mutex<HashMap<String, String>>>,
 	pub password_prompt: PromptResponse,
 	pub output_inner: Arc<OnceLock<OutputInner>>,
@@ -263,7 +263,7 @@ impl State {
 			task_manager: Arc::new(OnceLock::new()),
 			paths,
 			client: Client::new(),
-			user_manager: Arc::new(Mutex::new(UserManager::new(get_ms_client_id()))),
+			account_manager: Arc::new(Mutex::new(AccountManager::new(get_ms_client_id()))),
 			passkeys: Arc::new(Mutex::new(HashMap::new())),
 			password_prompt: PromptResponse::new(Mutex::new(None)),
 			output_inner: Arc::new(OnceLock::new()),

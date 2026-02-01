@@ -10,6 +10,7 @@ use nitro_shared::output::{MessageContents, MessageLevel};
 use nitro_shared::versions::{VersionInfo, VersionName};
 use nitro_shared::Side;
 
+use crate::account::AccountManager;
 use crate::config::BrandingProperties;
 use crate::instance::{Instance, InstanceConfiguration, InstanceParameters};
 use crate::io::files::paths::Paths;
@@ -22,7 +23,6 @@ use crate::io::update::UpdateManager;
 use crate::net::game_files::client_meta::{self, ClientMeta};
 use crate::net::game_files::version_manifest::{self, VersionManifestAndList};
 use crate::net::game_files::{assets, game_jar, libraries};
-use crate::user::UserManager;
 use crate::util::versions::MinecraftVersion;
 
 /// An installed version of the game. This cannot be constructed directly,
@@ -67,7 +67,7 @@ impl InstalledVersion<'_, '_> {
 			persistent: self.params.persistent,
 			update_manager: self.params.update_manager,
 			client_meta: &self.inner.client_meta,
-			users: self.params.users,
+			accounts: self.params.accounts,
 			java_installations: self.params.java_installations,
 			custom_java_fn: self.params.custom_java_fn,
 			client_assets_and_libs: &mut self.inner.client_assets_and_libs,
@@ -303,7 +303,7 @@ pub(crate) struct VersionParameters<'a> {
 	pub req_client: &'a reqwest::Client,
 	pub persistent: &'a mut PersistentData,
 	pub update_manager: &'a mut UpdateManager,
-	pub users: &'a mut UserManager,
+	pub accounts: &'a mut AccountManager,
 	pub java_installations:
 		&'a mut HashMap<(JavaInstallationKind, JavaMajorVersion), JavaInstallation>,
 	pub custom_java_fn: Option<&'a Arc<dyn CustomJavaFunction>>,

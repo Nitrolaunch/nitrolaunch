@@ -10,6 +10,8 @@ use std::sync::Arc;
 
 use anyhow::{bail, Context};
 use nitro_config::instance::QuickPlay;
+use nitro_core::account::uuid::hyphenate_uuid;
+use nitro_core::account::{Account, AccountManager, CustomAuthFunction};
 use nitro_core::auth_crate::mc::ClientId;
 use nitro_core::config::BrandingProperties;
 use nitro_core::instance::WindowResolution;
@@ -17,8 +19,6 @@ use nitro_core::io::java::classpath::Classpath;
 use nitro_core::io::java::install::{CustomJavaFunction, CustomJavaFunctionResult};
 use nitro_core::io::json_to_file;
 use nitro_core::launch::LaunchConfiguration;
-use nitro_core::user::uuid::hyphenate_uuid;
-use nitro_core::user::{CustomAuthFunction, User, UserManager};
 use nitro_core::version::InstalledVersion;
 use nitro_core::{NitroCore, QuickPlayType};
 use nitro_plugin::hook::hooks::{
@@ -53,7 +53,7 @@ impl Instance {
 		version_info: &VersionInfo,
 		plugins: &PluginManager,
 		paths: &Paths,
-		users: &UserManager,
+		accounts: &AccountManager,
 		lock: &mut Lockfile,
 		o: &mut impl NitroOutput,
 	) -> anyhow::Result<UpdateMethodResult> {
@@ -66,7 +66,7 @@ impl Instance {
 				);
 				o.start_section();
 				let result = self
-					.setup_client(paths, users)
+					.setup_client(paths, accounts)
 					.await
 					.context("Failed to create client")?;
 				Ok::<_, anyhow::Error>(result)
@@ -365,9 +365,9 @@ impl Instance {
 	}
 
 	/// Create a keypair file in the instance
-	fn create_keypair(&mut self, user: &User, paths: &Paths) -> anyhow::Result<()> {
-		if let Some(uuid) = user.get_uuid() {
-			if let Some(keypair) = user.get_keypair() {
+	fn create_keypair(&mut self, account: &Account, paths: &Paths) -> anyhow::Result<()> {
+		if let Some(uuid) = account.get_uuid() {
+			if let Some(keypair) = account.get_keypair() {
 				self.ensure_dirs(paths)?;
 				if let Some(game_dir) = &self.dirs.get().game_dir {
 					let keys_dir = game_dir.join("profilekeys");
@@ -475,7 +475,7 @@ pub async fn setup_core(
 	client_id: Option<&ClientId>,
 	settings: &UpdateSettings,
 	client: &Client,
-	users: &UserManager,
+	accounts: &AccountManager,
 	plugins: &PluginManager,
 	paths: &Paths,
 	o: &mut impl NitroOutput,
@@ -492,12 +492,12 @@ pub async fn setup_core(
 	let core_config = core_config.build();
 	let mut core = NitroCore::with_config(core_config).context("Failed to initialize core")?;
 
-	// Set up user manager along
-	core.get_users().steal_users(users);
-	core.get_users().set_offline(settings.offline_auth);
+	// Set up account manager
+	core.get_accounts().steal_accounts(accounts);
+	core.get_accounts().set_offline(settings.offline_auth);
 
 	// Set up custom plugin integrations
-	core.get_users()
+	core.get_accounts()
 		.set_custom_auth_function(Arc::new(AuthFunction {
 			plugins: plugins.clone(),
 			paths: paths.clone(),
@@ -521,7 +521,7 @@ pub async fn setup_core(
 	Ok(core)
 }
 
-/// CustomAuthFunction implementation for user types using plugins
+/// CustomAuthFunction implementation for account types using plugins
 struct AuthFunction {
 	plugins: PluginManager,
 	paths: Paths,
@@ -532,11 +532,11 @@ impl CustomAuthFunction for AuthFunction {
 	async fn auth(
 		&self,
 		id: &str,
-		user_type: &str,
+		account_type: &str,
 	) -> anyhow::Result<Option<MinecraftUserProfile>> {
 		let arg = HandleAuthArg {
-			user_id: id.to_string(),
-			user_type: user_type.to_string(),
+			account_id: id.to_string(),
+			account_type: account_type.to_string(),
 		};
 		let mut results = self
 			.plugins

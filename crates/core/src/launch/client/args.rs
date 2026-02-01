@@ -5,10 +5,10 @@ use nitro_shared::versions::VersionPattern;
 use crate::instance::{InstanceKind, WindowResolution};
 use crate::launch::{LaunchParameters, QuickPlayType};
 
+use crate::account::AccountKind;
 use crate::io::files::paths::Paths;
 use crate::net::game_files::assets::get_virtual_dir_path;
 use crate::net::game_files::client_meta::args::ArgumentItem;
-use crate::user::UserKind;
 
 /// Process an argument for the client from the client meta
 pub(crate) fn process_arg(arg: &ArgumentItem, params: &LaunchParameters) -> Vec<String> {
@@ -45,8 +45,8 @@ pub(crate) fn process_arg(arg: &ArgumentItem, params: &LaunchParameters) -> Vec<
 				}
 				if let Some(is_demo_user) = &rule.features.is_demo_user {
 					if *is_demo_user {
-						let use_demo = match params.users.get_chosen_user() {
-							Some(user) => matches!(user.kind, UserKind::Demo),
+						let use_demo = match params.accounts.get_chosen_account() {
+							Some(account) => matches!(account.kind, AccountKind::Demo),
 							None => false,
 						};
 						if !use_demo {
@@ -202,28 +202,28 @@ pub(crate) fn replace_arg_placeholders(arg: &str, params: &LaunchParameters) -> 
 		},
 	);
 
-	// User
-	match params.users.get_chosen_user() {
-		Some(user) => {
+	// Account
+	match params.accounts.get_chosen_account() {
+		Some(account) => {
 			// User type
-			let user_type = match user.get_kind() {
-				UserKind::Microsoft { .. } => "msa",
+			let user_type = match account.get_kind() {
+				AccountKind::Microsoft { .. } => "msa",
 				_ => "msa",
 			};
 			out = out.replace(placeholder!("user_type"), user_type);
 
-			if let Some(username) = user.get_name() {
+			if let Some(username) = account.get_name() {
 				out = out.replace(placeholder!("auth_player_name"), username);
 			}
-			if let Some(uuid) = user.get_uuid() {
+			if let Some(uuid) = account.get_uuid() {
 				out = out.replace(placeholder!("auth_uuid"), uuid);
 			}
-			if let Some(access_token) = user.get_access_token() {
+			if let Some(access_token) = account.get_access_token() {
 				out = out.replace(placeholder!("auth_access_token"), &access_token.0);
 			}
-			if let UserKind::Microsoft {
+			if let AccountKind::Microsoft {
 				xbox_uid: Some(xbox_uid),
-			} = &user.kind
+			} = &account.kind
 			{
 				out = out.replace(placeholder!("auth_xuid"), xbox_uid);
 			}

@@ -98,7 +98,7 @@ export interface Theme {
 	color: string;
 }
 
-export interface UserTypeInfo {
+export interface AccountTypeInfo {
 	id: string;
 	name: string;
 	color: string;

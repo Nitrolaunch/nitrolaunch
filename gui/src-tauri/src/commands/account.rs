@@ -6,10 +6,10 @@ use nitrolaunch::{
 		modifications::{apply_modifications_and_write, ConfigModification},
 		Config,
 	},
-	config_crate::user::{UserConfig, UserVariant},
-	core::user::UserKind,
+	config_crate::account::{AccountConfig, AccountVariant},
+	core::account::AccountKind,
 	plugin::PluginManager,
-	plugin_crate::hook::hooks::{AddUserTypes, UserTypeInfo},
+	plugin_crate::hook::hooks::{AddAccountTypes, AccountTypeInfo},
 	shared::output::NoOp,
 };
 use serde::{Deserialize, Serialize};
@@ -19,10 +19,10 @@ use std::fmt::Debug;
 use super::{fmt_err, load_config};
 
 #[tauri::command]
-pub async fn get_users(
+pub async fn get_accounts(
 	state: tauri::State<'_, State>,
 	app_handle: tauri::AppHandle,
-) -> Result<(Option<String>, HashMap<String, UserInfo>), String> {
+) -> Result<(Option<String>, HashMap<String, AccountInfo>), String> {
 	let data = state.data.lock().await;
 	let mut output = LauncherOutput::new(state.get_output(app_handle));
 
@@ -31,73 +31,73 @@ pub async fn get_users(
 			.await
 			.context("Failed to load config"),
 	)?;
-	let user_ids: Vec<_> = config.users.iter_users().map(|x| x.0.clone()).collect();
+	let account_ids: Vec<_> = config.accounts.iter_accounts().map(|x| x.0.clone()).collect();
 
-	let mut users = HashMap::with_capacity(user_ids.len());
-	config.users.set_offline(true);
-	for id in user_ids {
+	let mut accounts = HashMap::with_capacity(account_ids.len());
+	config.accounts.set_offline(true);
+	for id in account_ids {
 		let _ = config
-			.users
-			.authenticate_user(&id, &state.paths.core, &state.client, &mut output)
+			.accounts
+			.authenticate_account(&id, &state.paths.core, &state.client, &mut output)
 			.await
-			.context("Failed to authenticate user");
+			.context("Failed to authenticate account");
 
-		let user = config.users.get_user(&id).expect("User should exist");
+		let account = config.accounts.get_account(&id).expect("Account should exist");
 
-		let ty = match user.get_kind() {
-			UserKind::Microsoft { .. } => UserType::Microsoft,
-			UserKind::Demo => UserType::Demo,
-			UserKind::Unknown(..) => UserType::Other,
+		let ty = match account.get_kind() {
+			AccountKind::Microsoft { .. } => AccountType::Microsoft,
+			AccountKind::Demo => AccountType::Demo,
+			AccountKind::Unknown(..) => AccountType::Other,
 		};
 
-		let info = UserInfo {
+		let info = AccountInfo {
 			id: id.to_string(),
 			r#type: ty,
-			username: user.get_name().cloned(),
-			uuid: user.get_uuid().cloned(),
+			username: account.get_name().cloned(),
+			uuid: account.get_uuid().cloned(),
 		};
 
-		users.insert(id.to_string(), info);
+		accounts.insert(id.to_string(), info);
 	}
 
-	let current_user = data
-		.current_user
+	let current_account = data
+		.current_account
 		.clone()
-		.filter(|x| config.users.user_exists(x));
+		.filter(|x| config.accounts.account_exists(x));
 
-	Ok((current_user, users))
+	Ok((current_account, accounts))
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct UserInfo {
+pub struct AccountInfo {
 	pub id: String,
-	pub r#type: UserType,
+	pub r#type: AccountType,
 	pub username: Option<String>,
 	pub uuid: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub enum UserType {
+pub enum AccountType {
 	Microsoft,
 	Demo,
 	Other,
 }
 
 #[tauri::command]
-pub async fn select_user(state: tauri::State<'_, State>, user: &str) -> Result<(), String> {
+pub async fn select_account(state: tauri::State<'_, State>, account: &str) -> Result<(), String> {
 	let mut data = state.data.lock().await;
 
-	data.current_user = Some(user.to_string());
+	data.current_account = Some(account.to_string());
 	fmt_err(data.write(&state.paths))?;
 
 	Ok(())
 }
 
 #[tauri::command]
-pub async fn login_user(
+pub async fn login_account(
 	state: tauri::State<'_, State>,
 	app_handle: tauri::AppHandle,
-	user: &str,
+	account: &str,
 ) -> Result<(), String> {
 	let mut config = fmt_err(
 		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
@@ -106,57 +106,57 @@ pub async fn login_user(
 	)?;
 
 	let mut output = LauncherOutput::new(state.get_output(app_handle));
-	output.set_task("login_user");
+	output.set_task("login_account");
 
-	let user = user.to_string();
+	let account = account.to_string();
 	let paths = state.paths.clone();
 	let client = state.client.clone();
 	let task = async move {
 		let mut output = output;
 		config
-			.users
-			.authenticate_user(&user, &paths.core, &client, &mut output)
+			.accounts
+			.authenticate_account(&account, &paths.core, &client, &mut output)
 			.await?;
 
 		Ok::<(), anyhow::Error>(())
 	};
 
-	state.register_task("login_user", tokio::spawn(task)).await;
+	state.register_task("login_account", tokio::spawn(task)).await;
 
 	Ok(())
 }
 
 #[tauri::command]
-pub async fn logout_user(state: tauri::State<'_, State>, user: &str) -> Result<(), String> {
+pub async fn logout_account(state: tauri::State<'_, State>, account: &str) -> Result<(), String> {
 	let mut config = fmt_err(
 		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
 			.await
 			.context("Failed to load config"),
 	)?;
 
-	let Some(user) = config.users.get_user_mut(user) else {
-		return Err("User does not exist".into());
+	let Some(account) = config.accounts.get_account_mut(account) else {
+		return Err("Account does not exist".into());
 	};
 
-	fmt_err(user.logout(&state.paths.core))?;
+	fmt_err(account.logout(&state.paths.core))?;
 
 	Ok(())
 }
 
 #[tauri::command]
-pub async fn create_user(
+pub async fn create_account(
 	state: tauri::State<'_, State>,
 	id: &str,
-	kind: UserVariant,
+	kind: AccountVariant,
 ) -> Result<(), String> {
 	let mut configuration =
 		fmt_err(Config::open(&Config::get_path(&state.paths)).context("Failed to load config"))?;
 
-	let user = UserConfig::Simple(kind);
+	let account = AccountConfig::Simple(kind);
 
 	let plugins = fmt_err(PluginManager::load(&state.paths, &mut NoOp).await)?;
 
-	let modifications = vec![ConfigModification::AddUser(id.into(), user)];
+	let modifications = vec![ConfigModification::AddAccount(id.into(), account)];
 	fmt_err(
 		apply_modifications_and_write(
 			&mut configuration,
@@ -173,17 +173,17 @@ pub async fn create_user(
 }
 
 #[tauri::command]
-pub async fn remove_user(state: tauri::State<'_, State>, user: &str) -> Result<(), String> {
+pub async fn remove_account(state: tauri::State<'_, State>, account: &str) -> Result<(), String> {
 	let paths = state.paths.clone();
 
-	logout_user(state, user).await?;
+	logout_account(state, account).await?;
 
 	let mut configuration =
 		fmt_err(Config::open(&Config::get_path(&paths)).context("Failed to load config"))?;
 
 	let plugins = fmt_err(PluginManager::load(&paths, &mut NoOp).await)?;
 
-	let modifications = vec![ConfigModification::RemoveUser(user.into())];
+	let modifications = vec![ConfigModification::RemoveAccount(account.into())];
 	fmt_err(
 		apply_modifications_and_write(
 			&mut configuration,
@@ -200,9 +200,9 @@ pub async fn remove_user(state: tauri::State<'_, State>, user: &str) -> Result<(
 }
 
 #[tauri::command]
-pub async fn get_supported_user_types(
+pub async fn get_supported_account_types(
 	state: tauri::State<'_, State>,
-) -> Result<Vec<UserTypeInfo>, String> {
+) -> Result<Vec<AccountTypeInfo>, String> {
 	let config = fmt_err(
 		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
 			.await
@@ -212,9 +212,9 @@ pub async fn get_supported_user_types(
 	let results = fmt_err(
 		config
 			.plugins
-			.call_hook(AddUserTypes, &(), &state.paths, &mut NoOp)
+			.call_hook(AddAccountTypes, &(), &state.paths, &mut NoOp)
 			.await
-			.context("Failed to get new user types from plugins"),
+			.context("Failed to get new account types from plugins"),
 	)?;
 	let out = fmt_err(results.flatten_all_results(&mut NoOp).await)?;
 

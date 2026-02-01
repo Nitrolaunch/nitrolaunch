@@ -13,6 +13,8 @@ use std::sync::Arc;
 
 pub use nitro_auth as auth_crate;
 
+/// Different types of accounts and authentication
+pub mod account;
 /// Configuration for library functionality
 pub mod config;
 /// Instances of versions that can be launched
@@ -23,13 +25,12 @@ pub mod io;
 pub mod launch;
 /// Networking interfaces
 pub mod net;
-/// Different types of users and authentication
-pub mod user;
 /// Common utilities
 pub mod util;
 /// Installable versions of the game
 pub mod version;
 
+use account::AccountManager;
 use anyhow::Context;
 use io::java::install::{JavaInstallParameters, JavaInstallation, JavaInstallationKind};
 use io::java::JavaMajorVersion;
@@ -38,7 +39,6 @@ use net::game_files::version_manifest::{make_version_list, VersionManifestAndLis
 use nitro_shared::minecraft::VersionEntry;
 use nitro_shared::output::{self, NitroOutput};
 use nitro_shared::versions::VersionInfo;
-use user::UserManager;
 use util::versions::MinecraftVersion;
 use version::{
 	InstalledVersion, LoadVersionManifestParameters, LoadVersionParameters, VersionParameters,
@@ -60,7 +60,7 @@ pub struct NitroCore {
 	persistent: PersistentData,
 	update_manager: UpdateManager,
 	versions: VersionRegistry,
-	users: UserManager,
+	accounts: AccountManager,
 	java_installations: HashMap<(JavaInstallationKind, JavaMajorVersion), JavaInstallation>,
 	custom_java_fn: Option<Arc<dyn CustomJavaFunction>>,
 }
@@ -86,7 +86,7 @@ impl NitroCore {
 			persistent,
 			update_manager: UpdateManager::new(config.update_depth),
 			versions: VersionRegistry::new(),
-			users: UserManager::new(config.ms_client_id.clone()),
+			accounts: AccountManager::new(config.ms_client_id.clone()),
 			config,
 			java_installations: HashMap::new(),
 			custom_java_fn: None,
@@ -116,9 +116,9 @@ impl NitroCore {
 		&self.paths
 	}
 
-	/// Get the UserManager in order to add, remove, and auth users
-	pub fn get_users(&mut self) -> &mut UserManager {
-		&mut self.users
+	/// Get the AccountManager in order to add, remove, and auth users
+	pub fn get_accounts(&mut self) -> &mut AccountManager {
+		&mut self.accounts
 	}
 
 	/// Get the UpdateManager in order to help with custom installation
@@ -178,7 +178,7 @@ impl NitroCore {
 			req_client: &self.req_client,
 			persistent: &mut self.persistent,
 			update_manager: &mut self.update_manager,
-			users: &mut self.users,
+			accounts: &mut self.accounts,
 			java_installations: &mut self.java_installations,
 			censor_secrets: self.config.censor_secrets,
 			disable_hardlinks: self.config.disable_hardlinks,

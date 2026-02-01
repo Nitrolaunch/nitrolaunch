@@ -8,7 +8,7 @@ use crate::instance::setup::setup_core;
 #[cfg(not(feature = "disable_instance_update_packages"))]
 use crate::pkg::eval::EvalConstants;
 use crate::plugin::PluginManager;
-use nitro_core::user::UserManager;
+use nitro_core::account::AccountManager;
 use nitro_plugin::hook::hooks::{AfterPackagesInstalled, AfterPackagesInstalledArg};
 use nitro_shared::{translate, UpdateDepth};
 #[cfg(not(feature = "disable_instance_update_packages"))]
@@ -33,8 +33,8 @@ use super::Instance;
 pub struct InstanceUpdateContext<'a, O: NitroOutput> {
 	/// The package registry
 	pub packages: &'a mut PkgRegistry,
-	/// The users
-	pub users: &'a UserManager,
+	/// The accounts
+	pub accounts: &'a AccountManager,
 	/// The plugins
 	pub plugins: &'a PluginManager,
 	/// The preferences
@@ -75,7 +75,7 @@ impl Instance {
 			None,
 			&manager.settings,
 			ctx.client,
-			ctx.users,
+			ctx.accounts,
 			ctx.plugins,
 			ctx.paths,
 			ctx.output,
@@ -103,7 +103,7 @@ impl Instance {
 			&version_info,
 			ctx.plugins,
 			ctx.paths,
-			ctx.users,
+			ctx.accounts,
 			ctx.lock,
 			ctx.output,
 		)

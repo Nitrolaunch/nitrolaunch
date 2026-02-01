@@ -69,8 +69,8 @@ define_translations! {
 	DownloadedLibrary, "When a library finishes downloading", "Downloaded library %lib";
 	StartExtractingNative, "When a native library starts to extract", "Extracting native library %lib";
 	ExtractedNativeFile, "When a native library file extract is extracted", "Extracted native file %file";
-	NoDefaultUser, "When users are available but no default is set", "Users are available but no default user is set";
-	NoUsers, "When no users are available", "No users are available";
+	NoDefaultAccount, "When accounts are available but no default is set", "Accounts are available but no default account is set";
+	NoAccounts, "When no accounts are available", "No accounts are available";
 	ModificationNotSupported, "When a loader can't be installed by Nitrolaunch", "A plugin is needed to support %mod installation";
 	EmptyTemplate, "When a template has no instances", "Template '%template' does not have any instances";
 	StartDownloadingVersionManifest, "When starting to download the version manifest", "Downloading version manifest";

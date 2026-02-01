@@ -1,14 +1,14 @@
-#user-container {
+#account-container {
 	width: 97%;
 }
 
-#user-header-container {
+#account-header-container {
 	width: 100%;
 	position: relative;
 	justify-content: flex-start;
 }
 
-#user-header {
+#account-header {
 	display: grid;
 	width: 100%;
 	grid-template-columns: minmax(0, 0.075fr) minmax(0, 1fr);
@@ -22,11 +22,11 @@
 	overflow: hidden;
 }
 
-#user-icon {
+#account-icon {
 	align-items: flex-start;
 }
 
-#user-icon-image {
+#account-icon-image {
 	width: 4.3rem;
 	height: 4.3rem;
 
@@ -36,37 +36,37 @@
 	image-rendering: pixelated;
 }
 
-#user-details-container {
+#account-details-container {
 	width: 100%;
 	display: grid;
 	grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
 }
 
-#user-details {
+#account-details {
 	margin-top: 0.25rem;
 	margin-left: 0.5rem;
 }
 
-#user-upper-details {
+#account-upper-details {
 	justify-content: flex-start;
 }
 
-#user-name {
+#account-name {
 	font-size: 1.3rem;
 	font-weight: bold;
 }
 
-#user-id {
+#account-id {
 	color: var(--fg3);
 	font-weight: bold;
 }
 
-#user-lower-details {
+#account-lower-details {
 	justify-content: flex-start;
 	margin-top: 0.35rem;
 }
 
-#user-type {
+#account-type {
 	background-color: var(--bg3);
 	color: var(--fg2);
 
@@ -78,7 +78,7 @@
 	line-height: 1;
 }
 
-#user-body {
+#account-body {
 	min-height: 10rem;
 	width: 100%;
 

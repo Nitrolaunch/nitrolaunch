@@ -5,6 +5,7 @@
 
 use std::{collections::HashMap, sync::Arc};
 
+use account::AccountConfig;
 use instance::InstanceConfig;
 use nitro_shared::id::{InstanceID, TemplateID};
 use preferences::PrefDeser;
@@ -12,8 +13,9 @@ use preferences::PrefDeser;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use template::TemplateConfig;
-use user::UserConfig;
 
+/// Account configuration
+pub mod account;
 /// Instance configuration
 pub mod instance;
 /// Package configuration
@@ -22,18 +24,18 @@ pub mod package;
 pub mod preferences;
 /// Template configuration
 pub mod template;
-/// User configuration
-pub mod user;
 
 /// Deserialization struct for user configuration
 #[derive(Deserialize, Serialize, Default)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[serde(default)]
 pub struct ConfigDeser {
-	/// The list of configured users
-	pub users: HashMap<String, UserConfig>,
-	/// The currently selected user
-	pub default_user: Option<String>,
+	/// The list of configured accounts
+	#[serde(alias = "users")]
+	pub accounts: HashMap<String, AccountConfig>,
+	/// The currently selected account
+	#[serde(alias = "default_user")]
+	pub default_account: Option<String>,
 	/// The list of configured instances
 	pub instances: HashMap<InstanceID, InstanceConfig>,
 	/// The list of configured instance groups

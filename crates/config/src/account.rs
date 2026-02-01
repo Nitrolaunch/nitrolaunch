@@ -7,33 +7,33 @@ use serde::{Deserialize, Serialize};
 #[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(untagged)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
-/// Configuration for a user
-pub enum UserConfig {
+/// Configuration for an account
+pub enum AccountConfig {
 	/// Simple config with just the variant
-	Simple(UserVariant),
+	Simple(AccountVariant),
 	/// Advanced config
 	Advanced {
-		/// The variant of the user
+		/// The variant of the account
 		#[serde(rename = "type")]
-		variant: UserVariant,
+		variant: AccountVariant,
 	},
 }
 
-/// Different variants of users for configuration
+/// Different variants of accounts for configuration
 #[derive(Deserialize, Serialize, Clone, Debug)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[serde(rename_all = "snake_case")]
-pub enum UserVariant {
-	/// A Microsoft user
+pub enum AccountVariant {
+	/// A Microsoft account
 	Microsoft,
-	/// A demo user
+	/// A demo account
 	Demo,
-	/// An unknown user
+	/// An unknown account
 	#[cfg_attr(not(feature = "schema"), serde(untagged))]
 	Unknown(String),
 }
 
-impl Display for UserVariant {
+impl Display for AccountVariant {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		match self {
 			Self::Microsoft {} => write!(f, "microsoft"),

@@ -8,10 +8,10 @@ When you first run a command that reads from the config, a default configuration
 
 ```
 {
-	"users": {
-		"user": { ... }
+	"accounts": {
+		"account": { ... }
 	},
-	"default_user": ...,
+	"default_account": ...,
 	"instances": {
 		"instance": { ... }
 	},
@@ -29,9 +29,9 @@ When you first run a command that reads from the config, a default configuration
 - `base_template`: An optional global template that all other templates and instances will inherit from
 - `instance_groups`: Named groups of instance IDs that can be used to easily refer to multiple instances
 
-## Users
+## Accounts
 
-Users are defined in the `users` object in the base of the config. User structure looks like this:
+Accounts are defined in the `accounts` object in the base of the config. Account structure looks like this:
 
 ```
 "id": {
@@ -39,12 +39,12 @@ Users are defined in the `users` object in the base of the config. User structur
 }
 ```
 
-- `id`: The unique identifier of the user that will be referenced in commands.
-- `type`: What type of user this is. Can be any of the following:
+- `id`: The unique identifier of the account that will be referenced in commands.
+- `type`: What type of account this is. Can be any of the following:
   - `"microsoft"`: A normal Minecraft account
   - `"demo"`: An account that owns a demo of the game
 
-There is a field called `default_user` where you should specify which user you are currently using. Otherwise, Nitrolaunch will not know which user to start the game with by default and you will have to specify it every time.
+There is a field called `default_account` where you should specify which account you are currently using. Otherwise, Nitrolaunch will not know which account to start the game with by default and you will have to specify it every time.
 
 ## Instances
 

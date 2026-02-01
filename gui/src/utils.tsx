@@ -122,8 +122,8 @@ export async function getSupportedLoaders(): Promise<string[]> {
 	return results;
 }
 
-// Gets the head icon for a user
-export function getUserIcon(uuid?: string) {
+// Gets the head icon for a Microsoft account
+export function getAccountIcon(uuid?: string) {
 	return uuid == undefined
 		? "/default_skin.png"
 		: `https://avatars.cloudhaven.gg/avatars/${uuid}?overlay`;

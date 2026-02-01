@@ -359,7 +359,7 @@ pub struct CustomPackageInstructionResult {
 def_hook!(
 	HandleAuth,
 	"handle_auth",
-	"Hook for handling authentication for custom user types",
+	"Hook for handling authentication for custom account types",
 	HandleAuthArg,
 	HandleAuthResult,
 	1,
@@ -369,19 +369,19 @@ def_hook!(
 #[derive(Serialize, Deserialize, Default)]
 #[serde(default)]
 pub struct HandleAuthArg {
-	/// The ID of the user
-	pub user_id: String,
-	/// The custom type of the user
-	pub user_type: String,
+	/// The ID of the account
+	pub account_id: String,
+	/// The custom type of the account
+	pub account_type: String,
 }
 
 /// Result from the HandleAuth hook
 #[derive(Serialize, Deserialize, Default)]
 #[serde(default)]
 pub struct HandleAuthResult {
-	/// Whether the auth for this user type was handled by this plugin
+	/// Whether the auth for this account type was handled by this plugin
 	pub handled: bool,
-	/// The resulting user profile
+	/// The resulting account profile
 	pub profile: Option<MinecraftUserProfile>,
 }
 
@@ -925,23 +925,23 @@ pub struct GetLoaderVersionsArg {
 }
 
 def_hook!(
-	AddUserTypes,
-	"add_user_types",
-	"Adds new available user types",
+	AddAccountTypes,
+	"add_account_types",
+	"Adds new available account types",
 	(),
-	Vec<UserTypeInfo>,
+	Vec<AccountTypeInfo>,
 	1,
 );
 
-/// Information about a user type
+/// Information about an account type
 #[derive(Serialize, Deserialize, Default)]
 #[serde(default)]
-pub struct UserTypeInfo {
-	/// The ID of the user type
+pub struct AccountTypeInfo {
+	/// The ID of the account type
 	pub id: String,
-	/// The display name of the user type
+	/// The display name of the account type
 	pub name: String,
-	/// CSS color of the user type
+	/// CSS color of the account type
 	pub color: String,
 }
 

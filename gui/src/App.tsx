@@ -13,7 +13,7 @@ import { listen } from "@tauri-apps/api/event";
 import CustomPluginPage from "./pages/CustomPluginPage";
 import Footer, { FooterMode } from "./components/navigation/Footer";
 import InstanceInfo from "./pages/instance/InstanceInfo";
-import UserPage from "./pages/user/UserPage";
+import AccountPage from "./pages/account/AccountPage";
 import Global from "./Global";
 import "./components/package/PackageDescription.css";
 import ModalBase from "./components/dialog/ModalBase";
@@ -32,7 +32,7 @@ export default function App() {
 		action: () => {},
 	});
 
-	let [selectedUser, setSelectedUser] = createSignal<string>();
+	let [selectedAccount, setSelectedAccount] = createSignal<string>();
 
 	// Window refresh logic
 	let [showUi, setShowUi] = createSignal(true);
@@ -49,8 +49,8 @@ export default function App() {
 						children={children}
 						location={location}
 						footerData={footerData()}
-						onSelectUser={setSelectedUser}
-						selectedUser={selectedUser()}
+						onSelectAccount={setSelectedAccount}
+						selectedAccount={selectedAccount()}
 					/>
 				)}
 			>
@@ -70,7 +70,7 @@ export default function App() {
 					path="/packages/package/:id"
 					component={() => <ViewPackage setFooterData={setFooterData} />}
 				/>
-				<Route path="/users/:userId" component={() => <UserPage />} />
+				<Route path="/accounts/:accountId" component={() => <AccountPage />} />
 				<Route path="/plugins" component={() => <Plugins />} />
 				<Route path="/docs" component={() => <Docs />} />
 				<Route path="/custom/:page" component={() => <CustomPluginPage />} />
@@ -135,7 +135,7 @@ function Layout(props: LayoutProps) {
 			<NavBar
 				onSidebarToggle={() => setShowSidebar(!showSidebar())}
 				onSidebarClose={() => setShowSidebar(false)}
-				onSelectUser={props.onSelectUser}
+				onSelectAccount={props.onSelectAccount}
 				location={props.location}
 			/>
 			<ErrorBoundary
@@ -149,12 +149,12 @@ function Layout(props: LayoutProps) {
 				visible={showSidebar()}
 				location={props.location}
 				setVisible={setShowSidebar}
-				onSelectUser={props.onSelectUser}
+				onSelectAccount={props.onSelectAccount}
 			/>
 			<Footer
 				selectedItem={props.footerData.selectedItem}
 				mode={props.footerData.mode}
-				selectedUser={props.selectedUser}
+				selectedAccount={props.selectedAccount}
 				action={props.footerData.action}
 				itemFromPlugin={props.footerData.fromPlugin}
 				itemEditable={props.footerData.isEditable}
@@ -184,8 +184,8 @@ interface LayoutProps {
 	children: any;
 	location: Location;
 	footerData: FooterData;
-	selectedUser?: string;
-	onSelectUser: (user: string) => void;
+	selectedAccount?: string;
+	onSelectAccount: (account: string) => void;
 }
 
 export interface FooterData {

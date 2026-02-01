@@ -97,23 +97,23 @@ impl RunningInstanceRegistry {
 	}
 
 	/// Adds an instance to the registry
-	pub fn add_instance(&mut self, pid: u32, instance: &str, is_java: bool, user: Option<String>) {
+	pub fn add_instance(&mut self, pid: u32, instance: &str, is_java: bool, account: Option<String>) {
 		let entry = RunningInstanceEntry {
 			pid,
 			parent_pid: std::process::id(),
 			instance_id: instance.to_string(),
 			is_java,
-			user,
+			account,
 		};
 		self.data.instances.push(entry);
 		self.is_dirty = true;
 	}
 
 	/// Removes an instance from the registry
-	pub fn remove_instance(&mut self, pid: u32, instance: &str, user: Option<&str>) {
+	pub fn remove_instance(&mut self, pid: u32, instance: &str, account: Option<&str>) {
 		let index = self.data.instances.iter().position(|x| {
-			if let Some(user) = user {
-				if !x.user.as_ref().is_some_and(|x| x == user) {
+			if let Some(account) = account {
+				if !x.account.as_ref().is_some_and(|x| x == account) {
 					return false;
 				}
 			}
@@ -129,11 +129,11 @@ impl RunningInstanceRegistry {
 	}
 
 	/// Kills an instance in the registry
-	pub fn kill_instance(&mut self, instance: &str, user: Option<&str>) {
+	pub fn kill_instance(&mut self, instance: &str, account: Option<&str>) {
 		let mut pids = Vec::new();
 		for entry in &self.data.instances {
-			if let Some(user) = user {
-				if !entry.user.as_ref().is_some_and(|x| x == user) {
+			if let Some(account) = account {
+				if !entry.account.as_ref().is_some_and(|x| x == account) {
 					continue;
 				}
 			}
@@ -150,7 +150,7 @@ impl RunningInstanceRegistry {
 				process.kill();
 			}
 
-			self.remove_instance(pid, instance, user);
+			self.remove_instance(pid, instance, account);
 		}
 	}
 
@@ -188,9 +188,10 @@ pub struct RunningInstanceEntry {
 	/// Whether this is a Java instance
 	#[serde(default = "default_is_java")]
 	pub is_java: bool,
-	/// The user that launched this instance
+	/// The account that launched this instance
 	#[serde(default)]
-	pub user: Option<String>,
+	#[serde(alias = "user")]
+	pub account: Option<String>,
 }
 
 fn default_is_java() -> bool {

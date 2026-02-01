@@ -19,7 +19,7 @@ pub struct Configuration {
 	pub(crate) ms_client_id: ClientId,
 	/// The depth of updates to perform
 	pub(crate) update_depth: UpdateDepth,
-	/// Whether to censor user credentials in output messages and logs
+	/// Whether to censor account credentials in output messages and logs
 	pub(crate) censor_secrets: bool,
 	/// Whether to use file copies instead of hardlinks. Useful if you
 	/// are on a filesystem that doesn't like hardlinks
@@ -85,7 +85,7 @@ impl ConfigBuilder {
 	builder_method!(
 		censor_secrets,
 		bool,
-		"Set whether to censor user credentials in output messages and logs"
+		"Set whether to censor account credentials in output messages and logs"
 	);
 
 	builder_method!(

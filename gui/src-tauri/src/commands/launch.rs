@@ -56,7 +56,7 @@ pub async fn launch_game(
 async fn launch_game_impl(
 	instance_id: String,
 	offline: bool,
-	user: Option<&str>,
+	account: Option<&str>,
 	state: Arc<tauri::State<'_, State>>,
 	app: Arc<AppHandle>,
 	stdio_paths: Arc<Mutex<Option<(PathBuf, Option<PathBuf>)>>>,
@@ -68,8 +68,8 @@ async fn launch_game_impl(
 	let mut config = load_config(&state.paths, &state.wasm_loader, &mut o)
 		.await
 		.context("Failed to load config")?;
-	if let Some(user) = user {
-		config.users.choose_user(user)?;
+	if let Some(account) = account {
+		config.accounts.choose_account(account)?;
 	}
 
 	// Check first update
@@ -104,7 +104,7 @@ async fn launch_game_impl(
 				pipe_stdin: false,
 			};
 			let mut handle = instance
-				.launch(&paths, &mut config.users, &plugins, settings, &mut o)
+				.launch(&paths, &mut config.accounts, &plugins, settings, &mut o)
 				.await
 				.context("Failed to launch instance")?;
 

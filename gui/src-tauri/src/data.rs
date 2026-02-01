@@ -18,8 +18,9 @@ pub struct LauncherData {
 	pub saved_instance_icons: Vec<InstanceIcon>,
 	/// Set of pinned instances
 	pub pinned: HashSet<String>,
-	/// The currently selected user
-	pub current_user: Option<String>,
+	/// The currently selected account
+	#[serde(alias = "current_user")]
+	pub current_account: Option<String>,
 	/// The last selected package repository
 	pub last_repository: Option<String>,
 	/// The last package resolution error associated with instances

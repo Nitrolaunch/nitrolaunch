@@ -12,14 +12,14 @@ pub mod preferences;
 use self::instance::read_instance_config;
 use crate::plugin::PluginManager;
 use anyhow::Context;
+use nitro_config::account::{AccountConfig, AccountVariant};
 use nitro_config::instance::InstanceConfig;
 use nitro_config::template::consolidate_template_configs;
 use nitro_config::template::TemplateConfig;
-use nitro_config::user::{UserConfig, UserVariant};
 use nitro_config::ConfigDeser;
+use nitro_core::account::{Account, AccountKind, AccountManager};
 use nitro_core::auth_crate::mc::ClientId;
 use nitro_core::io::{json_from_file, json_to_file_pretty};
-use nitro_core::user::{User, UserKind, UserManager};
 use nitro_pkg::PkgRequest;
 use nitro_plugin::hook::hooks::{AddInstances, AddInstancesArg, AddSupportedLoaders, AddTemplates};
 use nitro_shared::id::{InstanceID, TemplateID};
@@ -43,8 +43,8 @@ use std::sync::Arc;
 /// The data resulting from reading configuration.
 /// Represents all of the configured data that Nitrolaunch will use
 pub struct Config {
-	/// The user manager
-	pub users: UserManager,
+	/// The account manager
+	pub accounts: AccountManager,
 	/// Instances
 	pub instances: HashMap<InstanceID, Instance>,
 	/// templates
@@ -102,7 +102,7 @@ impl Config {
 			let _ = check_nitro_version(paths, o);
 		}
 
-		let mut users = UserManager::new(client_id);
+		let mut accounts = AccountManager::new(client_id);
 		let mut instances = HashMap::with_capacity(config.instances.len());
 		// Preferences
 		let (prefs, repositories) =
@@ -114,41 +114,41 @@ impl Config {
 			check_configured_packages(&config.instances, &config.templates, o);
 		}
 
-		// Users
-		for (user_id, user_config) in config.users.iter() {
-			if !is_valid_identifier(user_id) {
+		// Accounts
+		for (account_id, account_config) in config.accounts.iter() {
+			if !is_valid_identifier(account_id) {
 				o.display(
-					MessageContents::Error(format!("Invalid user ID '{user_id}'")),
+					MessageContents::Error(format!("Invalid account ID '{account_id}'")),
 					MessageLevel::Important,
 				);
 				continue;
 			}
-			let user = read_user_config(user_config, user_id);
+			let account = read_account_config(account_config, account_id);
 
-			users.add_user(user);
+			accounts.add_account(account);
 		}
 
-		if let Some(default_user_id) = &config.default_user {
-			if users.user_exists(default_user_id) {
-				users
-					.choose_user(default_user_id)
-					.expect("Default user should exist");
+		if let Some(default_account_id) = &config.default_account {
+			if accounts.account_exists(default_account_id) {
+				accounts
+					.choose_account(default_account_id)
+					.expect("Default account should exist");
 			} else {
 				o.display(
 					MessageContents::Error(format!(
-						"Provided default user '{default_user_id}' does not exist"
+						"Provided default account '{default_account_id}' does not exist"
 					)),
 					MessageLevel::Important,
 				);
 			}
-		} else if config.users.is_empty() && show_warnings {
+		} else if config.accounts.is_empty() && show_warnings {
 			o.display(
-				MessageContents::Warning(translate!(o, NoDefaultUser)),
+				MessageContents::Warning(translate!(o, NoDefaultAccount)),
 				MessageLevel::Important,
 			);
 		} else if show_warnings {
 			o.display(
-				MessageContents::Warning(translate!(o, NoUsers)),
+				MessageContents::Warning(translate!(o, NoAccounts)),
 				MessageLevel::Important,
 			);
 		}
@@ -309,7 +309,7 @@ impl Config {
 		}
 
 		Self {
-			users,
+			accounts,
 			instances,
 			templates: config.templates,
 			consolidated_templates,
@@ -339,12 +339,12 @@ impl Config {
 fn default_config() -> serde_json::Value {
 	json!(
 		{
-			"users": {
+			"accounts": {
 				"example": {
 					"type": "microsoft"
 				}
 			},
-			"default_user": "example",
+			"default_account": "example",
 			"templates": {
 				"1.20": {
 					"version": "1.19.3",
@@ -444,16 +444,16 @@ pub fn is_first_run(paths: &Paths) -> bool {
 	out
 }
 
-/// Creates a user from a user config
-pub fn read_user_config(config: &UserConfig, id: &str) -> User {
+/// Creates an account from an account config
+pub fn read_account_config(config: &AccountConfig, id: &str) -> Account {
 	match config {
-		UserConfig::Simple(variant) | UserConfig::Advanced { variant } => {
+		AccountConfig::Simple(variant) | AccountConfig::Advanced { variant } => {
 			let kind = match variant {
-				UserVariant::Microsoft => UserKind::Microsoft { xbox_uid: None },
-				UserVariant::Demo => UserKind::Demo,
-				UserVariant::Unknown(id) => UserKind::Unknown(id.clone()),
+				AccountVariant::Microsoft => AccountKind::Microsoft { xbox_uid: None },
+				AccountVariant::Demo => AccountKind::Demo,
+				AccountVariant::Unknown(id) => AccountKind::Unknown(id.clone()),
 			};
-			User::new(kind, id.into())
+			Account::new(kind, id.into())
 		}
 	}
 }

@@ -54,9 +54,9 @@ export default function RunningInstanceList(props: RunningInstanceListProps) {
 			<Show when={hover() != undefined}>
 				<div class="cont col pop-in-fast" id="running-instance-list-tip">
 					{hover()!.name}
-					<Show when={hover()!.user != undefined}>
+					<Show when={hover()!.account != undefined}>
 						<span style="color:var(--fg2);font-size:0.9rem">
-							User: {hover()!.user}
+							Account: {hover()!.account}
 						</span>
 					</Show>
 					<span style="color:var(--error);font-size:0.9rem">
@@ -83,7 +83,7 @@ export default function RunningInstanceList(props: RunningInstanceListProps) {
 							onclick={() => {
 								navigate(`/instance/${instance.instance_id}`);
 							}}
-							onmouseenter={() => setHover({ name: name, user: instance.user })}
+							onmouseenter={() => setHover({ name: name, account: instance.account })}
 							onmouseleave={() => setHover(undefined)}
 							onerror={(e: any) =>
 								(e.target.src = "/icons/default_instance.png")
@@ -94,7 +94,7 @@ export default function RunningInstanceList(props: RunningInstanceListProps) {
 								try {
 									invoke("kill_instance", {
 										instance: instance.instance_id,
-										user: instance.user,
+										account: instance.account,
 									});
 								} catch (e) {
 									errorToast("Failed to kill instance: " + e);
@@ -112,7 +112,7 @@ export interface RunningInstanceListProps {}
 
 interface HoverData {
 	name: string;
-	user?: string;
+	account?: string;
 }
 
 export interface RunningInstancesEvent {
@@ -121,5 +121,5 @@ export interface RunningInstancesEvent {
 
 export interface RunningInstanceEntry {
 	instance_id: string;
-	user?: string;
+	account?: string;
 }

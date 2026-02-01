@@ -14,7 +14,7 @@ _nitro() {
 	local -a subcmds
 	subcmds=(
 		"instance: Manage instances"
-  	"user: Manage users and authentication"
+  	"account: Manage accounts and authentication"
   	"launch: Launch instances to play the game"
   	"package: Manage packages"
   	"plugin: Manage plugins"

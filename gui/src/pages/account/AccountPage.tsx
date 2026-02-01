@@ -3,39 +3,39 @@ import { createResource, Match, onMount, Show, Switch } from "solid-js";
 import { loadPagePlugins } from "../../plugins";
 import { errorToast, successToast } from "../../components/dialog/Toasts";
 import LoadingSpinner from "../../components/utility/LoadingSpinner";
-import { beautifyString, getUserIcon } from "../../utils";
+import { beautifyString, getAccountIcon } from "../../utils";
 import { Delete, Lock, LockOpen } from "../../icons";
-import "./UserPage.css";
+import "./AccountPage.css";
 import IconTextButton from "../../components/input/button/IconTextButton";
 import { invoke } from "@tauri-apps/api/core";
-import { UserInfo } from "../../components/user/UserWidget";
+import { AccountInfo } from "../../components/account/AccountWidget";
 import { emit, Event, listen } from "@tauri-apps/api/event";
 
-export default function UserPage() {
+export default function AccountPage() {
 	let navigate = useNavigate();
 
 	let params = useParams();
-	let id = params.userId;
+	let id = params.accountId;
 
-	onMount(() => loadPagePlugins("user", id));
+	onMount(() => loadPagePlugins("account", id));
 
-	let [user, userOperations] = createResource(async () => {
+	let [account, accountOperations] = createResource(async () => {
 		try {
-			let [_, users] = (await invoke("get_users")) as [
+			let [_, accounts] = (await invoke("get_accounts")) as [
 				string | undefined,
-				{ [id: string]: UserInfo }
+				{ [id: string]: AccountInfo },
 			];
 
-			return users[id];
+			return accounts[id];
 		} catch (e) {
-			errorToast("Failed to get user: " + e);
+			errorToast("Failed to get account: " + e);
 			return undefined;
 		}
 	});
 
 	return (
 		<Show
-			when={user() != undefined}
+			when={account() != undefined}
 			fallback={
 				<div class="cont" style="width:100%">
 					<LoadingSpinner size="5rem" />
@@ -43,52 +43,57 @@ export default function UserPage() {
 			}
 		>
 			<div class="cont col" style="width:100%">
-				<div class="cont col" id="user-container">
-					<div class="cont" id="user-header-container">
-						<div class="shadow" id="user-header">
-							<div class="cont start" id="user-icon">
+				<div class="cont col" id="account-container">
+					<div class="cont" id="account-header-container">
+						<div class="shadow" id="account-header">
+							<div class="cont start" id="account-icon">
 								<img
-									id="user-icon-image"
-									src={getUserIcon(user()!.uuid)}
+									id="account-icon-image"
+									src={getAccountIcon(account()!.uuid)}
 									onerror={(e) =>
-										((e.target as any).src = getUserIcon(undefined))
+										((e.target as any).src = getAccountIcon(undefined))
 									}
 								/>
 							</div>
-							<div id="user-details-container">
-								<div class="col" id="user-details">
-									<div class="cont" id="user-upper-details">
-										<div id="user-name">
-											{user()!.username == undefined ? id : user()!.username}
+							<div id="account-details-container">
+								<div class="col" id="account-details">
+									<div class="cont" id="account-upper-details">
+										<div id="account-name">
+											{account()!.username == undefined
+												? id
+												: account()!.username}
 										</div>
-										<Show when={user()!.username != undefined}>
-											<div id="user-id">{id}</div>
+										<Show when={account()!.username != undefined}>
+											<div id="account-id">{id}</div>
 										</Show>
 									</div>
-									<div class="cont start" id="user-lower-details">
-										<div class="cont" id="user-type">
-											{beautifyString(user()!.type).toLocaleUpperCase()}
+									<div class="cont start" id="account-lower-details">
+										<div class="cont" id="account-type">
+											{beautifyString(account()!.type).toLocaleUpperCase()}
 										</div>
 									</div>
 								</div>
 								<div class="cont end" style="margin-right:1rem">
 									<Switch>
-										<Match when={user()!.username == undefined}>
+										<Match when={account()!.username == undefined}>
 											<IconTextButton
 												icon={LockOpen}
 												size="1.2rem"
 												text="Log In"
 												onClick={async () => {
 													try {
-														await invoke("login_user", { user: id });
+														await invoke("login_account", { account: id });
 
-														let unlisten = await listen("nitro_output_finish_task", (e: Event<string>) => {
-															if (e.payload == "login_user") {
-																successToast("Logged in");
-																userOperations.refetch();
-																emit("refresh_users");
-															}
-														});
+														let unlisten = await listen(
+															"nitro_output_finish_task",
+															(e: Event<string>) => {
+																if (e.payload == "login_account") {
+																	successToast("Logged in");
+																	accountOperations.refetch();
+																	emit("refresh_accounts");
+																}
+															},
+														);
 
 														unlisten();
 													} catch (e) {
@@ -98,17 +103,17 @@ export default function UserPage() {
 												shadow={false}
 											/>
 										</Match>
-										<Match when={user()!.username != undefined}>
+										<Match when={account()!.username != undefined}>
 											<IconTextButton
 												icon={Lock}
 												size="1.2rem"
 												text="Log Out"
 												onClick={async () => {
 													try {
-														await invoke("logout_user", { user: id });
+														await invoke("logout_account", { account: id });
 														successToast("Logged out");
-														userOperations.refetch();
-														emit("refresh_users");
+														accountOperations.refetch();
+														emit("refresh_accounts");
 													} catch (e) {
 														errorToast("Failed to log out: " + e);
 													}
@@ -125,13 +130,13 @@ export default function UserPage() {
 										bgColor="var(--errorbg)"
 										onClick={async () => {
 											try {
-												await invoke("remove_user", {
-													user: id,
+												await invoke("remove_account", {
+													account: id,
 												});
-												successToast("User deleted");
+												successToast("Account deleted");
 												navigate("/");
 											} catch (e) {
-												errorToast("Failed to delete user: " + e);
+												errorToast("Failed to delete account: " + e);
 											}
 										}}
 										shadow={false}
@@ -140,7 +145,7 @@ export default function UserPage() {
 							</div>
 						</div>
 					</div>
-					<div id="user-body" class="shadow"></div>
+					<div id="account-body" class="shadow"></div>
 				</div>
 				<br />
 				<br />

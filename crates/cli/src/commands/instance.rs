@@ -48,9 +48,9 @@ pub enum InstanceSubcommand {
 	Info { instance: Option<String> },
 	#[command(about = "Launch instances to play the game")]
 	Launch {
-		/// An optional user to choose when launching
+		/// An optional account to choose when launching
 		#[arg(short, long)]
-		user: Option<String>,
+		account: Option<String>,
 		/// Whether to launch in offline mode, skipping authentication. This only works
 		/// if you have authenticated at least once
 		#[arg(short, long)]
@@ -124,11 +124,11 @@ pub async fn run(command: InstanceSubcommand, mut data: CmdData<'_>) -> anyhow::
 	match command {
 		InstanceSubcommand::List { raw, side } => list(&mut data, raw, side).await,
 		InstanceSubcommand::Launch {
-			user,
+			account,
 			offline,
 			skip_update,
 			instance,
-		} => launch(instance, user, offline, skip_update, data).await,
+		} => launch(instance, account, offline, skip_update, data).await,
 		InstanceSubcommand::Info { instance } => info(&mut data, instance).await,
 		InstanceSubcommand::Update {
 			force,
@@ -237,7 +237,7 @@ async fn info(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()> 
 
 pub async fn launch(
 	instance: Option<String>,
-	user: Option<String>,
+	account: Option<String>,
 	offline: bool,
 	skip_update: bool,
 	mut data: CmdData<'_>,
@@ -261,7 +261,7 @@ pub async fn launch(
 			let client = Client::new();
 			let mut ctx = InstanceUpdateContext {
 				packages: &mut config.packages,
-				users: &config.users,
+				accounts: &config.accounts,
 				plugins: &config.plugins,
 				prefs: &config.prefs,
 				paths: &data.paths,
@@ -277,11 +277,11 @@ pub async fn launch(
 		}
 	}
 
-	if let Some(user) = user {
+	if let Some(account) = account {
 		config
-			.users
-			.choose_user(&user)
-			.context("Failed to choose user")?;
+			.accounts
+			.choose_account(&account)
+			.context("Failed to choose account")?;
 	}
 
 	let launch_settings = LaunchSettings {
@@ -292,7 +292,7 @@ pub async fn launch(
 	let instance_handle = instance
 		.launch(
 			&data.paths,
-			&mut config.users,
+			&mut config.accounts,
 			&config.plugins,
 			launch_settings,
 			data.output,
@@ -374,7 +374,7 @@ async fn update(
 
 		let mut ctx = InstanceUpdateContext {
 			packages: &mut config.packages,
-			users: &config.users,
+			accounts: &config.accounts,
 			plugins: &config.plugins,
 			prefs: &config.prefs,
 			paths: &data.paths,

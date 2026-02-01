@@ -1,5 +1,5 @@
 use anyhow::Context;
-use nitro_core::user::UserManager;
+use nitro_core::account::AccountManager;
 
 use crate::io::paths::Paths;
 
@@ -11,7 +11,7 @@ impl Instance {
 	pub async fn setup_client(
 		&mut self,
 		paths: &Paths,
-		users: &UserManager,
+		accounts: &AccountManager,
 	) -> anyhow::Result<UpdateMethodResult> {
 		debug_assert!(matches!(self.kind, InstKind::Client { .. }));
 
@@ -19,10 +19,10 @@ impl Instance {
 		self.ensure_dirs(paths)?;
 
 		// Create keypair file
-		if users.is_authenticated() {
-			if let Some(user) = users.get_chosen_user() {
-				self.create_keypair(user, paths)
-					.context("Failed to create user keypair")?;
+		if accounts.is_authenticated() {
+			if let Some(account) = accounts.get_chosen_account() {
+				self.create_keypair(account, paths)
+					.context("Failed to create account keypair")?;
 			}
 		}
 

@@ -94,13 +94,13 @@ pub trait NitroOutput: Send {
 		)
 	}
 
-	/// Specialized implementation for prompting a user passkey
-	async fn prompt_special_user_passkey(
+	/// Specialized implementation for prompting an account passkey
+	async fn prompt_special_account_passkey(
 		&mut self,
 		message: MessageContents,
-		user_id: &str,
+		account_id: &str,
 	) -> anyhow::Result<String> {
-		let _ = user_id;
+		let _ = account_id;
 		self.prompt_password(message).await
 	}
 

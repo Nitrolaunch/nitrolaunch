@@ -2,7 +2,7 @@
 
 //! This library is used by Nitrolaunch to authenticate with Minecraft using Microsoft's APIs.
 //! Although it provides the base functions for authentication, it does not string them
-//! together for you. For an example of using this crate, look at the `user::auth` module in
+//! together for you. For an example of using this crate, look at the `account::auth` module in
 //! the `nitro_core` crate.
 //!
 //! Note: The asynchronous functions in this library expect the use of the Tokio runtime and may panic

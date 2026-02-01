@@ -20,9 +20,9 @@ const DEVICE_CODE_URL: &str = "https://login.microsoftonline.com/consumers/oauth
 const MSA_AUTHORIZE_URL: &str = "https://login.microsoftonline.com/consumers/oauth2/v2.0/authorize";
 const MSA_TOKEN_URL: &str = "https://login.microsoftonline.com/consumers/oauth2/v2.0/token";
 
-/// Authenticate a Microsoft user using Microsoft OAuth.
+/// Authenticate a Microsoft account using Microsoft OAuth.
 /// Will authenticate every time and will not use the database.
-pub async fn authenticate_microsoft_user(
+pub async fn authenticate_microsoft_account(
 	client_id: ClientId,
 	client: &reqwest::Client,
 	o: &mut impl NitroOutput,
@@ -38,13 +38,13 @@ pub async fn authenticate_microsoft_user(
 		.await
 		.context("Failed to get Microsoft token")?;
 
-	let result = authenticate_microsoft_user_from_token(token, client, o).await?;
+	let result = authenticate_microsoft_account_from_token(token, client, o).await?;
 
 	Ok(result)
 }
 
-/// Authenticate a Microsoft user from the Microsoft access token
-pub async fn authenticate_microsoft_user_from_token(
+/// Authenticate a Microsoft account from the Microsoft access token
+pub async fn authenticate_microsoft_account_from_token(
 	token: MicrosoftToken,
 	client: &reqwest::Client,
 	o: &mut impl NitroOutput,
@@ -116,7 +116,7 @@ pub async fn generate_login_page(
 /// A TokenResponse from Microsoft OAuth
 pub type MicrosoftToken = StandardTokenResponse<EmptyExtraTokenFields, BasicTokenType>;
 
-/// Get the Microsoft token. Will wait indefinitely until the user has signed in to
+/// Get the Microsoft token. Will wait indefinitely until the account has signed in to
 /// Microsoft and authenticated the application
 pub async fn get_microsoft_token(
 	client: &BasicClient,
@@ -205,7 +205,7 @@ pub struct MicrosoftAuthResult {
 	pub refresh_token: Option<RefreshToken>,
 }
 
-/// An access token for a user that will be hidden in debug messages
+/// An access token for an account that will be hidden in debug messages
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct AccessToken(pub String);
 

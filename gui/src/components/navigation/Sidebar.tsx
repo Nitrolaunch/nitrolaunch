@@ -266,7 +266,7 @@ export interface SidebarProps {
 	visible: boolean;
 	setVisible: (visible: boolean) => void;
 	location: Location;
-	onSelectUser: (user: string) => void;
+	onSelectAccount: (account: string) => void;
 }
 
 function SidebarItem(props: SidebarItemProps) {

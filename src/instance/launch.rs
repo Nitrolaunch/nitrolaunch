@@ -11,9 +11,9 @@ use sysinfo::{Pid, System};
 
 use anyhow::{bail, Context};
 use nitro_config::instance::{QuickPlay, WrapperCommand};
+use nitro_core::account::{AccountID, AccountManager};
 use nitro_core::auth_crate::mc::ClientId;
 use nitro_core::io::java::install::JavaInstallationKind;
-use nitro_core::user::{UserID, UserManager};
 use nitro_plugin::hook::call::HookHandles;
 use nitro_plugin::hook::hooks::{
 	InstanceLaunchArg, OnInstanceLaunch, OnInstanceStop, ReplaceInstanceLaunch, WhileInstanceLaunch,
@@ -42,7 +42,7 @@ impl Instance {
 	pub async fn launch(
 		&mut self,
 		paths: &Paths,
-		users: &mut UserManager,
+		accounts: &mut AccountManager,
 		plugins: &PluginManager,
 		settings: LaunchSettings,
 		o: &mut impl NitroOutput,
@@ -62,7 +62,7 @@ impl Instance {
 			Some(&settings.ms_client_id),
 			&manager.settings,
 			&client,
-			users,
+			accounts,
 			plugins,
 			paths,
 			o,
@@ -82,7 +82,7 @@ impl Instance {
 				&version_info,
 				plugins,
 				paths,
-				users,
+				accounts,
 				&mut lock,
 				o,
 			)
@@ -129,11 +129,12 @@ impl Instance {
 			self.launch_standard(core, hook_arg, paths, plugins, settings, o)
 				.await
 		} else {
-			let user = core
-				.get_users()
-				.get_chosen_user()
+			let account = core
+				.get_accounts()
+				.get_chosen_account()
 				.map(|x| x.get_id().clone());
-			self.launch_custom(hook_arg, user, paths, plugins, o).await
+			self.launch_custom(hook_arg, account, paths, plugins, o)
+				.await
 		}
 	}
 
@@ -147,11 +148,11 @@ impl Instance {
 		settings: LaunchSettings,
 		o: &mut impl NitroOutput,
 	) -> anyhow::Result<InstanceHandle> {
-		let selected_user = core
-			.get_users()
-			.get_chosen_user()
+		let selected_account = core
+			.get_accounts()
+			.get_chosen_account()
 			.map(|x| x.get_id().clone());
-		let user = selected_user.map(|x| x.to_string());
+		let selected_account = selected_account.map(|x| x.to_string());
 
 		let mut core_version = core.get_version(&self.config.version, o).await?;
 
@@ -193,7 +194,7 @@ impl Instance {
 			hook_arg,
 			stdout: tokio::io::stdout(),
 			is_silent: false,
-			user: user.clone(),
+			account: selected_account.clone(),
 			inner: InstanceHandleInner::Standard {
 				inner: handle,
 				world_files,
@@ -203,7 +204,7 @@ impl Instance {
 		// Update the running instance registry
 		let mut running_instance_registry = RunningInstanceRegistry::open(paths)
 			.context("Failed to open registry of running instances")?;
-		running_instance_registry.add_instance(handle.get_pid(), &self.id, true, user);
+		running_instance_registry.add_instance(handle.get_pid(), &self.id, true, selected_account);
 		let _ = running_instance_registry.write();
 
 		Ok(handle)
@@ -213,7 +214,7 @@ impl Instance {
 	async fn launch_custom(
 		&mut self,
 		mut hook_arg: InstanceLaunchArg,
-		selected_user: Option<UserID>,
+		selected_account: Option<AccountID>,
 		paths: &Paths,
 		plugins: &PluginManager,
 		o: &mut impl NitroOutput,
@@ -248,7 +249,7 @@ impl Instance {
 			File::open(&stdout_path).context("Launch hook did not open an stdout file")?;
 		let stdin_file = open_file_append(&stdin_path)?;
 
-		let user = selected_user.map(|x| x.to_string());
+		let selected_account = selected_account.map(|x| x.to_string());
 
 		let handle = InstanceHandle {
 			instance_id: self.id.clone(),
@@ -256,7 +257,7 @@ impl Instance {
 			hook_arg,
 			stdout: tokio::io::stdout(),
 			is_silent: false,
-			user: user.clone(),
+			account: selected_account.clone(),
 			inner: InstanceHandleInner::Plugin {
 				pid: result.pid,
 				stdout_file,
@@ -269,7 +270,7 @@ impl Instance {
 		// Update the running instance registry
 		let mut running_instance_registry = RunningInstanceRegistry::open(paths)
 			.context("Failed to open registry of running instances")?;
-		running_instance_registry.add_instance(handle.get_pid(), &self.id, true, user);
+		running_instance_registry.add_instance(handle.get_pid(), &self.id, true, selected_account);
 		let _ = running_instance_registry.write();
 
 		Ok(handle)
@@ -321,8 +322,8 @@ pub struct InstanceHandle {
 	stdout: Stdout,
 	/// Whether to redirect stdin and stdout to the process stdin and stdout
 	is_silent: bool,
-	/// The user that launched this instance
-	user: Option<String>,
+	/// The account that launched this instance
+	account: Option<String>,
 	/// Inner implementation
 	inner: InstanceHandleInner,
 }
@@ -413,7 +414,7 @@ impl InstanceHandle {
 		Self::on_stop(
 			&self.instance_id,
 			pid,
-			self.user.as_deref(),
+			self.account.as_deref(),
 			&self.hook_arg,
 			plugins,
 			paths,
@@ -450,7 +451,7 @@ impl InstanceHandle {
 		Self::on_stop(
 			&self.instance_id,
 			pid,
-			self.user.as_deref(),
+			self.account.as_deref(),
 			&self.hook_arg,
 			plugins,
 			paths,
@@ -515,7 +516,7 @@ impl InstanceHandle {
 	async fn on_stop(
 		instance_id: &str,
 		pid: u32,
-		user: Option<&str>,
+		account: Option<&str>,
 		arg: &InstanceLaunchArg,
 		plugins: &PluginManager,
 		paths: &Paths,
@@ -524,7 +525,7 @@ impl InstanceHandle {
 		// Remove the instance from the registry
 		let running_instance_registry = RunningInstanceRegistry::open(paths);
 		if let Ok(mut running_instance_registry) = running_instance_registry {
-			running_instance_registry.remove_instance(pid, instance_id, user);
+			running_instance_registry.remove_instance(pid, instance_id, account);
 			let _ = running_instance_registry.write();
 		}
 

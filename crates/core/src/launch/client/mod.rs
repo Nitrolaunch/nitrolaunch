@@ -19,9 +19,9 @@ use super::{process::LaunchProcessProperties, LaunchParameters};
 pub(crate) async fn get_launch_props(
 	params: &LaunchParameters<'_>,
 ) -> anyhow::Result<LaunchProcessProperties> {
-	// Ensure a user is picked
-	if !params.users.is_user_chosen() {
-		bail!("No user chosen");
+	// Ensure an account is picked
+	if !params.accounts.is_account_chosen() {
+		bail!("No account chosen");
 	}
 
 	// Build up arguments

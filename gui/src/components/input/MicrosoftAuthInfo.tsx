@@ -11,7 +11,7 @@ import { invoke } from "@tauri-apps/api/core";
 
 export default function MicrosoftAuthInfo(props: MicrosoftAuthInfoProps) {
 	let onClose = async () => {
-		await invoke("cancel_task", { task: "login_user" });
+		await invoke("cancel_task", { task: "login_account" });
 		props.onCancel();
 	}
 

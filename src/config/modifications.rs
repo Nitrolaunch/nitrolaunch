@@ -2,7 +2,7 @@ use anyhow::{anyhow, bail, Context};
 use nitro_config::instance::InstanceConfig;
 use nitro_config::template::TemplateConfig;
 use nitro_config::ConfigDeser;
-use nitro_config::{package::PackageConfigDeser, user::UserConfig};
+use nitro_config::{account::AccountConfig, package::PackageConfigDeser};
 use nitro_core::io::json_to_file_pretty;
 use nitro_plugin::hook::hooks::{
 	SaveInstanceConfig, SaveInstanceConfigArg, SaveTemplateConfig, SaveTemplateConfigArg,
@@ -17,16 +17,16 @@ use super::Config;
 
 /// A modification operation that can be applied to the config
 pub enum ConfigModification {
-	/// Adds a new user
-	AddUser(String, UserConfig),
+	/// Adds a new account
+	AddAccount(String, AccountConfig),
 	/// Adds or updates an instance
 	AddInstance(InstanceID, InstanceConfig),
 	/// Adds or updates a template
 	AddTemplate(TemplateID, TemplateConfig),
 	/// Adds a new package to an instance
 	AddPackage(InstanceID, PackageConfigDeser),
-	/// Removes a user
-	RemoveUser(String),
+	/// Removes an account
+	RemoveAccount(String),
 	/// Removes an instance
 	RemoveInstance(InstanceID),
 	/// Removes a template
@@ -43,8 +43,8 @@ pub async fn apply_modifications(
 ) -> anyhow::Result<()> {
 	for modification in modifications {
 		match modification {
-			ConfigModification::AddUser(id, user) => {
-				config.users.insert(id, user);
+			ConfigModification::AddAccount(id, account) => {
+				config.accounts.insert(id, account);
 			}
 			ConfigModification::AddInstance(instance_id, instance) => {
 				if let Some(plugin) = &instance.source_plugin {
@@ -103,8 +103,8 @@ pub async fn apply_modifications(
 					.ok_or(anyhow!("Unknown instance '{instance_id}'"))?;
 				instance.packages.push(package);
 			}
-			ConfigModification::RemoveUser(user) => {
-				config.users.remove(&user);
+			ConfigModification::RemoveAccount(account) => {
+				config.accounts.remove(&account);
 			}
 			ConfigModification::RemoveInstance(instance) => {
 				config.instances.remove(&instance);
@@ -137,18 +137,18 @@ pub async fn apply_modifications_and_write(
 
 #[cfg(test)]
 mod tests {
-	use nitro_config::user::UserVariant;
+	use nitro_config::account::AccountVariant;
 	use nitro_shared::output::NoOp;
 
 	use super::*;
 
 	#[tokio::test]
-	async fn test_user_add_modification() {
+	async fn test_account_add_modification() {
 		let mut config = ConfigDeser::default();
 
-		let user_config = UserConfig::Simple(UserVariant::Demo {});
+		let account_config = AccountConfig::Simple(AccountVariant::Demo {});
 
-		let modifications = vec![ConfigModification::AddUser("bob".into(), user_config)];
+		let modifications = vec![ConfigModification::AddAccount("bob".into(), account_config)];
 
 		let paths = Paths::new_no_create().unwrap();
 		let plugins = PluginManager::new(&paths);
@@ -156,6 +156,6 @@ mod tests {
 		apply_modifications(&mut config, modifications, &paths, &plugins, &mut NoOp)
 			.await
 			.unwrap();
-		assert!(config.users.contains_key("bob"));
+		assert!(config.accounts.contains_key("bob"));
 	}
 }

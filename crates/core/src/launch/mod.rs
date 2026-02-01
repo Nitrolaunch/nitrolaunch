@@ -20,6 +20,8 @@ use nitro_shared::{translate, Side};
 
 use self::client::create_quick_play_args;
 use self::process::{launch_game_process, LaunchGameProcessParameters};
+use crate::account::auth::check_game_ownership;
+use crate::account::AccountManager;
 use crate::config::BrandingProperties;
 use crate::instance::InstanceKind;
 use crate::io::files::paths::Paths;
@@ -27,8 +29,6 @@ use crate::io::java::classpath::Classpath;
 use crate::io::java::install::JavaInstallation;
 use crate::net::game_files::client_meta::ClientMeta;
 use crate::net::game_files::version_manifest::VersionManifestAndList;
-use crate::user::auth::check_game_ownership;
-use crate::user::UserManager;
 
 pub use self::configuration::{
 	LaunchConfigBuilder, LaunchConfiguration, QuickPlayType, WrapperCommand,
@@ -54,7 +54,7 @@ pub(crate) async fn launch(
 		);
 
 		params
-			.users
+			.accounts
 			.authenticate(params.paths, params.req_client, process.deref_mut())
 			.await
 			.context("Failed to ensure authentication")?;
@@ -82,9 +82,9 @@ pub(crate) async fn launch(
 	}
 	.context("Failed to generate side-specific launch properties")?;
 
-	let user_access_token = params
-		.users
-		.get_chosen_user()
+	let account_access_token = params
+		.accounts
+		.get_chosen_account()
 		.and_then(|x| x.get_access_token());
 
 	let proc_params = LaunchGameProcessParameters {
@@ -97,7 +97,7 @@ pub(crate) async fn launch(
 		version: params.version,
 		version_list: &params.version_manifest.list,
 		side: params.side,
-		user_access_token,
+		account_access_token,
 		censor_secrets: params.censor_secrets,
 		pipe_stdin: params.pipe_stdin,
 	};
@@ -118,7 +118,7 @@ pub(crate) struct LaunchParameters<'a> {
 	pub paths: &'a Paths,
 	pub req_client: &'a reqwest::Client,
 	pub client_meta: &'a ClientMeta,
-	pub users: &'a mut UserManager,
+	pub accounts: &'a mut AccountManager,
 	pub censor_secrets: bool,
 	pub branding: &'a BrandingProperties,
 	pub pipe_stdin: bool,

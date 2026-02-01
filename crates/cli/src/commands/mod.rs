@@ -5,7 +5,7 @@ mod log;
 mod package;
 mod plugin;
 mod template;
-mod user;
+mod account;
 
 use std::collections::HashMap;
 
@@ -34,7 +34,7 @@ use self::log::LogSubcommand;
 use self::package::PackageSubcommand;
 use self::plugin::PluginSubcommand;
 use self::template::TemplateSubcommand;
-use self::user::UserSubcommand;
+use self::account::AccountSubcommand;
 
 use super::output::TerminalOutput;
 
@@ -46,10 +46,10 @@ pub enum Command {
 		#[command(subcommand)]
 		command: InstanceSubcommand,
 	},
-	#[command(about = "Manage users and authentication")]
-	User {
+	#[command(about = "Manage accountss and authentication")]
+	Account {
 		#[command(subcommand)]
-		command: UserSubcommand,
+		command: AccountSubcommand,
 	},
 	#[command(about = "Launch instances to play the game")]
 	Launch {
@@ -196,7 +196,7 @@ Would you like to do that now?"
 		data.output.set_log_level(log_level);
 
 		match cli.command {
-			Command::User { command } => user::run(command, &mut data).await,
+			Command::Account { command } => account::run(command, &mut data).await,
 			Command::Launch { instance } => {
 				instance::launch(instance, None, false, false, data).await
 			}

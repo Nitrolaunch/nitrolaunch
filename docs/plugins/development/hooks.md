@@ -388,11 +388,11 @@ Handles custom instructions in script packages.
 
 - `handled`: Whether this instruction was handled or not. Should be false if this instruction is not for your plugin.
 
-## User Hooks
+## Account Hooks
 
-### `add_user_types`
+### `add_account_types`
 
-Adds new custom user types
+Adds new custom account types
 
 - Argument: None
 
@@ -411,14 +411,14 @@ Adds new custom user types
 
 ### `handle_auth`
 
-Handles authentication with custom user types
+Handles authentication with custom account types
 
 - Argument:
 
 ```
 {
-	"user_id": string,
-	"user_type": string
+	"account_id": string,
+	"account_type": string
 }
 ```
 
@@ -450,7 +450,7 @@ Handles authentication with custom user types
 }
 ```
 
-- `profile.id`: The UUID of the user
+- `profile.id`: The UUID of the account
 
 ## Instance Transfer Hooks
 

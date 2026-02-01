@@ -470,7 +470,7 @@ function getTaskDisplayName(task: string) {
 		return "Loading packages";
 	} else if (task == "sync_packages") {
 		return "Syncing packages";
-	} else if (task == "login_user") {
+	} else if (task == "login_account") {
 		return "Logging in";
 	} else if (task == "install_plugins") {
 		return "Installing plugins";
@@ -503,7 +503,7 @@ function getTaskColor(task: string) {
 	) {
 		return "instance";
 	} else if (
-		task == "login_user" ||
+		task == "login_account" ||
 		task == "update_versions" ||
 		task == "save_template_config" ||
 		task == "delete_template"

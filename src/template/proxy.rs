@@ -8,7 +8,7 @@ use nitro_core::io::java::install::JavaInstallation;
 // use nitro_core::launch::{
 // 	launch_process, LaunchConfiguration, LaunchProcessParameters, LaunchProcessProperties,
 // };
-// use nitro_core::user::UserManager;
+// use nitro_core::account::AccountManager;
 // use nitro_mods::paper;
 // use nitro_shared::modifications::Proxy;
 // use nitro_shared::output::{NitroOutput, MessageContents, MessageLevel};
@@ -81,7 +81,7 @@ use nitro_core::io::java::install::JavaInstallation;
 // 		let mut manager = UpdateManager::new(false, true);
 // 		manager
 // 			.fulfill_requirements(
-// 				&UserManager::new(ClientId::new(String::new())),
+// 				&AccountManager::new(ClientId::new(String::new())),
 // 				plugins,
 // 				paths,
 // 				client,

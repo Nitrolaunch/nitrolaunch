@@ -370,7 +370,7 @@ pub async fn update_instance_impl(
 
 			let mut ctx = InstanceUpdateContext {
 				packages: &mut config.packages,
-				users: &config.users,
+				accounts: &config.accounts,
 				plugins: &config.plugins,
 				prefs: &config.prefs,
 				paths: &paths,
@@ -428,7 +428,7 @@ pub async fn update_instance_packages(
 
 			let mut ctx = InstanceUpdateContext {
 				packages: &mut config.packages,
-				users: &config.users,
+				accounts: &config.accounts,
 				plugins: &config.plugins,
 				prefs: &config.prefs,
 				paths: &paths,
@@ -443,7 +443,7 @@ pub async fn update_instance_packages(
 				None,
 				&manager.settings,
 				ctx.client,
-				ctx.users,
+				ctx.accounts,
 				ctx.plugins,
 				ctx.paths,
 				ctx.output,
@@ -761,7 +761,7 @@ pub async fn canonicalize_version(
 				offline_auth: true,
 			},
 			&state.client,
-			&config.users,
+			&config.accounts,
 			&config.plugins,
 			&state.paths,
 			&mut NoOp,

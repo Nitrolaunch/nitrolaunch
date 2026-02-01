@@ -10,6 +10,7 @@ use tokio::sync::Mutex;
 
 use crate::State;
 
+pub mod account;
 pub mod instance;
 pub mod launch;
 pub mod misc;
@@ -17,7 +18,6 @@ pub mod package;
 pub mod plugin;
 pub mod settings;
 pub mod transfer;
-pub mod user;
 
 async fn load_config(
 	paths: &Paths,

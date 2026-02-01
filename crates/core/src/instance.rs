@@ -21,7 +21,7 @@ use crate::launch::{LaunchConfiguration, LaunchParameters};
 use crate::net::game_files::client_meta::ClientMeta;
 use crate::net::game_files::version_manifest::VersionManifestAndList;
 use crate::net::game_files::{game_jar, libraries};
-use crate::user::UserManager;
+use crate::account::AccountManager;
 use crate::version::{ClientAssetsAndLibraries, ClientAssetsAndLibsParameters};
 use crate::InstanceHandle;
 
@@ -241,7 +241,7 @@ impl<'params> Instance<'params> {
 			paths: self.params.paths,
 			req_client: self.params.req_client,
 			client_meta: self.params.client_meta,
-			users: self.params.users,
+			accounts: self.params.accounts,
 			censor_secrets: self.params.censor_secrets,
 			branding: self.params.branding,
 			pipe_stdin: self.pipe_stdin,
@@ -416,7 +416,7 @@ pub(crate) struct InstanceParameters<'a> {
 	pub persistent: &'a mut PersistentData,
 	pub update_manager: &'a mut UpdateManager,
 	pub client_meta: &'a ClientMeta,
-	pub users: &'a mut UserManager,
+	pub accounts: &'a mut AccountManager,
 	pub java_installations:
 		&'a mut HashMap<(JavaInstallationKind, JavaMajorVersion), JavaInstallation>,
 	pub custom_java_fn: Option<&'a Arc<dyn CustomJavaFunction>>,

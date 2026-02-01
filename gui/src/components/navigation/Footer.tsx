@@ -97,12 +97,12 @@ export default function Footer(props: FooterProps) {
 			return;
 		}
 
-		emit("refresh_users");
+		emit("refresh_accounts");
 
 		let launchPromise = invoke("launch_game", {
 			instanceId: instance,
 			offline: offline,
-			user: props.selectedUser,
+			account: props.selectedAccount,
 		});
 
 		try {
@@ -375,7 +375,7 @@ export default function Footer(props: FooterProps) {
 export interface FooterProps {
 	selectedItem?: string;
 	mode: FooterMode;
-	selectedUser?: string;
+	selectedAccount?: string;
 	action: () => void;
 	itemFromPlugin?: boolean;
 	itemEditable?: boolean;

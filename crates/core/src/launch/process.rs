@@ -61,7 +61,7 @@ pub(crate) fn launch_game_process(
 	let mut cmd = get_process_launch_command(proc_params, &stdout, stdin.as_deref())
 		.context("Failed to create process launch command")?;
 
-	output_launch_command(&cmd, params.user_access_token, params.censor_secrets, o)?;
+	output_launch_command(&cmd, params.account_access_token, params.censor_secrets, o)?;
 
 	// Spawn
 	let child = cmd.spawn().context("Failed to spawn child process")?;
@@ -246,7 +246,7 @@ pub(crate) struct LaunchGameProcessParameters<'a> {
 	pub version: &'a VersionName,
 	pub version_list: &'a [String],
 	pub side: &'a InstanceKind,
-	pub user_access_token: Option<&'a AccessToken>,
+	pub account_access_token: Option<&'a AccessToken>,
 	pub censor_secrets: bool,
 	pub pipe_stdin: bool,
 }

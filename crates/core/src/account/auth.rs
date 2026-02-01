@@ -8,56 +8,56 @@ use nitro_shared::translate;
 use nitro_shared::util::utc_timestamp;
 
 use crate::Paths;
-use nitro_auth::db::{AuthDatabase, DatabaseUser, SensitiveUserInfo};
+use nitro_auth::db::{AuthDatabase, DatabaseAccount, SensitiveAccountInfo};
 use nitro_auth::mc::Keypair;
 use nitro_auth::mc::{
-	self as auth, authenticate_microsoft_user, authenticate_microsoft_user_from_token, AccessToken,
-	ClientId, RefreshToken,
+	self as auth, authenticate_microsoft_account, authenticate_microsoft_account_from_token,
+	AccessToken, ClientId, RefreshToken,
 };
 
-use super::{CustomAuthFunction, User, UserKind};
+use super::{Account, AccountKind, CustomAuthFunction};
 
-impl User {
-	/// Authenticate the user
+impl Account {
+	/// Authenticate the account
 	pub(crate) async fn authenticate(
 		&mut self,
 		params: AuthParameters<'_>,
 		o: &mut impl NitroOutput,
 	) -> anyhow::Result<()> {
 		match &mut self.kind {
-			UserKind::Microsoft { xbox_uid } => {
+			AccountKind::Microsoft { xbox_uid } => {
 				if params.offline {
 					let db = AuthDatabase::open(&params.paths.auth)
 						.context("Failed to open authentication database")?;
-					let Some((user, sensitive)) = get_full_user(&db, &self.id, o)
+					let Some((account, sensitive)) = get_full_account(&db, &self.id, o)
 						.await
-						.context("Failed to get user from database")?
+						.context("Failed to get account from database")?
 					else {
-						bail!("User not present in database. Make sure to authenticate at least once before logging in in offline mode");
+						bail!("Account not present in database. Make sure to authenticate at least once before logging in in offline mode");
 					};
 
-					self.name = Some(user.username.clone());
-					self.uuid = Some(user.uuid.clone());
+					self.name = Some(account.username.clone());
+					self.uuid = Some(account.uuid.clone());
 					self.keypair = sensitive.keypair.clone();
 					*xbox_uid = sensitive.xbox_uid.clone();
 				} else {
-					let user_data = update_microsoft_user_auth(&self.id, params, o)
+					let account_data = update_microsoft_account_auth(&self.id, params, o)
 						.await
-						.context("Failed to update user authentication")?;
+						.context("Failed to update account authentication")?;
 
-					self.access_token = Some(user_data.access_token);
-					self.name = Some(user_data.profile.name);
-					self.uuid = Some(user_data.profile.uuid);
-					self.keypair = user_data.keypair;
-					*xbox_uid = user_data.xbox_uid;
+					self.access_token = Some(account_data.access_token);
+					self.name = Some(account_data.profile.name);
+					self.uuid = Some(account_data.profile.uuid);
+					self.keypair = account_data.keypair;
+					*xbox_uid = account_data.xbox_uid;
 				}
 			}
-			UserKind::Demo => {}
-			UserKind::Unknown(other) => {
+			AccountKind::Demo => {}
+			AccountKind::Unknown(other) => {
 				if let Some(func) = params.custom_auth_fn {
 					o.display(
 						MessageContents::Simple(
-							"Handling custom user type with authentication function".into(),
+							"Handling custom account type with authentication function".into(),
 						),
 						MessageLevel::Debug,
 					);
@@ -72,7 +72,7 @@ impl User {
 				} else {
 					o.display(
 						MessageContents::Simple(
-							"Authentication for custom user type not handled".into(),
+							"Authentication for custom account type not handled".into(),
 						),
 						MessageLevel::Debug,
 					);
@@ -83,33 +83,33 @@ impl User {
 		Ok(())
 	}
 
-	/// Checks if the user still has valid authentication. This does not mean that they are
-	/// authenticated yet. To check if the user is authenticated and ready to be used, use the is_authenticated
+	/// Checks if the account still has valid authentication. This does not mean that they are
+	/// authenticated yet. To check if the account is authenticated and ready to be used, use the is_authenticated
 	/// function instead.
 	pub fn is_auth_valid(&self, paths: &Paths) -> bool {
 		match &self.kind {
-			UserKind::Microsoft { .. } => {
+			AccountKind::Microsoft { .. } => {
 				let Ok(db) = AuthDatabase::open(&paths.auth) else {
 					return false;
 				};
 
-				db.get_valid_user(&self.id).is_some()
+				db.get_valid_account(&self.id).is_some()
 			}
-			UserKind::Demo => true,
-			UserKind::Unknown(..) => true,
+			AccountKind::Demo => true,
+			AccountKind::Unknown(..) => true,
 		}
 	}
 
-	/// Checks if this user is currently authenticated and ready to be used
+	/// Checks if this account is currently authenticated and ready to be used
 	pub fn is_authenticated(&self) -> bool {
 		match &self.kind {
-			UserKind::Microsoft { .. } => self.access_token.is_some() && self.uuid.is_some(),
-			UserKind::Demo => true,
-			UserKind::Unknown(..) => true,
+			AccountKind::Microsoft { .. } => self.access_token.is_some() && self.uuid.is_some(),
+			AccountKind::Demo => true,
+			AccountKind::Unknown(..) => true,
 		}
 	}
 
-	/// Updates this user's passkey using prompts
+	/// Updates this account's passkey using prompts
 	pub async fn update_passkey(
 		&self,
 		paths: &Paths,
@@ -117,13 +117,13 @@ impl User {
 	) -> anyhow::Result<()> {
 		let mut db =
 			AuthDatabase::open(&paths.auth).context("Failed to open authentication database")?;
-		let user = db.get_user_mut(&self.id).context(
-			"User does not exist in database. Try authenticating first before setting a passkey",
+		let account = db.get_account_mut(&self.id).context(
+			"Account does not exist in database. Try authenticating first before setting a passkey",
 		)?;
-		let old_passkey = if user.has_passkey() {
+		let old_passkey = if account.has_passkey() {
 			Some(
 				o.prompt_password(MessageContents::Simple(format!(
-					"Enter the old passkey for user '{}'",
+					"Enter the old passkey for account '{}'",
 					self.id
 				)))
 				.await
@@ -134,13 +134,14 @@ impl User {
 		};
 		let new_passkey = o
 			.prompt_new_password(MessageContents::Simple(format!(
-				"Enter the new passkey for user '{}'",
+				"Enter the new passkey for account '{}'",
 				self.id
 			)))
 			.await
 			.context("Failed to get new passkey")?;
-		user.update_passkey(old_passkey.as_deref(), &new_passkey)
-			.context("Failed to update passkey for user")?;
+		account
+			.update_passkey(old_passkey.as_deref(), &new_passkey)
+			.context("Failed to update passkey for account")?;
 
 		db.write()
 			.context("Failed to write to authentication database")?;
@@ -148,12 +149,12 @@ impl User {
 		Ok(())
 	}
 
-	/// Logs out this user and removes their data from the auth database (not including passkey)
+	/// Logs out this account and removes their data from the auth database (not including passkey)
 	pub fn logout(&mut self, paths: &Paths) -> anyhow::Result<()> {
 		let mut db =
 			AuthDatabase::open(&paths.auth).context("Failed to open authentication database")?;
-		db.logout_user(&self.id)
-			.context("Failed to logout user in database")?;
+		db.logout_account(&self.id)
+			.context("Failed to logout account in database")?;
 
 		db.write()
 			.context("Failed to write authentication database")?;
@@ -162,35 +163,41 @@ impl User {
 	}
 }
 
-/// Data for a Microsoft user
-pub struct MicrosoftUserData {
+/// Data for a Microsoft account
+pub struct MicrosoftAccountData {
 	access_token: AccessToken,
 	profile: MinecraftUserProfile,
 	xbox_uid: Option<String>,
 	keypair: Option<Keypair>,
 }
 
-/// Updates authentication for a Microsoft user using either the database or updating from the API
-async fn update_microsoft_user_auth(
-	user_id: &str,
+/// Updates authentication for a Microsoft account using either the database or updating from the API
+async fn update_microsoft_account_auth(
+	account_id: &str,
 	params: AuthParameters<'_>,
 	o: &mut impl NitroOutput,
-) -> anyhow::Result<MicrosoftUserData> {
+) -> anyhow::Result<MicrosoftAccountData> {
 	let mut db =
 		AuthDatabase::open(&params.paths.auth).context("Failed to open authentication database")?;
 
 	// Force reauth if specified
 	if params.force {
-		return reauth_microsoft_user(user_id, &mut db, params.client_id, params.req_client, o)
-			.await;
+		return reauth_microsoft_account(
+			account_id,
+			&mut db,
+			params.client_id,
+			params.req_client,
+			o,
+		)
+		.await;
 	}
 
 	// Check the authentication DB
-	let user_data = if let Some((db_user, sensitive)) = get_full_user(&db, user_id, o)
+	let account_data = if let Some((db_account, sensitive)) = get_full_account(&db, account_id, o)
 		.await
-		.context("Failed to get full user from database")?
+		.context("Failed to get full account from database")?
 	{
-		let db_user = db_user.clone();
+		let db_account = db_account.clone();
 
 		// See if we have a non-expired access token already stored
 		let access_token = if let (Some(access_token), Some(expiration)) =
@@ -199,21 +206,21 @@ async fn update_microsoft_user_auth(
 			if utc_timestamp().unwrap_or(u64::MAX) < *expiration {
 				AccessToken(access_token.clone())
 			} else {
-				update_using_refresh_token(user_id, &sensitive, &params, &mut db, o)
+				update_using_refresh_token(account_id, &sensitive, &params, &mut db, o)
 					.await
 					.context("Failed to refresh authentication")?
 			}
 		} else {
-			update_using_refresh_token(user_id, &sensitive, &params, &mut db, o)
+			update_using_refresh_token(account_id, &sensitive, &params, &mut db, o)
 				.await
 				.context("Failed to refresh authentication")?
 		};
 
-		MicrosoftUserData {
+		MicrosoftAccountData {
 			access_token,
 			profile: MinecraftUserProfile {
-				name: db_user.username.clone(),
-				uuid: db_user.uuid.clone(),
+				name: db_account.username.clone(),
+				uuid: db_account.uuid.clone(),
 				skins: Vec::new(),
 				capes: Vec::new(),
 			},
@@ -222,16 +229,17 @@ async fn update_microsoft_user_auth(
 		}
 	} else {
 		// Authenticate with the server again
-		reauth_microsoft_user(user_id, &mut db, params.client_id, params.req_client, o).await?
+		reauth_microsoft_account(account_id, &mut db, params.client_id, params.req_client, o)
+			.await?
 	};
 
-	Ok(user_data)
+	Ok(account_data)
 }
 
 /// Gets the access token using the refresh token
 async fn update_using_refresh_token(
-	user_id: &str,
-	sensitive: &SensitiveUserInfo,
+	account_id: &str,
+	sensitive: &SensitiveAccountInfo,
 	params: &AuthParameters<'_>,
 	db: &mut AuthDatabase,
 	o: &mut impl NitroOutput,
@@ -240,7 +248,7 @@ async fn update_using_refresh_token(
 		sensitive
 			.refresh_token
 			.clone()
-			.expect("Refresh token should be present in a full valid user"),
+			.expect("Refresh token should be present in a full valid account"),
 	);
 	// Get the access token using the refresh token
 	let oauth_client =
@@ -249,41 +257,41 @@ async fn update_using_refresh_token(
 		.await
 		.context("Failed to get refreshed token")?;
 
-	let auth_result = authenticate_microsoft_user_from_token(token, params.req_client, o)
+	let auth_result = authenticate_microsoft_account_from_token(token, params.req_client, o)
 		.await
 		.context("Failed to authenticate with refreshed token")?;
 
-	let mut db_user = db
-		.get_user(user_id)
-		.context("Failed to get user from database")?
+	let mut db_account = db
+		.get_account(account_id)
+		.context("Failed to get account from database")?
 		.clone();
 
-	let mut sensitive = get_sensitive_info(&db_user, o)
+	let mut sensitive = get_sensitive_info(&db_account, o)
 		.await
 		.context("Failed to get sensitive info")?;
 	sensitive.access_token = Some(auth_result.access_token.0.clone());
 	sensitive.access_token_expires = utc_timestamp().map(|x| x + 24 * 3600).ok();
-	db_user
+	db_account
 		.set_sensitive_info(sensitive)
-		.context("Failed to set sensitive info for user")?;
+		.context("Failed to set sensitive info for account")?;
 
-	db.update_user(db_user, user_id)
-		.context("Failed to update user in database")?;
+	db.update_account(db_account, account_id)
+		.context("Failed to update account in database")?;
 
 	Ok(AccessToken(auth_result.access_token.0.clone()))
 }
 
 /// Fully reauthenticates, getting a new refresh token using a login
-async fn reauth_microsoft_user(
-	user_id: &str,
+async fn reauth_microsoft_account(
+	account_id: &str,
 	db: &mut AuthDatabase,
 	client_id: ClientId,
 	client: &reqwest::Client,
 	o: &mut impl NitroOutput,
-) -> anyhow::Result<MicrosoftUserData> {
-	let auth_result = authenticate_microsoft_user(client_id, client, o)
+) -> anyhow::Result<MicrosoftAccountData> {
+	let auth_result = authenticate_microsoft_account(client_id, client, o)
 		.await
-		.context("Failed to authenticate user")?;
+		.context("Failed to authenticate account")?;
 
 	let ownership_task = {
 		let client = client.clone();
@@ -303,7 +311,7 @@ async fn reauth_microsoft_user(
 		async move {
 			let profile = crate::net::minecraft::get_user_profile(&token, &client)
 				.await
-				.context("Failed to get Microsoft user profile")?;
+				.context("Failed to get Microsoft account profile")?;
 
 			Ok::<MinecraftUserProfile, anyhow::Error>(profile)
 		}
@@ -331,9 +339,9 @@ async fn reauth_microsoft_user(
 	// Calculate expiration time
 	let expiration_time = nitro_auth::db::calculate_expiration_date();
 
-	// Write the new user to the database
+	// Write the new account to the database
 
-	let sensitive = SensitiveUserInfo {
+	let sensitive = SensitiveAccountInfo {
 		refresh_token: auth_result.refresh_token.map(|x| x.secret().clone()),
 		xbox_uid: Some(auth_result.xbox_uid.clone()),
 		keypair: Some(certificate.key_pair.clone()),
@@ -341,19 +349,19 @@ async fn reauth_microsoft_user(
 		// Expires in 24 hours
 		access_token_expires: utc_timestamp().map(|x| x + 24 * 3600).ok(),
 	};
-	let db_user = DatabaseUser::new(
-		user_id.to_string(),
+	let db_account = DatabaseAccount::new(
+		account_id.to_string(),
 		profile.name.clone(),
 		profile.uuid.clone(),
 		expiration_time,
 		sensitive,
 	)
-	.context("Failed to create new user in database")?;
+	.context("Failed to create new account in database")?;
 
-	db.update_user(db_user, user_id)
-		.context("Failed to update user in database")?;
+	db.update_account(db_account, account_id)
+		.context("Failed to update account in database")?;
 
-	Ok(MicrosoftUserData {
+	Ok(MicrosoftAccountData {
 		access_token: auth_result.access_token,
 		xbox_uid: Some(auth_result.xbox_uid),
 		profile,
@@ -361,51 +369,51 @@ async fn reauth_microsoft_user(
 	})
 }
 
-/// Tries to get a full valid user from the database along with a passkey prompt if applicable
-async fn get_full_user<'db>(
+/// Tries to get a full valid account from the database along with a passkey prompt if applicable
+async fn get_full_account<'db>(
 	db: &'db AuthDatabase,
-	user_id: &str,
+	account_id: &str,
 	o: &mut impl NitroOutput,
-) -> anyhow::Result<Option<(&'db DatabaseUser, SensitiveUserInfo)>> {
-	let Some(user) = db.get_valid_user(user_id) else {
+) -> anyhow::Result<Option<(&'db DatabaseAccount, SensitiveAccountInfo)>> {
+	let Some(account) = db.get_valid_account(account_id) else {
 		return Ok(None);
 	};
-	// We have to reauthenticate non-logged-in users
-	if !user.is_logged_in() {
+	// We have to reauthenticate non-logged-in accounts
+	if !account.is_logged_in() {
 		return Ok(None);
 	}
 
 	// Get their sensitive info
-	let sensitive = get_sensitive_info(user, o)
+	let sensitive = get_sensitive_info(account, o)
 		.await
 		.context("Failed to get sensitive information")?;
 	if sensitive.refresh_token.is_none() {
 		return Ok(None);
 	}
 
-	Ok(Some((user, sensitive)))
+	Ok(Some((account, sensitive)))
 }
 
-/// Gets sensitive info from a user using their passkey
+/// Gets sensitive info from an account using their passkey
 async fn get_sensitive_info(
-	db_user: &DatabaseUser,
+	db_account: &DatabaseAccount,
 	o: &mut impl NitroOutput,
-) -> anyhow::Result<SensitiveUserInfo> {
-	let out = if db_user.has_passkey() {
+) -> anyhow::Result<SensitiveAccountInfo> {
+	let out = if db_account.has_passkey() {
 		let private_key = get_private_key(
-			db_user,
+			db_account,
 			MessageContents::Simple(format!(
-				"Please enter the passkey for the user '{}'",
-				db_user.id
+				"Please enter the passkey for the account '{}'",
+				db_account.id
 			)),
 			o,
 		)
 		.await
 		.context("Failed to get key")?;
 
-		let out = db_user
+		let out = db_account
 			.get_sensitive_info_with_key(&private_key)
-			.context("Failed to get sensitive user info using key")?;
+			.context("Failed to get sensitive account info using key")?;
 		o.display(
 			MessageContents::Success(translate!(o, PasskeyAccepted)),
 			MessageLevel::Important,
@@ -413,18 +421,18 @@ async fn get_sensitive_info(
 
 		out
 	} else {
-		db_user
+		db_account
 			.get_sensitive_info_no_passkey()
-			.context("Failed to get sensitive user info without key")?
+			.context("Failed to get sensitive account info without key")?
 	};
 
 	Ok(out)
 }
 
-/// Gets the user's private key with a repeating passkey prompt.
-/// The user must have a passkey available.
+/// Gets the account's private key with a repeating passkey prompt.
+/// The account must have a passkey available.
 async fn get_private_key(
-	user: &DatabaseUser,
+	account: &DatabaseAccount,
 	message: MessageContents,
 	o: &mut impl NitroOutput,
 ) -> anyhow::Result<RsaPrivateKey> {
@@ -432,13 +440,13 @@ async fn get_private_key(
 
 	for _ in 0..MAX_ATTEMPTS {
 		let result = o
-			.prompt_special_user_passkey(message.clone(), &user.id)
+			.prompt_special_account_passkey(message.clone(), &account.id)
 			.await;
 		if let Ok(passkey) = result {
-			let result = user.get_private_key(&passkey);
+			let result = account.get_private_key(&passkey);
 			match result {
 				Ok(private_key) => {
-					return Ok(private_key.expect("User should have passkey"));
+					return Ok(private_key.expect("Account should have passkey"));
 				}
 				Err(e) => {
 					o.display(
@@ -453,7 +461,7 @@ async fn get_private_key(
 	bail!("Passkey authentication failed; max attempts exceeded")
 }
 
-/// Container struct for parameters for authenticating a user
+/// Container struct for parameters for authenticating an account
 pub(crate) struct AuthParameters<'a> {
 	pub force: bool,
 	pub offline: bool,
@@ -467,5 +475,5 @@ pub(crate) struct AuthParameters<'a> {
 pub fn check_game_ownership(paths: &Paths) -> anyhow::Result<bool> {
 	let db = AuthDatabase::open(&paths.auth).context("Failed to open auth database")?;
 
-	Ok(db.has_logged_in_user())
+	Ok(db.has_logged_in_account())
 }

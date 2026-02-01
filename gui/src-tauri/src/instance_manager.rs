@@ -56,8 +56,8 @@ impl RunningInstanceManager {
 	}
 
 	/// Kills an instance
-	pub fn kill(&mut self, instance: &str, user: Option<&str>) {
-		self.running_instance_registry.kill_instance(instance, user);
+	pub fn kill(&mut self, instance: &str, account: Option<&str>) {
+		self.running_instance_registry.kill_instance(instance, account);
 		let _ = self.running_instance_registry.write();
 	}
 

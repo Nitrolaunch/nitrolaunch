@@ -126,21 +126,21 @@ impl NitroOutput for LauncherOutput {
 		}
 	}
 
-	async fn prompt_special_user_passkey(
+	async fn prompt_special_account_passkey(
 		&mut self,
 		message: MessageContents,
-		user_id: &str,
+		account_id: &str,
 	) -> anyhow::Result<String> {
 		{
 			let passkeys = self.inner.passkeys.lock().await;
-			if let Some(existing) = passkeys.get(user_id) {
+			if let Some(existing) = passkeys.get(account_id) {
 				return Ok(existing.clone());
 			}
 		}
 
 		let result = self.prompt_password(message).await?;
 		let mut passkeys = self.inner.passkeys.lock().await;
-		passkeys.insert(user_id.into(), result.clone());
+		passkeys.insert(account_id.into(), result.clone());
 		Ok(result)
 	}
 

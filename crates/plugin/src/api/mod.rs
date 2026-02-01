@@ -136,7 +136,7 @@ hook_interface!(
 	"get_loader_versions",
 	GetLoaderVersions
 );
-hook_interface!(add_user_types, "add_user_types", AddUserTypes);
+hook_interface!(add_account_types, "add_account_types", AddAccountTypes);
 hook_interface!(add_java_types, "add_java_types", AddJavaTypes);
 hook_interface!(
 	install_custom_java,
@@ -158,13 +158,5 @@ hook_interface!(
 	"save_template_config",
 	SaveTemplateConfig
 );
-hook_interface!(
-	delete_instance,
-	"delete_instance",
-	DeleteInstance
-);
-hook_interface!(
-	delete_template,
-	"delete_template",
-	DeleteTemplate
-);
+hook_interface!(delete_instance, "delete_instance", DeleteInstance);
+hook_interface!(delete_template, "delete_template", DeleteTemplate);
