@@ -1,13 +1,10 @@
-#user-widget {
+#account-widget {
 	position: relative;
 	font-size: 0.9rem;
 	width: 13rem;
-
-	user-select: none;
-	-webkit-user-select: none;
 }
 
-#user-widget-head {
+#account-widget-head {
 	background-color: var(--bg0);
 	border-radius: var(--round2);
 	width: 100%;
@@ -19,14 +16,14 @@
 	border: var(--border) solid var(--bg3);
 }
 
-#user-widget-head.open {
+#account-widget-head.open {
 	border: var(--border) solid var(--bg3);
 	border-bottom-width: 0px;
 	border-bottom-left-radius: 0px;
 	border-bottom-right-radius: 0px;
 }
 
-.user-tile {
+.account-tile {
 	width: 100%;
 
 	display: grid;
@@ -40,20 +37,22 @@
 
 	position: relative;
 
-	transition: background-color 0.25s, transform var(--bubble);
+	transition:
+		background-color 0.25s,
+		transform var(--bubble);
 }
 
-.user-tile.hover {
+.account-tile.hover {
 	background-color: var(--bg3);
 }
 
-.user-tile-image {
+.account-tile-image {
 	width: 1.2rem;
 	border-radius: 0.2rem;
 	image-rendering: pixelated;
 }
 
-.user-tile-name {
+.account-tile-name {
 	justify-content: flex-start;
 	margin-left: 0.5rem;
 	font-weight: bold;
@@ -61,13 +60,13 @@
 	width: 100%;
 }
 
-.user-tile-edit {
+.account-tile-edit {
 	position: absolute;
 	right: 0.75rem;
 	height: 100%;
 }
 
-#user-widget-dropdown {
+#account-widget-dropdown {
 	position: absolute;
 	left: 0px;
 	width: 100%;
