@@ -151,6 +151,8 @@ fn main() {
 			commands::launch::kill_instance,
 			commands::launch::get_instance_output,
 			commands::launch::write_instance_input,
+			commands::launch::get_instance_logs,
+			commands::launch::get_instance_log,
 			commands::instance::get_instances,
 			commands::instance::get_templates,
 			commands::instance::get_instance_groups,

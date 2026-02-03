@@ -8,6 +8,7 @@ use nitrolaunch::instance::tracking::RunningInstanceEntry;
 use nitrolaunch::io::lock::Lockfile;
 use nitrolaunch::plugin_crate::try_read::TryReadExt;
 use nitrolaunch::shared::id::InstanceID;
+use nitrolaunch::shared::output::NoOp;
 use nitrolaunch::shared::UpdateDepth;
 use std::io::Write;
 use std::path::PathBuf;
@@ -261,6 +262,43 @@ pub async fn write_instance_input(
 	fmt_err(file.write_all(input.as_bytes()))?;
 
 	Ok(())
+}
+
+#[tauri::command]
+pub async fn get_instance_logs(
+	state: tauri::State<'_, State>,
+	instance_id: &str,
+) -> Result<Vec<String>, String> {
+	let mut config = fmt_err(load_config(&state.paths, &state.wasm_loader, &mut NoOp).await)?;
+
+	let Some(instance) = config.instances.get_mut(instance_id) else {
+		return Err("Instance does not exist".into());
+	};
+
+	fmt_err(
+		instance
+			.get_logs(&config.plugins, &state.paths, &mut NoOp)
+			.await,
+	)
+}
+
+#[tauri::command]
+pub async fn get_instance_log(
+	state: tauri::State<'_, State>,
+	instance_id: &str,
+	log_id: &str,
+) -> Result<String, String> {
+	let mut config = fmt_err(load_config(&state.paths, &state.wasm_loader, &mut NoOp).await)?;
+
+	let Some(instance) = config.instances.get_mut(instance_id) else {
+		return Err("Instance does not exist".into());
+	};
+
+	fmt_err(
+		instance
+			.get_log(log_id, &config.plugins, &state.paths, &mut NoOp)
+			.await,
+	)
 }
 
 async fn emit_instance_stdio_changes(

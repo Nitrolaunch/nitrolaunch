@@ -160,3 +160,5 @@ hook_interface!(
 );
 hook_interface!(delete_instance, "delete_instance", DeleteInstance);
 hook_interface!(delete_template, "delete_template", DeleteTemplate);
+hook_interface!(get_instance_logs, "get_instance_logs", GetInstanceLogs);
+hook_interface!(get_instance_log, "get_instance_log", GetInstanceLog);

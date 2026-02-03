@@ -1,6 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { Event, listen } from "@tauri-apps/api/event";
 import {
+	createEffect,
 	createMemo,
 	createResource,
 	createSignal,
@@ -16,9 +17,13 @@ import SearchBar from "../input/text/SearchBar";
 import Icon from "../Icon";
 import { AngleDown, AngleRight, Error, Info, Text, Warning } from "../../icons";
 import { errorToast } from "../dialog/Toasts";
+import Dropdown, { Option } from "../input/select/Dropdown";
 
 export default function InstanceConsole(props: InstanceConsoleProps) {
 	let outputElem!: HTMLDivElement;
+
+	// Undefined for the current instance output
+	let [selectedLog, setSelectedLog] = createSignal<string | undefined>();
 
 	let [filter, setFilter] = createSignal("all");
 	let [search, setSearch] = createSignal("");
@@ -28,32 +33,50 @@ export default function InstanceConsole(props: InstanceConsoleProps) {
 	let [output, outputMethods] = createResource(
 		() => props.instanceId,
 		async () => {
-			let output = (await invoke("get_instance_output", {
-				instanceId: props.instanceId,
-			})) as string | undefined;
+			try {
+				let text = "";
+				if (selectedLog() == undefined) {
+					let output = (await invoke("get_instance_output", {
+						instanceId: props.instanceId,
+					})) as string | undefined;
 
-			if (output == undefined) {
-				return undefined;
+					if (output == undefined) {
+						return undefined;
+					}
+					text = output;
+				} else {
+					text = (await invoke("get_instance_log", {
+						instanceId: props.instanceId,
+						logId: selectedLog(),
+					})) as string;
+				}
+
+				// Format the output into lines
+				let lines = text.split("\n");
+
+				scrollToBottom();
+
+				return lines;
+			} catch (e) {
+				console.error(e);
 			}
-
-			// Format the output into lines
-			let lines = output.split("\n");
-
-			scrollToBottom();
-
-			return lines;
-		}
+		},
 	);
+
+	createEffect(() => {
+		selectedLog();
+		outputMethods.refetch();
+	});
 
 	// Listener for when the output updates
 	let [unlisten, _] = createResource(async () => {
 		let unlisten = await listen(
 			"update_instance_stdio",
 			(event: Event<string>) => {
-				if (event.payload == props.instanceId) {
+				if (event.payload == props.instanceId && selectedLog() == undefined) {
 					outputMethods.refetch();
 				}
-			}
+			},
 		);
 
 		return unlisten;
@@ -65,6 +88,20 @@ export default function InstanceConsole(props: InstanceConsoleProps) {
 		}
 	});
 
+	let [availableLogs, __] = createResource(
+		async () => {
+			try {
+				return (await invoke("get_instance_logs", {
+					instanceId: props.instanceId,
+				})) as string[];
+			} catch (e) {
+				errorToast("Failed to fetch instance logs: " + e);
+				return [];
+			}
+		},
+		{ initialValue: [] },
+	);
+
 	function scrollToBottom() {
 		if (outputElem != undefined) {
 			outputElem.scrollTop = outputElem.scrollHeight;
@@ -73,7 +110,7 @@ export default function InstanceConsole(props: InstanceConsoleProps) {
 
 	return (
 		<div class="cont col instance-console">
-			<div class="cont split fullwidth instance-console-header">
+			<div class="cont fullwidth instance-console-header">
 				<InlineSelect
 					options={[
 						{
@@ -126,6 +163,28 @@ export default function InstanceConsole(props: InstanceConsoleProps) {
 					columns={4}
 					solidSelect
 				/>
+				<div class="cont">
+					<div class="cont" style="width:14rem">
+						<Dropdown
+							options={[
+								{
+									value: undefined,
+									contents: "Current Output",
+								} as Option,
+							].concat(
+								availableLogs().map((x) => {
+									return {
+										value: x,
+										contents: x,
+									};
+								}),
+							)}
+							selected={selectedLog()}
+							onChange={setSelectedLog}
+							zIndex="2"
+						/>
+					</div>
+				</div>
 				<div class="cont end fullwidth">
 					<SearchBar value={search()} method={setSearch} immediate />
 				</div>
@@ -139,10 +198,10 @@ export default function InstanceConsole(props: InstanceConsoleProps) {
 									let cls = line.includes("INFO")
 										? "info"
 										: line.includes("WARN")
-										? "warning"
-										: line.includes("ERROR")
-										? "error"
-										: "";
+											? "warning"
+											: line.includes("ERROR")
+												? "error"
+												: "";
 
 									let isVisible = createMemo((input) => {
 										let filter2 = filter();
@@ -217,11 +276,11 @@ export default function InstanceConsole(props: InstanceConsoleProps) {
 							</div>
 						</Show>
 					</Match>
-					<Match when={output.error != undefined}>
+					<Match when={output.state == "errored"}>
 						Failed to load: {output.error}
 					</Match>
-					<Match when={output.loading}>Loading...</Match>
-					<Match when={!output.loading}>No logs found</Match>
+					<Match when={output.state == "pending"}>Loading...</Match>
+					<Match when={!output.loading}>No log found</Match>
 				</Switch>
 			</div>
 		</div>

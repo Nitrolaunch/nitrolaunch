@@ -331,6 +331,39 @@ Called when shared world files are updated on an instance.
 - Argument: InstanceLaunchArg
 - Result: None
 
+## Instance Logging Hooks
+
+### `get_instance_logs`
+
+Gets logs for an instance with `custom_logging_plugin` set. Returns a list of unique log IDs (whatever that means to your plugin) that will be used later with the `get_instance_log` hook. Returned logs should be ordered oldest to newest if possible.
+
+- Argument:
+
+```
+{
+	"id": string,
+	"config": InstanceConfig
+}
+```
+
+- Result: `string[]`
+
+### `get_instance_log`
+
+Gets the contents of a log for the given instance with an ID returned from the `get_instance_logs` hook
+
+- Argument:
+
+```
+{
+	"instance_id": string,
+	"log_id": string,
+	"config": InstanceConfig
+}
+```
+
+- Result: `string`
+
 ## Package Hooks
 
 ### `custom_package_instruction`

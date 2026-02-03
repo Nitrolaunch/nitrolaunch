@@ -79,6 +79,9 @@ pub struct InstanceConfig {
 	/// Whether to use a plugin to custom launch this instance. Should only be set by plugins.
 	#[serde(skip_serializing_if = "DefaultExt::is_default")]
 	pub custom_launch: bool,
+	/// A custom plugin to use to retrieve logs for this instance. Should only be set by plugins.
+	#[serde(skip_serializing_if = "DefaultExt::is_default")]
+	pub custom_logging_plugin: Option<String>,
 	/// Whether this instance was imported
 	#[serde(skip_serializing_if = "DefaultExt::is_default")]
 	pub imported: bool,
@@ -123,6 +126,7 @@ impl InstanceConfig {
 		self.is_editable = false;
 		self.is_deletable = false;
 		self.custom_launch = false;
+		self.custom_logging_plugin = None;
 	}
 
 	/// Restores plugin-only fields to a config from a config with them

@@ -4,6 +4,8 @@ mod addons;
 pub mod launch;
 /// Storing install data about an instance like the current version and packages
 pub mod lock;
+/// Accessing log files
+pub mod logs;
 /// Managing and installing packages on an instance
 pub mod packages;
 /// Setup of instance contents

@@ -14,6 +14,8 @@ pub mod config;
 pub mod files;
 /// Interaction with some of Java's formats
 pub mod java;
+/// Game logs
+pub mod logs;
 /// I/O with Minecraft data formats
 pub mod minecraft;
 /// Use of a file for persistent data

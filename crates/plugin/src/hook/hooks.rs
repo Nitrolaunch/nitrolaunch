@@ -1057,3 +1057,45 @@ def_hook!(
 	1,
 	false,
 );
+
+def_hook!(
+	GetInstanceLogs,
+	"get_instance_logs",
+	"Gets the list of available log IDs for an instance",
+	GetInstanceLogsArg,
+	Vec<String>,
+	1,
+	true,
+);
+
+/// Argument for the GetInstanceLogs hook
+#[derive(Serialize, Deserialize, Default)]
+#[serde(default)]
+pub struct GetInstanceLogsArg {
+	/// The ID of the instance
+	pub id: String,
+	/// The configuration of the instance
+	pub config: InstanceConfig,
+}
+
+def_hook!(
+	GetInstanceLog,
+	"get_instance_log",
+	"Gets the contents of a specific log for an instance",
+	GetInstanceLogArg,
+	String,
+	1,
+	true,
+);
+
+/// Argument for the GetInstanceLog hook
+#[derive(Serialize, Deserialize, Default)]
+#[serde(default)]
+pub struct GetInstanceLogArg {
+	/// The ID of the instance
+	pub instance_id: String,
+	/// The ID of the log
+	pub log_id: String,
+	/// The configuration of the instance
+	pub config: InstanceConfig,
+}
