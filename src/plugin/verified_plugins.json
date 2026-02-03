@@ -278,5 +278,13 @@
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Install NeoForge on the client"
+	},
+	"themes": {
+		"id": "themes",
+		"name": "Themes",
+		"version": "v5",
+		"github_owner": "Nitrolaunch",
+		"github_repo": "plugins",
+		"description": "Adds more themes for you to choose from"
 	}
 }

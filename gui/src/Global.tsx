@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { Event, listen, UnlistenFn } from "@tauri-apps/api/event";
-import { createResource, createSignal, onCleanup } from "solid-js";
+import { createMemo, createResource, createSignal, onCleanup } from "solid-js";
 import { Theme } from "./types";
 import { LauncherSettings } from "./pages/Settings";
 import { errorToast } from "./components/dialog/Toasts";
@@ -11,9 +11,10 @@ export default function Global(props: GlobalProps) {
 	let [selectedTheme, setSelectedTheme] = createSignal<string>("dark");
 
 	let [unlisten, setUnlisten] = createSignal<UnlistenFn>(() => {});
-	let [availableThemes, _] = createResource(async () => {
+	let [availableThemes, availableThemesMethods] = createResource(async () => {
 		let unlisten = await listen("update_theme", (e: Event<string>) => {
 			setSelectedTheme(e.payload);
+			availableThemesMethods.refetch();
 		});
 
 		setUnlisten(() => unlisten);
@@ -38,26 +39,24 @@ export default function Global(props: GlobalProps) {
 		unlisten();
 	});
 
-	let styleElement = () => {
+	let styleElement = createMemo(() => {
 		if (selectedTheme() == "dark" || selectedTheme() == "light") {
-			return <link rel="stylesheet" href={`/themes/${selectedTheme()}.css`} />;
+			return `<link rel="stylesheet" href="/themes/${selectedTheme()}.css" />`;
 		} else {
 			if (
 				availableThemes() != undefined &&
 				availableThemes()!.some((x) => x.id == selectedTheme())
 			) {
 				let css = availableThemes()!.find((x) => x.id == selectedTheme())!.css;
-				return <style innerText={css}></style>;
+				return `<style>${css}</style>`;
 			} else {
-				return (
-					<link rel="stylesheet" href={`/themes/${selectedTheme()}.css`} />
-				);
+				return `<link rel="stylesheet" href="/themes/${selectedTheme()}.css" />`;
 			}
 		}
-	};
+	});
 
 	return (
-		<div style="position:absolute">
+		<div style="position:absolute" innerHTML={styleElement()}>
 			<Dynamic component={styleElement} />
 		</div>
 	);

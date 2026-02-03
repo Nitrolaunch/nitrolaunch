@@ -22,6 +22,7 @@ package.cross_platform: build.cross_platform
 	@rm -f release/mojang_transfer-universal.zip
 	@rm -f release/multiply-universal.zip
 	@rm -f release/nitro_transfer-universal.zip
+	@rm -f release/themes-universal.zip
 	@rm -f release/webtools-universal.zip
 	@rm -f release/weld-universal.zip
 	@rm -f release/zulu-universal.zip
@@ -64,6 +65,7 @@ package.cross_platform: build.cross_platform
 	@zip -j release/extra_versions-universal.zip plugins/extra_versions/plugin.json
 	@zip -j release/gamepad-universal.zip plugins/gamepad/plugin.json plugins/gamepad/gamepad.js
 	@zip -j release/lang-universal.zip plugins/lang/plugin.json
+	@zip -j release/themes-universal.zip plugins/themes/plugin.json
 	@zip -j release/weld-universal.zip plugins/weld/plugin.json plugins/weld/weld.pyz
 
 build.cross_platform: build.weld
@@ -298,6 +300,9 @@ install.stats:
 	@cargo install --path . --bin nitro_plugin_stats --offline
 	@mkdir -p ~/.local/share/nitro/plugins/stats
 	@cat plugins/stats/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/stats/plugin.json
+
+install.themes:
+	@cp -r plugins/themes ~/.local/share/nitro/plugins
 
 install.webtools:
 	@cargo build -p nitro_plugin_webtools --release --target wasm32-wasip2

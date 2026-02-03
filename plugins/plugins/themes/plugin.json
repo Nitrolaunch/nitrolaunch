@@ -1,0 +1,18 @@
+{
+	"name": "Themes",
+	"description": "Adds more themes for you to choose from",
+	"version": "v5",
+	"hooks": {
+		"add_themes": {
+			"constant": [
+				{
+					"id": "sleek",
+					"name": "Sleek",
+					"description": "A sleek, modern dark theme",
+					"css": "$file:sleek.css",
+					"color": "#000000"
+				}
+			]
+		}
+	}
+}
