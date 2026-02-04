@@ -15,7 +15,7 @@ use nitro_pkg_gen::relation_substitution::{
 	PackageAndVersion, RelationSubFunction, RelationSubNone,
 };
 use nitro_plugin::{
-	api::executable::{utils::PackageSearchCache, ExecutablePlugin},
+	api::executable::ExecutablePlugin, api::utils::PackageSearchCache,
 	hook::hooks::CustomRepoQueryResult,
 };
 use nitro_shared::versions::VersionPattern;

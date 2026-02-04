@@ -1,6 +1,8 @@
 /// Version of the API for executable plugins
 #[cfg(feature = "executable_api")]
 pub mod executable;
+/// Utilities for plugins to use
+pub mod utils;
 /// Version of the API for WASM plugins
 #[cfg(any(feature = "wasm_api", target_family = "wasm"))]
 pub mod wasm;

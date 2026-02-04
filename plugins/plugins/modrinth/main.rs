@@ -17,7 +17,7 @@ use nitro_net::{
 use nitro_pkg::{PackageSearchResults, PkgRequest, PkgRequestSource};
 use nitro_pkg_gen::{modrinth::get_preview, relation_substitution::RelationSubNone};
 use nitro_plugin::{
-	api::executable::{utils::PackageSearchCache, ExecutablePlugin},
+	api::executable::ExecutablePlugin, api::utils::PackageSearchCache,
 	hook::hooks::CustomRepoQueryResult,
 };
 use nitro_shared::versions::VersionPattern;
