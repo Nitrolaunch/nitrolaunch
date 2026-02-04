@@ -162,7 +162,7 @@ impl Lockfile {
 
 	/// Updates a package with a new version.
 	/// Returns a list of addon files to be removed
-	pub fn update_package(
+	pub async fn update_package(
 		&mut self,
 		req: &PkgRequest,
 		instance: &str,
@@ -238,7 +238,7 @@ impl Lockfile {
 							OverwriteAddonFilePrompt,
 							"file" = file
 						)),
-					)
+					).await
 					.context("Prompt failed")?;
 
 				if !allow {

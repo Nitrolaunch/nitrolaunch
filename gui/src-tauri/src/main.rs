@@ -32,7 +32,7 @@ use tauri::{AppHandle, Emitter, Listener, Manager};
 
 use crate::commands::misc::update_version_manifest;
 use crate::instance_manager::RunningInstanceManager;
-use crate::output::{MessageEvent, MessageType, ResolutionErrorEvent};
+use crate::output::{MessageEvent, MessageType, ResolutionErrorEvent, YesNoPromptResponse};
 use crate::task_manager::TaskManager;
 
 fn main() {
@@ -227,6 +227,7 @@ fn main() {
 			commands::misc::get_available_icons,
 			commands::misc::save_icon,
 			commands::misc::get_supported_java_types,
+			commands::misc::answer_yes_no_prompt,
 			commands::misc::custom_scrollbar_needed,
 			commands::misc::get_nitro_version,
 			commands::cancel_task,
@@ -248,6 +249,7 @@ pub struct State {
 	/// Map of accounts to their already entered passkeys
 	pub passkeys: Arc<Mutex<HashMap<String, String>>>,
 	pub password_prompt: PromptResponse,
+	pub yes_no_prompt: YesNoPromptResponse,
 	pub output_inner: Arc<OnceLock<OutputInner>>,
 	pub logging_sender: Sender<Message>,
 	pub wasm_loader: Arc<Mutex<WASMLoader>>,
@@ -268,6 +270,7 @@ impl State {
 			account_manager: Arc::new(Mutex::new(AccountManager::new(get_ms_client_id()))),
 			passkeys: Arc::new(Mutex::new(HashMap::new())),
 			password_prompt: PromptResponse::new(Mutex::new(None)),
+			yes_no_prompt: YesNoPromptResponse::new(Mutex::new(None)),
 			output_inner: Arc::new(OnceLock::new()),
 			logging_sender,
 		})
@@ -281,6 +284,7 @@ impl State {
 		self.output_inner.get_or_init(|| OutputInner {
 			app: app_handle,
 			password_prompt: self.password_prompt.clone(),
+			yes_no_prompt: self.yes_no_prompt.clone(),
 			passkeys: self.passkeys.clone(),
 			logger: self.logging_sender.clone(),
 		})

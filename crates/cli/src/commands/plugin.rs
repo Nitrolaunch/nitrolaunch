@@ -184,10 +184,14 @@ pub(crate) async fn install(
 }
 
 async fn uninstall(data: &mut CmdData<'_>, plugin: String) -> anyhow::Result<()> {
-	let Ok(result) = data.output.prompt_yes_no(
-		false,
-		MessageContents::Simple("Are you sure you want to delete this plugin?".into()),
-	) else {
+	let Ok(result) = data
+		.output
+		.prompt_yes_no(
+			false,
+			MessageContents::Simple("Are you sure you want to delete this plugin?".into()),
+		)
+		.await
+	else {
 		return Ok(());
 	};
 	if !result {

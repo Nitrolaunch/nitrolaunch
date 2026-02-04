@@ -28,6 +28,7 @@
 	padding: 2rem;
 	box-sizing: border-box;
 	overflow-y: auto;
+	overscroll-behavior: none;
 }
 
 .modal-buttons {

@@ -452,6 +452,16 @@ pub enum ResolutionError {
 	Misc(anyhow::Error),
 }
 
+/// A change to an installed package, used for user display
+pub enum PackageDiff {
+	/// A new package was added
+	Added(ArcPkgReq),
+	/// An existing package was removed
+	Removed(ArcPkgReq),
+	/// An existing package had it's version changed. Contains the old and new version
+	VersionChanged(ArcPkgReq, String, String),
+}
+
 #[cfg(test)]
 mod tests {
 	use super::*;

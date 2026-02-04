@@ -4,13 +4,15 @@ use anyhow::Context;
 use nitrolaunch::shared::id::InstanceID;
 use nitrolaunch::shared::lang::translate::TranslationKey;
 use nitrolaunch::shared::output::{Message, MessageContents, MessageLevel, NitroOutput};
-use nitrolaunch::shared::pkg::{ArcPkgReq, ResolutionError};
+use nitrolaunch::shared::pkg::{ArcPkgReq, PackageDiff, ResolutionError};
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter};
 use tokio::sync::{mpsc::Sender, Mutex};
 
 /// Response to a prompt in the frontend, shared with a mutex
 pub type PromptResponse = Arc<Mutex<Option<String>>>;
+/// Response to a yes/no prompt in the frontend, shared with a mutex
+pub type YesNoPromptResponse = Arc<Mutex<Option<bool>>>;
 
 pub struct LauncherOutput {
 	inner: OutputInner,
@@ -126,6 +128,30 @@ impl NitroOutput for LauncherOutput {
 		}
 	}
 
+	async fn prompt_yes_no(
+		&mut self,
+		default: bool,
+		message: MessageContents,
+	) -> anyhow::Result<bool> {
+		let _ = default;
+		self.inner.yes_no_prompt.lock().await.take();
+
+		self.inner
+			.app
+			.emit("nitro_display_yes_no_prompt", message.default_format())
+			.context("Failed to display yes/no prompt to user")?;
+
+		// Block this thread, checking every interval if the prompt has been filled
+		let result = loop {
+			if let Some(answer) = self.inner.yes_no_prompt.lock().await.take() {
+				break answer;
+			}
+			tokio::time::sleep(Duration::from_millis(50)).await;
+		};
+
+		Ok(result)
+	}
+
 	async fn prompt_special_account_passkey(
 		&mut self,
 		message: MessageContents,
@@ -164,6 +190,33 @@ impl NitroOutput for LauncherOutput {
 
 	async fn prompt_new_password(&mut self, message: MessageContents) -> anyhow::Result<String> {
 		self.prompt_password(message).await
+	}
+
+	async fn prompt_special_package_diffs(
+		&mut self,
+		diffs: Vec<PackageDiff>,
+	) -> anyhow::Result<bool> {
+		self.inner.yes_no_prompt.lock().await.take();
+
+		let diffs: Vec<_> = diffs
+			.into_iter()
+			.map(SerializablePackageDiff::from_diff)
+			.collect();
+
+		self.inner
+			.app
+			.emit("nitro_display_package_diffs_prompt", &diffs)
+			.context("Failed to display package diff prompt to user")?;
+
+		// Block this thread, checking every interval if the prompt has been filled
+		let result = loop {
+			if let Some(answer) = self.inner.yes_no_prompt.lock().await.take() {
+				break answer;
+			}
+			tokio::time::sleep(Duration::from_millis(50)).await;
+		};
+
+		Ok(result)
 	}
 
 	fn display_special_ms_auth(&mut self, url: &str, code: &str) {
@@ -252,6 +305,7 @@ impl Drop for LauncherOutput {
 pub struct OutputInner {
 	pub app: Arc<AppHandle>,
 	pub password_prompt: PromptResponse,
+	pub yes_no_prompt: YesNoPromptResponse,
 	pub passkeys: Arc<Mutex<HashMap<String, String>>>,
 	pub logger: Sender<Message>,
 }
@@ -338,6 +392,31 @@ impl SerializableResolutionError {
 				SerializableResolutionError::FailedToEvaluate(req, format!("{error:?}"))
 			}
 			ResolutionError::Misc(error) => SerializableResolutionError::Misc(format!("{error:?}")),
+		}
+	}
+}
+
+/// A change to an installed package, used for user display
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+#[serde(tag = "type", content = "data")]
+pub enum SerializablePackageDiff {
+	/// A new package was added
+	Added(String),
+	/// An existing package was removed
+	Removed(String),
+	/// An existing package had it's version changed. Contains the old and new version
+	VersionChanged(String, String, String),
+}
+
+impl SerializablePackageDiff {
+	pub fn from_diff(diff: PackageDiff) -> Self {
+		match diff {
+			PackageDiff::Added(pkg) => Self::Added(pkg.to_string()),
+			PackageDiff::Removed(pkg) => Self::Removed(pkg.to_string()),
+			PackageDiff::VersionChanged(pkg, old_version, new_version) => {
+				Self::VersionChanged(pkg.to_string(), old_version, new_version)
+			}
 		}
 	}
 }

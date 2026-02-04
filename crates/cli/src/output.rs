@@ -115,7 +115,7 @@ impl NitroOutput for TerminalOutput {
 		}
 	}
 
-	fn prompt_yes_no(&mut self, default: bool, message: MessageContents) -> anyhow::Result<bool> {
+	async fn prompt_yes_no(&mut self, default: bool, message: MessageContents) -> anyhow::Result<bool> {
 		let ans = Confirm::new(&self.format_message(message))
 			.with_default(default)
 			.prompt()

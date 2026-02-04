@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
 	lang::translate::TranslationKey,
-	pkg::{PkgRequest, ResolutionError},
+	pkg::{PackageDiff, PkgRequest, ResolutionError},
 };
 
 /// Trait for a type that can output information about Nitrolaunch processes
@@ -55,7 +55,11 @@ pub trait NitroOutput: Send {
 
 	/// Offer a confirmation / yes no prompt to the user.
 	/// The default is the default value of the prompt.
-	fn prompt_yes_no(&mut self, default: bool, message: MessageContents) -> anyhow::Result<bool> {
+	async fn prompt_yes_no(
+		&mut self,
+		default: bool,
+		message: MessageContents,
+	) -> anyhow::Result<bool> {
 		let _message = message;
 		Ok(default)
 	}
@@ -102,6 +106,43 @@ pub trait NitroOutput: Send {
 	) -> anyhow::Result<String> {
 		let _ = account_id;
 		self.prompt_password(message).await
+	}
+
+	/// Specialized implementation for showing changes to installed packages and asking if the user
+	/// wants to proceed
+	async fn prompt_special_package_diffs(
+		&mut self,
+		diffs: Vec<PackageDiff>,
+	) -> anyhow::Result<bool> {
+		self.display(
+			MessageContents::Header("Package changes:".into()),
+			MessageLevel::Important,
+		);
+
+		for diff in diffs {
+			let (PackageDiff::Added(pkg)
+			| PackageDiff::Removed(pkg)
+			| PackageDiff::VersionChanged(pkg, ..)) = &diff;
+			let pkg = PkgRequest::clone(pkg);
+
+			let message = match &diff {
+				PackageDiff::Added(..) => "Added".to_string(),
+				PackageDiff::Removed(..) => "Removed".to_string(),
+				PackageDiff::VersionChanged(_, old_version, new_version) => {
+					format!("{old_version} -> {new_version}")
+				}
+			};
+			self.display(
+				MessageContents::Package(pkg, Box::new(MessageContents::Simple(message))),
+				MessageLevel::Important,
+			);
+		}
+
+		self.prompt_yes_no(
+			false,
+			MessageContents::Simple("Would you like to proceed with these changes?".into()),
+		)
+		.await
 	}
 
 	/// Gets a copy of this output that may technically be used in asynchronous tasks,

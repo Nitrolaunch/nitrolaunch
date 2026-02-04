@@ -338,6 +338,16 @@ pub async fn get_supported_java_types(
 	Ok(out)
 }
 
+#[tauri::command]
+pub async fn answer_yes_no_prompt(
+	state: tauri::State<'_, State>,
+	answer: bool,
+) -> Result<(), String> {
+	*state.yes_no_prompt.lock().await = Some(answer);
+
+	Ok(())
+}
+
 /// Gets whether a custom scrollbar is needed for the frontend
 #[tauri::command]
 pub async fn custom_scrollbar_needed() -> Result<bool, String> {

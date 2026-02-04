@@ -123,6 +123,7 @@ impl Instance {
 				eval.selected_content_version.clone(),
 				o,
 			)
+			.await
 			.context("Failed to update package in lockfile")?;
 
 		for addon in eval.addon_reqs.iter() {

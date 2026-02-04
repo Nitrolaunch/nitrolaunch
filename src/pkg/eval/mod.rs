@@ -20,6 +20,8 @@ use nitro_pkg::script_eval::AddonInstructionData;
 use nitro_pkg::script_eval::EvalReason;
 use nitro_pkg::ConfiguredPackage;
 use nitro_pkg::PackageContentType;
+use nitro_pkg::PkgRequest;
+use nitro_pkg::PkgRequestSource;
 use nitro_pkg::RecommendedPackage;
 use nitro_pkg::RequiredPackage;
 use nitro_pkg::{
@@ -35,9 +37,11 @@ use nitro_shared::output::MessageLevel;
 use nitro_shared::output::NitroOutput;
 use nitro_shared::output::Simple;
 use nitro_shared::pkg::ArcPkgReq;
+use nitro_shared::pkg::PackageDiff;
 use nitro_shared::pkg::PackageID;
 use nitro_shared::util::io::replace_tilde;
 use nitro_shared::util::is_valid_identifier;
+use nitro_shared::versions::VersionPattern;
 use reqwest::Client;
 
 use self::conditions::check_arch_condition;
@@ -49,6 +53,7 @@ use super::reg::PkgRegistry;
 use super::Package;
 use crate::addon::{self, AddonLocation, AddonRequest};
 use crate::config::package::PackageConfig;
+use crate::io::lock::LockfilePackage;
 use crate::io::paths::Paths;
 use crate::plugin::PluginManager;
 use crate::util::hash::{
@@ -579,6 +584,71 @@ pub struct ResolutionAndEvalResult {
 	pub packages: Vec<ResolvedPackage>,
 	/// Package recommendations that were not satisfied
 	pub unfulfilled_recommendations: Vec<nitro_pkg::resolve::RecommendedPackage>,
+}
+
+impl ResolutionAndEvalResult {
+	/// Get the changes to the currently installed packages on the instance
+	pub fn get_diffs(
+		&self,
+		current_packages: &HashMap<String, LockfilePackage>,
+	) -> Vec<PackageDiff> {
+		let mut out = Vec::with_capacity(self.packages.len());
+
+		// Parse requests for current packages
+		let current_packages: HashMap<_, _> = current_packages
+			.iter()
+			.map(|(k, v)| {
+				(
+					PkgRequest::parse(k, PkgRequestSource::UserRequire),
+					v.clone(),
+				)
+			})
+			.collect();
+
+		for new_pkg in &self.packages {
+			if let Some(existing_pkg) = current_packages.get(&new_pkg.req) {
+				let old_version = new_pkg
+					.eval
+					.selected_content_version
+					.as_ref()
+					.cloned()
+					.unwrap_or("None".into());
+				let new_version = existing_pkg
+					.content_version
+					.as_ref()
+					.cloned()
+					.unwrap_or("None".into());
+
+				if old_version != new_version {
+					out.push(PackageDiff::VersionChanged(
+						new_pkg.req.clone(),
+						old_version,
+						new_version,
+					));
+				}
+			} else {
+				// We want to show the content version for added packages
+				let new_req = if let Some(selected_content_version) =
+					&new_pkg.eval.selected_content_version
+				{
+					Arc::new(new_pkg.req.with_content_version(VersionPattern::Single(
+						selected_content_version.clone(),
+					)))
+				} else {
+					new_pkg.req.clone()
+				};
+				out.push(PackageDiff::Added(new_req));
+			}
+		}
+
+		for existing_pkg in current_packages.keys() {
+			if !self.packages.iter().any(|x| &(*x.req) == existing_pkg) {
+				out.push(PackageDiff::Removed(Arc::new(existing_pkg.clone())));
+			}
+		}
+
+		out
+	}
 }
 
 /// Data from a package after resolution

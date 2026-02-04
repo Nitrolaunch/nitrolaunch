@@ -22,7 +22,7 @@ use crate::util::select_random_n_items_from_list;
 
 use super::InstanceUpdateContext;
 
-use anyhow::Context;
+use anyhow::{bail, Context};
 
 /// Install packages on an instance. Returns a set of all unique packages
 pub async fn update_instance_packages<O: NitroOutput>(
@@ -45,6 +45,15 @@ pub async fn update_instance_packages<O: NitroOutput>(
 		MessageLevel::Important,
 	);
 	ctx.output.end_process();
+
+	if let Some(current_packages) = ctx.lock.get_instance_packages(&instance.id) {
+		let diffs = resolution.get_diffs(current_packages);
+		if !diffs.is_empty() {
+			if !ctx.output.prompt_special_package_diffs(diffs).await? {
+				bail!("Package update aborted");
+			}
+		}
+	}
 
 	remove_existing_addons(instance, constants, ctx)?;
 

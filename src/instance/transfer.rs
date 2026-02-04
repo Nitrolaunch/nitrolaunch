@@ -271,6 +271,7 @@ pub async fn migrate_instances(
 				None,
 				o,
 			)
+			.await
 			.context("Failed to add locked package")?;
 		}
 	}

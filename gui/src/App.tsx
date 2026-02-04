@@ -2,14 +2,14 @@ import { Router, Route, Location } from "@solidjs/router";
 import "./App.css";
 import LaunchPage from "./pages/instance/InstanceList";
 import NavBar from "./components/navigation/NavBar";
-import { createSignal, ErrorBoundary, onMount, Show } from "solid-js";
+import { createResource, createSignal, ErrorBoundary, onCleanup, onMount, Show } from "solid-js";
 import BrowsePackages from "./pages/package/BrowsePackages";
 import ViewPackage from "./pages/package/ViewPackage";
 import Sidebar from "./components/navigation/Sidebar";
 import Plugins from "./pages/plugin/Plugins";
 import Docs from "./pages/Docs";
 import { loadPagePlugins } from "./plugins";
-import { listen } from "@tauri-apps/api/event";
+import { Event, listen } from "@tauri-apps/api/event";
 import CustomPluginPage from "./pages/CustomPluginPage";
 import Footer, { FooterMode } from "./components/navigation/Footer";
 import InstanceInfo from "./pages/instance/InstanceInfo";
@@ -24,12 +24,13 @@ import InstanceConfigModal, {
 	InstanceConfigParams,
 } from "./pages/instance/InstanceConfig";
 import { open } from "@tauri-apps/plugin-shell";
+import PackageDiffsPrompt, { PackageDiff } from "./components/package/PackageDiffsPrompt";
 
 export default function App() {
 	const [footerData, setFooterData] = createSignal<FooterData>({
 		selectedItem: undefined,
 		mode: FooterMode.Instance,
-		action: () => {},
+		action: () => { },
 	});
 
 	let [selectedAccount, setSelectedAccount] = createSignal<string>();
@@ -89,6 +90,7 @@ function Layout(props: LayoutProps) {
 	let [instanceConfigParams, setInstanceConfigParams] = createSignal<
 		InstanceConfigParams | undefined
 	>();
+	let [packageDiffsPrompt, setPackageDiffsPrompt] = createSignal<PackageDiff[] | undefined>();
 
 	(window as any).__setPluginModalContents = (x: any) => {
 		setPluginModalContents(x);
@@ -127,6 +129,23 @@ function Layout(props: LayoutProps) {
 			e.preventDefault();
 			open((e.target as any).href);
 		};
+	});
+
+	let [unlisten, _] = createResource(async () => {
+		let unlisten = await listen(
+			"nitro_display_package_diffs_prompt",
+			(event: Event<PackageDiff[]>) => {
+				setPackageDiffsPrompt(event.payload);
+			},
+		);
+
+		return unlisten;
+	});
+
+	onCleanup(() => {
+		if (unlisten() != undefined) {
+			unlisten();
+		}
 	});
 
 	return (
@@ -176,6 +195,7 @@ function Layout(props: LayoutProps) {
 				params={instanceConfigParams()}
 				onClose={() => setInstanceConfigParams(undefined)}
 			/>
+			<PackageDiffsPrompt diffs={packageDiffsPrompt()} onClose={() => setPackageDiffsPrompt(undefined)} />
 		</>
 	);
 }

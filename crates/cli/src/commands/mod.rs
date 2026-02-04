@@ -1,3 +1,4 @@
+mod account;
 mod config;
 mod files;
 mod instance;
@@ -5,7 +6,6 @@ mod log;
 mod package;
 mod plugin;
 mod template;
-mod account;
 
 use std::collections::HashMap;
 
@@ -27,6 +27,7 @@ use nitrolaunch::shared::lang::translate::TranslationKey;
 use nitrolaunch::shared::later::Later;
 use nitrolaunch::shared::output::{MessageContents, MessageLevel, NitroOutput};
 
+use self::account::AccountSubcommand;
 use self::config::ConfigSubcommand;
 use self::files::FilesSubcommand;
 use self::instance::InstanceSubcommand;
@@ -34,7 +35,6 @@ use self::log::LogSubcommand;
 use self::package::PackageSubcommand;
 use self::plugin::PluginSubcommand;
 use self::template::TemplateSubcommand;
-use self::account::AccountSubcommand;
 
 use super::output::TerminalOutput;
 
@@ -148,15 +148,17 @@ pub async fn run_cli() -> anyhow::Result<()> {
 			MessageLevel::Important,
 		);
 
-		let install_default = output.prompt_yes_no(
-			true,
-			MessageContents::Simple(
-				"You probably want to install the default set of plugins, \
+		let install_default = output
+			.prompt_yes_no(
+				true,
+				MessageContents::Simple(
+					"You probably want to install the default set of plugins, \
 which includes features like Modrinth, Fabric, and stats tracking. \
 Would you like to do that now?"
-					.into(),
-			),
-		)?;
+						.into(),
+				),
+			)
+			.await?;
 
 		if install_default {
 			let mut data = CmdData::new(paths.clone(), &mut output)?;

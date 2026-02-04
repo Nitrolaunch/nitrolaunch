@@ -1,0 +1,58 @@
+.package-diff {
+	display: grid;
+	grid-template-columns: 3rem 4fr;
+
+	width: 100%;
+	height: 3rem;
+
+	gap: 0;
+}
+
+.package-diff-indicator {
+	height: 100%;
+	border-top-left-radius: var(--round2);
+	border-bottom-left-radius: var(--round2);
+	border: var(--border) solid;
+	box-sizing: border-box;
+}
+
+.package-diff-indicator.added {
+	background-color: var(--instancebg);
+	color: var(--instance);
+	border-color: var(--instance);
+}
+
+.package-diff-indicator.removed {
+	background-color: var(--errorbg);
+	color: var(--error);
+	border-color: var(--error);
+}
+
+.package-diff-indicator.version_changed {
+	background-color: var(--packagebg);
+	color: var(--package);
+	border-color: var(--package);
+}
+
+.package-diff-info {
+	justify-content: flex-start;
+	padding-left: 0.5rem;
+	height: 100%;
+	box-sizing: border-box;
+
+	background-color: var(--bg2);
+	border-top-right-radius: var(--round2);
+	border-bottom-right-radius: var(--round2);
+	border: var(--border) solid var(--bg4);
+	border-left: none;
+}
+
+.package-diff-package-icon {
+	width: 2rem;
+	aspect-ratio: 1;
+	border-radius: var(--round);
+}
+
+.package-diff-version {
+	color: var(--package);
+}

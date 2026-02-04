@@ -49,7 +49,7 @@ impl InstanceLockfile {
 
 	/// Updates a package with a new version.
 	/// Returns a list of addon files to be removed
-	pub fn update_package(
+	pub async fn update_package(
 		&mut self,
 		req: &PkgRequest,
 		addons: &[LockfileAddon],
@@ -117,6 +117,7 @@ impl InstanceLockfile {
 							"file" = file
 						)),
 					)
+					.await
 					.context("Prompt failed")?;
 
 				if !allow {
