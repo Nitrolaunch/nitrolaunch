@@ -1,0 +1,16 @@
+.package-chip {
+	padding: 0.5rem;
+
+	background-color: var(--bg2);
+	border: var(--border) solid var(--bg4);
+	border-radius: var(--round2);
+
+	font-weight: normal;
+	cursor: pointer;
+}
+
+.package-chip-icon {
+	width: 1.5rem;
+	aspect-ratio: 1;
+	border-radius: var(--round);
+}

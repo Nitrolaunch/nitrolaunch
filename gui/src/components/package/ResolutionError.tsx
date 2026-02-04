@@ -1,7 +1,7 @@
-import { Match, Switch } from "solid-js";
+import { For, Match, Switch } from "solid-js";
 import { PkgRequest } from "../../types";
-import { pkgRequestToString } from "../../utils";
 import "./ResolutionError.css";
+import PackageChip from "./PackageChip";
 
 // Displays an error during package resolution
 export default function ResolutionError(props: ResolutionErrorProps) {
@@ -12,7 +12,7 @@ export default function ResolutionError(props: ResolutionErrorProps) {
 			<Switch>
 				<Match when={props.error.type == "package_context"}>
 					<div class="cont resolution-error-header">
-						In package {pkgRequestToString(data()[0])}
+						In <PackageChip req={data()[0]} />
 					</div>
 					<ResolutionError error={data()[1]} />
 				</Match>
@@ -24,45 +24,54 @@ export default function ResolutionError(props: ResolutionErrorProps) {
 				</Match>
 				<Match when={props.error.type == "failed_to_get_properties"}>
 					<div class="cont resolution-error-header">
-						Failed to get package {pkgRequestToString(data()[0])}
+						Failed to get <PackageChip req={data()[0]} />
 					</div>
 					<pre class="cont full-error">{data()[1]}</pre>
 				</Match>
 				<Match when={props.error.type == "no_valid_versions_found"}>
 					<div class="cont">
-						No valid versions found for package {pkgRequestToString(data()[0])}
+						No valid versions found for <PackageChip req={data()[0]} />
 						Requested versions: {data()[1].toString()}
 					</div>
 				</Match>
 				<Match when={props.error.type == "extension_not_fulfilled"}>
 					<div class="cont">
-						{data()[0] == undefined
-							? "A package"
-							: `The package ${pkgRequestToString(data()[0])}`}
-						{` extends the functionality of the package ${pkgRequestToString(
-							data()[1],
-						)}, which is not installed`}
+						<Switch>
+							<Match when={data()[0] == undefined}>
+								A package
+							</Match>
+							<Match when={data()[0] != undefined}>
+								<PackageChip req={data()[0]} />
+							</Match>
+						</Switch>
+						extends the functionality of
+						<PackageChip req={data()[1]} />
+						, which is not installed
 					</div>
 				</Match>
 				<Match when={props.error.type == "explicit_require_not_fulfilled"}>
 					<div class="cont">
-						{`Package ${pkgRequestToString(
-							data()[0],
-						)} has been explicitly required by package ${pkgRequestToString(
-							data()[1],
-						)}. This means it must be required by the user in their config.`}
+						<PackageChip req={data()[0]} />
+						has been explicitly required by
+						<PackageChip req={data()[1]} />
+						. This means it must be required by the user in their config.`
 					</div>
 				</Match>
 				<Match when={props.error.type == "incompatible_package"}>
 					<div class="cont">
-						{`Package ${pkgRequestToString(
-							data()[0],
-						)} is incompatible with the packages ${data()[1].join(",")}`}
+						<PackageChip req={data()[0]} />
+						is incompatible with the packages
+						<For each={data()[1]}>
+							{(pkg) =>
+								<PackageChip req={pkg} />
+							}
+						</For>
 					</div>
 				</Match>
 				<Match when={props.error.type == "failed_to_evaluate"}>
 					<div class="cont resolution-error-header">
-						Failed to evaluate package package {pkgRequestToString(data()[0])}
+						Failed to evaluate package package
+						<PackageChip req={data()[0]} />
 					</div>
 					<pre class="cont full-error">{data()[1]}</pre>
 				</Match>
@@ -82,38 +91,38 @@ export interface ResolutionErrorProps {
 // Data for the actual error
 export type ResolutionErrorData =
 	| {
-			type: "package_context";
-			data: [PkgRequest, ResolutionErrorData];
-	  }
+		type: "package_context";
+		data: [PkgRequest, ResolutionErrorData];
+	}
 	| {
-			type: "failed_to_preload";
-			data: string;
-	  }
+		type: "failed_to_preload";
+		data: string;
+	}
 	| {
-			type: "failed_to_get_properties";
-			data: [PkgRequest, string];
-	  }
+		type: "failed_to_get_properties";
+		data: [PkgRequest, string];
+	}
 	| {
-			type: "no_valid_versions_found";
-			data: [PkgRequest, string[]];
-	  }
+		type: "no_valid_versions_found";
+		data: [PkgRequest, string[]];
+	}
 	| {
-			type: "extension_not_fulfilled";
-			data: [PkgRequest | undefined, PkgRequest];
-	  }
+		type: "extension_not_fulfilled";
+		data: [PkgRequest | undefined, PkgRequest];
+	}
 	| {
-			type: "explicit_require_not_fulfilled";
-			data: [PkgRequest, PkgRequest];
-	  }
+		type: "explicit_require_not_fulfilled";
+		data: [PkgRequest, PkgRequest];
+	}
 	| {
-			type: "incompatible_package";
-			data: [PkgRequest, string[]];
-	  }
+		type: "incompatible_package";
+		data: [PkgRequest, string[]];
+	}
 	| {
-			type: "failed_to_evaluate";
-			data: [PkgRequest, string];
-	  }
+		type: "failed_to_evaluate";
+		data: [PkgRequest, string];
+	}
 	| {
-			type: "misc";
-			data: string;
-	  };
+		type: "misc";
+		data: string;
+	};
