@@ -44,7 +44,7 @@
 	--pluginfg: #8b93ff;
 	--pluginbg: #180e31;
 	--errorbg: #2b0e14;
-	--confirmbg: var(--errorbg);
+	--confirmbg: var(--instancebg);
 
 	/* Other values */
 	--round: 0.2rem;
