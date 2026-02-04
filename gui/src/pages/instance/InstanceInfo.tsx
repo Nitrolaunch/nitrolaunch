@@ -802,8 +802,8 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 						{
 							text: "Cancel",
 							icon: Delete,
-							color: "var(--instance)",
-							bgColor: "var(--instancebg)",
+							color: "var(--confirm)",
+							bgColor: "var(--confirmbg)",
 							onClick: () => setShowDeleteConfirm(false),
 						},
 						{

@@ -42,6 +42,8 @@ export default function PackageDiffsPrompt(props: PackageDiffsPromptProps) {
 			{
 				text: "Install",
 				icon: Download,
+				color: "var(--package)",
+				bgColor: "var(--packagebg)",
 				onClick: () => setAnswer(true),
 			}
 		]}

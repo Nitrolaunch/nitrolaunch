@@ -17,9 +17,9 @@
 }
 
 .package-diff-indicator.added {
-	background-color: var(--instancebg);
-	color: var(--instance);
-	border-color: var(--instance);
+	background-color: var(--confirmbg);
+	color: var(--confirm);
+	border-color: var(--confirm);
 }
 
 .package-diff-indicator.removed {

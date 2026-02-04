@@ -123,6 +123,8 @@ export default function PackageVersionInfo(props: PackageVersionInfoProps) {
 				{
 					text: "Install",
 					icon: Download,
+					color: "var(--package",
+					bgColor: "var(--packagebg)",
 					onClick: () => {
 						props.onInstall(props.version.name!);
 						props.onClose();

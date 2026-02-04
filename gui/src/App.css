@@ -36,6 +36,7 @@
 	--plugin: #5b65ff;
 	--warning: #e9ca1b;
 	--error: #d40e3d;
+	--confirm: var(--instance);
 
 	--instancebg: #051d1d;
 	--templatebg: #0d1624;
@@ -43,6 +44,7 @@
 	--pluginfg: #8b93ff;
 	--pluginbg: #180e31;
 	--errorbg: #2b0e14;
+	--confirmbg: var(--errorbg);
 
 	/* Other values */
 	--round: 0.2rem;

@@ -34,8 +34,8 @@ export default function TemplateDeletePrompt(props: TemplateDeletePromptProps) {
 			{
 				text: "Cancel",
 				icon: Delete,
-				color: "var(--instance)",
-				bgColor: "var(--instancebg)",
+				color: "var(--confirm)",
+				bgColor: "var(--confirmbg)",
 				onClick: props.onClose,
 			},
 		];
