@@ -1,4 +1,7 @@
 :root {
+	font-size: 14px;
+	font-family: monospace;
+
 	--fg: #f6f6f6;
 	--fg2: #d3d3d3;
 	--fg3: #777777;
@@ -12,13 +15,14 @@
 	--round: 0.2rem;
 	--round2: 0.4rem;
 	--border: 1px;
+	--shadow-offset: 0px;
 }
 
 .cont {
 	gap: 0.4rem;
 }
 
-
-.bubble-hover:hover, .bubble-hover-small:hover {
+.bubble-hover:hover,
+.bubble-hover-small:hover {
 	transform: scale(1);
 }
