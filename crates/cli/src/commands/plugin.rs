@@ -2,7 +2,7 @@ use anyhow::{bail, Context};
 use clap::Subcommand;
 use color_print::cprintln;
 use itertools::Itertools;
-use nitrolaunch::core::io::json_from_file;
+use nitrolaunch::core::io::{json_from_file, json_to_file_pretty};
 use nitrolaunch::plugin::install::get_verified_plugins;
 use nitrolaunch::plugin::PluginManager;
 use nitrolaunch::plugin_crate::plugin::PluginManifest;
@@ -15,6 +15,7 @@ use std::ops::DerefMut;
 
 use super::CmdData;
 use crate::commands::call_plugin_subcommand;
+use crate::commands::config::{edit_plugins, edit_temp_file};
 use crate::output::{CHECK, HYPHEN_POINT};
 
 #[derive(Debug, Subcommand)]
@@ -49,6 +50,11 @@ pub enum PluginSubcommand {
 	Enable { plugin: String },
 	#[command(about = "Disable a plugin")]
 	Disable { plugin: String },
+	#[command(about = "Edit configuration for a plugin")]
+	Edit {
+		/// The plugin to edit. Omit it to edit the plugins file
+		plugin: Option<String>,
+	},
 	#[clap(external_subcommand)]
 	External(Vec<String>),
 }
@@ -62,6 +68,7 @@ pub async fn run(command: PluginSubcommand, data: &mut CmdData<'_>) -> anyhow::R
 		PluginSubcommand::Browse => browse(data).await,
 		PluginSubcommand::Enable { plugin } => enable(data, plugin).await,
 		PluginSubcommand::Disable { plugin } => disable(data, plugin).await,
+		PluginSubcommand::Edit { plugin } => edit(data, plugin).await,
 		PluginSubcommand::External(args) => {
 			call_plugin_subcommand(args, Some("plugin"), data).await
 		}
@@ -252,6 +259,42 @@ async fn disable(data: &mut CmdData<'_>, plugin: String) -> anyhow::Result<()> {
 
 	data.output.display(
 		MessageContents::Success("Plugin disabled".into()),
+		MessageLevel::Important,
+	);
+
+	Ok(())
+}
+
+async fn edit(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()> {
+	let Some(id) = id else {
+		return edit_plugins(data).await;
+	};
+
+	let config_path = PluginManager::get_config_path(&data.paths);
+	let mut config =
+		PluginManager::open_config(&data.paths).context("Failed to open plugin configuration")?;
+
+	let default = serde_json::Value::Object(serde_json::Map::new());
+	let plugin_config = config.config.get(&id).unwrap_or(&default);
+
+	let text =
+		serde_json::to_string_pretty(&plugin_config).context("Failed to serialize config")?;
+	let edited = edit_temp_file(&text, &format!("Editing plugin {id}"), &data.paths)?;
+	let new_config: serde_json::Value = serde_json::from_str(&edited)
+		.context("Failed to serialize. Make sure your config is valid JSON")?;
+
+	if let serde_json::Value::Object(obj) = &new_config {
+		if obj.is_empty() {
+			return Ok(());
+		}
+	}
+
+	config.config.insert(id, new_config);
+
+	json_to_file_pretty(config_path, &config).context("Failed to write to plugin config file")?;
+
+	data.output.display(
+		MessageContents::Success("Changes saved".into()),
 		MessageLevel::Important,
 	);
 

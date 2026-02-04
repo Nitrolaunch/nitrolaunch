@@ -43,7 +43,7 @@ async fn edit(data: &mut CmdData<'_>) -> anyhow::Result<()> {
 	Ok(())
 }
 
-async fn edit_plugins(data: &mut CmdData<'_>) -> anyhow::Result<()> {
+pub async fn edit_plugins(data: &mut CmdData<'_>) -> anyhow::Result<()> {
 	let path = PluginManager::get_config_path(&data.paths);
 
 	PluginManager::create_default(&data.paths).context("Failed to create default config")?;
