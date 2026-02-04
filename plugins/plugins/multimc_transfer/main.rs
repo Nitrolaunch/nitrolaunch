@@ -5,7 +5,7 @@ use std::{
 };
 
 use anyhow::{bail, Context};
-use nitro_core::io::{extract_zip_dir, json_from_file};
+use nitro_core::io::{extract_zip_dir, files::copy_dir_contents, json_from_file};
 use nitro_pkg::PkgRequest;
 use nitro_plugin::{
 	api::executable::ExecutablePlugin,
@@ -126,11 +126,9 @@ fn main() -> anyhow::Result<()> {
 		}
 	})?;
 
-	plugin.migrate_instances(|_, arg| {
+	plugin.migrate_instances(|ctx, arg| {
 		let data_folder = data_folder(&arg.format)?;
-
 		let instances_folder = data_folder.join("instances");
-
 		if !instances_folder.exists() {
 			return Ok(MigrateInstancesResult {
 				format: arg.format,
@@ -138,6 +136,9 @@ fn main() -> anyhow::Result<()> {
 				packages: HashMap::new(),
 			});
 		}
+
+		let nitro_data_dir = ctx.get_data_dir()?;
+		let nitro_instances_dir = nitro_data_dir.join("instances");
 
 		let mut instances = HashMap::new();
 		let mut packages = HashMap::new();
@@ -186,7 +187,14 @@ fn main() -> anyhow::Result<()> {
 
 			let id = make_valid_instance_id(config.name.as_ref().context("Instance has no name")?);
 
-			config.game_dir = Some(mc_dir.to_string_lossy().to_string());
+			// File migration
+			if arg.link {
+				config.game_dir = Some(mc_dir.to_string_lossy().to_string());
+			} else {
+				let target_dir = nitro_instances_dir.join(&id).join(".minecraft");
+				std::fs::create_dir_all(&target_dir)?;
+				copy_dir_contents(&mc_dir, &target_dir).context("Failed to copy instance files")?;
+			}
 
 			let id = if instances.contains_key(&id) {
 				id + "2"
