@@ -1,5 +1,12 @@
 import { createSignal, JSX } from "solid-js";
-import { ArrowLeft, ArrowRight, Home, Honeycomb, Jigsaw, Menu } from "../../icons";
+import {
+	ArrowLeft,
+	ArrowRight,
+	Home,
+	Honeycomb,
+	Jigsaw,
+	Menu,
+} from "../../icons";
 import IconButton from "../input/button/IconButton";
 import "./NavBar.css";
 import { Location } from "@solidjs/router";
@@ -97,8 +104,17 @@ export default function NavBar(props: NavBarProps) {
 						/>
 					</div>
 					<h3 class="cont bubble-hover navbar-item">
-						<a href="/" class="cont link bold" title="Return to the homepage" style="position:relative">
-							<img src="/Logo.png" style="width:1.5rem;border-radius:var(--round)" class="shadow" />
+						<a
+							href="/"
+							class="cont link bold"
+							title="Return to the homepage"
+							style="position:relative"
+						>
+							<img
+								src="/Logo.png"
+								style="width:1.5rem;border-radius:var(--round)"
+								class="shadow"
+							/>
 							<div id="logo-text">NITRO</div>
 							<div class="cont" id="beta-indicator">
 								BETA
@@ -106,7 +122,7 @@ export default function NavBar(props: NavBarProps) {
 						</a>
 					</h3>
 					<div class="cont end navbar-item" id="navbar-right">
-						<AccountWidget onSelect={props.onSelectAccount} />
+						<AccountWidget />
 						<Toasts />
 					</div>
 				</div>
@@ -118,7 +134,6 @@ export default function NavBar(props: NavBarProps) {
 export interface NavBarProps {
 	onSidebarToggle: () => void;
 	onSidebarClose: () => void;
-	onSelectAccount: (account: string) => void;
 	location: Location;
 }
 
@@ -151,8 +166,9 @@ function NavbarButton(props: NavbarButtonProps) {
 		<a
 			class={`cont link navbar-button bubble-hover ${selected() ? "selected" : ""}`}
 			href={props.href}
-			style={`color:${color()};background-color:${selected() ? props.backgroundColor : "var(--bg)"
-				};border-color:${borderColor()}`}
+			style={`color:${color()};background-color:${
+				selected() ? props.backgroundColor : "var(--bg)"
+			};border-color:${borderColor()}`}
 			onmouseenter={() => setIsHovered(true)}
 			onmouseleave={() => setIsHovered(false)}
 			onclick={props.onClick}

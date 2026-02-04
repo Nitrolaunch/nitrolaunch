@@ -25,7 +25,6 @@ pub async fn launch_game(
 	state: tauri::State<'_, State>,
 	instance_id: String,
 	offline: bool,
-	user: Option<&str>,
 ) -> Result<(), String> {
 	let state = Arc::new(state);
 	let app_handle = Arc::new(app_handle);
@@ -36,11 +35,13 @@ pub async fn launch_game(
 
 	let stdio_paths = Arc::new(Mutex::new(None));
 
+	let data = fmt_err(LauncherData::open(&state.paths).context("Failed to open launcher data"))?;
+
 	fmt_err(
 		launch_game_impl(
 			instance_id.to_string(),
 			offline,
-			user,
+			data.current_account.as_deref(),
 			state.clone(),
 			app_handle,
 			stdio_paths.clone(),

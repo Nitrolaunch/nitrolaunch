@@ -8,7 +8,14 @@ import {
 	Show,
 	Switch,
 } from "solid-js";
-import { AngleDown, AngleRight, Check, Plus, Properties, User } from "../../icons";
+import {
+	AngleDown,
+	AngleRight,
+	Check,
+	Plus,
+	Properties,
+	User,
+} from "../../icons";
 import "./AccountWidget.css";
 import { stringCompare, getAccountIcon } from "../../utils";
 import Icon from "../Icon";
@@ -29,7 +36,7 @@ export default function AccountWidget(props: AccountWidgetProps) {
 		try {
 			let [currentAccount, accounts] = (await invoke("get_accounts")) as [
 				string | undefined,
-				AccountMap
+				AccountMap,
 			];
 
 			let currentAccountInfo =
@@ -71,25 +78,30 @@ export default function AccountWidget(props: AccountWidgetProps) {
 		}
 	});
 
-	let [availableAccountTypes, __] = createResource(async () => {
-		let pluginTypes = await invoke("get_supported_account_types") as AccountTypeInfo[];
+	let [availableAccountTypes, __] = createResource(
+		async () => {
+			let pluginTypes = (await invoke(
+				"get_supported_account_types",
+			)) as AccountTypeInfo[];
 
-		let out: AccountTypeInfo[] = [
-			{
-				id: "microsoft",
-				name: "Microsoft",
-				color: "#00a2ed"
-			},
-			{
-				id: "demo",
-				name: "Demo",
-				color: "#dddddd"
-			}
-		];
-		out = out.concat(pluginTypes);
+			let out: AccountTypeInfo[] = [
+				{
+					id: "microsoft",
+					name: "Microsoft",
+					color: "#00a2ed",
+				},
+				{
+					id: "demo",
+					name: "Demo",
+					color: "#dddddd",
+				},
+			];
+			out = out.concat(pluginTypes);
 
-		return out;
-	}, { initialValue: [] });
+			return out;
+		},
+		{ initialValue: [] },
+	);
 
 	return (
 		<div id="account-widget" onmouseleave={() => setIsOpen(false)}>
@@ -99,7 +111,10 @@ export default function AccountWidget(props: AccountWidgetProps) {
 				onclick={() => setIsOpen(!isOpen())}
 			>
 				<Show
-					when={accountData() != undefined && accountData()!.currentAccount != undefined}
+					when={
+						accountData() != undefined &&
+						accountData()!.currentAccount != undefined
+					}
 					fallback={
 						<AccountTile
 							account={{
@@ -108,7 +123,7 @@ export default function AccountWidget(props: AccountWidgetProps) {
 								username: "No Account Selected",
 							}}
 							isFeatured={true}
-							onclick={() => { }}
+							onclick={() => {}}
 							onClose={() => setIsOpen(false)}
 						/>
 					}
@@ -116,7 +131,7 @@ export default function AccountWidget(props: AccountWidgetProps) {
 					<AccountTile
 						account={accountData()!.currentAccount!}
 						isFeatured={true}
-						onclick={() => { }}
+						onclick={() => {}}
 						onClose={() => setIsOpen(false)}
 					/>
 				</Show>
@@ -142,11 +157,12 @@ export default function AccountWidget(props: AccountWidgetProps) {
 											account={account!}
 											isFeatured={false}
 											onclick={(account) => {
-												invoke("select_account", { account: account }).then(() => {
-													props.onSelect(account);
-													methods.refetch();
-													setIsOpen(false);
-												});
+												invoke("select_account", { account: account }).then(
+													() => {
+														methods.refetch();
+														setIsOpen(false);
+													},
+												);
 											}}
 											onClose={() => setIsOpen(false)}
 										/>
@@ -155,10 +171,13 @@ export default function AccountWidget(props: AccountWidgetProps) {
 							)}
 						</For>
 					</Show>
-					<div class="bubble-hover account-tile" onclick={() => {
-						setIsCreatingAccount(true);
-						setIsOpen(false);
-					}}>
+					<div
+						class="bubble-hover account-tile"
+						onclick={() => {
+							setIsCreatingAccount(true);
+							setIsOpen(false);
+						}}
+					>
 						<div class="cont">
 							<Icon icon={Plus} size="1.2rem" />
 						</div>
@@ -195,10 +214,9 @@ export default function AccountWidget(props: AccountWidgetProps) {
 								setIsCreatingAccount(false);
 								errorToast("Failed to create account: " + e);
 							}
-						}
-					}
-				]
-				}
+						},
+					},
+				]}
 			>
 				<div class="cont col fullwidth">
 					<label class="cont start fullwidth label" for="account-id">
@@ -241,9 +259,7 @@ export default function AccountWidget(props: AccountWidgetProps) {
 	);
 }
 
-export interface AccountWidgetProps {
-	onSelect: (account: string) => void;
-}
+export interface AccountWidgetProps {}
 
 interface AccountData {
 	currentAccount?: AccountInfo;
@@ -276,10 +292,15 @@ function AccountTile(props: AccountTileProps) {
 			onmouseleave={() => setIsHovered(false)}
 		>
 			<div class="cont">
-				<img class="account-tile-image" src={getAccountIcon(props.account.uuid)} />
+				<img
+					class="account-tile-image"
+					src={getAccountIcon(props.account.uuid)}
+				/>
 			</div>
 			<div class="cont account-tile-name">
-				{props.account.username == undefined ? props.account.id : props.account.username}
+				{props.account.username == undefined
+					? props.account.id
+					: props.account.username}
 			</div>
 			<Show when={!props.isFeatured && isHovered()}>
 				<div class="cont account-tile-edit">

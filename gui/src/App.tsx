@@ -2,7 +2,14 @@ import { Router, Route, Location } from "@solidjs/router";
 import "./App.css";
 import LaunchPage from "./pages/instance/InstanceList";
 import NavBar from "./components/navigation/NavBar";
-import { createResource, createSignal, ErrorBoundary, onCleanup, onMount, Show } from "solid-js";
+import {
+	createResource,
+	createSignal,
+	ErrorBoundary,
+	onCleanup,
+	onMount,
+	Show,
+} from "solid-js";
 import BrowsePackages from "./pages/package/BrowsePackages";
 import ViewPackage from "./pages/package/ViewPackage";
 import Sidebar from "./components/navigation/Sidebar";
@@ -24,16 +31,16 @@ import InstanceConfigModal, {
 	InstanceConfigParams,
 } from "./pages/instance/InstanceConfig";
 import { open } from "@tauri-apps/plugin-shell";
-import PackageDiffsPrompt, { PackageDiff } from "./components/package/PackageDiffsPrompt";
+import PackageDiffsPrompt, {
+	PackageDiff,
+} from "./components/package/PackageDiffsPrompt";
 
 export default function App() {
 	const [footerData, setFooterData] = createSignal<FooterData>({
 		selectedItem: undefined,
 		mode: FooterMode.Instance,
-		action: () => { },
+		action: () => {},
 	});
-
-	let [selectedAccount, setSelectedAccount] = createSignal<string>();
 
 	// Window refresh logic
 	let [showUi, setShowUi] = createSignal(true);
@@ -50,8 +57,6 @@ export default function App() {
 						children={children}
 						location={location}
 						footerData={footerData()}
-						onSelectAccount={setSelectedAccount}
-						selectedAccount={selectedAccount()}
 					/>
 				)}
 			>
@@ -90,7 +95,9 @@ function Layout(props: LayoutProps) {
 	let [instanceConfigParams, setInstanceConfigParams] = createSignal<
 		InstanceConfigParams | undefined
 	>();
-	let [packageDiffsPrompt, setPackageDiffsPrompt] = createSignal<PackageDiff[] | undefined>();
+	let [packageDiffsPrompt, setPackageDiffsPrompt] = createSignal<
+		PackageDiff[] | undefined
+	>();
 
 	(window as any).__setPluginModalContents = (x: any) => {
 		setPluginModalContents(x);
@@ -154,7 +161,6 @@ function Layout(props: LayoutProps) {
 			<NavBar
 				onSidebarToggle={() => setShowSidebar(!showSidebar())}
 				onSidebarClose={() => setShowSidebar(false)}
-				onSelectAccount={props.onSelectAccount}
 				location={props.location}
 			/>
 			<ErrorBoundary
@@ -168,12 +174,10 @@ function Layout(props: LayoutProps) {
 				visible={showSidebar()}
 				location={props.location}
 				setVisible={setShowSidebar}
-				onSelectAccount={props.onSelectAccount}
 			/>
 			<Footer
 				selectedItem={props.footerData.selectedItem}
 				mode={props.footerData.mode}
-				selectedAccount={props.selectedAccount}
 				action={props.footerData.action}
 				itemFromPlugin={props.footerData.fromPlugin}
 				itemEditable={props.footerData.isEditable}
@@ -195,7 +199,10 @@ function Layout(props: LayoutProps) {
 				params={instanceConfigParams()}
 				onClose={() => setInstanceConfigParams(undefined)}
 			/>
-			<PackageDiffsPrompt diffs={packageDiffsPrompt()} onClose={() => setPackageDiffsPrompt(undefined)} />
+			<PackageDiffsPrompt
+				diffs={packageDiffsPrompt()}
+				onClose={() => setPackageDiffsPrompt(undefined)}
+			/>
 		</>
 	);
 }
@@ -204,8 +211,6 @@ interface LayoutProps {
 	children: any;
 	location: Location;
 	footerData: FooterData;
-	selectedAccount?: string;
-	onSelectAccount: (account: string) => void;
 }
 
 export interface FooterData {
@@ -222,7 +227,7 @@ export interface FooterData {
 export function setInstanceConfigModal(
 	id: string | undefined,
 	mode: InstanceConfigMode,
-	creating: boolean
+	creating: boolean,
 ) {
 	(window as any).__setInstanceConfigModal({
 		id: id,

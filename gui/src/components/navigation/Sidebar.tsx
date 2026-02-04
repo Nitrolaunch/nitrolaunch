@@ -47,7 +47,7 @@ export default function Sidebar(props: SidebarProps) {
 		])) as [
 			InstanceInfo[],
 			InstanceInfo[],
-			[string, InstanceOrTemplate] | undefined
+			[string, InstanceOrTemplate] | undefined,
 		];
 
 		let allInstances: [InstanceInfo, InstanceOrTemplate][] = [];
@@ -115,7 +115,10 @@ export default function Sidebar(props: SidebarProps) {
 				class="cont"
 				style="padding:0.25rem;width:var(--width);box-sizing:border-box"
 			></div>
-			<div class="split fullwidth" style="padding:0.55rem;box-sizing:border-box">
+			<div
+				class="split fullwidth"
+				style="padding:0.55rem;box-sizing:border-box"
+			>
 				<div class="cont start">
 					<div class="cont">
 						<IconButton
@@ -233,9 +236,9 @@ export default function Sidebar(props: SidebarProps) {
 												setInstanceConfigModal(
 													info.id,
 													InstanceConfigMode.Template,
-													false
+													false,
 												);
-										  }
+											}
 								}
 								location={props.location}
 								selectedPath={url}
@@ -266,7 +269,6 @@ export interface SidebarProps {
 	visible: boolean;
 	setVisible: (visible: boolean) => void;
 	location: Location;
-	onSelectAccount: (account: string) => void;
 }
 
 function SidebarItem(props: SidebarItemProps) {

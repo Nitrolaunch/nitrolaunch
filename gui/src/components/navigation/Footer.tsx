@@ -40,7 +40,7 @@ export default function Footer(props: FooterProps) {
 	// Prompts
 	const [showPasswordPrompt, setShowPasswordPrompt] = createSignal(false);
 	const [authInfo, setAuthInfo] = createSignal<AuthDisplayEvent | undefined>(
-		undefined
+		undefined,
 	);
 	const [passwordPromptMessage, setPasswordPromptMessage] = createSignal("");
 	let [showTemplateDeletePrompt, setShowTemplateDeletePrompt] =
@@ -59,7 +59,7 @@ export default function Footer(props: FooterProps) {
 			"nitro_display_auth_info",
 			(event: Event<AuthDisplayEvent>) => {
 				setAuthInfo(event.payload);
-			}
+			},
 		);
 
 		let authInfoClosePromise = listen("nitro_close_auth_info", () => {
@@ -71,7 +71,7 @@ export default function Footer(props: FooterProps) {
 			(event: Event<string>) => {
 				setShowPasswordPrompt(true);
 				setPasswordPromptMessage(event.payload);
-			}
+			},
 		);
 
 		let eventUnlistens = await Promise.all([
@@ -102,7 +102,6 @@ export default function Footer(props: FooterProps) {
 		let launchPromise = invoke("launch_game", {
 			instanceId: instance,
 			offline: offline,
-			account: props.selectedAccount,
 		});
 
 		try {
@@ -126,7 +125,7 @@ export default function Footer(props: FooterProps) {
 					if (e.payload == "update_instance") {
 						methods.refetch();
 					}
-				}
+				},
 			);
 
 			setUnlistens((unlistens) => {
@@ -137,7 +136,7 @@ export default function Footer(props: FooterProps) {
 			return await invoke("get_instance_has_updated", {
 				instance: props.selectedItem,
 			});
-		}
+		},
 	);
 
 	let gallery!: HTMLDivElement;
@@ -316,7 +315,7 @@ export default function Footer(props: FooterProps) {
 								setInstanceConfigModal(
 									props.selectedItem,
 									InstanceConfigMode.Template,
-									false
+									false,
 								);
 							}
 						} else {
@@ -375,7 +374,6 @@ export default function Footer(props: FooterProps) {
 export interface FooterProps {
 	selectedItem?: string;
 	mode: FooterMode;
-	selectedAccount?: string;
 	action: () => void;
 	itemFromPlugin?: boolean;
 	itemEditable?: boolean;
