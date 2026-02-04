@@ -8,18 +8,14 @@
 	--bg-1: #000000;
 	--bg0: #0b0b0b;
 	--bg: #0d0d0d;
-	--bg2: #141414;
+	--bg2: #0d0d0d;
 	--bg3: #202020;
 	--bg4: #3a3a3a;
 
 	--round: 0.2rem;
 	--round2: 0.4rem;
-	--border: 1px;
+	--border: 2px;
 	--shadow-offset: 0px;
-}
-
-.cont {
-	gap: 0.4rem;
 }
 
 .bubble-hover:hover,
