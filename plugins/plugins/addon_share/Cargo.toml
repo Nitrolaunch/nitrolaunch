@@ -12,7 +12,7 @@ crate-type = ["cdylib"]
 anyhow = { workspace = true }
 clap = { workspace = true }
 nitro_config = { workspace = true }
-nitro_plugin = { version = "0.28.0", path = "../../../crates/plugin", default-features = false, features = [
+nitro_plugin = { version = "0.29.0", path = "../../../crates/plugin", default-features = false, features = [
 	"wasm_api",
 ] }
 nitro_shared = { workspace = true }
