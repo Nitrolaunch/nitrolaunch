@@ -2,26 +2,28 @@
 
 VERSION=0.29.0
 
-mkdir -p unzip
-rm -r unzip
-mkdir unzip
+mkdir -p release
 
-mkdir -p out
-rm -r out
-mkdir out
+mkdir -p release/unzip
+rm -r release/unzip
+mkdir release/unzip
 
-unzip -d unzip macos-latest.zip
-unzip -d unzip windows-2022.zip
-unzip -d unzip ubuntu-latest.zip
+mkdir -p release/out
+rm -r release/out
+mkdir release/out
 
-mv "unzip/universal-apple-darwin/release/bundle/dmg/Nitrolaunch_${VERSION}_universal.dmg" out
-mv "unzip/release/bundle/msi/Nitrolaunch_${VERSION}_x64_en-US.msi" out
-mv "unzip/aarch64-pc-windows-msvc/release/bundle/msi/Nitrolaunch_${VERSION}_arm64_en-US.msi" out
-mv "unzip/release/Nitrolaunch.exe" out
-mv "unzip/aarch64-pc-windows-msvc/release/Nitrolaunch.exe" out/Nitrolaunch_arm64.exe
+unzip -d release/unzip release/macos-latest.zip
+unzip -d release/unzip release/windows-2022.zip
+unzip -d release/unzip release/ubuntu-latest.zip
 
-mv "unzip/release/bundle/deb/Nitrolaunch_${VERSION}_amd64.deb" out
-mv "unzip/release/bundle/appimage/Nitrolaunch_${VERSION}_amd64.AppImage" out
+mv "release/unzip/universal-apple-darwin/release/bundle/dmg/Nitrolaunch_${VERSION}_universal.dmg" release/out
+mv "release/unzip/release/bundle/msi/Nitrolaunch_${VERSION}_x64_en-US.msi" release/out
+mv "release/unzip/aarch64-pc-windows-msvc/release/bundle/msi/Nitrolaunch_${VERSION}_arm64_en-US.msi" release/out
+mv "release/unzip/release/Nitrolaunch.exe" release/out
+mv "release/unzip/aarch64-pc-windows-msvc/release/Nitrolaunch.exe" release/out/Nitrolaunch_arm64.exe
 
-rm -r unzip
+mv "release/unzip/release/bundle/deb/Nitrolaunch_${VERSION}_amd64.deb" release/out
+mv "release/unzip/release/bundle/appimage/Nitrolaunch_${VERSION}_amd64.AppImage" release/out
+
+rm -r release/unzip
 

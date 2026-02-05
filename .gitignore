@@ -9,6 +9,9 @@
 /docs/.retype
 /docs/retype.manifest
 
+# Releasing
+/release
+
 # GUI
 /gui/target
 /gui/gen/schemas
