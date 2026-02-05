@@ -11,6 +11,13 @@
 					"description": "A sleek, modern dark theme",
 					"css": "$file:sleek.css",
 					"color": "#000000"
+				},
+				{
+					"id": "ghost",
+					"name": "Ghost",
+					"description": "Dark theme with white accent colors",
+					"css": "$file:ghost.css",
+					"color": "#ffffff"
 				}
 			]
 		}

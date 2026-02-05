@@ -1,0 +1,15 @@
+:root {
+	--instance: var(--fg);
+	--template: var(--fg);
+	--package: var(--fg);
+	--plugin: var(--fg);
+	--warning: var(--fg);
+	--error: var(--fg);
+
+	--instancebg: var(--bg2);
+	--templatebg: var(--bg2);
+	--packagebg: var(--bg2);
+	--pluginfg: var(--bg2);
+	--pluginbg: var(--bg2);
+	--errorbg: var(--bg2);
+}
