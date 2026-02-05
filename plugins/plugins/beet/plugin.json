@@ -1,7 +1,7 @@
 {
 	"name": "Beet",
 	"description": "Tools for Beet developers",
-	"version": "v5",
+	"version": "v6",
 	"protocol_version": 3,
 	"hooks": {
 		"subcommand": {

@@ -1,7 +1,7 @@
 {
 	"name": "Backup",
 	"description": "Create backups of instances",
-	"version": "v5",
+	"version": "v6",
 	"protocol_version": 3,
 	"hooks": {
 		"subcommand": {

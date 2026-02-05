@@ -1,7 +1,7 @@
 {
 	"name": "GLFW Fix",
 	"description": "Fixes crashes from a bad GLFW version",
-	"version": "v5",
+	"version": "v6",
 	"protocol_version": 3,
 	"hooks": {
 		"on_instance_setup": {

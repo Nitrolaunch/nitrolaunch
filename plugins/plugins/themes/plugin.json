@@ -1,7 +1,7 @@
 {
 	"name": "Themes",
 	"description": "Adds more themes for you to choose from",
-	"version": "v5",
+	"version": "v6",
 	"hooks": {
 		"add_themes": {
 			"constant": [

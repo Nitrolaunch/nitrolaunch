@@ -1,7 +1,7 @@
 {
 	"name": "Options",
 	"description": "Manage game options for client and server",
-	"version": "v5",
+	"version": "v6",
 	"protocol_version": 3,
 	"hooks": {
 		"on_instance_setup": {

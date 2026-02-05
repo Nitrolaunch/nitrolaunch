@@ -1,7 +1,7 @@
 {
 	"name": "Server Restart",
 	"description": "Manage restart behavior for Spigot and Paper servers",
-	"version": "v5",
+	"version": "v6",
 	"protocol_version": 3,
 	"hooks": {
 		"on_instance_setup": {

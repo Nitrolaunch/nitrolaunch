@@ -1,7 +1,7 @@
 {
 	"name": "Args",
 	"description": "Use argument presets to increase game performance",
-	"version": "v5",
+	"version": "v6",
 	"protocol_version": 3,
 	"hooks": {
 		"modify_instance_config": {
