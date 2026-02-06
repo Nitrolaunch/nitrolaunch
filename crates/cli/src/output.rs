@@ -115,7 +115,11 @@ impl NitroOutput for TerminalOutput {
 		}
 	}
 
-	async fn prompt_yes_no(&mut self, default: bool, message: MessageContents) -> anyhow::Result<bool> {
+	async fn prompt_yes_no(
+		&mut self,
+		default: bool,
+		message: MessageContents,
+	) -> anyhow::Result<bool> {
 		let ans = Confirm::new(&self.format_message(message))
 			.with_default(default)
 			.prompt()
@@ -297,11 +301,11 @@ impl TerminalOutput {
 /// Format a PkgRequest with colors
 fn disp_pkg_request_with_colors(req: PkgRequest) -> String {
 	match req.source {
-		PkgRequestSource::UserRequire => cformat!("<y>{}", req.id),
-		PkgRequestSource::Bundled(..) => cformat!("<b>{}", req.id),
-		PkgRequestSource::Refused(..) => cformat!("<r>{}", req.id),
+		PkgRequestSource::UserRequire => cformat!("<y>{req}"),
+		PkgRequestSource::Bundled(..) => cformat!("<b>{req}"),
+		PkgRequestSource::Refused(..) => cformat!("<r>{req}"),
 		PkgRequestSource::Dependency(..) | PkgRequestSource::Repository => {
-			cformat!("<c>{}", req.id)
+			cformat!("<c>{req}")
 		}
 	}
 }

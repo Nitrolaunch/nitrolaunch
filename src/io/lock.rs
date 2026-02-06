@@ -238,7 +238,8 @@ impl Lockfile {
 							OverwriteAddonFilePrompt,
 							"file" = file
 						)),
-					).await
+					)
+					.await
 					.context("Prompt failed")?;
 
 				if !allow {
@@ -259,14 +260,9 @@ impl Lockfile {
 	) -> anyhow::Result<Vec<PathBuf>> {
 		if let Some(inst) = self.contents.packages.get_mut(instance) {
 			let mut pkgs_to_remove = Vec::new();
-			for (req, pkg) in inst.iter() {
+			for req in inst.keys() {
 				let req2 = Arc::new(PkgRequest::parse(req, PkgRequestSource::UserRequire));
 				if used_packages.contains(&req2) {
-					continue;
-				}
-
-				// Backwards compatability fix to prevent removing packages that add a repository
-				if req2.repository.is_some() && inst.values().any(|x| x.addons == pkg.addons) {
 					continue;
 				}
 

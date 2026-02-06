@@ -104,19 +104,17 @@ pub async fn update_instance_packages<O: NitroOutput>(
 	);
 
 	// Install each package one after another onto all of its instances
+	ctx.output.start_process();
 	ctx.output.display(
 		MessageContents::Header(translate!(ctx.output, StartInstallingPackages)),
 		MessageLevel::Important,
 	);
 
+	let version_info = VersionInfo {
+		version: constants.version.clone(),
+		versions: constants.version_list.clone(),
+	};
 	for package in &resolution.packages {
-		ctx.output.start_process();
-
-		let version_info = VersionInfo {
-			version: constants.version.clone(),
-			versions: constants.version_list.clone(),
-		};
-
 		instance
 			.install_eval_data(
 				&package.req,
@@ -128,34 +126,33 @@ pub async fn update_instance_packages<O: NitroOutput>(
 			)
 			.await
 			.context("Failed to install package on instance")?;
-
-		ctx.output.display(
-			format_package_update_message(
-				&package.req,
-				MessageContents::Success(translate!(ctx.output, FinishInstallingPackage)),
-			),
-			MessageLevel::Important,
-		);
-		ctx.output.end_process();
 	}
 
 	// Remove unused packages and addons
+	let used_package_reqs = resolution
+		.packages
+		.iter()
+		.map(|x| x.req.clone())
+		.collect::<Vec<_>>();
 	let files_to_remove = ctx
 		.lock
-		.remove_unused_packages(
-			&instance.id,
-			&resolution
-				.packages
-				.iter()
-				.map(|x| x.req.clone())
-				.collect::<Vec<_>>(),
-		)
+		.remove_unused_packages(&instance.id, &used_package_reqs)
 		.context("Failed to remove unused packages")?;
 	for file in files_to_remove {
 		instance
 			.remove_addon_file(&file, ctx.paths)
 			.with_context(|| format!("Failed to remove addon file {}", file.display()))?;
 	}
+
+	ctx.output.display(
+		MessageContents::Success(translate!(
+			ctx.output,
+			FinishInstallingPackages,
+			"count" = &resolution.packages.len().to_string()
+		)),
+		MessageLevel::Important,
+	);
+	ctx.output.end_process();
 
 	// Get the set of unique packages
 	let out = HashSet::from_iter(resolution.packages.into_iter().map(|x| x.req));

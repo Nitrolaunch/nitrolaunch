@@ -723,32 +723,35 @@ pub async fn resolve(
 }
 
 /// Prints an unfulfilled recommendation warning
-fn print_recommendation_warning(
+pub fn print_recommendation_warning(
 	package: &nitro_pkg::resolve::RecommendedPackage,
 	o: &mut impl NitroOutput,
 ) {
 	let source = package.req.source.get_source();
-	let message = if package.invert {
-		if let Some(source) = source {
-			MessageContents::Warning(format!("The package '{}' recommends against the use of the package '{}', which is installed", source.debug_sources(), package.req))
-		} else {
+	// NOTE: This check only added because I don't think we want to show positive recommendations (they get very cluttered)
+	if package.invert {
+		let message = if package.invert {
+			if let Some(source) = source {
+				MessageContents::Warning(format!("The package '{}' recommends against the use of the package '{}', which is installed", source.debug_sources(), package.req))
+			} else {
+				MessageContents::Warning(format!(
+					"A package recommends against the use of the package '{}', which is installed",
+					package.req
+				))
+			}
+		} else if let Some(source) = source {
 			MessageContents::Warning(format!(
-				"A package recommends against the use of the package '{}', which is installed",
+				"The package '{}' recommends the use of the package '{}', which is not installed",
+				source.debug_sources(),
 				package.req
 			))
-		}
-	} else if let Some(source) = source {
-		MessageContents::Warning(format!(
-			"The package '{}' recommends the use of the package '{}', which is not installed",
-			source.debug_sources(),
-			package.req
-		))
-	} else {
-		MessageContents::Warning(format!(
-			"A package recommends the use of the package '{}', which is not installed",
-			package.req
-		))
-	};
+		} else {
+			MessageContents::Warning(format!(
+				"A package recommends the use of the package '{}', which is not installed",
+				package.req
+			))
+		};
 
-	o.display(message, MessageLevel::Important);
+		o.display(message, MessageLevel::Important);
+	}
 }

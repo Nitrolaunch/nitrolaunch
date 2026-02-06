@@ -136,20 +136,9 @@ impl InstanceLockfile {
 		used_packages: &[ArcPkgReq],
 	) -> anyhow::Result<Vec<PathBuf>> {
 		let mut pkgs_to_remove = Vec::new();
-		for (req, pkg) in &self.contents.packages {
+		for req in self.contents.packages.keys() {
 			let req2 = Arc::new(PkgRequest::parse(req, PkgRequestSource::UserRequire));
 			if used_packages.contains(&req2) {
-				continue;
-			}
-
-			// Backwards compatability fix to prevent removing packages that add a repository
-			if req2.repository.is_some()
-				&& self
-					.contents
-					.packages
-					.values()
-					.any(|x| x.addons == pkg.addons)
-			{
 				continue;
 			}
 
