@@ -1,0 +1,24 @@
+:root {
+	font-family: Minecraft, sans-serif;
+
+	--instance: #4da834;
+	--template: #4da834;
+	--package: #4da834;
+	--plugin: #4da834;
+
+	--instancebg: var(--bg2);
+	--templatebg: var(--bg2);
+	--packagebg: var(--bg2);
+	--pluginfg: var(--fg2);
+	--pluginbg: var(--bg2);
+
+	--round: 0px;
+	--round2: 0px;
+}
+
+/* Fonts */
+@font-face {
+	font-family: Minecraft;
+	src: url(asset://localhost${PLUGIN_DIR}/Minecraft.ttf);
+	font-display: swap;
+}

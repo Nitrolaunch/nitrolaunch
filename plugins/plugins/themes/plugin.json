@@ -14,6 +14,14 @@
 					"color": "var(--bg4)"
 				},
 				{
+					"id": "minecraft",
+					"name": "Minecraft",
+					"description": "Blocky theme with the Minecraft font",
+					"type": "base",
+					"css": "$file:minecraft.css",
+					"color": "rgb(60, 133, 39)"
+				},
+				{
 					"id": "ghost",
 					"name": "Ghost",
 					"description": "White accent colors",

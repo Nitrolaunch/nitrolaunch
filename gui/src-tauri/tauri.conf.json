@@ -34,6 +34,7 @@
           "allow": [
             "$APPCACHE/**",
             "$RESOURCE/**",
+            "**/.local/share/**/*",
             "/home/**"
           ],
           "deny": [],
