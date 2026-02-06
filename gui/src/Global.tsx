@@ -1,6 +1,12 @@
-import { invoke } from "@tauri-apps/api/core";
+import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { listen, UnlistenFn } from "@tauri-apps/api/event";
-import { createMemo, createResource, createSignal, For, onCleanup } from "solid-js";
+import {
+	createMemo,
+	createResource,
+	createSignal,
+	For,
+	onCleanup,
+} from "solid-js";
 import { Theme } from "./types";
 import { LauncherSettings } from "./pages/Settings";
 import { errorToast } from "./components/dialog/Toasts";
@@ -10,7 +16,7 @@ export default function Global(props: GlobalProps) {
 	let [baseTheme, setBaseTheme] = createSignal<string>("dark");
 	let [overlayThemes, setOverlayThemes] = createSignal<string[]>([]);
 
-	let [unlisten, setUnlisten] = createSignal<UnlistenFn>(() => { });
+	let [unlisten, setUnlisten] = createSignal<UnlistenFn>(() => {});
 	let [availableThemes, availableThemesMethods] = createResource(async () => {
 		let unlisten = await listen("update_theme", () => {
 			availableThemesMethods.refetch();
@@ -48,7 +54,8 @@ export default function Global(props: GlobalProps) {
 				availableThemes()!.some((x) => x.id == theme)
 			) {
 				let css = availableThemes()!.find((x) => x.id == theme)!.css;
-				return `<style>${css}</style>`;
+				let fixedCss = fixTheme(css);
+				return `<style>${fixedCss}</style>`;
 			} else {
 				return `<link rel="stylesheet" href="/themes/${theme}.css" />`;
 			}
@@ -68,9 +75,29 @@ export default function Global(props: GlobalProps) {
 	);
 }
 
-export interface GlobalProps { }
+export interface GlobalProps {}
 
-export interface UpdateThemeEvent {
-	base_theme: string;
-	overlay_themes: string[];
+// Fixes the CSS of a theme by replacing local asset URLs with Tauri asset URLs
+function fixTheme(css: string): string {
+	let regex = /url\(\//g;
+
+	let out = "";
+	let lastMatchPos = 0;
+	for (let result of css.matchAll(regex)) {
+		let start = result.index + 4;
+		let end = css.indexOf(")", start);
+		if (end != -1) {
+			let path = css.substring(start, end);
+			let newPath = convertFileSrc(path);
+			out += css.substring(lastMatchPos, start);
+			out += newPath;
+			lastMatchPos = end;
+		}
+	}
+
+	if (lastMatchPos > 0) {
+		out += css.substring(lastMatchPos);
+	}
+
+	return out;
 }

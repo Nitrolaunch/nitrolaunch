@@ -19,7 +19,7 @@
 /* Fonts */
 @font-face {
 	font-family: Minecraft;
-	src: url(asset://localhost${PLUGIN_DIR}/MinecraftRegular.otf);
+	src: url(${PLUGIN_DIR}/MinecraftRegular.otf);
 	font-weight: normal;
 	font-display: swap;
 }
