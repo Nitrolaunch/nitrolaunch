@@ -97,6 +97,8 @@ function fixTheme(css: string): string {
 
 	if (lastMatchPos > 0) {
 		out += css.substring(lastMatchPos);
+	} else {
+		out = css;
 	}
 
 	return out;
