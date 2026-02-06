@@ -794,10 +794,23 @@ pub struct Theme {
 	pub name: String,
 	/// A description for the theme
 	pub description: Option<String>,
+	/// The type of this theme
+	pub r#type: ThemeType,
 	/// The CSS data for the theme
 	pub css: String,
 	/// A css color that identifies this theme
 	pub color: String,
+}
+
+/// Types of GUI themes
+#[derive(Serialize, Deserialize, Default, Clone, Copy)]
+#[serde(rename_all = "snake_case")]
+pub enum ThemeType {
+	/// A base theme that restyles most of the launcher
+	#[default]
+	Base,
+	/// A light change that can be stacked with other overlay themes
+	Overlay,
 }
 
 def_hook!(

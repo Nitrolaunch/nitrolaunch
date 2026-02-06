@@ -94,6 +94,7 @@ export interface Theme {
 	id: string;
 	name: string;
 	description?: string;
+	type: "base" | "overlay";
 	css: string;
 	color: string;
 }

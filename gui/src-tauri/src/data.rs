@@ -31,8 +31,11 @@ pub struct LauncherData {
 	pub last_added_package: Option<(String, InstanceOrTemplate)>,
 	/// The instance or template that was last opened
 	pub last_opened_instance: Option<(String, InstanceOrTemplate)>,
-	/// The currently selected theme
-	pub theme: Option<String>,
+	/// The currently selected base theme
+	#[serde(alias = "theme")]
+	pub base_theme: Option<String>,
+	/// The currently selected overlay themes
+	pub overlay_themes: Vec<String>,
 }
 
 impl LauncherData {

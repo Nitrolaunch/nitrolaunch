@@ -21,6 +21,7 @@ export default function Settings(props: SettingsProps) {
 				id: "dark",
 				name: "Dark",
 				description: "Default dark theme",
+				type: "base",
 				css: "",
 				color: "var(--bg4)",
 			} as Theme,
@@ -28,6 +29,7 @@ export default function Settings(props: SettingsProps) {
 				id: "light",
 				name: "Light",
 				description: "Default light theme",
+				type: "base",
 				css: "",
 				color: "var(--fg2)",
 			} as Theme,
@@ -45,15 +47,17 @@ export default function Settings(props: SettingsProps) {
 		}
 	});
 
-	let [theme, setTheme] = createSignal<string>("dark");
+	let [baseTheme, setBaseTheme] = createSignal<string>("dark");
+	let [overlayThemes, setOverlayThemes] = createSignal<string[]>([]);
 
 	createEffect(() => {
 		if (settings() == undefined) {
 			return;
 		}
 
-		let theme = settings()!.selected_theme;
-		setTheme(theme == undefined ? "dark" : theme);
+		let baseTheme = settings()!.base_theme;
+		setBaseTheme(baseTheme == undefined ? "dark" : baseTheme);
+		setOverlayThemes(settings()!.overlay_themes);
 	});
 
 	async function saveSettings() {
@@ -62,7 +66,8 @@ export default function Settings(props: SettingsProps) {
 		}
 
 		let newSettings: LauncherSettings = {
-			selected_theme: theme(),
+			base_theme: baseTheme(),
+			overlay_themes: overlayThemes(),
 		};
 
 		try {
@@ -71,7 +76,7 @@ export default function Settings(props: SettingsProps) {
 
 			setIsDirty(false);
 
-			emit("update_theme", theme());
+			emit("update_theme");
 		} catch (e) {
 			errorToast("Failed to save: " + e);
 		}
@@ -109,16 +114,40 @@ export default function Settings(props: SettingsProps) {
 			<div class="cont fullwidth">
 				<div class="cont fields">
 					<div class="cont start label">
-						<label for="theme">THEME</label>
+						<label for="theme">BASE THEME</label>
 					</div>
 					<Show when={availableThemes() != undefined}>
 						<InlineSelect
 							onChange={(x) => {
-								setTheme(x as string);
+								setBaseTheme(x as string);
 								setIsDirty(true);
 							}}
-							selected={theme()}
-							options={availableThemes()!.map((theme) => {
+							selected={baseTheme()}
+							options={availableThemes()!.filter((x) => x.type == "base").map((theme) => {
+								return {
+									value: theme.id,
+									contents: <div>{theme.name}</div>,
+									tip: theme.description,
+									color: theme.color,
+									selectedTextColor: "var(--fg)",
+								};
+							})}
+							columns={3}
+							allowEmpty={false}
+							connected={false}
+						/>
+					</Show>
+					<div class="cont start label">
+						<label for="theme">OVERLAY THEMES</label>
+					</div>
+					<Show when={availableThemes() != undefined}>
+						<InlineSelect
+							onChangeMulti={(x) => {
+								setOverlayThemes(x as string[]);
+								setIsDirty(true);
+							}}
+							selected={overlayThemes()}
+							options={availableThemes()!.filter((x) => x.type == "overlay").map((theme) => {
 								return {
 									value: theme.id,
 									contents: <div>{theme.name}</div>,
@@ -158,5 +187,6 @@ export interface SettingsProps {
 
 // Global launcher settings
 export interface LauncherSettings {
-	selected_theme?: string;
+	base_theme?: string;
+	overlay_themes: string[];
 }
