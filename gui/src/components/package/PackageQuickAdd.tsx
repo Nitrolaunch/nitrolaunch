@@ -227,10 +227,9 @@ export default function PackageQuickAdd(props: PackageQuickAddProps) {
 										color="var(--package)"
 										bgColor="var(--packagebg)"
 										onClick={() => {
-											let req: PkgRequest = {
-												id: previewedPackage()!,
-												slug: previewedPackageData()![0].slug,
-											};
+											let req: PkgRequest = parsePkgRequest(
+												previewedPackage()!,
+											);
 											props.onAdd(req);
 										}}
 										shadow={false}
