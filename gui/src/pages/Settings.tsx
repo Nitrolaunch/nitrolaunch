@@ -11,11 +11,16 @@ import Modal, { ModalButton } from "../components/dialog/Modal";
 
 export default function Settings(props: SettingsProps) {
 	let [settings, settingsMethods] = createResource(
-		async () => (await invoke("get_settings")) as LauncherSettings
+		async () => (await invoke("get_settings")) as LauncherSettings,
 	);
 
 	let [availableThemes, __] = createResource(async () => {
-		let themes = (await invoke("get_themes")) as Theme[];
+		let themes: Theme[] = [];
+		try {
+			themes = (await invoke("get_themes")) as Theme[];
+		} catch (e) {
+			errorToast("Failed to load themes: " + e);
+		}
 		themes = [
 			{
 				id: "dark",
@@ -123,15 +128,17 @@ export default function Settings(props: SettingsProps) {
 								setIsDirty(true);
 							}}
 							selected={baseTheme()}
-							options={availableThemes()!.filter((x) => x.type == "base").map((theme) => {
-								return {
-									value: theme.id,
-									contents: <div>{theme.name}</div>,
-									tip: theme.description,
-									color: theme.color,
-									selectedTextColor: "var(--fg)",
-								};
-							})}
+							options={availableThemes()!
+								.filter((x) => x.type == "base")
+								.map((theme) => {
+									return {
+										value: theme.id,
+										contents: <div>{theme.name}</div>,
+										tip: theme.description,
+										color: theme.color,
+										selectedTextColor: "var(--fg)",
+									};
+								})}
 							columns={3}
 							allowEmpty={false}
 							connected={false}
@@ -147,15 +154,17 @@ export default function Settings(props: SettingsProps) {
 								setIsDirty(true);
 							}}
 							selected={overlayThemes()}
-							options={availableThemes()!.filter((x) => x.type == "overlay").map((theme) => {
-								return {
-									value: theme.id,
-									contents: <div>{theme.name}</div>,
-									tip: theme.description,
-									color: theme.color,
-									selectedTextColor: "var(--fg)",
-								};
-							})}
+							options={availableThemes()!
+								.filter((x) => x.type == "overlay")
+								.map((theme) => {
+									return {
+										value: theme.id,
+										contents: <div>{theme.name}</div>,
+										tip: theme.description,
+										color: theme.color,
+										selectedTextColor: "var(--fg)",
+									};
+								})}
 							columns={3}
 							allowEmpty={false}
 							connected={false}
