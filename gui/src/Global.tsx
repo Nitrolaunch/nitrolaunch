@@ -31,7 +31,7 @@ export default function Global(props: GlobalProps) {
 
 			return availableThemes;
 		} catch (e) {
-			errorToast("Failed to load theme");
+			errorToast("Failed to load theme: " + e);
 		}
 	});
 
