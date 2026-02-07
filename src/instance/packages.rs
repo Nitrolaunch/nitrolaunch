@@ -6,7 +6,8 @@ use nitro_shared::versions::VersionInfo;
 use reqwest::Client;
 
 use crate::addon::AddonExt;
-use crate::io::lock::{Lockfile, LockfileAddon};
+use crate::instance::lock::InstanceLockfile;
+use crate::io::lock::LockfileAddon;
 use crate::io::paths::Paths;
 use crate::pkg::eval::EvalData;
 
@@ -24,7 +25,7 @@ impl Instance {
 		pkg: &ArcPkgReq,
 		eval: &EvalData,
 		paths: &Paths,
-		lock: &mut Lockfile,
+		inst_lock: &mut InstanceLockfile,
 		force: bool,
 		client: &Client,
 		o: &mut impl NitroOutput,
@@ -43,7 +44,7 @@ impl Instance {
 			task.await.context("Failed to install addon")?;
 		}
 
-		self.install_eval_data(pkg, &eval, &version_info, paths, lock, o)
+		self.install_eval_data(pkg, &eval, &version_info, paths, inst_lock, o)
 			.await
 			.context("Failed to install evaluation data on instance")?;
 
@@ -81,7 +82,7 @@ impl Instance {
 		eval: &EvalData,
 		version_info: &VersionInfo,
 		paths: &Paths,
-		lock: &mut Lockfile,
+		inst_lock: &mut InstanceLockfile,
 		o: &mut impl NitroOutput,
 	) -> anyhow::Result<()> {
 		// Get the configuration for the package or the default if it is not configured by the user
@@ -115,10 +116,9 @@ impl Instance {
 			.collect::<anyhow::Result<Vec<LockfileAddon>>>()
 			.context("Failed to convert addons to the lockfile format")?;
 
-		let files_to_remove = lock
+		let files_to_remove = inst_lock
 			.update_package(
 				pkg,
-				&self.id,
 				&lockfile_addons,
 				eval.selected_content_version.clone(),
 				o,

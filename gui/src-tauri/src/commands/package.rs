@@ -272,12 +272,20 @@ pub async fn get_instance_packages(
 	state: tauri::State<'_, State>,
 	instance: &str,
 ) -> Result<HashMap<String, LockfilePackage>, String> {
+	let mut config = fmt_err(
+		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
+			.await
+			.context("Failed to load config"),
+	)?;
 	let lock = fmt_err(Lockfile::open(&state.paths).context("Failed to open lockfile"))?;
 
-	let default = HashMap::new();
-	let packages = lock.get_instance_packages(instance).unwrap_or(&default);
+	let Some(instance) = config.instances.get_mut(instance) else {
+		return Ok(HashMap::new());
+	};
 
-	Ok(packages.clone())
+	let lock = fmt_err(instance.get_lockfile(&lock, &state.paths))?;
+
+	Ok(lock.get_packages().clone())
 }
 
 #[tauri::command]

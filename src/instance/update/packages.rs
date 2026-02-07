@@ -46,12 +46,13 @@ pub async fn update_instance_packages<O: NitroOutput>(
 	);
 	ctx.output.end_process();
 
-	if let Some(current_packages) = ctx.lock.get_instance_packages(&instance.id) {
-		let diffs = resolution.get_diffs(current_packages);
-		if !diffs.is_empty() {
-			if !ctx.output.prompt_special_package_diffs(diffs).await? {
-				bail!("Package update aborted");
-			}
+	let mut inst_lock = instance.get_lockfile(ctx.lock, ctx.paths)?;
+
+	let current_packages = inst_lock.get_packages();
+	let diffs = resolution.get_diffs(current_packages);
+	if !diffs.is_empty() {
+		if !ctx.output.prompt_special_package_diffs(diffs).await? {
+			bail!("Package update aborted");
 		}
 	}
 
@@ -121,7 +122,7 @@ pub async fn update_instance_packages<O: NitroOutput>(
 				&package.eval,
 				&version_info,
 				ctx.paths,
-				ctx.lock,
+				&mut inst_lock,
 				ctx.output,
 			)
 			.await
@@ -134,15 +135,16 @@ pub async fn update_instance_packages<O: NitroOutput>(
 		.iter()
 		.map(|x| x.req.clone())
 		.collect::<Vec<_>>();
-	let files_to_remove = ctx
-		.lock
-		.remove_unused_packages(&instance.id, &used_package_reqs)
+	let files_to_remove = inst_lock
+		.remove_unused_packages(&used_package_reqs)
 		.context("Failed to remove unused packages")?;
 	for file in files_to_remove {
 		instance
 			.remove_addon_file(&file, ctx.paths)
 			.with_context(|| format!("Failed to remove addon file {}", file.display()))?;
 	}
+
+	inst_lock.write()?;
 
 	ctx.output.display(
 		MessageContents::Success(translate!(

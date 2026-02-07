@@ -736,23 +736,24 @@ pub async fn canonicalize_version(
 		return Ok(version.to_string());
 	}
 
+	let mut config = fmt_err(load_config(&state.paths, &state.wasm_loader, &mut NoOp).await)?;
+
 	if let Some(id) = id {
 		if instance_or_template == InstanceOrTemplate::Instance {
 			let lock = fmt_err(Lockfile::open(&state.paths).context("Failed to open lockfile"))?;
-			if let Some(version) = lock.get_instance_version(id) {
-				return Ok(version.to_string());
+			let Some(instance) = config.instances.get_mut(id) else {
+				return Err("Instance does not exist".into());
+			};
+
+			let inst_lock = fmt_err(instance.get_lockfile(&lock, &state.paths))?;
+
+			if let Some(version) = inst_lock.get_minecraft_version() {
+				return Ok(version.clone());
 			}
 		}
 	}
 
 	// Get the latest version
-
-	let config = fmt_err(
-		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
-			.await
-			.context("Failed to load config"),
-	)?;
-
 	let mut core = fmt_err(
 		setup_core(
 			None,

@@ -102,11 +102,13 @@ impl Instance {
 
 		// Run plugin setup hooks
 
-		lock.ensure_instance_created(&self.id, &version_info.version);
-		let lock_instance = lock.get_instance(&self.id);
-		let current_version = lock_instance.map(|x| x.version.clone());
-		let current_loader_version = lock_instance.and_then(|x| x.loader_version.clone());
-		let current_loader = lock_instance.map(|x| x.loader.clone()).unwrap_or_default();
+		let mut inst_lock = self
+			.get_lockfile(lock, paths)
+			.context("Failed to open instance lockfile")?;
+
+		let current_version = inst_lock.get_minecraft_version().cloned();
+		let current_loader = inst_lock.get_loader().clone();
+		let current_loader_version = inst_lock.get_loader_version().cloned();
 
 		let mut arg = OnInstanceSetupArg {
 			id: self.id.to_string(),
@@ -215,19 +217,17 @@ impl Instance {
 				if loader_version_set {
 					bail!("Multiple plugins attempted to modify the loader version");
 				}
-				lock.update_instance_loader_version(&self.id, Some(loader_version))
-					.expect("Instance should exist");
+				inst_lock.update_loader_version(Some(loader_version));
 				loader_version_set = true;
 			}
 		}
 
 		// Update the loaders and version
-		lock.update_instance_version(&self.id, &version_info.version)
-			.expect("Instance should exist");
-		lock.update_instance_loader(&self.id, self.config.loader.clone())
-			.expect("Instance should exist");
+		inst_lock.update_minecraft_version(&version_info.version);
+		inst_lock.update_loader(self.config.loader.clone());
 
-		lock.finish(paths)
+		inst_lock
+			.write()
 			.context("Failed to finish using lockfile")?;
 
 		// Create the core instance only if this is a local instance

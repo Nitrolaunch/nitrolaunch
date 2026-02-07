@@ -51,17 +51,23 @@ pub struct LockfilePackage {
 /// Format for an addon in the lockfile
 #[derive(Serialize, Deserialize, PartialEq, Clone, Debug)]
 pub struct LockfileAddon {
+	/// ID of the addon
 	#[serde(alias = "name")]
-	id: String,
+	pub id: String,
+	/// Filename of the addon
 	#[serde(skip_serializing_if = "Option::is_none")]
-	file_name: Option<String>,
-	files: Vec<String>,
-	kind: String,
+	pub file_name: Option<String>,
+	/// Files for the addon
+	pub files: Vec<String>,
+	/// The kind of the addon
+	pub kind: String,
+	/// The version ID of the addon
 	#[serde(skip_serializing_if = "Option::is_none")]
-	version: Option<String>,
+	pub version: Option<String>,
+	/// Hashes for the addon
 	#[serde(default)]
 	#[serde(skip_serializing_if = "PackageAddonOptionalHashes::is_empty")]
-	hashes: PackageAddonOptionalHashes,
+	pub hashes: PackageAddonOptionalHashes,
 }
 
 impl LockfileAddon {

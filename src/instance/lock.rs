@@ -5,44 +5,86 @@ use std::{
 };
 
 use anyhow::{bail, Context};
-use nitro_core::io::{json_from_file, json_to_file_pretty};
+use nitro_core::io::{files::create_leading_dirs, json_from_file, json_to_file};
 use nitro_pkg::{PkgRequest, PkgRequestSource};
 use nitro_shared::{
-	addon::{Addon, AddonKind},
 	loaders::Loader,
 	output::{MessageContents, NitroOutput},
-	pkg::{ArcPkgReq, PackageAddonOptionalHashes, PackageID},
+	pkg::ArcPkgReq,
 	translate,
 };
 use serde::{Deserialize, Serialize};
 
+use crate::{
+	instance::Instance,
+	io::{
+		lock::{Lockfile, LockfileAddon, LockfilePackage},
+		paths::Paths,
+	},
+};
+
+impl Instance {
+	/// Opens the lockfile for this instance and returns it
+	pub fn get_lockfile(
+		&mut self,
+		global_lock: &Lockfile,
+		paths: &Paths,
+	) -> anyhow::Result<InstanceLockfile> {
+		self.ensure_dirs(paths)?;
+
+		let lock_path =
+			InstanceLockfile::get_path(self.dirs.get().game_dir.as_deref(), &self.id, paths);
+		let lock = if lock_path.exists() {
+			InstanceLockfile::open(&lock_path)?
+		} else {
+			InstanceLockfile {
+				contents: InstanceLockfileContents::from_global(global_lock, &self.id),
+				path: lock_path,
+			}
+		};
+
+		Ok(lock)
+	}
+}
+
 /// Stored install info about an instance
+#[derive(Debug)]
 pub struct InstanceLockfile {
 	contents: InstanceLockfileContents,
 	path: PathBuf,
 }
 
 impl InstanceLockfile {
-	/// Open the lockfile
-	pub fn open(inst_dir: &Path) -> anyhow::Result<Self> {
-		let path = Self::get_path(inst_dir);
+	/// Open the lockfile at the specified path
+	pub fn open(path: &Path) -> anyhow::Result<Self> {
 		let contents: InstanceLockfileContents = if path.exists() {
-			json_from_file(&path).context("Failed to read instance lockfile")?
+			json_from_file(path).context("Failed to read instance lockfile")?
 		} else {
 			InstanceLockfileContents::default()
 		};
 
-		Ok(Self { contents, path })
+		Ok(Self {
+			contents,
+			path: path.to_owned(),
+		})
 	}
 
 	/// Get the path to the lockfile
-	pub fn get_path(inst_dir: &Path) -> PathBuf {
-		inst_dir.join("nitro_lock.json")
+	pub fn get_path(inst_dir: Option<&Path>, instance_id: &str, paths: &Paths) -> PathBuf {
+		if let Some(inst_dir) = inst_dir {
+			inst_dir.join("nitro_lock.json")
+		} else {
+			paths
+				.internal
+				.join("lock/instances")
+				.join(format!("{instance_id}.json"))
+		}
 	}
 
 	/// Finish using the lockfile and write to the disk
 	pub fn write(&self) -> anyhow::Result<()> {
-		json_to_file_pretty(&self.path, &self.contents).context("Failed to write to lockfile")?;
+		create_leading_dirs(&self.path)?;
+		json_to_file(&self.path, &self.contents).context("Failed to write to lockfile")?;
 
 		Ok(())
 	}
@@ -157,6 +199,21 @@ impl InstanceLockfile {
 		Ok(files_to_remove)
 	}
 
+	/// Gets the current Minecraft version
+	pub fn get_minecraft_version(&self) -> Option<&String> {
+		self.contents.minecraft_version.as_ref()
+	}
+
+	/// Gets the current loader
+	pub fn get_loader(&self) -> &Loader {
+		&self.contents.loader
+	}
+
+	/// Gets the current loader version
+	pub fn get_loader_version(&self) -> Option<&String> {
+		self.contents.loader_version.as_ref()
+	}
+
 	/// Updates the Minecraft version
 	pub fn update_minecraft_version(&mut self, version: &str) {
 		self.contents.minecraft_version = Some(version.to_string());
@@ -178,7 +235,7 @@ impl InstanceLockfile {
 	}
 }
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Debug)]
 pub(crate) struct InstanceLockfileContents {
 	pub(crate) minecraft_version: Option<String>,
 	pub(crate) loader: Loader,
@@ -186,77 +243,30 @@ pub(crate) struct InstanceLockfileContents {
 	packages: HashMap<String, LockfilePackage>,
 }
 
-/// Package stored in the lockfile
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct LockfilePackage {
-	/// The addons of this package
-	pub addons: Vec<LockfileAddon>,
-	/// The selected content version of this package
-	pub content_version: Option<String>,
-}
+impl InstanceLockfileContents {
+	/// Migrates an instance lockfile from the old shared lockfile format
+	pub fn from_global(global_lock: &Lockfile, instance_id: &str) -> Self {
+		let (minecraft_version, loader, loader_version) =
+			if let Some(lock_instance) = global_lock.get_instance(instance_id) {
+				(
+					Some(lock_instance.version.clone()),
+					lock_instance.loader.clone(),
+					lock_instance.loader_version.clone(),
+				)
+			} else {
+				(None, Loader::Vanilla, None)
+			};
 
-/// Format for an addon in the lockfile
-#[derive(Serialize, Deserialize, PartialEq, Clone, Debug)]
-pub struct LockfileAddon {
-	#[serde(alias = "name")]
-	id: String,
-	#[serde(skip_serializing_if = "Option::is_none")]
-	file_name: Option<String>,
-	files: Vec<String>,
-	kind: String,
-	#[serde(skip_serializing_if = "Option::is_none")]
-	version: Option<String>,
-	#[serde(default)]
-	#[serde(skip_serializing_if = "PackageAddonOptionalHashes::is_empty")]
-	hashes: PackageAddonOptionalHashes,
-}
+		let packages = global_lock
+			.get_instance_packages(instance_id)
+			.cloned()
+			.unwrap_or_default();
 
-impl LockfileAddon {
-	/// Converts an addon to the format used by the lockfile.
-	/// Paths is the list of paths for the addon in the instance
-	pub fn from_addon(addon: &Addon, paths: Vec<PathBuf>) -> Self {
 		Self {
-			id: addon.id.clone(),
-			file_name: Some(addon.file_name.clone()),
-			files: paths
-				.iter()
-				.map(|x| {
-					x.to_str()
-						.expect("Failed to convert addon path to a string")
-						.to_owned()
-				})
-				.collect(),
-			kind: addon.kind.to_string(),
-			version: addon.version.clone(),
-			hashes: addon.hashes.clone(),
+			minecraft_version,
+			loader,
+			loader_version,
+			packages,
 		}
-	}
-
-	/// Converts this LockfileAddon to an Addon
-	pub fn to_addon(&self, pkg_id: PackageID) -> anyhow::Result<Addon> {
-		Ok(Addon {
-			kind: AddonKind::parse_from_str(&self.kind)
-				.with_context(|| format!("Invalid addon kind '{}'", self.kind))?,
-			id: self.id.clone(),
-			file_name: self
-				.file_name
-				.clone()
-				.expect("Filename should have been filled in or fixed"),
-			pkg_id,
-			version: self.version.clone(),
-			hashes: self.hashes.clone(),
-		})
-	}
-
-	/// Remove this addon
-	pub fn remove(&self) -> anyhow::Result<()> {
-		for file in self.files.iter() {
-			let path = PathBuf::from(file);
-			if path.exists() {
-				std::fs::remove_file(path).context("Failed to remove addon")?;
-			}
-		}
-
-		Ok(())
 	}
 }
