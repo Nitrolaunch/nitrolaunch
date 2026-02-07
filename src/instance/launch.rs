@@ -28,7 +28,7 @@ use tokio::io::{AsyncWriteExt, Stdout};
 use super::tracking::RunningInstanceRegistry;
 use super::update::manager::UpdateManager;
 use crate::instance::setup::setup_core;
-use crate::instance::tracking::is_process_alive;
+use crate::instance::tracking::{is_process_alive, RunningInstanceEntry};
 use crate::instance::update::manager::UpdateSettings;
 use crate::instance::world_files::WorldFilesWatcher;
 use crate::io::lock::Lockfile;
@@ -204,7 +204,25 @@ impl Instance {
 		// Update the running instance registry
 		let mut running_instance_registry = RunningInstanceRegistry::open(paths)
 			.context("Failed to open registry of running instances")?;
-		running_instance_registry.add_instance(handle.get_pid(), &self.id, true, selected_account);
+		let entry = RunningInstanceEntry {
+			instance_id: self.id.to_string(),
+			pid: handle.get_pid(),
+			parent_pid: std::process::id(),
+			is_java: true,
+			stdin_file: handle
+				.stdin()
+				.map(|x| x.file_name().unwrap().to_string_lossy().to_string()),
+			stdout_file: Some(
+				handle
+					.stdout()
+					.file_name()
+					.unwrap()
+					.to_string_lossy()
+					.to_string(),
+			),
+			account: selected_account,
+		};
+		running_instance_registry.add_instance(entry);
 		let _ = running_instance_registry.write();
 
 		Ok(handle)
@@ -270,7 +288,25 @@ impl Instance {
 		// Update the running instance registry
 		let mut running_instance_registry = RunningInstanceRegistry::open(paths)
 			.context("Failed to open registry of running instances")?;
-		running_instance_registry.add_instance(handle.get_pid(), &self.id, true, selected_account);
+		let entry = RunningInstanceEntry {
+			instance_id: self.id.to_string(),
+			pid: handle.get_pid(),
+			parent_pid: std::process::id(),
+			is_java: false,
+			stdin_file: handle
+				.stdin()
+				.map(|x| x.file_name().unwrap().to_string_lossy().to_string()),
+			stdout_file: Some(
+				handle
+					.stdout()
+					.file_name()
+					.unwrap()
+					.to_string_lossy()
+					.to_string(),
+			),
+			account: selected_account,
+		};
+		running_instance_registry.add_instance(entry);
 		let _ = running_instance_registry.write();
 
 		Ok(handle)
