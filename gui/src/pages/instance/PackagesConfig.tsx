@@ -469,7 +469,7 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 									!(
 										meta != undefined &&
 										meta.name != undefined &&
-										meta.name.includes(search()!)
+										meta.name.toLocaleLowerCase().includes(search()!)
 									)
 								) {
 									return false;
