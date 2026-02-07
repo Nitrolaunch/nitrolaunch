@@ -201,29 +201,7 @@ impl Instance {
 			},
 		};
 
-		// Update the running instance registry
-		let mut running_instance_registry = RunningInstanceRegistry::open(paths)
-			.context("Failed to open registry of running instances")?;
-		let entry = RunningInstanceEntry {
-			instance_id: self.id.to_string(),
-			pid: handle.get_pid(),
-			parent_pid: std::process::id(),
-			is_java: true,
-			stdin_file: handle
-				.stdin()
-				.map(|x| x.file_name().unwrap().to_string_lossy().to_string()),
-			stdout_file: Some(
-				handle
-					.stdout()
-					.file_name()
-					.unwrap()
-					.to_string_lossy()
-					.to_string(),
-			),
-			account: selected_account,
-		};
-		running_instance_registry.add_instance(entry);
-		let _ = running_instance_registry.write();
+		let _ = handle.create_tracking_entry(paths);
 
 		Ok(handle)
 	}
@@ -285,29 +263,7 @@ impl Instance {
 			},
 		};
 
-		// Update the running instance registry
-		let mut running_instance_registry = RunningInstanceRegistry::open(paths)
-			.context("Failed to open registry of running instances")?;
-		let entry = RunningInstanceEntry {
-			instance_id: self.id.to_string(),
-			pid: handle.get_pid(),
-			parent_pid: std::process::id(),
-			is_java: false,
-			stdin_file: handle
-				.stdin()
-				.map(|x| x.file_name().unwrap().to_string_lossy().to_string()),
-			stdout_file: Some(
-				handle
-					.stdout()
-					.file_name()
-					.unwrap()
-					.to_string_lossy()
-					.to_string(),
-			),
-			account: selected_account,
-		};
-		running_instance_registry.add_instance(entry);
-		let _ = running_instance_registry.write();
+		let _ = handle.create_tracking_entry(paths);
 
 		Ok(handle)
 	}
@@ -388,6 +344,30 @@ enum InstanceHandleInner {
 }
 
 impl InstanceHandle {
+	fn create_tracking_entry(&self, paths: &Paths) -> anyhow::Result<()> {
+		let mut registry = RunningInstanceRegistry::open(paths)
+			.context("Failed to open registry of running instances")?;
+		let entry = RunningInstanceEntry {
+			instance_id: self.instance_id.to_string(),
+			pid: self.get_pid(),
+			parent_pid: std::process::id(),
+			is_java: matches!(&self.inner, InstanceHandleInner::Standard { .. }),
+			stdin_file: self
+				.stdin()
+				.map(|x| x.file_name().unwrap().to_string_lossy().to_string()),
+			stdout_file: Some(
+				self.stdout()
+					.file_name()
+					.unwrap()
+					.to_string_lossy()
+					.to_string(),
+			),
+			account: self.account.clone(),
+		};
+		registry.add_instance(entry);
+		registry.write()
+	}
+
 	/// Waits for the process to complete
 	pub async fn wait(
 		mut self,
@@ -559,10 +539,10 @@ impl InstanceHandle {
 		o: &mut impl NitroOutput,
 	) -> anyhow::Result<()> {
 		// Remove the instance from the registry
-		let running_instance_registry = RunningInstanceRegistry::open(paths);
-		if let Ok(mut running_instance_registry) = running_instance_registry {
-			running_instance_registry.remove_instance(pid, instance_id, account);
-			let _ = running_instance_registry.write();
+		let registry = RunningInstanceRegistry::open(paths);
+		if let Ok(mut registry) = registry {
+			registry.remove_instance(pid, instance_id, account);
+			let _ = registry.write();
 		}
 
 		// Call on stop hooks
