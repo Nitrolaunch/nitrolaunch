@@ -1,6 +1,7 @@
 import {
 	Accessor,
 	createEffect,
+	createMemo,
 	createResource,
 	createSignal,
 	For,
@@ -452,7 +453,7 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 				>
 					<For each={allPackages()}>
 						{(pkg) => {
-							let isVisible = () => {
+							let isFilteredShown = createMemo(() => {
 								if (!pkg.isConfigured && filter() == "user") {
 									return false;
 								} else if (filter() == "bundled") {
@@ -463,7 +464,17 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 									return false;
 								} else if (sideFilter() == "server" && !pkg.isServer) {
 									return false;
-								} else if (
+								} else {
+									return true;
+								}
+							});
+
+							let isVisible = () => {
+								if (!isFilteredShown()) {
+									return false;
+								}
+
+								if (
 									search() != undefined &&
 									!pkg.req.id.includes(search()!) &&
 									!(
