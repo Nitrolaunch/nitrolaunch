@@ -405,5 +405,5 @@ fn format_loading_spinner(stage: u8) -> String {
 
 /// Get whether icons are enabled
 pub fn icons_enabled() -> bool {
-	IO_CONFIG.get("cli_icons") == Some("1".into())
+	IO_CONFIG.get_bool("cli_icons").unwrap_or_default()
 }

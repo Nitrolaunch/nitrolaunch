@@ -38,7 +38,7 @@ pub async fn create_leading_dirs_async(path: &Path) -> std::io::Result<()> {
 
 /// Gets the configured IO link method
 pub fn get_link_method() -> LinkMethod {
-	let method = IO_CONFIG.get("link_method");
+	let method = IO_CONFIG.get_string("link_method");
 	let Some(method) = method else {
 		return LinkMethod::Hard;
 	};

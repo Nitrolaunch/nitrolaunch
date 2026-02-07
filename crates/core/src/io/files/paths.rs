@@ -66,12 +66,12 @@ impl Paths {
 		let project = ProjectDirs::from("", "nitro", "nitro")
 			.ok_or(anyhow!("Failed to create project directories"))?;
 
-		let config = if let Some(dir) = IO_CONFIG.get("config_path") {
+		let config = if let Some(dir) = IO_CONFIG.get_string("config_path") {
 			PathBuf::from(dir)
 		} else {
 			project.config_dir().to_owned()
 		};
-		let data = if let Some(dir) = IO_CONFIG.get("data_path") {
+		let data = if let Some(dir) = IO_CONFIG.get_string("data_path") {
 			PathBuf::from(dir)
 		} else {
 			project.data_dir().to_owned()
