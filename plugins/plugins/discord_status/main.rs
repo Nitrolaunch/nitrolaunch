@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use discord_rich_presence::{
 	activity::{Activity, ActivityType, StatusDisplayType, Timestamps},
 	DiscordIpc, DiscordIpcClient,
@@ -16,24 +18,15 @@ fn main() -> anyhow::Result<()> {
 	let mut plugin =
 		ExecutablePlugin::from_manifest_file("discord_status", include_str!("plugin.json"))?;
 
-	plugin.on_instance_launch(|mut ctx, _| {
-		ctx.get_output().display(
-			MessageContents::StartProcess("Updating Discord rich presence".into()),
-			MessageLevel::Debug,
-		);
+	plugin.while_instance_launch(|mut ctx, _| loop {
+		std::thread::sleep(Duration::from_secs(5));
+
 		if let Err(e) = update_presence() {
 			ctx.get_output().display(
 				MessageContents::Error(format!("Failed to update Discord rich presence:\n{e}")),
 				MessageLevel::Debug,
 			);
 		}
-
-		ctx.get_output().display(
-			MessageContents::Success("Discord rich presence updated".into()),
-			MessageLevel::Debug,
-		);
-
-		Ok(())
 	})?;
 
 	plugin.on_instance_stop(|mut ctx, _| {
