@@ -48,7 +48,7 @@
 
 .account-tile-image {
 	width: 1.2rem;
-	border-radius: 0.2rem;
+	border-radius: var(--round);
 	image-rendering: pixelated;
 }
 

@@ -14,6 +14,7 @@
 
 	--round: 0px;
 	--round2: 0px;
+	--shadow-blur: 0px;
 }
 
 /* Fonts */
@@ -22,4 +23,14 @@
 	src: url(${PLUGIN_DIR}/MinecraftRegular.otf);
 	font-weight: normal;
 	font-display: swap;
+}
+
+.inline-select-checkbox,
+.slide-switch,
+.slide-switch-handle,
+.task-indicator-dot,
+.icon-button.circle,
+.running-instance-list-icon,
+.package-version-stability-indicator {
+	border-radius: 0;
 }
