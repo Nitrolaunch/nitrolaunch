@@ -25,6 +25,7 @@ use nitrolaunch::plugin_crate::plugin::PluginProvidedSubcommand;
 use nitrolaunch::shared::id::InstanceID;
 use nitrolaunch::shared::lang::translate::TranslationKey;
 use nitrolaunch::shared::later::Later;
+use nitrolaunch::shared::nitro_executable::{NitroClientId, NitroExecutableRegistry};
 use nitrolaunch::shared::output::{MessageContents, MessageLevel, NitroOutput};
 
 use self::account::AccountSubcommand;
@@ -140,6 +141,10 @@ pub async fn run_cli() -> anyhow::Result<()> {
 		.await
 		.context("Failed to set up system paths")?;
 	let mut output = TerminalOutput::new(&paths).context("Failed to set up output")?;
+
+	if let Ok(mut exec_registry) = NitroExecutableRegistry::open(&paths.internal) {
+		let _ = exec_registry.add_this(NitroClientId::Cli);
+	}
 
 	// First launch message
 	if is_first_run(&paths) {

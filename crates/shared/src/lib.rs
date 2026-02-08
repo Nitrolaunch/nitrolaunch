@@ -16,6 +16,8 @@ pub mod lang;
 pub mod loaders;
 /// Common Mojang / Microsoft API types
 pub mod minecraft;
+/// Finding viable Nitrolaunch executables for launching instances
+pub mod nitro_executable;
 /// Nitrolaunch output
 pub mod output;
 /// Common package constructs

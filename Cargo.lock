@@ -3417,6 +3417,7 @@ version = "0.29.0"
 dependencies = [
  "anyhow",
  "async-trait",
+ "clap",
  "itertools 0.11.0",
  "nitrolaunch",
  "serde",

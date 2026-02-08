@@ -1,6 +1,8 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+/// Command-line interface (for launching instances)
+mod cli;
 /// Commands for Tauri
 mod commands;
 /// Storage and reading for GUI-specific data
@@ -18,21 +20,27 @@ use std::sync::{Arc, OnceLock};
 use std::time::Duration;
 
 use anyhow::Context;
+use clap::Parser;
 use data::LauncherData;
 use nitrolaunch::core::auth_crate::mc::ClientId;
-use nitrolaunch::core::{net::download::Client, account::AccountManager};
+use nitrolaunch::core::{account::AccountManager, net::download::Client};
 use nitrolaunch::io::logging::Logger;
 use nitrolaunch::io::paths::Paths;
 use nitrolaunch::plugin_crate::hook::wasm::loader::WASMLoader;
+use nitrolaunch::shared::id::InstanceID;
+use nitrolaunch::shared::nitro_executable::{NitroClientId, NitroExecutableRegistry};
 use nitrolaunch::shared::output::Message;
 use output::{OutputInner, PromptResponse};
 use tauri::async_runtime::{Mutex, Sender};
 use tauri::process::restart;
 use tauri::{AppHandle, Emitter, Listener, Manager};
 
+use crate::cli::Cli;
 use crate::commands::misc::update_version_manifest;
 use crate::instance_manager::RunningInstanceManager;
-use crate::output::{MessageEvent, MessageType, ResolutionErrorEvent, YesNoPromptResponse};
+use crate::output::{
+	LauncherOutput, MessageEvent, MessageType, ResolutionErrorEvent, YesNoPromptResponse,
+};
 use crate::task_manager::TaskManager;
 
 fn main() {
@@ -45,7 +53,13 @@ fn main() {
 	let data = state.data.clone();
 	let paths = state.paths.clone();
 
+	if let Ok(mut exec_registry) = NitroExecutableRegistry::open(&paths.internal) {
+		let _ = exec_registry.add_this(NitroClientId::Gui);
+	}
+
 	let state2 = state.clone();
+
+	let cli = Cli::parse();
 
 	tauri::Builder::default()
 		.plugin(tauri_plugin_clipboard_manager::init())
@@ -138,6 +152,41 @@ fn main() {
 					let state = state.clone();
 					tauri::async_runtime::spawn(async move { state.reset_wasm_cache().await });
 				});
+			}
+
+			// CLI launching
+			{
+				let state = state2.clone();
+				let app_handle = app.app_handle().clone();
+
+				if let Some(instance) = cli.launch {
+					let state = Arc::new(state);
+					let app_handle = Arc::new(app_handle);
+					let mut output = LauncherOutput::new(state.get_output_arc(app_handle.clone()));
+					output.set_task(&format!("launch_instance_{instance}"));
+
+					let instance_id = InstanceID::from(instance);
+
+					let stdio_paths = Arc::new(Mutex::new(None));
+
+					tauri::async_runtime::spawn(async move {
+						let data = LauncherData::open(&state.paths)
+							.context("Failed to open launcher data")?;
+						let account = cli.account.as_deref().or(data.current_account.as_deref());
+
+						commands::launch::launch_game_impl(
+							instance_id.to_string(),
+							false,
+							account,
+							&state,
+							app_handle,
+							stdio_paths.clone(),
+							state.data.clone(),
+							output,
+						)
+						.await
+					});
+				}
 			}
 
 			Ok(())
