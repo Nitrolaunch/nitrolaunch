@@ -4,6 +4,8 @@
 pub mod interface;
 /// Basic networking
 pub mod net;
+/// Nitrolaunch-specific utilities
+pub mod nitro;
 /// NitroOutput interface
 pub mod output;
 /// System access

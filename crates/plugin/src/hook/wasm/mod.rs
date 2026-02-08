@@ -13,6 +13,7 @@ use std::{
 use anyhow::{bail, Context};
 use nitro_net::download::{self, Client};
 use nitro_shared::{
+	nitro_executable::NitroExecutableRegistry,
 	no_window,
 	output::{Message, MessageContents, MessageLevel, NitroOutput},
 	util::{ARCH_STRING, OS_STRING},
@@ -364,6 +365,26 @@ impl bindings::InterfaceWorldImports for State {
 		}
 	}
 
+	async fn launch_instance(
+		&mut self,
+		instance: String,
+		account: Option<String>,
+	) -> Result<(), String> {
+		let executable_registry = fmt_err(NitroExecutableRegistry::open(
+			&PathBuf::from(&self.data_dir).join("internal"),
+		))?;
+
+		let mut command = fmt_err(
+			executable_registry
+				.launch_instance(&instance, account.as_deref())
+				.context("No executable available"),
+		)?;
+
+		fmt_err(command.spawn().context("Failed to launch instance"))?;
+
+		Ok(())
+	}
+
 	async fn output_display_text(&mut self, text: String, level: u8) {
 		let level = match level {
 			0 => MessageLevel::Important,
@@ -408,4 +429,8 @@ impl bindings::InterfaceWorldImports for State {
 	async fn output_end_section(&mut self) {
 		self.o.lock().await.end_section();
 	}
+}
+
+fn fmt_err<T>(x: anyhow::Result<T>) -> Result<T, String> {
+	x.map_err(|e| e.to_string())
 }
