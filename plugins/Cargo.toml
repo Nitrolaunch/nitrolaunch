@@ -23,6 +23,10 @@ name = "nitro_plugin_curseforge_api"
 path = "plugins/curseforge_api/main.rs"
 
 [[bin]]
+name = "nitro_plugin_discord_status"
+path = "plugins/discord_status/main.rs"
+
+[[bin]]
 name = "nitro_plugin_docs"
 path = "plugins/docs/main.rs"
 
@@ -96,6 +100,7 @@ base64 = { workspace = true }
 chrono = { workspace = true }
 clap = { workspace = true }
 color-print = { workspace = true }
+discord-rich-presence = { workspace = true }
 glob = { workspace = true }
 iso8601-timestamp = { workspace = true }
 itertools = { workspace = true }

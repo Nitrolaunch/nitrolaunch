@@ -82,6 +82,7 @@ package_zips.platform_dependent:
 	@rm -f release/beet-${OS}.zip
 	@rm -f release/cleanup-${OS}.zip
 	@rm -f release/curseforge_api-${OS}.zip
+	@rm -f release/discord_status-${OS}.zip
 	@rm -f release/docs-${OS}.zip
 	@rm -f release/fabric_quilt-${OS}.zip
 	@rm -f release/forge-${OS}.zip
@@ -104,6 +105,7 @@ package_zips.platform_dependent:
 	@zip -j release/beet-${OS}.zip $(TARGET_DIR)/nitro_plugin_beet${EXTENSION} plugins/beet/plugin.json
 	@zip -j release/cleanup-${OS}.zip $(TARGET_DIR)/nitro_plugin_cleanup${EXTENSION} plugins/cleanup/plugin.json
 	@zip -j release/curseforge_api-${OS}.zip $(TARGET_DIR)/nitro_plugin_curseforge_api${EXTENSION} plugins/curseforge_api/plugin.json
+	@zip -j release/discord_status-${OS}.zip $(TARGET_DIR)/nitro_plugin_discord_status${EXTENSION} plugins/discord_status/plugin.json
 	@zip -j release/docs-${OS}.zip $(TARGET_DIR)/nitro_plugin_docs${EXTENSION} plugins/docs/plugin.json
 	@zip -j release/fabric_quilt-${OS}.zip $(TARGET_DIR)/nitro_plugin_fabric_quilt${EXTENSION} plugins/fabric_quilt/plugin.json
 	@zip -j release/forge-${OS}.zip $(TARGET_DIR)/nitro_plugin_forge${EXTENSION} plugins/forge/plugin.json
@@ -184,6 +186,11 @@ install.custom_files:
 	@cargo build -p nitro_plugin_custom_files --release --target wasm32-wasip2
 	@cp -r plugins/custom_files ~/.local/share/nitro/plugins
 	@cp -r ../target/wasm32-wasip2/release/nitro_plugin_custom_files.wasm ~/.local/share/nitro/plugins/custom_files/plugin.wasm
+
+install.discord_status:
+	@cargo install --path . --bin nitro_plugin_discord_status --offline
+	@mkdir -p ~/.local/share/nitro/plugins/discord_status
+	@cat plugins/discord_status/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/discord_status/plugin.json
 
 install.docs:
 	@cargo install --path . --bin nitro_plugin_docs --offline

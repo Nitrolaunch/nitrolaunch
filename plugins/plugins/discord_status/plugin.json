@@ -1,0 +1,14 @@
+{
+	"name": "Discord Status",
+	"description": "Show your running instances to Discord",
+	"version": "v6",
+	"protocol_version": 3,
+	"hooks": {
+		"on_instance_launch": {
+			"executable": "${PLUGIN_DIR}/nitro_plugin_discord_status${EXE_EXTENSION}"
+		},
+		"on_instance_stop": {
+			"executable": "${PLUGIN_DIR}/nitro_plugin_discord_status${EXE_EXTENSION}"
+		}
+	}
+}
