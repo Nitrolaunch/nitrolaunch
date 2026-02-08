@@ -4,7 +4,7 @@ use std::{
 	time::SystemTime,
 };
 
-use anyhow::Context;
+use anyhow::{bail, Context};
 use nitro_core::io::{files::create_leading_dirs, json_from_file, json_to_file};
 use nitro_net::{
 	download::{self, Client},
@@ -22,6 +22,7 @@ use nitro_shared::versions::VersionPattern;
 use serde::{Deserialize, Serialize};
 
 const PROJECT_CACHE_TIME_SECS: u64 = 3600;
+static SUPPORTED_VERSIONS_FILENAME: &str = "supported_versions.json";
 
 fn main() -> anyhow::Result<()> {
 	let mut plugin = ExecutablePlugin::from_manifest_file("smithed", include_str!("plugin.json"))?;
@@ -92,6 +93,15 @@ fn main() -> anyhow::Result<()> {
 			{
 				entry
 			} else {
+				// Check if the versions are supported
+				let supported_versions =
+					get_cached_supported_versions(&smithed_dir, &client).await?;
+				for version in &arg.parameters.minecraft_versions {
+					if !supported_versions.contains(version) {
+						bail!("Version {version} is not supported by Smithed yet");
+					}
+				}
+
 				let search_task = {
 					let client = client.clone();
 					let params = arg.parameters.clone();
@@ -161,6 +171,12 @@ fn main() -> anyhow::Result<()> {
 		let packs_path = smithed_dir.join("packs");
 		if packs_path.exists() {
 			std::fs::remove_dir_all(packs_path).context("Failed to remove cached packs")?;
+		}
+
+		let supported_versions_file = smithed_dir.join(SUPPORTED_VERSIONS_FILENAME);
+		if supported_versions_file.exists() {
+			std::fs::remove_file(supported_versions_file)
+				.context("Failed to remove supported versions file")?;
 		}
 
 		Ok(())
@@ -307,6 +323,22 @@ async fn get_cached_pack(
 		let _ = json_to_file(&pack_path, &pack_info);
 
 		Ok(Some(pack_info))
+	}
+}
+
+async fn get_cached_supported_versions(
+	smithed_dir: &Path,
+	client: &Client,
+) -> anyhow::Result<Vec<String>> {
+	let path = smithed_dir.join(SUPPORTED_VERSIONS_FILENAME);
+	if path.exists() {
+		json_from_file(path)
+	} else {
+		let versions = smithed::get_supported_versions(client).await?;
+		create_leading_dirs(&path)?;
+		json_to_file(path, &versions)?;
+
+		Ok(versions)
 	}
 }
 

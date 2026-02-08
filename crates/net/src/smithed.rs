@@ -236,3 +236,10 @@ fn convert_category(category: PackageCategory) -> Option<&'static str> {
 		_ => None,
 	}
 }
+
+/// Get the list of versions that Smithed supports
+pub async fn get_supported_versions(client: &Client) -> anyhow::Result<Vec<String>> {
+	let url = format!("{API_URL}/supported-versions");
+
+	download::json(url, client).await
+}
