@@ -167,7 +167,7 @@ Would you like to do that now?"
 			let log_level = get_log_level(&cli);
 			data.output.set_log_level(log_level);
 
-			plugin::install(
+			if let Err(e) = plugin::install(
 				&mut data,
 				vec![
 					"fabric_quilt".into(),
@@ -181,7 +181,12 @@ Would you like to do that now?"
 				None,
 			)
 			.await
-			.context("Failed to install default plugins")?;
+			{
+				output.display(MessageContents::Error(format!(
+					"Failed to install default plugins: {e}"
+				)));
+				bail!("");
+			}
 
 			output.display(
 				MessageContents::Header("Use the nitro migrate command to use instances from an existing launcher, and make sure to join the Discord!".into()),
