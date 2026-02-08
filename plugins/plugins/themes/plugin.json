@@ -28,6 +28,14 @@
 					"type": "overlay",
 					"css": "$file:ghost.css",
 					"color": "#ffffff"
+				},
+				{
+					"id": "vertical_instance_list",
+					"name": "Vertical Instance List",
+					"description": "Tweak to the instance list",
+					"type": "overlay",
+					"css": "$file:vertical_instance_list.css",
+					"color": "#dddddd"
 				}
 			]
 		}
