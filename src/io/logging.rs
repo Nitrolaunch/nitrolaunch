@@ -95,7 +95,9 @@ pub fn get_log_files(paths: &Paths, client_id: &str) -> anyhow::Result<Vec<PathB
 		Some((x.path(), time))
 	});
 
-	let sorted = mapped.sorted_by_key(|x| x.1).map(|x| x.0);
+	let sorted = mapped
+		.sorted_by_key(|x| std::cmp::Reverse(x.1))
+		.map(|x| x.0);
 
 	Ok(sorted.collect())
 }
