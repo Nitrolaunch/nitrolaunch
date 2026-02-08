@@ -3,10 +3,11 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use anyhow::{bail, Context};
-use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
+use nitro_shared::output::{MessageContents, NitroOutput};
 use nitro_shared::versions::VersionName;
 use nitro_shared::{translate, Side};
 
+use crate::account::AccountManager;
 use crate::config::BrandingProperties;
 use crate::io::files::paths::Paths;
 use crate::io::files::update_link;
@@ -21,7 +22,6 @@ use crate::launch::{LaunchConfiguration, LaunchParameters};
 use crate::net::game_files::client_meta::ClientMeta;
 use crate::net::game_files::version_manifest::VersionManifestAndList;
 use crate::net::game_files::{game_jar, libraries};
-use crate::account::AccountManager;
 use crate::version::{ClientAssetsAndLibraries, ClientAssetsAndLibsParameters};
 use crate::InstanceHandle;
 
@@ -196,10 +196,7 @@ impl<'params> Instance<'params> {
 						.await
 						.context("Failed to create eula.txt")?;
 
-					o.display(
-						MessageContents::Notice(translate!(o, AgreeToEula)),
-						MessageLevel::Important,
-					);
+					o.display(MessageContents::Notice(translate!(o, AgreeToEula)));
 				}
 			}
 		}

@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 use anyhow::Context;
 use nitro_core::io::files::{create_leading_dirs, update_link};
 use nitro_plugin::hook::hooks::{InstanceLaunchArg, UpdateWorldFiles};
-use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
+use nitro_shared::output::{MessageContents, NitroOutput};
 
 use crate::{io::paths::Paths, plugin::PluginManager};
 
@@ -74,10 +74,9 @@ impl WorldFilesWatcher {
 		paths: &Paths,
 		o: &mut impl NitroOutput,
 	) -> anyhow::Result<()> {
-		o.display(
-			MessageContents::Simple("Updating shared world files".into()),
-			MessageLevel::Debug,
-		);
+		o.debug(MessageContents::Simple(
+			"Updating shared world files".into(),
+		));
 
 		// Get a list of all the worlds in the directory
 		let read = self.saves_dir.read_dir()?;
@@ -147,10 +146,7 @@ impl WorldFilesWatcher {
 			while let Some(result) = result.next() {
 				let result = result.result(o).await;
 				if let Err(e) = result {
-					o.display(
-						MessageContents::Error(format!("{e:?}")),
-						MessageLevel::Important,
-					);
+					o.display(MessageContents::Error(format!("{e:?}")));
 				}
 			}
 		}

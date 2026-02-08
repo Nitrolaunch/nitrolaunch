@@ -10,7 +10,7 @@ use nitro_net::download;
 use nitro_pkg::repo::{get_api_url, get_index_url, RepoIndex, RepoMetadata, RepoPkgEntry};
 use nitro_shared::{
 	later::Later,
-	output::{MessageContents, MessageLevel, NitroOutput},
+	output::{MessageContents, NitroOutput},
 	translate,
 };
 use reqwest::Client;
@@ -137,14 +137,11 @@ impl BasicPackageRepository {
 			let program_version = version_compare::Version::from(crate::VERSION);
 			if let (Some(repo_version), Some(program_version)) = (repo_version, program_version) {
 				if repo_version > program_version {
-					o.display(
-						MessageContents::Warning(translate!(
-							o,
-							RepoVersionWarning,
-							"repo" = &self.id
-						)),
-						MessageLevel::Important,
-					);
+					o.display(MessageContents::Warning(translate!(
+						o,
+						RepoVersionWarning,
+						"repo" = &self.id
+					)));
 				}
 			}
 		}

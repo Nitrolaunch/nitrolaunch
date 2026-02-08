@@ -9,7 +9,7 @@ use nitro_plugin::{
 	hook::hooks::OnInstanceSetupResult,
 	nitro_wasm_plugin,
 };
-use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
+use nitro_shared::output::{MessageContents, NitroOutput};
 use nitro_shared::UpdateDepth;
 use serde_json::Value;
 
@@ -60,17 +60,11 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 		let mut o = WASMPluginOutput::new();
 
 		let mut process = o.get_process();
-		process.display(
-			MessageContents::StartProcess("Downloading GLFW".into()),
-			MessageLevel::Important,
-		);
+		process.display(MessageContents::StartProcess("Downloading GLFW".into()));
 
 		download_file(url.to_string(), lib_path).context("Failed to download GLFW")?;
 
-		process.display(
-			MessageContents::Success("GLFW downloaded".into()),
-			MessageLevel::Important,
-		);
+		process.display(MessageContents::Success("GLFW downloaded".into()));
 
 		Ok(output)
 	})?;

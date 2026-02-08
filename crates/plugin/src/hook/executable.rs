@@ -3,7 +3,7 @@ use std::{collections::VecDeque, env::consts::EXE_SUFFIX, sync::Arc, time::Insta
 use anyhow::{anyhow, bail, Context};
 use nitro_shared::{
 	no_window,
-	output::{MessageContents, MessageLevel, NitroOutput},
+	output::{MessageContents, NitroOutput},
 };
 use tokio::{
 	io::AsyncWriteExt,
@@ -76,10 +76,7 @@ pub(crate) async fn call_executable<H: Hook + Sized>(
 	no_window!(cmd);
 
 	if plugin_debug_enabled() {
-		o.display(
-			MessageContents::Simple(format!("{cmd:?}")),
-			MessageLevel::Important,
-		);
+		o.display(MessageContents::Simple(format!("{cmd:?}")));
 	}
 
 	if H::get_takes_over() {

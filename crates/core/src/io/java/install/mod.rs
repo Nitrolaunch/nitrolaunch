@@ -11,7 +11,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use anyhow::{bail, Context};
-use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
+use nitro_shared::output::{MessageContents, NitroOutput};
 use nitro_shared::{translate, UpdateDepth};
 use tar::Archive;
 use zip::ZipArchive;
@@ -69,10 +69,10 @@ impl JavaInstallation {
 		o: &mut impl NitroOutput,
 	) -> anyhow::Result<Self> {
 		o.start_process();
-		o.display(
-			MessageContents::StartProcess(translate!(o, StartCheckingForJavaUpdates)),
-			MessageLevel::Important,
-		);
+		o.display(MessageContents::StartProcess(translate!(
+			o,
+			StartCheckingForJavaUpdates
+		)));
 
 		let vers_str = major_version.to_string();
 
@@ -90,10 +90,9 @@ impl JavaInstallation {
 				);
 
 				if let Some(existing_dir) = existing_dir {
-					o.display(
-						MessageContents::Simple("Using existing Java installation".to_string()),
-						MessageLevel::Debug,
-					);
+					o.debug(MessageContents::Simple(
+						"Using existing Java installation".to_string(),
+					));
 					existing_dir
 				} else {
 					if params.custom_install_func.is_some() {
@@ -130,10 +129,10 @@ impl JavaInstallation {
 			}
 		};
 
-		o.display(
-			MessageContents::Success(translate!(o, FinishCheckingForJavaUpdates)),
-			MessageLevel::Important,
-		);
+		o.display(MessageContents::Success(translate!(
+			o,
+			FinishCheckingForJavaUpdates
+		)));
 
 		o.end_process();
 
@@ -306,34 +305,31 @@ async fn update_adoptium(
 
 	let bin_url = version.binary.package.link;
 
-	o.display(
-		MessageContents::StartProcess(translate!(
-			o,
-			DownloadingAdoptium,
-			"version" = &release_name
-		)),
-		MessageLevel::Important,
-	);
+	o.display(MessageContents::StartProcess(translate!(
+		o,
+		DownloadingAdoptium,
+		"version" = &release_name
+	)));
 	download::file(bin_url, &arc_path, params.req_client)
 		.await
 		.context("Failed to download JRE binaries")?;
 
 	// Extraction
-	o.display(
-		MessageContents::StartProcess(translate!(o, StartExtractingJava)),
-		MessageLevel::Important,
-	);
+	o.display(MessageContents::StartProcess(translate!(
+		o,
+		StartExtractingJava
+	)));
 	extract_archive_file(&arc_path, &out_dir).context("Failed to extract")?;
-	o.display(
-		MessageContents::StartProcess(translate!(o, StartRemovingJavaArchive)),
-		MessageLevel::Important,
-	);
+	o.display(MessageContents::StartProcess(translate!(
+		o,
+		StartRemovingJavaArchive
+	)));
 	std::fs::remove_file(arc_path).context("Failed to remove archive")?;
 
-	o.display(
-		MessageContents::Success(translate!(o, FinishJavaInstallation)),
-		MessageLevel::Important,
-	);
+	o.display(MessageContents::Success(translate!(
+		o,
+		FinishJavaInstallation
+	)));
 
 	// MacOS does some screwery
 	#[cfg(not(target_os = "macos"))]

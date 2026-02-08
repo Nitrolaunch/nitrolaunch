@@ -10,7 +10,6 @@ use nitro_pkg::PackageSearchResults;
 use nitro_pkg::PkgRequest;
 use nitro_pkg::PkgRequestSource;
 use nitro_shared::output::MessageContents;
-use nitro_shared::output::MessageLevel;
 use nitro_shared::output::NitroOutput;
 use nitro_shared::pkg::ArcPkgReq;
 use nitro_shared::pkg::PackageSearchParameters;
@@ -284,10 +283,7 @@ impl PkgRegistry {
 		let pkg = match pkg.get_declarative_contents(paths, client).await {
 			Ok(pkg) => pkg.expect("Should be a declarative package"),
 			Err(e) => {
-				o.display(
-					MessageContents::Warning(format!("{e:?}")),
-					MessageLevel::Important,
-				);
+				o.display(MessageContents::Warning(format!("{e:?}")));
 				return req.clone();
 			}
 		};

@@ -12,7 +12,7 @@ use nitrolaunch::pkg_crate::properties::PackageProperties;
 use nitrolaunch::pkg_crate::{PackageContentType, PkgRequest, PkgRequestSource};
 use nitrolaunch::shared::id::{InstanceID, TemplateID};
 use nitrolaunch::shared::loaders::Loader;
-use nitrolaunch::shared::output::{MessageContents, MessageLevel, NitroOutput};
+use nitrolaunch::shared::output::{MessageContents, NitroOutput};
 
 use anyhow::{bail, Context};
 use clap::Subcommand;
@@ -250,10 +250,8 @@ async fn sync(data: &mut CmdData<'_>, filter: Vec<String>) -> anyhow::Result<()>
 	data.ensure_config(true).await?;
 	let config = data.config.get_mut();
 
-	data.output.display(
-		MessageContents::Header("Syncing Repositories".into()),
-		MessageLevel::Important,
-	);
+	data.output
+		.display(MessageContents::Header("Syncing Repositories".into()));
 	let mut section = data.output.get_section();
 
 	let client = Client::new();
@@ -264,10 +262,10 @@ async fn sync(data: &mut CmdData<'_>, filter: Vec<String>) -> anyhow::Result<()>
 		}
 
 		let mut process = section.get_process();
-		process.display(
-			MessageContents::StartProcess(cformat!("Syncing repository <b>{}</b>", repo.get_id())),
-			MessageLevel::Important,
-		);
+		process.display(MessageContents::StartProcess(cformat!(
+			"Syncing repository <b>{}</b>",
+			repo.get_id()
+		)));
 
 		let result = repo
 			.sync(&data.paths, &config.plugins, &client, process.deref_mut())
@@ -275,22 +273,16 @@ async fn sync(data: &mut CmdData<'_>, filter: Vec<String>) -> anyhow::Result<()>
 
 		match result {
 			Ok(..) => {
-				process.display(
-					MessageContents::Success(cformat!(
-						"Synced repository <b>{}</b>",
-						repo.get_id()
-					)),
-					MessageLevel::Important,
-				);
+				process.display(MessageContents::Success(cformat!(
+					"Synced repository <b>{}</b>",
+					repo.get_id()
+				)));
 			}
 			Err(e) => {
-				process.display(
-					MessageContents::Error(format!(
-						"Failed to sync repository {}: {e}",
-						repo.get_id()
-					)),
-					MessageLevel::Important,
-				);
+				process.display(MessageContents::Error(format!(
+					"Failed to sync repository {}: {e}",
+					repo.get_id()
+				)));
 				continue;
 			}
 		};
@@ -299,10 +291,7 @@ async fn sync(data: &mut CmdData<'_>, filter: Vec<String>) -> anyhow::Result<()>
 	std::mem::drop(section);
 
 	let mut process = data.output.get_process();
-	process.display(
-		MessageContents::StartProcess("Updating packages".into()),
-		MessageLevel::Important,
-	);
+	process.display(MessageContents::StartProcess("Updating packages".into()));
 
 	config
 		.packages
@@ -310,10 +299,7 @@ async fn sync(data: &mut CmdData<'_>, filter: Vec<String>) -> anyhow::Result<()>
 		.await
 		.context("Failed to update cached packages")?;
 
-	process.display(
-		MessageContents::Success("Packages updated".into()),
-		MessageLevel::Important,
-	);
+	process.display(MessageContents::Success("Packages updated".into()));
 
 	Ok(())
 }
@@ -754,10 +740,8 @@ async fn add(
 	.await
 	.context("Failed to write modified config")?;
 
-	data.output.display(
-		MessageContents::Success("Package added".into()),
-		MessageLevel::Important,
-	);
+	data.output
+		.display(MessageContents::Success("Package added".into()));
 
 	Ok(())
 }

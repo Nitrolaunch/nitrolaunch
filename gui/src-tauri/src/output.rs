@@ -60,7 +60,7 @@ impl NitroOutput for LauncherOutput {
 			let _ = logger.send(message2).await;
 		});
 
-		if !message.level.at_least(&MessageLevel::Extra) {
+		if message.level < MessageLevel::Important {
 			return;
 		}
 

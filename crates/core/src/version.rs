@@ -5,8 +5,8 @@ use std::sync::Arc;
 use anyhow::Context;
 use nitro_shared::later::Later;
 use nitro_shared::minecraft::{VersionEntry, VersionManifest};
+use nitro_shared::output::MessageContents;
 use nitro_shared::output::NitroOutput;
-use nitro_shared::output::{MessageContents, MessageLevel};
 use nitro_shared::versions::{VersionInfo, VersionName};
 use nitro_shared::Side;
 
@@ -181,10 +181,9 @@ impl InstalledVersionInner {
 	) -> anyhow::Result<Self> {
 		// Get the client meta
 		o.start_process();
-		o.display(
-			MessageContents::StartProcess("Obtaining client metadata".into()),
-			MessageLevel::Important,
-		);
+		o.display(MessageContents::StartProcess(
+			"Obtaining client metadata".into(),
+		));
 
 		let client_meta = client_meta::get(
 			&version,
@@ -197,10 +196,7 @@ impl InstalledVersionInner {
 		.await
 		.context("Failed to get client meta")?;
 
-		o.display(
-			MessageContents::Success("Client meta obtained".into()),
-			MessageLevel::Important,
-		);
+		o.display(MessageContents::Success("Client meta obtained".into()));
 		o.end_process();
 
 		Ok(Self {

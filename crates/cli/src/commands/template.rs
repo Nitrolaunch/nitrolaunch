@@ -21,7 +21,7 @@ use nitrolaunch::{
 	plugin_crate::hook::hooks::{DeleteTemplate, SaveTemplateConfigArg},
 	shared::{
 		id::TemplateID,
-		output::{MessageContents, MessageLevel, NitroOutput},
+		output::{MessageContents, NitroOutput},
 		Side,
 	},
 };
@@ -185,10 +185,7 @@ async fn delete(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()
 	}
 
 	let mut process = data.output.get_process();
-	process.display(
-		MessageContents::StartProcess("Deleting template".into()),
-		MessageLevel::Important,
-	);
+	process.display(MessageContents::StartProcess("Deleting template".into()));
 
 	if let Some(source_plugin) = &template.instance.source_plugin {
 		if !template.instance.is_deletable {
@@ -226,10 +223,7 @@ async fn delete(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()
 		.context("Failed to modify and write config")?;
 	}
 
-	process.display(
-		MessageContents::Success("Template deleted".into()),
-		MessageLevel::Important,
-	);
+	process.display(MessageContents::Success("Template deleted".into()));
 
 	Ok(())
 }
@@ -271,10 +265,8 @@ async fn edit(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()> 
 	.await
 	.context("Failed to modify and write config")?;
 
-	data.output.display(
-		MessageContents::Success("Changes saved".into()),
-		MessageLevel::Important,
-	);
+	data.output
+		.display(MessageContents::Success("Changes saved".into()));
 
 	Ok(())
 }

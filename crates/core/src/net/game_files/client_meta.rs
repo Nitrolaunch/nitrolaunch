@@ -2,7 +2,7 @@ use std::io::{Cursor, Read};
 
 use anyhow::{bail, Context};
 use nitro_shared::minecraft::VersionManifest;
-use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
+use nitro_shared::output::{MessageContents, NitroOutput};
 use nitro_shared::util::DeserListOrSingle;
 use nitro_shared::{translate, UpdateDepth};
 use reqwest::Client;
@@ -370,16 +370,13 @@ pub async fn get(
 
 		while !download.is_finished() {
 			download.poll_download().await?;
-			o.display(
-				MessageContents::Associated(
-					Box::new(download.get_progress()),
-					Box::new(MessageContents::Simple(translate!(
-						o,
-						DownloadingClientMeta
-					))),
-				),
-				MessageLevel::Important,
-			);
+			o.display(MessageContents::Associated(
+				Box::new(download.get_progress()),
+				Box::new(MessageContents::Simple(translate!(
+					o,
+					DownloadingClientMeta
+				))),
+			));
 		}
 		let mut bytes = download.finish();
 

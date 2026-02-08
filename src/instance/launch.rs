@@ -20,7 +20,7 @@ use nitro_plugin::hook::hooks::{
 };
 use nitro_shared::id::InstanceID;
 use nitro_shared::java_args::MemoryNum;
-use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
+use nitro_shared::output::{MessageContents, NitroOutput};
 use nitro_shared::{translate, Side, UpdateDepth};
 use reqwest::Client;
 use tokio::io::{AsyncWriteExt, Stdout};
@@ -47,10 +47,11 @@ impl Instance {
 		settings: LaunchSettings,
 		o: &mut impl NitroOutput,
 	) -> anyhow::Result<InstanceHandle> {
-		o.display(
-			MessageContents::StartProcess(translate!(o, StartUpdatingInstance, "inst" = &self.id)),
-			MessageLevel::Important,
-		);
+		o.display(MessageContents::StartProcess(translate!(
+			o,
+			StartUpdatingInstance,
+			"inst" = &self.id
+		)));
 
 		let mut manager = UpdateManager::from_settings(UpdateSettings {
 			depth: UpdateDepth::Shallow,
@@ -113,10 +114,7 @@ impl Instance {
 		// Make sure that any fluff from the update gets ended
 		o.end_process();
 
-		o.display(
-			MessageContents::Simple(translate!(o, PreparingLaunch)),
-			MessageLevel::Important,
-		);
+		o.display(MessageContents::Simple(translate!(o, PreparingLaunch)));
 
 		// Run pre-launch hooks
 		let results = plugins

@@ -23,7 +23,7 @@ use nitro_core::io::{json_from_file, json_to_file_pretty};
 use nitro_pkg::PkgRequest;
 use nitro_plugin::hook::hooks::{AddInstances, AddInstancesArg, AddSupportedLoaders, AddTemplates};
 use nitro_shared::id::{InstanceID, TemplateID};
-use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
+use nitro_shared::output::{MessageContents, NitroOutput};
 use nitro_shared::util::is_valid_identifier;
 use nitro_shared::{skip_fail, translate};
 use preferences::ConfigPreferences;
@@ -117,10 +117,9 @@ impl Config {
 		// Accounts
 		for (account_id, account_config) in config.accounts.iter() {
 			if !is_valid_identifier(account_id) {
-				o.display(
-					MessageContents::Error(format!("Invalid account ID '{account_id}'")),
-					MessageLevel::Important,
-				);
+				o.display(MessageContents::Error(format!(
+					"Invalid account ID '{account_id}'"
+				)));
 				continue;
 			}
 			let account = read_account_config(account_config, account_id);
@@ -134,23 +133,14 @@ impl Config {
 					.choose_account(default_account_id)
 					.expect("Default account should exist");
 			} else {
-				o.display(
-					MessageContents::Error(format!(
-						"Provided default account '{default_account_id}' does not exist"
-					)),
-					MessageLevel::Important,
-				);
+				o.display(MessageContents::Error(format!(
+					"Provided default account '{default_account_id}' does not exist"
+				)));
 			}
 		} else if config.accounts.is_empty() && show_warnings {
-			o.display(
-				MessageContents::Warning(translate!(o, NoDefaultAccount)),
-				MessageLevel::Important,
-			);
+			o.display(MessageContents::Warning(translate!(o, NoDefaultAccount)));
 		} else if show_warnings {
-			o.display(
-				MessageContents::Warning(translate!(o, NoAccounts)),
-				MessageLevel::Important,
-			);
+			o.display(MessageContents::Warning(translate!(o, NoAccounts)));
 		}
 
 		// Add instances from plugins
@@ -164,12 +154,9 @@ impl Config {
 					let result = match result.result(o).await {
 						Ok(result) => result,
 						Err(e) => {
-							o.display(
-								MessageContents::Error(format!(
-									"Failed to add instances from plugin: {e:?}"
-								)),
-								MessageLevel::Important,
-							);
+							o.display(MessageContents::Error(format!(
+								"Failed to add instances from plugin: {e:?}"
+							)));
 							continue;
 						}
 					};
@@ -184,10 +171,9 @@ impl Config {
 				}
 			}
 			Err(e) => {
-				o.display(
-					MessageContents::Error(format!("Failed to add instances from plugins: {e:?}")),
-					MessageLevel::Important,
-				);
+				o.display(MessageContents::Error(format!(
+					"Failed to add instances from plugins: {e:?}"
+				)));
 			}
 		}
 		// Add templates from plugins
@@ -199,12 +185,9 @@ impl Config {
 					let result = match result.result(o).await {
 						Ok(result) => result,
 						Err(e) => {
-							o.display(
-								MessageContents::Error(format!(
-									"Failed to add templates from plugin: {e:?}"
-								)),
-								MessageLevel::Important,
-							);
+							o.display(MessageContents::Error(format!(
+								"Failed to add templates from plugin: {e:?}"
+							)));
 							continue;
 						}
 					};
@@ -219,10 +202,9 @@ impl Config {
 				}
 			}
 			Err(e) => {
-				o.display(
-					MessageContents::Error(format!("Failed to add templates from plugins: {e:?}")),
-					MessageLevel::Important,
-				);
+				o.display(MessageContents::Error(format!(
+					"Failed to add templates from plugins: {e:?}"
+				)));
 			}
 		}
 
@@ -245,12 +227,9 @@ impl Config {
 				}
 			}
 			Err(e) => {
-				o.display(
-					MessageContents::Error(format!(
-						"Failed to get supported loaders from plugins: {e:?}"
-					)),
-					MessageLevel::Important,
-				);
+				o.display(MessageContents::Error(format!(
+					"Failed to get supported loaders from plugins: {e:?}"
+				)));
 			}
 		}
 
@@ -269,15 +248,12 @@ impl Config {
 			let instance = match result {
 				Ok(instance) => instance,
 				Err(e) => {
-					o.display(
-						MessageContents::Error(translate!(
-							o,
-							InvalidInstanceConfig,
-							"instance" = &instance_id,
-							"error" = &format!("{e:?}")
-						)),
-						MessageLevel::Important,
-					);
+					o.display(MessageContents::Error(translate!(
+						o,
+						InvalidInstanceConfig,
+						"instance" = &instance_id,
+						"error" = &format!("{e:?}")
+					)));
 					continue;
 				}
 			};
@@ -286,14 +262,11 @@ impl Config {
 				&& !nitro_config::instance::can_install_loader(&instance.config.loader)
 				&& !supported_loaders.contains(&instance.config.loader)
 			{
-				o.display(
-					MessageContents::Warning(translate!(
-						o,
-						ModificationNotSupported,
-						"mod" = &format!("{}", instance.config.loader)
-					)),
-					MessageLevel::Important,
-				);
+				o.display(MessageContents::Warning(translate!(
+					o,
+					ModificationNotSupported,
+					"mod" = &format!("{}", instance.config.loader)
+				)));
 			}
 
 			instances.insert(instance_id, instance);
@@ -301,10 +274,9 @@ impl Config {
 
 		for group in config.instance_groups.keys() {
 			if !is_valid_identifier(group) {
-				o.display(
-					MessageContents::Error(format!("Invalid ID for instance group '{group}'")),
-					MessageLevel::Important,
-				);
+				o.display(MessageContents::Error(format!(
+					"Invalid ID for instance group '{group}'"
+				)));
 			}
 		}
 
@@ -378,15 +350,12 @@ pub fn check_nitro_version(paths: &Paths, o: &mut impl NitroOutput) -> anyhow::R
 		let new_version = Version::from(crate::VERSION).context("New version failed to parse")?;
 
 		if current_version.compare_to(new_version, version_compare::Cmp::Gt) {
-			o.display(
-				MessageContents::Warning(translate!(
-					o,
-					WrongNitroVersion,
-					"current" = &contents,
-					"new" = crate::VERSION
-				)),
-				MessageLevel::Important,
-			);
+			o.display(MessageContents::Warning(translate!(
+				o,
+				WrongNitroVersion,
+				"current" = &contents,
+				"new" = crate::VERSION
+			)));
 		} else {
 			std::fs::write(path, crate::VERSION)?;
 		}
@@ -409,10 +378,9 @@ fn check_configured_packages(
 				.repository
 				.is_none()
 		}) {
-			o.display(
-				MessageContents::Warning("An instance uses deprecated generic packages".into()),
-				MessageLevel::Important,
-			);
+			o.display(MessageContents::Warning(
+				"An instance uses deprecated generic packages".into(),
+			));
 			return;
 		}
 	}
@@ -423,10 +391,9 @@ fn check_configured_packages(
 				.repository
 				.is_none()
 		}) {
-			o.display(
-				MessageContents::Warning("A template uses deprecated generic packages".into()),
-				MessageLevel::Important,
-			);
+			o.display(MessageContents::Warning(
+				"A template uses deprecated generic packages".into(),
+			));
 			return;
 		}
 	}

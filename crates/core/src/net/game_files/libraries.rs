@@ -4,7 +4,7 @@ use std::path::Path;
 use std::sync::Arc;
 
 use anyhow::{anyhow, Context};
-use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
+use nitro_shared::output::{MessageContents, NitroOutput};
 use nitro_shared::translate;
 use reqwest::Client;
 use tokio::{sync::Semaphore, task::JoinSet};
@@ -91,14 +91,11 @@ pub async fn get(
 
 	let count = libs_to_download.len();
 	if count > 0 {
-		o.display(
-			MessageContents::StartProcess(translate!(
-				o,
-				StartDownloadingLibraries,
-				"count" = &format!("{count}")
-			)),
-			MessageLevel::Important,
-		);
+		o.display(MessageContents::StartProcess(translate!(
+			o,
+			StartDownloadingLibraries,
+			"count" = &format!("{count}")
+		)));
 
 		o.start_process();
 	}
@@ -129,51 +126,46 @@ pub async fn get(
 	}
 
 	if count > 0 {
-		o.display(
-			MessageContents::Associated(
-				Box::new(MessageContents::Progress {
-					current: 0,
-					total: count as u32,
-				}),
-				Box::new(MessageContents::Simple(String::new())),
-			),
-			MessageLevel::Important,
-		);
+		o.display(MessageContents::Associated(
+			Box::new(MessageContents::Progress {
+				current: 0,
+				total: count as u32,
+			}),
+			Box::new(MessageContents::Simple(String::new())),
+		));
 	}
 	let mut num_done = 0;
 	while let Some(lib) = join.join_next().await {
 		let name = lib??;
 		num_done += 1;
-		o.display(
-			MessageContents::Associated(
-				Box::new(MessageContents::Progress {
-					current: num_done,
-					total: count as u32,
-				}),
-				Box::new(MessageContents::Simple(translate!(
-					o,
-					DownloadedLibrary,
-					"lib" = &name
-				))),
-			),
-			MessageLevel::Important,
-		);
+		o.display(MessageContents::Associated(
+			Box::new(MessageContents::Progress {
+				current: num_done,
+				total: count as u32,
+			}),
+			Box::new(MessageContents::Simple(translate!(
+				o,
+				DownloadedLibrary,
+				"lib" = &name
+			))),
+		));
 	}
 
 	for (path, name, extract) in natives {
-		o.display(
-			MessageContents::StartProcess(translate!(o, StartExtractingNative, "lib" = name)),
-			MessageLevel::Debug,
-		);
+		o.debug(MessageContents::StartProcess(translate!(
+			o,
+			StartExtractingNative,
+			"lib" = name
+		)));
 		let natives_result = extract_native(&path, &natives_path, extract, manager, o)
 			.with_context(|| format!("Failed to extract native library {name}"))?;
 		out.merge(natives_result);
 	}
 
-	o.display(
-		MessageContents::Success(translate!(o, FinishDownloadingLibraries)),
-		MessageLevel::Important,
-	);
+	o.display(MessageContents::Success(translate!(
+		o,
+		FinishDownloadingLibraries
+	)));
 	o.end_process();
 
 	Ok(out)
@@ -271,14 +263,11 @@ fn extract_native(
 						File::create(&out_path).context("Failed to open output file for native")?;
 					std::io::copy(&mut file, &mut out_file)
 						.context("Failed to copy compressed file")?;
-					o.display(
-						MessageContents::Simple(translate!(
-							o,
-							ExtractedNativeFile,
-							"file" = &out_path.to_string_lossy()
-						)),
-						MessageLevel::Debug,
-					);
+					o.debug(MessageContents::Simple(translate!(
+						o,
+						ExtractedNativeFile,
+						"file" = &out_path.to_string_lossy()
+					)));
 					out.files_updated.insert(out_path);
 				}
 				_ => continue,

@@ -14,7 +14,7 @@ use std::path::{Path, PathBuf};
 
 use anyhow::{bail, Context};
 use nitro_shared::java_args::MemoryArg;
-use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
+use nitro_shared::output::{MessageContents, NitroOutput};
 use nitro_shared::versions::VersionName;
 use nitro_shared::{translate, Side};
 
@@ -48,10 +48,7 @@ pub(crate) async fn launch(
 	if let InstanceKind::Client { .. } = &params.side {
 		let mut process = o.get_process();
 		let message = translate!(process, StartAuthenticating);
-		process.display(
-			MessageContents::StartProcess(message),
-			MessageLevel::Important,
-		);
+		process.display(MessageContents::StartProcess(message));
 
 		params
 			.accounts
@@ -68,7 +65,7 @@ pub(crate) async fn launch(
 		}
 
 		let message = translate!(process, FinishAuthenticating);
-		process.display(MessageContents::Success(message), MessageLevel::Important);
+		process.display(MessageContents::Success(message));
 	}
 
 	// Deduplicate the classpath for common libraries

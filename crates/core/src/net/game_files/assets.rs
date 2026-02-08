@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use anyhow::Context;
-use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
+use nitro_shared::output::{MessageContents, NitroOutput};
 use nitro_shared::versions::VersionName;
 use nitro_shared::versions::VersionPattern;
 use nitro_shared::{translate, try_3, UpdateDepth};
@@ -71,18 +71,9 @@ pub async fn get(
 	let index = match download_index(index_url, &index_path, manager, client, false).await {
 		Ok(val) => val,
 		Err(err) => {
-			o.display(
-				MessageContents::Error(translate!(o, AssetIndexFailed)),
-				MessageLevel::Important,
-			);
-			o.display(
-				MessageContents::Error(format!("{}", err)),
-				MessageLevel::Important,
-			);
-			o.display(
-				MessageContents::StartProcess(translate!(o, Redownloading)),
-				MessageLevel::Important,
-			);
+			o.display(MessageContents::Error(translate!(o, AssetIndexFailed)));
+			o.display(MessageContents::Error(format!("{}", err)));
+			o.display(MessageContents::StartProcess(translate!(o, Redownloading)));
 			download_index(index_url, &index_path, manager, client, true)
 				.await
 				.context("Failed to obtain asset index")?
@@ -125,14 +116,11 @@ pub async fn get(
 
 	let count = assets_to_download.len();
 	if count > 0 {
-		o.display(
-			MessageContents::StartProcess(translate!(
-				o,
-				StartDownloadingAssets,
-				"count" = &format!("{count}")
-			)),
-			MessageLevel::Important,
-		);
+		o.display(MessageContents::StartProcess(translate!(
+			o,
+			StartDownloadingAssets,
+			"count" = &format!("{count}")
+		)));
 
 		o.start_process();
 	}
@@ -155,16 +143,13 @@ pub async fn get(
 	}
 
 	if count > 0 {
-		o.display(
-			MessageContents::Associated(
-				Box::new(MessageContents::Progress {
-					current: 0,
-					total: count as u32,
-				}),
-				Box::new(MessageContents::Simple(String::new())),
-			),
-			MessageLevel::Important,
-		);
+		o.display(MessageContents::Associated(
+			Box::new(MessageContents::Progress {
+				current: 0,
+				total: count as u32,
+			}),
+			Box::new(MessageContents::Simple(String::new())),
+		));
 	}
 	let mut num_done = 0;
 	let mut num_failures = 0;
@@ -176,47 +161,42 @@ pub async fn get(
 		let name = match name {
 			Ok(name) => name,
 			Err(e) => {
-				o.display(
-					MessageContents::Error(translate!(o, AssetFailed, "error" = &e.to_string())),
-					MessageLevel::Important,
-				);
+				o.display(MessageContents::Error(translate!(
+					o,
+					AssetFailed,
+					"error" = &e.to_string()
+				)));
 				num_failures += 1;
 				continue;
 			}
 		};
 
 		num_done += 1;
-		o.display(
-			MessageContents::Associated(
-				Box::new(MessageContents::Progress {
-					current: num_done,
-					total: count as u32,
-				}),
-				Box::new(MessageContents::Simple(translate!(
-					o,
-					DownloadedAsset,
-					"asset" = &name
-				))),
-			),
-			MessageLevel::Important,
-		);
+		o.display(MessageContents::Associated(
+			Box::new(MessageContents::Progress {
+				current: num_done,
+				total: count as u32,
+			}),
+			Box::new(MessageContents::Simple(translate!(
+				o,
+				DownloadedAsset,
+				"asset" = &name
+			))),
+		));
 	}
 
 	if num_failures > 0 {
-		o.display(
-			MessageContents::Error(translate!(
-				o,
-				AssetsFailed,
-				"num" = &num_failures.to_string()
-			)),
-			MessageLevel::Important,
-		);
+		o.display(MessageContents::Error(translate!(
+			o,
+			AssetsFailed,
+			"num" = &num_failures.to_string()
+		)));
 	}
 
-	o.display(
-		MessageContents::Success(translate!(o, FinishDownloadingAssets)),
-		MessageLevel::Important,
-	);
+	o.display(MessageContents::Success(translate!(
+		o,
+		FinishDownloadingAssets
+	)));
 	o.end_process();
 
 	Ok(out)

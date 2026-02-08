@@ -13,7 +13,7 @@ use nitro_net::download::Client;
 use nitro_plugin::{api::executable::ExecutablePlugin, hook::hooks::OnInstanceSetupResult};
 use nitro_shared::{
 	loaders::Loader,
-	output::{MessageContents, MessageLevel, NitroOutput, OutputProcess},
+	output::{MessageContents, NitroOutput, OutputProcess},
 	versions::VersionPattern,
 	Side, UpdateDepth,
 };
@@ -46,10 +46,9 @@ fn main() -> anyhow::Result<()> {
 		};
 
 		let mut process = OutputProcess::new(ctx.get_output());
-		process.display(
-			MessageContents::StartProcess(format!("Checking for {mode} updates")),
-			MessageLevel::Important,
-		);
+		process.display(MessageContents::StartProcess(format!(
+			"Checking for {mode} updates"
+		)));
 
 		let client = nitro_net::download::Client::new();
 		let paths = Paths::new()?;
@@ -60,10 +59,9 @@ fn main() -> anyhow::Result<()> {
 		let stored_versions_path = get_stored_versions_path(&paths, mode);
 		let versions = if stored_versions_path.exists() && arg.update_depth == UpdateDepth::Shallow
 		{
-			process.display(
-				MessageContents::StartProcess("Downloading version list".to_string()),
-				MessageLevel::Important,
-			);
+			process.display(MessageContents::StartProcess(
+				"Downloading version list".to_string(),
+			));
 			json_from_file(&stored_versions_path).context("Failed to read versions from file")?
 		} else {
 			runtime
@@ -83,10 +81,9 @@ fn main() -> anyhow::Result<()> {
 		let build_nums = if builds_path.exists() && arg.update_depth == UpdateDepth::Shallow {
 			json_from_file(&builds_path).context("Failed to read builds from file")?
 		} else {
-			process.display(
-				MessageContents::StartProcess("Getting build list".to_string()),
-				MessageLevel::Important,
-			);
+			process.display(MessageContents::StartProcess(
+				"Getting build list".to_string(),
+			));
 			runtime
 				.block_on(paper::get_builds(mode, &arg.version_info.version, &client))
 				.with_context(|| {
@@ -114,10 +111,9 @@ fn main() -> anyhow::Result<()> {
 		// use it to teardown
 		if let Some(current_build_num) = current_build_num {
 			if desired_build_num != current_build_num {
-				process.display(
-					MessageContents::StartProcess("Removing old build".to_string()),
-					MessageLevel::Important,
-				);
+				process.display(MessageContents::StartProcess(
+					"Removing old build".to_string(),
+				));
 				let build_info = get_build_info(
 					&paths,
 					mode,
@@ -154,10 +150,9 @@ fn main() -> anyhow::Result<()> {
 		// Download the JAR
 		let jar_path = paper::get_local_jar_path(mode, &arg.version_info.version, &paths);
 		if !jar_path.exists() || arg.update_depth == UpdateDepth::Force {
-			process.display(
-				MessageContents::StartProcess("Downloading JAR file".to_string()),
-				MessageLevel::Important,
-			);
+			process.display(MessageContents::StartProcess(
+				"Downloading JAR file".to_string(),
+			));
 			runtime
 				.block_on(paper::download_server_jar(
 					mode,
@@ -170,10 +165,7 @@ fn main() -> anyhow::Result<()> {
 				.with_context(|| format!("Failed to download JAR file for {mode}"))?;
 		}
 
-		process.display(
-			MessageContents::Success(format!("{mode} updated")),
-			MessageLevel::Important,
-		);
+		process.display(MessageContents::Success(format!("{mode} updated")));
 
 		let main_class = paper::PAPER_SERVER_MAIN_CLASS;
 
@@ -225,10 +217,9 @@ fn get_build_info(
 	let build_info = if build_info_path.exists() && update_depth <= UpdateDepth::Full {
 		json_from_file(&build_info_path).context("Failed to read build info from file")?
 	} else {
-		o.display(
-			MessageContents::StartProcess("Downloading build info".to_string()),
-			MessageLevel::Important,
-		);
+		o.display(MessageContents::StartProcess(
+			"Downloading build info".to_string(),
+		));
 		runtime
 			.block_on(paper::get_build_info(mode, version, build, client))
 			.with_context(|| format!("Failed to get build info for new {mode} version"))?

@@ -1,5 +1,5 @@
 use anyhow::{bail, Context};
-use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
+use nitro_shared::output::{MessageContents, NitroOutput};
 use nitro_shared::pkg::ArcPkgReq;
 use nitro_shared::translate;
 use nitro_shared::versions::VersionInfo;
@@ -92,10 +92,10 @@ impl Instance {
 			.unwrap_or_else(|| PackageConfig::from_id(pkg.id.clone()));
 
 		if eval.uses_custom_instructions {
-			o.display(
-				MessageContents::Warning(translate!(o, CustomInstructionsWarning)),
-				MessageLevel::Important,
-			);
+			o.display(MessageContents::Warning(translate!(
+				o,
+				CustomInstructionsWarning
+			)));
 		}
 
 		// Run commands
@@ -157,10 +157,10 @@ impl Instance {
 /// Runs package commands
 fn run_package_commands(commands: &[Vec<String>], o: &mut impl NitroOutput) -> anyhow::Result<()> {
 	if !commands.is_empty() {
-		o.display(
-			MessageContents::StartProcess(translate!(o, StartRunningCommands)),
-			MessageLevel::Important,
-		);
+		o.display(MessageContents::StartProcess(translate!(
+			o,
+			StartRunningCommands
+		)));
 
 		for command_and_args in commands {
 			let program = command_and_args
@@ -177,10 +177,10 @@ fn run_package_commands(commands: &[Vec<String>], o: &mut impl NitroOutput) -> a
 			}
 		}
 
-		o.display(
-			MessageContents::Success(translate!(o, FinishRunningCommands)),
-			MessageLevel::Important,
-		);
+		o.display(MessageContents::Success(translate!(
+			o,
+			FinishRunningCommands
+		)));
 	}
 
 	Ok(())

@@ -6,7 +6,7 @@ use nitro_pkg::repo::{PackageFlag, RepoMetadata, RepoPkgEntry};
 use nitro_pkg::PackageContentType;
 
 use anyhow::Context;
-use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
+use nitro_shared::output::{MessageContents, NitroOutput};
 use nitro_shared::pkg::{ArcPkgReq, PackageQueryDepth};
 use nitro_shared::translate;
 use reqwest::Client;
@@ -210,13 +210,10 @@ pub async fn query_all(
 		let query = match repo.query(&pkg.id, paths, client, plugins, o).await {
 			Ok(val) => val,
 			Err(e) => {
-				o.display(
-					MessageContents::Error(format!(
-						"Failed to get package from repository {}: {e:?}",
-						repo.get_id()
-					)),
-					MessageLevel::Important,
-				);
+				o.display(MessageContents::Error(format!(
+					"Failed to get package from repository {}: {e:?}",
+					repo.get_id()
+				)));
 				continue;
 			}
 		};

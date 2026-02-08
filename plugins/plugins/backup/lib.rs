@@ -11,7 +11,7 @@ use nitro_plugin::api::wasm::sys::get_data_dir;
 use nitro_plugin::api::wasm::util::get_custom_config;
 use nitro_plugin::api::wasm::WASMPlugin;
 use nitro_plugin::nitro_wasm_plugin;
-use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
+use nitro_shared::output::{MessageContents, NitroOutput};
 
 use crate::backup::BackupSource;
 
@@ -211,10 +211,9 @@ fn list(
 		if raw {
 			println!("{}", backup.id);
 		} else {
-			o.display(
-				MessageContents::ListItem(Box::new(MessageContents::Simple(backup.id.clone()))),
-				MessageLevel::Important,
-			);
+			o.display(MessageContents::ListItem(Box::new(
+				MessageContents::Simple(backup.id.clone()),
+			)));
 		}
 	}
 
@@ -233,10 +232,7 @@ fn create(instance: &str, group: Option<&str>, o: &mut impl NitroOutput) -> anyh
 
 	index.finish()?;
 
-	o.display(
-		MessageContents::Success("Backup created".into()),
-		MessageLevel::Important,
-	);
+	o.display(MessageContents::Success("Backup created".into()));
 
 	Ok(())
 }
@@ -254,10 +250,7 @@ fn remove(
 	index.remove_backup(group, backup)?;
 	index.finish()?;
 
-	o.display(
-		MessageContents::Success("Backup removed".into()),
-		MessageLevel::Important,
-	);
+	o.display(MessageContents::Success("Backup removed".into()));
 
 	Ok(())
 }
@@ -278,10 +271,7 @@ fn restore(
 	index.restore_backup(group, backup, &inst_dir)?;
 	index.finish()?;
 
-	o.display(
-		MessageContents::Success("Backup restored".into()),
-		MessageLevel::Important,
-	);
+	o.display(MessageContents::Success("Backup restored".into()));
 
 	Ok(())
 }
@@ -333,10 +323,7 @@ fn check_auto_hook(
 
 	if creating_backups {
 		o.start_process();
-		o.display(
-			MessageContents::StartProcess("Creating backups".into()),
-			MessageLevel::Important,
-		);
+		o.display(MessageContents::StartProcess("Creating backups".into()));
 	}
 
 	for (group_id, group) in groups {
@@ -348,10 +335,7 @@ fn check_auto_hook(
 	}
 
 	if creating_backups {
-		o.display(
-			MessageContents::Success("Backups created".into()),
-			MessageLevel::Important,
-		);
+		o.display(MessageContents::Success("Backups created".into()));
 		o.end_process();
 	}
 

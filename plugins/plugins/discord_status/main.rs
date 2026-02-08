@@ -6,7 +6,7 @@ use discord_rich_presence::{
 };
 use nitro_plugin::api::executable::ExecutablePlugin;
 use nitro_shared::{
-	output::{MessageContents, MessageLevel, NitroOutput},
+	output::{MessageContents, NitroOutput},
 	util::utc_timestamp,
 };
 use nitrolaunch::{instance::tracking::RunningInstanceRegistry, io::paths::Paths};
@@ -22,25 +22,22 @@ fn main() -> anyhow::Result<()> {
 		std::thread::sleep(Duration::from_secs(5));
 
 		if let Err(e) = update_presence() {
-			ctx.get_output().display(
-				MessageContents::Error(format!("Failed to update Discord rich presence:\n{e}")),
-				MessageLevel::Debug,
-			);
+			ctx.get_output().debug(MessageContents::Error(format!(
+				"Failed to update Discord rich presence:\n{e}"
+			)));
 		}
 	})?;
 
 	plugin.on_instance_stop(|mut ctx, _| {
 		if let Err(e) = update_presence() {
-			ctx.get_output().display(
-				MessageContents::Error(format!("Failed to update Discord rich presence:\n{e}")),
-				MessageLevel::Debug,
-			);
+			ctx.get_output().debug(MessageContents::Error(format!(
+				"Failed to update Discord rich presence:\n{e}"
+			)));
 		}
 
-		ctx.get_output().display(
-			MessageContents::Success("Discord rich presence updated".into()),
-			MessageLevel::Debug,
-		);
+		ctx.get_output().debug(MessageContents::Success(
+			"Discord rich presence updated".into(),
+		));
 
 		Ok(())
 	})?;

@@ -7,7 +7,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use anyhow::Context;
 use nitro_auth::mc::AccessToken;
-use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
+use nitro_shared::output::{MessageContents, NitroOutput};
 use nitro_shared::versions::VersionName;
 use nitro_shared::{no_window, translate};
 
@@ -44,10 +44,7 @@ pub(crate) fn launch_game_process(
 		launch_config: params.launch_config,
 	};
 
-	o.display(
-		MessageContents::Success(translate!(o, Launch)),
-		MessageLevel::Important,
-	);
+	o.display(MessageContents::Success(translate!(o, Launch)));
 
 	// Stdio files
 	let stdout = get_stdio_file_path(params.paths, false);
@@ -141,20 +138,14 @@ fn output_launch_command(
 ) -> anyhow::Result<()> {
 	o.end_process();
 	let access_token = if censor_secrets { access_token } else { None };
-	o.display(
-		MessageContents::Property(
-			"Launch command".into(),
-			Box::new(MessageContents::Simple(
-				command.get_program().to_string_lossy().into(),
-			)),
-		),
-		MessageLevel::Debug,
-	);
+	o.debug(MessageContents::Property(
+		"Launch command".into(),
+		Box::new(MessageContents::Simple(
+			command.get_program().to_string_lossy().into(),
+		)),
+	));
 
-	o.display(
-		MessageContents::Header("Launch command arguments".into()),
-		MessageLevel::Debug,
-	);
+	o.debug(MessageContents::Header("Launch command arguments".into()));
 
 	const CENSOR_STR: &str = "***";
 	for arg in command.get_args() {
@@ -162,39 +153,28 @@ fn output_launch_command(
 		if let Some(access_token) = &access_token {
 			arg = arg.replace(&access_token.0, CENSOR_STR);
 		}
-		o.display(
-			MessageContents::ListItem(Box::new(MessageContents::Simple(arg))),
-			MessageLevel::Debug,
-		);
+		o.debug(MessageContents::ListItem(Box::new(
+			MessageContents::Simple(arg),
+		)));
 	}
 
-	o.display(
-		MessageContents::Header("Launch command environment".into()),
-		MessageLevel::Debug,
-	);
+	o.debug(MessageContents::Header("Launch command environment".into()));
 
 	for (env, val) in command.get_envs() {
 		let Some(val) = val else { continue };
 		let env = env.to_string_lossy().to_string();
 		let val = val.to_string_lossy().to_string();
 
-		o.display(
-			MessageContents::ListItem(Box::new(MessageContents::Property(
-				env,
-				Box::new(MessageContents::Simple(val)),
-			))),
-			MessageLevel::Debug,
-		);
+		o.debug(MessageContents::ListItem(Box::new(
+			MessageContents::Property(env, Box::new(MessageContents::Simple(val))),
+		)));
 	}
 
 	if let Some(dir) = command.get_current_dir() {
-		o.display(
-			MessageContents::Property(
-				"Launch command directory".into(),
-				Box::new(MessageContents::Simple(dir.to_string_lossy().into())),
-			),
-			MessageLevel::Debug,
-		);
+		o.debug(MessageContents::Property(
+			"Launch command directory".into(),
+			Box::new(MessageContents::Simple(dir.to_string_lossy().into())),
+		));
 	}
 
 	Ok(())

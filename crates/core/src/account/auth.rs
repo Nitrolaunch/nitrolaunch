@@ -3,7 +3,7 @@ use std::sync::Arc;
 use anyhow::{bail, Context};
 use nitro_auth::RsaPrivateKey;
 use nitro_shared::minecraft::MinecraftUserProfile;
-use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
+use nitro_shared::output::{MessageContents, NitroOutput};
 use nitro_shared::translate;
 use nitro_shared::util::utc_timestamp;
 
@@ -55,12 +55,9 @@ impl Account {
 			AccountKind::Demo => {}
 			AccountKind::Unknown(other) => {
 				if let Some(func) = params.custom_auth_fn {
-					o.display(
-						MessageContents::Simple(
-							"Handling custom account type with authentication function".into(),
-						),
-						MessageLevel::Debug,
-					);
+					o.debug(MessageContents::Simple(
+						"Handling custom account type with authentication function".into(),
+					));
 					let profile = func
 						.auth(&self.id, other)
 						.await
@@ -70,12 +67,9 @@ impl Account {
 						self.uuid = Some(profile.uuid);
 					}
 				} else {
-					o.display(
-						MessageContents::Simple(
-							"Authentication for custom account type not handled".into(),
-						),
-						MessageLevel::Debug,
-					);
+					o.debug(MessageContents::Simple(
+						"Authentication for custom account type not handled".into(),
+					));
 				}
 			}
 		}
@@ -414,10 +408,7 @@ async fn get_sensitive_info(
 		let out = db_account
 			.get_sensitive_info_with_key(&private_key)
 			.context("Failed to get sensitive account info using key")?;
-		o.display(
-			MessageContents::Success(translate!(o, PasskeyAccepted)),
-			MessageLevel::Important,
-		);
+		o.display(MessageContents::Success(translate!(o, PasskeyAccepted)));
 
 		out
 	} else {
@@ -449,10 +440,7 @@ async fn get_private_key(
 					return Ok(private_key.expect("Account should have passkey"));
 				}
 				Err(e) => {
-					o.display(
-						MessageContents::Error(format!("{e:?}")),
-						MessageLevel::Important,
-					);
+					o.display(MessageContents::Error(format!("{e:?}")));
 				}
 			}
 		}

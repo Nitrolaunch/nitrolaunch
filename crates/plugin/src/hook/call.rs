@@ -14,7 +14,7 @@ use crate::{
 	PluginPaths,
 };
 use anyhow::Context;
-use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput, NoOp};
+use nitro_shared::output::{MessageContents, NitroOutput, NoOp};
 use tokio::sync::Mutex;
 
 use crate::{
@@ -166,14 +166,11 @@ impl<H: Hook> HookHandle<H> {
 			if let Some(start_time) = &self.start_time {
 				let now = Instant::now();
 				let delta = now.duration_since(*start_time);
-				o.display(
-					MessageContents::Simple(format!(
-						"Plugin '{}' took {delta:?} to run hook '{}'",
-						self.plugin_id,
-						H::get_name_static()
-					)),
-					MessageLevel::Important,
-				);
+				o.display(MessageContents::Simple(format!(
+					"Plugin '{}' took {delta:?} to run hook '{}'",
+					self.plugin_id,
+					H::get_name_static()
+				)));
 			}
 		}
 

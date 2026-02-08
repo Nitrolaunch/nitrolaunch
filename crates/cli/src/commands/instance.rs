@@ -16,7 +16,7 @@ use nitrolaunch::instance::Instance;
 use nitrolaunch::io::lock::Lockfile;
 use nitrolaunch::plugin_crate::hook::hooks::{DeleteInstance, SaveInstanceConfigArg};
 use nitrolaunch::shared::id::InstanceID;
-use nitrolaunch::shared::output::{MessageContents, MessageLevel};
+use nitrolaunch::shared::output::MessageContents;
 use nitrolaunch::shared::util::to_string_json;
 use nitrolaunch::shared::versions::{MinecraftLatestVersion, MinecraftVersionDeser};
 
@@ -458,10 +458,8 @@ async fn add(data: &mut CmdData<'_>) -> anyhow::Result<()> {
 	.await
 	.context("Failed to write modified config")?;
 
-	data.output.display(
-		MessageContents::Success("Instance added".into()),
-		MessageLevel::Important,
-	);
+	data.output
+		.display(MessageContents::Success("Instance added".into()));
 
 	Ok(())
 }
@@ -606,10 +604,7 @@ async fn delete(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()
 	}
 
 	let mut process = data.output.get_process();
-	process.display(
-		MessageContents::StartProcess("Deleting instance".into()),
-		MessageLevel::Important,
-	);
+	process.display(MessageContents::StartProcess("Deleting instance".into()));
 
 	instance
 		.delete_files(&data.paths)
@@ -652,10 +647,7 @@ async fn delete(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()
 		.context("Failed to modify and write config")?;
 	}
 
-	process.display(
-		MessageContents::Success("Instance deleted".into()),
-		MessageLevel::Important,
-	);
+	process.display(MessageContents::Success("Instance deleted".into()));
 
 	Ok(())
 }
@@ -695,10 +687,8 @@ async fn edit(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()> 
 	.await
 	.context("Failed to modify and write config")?;
 
-	data.output.display(
-		MessageContents::Success("Changes saved".into()),
-		MessageLevel::Important,
-	);
+	data.output
+		.display(MessageContents::Success("Changes saved".into()));
 
 	Ok(())
 }

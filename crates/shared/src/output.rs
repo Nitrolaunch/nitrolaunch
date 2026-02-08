@@ -19,9 +19,28 @@ pub trait NitroOutput: Send {
 		self.display_text(message.contents.default_format(), message.level);
 	}
 
-	/// Convenience function to remove the need to construct a message
-	fn display(&mut self, contents: MessageContents, level: MessageLevel) {
-		self.display_message(Message { contents, level })
+	/// Display a message at the important level
+	fn display(&mut self, contents: MessageContents) {
+		self.display_message(Message {
+			contents,
+			level: MessageLevel::Important,
+		})
+	}
+
+	/// Display a message at the debug level
+	fn debug(&mut self, contents: MessageContents) {
+		self.display_message(Message {
+			contents,
+			level: MessageLevel::Debug,
+		})
+	}
+
+	/// Display a message at the trace level
+	fn trace(&mut self, contents: MessageContents) {
+		self.display_message(Message {
+			contents,
+			level: MessageLevel::Trace,
+		})
 	}
 
 	/// Start a process of multiple messages. Implementations can use this to replace a line
@@ -90,12 +109,9 @@ pub trait NitroOutput: Send {
 
 	/// Specialized implementation for displaying a package resolution error to the user
 	fn display_special_resolution_error(&mut self, error: ResolutionError, instance_id: &str) {
-		self.display(
-			MessageContents::Error(format!(
-				"Failed to resolve packages for instance {instance_id}: {error}"
-			)),
-			MessageLevel::Important,
-		)
+		self.display(MessageContents::Error(format!(
+			"Failed to resolve packages for instance {instance_id}: {error}"
+		)))
 	}
 
 	/// Specialized implementation for prompting an account passkey
@@ -114,10 +130,7 @@ pub trait NitroOutput: Send {
 		&mut self,
 		diffs: Vec<PackageDiff>,
 	) -> anyhow::Result<bool> {
-		self.display(
-			MessageContents::Header("Package changes:".into()),
-			MessageLevel::Important,
-		);
+		self.display(MessageContents::Header("Package changes:".into()));
 
 		for diff in diffs {
 			let (PackageDiff::Added(pkg)
@@ -132,10 +145,10 @@ pub trait NitroOutput: Send {
 					format!("{old_version} -> {new_version}")
 				}
 			};
-			self.display(
-				MessageContents::Package(pkg, Box::new(MessageContents::Simple(message))),
-				MessageLevel::Important,
-			);
+			self.display(MessageContents::Package(
+				pkg,
+				Box::new(MessageContents::Simple(message)),
+			));
 		}
 
 		self.prompt_yes_no(
@@ -162,20 +175,14 @@ pub trait NitroOutput: Send {
 
 /// Displays the default Microsoft authentication messages
 pub fn default_special_ms_auth(o: &mut (impl NitroOutput + ?Sized), url: &str, code: &str) {
-	o.display(
-		MessageContents::Property(
-			"Open this link in your web browser if it has not opened already".into(),
-			Box::new(MessageContents::Hyperlink(url.into())),
-		),
-		MessageLevel::Important,
-	);
-	o.display(
-		MessageContents::Property(
-			"and enter the code".into(),
-			Box::new(MessageContents::Copyable(code.into())),
-		),
-		MessageLevel::Important,
-	);
+	o.display(MessageContents::Property(
+		"Open this link in your web browser if it has not opened already".into(),
+		Box::new(MessageContents::Hyperlink(url.into())),
+	));
+	o.display(MessageContents::Property(
+		"and enter the code".into(),
+		Box::new(MessageContents::Copyable(code.into())),
+	));
 }
 
 /// A message supplied to the output
@@ -255,33 +262,16 @@ impl MessageContents {
 }
 
 /// The level of logging that a message has
-#[derive(Copy, Clone, Debug, Deserialize, Serialize)]
+#[derive(Copy, Clone, Debug, Deserialize, Serialize, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(rename_all = "snake_case")]
 pub enum MessageLevel {
-	/// Messages that should always be displayed
-	Important,
-	/// Messages that can be displayed but are not required
-	Extra,
+	/// Very Debug-level messages. Should only be used for logging
+	Trace,
 	/// Debug-level messages. Good for logging but should not be displayed to
 	/// the user unless they ask
 	Debug,
-	/// Very Debug-level messages. Should only be used for logging
-	Trace,
-}
-
-impl MessageLevel {
-	/// Checks if this level is at least another level
-	pub fn at_least(&self, other: &Self) -> bool {
-		match &self {
-			Self::Important => matches!(
-				other,
-				Self::Important | Self::Extra | Self::Debug | Self::Trace
-			),
-			Self::Extra => matches!(other, Self::Extra | Self::Debug | Self::Trace),
-			Self::Debug => matches!(other, Self::Debug | Self::Trace),
-			Self::Trace => matches!(other, Self::Trace),
-		}
-	}
+	/// Messages that should always be displayed
+	Important,
 }
 
 /// Dummy NitroOutput that doesn't print anything
@@ -298,7 +288,7 @@ pub struct Simple(pub MessageLevel);
 
 impl NitroOutput for Simple {
 	fn display_text(&mut self, text: String, level: MessageLevel) {
-		if !level.at_least(&self.0) {
+		if level < self.0 {
 			return;
 		}
 
@@ -393,17 +383,5 @@ where
 {
 	fn deref_mut(&mut self) -> &mut Self::Target {
 		self.0
-	}
-}
-
-#[cfg(test)]
-mod tests {
-	use super::*;
-
-	#[test]
-	fn test_level_is_at_least() {
-		assert!(MessageLevel::Extra.at_least(&MessageLevel::Debug));
-		assert!(MessageLevel::Debug.at_least(&MessageLevel::Debug));
-		assert!(!MessageLevel::Debug.at_least(&MessageLevel::Extra));
 	}
 }

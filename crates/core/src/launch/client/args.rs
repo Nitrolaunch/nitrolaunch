@@ -1,4 +1,4 @@
-use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
+use nitro_shared::output::{MessageContents, NitroOutput};
 use nitro_shared::util::{ARCH_STRING, OS_STRING};
 use nitro_shared::versions::VersionPattern;
 
@@ -271,22 +271,16 @@ pub fn create_quick_play_args(
 				QuickPlayType::None => {}
 				QuickPlayType::World { .. } => {
 					if before_23w14a {
-						o.display(
-							MessageContents::Warning(
-								"World Quick Play has no effect before 23w14a (1.20)".into(),
-							),
-							MessageLevel::Important,
-						);
+						o.debug(MessageContents::Warning(
+							"World Quick Play has no effect before 23w14a (1.20)".into(),
+						));
 					}
 				}
 				QuickPlayType::Realm { .. } => {
 					if before_23w14a {
-						o.display(
-							MessageContents::Warning(
-								"Realm Quick Play has no effect before 23w14a (1.20)".into(),
-							),
-							MessageLevel::Important,
-						);
+						o.debug(MessageContents::Warning(
+							"Realm Quick Play has no effect before 23w14a (1.20)".into(),
+						));
 					}
 				}
 				QuickPlayType::Server { server, port } => {

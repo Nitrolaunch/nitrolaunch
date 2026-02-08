@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use nitro_shared::id::TemplateID;
-use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
+use nitro_shared::output::{MessageContents, NitroOutput};
 use nitro_shared::Side;
 #[cfg(feature = "schema")]
 use schemars::JsonSchema;
@@ -288,12 +288,9 @@ pub fn consolidate_template_configs(
 					} else {
 						// Check if the parent template actually doesn't exist or if we just haven't consolidated it yet
 						if !templates.contains_key(&parent_id) {
-							o.display(
-								MessageContents::Error(format!(
-									"Parent template '{parent}' does not exist"
-								)),
-								MessageLevel::Important,
-							);
+							o.display(MessageContents::Error(format!(
+								"Parent template '{parent}' does not exist"
+							)));
 						}
 					}
 				}

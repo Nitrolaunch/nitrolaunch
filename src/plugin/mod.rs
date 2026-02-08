@@ -15,8 +15,8 @@ use nitro_plugin::hook::Hook;
 use nitro_plugin::host::CorePluginManager;
 use nitro_plugin::plugin::{Plugin, PluginManifest};
 use nitro_plugin::PluginPaths;
+use nitro_shared::output::MessageContents;
 use nitro_shared::output::NitroOutput;
-use nitro_shared::output::{MessageContents, MessageLevel};
 use nitro_shared::translate;
 use tokio::sync::Mutex;
 
@@ -133,14 +133,11 @@ impl PluginManager {
 				version_compare::Version::from(plugin_nitro_version),
 			) {
 				if plugin_nitro_version > nitro_version {
-					o.display(
-						MessageContents::Warning(translate!(
-							o,
-							PluginForNewerVersion,
-							"plugin" = plugin.get_id()
-						)),
-						MessageLevel::Important,
-					);
+					o.display(MessageContents::Warning(translate!(
+						o,
+						PluginForNewerVersion,
+						"plugin" = plugin.get_id()
+					)));
 				}
 			}
 		}
@@ -178,23 +175,21 @@ impl PluginManager {
 		// Get the path for the manifest
 		let path = paths.plugins.join(format!("{}.json", plugin.id));
 		let (path, plugin_dir) = if path.exists() {
-			o.display(
-				MessageContents::Warning(format!(
-					"Plugin '{}' is using outdated JSON-only format",
-					plugin.id
-				)),
-				MessageLevel::Important,
-			);
+			o.display(MessageContents::Warning(format!(
+				"Plugin '{}' is using outdated JSON-only format",
+				plugin.id
+			)));
 			(path, None)
 		} else {
 			let dir = paths.plugins.join(&plugin.id);
 			(dir.join("plugin.json"), Some(dir))
 		};
 		if !path.exists() {
-			o.display(
-				MessageContents::Error(translate!(o, PluginNotFound, "plugin" = &plugin.id)),
-				MessageLevel::Important,
-			);
+			o.display(MessageContents::Error(translate!(
+				o,
+				PluginNotFound,
+				"plugin" = &plugin.id
+			)));
 
 			return Ok(());
 		}
@@ -324,15 +319,12 @@ impl PluginManager {
 		for plugin in inner.manager.iter_plugins() {
 			for dependency in &plugin.get_manifest().dependencies {
 				if !ids.contains(dependency) {
-					o.display(
-						MessageContents::Warning(translate!(
-							o,
-							PluginDependencyMissing,
-							"dependency" = dependency,
-							"plugin" = plugin.get_id()
-						)),
-						MessageLevel::Important,
-					);
+					o.display(MessageContents::Warning(translate!(
+						o,
+						PluginDependencyMissing,
+						"dependency" = dependency,
+						"plugin" = plugin.get_id()
+					)));
 				}
 			}
 		}

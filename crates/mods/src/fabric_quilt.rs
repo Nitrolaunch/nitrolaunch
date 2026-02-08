@@ -9,7 +9,7 @@ use nitro_core::io::update::UpdateManager;
 use nitro_core::io::{files, json_to_file};
 use nitro_core::net::download;
 use nitro_core::NitroCore;
-use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput, OutputProcess};
+use nitro_shared::output::{MessageContents, NitroOutput, OutputProcess};
 use nitro_shared::versions::VersionInfo;
 use nitro_shared::{Side, UpdateDepth};
 use reqwest::Client;
@@ -253,10 +253,7 @@ pub async fn download_files(
 	let force = manager.get_depth() == UpdateDepth::Force;
 
 	let mut process = OutputProcess::new(o);
-	process.display(
-		MessageContents::StartProcess(format!("Downloading {mode}")),
-		MessageLevel::Important,
-	);
+	process.display(MessageContents::StartProcess(format!("Downloading {mode}")));
 
 	let libs = meta.launcher_meta.libraries.common.clone();
 	let libraries_dir_clone = libraries_dir.to_path_buf();
@@ -300,10 +297,7 @@ pub async fn download_files(
 	res1.with_context(|| format!("Failed to download {mode} common libraries"))?;
 	res2.with_context(|| format!("Failed to download {mode} main libraries"))?;
 
-	process.display(
-		MessageContents::Success(format!("{mode} downloaded")),
-		MessageLevel::Important,
-	);
+	process.display(MessageContents::Success(format!("{mode} downloaded")));
 
 	Ok(())
 }

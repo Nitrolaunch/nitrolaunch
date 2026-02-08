@@ -2,7 +2,7 @@ use super::mc_msa::{
 	MinecraftAccessToken, MinecraftAuthenticationResponse, MinecraftAuthorizationFlow,
 };
 use anyhow::{anyhow, Context};
-use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
+use nitro_shared::output::{MessageContents, NitroOutput};
 use nitro_shared::translate;
 pub use oauth2::basic::{BasicClient, BasicTokenType};
 pub use oauth2::reqwest::async_http_client;
@@ -57,10 +57,10 @@ pub async fn authenticate_microsoft_account_from_token(
 
 	let access_token = mc_access_token_to_string(&mc_token.access_token);
 
-	o.display(
-		MessageContents::Success(translate!(o, AuthenticationSuccessful)),
-		MessageLevel::Important,
-	);
+	o.display(MessageContents::Success(translate!(
+		o,
+		AuthenticationSuccessful
+	)));
 
 	let out = MicrosoftAuthResult {
 		access_token: AccessToken(access_token),

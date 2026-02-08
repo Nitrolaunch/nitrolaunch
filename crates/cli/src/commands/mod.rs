@@ -143,10 +143,7 @@ pub async fn run_cli() -> anyhow::Result<()> {
 
 	// First launch message
 	if is_first_run(&paths) {
-		output.display(
-			MessageContents::Header("Welcome to Nitrolaunch!".into()),
-			MessageLevel::Important,
-		);
+		output.display(MessageContents::Header("Welcome to Nitrolaunch!".into()));
 
 		let install_default = output
 			.prompt_yes_no(
@@ -183,12 +180,10 @@ Would you like to do that now?"
 
 			output.display(
 				MessageContents::Header("Use the nitro migrate command to use instances from an existing launcher, and make sure to join the Discord!".into()),
-				MessageLevel::Important,
 			);
-			output.display(
-				MessageContents::Hyperlink("https://discord.gg/cgVapnVfZJ".into()),
-				MessageLevel::Important,
-			);
+			output.display(MessageContents::Hyperlink(
+				"https://discord.gg/cgVapnVfZJ".into(),
+			));
 		}
 	}
 
@@ -226,10 +221,7 @@ Would you like to do that now?"
 		// Don't use the existing process or section
 		output.end_process();
 		output.end_section();
-		output.display(
-			MessageContents::Error(format!("{e:?}")),
-			MessageLevel::Important,
-		);
+		output.display(MessageContents::Error(format!("{e:?}")));
 	}
 
 	res

@@ -46,13 +46,15 @@ pub struct TerminalOutput {
 impl NitroOutput for TerminalOutput {
 	fn display_text(&mut self, text: String, level: MessageLevel) {
 		let _ = self.log_message(MessageContents::Simple(text.clone()), level);
-		self.display_text_impl(text, level);
+		if level >= self.level {
+			self.display_text_impl(text);
+		}
 	}
 
 	fn display_message(&mut self, message: Message) {
 		let _ = self.log_message(message.contents.clone(), message.level);
 
-		if message.level.at_least(&self.level) {
+		if message.level >= self.level {
 			let is_error = matches!(&message.contents, MessageContents::Error(..));
 
 			// Loading spinner handling
@@ -86,7 +88,7 @@ impl NitroOutput for TerminalOutput {
 				self.end_process();
 			}
 
-			self.display_text_impl(message_contents, message.level);
+			self.display_text_impl(message_contents);
 		}
 	}
 
@@ -201,11 +203,7 @@ impl TerminalOutput {
 	}
 
 	/// Display text
-	fn display_text_impl(&mut self, text: String, level: MessageLevel) {
-		if !level.at_least(&self.level) {
-			return;
-		}
-
+	fn display_text_impl(&mut self, text: String) {
 		if self.in_process {
 			self.printer.print(&text);
 		} else {

@@ -14,7 +14,7 @@ use anyhow::{bail, Context};
 use nitro_net::download::{self, Client};
 use nitro_shared::{
 	no_window,
-	output::{MessageContents, MessageLevel, NitroOutput},
+	output::{Message, MessageContents, MessageLevel, NitroOutput},
 	util::{ARCH_STRING, OS_STRING},
 };
 use tokio::{process::Command, sync::Mutex};
@@ -107,14 +107,11 @@ impl<H: Hook> WASMHookHandle<H> {
 		}
 
 		if plugin_debug_enabled() {
-			o.display(
-				MessageContents::Simple(format!(
-					"Running hook '{}' on plugin '{}'",
-					H::get_name_static(),
-					self.plugin_id
-				)),
-				MessageLevel::Important,
-			);
+			o.display(MessageContents::Simple(format!(
+				"Running hook '{}' on plugin '{}'",
+				H::get_name_static(),
+				self.plugin_id
+			)));
 		}
 
 		let mut start_time = if std::env::var("NITRO_PLUGIN_PROFILE").is_ok_and(|x| x == "1") {
@@ -370,9 +367,8 @@ impl bindings::InterfaceWorldImports for State {
 	async fn output_display_text(&mut self, text: String, level: u8) {
 		let level = match level {
 			0 => MessageLevel::Important,
-			1 => MessageLevel::Extra,
-			2 => MessageLevel::Debug,
-			3 => MessageLevel::Trace,
+			1 => MessageLevel::Debug,
+			2 => MessageLevel::Trace,
 			_ => return,
 		};
 
@@ -386,13 +382,15 @@ impl bindings::InterfaceWorldImports for State {
 
 		let level = match level {
 			0 => MessageLevel::Important,
-			1 => MessageLevel::Extra,
-			2 => MessageLevel::Debug,
-			3 => MessageLevel::Trace,
+			1 => MessageLevel::Debug,
+			2 => MessageLevel::Trace,
 			_ => return,
 		};
 
-		self.o.lock().await.display(message, level);
+		self.o.lock().await.display_message(Message {
+			contents: message,
+			level,
+		});
 	}
 
 	async fn output_start_process(&mut self) {

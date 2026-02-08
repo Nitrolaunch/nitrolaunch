@@ -9,7 +9,7 @@ use nitrolaunch::core::account::AccountKind;
 
 use clap::Subcommand;
 use color_print::{cprint, cprintln};
-use nitrolaunch::shared::output::{MessageContents, MessageLevel, NitroOutput};
+use nitrolaunch::shared::output::{MessageContents, NitroOutput};
 use reqwest::Client;
 
 #[derive(Debug, Subcommand)]
@@ -203,10 +203,8 @@ async fn add(data: &mut CmdData<'_>) -> anyhow::Result<()> {
 	.await
 	.context("Failed to write modified config")?;
 
-	data.output.display(
-		MessageContents::Success("Account added".into()),
-		MessageLevel::Important,
-	);
+	data.output
+		.display(MessageContents::Success("Account added".into()));
 
 	Ok(())
 }

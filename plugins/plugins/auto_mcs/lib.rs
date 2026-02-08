@@ -19,7 +19,7 @@ use nitro_plugin::{
 };
 use nitro_shared::{id::InstanceID, loaders::Loader, versions::MinecraftVersionDeser, Side};
 use nitro_shared::{
-	output::{MessageContents, MessageLevel, NitroOutput},
+	output::{MessageContents, NitroOutput},
 	util::to_string_json,
 };
 use serde::Deserialize;
@@ -161,10 +161,7 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 		.context("Failed to spawn auto-mcs server")?;
 
 		let mut o = WASMPluginOutput::new();
-		o.display(
-			MessageContents::Simple("Checking log file dir".into()),
-			MessageLevel::Debug,
-		);
+		o.debug(MessageContents::Simple("Checking log file dir".into()));
 
 		// Keep checking for new log files, then pick the newest one when the entries change
 		let log_file_path = loop {
@@ -180,10 +177,9 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 
 		let log_file_path = log_file_path.to_string_lossy().to_string();
 
-		o.display(
-			MessageContents::Simple(format!("Found log file {log_file_path}")),
-			MessageLevel::Debug,
-		);
+		o.debug(MessageContents::Simple(format!(
+			"Found log file {log_file_path}"
+		)));
 
 		Ok(Some(ReplaceInstanceLaunchResult {
 			pid,

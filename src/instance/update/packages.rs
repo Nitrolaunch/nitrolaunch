@@ -9,7 +9,7 @@ use nitro_core::net::get_transfer_limit;
 use nitro_pkg::repo::PackageFlag;
 use nitro_pkg::PkgRequest;
 use nitro_shared::addon::AddonKind;
-use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
+use nitro_shared::output::{MessageContents, NitroOutput};
 use nitro_shared::pkg::ArcPkgReq;
 use nitro_shared::translate;
 use nitro_shared::versions::VersionInfo;
@@ -33,17 +33,17 @@ pub async fn update_instance_packages<O: NitroOutput>(
 ) -> anyhow::Result<HashSet<ArcPkgReq>> {
 	// Resolve dependencies
 	ctx.output.start_process();
-	ctx.output.display(
-		MessageContents::StartProcess(translate!(ctx.output, StartResolvingDependencies)),
-		MessageLevel::Important,
-	);
+	ctx.output.display(MessageContents::StartProcess(translate!(
+		ctx.output,
+		StartResolvingDependencies
+	)));
 	let resolution = resolve_instance(instance, constants, ctx)
 		.await
 		.context("Failed to resolve dependencies for instance")?;
-	ctx.output.display(
-		MessageContents::Success(translate!(ctx.output, FinishResolvingDependencies)),
-		MessageLevel::Important,
-	);
+	ctx.output.display(MessageContents::Success(translate!(
+		ctx.output,
+		FinishResolvingDependencies
+	)));
 	ctx.output.end_process();
 
 	let mut inst_lock = instance.get_lockfile(ctx.lock, ctx.paths)?;
@@ -59,10 +59,10 @@ pub async fn update_instance_packages<O: NitroOutput>(
 	remove_existing_addons(instance, constants, ctx)?;
 
 	// Evaluate first to install all of the addons
-	ctx.output.display(
-		MessageContents::Header(translate!(ctx.output, StartAcquiringAddons)),
-		MessageLevel::Important,
-	);
+	ctx.output.display(MessageContents::Header(translate!(
+		ctx.output,
+		StartAcquiringAddons
+	)));
 	let mut tasks = HashMap::new();
 	for package in resolution.packages.iter().sorted_by_key(|x| x.req.clone()) {
 		// Check the package to display warnings
@@ -84,13 +84,10 @@ pub async fn update_instance_packages<O: NitroOutput>(
 
 		// Display any notices from the installation
 		for notice in &package.eval.notices {
-			ctx.output.display(
-				format_package_update_message(
-					&package.req,
-					MessageContents::Notice(notice.clone()),
-				),
-				MessageLevel::Important,
-			);
+			ctx.output.display(format_package_update_message(
+				&package.req,
+				MessageContents::Notice(notice.clone()),
+			));
 		}
 	}
 
@@ -99,17 +96,17 @@ pub async fn update_instance_packages<O: NitroOutput>(
 		.await
 		.context("Failed to acquire addons")?;
 
-	ctx.output.display(
-		MessageContents::Success(translate!(ctx.output, FinishAcquiringAddons)),
-		MessageLevel::Important,
-	);
+	ctx.output.display(MessageContents::Success(translate!(
+		ctx.output,
+		FinishAcquiringAddons
+	)));
 
 	// Install each package one after another onto all of its instances
 	ctx.output.start_process();
-	ctx.output.display(
-		MessageContents::Header(translate!(ctx.output, StartInstallingPackages)),
-		MessageLevel::Important,
-	);
+	ctx.output.display(MessageContents::Header(translate!(
+		ctx.output,
+		StartInstallingPackages
+	)));
 
 	let version_info = VersionInfo {
 		version: constants.version.clone(),
@@ -146,14 +143,11 @@ pub async fn update_instance_packages<O: NitroOutput>(
 
 	inst_lock.write()?;
 
-	ctx.output.display(
-		MessageContents::Success(translate!(
-			ctx.output,
-			FinishInstallingPackages,
-			"count" = &resolution.packages.len().to_string()
-		)),
-		MessageLevel::Important,
-	);
+	ctx.output.display(MessageContents::Success(translate!(
+		ctx.output,
+		FinishInstallingPackages,
+		"count" = &resolution.packages.len().to_string()
+	)));
 	ctx.output.end_process();
 
 	// Get the set of unique packages
@@ -194,7 +188,7 @@ async fn run_addon_tasks(
 				total: total_count as u32,
 			};
 
-			process.display(progress, MessageLevel::Important);
+			process.display(progress);
 		}
 	}
 
@@ -290,31 +284,35 @@ async fn check_package<O: NitroOutput>(
 		.await
 		.context("Failed to get flags for package")?;
 	if flags.contains(&PackageFlag::OutOfDate) {
-		ctx.output.display(
-			MessageContents::Warning(translate!(ctx.output, PackageOutOfDate, "pkg" = &pkg.id)),
-			MessageLevel::Important,
-		);
+		ctx.output.display(MessageContents::Warning(translate!(
+			ctx.output,
+			PackageOutOfDate,
+			"pkg" = &pkg.id
+		)));
 	}
 
 	if flags.contains(&PackageFlag::Deprecated) {
-		ctx.output.display(
-			MessageContents::Warning(translate!(ctx.output, PackageDeprecated, "pkg" = &pkg.id)),
-			MessageLevel::Important,
-		);
+		ctx.output.display(MessageContents::Warning(translate!(
+			ctx.output,
+			PackageDeprecated,
+			"pkg" = &pkg.id
+		)));
 	}
 
 	if flags.contains(&PackageFlag::Insecure) {
-		ctx.output.display(
-			MessageContents::Error(translate!(ctx.output, PackageInsecure, "pkg" = &pkg.id)),
-			MessageLevel::Important,
-		);
+		ctx.output.display(MessageContents::Error(translate!(
+			ctx.output,
+			PackageInsecure,
+			"pkg" = &pkg.id
+		)));
 	}
 
 	if flags.contains(&PackageFlag::Malicious) {
-		ctx.output.display(
-			MessageContents::Error(translate!(ctx.output, PackageMalicious, "pkg" = &pkg.id)),
-			MessageLevel::Important,
-		);
+		ctx.output.display(MessageContents::Error(translate!(
+			ctx.output,
+			PackageMalicious,
+			"pkg" = &pkg.id
+		)));
 	}
 
 	Ok(())
@@ -340,13 +338,13 @@ pub async fn print_package_support_messages<O: NitroOutput>(
 		}
 	}
 	if !links.is_empty() {
-		ctx.output.display(
-			MessageContents::Header(translate!(ctx.output, PackageSupportHeader)),
-			MessageLevel::Important,
-		);
+		ctx.output.display(MessageContents::Header(translate!(
+			ctx.output,
+			PackageSupportHeader
+		)));
 		for (req, link) in links {
 			let msg = format_package_update_message(req, MessageContents::Hyperlink(link));
-			ctx.output.display(msg, MessageLevel::Important);
+			ctx.output.display(msg);
 		}
 	}
 

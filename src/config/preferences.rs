@@ -17,7 +17,7 @@ use anyhow::{bail, Context};
 use nitro_plugin::hook::hooks::AddCustomPackageRepositories;
 use nitro_shared::{
 	lang::Language,
-	output::{MessageContents, MessageLevel, NitroOutput},
+	output::{MessageContents, NitroOutput},
 };
 
 /// Configured user preferences
@@ -66,25 +66,19 @@ impl ConfigPreferences {
 				}
 			}
 			Err(e) => {
-				o.display(
-					MessageContents::Error(format!(
-						"Failed to get repositories from plugins: {e:?}"
-					)),
-					MessageLevel::Important,
-				);
+				o.display(MessageContents::Error(format!(
+					"Failed to get repositories from plugins: {e:?}"
+				)));
 			}
 		}
 
 		for repo in prefs.repositories.preferred.iter() {
 			if !repo.disable {
 				if let Err(e) = add_repo(&mut repositories, repo) {
-					o.display(
-						MessageContents::Error(format!(
-							"Failed to add repository {}: {e:?}",
-							repo.id
-						)),
-						MessageLevel::Important,
-					);
+					o.display(MessageContents::Error(format!(
+						"Failed to add repository {}: {e:?}",
+						repo.id
+					)));
 				}
 			}
 		}
@@ -94,13 +88,10 @@ impl ConfigPreferences {
 		for repo in prefs.repositories.backup.iter() {
 			if !repo.disable {
 				if let Err(e) = add_repo(&mut repositories, repo) {
-					o.display(
-						MessageContents::Error(format!(
-							"Failed to add repository {}: {e:?}",
-							repo.id
-						)),
-						MessageLevel::Important,
-					);
+					o.display(MessageContents::Error(format!(
+						"Failed to add repository {}: {e:?}",
+						repo.id
+					)));
 				}
 			}
 		}
@@ -109,10 +100,10 @@ impl ConfigPreferences {
 		let mut existing = HashSet::new();
 		for repo in &repositories {
 			if existing.contains(&repo.get_id()) {
-				o.display(
-					MessageContents::Error(format!("Duplicate repository ID '{}'", repo.get_id())),
-					MessageLevel::Important,
-				);
+				o.display(MessageContents::Error(format!(
+					"Duplicate repository ID '{}'",
+					repo.get_id()
+				)));
 			}
 			existing.insert(repo.get_id());
 		}

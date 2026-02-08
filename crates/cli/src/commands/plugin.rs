@@ -7,7 +7,7 @@ use nitrolaunch::plugin::install::get_verified_plugins;
 use nitrolaunch::plugin::PluginManager;
 use nitrolaunch::plugin_crate::plugin::PluginManifest;
 use nitrolaunch::shared::lang::translate::TranslationKey;
-use nitrolaunch::shared::output::{MessageContents, MessageLevel, NitroOutput};
+use nitrolaunch::shared::output::{MessageContents, NitroOutput};
 use nitrolaunch::shared::translate;
 use nitrolaunch::shared::versions::parse_single_versioned_string;
 use reqwest::Client;
@@ -172,10 +172,7 @@ pub(crate) async fn install(
 		let mut process = data.output.get_process();
 
 		let message = translate!(process, StartInstallingPlugin, "plugin" = plugin_id);
-		process.display(
-			MessageContents::StartProcess(message),
-			MessageLevel::Important,
-		);
+		process.display(MessageContents::StartProcess(message));
 		plugin
 			.install(version, &data.paths, &client, process.deref_mut())
 			.await
@@ -184,7 +181,7 @@ pub(crate) async fn install(
 		let message = process
 			.translate(TranslationKey::FinishInstallingPlugin)
 			.to_string();
-		process.display(MessageContents::Success(message), MessageLevel::Important);
+		process.display(MessageContents::Success(message));
 	}
 
 	Ok(())
@@ -208,10 +205,8 @@ async fn uninstall(data: &mut CmdData<'_>, plugin: String) -> anyhow::Result<()>
 
 	PluginManager::uninstall_plugin(&plugin, &data.paths).context("Failed to remove plugin")?;
 
-	data.output.display(
-		MessageContents::Success("Plugin removed".into()),
-		MessageLevel::Important,
-	);
+	data.output
+		.display(MessageContents::Success("Plugin removed".into()));
 
 	Ok(())
 }
@@ -225,10 +220,8 @@ async fn browse(data: &mut CmdData<'_>) -> anyhow::Result<()> {
 		.await
 		.context("Failed to get verified plugin list")?;
 
-	data.output.display(
-		MessageContents::Header("Available plugins:".into()),
-		MessageLevel::Important,
-	);
+	data.output
+		.display(MessageContents::Header("Available plugins:".into()));
 	for plugin in verified_list
 		.values()
 		.sorted_by_cached_key(|x| x.id.clone())
@@ -246,10 +239,8 @@ async fn browse(data: &mut CmdData<'_>) -> anyhow::Result<()> {
 async fn enable(data: &mut CmdData<'_>, plugin: String) -> anyhow::Result<()> {
 	PluginManager::enable_plugin(&plugin, &data.paths)?;
 
-	data.output.display(
-		MessageContents::Success("Plugin enabled".into()),
-		MessageLevel::Important,
-	);
+	data.output
+		.display(MessageContents::Success("Plugin enabled".into()));
 
 	Ok(())
 }
@@ -257,10 +248,8 @@ async fn enable(data: &mut CmdData<'_>, plugin: String) -> anyhow::Result<()> {
 async fn disable(data: &mut CmdData<'_>, plugin: String) -> anyhow::Result<()> {
 	PluginManager::disable_plugin(&plugin, &data.paths)?;
 
-	data.output.display(
-		MessageContents::Success("Plugin disabled".into()),
-		MessageLevel::Important,
-	);
+	data.output
+		.display(MessageContents::Success("Plugin disabled".into()));
 
 	Ok(())
 }
@@ -293,10 +282,8 @@ async fn edit(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()> 
 
 	json_to_file_pretty(config_path, &config).context("Failed to write to plugin config file")?;
 
-	data.output.display(
-		MessageContents::Success("Changes saved".into()),
-		MessageLevel::Important,
-	);
+	data.output
+		.display(MessageContents::Success("Changes saved".into()));
 
 	Ok(())
 }

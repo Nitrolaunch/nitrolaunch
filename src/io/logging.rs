@@ -104,7 +104,6 @@ pub fn get_log_files(paths: &Paths, client_id: &str) -> anyhow::Result<Vec<PathB
 pub fn format_log_message(text: &str, level: MessageLevel) -> String {
 	let level_indicator = match level {
 		MessageLevel::Important => "info",
-		MessageLevel::Extra => "extra",
 		MessageLevel::Debug => "debug",
 		MessageLevel::Trace => "trace",
 	};

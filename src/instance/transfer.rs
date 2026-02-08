@@ -12,7 +12,7 @@ use nitro_plugin::hook::hooks::{
 };
 use nitro_shared::addon::Addon;
 use nitro_shared::lang::translate::TranslationKey;
-use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
+use nitro_shared::output::{MessageContents, NitroOutput};
 use nitro_shared::pkg::PackageAddonHashes;
 use nitro_shared::translate;
 
@@ -57,16 +57,13 @@ impl Instance {
 			bail!("This instance has no game directory and cannot be exported");
 		}
 
-		o.display(
-			MessageContents::StartProcess(translate!(
-				o,
-				StartExporting,
-				"instance" = &self.id,
-				"format" = &format.info.id,
-				"plugin" = &format.plugin
-			)),
-			MessageLevel::Important,
-		);
+		o.display(MessageContents::StartProcess(translate!(
+			o,
+			StartExporting,
+			"instance" = &self.id,
+			"format" = &format.info.id,
+			"plugin" = &format.plugin
+		)));
 
 		let inst_lock = self.get_lockfile(lock, paths)?;
 
@@ -98,15 +95,13 @@ impl Instance {
 
 		if let Some(result) = result {
 			result.result(o).await?;
-			o.display(
-				MessageContents::Success(o.translate(TranslationKey::FinishExporting).into()),
-				MessageLevel::Important,
-			);
+			o.display(MessageContents::Success(
+				o.translate(TranslationKey::FinishExporting).into(),
+			));
 		} else {
-			o.display(
-				MessageContents::Error(o.translate(TranslationKey::ExportPluginNoResult).into()),
-				MessageLevel::Debug,
-			);
+			o.debug(MessageContents::Error(
+				o.translate(TranslationKey::ExportPluginNoResult).into(),
+			));
 		}
 
 		Ok(())
@@ -136,16 +131,13 @@ impl Instance {
 
 		output_support_warnings(import_info, o);
 
-		o.display(
-			MessageContents::StartProcess(translate!(
-				o,
-				StartImporting,
-				"instance" = id,
-				"format" = &format.info.id,
-				"plugin" = &format.plugin
-			)),
-			MessageLevel::Important,
-		);
+		o.display(MessageContents::StartProcess(translate!(
+			o,
+			StartImporting,
+			"instance" = id,
+			"format" = &format.info.id,
+			"plugin" = &format.plugin
+		)));
 
 		// Create the target directory
 		let target_dir = paths.data.join("instances").join(id);
@@ -165,19 +157,17 @@ impl Instance {
 			.context("Failed to import instance using plugin")?;
 
 		let Some(result) = result else {
-			o.display(
-				MessageContents::Error(o.translate(TranslationKey::ImportPluginNoResult).into()),
-				MessageLevel::Debug,
-			);
+			o.debug(MessageContents::Error(
+				o.translate(TranslationKey::ImportPluginNoResult).into(),
+			));
 
 			bail!("Import plugin did not return a result");
 		};
 
 		let mut result = result.result(o).await?;
-		o.display(
-			MessageContents::Success(o.translate(TranslationKey::FinishImporting).into()),
-			MessageLevel::Important,
-		);
+		o.debug(MessageContents::Success(
+			o.translate(TranslationKey::FinishImporting).into(),
+		));
 
 		result.config.imported = true;
 
@@ -209,15 +199,12 @@ pub async fn migrate_instances(
 
 	output_support_warnings(migrate_info, o);
 
-	o.display(
-		MessageContents::StartProcess(translate!(
-			o,
-			StartMigrating,
-			"format" = &format.info.id,
-			"plugin" = &format.plugin
-		)),
-		MessageLevel::Important,
-	);
+	o.display(MessageContents::StartProcess(translate!(
+		o,
+		StartMigrating,
+		"format" = &format.info.id,
+		"plugin" = &format.plugin
+	)));
 
 	let arg = MigrateInstancesArg {
 		format: format.info.id.clone(),
@@ -230,19 +217,17 @@ pub async fn migrate_instances(
 		.context("Failed to import instances using plugin")?;
 
 	let Some(result) = result else {
-		o.display(
-			MessageContents::Error(o.translate(TranslationKey::ImportPluginNoResult).into()),
-			MessageLevel::Debug,
-		);
+		o.debug(MessageContents::Error(
+			o.translate(TranslationKey::ImportPluginNoResult).into(),
+		));
 
 		bail!("Migration plugin did not return a result");
 	};
 
 	let mut result = result.result(o).await?;
-	o.display(
-		MessageContents::Success(o.translate(TranslationKey::FinishMigrating).into()),
-		MessageLevel::Important,
-	);
+	o.display(MessageContents::Success(
+		o.translate(TranslationKey::FinishMigrating).into(),
+	));
 
 	for (inst, packages) in result.packages {
 		for package in packages {
@@ -347,22 +332,20 @@ fn output_support_warnings(info: &InstanceTransferFormatDirection, o: &mut impl 
 		let feat = o.translate(name);
 		match support {
 			InstanceTransferFeatureSupport::Supported => {}
-			InstanceTransferFeatureSupport::FormatUnsupported => o.display(
-				MessageContents::Warning(translate!(
+			InstanceTransferFeatureSupport::FormatUnsupported => {
+				o.display(MessageContents::Warning(translate!(
 					o,
 					TransferFeatureUnsupportedByFormat,
 					"feat" = feat
-				)),
-				MessageLevel::Important,
-			),
-			InstanceTransferFeatureSupport::PluginUnsupported => o.display(
-				MessageContents::Warning(translate!(
+				)))
+			}
+			InstanceTransferFeatureSupport::PluginUnsupported => {
+				o.display(MessageContents::Warning(translate!(
 					o,
 					TransferFeatureUnsupportedByPlugin,
 					"feat" = feat
-				)),
-				MessageLevel::Important,
-			),
+				)))
+			}
 		}
 	}
 }

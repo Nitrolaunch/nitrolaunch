@@ -26,7 +26,7 @@ use nitro_plugin::hook::hooks::{
 	OnInstanceSetup, OnInstanceSetupArg, RemoveLoader,
 };
 use nitro_shared::minecraft::MinecraftUserProfile;
-use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
+use nitro_shared::output::{MessageContents, NitroOutput};
 use nitro_shared::output::{NoOp, OutputProcess};
 use nitro_shared::versions::VersionInfo;
 use nitro_shared::Side;
@@ -60,10 +60,7 @@ impl Instance {
 		// Start by setting up side-specific stuff
 		let result = match &self.kind {
 			InstKind::Client { .. } => {
-				o.display(
-					MessageContents::Header(translate!(o, StartUpdatingClient)),
-					MessageLevel::Important,
-				);
+				o.display(MessageContents::Header(translate!(o, StartUpdatingClient)));
 				o.start_section();
 				let result = self
 					.setup_client(paths, accounts)
@@ -72,10 +69,7 @@ impl Instance {
 				Ok::<_, anyhow::Error>(result)
 			}
 			InstKind::Server { .. } => {
-				o.display(
-					MessageContents::Header(translate!(o, StartUpdatingServer)),
-					MessageLevel::Important,
-				);
+				o.display(MessageContents::Header(translate!(o, StartUpdatingServer)));
 				o.start_section();
 				let result = self
 					.setup_server(paths)
@@ -145,7 +139,7 @@ impl Instance {
 			if is_loader_different {
 				let message =
 					MessageContents::StartProcess(translate!(process, StartUpdatingInstanceLoader));
-				process.display(message, MessageLevel::Important);
+				process.display(message);
 			} else if is_version_different {
 				let message = MessageContents::StartProcess(translate!(
 					process,
@@ -153,7 +147,7 @@ impl Instance {
 					"version1" = &current_version.as_ref().expect("Version should exist"),
 					"version2" = &version_info.version
 				));
-				process.display(message, MessageLevel::Important);
+				process.display(message);
 			}
 
 			// Teardown
@@ -178,7 +172,7 @@ impl Instance {
 
 			let message =
 				MessageContents::Success(translate!(process, FinishUpdatingInstanceVersion));
-			process.display(message, MessageLevel::Important);
+			process.display(message);
 		}
 
 		let mut results = plugins

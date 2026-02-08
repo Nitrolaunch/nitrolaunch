@@ -1,6 +1,6 @@
 use anyhow::Context;
 use nitro_shared::minecraft::VersionManifest;
-use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
+use nitro_shared::output::{MessageContents, NitroOutput};
 use nitro_shared::{translate, UpdateDepth};
 use reqwest::Client;
 
@@ -22,18 +22,11 @@ pub async fn get(
 	let manifest = match manifest {
 		Ok(manifest) => manifest,
 		Err(err) => {
-			o.display(
-				MessageContents::Error("Failed to obtain version manifest".into()),
-				MessageLevel::Important,
-			);
-			o.display(
-				MessageContents::Error(format!("{}", err)),
-				MessageLevel::Important,
-			);
-			o.display(
-				MessageContents::StartProcess("Redownloading".into()),
-				MessageLevel::Important,
-			);
+			o.display(MessageContents::Error(
+				"Failed to obtain version manifest".into(),
+			));
+			o.display(MessageContents::Error(format!("{}", err)));
+			o.display(MessageContents::StartProcess("Redownloading".into()));
 			get_contents(requested_version, paths, manager, client, true, o)
 				.await
 				.context("Failed to download manifest contents")?
@@ -51,19 +44,15 @@ pub async fn get_with_output(
 	o: &mut impl NitroOutput,
 ) -> anyhow::Result<VersionManifest> {
 	o.start_process();
-	o.display(
-		MessageContents::StartProcess("Obtaining version manifest".into()),
-		MessageLevel::Important,
-	);
+	o.display(MessageContents::StartProcess(
+		"Obtaining version manifest".into(),
+	));
 
 	let manifest = get(requested_version, paths, manager, client, o)
 		.await
 		.context("Failed to get version manifest")?;
 
-	o.display(
-		MessageContents::Success("Version manifest obtained".into()),
-		MessageLevel::Important,
-	);
+	o.display(MessageContents::Success("Version manifest obtained".into()));
 	o.end_process();
 
 	Ok(manifest)
@@ -108,16 +97,13 @@ async fn get_contents(
 
 	while !download.is_finished() {
 		download.poll_download().await?;
-		o.display(
-			MessageContents::Associated(
-				Box::new(download.get_progress()),
-				Box::new(MessageContents::Simple(translate!(
-					o,
-					StartDownloadingVersionManifest
-				))),
-			),
-			MessageLevel::Important,
-		);
+		o.display(MessageContents::Associated(
+			Box::new(download.get_progress()),
+			Box::new(MessageContents::Simple(translate!(
+				o,
+				StartDownloadingVersionManifest
+			))),
+		));
 	}
 	let manifest = download.finish_json()?;
 

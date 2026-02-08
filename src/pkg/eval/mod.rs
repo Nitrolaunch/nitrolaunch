@@ -752,6 +752,6 @@ pub fn print_recommendation_warning(
 			))
 		};
 
-		o.display(message, MessageLevel::Important);
+		o.display(message);
 	}
 }

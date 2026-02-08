@@ -19,7 +19,7 @@ use super::download;
 
 /// Downloading the game JAR file
 pub mod game_jar {
-	use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput, OutputProcess};
+	use nitro_shared::output::{MessageContents, NitroOutput, OutputProcess};
 
 	use self::download::ProgressiveDownload;
 
@@ -43,10 +43,7 @@ pub mod game_jar {
 
 		let mut process = OutputProcess::new(o);
 		let download_message = translate!(process, StartDownloadingGameJar, "side" = &side_str);
-		process.display(
-			MessageContents::StartProcess(download_message.clone()),
-			MessageLevel::Important,
-		);
+		process.display(MessageContents::StartProcess(download_message.clone()));
 
 		let Some(downloads) = &client_meta.downloads else {
 			return Ok(());
@@ -60,13 +57,10 @@ pub mod game_jar {
 		let mut download = ProgressiveDownload::file(&download.url, path, client).await?;
 		while !download.is_finished() {
 			download.poll_download().await?;
-			process.display(
-				MessageContents::Associated(
-					Box::new(download.get_progress()),
-					Box::new(MessageContents::Simple(download_message.clone())),
-				),
-				MessageLevel::Important,
-			);
+			process.display(MessageContents::Associated(
+				Box::new(download.get_progress()),
+				Box::new(MessageContents::Simple(download_message.clone())),
+			));
 		}
 
 		let side_str = cap_first_letter(&side_str);
@@ -76,7 +70,7 @@ pub mod game_jar {
 			FinishDownloadingGameJar,
 			"side" = &side_str
 		));
-		process.display(message, MessageLevel::Important);
+		process.display(message);
 
 		Ok(())
 	}

@@ -9,7 +9,7 @@ use nitro_core::{io::json_from_file, net::download};
 use nitro_net::github::{get_github_releases, GithubAsset};
 use nitro_plugin::plugin::{PluginManifest, PluginMetadata};
 use nitro_shared::{
-	output::{MessageContents, MessageLevel, NitroOutput},
+	output::{MessageContents, NitroOutput},
 	util::TARGET_BITS_STR,
 };
 use reqwest::Client;
@@ -161,10 +161,7 @@ impl VerifiedPlugin {
 			json_from_file(dir.join("plugin.json")).context("Failed to read plugin manifest")?;
 
 		if let Some(install_message) = manifest.install_message {
-			o.display(
-				MessageContents::Warning(install_message),
-				MessageLevel::Important,
-			);
+			o.display(MessageContents::Warning(install_message));
 		}
 
 		let _ = PluginManager::enable_plugin(&self.id, paths);

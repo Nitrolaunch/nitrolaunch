@@ -8,7 +8,7 @@ use nitrolaunch::pkg_crate::properties::PackageProperties;
 use nitrolaunch::pkg_crate::repo::RepoMetadata;
 use nitrolaunch::pkg_crate::{PackageSearchResults, PkgRequest, PkgRequestSource};
 use nitrolaunch::shared::loaders::Loader;
-use nitrolaunch::shared::output::{MessageContents, MessageLevel, NitroOutput, NoOp};
+use nitrolaunch::shared::output::{MessageContents, NitroOutput, NoOp};
 use nitrolaunch::shared::pkg::{PackageCategory, PackageKind, PackageSearchParameters};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -303,10 +303,10 @@ pub async fn sync_packages(
 	output.set_task("sync_packages");
 
 	for repo in config.packages.repos.iter_mut() {
-		output.display(
-			MessageContents::StartProcess(format!("Syncing repository {}", repo.get_id())),
-			MessageLevel::Important,
-		);
+		output.display(MessageContents::StartProcess(format!(
+			"Syncing repository {}",
+			repo.get_id()
+		)));
 		let mut process = output.get_process();
 		match repo
 			.sync(
@@ -318,28 +318,24 @@ pub async fn sync_packages(
 			.await
 		{
 			Ok(..) => {
-				process.display(
-					MessageContents::Success(format!("Synced repository {}", repo.get_id())),
-					MessageLevel::Important,
-				);
+				process.display(MessageContents::Success(format!(
+					"Synced repository {}",
+					repo.get_id()
+				)));
 			}
 			Err(e) => {
-				process.display(
-					MessageContents::Error(format!(
-						"Failed to sync repository {}: {e}",
-						repo.get_id()
-					)),
-					MessageLevel::Important,
-				);
+				process.display(MessageContents::Error(format!(
+					"Failed to sync repository {}: {e}",
+					repo.get_id()
+				)));
 			}
 		};
 	}
 
 	let mut process = output.get_process();
-	process.display(
-		MessageContents::StartProcess("Updating standard packages".into()),
-		MessageLevel::Important,
-	);
+	process.display(MessageContents::StartProcess(
+		"Updating standard packages".into(),
+	));
 	fmt_err(
 		config
 			.packages
@@ -347,10 +343,7 @@ pub async fn sync_packages(
 			.await
 			.context("Failed to update cached packages"),
 	)?;
-	process.display(
-		MessageContents::Success("Packages updated".into()),
-		MessageLevel::Important,
-	);
+	process.display(MessageContents::Success("Packages updated".into()));
 
 	Ok(())
 }

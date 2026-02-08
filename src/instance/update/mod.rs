@@ -18,7 +18,7 @@ use packages::update_instance_packages;
 use std::collections::HashSet;
 
 use anyhow::Context;
-use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
+use nitro_shared::output::{MessageContents, NitroOutput};
 use reqwest::Client;
 
 use crate::io::lock::Lockfile;
@@ -62,14 +62,11 @@ impl Instance {
 
 		let mut manager = UpdateManager::new(depth);
 
-		ctx.output.display(
-			MessageContents::Header(translate!(
-				ctx.output,
-				StartUpdatingInstance,
-				"inst" = &self.id
-			)),
-			MessageLevel::Important,
-		);
+		ctx.output.display(MessageContents::Header(translate!(
+			ctx.output,
+			StartUpdatingInstance,
+			"inst" = &self.id
+		)));
 
 		let mut core = setup_core(
 			None,
@@ -117,10 +114,10 @@ impl Instance {
 
 				let mut all_packages = HashSet::new();
 
-				ctx.output.display(
-					MessageContents::Header(translate!(ctx.output, StartUpdatingPackages)),
-					MessageLevel::Important,
-				);
+				ctx.output.display(MessageContents::Header(translate!(
+					ctx.output,
+					StartUpdatingPackages
+				)));
 
 				ctx.output.start_section();
 
@@ -140,10 +137,10 @@ impl Instance {
 				)
 				.await?;
 
-				ctx.output.display(
-					MessageContents::Success(translate!(ctx.output, FinishUpdatingPackages)),
-					MessageLevel::Important,
-				);
+				ctx.output.display(MessageContents::Success(translate!(
+					ctx.output,
+					FinishUpdatingPackages
+				)));
 
 				all_packages.extend(packages);
 
