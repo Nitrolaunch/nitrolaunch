@@ -51,38 +51,43 @@ impl NitroOutput for TerminalOutput {
 
 	fn display_message(&mut self, message: Message) {
 		let _ = self.log_message(message.contents.clone(), message.level);
-		let is_error = matches!(&message.contents, MessageContents::Error(..));
 
-		// Loading spinner handling
-		let message_contents = match message.contents {
-			MessageContents::StartProcess(inner_message) if message.level.at_least(&self.level) => {
-				if let Some(existing_task) = self.process_spinner_task.take() {
-					tokio::spawn(async move { existing_task.send(()).await });
+		if message.level.at_least(&self.level) {
+			let is_error = matches!(&message.contents, MessageContents::Error(..));
+
+			// Loading spinner handling
+			let message_contents = match message.contents {
+				MessageContents::StartProcess(inner_message) => {
+					if let Some(existing_task) = self.process_spinner_task.take() {
+						tokio::spawn(async move { existing_task.send(()).await });
+					}
+
+					let inner_message = format!("{inner_message}...");
+					let start_message = format!("{} {inner_message}", format_loading_spinner(3));
+
+					let printer = self.printer.clone();
+					let (tx, rx) = tokio::sync::mpsc::channel(2);
+
+					tokio::spawn(
+						async move { loading_spinner_task(inner_message, printer, rx).await },
+					);
+					self.process_spinner_task = Some(tx);
+
+					start_message
 				}
+				other => self.format_message(other),
+			};
 
-				let inner_message = format!("{inner_message}...");
-				let start_message = format!("{} {inner_message}", format_loading_spinner(3));
-
-				let printer = self.printer.clone();
-				let (tx, rx) = tokio::sync::mpsc::channel(2);
-
-				tokio::spawn(async move { loading_spinner_task(inner_message, printer, rx).await });
-				self.process_spinner_task = Some(tx);
-
-				start_message
+			/*
+				If the message is an error it will span multiple lines and break the ReplPrinter,
+				plus the process is aborted anyway
+			*/
+			if is_error {
+				self.end_process();
 			}
-			other => self.format_message(other),
-		};
 
-		/*
-			If the message is an error it will span multiple lines and break the ReplPrinter,
-			plus the process is aborted anyway
-		*/
-		if is_error {
-			self.end_process();
+			self.display_text_impl(message_contents, message.level);
 		}
-
-		self.display_text_impl(message_contents, message.level);
 	}
 
 	fn start_process(&mut self) {
