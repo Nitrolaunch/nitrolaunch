@@ -65,7 +65,7 @@ package.cross_platform: build.cross_platform
 	@zip -j release/extra_versions-universal.zip plugins/extra_versions/plugin.json
 	@zip -j release/gamepad-universal.zip plugins/gamepad/plugin.json plugins/gamepad/gamepad.js
 	@zip -j release/lang-universal.zip plugins/lang/plugin.json
-	@zip -j release/themes-universal.zip plugins/themes/plugin.json
+	@zip -j release/themes-universal.zip plugins/themes/**
 	@zip -j release/weld-universal.zip plugins/weld/plugin.json plugins/weld/weld.pyz
 
 build.cross_platform: build.weld
