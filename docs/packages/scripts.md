@@ -81,6 +81,7 @@ Properties like `features` and `modrinth_id` can only be used in the `@propertie
 #### Metadata Instructions
 
 - `name {name}`: Set the display name of the package.
+- `slug {slug}`: Set the ID slug of the package.
 - `description {description}`: Set a short description for this package.
 - `long_description {description}`: Set a long description for this package.
 - `authors {author1} {author2} ...`: Set the list of authors for this package.

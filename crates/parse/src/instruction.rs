@@ -40,6 +40,8 @@ pub enum InstrKind {
 	},
 	/// Set the package name metadata
 	Name(Later<String>),
+	/// Set the package slug metadata
+	Slug(Later<String>),
 	/// Set the package description metadata
 	Description(Later<String>),
 	/// Set the package long description metadata
@@ -164,6 +166,7 @@ impl Display for InstrKind {
 			match self {
 				Self::If { .. } => "if",
 				Self::Name(..) => "name",
+				Self::Slug(..) => "slug",
 				Self::Description(..) => "description",
 				Self::LongDescription(..) => "long_description",
 				Self::Authors(..) => "authors",
@@ -224,6 +227,7 @@ impl Instruction {
 	pub fn from_str(string: &str, pos: TextPos) -> anyhow::Result<Self> {
 		let kind = match string {
 			"name" => Ok::<InstrKind, anyhow::Error>(InstrKind::Name(Later::Empty)),
+			"slug" => Ok(InstrKind::Slug(Later::Empty)),
 			"description" => Ok(InstrKind::Description(Later::Empty)),
 			"long_description" => Ok(InstrKind::LongDescription(Later::Empty)),
 			"authors" => Ok(InstrKind::Authors(Vec::new())),
@@ -276,6 +280,7 @@ impl Instruction {
 	pub fn is_finished_parsing(&self) -> bool {
 		match &self.kind {
 			InstrKind::Name(val)
+			| InstrKind::Slug(val)
 			| InstrKind::Description(val)
 			| InstrKind::LongDescription(val)
 			| InstrKind::SupportLink(val)
@@ -334,6 +339,7 @@ impl Instruction {
 		} else {
 			match &mut self.kind {
 				InstrKind::Name(text)
+				| InstrKind::Slug(text)
 				| InstrKind::Description(text)
 				| InstrKind::LongDescription(text)
 				| InstrKind::Website(text)
