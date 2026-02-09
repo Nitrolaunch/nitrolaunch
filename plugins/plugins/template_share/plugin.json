@@ -1,6 +1,7 @@
 {
 	"name": "Template Share",
 	"description": "Easily share instance templates with friends",
+	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/template_share",
 	"version": "v6",
 	"protocol_version": 3,
 	"hooks": {

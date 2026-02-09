@@ -1,6 +1,7 @@
 {
 	"name": "Server Restart",
 	"description": "Manage restart behavior for Spigot and Paper servers",
+	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/server_restart",
 	"version": "v6",
 	"protocol_version": 3,
 	"hooks": {

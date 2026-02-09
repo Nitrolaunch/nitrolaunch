@@ -78,7 +78,7 @@ export default function App() {
 				/>
 				<Route path="/accounts/:accountId" component={() => <AccountPage />} />
 				<Route path="/plugins" component={() => <Plugins />} />
-				<Route path="/docs" component={() => <Docs />} />
+				<Route path="/docs/*subpath" component={() => <Docs />} />
 				<Route path="/custom/:page" component={() => <CustomPluginPage />} />
 			</Router>
 		</Show>

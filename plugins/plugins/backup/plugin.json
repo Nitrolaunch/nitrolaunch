@@ -1,6 +1,7 @@
 {
 	"name": "Backup",
 	"description": "Create backups of instances",
+	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/backup",
 	"version": "v6",
 	"protocol_version": 3,
 	"hooks": {

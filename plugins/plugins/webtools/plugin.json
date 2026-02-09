@@ -1,6 +1,7 @@
 {
 	"name": "WebTools",
 	"description": "Launch online Minecraft tools",
+	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/webtools",
 	"version": "v6",
 	"protocol_version": 3,
 	"hooks": {

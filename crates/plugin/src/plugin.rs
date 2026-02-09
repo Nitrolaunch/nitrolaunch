@@ -332,6 +332,8 @@ pub struct PluginMetadata {
 	pub name: Option<String>,
 	/// The short description of the plugin
 	pub description: Option<String>,
+	/// URL for plugin documentation
+	pub documentation: Option<String>,
 }
 
 /// A CLI subcommand provided by a plugin

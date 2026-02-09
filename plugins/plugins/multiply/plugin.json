@@ -1,6 +1,7 @@
 {
 	"name": "Multiply",
 	"description": "Create many instances easily",
+	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/multiply",
 	"version": "v6",
 	"protocol_version": 3,
 	"hooks": {

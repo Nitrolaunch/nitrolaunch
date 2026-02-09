@@ -1,6 +1,7 @@
 {
 	"name": "Smithed API",
 	"description": "Make simple Smithed API calls to query project versions",
+	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/smithed_api",
 	"version": "v6",
 	"protocol_version": 3,
 	"hooks": {

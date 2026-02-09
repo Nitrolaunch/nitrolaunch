@@ -1,6 +1,7 @@
 {
 	"name": "Args",
 	"description": "Use argument presets to increase game performance",
+	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/args",
 	"version": "v6",
 	"protocol_version": 3,
 	"hooks": {

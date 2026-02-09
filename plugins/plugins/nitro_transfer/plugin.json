@@ -1,6 +1,7 @@
 {
 	"name": "Nitrolaunch Transfer",
 	"description": "Instance transfer support that supports everything in Nitrolaunch instances",
+	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/nitro_transfer",
 	"version": "v6",
 	"protocol_version": 3,
 	"hooks": {

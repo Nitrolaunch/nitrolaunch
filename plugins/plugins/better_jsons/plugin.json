@@ -1,6 +1,7 @@
 {
 	"name": "BetterJSONs",
 	"description": "Uses BetterJSONs versions for improved compatability",
+	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/better_jsons",
 	"version": "v6",
 	"protocol_version": 3,
 	"hooks": {

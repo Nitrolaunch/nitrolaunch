@@ -5,7 +5,8 @@
 		"version": "v6",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
-		"description": "Use argument presets to improve game performance"
+		"description": "Use argument presets to improve game performance",
+		"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/args"
 	},
 	"backup": {
 		"id": "backup",
@@ -13,7 +14,8 @@
 		"version": "v6",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
-		"description": "Create backups of instances"
+		"description": "Create backups of instances",
+		"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/backup"
 	},
 	"docs": {
 		"id": "docs",
@@ -21,7 +23,8 @@
 		"version": "v6",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
-		"description": "View Nitrolaunch's documentation straight from the command line"
+		"description": "View Nitrolaunch's documentation straight from the command line",
+		"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/docs"
 	},
 	"extra_versions": {
 		"id": "extra_versions",
@@ -29,7 +32,8 @@
 		"version": "v6",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
-		"description": "Add versions of Minecraft that are not normally available"
+		"description": "Add versions of Minecraft that are not normally available",
+		"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/extra_versions"
 	},
 	"gen_pkg": {
 		"id": "gen_pkg",
@@ -37,7 +41,8 @@
 		"version": "v6",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
-		"description": "Automatically generate packages from existing websites"
+		"description": "Automatically generate packages from existing websites",
+		"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/gen_pkg"
 	},
 	"lang": {
 		"id": "lang",
@@ -45,7 +50,8 @@
 		"version": "v6",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
-		"description": "Language translations for Nitrolaunch"
+		"description": "Language translations for Nitrolaunch",
+		"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/lang"
 	},
 	"modrinth_api": {
 		"id": "modrinth_api",
@@ -53,7 +59,8 @@
 		"version": "v6",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
-		"description": "Make simple Modrinth API calls to query project versions"
+		"description": "Make simple Modrinth API calls to query project versions",
+		"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/modrinth_api"
 	},
 	"options": {
 		"id": "options",
@@ -61,7 +68,8 @@
 		"version": "v6",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
-		"description": "Manage game options for client and server"
+		"description": "Manage game options for client and server",
+		"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/options"
 	},
 	"server_restart": {
 		"id": "server_restart",
@@ -69,7 +77,8 @@
 		"version": "v6",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
-		"description": "Manage restart behavior for Spigot and Paper servers"
+		"description": "Manage restart behavior for Spigot and Paper servers",
+		"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/server_restart"
 	},
 	"stats": {
 		"id": "stats",
@@ -77,7 +86,8 @@
 		"version": "v6",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
-		"description": "Track and view playtime stats"
+		"description": "Track and view playtime stats",
+		"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/stats"
 	},
 	"nitro_transfer": {
 		"id": "nitro_transfer",
@@ -85,7 +95,8 @@
 		"version": "v6",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
-		"description": "Import and export Nitrolaunch instances"
+		"description": "Import and export Nitrolaunch instances",
+		"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/nitro_transfer"
 	},
 	"fabric_quilt": {
 		"id": "fabric_quilt",
@@ -101,7 +112,8 @@
 		"version": "v6",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
-		"description": "Share custom files across multiple instances"
+		"description": "Share custom files across multiple instances",
+		"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/custom_files"
 	},
 	"paper": {
 		"id": "paper",
@@ -117,7 +129,8 @@
 		"version": "v6",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
-		"description": "Run commands at different parts of the instance lifecycle with no coding knowledge"
+		"description": "Run commands at different parts of the instance lifecycle with no coding knowledge",
+		"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/automate"
 	},
 	"config_split": {
 		"id": "config_split",
@@ -125,7 +138,8 @@
 		"version": "v6",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
-		"description": "Split parts of your configuration into multiple files"
+		"description": "Split parts of your configuration into multiple files",
+		"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/config_split"
 	},
 	"smithed_api": {
 		"id": "smithed_api",
@@ -133,7 +147,8 @@
 		"version": "v6",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
-		"description": "Make simple Smithed API calls to query project versions"
+		"description": "Make simple Smithed API calls to query project versions",
+		"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/smithed_api"
 	},
 	"smithed": {
 		"id": "smithed",
@@ -141,7 +156,8 @@
 		"version": "v6",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
-		"description": "Install Smithed packs on templates and instances"
+		"description": "Install Smithed packs on templates and instances",
+		"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/smithed"
 	},
 	"modrinth": {
 		"id": "modrinth",
@@ -149,7 +165,8 @@
 		"version": "v6",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
-		"description": "Install Modrinth projects on templates and instances"
+		"description": "Install Modrinth projects on templates and instances",
+		"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/modrinth"
 	},
 	"weld": {
 		"id": "weld",
@@ -157,7 +174,8 @@
 		"version": "v6",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
-		"description": "Weld data and resource packs together for better compatability"
+		"description": "Weld data and resource packs together for better compatability",
+		"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/weld"
 	},
 	"xmcl_transfer": {
 		"id": "xmcl_transfer",
@@ -165,7 +183,8 @@
 		"version": "v6",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
-		"description": "Instance transfer for XMCL"
+		"description": "Instance transfer for XMCL",
+		"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/xmcl_transfer"
 	},
 	"cleanup": {
 		"id": "cleanup",
@@ -173,7 +192,8 @@
 		"version": "v6",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
-		"description": "Clean up old files"
+		"description": "Clean up old files",
+		"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/cleanup"
 	},
 	"glfw_fix": {
 		"id": "glfw_fix",
@@ -181,7 +201,8 @@
 		"version": "v6",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
-		"description": "Fixes crashes from a bad GLFW version"
+		"description": "Fixes crashes from a bad GLFW version",
+		"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/glfw_fix"
 	},
 	"multimc_transfer": {
 		"id": "multimc_transfer",
@@ -189,7 +210,8 @@
 		"version": "v6",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
-		"description": "Instance transfer for MultiMC and PrismLauncher"
+		"description": "Instance transfer for MultiMC and PrismLauncher",
+		"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/multimc_transfer"
 	},
 	"better_jsons": {
 		"id": "better_jsons",
@@ -197,7 +219,8 @@
 		"version": "v6",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
-		"description": "Uses BetterJSONs versions for improved compatability"
+		"description": "Uses BetterJSONs versions for improved compatability",
+		"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/better_jsons"
 	},
 	"template_share": {
 		"id": "template_share",
@@ -205,7 +228,8 @@
 		"version": "v6",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
-		"description": "Easily share templates with friends"
+		"description": "Easily share templates with friends",
+		"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/template_share"
 	},
 	"multiply": {
 		"id": "multiply",
@@ -213,7 +237,8 @@
 		"version": "v6",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
-		"description": "Create many instances easily"
+		"description": "Create many instances easily",
+		"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/multiply"
 	},
 	"curseforge_api": {
 		"id": "curseforge_api",
@@ -261,7 +286,8 @@
 		"version": "v6",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
-		"description": "Share instance addons as a zip file"
+		"description": "Share instance addons as a zip file",
+		"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/addon_share"
 	},
 	"completions": {
 		"id": "completions",
@@ -269,7 +295,8 @@
 		"version": "v6",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
-		"description": "Shell completions for zsh and other shells"
+		"description": "Shell completions for zsh and other shells",
+		"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/completions"
 	},
 	"forge": {
 		"id": "forge",

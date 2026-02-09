@@ -1,6 +1,7 @@
 {
 	"name": "Stats",
 	"description": "Track and view playtime stats",
+	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/stats",
 	"version": "v6",
 	"protocol_version": 3,
 	"hooks": {

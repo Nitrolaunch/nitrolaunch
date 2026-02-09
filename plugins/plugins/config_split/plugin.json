@@ -1,6 +1,7 @@
 {
 	"name": "Config Split",
 	"description": "Split configuration into multiple files",
+	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/config_split",
 	"version": "v6",
 	"protocol_version": 3,
 	"supports_instance_creation": true,

@@ -1,6 +1,7 @@
 {
 	"name": "Custom Files",
 	"description": "Share custom files across multiple instances",
+	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/custom_files",
 	"version": "v6",
 	"protocol_version": 3,
 	"hooks": {
