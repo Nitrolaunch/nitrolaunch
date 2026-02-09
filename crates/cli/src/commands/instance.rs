@@ -327,12 +327,12 @@ async fn dir(data: &mut CmdData<'_>, instance: Option<String>) -> anyhow::Result
 		.instances
 		.get_mut(&instance)
 		.context("Instance does not exist")?;
-	instance.ensure_dirs(&data.paths)?;
+	instance.ensure_dir()?;
 
-	if let Some(game_dir) = &instance.get_dirs().get().game_dir {
-		println!("{game_dir:?}");
+	if let Some(inst_dir) = &instance.get_dir() {
+		println!("{inst_dir:?}");
 	} else {
-		bail!("Instance has no game dir");
+		bail!("Instance has no directory");
 	}
 
 	Ok(())
@@ -612,7 +612,7 @@ async fn delete(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()
 	process.display(MessageContents::StartProcess("Deleting instance".into()));
 
 	instance
-		.delete_files(&data.paths)
+		.delete_files()
 		.await
 		.context("Failed to delete instance")?;
 

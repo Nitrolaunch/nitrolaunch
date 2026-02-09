@@ -30,10 +30,7 @@ impl Instance {
 		global_lock: &Lockfile,
 		paths: &Paths,
 	) -> anyhow::Result<InstanceLockfile> {
-		self.ensure_dirs(paths)?;
-
-		let lock_path =
-			InstanceLockfile::get_path(self.dirs.get().game_dir.as_deref(), &self.id, paths);
+		let lock_path = InstanceLockfile::get_path(self.dir.as_deref(), &self.id, paths);
 		let lock = if lock_path.exists() {
 			InstanceLockfile::open(&lock_path)?
 		} else {

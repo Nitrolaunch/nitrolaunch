@@ -19,12 +19,11 @@ pub mod update;
 /// Updating shared world files
 pub mod world_files;
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use nitro_config::instance::{ClientWindowConfig, InstanceConfig};
 use nitro_core::util::versions::MinecraftVersion;
 use nitro_pkg::overrides::PackageOverrides;
-use nitro_shared::later::Later;
 use nitro_shared::loaders::Loader;
 use nitro_shared::pkg::PackageStability;
 use nitro_shared::versions::VersionPattern;
@@ -33,7 +32,7 @@ use nitro_shared::Side;
 use crate::io::paths::Paths;
 
 use self::launch::LaunchOptions;
-use self::setup::{InstanceDirs, ModificationData};
+use self::setup::ModificationData;
 
 use super::config::package::PackageConfig;
 use nitro_shared::id::InstanceID;
@@ -45,8 +44,8 @@ pub struct Instance {
 	pub(crate) kind: InstKind,
 	/// The ID of this instance
 	pub(crate) id: InstanceID,
-	/// Directories of the instance
-	pub(crate) dirs: Later<InstanceDirs>,
+	/// Directory for the instance's files
+	pub(crate) dir: Option<PathBuf>,
 	/// Configuration for the instance
 	pub(crate) config: InstanceStoredConfig,
 	/// Modification data
@@ -111,8 +110,8 @@ pub struct InstanceStoredConfig {
 	pub package_stability: PackageStability,
 	/// Package overrides
 	pub package_overrides: PackageOverrides,
-	/// Game dir override
-	pub game_dir: Option<PathBuf>,
+	/// Inst dir override
+	pub inst_dir_override: Option<PathBuf>,
 	/// Whether custom launch behavior is enabled
 	pub custom_launch: bool,
 	/// The original instance configuration before applying templates
@@ -125,14 +124,40 @@ pub struct InstanceStoredConfig {
 	pub plugin_config: serde_json::Map<String, serde_json::Value>,
 }
 
+impl InstanceStoredConfig {
+	/// Gets the final instance dir
+	pub fn get_dir(&self, paths: &Paths, instance_id: &str, side: Side) -> Option<PathBuf> {
+		let base_dir = paths.data.join("instances").join(instance_id);
+
+		if let Some(inst_dir) = &self.inst_dir_override {
+			// 'none' can be used to specify a missing game dir
+			if inst_dir.to_string_lossy() == "none" {
+				None
+			} else {
+				Some(inst_dir.to_owned())
+			}
+		} else {
+			match side {
+				Side::Client => Some(base_dir.join(".minecraft")),
+				Side::Server => Some(base_dir),
+			}
+		}
+	}
+}
+
 impl Instance {
 	/// Create a new instance
-	pub fn new(kind: InstKind, id: InstanceID, config: InstanceStoredConfig) -> Self {
+	pub fn new(
+		kind: InstKind,
+		id: InstanceID,
+		config: InstanceStoredConfig,
+		paths: &Paths,
+	) -> Self {
 		Self {
+			dir: config.get_dir(paths, &id, kind.to_side()),
 			kind,
 			id,
 			config,
-			dirs: Later::Empty,
 			modification_data: ModificationData::new(),
 		}
 	}
@@ -152,9 +177,9 @@ impl Instance {
 		&self.id
 	}
 
-	/// Get the instance's directories
-	pub fn get_dirs(&self) -> &Later<InstanceDirs> {
-		&self.dirs
+	/// Get the instance's directory
+	pub fn get_dir(&self) -> Option<&Path> {
+		self.dir.as_deref()
 	}
 
 	/// Get the instance's stored configuration

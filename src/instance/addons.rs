@@ -19,10 +19,10 @@ impl Instance {
 		paths: &Paths,
 		version_info: &VersionInfo,
 	) -> anyhow::Result<()> {
-		self.ensure_dirs(paths)?;
+		self.ensure_dir()?;
 
 		for path in self
-			.get_linked_addon_paths(addon, selected_worlds, paths, version_info)
+			.get_linked_addon_paths(addon, selected_worlds, version_info)
 			.context("Failed to get linked directory")?
 		{
 			Self::link_addon(&path, addon, paths, &self.id)
@@ -37,14 +37,13 @@ impl Instance {
 		&mut self,
 		addon: &Addon,
 		selected_worlds: &[String],
-		paths: &Paths,
 		version_info: &VersionInfo,
 	) -> anyhow::Result<Vec<PathBuf>> {
-		self.ensure_dirs(paths)?;
-		if let Some(game_dir) = &self.dirs.get().game_dir {
+		self.ensure_dir()?;
+		if let Some(inst_dir) = &self.dir {
 			get_addon_paths(
 				&self.config.original_config_with_templates_and_plugins,
-				game_dir,
+				inst_dir,
 				addon.kind,
 				selected_worlds,
 				version_info,

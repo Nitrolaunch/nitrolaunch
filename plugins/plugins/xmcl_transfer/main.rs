@@ -28,14 +28,14 @@ fn main() -> anyhow::Result<()> {
 			bail!("Servers cannot be exported to XMCL");
 		}
 
-		let game_dir = PathBuf::from(arg.game_dir);
+		let inst_dir = PathBuf::from(arg.inst_dir);
 		let target_path = PathBuf::from(arg.result_path);
 		let target_file = File::create(target_path).context("Failed to open target file")?;
 
 		// Write the instance files
 		let mut zip = ZipWriter::new(target_file);
 
-		visit_dir(&game_dir, &mut zip, &game_dir).context("Failed to read instance directory")?;
+		visit_dir(&inst_dir, &mut zip, &inst_dir).context("Failed to read instance directory")?;
 
 		fn visit_dir(dir: &Path, zip: &mut ZipWriter<File>, game_dir: &Path) -> anyhow::Result<()> {
 			let dir_read = dir.read_dir().context("Failed to read directory")?;

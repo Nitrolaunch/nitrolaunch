@@ -94,7 +94,7 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 				continue;
 			};
 
-			config.game_dir = Some(path.to_string_lossy().to_string());
+			config.dir = Some(path.to_string_lossy().to_string());
 			config.custom_launch = true;
 			config.is_editable = false;
 

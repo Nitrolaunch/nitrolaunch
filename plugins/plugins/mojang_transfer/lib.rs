@@ -115,7 +115,7 @@ fn create_config(profile: Profile) -> anyhow::Result<InstanceConfig> {
 			args,
 			..Default::default()
 		},
-		game_dir: Some(profile.game_dir),
+		dir: Some(profile.game_dir),
 		..Default::default()
 	})
 }

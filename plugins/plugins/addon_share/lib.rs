@@ -37,8 +37,8 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 			.instances
 			.get(&InstanceID::from(cli.instance.clone()))
 			.context("Instance does not exist")?;
-		let game_dir = if let Some(game_dir) = &instance.game_dir {
-			PathBuf::from(game_dir)
+		let inst_dir = if let Some(inst_dir) = &instance.dir {
+			PathBuf::from(inst_dir)
 		} else {
 			let data_dir = get_data_dir();
 			match instance.side.expect("Instance should have a side") {
@@ -62,7 +62,7 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 				};
 				dirs.extend(get_addon_paths(
 					instance,
-					&game_dir,
+					&inst_dir,
 					kind,
 					&[],
 					&version_info,
@@ -73,7 +73,7 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 				};
 				dirs.extend(get_addon_paths(
 					instance,
-					&game_dir,
+					&inst_dir,
 					kind,
 					&[],
 					&version_info,
@@ -85,7 +85,7 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 				};
 				dirs.extend(get_addon_paths(
 					instance,
-					&game_dir,
+					&inst_dir,
 					kind,
 					&[],
 					&version_info,

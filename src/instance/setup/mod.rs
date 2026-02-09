@@ -63,7 +63,7 @@ impl Instance {
 				o.display(MessageContents::Header(translate!(o, StartUpdatingClient)));
 				o.start_section();
 				let result = self
-					.setup_client(paths, accounts)
+					.setup_client(accounts)
 					.await
 					.context("Failed to create client")?;
 				Ok::<_, anyhow::Error>(result)
@@ -72,14 +72,14 @@ impl Instance {
 				o.display(MessageContents::Header(translate!(o, StartUpdatingServer)));
 				o.start_section();
 				let result = self
-					.setup_server(paths)
+					.setup_server()
 					.await
 					.context("Failed to create server")?;
 				Ok(result)
 			}
 		}?;
 
-		self.ensure_dirs(paths)?;
+		self.ensure_dir()?;
 
 		let update_depth = manager.settings.depth;
 
@@ -107,12 +107,7 @@ impl Instance {
 		let mut arg = OnInstanceSetupArg {
 			id: self.id.to_string(),
 			side: Some(self.get_side()),
-			game_dir: self
-				.dirs
-				.get()
-				.game_dir
-				.as_ref()
-				.map(|x| x.to_string_lossy().to_string()),
+			inst_dir: self.dir.as_ref().map(|x| x.to_string_lossy().to_string()),
 			version_info: version_info.clone(),
 			old_version: current_version.clone(),
 			loader: self.config.loader.clone(),
@@ -151,8 +146,7 @@ impl Instance {
 			}
 
 			// Teardown
-			self.teardown(paths)
-				.context("Failed to teardown instance")?;
+			self.teardown().context("Failed to teardown instance")?;
 
 			arg.loader = current_loader;
 			if let Some(current_version) = &current_version {
@@ -225,7 +219,7 @@ impl Instance {
 			.context("Failed to finish using lockfile")?;
 
 		// Create the core instance only if this is a local instance
-		if self.dirs.get().game_dir.is_some() {
+		if self.dir.is_some() {
 			self.create_core_instance(&mut version, paths, o)
 				.await
 				.context("Failed to create core instance")?;
@@ -236,17 +230,11 @@ impl Instance {
 		Ok(result)
 	}
 
-	/// Ensure the directories are set and exist
-	pub fn ensure_dirs(&mut self, paths: &Paths) -> anyhow::Result<()> {
-		self.dirs.ensure_full(|| {
-			InstanceDirs::new(
-				paths,
-				&self.id,
-				&self.kind.to_side(),
-				self.config.game_dir.as_deref(),
-			)
-		});
-		self.dirs.get().ensure_exist()?;
+	/// Ensure the instance directory exists
+	pub fn ensure_dir(&self) -> anyhow::Result<()> {
+		if let Some(dir) = &self.dir {
+			std::fs::create_dir_all(dir)?;
+		}
 
 		Ok(())
 	}
@@ -258,7 +246,7 @@ impl Instance {
 		paths: &Paths,
 		o: &mut impl NitroOutput,
 	) -> anyhow::Result<nitro_core::Instance<'core>> {
-		self.ensure_dirs(paths)?;
+		self.ensure_dir()?;
 		let side = match &self.kind {
 			InstKind::Client { window, .. } => nitro_core::InstanceKind::Client {
 				window: nitro_core::ClientWindowConfig {
@@ -305,15 +293,13 @@ impl Instance {
 			quick_play,
 			use_log4j_config: self.config.launch.use_log4j_config,
 		};
-		let game_dir = self
-			.dirs
-			.get()
-			.game_dir
+		let inst_dir = self
+			.dir
 			.clone()
-			.unwrap_or(self.dirs.get().inst_dir.clone());
+			.unwrap_or(paths.data.join("instances").join(&*self.id));
 		let config = nitro_core::InstanceConfiguration {
 			side,
-			path: game_dir,
+			path: inst_dir,
 			launch: launch_config,
 			jar_path: self.modification_data.jar_path_override.clone(),
 			main_class: self.modification_data.main_class_override.clone(),
@@ -328,18 +314,17 @@ impl Instance {
 	}
 
 	/// Removes files such as the game jar for when the template version changes
-	pub fn teardown(&mut self, paths: &Paths) -> anyhow::Result<()> {
-		self.ensure_dirs(paths)?;
-		if let Some(game_dir) = &self.dirs.get().game_dir {
+	pub fn teardown(&mut self) -> anyhow::Result<()> {
+		if let Some(inst_dir) = &self.dir {
 			match self.kind {
 				InstKind::Client { .. } => {
-					let jar_path = game_dir.join("client.jar");
+					let jar_path = inst_dir.join("client.jar");
 					if jar_path.exists() {
 						fs::remove_file(jar_path).context("Failed to remove client.jar")?;
 					}
 				}
 				InstKind::Server { .. } => {
-					let jar_path = game_dir.join("server.jar");
+					let jar_path = inst_dir.join("server.jar");
 					if jar_path.exists() {
 						fs::remove_file(jar_path).context("Failed to remove server.jar")?;
 					}
@@ -351,20 +336,27 @@ impl Instance {
 	}
 
 	/// Removes all game files for an instance, including saves. Be wary when using this!
-	pub async fn delete_files(&mut self, paths: &Paths) -> anyhow::Result<()> {
-		self.ensure_dirs(paths)?;
-		tokio::fs::remove_dir_all(&self.dirs.get().inst_dir).await?;
+	pub async fn delete_files(&self) -> anyhow::Result<()> {
+		if let Some(dir) = &self.dir {
+			if dir.exists() {
+				tokio::fs::remove_dir_all(dir).await?;
+			}
+		}
 
 		Ok(())
 	}
 
 	/// Create a keypair file in the instance
-	fn create_keypair(&mut self, account: &Account, paths: &Paths) -> anyhow::Result<()> {
+	fn create_keypair(&mut self, account: &Account) -> anyhow::Result<()> {
+		if self.get_side() != Side::Client {
+			return Ok(());
+		}
+
 		if let Some(uuid) = account.get_uuid() {
 			if let Some(keypair) = account.get_keypair() {
-				self.ensure_dirs(paths)?;
-				if let Some(game_dir) = &self.dirs.get().game_dir {
-					let keys_dir = game_dir.join("profilekeys");
+				self.ensure_dir()?;
+				if let Some(inst_dir) = &self.dir {
+					let keys_dir = inst_dir.join("profilekeys");
 					let hyphenated_uuid =
 						hyphenate_uuid(uuid).context("Failed to hyphenate UUID")?;
 					let path = keys_dir.join(format!("{hyphenated_uuid}.json"));

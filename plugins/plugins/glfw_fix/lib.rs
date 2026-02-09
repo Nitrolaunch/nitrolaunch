@@ -17,7 +17,7 @@ nitro_wasm_plugin!(main, "glfw_fix");
 
 fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 	plugin.on_instance_setup(|arg| {
-		if arg.game_dir.is_none() {
+		if arg.inst_dir.is_none() {
 			return Ok(OnInstanceSetupResult::default());
 		};
 

@@ -12,7 +12,7 @@ nitro_wasm_plugin!(main, "custom_files");
 
 fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 	plugin.on_instance_setup(|arg| {
-		let Some(game_dir) = arg.game_dir else {
+		let Some(inst_dir) = arg.inst_dir else {
 			return Ok(OnInstanceSetupResult::default());
 		};
 
@@ -22,12 +22,12 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 		let config: Config = serde_json::from_value(config.clone())
 			.context("Configuration is incorrectly formatted")?;
 
-		let game_dir = PathBuf::from(game_dir);
+		let inst_dir = PathBuf::from(inst_dir);
 
 		// Copy all of the files
 		for file in config.files {
 			let src = replace_tilde(&file.source);
-			let target = game_dir.join(PathBuf::from(file.target));
+			let target = inst_dir.join(file.target);
 
 			if let Some(parent) = target.parent() {
 				std::fs::create_dir_all(parent)

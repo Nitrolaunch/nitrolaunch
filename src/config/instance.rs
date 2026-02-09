@@ -133,7 +133,7 @@ pub async fn read_instance_config(
 		packages: read_packages,
 		package_stability: config.package_stability.unwrap_or_default(),
 		package_overrides: config.overrides,
-		game_dir: config.game_dir.map(PathBuf::from),
+		inst_dir_override: config.dir.map(PathBuf::from),
 		custom_launch: config.custom_launch,
 		original_config,
 		original_config_with_templates,
@@ -141,7 +141,7 @@ pub async fn read_instance_config(
 		plugin_config: config.plugin_config,
 	};
 
-	let instance = Instance::new(kind, id, stored_config);
+	let instance = Instance::new(kind, id, stored_config, paths);
 
 	Ok(instance)
 }

@@ -11,7 +11,7 @@ fn main() -> anyhow::Result<()> {
 			bail!("Instance side is empty");
 		};
 
-		if arg.game_dir.is_none() {
+		if arg.inst_dir.is_none() {
 			return Ok(OnInstanceSetupResult::default());
 		};
 

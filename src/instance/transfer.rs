@@ -51,12 +51,6 @@ impl Instance {
 			bail!("Instance has not done it's first update and is not ready for transfer");
 		}
 
-		self.ensure_dirs(paths)
-			.context("Failed to ensure instance directories")?;
-		if self.dirs.get().game_dir.is_none() {
-			bail!("This instance has no game directory and cannot be exported");
-		}
-
 		o.display(MessageContents::StartProcess(translate!(
 			o,
 			StartExporting,
@@ -71,6 +65,10 @@ impl Instance {
 			bail!("Version missing. Please update the instance before exporting.");
 		};
 
+		let Some(inst_dir) = &self.dir else {
+			bail!("This instance has no game directory and cannot be exported");
+		};
+
 		// Export using the plugin
 		let arg = ExportInstanceArg {
 			id: self.id.to_string(),
@@ -78,14 +76,7 @@ impl Instance {
 			config: self.config.original_config_with_templates.clone(),
 			minecraft_version: minecraft_version.clone(),
 			loader_version: inst_lock.get_loader_version().cloned(),
-			game_dir: self
-				.dirs
-				.get()
-				.game_dir
-				.as_ref()
-				.unwrap()
-				.to_string_lossy()
-				.to_string(),
+			inst_dir: inst_dir.to_string_lossy().to_string(),
 			result_path: result_path.to_string_lossy().to_string(),
 		};
 		let result = plugins

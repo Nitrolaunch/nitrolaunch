@@ -60,25 +60,27 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 	})?;
 
 	plugin.on_instance_launch(|arg| {
-		let inst_dir = PathBuf::from(&arg.dir);
-		check_auto_hook(
-			BackupAutoHook::Launch,
-			&arg.id,
-			&inst_dir,
-			&mut WASMPluginOutput::new(),
-		)?;
+		if let Some(inst_dir) = &arg.inst_dir {
+			check_auto_hook(
+				BackupAutoHook::Launch,
+				&arg.id,
+				&Path::new(inst_dir),
+				&mut WASMPluginOutput::new(),
+			)?;
+		}
 
 		Ok(())
 	})?;
 
 	plugin.on_instance_stop(|arg| {
-		let inst_dir = PathBuf::from(&arg.dir);
-		check_auto_hook(
-			BackupAutoHook::Stop,
-			&arg.id,
-			&inst_dir,
-			&mut WASMPluginOutput::new(),
-		)?;
+		if let Some(inst_dir) = &arg.inst_dir {
+			check_auto_hook(
+				BackupAutoHook::Stop,
+				&arg.id,
+				&Path::new(inst_dir),
+				&mut WASMPluginOutput::new(),
+			)?;
+		}
 
 		Ok(())
 	})?;

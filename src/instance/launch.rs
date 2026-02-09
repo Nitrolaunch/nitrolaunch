@@ -94,13 +94,7 @@ impl Instance {
 		let hook_arg = InstanceLaunchArg {
 			id: self.id.to_string(),
 			side: Some(self.get_side()),
-			dir: self.dirs.get().inst_dir.to_string_lossy().into(),
-			game_dir: self
-				.dirs
-				.get()
-				.game_dir
-				.as_ref()
-				.map(|x| x.to_string_lossy().into()),
+			inst_dir: self.dir.as_ref().map(|x| x.to_string_lossy().into()),
 			version_info: version_info.clone(),
 			config: self
 				.config
@@ -123,7 +117,7 @@ impl Instance {
 			.context("Failed to call on launch hook")?;
 		results.all_results(o).await?;
 
-		if self.dirs.get().game_dir.is_some() && !self.config.custom_launch {
+		if self.dir.is_some() && !self.config.custom_launch {
 			self.launch_standard(core, hook_arg, paths, plugins, settings, o)
 				.await
 		} else {
@@ -179,7 +173,7 @@ impl Instance {
 
 		let world_files = if self.get_side() == Side::Client {
 			Some(
-				WorldFilesWatcher::new(self.dirs.get().game_dir.as_ref().unwrap(), plugins.clone())
+				WorldFilesWatcher::new(self.dir.as_ref().unwrap(), plugins.clone())
 					.context("Failed to setup world files watcher")?,
 			)
 		} else {

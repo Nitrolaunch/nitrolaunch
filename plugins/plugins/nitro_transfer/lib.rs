@@ -15,7 +15,7 @@ nitro_wasm_plugin!(main, "nitro_transfer");
 
 fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 	plugin.export_instance(|arg| {
-		let game_dir = PathBuf::from(arg.game_dir);
+		let inst_dir = PathBuf::from(arg.inst_dir);
 		let target_path = PathBuf::from(arg.result_path);
 		dbg!(&target_path);
 		let target_file = File::create(target_path).context("Failed to open target file")?;
@@ -23,22 +23,22 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 		// Write the instance files
 		let mut zip = ZipWriter::new(target_file);
 
-		visit_dir(&game_dir, &mut zip, &game_dir).context("Failed to read instance directory")?;
+		visit_dir(&inst_dir, &mut zip, &inst_dir).context("Failed to read instance directory")?;
 
-		fn visit_dir(dir: &Path, zip: &mut ZipWriter<File>, game_dir: &Path) -> anyhow::Result<()> {
+		fn visit_dir(dir: &Path, zip: &mut ZipWriter<File>, inst_dir: &Path) -> anyhow::Result<()> {
 			let dir_read = dir.read_dir().context("Failed to read directory")?;
 
 			for item in dir_read {
 				let item = item?;
 				if item.file_type()?.is_dir() {
-					visit_dir(&item.path(), zip, game_dir)?;
+					visit_dir(&item.path(), zip, inst_dir)?;
 				} else {
 					if !should_include_file(&item.path()) {
 						continue;
 					}
 
 					zip.start_file_from_path(
-						item.path().strip_prefix(game_dir)?,
+						item.path().strip_prefix(inst_dir)?,
 						FileOptions::<()>::default(),
 					)?;
 					let mut src = BufReader::new(File::open(item.path())?);

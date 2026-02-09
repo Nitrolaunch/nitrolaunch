@@ -26,7 +26,7 @@ fn main() -> anyhow::Result<()> {
 			bail!("Instance side is empty");
 		};
 
-		let Some(game_dir) = arg.game_dir else {
+		let Some(inst_dir) = &arg.inst_dir else {
 			return Ok(OnInstanceSetupResult::default());
 		};
 
@@ -126,11 +126,8 @@ fn main() -> anyhow::Result<()> {
 				)
 				.context("Failed to get old version build info")?;
 
-				remove_paper(
-					&PathBuf::from(game_dir),
-					build_info.downloads.application.name,
-				)
-				.with_context(|| format!("Failed to remove {mode} from the instance"))?;
+				remove_paper(&Path::new(inst_dir), build_info.downloads.application.name)
+					.with_context(|| format!("Failed to remove {mode} from the instance"))?;
 			}
 		}
 

@@ -107,7 +107,7 @@ impl Instance {
 			.map(|x| {
 				Ok(LockfileAddon::from_addon(
 					&x.addon,
-					self.get_linked_addon_paths(&x.addon, &pkg_config.worlds, paths, version_info)?
+					self.get_linked_addon_paths(&x.addon, &pkg_config.worlds, version_info)?
 						.iter()
 						.map(|y| y.join(x.addon.file_name.clone()))
 						.collect(),

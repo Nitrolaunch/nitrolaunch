@@ -14,7 +14,7 @@ use nitro_shared::Side;
 fn main() -> anyhow::Result<()> {
 	let mut plugin = ExecutablePlugin::from_manifest_file("options", include_str!("plugin.json"))?;
 	plugin.on_instance_setup(|ctx, arg| {
-		let Some(game_dir) = arg.game_dir else {
+		let Some(inst_dir) = arg.inst_dir else {
 			return Ok(OnInstanceSetupResult::default());
 		};
 
@@ -79,7 +79,7 @@ fn main() -> anyhow::Result<()> {
 		if !keys.is_empty() {
 			match arg.side.unwrap() {
 				Side::Client => {
-					let options_path = PathBuf::from(game_dir).join("options.txt");
+					let options_path = PathBuf::from(inst_dir).join("options.txt");
 					let paths = Paths::new()?;
 					let data_version =
 						nitro_core::io::minecraft::get_data_version(&arg.version_info, &paths.jars);
@@ -87,7 +87,7 @@ fn main() -> anyhow::Result<()> {
 						.context("Failed to write options.txt")?;
 				}
 				Side::Server => {
-					let options_path = PathBuf::from(game_dir).join("server.properties");
+					let options_path = PathBuf::from(inst_dir).join("server.properties");
 					write_server_properties(keys, &options_path)
 						.context("Failed to write server.properties")?;
 				}

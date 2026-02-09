@@ -66,7 +66,8 @@ pub struct InstanceConfig {
 	// Plugin-only config (Should not be edited by user)
 	/// Override for the game file directory for this instance
 	#[serde(skip_serializing_if = "Option::is_none")]
-	pub game_dir: Option<String>,
+	#[serde(alias = "game_dir")]
+	pub dir: Option<String>,
 	/// The plugin this config was created by
 	#[serde(skip_serializing_if = "DefaultExt::is_default")]
 	pub source_plugin: Option<String>,
@@ -112,7 +113,7 @@ impl InstanceConfig {
 		self.window.merge(other.window);
 
 		// These properties are not derived and instead just overrided
-		self.game_dir = other.game_dir;
+		self.dir = other.dir;
 		self.source_plugin = other.source_plugin;
 		self.is_editable = other.is_editable;
 		self.is_deletable = other.is_deletable;

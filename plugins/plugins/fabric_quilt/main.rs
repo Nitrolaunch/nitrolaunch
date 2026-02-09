@@ -14,7 +14,7 @@ fn main() -> anyhow::Result<()> {
 			bail!("Instance side is empty");
 		};
 
-		let Some(game_dir) = &arg.game_dir else {
+		let Some(inst_dir) = &arg.inst_dir else {
 			return Ok(OnInstanceSetupResult::default());
 		};
 
@@ -94,7 +94,7 @@ fn main() -> anyhow::Result<()> {
 
 		// Cleanup files when the version changes
 		if arg.old_version != Some(arg.version_info.version.clone()) {
-			cleanup_files(&PathBuf::from(game_dir));
+			cleanup_files(&Path::new(inst_dir));
 		}
 
 		Ok(OnInstanceSetupResult {

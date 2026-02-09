@@ -146,8 +146,8 @@ pub struct OnInstanceSetupArg {
 	pub id: String,
 	/// The side of the instance
 	pub side: Option<Side>,
-	/// Path to the instance's game dir
-	pub game_dir: Option<String>,
+	/// Path to the instance's directory
+	pub inst_dir: Option<String>,
 	/// Version info for the instance
 	pub version_info: VersionInfo,
 	/// The current version of the instance before being updated to the one in version_info. Can be used to detect version changes.
@@ -216,8 +216,8 @@ pub struct AfterPackagesInstalledArg {
 	pub id: String,
 	/// The side of the instance
 	pub side: Option<Side>,
-	/// Path to the instance's game dir
-	pub game_dir: Option<String>,
+	/// Path to the instance's directory
+	pub inst_dir: Option<String>,
 	/// Version info for the instance
 	pub version_info: VersionInfo,
 	/// The loader of the instance
@@ -294,10 +294,8 @@ pub struct InstanceLaunchArg {
 	pub id: String,
 	/// The side of the instance
 	pub side: Option<Side>,
-	/// Path to the instance's dir
-	pub dir: String,
-	/// Path to the instance's game dir
-	pub game_dir: Option<String>,
+	/// Path to the instance's directory
+	pub inst_dir: Option<String>,
 	/// Version info for the instance
 	pub version_info: VersionInfo,
 	/// The instance's configuration
@@ -471,7 +469,7 @@ pub struct ExportInstanceArg {
 	/// The actual loader version of the instance
 	pub loader_version: Option<String>,
 	/// The directory where the instance game files are located
-	pub game_dir: String,
+	pub inst_dir: String,
 	/// The desired path for the resulting instance, as a file path
 	pub result_path: String,
 }

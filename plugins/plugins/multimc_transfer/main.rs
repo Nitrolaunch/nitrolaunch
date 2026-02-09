@@ -189,7 +189,7 @@ fn main() -> anyhow::Result<()> {
 
 			// File migration
 			if arg.link {
-				config.game_dir = Some(mc_dir.to_string_lossy().to_string());
+				config.dir = Some(mc_dir.to_string_lossy().to_string());
 			} else {
 				let target_dir = nitro_instances_dir.join(&id).join(".minecraft");
 				std::fs::create_dir_all(&target_dir)?;

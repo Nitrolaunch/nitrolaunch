@@ -56,7 +56,7 @@ pub async fn update_instance_packages<O: NitroOutput>(
 		}
 	}
 
-	remove_existing_addons(instance, constants, ctx)?;
+	remove_existing_addons(instance, constants)?;
 
 	// Evaluate first to install all of the addons
 	ctx.output.display(MessageContents::Header(translate!(
@@ -228,10 +228,9 @@ async fn resolve_instance<O: NitroOutput>(
 }
 
 /// Removes existing addons on an instance just in case there are lockfile issues
-fn remove_existing_addons<O: NitroOutput>(
+fn remove_existing_addons(
 	instance: &mut Instance,
 	constants: &EvalConstants,
-	ctx: &mut InstanceUpdateContext<'_, O>,
 ) -> anyhow::Result<()> {
 	let addon_kinds = [
 		AddonKind::Datapack,
@@ -241,20 +240,16 @@ fn remove_existing_addons<O: NitroOutput>(
 		AddonKind::Shader,
 	];
 
+	instance.ensure_dir()?;
+
 	for adddon_kind in addon_kinds {
-		instance.ensure_dirs(ctx.paths)?;
-		if instance.get_dirs().get().game_dir.is_none() {
+		let Some(inst_dir) = instance.get_dir() else {
 			continue;
-		}
+		};
 
 		let Ok(dirs) = get_addon_paths(
 			&instance.config.original_config_with_templates_and_plugins,
-			instance
-				.get_dirs()
-				.get()
-				.game_dir
-				.as_ref()
-				.expect("Game dir should exist"),
+			inst_dir,
 			adddon_kind,
 			&[],
 			&VersionInfo {

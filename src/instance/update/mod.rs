@@ -159,12 +159,7 @@ impl Instance {
 		let arg = AfterPackagesInstalledArg {
 			id: self.id.to_string(),
 			side: Some(self.get_side()),
-			game_dir: self
-				.dirs
-				.get()
-				.game_dir
-				.as_ref()
-				.map(|x| x.to_string_lossy().to_string()),
+			inst_dir: self.dir.as_ref().map(|x| x.to_string_lossy().to_string()),
 			version_info: version_info.clone(),
 			loader: self.config.loader.clone(),
 			config: self
