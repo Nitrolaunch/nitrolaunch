@@ -118,7 +118,9 @@ input {
 	padding: 0.5rem 1rem;
 	height: var(--input-height);
 	background-color: var(--bg0);
-	transition: border-color 0.25s, outline-color 0.35s;
+	transition:
+		border-color 0.25s,
+		outline-color 0.35s;
 	box-shadow: 0 2px 2px rgba(0, 0, 0, 0.2);
 	/* text-align: center; */
 	border: var(--border) solid var(--bg3);

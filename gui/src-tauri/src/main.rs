@@ -277,7 +277,7 @@ fn main() {
 			commands::misc::save_icon,
 			commands::misc::get_supported_java_types,
 			commands::misc::answer_yes_no_prompt,
-			commands::misc::custom_scrollbar_needed,
+			commands::misc::linux_fixes_needed,
 			commands::misc::get_nitro_version,
 			commands::cancel_task,
 		])

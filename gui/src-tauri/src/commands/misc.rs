@@ -348,9 +348,9 @@ pub async fn answer_yes_no_prompt(
 	Ok(())
 }
 
-/// Gets whether a custom scrollbar is needed for the frontend
+/// Gets whether Linux fixes are needed for the frontend
 #[tauri::command]
-pub async fn custom_scrollbar_needed() -> Result<bool, String> {
+pub async fn linux_fixes_needed() -> Result<bool, String> {
 	#[cfg(target_os = "linux")]
 	{
 		Ok(true)

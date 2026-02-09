@@ -122,11 +122,12 @@ function Layout(props: LayoutProps) {
 
 	// Fix for Webkitgtk scrolling
 	onMount(async () => {
-		if (await invoke("custom_scrollbar_needed")) {
+		if (await invoke("linux_fixes_needed")) {
 			let elem = document.getElementById("root")!;
 			elem.style.overflowY = "auto";
 			elem.style.overflowX = "hidden";
 			elem.style.height = "100vh";
+			elem.style.setProperty("--shadow-blur", "0px");
 		}
 	});
 
