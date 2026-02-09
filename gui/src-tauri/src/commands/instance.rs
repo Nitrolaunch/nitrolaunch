@@ -788,6 +788,44 @@ pub async fn canonicalize_version(
 	Ok(version)
 }
 
+/// Gets the plugins supporting creation of custom instances or templates
+#[tauri::command]
+pub async fn get_plugins_supporting_creation(
+	state: tauri::State<'_, State>,
+	instance_or_template: InstanceOrTemplate,
+) -> Result<Vec<PluginAndName>, String> {
+	let config = fmt_err(
+		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
+			.await
+			.context("Failed to load config"),
+	)?;
+
+	let out = config
+		.plugins
+		.get_lock()
+		.await
+		.manager
+		.iter_plugins()
+		.filter(|x| match instance_or_template {
+			InstanceOrTemplate::Instance => x.manifest.supports_instance_creation,
+			InstanceOrTemplate::Template => x.manifest.supports_template_creation,
+		})
+		.map(|x| PluginAndName {
+			id: x.get_id().clone(),
+			name: x.manifest.meta.name.clone(),
+		})
+		.collect();
+
+	Ok(out)
+}
+
+#[derive(Deserialize, Serialize, Clone)]
+#[serde(rename_all = "snake_case")]
+pub struct PluginAndName {
+	pub id: String,
+	pub name: Option<String>,
+}
+
 #[derive(Deserialize, Serialize, Clone, Copy, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 pub enum InstanceOrTemplate {

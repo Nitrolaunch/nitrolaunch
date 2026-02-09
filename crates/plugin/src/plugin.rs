@@ -32,7 +32,7 @@ pub struct Plugin {
 	/// The plugin's ID
 	id: String,
 	/// The plugin's manifest
-	manifest: PluginManifest,
+	pub manifest: PluginManifest,
 	/// The custom config for the plugin, serialized from JSON
 	custom_config: Option<String>,
 	/// The working directory for the plugin
@@ -301,8 +301,6 @@ pub struct PluginManifest {
 	pub nitro_version: Option<String>,
 	/// The hook handlers for the plugin
 	pub hooks: HashMap<String, HookHandler>,
-	/// The subcommands the plugin provides
-	pub subcommands: HashMap<String, PluginProvidedSubcommand>,
 	/// Plugins that this plugin depends on
 	pub dependencies: Vec<String>,
 	/// Message to display when the plugin is installed
@@ -311,6 +309,12 @@ pub struct PluginManifest {
 	pub protocol_version: Option<u16>,
 	/// Whether to disable base64 encoding in the protocol
 	pub raw_transfer: bool,
+	/// Whether the plugin supports creating custom instances
+	pub supports_instance_creation: bool,
+	/// Whether the plugin supports creating custom templates
+	pub supports_template_creation: bool,
+	/// The subcommands the plugin provides
+	pub subcommands: HashMap<String, PluginProvidedSubcommand>,
 }
 
 impl PluginManifest {

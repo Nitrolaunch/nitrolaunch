@@ -79,7 +79,11 @@ pub enum InstanceSubcommand {
 		instances: Vec<String>,
 	},
 	#[command(about = "Easily create a new instance")]
-	Add,
+	Add {
+		/// A plugin to create this instance with. Not all plugins support instances.
+		#[arg(short, long)]
+		plugin: Option<String>,
+	},
 	#[command(about = "Delete an instance and its files forever")]
 	Delete {
 		/// The instance to delete
@@ -138,7 +142,7 @@ pub async fn run(command: InstanceSubcommand, mut data: CmdData<'_>) -> anyhow::
 			instances,
 		} => update(&mut data, instances, groups, all, force, skip_packages).await,
 		InstanceSubcommand::Dir { instance } => dir(&mut data, instance).await,
-		InstanceSubcommand::Add => add(&mut data).await,
+		InstanceSubcommand::Add { plugin } => add(&mut data, plugin).await,
 		InstanceSubcommand::Import {
 			instance,
 			path,
@@ -406,7 +410,7 @@ async fn update(
 	Ok(())
 }
 
-async fn add(data: &mut CmdData<'_>) -> anyhow::Result<()> {
+async fn add(data: &mut CmdData<'_>, plugin: Option<String>) -> anyhow::Result<()> {
 	data.ensure_config(true).await?;
 	let mut config = data.get_raw_config()?;
 
@@ -445,6 +449,7 @@ async fn add(data: &mut CmdData<'_>) -> anyhow::Result<()> {
 		side: Some(side),
 		version: Some(version),
 		loader: Some(to_string_json(&loader)),
+		source_plugin: plugin,
 		..Default::default()
 	};
 

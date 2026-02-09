@@ -124,24 +124,24 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 			// Derived packages are in the full config but not the editable one
 			setDerivedGlobalPackages(
 				allGlobal.filter(
-					(x) => !globalPackages().some((y) => packageConfigsEqual(x, y))
-				)
+					(x) => !globalPackages().some((y) => packageConfigsEqual(x, y)),
+				),
 			);
 			setDerivedClientPackages(
 				allClient.filter(
-					(x) => !clientPackages().some((y) => packageConfigsEqual(x, y))
-				)
+					(x) => !clientPackages().some((y) => packageConfigsEqual(x, y)),
+				),
 			);
 			setDerivedServerPackages(
 				allServer.filter(
-					(x) => !serverPackages().some((y) => packageConfigsEqual(x, y))
-				)
+					(x) => !serverPackages().some((y) => packageConfigsEqual(x, y)),
+				),
 			);
 
 			setPackageOverrides(
 				editableConfiguration.overrides == undefined
 					? {}
-					: editableConfiguration.overrides
+					: editableConfiguration.overrides,
 			);
 
 			setEditableConfig(editableConfiguration);
@@ -157,7 +157,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 		async () => {
 			return await getParentTemplates(from(), InstanceConfigMode.Instance);
 		},
-		{ initialValue: [] }
+		{ initialValue: [] },
 	);
 
 	let [bannerImages, __] = createResource(
@@ -177,7 +177,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 				console.error("Failed to get banner images: " + e);
 				return undefined;
 			}
-		}
+		},
 	);
 
 	let [isRunning, setIsRunning] = createSignal(false);
@@ -188,9 +188,9 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 			"nitro_update_running_instances",
 			(e: Event<RunningInstancesEvent>) => {
 				setIsRunning(
-					e.payload.running_instances.some((x) => x.instance_id == id())
+					e.payload.running_instances.some((x) => x.instance_id == id()),
 				);
-			}
+			},
 		);
 
 		setUnlisten(() => unlisten);
@@ -207,7 +207,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 				if (e.payload == "update_instance") {
 					methods.refetch();
 				}
-			}
+			},
 		);
 
 		setUnlisten2(() => unlisten);
@@ -227,10 +227,10 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 					if (e.payload.id == id() && e.payload.type == "instance") {
 						instanceMethods.refetch();
 					}
-				}
+				},
 			);
 		},
-		{ initialValue: () => {} }
+		{ initialValue: () => {} },
 	);
 
 	onCleanup(() => {
@@ -244,7 +244,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 		async () => {
 			return getDropdownButtons("instance_launch");
 		},
-		{ initialValue: [] }
+		{ initialValue: [] },
 	);
 
 	let [updateDropdownButtons, _2] = createResource(
@@ -252,7 +252,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 		async () => {
 			return getDropdownButtons("instance_update");
 		},
-		{ initialValue: [] }
+		{ initialValue: [] },
 	);
 
 	let [moreDropdownButtons, _3] = createResource(
@@ -260,7 +260,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 		async () => {
 			return getDropdownButtons("instance_more_options");
 		},
-		{ initialValue: [] }
+		{ initialValue: [] },
 	);
 
 	let isEditable = () => {
@@ -284,7 +284,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 	};
 
 	let [packageOverrides, setPackageOverrides] = createSignal<PackageOverrides>(
-		{}
+		{},
 	);
 
 	let [selectedTab, setSelectedTab] = createSignal("general");
@@ -299,7 +299,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 				globalPackages(),
 				clientPackages(),
 				serverPackages(),
-				true
+				true,
 			);
 
 			let overrides =
@@ -372,7 +372,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 		}
 
 		options = options.concat(
-			launchDropdownButtons().map(dropdownButtonToOption)
+			launchDropdownButtons().map(dropdownButtonToOption),
 		);
 
 		return options;
@@ -568,7 +568,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 														},
 													] as Option[]
 												).concat(
-													updateDropdownButtons().map(dropdownButtonToOption)
+													updateDropdownButtons().map(dropdownButtonToOption),
 												)}
 												previewText={
 													<div
@@ -624,7 +624,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 													setInstanceConfigModal(
 														id(),
 														InstanceConfigMode.Instance,
-														false
+														false,
 													);
 												}}
 											/>
@@ -742,7 +742,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 											let func = (packages: PackageConfig[]) => {
 												if (
 													!packages.some((x) =>
-														packageConfigsFullyEqual(x, pkg)
+														packageConfigsFullyEqual(x, pkg),
 													)
 												) {
 													packages.push(pkg);
@@ -768,7 +768,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 										minecraftVersion={instance()!.version}
 										loader={
 											parseVersionedString(
-												instance()!.loader as string
+												instance()!.loader as string,
 											)[0] as Loader
 										}
 										showBrowseButton={true}
@@ -812,7 +812,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 							color: "var(--fg3)",
 							onClick: async () => {
 								try {
-									await invoke("delete_instance", { instance: id });
+									await invoke("delete_instance", { instance: id() });
 									successToast("Instance deleted");
 									setShowDeleteConfirm(false);
 									updateInstanceList();

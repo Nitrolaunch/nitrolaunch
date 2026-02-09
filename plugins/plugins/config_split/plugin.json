@@ -3,6 +3,8 @@
 	"description": "Split configuration into multiple files",
 	"version": "v6",
 	"protocol_version": 3,
+	"supports_instance_creation": true,
+	"supports_template_creation": true,
 	"hooks": {
 		"add_instances": {
 			"wasm": true

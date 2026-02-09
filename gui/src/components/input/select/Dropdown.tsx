@@ -89,7 +89,11 @@ export default function Dropdown(props: DropdownProps) {
 	// The height of the opened dropdown options
 	let openedHeight = () => {
 		if (props.options.length < 10.5) {
-			return `calc(${props.options.length} * var(--option-height) + 2 * var(--border))`;
+			let optionCount = props.options.length;
+			if (props.allowEmpty == true) {
+				optionCount++;
+			}
+			return `calc(${optionCount} * var(--option-height) + 2 * var(--border))`;
 		} else {
 			return "calc(10.5 * var(--option-height) + 2 * var(--border))";
 		}
@@ -246,7 +250,7 @@ export default function Dropdown(props: DropdownProps) {
 									isSelected={createMemo(() =>
 										props.selected != undefined && Array.isArray(props.selected)
 											? props.selected.includes(option.value!)
-											: props.selected == option.value
+											: props.selected == option.value,
 									)()}
 									isFirst={!allowEmpty && index() == 0}
 									isLast={index() == lastIndex()}
