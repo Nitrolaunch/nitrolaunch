@@ -252,9 +252,9 @@ pub async fn open_instance_dir(
 		return Err(format!("Instance {instance} does not exist"));
 	};
 
-	let _ = instance.ensure_dirs(&state.paths);
+	let _ = instance.ensure_dir();
 
-	let path = instance.get_dirs().get().game_dir.clone();
+	let path = instance.get_dir().map(|x| x.to_owned());
 	let Some(path) = path else {
 		return Err("Instance has no game dir".into());
 	};
