@@ -262,93 +262,88 @@ export default function InstanceConfigModal(props: InstanceConfigProps) {
 
 	// Initialize config signals from config
 	createEffect(() => {
-		if (config() != undefined) {
-			setName(config()!.name);
-			setSide(config()!.type);
-			setIcon(config()!.icon);
-			setVersion(config()!.version);
+		setName(config().name);
+		setSide(config().type);
+		setIcon(config().icon);
+		setVersion(config().version);
 
-			// Loader madness
-			let [clientLoader, clientLoaderVersion]: [
-				string | undefined,
-				string | undefined,
-			] = [undefined, undefined];
-			let [serverLoader, serverLoaderVersion]: [
-				string | undefined,
-				string | undefined,
-			] = [undefined, undefined];
-			let configuredLoader = config()!.loader;
-			if (configuredLoader != undefined) {
-				if (typeof configuredLoader == "object") {
-					if (configuredLoader.client != undefined) {
-						[clientLoader, clientLoaderVersion] = parseVersionedString(
-							configuredLoader.client,
-						);
-					}
-					if (configuredLoader.server != undefined) {
-						[serverLoader, serverLoaderVersion] = parseVersionedString(
-							configuredLoader.server,
-						);
-					}
-				} else {
-					let [loader, loaderVersion] = parseVersionedString(configuredLoader);
-					clientLoader = loader;
-					clientLoaderVersion = loaderVersion;
-					serverLoader = loader;
-					serverLoaderVersion = loaderVersion;
+		// Loader madness
+		let [clientLoader, clientLoaderVersion]: [
+			string | undefined,
+			string | undefined,
+		] = [undefined, undefined];
+		let [serverLoader, serverLoaderVersion]: [
+			string | undefined,
+			string | undefined,
+		] = [undefined, undefined];
+		let configuredLoader = config().loader;
+		if (configuredLoader != undefined) {
+			if (typeof configuredLoader == "object") {
+				if (configuredLoader.client != undefined) {
+					[clientLoader, clientLoaderVersion] = parseVersionedString(
+						configuredLoader.client,
+					);
 				}
-			}
-
-			setClientLoader(clientLoader);
-			setClientLoaderVersion(clientLoaderVersion);
-			setServerLoader(serverLoader);
-			setServerLoaderVersion(serverLoaderVersion);
-
-			setDatapackFolder(config()!.datapack_folder);
-
-			// Packages
-			let [global, client, server] = getConfigPackages(config()!);
-			setGlobalPackages(global);
-			setClientPackages(client);
-			setServerPackages(server);
-
-			// Launch config
-			setJavaType(
-				config()!.launch == undefined ? undefined : config()!.launch!.java,
-			);
-
-			let [init, max] = parseLaunchMemory(
-				config()!.launch == undefined ? undefined : config()!.launch!.memory,
-			);
-			setInitMemory(init);
-			setMaxMemory(max);
-
-			if (config()!.launch == undefined || config()!.launch!.env == undefined) {
-				setEnvVars([]);
-			} else {
-				let out: string[] = [];
-				for (let key of Object.keys(config()!.launch!.env!)) {
-					out.push(`${key}=${config()!.launch!.env![key]}`);
+				if (configuredLoader.server != undefined) {
+					[serverLoader, serverLoaderVersion] = parseVersionedString(
+						configuredLoader.server,
+					);
 				}
-			}
-
-			if (
-				config()!.launch == undefined ||
-				config()!.launch!.args == undefined
-			) {
-				setJvmArgs([]);
-				setGameArgs([]);
 			} else {
-				setJvmArgs(readArgs(config()!.launch!.args?.jvm));
-				setGameArgs(readArgs(config()!.launch!.args?.game));
+				let [loader, loaderVersion] = parseVersionedString(configuredLoader);
+				clientLoader = loader;
+				clientLoaderVersion = loaderVersion;
+				serverLoader = loader;
+				serverLoaderVersion = loaderVersion;
 			}
-
-			setPackageOverrides(
-				config()!.overrides == undefined ? {} : config()!.overrides!,
-			);
-
-			setPlugin(config()!.source_plugin);
 		}
+
+		setClientLoader(clientLoader);
+		setClientLoaderVersion(clientLoaderVersion);
+		setServerLoader(serverLoader);
+		setServerLoaderVersion(serverLoaderVersion);
+
+		setDatapackFolder(config().datapack_folder);
+
+		// Packages
+		let [global, client, server] = getConfigPackages(config());
+		setGlobalPackages(global);
+		setClientPackages(client);
+		setServerPackages(server);
+
+		// Launch config
+		setJavaType(
+			config().launch == undefined ? undefined : config().launch!.java,
+		);
+
+		let [init, max] = parseLaunchMemory(
+			config().launch == undefined ? undefined : config().launch!.memory,
+		);
+		setInitMemory(init);
+		setMaxMemory(max);
+
+		if (config().launch == undefined || config().launch!.env == undefined) {
+			setEnvVars([]);
+		} else {
+			let out: string[] = [];
+			for (let key of Object.keys(config().launch!.env!)) {
+				out.push(`${key}=${config().launch!.env![key]}`);
+			}
+		}
+
+		if (config().launch == undefined || config().launch!.args == undefined) {
+			setJvmArgs([]);
+			setGameArgs([]);
+		} else {
+			setJvmArgs(readArgs(config().launch!.args?.jvm));
+			setGameArgs(readArgs(config().launch!.args?.game));
+		}
+
+		setPackageOverrides(
+			config().overrides == undefined ? {} : config().overrides!,
+		);
+
+		setPlugin(config().source_plugin);
 
 		// Default side
 		if (isCreating() && isInstance()) {
@@ -504,18 +499,16 @@ export default function InstanceConfigModal(props: InstanceConfigProps) {
 		};
 
 		// Handle extra fields
-		if (config() != undefined) {
-			for (let key of Object.keys(config()!)) {
-				if (!Object.keys(newConfig).includes(key)) {
-					newConfig[key] = config()![key];
-				}
+		for (let key of Object.keys(config())) {
+			if (!Object.keys(newConfig).includes(key)) {
+				newConfig[key] = config()[key];
 			}
+		}
 
-			if (config()!.launch != undefined) {
-				for (let key of Object.keys(config()!.launch!)) {
-					if (!Object.keys(newConfig.launch!).includes(key)) {
-						newConfig.launch![key] = config()!.launch![key];
-					}
+		if (config().launch != undefined) {
+			for (let key of Object.keys(config().launch!)) {
+				if (!Object.keys(newConfig.launch!).includes(key)) {
+					newConfig.launch![key] = config().launch![key];
 				}
 			}
 		}
