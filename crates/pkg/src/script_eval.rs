@@ -68,6 +68,13 @@ pub trait ScriptEvaluator {
 		pkg: PackageID,
 	) -> anyhow::Result<()>;
 
+	/// Add an inclusion
+	fn add_inclusion(
+		&mut self,
+		shared: &mut Self::Shared<'_>,
+		pkg: PackageID,
+	) -> anyhow::Result<()>;
+
 	/// Add a notice
 	fn add_notice(&mut self, shared: &mut Self::Shared<'_>, notice: String) -> anyhow::Result<()>;
 

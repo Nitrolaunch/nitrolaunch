@@ -152,6 +152,15 @@ impl ScriptEvaluatorTrait for ScriptEvaluator {
 		Ok(())
 	}
 
+	fn add_inclusion(
+		&mut self,
+		shared: &mut Self::Shared<'_>,
+		pkg: PackageID,
+	) -> anyhow::Result<()> {
+		shared.eval.inclusions.push(pkg);
+		Ok(())
+	}
+
 	fn add_notice(&mut self, shared: &mut Self::Shared<'_>, notice: String) -> anyhow::Result<()> {
 		if shared.eval.notices.len() > MAX_NOTICE_INSTRUCTIONS {
 			bail!("Max number of notice instructions was exceded (>{MAX_NOTICE_INSTRUCTIONS})");

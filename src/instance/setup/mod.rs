@@ -5,7 +5,7 @@ mod server;
 
 use std::fs;
 use std::ops::DerefMut;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::sync::Arc;
 
 use anyhow::{bail, Context};
@@ -367,54 +367,6 @@ impl Instance {
 			}
 		}
 
-		Ok(())
-	}
-}
-
-/// Directories that an instance uses
-#[derive(Debug)]
-pub struct InstanceDirs {
-	/// The base instance directory
-	pub inst_dir: PathBuf,
-	/// The game directory, such as .minecraft, relative to the instance directory.
-	/// Will be None if the instance is not configured to have one (it is a remote instance)
-	pub game_dir: Option<PathBuf>,
-}
-
-impl InstanceDirs {
-	/// Create a new InstanceDirs
-	pub fn new(
-		paths: &Paths,
-		instance_id: &str,
-		side: &Side,
-		game_dir_override: Option<&Path>,
-	) -> Self {
-		let inst_dir = paths.data.join("instances").join(instance_id);
-
-		let game_dir = if let Some(game_dir) = game_dir_override {
-			// 'none' can be used to specify a missing game dir
-			if game_dir.to_string_lossy() == "none" {
-				None
-			} else {
-				Some(game_dir.to_owned())
-			}
-		} else {
-			match side {
-				Side::Client => Some(inst_dir.join(".minecraft")),
-				Side::Server => Some(inst_dir.clone()),
-			}
-		};
-
-		Self { inst_dir, game_dir }
-	}
-
-	/// Make sure the directories exist
-	pub fn ensure_exist(&self) -> anyhow::Result<()> {
-		std::fs::create_dir_all(&self.inst_dir).context("Failed to create instance directory")?;
-		if let Some(game_dir) = &self.game_dir {
-			std::fs::create_dir_all(game_dir)
-				.context("Failed to create instance game directory")?;
-		}
 		Ok(())
 	}
 }

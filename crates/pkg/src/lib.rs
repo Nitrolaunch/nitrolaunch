@@ -179,6 +179,8 @@ pub struct PackageEvalRelationsResult {
 	pub compats: Vec<(PackageID, PackageID)>,
 	/// The evaluated extensions
 	pub extensions: Vec<PackageID>,
+	/// The evaluated inclusions
+	pub inclusions: Vec<PackageID>,
 }
 
 /// Checks if a package is open source

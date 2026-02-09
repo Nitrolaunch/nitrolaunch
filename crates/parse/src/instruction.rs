@@ -131,6 +131,8 @@ pub enum InstrKind {
 	Compat(Value, Value),
 	/// Extend a package
 	Extend(Value),
+	/// Include a package
+	Include(Value),
 	/// Finish evaluation early
 	Finish(),
 	/// Fail evaluation
@@ -200,6 +202,7 @@ impl Display for InstrKind {
 				Self::Bundle(..) => "bundle",
 				Self::Compat(..) => "compat",
 				Self::Extend(..) => "extend",
+				Self::Include(..) => "include",
 				Self::Finish() => "finish",
 				Self::Fail(..) => "fail",
 				Self::Notice(..) => "notice",
@@ -258,6 +261,7 @@ impl Instruction {
 			"bundle" => Ok(InstrKind::Bundle(Value::None)),
 			"compat" => Ok(InstrKind::Compat(Value::None, Value::None)),
 			"extend" => Ok(InstrKind::Extend(Value::None)),
+			"include" => Ok(InstrKind::Include(Value::None)),
 			"notice" => Ok(InstrKind::Notice(Value::None)),
 			"call" => Ok(InstrKind::Call(Later::Empty)),
 			"custom" => Ok(InstrKind::Custom(Later::Empty, Vec::new())),
@@ -300,7 +304,8 @@ impl Instruction {
 			| InstrKind::Recommend(_, val)
 			| InstrKind::Bundle(val)
 			| InstrKind::Extend(val)
-			| InstrKind::Notice(val) => val.is_some(),
+			| InstrKind::Notice(val)
+			| InstrKind::Include(val) => val.is_some(),
 			InstrKind::Categories(val) => !val.is_empty(),
 			InstrKind::SupportedVersions(val) => !val.is_empty(),
 			InstrKind::SupportedLoaders(val) => !val.is_empty(),
@@ -351,7 +356,8 @@ impl Instruction {
 				InstrKind::Refuse(val)
 				| InstrKind::Bundle(val)
 				| InstrKind::Notice(val)
-				| InstrKind::Extend(val) => {
+				| InstrKind::Extend(val)
+				| InstrKind::Include(val) => {
 					if let Value::None = val {
 						*val = parse_arg(tok, pos)?;
 					} else {

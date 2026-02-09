@@ -28,6 +28,15 @@ pub async fn resolve<'a, E: PackageEvaluator<'a>>(
 		overrides,
 	};
 
+	for suppressed in &resolver.overrides.suppress {
+		resolver.constraints.push(Constraint {
+			kind: ConstraintKind::Suppress(Arc::new(PkgRequest::parse(
+				suppressed,
+				PkgRequestSource::UserRequire,
+			))),
+		});
+	}
+
 	// Used to keep track of which packages have been preloaded and are good to further evaluate as tasks
 	let mut preloaded_packages = HashSet::with_capacity(packages.len());
 
@@ -379,6 +388,14 @@ async fn resolve_eval_package<'a, E: PackageEvaluator<'a>>(
 		});
 	}
 
+	for inclusion in result.inclusions.iter().sorted() {
+		let req = Arc::new(PkgRequest::parse(
+			inclusion,
+			PkgRequestSource::Dependency(package.clone()),
+		));
+		resolver.suppress_package(req);
+	}
+
 	Ok(())
 }
 
@@ -442,7 +459,11 @@ where
 		req: &ArcPkgReq,
 		kind: DependencyKind,
 	) -> Result<(), ResolutionError> {
-		if is_package_overridden(req, &self.overrides.suppress) {
+		if self
+			.constraints
+			.iter()
+			.any(|x| matches!(&x.kind, ConstraintKind::Suppress(req2) if req == req2))
+		{
 			return Ok(());
 		}
 
@@ -466,6 +487,14 @@ where
 		}
 
 		Ok(())
+	}
+
+	/// Suppresses a package
+	pub fn suppress_package(&mut self, req: ArcPkgReq) {
+		self.dependencies.remove(&req);
+		self.constraints.push(Constraint {
+			kind: ConstraintKind::Suppress(req),
+		});
 	}
 
 	fn is_refused_fn(constraint: &Constraint, req: ArcPkgReq) -> bool {
@@ -564,6 +593,7 @@ enum ConstraintKind {
 	Recommend(ArcPkgReq, bool),
 	Compat(ArcPkgReq, ArcPkgReq),
 	Extend(ArcPkgReq),
+	Suppress(ArcPkgReq),
 }
 
 #[derive(Clone)]

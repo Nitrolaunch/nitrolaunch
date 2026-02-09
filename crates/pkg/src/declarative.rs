@@ -64,6 +64,9 @@ pub struct DeclarativePackageRelations {
 	/// Package recommendations
 	#[serde(skip_serializing_if = "DeserListOrSingle::is_empty")]
 	pub recommendations: DeserListOrSingle<RecommendedPackage>,
+	/// Included packages
+	#[serde(skip_serializing_if = "DeserListOrSingle::is_empty")]
+	pub inclusions: DeserListOrSingle<String>,
 }
 
 impl DeclarativePackageRelations {
@@ -77,6 +80,7 @@ impl DeclarativePackageRelations {
 		self.bundled.merge(other.bundled);
 		self.compats.merge(other.compats);
 		self.recommendations.merge(other.recommendations);
+		self.inclusions.merge(other.inclusions);
 	}
 
 	/// Checks if the relations are empty
@@ -88,6 +92,7 @@ impl DeclarativePackageRelations {
 			&& self.bundled.is_empty()
 			&& self.compats.is_empty()
 			&& self.recommendations.is_empty()
+			&& self.inclusions.is_empty()
 	}
 }
 

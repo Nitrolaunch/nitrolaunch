@@ -217,6 +217,8 @@ pub struct EvalData {
 	pub compats: Vec<(PackageID, PackageID)>,
 	/// The output package extensions
 	pub extensions: Vec<PackageID>,
+	/// The output package inclusions
+	pub inclusions: Vec<PackageID>,
 	/// The output notices
 	pub notices: Vec<String>,
 	/// The output commands
@@ -250,6 +252,7 @@ impl EvalData {
 			bundled: Vec::new(),
 			compats: Vec::new(),
 			extensions: Vec::new(),
+			inclusions: Vec::new(),
 			notices: Vec::new(),
 			commands: Vec::new(),
 			selected_content_version: None,
@@ -523,6 +526,7 @@ impl<'a> PackageEvaluatorTrait<'a> for PackageEvaluator<'a> {
 			bundled: eval.bundled.clone(),
 			compats: eval.compats.clone(),
 			extensions: eval.extensions.clone(),
+			inclusions: eval.inclusions.clone(),
 		};
 
 		self.results.insert(pkg.clone(), eval);

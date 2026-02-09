@@ -145,6 +145,9 @@ fn eval_declarative_package_impl(
 	eval_data
 		.recommendations
 		.extend(relations.recommendations.iter().cloned());
+	eval_data
+		.inclusions
+		.extend(relations.inclusions.iter().cloned().map(PackageID::from));
 
 	eval_data.notices.extend(notices);
 
