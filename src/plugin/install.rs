@@ -2,23 +2,15 @@ use std::{
 	collections::HashMap,
 	env::consts::{ARCH, OS},
 	io::Cursor,
-	path::Path,
 };
 
 use anyhow::{bail, Context};
-use nitro_core::{io::json_from_file, net::download};
+use nitro_core::net::download;
 use nitro_net::github::{get_github_releases, GithubAsset};
-use nitro_plugin::{
-	hook::{wasm::loader::WASMLoader, WASM_FILE_NAME},
-	plugin::{HookHandler, PluginManifest, PluginMetadata},
-};
-use nitro_shared::{
-	output::{MessageContents, NitroOutput},
-	util::TARGET_BITS_STR,
-};
+use nitro_plugin::plugin::PluginMetadata;
+use nitro_shared::{output::NitroOutput, util::TARGET_BITS_STR};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
-use zip::ZipArchive;
 
 use crate::io::paths::Paths;
 
@@ -151,30 +143,9 @@ impl VerifiedPlugin {
 			.await
 			.context("Failed to download zipped plugin")?;
 
-		let mut zip = ZipArchive::new(Cursor::new(zip)).context("Failed to read zip archive")?;
-
-		PluginManager::remove_plugin(&self.id, paths)
-			.context("Failed to remove existing plugin")?;
-		let dir = paths.plugins.join(&self.id);
-		std::fs::create_dir_all(&dir).context("Failed to create plugin directory")?;
-
-		zip.extract(&dir)
-			.context("Failed to extract plugin files")?;
-
-		let manifest: PluginManifest =
-			json_from_file(dir.join("plugin.json")).context("Failed to read plugin manifest")?;
-
-		if let Err(e) = precompile_wasm(&self.id, &manifest, &dir, paths).await {
-			o.display(MessageContents::Error(format!(
-				"Failed to precompile WASM: {e}"
-			)));
-		}
-
-		if let Some(install_message) = manifest.install_message {
-			o.display(MessageContents::Warning(install_message));
-		}
-
-		let _ = PluginManager::enable_plugin(&self.id, paths);
+		PluginManager::install_plugin(&mut Cursor::new(zip), Some(self.id.clone()), paths, o)
+			.await
+			.context("Failed to install downloaded plugin")?;
 
 		Ok(())
 	}
@@ -193,26 +164,4 @@ pub fn extract_release_plugin_version(tag_name: &str) -> Option<&str> {
 	// Format is plugin-<id>-<version>
 	let mut tag_parts = tag_name.split('-');
 	tag_parts.nth(2)
-}
-
-async fn precompile_wasm(
-	plugin_id: &str,
-	manifest: &PluginManifest,
-	plugin_dir: &Path,
-	paths: &Paths,
-) -> anyhow::Result<()> {
-	let uses_wasm = manifest
-		.hooks
-		.values()
-		.any(|x| matches!(x, HookHandler::Wasm { .. }));
-
-	if uses_wasm {
-		let wasm_path = plugin_dir.join(WASM_FILE_NAME);
-		if wasm_path.exists() {
-			let mut loader = WASMLoader::new(&paths.data);
-			loader.load(plugin_id.to_string(), &wasm_path).await?;
-		}
-	}
-
-	Ok(())
 }

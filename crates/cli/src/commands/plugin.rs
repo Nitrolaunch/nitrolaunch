@@ -12,6 +12,7 @@ use nitrolaunch::shared::translate;
 use nitrolaunch::shared::versions::parse_single_versioned_string;
 use reqwest::Client;
 use std::ops::DerefMut;
+use std::path::PathBuf;
 
 use super::CmdData;
 use crate::commands::call_plugin_subcommand;
@@ -41,6 +42,9 @@ pub enum PluginSubcommand {
 		/// this global version per-plugin
 		#[arg(short, long)]
 		version: Option<String>,
+		/// Plugin ZIP files to install
+		#[arg(short, long)]
+		files: Vec<String>,
 	},
 	#[command(about = "Uninstall a plugin")]
 	Uninstall { plugin: String },
@@ -63,7 +67,11 @@ pub async fn run(command: PluginSubcommand, data: &mut CmdData<'_>) -> anyhow::R
 	match command {
 		PluginSubcommand::List { raw, loaded } => list(data, raw, loaded).await,
 		PluginSubcommand::Info { plugin } => info(data, plugin).await,
-		PluginSubcommand::Install { plugins, version } => install(data, plugins, version).await,
+		PluginSubcommand::Install {
+			plugins,
+			version,
+			files,
+		} => install(data, plugins, version, files).await,
 		PluginSubcommand::Uninstall { plugin } => uninstall(data, plugin).await,
 		PluginSubcommand::Browse => browse(data).await,
 		PluginSubcommand::Enable { plugin } => enable(data, plugin).await,
@@ -145,6 +153,7 @@ pub(crate) async fn install(
 	data: &mut CmdData<'_>,
 	plugins: Vec<String>,
 	version: Option<String>,
+	files: Vec<String>,
 ) -> anyhow::Result<()> {
 	if plugins.is_empty() {
 		bail!("No plugins were provided to install");
@@ -175,6 +184,42 @@ pub(crate) async fn install(
 		process.display(MessageContents::StartProcess(message));
 		plugin
 			.install(version, &data.paths, &client, process.deref_mut())
+			.await
+			.context("Failed to install plugin")?;
+
+		let message = process
+			.translate(TranslationKey::FinishInstallingPlugin)
+			.to_string();
+		process.display(MessageContents::Success(message));
+	}
+
+	if !files.is_empty() {
+		if !data.output.prompt_yes_no(
+			false,
+			MessageContents::Warning(
+				"Installing a plugin from a file is not verified by Nitrolaunch and could pose security risks. Please make sure you trust the plugin before installing.".into()
+			)
+		).await? {
+			bail!("Cancelled");
+		}
+	}
+
+	for file in files {
+		let path = PathBuf::from(file);
+		if !path.exists() {
+			bail!("Plugin file {path:?} does not exist");
+		}
+
+		let mut process = data.output.get_process();
+
+		let message = translate!(
+			process,
+			StartInstallingPlugin,
+			"plugin" = &path.to_string_lossy()
+		);
+		process.display(MessageContents::StartProcess(message));
+
+		PluginManager::install_from_file(&path, &data.paths, process.deref_mut())
 			.await
 			.context("Failed to install plugin")?;
 

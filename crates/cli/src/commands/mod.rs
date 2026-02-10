@@ -179,6 +179,7 @@ Would you like to do that now?"
 					"xmcl_transfer".into(),
 				],
 				None,
+				Vec::new(),
 			)
 			.await
 			{
