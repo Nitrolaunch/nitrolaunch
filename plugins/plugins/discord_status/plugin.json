@@ -1,4 +1,5 @@
 {
+	"id": "discord_status",
 	"name": "Discord Status",
 	"description": "Show your running instances to Discord",
 	"version": "v6",

@@ -1,4 +1,5 @@
 {
+	"id": "webtools",
 	"name": "WebTools",
 	"description": "Launch online Minecraft tools",
 	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/webtools",

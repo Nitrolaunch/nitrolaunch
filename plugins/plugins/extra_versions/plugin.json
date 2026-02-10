@@ -1,4 +1,5 @@
 {
+	"id": "extra_versions",
 	"name": "Extra Versions",
 	"description": "Add versions of Minecraft that are not normally available",
 	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/extra_versions",

@@ -1,4 +1,5 @@
 {
+	"id": "xmcl_transfer",
 	"name": "XMCL Transfer",
 	"description": "Instance transfer for XMCL",
 	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/xmcl_transfer",

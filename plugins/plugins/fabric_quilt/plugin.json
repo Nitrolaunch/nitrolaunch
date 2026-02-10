@@ -1,4 +1,5 @@
 {
+	"id": "fabric_quilt",
 	"name": "Fabric Quilt",
 	"description": "Install Fabric and Quilt instances",
 	"version": "v6",

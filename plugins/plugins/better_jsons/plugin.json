@@ -1,4 +1,5 @@
 {
+	"id": "better_jsons",
 	"name": "BetterJSONs",
 	"description": "Uses BetterJSONs versions for improved compatability",
 	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/better_jsons",

@@ -1,4 +1,5 @@
 {
+	"id": "auto_mcs",
 	"name": "auto-mcs",
 	"description": "Full integration with auto-mcs",
 	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/auto_mcs",

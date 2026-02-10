@@ -1,4 +1,5 @@
 {
+	"id": "addon_share",
 	"name": "Addon Share",
 	"description": "Share instance addons as a zip file",
 	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/addon_share",

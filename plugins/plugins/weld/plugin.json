@@ -1,4 +1,5 @@
 {
+	"id": "weld",
 	"name": "Weld",
 	"description": "Weld data and resource packs together for better compatability",
 	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/weld",

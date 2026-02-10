@@ -1,4 +1,5 @@
 {
+	"id": "args",
 	"name": "Args",
 	"description": "Use argument presets to increase game performance",
 	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/args",

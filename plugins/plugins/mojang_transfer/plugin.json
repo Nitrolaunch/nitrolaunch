@@ -1,4 +1,5 @@
 {
+	"id": "mojang_transfer",
 	"name": "Mojang Transfer",
 	"description": "Instance transfer for the Official Launcher",
 	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/mojang_transfer",

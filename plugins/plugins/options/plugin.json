@@ -1,4 +1,5 @@
 {
+	"id": "options",
 	"name": "Options",
 	"description": "Manage game options for client and server",
 	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/options",

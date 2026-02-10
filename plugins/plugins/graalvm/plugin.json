@@ -1,4 +1,5 @@
 {
+	"id": "graalvm",
 	"name": "GraalVM",
 	"description": "Oracle GraalVM Java installation",
 	"protocol_version": 3,

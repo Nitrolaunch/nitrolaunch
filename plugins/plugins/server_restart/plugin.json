@@ -1,4 +1,5 @@
 {
+	"id": "server_restart",
 	"name": "Server Restart",
 	"description": "Manage restart behavior for Spigot and Paper servers",
 	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/server_restart",

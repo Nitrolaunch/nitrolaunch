@@ -1,4 +1,5 @@
 {
+	"id": "completions",
 	"name": "Completions",
 	"description": "Shell completions for zsh and other shells",
 	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/completions",

@@ -291,6 +291,8 @@ impl Plugin {
 #[derive(Deserialize, Debug, Default)]
 #[serde(default)]
 pub struct PluginManifest {
+	/// ID for the plugin
+	pub id: Option<String>,
 	/// Metadata for the plugin
 	#[serde(flatten)]
 	pub meta: PluginMetadata,

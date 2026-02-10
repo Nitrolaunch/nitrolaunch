@@ -1,4 +1,5 @@
 {
+	"id": "docs",
 	"name": "Docs",
 	"description": "View Nitrolaunch's documentation straight from the program",
 	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/docs",

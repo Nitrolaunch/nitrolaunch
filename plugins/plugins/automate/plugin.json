@@ -1,4 +1,5 @@
 {
+	"id": "automate",
 	"name": "Automate",
 	"description": "Run commands at different parts of the instance lifecycle with no coding knowledge",
 	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/automate",

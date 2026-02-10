@@ -1,4 +1,5 @@
 {
+	"id": "stats",
 	"name": "Stats",
 	"description": "Track and view playtime stats",
 	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/stats",

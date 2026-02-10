@@ -1,4 +1,5 @@
 {
+	"id": "cleanup",
 	"name": "Cleanup",
 	"description": "Clean up old files",
 	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/cleanup",

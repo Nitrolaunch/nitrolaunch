@@ -1,4 +1,5 @@
 {
+	"id": "modrinth",
 	"name": "Modrinth",
 	"description": "Install Modrinth packs on templates and instances",
 	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/modrinth",

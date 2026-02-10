@@ -1,4 +1,5 @@
 {
+	"id": "gamepad",
 	"name": "Gamepad",
 	"description": "Adds better gamepad and arrow key support for the GUI",
 	"version": "v6",

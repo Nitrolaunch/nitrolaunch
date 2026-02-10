@@ -1,4 +1,5 @@
 {
+	"id": "packhost",
 	"name": "Resource Pack Host",
 	"description": "Host a resource pack locally for servers",
 	"version": "v6",

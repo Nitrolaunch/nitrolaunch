@@ -1,4 +1,5 @@
 {
+	"id": "curseforge_api",
 	"name": "CurseForge API",
 	"description": "Make simple CurseForge API calls to query mod versions",
 	"version": "v6",

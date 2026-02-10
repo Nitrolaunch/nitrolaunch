@@ -1,4 +1,5 @@
 {
+	"id": "modrinth_api",
 	"name": "Modrinth API",
 	"description": "Make simple Modrinth API calls to query project versions",
 	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/modrinth_api",

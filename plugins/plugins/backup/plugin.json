@@ -1,4 +1,5 @@
 {
+	"id": "backup",
 	"name": "Backup",
 	"description": "Create backups of instances",
 	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/backup",

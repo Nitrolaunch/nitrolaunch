@@ -1,4 +1,5 @@
 {
+	"id": "multiply",
 	"name": "Multiply",
 	"description": "Create many instances easily",
 	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/multiply",

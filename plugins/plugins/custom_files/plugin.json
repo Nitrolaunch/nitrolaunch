@@ -1,4 +1,5 @@
 {
+	"id": "custom_files",
 	"name": "Custom Files",
 	"description": "Share custom files across multiple instances",
 	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/custom_files",

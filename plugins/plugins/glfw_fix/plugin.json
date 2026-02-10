@@ -1,4 +1,5 @@
 {
+	"id": "glfw_fix",
 	"name": "GLFW Fix",
 	"description": "Fixes crashes from a bad GLFW version",
 	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/glfw_fix",

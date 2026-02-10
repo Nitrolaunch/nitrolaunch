@@ -1,4 +1,5 @@
 {
+	"id": "gen_pkg",
 	"name": "Gen Package",
 	"description": "Automatically generate packages from existing websites",
 	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/gen_pkg",

@@ -1,4 +1,5 @@
 {
+	"id": "beet",
 	"name": "Beet",
 	"description": "Tools for Beet developers",
 	"version": "v6",
