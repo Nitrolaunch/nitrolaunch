@@ -2,12 +2,16 @@ use std::{
 	collections::HashMap,
 	env::consts::{ARCH, OS},
 	io::Cursor,
+	path::Path,
 };
 
 use anyhow::{bail, Context};
 use nitro_core::{io::json_from_file, net::download};
 use nitro_net::github::{get_github_releases, GithubAsset};
-use nitro_plugin::plugin::{PluginManifest, PluginMetadata};
+use nitro_plugin::{
+	hook::{wasm::loader::WASMLoader, WASM_FILE_NAME},
+	plugin::{HookHandler, PluginManifest, PluginMetadata},
+};
 use nitro_shared::{
 	output::{MessageContents, NitroOutput},
 	util::TARGET_BITS_STR,
@@ -160,6 +164,12 @@ impl VerifiedPlugin {
 		let manifest: PluginManifest =
 			json_from_file(dir.join("plugin.json")).context("Failed to read plugin manifest")?;
 
+		if let Err(e) = precompile_wasm(&self.id, &manifest, &dir, paths).await {
+			o.display(MessageContents::Error(format!(
+				"Failed to precompile WASM: {e}"
+			)));
+		}
+
 		if let Some(install_message) = manifest.install_message {
 			o.display(MessageContents::Warning(install_message));
 		}
@@ -183,4 +193,26 @@ pub fn extract_release_plugin_version(tag_name: &str) -> Option<&str> {
 	// Format is plugin-<id>-<version>
 	let mut tag_parts = tag_name.split('-');
 	tag_parts.nth(2)
+}
+
+async fn precompile_wasm(
+	plugin_id: &str,
+	manifest: &PluginManifest,
+	plugin_dir: &Path,
+	paths: &Paths,
+) -> anyhow::Result<()> {
+	let uses_wasm = manifest
+		.hooks
+		.values()
+		.any(|x| matches!(x, HookHandler::Wasm { .. }));
+
+	if uses_wasm {
+		let wasm_path = plugin_dir.join(WASM_FILE_NAME);
+		if wasm_path.exists() {
+			let mut loader = WASMLoader::new(&paths.data);
+			loader.load(plugin_id.to_string(), &wasm_path).await?;
+		}
+	}
+
+	Ok(())
 }
