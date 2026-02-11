@@ -77,6 +77,8 @@ export interface PackageProperties {
 	features?: string[] | string;
 }
 
+export type PackageMetaAndProps = [PackageMeta, PackageProperties];
+
 export interface PkgRequest {
 	id: string;
 	repository?: string;

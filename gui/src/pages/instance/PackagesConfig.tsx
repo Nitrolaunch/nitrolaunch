@@ -12,7 +12,7 @@ import {
 } from "solid-js";
 import InlineSelect from "../../components/input/select/InlineSelect";
 import "./PackagesConfig.css";
-import { PackageMeta, PackageProperties, PkgRequest } from "../../types";
+import { PackageMeta, PackageMetaAndProps, PackageProperties, PkgRequest } from "../../types";
 import { invoke } from "@tauri-apps/api/core";
 import {
 	parsePkgRequest,
@@ -60,15 +60,6 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 	let [sideFilter, setSideFilter] = createSignal("all");
 	let [search, setSearch] = createSignal<string | undefined>(undefined);
 
-	let [packageMetas, setPackageMetas] = createSignal<
-		{ [key: string]: PackageMeta } | undefined
-	>();
-	let [packageProps, setPackageProps] = createSignal<
-		{ [key: string]: PackageProperties } | undefined
-	>();
-	let [errors, setErrors] = createSignal<{ [key: string]: string | undefined }>(
-		{},
-	);
 	let [selectedPackage, setSelectedPackage] = createSignal<
 		ConfiguredPackageProps | undefined
 	>();
@@ -101,8 +92,8 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 		},
 	);
 
-	let [allPackages, allPackagesMethods] = createResource(async () => {
-		let installedPackages: InstalledPackage[] = [];
+	let [installedPackages, __] = createResource(() => props.id, async () => {
+		let out: InstalledPackage[] = [];
 		if (!props.isTemplate && props.id != undefined) {
 			let map: { [key: string]: LockfilePackage } = await invoke(
 				"get_instance_packages",
@@ -110,7 +101,7 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 			);
 			for (let pkg of Object.keys(map)) {
 				let val = map[pkg];
-				installedPackages.push({
+				out.push({
 					pkg: pkg,
 					req: parsePkgRequest(pkg),
 					contentVersion: val.content_version,
@@ -124,8 +115,12 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 			}
 		}
 
+		return out;
+	});
+
+	let [allPackages, allPackagesMethods] = createResource(() => installedPackages(), async (installed) => {
 		// Get a list of all packages. We fetch and list all of the packages, and each one is then filtered by checking which groups it is in.
-		let allPackages = installedPackages.concat([]);
+		let allPackages = installed.concat([]);
 
 		function addPackages(
 			list: PackageConfig[],
@@ -185,14 +180,18 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 			return x;
 		});
 
-		// Get metadata and properties
-		let metas: any = {};
-		let properties: any = {};
-		let errors: any = {};
+		allPackages.sort((a, b) => stringCompare(a.req.id, b.req.id));
+
+		return allPackages;
+	});
+
+	let [packageData, ___] = createResource(() => allPackages(), async (allPackages) => {
+		let out: { [pkg: string]: string | PackageMetaAndProps } = {};
 
 		try {
+			let packages = allPackages!.map((pkg) => pkg.pkg).filter((pkg) => out[pkg] == undefined);
 			await invoke("preload_packages", {
-				packages: allPackages.map((pkg) => pkg.pkg),
+				packages: packages,
 				repo: undefined,
 			});
 		} catch (e) {
@@ -200,18 +199,23 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 		}
 
 		let promises = [];
-		for (let pkg of allPackages) {
+		let errorCount = 0;
+		for (let pkg of allPackages!) {
+			if (out[pkg.pkg] != undefined) {
+				continue;
+			}
+
 			promises.push(
 				(async () => {
 					try {
 						return [
 							pkg.pkg,
-							await invoke("get_package_meta_and_props", { package: pkg.pkg }),
+							await invoke("get_package_meta_and_props", { package: pkg.pkg }) as PackageMetaAndProps,
 						];
 					} catch (e) {
 						console.error("Failed to load package: " + e);
-						errors[pkg.pkg] = e;
-						return undefined;
+						errorCount++;
+						return [pkg.pkg, "" + e];
 					}
 				})(),
 			);
@@ -219,30 +223,16 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 
 		let results = await Promise.all(promises);
 		for (let result of results) {
-			if (result == undefined) {
-				continue;
-			}
-
-			let [id, [meta, props]] = result as [
-				string,
-				[PackageMeta, PackageProperties],
-			];
-			metas[id] = meta;
-			properties[id] = props;
+			let [id, data] = result;
+			out[id as string] = data;
 		}
 
-		if (Object.keys(errors).length > 0) {
-			console.log("One or more packages failed to load");
+		if (errorCount > 0) {
+			console.log(`${errorCount} packages failed to load`);
 		}
 
-		setPackageMetas(metas);
-		setPackageProps(properties);
-		setErrors(errors);
-
-		allPackages.sort((a, b) => stringCompare(a.req.id, b.req.id));
-
-		return allPackages;
-	});
+		return out;
+	}, { initialValue: {} });
 
 	createEffect(() => {
 		props.globalPackages;
@@ -488,22 +478,18 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 								return true;
 							};
 
-							let meta =
-								packageMetas() == undefined
-									? undefined
-									: packageMetas()![pkg.pkg];
-							let properties =
-								packageProps() == undefined
-									? undefined
-									: packageProps()![pkg.pkg];
+							let data = () => packageData()[pkg.pkg];
+							let meta = createMemo(() => data() == undefined || typeof data() == "string" ? undefined : data()[0] as PackageMeta);
+							let properties = createMemo(() => data() == undefined || typeof data() == "string" ? undefined : data()[1] as PackageProperties);
+							let error = createMemo(() => data() == undefined || typeof data() != "string" ? undefined : data() as string);
 
 							return (
 								<Show when={isVisible()}>
 									<ConfiguredPackage
 										pkg={pkg}
-										meta={meta}
-										props={properties}
-										error={errors()[pkg.pkg]}
+										meta={meta()}
+										props={properties()}
+										error={error()}
 										suppressed={() =>
 											props.overrides.suppress != undefined &&
 											props.overrides.suppress.includes(pkg.pkg)
@@ -638,12 +624,12 @@ function ConfiguredPackage(props: ConfiguredPackageProps) {
 	let navigate = useNavigate();
 
 	let [isHovered, setIsHovered] = createSignal(false);
-	let name =
+	let name = () =>
 		props.meta == undefined || props.meta.name == undefined
 			? props.pkg.req.id
 			: props.meta.name;
 
-	let icon =
+	let icon = () =>
 		props.meta == undefined || props.meta.icon == undefined
 			? "/icons/default_instance.png"
 			: props.meta.icon;
@@ -666,13 +652,13 @@ function ConfiguredPackage(props: ConfiguredPackageProps) {
 						<LoadingSpinner size="2rem" />
 					</Match>
 					<Match when={props.meta != undefined}>
-						<img src={icon} class="configured-package-icon" />
+						<img src={icon()} class="configured-package-icon" />
 					</Match>
 				</Switch>
 			</div>
 			<div class="cont col configured-package-details">
 				<div class="cont configured-package-details-top">
-					<div class="configured-package-name">{name}</div>
+					<div class="configured-package-name">{name()}</div>
 					<PackageVersion
 						configuredVersion={props.pkg.req.version}
 						installedVersion={props.pkg.contentVersion}
@@ -765,8 +751,8 @@ export interface ConfiguredPackageProps {
 export type PackageConfig =
 	| string
 	| {
-			id: string;
-	  };
+		id: string;
+	};
 
 // Gets the PkgRequest from a PackageConfig
 export function getPackageConfigRequest(config: PackageConfig) {
@@ -816,6 +802,6 @@ export interface InstalledPackage {
 	isDerived: boolean;
 }
 
-interface LockfileAddon {}
+interface LockfileAddon { }
 
 export type ConfiguredPackageCategory = "global" | "client" | "server";
