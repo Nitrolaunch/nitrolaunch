@@ -75,7 +75,7 @@ impl PackageRepository {
 
 	/// Update cached packages
 	pub async fn sync(
-		&mut self,
+		&self,
 		paths: &Paths,
 		plugins: &PluginManager,
 		client: &Client,
@@ -90,7 +90,7 @@ impl PackageRepository {
 
 	/// Ask if the index has a package and return the url and version for that package if it exists
 	pub async fn query(
-		&mut self,
+		&self,
 		id: &str,
 		paths: &Paths,
 		client: &Client,
@@ -120,7 +120,7 @@ impl PackageRepository {
 
 	/// Preloads multiple packages from this repo
 	pub async fn preload(
-		&mut self,
+		&self,
 		packages: Vec<ArcPkgReq>,
 		paths: &Paths,
 		plugins: &PluginManager,
@@ -138,7 +138,7 @@ impl PackageRepository {
 
 	/// Get all packages from this repo. Returns an empty array for custom repos.
 	pub async fn get_all_packages(
-		&mut self,
+		&self,
 		paths: &Paths,
 		client: &Client,
 		o: &mut impl NitroOutput,
@@ -152,7 +152,7 @@ impl PackageRepository {
 
 	/// Get the number of packages in the repo
 	pub async fn get_package_count(
-		&mut self,
+		&self,
 		paths: &Paths,
 		client: &Client,
 		o: &mut impl NitroOutput,
@@ -166,7 +166,7 @@ impl PackageRepository {
 
 	/// Get the repo's metadata
 	pub async fn get_metadata(
-		&'_ mut self,
+		&'_ self,
 		paths: &Paths,
 		client: &Client,
 		o: &mut impl NitroOutput,
@@ -186,7 +186,7 @@ impl PackageRepository {
 
 /// Query a list of repos
 pub async fn query_all(
-	repos: &mut [PackageRepository],
+	repos: &[PackageRepository],
 	pkg: &ArcPkgReq,
 	include_custom_repos: bool,
 	paths: &Paths,
@@ -226,14 +226,14 @@ pub async fn query_all(
 
 /// Get all packages from a list of repositories with the normal priority order
 pub async fn get_all_packages(
-	repos: &mut [PackageRepository],
+	repos: &[PackageRepository],
 	paths: &Paths,
 	client: &Client,
 	o: &mut impl NitroOutput,
 ) -> anyhow::Result<HashMap<String, RepoPkgEntry>> {
 	let mut out = HashMap::new();
 	// Iterate in reverse to make sure that repos at the beginning take precendence
-	for repo in repos.iter_mut().rev() {
+	for repo in repos.iter().rev() {
 		let packages = repo
 			.get_all_packages(paths, client, o)
 			.await

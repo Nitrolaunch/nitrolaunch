@@ -1,15 +1,10 @@
-use std::{
-	fmt::Display,
-	fs::File,
-	io::{BufReader, Cursor},
-	path::PathBuf,
-};
+use std::{fmt::Display, path::PathBuf, sync::OnceLock};
 
 use anyhow::{bail, Context};
+use nitro_core::io::json_from_file;
 use nitro_net::download;
 use nitro_pkg::repo::{get_api_url, get_index_url, RepoIndex, RepoMetadata, RepoPkgEntry};
 use nitro_shared::{
-	later::Later,
 	output::{MessageContents, NitroOutput},
 	translate,
 };
@@ -25,7 +20,7 @@ pub struct BasicPackageRepository {
 	/// The identifier for the repository
 	pub id: String,
 	location: RepoLocation,
-	index: Later<RepoIndex>,
+	index: OnceLock<RepoIndex>,
 }
 
 /// Location for a BasicPackageRepository
@@ -52,7 +47,7 @@ impl BasicPackageRepository {
 		Self {
 			id: id.to_owned(),
 			location,
-			index: Later::new(),
+			index: OnceLock::new(),
 		}
 	}
 
@@ -66,21 +61,14 @@ impl BasicPackageRepository {
 		&self.location
 	}
 
-	/// Set the index to serialized json text
-	fn set_index(&mut self, index: &mut impl std::io::Read) -> anyhow::Result<()> {
-		let parsed = simd_json::from_reader(index)?;
-		self.index.fill(parsed);
-		Ok(())
-	}
-
-	/// Update the currently cached index file
-	pub async fn sync(&mut self, paths: &Paths, client: &Client) -> anyhow::Result<()> {
-		match &self.location {
+	/// Update the currently cached index file and return the contents
+	pub async fn sync(&self, paths: &Paths, client: &Client) -> anyhow::Result<()> {
+		let bytes = match &self.location {
 			RepoLocation::Local(path) => {
 				let bytes = tokio::fs::read(path).await?;
 				tokio::fs::write(self.get_path(paths), &bytes).await?;
-				let mut cursor = Cursor::new(&bytes);
-				self.set_index(&mut cursor).context("Failed to set index")?;
+
+				bytes
 			}
 			RepoLocation::Remote(url) => {
 				let bytes = download::bytes(get_index_url(url), client)
@@ -89,28 +77,31 @@ impl BasicPackageRepository {
 				tokio::fs::write(self.get_path(paths), &bytes)
 					.await
 					.context("Failed to write index to cached file")?;
-				let mut cursor = Cursor::new(&bytes);
-				self.set_index(&mut cursor).context("Failed to set index")?;
+
+				bytes.to_vec()
 			}
-		}
+		};
+
+		let _ = self.index.set(serde_json::from_slice(&bytes)?);
 
 		Ok(())
 	}
 
-	/// Make sure that the repository index is downloaded
-	pub async fn ensure_index(
-		&mut self,
+	/// Make sure that the repository index is downloaded and returns it
+	pub async fn ensure_index<'this>(
+		&self,
 		paths: &Paths,
 		client: &Client,
 		o: &mut impl NitroOutput,
 	) -> anyhow::Result<()> {
-		if self.index.is_empty() {
+		if self.index.get().is_none() {
 			let path = self.get_path(paths);
 			if path.exists() {
-				let file = File::open(&path).context("Failed to open cached index")?;
-				let mut file = BufReader::new(file);
-				match self.set_index(&mut file) {
-					Ok(..) => {}
+				let result = json_from_file(&path);
+				match result {
+					Ok(index) => {
+						let _ = self.index.set(index);
+					}
 					Err(..) => {
 						self.sync(paths, client)
 							.await
@@ -131,7 +122,7 @@ impl BasicPackageRepository {
 
 	/// Checks the index. It must be already loaded.
 	fn check_index(&self, o: &mut impl NitroOutput) {
-		let repo_version = &self.index.get().metadata.nitro_version;
+		let repo_version = &self.index.get().unwrap().metadata.nitro_version;
 		if let Some(repo_version) = repo_version {
 			let repo_version = version_compare::Version::from(repo_version);
 			let program_version = version_compare::Version::from(crate::VERSION);
@@ -149,14 +140,14 @@ impl BasicPackageRepository {
 
 	/// Ask if the index has a package and return the url and version for that package if it exists
 	pub async fn query(
-		&mut self,
+		&self,
 		id: &str,
 		paths: &Paths,
 		client: &Client,
 		o: &mut impl NitroOutput,
 	) -> anyhow::Result<Option<RepoQueryResult>> {
 		self.ensure_index(paths, client, o).await?;
-		let index = self.index.get();
+		let index = self.index.get().unwrap();
 		if let Some(entry) = index.packages.get(id) {
 			let location = get_package_location(entry, &self.location, &self.id)
 				.context("Failed to get location of package")?;
@@ -171,14 +162,14 @@ impl BasicPackageRepository {
 
 	/// Get all packages from this repo
 	pub async fn get_all_packages(
-		&mut self,
+		&self,
 		paths: &Paths,
 		client: &Client,
 		o: &mut impl NitroOutput,
 	) -> anyhow::Result<Vec<(String, RepoPkgEntry)>> {
 		self.ensure_index(paths, client, o).await?;
 
-		let index = self.index.get();
+		let index = self.index.get().unwrap();
 		Ok(index
 			.packages
 			.iter()
@@ -188,26 +179,26 @@ impl BasicPackageRepository {
 
 	/// Get the number of packages in the repo
 	pub async fn get_package_count(
-		&mut self,
+		&self,
 		paths: &Paths,
 		client: &Client,
 		o: &mut impl NitroOutput,
 	) -> anyhow::Result<usize> {
 		self.ensure_index(paths, client, o).await?;
 
-		Ok(self.index.get().packages.len())
+		Ok(self.index.get().unwrap().packages.len())
 	}
 
 	/// Get the repo's metadata
 	pub async fn get_metadata(
-		&mut self,
+		&self,
 		paths: &Paths,
 		client: &Client,
 		o: &mut impl NitroOutput,
 	) -> anyhow::Result<&RepoMetadata> {
 		self.ensure_index(paths, client, o).await?;
 
-		Ok(&self.index.get().metadata)
+		Ok(&self.index.get().unwrap().metadata)
 	}
 }
 

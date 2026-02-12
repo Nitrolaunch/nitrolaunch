@@ -206,6 +206,45 @@ pub async fn get_package_meta_and_props(
 	Ok((meta, props))
 }
 
+// #[tauri::command]
+// pub async fn get_multiple_package_meta_and_props(
+// 	state: tauri::State<'_, State>,
+// 	app_handle: tauri::AppHandle,
+// 	packages: Vec<&str>,
+// ) -> Result<HashMap<String, (PackageMetadata, PackageProperties)>, String> {
+// 	let mut config = fmt_err(
+// 		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
+// 			.await
+// 			.context("Failed to load config"),
+// 	)?;
+
+// 	let mut out = HashMap::new();
+
+// 	let request = Arc::new(PkgRequest::parse(package, PkgRequestSource::UserRequire));
+
+// 	let mut output = LauncherOutput::new(state.get_output(app_handle));
+
+// 	let meta = fmt_err(
+// 		config
+// 			.packages
+// 			.get_metadata(&request, &state.paths, &state.client, &mut output)
+// 			.await
+// 			.context("Failed to get metadata"),
+// 	)?
+// 	.clone();
+
+// 	let props = fmt_err(
+// 		config
+// 			.packages
+// 			.get_properties(&request, &state.paths, &state.client, &mut output)
+// 			.await
+// 			.context("Failed to get properties"),
+// 	)?
+// 	.clone();
+
+// 	Ok(out)
+// }
+
 #[tauri::command]
 pub async fn get_declarative_package_contents(
 	state: tauri::State<'_, State>,
