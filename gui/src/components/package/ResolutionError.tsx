@@ -11,10 +11,12 @@ export default function ResolutionError(props: ResolutionErrorProps) {
 		<div class="cont col package-resolution-error">
 			<Switch>
 				<Match when={props.error.type == "package_context"}>
-					<div class="cont resolution-error-header">
+					<div class="cont resolution-error-context">
 						In <PackageChip req={data()[0]} />
 					</div>
-					<ResolutionError error={data()[1]} />
+					<div class="cont" style="padding:0.5rem;box-sizing:border-box">
+						<ResolutionError error={data()[1]} />
+					</div>
 				</Match>
 				<Match when={props.error.type == "failed_to_preload"}>
 					<div class="cont resolution-error-header">
@@ -37,40 +39,33 @@ export default function ResolutionError(props: ResolutionErrorProps) {
 				<Match when={props.error.type == "extension_not_fulfilled"}>
 					<div class="cont">
 						<Switch>
-							<Match when={data()[0] == undefined}>
-								A package
-							</Match>
+							<Match when={data()[0] == undefined}>A package</Match>
 							<Match when={data()[0] != undefined}>
 								<PackageChip req={data()[0]} />
 							</Match>
 						</Switch>
 						extends the functionality of
-						<PackageChip req={data()[1]} />
-						, which is not installed
+						<PackageChip req={data()[1]} />, which is not installed
 					</div>
 				</Match>
 				<Match when={props.error.type == "explicit_require_not_fulfilled"}>
 					<div class="cont">
 						<PackageChip req={data()[0]} />
 						has been explicitly required by
-						<PackageChip req={data()[1]} />
-						. This means it must be required by the user in their config.`
+						<PackageChip req={data()[1]} />. This means it must be required by
+						the user in their config.`
 					</div>
 				</Match>
 				<Match when={props.error.type == "incompatible_package"}>
 					<div class="cont">
 						<PackageChip req={data()[0]} />
 						is incompatible with the packages
-						<For each={data()[1]}>
-							{(pkg) =>
-								<PackageChip req={pkg} />
-							}
-						</For>
+						<For each={data()[1]}>{(pkg) => <PackageChip req={pkg} />}</For>
 					</div>
 				</Match>
 				<Match when={props.error.type == "failed_to_evaluate"}>
 					<div class="cont resolution-error-header">
-						Failed to evaluate package package
+						Failed to evaluate package
 						<PackageChip req={data()[0]} />
 					</div>
 					<pre class="cont full-error">{data()[1]}</pre>
@@ -91,38 +86,38 @@ export interface ResolutionErrorProps {
 // Data for the actual error
 export type ResolutionErrorData =
 	| {
-		type: "package_context";
-		data: [PkgRequest, ResolutionErrorData];
-	}
+			type: "package_context";
+			data: [PkgRequest, ResolutionErrorData];
+	  }
 	| {
-		type: "failed_to_preload";
-		data: string;
-	}
+			type: "failed_to_preload";
+			data: string;
+	  }
 	| {
-		type: "failed_to_get_properties";
-		data: [PkgRequest, string];
-	}
+			type: "failed_to_get_properties";
+			data: [PkgRequest, string];
+	  }
 	| {
-		type: "no_valid_versions_found";
-		data: [PkgRequest, string[]];
-	}
+			type: "no_valid_versions_found";
+			data: [PkgRequest, string[]];
+	  }
 	| {
-		type: "extension_not_fulfilled";
-		data: [PkgRequest | undefined, PkgRequest];
-	}
+			type: "extension_not_fulfilled";
+			data: [PkgRequest | undefined, PkgRequest];
+	  }
 	| {
-		type: "explicit_require_not_fulfilled";
-		data: [PkgRequest, PkgRequest];
-	}
+			type: "explicit_require_not_fulfilled";
+			data: [PkgRequest, PkgRequest];
+	  }
 	| {
-		type: "incompatible_package";
-		data: [PkgRequest, string[]];
-	}
+			type: "incompatible_package";
+			data: [PkgRequest, string[]];
+	  }
 	| {
-		type: "failed_to_evaluate";
-		data: [PkgRequest, string];
-	}
+			type: "failed_to_evaluate";
+			data: [PkgRequest, string];
+	  }
 	| {
-		type: "misc";
-		data: string;
-	};
+			type: "misc";
+			data: string;
+	  };

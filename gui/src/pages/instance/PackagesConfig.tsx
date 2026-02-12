@@ -12,7 +12,12 @@ import {
 } from "solid-js";
 import InlineSelect from "../../components/input/select/InlineSelect";
 import "./PackagesConfig.css";
-import { PackageMeta, PackageMetaAndProps, PackageProperties, PkgRequest } from "../../types";
+import {
+	PackageMeta,
+	PackageMetaAndProps,
+	PackageProperties,
+	PkgRequest,
+} from "../../types";
 import { invoke } from "@tauri-apps/api/core";
 import {
 	parsePkgRequest,
@@ -92,147 +97,161 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 		},
 	);
 
-	let [installedPackages, __] = createResource(() => props.id, async () => {
-		let out: InstalledPackage[] = [];
-		if (!props.isTemplate && props.id != undefined) {
-			let map: { [key: string]: LockfilePackage } = await invoke(
-				"get_instance_packages",
-				{ instance: props.id },
-			);
-			for (let pkg of Object.keys(map)) {
-				let val = map[pkg];
-				out.push({
-					pkg: pkg,
-					req: parsePkgRequest(pkg),
-					contentVersion: val.content_version,
-					isInstalled: true,
-					// We can set these to defaults since they will be replaced
-					isConfigured: false,
-					isClient: false,
-					isServer: false,
-					isDerived: false,
-				});
-			}
-		}
-
-		return out;
-	});
-
-	let [allPackages, allPackagesMethods] = createResource(() => installedPackages(), async (installed) => {
-		// Get a list of all packages. We fetch and list all of the packages, and each one is then filtered by checking which groups it is in.
-		let allPackages = installed.concat([]);
-
-		function addPackages(
-			list: PackageConfig[],
-			modifier: (pkg: InstalledPackage) => InstalledPackage,
-		) {
-			for (let config of list) {
-				let req = getPackageConfigRequest(config);
-				let existingPackage = allPackages.find(
-					(x) => x.isInstalled && pkgRequestsEqual(x.req, req),
+	let [installedPackages, __] = createResource(
+		() => props.id,
+		async () => {
+			let out: InstalledPackage[] = [];
+			if (!props.isTemplate && props.id != undefined) {
+				let map: { [key: string]: LockfilePackage } = await invoke(
+					"get_instance_packages",
+					{ instance: props.id },
 				);
-				allPackages = allPackages.filter(
-					(x) => !packageConfigsEqual(x.req, req),
-				);
-
-				let pkg: InstalledPackage = {
-					pkg: pkgRequestToString(req),
-					req: req,
-					contentVersion:
-						existingPackage == undefined
-							? undefined
-							: existingPackage.contentVersion,
-					config: config,
-					isInstalled: existingPackage != undefined,
-					isConfigured: true,
-					isClient: false,
-					isServer: false,
-					isDerived: false,
-				};
-
-				pkg = modifier(pkg);
-
-				allPackages.push(pkg);
+				for (let pkg of Object.keys(map)) {
+					let val = map[pkg];
+					out.push({
+						pkg: pkg,
+						req: parsePkgRequest(pkg),
+						contentVersion: val.content_version,
+						isInstalled: true,
+						// We can set these to defaults since they will be replaced
+						isConfigured: false,
+						isClient: false,
+						isServer: false,
+						isDerived: false,
+					});
+				}
 			}
-		}
 
-		addPackages(props.derivedGlobalPackages, (x) => {
-			x.isDerived = true;
-			return x;
-		});
-		addPackages(props.derivedClientPackages, (x) => {
-			x.isDerived = true;
-			x.isClient = true;
-			return x;
-		});
-		addPackages(props.derivedServerPackages, (x) => {
-			x.isDerived = true;
-			x.isServer = true;
-			return x;
-		});
-		addPackages(props.globalPackages, (x) => x);
-		addPackages(props.clientPackages, (x) => {
-			x.isClient = true;
-			return x;
-		});
-		addPackages(props.serverPackages, (x) => {
-			x.isServer = true;
-			return x;
-		});
+			return out;
+		},
+	);
 
-		allPackages.sort((a, b) => stringCompare(a.req.id, b.req.id));
+	let [allPackages, allPackagesMethods] = createResource(
+		() => installedPackages(),
+		async (installed) => {
+			// Get a list of all packages. We fetch and list all of the packages, and each one is then filtered by checking which groups it is in.
+			let allPackages = installed.concat([]);
 
-		return allPackages;
-	});
+			function addPackages(
+				list: PackageConfig[],
+				modifier: (pkg: InstalledPackage) => InstalledPackage,
+			) {
+				for (let config of list) {
+					let req = getPackageConfigRequest(config);
+					let existingPackage = allPackages.find(
+						(x) => x.isInstalled && pkgRequestsEqual(x.req, req),
+					);
+					allPackages = allPackages.filter(
+						(x) => !packageConfigsEqual(x.req, req),
+					);
 
-	let [packageData, ___] = createResource(() => allPackages(), async (allPackages) => {
-		let out: { [pkg: string]: string | PackageMetaAndProps } = {};
+					let pkg: InstalledPackage = {
+						pkg: pkgRequestToString(req),
+						req: req,
+						contentVersion:
+							existingPackage == undefined
+								? undefined
+								: existingPackage.contentVersion,
+						config: config,
+						isInstalled: existingPackage != undefined,
+						isConfigured: true,
+						isClient: false,
+						isServer: false,
+						isDerived: false,
+					};
 
-		try {
-			let packages = allPackages!.map((pkg) => pkg.pkg).filter((pkg) => out[pkg] == undefined);
-			await invoke("preload_packages", {
-				packages: packages,
-				repo: undefined,
+					pkg = modifier(pkg);
+
+					allPackages.push(pkg);
+				}
+			}
+
+			addPackages(props.derivedGlobalPackages, (x) => {
+				x.isDerived = true;
+				return x;
 			});
-		} catch (e) {
-			console.error("Failed to preload: " + e);
-		}
+			addPackages(props.derivedClientPackages, (x) => {
+				x.isDerived = true;
+				x.isClient = true;
+				return x;
+			});
+			addPackages(props.derivedServerPackages, (x) => {
+				x.isDerived = true;
+				x.isServer = true;
+				return x;
+			});
+			addPackages(props.globalPackages, (x) => x);
+			addPackages(props.clientPackages, (x) => {
+				x.isClient = true;
+				return x;
+			});
+			addPackages(props.serverPackages, (x) => {
+				x.isServer = true;
+				return x;
+			});
 
-		let promises = [];
-		let errorCount = 0;
-		for (let pkg of allPackages!) {
-			if (out[pkg.pkg] != undefined) {
-				continue;
+			allPackages.sort((a, b) => stringCompare(a.req.id, b.req.id));
+
+			return allPackages;
+		},
+	);
+
+	let [packageData, ___] = createResource(
+		() => allPackages(),
+		async (allPackages) => {
+			let out: { [pkg: string]: string | PackageMetaAndProps } = {};
+
+			try {
+				let packages = allPackages!
+					.map((pkg) => pkg.pkg)
+					.filter((pkg) => out[pkg] == undefined);
+				await invoke("preload_packages", {
+					packages: packages,
+					repo: undefined,
+				});
+			} catch (e) {
+				console.error("Failed to preload: " + e);
 			}
 
-			promises.push(
-				(async () => {
-					try {
-						return [
-							pkg.pkg,
-							await invoke("get_package_meta_and_props", { package: pkg.pkg }) as PackageMetaAndProps,
-						];
-					} catch (e) {
-						console.error("Failed to load package: " + e);
-						errorCount++;
-						return [pkg.pkg, "" + e];
-					}
-				})(),
-			);
-		}
+			let promises = [];
+			let errorCount = 0;
+			for (let pkg of allPackages!) {
+				if (out[pkg.pkg] != undefined) {
+					continue;
+				}
 
-		let results = await Promise.all(promises);
-		for (let result of results) {
-			let [id, data] = result;
-			out[id as string] = data;
-		}
+				promises.push(
+					(async () => {
+						try {
+							return [
+								pkg.pkg,
+								(await invoke("get_package_meta_and_props", {
+									package: pkg.pkg,
+								})) as PackageMetaAndProps,
+							];
+						} catch (e) {
+							console.error("Failed to load package: " + e);
+							errorCount++;
+							return [pkg.pkg, "" + e];
+						}
+					})(),
+				);
+			}
 
-		if (errorCount > 0) {
-			console.log(`${errorCount} packages failed to load`);
-		}
+			let results = await Promise.all(promises);
+			for (let result of results) {
+				let [id, data] = result;
+				out[id as string] = data;
+			}
 
-		return out;
-	}, { initialValue: {} });
+			if (errorCount > 0) {
+				console.log(`${errorCount} packages failed to load`);
+			}
+
+			return out;
+		},
+		{ initialValue: {} },
+	);
 
 	createEffect(() => {
 		props.globalPackages;
@@ -268,7 +287,7 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 	return (
 		<div class="cont col" id="packages-config">
 			<Show when={resolutionError() != undefined}>
-				<div class="cont" id="packages-config-resolution-error">
+				<div class="cont col start" id="packages-config-resolution-error">
 					<ResolutionError error={resolutionError()!} />
 				</div>
 			</Show>
@@ -479,9 +498,21 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 							};
 
 							let data = () => packageData()[pkg.pkg];
-							let meta = createMemo(() => data() == undefined || typeof data() == "string" ? undefined : data()[0] as PackageMeta);
-							let properties = createMemo(() => data() == undefined || typeof data() == "string" ? undefined : data()[1] as PackageProperties);
-							let error = createMemo(() => data() == undefined || typeof data() != "string" ? undefined : data() as string);
+							let meta = createMemo(() =>
+								data() == undefined || typeof data() == "string"
+									? undefined
+									: (data()[0] as PackageMeta),
+							);
+							let properties = createMemo(() =>
+								data() == undefined || typeof data() == "string"
+									? undefined
+									: (data()[1] as PackageProperties),
+							);
+							let error = createMemo(() =>
+								data() == undefined || typeof data() != "string"
+									? undefined
+									: (data() as string),
+							);
 
 							return (
 								<Show when={isVisible()}>
@@ -751,8 +782,8 @@ export interface ConfiguredPackageProps {
 export type PackageConfig =
 	| string
 	| {
-		id: string;
-	};
+			id: string;
+	  };
 
 // Gets the PkgRequest from a PackageConfig
 export function getPackageConfigRequest(config: PackageConfig) {
@@ -802,6 +833,6 @@ export interface InstalledPackage {
 	isDerived: boolean;
 }
 
-interface LockfileAddon { }
+interface LockfileAddon {}
 
 export type ConfiguredPackageCategory = "global" | "client" | "server";
