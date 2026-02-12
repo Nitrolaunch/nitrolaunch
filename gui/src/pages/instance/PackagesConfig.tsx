@@ -657,7 +657,9 @@ function ConfiguredPackage(props: ConfiguredPackageProps) {
 	let [isHovered, setIsHovered] = createSignal(false);
 	let name = () =>
 		props.meta == undefined || props.meta.name == undefined
-			? props.pkg.req.id
+			? props.pkg.req.slug == undefined
+				? props.pkg.req.id
+				: props.pkg.req.slug
 			: props.meta.name;
 
 	let icon = () =>
