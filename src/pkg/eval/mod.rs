@@ -729,9 +729,13 @@ pub async fn resolve(
 
 	let mut packages = Vec::new();
 	for package in result.packages {
-		let eval = results
-			.remove(&package.req)
-			.with_context(|| format!("Evaluation for package {} not in map", package.req))?;
+		let Some(eval) = results.remove(&package.req) else {
+			o.debug(MessageContents::Warning(format!(
+				"Evaluation for package {} not in map. Hopefully it is optional.",
+				package.req
+			)));
+			continue;
+		};
 		packages.push(ResolvedPackage {
 			req: package.req,
 			eval,
