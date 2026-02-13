@@ -288,7 +288,7 @@ async fn resolve_eval_package<'a, E: PackageEvaluator<'a>>(
 	// Get the correct EvalInput
 	let config = resolver.package_configs.get(&package);
 	let input = override_eval_input::<E>(
-		properties,
+		&properties,
 		&resolver.constant_input,
 		required_content_versions,
 		preferred_content_versions,

@@ -201,10 +201,11 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 		async (allPackages) => {
 			let out: { [pkg: string]: string | PackageMetaAndProps } = {};
 
+			let packages = allPackages!
+				.map((pkg) => pkg.pkg)
+				.filter((pkg) => out[pkg] == undefined);
+
 			try {
-				let packages = allPackages!
-					.map((pkg) => pkg.pkg)
-					.filter((pkg) => out[pkg] == undefined);
 				await invoke("preload_packages", {
 					packages: packages,
 					repo: undefined,
@@ -213,39 +214,22 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 				console.error("Failed to preload: " + e);
 			}
 
-			let promises = [];
-			let errorCount = 0;
-			for (let pkg of allPackages!) {
-				if (out[pkg.pkg] != undefined) {
-					continue;
+			try {
+				let results = (await invoke("get_multiple_package_meta_and_props", {
+					packages: packages,
+				})) as { [pkg: string]: string | PackageMetaAndProps };
+
+				out = results;
+
+				let errorCount = Object.values(results).filter(
+					(x) => typeof x == "string",
+				).length;
+
+				if (errorCount > 0) {
+					console.log(`${errorCount} packages failed to load`);
 				}
-
-				promises.push(
-					(async () => {
-						try {
-							return [
-								pkg.pkg,
-								(await invoke("get_package_meta_and_props", {
-									package: pkg.pkg,
-								})) as PackageMetaAndProps,
-							];
-						} catch (e) {
-							console.error("Failed to load package: " + e);
-							errorCount++;
-							return [pkg.pkg, "" + e];
-						}
-					})(),
-				);
-			}
-
-			let results = await Promise.all(promises);
-			for (let result of results) {
-				let [id, data] = result;
-				out[id as string] = data;
-			}
-
-			if (errorCount > 0) {
-				console.log(`${errorCount} packages failed to load`);
+			} catch (e) {
+				errorToast("Failed to load packages: " + e);
 			}
 
 			return out;

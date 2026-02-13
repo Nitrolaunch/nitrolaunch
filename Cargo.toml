@@ -93,6 +93,7 @@ cfg-match = "0.2.1"
 chrono = "0.4.42"
 clap = { version = "4.5.4", features = ["derive"] }
 color-print = "0.3.6"
+dashmap = "7.0.0-rc2"
 directories = "5.0.0"
 discord-rich-presence = "1.1.0"
 glob = "0.3.1"
@@ -158,6 +159,7 @@ zip = { version = "3.0.0", default-features = false, features = ["deflate"] }
 anyhow = { workspace = true }
 async-trait = { workspace = true }
 cfg-match = { workspace = true }
+dashmap = { workspace = true }
 directories = { workspace = true }
 hex = { workspace = true }
 itertools = { workspace = true }

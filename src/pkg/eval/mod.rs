@@ -55,6 +55,7 @@ use crate::addon::{self, AddonLocation, AddonRequest};
 use crate::config::package::PackageConfig;
 use crate::io::lock::LockfilePackage;
 use crate::io::paths::Paths;
+use crate::pkg::PkgContents;
 use crate::plugin::PluginManager;
 use crate::util::hash::{
 	get_hash_str_as_hex, HASH_SHA256_RESULT_LENGTH, HASH_SHA512_RESULT_LENGTH,
@@ -200,7 +201,7 @@ pub struct EvalData {
 	/// Level of evaluation
 	pub reason: EvalReason,
 	/// Package properties
-	pub properties: PackageProperties,
+	pub properties: Arc<PackageProperties>,
 	/// Variables, used for script evaluation
 	pub vars: HashMapVariableStore,
 	/// The output of addon requests
@@ -234,7 +235,7 @@ impl EvalData {
 	pub fn new(
 		input: EvalInput,
 		id: PackageID,
-		properties: PackageProperties,
+		properties: Arc<PackageProperties>,
 		routine: &Routine,
 		plugins: PluginManager,
 	) -> Self {
@@ -264,7 +265,7 @@ impl EvalData {
 impl Package {
 	/// Evaluate a routine on a package
 	pub async fn eval(
-		&mut self,
+		&self,
 		paths: &Paths,
 		routine: Routine,
 		input: EvalInput,
@@ -287,7 +288,11 @@ impl Package {
 
 		match self.content_type {
 			PackageContentType::Script => {
-				let parsed = self.data.get_mut().contents.get_mut().get_script_contents();
+				let contents = self.contents.get().unwrap();
+				let PkgContents::Script(parsed) = contents else {
+					bail!("Content type does not match");
+				};
+
 				let eval = eval_script_package(
 					self.id.clone(),
 					parsed,
@@ -301,7 +306,11 @@ impl Package {
 				Ok(eval)
 			}
 			PackageContentType::Declarative => {
-				let contents = self.data.get().contents.get().get_declarative_contents();
+				let contents = self.contents.get().unwrap();
+				let PkgContents::Declarative(contents) = contents else {
+					bail!("Content type does not match");
+				};
+
 				let eval = eval_declarative_package(
 					self.id.clone(),
 					contents,
@@ -455,7 +464,7 @@ pub fn create_valid_addon_request(
 
 /// Evaluator used as an input for dependency resolution
 struct PackageEvaluator<'a> {
-	reg: &'a mut PkgRegistry,
+	reg: &'a PkgRegistry,
 	results: &'a mut HashMap<ArcPkgReq, EvalData>,
 }
 
@@ -506,15 +515,24 @@ impl<'a> PackageEvaluatorTrait<'a> for PackageEvaluator<'a> {
 		input: &Self::EvalInput,
 		common_input: &Self::CommonInput,
 	) -> anyhow::Result<PackageEvalRelationsResult> {
-		let eval = self
+		let package = self
 			.reg
-			.eval(
+			.get(
 				pkg,
+				common_input.paths,
+				common_input.client,
+				&mut output::NoOp,
+			)
+			.await
+			.context("Failed to get package")?;
+
+		let eval = package
+			.eval(
 				common_input.paths,
 				Routine::InstallResolve,
 				input.clone(),
 				common_input.client,
-				&mut output::NoOp,
+				self.reg.get_plugins().clone(),
 			)
 			.await
 			.context("Failed to evaluate package")?;
@@ -538,17 +556,21 @@ impl<'a> PackageEvaluatorTrait<'a> for PackageEvaluator<'a> {
 		&'b mut self,
 		pkg: &ArcPkgReq,
 		common_input: &Self::CommonInput,
-	) -> anyhow::Result<&'b PackageProperties> {
-		let properties = self
+	) -> anyhow::Result<Arc<PackageProperties>> {
+		let package = self
 			.reg
-			.get_properties(
+			.get(
 				pkg,
 				common_input.paths,
 				common_input.client,
 				&mut output::NoOp,
 			)
-			.await?;
-		Ok(properties)
+			.await
+			.context("Failed to get package")?;
+
+		package
+			.get_properties(common_input.paths, common_input.client)
+			.await
 	}
 
 	async fn preload_packages<'b>(
@@ -672,7 +694,7 @@ pub async fn resolve(
 	default_params: EvalParameters,
 	overrides: PackageOverrides,
 	paths: &Paths,
-	reg: &mut PkgRegistry,
+	reg: &PkgRegistry,
 	client: &Client,
 	o: &mut impl NitroOutput,
 ) -> anyhow::Result<ResolutionAndEvalResult> {

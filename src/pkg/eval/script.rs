@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use anyhow::bail;
 use nitro_parse::conditions::ConditionKind;
 use nitro_parse::parse::Parsed;
@@ -30,7 +32,7 @@ pub async fn eval_script_package(
 	pkg_id: PackageID,
 	parsed: &Parsed,
 	routine: Routine,
-	properties: PackageProperties,
+	properties: Arc<PackageProperties>,
 	input: EvalInput,
 	plugins: PluginManager,
 	paths: &Paths,

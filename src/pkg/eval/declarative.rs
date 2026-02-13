@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use anyhow::bail;
 use itertools::Itertools;
 use nitro_pkg::declarative::{
@@ -23,7 +25,7 @@ pub fn eval_declarative_package(
 	id: PackageID,
 	contents: &DeclarativePackage,
 	input: EvalInput,
-	properties: PackageProperties,
+	properties: Arc<PackageProperties>,
 	routine: Routine,
 	plugins: PluginManager,
 ) -> anyhow::Result<EvalData> {
@@ -38,7 +40,7 @@ fn eval_declarative_package_impl(
 	id: PackageID,
 	contents: &DeclarativePackage,
 	input: EvalInput,
-	properties: PackageProperties,
+	properties: Arc<PackageProperties>,
 	routine: Routine,
 	plugins: PluginManager,
 ) -> anyhow::Result<EvalData> {
@@ -452,7 +454,7 @@ mod tests {
 			PackageID::from("foo"),
 			&pkg,
 			input,
-			PackageProperties::default(),
+			Arc::new(PackageProperties::default()),
 			Routine::Install,
 			plugins,
 		)

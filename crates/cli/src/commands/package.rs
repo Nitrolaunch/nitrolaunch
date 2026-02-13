@@ -255,7 +255,7 @@ async fn sync(data: &mut CmdData<'_>, filter: Vec<String>) -> anyhow::Result<()>
 	let mut section = data.output.get_section();
 
 	let client = Client::new();
-	for repo in config.packages.repos.iter_mut() {
+	for repo in config.packages.repos.iter() {
 		// Skip repositories not in the filter
 		if !filter.is_empty() && !filter.contains(&repo.get_id().to_string()) {
 			continue;
@@ -311,10 +311,11 @@ async fn cat(data: &mut CmdData<'_>, id: &str, raw: bool) -> anyhow::Result<()> 
 	let client = Client::new();
 
 	let req = Arc::new(PkgRequest::parse(id, PkgRequestSource::UserRequire));
-	let contents = config
+	let package = config
 		.packages
-		.load(&req, &data.paths, &client, data.output)
+		.get(&req, &data.paths, &client, data.output)
 		.await?;
+	let contents = package.get_text(&data.paths, &client).await?;
 	if !raw {
 		cprintln!("<s,b>Contents of package <g>{}</g>:</s,b>", req);
 	}
@@ -322,11 +323,7 @@ async fn cat(data: &mut CmdData<'_>, id: &str, raw: bool) -> anyhow::Result<()> 
 	if raw {
 		print!("{contents}");
 	} else {
-		let content_type = config
-			.packages
-			.content_type(&req, &data.paths, &client, data.output)
-			.await?;
-		if let PackageContentType::Script = content_type {
+		if package.content_type == PackageContentType::Script {
 			pretty_print_package_script(&contents)?;
 		} else {
 			print!("{contents}");
@@ -420,24 +417,19 @@ async fn info(data: &mut CmdData<'_>, id: &str, raw: bool) -> anyhow::Result<()>
 	let client = Client::new();
 
 	let req = Arc::new(PkgRequest::parse(id, PkgRequestSource::UserRequire));
-	let metadata = config
+	let package = config
 		.packages
-		.get_metadata(&req, &data.paths, &client, data.output)
-		.await
-		.context("Failed to get metadata from the registry")?
-		.clone();
+		.get(&req, &data.paths, &client, data.output)
+		.await?;
+	let metadata = package.get_metadata(&data.paths, &client).await?;
 
 	if raw {
-		let properties = config
-			.packages
-			.get_properties(&req, &data.paths, &client, data.output)
-			.await
-			.context("Failed to get package properties from the registry")?;
+		let properties = package.get_properties(&data.paths, &client).await?;
 
 		#[derive(Serialize)]
-		struct RawOutput<'a> {
-			metadata: PackageMetadata,
-			properties: &'a PackageProperties,
+		struct RawOutput {
+			metadata: Arc<PackageMetadata>,
+			properties: Arc<PackageProperties>,
 		}
 
 		let out = serde_json::to_string(&RawOutput {
@@ -527,11 +519,11 @@ async fn versions(data: &mut CmdData<'_>, id: &str, raw: bool) -> anyhow::Result
 
 	let req = Arc::new(PkgRequest::parse(id, PkgRequestSource::UserRequire));
 
-	let properties = config
+	let package = config
 		.packages
-		.get_properties(&req, &data.paths, &client, data.output)
-		.await
-		.context("Failed to get package properties from the registry")?;
+		.get(&req, &data.paths, &client, data.output)
+		.await?;
+	let properties = package.get_properties(&data.paths, &client).await?;
 
 	let default_versions = Vec::new();
 	let versions = properties
@@ -594,11 +586,7 @@ async fn repo_info(data: &mut CmdData<'_>, repo_id: String) -> anyhow::Result<()
 	data.ensure_config(true).await?;
 	let config = data.config.get_mut();
 
-	let repo = config
-		.packages
-		.repos
-		.iter_mut()
-		.find(|x| x.get_id() == repo_id);
+	let repo = config.packages.repos.iter().find(|x| x.get_id() == repo_id);
 	let Some(repo) = repo else {
 		bail!("Repository {repo_id} does not exist");
 	};

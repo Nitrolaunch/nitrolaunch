@@ -1,10 +1,7 @@
 use anyhow::{anyhow, Context};
+use dashmap::DashMap;
 use itertools::Itertools;
 use nitro_core::net::get_transfer_limit;
-use nitro_pkg::metadata::PackageMetadata;
-use nitro_pkg::parse_and_validate;
-use nitro_pkg::properties::PackageProperties;
-use nitro_pkg::repo::PackageFlag;
 use nitro_pkg::PackageContentType;
 use nitro_pkg::PackageSearchResults;
 use nitro_pkg::PkgRequest;
@@ -18,14 +15,12 @@ use reqwest::Client;
 use tokio::sync::Semaphore;
 use tokio::task::JoinSet;
 
-use super::eval::{EvalData, EvalInput, Routine};
 use super::repo::{query_all, PackageRepository};
-use super::{Package, PkgContents};
+use super::Package;
 use crate::io::paths::Paths;
 use crate::plugin::PluginManager;
 
 use std::collections::HashMap;
-use std::collections::HashSet;
 use std::sync::Arc;
 
 /// An object used to store and cache all of the packages that we are working with.
@@ -34,7 +29,7 @@ use std::sync::Arc;
 pub struct PkgRegistry {
 	/// The package repositories that the user has configured
 	pub repos: Vec<PackageRepository>,
-	packages: HashMap<ArcPkgReq, Package>,
+	packages: DashMap<ArcPkgReq, Arc<Package>>,
 	plugins: PluginManager,
 }
 
@@ -43,23 +38,24 @@ impl PkgRegistry {
 	pub fn new(repos: Vec<PackageRepository>, plugins: &PluginManager) -> Self {
 		Self {
 			repos,
-			packages: HashMap::new(),
+			packages: DashMap::new(),
 			plugins: plugins.clone(),
 		}
 	}
 
 	/// Clear the registry
-	pub fn clear(&mut self) {
+	pub fn clear(&self) {
 		self.packages.clear();
 	}
 
 	/// Insert a package into the registry and return a mutable reference to the
 	/// newly inserted package
-	fn insert(&mut self, req: ArcPkgReq, pkg: Package) -> &mut Package {
-		self.packages.insert(req.clone(), pkg);
+	fn insert(&self, req: ArcPkgReq, pkg: Arc<Package>) -> Arc<Package> {
+		self.packages.insert(req.clone(), pkg.clone());
 		self.packages
-			.get_mut(&req)
+			.get(&req)
 			.expect("Package was not inserted into map")
+			.clone()
 	}
 
 	/// Checks if a package is in the registry already
@@ -69,16 +65,16 @@ impl PkgRegistry {
 
 	/// Query repositories to insert a package
 	async fn query_insert(
-		&mut self,
+		&self,
 		req: &ArcPkgReq,
 		include_custom_repos: bool,
 		paths: &Paths,
 		client: &Client,
 		o: &mut impl NitroOutput,
-	) -> anyhow::Result<&mut Package> {
+	) -> anyhow::Result<Arc<Package>> {
 		// First check the remote repositories
 		let query = query_all(
-			&mut self.repos,
+			&self.repos,
 			req,
 			include_custom_repos,
 			paths,
@@ -91,54 +87,40 @@ impl PkgRegistry {
 		if let Some(result) = query {
 			Ok(self.insert(
 				req.clone(),
-				Package::new(
+				Arc::new(Package::new(
 					req.id.clone(),
 					result.location,
 					result.content_type,
 					result.flags,
-				),
+				)),
 			))
 		} else {
 			Err(anyhow!("Package '{req}' does not exist"))
 		}
 	}
 
-	/// Get a package from the map if it exists, and query insert it otherwise
-	async fn get(
-		&mut self,
+	/// Get a package from the registry, fetching it if it isn't present
+	pub async fn get(
+		&self,
 		req: &ArcPkgReq,
 		paths: &Paths,
 		client: &Client,
 		o: &mut impl NitroOutput,
-	) -> anyhow::Result<&mut Package> {
+	) -> anyhow::Result<Arc<Package>> {
 		if self.has_now(req) {
-			Ok(self.packages.get_mut(req).expect("Package does not exist"))
+			Ok(self
+				.packages
+				.get(req)
+				.expect("Package does not exist")
+				.clone())
 		} else {
 			self.query_insert(req, true, paths, client, o).await
 		}
 	}
 
-	/// Ensure package contents while following the caching strategy
-	async fn ensure_package_contents(
-		&mut self,
-		req: &ArcPkgReq,
-		paths: &Paths,
-		client: &Client,
-		o: &mut impl NitroOutput,
-	) -> anyhow::Result<&mut Package> {
-		let pkg = self
-			.get(req, paths, client, o)
-			.await
-			.with_context(|| format!("Failed to get package {req}"))?;
-		pkg.ensure_loaded(paths, false, client)
-			.await
-			.with_context(|| format!("Failed to load package {req}"))?;
-		Ok(pkg)
-	}
-
 	/// Ensure that a package is in the registry
 	pub async fn ensure_package(
-		&mut self,
+		&self,
 		req: &ArcPkgReq,
 		paths: &Paths,
 		client: &Client,
@@ -151,128 +133,15 @@ impl PkgRegistry {
 		Ok(())
 	}
 
-	/// Get the metadata of a package
-	pub async fn get_metadata<'a>(
-		&'a mut self,
-		req: &ArcPkgReq,
-		paths: &Paths,
-		client: &Client,
-		o: &mut impl NitroOutput,
-	) -> anyhow::Result<&'a PackageMetadata> {
-		let pkg = self.ensure_package_contents(req, paths, client, o).await?;
-		pkg.get_metadata(paths, client)
-			.await
-			.context("Failed to get metadata from package")
-	}
-
-	/// Get the properties of a package
-	pub async fn get_properties<'a>(
-		&'a mut self,
-		req: &ArcPkgReq,
-		paths: &Paths,
-		client: &Client,
-		o: &mut impl NitroOutput,
-	) -> anyhow::Result<&'a PackageProperties> {
-		let pkg = self.ensure_package_contents(req, paths, client, o).await?;
-		pkg.get_properties(paths, client)
-			.await
-			.context("Failed to get properties from package")
-	}
-
-	/// Load the contents of a package
-	pub async fn load(
-		&mut self,
-		req: &ArcPkgReq,
-		paths: &Paths,
-		client: &Client,
-		o: &mut impl NitroOutput,
-	) -> anyhow::Result<Arc<str>> {
-		let pkg = self.ensure_package_contents(req, paths, client, o).await?;
-		let contents = pkg.data.get().get_text();
-		Ok(contents)
-	}
-
-	/// Parse and validate a package
-	pub async fn parse_and_validate(
-		&mut self,
-		req: &ArcPkgReq,
-		paths: &Paths,
-		client: &Client,
-		o: &mut impl NitroOutput,
-	) -> anyhow::Result<()> {
-		let pkg = self.ensure_package_contents(req, paths, client, o).await?;
-		let contents = &pkg.data.get().get_text();
-
-		parse_and_validate(contents, pkg.content_type)?;
-
-		Ok(())
-	}
-
-	/// Parse a package and get the contents
-	pub async fn parse<'a>(
-		&'a mut self,
-		req: &ArcPkgReq,
-		paths: &Paths,
-		client: &Client,
-		o: &mut impl NitroOutput,
-	) -> anyhow::Result<&'a PkgContents> {
-		let pkg = self.ensure_package_contents(req, paths, client, o).await?;
-		pkg.parse(paths, client)
-			.await
-			.context("Failed to parse package")?;
-		Ok(pkg.data.get().contents.get())
-	}
-
-	/// Evaluate a package
-	#[allow(clippy::too_many_arguments)]
-	pub async fn eval(
-		&mut self,
-		req: &ArcPkgReq,
-		paths: &Paths,
-		routine: Routine,
-		input: EvalInput,
-		client: &Client,
-		o: &mut impl NitroOutput,
-	) -> anyhow::Result<EvalData> {
-		let plugins = self.plugins.clone();
-		let pkg = self.ensure_package_contents(req, paths, client, o).await?;
-		let eval = pkg.eval(paths, routine, input, client, plugins).await?;
-		Ok(eval)
-	}
-
-	/// Get the content type of a package
-	pub async fn content_type(
-		&mut self,
-		req: &ArcPkgReq,
-		paths: &Paths,
-		client: &Client,
-		o: &mut impl NitroOutput,
-	) -> anyhow::Result<PackageContentType> {
-		let pkg = self.ensure_package_contents(req, paths, client, o).await?;
-		Ok(pkg.content_type)
-	}
-
-	/// Get the flags of a package
-	pub async fn flags<'a>(
-		&'a mut self,
-		req: &ArcPkgReq,
-		paths: &Paths,
-		client: &Client,
-		o: &mut impl NitroOutput,
-	) -> anyhow::Result<&'a HashSet<PackageFlag>> {
-		let pkg = self.ensure_package_contents(req, paths, client, o).await?;
-		Ok(&pkg.flags)
-	}
-
 	/// Replaces the slug and version of a request if possible, to make it better for user display
 	pub async fn make_req_displayable(
-		&mut self,
+		&self,
 		req: &ArcPkgReq,
 		paths: &Paths,
 		client: &Client,
 		o: &mut impl NitroOutput,
 	) -> ArcPkgReq {
-		let Ok(pkg) = self.ensure_package_contents(req, paths, client, o).await else {
+		let Ok(pkg) = self.query_insert(req, true, paths, client, o).await else {
 			return req.clone();
 		};
 
@@ -321,7 +190,7 @@ impl PkgRegistry {
 
 	/// Remove a cached package
 	pub async fn remove_cached(
-		&mut self,
+		&self,
 		req: &ArcPkgReq,
 		paths: &Paths,
 		client: &Client,
@@ -336,23 +205,24 @@ impl PkgRegistry {
 	}
 
 	/// Iterator over all package requests in the registry
-	pub fn iter_requests(&self) -> impl Iterator<Item = &ArcPkgReq> {
-		self.packages.keys()
+	pub fn iter_requests(&self) -> impl Iterator<Item = ArcPkgReq> {
+		let vec: Vec<_> = self.packages.iter().map(|x| x.key().clone()).collect();
+		vec.into_iter()
 	}
 
 	/// Get all of the package requests in the registry in an owned manner
 	pub fn get_all_packages(&self) -> Vec<ArcPkgReq> {
-		self.iter_requests().cloned().collect()
+		self.packages.iter().map(|x| x.key().clone()).collect()
 	}
 
 	/// Get all of the available package requests from the repos
 	pub async fn get_all_available_packages(
-		&mut self,
+		&self,
 		paths: &Paths,
 		client: &Client,
 		o: &mut impl NitroOutput,
 	) -> anyhow::Result<Vec<ArcPkgReq>> {
-		let out = super::repo::get_all_packages(&mut self.repos, paths, client, o)
+		let out = super::repo::get_all_packages(&self.repos, paths, client, o)
 			.await
 			.context("Failed to retrieve all packages from repos")?
 			.iter()
@@ -364,7 +234,7 @@ impl PkgRegistry {
 
 	/// Remove cached packages
 	async fn remove_cached_packages(
-		&mut self,
+		&self,
 		packages: impl Iterator<Item = &ArcPkgReq>,
 		paths: &Paths,
 		client: &Client,
@@ -381,7 +251,7 @@ impl PkgRegistry {
 
 	/// Update cached package scripts based on the caching strategy
 	pub async fn update_cached_packages(
-		&mut self,
+		&self,
 		paths: &Paths,
 		client: &Client,
 		o: &mut impl NitroOutput,
@@ -423,7 +293,7 @@ impl PkgRegistry {
 
 	/// Searches the registry and repositories for packages
 	pub async fn search(
-		&mut self,
+		&self,
 		mut params: PackageSearchParameters,
 		repo: Option<&str>,
 		paths: &Paths,
@@ -453,10 +323,8 @@ impl PkgRegistry {
 
 			for req in all_basic_packages.into_iter().sorted() {
 				if !params.categories.is_empty() || params.search.is_some() {
-					let meta = self
-						.get_metadata(&req, paths, client, o)
-						.await
-						.context("Failed to get package metadata")?;
+					let pkg = self.query_insert(&req, true, paths, client, o).await?;
+					let meta = pkg.get_metadata(paths, client).await?;
 
 					// Check all of the parameters
 					if !params.categories.is_empty() {
@@ -546,7 +414,7 @@ impl PkgRegistry {
 
 	/// Preloads packages, if it can, from the repos in this registry
 	pub async fn preload_packages(
-		&mut self,
+		&self,
 		packages: impl Iterator<Item = &ArcPkgReq>,
 		paths: &Paths,
 		client: &Client,
@@ -599,5 +467,10 @@ impl PkgRegistry {
 	/// Gets the repositories stored in this registry in their correct order
 	pub fn get_repos(&self) -> &[PackageRepository] {
 		&self.repos
+	}
+
+	/// Gets the plugin manager used by this registry
+	pub fn get_plugins(&self) -> &PluginManager {
+		&self.plugins
 	}
 }

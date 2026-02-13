@@ -21,7 +21,7 @@ pub mod resolve;
 /// Framework for evaluating script packages
 pub mod script_eval;
 
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Arc};
 
 use anyhow::Context;
 use async_trait::async_trait;
@@ -114,7 +114,7 @@ pub trait PackageEvaluator<'a> {
 		&'b mut self,
 		pkg: &ArcPkgReq,
 		common_input: &Self::CommonInput,
-	) -> anyhow::Result<&'b PackageProperties>;
+	) -> anyhow::Result<Arc<PackageProperties>>;
 
 	/// Preload multiple packages
 	async fn preload_packages<'b>(

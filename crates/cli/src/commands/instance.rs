@@ -377,7 +377,7 @@ async fn update(
 			.with_context(|| format!("Unknown instance '{id}'"))?;
 
 		let mut ctx = InstanceUpdateContext {
-			packages: &mut config.packages,
+			packages: &config.packages,
 			accounts: &config.accounts,
 			plugins: &config.plugins,
 			prefs: &config.prefs,

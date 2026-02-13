@@ -56,7 +56,7 @@ pub struct Config {
 	/// Named groups of instances
 	pub instance_groups: HashMap<Arc<str>, Vec<InstanceID>>,
 	/// The registry of packages. Will include packages that are configured when created this way
-	pub packages: PkgRegistry,
+	pub packages: Arc<PkgRegistry>,
 	/// Configured plugins
 	pub plugins: PluginManager,
 	/// Global user preferences
@@ -287,7 +287,7 @@ impl Config {
 			consolidated_templates,
 			base_template: config.base_template.unwrap_or_default(),
 			instance_groups: config.instance_groups,
-			packages,
+			packages: Arc::new(packages),
 			plugins,
 			prefs,
 		}

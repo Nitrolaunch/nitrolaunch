@@ -32,7 +32,7 @@ use super::Instance;
 /// Shared objects for instance updating functions
 pub struct InstanceUpdateContext<'a, O: NitroOutput> {
 	/// The package registry
-	pub packages: &'a mut PkgRegistry,
+	pub packages: &'a PkgRegistry,
 	/// The accounts
 	pub accounts: &'a AccountManager,
 	/// The plugins

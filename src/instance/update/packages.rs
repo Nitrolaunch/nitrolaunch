@@ -273,12 +273,12 @@ async fn check_package<O: NitroOutput>(
 	ctx: &mut InstanceUpdateContext<'_, O>,
 	pkg: &ArcPkgReq,
 ) -> anyhow::Result<()> {
-	let flags = ctx
+	let package = ctx
 		.packages
-		.flags(pkg, ctx.paths, ctx.client, ctx.output)
-		.await
-		.context("Failed to get flags for package")?;
-	if flags.contains(&PackageFlag::OutOfDate) {
+		.get(pkg, ctx.paths, ctx.client, ctx.output)
+		.await?;
+
+	if package.flags.contains(&PackageFlag::OutOfDate) {
 		ctx.output.display(MessageContents::Warning(translate!(
 			ctx.output,
 			PackageOutOfDate,
@@ -286,7 +286,7 @@ async fn check_package<O: NitroOutput>(
 		)));
 	}
 
-	if flags.contains(&PackageFlag::Deprecated) {
+	if package.flags.contains(&PackageFlag::Deprecated) {
 		ctx.output.display(MessageContents::Warning(translate!(
 			ctx.output,
 			PackageDeprecated,
@@ -294,7 +294,7 @@ async fn check_package<O: NitroOutput>(
 		)));
 	}
 
-	if flags.contains(&PackageFlag::Insecure) {
+	if package.flags.contains(&PackageFlag::Insecure) {
 		ctx.output.display(MessageContents::Error(translate!(
 			ctx.output,
 			PackageInsecure,
@@ -302,7 +302,7 @@ async fn check_package<O: NitroOutput>(
 		)));
 	}
 
-	if flags.contains(&PackageFlag::Malicious) {
+	if package.flags.contains(&PackageFlag::Malicious) {
 		ctx.output.display(MessageContents::Error(translate!(
 			ctx.output,
 			PackageMalicious,
@@ -321,15 +321,18 @@ pub async fn print_package_support_messages<O: NitroOutput>(
 	let package_count = 5;
 	let packages = select_random_n_items_from_list(packages, package_count);
 	let mut links = Vec::new();
-	for package in packages {
-		if let Some(link) = ctx
+	for req in packages {
+		let package = ctx
 			.packages
-			.get_metadata(package, ctx.paths, ctx.client, ctx.output)
+			.get(req, ctx.paths, ctx.client, ctx.output)
+			.await?;
+		if let Some(link) = package
+			.get_metadata(ctx.paths, ctx.client)
 			.await?
 			.support_link
 			.clone()
 		{
-			links.push((package, link))
+			links.push((req, link))
 		}
 	}
 	if !links.is_empty() {

@@ -230,6 +230,7 @@ fn main() {
 			commands::package::get_package_meta,
 			commands::package::get_package_props,
 			commands::package::get_package_meta_and_props,
+			commands::package::get_multiple_package_meta_and_props,
 			commands::package::get_declarative_package_contents,
 			commands::package::get_package_repos,
 			commands::package::get_instance_packages,

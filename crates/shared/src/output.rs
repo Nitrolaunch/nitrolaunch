@@ -173,6 +173,87 @@ pub trait NitroOutput: Send {
 	}
 }
 
+#[async_trait::async_trait]
+impl<T: NitroOutput + Sync + ?Sized> NitroOutput for Box<T> {
+	fn display_text(&mut self, text: String, level: MessageLevel) {
+		self.deref_mut().display_text(text, level)
+	}
+
+	fn display_message(&mut self, message: Message) {
+		self.deref_mut().display_message(message)
+	}
+
+	fn start_process(&mut self) {
+		self.deref_mut().start_process()
+	}
+
+	fn end_process(&mut self) {
+		self.deref_mut().end_process()
+	}
+
+	fn start_section(&mut self) {
+		self.deref_mut().start_section()
+	}
+
+	fn end_section(&mut self) {
+		self.deref_mut().end_section()
+	}
+
+	async fn prompt_yes_no(
+		&mut self,
+		default: bool,
+		message: MessageContents,
+	) -> anyhow::Result<bool> {
+		self.deref_mut().prompt_yes_no(default, message).await
+	}
+
+	async fn prompt_password(&mut self, message: MessageContents) -> anyhow::Result<String> {
+		self.deref_mut().prompt_password(message).await
+	}
+
+	async fn prompt_new_password(&mut self, message: MessageContents) -> anyhow::Result<String> {
+		self.deref_mut().prompt_new_password(message).await
+	}
+
+	fn translate(&self, key: TranslationKey) -> &str {
+		self.deref().translate(key)
+	}
+
+	fn display_special_ms_auth(&mut self, url: &str, code: &str) {
+		self.deref_mut().display_special_ms_auth(url, code)
+	}
+
+	fn display_special_resolution_error(&mut self, error: ResolutionError, instance_id: &str) {
+		self.deref_mut()
+			.display_special_resolution_error(error, instance_id)
+	}
+
+	async fn prompt_special_account_passkey(
+		&mut self,
+		message: MessageContents,
+		account_id: &str,
+	) -> anyhow::Result<String> {
+		self.deref_mut()
+			.prompt_special_account_passkey(message, account_id)
+			.await
+	}
+
+	async fn prompt_special_package_diffs(
+		&mut self,
+		diffs: Vec<PackageDiff>,
+	) -> anyhow::Result<bool> {
+		self.deref_mut().prompt_special_package_diffs(diffs).await
+	}
+
+	fn get_greater_copy(&self) -> Box<dyn NitroOutput + Sync> {
+		self.deref().get_lesser_copy()
+	}
+
+	fn get_lesser_copy(&self) -> Box<dyn NitroOutput + Sync> {
+		self.deref().get_lesser_copy()
+	}
+}
+
 /// Displays the default Microsoft authentication messages
 pub fn default_special_ms_auth(o: &mut (impl NitroOutput + ?Sized), url: &str, code: &str) {
 	o.display(MessageContents::Property(
