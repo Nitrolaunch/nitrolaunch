@@ -1,5 +1,5 @@
 use std::{
-	collections::VecDeque,
+	collections::{HashMap, HashSet, VecDeque},
 	path::Path,
 	sync::Arc,
 	time::{Duration, Instant},
@@ -11,9 +11,11 @@ use crate::{
 		wasm::{loader::WASMLoader, WASMHookHandle},
 		Hook,
 	},
+	plugin::HookSubscription,
 	PluginPaths,
 };
 use anyhow::Context;
+use nitro_config::{instance::InstanceConfig, template::TemplateConfig};
 use nitro_shared::output::{MessageContents, NitroOutput, NoOp};
 use tokio::sync::Mutex;
 
@@ -28,28 +30,40 @@ pub struct HookCallArg<'a, H: Hook> {
 	pub cmd: &'a str,
 	/// The argument to the hook
 	pub arg: &'a H::Arg,
-	/// Additional arguments for the executable
+	/// Additional arguments for executable hooks
 	pub additional_args: &'a [String],
-	/// The working directory for the executable
+	/// The working directory for the plugin
 	pub working_dir: Option<&'a Path>,
-	/// Whether to use base64 encoding
+	/// Context for the hook call
+	pub ctx: HookCallContext<'a>,
+	/// Whether to use base64 encoding for executable hooks
 	pub use_base64: bool,
-	/// Custom configuration for the plugin
-	pub custom_config: Option<String>,
 	/// Persistent data for the plugin
 	pub persistence: Arc<Mutex<PluginPersistence>>,
 	/// Paths
 	pub paths: &'a PluginPaths,
-	/// The version of Nitrolaunch
-	pub nitro_version: Option<&'a str>,
 	/// The ID of the plugin
 	pub plugin_id: &'a str,
-	/// The list of all enabled plugins and their versions
-	pub plugin_list: &'a [String],
 	/// The protocol version
 	pub protocol_version: u16,
 	/// The WASM file loader
 	pub wasm_loader: Arc<Mutex<WASMLoader>>,
+}
+
+/// Context information for a hook call that could be passed to the hook
+pub struct HookCallContext<'a> {
+	/// Data to send for executable hooks
+	pub subscriptions: &'a HashSet<HookSubscription>,
+	/// The version of Nitrolaunch
+	pub nitro_version: Option<&'a str>,
+	/// Custom configuration for the plugin
+	pub custom_config: Option<String>,
+	/// The list of all enabled plugins and their versions
+	pub plugin_list: &'a [String],
+	/// Configured instances
+	pub instances: Option<&'a Arc<HashMap<String, InstanceConfig>>>,
+	/// Configured templates
+	pub templates: Option<&'a Arc<HashMap<String, TemplateConfig>>>,
 }
 
 /// Handle returned by running a hook. Make sure to await it if you need to.

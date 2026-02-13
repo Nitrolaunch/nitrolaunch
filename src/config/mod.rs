@@ -280,6 +280,26 @@ impl Config {
 			}
 		}
 
+		// Add instances and templates to plugin manager
+		let plugin_manager_instances = instances
+			.iter()
+			.map(|(k, v)| {
+				(
+					k.to_string(),
+					v.config.original_config_with_templates_and_plugins.clone(),
+				)
+			})
+			.collect();
+		let plugin_manager_templates = config
+			.templates
+			.iter()
+			.map(|(k, v)| (k.to_string(), v.clone()))
+			.collect();
+
+		plugins
+			.set_instances_and_templates(plugin_manager_instances, plugin_manager_templates)
+			.await;
+
 		Self {
 			accounts,
 			instances,

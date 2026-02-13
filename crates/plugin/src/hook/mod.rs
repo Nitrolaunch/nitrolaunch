@@ -80,6 +80,10 @@ pub static NITRO_PLUGIN_ENV: &str = "NITRO_PLUGIN";
 pub static HOOK_VERSION_ENV: &str = "NITRO_HOOK_VERSION";
 /// The environment variable with the list of plugins
 pub static PLUGIN_LIST_ENV: &str = "NITRO_PLUGIN_LIST";
+/// The environment variable with the map of IDs to instance configs
+pub static INSTANCE_LIST_ENV: &str = "NITRO_INSTANCES";
+/// The environment variable with the map of IDs to template configs
+pub static TEMPLATE_LIST_ENV: &str = "NITRO_TEMPLATES";
 
 /// Filename for a plugin's WASM code
 pub static WASM_FILE_NAME: &str = "plugin.wasm";

@@ -1,16 +1,20 @@
 use std::collections::HashMap;
+use std::collections::HashSet;
 use std::fmt::Debug;
 use std::path::PathBuf;
 use std::sync::Arc;
 
 use anyhow::bail;
 use anyhow::Context;
+use nitro_config::instance::InstanceConfig;
+use nitro_config::template::TemplateConfig;
 use nitro_shared::output::NitroOutput;
 use serde::Serialize;
 use serde::{Deserialize, Deserializer};
 use tokio::sync::Mutex;
 
 use crate::hook::call::HookCallArg;
+use crate::hook::call::HookCallContext;
 use crate::hook::call::HookHandle;
 use crate::hook::hooks::StartWorker;
 use crate::hook::wasm::call_wasm;
@@ -72,6 +76,8 @@ impl Plugin {
 		nitro_version: Option<&str>,
 		plugin_list: &[String],
 		wasm_loader: Arc<Mutex<WASMLoader>>,
+		instances: Option<&Arc<HashMap<String, InstanceConfig>>>,
+		templates: Option<&Arc<HashMap<String, TemplateConfig>>>,
 		o: &mut impl NitroOutput,
 	) -> anyhow::Result<Option<HookHandle<H>>> {
 		let Some(handler) = self.manifest.hooks.get(hook.get_name()) else {
@@ -86,6 +92,8 @@ impl Plugin {
 			nitro_version,
 			plugin_list,
 			wasm_loader,
+			instances,
+			templates,
 			o,
 		)
 		.await
@@ -101,6 +109,8 @@ impl Plugin {
 		nitro_version: Option<&str>,
 		plugin_list: &[String],
 		wasm_loader: Arc<Mutex<WASMLoader>>,
+		instances: Option<&Arc<HashMap<String, InstanceConfig>>>,
+		templates: Option<&Arc<HashMap<String, TemplateConfig>>>,
 		o: &mut impl NitroOutput,
 	) -> anyhow::Result<Option<HookHandle<H>>> {
 		match handler {
@@ -113,18 +123,26 @@ impl Plugin {
 					.to_string_lossy()
 					.to_string();
 
+				let subscriptions = HashSet::new();
+				let ctx = HookCallContext {
+					subscriptions: &subscriptions,
+					custom_config: self.custom_config.clone(),
+					nitro_version,
+					plugin_list,
+					instances,
+					templates,
+				};
+
 				let arg = HookCallArg {
 					cmd: &file,
 					arg,
 					additional_args: &[],
 					working_dir: self.working_dir.as_deref(),
+					ctx,
 					use_base64: !self.manifest.raw_transfer,
-					custom_config: self.custom_config.clone(),
 					persistence: self.persistence.clone(),
 					paths,
-					nitro_version,
 					plugin_id: &self.id,
-					plugin_list,
 					protocol_version: self
 						.manifest
 						.protocol_version
@@ -137,19 +155,27 @@ impl Plugin {
 				executable,
 				args,
 				priority: _,
+				subscriptions,
 			} => {
+				let ctx = HookCallContext {
+					subscriptions,
+					custom_config: self.custom_config.clone(),
+					nitro_version,
+					plugin_list,
+					instances,
+					templates,
+				};
+
 				let arg = HookCallArg {
 					cmd: executable,
 					arg,
 					additional_args: args,
 					working_dir: self.working_dir.as_deref(),
+					ctx,
 					use_base64: !self.manifest.raw_transfer,
-					custom_config: self.custom_config.clone(),
 					persistence: self.persistence.clone(),
 					paths,
-					nitro_version,
 					plugin_id: &self.id,
-					plugin_list,
 					protocol_version: self
 						.manifest
 						.protocol_version
@@ -225,6 +251,8 @@ impl Plugin {
 							nitro_version,
 							plugin_list,
 							wasm_loader,
+							instances,
+							templates,
 							o,
 						))
 						.await;
@@ -376,6 +404,9 @@ pub enum HookHandler {
 		/// The priority for the hook
 		#[serde(default)]
 		priority: HookPriority,
+		/// Data for the hook to subscribe to
+		#[serde(default)]
+		subscriptions: HashSet<HookSubscription>,
 	},
 	/// Handle this hook by returning a constant result
 	Constant {
@@ -432,6 +463,16 @@ pub enum HookPriority {
 	Any,
 	/// The plugin will try to run after other ones
 	Last,
+}
+
+/// Data that an executable handler can subscribe to receiving
+#[derive(Deserialize, PartialEq, Eq, Clone, Copy, Hash)]
+#[serde(rename_all = "snake_case")]
+pub enum HookSubscription {
+	/// List of instances
+	Instances,
+	/// List of templates
+	Templates,
 }
 
 /// Deserialize function for the native hook. No plugin manifests should ever use this,

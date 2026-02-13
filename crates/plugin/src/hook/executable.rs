@@ -15,11 +15,11 @@ use crate::{
 	hook::{
 		call::{HookCallArg, HookHandle},
 		Hook, CONFIG_DIR_ENV, CUSTOM_CONFIG_ENV, DATA_DIR_ENV, EXE_EXTENSION_TOKEN,
-		HOOK_VERSION_ENV, NITRO_PLUGIN_ENV, NITRO_VERSION_ENV, PLUGIN_DIR_TOKEN, PLUGIN_LIST_ENV,
-		PLUGIN_STATE_ENV,
+		HOOK_VERSION_ENV, INSTANCE_LIST_ENV, NITRO_PLUGIN_ENV, NITRO_VERSION_ENV, PLUGIN_DIR_TOKEN,
+		PLUGIN_LIST_ENV, PLUGIN_STATE_ENV, TEMPLATE_LIST_ENV,
 	},
 	input_output::{CommandResult, InputAction, OutputAction},
-	plugin::PluginPersistence,
+	plugin::{HookSubscription, PluginPersistence},
 	plugin_debug_enabled,
 	try_read::TryLineReader,
 };
@@ -48,12 +48,12 @@ pub(crate) async fn call_executable<H: Hook + Sized>(
 	cmd.arg(hook_arg);
 
 	// Set up environment
-	if let Some(custom_config) = arg.custom_config {
+	if let Some(custom_config) = arg.ctx.custom_config {
 		cmd.env(CUSTOM_CONFIG_ENV, custom_config);
 	}
 	cmd.env(DATA_DIR_ENV, &arg.paths.data_dir);
 	cmd.env(CONFIG_DIR_ENV, &arg.paths.config_dir);
-	if let Some(nitro_version) = arg.nitro_version {
+	if let Some(nitro_version) = arg.ctx.nitro_version {
 		cmd.env(NITRO_VERSION_ENV, nitro_version);
 	}
 	cmd.env(NITRO_PLUGIN_ENV, "1");
@@ -70,8 +70,20 @@ pub(crate) async fn call_executable<H: Hook + Sized>(
 			cmd.env(PLUGIN_STATE_ENV, state);
 		}
 	}
-	let plugin_list = arg.plugin_list.join(",");
+	let plugin_list = arg.ctx.plugin_list.join(",");
 	cmd.env(PLUGIN_LIST_ENV, plugin_list);
+
+	if arg.ctx.subscriptions.contains(&HookSubscription::Instances) {
+		if let Some(instances) = arg.ctx.instances {
+			cmd.env(INSTANCE_LIST_ENV, serde_json::to_string(instances)?);
+		}
+	}
+
+	if arg.ctx.subscriptions.contains(&HookSubscription::Templates) {
+		if let Some(templates) = arg.ctx.templates {
+			cmd.env(TEMPLATE_LIST_ENV, serde_json::to_string(templates)?);
+		}
+	}
 
 	no_window!(cmd);
 

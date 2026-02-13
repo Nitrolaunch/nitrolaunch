@@ -2,6 +2,7 @@
 pub mod loader;
 
 use std::{
+	collections::HashMap,
 	fs::File,
 	marker::PhantomData,
 	path::{Path, PathBuf},
@@ -11,6 +12,7 @@ use std::{
 };
 
 use anyhow::{bail, Context};
+use nitro_config::{instance::InstanceConfig, template::TemplateConfig};
 use nitro_net::download::{self, Client};
 use nitro_shared::{
 	nitro_executable::NitroExecutableRegistry,
@@ -69,7 +71,9 @@ pub(crate) async fn call_wasm<H: Hook + Sized>(
 			wasm_path: PathBuf::from(arg.cmd),
 			arg: serde_json::to_string(&arg.arg)?,
 			result: None,
-			custom_config: arg.custom_config,
+			custom_config: arg.ctx.custom_config,
+			instances: arg.ctx.instances.cloned(),
+			templates: arg.ctx.templates.cloned(),
 			wasm_loader: arg.wasm_loader,
 			data_dir: arg.paths.data_dir.to_string_lossy().to_string(),
 			config_dir: arg.paths.config_dir.to_string_lossy().to_string(),
@@ -93,6 +97,8 @@ pub(super) struct WASMHookHandle<H: Hook> {
 	arg: String,
 	result: Option<H::Result>,
 	custom_config: Option<String>,
+	instances: Option<Arc<HashMap<String, InstanceConfig>>>,
+	templates: Option<Arc<HashMap<String, TemplateConfig>>>,
 	wasm_loader: Arc<Mutex<WASMLoader>>,
 	data_dir: String,
 	config_dir: String,
@@ -164,6 +170,8 @@ impl<H: Hook> WASMHookHandle<H> {
 				wasi_ctx,
 				table: ResourceTable::new(),
 				custom_config: self.custom_config.clone(),
+				instances: self.instances.clone(),
+				templates: self.templates.clone(),
 				data_dir: self.data_dir.clone(),
 				config_dir: self.config_dir.clone(),
 				plugin_dir: self.plugin_dir.clone(),
@@ -233,6 +241,8 @@ struct State {
 	wasi_ctx: WasiCtx,
 	table: ResourceTable,
 	custom_config: Option<String>,
+	instances: Option<Arc<HashMap<String, InstanceConfig>>>,
+	templates: Option<Arc<HashMap<String, TemplateConfig>>>,
 	data_dir: String,
 	config_dir: String,
 	plugin_dir: String,
@@ -363,6 +373,44 @@ impl bindings::InterfaceWorldImports for State {
 		} else {
 			Ok((0, pid))
 		}
+	}
+
+	async fn get_instances(&mut self) -> Option<Vec<(String, String)>> {
+		let Some(instances) = &self.instances else {
+			return None;
+		};
+
+		Some(
+			instances
+				.iter()
+				.filter_map(|(k, v)| {
+					if let Ok(config) = serde_json::to_string(v) {
+						Some((k.clone(), config))
+					} else {
+						None
+					}
+				})
+				.collect(),
+		)
+	}
+
+	async fn get_templates(&mut self) -> Option<Vec<(String, String)>> {
+		let Some(templates) = &self.templates else {
+			return None;
+		};
+
+		Some(
+			templates
+				.iter()
+				.filter_map(|(k, v)| {
+					if let Ok(config) = serde_json::to_string(v) {
+						Some((k.clone(), config))
+					} else {
+						None
+					}
+				})
+				.collect(),
+		)
 	}
 
 	async fn launch_instance(

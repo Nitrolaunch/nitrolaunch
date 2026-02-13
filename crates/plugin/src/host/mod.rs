@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::collections::VecDeque;
 use std::sync::Arc;
 
@@ -11,6 +12,8 @@ use crate::plugin::{HookPriority, Plugin, DEFAULT_PROTOCOL_VERSION, NEWEST_PROTO
 use crate::PluginPaths;
 use anyhow::{bail, Context};
 use itertools::Itertools;
+use nitro_config::instance::InstanceConfig;
+use nitro_config::template::TemplateConfig;
 use nitro_shared::output::NitroOutput;
 use tokio::sync::Mutex;
 
@@ -21,6 +24,8 @@ pub struct CorePluginManager {
 	plugin_list: Vec<String>,
 	nitro_version: Option<&'static str>,
 	wasm_loader: Arc<Mutex<WASMLoader>>,
+	instances: Option<Arc<HashMap<String, InstanceConfig>>>,
+	templates: Option<Arc<HashMap<String, TemplateConfig>>>,
 }
 
 impl CorePluginManager {
@@ -31,6 +36,8 @@ impl CorePluginManager {
 			plugin_list: Vec::new(),
 			nitro_version: None,
 			wasm_loader: Arc::new(Mutex::new(WASMLoader::new(&paths.data_dir))),
+			instances: None,
+			templates: None,
 		}
 	}
 
@@ -73,6 +80,8 @@ impl CorePluginManager {
 				self.nitro_version,
 				&self.plugin_list,
 				self.wasm_loader.clone(),
+				self.instances.as_ref(),
+				self.templates.as_ref(),
 				o,
 			)
 			.await
@@ -90,6 +99,8 @@ impl CorePluginManager {
 				self.nitro_version,
 				&self.plugin_list,
 				self.wasm_loader.clone(),
+				self.instances.as_ref(),
+				self.templates.as_ref(),
 				o,
 			)
 			.await
@@ -127,6 +138,8 @@ impl CorePluginManager {
 					self.nitro_version,
 					&self.plugin_list,
 					self.wasm_loader.clone(),
+					self.instances.as_ref(),
+					self.templates.as_ref(),
 					o,
 				)
 				.await
@@ -160,6 +173,8 @@ impl CorePluginManager {
 						self.nitro_version,
 						&self.plugin_list,
 						self.wasm_loader.clone(),
+						self.instances.as_ref(),
+						self.templates.as_ref(),
 						o,
 					)
 					.await
@@ -179,6 +194,16 @@ impl CorePluginManager {
 	/// Checks whether the given plugin is present and enabled in the manager
 	pub fn has_plugin(&self, plugin_id: &str) -> bool {
 		self.plugin_list.iter().any(|x| x == plugin_id)
+	}
+
+	/// Sets the instance and template list for the manager to pass to plugins
+	pub fn set_instances_and_templates(
+		&mut self,
+		instances: HashMap<String, InstanceConfig>,
+		templates: HashMap<String, TemplateConfig>,
+	) {
+		self.instances = Some(Arc::new(instances));
+		self.templates = Some(Arc::new(templates));
 	}
 }
 

@@ -12,6 +12,8 @@ Nitrolaunch sets multiple environment variables on the running plugin executable
 - `NITRO_VERSION`: The version of Nitrolaunch that is running the plugin
 - `NITRO_HOOK_VERSION`: The version of the hook that is running. Can be used to prevent sending back invalid data.
 - `NITRO_PLUGIN_LIST`: The list of all enabled plugins, separated by commas. Will include the plugin that is running as well.
+- `NITRO_INSTANCES`: A JSON map of IDs to InstanceConfig's, representing the final configs of all loaded instances. May not be present.
+- `NITRO_TEMPLATES`: A JSON map of IDs to TemplateConfig's, representing the final configs of all loaded templates. May not be present.
 
 ## Arguments
 Arguments to the executable will always be passed in this order

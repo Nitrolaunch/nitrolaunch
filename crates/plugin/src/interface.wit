@@ -16,6 +16,8 @@ world interface-world {
 	import update-hardlink: func(src: string, tgt: string) -> result<_, string>;
 	import run-command: func(cmd: string, args: list<string>, working-dir: option<string>, stdout-file: option<string>, suppress-command-window: bool, silent: bool, wait: bool) -> result<tuple<s32, u32>, string>;
 
+	import get-instances: func() -> option<list<tuple<string, string>>>;
+	import get-templates: func() -> option<list<tuple<string, string>>>;
 	import launch-instance: func(instance: string, account: option<string>) -> result<_, string>;
 
 	import download-bytes: func(url: string) -> result<list<u8>, string>;
