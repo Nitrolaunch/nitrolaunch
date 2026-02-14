@@ -28,17 +28,18 @@ export default function TaskIndicator() {
 
 	// The task visible in the popup
 	let [selectedTask, setSelectedTask] = createSignal<number | undefined>(
-		undefined
+		undefined,
 	);
 
 	let [selectedTaskProgress, setSelectedTaskProgress] = createSignal<
 		number | undefined
 	>(undefined);
 
+	let updateTaskCount = () => {
+		setTaskCount(Object.keys(messages()).length);
+	};
+
 	function createTask(task: string) {
-		if (messages()[task] == undefined) {
-			setTaskCount((taskCount) => taskCount + 1);
-		}
 		if (taskCount() == 1) {
 			setTaskName(getTaskDisplayName(task));
 			setColor(getTaskColor(task));
@@ -57,6 +58,7 @@ export default function TaskIndicator() {
 			};
 			return messages;
 		});
+		updateTaskCount();
 	}
 
 	let [eventUnlistens, _] = createResource(async () => {
@@ -64,7 +66,7 @@ export default function TaskIndicator() {
 			"nitro_output_create_task",
 			(event: Event<string>) => {
 				createTask(event.payload);
-			}
+			},
 		);
 
 		(window as any).foo = messages;
@@ -111,16 +113,12 @@ export default function TaskIndicator() {
 						return messages;
 					});
 				}
-			}
+			},
 		);
 
 		let unlisten3 = listen(
 			"nitro_output_finish_task",
 			(event: Event<string>) => {
-				if (messages()[event.payload] != undefined) {
-					setTaskCount((taskCount) => taskCount - 1);
-				}
-
 				// TODO: Keep the same task focused
 				if (selectedTask() != undefined && selectedTask()! >= taskCount() - 1) {
 					if (taskCount() == 0) {
@@ -134,12 +132,13 @@ export default function TaskIndicator() {
 					delete messages[event.payload];
 					return messages;
 				});
+				updateTaskCount();
 				if (taskCount() == 0) {
 					setColor("disabled");
 				} else if (taskCount() == 1) {
 					setTaskName(getTaskDisplayName(Object.keys(messages())[0]!));
 				}
-			}
+			},
 		);
 
 		let unlisten4 = listen(
@@ -154,7 +153,7 @@ export default function TaskIndicator() {
 						return messages;
 					});
 				}
-			}
+			},
 		);
 
 		let unlisten5 = listen(
@@ -169,7 +168,7 @@ export default function TaskIndicator() {
 						return messages;
 					});
 				}
-			}
+			},
 		);
 
 		let unlisten6 = listen(
@@ -184,7 +183,7 @@ export default function TaskIndicator() {
 						return messages;
 					});
 				}
-			}
+			},
 		);
 
 		let unlisten7 = listen(
@@ -199,7 +198,7 @@ export default function TaskIndicator() {
 						return messages;
 					});
 				}
-			}
+			},
 		);
 
 		let unlisten8 = listen(
@@ -217,14 +216,14 @@ export default function TaskIndicator() {
 
 					updateSelectedProgress();
 				}
-			}
+			},
 		);
 
 		let unlisten9 = listen(
 			"nitro_display_resolution_error",
 			(event: Event<ResolutionErrorEvent>) => {
 				errorToast(<ResolutionError error={event.payload.error} />);
-			}
+			},
 		);
 
 		return await Promise.all([
