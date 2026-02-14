@@ -6,6 +6,7 @@ import {
 	createSignal,
 	For,
 	Match,
+	onCleanup,
 	Setter,
 	Show,
 	Switch,
@@ -57,6 +58,7 @@ import SearchBar from "../../components/input/text/SearchBar";
 import Modal from "../../components/dialog/Modal";
 import ConfiguredPackageModal from "./ConfiguredPackageModal";
 import PackageVersion from "../../components/input/text/PackageVersion";
+import { Event, listen } from "@tauri-apps/api/event";
 
 export default function PackagesConfig(props: PackagesConfigProps) {
 	let navigate = useNavigate();
@@ -97,7 +99,7 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 		},
 	);
 
-	let [installedPackages, __] = createResource(
+	let [installedPackages, installedPackagesMethods] = createResource(
 		() => props.id,
 		async () => {
 			let out: InstalledPackage[] = [];
@@ -196,7 +198,7 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 		},
 	);
 
-	let [packageData, ___] = createResource(
+	let [packageData, packageDataMethods] = createResource(
 		() => allPackages(),
 		async (allPackages) => {
 			let out: { [pkg: string]: string | PackageMetaAndProps } = {};
@@ -246,6 +248,7 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 		props.derivedServerPackages;
 
 		allPackagesMethods.refetch();
+		packageDataMethods.refetch();
 	});
 
 	let [resolutionError, resolutionErrorMethods] = createResource(async () => {
@@ -267,6 +270,22 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 
 	let [showQuickAdd, setShowQuickAdd] = createSignal(false);
 	let [showOverridesModal, setShowOverridesModal] = createSignal(false);
+
+	let [unlisten, __] = createResource(
+		async () => {
+			return await listen("nitro_output_finish_task", (e: Event<string>) => {
+				if (
+					e.payload == "update_instance_packages" ||
+					e.payload == "update_instance"
+				) {
+					installedPackagesMethods.refetch();
+				}
+			});
+		},
+		{ initialValue: () => {} },
+	);
+
+	onCleanup(() => unlisten());
 
 	return (
 		<div class="cont col" id="packages-config">

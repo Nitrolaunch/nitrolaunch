@@ -43,8 +43,6 @@ export default function TaskIndicator() {
 		if (taskCount() == 1) {
 			setTaskName(getTaskDisplayName(task));
 			setColor(getTaskColor(task));
-		} else {
-			setColor("running");
 		}
 		setMessages((messages) => {
 			messages[task] = {
