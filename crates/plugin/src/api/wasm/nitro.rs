@@ -1,4 +1,4 @@
-use std::{borrow::Borrow, collections::HashMap, hash::Hash, marker::PhantomData};
+use std::{borrow::Borrow, collections::HashMap, hash::Hash, marker::PhantomData, path::PathBuf};
 
 use anyhow::{anyhow, Context};
 use nitro_config::{instance::InstanceConfig, template::TemplateConfig};
@@ -22,6 +22,13 @@ pub fn get_templates() -> Option<WASMMap<TemplateConfig>> {
 		map: templates.into_iter().collect(),
 		_phantom: PhantomData,
 	})
+}
+
+/// Gets the directory for an instance
+pub fn get_instance_dir(instance: &str) -> anyhow::Result<Option<PathBuf>> {
+	super::interface::get_instance_dir(instance)
+		.map(|x| x.map(PathBuf::from))
+		.map_err(|e| anyhow!(e))
 }
 
 /// Launches an instance in the background

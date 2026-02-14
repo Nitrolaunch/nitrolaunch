@@ -18,6 +18,7 @@ world interface-world {
 
 	import get-instances: func() -> option<list<tuple<string, string>>>;
 	import get-templates: func() -> option<list<tuple<string, string>>>;
+	import get-instance-dir: func(instance: string) -> result<option<string>, string>;
 	import launch-instance: func(instance: string, account: option<string>) -> result<_, string>;
 
 	import download-bytes: func(url: string) -> result<list<u8>, string>;

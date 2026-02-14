@@ -19,6 +19,7 @@ use nitro_shared::{
 	no_window,
 	output::{Message, MessageContents, MessageLevel, NitroOutput},
 	util::{ARCH_STRING, OS_STRING},
+	Side,
 };
 use tokio::{process::Command, sync::Mutex};
 use wasmtime::{
@@ -411,6 +412,32 @@ impl bindings::InterfaceWorldImports for State {
 				})
 				.collect(),
 		)
+	}
+
+	async fn get_instance_dir(&mut self, instance: String) -> Result<Option<String>, String> {
+		let Some(instances) = &self.instances else {
+			return Ok(None);
+		};
+		let Some(config) = instances.get(&instance) else {
+			return Err("Instance does not exist".into());
+		};
+
+		let inst_dir = if let Some(inst_dir) = &config.dir {
+			if inst_dir == "none" {
+				return Ok(None);
+			} else {
+				inst_dir.clone()
+			}
+		} else {
+			let base_dir = Path::new(&self.data_dir).join("instances").join(instance);
+			if config.side == Some(Side::Client) {
+				base_dir.join(".minecraft").to_string_lossy().to_string()
+			} else {
+				base_dir.to_string_lossy().to_string()
+			}
+		};
+
+		Ok(Some(inst_dir))
 	}
 
 	async fn launch_instance(

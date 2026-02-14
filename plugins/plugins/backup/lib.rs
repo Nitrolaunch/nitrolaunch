@@ -6,6 +6,7 @@ use std::path::{Path, PathBuf};
 use anyhow::Context;
 use backup::{get_backup_directory, BackupAutoHook, Config, Index, DEFAULT_GROUP};
 use clap::Parser;
+use nitro_plugin::api::wasm::nitro::get_instance_dir;
 use nitro_plugin::api::wasm::output::WASMPluginOutput;
 use nitro_plugin::api::wasm::sys::get_data_dir;
 use nitro_plugin::api::wasm::util::get_custom_config;
@@ -228,7 +229,7 @@ fn create(instance: &str, group: Option<&str>, o: &mut impl NitroOutput) -> anyh
 
 	let mut index = get_index(instance)?;
 
-	let inst_dir = get_data_dir().join("instances").join(instance);
+	let inst_dir = get_instance_dir(instance)?.context("Instance directory does not exist")?;
 
 	index.create_backup(BackupSource::User, Some(group), &inst_dir)?;
 
@@ -266,9 +267,7 @@ fn restore(
 	let group = group.unwrap_or(DEFAULT_GROUP);
 
 	let index = get_index(instance)?;
-
-	// FIXME: Use instance API
-	let inst_dir = get_data_dir().join("instances").join(instance);
+	let inst_dir = get_instance_dir(instance)?.context("Instance directory does not exist")?;
 
 	index.restore_backup(group, backup, &inst_dir)?;
 	index.finish()?;
