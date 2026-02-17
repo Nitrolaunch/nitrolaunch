@@ -1,5 +1,5 @@
 use crate::commands::instance::update_instance_impl;
-use crate::data::{InstanceLaunch, LauncherData};
+use crate::data::LauncherData;
 use crate::{output::LauncherOutput, State};
 use anyhow::{bail, Context};
 use nitrolaunch::core::io::open_named_pipe;
@@ -48,7 +48,6 @@ pub async fn launch_game(
 			&state,
 			app_handle,
 			stdio_paths.clone(),
-			state.data.clone(),
 			output,
 		)
 		.await
@@ -65,7 +64,6 @@ pub async fn launch_game_impl(
 	state: &State,
 	app: Arc<AppHandle>,
 	stdio_paths: Arc<Mutex<Option<(PathBuf, Option<PathBuf>)>>>,
-	data: Arc<Mutex<LauncherData>>,
 	mut o: LauncherOutput,
 ) -> anyhow::Result<()> {
 	println!("Launching game!");
@@ -116,18 +114,6 @@ pub async fn launch_game_impl(
 			o.finish_task();
 
 			handle.silence_output(true);
-
-			// Record the launch
-			let mut data = data.lock().await;
-			data.last_launches.insert(
-				instance_id.to_string(),
-				InstanceLaunch {
-					stdout: handle.stdout().to_string_lossy().to_string(),
-					stdin: handle.stdin().map(|x| x.to_string_lossy().to_string()),
-				},
-			);
-			let _ = data.write(&paths);
-			std::mem::drop(data);
 
 			*stdio_paths.lock().await = Some((
 				handle.stdout().to_owned(),
@@ -226,12 +212,16 @@ pub async fn get_instance_output(
 	instance_id: &str,
 ) -> Result<Option<String>, String> {
 	let path = {
-		let data = state.data.lock().await;
-		if let Some(last_launch) = data.last_launches.get(instance_id) {
-			PathBuf::from(&last_launch.stdout)
-		} else {
+		let lock = state.running_instances.get().unwrap().lock().await;
+		let Some(entry) = lock.get_entry(instance_id, None) else {
 			return Ok(None);
-		}
+		};
+
+		let Some(path) = &entry.stdout_file else {
+			return Ok(None);
+		};
+
+		state.paths.internal.join("stdio").join(path)
 	};
 
 	let contents = fmt_err(
@@ -250,16 +240,16 @@ pub async fn write_instance_input(
 	input: &str,
 ) -> Result<(), String> {
 	let path = {
-		let data = state.data.lock().await;
-		if let Some(last_launch) = data.last_launches.get(instance_id) {
-			if let Some(stdin) = &last_launch.stdin {
-				PathBuf::from(stdin)
-			} else {
-				return Ok(());
-			}
-		} else {
+		let lock = state.running_instances.get().unwrap().lock().await;
+		let Some(entry) = lock.get_entry(instance_id, None) else {
 			return Ok(());
-		}
+		};
+
+		let Some(path) = &entry.stdin_file else {
+			return Ok(());
+		};
+
+		state.paths.internal.join("stdio").join(path)
 	};
 
 	let mut file = fmt_err(open_named_pipe(path))?;

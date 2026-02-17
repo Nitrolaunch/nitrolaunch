@@ -116,6 +116,23 @@ impl RunningInstanceRegistry {
 		self.is_dirty = true;
 	}
 
+	/// Gets an instance in the registry
+	pub fn get_instance<'this>(
+		&'this self,
+		instance: &str,
+		account: Option<&str>,
+	) -> Option<&'this RunningInstanceEntry> {
+		self.data.instances.iter().find(|x| {
+			if let Some(account) = account {
+				if !x.account.as_ref().is_some_and(|x| x == account) {
+					return false;
+				}
+			}
+
+			x.instance_id == instance
+		})
+	}
+
 	/// Removes an instance from the registry
 	pub fn remove_instance(&mut self, pid: u32, instance: &str, account: Option<&str>) {
 		let index = self.data.instances.iter().position(|x| {

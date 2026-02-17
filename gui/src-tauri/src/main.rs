@@ -181,7 +181,6 @@ fn main() {
 							&state,
 							app_handle,
 							stdio_paths.clone(),
-							state.data.clone(),
 							output,
 						)
 						.await
