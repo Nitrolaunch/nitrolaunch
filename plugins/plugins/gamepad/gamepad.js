@@ -129,9 +129,9 @@ function updateFocus(focusElem, dir) {
 		} else if (dir == "right") {
 			newIndex = index + 1;
 		} else if (dir == "up") {
-			newIndex = index - 3;
+			newIndex = index - getInstancesPerRow();
 		} else if (dir == "down") {
-			newIndex = index + 3;
+			newIndex = index + getInstancesPerRow();
 		}
 
 		let newFocus = document.querySelector(`.instance-list-item[data-index="${newIndex}"][data-section="${section}"]`);
@@ -148,6 +148,18 @@ function gamepadAction(focusElem) {
 		focusElem.click();
 		addFocus(focusElem);
 	}
+}
+
+function getInstancesPerRow() {
+	let elems = document.getElementsByClassName("instance-list-section");
+	for (let elem of elems) {
+		let style = getComputedStyle(elem);
+		let count = style.gridTemplateColumns.split(" ").length;
+		if (count > 0) {
+			return count;
+		}
+	}
+	return 4;
 }
 
 addStyle(`
