@@ -56,7 +56,8 @@
 	justify-content: flex-start;
 	margin-left: 0.5rem;
 	font-weight: bold;
-	overflow: hidden;
+	overflow-x: hidden;
+	text-wrap: nowrap;
 	width: 100%;
 }
 
