@@ -29,10 +29,9 @@ pub enum AccountSubcommand {
 		#[arg(short, long)]
 		account: Option<String>,
 	},
-	#[command(about = "Ensure that an account is authenticated")]
-	Auth {
+	#[command(about = "Log in an account")]
+	Login {
 		/// The account to authenticate. If not specified, uses the default account
-		#[arg(short, long)]
 		account: Option<String>,
 	},
 	#[command(about = "Log out an account")]
@@ -52,7 +51,7 @@ pub async fn run(subcommand: AccountSubcommand, data: &mut CmdData<'_>) -> anyho
 		AccountSubcommand::List { raw } => list(data, raw).await,
 		AccountSubcommand::Status => status(data).await,
 		AccountSubcommand::Passkey { account } => passkey(data, account).await,
-		AccountSubcommand::Auth { account } => auth(data, account).await,
+		AccountSubcommand::Login { account } => login(data, account).await,
 		AccountSubcommand::Logout { account } => logout(data, account).await,
 		AccountSubcommand::Add {} => add(data).await,
 		AccountSubcommand::External(args) => {
@@ -145,7 +144,7 @@ async fn passkey(data: &mut CmdData<'_>, account: Option<String>) -> anyhow::Res
 	Ok(())
 }
 
-async fn auth(data: &mut CmdData<'_>, account: Option<String>) -> anyhow::Result<()> {
+async fn login(data: &mut CmdData<'_>, account: Option<String>) -> anyhow::Result<()> {
 	data.ensure_config(true).await?;
 	let config = data.config.get_mut();
 	if let Some(account) = account {
