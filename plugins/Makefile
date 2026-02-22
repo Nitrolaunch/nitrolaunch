@@ -44,6 +44,7 @@ package.cross_platform: build.cross_platform
 
 	@zip -j release/completions-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_completions.wasm plugins/completions/plugin.json plugins/completions/zsh/_nitro
 	@printf "@ nitro_plugin_completions.wasm\\n@=plugin.wasm\\n" | zipnote -w release/completions-universal.zip
+	@printf "@ _nitro\\n@=completions/zsh/_nitro\\n" | zipnote -w release/completions-universal.zip
 	
 	@zip -j release/custom_files-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_custom_files.wasm plugins/custom_files/plugin.json
 	@printf "@ nitro_plugin_custom_files.wasm\\n@=plugin.wasm\\n" | zipnote -w release/custom_files-universal.zip
