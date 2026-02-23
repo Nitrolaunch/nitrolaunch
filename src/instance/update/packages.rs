@@ -63,6 +63,7 @@ pub async fn update_instance_packages<O: NitroOutput>(
 					.make_req_displayable(req, ctx.paths, ctx.client, ctx.output)
 					.await
 			}
+			PackageDiff::ManyAdded(..) | PackageDiff::ManyRemoved(..) => {}
 		}
 	}
 

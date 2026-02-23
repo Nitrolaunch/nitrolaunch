@@ -133,22 +133,32 @@ pub trait NitroOutput: Send {
 		self.display(MessageContents::Header("Package changes:".into()));
 
 		for diff in diffs {
-			let (PackageDiff::Added(pkg)
-			| PackageDiff::Removed(pkg)
-			| PackageDiff::VersionChanged(pkg, ..)) = &diff;
-			let pkg = PkgRequest::clone(pkg);
+			match &diff {
+				PackageDiff::Added(pkg)
+				| PackageDiff::Removed(pkg)
+				| PackageDiff::VersionChanged(pkg, ..) => {
+					let pkg = PkgRequest::clone(pkg);
 
-			let message = match &diff {
-				PackageDiff::Added(..) => "Added".to_string(),
-				PackageDiff::Removed(..) => "Removed".to_string(),
-				PackageDiff::VersionChanged(_, old_version, new_version) => {
-					format!("{old_version} -> {new_version}")
+					let message = match &diff {
+						PackageDiff::Added(..) => "Added".to_string(),
+						PackageDiff::Removed(..) => "Removed".to_string(),
+						PackageDiff::VersionChanged(_, old_version, new_version) => {
+							format!("{old_version} -> {new_version}")
+						}
+						_ => unreachable!(),
+					};
+					self.display(MessageContents::Package(
+						pkg,
+						Box::new(MessageContents::Simple(message)),
+					));
 				}
-			};
-			self.display(MessageContents::Package(
-				pkg,
-				Box::new(MessageContents::Simple(message)),
-			));
+				PackageDiff::ManyAdded(count) => {
+					self.display(MessageContents::Simple(format!("Added {count} packages")))
+				}
+				PackageDiff::ManyRemoved(count) => {
+					self.display(MessageContents::Simple(format!("Removed {count} packages")))
+				}
+			}
 		}
 
 		self.prompt_yes_no(

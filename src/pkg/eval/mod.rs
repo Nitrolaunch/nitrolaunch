@@ -67,6 +67,8 @@ use nitro_shared::Side;
 const MAX_NOTICE_INSTRUCTIONS: usize = 10;
 /// Max characters per notice instruction
 const MAX_NOTICE_CHARACTERS: usize = 128;
+/// Max number of add/delete package diffs until we replace them with a many diff
+const MAX_DIFF_COUNT: usize = 50;
 
 /// Context / purpose for when we are evaluating
 pub enum Routine {
@@ -671,6 +673,25 @@ impl ResolutionAndEvalResult {
 			if !self.packages.iter().any(|x| &(*x.req) == existing_pkg) {
 				out.push(PackageDiff::Removed(Arc::new(existing_pkg.clone())));
 			}
+		}
+
+		// Consolidate many additions or deletions into a single item
+		let add_count = out
+			.iter()
+			.filter(|x| matches!(x, PackageDiff::Added(..)))
+			.count();
+		if add_count > MAX_DIFF_COUNT {
+			out.retain(|x| !matches!(x, PackageDiff::Added(..)));
+			out.insert(0, PackageDiff::ManyAdded(add_count as u16));
+		}
+
+		let remove_count = out
+			.iter()
+			.filter(|x| matches!(x, PackageDiff::Removed(..)))
+			.count();
+		if remove_count > MAX_DIFF_COUNT {
+			out.retain(|x| !matches!(x, PackageDiff::Removed(..)));
+			out.insert(0, PackageDiff::ManyRemoved(remove_count as u16));
 		}
 
 		out

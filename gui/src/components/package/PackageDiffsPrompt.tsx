@@ -50,10 +50,10 @@ export default function PackageDiffsPrompt(props: PackageDiffsPromptProps) {
 	>
 		<For each={props.diffs}>
 			{(diff) => {
-				let pkg = diff.type == "version_changed" ? diff.data[0] : diff.data;
-				let meta = () => metas()[pkg];
+				let pkg = diff.type == "version_changed" ? diff.data[0] : diff.type.includes("many") ? undefined : diff.data;
+				let meta = () => pkg == undefined ? undefined : metas()[pkg];
 
-				let pkgElement = <div class="cont package-diff-package">
+				let pkgElement = meta() == undefined ? undefined : <div class="cont package-diff-package">
 					<img
 						class="package-diff-package-icon"
 						src={meta() == undefined || meta()!.icon == undefined ? "icons/default_instance.png" : meta()!.icon!}
@@ -64,10 +64,10 @@ export default function PackageDiffsPrompt(props: PackageDiffsPromptProps) {
 				return <div class="cont package-diff">
 					<div class={`cont package-diff-indicator ${diff.type}`}>
 						<Switch>
-							<Match when={diff.type == "added"}>
+							<Match when={diff.type == "added" || diff.type == "many_added"}>
 								<Icon icon={Plus} size="1rem" />
 							</Match>
-							<Match when={diff.type == "removed"}>
+							<Match when={diff.type == "removed" || diff.type == "many_removed"}>
 								<Icon icon={Delete} size="1rem" />
 							</Match>
 							<Match when={diff.type == "version_changed"}>
@@ -79,11 +79,14 @@ export default function PackageDiffsPrompt(props: PackageDiffsPromptProps) {
 						<Switch>
 							<Match when={diff.type == "version_changed"}>
 								{pkgElement}
-								<span class="cont package-diff-version" style="color:var(--error)">{diff.data[1]}</span>
+								<span class="cont package-diff-version" style="color:var(--error)">{(diff.data as any)[1]}</span>
 								<Icon icon={ArrowRight} size="1.25rem" />
-								<span class="cont package-diff-version" style="color:var(--instance)">{diff.data[2]}</span>
+								<span class="cont package-diff-version" style="color:var(--instance)">{(diff.data as any)[2]}</span>
 							</Match>
-							<Match when={diff.type != "version_changed"}>
+							<Match when={diff.type == "many_added" || diff.type == "many_removed"}>
+								{diff.data} packages
+							</Match>
+							<Match when={diff.type != "version_changed" && diff.type != "many_added" && diff.type != "many_removed"}>
 								{pkgElement}
 							</Match>
 						</Switch>
@@ -106,8 +109,16 @@ export type PackageDiff =
 		data: string
 	}
 	| {
+		type: "many_added",
+		data: number
+	}
+	| {
 		type: "removed",
 		data: string
+	}
+	| {
+		type: "many_removed",
+		data: number
 	}
 	| {
 		type: "version_changed",

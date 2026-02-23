@@ -455,8 +455,12 @@ pub enum ResolutionError {
 pub enum PackageDiff {
 	/// A new package was added
 	Added(ArcPkgReq),
+	/// A large number of packages were added
+	ManyAdded(u16),
 	/// An existing package was removed
 	Removed(ArcPkgReq),
+	/// A large number of packages were removed
+	ManyRemoved(u16),
 	/// An existing package had it's version changed. Contains the old and new version
 	VersionChanged(ArcPkgReq, String, String),
 }
