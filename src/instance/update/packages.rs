@@ -10,7 +10,7 @@ use nitro_pkg::repo::PackageFlag;
 use nitro_pkg::PkgRequest;
 use nitro_shared::addon::AddonKind;
 use nitro_shared::output::{MessageContents, NitroOutput};
-use nitro_shared::pkg::ArcPkgReq;
+use nitro_shared::pkg::{ArcPkgReq, PackageDiff};
 use nitro_shared::translate;
 use nitro_shared::versions::VersionInfo;
 use tokio::sync::Semaphore;
@@ -48,8 +48,24 @@ pub async fn update_instance_packages<O: NitroOutput>(
 
 	let mut inst_lock = instance.get_lockfile(ctx.lock, ctx.paths)?;
 
+	// Prompt to update the packages
 	let current_packages = inst_lock.get_packages();
-	let diffs = resolution.get_diffs(current_packages);
+	let mut diffs = resolution.get_diffs(current_packages);
+
+	// Make requests displayable
+	for diff in &mut diffs {
+		match diff {
+			PackageDiff::Added(req)
+			| PackageDiff::Removed(req)
+			| PackageDiff::VersionChanged(req, ..) => {
+				*req = ctx
+					.packages
+					.make_req_displayable(req, ctx.paths, ctx.client, ctx.output)
+					.await
+			}
+		}
+	}
+
 	if !diffs.is_empty() {
 		if !ctx.output.prompt_special_package_diffs(diffs).await? {
 			bail!("Package update aborted");
