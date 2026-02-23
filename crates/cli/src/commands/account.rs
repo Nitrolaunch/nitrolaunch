@@ -2,10 +2,12 @@ use super::CmdData;
 use crate::commands::call_plugin_subcommand;
 use crate::output::{icons_enabled, HYPHEN_POINT, STAR};
 use anyhow::{bail, Context};
+use inquire::Select;
 use itertools::Itertools;
 use nitrolaunch::config::modifications::{apply_modifications_and_write, ConfigModification};
+use nitrolaunch::config::Config;
 use nitrolaunch::config_crate::account::{AccountConfig, AccountVariant};
-use nitrolaunch::core::account::AccountKind;
+use nitrolaunch::core::account::{AccountID, AccountKind};
 
 use clap::Subcommand;
 use color_print::{cprint, cprintln};
@@ -21,6 +23,8 @@ pub enum AccountSubcommand {
 		#[arg(short, long)]
 		raw: bool,
 	},
+	#[command(about = "Switch to another default account")]
+	Switch { account: Option<String> },
 	#[command(about = "Get current authentication status")]
 	Status,
 	#[command(about = "Update the passkey for an account")]
@@ -49,6 +53,7 @@ pub enum AccountSubcommand {
 pub async fn run(subcommand: AccountSubcommand, data: &mut CmdData<'_>) -> anyhow::Result<()> {
 	match subcommand {
 		AccountSubcommand::List { raw } => list(data, raw).await,
+		AccountSubcommand::Switch { account } => switch(data, account).await,
 		AccountSubcommand::Status => status(data).await,
 		AccountSubcommand::Passkey { account } => passkey(data, account).await,
 		AccountSubcommand::Login { account } => login(data, account).await,
@@ -91,6 +96,25 @@ async fn list(data: &mut CmdData<'_>, raw: bool) -> anyhow::Result<()> {
 			println!();
 		}
 	}
+
+	Ok(())
+}
+
+async fn switch(data: &mut CmdData<'_>, account: Option<String>) -> anyhow::Result<()> {
+	data.ensure_config(true).await?;
+	let mut raw_config = data.get_raw_config()?;
+
+	let account = pick_account(account, data.config.get())?;
+	raw_config.default_account = Some(account.to_string());
+
+	apply_modifications_and_write(
+		&mut raw_config,
+		Vec::new(),
+		&data.paths,
+		&data.config.get().plugins,
+		data.output,
+	)
+	.await?;
 
 	Ok(())
 }
@@ -206,4 +230,23 @@ async fn add(data: &mut CmdData<'_>) -> anyhow::Result<()> {
 		.display(MessageContents::Success("Account added".into()));
 
 	Ok(())
+}
+
+/// Pick which account to use
+pub fn pick_account(account: Option<String>, config: &Config) -> anyhow::Result<AccountID> {
+	if let Some(account) = account {
+		Ok(account.into())
+	} else {
+		let options = config
+			.accounts
+			.iter_accounts()
+			.map(|x| x.0)
+			.sorted()
+			.collect();
+		let selection = Select::new("Choose an account", options)
+			.prompt()
+			.context("Prompt failed")?;
+
+		Ok(selection.clone())
+	}
 }
