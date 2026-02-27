@@ -39,3 +39,6 @@ Path to the config folder, containing nitro configuration.
 
 ### `cli_icons` - `boolean`
 Enables or disables icons for the CLI. Defaults to false.
+
+### `cli_wrap` - `boolean`
+Enables or disables text wrapping for the CLI. Defaults to true.

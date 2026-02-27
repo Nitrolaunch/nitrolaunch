@@ -3375,6 +3375,7 @@ dependencies = [
  "async-trait",
  "clap",
  "color-print",
+ "crossterm 0.29.0",
  "inquire",
  "itertools 0.11.0",
  "nitrolaunch",

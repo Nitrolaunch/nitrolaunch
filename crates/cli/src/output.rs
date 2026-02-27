@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::time::Duration;
 
 use anyhow::Context;
@@ -40,6 +41,7 @@ pub struct TerminalOutput {
 	logger: Logger,
 	translation_map: Option<TranslationMap>,
 	process_spinner_task: Option<Sender<()>>,
+	wrapping_enabled: bool,
 }
 
 #[async_trait::async_trait]
@@ -77,7 +79,15 @@ impl NitroOutput for TerminalOutput {
 
 					start_message
 				}
-				other => self.format_message(other),
+				message => {
+					// Wrapping
+					let message = self.format_message(message);
+					if !self.in_process && self.wrapping_enabled {
+						wrap_message(&message).to_string()
+					} else {
+						message
+					}
+				}
 			};
 
 			/*
@@ -179,6 +189,7 @@ impl NitroOutput for TerminalOutput {
 			logger: Logger::dummy(),
 			translation_map: None,
 			process_spinner_task: None,
+			wrapping_enabled: self.wrapping_enabled,
 		})
 	}
 }
@@ -199,6 +210,7 @@ impl TerminalOutput {
 			logger,
 			translation_map: None,
 			process_spinner_task: None,
+			wrapping_enabled: IO_CONFIG.get_bool("cli_wrap").unwrap_or(true),
 		})
 	}
 
@@ -406,7 +418,89 @@ fn format_loading_spinner(stage: u8) -> String {
 	cformat!("<s>[</><y>{icon}</><s>]</>")
 }
 
+/// Wraps a message based on the terminal width
+fn wrap_message(message: &'_ str) -> Cow<'_, str> {
+	let Ok((width, ..)) = crossterm::terminal::size() else {
+		return Cow::Borrowed(message);
+	};
+
+	wrap_message_width(message, width as usize)
+}
+
+/// Wraps a message to a max size
+fn wrap_message_width(message: &'_ str, width: usize) -> Cow<'_, str> {
+	if width == 0 {
+		return Cow::Borrowed(message);
+	}
+
+	let char_len = message.char_indices().count();
+	let wrap_count = char_len / width;
+
+	let mut out = String::with_capacity(message.len() + wrap_count);
+	// +1 is to ensure we get the extra text at the end that is not wrapped
+	for i in 0..(wrap_count + 1) {
+		let start_char = i * width;
+		// Bound the end to the end of the message
+		let char_count = if start_char + width > char_len {
+			char_len - start_char
+		} else {
+			width
+		};
+		if char_count == 0 {
+			continue;
+		}
+
+		let mut chars = message.char_indices();
+		let start = chars.nth(start_char).expect("Should be in bounds").0;
+		let (end_start, end_char) = chars.nth(char_count - 2).expect("Should be in bounds");
+		let end = end_start + end_char.len_utf8();
+
+		out.push_str(&message[start..end]);
+		// Prevent trailing newlines
+		if end != message.len() {
+			out.push('\n');
+		}
+	}
+
+	Cow::Owned(out)
+}
+
 /// Get whether icons are enabled
 pub fn icons_enabled() -> bool {
 	IO_CONFIG.get_bool("cli_icons").unwrap_or_default()
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	fn test_wrap_empty() {
+		assert_eq!(wrap_message_width("", 5), "");
+	}
+
+	#[test]
+	fn test_wrap_zero_width() {
+		assert_eq!(wrap_message_width("foo", 0), "foo");
+	}
+
+	#[test]
+	fn test_wrap_equal_width() {
+		assert_eq!(wrap_message_width("foo", 3), "foo");
+	}
+
+	#[test]
+	fn test_wrap_multiple_of_width() {
+		assert_eq!(wrap_message_width("foobar", 3), "foo\nbar");
+	}
+
+	#[test]
+	fn test_wrap_standard_value() {
+		assert_eq!(wrap_message_width("foobarba", 3), "foo\nbar\nba");
+	}
+
+	#[test]
+	fn test_wrap_inside_codepoint() {
+		assert_eq!(wrap_message_width("fo⬢bar", 3), "fo⬢\nbar");
+	}
 }

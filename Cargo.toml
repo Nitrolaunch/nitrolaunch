@@ -93,6 +93,7 @@ cfg-match = "0.2.1"
 chrono = "0.4.42"
 clap = { version = "4.5.4", features = ["derive"] }
 color-print = "0.3.6"
+crossterm = "0.29.0"
 dashmap = "7.0.0-rc2"
 directories = "5.0.0"
 discord-rich-presence = "1.1.0"
