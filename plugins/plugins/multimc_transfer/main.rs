@@ -14,7 +14,13 @@ use nitro_plugin::{
 		MigratedPackage,
 	},
 };
-use nitro_shared::{addon::AddonKind, loaders::Loader, versions::MinecraftVersionDeser, Side};
+use nitro_shared::{
+	addon::AddonKind,
+	loaders::Loader,
+	output::{MessageContents, NitroOutput},
+	versions::MinecraftVersionDeser,
+	Side,
+};
 use nitrolaunch::config_crate::{
 	instance::{make_valid_instance_id, InstanceConfig},
 	package::PackageConfigDeser,
@@ -96,46 +102,20 @@ fn main() -> anyhow::Result<()> {
 		})
 	})?;
 
-	plugin.check_migration(|_, arg| {
+	plugin.check_migration(|mut ctx, arg| {
 		let data_folder = data_folder(&arg)?;
 		let instances_folder = data_folder.join("instances");
-		if instances_folder.exists() {
-			let mut instances = Vec::new();
+		let instances = get_available_instances(&instances_folder, ctx.get_output())?;
 
-			let read = instances_folder
-				.read_dir()
-				.context("Failed to read instances")?;
-			for entry in read {
-				let entry = entry?;
-
-				if entry.file_type()?.is_file() {
-					continue;
-				}
-
-				let name = entry.file_name().to_string_lossy().to_string();
-				if name == "_LAUNCHER_TEMP" {
-					continue;
-				}
-
-				instances.push(name);
-			}
-
-			Ok(Some(CheckMigrationResult { instances }))
-		} else {
-			Ok(None)
-		}
+		Ok(instances.map(|instances| CheckMigrationResult { instances }))
 	})?;
 
-	plugin.migrate_instances(|ctx, arg| {
+	plugin.migrate_instances(|mut ctx, arg| {
+		// Get instances
 		let data_folder = data_folder(&arg.format)?;
 		let instances_folder = data_folder.join("instances");
-		if !instances_folder.exists() {
-			return Ok(MigrateInstancesResult {
-				format: arg.format,
-				instances: HashMap::new(),
-				packages: HashMap::new(),
-			});
-		}
+		let names =
+			get_available_instances(&instances_folder, ctx.get_output())?.unwrap_or_default();
 
 		let nitro_data_dir = ctx.get_data_dir()?;
 		let nitro_instances_dir = nitro_data_dir.join("instances");
@@ -143,37 +123,18 @@ fn main() -> anyhow::Result<()> {
 		let mut instances = HashMap::new();
 		let mut packages = HashMap::new();
 
-		let read = instances_folder
-			.read_dir()
-			.context("Failed to read instances")?;
-		for entry in read {
-			let entry = entry?;
-
-			if entry.file_type()?.is_file() {
-				continue;
-			}
-
-			let name = entry.file_name().to_string_lossy().to_string();
-			if name == "_LAUNCHER_TEMP" {
-				continue;
-			}
+		for name in names {
 			if let Some(requested_instances) = &arg.instances {
-				if !requested_instances.contains(&name) {
+				if !requested_instances.is_empty() && !requested_instances.contains(&name) {
 					continue;
 				}
 			}
 
-			let path = entry.path();
+			let path = instances_folder.join(&name);
 
 			let mc_dir = path.join(".minecraft");
-			if !mc_dir.exists() {
-				continue;
-			}
 
 			let cfg_path = path.join("instance.cfg");
-			if !cfg_path.exists() {
-				continue;
-			}
 
 			let cfg =
 				std::fs::read_to_string(cfg_path).context("Failed to read instance config")?;
@@ -379,6 +340,55 @@ fn read_pw_toml(contents: &str) -> HashMap<&str, HashMap<&str, &str>> {
 	}
 
 	sections
+}
+
+/// Gets the list of available instance names, returning None specifically if the launcher instance folder does not exist
+fn get_available_instances(
+	instances_folder: &Path,
+	o: &mut impl NitroOutput,
+) -> anyhow::Result<Option<Vec<String>>> {
+	if !instances_folder.exists() {
+		return Ok(None);
+	}
+
+	let read = instances_folder
+		.read_dir()
+		.context("Failed to read instances")?;
+	let mut out = Vec::new();
+	for entry in read {
+		let entry = entry?;
+
+		if entry.file_type()?.is_file() {
+			continue;
+		}
+
+		let name = entry.file_name().to_string_lossy().to_string();
+		if name == "_LAUNCHER_TEMP" {
+			continue;
+		}
+
+		let path = entry.path();
+
+		let mc_dir = path.join(".minecraft");
+		if !mc_dir.exists() {
+			o.debug(MessageContents::Simple(format!(
+				"Skipping {name}, Minecraft dir missing"
+			)));
+			continue;
+		}
+
+		let cfg_path = path.join("instance.cfg");
+		if !cfg_path.exists() {
+			o.debug(MessageContents::Simple(format!(
+				"Skipping {name}, Cfg file missing"
+			)));
+			continue;
+		}
+
+		out.push(name);
+	}
+
+	Ok(Some(out))
 }
 
 /// Gets the data folder depending on the format and operating system
