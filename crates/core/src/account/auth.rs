@@ -15,7 +15,7 @@ use nitro_auth::mc::{
 	AccessToken, ClientId, RefreshToken,
 };
 
-use super::{Account, AccountKind, CustomAuthFunction};
+use super::{Account, AccountKind, AccountManagerHooks};
 
 impl Account {
 	/// Authenticate the account
@@ -54,11 +54,11 @@ impl Account {
 			}
 			AccountKind::Demo => {}
 			AccountKind::Unknown(other) => {
-				if let Some(func) = params.custom_auth_fn {
+				if let Some(hooks) = params.custom_hooks {
 					o.debug(MessageContents::Simple(
 						"Handling custom account type with authentication function".into(),
 					));
-					let profile = func
+					let profile = hooks
 						.auth(&self.id, other)
 						.await
 						.context("Custom auth function failed")?;
@@ -158,15 +158,15 @@ impl Account {
 }
 
 /// Data for a Microsoft account
-pub struct MicrosoftAccountData {
-	access_token: AccessToken,
-	profile: MinecraftUserProfile,
-	xbox_uid: Option<String>,
-	keypair: Option<Keypair>,
+pub(crate) struct MicrosoftAccountData {
+	pub access_token: AccessToken,
+	pub profile: MinecraftUserProfile,
+	pub xbox_uid: Option<String>,
+	pub keypair: Option<Keypair>,
 }
 
 /// Updates authentication for a Microsoft account using either the database or updating from the API
-async fn update_microsoft_account_auth(
+pub(crate) async fn update_microsoft_account_auth(
 	account_id: &str,
 	params: AuthParameters<'_>,
 	o: &mut impl NitroOutput,
@@ -456,7 +456,7 @@ pub(crate) struct AuthParameters<'a> {
 	pub client_id: ClientId,
 	pub paths: &'a Paths,
 	pub req_client: &'a reqwest::Client,
-	pub custom_auth_fn: Option<Arc<dyn CustomAuthFunction>>,
+	pub custom_hooks: Option<Arc<dyn AccountManagerHooks>>,
 }
 
 /// Checks whether an account in the database is logged in

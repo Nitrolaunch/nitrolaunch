@@ -1,6 +1,6 @@
 use super::CmdData;
 use crate::commands::call_plugin_subcommand;
-use crate::output::{icons_enabled, HYPHEN_POINT, STAR};
+use crate::output::{icons_enabled, CHECK, HYPHEN_POINT, STAR};
 use anyhow::{bail, Context};
 use inquire::Select;
 use itertools::Itertools;
@@ -10,7 +10,8 @@ use nitrolaunch::config_crate::account::{AccountConfig, AccountVariant};
 use nitrolaunch::core::account::{AccountID, AccountKind};
 
 use clap::Subcommand;
-use color_print::{cprint, cprintln};
+use color_print::{cformat, cprint, cprintln};
+use nitrolaunch::shared::minecraft::CosmeticState;
 use nitrolaunch::shared::output::{MessageContents, NitroOutput};
 use reqwest::Client;
 
@@ -46,6 +47,12 @@ pub enum AccountSubcommand {
 	},
 	#[command(about = "Add new accounts to your config")]
 	Add {},
+	#[command(about = "Get or set skins and capes")]
+	Cosmetics {
+		/// The account to use. If not specified, uses the default account
+		#[arg(short, long)]
+		account: Option<String>,
+	},
 	#[clap(external_subcommand)]
 	External(Vec<String>),
 }
@@ -59,6 +66,7 @@ pub async fn run(subcommand: AccountSubcommand, data: &mut CmdData<'_>) -> anyho
 		AccountSubcommand::Login { account } => login(data, account).await,
 		AccountSubcommand::Logout { account } => logout(data, account).await,
 		AccountSubcommand::Add {} => add(data).await,
+		AccountSubcommand::Cosmetics { account } => cosmetics(data, account).await,
 		AccountSubcommand::External(args) => {
 			call_plugin_subcommand(args, Some("account"), data).await
 		}
@@ -228,6 +236,46 @@ async fn add(data: &mut CmdData<'_>) -> anyhow::Result<()> {
 
 	data.output
 		.display(MessageContents::Success("Account added".into()));
+
+	Ok(())
+}
+
+async fn cosmetics(data: &mut CmdData<'_>, account: Option<String>) -> anyhow::Result<()> {
+	data.ensure_config(true).await?;
+	let config = data.config.get_mut();
+	if let Some(account) = account {
+		config.accounts.choose_account(&account)?;
+	}
+
+	let client = Client::new();
+	let (skins, capes) = config
+		.accounts
+		.get_cosmetics(&data.paths.core, &client, data.output)
+		.await
+		.context("Failed to get cosmetics")?;
+
+	if !skins.is_empty() {
+		cprintln!("<s,m>Skins:");
+		for skin in skins {
+			let line = cformat!("<m>{}", skin.cosmetic.id);
+			let line = match skin.cosmetic.state {
+				CosmeticState::Active => cformat!("{line} <s,g>{CHECK} Selected"),
+				CosmeticState::Inactive => line,
+			};
+			println!("{HYPHEN_POINT}{line}");
+		}
+	}
+	if !capes.is_empty() {
+		cprintln!("<s,y>Capes:");
+		for cape in capes {
+			let line = cformat!("<y>{} - {}", cape.alias, cape.cosmetic.id);
+			let line = match cape.cosmetic.state {
+				CosmeticState::Active => cformat!("{line} <s,g>{CHECK} Selected"),
+				CosmeticState::Inactive => line,
+			};
+			println!("{HYPHEN_POINT}{line}");
+		}
+	}
 
 	Ok(())
 }

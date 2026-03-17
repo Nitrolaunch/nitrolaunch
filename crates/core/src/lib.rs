@@ -66,18 +66,21 @@ pub struct NitroCore {
 }
 
 impl NitroCore {
-	/// Construct a new core with default settings
-	pub fn new() -> anyhow::Result<Self> {
-		Self::with_config(Configuration::new())
-	}
-
 	/// Construct a new core with set configuration
-	pub fn with_config(config: Configuration) -> anyhow::Result<Self> {
-		Self::with_config_and_paths(config, Paths::new().context("Failed to create core paths")?)
+	pub fn with_config(config: Configuration, accounts: AccountManager) -> anyhow::Result<Self> {
+		Self::with_config_and_paths(
+			config,
+			Paths::new().context("Failed to create core paths")?,
+			accounts,
+		)
 	}
 
 	/// Construct a new core with set configuration and paths
-	pub fn with_config_and_paths(config: Configuration, paths: Paths) -> anyhow::Result<Self> {
+	pub fn with_config_and_paths(
+		config: Configuration,
+		paths: Paths,
+		accounts: AccountManager,
+	) -> anyhow::Result<Self> {
 		let persistent =
 			PersistentData::open(&paths).context("Failed to open persistent data file")?;
 		let out = Self {
@@ -86,7 +89,7 @@ impl NitroCore {
 			persistent,
 			update_manager: UpdateManager::new(config.update_depth),
 			versions: VersionRegistry::new(),
-			accounts: AccountManager::new(config.ms_client_id.clone()),
+			accounts,
 			config,
 			java_installations: HashMap::new(),
 			custom_java_fn: None,

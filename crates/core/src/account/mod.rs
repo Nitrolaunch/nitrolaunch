@@ -1,5 +1,7 @@
 /// Authentication for different types of account accounts
 pub mod auth;
+/// Account cosmetics
+pub mod cosmetics;
 /// Tools for working with UUIDs
 pub mod uuid;
 
@@ -7,7 +9,10 @@ use std::{collections::HashMap, ops::Deref, sync::Arc};
 
 use anyhow::{bail, Context};
 use nitro_auth::mc::{AccessToken, ClientId, Keypair};
-use nitro_shared::{minecraft::MinecraftUserProfile, output::NitroOutput};
+use nitro_shared::{
+	minecraft::{Cape, MinecraftUserProfile, Skin},
+	output::NitroOutput,
+};
 use reqwest::Client;
 
 use crate::Paths;
@@ -145,8 +150,8 @@ pub struct AccountManager {
 	ms_client_id: ClientId,
 	/// Whether the manager has been set as offline for authentication
 	offline: bool,
-	/// Custom auth function for plugin injection
-	custom_auth_fn: Option<Arc<dyn CustomAuthFunction>>,
+	/// Custom hooks for plugin injection
+	custom_hooks: Option<Arc<dyn AccountManagerHooks>>,
 }
 
 /// State of authentication
@@ -166,7 +171,7 @@ impl AccountManager {
 			accounts: HashMap::new(),
 			ms_client_id,
 			offline: false,
-			custom_auth_fn: None,
+			custom_hooks: None,
 		}
 	}
 
@@ -275,7 +280,7 @@ impl AccountManager {
 					force: false,
 					offline: self.offline,
 					client_id: self.ms_client_id.clone(),
-					custom_auth_fn: self.custom_auth_fn.clone(),
+					custom_hooks: self.custom_hooks.clone(),
 				};
 				account.authenticate(params, o).await?;
 			}
@@ -292,7 +297,10 @@ impl AccountManager {
 		client: &Client,
 		o: &mut impl NitroOutput,
 	) -> anyhow::Result<()> {
-		let account = self.accounts.get_mut(account).context("Account does not exist")?;
+		let account = self
+			.accounts
+			.get_mut(account)
+			.context("Account does not exist")?;
 
 		if !account.is_authenticated() || !account.is_auth_valid(paths) {
 			let params = AuthParameters {
@@ -301,12 +309,63 @@ impl AccountManager {
 				force: false,
 				offline: self.offline,
 				client_id: self.ms_client_id.clone(),
-				custom_auth_fn: self.custom_auth_fn.clone(),
+				custom_hooks: self.custom_hooks.clone(),
 			};
 			account.authenticate(params, o).await?;
 		}
 
 		Ok(())
+	}
+
+	/// Gets cosmetics from the currently chosen account. Returns an error if no account is chosen.
+	pub async fn get_cosmetics(
+		&mut self,
+		paths: &Paths,
+		client: &Client,
+		o: &mut impl NitroOutput,
+	) -> anyhow::Result<(Vec<Skin>, Vec<Cape>)> {
+		if let AuthState::AccountChosen(account_id) = &mut self.state {
+			let account = self
+				.accounts
+				.get_mut(account_id)
+				.expect("Account in AuthState does not exist");
+
+			let params = AuthParameters {
+				req_client: client,
+				paths,
+				force: false,
+				offline: self.offline,
+				client_id: self.ms_client_id.clone(),
+				custom_hooks: self.custom_hooks.clone(),
+			};
+			account.get_cosmetics(params, o).await
+		} else {
+			bail!("No account chosen")
+		}
+	}
+
+	/// Gets cosmetics from a specific account
+	pub async fn get_account_cosmetics(
+		&mut self,
+		account: &str,
+		paths: &Paths,
+		client: &Client,
+		o: &mut impl NitroOutput,
+	) -> anyhow::Result<(Vec<Skin>, Vec<Cape>)> {
+		let account = self
+			.accounts
+			.get_mut(account)
+			.context("Account does not exist")?;
+
+		let params = AuthParameters {
+			req_client: client,
+			paths,
+			force: false,
+			offline: self.offline,
+			client_id: self.ms_client_id.clone(),
+			custom_hooks: self.custom_hooks.clone(),
+		};
+		account.get_cosmetics(params, o).await
 	}
 
 	/// Unchooses the current account, if one is chosen
@@ -326,18 +385,28 @@ impl AccountManager {
 		self.offline = offline;
 	}
 
-	/// Set the manager's custom auth function
-	pub fn set_custom_auth_function(&mut self, func: Arc<dyn CustomAuthFunction>) {
-		self.custom_auth_fn = Some(func);
+	/// Set the manager's custom hooks
+	pub fn set_custom_hooks(&mut self, hooks: Arc<dyn AccountManagerHooks>) {
+		self.custom_hooks = Some(hooks);
 	}
 }
 
-/// Function for custom authentication handling
+/// Functions for custom handling for unknown account types
 #[async_trait::async_trait]
-pub trait CustomAuthFunction: Send + Sync {
-	/// Call the custom auth function
-	async fn auth(&self, id: &str, account_type: &str)
-		-> anyhow::Result<Option<MinecraftUserProfile>>;
+pub trait AccountManagerHooks: Send + Sync {
+	/// Authenticate a custom account
+	async fn auth(
+		&self,
+		id: &str,
+		account_type: &str,
+	) -> anyhow::Result<Option<MinecraftUserProfile>>;
+
+	/// Get cosmetics for a custom account
+	async fn get_cosmetics(
+		&self,
+		id: &str,
+		account_type: &str,
+	) -> anyhow::Result<(Vec<Skin>, Vec<Cape>)>;
 }
 
 /// Validate a Minecraft username
@@ -389,7 +458,9 @@ mod tests {
 		let mut accounts = AccountManager::new(ClientId::new(String::new()));
 		let account = Account::new(AccountKind::Demo, "foo".into());
 		accounts.add_account(account);
-		accounts.choose_account("foo").expect("Failed to choose account");
+		accounts
+			.choose_account("foo")
+			.expect("Failed to choose account");
 		let account = Account::new(AccountKind::Demo, "bar".into());
 		accounts.add_account(account);
 		accounts.remove_account("foo");

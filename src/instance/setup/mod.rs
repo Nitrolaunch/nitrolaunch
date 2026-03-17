@@ -11,7 +11,7 @@ use std::sync::Arc;
 use anyhow::{bail, Context};
 use nitro_config::instance::QuickPlay;
 use nitro_core::account::uuid::hyphenate_uuid;
-use nitro_core::account::{Account, AccountManager, CustomAuthFunction};
+use nitro_core::account::{Account, AccountManager};
 use nitro_core::auth_crate::mc::ClientId;
 use nitro_core::config::BrandingProperties;
 use nitro_core::instance::WindowResolution;
@@ -22,10 +22,9 @@ use nitro_core::launch::LaunchConfiguration;
 use nitro_core::version::InstalledVersion;
 use nitro_core::{NitroCore, QuickPlayType};
 use nitro_plugin::hook::hooks::{
-	AddVersions, HandleAuth, HandleAuthArg, InstallCustomJava, InstallCustomJavaArg,
-	OnInstanceSetup, OnInstanceSetupArg, RemoveLoader,
+	AddVersions, InstallCustomJava, InstallCustomJavaArg, OnInstanceSetup, OnInstanceSetupArg,
+	RemoveLoader,
 };
-use nitro_shared::minecraft::MinecraftUserProfile;
 use nitro_shared::output::{MessageContents, NitroOutput};
 use nitro_shared::output::{NoOp, OutputProcess};
 use nitro_shared::versions::VersionInfo;
@@ -428,18 +427,14 @@ pub async fn setup_core(
 		core_config = core_config.ms_client_id(client_id.clone());
 	}
 	let core_config = core_config.build();
-	let mut core = NitroCore::with_config(core_config).context("Failed to initialize core")?;
+	let mut core = NitroCore::with_config(core_config, accounts.clone())
+		.context("Failed to initialize core")?;
 
 	// Set up account manager
 	core.get_accounts().steal_accounts(accounts);
 	core.get_accounts().set_offline(settings.offline_auth);
 
 	// Set up custom plugin integrations
-	core.get_accounts()
-		.set_custom_auth_function(Arc::new(AuthFunction {
-			plugins: plugins.clone(),
-			paths: paths.clone(),
-		}));
 	core.set_custom_java_install_fn(Arc::new(JavaFunction {
 		plugins: plugins.clone(),
 		paths: paths.clone(),
@@ -457,40 +452,6 @@ pub async fn setup_core(
 	}
 
 	Ok(core)
-}
-
-/// CustomAuthFunction implementation for account types using plugins
-struct AuthFunction {
-	plugins: PluginManager,
-	paths: Paths,
-}
-
-#[async_trait::async_trait]
-impl CustomAuthFunction for AuthFunction {
-	async fn auth(
-		&self,
-		id: &str,
-		account_type: &str,
-	) -> anyhow::Result<Option<MinecraftUserProfile>> {
-		let arg = HandleAuthArg {
-			account_id: id.to_string(),
-			account_type: account_type.to_string(),
-		};
-		let mut results = self
-			.plugins
-			.call_hook(HandleAuth, &arg, &self.paths, &mut NoOp)
-			.await
-			.context("Failed to call handle auth hook")?;
-
-		let mut out = None;
-		while let Some(result) = results.next_result(&mut NoOp).await? {
-			if result.handled {
-				out = result.profile;
-			}
-		}
-
-		Ok(out)
-	}
 }
 
 /// CustomJavaFunction implementation using plugins

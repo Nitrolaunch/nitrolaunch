@@ -9,7 +9,7 @@ use nitro_shared::addon::AddonKind;
 use nitro_shared::id::{InstanceID, TemplateID};
 use nitro_shared::lang::translate::LanguageMap;
 use nitro_shared::loaders::Loader;
-use nitro_shared::minecraft::MinecraftUserProfile;
+use nitro_shared::minecraft::{Cape, MinecraftUserProfile, Skin};
 use nitro_shared::minecraft::VersionEntry;
 use nitro_shared::pkg::{PackageID, PackageQueryDepth, PackageSearchParameters};
 use nitro_shared::versions::VersionPattern;
@@ -1109,4 +1109,34 @@ pub struct GetInstanceLogArg {
 	pub log_id: String,
 	/// The configuration of the instance
 	pub config: InstanceConfig,
+}
+
+def_hook!(
+	GetAccountCosmetics,
+	"get_account_cosmetics",
+	"Gets the available cosmetics for a custom account",
+	GetAccountCosmeticsArg,
+	GetAccountCosmeticsResult,
+	1,
+	true,
+);
+
+/// Argument for the GetAccountCosmetics hook
+#[derive(Serialize, Deserialize, Default)]
+#[serde(default)]
+pub struct GetAccountCosmeticsArg {
+	/// The ID of the account
+	pub id: String,
+	/// The account kind of the account
+	pub kind: String,
+}
+
+/// Result from the GetAccountCosmetics hook
+#[derive(Serialize, Deserialize, Default)]
+#[serde(default)]
+pub struct GetAccountCosmeticsResult {
+	/// The list of available skins
+	pub skins: Vec<Skin>,
+	/// The list of available capes
+	pub capes: Vec<Cape>,
 }

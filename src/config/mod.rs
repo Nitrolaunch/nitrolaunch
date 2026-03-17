@@ -17,13 +17,17 @@ use nitro_config::instance::InstanceConfig;
 use nitro_config::template::consolidate_template_configs;
 use nitro_config::template::TemplateConfig;
 use nitro_config::ConfigDeser;
-use nitro_core::account::{Account, AccountKind, AccountManager};
+use nitro_core::account::{Account, AccountKind, AccountManager, AccountManagerHooks};
 use nitro_core::auth_crate::mc::ClientId;
 use nitro_core::io::{json_from_file, json_to_file_pretty};
 use nitro_pkg::PkgRequest;
-use nitro_plugin::hook::hooks::{AddInstances, AddInstancesArg, AddSupportedLoaders, AddTemplates};
+use nitro_plugin::hook::hooks::{
+	AddInstances, AddInstancesArg, AddSupportedLoaders, AddTemplates, GetAccountCosmetics,
+	GetAccountCosmeticsArg, HandleAuth, HandleAuthArg,
+};
 use nitro_shared::id::{InstanceID, TemplateID};
-use nitro_shared::output::{MessageContents, NitroOutput};
+use nitro_shared::minecraft::{Cape, MinecraftUserProfile, Skin};
+use nitro_shared::output::{MessageContents, NitroOutput, NoOp};
 use nitro_shared::util::is_valid_identifier;
 use nitro_shared::{skip_fail, translate};
 use preferences::ConfigPreferences;
@@ -103,6 +107,10 @@ impl Config {
 		}
 
 		let mut accounts = AccountManager::new(client_id);
+		accounts.set_custom_hooks(Arc::new(AuthFunction {
+			plugins: plugins.clone(),
+			paths: paths.clone(),
+		}));
 		let mut instances = HashMap::with_capacity(config.instances.len());
 		// Preferences
 		let (prefs, repositories) =
@@ -442,6 +450,65 @@ pub fn read_account_config(config: &AccountConfig, id: &str) -> Account {
 			};
 			Account::new(kind, id.into())
 		}
+	}
+}
+
+/// AccountManagerHooks implementation for account types using plugins
+struct AuthFunction {
+	plugins: PluginManager,
+	paths: Paths,
+}
+
+#[async_trait::async_trait]
+impl AccountManagerHooks for AuthFunction {
+	async fn auth(
+		&self,
+		id: &str,
+		account_type: &str,
+	) -> anyhow::Result<Option<MinecraftUserProfile>> {
+		let arg = HandleAuthArg {
+			account_id: id.to_string(),
+			account_type: account_type.to_string(),
+		};
+		let mut results = self
+			.plugins
+			.call_hook(HandleAuth, &arg, &self.paths, &mut NoOp)
+			.await
+			.context("Failed to call handle auth hook")?;
+
+		let mut out = None;
+		while let Some(result) = results.next_result(&mut NoOp).await? {
+			if result.handled {
+				out = result.profile;
+			}
+		}
+
+		Ok(out)
+	}
+
+	async fn get_cosmetics(
+		&self,
+		id: &str,
+		account_type: &str,
+	) -> anyhow::Result<(Vec<Skin>, Vec<Cape>)> {
+		let arg = GetAccountCosmeticsArg {
+			id: id.to_string(),
+			kind: account_type.to_string(),
+		};
+		let mut results = self
+			.plugins
+			.call_hook(GetAccountCosmetics, &arg, &self.paths, &mut NoOp)
+			.await
+			.context("Failed to call handle auth hook")?;
+
+		let mut skins = Vec::new();
+		let mut capes = Vec::new();
+		while let Some(result) = results.next_result(&mut NoOp).await? {
+			skins.extend(result.skins);
+			capes.extend(result.capes);
+		}
+
+		Ok((skins, capes))
 	}
 }
 
