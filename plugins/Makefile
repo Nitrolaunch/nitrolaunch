@@ -154,7 +154,7 @@ install.backup:
 	@cp -r ../target/wasm32-wasip2/release/nitro_plugin_backup.wasm ~/.local/share/nitro/plugins/backup/plugin.wasm
 
 install.beet:
-	@cargo install --path . --bin nitro_plugin_beet --locked
+	@cargo install --path . --bin nitro_plugin_beet --locked --profile fast_release
 	@mkdir -p ~/.local/share/nitro/plugins/beet
 	@cat plugins/beet/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/beet/plugin.json
 
@@ -164,7 +164,7 @@ install.better_jsons:
 	@cp -r ../target/wasm32-wasip2/release/nitro_plugin_better_jsons.wasm ~/.local/share/nitro/plugins/better_jsons/plugin.wasm
 
 install.cleanup:
-	@cargo install --path . --bin nitro_plugin_cleanup --locked
+	@cargo install --path . --bin nitro_plugin_cleanup --locked --profile fast_release
 	@mkdir -p ~/.local/share/nitro/plugins/cleanup
 	@cat plugins/cleanup/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/cleanup/plugin.json
 
@@ -179,7 +179,7 @@ install.config_split:
 	@cp -r ../target/wasm32-wasip2/release/nitro_plugin_config_split.wasm ~/.local/share/nitro/plugins/config_split/plugin.wasm
 
 install.curseforge_api:
-	@cargo install --path . --bin nitro_plugin_curseforge_api --locked
+	@cargo install --path . --bin nitro_plugin_curseforge_api --locked --profile fast_release
 	@mkdir -p ~/.local/share/nitro/plugins/curseforge_api
 	@cat plugins/curseforge_api/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/curseforge_api/plugin.json
 
@@ -189,12 +189,12 @@ install.custom_files:
 	@cp -r ../target/wasm32-wasip2/release/nitro_plugin_custom_files.wasm ~/.local/share/nitro/plugins/custom_files/plugin.wasm
 
 install.discord_status:
-	@cargo install --path . --bin nitro_plugin_discord_status --locked
+	@cargo install --path . --bin nitro_plugin_discord_status --locked --profile fast_release
 	@mkdir -p ~/.local/share/nitro/plugins/discord_status
 	@cat plugins/discord_status/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/discord_status/plugin.json
 
 install.docs:
-	@cargo install --path . --bin nitro_plugin_docs --locked
+	@cargo install --path . --bin nitro_plugin_docs --locked --profile fast_release
 	@mkdir -p ~/.local/share/nitro/plugins/docs
 	@cat plugins/docs/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/docs/plugin.json
 	
@@ -202,12 +202,12 @@ install.extra_versions:
 	@cp -r plugins/extra_versions ~/.local/share/nitro/plugins
 
 install.fabric_quilt:
-	@cargo install --path . --bin nitro_plugin_fabric_quilt --locked
+	@cargo install --path . --bin nitro_plugin_fabric_quilt --locked --profile fast_release
 	@mkdir -p ~/.local/share/nitro/plugins/fabric_quilt
 	@cat plugins/fabric_quilt/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/fabric_quilt/plugin.json
 
 install.forge:
-	@cargo install --path . --bin nitro_plugin_forge --locked
+	@cargo install --path . --bin nitro_plugin_forge --locked --profile fast_release
 	@mkdir -p ~/.local/share/nitro/plugins/forge
 	@cat plugins/forge/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/forge/plugin.json
 
@@ -215,7 +215,7 @@ install.gamepad:
 	@cp -r plugins/gamepad ~/.local/share/nitro/plugins
 
 install.gen_pkg:
-	@cargo install --path . --bin nitro_plugin_gen_pkg --locked
+	@cargo install --path . --bin nitro_plugin_gen_pkg --locked --profile fast_release
 	@mkdir -p ~/.local/share/nitro/plugins/gen_pkg
 	@cat plugins/gen_pkg/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/gen_pkg/plugin.json
 
@@ -233,12 +233,12 @@ install.lang:
 	@cp -r plugins/lang ~/.local/share/nitro/plugins
 
 install.modrinth:
-	@cargo install --path . --bin nitro_plugin_modrinth --locked
+	@cargo install --path . --bin nitro_plugin_modrinth --locked --profile fast_release
 	@cp -r plugins/modrinth ~/.local/share/nitro/plugins
 	@cat plugins/modrinth/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/modrinth/plugin.json
 
 install.modrinth_api:
-	@cargo install --path . --bin nitro_plugin_modrinth_api --locked
+	@cargo install --path . --bin nitro_plugin_modrinth_api --locked --profile fast_release
 	@mkdir -p ~/.local/share/nitro/plugins/modrinth_api
 	@cat plugins/modrinth_api/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/modrinth_api/plugin.json
 
@@ -248,7 +248,7 @@ install.mojang_transfer:
 	@cp -r ../target/wasm32-wasip2/release/nitro_plugin_mojang_transfer.wasm ~/.local/share/nitro/plugins/mojang_transfer/plugin.wasm
 
 install.multimc_transfer:
-	@cargo install --path . --bin nitro_plugin_multimc_transfer --locked
+	@cargo install --path . --bin nitro_plugin_multimc_transfer --locked --profile fast_release
 	@mkdir -p ~/.local/share/nitro/plugins/multimc_transfer
 	@cat plugins/multimc_transfer/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/multimc_transfer/plugin.json
 
@@ -263,49 +263,49 @@ install.nitro_transfer:
 	@cp -r ../target/wasm32-wasip2/release/nitro_plugin_nitro_transfer.wasm ~/.local/share/nitro/plugins/nitro_transfer/plugin.wasm
 
 install.options:
-	@cargo install --path . --bin nitro_plugin_options --locked
+	@cargo install --path . --bin nitro_plugin_options --locked --profile fast_release
 	@mkdir -p ~/.local/share/nitro/plugins/options
 	@cat plugins/options/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/options/plugin.json
 
 install.packhost:
-	@cargo install --path . --bin nitro_plugin_packhost --locked
+	@cargo install --path . --bin nitro_plugin_packhost --locked --profile fast_release
 	@mkdir -p ~/.local/share/nitro/plugins/packhost
 	@cat plugins/packhost/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/packhost/plugin.json
 
 install.paper:
-	@cargo install --path . --bin nitro_plugin_paper --locked
+	@cargo install --path . --bin nitro_plugin_paper --locked --profile fast_release
 	@mkdir -p ~/.local/share/nitro/plugins/paper
 	@cat plugins/paper/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/paper/plugin.json
 
 install.template_share:
-	@cargo install --path . --bin nitro_plugin_template_share --locked
+	@cargo install --path . --bin nitro_plugin_template_share --locked --profile fast_release
 	@mkdir -p ~/.local/share/nitro/plugins/template_share
 	@cat plugins/template_share/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/template_share/plugin.json
 	@cp plugins/template_share/import.js ~/.local/share/nitro/plugins/template_share
 	@cp plugins/template_share/export.js ~/.local/share/nitro/plugins/template_share
 
 install.server_restart:
-	@cargo install --path . --bin nitro_plugin_server_restart --locked
+	@cargo install --path . --bin nitro_plugin_server_restart --locked --profile fast_release
 	@mkdir -p ~/.local/share/nitro/plugins/server_restart
 	@cat plugins/server_restart/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/server_restart/plugin.json
 
 install.smithed:
-	@cargo install --path . --bin nitro_plugin_smithed --locked
+	@cargo install --path . --bin nitro_plugin_smithed --locked --profile fast_release
 	@cp -r plugins/smithed ~/.local/share/nitro/plugins
 	@cat plugins/smithed/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/smithed/plugin.json
 
 install.smithed_api:
-	@cargo install --path . --bin nitro_plugin_smithed_api --locked
+	@cargo install --path . --bin nitro_plugin_smithed_api --locked --profile fast_release
 	@mkdir -p ~/.local/share/nitro/plugins/smithed_api
 	@cat plugins/smithed_api/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/smithed_api/plugin.json
 
 install.sponge:
-	@cargo install --path . --bin nitro_plugin_sponge --locked
+	@cargo install --path . --bin nitro_plugin_sponge --locked --profile fast_release
 	@mkdir -p ~/.local/share/nitro/plugins/sponge
 	@cat plugins/sponge/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/sponge/plugin.json
 
 install.stats:
-	@cargo install --path . --bin nitro_plugin_stats --locked
+	@cargo install --path . --bin nitro_plugin_stats --locked --profile fast_release
 	@mkdir -p ~/.local/share/nitro/plugins/stats
 	@cat plugins/stats/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/stats/plugin.json
 
@@ -323,7 +323,7 @@ install.weld:
 	@cp plugins/weld/local_plugin.json ~/.local/share/nitro/plugins/weld/plugin.json
 
 install.xmcl_transfer:
-	@cargo install --path . --bin nitro_plugin_xmcl_transfer --locked
+	@cargo install --path . --bin nitro_plugin_xmcl_transfer --locked --profile fast_release
 	@mkdir -p ~/.local/share/nitro/plugins/xmcl_transfer
 	@cat plugins/xmcl_transfer/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/xmcl_transfer/plugin.json
 
