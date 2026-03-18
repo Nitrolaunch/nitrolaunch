@@ -1,3 +1,5 @@
+use std::path::Path;
+
 use super::CmdData;
 use crate::commands::call_plugin_subcommand;
 use crate::output::{icons_enabled, CHECK, HYPHEN_POINT, STAR};
@@ -11,7 +13,7 @@ use nitrolaunch::core::account::{AccountID, AccountKind};
 
 use clap::Subcommand;
 use color_print::{cformat, cprint, cprintln};
-use nitrolaunch::shared::minecraft::CosmeticState;
+use nitrolaunch::shared::minecraft::{CosmeticState, SkinVariant};
 use nitrolaunch::shared::output::{MessageContents, NitroOutput};
 use reqwest::Client;
 
@@ -31,7 +33,6 @@ pub enum AccountSubcommand {
 	#[command(about = "Update the passkey for an account")]
 	Passkey {
 		/// The account to update the passkey for. If not specified, uses the default account
-		#[arg(short, long)]
 		account: Option<String>,
 	},
 	#[command(about = "Log in an account")]
@@ -42,16 +43,35 @@ pub enum AccountSubcommand {
 	#[command(about = "Log out an account")]
 	Logout {
 		/// The account to log out. If not specified, uses the default account
-		#[arg(short, long)]
 		account: Option<String>,
 	},
 	#[command(about = "Add new accounts to your config")]
 	Add {},
 	#[command(about = "Get or set skins and capes")]
-	Cosmetics {
+	Cosmetic {
+		#[command(subcommand)]
+		subcommand: CosmeticSubcommand,
+	},
+	#[clap(external_subcommand)]
+	External(Vec<String>),
+}
+
+#[derive(Debug, Subcommand)]
+pub enum CosmeticSubcommand {
+	#[command(about = "List cosmetics")]
+	List {
 		/// The account to use. If not specified, uses the default account
-		#[arg(short, long)]
 		account: Option<String>,
+	},
+	#[command(about = "Upload a new skin to an account")]
+	Upload {
+		/// The account to use. If not specified, uses the default account
+		account: String,
+		/// The path to the skin file
+		path: String,
+		/// Whether this is a slim (Alex-like) skin
+		#[arg(long)]
+		slim: bool,
 	},
 	#[clap(external_subcommand)]
 	External(Vec<String>),
@@ -66,7 +86,17 @@ pub async fn run(subcommand: AccountSubcommand, data: &mut CmdData<'_>) -> anyho
 		AccountSubcommand::Login { account } => login(data, account).await,
 		AccountSubcommand::Logout { account } => logout(data, account).await,
 		AccountSubcommand::Add {} => add(data).await,
-		AccountSubcommand::Cosmetics { account } => cosmetics(data, account).await,
+		AccountSubcommand::Cosmetic { subcommand } => match subcommand {
+			CosmeticSubcommand::List { account } => cosmetic_list(data, account).await,
+			CosmeticSubcommand::Upload {
+				account,
+				path,
+				slim,
+			} => cosmetic_upload(data, account, path, slim).await,
+			CosmeticSubcommand::External(args) => {
+				call_plugin_subcommand(args, Some("account.cosmetic"), data).await
+			}
+		},
 		AccountSubcommand::External(args) => {
 			call_plugin_subcommand(args, Some("account"), data).await
 		}
@@ -240,7 +270,7 @@ async fn add(data: &mut CmdData<'_>) -> anyhow::Result<()> {
 	Ok(())
 }
 
-async fn cosmetics(data: &mut CmdData<'_>, account: Option<String>) -> anyhow::Result<()> {
+async fn cosmetic_list(data: &mut CmdData<'_>, account: Option<String>) -> anyhow::Result<()> {
 	data.ensure_config(true).await?;
 	let config = data.config.get_mut();
 	if let Some(account) = account {
@@ -276,6 +306,47 @@ async fn cosmetics(data: &mut CmdData<'_>, account: Option<String>) -> anyhow::R
 			println!("{HYPHEN_POINT}{line}");
 		}
 	}
+
+	Ok(())
+}
+
+async fn cosmetic_upload(
+	data: &mut CmdData<'_>,
+	account: String,
+	path: String,
+	slim: bool,
+) -> anyhow::Result<()> {
+	data.ensure_config(true).await?;
+	let config = data.config.get_mut();
+
+	let client = Client::new();
+
+	let path = Path::new(&path);
+	if !path.exists() {
+		bail!("Skin file does not exist");
+	}
+
+	let variant = if slim {
+		SkinVariant::Slim
+	} else {
+		SkinVariant::Classic
+	};
+
+	config
+		.accounts
+		.upload_skin(
+			&account,
+			variant,
+			path,
+			&data.paths.core,
+			&client,
+			data.output,
+		)
+		.await
+		.context("Failed to upload skin")?;
+
+	data.output
+		.display(MessageContents::Success("Skin uploaded".into()));
 
 	Ok(())
 }

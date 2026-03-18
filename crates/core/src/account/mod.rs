@@ -5,12 +5,12 @@ pub mod cosmetics;
 /// Tools for working with UUIDs
 pub mod uuid;
 
-use std::{collections::HashMap, ops::Deref, sync::Arc};
+use std::{collections::HashMap, ops::Deref, path::Path, sync::Arc};
 
 use anyhow::{bail, Context};
 use nitro_auth::mc::{AccessToken, ClientId, Keypair};
 use nitro_shared::{
-	minecraft::{Cape, MinecraftUserProfile, Skin},
+	minecraft::{Cape, MinecraftUserProfile, Skin, SkinVariant},
 	output::NitroOutput,
 };
 use reqwest::Client;
@@ -231,6 +231,14 @@ impl AccountManager {
 		Ok(())
 	}
 
+	/// Get the currently chosen account ID, if there is one
+	pub fn get_chosen_account_id(&self) -> Option<&str> {
+		match &self.state {
+			AuthState::Offline => None,
+			AuthState::AccountChosen(account_id) => Some(account_id),
+		}
+	}
+
 	/// Get the currently chosen account, if there is one
 	pub fn get_chosen_account(&self) -> Option<&Account> {
 		match &self.state {
@@ -366,6 +374,32 @@ impl AccountManager {
 			custom_hooks: self.custom_hooks.clone(),
 		};
 		account.get_cosmetics(params, o).await
+	}
+
+	/// Uploads a skin for an account
+	pub async fn upload_skin(
+		&mut self,
+		account: &str,
+		variant: SkinVariant,
+		skin_path: &Path,
+		paths: &Paths,
+		client: &Client,
+		o: &mut impl NitroOutput,
+	) -> anyhow::Result<()> {
+		let account = self
+			.accounts
+			.get_mut(account)
+			.context("Account does not exist")?;
+
+		let params = AuthParameters {
+			req_client: client,
+			paths,
+			force: false,
+			offline: self.offline,
+			client_id: self.ms_client_id.clone(),
+			custom_hooks: self.custom_hooks.clone(),
+		};
+		account.upload_skin(variant, skin_path, params, o).await
 	}
 
 	/// Unchooses the current account, if one is chosen

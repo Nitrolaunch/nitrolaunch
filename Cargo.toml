@@ -127,6 +127,8 @@ rand_chacha = "0.3.1"
 reqwest = { version = "0.12.15", default-features = false, features = [
 	"json",
 	"rustls-tls",
+	"multipart",
+	"stream",
 ] }
 rsa = { version = "0.9.10", default-features = false, features = [
 	"std",
@@ -149,7 +151,7 @@ wasmtime = { version = "41.0.0", default-features = false, features = [
 	"runtime",
 	"cranelift",
 	"async",
-	"component-model"
+	"component-model",
 ] }
 wasmtime-wasi = "41.0.0"
 wit-bindgen = "0.48.1"
