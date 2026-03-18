@@ -538,11 +538,15 @@ impl InstanceHandle {
 		}
 
 		// Call on stop hooks
-		let results = plugins
+		let mut results = plugins
 			.call_hook(OnInstanceStop, arg, paths, o)
 			.await
 			.context("Failed to call on stop hook")?;
-		results.all_results(o).await?;
+		while let Some(result) = results.next() {
+			if let Err(e) = result.result(o).await {
+				o.display(MessageContents::Error(e.to_string()));
+			}
+		}
 
 		Ok(())
 	}

@@ -11,6 +11,7 @@ use nitro_core::io::{json_from_file, json_to_file};
 use nitro_plugin::api::executable::{ExecutablePlugin, HookContext};
 use nitro_plugin::hook::hooks::{InstanceTile, InstanceTileSize, Subcommand};
 use nitro_plugin::hook::Hook;
+use nitro_shared::output::{MessageContents, NitroOutput};
 use nitro_shared::util::utc_timestamp;
 use serde::{Deserialize, Serialize};
 use sysinfo::{Pid, ProcessesToUpdate, System};
@@ -33,7 +34,11 @@ fn main() -> anyhow::Result<()> {
 	})?;
 
 	plugin.on_instance_launch(|mut ctx, arg| {
-		let mut stats = Stats::open(&ctx).context("Failed to open stats")?;
+		let Ok(mut stats) = Stats::open(&ctx) else {
+			ctx.get_output()
+				.display(MessageContents::Error("Failed to open stats".into()));
+			return Ok(());
+		};
 
 		// Write launch count and launch time
 		let entry = stats.instances.entry(arg.id.clone()).or_default();
@@ -41,7 +46,7 @@ fn main() -> anyhow::Result<()> {
 		if let Ok(timestamp) = utc_timestamp() {
 			entry.last_launch = Some(timestamp);
 		}
-		stats.write(&ctx).context("Failed to write stats")?;
+		let _ = stats.write(&ctx);
 
 		// Track when the instance started in persistent state to get playtime
 		let state = ctx
