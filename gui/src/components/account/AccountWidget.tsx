@@ -29,7 +29,7 @@ import { useNavigate } from "@solidjs/router";
 import Modal from "../dialog/Modal";
 import { AccountTypeInfo } from "../../types";
 
-export default function AccountWidget(props: AccountWidgetProps) {
+export default function AccountWidget() {
 	let navigate = useNavigate();
 
 	let [accountData, methods] = createResource(async () => {
@@ -123,7 +123,7 @@ export default function AccountWidget(props: AccountWidgetProps) {
 								username: "No Account Selected",
 							}}
 							isFeatured={true}
-							onclick={() => {}}
+							onclick={() => { }}
 							onClose={() => setIsOpen(false)}
 						/>
 					}
@@ -131,7 +131,7 @@ export default function AccountWidget(props: AccountWidgetProps) {
 					<AccountTile
 						account={accountData()!.currentAccount!}
 						isFeatured={true}
-						onclick={() => {}}
+						onclick={() => { }}
 						onClose={() => setIsOpen(false)}
 					/>
 				</Show>
@@ -259,8 +259,6 @@ export default function AccountWidget(props: AccountWidgetProps) {
 	);
 }
 
-export interface AccountWidgetProps {}
-
 interface AccountData {
 	currentAccount?: AccountInfo;
 	accounts: AccountInfo[];
@@ -295,6 +293,7 @@ function AccountTile(props: AccountTileProps) {
 				<img
 					class="account-tile-image"
 					src={getAccountIcon(props.account.uuid)}
+					onerror={(e) => (e.target as any).src = "/default_skin.png"}
 				/>
 			</div>
 			<div class="cont account-tile-name">
