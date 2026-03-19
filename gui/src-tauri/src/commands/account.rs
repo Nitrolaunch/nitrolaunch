@@ -9,8 +9,11 @@ use nitrolaunch::{
 	config_crate::account::{AccountConfig, AccountVariant},
 	core::account::AccountKind,
 	plugin::PluginManager,
-	plugin_crate::hook::hooks::{AddAccountTypes, AccountTypeInfo},
-	shared::output::NoOp,
+	plugin_crate::hook::hooks::{AccountTypeInfo, AddAccountTypes},
+	shared::{
+		minecraft::{Cape, Skin},
+		output::NoOp,
+	},
 };
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -31,7 +34,11 @@ pub async fn get_accounts(
 			.await
 			.context("Failed to load config"),
 	)?;
-	let account_ids: Vec<_> = config.accounts.iter_accounts().map(|x| x.0.clone()).collect();
+	let account_ids: Vec<_> = config
+		.accounts
+		.iter_accounts()
+		.map(|x| x.0.clone())
+		.collect();
 
 	let mut accounts = HashMap::with_capacity(account_ids.len());
 	config.accounts.set_offline(true);
@@ -42,7 +49,10 @@ pub async fn get_accounts(
 			.await
 			.context("Failed to authenticate account");
 
-		let account = config.accounts.get_account(&id).expect("Account should exist");
+		let account = config
+			.accounts
+			.get_account(&id)
+			.expect("Account should exist");
 
 		let ty = match account.get_kind() {
 			AccountKind::Microsoft { .. } => AccountType::Microsoft,
@@ -121,7 +131,9 @@ pub async fn login_account(
 		Ok::<(), anyhow::Error>(())
 	};
 
-	state.register_task("login_account", tokio::spawn(task)).await;
+	state
+		.register_task("login_account", tokio::spawn(task))
+		.await;
 
 	Ok(())
 }
@@ -219,4 +231,30 @@ pub async fn get_supported_account_types(
 	let out = fmt_err(results.flatten_all_results(&mut NoOp).await)?;
 
 	Ok(out)
+}
+
+#[tauri::command]
+pub async fn get_cosmetics(
+	state: tauri::State<'_, State>,
+	app_handle: tauri::AppHandle,
+	account: &str,
+) -> Result<(Vec<Skin>, Vec<Cape>), String> {
+	let mut config = fmt_err(
+		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
+			.await
+			.context("Failed to load config"),
+	)?;
+
+	let mut output = LauncherOutput::new(state.get_output(app_handle));
+	output.set_task("get_cosmetics");
+
+	let cosmetics = fmt_err(
+		config
+			.accounts
+			.get_account_cosmetics(&account, &state.paths.core, &state.client, &mut output)
+			.await
+			.context("Failed to get cosmetics"),
+	)?;
+
+	Ok(cosmetics)
 }

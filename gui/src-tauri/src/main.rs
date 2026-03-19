@@ -259,6 +259,7 @@ fn main() {
 			commands::account::create_account,
 			commands::account::remove_account,
 			commands::account::get_supported_account_types,
+			commands::account::get_cosmetics,
 			commands::settings::get_settings,
 			commands::settings::write_settings,
 			commands::transfer::get_instance_transfer_formats,

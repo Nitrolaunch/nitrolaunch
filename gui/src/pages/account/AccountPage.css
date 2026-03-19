@@ -92,3 +92,34 @@
 	border-left-color: var(--bg4);
 	border-radius: var(--round2);
 }
+
+#cosmetics {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 1rem;
+	margin-top: 1rem;
+}
+
+.cosmetic {
+	height: 15rem;
+	background-color: var(--bg2);
+	border: var(--border) solid var(--bg3);
+	border-radius: var(--round2);
+	padding: 1rem;
+	box-sizing: border-box;
+}
+
+.cosmetic.active.skin {
+	border-color: var(--instance);
+}
+
+.cosmetic.active.cape {
+	border-color: var(--warning);
+}
+
+.cosmetic-thumbnail {
+	width: 100%;
+	height: 10rem;
+	object-fit: cover;
+	image-rendering: pixelated;
+}

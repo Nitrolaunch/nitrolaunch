@@ -481,6 +481,8 @@ function getTaskDisplayName(task: string) {
 		return "Deleting instance";
 	} else if (task == "delete_template") {
 		return "Deleting template";
+	} else if (task == "get_cosmetics") {
+		return "Fetching Cosmetics";
 	}
 	return beautifyString(task);
 }
@@ -501,6 +503,7 @@ function getTaskColor(task: string) {
 		return "instance";
 	} else if (
 		task == "login_account" ||
+		task == "get_cosmetics" ||
 		task == "update_versions" ||
 		task == "save_template_config" ||
 		task == "delete_template"
