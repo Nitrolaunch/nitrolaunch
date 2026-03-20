@@ -11,7 +11,8 @@ use nitro_shared::output::{MessageContents, NitroOutput};
 use nitro_shared::translate;
 use serde::{Deserialize, Serialize};
 
-use nitro_shared::addon::{Addon, AddonKind};
+use nitro_pkg::addon::PackageAddon;
+use nitro_shared::minecraft::AddonKind;
 use nitro_shared::pkg::{ArcPkgReq, PackageAddonOptionalHashes, PackageID};
 
 use super::paths::Paths;
@@ -72,18 +73,13 @@ pub struct LockfileAddon {
 
 impl LockfileAddon {
 	/// Converts an addon to the format used by the lockfile.
-	/// Paths is the list of paths for the addon in the instance
-	pub fn from_addon(addon: &Addon, paths: Vec<PathBuf>) -> Self {
+	pub fn from_addon(addon: &PackageAddon, targets: Vec<PathBuf>) -> Self {
 		Self {
 			id: addon.id.clone(),
 			file_name: Some(addon.file_name.clone()),
-			files: paths
+			files: targets
 				.iter()
-				.map(|x| {
-					x.to_str()
-						.expect("Failed to convert addon path to a string")
-						.to_owned()
-				})
+				.map(|x| x.to_string_lossy().to_string())
 				.collect(),
 			kind: addon.kind.to_string(),
 			version: addon.version.clone(),
@@ -92,8 +88,8 @@ impl LockfileAddon {
 	}
 
 	/// Converts this LockfileAddon to an Addon
-	pub fn to_addon(&self, pkg_id: PackageID) -> anyhow::Result<Addon> {
-		Ok(Addon {
+	pub fn to_addon(&self, pkg_id: PackageID) -> anyhow::Result<PackageAddon> {
+		Ok(PackageAddon {
 			kind: AddonKind::parse_from_str(&self.kind)
 				.ok_or(anyhow!("Invalid addon kind '{}'", self.kind))?,
 			id: self.id.clone(),

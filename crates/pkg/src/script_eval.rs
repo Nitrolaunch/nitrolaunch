@@ -6,7 +6,7 @@ use nitro_parse::vars::{Value, VariableStore};
 use nitro_parse::FailReason;
 
 use anyhow::{anyhow, bail, Context};
-use nitro_shared::addon::AddonKind;
+use nitro_shared::minecraft::AddonKind;
 use nitro_shared::pkg::{PackageAddonOptionalHashes, PackageID};
 use serde::{Deserialize, Serialize};
 

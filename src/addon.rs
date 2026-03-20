@@ -1,5 +1,7 @@
 use anyhow::{bail, Context};
-use nitro_shared::addon::{Addon, AddonKind};
+use nitro_instance::addon::Addon;
+use nitro_pkg::addon::PackageAddon;
+use nitro_shared::minecraft::AddonKind;
 use nitro_shared::pkg::PackageAddonOptionalHashes;
 use reqwest::Client;
 
@@ -32,7 +34,7 @@ pub trait AddonExt {
 	fn should_update(&self, paths: &Paths, instance_id: &str) -> bool;
 }
 
-impl AddonExt for Addon {
+impl AddonExt for PackageAddon {
 	fn get_dir(&self, paths: &Paths) -> PathBuf {
 		paths.addons.join(self.kind.to_plural_string())
 	}
@@ -94,14 +96,14 @@ pub enum AddonLocation {
 #[derive(Debug, Clone)]
 pub struct AddonRequest {
 	/// The addon that will be retrieved
-	pub addon: Addon,
+	pub addon: PackageAddon,
 	/// Where the addon is located
 	location: AddonLocation,
 }
 
 impl AddonRequest {
 	/// Create a new AddonRequest from an addon and location
-	pub fn new(addon: Addon, location: AddonLocation) -> Self {
+	pub fn new(addon: PackageAddon, location: AddonLocation) -> Self {
 		Self { addon, location }
 	}
 
@@ -188,6 +190,16 @@ impl AddonRequest {
 	}
 }
 
+/// Package addon with target paths
+pub struct ResolvedPackageAddon {
+	/// Requested addon
+	pub pkg_addon: PackageAddon,
+	/// Target addon
+	pub addon: Addon,
+	/// Target file paths for the addon
+	pub target_paths: Vec<PathBuf>,
+}
+
 #[cfg(test)]
 mod tests {
 	use nitro_shared::pkg::{PackageAddonOptionalHashes, PackageID};
@@ -196,7 +208,7 @@ mod tests {
 
 	#[test]
 	fn test_addon_split_filename() {
-		let addon = Addon {
+		let addon = PackageAddon {
 			kind: AddonKind::Mod,
 			id: "foo".into(),
 			file_name: "FooBar.baz.jar".into(),

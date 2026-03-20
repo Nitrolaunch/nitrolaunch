@@ -18,6 +18,11 @@ cd net
 cargo publish
 cd ..
 
+# nitro_instance
+cd instance
+cargo publish
+cd ..
+
 # nitro_core
 cd core
 cargo publish

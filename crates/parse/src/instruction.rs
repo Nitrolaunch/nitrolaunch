@@ -15,7 +15,7 @@ use super::vars::Value;
 use super::FailReason;
 use crate::conditions::{ArchCondition, OSCondition};
 use crate::unexpected_token;
-use nitro_shared::addon::AddonKind;
+use nitro_shared::minecraft::AddonKind;
 
 /// A command / statement run in a package script
 #[derive(Debug, Clone)]

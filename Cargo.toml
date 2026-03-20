@@ -45,6 +45,7 @@ members = [
 	"crates/cli",
 	"crates/config",
 	"crates/core",
+	"crates/instance",
 	"crates/mods",
 	"crates/net",
 	"crates/options",
@@ -80,6 +81,7 @@ schema = [
 	"dep:schemars",
 	"nitro_config/schema",
 	"nitro_core/schema",
+	"nitro_instance/schema",
 	"nitro_pkg/schema",
 	"nitro_shared/schema",
 ]
@@ -110,6 +112,7 @@ nitrolaunch = { path = ".", version = "0.29.0" }
 nitro_auth = { path = "crates/auth", version = "0.29.0" }
 nitro_core = { path = "crates/core", version = "0.29.0" }
 nitro_config = { path = "crates/config", version = "0.29.0" }
+nitro_instance = { path = "crates/instance", version = "0.29.0" }
 nitro_mods = { path = "crates/mods", version = "0.29.0" }
 nitro_net = { path = "crates/net", version = "0.29.0" }
 nitro_options = { path = "crates/options", version = "0.29.0" }
@@ -175,6 +178,7 @@ simd-json = { workspace = true }
 sha2 = { workspace = true }
 nitro_config = { workspace = true }
 nitro_core = { workspace = true }
+nitro_instance = { workspace = true }
 nitro_net = { workspace = true }
 nitro_parse = { workspace = true }
 nitro_pkg = { workspace = true }

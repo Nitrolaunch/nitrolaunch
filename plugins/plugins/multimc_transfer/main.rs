@@ -15,8 +15,8 @@ use nitro_plugin::{
 	},
 };
 use nitro_shared::{
-	addon::AddonKind,
 	loaders::Loader,
+	minecraft::AddonKind,
 	output::{MessageContents, NitroOutput},
 	versions::MinecraftVersionDeser,
 	Side,

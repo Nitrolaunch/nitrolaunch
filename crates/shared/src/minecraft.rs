@@ -1,3 +1,7 @@
+use std::fmt::Display;
+
+#[cfg(feature = "schema")]
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::util::DefaultExt;
@@ -60,6 +64,72 @@ pub struct LatestVersions {
 	pub release: VersionName,
 	/// The latest snapshot version
 	pub snapshot: VersionName,
+}
+
+/// Different kinds of addons
+#[derive(Debug, Clone, Copy, Deserialize, Serialize)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
+#[serde(rename_all = "snake_case")]
+pub enum AddonKind {
+	/// A Minecraft resource pack
+	ResourcePack,
+	/// A game modification that needs to be loaded by a custom loader
+	Mod,
+	/// A server plugin that modifies game behavior
+	Plugin,
+	/// A graphics shader that needs to be loaded by a shader modification
+	Shader,
+	/// A Minecraft datapack
+	Datapack,
+}
+
+impl AddonKind {
+	/// Parse an AddonKind from a string
+	pub fn parse_from_str(string: &str) -> Option<Self> {
+		match string {
+			"resource_pack" => Some(Self::ResourcePack),
+			"mod" => Some(Self::Mod),
+			"plugin" => Some(Self::Plugin),
+			"shader" => Some(Self::Shader),
+			"datapack" => Some(Self::Datapack),
+			_ => None,
+		}
+	}
+
+	/// Plural version of to_string
+	pub fn to_plural_string(&self) -> String {
+		match self {
+			Self::ResourcePack => "resource_packs".into(),
+			Self::Mod => "mods".into(),
+			Self::Plugin => "plugins".into(),
+			Self::Shader => "shaders".into(),
+			Self::Datapack => "datapacks".into(),
+		}
+	}
+
+	/// Gets the file extension for this addon kind
+	pub fn get_extension(&self) -> &str {
+		match self {
+			AddonKind::Mod | AddonKind::Plugin => ".jar",
+			AddonKind::ResourcePack | AddonKind::Shader | AddonKind::Datapack => ".zip",
+		}
+	}
+}
+
+impl Display for AddonKind {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		write!(
+			f,
+			"{}",
+			match self {
+				Self::ResourcePack => "resource_pack",
+				Self::Mod => "mod",
+				Self::Plugin => "plugin",
+				Self::Shader => "shader",
+				Self::Datapack => "datapack",
+			}
+		)
+	}
 }
 
 /// Struct for a Minecraft Profile from the Minecraft Services API

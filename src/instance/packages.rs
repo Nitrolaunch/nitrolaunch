@@ -5,7 +5,7 @@ use nitro_shared::translate;
 use nitro_shared::versions::VersionInfo;
 use reqwest::Client;
 
-use crate::addon::AddonExt;
+use crate::addon::{AddonExt, ResolvedPackageAddon};
 use crate::instance::lock::InstanceLockfile;
 use crate::io::lock::LockfileAddon;
 use crate::io::paths::Paths;
@@ -101,16 +101,29 @@ impl Instance {
 		// Run commands
 		run_package_commands(&eval.commands, o).context("Failed to run package commands")?;
 
-		let lockfile_addons = eval
+		// Install addons
+
+		let addons: Vec<_> = eval
 			.addon_reqs
 			.iter()
 			.map(|x| {
+				let addon = x.addon.addon(x.addon.get_path(paths, &self.id));
+				let targets = self.get_addon_targets(&addon, &pkg_config.worlds, version_info);
+
+				ResolvedPackageAddon {
+					pkg_addon: x.addon.clone(),
+					addon,
+					target_paths: targets,
+				}
+			})
+			.collect();
+
+		let lockfile_addons = addons
+			.iter()
+			.map(|x| {
 				Ok(LockfileAddon::from_addon(
-					&x.addon,
-					self.get_linked_addon_paths(&x.addon, &pkg_config.worlds, version_info)?
-						.iter()
-						.map(|y| y.join(x.addon.file_name.clone()))
-						.collect(),
+					&x.pkg_addon,
+					x.target_paths.clone(),
 				))
 			})
 			.collect::<anyhow::Result<Vec<LockfileAddon>>>()
@@ -126,9 +139,9 @@ impl Instance {
 			.await
 			.context("Failed to update package in lockfile")?;
 
-		for addon in eval.addon_reqs.iter() {
-			self.create_addon(&addon.addon, &pkg_config.worlds, paths, version_info)
-				.with_context(|| format!("Failed to install addon '{}'", addon.addon.id))?;
+		for addon in addons {
+			self.create_addon(&addon.addon, &pkg_config.worlds, version_info)
+				.with_context(|| format!("Failed to install addon '{}'", addon.pkg_addon.id))?;
 		}
 
 		for path in files_to_remove {

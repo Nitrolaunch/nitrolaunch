@@ -1,78 +1,45 @@
 use std::path::{Path, PathBuf};
 
-use anyhow::{ensure, Context};
-use nitro_config::instance::get_addon_paths;
-use nitro_shared::addon::Addon;
+use anyhow::Context;
+use nitro_instance::addon::Addon;
 use nitro_shared::versions::VersionInfo;
 
-use crate::addon::{self, AddonExt};
+use crate::addon;
 use crate::io::paths::Paths;
 
 use super::Instance;
 
 impl Instance {
-	/// Creates an addon on the instance
+	/// Creates or updates an addon on the instance
 	pub fn create_addon(
 		&mut self,
 		addon: &Addon,
 		selected_worlds: &[String],
-		paths: &Paths,
 		version_info: &VersionInfo,
 	) -> anyhow::Result<()> {
-		self.ensure_dir()?;
-
-		for path in self
-			.get_linked_addon_paths(addon, selected_worlds, version_info)
-			.context("Failed to get linked directory")?
-		{
-			Self::link_addon(&path, addon, paths, &self.id)
-				.with_context(|| format!("Failed to link addon {}", addon.id))?;
-		}
-
-		Ok(())
+		let targets = self.get_addon_targets(addon, selected_worlds, version_info);
+		addon.link(&targets).context("Failed to link addon")
 	}
 
-	/// Get the paths on this instance to hardlink an addon to
-	pub fn get_linked_addon_paths(
+	/// Get the target paths for an addon on this instance
+	pub fn get_addon_targets(
 		&mut self,
 		addon: &Addon,
 		selected_worlds: &[String],
 		version_info: &VersionInfo,
-	) -> anyhow::Result<Vec<PathBuf>> {
-		self.ensure_dir()?;
+	) -> Vec<PathBuf> {
 		if let Some(inst_dir) = &self.dir {
-			get_addon_paths(
-				&self.config.original_config_with_templates_and_plugins,
+			let config = &self.config.original_config_with_templates_and_plugins;
+			addon.get_targets(
+				self.get_side(),
 				inst_dir,
-				addon.kind,
 				selected_worlds,
+				config.datapack_folder.as_ref().map(|x| Path::new(x)),
 				version_info,
 			)
 		} else {
-			Ok(Vec::new())
+			Vec::new()
 		}
-	}
-
-	/// Hardlinks the addon from the path in addon storage to the correct in the instance,
-	/// under the specified directory
-	fn link_addon(
-		dir: &Path,
-		addon: &Addon,
-		paths: &Paths,
-		instance_id: &str,
-	) -> anyhow::Result<()> {
-		let link = dir.join(addon.file_name.clone());
-		let addon_path = addon.get_path(paths, instance_id);
-		nitro_core::io::files::create_leading_dirs(&link)?;
-		// These checks are to make sure that we properly link the hardlink to the right location
-		// We have to remove the current link since it doesnt let us update it in place
-		ensure!(addon_path.exists(), "Addon path does not exist");
-		if link.exists() {
-			std::fs::remove_file(&link).context("Failed to remove instance addon file")?;
-		}
-		nitro_core::io::files::update_link(&addon_path, &link)
-			.context("Failed to create hard link")?;
-		Ok(())
 	}
 
 	/// Removes an addon file from this instance

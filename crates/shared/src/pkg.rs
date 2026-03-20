@@ -8,8 +8,8 @@ use std::hash::Hash;
 use std::str::FromStr;
 use std::sync::Arc;
 
-use crate::addon::AddonKind;
 use crate::loaders::Loader;
+use crate::minecraft::AddonKind;
 use crate::util::is_valid_identifier;
 use crate::versions::{parse_versioned_string, VersionPattern};
 

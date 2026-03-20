@@ -4,13 +4,13 @@ use std::{collections::HashMap, path::Path};
 
 use anyhow::{bail, Context};
 use nitro_config::instance::InstanceConfig;
+use nitro_pkg::addon::PackageAddon;
 use nitro_pkg::PkgRequest;
 use nitro_plugin::hook::hooks::{
 	AddInstanceTransferFormats, ExportInstance, ExportInstanceArg, ImportInstance,
 	ImportInstanceArg, InstanceTransferFeatureSupport, InstanceTransferFormat,
 	InstanceTransferFormatDirection, MigrateInstances, MigrateInstancesArg,
 };
-use nitro_shared::addon::Addon;
 use nitro_shared::lang::translate::TranslationKey;
 use nitro_shared::output::{MessageContents, NitroOutput};
 use nitro_shared::pkg::PackageAddonHashes;
@@ -229,7 +229,7 @@ pub async fn migrate_instances(
 				.into_iter()
 				.map(|x| {
 					LockfileAddon::from_addon(
-						&Addon {
+						&PackageAddon {
 							kind: x.kind,
 							id: x.id,
 							file_name: "placeholder".into(),

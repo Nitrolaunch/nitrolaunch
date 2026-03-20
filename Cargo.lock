@@ -3458,6 +3458,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "nitro_instance"
+version = "0.29.0"
+dependencies = [
+ "anyhow",
+ "itertools 0.11.0",
+ "nitro_shared",
+ "schemars 0.8.22",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "nitro_mods"
 version = "0.29.0"
 dependencies = [
@@ -3516,6 +3528,7 @@ dependencies = [
  "anyhow",
  "async-trait",
  "itertools 0.11.0",
+ "nitro_instance",
  "nitro_parse",
  "nitro_shared",
  "schemars 0.8.22",
@@ -3568,6 +3581,7 @@ dependencies = [
  "anyhow",
  "clap",
  "nitro_config",
+ "nitro_instance",
  "nitro_plugin",
  "nitro_shared",
  "zip 3.0.0",
@@ -3833,6 +3847,7 @@ dependencies = [
  "itertools 0.11.0",
  "nitro_config",
  "nitro_core",
+ "nitro_instance",
  "nitro_net",
  "nitro_parse",
  "nitro_pkg",

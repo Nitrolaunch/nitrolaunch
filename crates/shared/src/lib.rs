@@ -6,8 +6,6 @@
 //!
 //! - `schema`: Enable generation of JSON schemas using the `schemars` crate
 
-/// Common addon constructs
-pub mod addon;
 /// Operating Java memory arguments
 pub mod java_args;
 /// Tools for languages and language detection

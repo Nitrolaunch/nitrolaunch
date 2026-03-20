@@ -1,7 +1,7 @@
 [package]
-name = "nitro_pkg"
+name = "nitro_instance"
 version = "0.29.0"
-description = "Package standard for Nitrolaunch"
+description = "Instance file and addon management for Nitrolaunch"
 keywords = ["minecraft", "launcher", "game", "mc"]
 categories.workspace = true
 edition.workspace = true
@@ -10,17 +10,16 @@ authors.workspace = true
 repository.workspace = true
 rust-version.workspace = true
 
+[lints]
+workspace = true
+
 [features]
-schema = ["dep:schemars", "nitro_parse/schema", "nitro_shared/schema"]
+schema = ["dep:schemars"]
 
 [dependencies]
-async-trait = { workspace = true }
 anyhow = { workspace = true }
 itertools = { workspace = true }
-nitro_instance = { workspace = true }
-nitro_parse = { workspace = true }
-nitro_shared = { workspace = true }
 schemars = { workspace = true, optional = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
-simd-json = { workspace = true }
+nitro_shared = { workspace = true }

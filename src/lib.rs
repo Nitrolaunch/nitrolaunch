@@ -16,6 +16,7 @@
 
 pub use nitro_config as config_crate;
 pub use nitro_core as core;
+pub use nitro_instance as instance_crate;
 pub use nitro_net as net_crate;
 pub use nitro_parse as parse;
 pub use nitro_pkg as pkg_crate;

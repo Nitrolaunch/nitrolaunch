@@ -4,11 +4,11 @@ use std::path::Path;
 use std::sync::Arc;
 
 use itertools::Itertools;
-use nitro_config::instance::get_addon_paths;
 use nitro_core::net::get_transfer_limit;
+use nitro_instance::addon::get_addon_dirs;
 use nitro_pkg::repo::PackageFlag;
 use nitro_pkg::PkgRequest;
-use nitro_shared::addon::AddonKind;
+use nitro_shared::minecraft::AddonKind;
 use nitro_shared::output::{MessageContents, NitroOutput};
 use nitro_shared::pkg::{ArcPkgReq, PackageDiff};
 use nitro_shared::translate;
@@ -264,19 +264,17 @@ fn remove_existing_addons(
 			continue;
 		};
 
-		let Ok(dirs) = get_addon_paths(
-			&instance.config.original_config_with_templates_and_plugins,
-			inst_dir,
+		let dirs = get_addon_dirs(
 			adddon_kind,
+			instance.get_side(),
+			inst_dir,
 			&[],
+			instance.config.datapack_folder.as_ref().map(Path::new),
 			&VersionInfo {
 				version: constants.version.clone(),
 				versions: constants.version_list.clone(),
 			},
-		) else {
-			continue;
-		};
-
+		);
 		for dir in dirs {
 			remove_nitro_addons(&dir);
 		}

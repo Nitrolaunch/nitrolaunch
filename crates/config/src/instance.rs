@@ -1,14 +1,11 @@
 use std::collections::HashMap;
-use std::path::{Path, PathBuf};
 
-use anyhow::Context;
 use nitro_pkg::overrides::PackageOverrides;
-use nitro_shared::addon::AddonKind;
 use nitro_shared::java_args::MemoryNum;
 use nitro_shared::loaders::Loader;
 use nitro_shared::pkg::PackageStability;
 use nitro_shared::util::{merge_options, DefaultExt, DeserListOrSingle};
-use nitro_shared::versions::{MinecraftVersionDeser, VersionInfo, VersionPattern};
+use nitro_shared::versions::MinecraftVersionDeser;
 use nitro_shared::Side;
 #[cfg(feature = "schema")]
 use schemars::JsonSchema;
@@ -405,66 +402,4 @@ pub fn make_valid_instance_id(string: &str) -> String {
 /// Check if a loader can be installed by Nitrolaunch
 pub fn can_install_loader(loader: &Loader) -> bool {
 	matches!(loader, Loader::Vanilla)
-}
-
-/// Get the paths on an instance to put addons in
-pub fn get_addon_paths(
-	instance: &InstanceConfig,
-	game_dir: &Path,
-	addon: AddonKind,
-	selected_worlds: &[String],
-	version_info: &VersionInfo,
-) -> anyhow::Result<Vec<PathBuf>> {
-	let side = instance.side.context("Instance side missing")?;
-	Ok(match addon {
-		AddonKind::ResourcePack => {
-			if side == Side::Client {
-				// Resource packs are texture packs on older versions
-				if VersionPattern::After("13w24a".into()).matches_info(version_info) {
-					vec![game_dir.join("resourcepacks")]
-				} else {
-					vec![game_dir.join("texturepacks")]
-				}
-			} else {
-				vec![game_dir.join("resourcepacks")]
-			}
-		}
-		AddonKind::Mod => vec![game_dir.join("mods")],
-		AddonKind::Plugin => {
-			if side == Side::Server {
-				vec![game_dir.join("plugins")]
-			} else {
-				vec![]
-			}
-		}
-		AddonKind::Shader => {
-			if side == Side::Client {
-				vec![game_dir.join("shaderpacks")]
-			} else {
-				vec![]
-			}
-		}
-		AddonKind::Datapack => {
-			if let Some(datapack_folder) = &instance.datapack_folder {
-				vec![game_dir.join(datapack_folder)]
-			} else {
-				match side {
-					Side::Client => {
-						if selected_worlds.is_empty() {
-							vec![game_dir.join("world_files/datapacks")]
-						} else {
-							selected_worlds
-								.iter()
-								.map(|x| game_dir.join("saves").join(x).join("datapacks"))
-								.collect()
-						}
-					}
-					Side::Server => {
-						// TODO: Support custom world names
-						vec![game_dir.join("world").join("datapacks")]
-					}
-				}
-			}
-		}
-	})
 }

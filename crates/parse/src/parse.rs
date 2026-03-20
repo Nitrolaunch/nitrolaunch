@@ -11,7 +11,7 @@ use super::conditions::ConditionKind;
 use super::instruction::{parse_arg, InstrKind, Instruction};
 use super::lex::{lex, reduce_tokens, Side, Token, TokenAndPos};
 use super::vars::Value;
-use nitro_shared::addon::AddonKind;
+use nitro_shared::minecraft::AddonKind;
 
 use std::collections::{HashMap, VecDeque};
 

@@ -1,8 +1,13 @@
-use std::{fs::File, io::BufReader, path::PathBuf, str::FromStr};
+use std::{
+	fs::File,
+	io::BufReader,
+	path::{Path, PathBuf},
+	str::FromStr,
+};
 
 use anyhow::{bail, Context};
 use clap::Parser;
-use nitro_config::instance::get_addon_paths;
+use nitro_instance::addon::{get_addon_dirs, get_resource_pack_dir};
 use nitro_plugin::{
 	api::wasm::{
 		sys::{get_current_dir, get_data_dir},
@@ -10,7 +15,7 @@ use nitro_plugin::{
 	},
 	nitro_wasm_plugin,
 };
-use nitro_shared::{addon::AddonKind, id::InstanceID, versions::VersionInfo, Side};
+use nitro_shared::{id::InstanceID, minecraft::AddonKind, versions::VersionInfo, Side};
 use zip::{write::SimpleFileOptions, ZipWriter};
 
 nitro_wasm_plugin!(main, "addon_share");
@@ -37,11 +42,13 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 			.instances
 			.get(&InstanceID::from(cli.instance.clone()))
 			.context("Instance does not exist")?;
+		let side = instance.side.context("Instance side missing")?;
+
 		let inst_dir = if let Some(inst_dir) = &instance.dir {
 			PathBuf::from(inst_dir)
 		} else {
 			let data_dir = get_data_dir();
-			match instance.side.expect("Instance should have a side") {
+			match side {
 				Side::Client => data_dir
 					.join("instances")
 					.join(&cli.instance)
@@ -56,40 +63,21 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 			let kind = addon_type.to_addon_kind();
 			// For resource packs we have to check both resourcepacks and texturepacks
 			if *addon_type == AddonType::ResourcePacks {
-				let version_info = VersionInfo {
-					version: "foo".into(),
-					versions: vec!["foo".into(), "13w24a".into()],
-				};
-				dirs.extend(get_addon_paths(
-					instance,
-					&inst_dir,
-					kind,
-					&[],
-					&version_info,
-				)?);
-				let version_info = VersionInfo {
-					version: "foo".into(),
-					versions: vec!["13w24a".into(), "foo".into()],
-				};
-				dirs.extend(get_addon_paths(
-					instance,
-					&inst_dir,
-					kind,
-					&[],
-					&version_info,
-				)?);
+				dirs.push(get_resource_pack_dir(&inst_dir, side, false));
+				dirs.push(get_resource_pack_dir(&inst_dir, side, true));
 			} else {
 				let version_info = VersionInfo {
 					version: "foo".into(),
 					versions: Vec::new(),
 				};
-				dirs.extend(get_addon_paths(
-					instance,
-					&inst_dir,
+				dirs.extend(get_addon_dirs(
 					kind,
+					side,
+					&inst_dir,
 					&[],
+					instance.datapack_folder.as_ref().map(Path::new),
 					&version_info,
-				)?);
+				));
 			}
 		}
 

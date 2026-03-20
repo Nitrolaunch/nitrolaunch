@@ -6,6 +6,8 @@
 //!
 //! - `schema`: Enable generation of JSON schemas using the `schemars` crate
 
+/// Addons from packages
+pub mod addon;
 /// Standard declarative package format
 pub mod declarative;
 /// Package metadata

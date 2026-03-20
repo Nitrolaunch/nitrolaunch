@@ -12,8 +12,10 @@ use anyhow::bail;
 use anyhow::Context;
 use async_trait::async_trait;
 use nitro_config::package::EvalPermissions;
+use nitro_instance::addon::is_filename_valid;
 use nitro_parse::routine::INSTALL_ROUTINE;
 use nitro_parse::vars::HashMapVariableStore;
+use nitro_pkg::addon::{is_addon_version_valid, PackageAddon};
 use nitro_pkg::overrides::PackageOverrides;
 use nitro_pkg::properties::PackageProperties;
 use nitro_pkg::script_eval::AddonInstructionData;
@@ -28,7 +30,6 @@ use nitro_pkg::{
 	EvalInput as EvalInputTrait, PackageEvalRelationsResult,
 	PackageEvaluator as PackageEvaluatorTrait,
 };
-use nitro_shared::addon::{is_addon_version_valid, is_filename_valid, Addon};
 use nitro_shared::lang::Language;
 use nitro_shared::loaders::Loader;
 use nitro_shared::output;
@@ -430,7 +431,7 @@ pub fn create_valid_addon_request(
 		}
 	}
 
-	let addon = Addon {
+	let addon = PackageAddon {
 		kind: data.kind,
 		id: data.id.clone(),
 		file_name,
