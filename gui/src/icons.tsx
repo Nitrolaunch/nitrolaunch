@@ -79,6 +79,8 @@ import HelmetIcon from "./assets/icons/helmet.svg?component-solid";
 import LightningIcon from "./assets/icons/lightning.svg?component-solid";
 import MultipleUsersIcon from "./assets/icons/multiple_users.svg?component-solid";
 import DiceIcon from "./assets/icons/dice.svg?component-solid";
+import LoginIcon from "./assets/icons/login.svg?component-solid";
+import LogoutIcon from "./assets/icons/logout.svg?component-solid";
 import { HasWidthHeight } from "./components/Icon";
 
 export function Pin({ width, height, viewBox }: HasWidthHeight) {
@@ -411,4 +413,12 @@ export function MultipleUsers({ width, height, viewBox }: HasWidthHeight) {
 
 export function Dice({ width, height, viewBox }: HasWidthHeight) {
 	return <DiceIcon width={width} height={height} viewBox={viewBox} />;
+}
+
+export function Login({ width, height, viewBox }: HasWidthHeight) {
+	return <LoginIcon width={width} height={height} viewBox={viewBox} />;
+}
+
+export function Logout({ width, height, viewBox }: HasWidthHeight) {
+	return <LogoutIcon width={width} height={height} viewBox={viewBox} />;
 }

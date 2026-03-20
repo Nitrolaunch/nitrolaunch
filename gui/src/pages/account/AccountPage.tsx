@@ -3,7 +3,7 @@ import { createEffect, createResource, createSignal, For, Match, onMount, Show, 
 import { loadPagePlugins } from "../../plugins";
 import { errorToast, successToast } from "../../components/dialog/Toasts";
 import { beautifyString, getAccountIcon } from "../../utils";
-import { Check, Delete, Lock, LockOpen, Star, User } from "../../icons";
+import { Check, Delete, Login, Logout, Star, User } from "../../icons";
 import "./AccountPage.css";
 import IconTextButton from "../../components/input/button/IconTextButton";
 import { invoke } from "@tauri-apps/api/core";
@@ -137,7 +137,7 @@ export default function AccountPage() {
 								<Switch>
 									<Match when={account() != undefined && account()!.username == undefined}>
 										<IconTextButton
-											icon={LockOpen}
+											icon={Login}
 											size="1.2rem"
 											text="Log In"
 											onClick={async () => {
@@ -165,7 +165,7 @@ export default function AccountPage() {
 									</Match>
 									<Match when={account() != undefined && account()!.username != undefined}>
 										<IconTextButton
-											icon={Lock}
+											icon={Logout}
 											size="1.2rem"
 											text="Log Out"
 											onClick={async () => {
