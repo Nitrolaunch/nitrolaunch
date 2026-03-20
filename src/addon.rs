@@ -1,13 +1,14 @@
 use anyhow::{bail, Context};
 use nitro_instance::addon::Addon;
 use nitro_pkg::addon::PackageAddon;
+use nitro_shared::io::update_link;
 use nitro_shared::minecraft::AddonKind;
 use nitro_shared::pkg::PackageAddonOptionalHashes;
 use reqwest::Client;
 
 use crate::io::paths::Paths;
 use crate::util::hash::{get_best_hash, hash_file_with_best_hash};
-use nitro_core::io::files::{create_leading_dirs, update_link};
+use nitro_core::io::files::create_leading_dirs;
 use nitro_core::net::download;
 
 use std::future::Future;

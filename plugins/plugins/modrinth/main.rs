@@ -6,10 +6,7 @@ use std::{
 };
 
 use anyhow::Context;
-use nitro_core::io::{
-	files::{create_leading_dirs, update_link},
-	json_from_file, json_to_file,
-};
+use nitro_core::io::{files::create_leading_dirs, json_from_file, json_to_file};
 use nitro_net::{
 	download::Client,
 	modrinth::{self, Member, Project, SearchResults, Version},
@@ -20,7 +17,7 @@ use nitro_plugin::{
 	api::executable::ExecutablePlugin, api::utils::PackageSearchCache,
 	hook::hooks::CustomRepoQueryResult,
 };
-use nitro_shared::versions::VersionPattern;
+use nitro_shared::{io::update_link, versions::VersionPattern};
 use serde::{Deserialize, Serialize};
 use tokio::sync::Mutex;
 

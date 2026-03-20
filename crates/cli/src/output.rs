@@ -5,10 +5,10 @@ use anyhow::Context;
 use color_print::{cformat, cstr};
 use inquire::{Confirm, Password};
 use itertools::Itertools;
-use nitrolaunch::core::io::config::IO_CONFIG;
 use nitrolaunch::io::logging::Logger;
 use nitrolaunch::io::paths::Paths;
 use nitrolaunch::pkg_crate::{PkgRequest, PkgRequestSource};
+use nitrolaunch::shared::io::config::IO_CONFIG;
 use nitrolaunch::shared::lang::translate::{TranslationKey, TranslationMap};
 use nitrolaunch::shared::output::{
 	default_special_ms_auth, Message, MessageContents, MessageLevel, NitroOutput,
@@ -210,7 +210,7 @@ impl TerminalOutput {
 			logger,
 			translation_map: None,
 			process_spinner_task: None,
-			wrapping_enabled: IO_CONFIG.get_bool("cli_wrap").unwrap_or(true),
+			wrapping_enabled: IO_CONFIG.get_bool("cli_wrap").unwrap_or(false),
 		})
 	}
 

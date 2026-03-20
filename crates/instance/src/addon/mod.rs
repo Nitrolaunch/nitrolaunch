@@ -7,6 +7,11 @@ use nitro_shared::{
 	Side,
 };
 
+/// Modpack formats
+pub mod modpack;
+/// Addon storage
+pub mod storage;
+
 /// Some content that is installed on Minecraft
 #[derive(Debug, Clone)]
 pub struct Addon {

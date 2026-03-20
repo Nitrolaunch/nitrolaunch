@@ -7,8 +7,7 @@ pub mod minecraft;
 
 // Re-export
 pub use nitro_net::download;
-
-use crate::io::config::IO_CONFIG;
+use nitro_shared::io::config::IO_CONFIG;
 
 /// Sensible open file descriptor limit for asynchronous transfers
 #[cfg(target_os = "windows")]

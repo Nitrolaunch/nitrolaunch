@@ -3,6 +3,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use anyhow::{bail, Context};
+use nitro_shared::io::update_link;
 use nitro_shared::output::{MessageContents, NitroOutput};
 use nitro_shared::versions::VersionName;
 use nitro_shared::{translate, Side};
@@ -10,7 +11,6 @@ use nitro_shared::{translate, Side};
 use crate::account::AccountManager;
 use crate::config::BrandingProperties;
 use crate::io::files::paths::Paths;
-use crate::io::files::update_link;
 use crate::io::java::classpath::Classpath;
 use crate::io::java::install::{
 	CustomJavaFunction, JavaInstallParameters, JavaInstallation, JavaInstallationKind,
@@ -133,7 +133,7 @@ impl<'params> Instance<'params> {
 							.context("Failed to copy server.jar")?;
 					} else {
 						update_link(&jar_path, &new_jar_path)
-							.context("Failed to hardlink server.jar")?;
+							.context("Failed to link server.jar")?;
 					}
 					params.update_manager.add_file(new_jar_path.clone());
 				}

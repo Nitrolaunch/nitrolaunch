@@ -14,6 +14,7 @@ world interface-world {
 	import get-pointer-width: func() -> u32;
 
 	import update-hardlink: func(src: string, tgt: string) -> result<_, string>;
+	import update-link: func(src: string, tgt: string) -> result<_, string>;
 	import run-command: func(cmd: string, args: list<string>, working-dir: option<string>, stdout-file: option<string>, suppress-command-window: bool, silent: bool, wait: bool) -> result<tuple<s32, u32>, string>;
 
 	import get-instances: func() -> option<list<tuple<string, string>>>;
@@ -24,6 +25,7 @@ world interface-world {
 	import download-bytes: func(url: string) -> result<list<u8>, string>;
 	import download-text: func(url: string) -> result<string, string>;
 	import download-file: func(url: string, path: string) -> result<_, string>;
+	import download-files: func(urls: list<string>, paths: list<string>, skip-existing: bool) -> result<_, string>;
 
 	import output-display-text: func(text: string, level: u8);
 	import output-display-message: func(message: string, level: u8);

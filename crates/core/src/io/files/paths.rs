@@ -1,9 +1,8 @@
 use anyhow::anyhow;
 use directories::ProjectDirs;
+use nitro_shared::io::config::IO_CONFIG;
 
 use std::path::PathBuf;
-
-use crate::io::config::IO_CONFIG;
 
 /// Store for all of the paths that are used throughout the application
 #[derive(Debug, Clone)]

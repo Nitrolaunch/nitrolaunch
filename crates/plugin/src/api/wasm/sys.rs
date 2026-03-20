@@ -49,6 +49,15 @@ pub fn update_hardlink(src: impl AsRef<Path>, tgt: impl AsRef<Path>) -> anyhow::
 	.map_err(|e| anyhow!("{e:?}"))
 }
 
+/// Updates a link between two files
+pub fn update_link(src: impl AsRef<Path>, tgt: impl AsRef<Path>) -> anyhow::Result<()> {
+	super::interface::update_link(
+		&src.as_ref().to_string_lossy(),
+		&tgt.as_ref().to_string_lossy(),
+	)
+	.map_err(|e| anyhow!("{e:?}"))
+}
+
 /// Runs a command
 pub fn run_command(
 	cmd: impl AsRef<OsStr>,

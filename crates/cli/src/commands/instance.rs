@@ -103,6 +103,9 @@ pub enum InstanceSubcommand {
 		/// Which format to use
 		#[arg(short, long)]
 		format: Option<String>,
+		/// The side of the instance. If not specified, auto-detects
+		#[arg(short, long)]
+		side: Option<Side>,
 	},
 	#[command(about = "Export an instance for use in another launcher")]
 	Export {
@@ -147,7 +150,8 @@ pub async fn run(command: InstanceSubcommand, mut data: CmdData<'_>) -> anyhow::
 			instance,
 			path,
 			format,
-		} => import(&mut data, instance, path, format).await,
+			side,
+		} => import(&mut data, instance, path, format, side).await,
 		InstanceSubcommand::Export {
 			instance,
 			format,
@@ -474,6 +478,7 @@ async fn import(
 	instance: String,
 	path: String,
 	format: Option<String>,
+	side: Option<Side>,
 ) -> anyhow::Result<()> {
 	data.ensure_config(true).await?;
 	let config = data.config.get();
@@ -505,6 +510,7 @@ async fn import(
 		&instance,
 		format,
 		&PathBuf::from(path),
+		side,
 		&formats,
 		&config.plugins,
 		&data.paths,

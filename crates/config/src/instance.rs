@@ -1,9 +1,8 @@
 use std::collections::HashMap;
 
-use nitro_pkg::overrides::PackageOverrides;
 use nitro_shared::java_args::MemoryNum;
 use nitro_shared::loaders::Loader;
-use nitro_shared::pkg::PackageStability;
+use nitro_shared::pkg::{PackageOverrides, PackageStability};
 use nitro_shared::util::{merge_options, DefaultExt, DeserListOrSingle};
 use nitro_shared::versions::MinecraftVersionDeser;
 use nitro_shared::Side;

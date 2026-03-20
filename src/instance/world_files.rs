@@ -1,9 +1,12 @@
 use std::path::{Path, PathBuf};
 
 use anyhow::Context;
-use nitro_core::io::files::{create_leading_dirs, update_link};
+use nitro_core::io::files::create_leading_dirs;
 use nitro_plugin::hook::hooks::{InstanceLaunchArg, UpdateWorldFiles};
-use nitro_shared::output::{MessageContents, NitroOutput};
+use nitro_shared::{
+	io::update_link,
+	output::{MessageContents, NitroOutput},
+};
 
 use crate::{io::paths::Paths, plugin::PluginManager};
 

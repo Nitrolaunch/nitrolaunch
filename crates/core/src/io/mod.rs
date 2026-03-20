@@ -1,15 +1,13 @@
 use std::ffi::CString;
 use std::fs::File;
 use std::io::{BufReader, BufWriter, Read, Seek};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use anyhow::Context;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use zip::ZipArchive;
 
-/// Global IO configuration using a file or environment variables
-pub mod config;
 /// Utilities for dealing with the filesystem
 pub mod files;
 /// Interaction with some of Java's formats
@@ -84,18 +82,6 @@ pub fn extract_zip_dir<R: Read + Seek>(
 	}
 
 	Ok(())
-}
-
-/// Tries to get the user's home dir
-pub fn home_dir() -> anyhow::Result<PathBuf> {
-	#[cfg(target_os = "linux")]
-	let path = std::env::var("HOME")?;
-	#[cfg(target_os = "windows")]
-	let path = format!("{}/..", std::env::var("%APPDATA%")?);
-	#[cfg(target_os = "macos")]
-	let path = std::env::var("HOME")?;
-
-	Ok(PathBuf::from(path))
 }
 
 #[cfg(target_family = "unix")]

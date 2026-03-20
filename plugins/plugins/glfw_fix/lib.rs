@@ -62,7 +62,7 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 		let mut process = o.get_process();
 		process.display(MessageContents::StartProcess("Downloading GLFW".into()));
 
-		download_file(url.to_string(), lib_path).context("Failed to download GLFW")?;
+		download_file(url, lib_path).context("Failed to download GLFW")?;
 
 		process.display(MessageContents::Success("GLFW downloaded".into()));
 

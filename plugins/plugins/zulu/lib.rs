@@ -40,7 +40,7 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 
 		let arc_path = out_dir.join(&package.name);
 
-		download_file(package.download_url, &arc_path)
+		download_file(&package.download_url, &arc_path)
 			.context("Failed to download JRE binaries")?;
 
 		// Extraction
@@ -59,7 +59,7 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 /// Gets the newest Zulu package for a major Java version
 fn get_latest(major_version: &str) -> anyhow::Result<PackageFormat> {
 	let url = json_url(major_version);
-	let bytes = download_bytes(url).context("Failed to download manifest of Zulu versions")?;
+	let bytes = download_bytes(&url).context("Failed to download manifest of Zulu versions")?;
 	let manifest: Vec<PackageFormat> = serde_json::from_slice(&bytes)
 		.context("Failed to deserialize manifest of Zulu versions")?;
 	let package = manifest

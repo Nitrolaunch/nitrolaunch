@@ -23,9 +23,8 @@ use std::path::{Path, PathBuf};
 
 use nitro_config::instance::{ClientWindowConfig, InstanceConfig};
 use nitro_core::util::versions::MinecraftVersion;
-use nitro_pkg::overrides::PackageOverrides;
 use nitro_shared::loaders::Loader;
-use nitro_shared::pkg::PackageStability;
+use nitro_shared::pkg::{PackageOverrides, PackageStability};
 use nitro_shared::versions::VersionPattern;
 use nitro_shared::Side;
 

@@ -15,11 +15,16 @@ workspace = true
 
 [features]
 schema = ["dep:schemars"]
+net = ["dep:tokio", "dep:nitro_net"]
 
 [dependencies]
 anyhow = { workspace = true }
+async-trait = { workspace = true }
 itertools = { workspace = true }
 schemars = { workspace = true, optional = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 nitro_shared = { workspace = true }
+nitro_net = { workspace = true, optional = true }
+tokio = { workspace = true, optional = true }
+zip = { workspace = true }

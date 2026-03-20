@@ -14,7 +14,7 @@ use nitro_plugin::hook::hooks::{
 use nitro_shared::lang::translate::TranslationKey;
 use nitro_shared::output::{MessageContents, NitroOutput};
 use nitro_shared::pkg::PackageAddonHashes;
-use nitro_shared::translate;
+use nitro_shared::{translate, Side};
 
 use crate::io::lock::{Lockfile, LockfileAddon};
 use crate::{io::paths::Paths, plugin::PluginManager};
@@ -77,7 +77,7 @@ impl Instance {
 			minecraft_version: minecraft_version.clone(),
 			loader_version: inst_lock.get_loader_version().cloned(),
 			inst_dir: inst_dir.to_string_lossy().to_string(),
-			result_path: result_path.to_string_lossy().to_string(),
+			result_path: result_path.canonicalize()?.to_string_lossy().to_string(),
 		};
 		let result = plugins
 			.call_hook_on_plugin(ExportInstance, &format.plugin, &arg, paths, o)
@@ -103,11 +103,16 @@ impl Instance {
 		id: &str,
 		format: &str,
 		source_path: &Path,
+		side: Option<Side>,
 		formats: &Formats,
 		plugins: &PluginManager,
 		paths: &Paths,
 		o: &mut impl NitroOutput,
 	) -> anyhow::Result<InstanceConfig> {
+		if !source_path.exists() {
+			bail!("Imported instance file does not exist");
+		}
+
 		// Get and print info about the format
 		let format = formats
 			.formats
@@ -122,7 +127,7 @@ impl Instance {
 
 		output_support_warnings(import_info, o);
 
-		o.display(MessageContents::StartProcess(translate!(
+		o.display(MessageContents::Header(translate!(
 			o,
 			StartImporting,
 			"instance" = id,
@@ -139,8 +144,9 @@ impl Instance {
 		let arg = ImportInstanceArg {
 			format: format.info.id.clone(),
 			id: id.to_string(),
-			source_path: source_path.to_string_lossy().to_string(),
+			source_path: source_path.canonicalize()?.to_string_lossy().to_string(),
 			result_path: target_dir.to_string_lossy().to_string(),
+			side,
 		};
 		let result = plugins
 			.call_hook_on_plugin(ImportInstance, &format.plugin, &arg, paths, o)

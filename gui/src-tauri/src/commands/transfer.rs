@@ -69,6 +69,7 @@ pub async fn import_instance(
 			&id,
 			&format,
 			&PathBuf::from(path),
+			None,
 			&formats,
 			&config.plugins,
 			&state.paths,

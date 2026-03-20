@@ -418,6 +418,8 @@ pub struct InstanceTransferFormat {
 	pub export: Option<InstanceTransferFormatDirection>,
 	/// Info for the migration side of this format
 	pub migrate: Option<InstanceTransferFormatDirection>,
+	/// Whether a side must be specified when importing this format
+	pub needs_import_side: bool,
 }
 
 /// Information about a side of an instance transfer format
@@ -495,6 +497,8 @@ pub struct ImportInstanceArg {
 	pub source_path: String,
 	/// The desired directory for the resulting instance
 	pub result_path: String,
+	/// The desired side for the instance if it cannot be inferred from the format itself
+	pub side: Option<Side>,
 }
 
 /// Result from the ImportInstance hook giving information about the new instance

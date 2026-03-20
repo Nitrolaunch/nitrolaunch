@@ -2,10 +2,11 @@ use std::collections::{HashMap, HashSet, VecDeque};
 use std::sync::Arc;
 
 use itertools::Itertools;
-use nitro_shared::pkg::{ArcPkgReq, PackageID, ResolutionError};
+use nitro_shared::pkg::{
+	is_package_overridden, ArcPkgReq, PackageID, PackageOverrides, ResolutionError,
+};
 use nitro_shared::versions::VersionPattern;
 
-use crate::overrides::{is_package_overridden, PackageOverrides};
 use crate::properties::PackageProperties;
 use crate::{ConfiguredPackage, EvalInput, PackageEvaluator};
 

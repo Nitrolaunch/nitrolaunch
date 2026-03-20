@@ -1,0 +1,23 @@
+{
+	"id": "modpacks",
+	"name": "Modpacks",
+	"description": "Install, import, and export modpacks",
+	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/modpacks",
+	"version": "v6",
+	"protocol_version": 3,
+	"hooks": {
+		"add_instance_transfer_formats": {
+			"constant": [
+				{
+					"id": "mrpack",
+					"name": "Modrinth Pack",
+					"import": {},
+					"needs_import_side": true
+				}
+			]
+		},
+		"import_instance": {
+			"wasm": true
+		}
+	}
+}

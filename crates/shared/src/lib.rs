@@ -6,6 +6,8 @@
 //!
 //! - `schema`: Enable generation of JSON schemas using the `schemars` crate
 
+/// Filesystem
+pub mod io;
 /// Operating Java memory arguments
 pub mod java_args;
 /// Tools for languages and language detection

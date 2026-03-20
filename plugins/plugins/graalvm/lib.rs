@@ -55,7 +55,7 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 /// Downloads the contents of the GraalVM archive
 fn get_latest(major_version: &str) -> anyhow::Result<Vec<u8>> {
 	let url = download_url(major_version);
-	download_bytes(url)
+	download_bytes(&url)
 }
 
 /// Gets the download URL

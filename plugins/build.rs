@@ -65,10 +65,12 @@ fn main() {
 	add_file!(zip, "plugins/plugins/glfw_fix.md");
 	add_file!(zip, "plugins/plugins/graalvm.md");
 	add_file!(zip, "plugins/plugins/lang.md");
+	add_file!(zip, "plugins/plugins/modpacks.md");
 	add_file!(zip, "plugins/plugins/modrinth.md");
 	add_file!(zip, "plugins/plugins/modrinth_api.md");
 	add_file!(zip, "plugins/plugins/mojang_transfer.md");
 	add_file!(zip, "plugins/plugins/multimc_transfer.md");
+	add_file!(zip, "plugins/plugins/nitro_transfer.md");
 	add_file!(zip, "plugins/plugins/options.md");
 	add_file!(zip, "plugins/plugins/template_share.md");
 	add_file!(zip, "plugins/plugins/server_restart.md");

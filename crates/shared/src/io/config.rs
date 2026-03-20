@@ -1,6 +1,6 @@
-use std::{collections::HashMap, sync::LazyLock};
+use std::{collections::HashMap, fs::File, sync::LazyLock};
 
-use crate::io::{home_dir, json_from_file};
+use crate::io::home_dir;
 
 /// Global IO configuration
 pub static IO_CONFIG: LazyLock<IoConfig> = LazyLock::new(|| {
@@ -24,7 +24,8 @@ impl IoConfig {
 		if !path.exists() {
 			Ok(Self::default())
 		} else {
-			let data: HashMap<String, serde_json::Value> = json_from_file(path)?;
+			let file = File::open(path)?;
+			let data: HashMap<String, serde_json::Value> = serde_json::from_reader(file)?;
 
 			Ok(Self { file_values: data })
 		}

@@ -20,8 +20,9 @@ use nitro_shared::{
 	output::{Message, MessageContents, MessageLevel, NitroOutput},
 	util::{ARCH_STRING, OS_STRING},
 	Side,
+	io::update_link
 };
-use tokio::{process::Command, sync::Mutex};
+use tokio::{process::Command, sync::Mutex, task::JoinSet};
 use wasmtime::{
 	component::{HasSelf, Linker},
 	Store,
@@ -144,7 +145,6 @@ impl<H: Hook> WASMHookHandle<H> {
 		}
 
 		let mut linker = Linker::new(&engine);
-		let _ = linker.define_unknown_imports_as_traps(&component);
 
 		let mut wasi_ctx = WasiCtxBuilder::new();
 		let wasi_ctx = wasi_ctx.inherit_stdio().inherit_env().inherit_network();
@@ -302,10 +302,18 @@ impl bindings::InterfaceWorldImports for State {
 
 	async fn update_hardlink(&mut self, src: String, tgt: String) -> Result<(), String> {
 		let result = if !PathBuf::from(&tgt).exists() {
-			tokio::fs::hard_link(src, tgt).await
+			tokio::fs::hard_link(tgt, src).await
 		} else {
 			Ok(())
 		};
+		match result {
+			Ok(..) => Ok(()),
+			Err(e) => Err(format!("{e:?}")),
+		}
+	}
+
+	async fn update_link(&mut self, src: String, tgt: String) -> Result<(), String> {
+		let result = update_link(&Path::new(&tgt), &Path::new(&src));
 		match result {
 			Ok(..) => Ok(()),
 			Err(e) => Err(format!("{e:?}")),
@@ -334,6 +342,38 @@ impl bindings::InterfaceWorldImports for State {
 			Ok(..) => Ok(()),
 			Err(e) => Err(format!("{e:?}")),
 		}
+	}
+
+	async fn download_files(
+		&mut self,
+		urls: Vec<String>,
+		paths: Vec<String>,
+		skip_existing: bool,
+	) -> Result<(), String> {
+		let mut tasks = JoinSet::new();
+		for (url, path) in urls.into_iter().zip(paths) {
+			let path = PathBuf::from(path);
+			if skip_existing && path.exists() {
+				continue;
+			}
+
+			let client = self.client.clone();
+			tasks.spawn(async move { download::file(url, path, &client).await });
+		}
+
+		let mut final_result = Ok(());
+		while let Some(result) = tasks.join_next().await {
+			match result {
+				Ok(result) => {
+					if final_result.is_ok() {
+						final_result = result.map_err(|e| format!("{e:?}"));
+					}
+				}
+				Err(e) => final_result = Err(e.to_string()),
+			}
+		}
+
+		final_result
 	}
 
 	async fn run_command(

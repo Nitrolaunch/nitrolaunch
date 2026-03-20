@@ -17,7 +17,6 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 	plugin.export_instance(|arg| {
 		let inst_dir = PathBuf::from(arg.inst_dir);
 		let target_path = PathBuf::from(arg.result_path);
-		dbg!(&target_path);
 		let target_file = File::create(target_path).context("Failed to open target file")?;
 
 		// Write the instance files
