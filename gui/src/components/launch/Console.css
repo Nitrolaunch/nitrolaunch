@@ -1,0 +1,98 @@
+.console {
+	position: relative;
+	width: 100%;
+	height: 35rem;
+
+	background-color: var(--bg);
+	border: var(--border) solid var(--bg3);
+	border-radius: var(--round2);
+	box-sizing: border-box;
+}
+
+.console-header {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(0, 0.5fr) minmax(0, 0.5fr);
+	height: 10%;
+	padding: 1rem;
+	padding-bottom: 0rem;
+	box-sizing: border-box;
+}
+
+.console-output {
+	position: relative;
+	width: 100%;
+	height: 90%;
+}
+
+.console-text {
+	width: 100%;
+	height: 100%;
+	box-sizing: border-box;
+	padding: 1rem;
+	padding-bottom: 0;
+
+	justify-content: flex-start;
+	align-items: flex-start;
+	gap: 0.3rem;
+
+	overflow: auto;
+	overscroll-behavior: contain;
+
+	font-family: "Courier New", Courier, monospace;
+	white-space: pre-wrap;
+
+	-webkit-user-select: text;
+	user-select: text;
+}
+
+.console-line.info {
+	color: var(--fg3);
+}
+
+.console-line.warning {
+	color: var(--warning);
+	font-weight: bolder;
+}
+
+.console-line.error {
+	color: var(--error);
+	font-weight: bold;
+}
+
+.console-scroll {
+	position: absolute;
+	bottom: 3rem;
+	right: 1rem;
+
+	padding: 0.25rem;
+
+	background-color: var(--bg2);
+	border: var(--border) solid var(--bg3);
+	border-radius: var(--round2);
+
+	cursor: pointer;
+}
+
+.console-input {
+	position: relative;
+	height: 2.5rem;
+
+	box-sizing: border-box;
+}
+
+.console-input input {
+	border-left: none;
+	border-right: none;
+	border-top-left-radius: 0;
+	border-top-right-radius: 0;
+	box-shadow: none;
+
+	padding-left: 2rem;
+}
+
+.console-input-prompt {
+	height: 100%;
+	position: absolute;
+	left: 0.5rem;
+	top: 0;
+}
