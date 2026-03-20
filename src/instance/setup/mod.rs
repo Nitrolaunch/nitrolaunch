@@ -174,14 +174,16 @@ impl Instance {
 			.context("Failed to call instance setup hook")?;
 
 		let mut loader_version_set = false;
+		let mut main_class_set = false;
 		while let Some(result) = results.next_result(o).await? {
 			self.modification_data
 				.classpath_extension
 				.add_multiple(result.classpath_extension.iter());
 
 			if let Some(main_class) = result.main_class_override {
-				if self.modification_data.main_class_override.is_none() {
+				if !main_class_set {
 					self.modification_data.main_class_override = Some(main_class);
+					main_class_set = true;
 				} else {
 					bail!("Multiple plugins overwrote the main class");
 				}
