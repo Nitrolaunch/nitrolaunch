@@ -144,6 +144,7 @@ impl<H: Hook> WASMHookHandle<H> {
 		}
 
 		let mut linker = Linker::new(&engine);
+		let _ = linker.define_unknown_imports_as_traps(&component);
 
 		let mut wasi_ctx = WasiCtxBuilder::new();
 		let wasi_ctx = wasi_ctx.inherit_stdio().inherit_env().inherit_network();
