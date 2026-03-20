@@ -215,7 +215,7 @@ async fn info(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()> 
 	cprintln!("<s>Version:</s> <g>{}", instance.get_config().version);
 
 	print_indent();
-	cprint!("{}Type: ", HYPHEN_POINT);
+	cprint!("<s>Type: ");
 	match instance.get_side() {
 		Side::Client => cprint!("<y!>Client"),
 		Side::Server => cprint!("<c!>Server"),
