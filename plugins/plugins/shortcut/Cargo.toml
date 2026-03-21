@@ -1,0 +1,19 @@
+[package]
+name = "nitro_plugin_shortcut"
+version = "0.1.0"
+rust-version.workspace = true
+edition.workspace = true
+
+[lib]
+path = "lib.rs"
+crate-type = ["cdylib"]
+
+[dependencies]
+anyhow = { workspace = true }
+clap = { workspace = true }
+lnk = { workspace = true }
+nitro_config = { workspace = true }
+nitro_plugin = { version = "0.29.0", path = "../../../crates/plugin", default-features = false, features = [
+	"wasm_api",
+] }
+nitro_shared = { workspace = true }

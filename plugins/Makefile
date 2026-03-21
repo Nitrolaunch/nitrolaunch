@@ -23,6 +23,7 @@ package.cross_platform: build.cross_platform
 	@rm -f release/mojang_transfer-universal.zip
 	@rm -f release/multiply-universal.zip
 	@rm -f release/nitro_transfer-universal.zip
+	@rm -f release/shortcut-universal.zip
 	@rm -f release/themes-universal.zip
 	@rm -f release/webtools-universal.zip
 	@rm -f release/weld-universal.zip
@@ -59,6 +60,8 @@ package.cross_platform: build.cross_platform
 	@printf "@ nitro_plugin_mojang_transfer.wasm\\n@=plugin.wasm\\n" | zipnote -w release/mojang_transfer-universal.zip
 	@zip -j release/multiply-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_multiply.wasm plugins/multiply/plugin.json
 	@printf "@ nitro_plugin_multiply.wasm\\n@=plugin.wasm\\n" | zipnote -w release/multiply-universal.zip
+	@zip -j release/shortcut-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_shortcut.wasm plugins/shortcut/plugin.json
+	@printf "@ nitro_plugin_shortcut.wasm\\n@=plugin.wasm\\n" | zipnote -w release/shortcut-universal.zip
 	@zip -j release/nitro_transfer-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_nitro_transfer.wasm plugins/nitro_transfer/plugin.json
 	@printf "@ nitro_plugin_nitro_transfer.wasm\\n@=plugin.wasm\\n" | zipnote -w release/nitro_transfer-universal.zip
 	@zip -j release/webtools-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_webtools.wasm plugins/webtools/plugin.json
@@ -285,17 +288,15 @@ install.paper:
 	@mkdir -p ~/.local/share/nitro/plugins/paper
 	@cat plugins/paper/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/paper/plugin.json
 
-install.template_share:
-	@cargo install --path . --bin nitro_plugin_template_share --locked --profile fast_release
-	@mkdir -p ~/.local/share/nitro/plugins/template_share
-	@cat plugins/template_share/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/template_share/plugin.json
-	@cp plugins/template_share/import.js ~/.local/share/nitro/plugins/template_share
-	@cp plugins/template_share/export.js ~/.local/share/nitro/plugins/template_share
-
 install.server_restart:
 	@cargo install --path . --bin nitro_plugin_server_restart --locked --profile fast_release
 	@mkdir -p ~/.local/share/nitro/plugins/server_restart
 	@cat plugins/server_restart/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/server_restart/plugin.json
+
+install.shortcut:
+	@cargo build -p nitro_plugin_shortcut --release --target wasm32-wasip2
+	@cp -r plugins/shortcut ~/.local/share/nitro/plugins
+	@cp -r ../target/wasm32-wasip2/release/nitro_plugin_shortcut.wasm ~/.local/share/nitro/plugins/shortcut/plugin.wasm
 
 install.smithed:
 	@cargo install --path . --bin nitro_plugin_smithed --locked --profile fast_release
@@ -316,6 +317,13 @@ install.stats:
 	@cargo install --path . --bin nitro_plugin_stats --locked --profile fast_release
 	@mkdir -p ~/.local/share/nitro/plugins/stats
 	@cat plugins/stats/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/stats/plugin.json
+	
+install.template_share:
+	@cargo install --path . --bin nitro_plugin_template_share --locked --profile fast_release
+	@mkdir -p ~/.local/share/nitro/plugins/template_share
+	@cat plugins/template_share/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/template_share/plugin.json
+	@cp plugins/template_share/import.js ~/.local/share/nitro/plugins/template_share
+	@cp plugins/template_share/export.js ~/.local/share/nitro/plugins/template_share
 
 install.themes:
 	@cp -r plugins/themes ~/.local/share/nitro/plugins

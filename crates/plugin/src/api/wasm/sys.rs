@@ -25,6 +25,11 @@ pub fn get_current_dir() -> PathBuf {
 	PathBuf::from(super::interface::get_current_dir())
 }
 
+/// Gets the user's home directory
+pub fn get_home_dir() -> PathBuf {
+	PathBuf::from(super::interface::get_home_dir())
+}
+
 /// Gets the operating system as a lowercase string
 pub fn get_os_string() -> String {
 	super::interface::get_os_string()

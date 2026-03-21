@@ -72,6 +72,7 @@ members = [
 	"plugins/plugins/mojang_transfer",
 	"plugins/plugins/multiply",
 	"plugins/plugins/nitro_transfer",
+	"plugins/plugins/shortcut",
 	"plugins/plugins/webtools",
 	"plugins/plugins/zulu",
 ]
@@ -109,6 +110,7 @@ inquire = { version = "0.6.2", default-features = false, features = [
 iso8601-timestamp = "0.2.17"
 itertools = "0.11.0"
 libflate = "2.1.0"
+lnk = { version = "0.6.3", features = ["unstable-save", "binwrite"] }
 nitrolaunch = { path = ".", version = "0.29.0" }
 nitro_auth = { path = "crates/auth", version = "0.29.0" }
 nitro_core = { path = "crates/core", version = "0.29.0" }

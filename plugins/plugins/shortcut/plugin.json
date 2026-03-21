@@ -1,0 +1,19 @@
+{
+	"id": "shortcut",
+	"name": "Shortcut",
+	"description": "Create desktop shortcuts to launch instances",
+	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/shortcut",
+	"version": "v6",
+	"protocol_version": 3,
+	"hooks": {
+		"subcommand": {
+			"wasm": true
+		}
+	},
+	"subcommands": {
+		"shortcut": {
+			"supercommand": "instance",
+			"description": "Create a shortcut to launch an instance"
+		}
+	}
+}

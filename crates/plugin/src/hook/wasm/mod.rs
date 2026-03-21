@@ -15,12 +15,12 @@ use anyhow::{bail, Context};
 use nitro_config::{instance::InstanceConfig, template::TemplateConfig};
 use nitro_net::download::{self, Client};
 use nitro_shared::{
+	io::{home_dir, update_link},
 	nitro_executable::NitroExecutableRegistry,
 	no_window,
 	output::{Message, MessageContents, MessageLevel, NitroOutput},
 	util::{ARCH_STRING, OS_STRING},
 	Side,
-	io::update_link
 };
 use tokio::{process::Command, sync::Mutex, task::JoinSet};
 use wasmtime::{
@@ -283,6 +283,12 @@ impl bindings::InterfaceWorldImports for State {
 			.unwrap_or_default()
 			.to_string_lossy()
 			.to_string()
+	}
+
+	async fn get_home_dir(&mut self) -> String {
+		home_dir()
+			.map(|x| x.to_string_lossy().to_string())
+			.unwrap_or_else(|_| "/home/none".into())
 	}
 
 	async fn get_os_string(&mut self) -> String {

@@ -9,6 +9,7 @@ world interface-world {
 	import get-config-dir: func() -> string;
 	import get-plugin-dir: func() -> string;
 	import get-current-dir: func() -> string;
+	import get-home-dir: func() -> string;
 	import get-os-string: func() -> string;
 	import get-arch-string: func() -> string;
 	import get-pointer-width: func() -> u32;
