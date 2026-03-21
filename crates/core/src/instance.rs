@@ -22,7 +22,7 @@ use crate::net::game_files::client_meta::ClientMeta;
 use crate::net::game_files::version_manifest::VersionManifestAndList;
 use crate::net::game_files::{game_jar, libraries};
 use crate::version::{ClientAssetsAndLibraries, ClientAssetsAndLibsParameters};
-use crate::InstanceHandle;
+use crate::{InstanceHandle, QuickPlayType};
 
 /// The default main class for the server
 pub const DEFAULT_SERVER_MAIN_CLASS: &str = "net.minecraft.server.Main";
@@ -226,9 +226,10 @@ impl Instance {
 	pub async fn launch(
 		&mut self,
 		accounts: &mut AccountManager,
+		quick_play: Option<QuickPlayType>,
 		o: &mut impl NitroOutput,
 	) -> anyhow::Result<()> {
-		let mut handle = self.launch_with_handle(accounts, o).await?;
+		let mut handle = self.launch_with_handle(accounts, quick_play, o).await?;
 		handle
 			.wait()
 			.context("Failed to wait for instance process")?;
@@ -239,8 +240,13 @@ impl Instance {
 	pub async fn launch_with_handle(
 		&mut self,
 		accounts: &mut AccountManager,
+		quick_play: Option<QuickPlayType>,
 		o: &mut impl NitroOutput,
 	) -> anyhow::Result<InstanceHandle> {
+		let mut launch_config = self.config.launch.clone();
+		if let Some(quick_play) = quick_play {
+			launch_config.quick_play = quick_play;
+		}
 		let params = LaunchParameters {
 			version: &self.params.version,
 			version_manifest: &self.params.version_manifest,

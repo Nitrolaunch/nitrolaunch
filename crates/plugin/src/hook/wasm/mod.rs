@@ -498,7 +498,7 @@ impl bindings::InterfaceWorldImports for State {
 
 		let mut command = fmt_err(
 			executable_registry
-				.launch_instance(&instance, account.as_deref())
+				.launch_instance(&instance, account.as_deref(), None)
 				.context("No executable available"),
 		)?;
 

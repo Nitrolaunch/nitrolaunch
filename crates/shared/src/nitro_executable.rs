@@ -1,11 +1,11 @@
+#[cfg(target_family = "unix")]
+use std::os::unix::fs::PermissionsExt;
 use std::{
 	collections::HashSet,
 	fs::{File, Permissions},
 	path::{Path, PathBuf},
 	process::Command,
 };
-#[cfg(target_family = "unix")]
-use std::os::unix::fs::PermissionsExt;
 
 use anyhow::{bail, Context};
 use serde::{Deserialize, Serialize};
@@ -55,11 +55,11 @@ impl NitroExecutableRegistry {
 			let filename = "launch_instance.bat";
 			#[cfg(target_family = "unix")]
 			let filename = "launch_instance.sh";
-	
+
 			let Some(parent) = self.path.parent() else {
 				return Ok(());
 			};
-	
+
 			let path = parent.join(filename);
 			std::fs::write(&path, script).context("Failed to write script")?;
 			#[cfg(target_family = "unix")]
@@ -85,10 +85,15 @@ impl NitroExecutableRegistry {
 	}
 
 	/// Launches an instance using the best available executable
-	pub fn launch_instance(&self, instance: &str, account: Option<&str>) -> Option<Command> {
+	pub fn launch_instance(
+		&self,
+		instance: &str,
+		account: Option<&str>,
+		quick_play: Option<&str>,
+	) -> Option<Command> {
 		let executable = self.get_best_executable()?;
 
-		Some(executable.launch_instance(instance, account))
+		Some(executable.launch_instance(instance, account, quick_play))
 	}
 
 	/// Gets the best available executable
@@ -114,26 +119,32 @@ struct NitroExecutable {
 }
 
 impl NitroExecutable {
-	fn launch_instance(&self, instance: &str, account: Option<&str>) -> Command {
+	fn launch_instance(
+		&self,
+		instance: &str,
+		account: Option<&str>,
+		quick_play: Option<&str>,
+	) -> Command {
 		let mut command = Command::new(&self.path);
 		match &self.client_id {
 			NitroClientId::Cli => {
 				command.arg("instance");
 				command.arg("launch");
 				command.arg(instance);
-				if let Some(account) = account {
-					command.arg("--account");
-					command.arg(account);
-				}
 			}
 			NitroClientId::Gui | NitroClientId::Other(..) => {
 				command.arg("--launch");
 				command.arg(instance);
-				if let Some(account) = account {
-					command.arg("--account");
-					command.arg(account);
-				}
 			}
+		}
+
+		if let Some(account) = account {
+			command.arg("--account");
+			command.arg(account);
+		}
+		if let Some(quick_play) = quick_play {
+			command.arg("--quick-play");
+			command.arg(quick_play);
 		}
 
 		command

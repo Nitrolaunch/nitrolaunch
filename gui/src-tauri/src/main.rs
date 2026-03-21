@@ -178,6 +178,7 @@ fn main() {
 							instance_id.to_string(),
 							false,
 							account,
+							cli.quick_play,
 							&state,
 							app_handle,
 							stdio_paths.clone(),

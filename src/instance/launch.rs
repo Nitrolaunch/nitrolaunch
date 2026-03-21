@@ -1,6 +1,6 @@
 use nitro_core::io::files::open_file_append;
 use nitro_core::launch::get_stdio_file_path;
-use nitro_core::NitroCore;
+use nitro_core::{NitroCore, QuickPlayType};
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{Read, Write};
@@ -155,7 +155,7 @@ impl Instance {
 
 		// Launch the instance using core
 		let handle = instance
-			.launch_with_handle(accounts, o)
+			.launch_with_handle(accounts, settings.quick_play, o)
 			.await
 			.context("Failed to launch core instance")?;
 
@@ -267,6 +267,8 @@ pub struct LaunchSettings {
 	pub offline_auth: bool,
 	/// Whether to pipe the stdin of this process into the instance process
 	pub pipe_stdin: bool,
+	/// Quick play for the launch
+	pub quick_play: Option<QuickPlayType>,
 }
 
 /// Options for launching after conversion from the deserialized version

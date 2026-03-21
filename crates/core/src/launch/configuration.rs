@@ -1,10 +1,10 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, convert::Infallible, fmt::Display, str::FromStr};
 
 use crate::io::java::install::JavaInstallationKind;
 use nitro_shared::java_args::MemoryNum;
 
 /// Options for launching an instance
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct LaunchConfiguration {
 	/// Java kind
 	pub java: JavaInstallationKind,
@@ -146,7 +146,7 @@ pub struct WrapperCommand {
 }
 
 /// Options for the Minecraft QuickPlay feature
-#[derive(Debug, PartialEq, Default, Clone)]
+#[derive(Debug, PartialEq, Eq, Default, Clone)]
 pub enum QuickPlayType {
 	/// QuickPlay a world
 	World {
@@ -169,4 +169,46 @@ pub enum QuickPlayType {
 	/// Don't do any QuickPlay
 	#[default]
 	None,
+}
+
+impl FromStr for QuickPlayType {
+	type Err = Infallible;
+
+	fn from_str(s: &str) -> Result<Self, Self::Err> {
+		if let Some(s) = s.strip_prefix("world:") {
+			Ok(Self::World {
+				world: s.to_string(),
+			})
+		} else if let Some(s) = s.strip_prefix("server:") {
+			let mut split = s.split(":");
+			let server = split.next().unwrap();
+			let port = split.next();
+			Ok(Self::Server {
+				server: server.to_string(),
+				port: port.and_then(|x| x.parse().ok()),
+			})
+		} else if let Some(s) = s.strip_prefix("realm:") {
+			Ok(Self::Realm {
+				realm: s.to_string(),
+			})
+		} else {
+			Ok(Self::World {
+				world: s.to_string(),
+			})
+		}
+	}
+}
+
+impl Display for QuickPlayType {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		match self {
+			Self::None => write!(f, "none"),
+			Self::World { world } => write!(f, "world:{world}"),
+			Self::Server { server, port } => match port {
+				Some(port) => write!(f, "server:{server}:{port}"),
+				None => write!(f, "server:{server}"),
+			},
+			Self::Realm { realm } => write!(f, "realm:{realm}"),
+		}
+	}
 }

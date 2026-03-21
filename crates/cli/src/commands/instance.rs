@@ -10,6 +10,7 @@ use itertools::Itertools;
 use nitrolaunch::config::modifications::{apply_modifications_and_write, ConfigModification};
 use nitrolaunch::config::Config;
 use nitrolaunch::config_crate::instance::InstanceConfig;
+use nitrolaunch::core::QuickPlayType;
 use nitrolaunch::instance::transfer::load_formats;
 use nitrolaunch::instance::update::InstanceUpdateContext;
 use nitrolaunch::instance::Instance;
@@ -58,6 +59,9 @@ pub enum InstanceSubcommand {
 		/// Whether to skip updating on the first launch. Can cause problems!
 		#[arg(long)]
 		skip_update: bool,
+		/// Launch into a world or server. Can be either world:<world>, server:<ip> or realm:<realm>
+		#[arg(short, long)]
+		quick_play: Option<QuickPlayType>,
 		/// The instance to launch
 		instance: Option<String>,
 	},
@@ -139,8 +143,9 @@ pub async fn run(command: InstanceSubcommand, mut data: CmdData<'_>) -> anyhow::
 			account,
 			offline,
 			skip_update,
+			quick_play,
 			instance,
-		} => launch(instance, account, offline, skip_update, data).await,
+		} => launch(instance, account, offline, skip_update, quick_play, data).await,
 		InstanceSubcommand::Info { instance } => info(&mut data, instance).await,
 		InstanceSubcommand::Update {
 			force,
@@ -254,6 +259,7 @@ pub async fn launch(
 	account: Option<String>,
 	offline: bool,
 	skip_update: bool,
+	quick_play: Option<QuickPlayType>,
 	mut data: CmdData<'_>,
 ) -> anyhow::Result<()> {
 	data.ensure_config(true).await?;
@@ -302,6 +308,7 @@ pub async fn launch(
 		ms_client_id: get_ms_client_id(),
 		offline_auth: offline,
 		pipe_stdin: true,
+		quick_play,
 	};
 	let instance_handle = instance
 		.launch(

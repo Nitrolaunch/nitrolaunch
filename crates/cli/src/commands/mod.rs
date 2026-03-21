@@ -206,7 +206,7 @@ Would you like to do that now?"
 		match cli.command {
 			Command::Account { command } => account::run(command, &mut data).await,
 			Command::Launch { instance } => {
-				instance::launch(instance, None, false, false, data).await
+				instance::launch(instance, None, false, false, None, data).await
 			}
 			Command::Version => {
 				print_version();

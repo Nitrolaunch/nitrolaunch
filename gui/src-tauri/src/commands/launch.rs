@@ -3,6 +3,7 @@ use crate::data::LauncherData;
 use crate::{output::LauncherOutput, State};
 use anyhow::{bail, Context};
 use nitrolaunch::core::io::open_named_pipe;
+use nitrolaunch::core::QuickPlayType;
 use nitrolaunch::instance::launch::LaunchSettings;
 use nitrolaunch::instance::tracking::RunningInstanceEntry;
 use nitrolaunch::io::lock::Lockfile;
@@ -45,6 +46,7 @@ pub async fn launch_game(
 			instance_id.to_string(),
 			offline,
 			account,
+			None,
 			&state,
 			app_handle,
 			stdio_paths.clone(),
@@ -61,6 +63,7 @@ pub async fn launch_game_impl(
 	instance_id: String,
 	offline: bool,
 	account: Option<&str>,
+	quick_play: Option<QuickPlayType>,
 	state: &State,
 	app: Arc<AppHandle>,
 	stdio_paths: Arc<Mutex<Option<(PathBuf, Option<PathBuf>)>>>,
@@ -105,6 +108,7 @@ pub async fn launch_game_impl(
 				ms_client_id: crate::get_ms_client_id(),
 				offline_auth: offline,
 				pipe_stdin: false,
+				quick_play,
 			};
 			let mut handle = instance
 				.launch(&paths, &mut config.accounts, &plugins, settings, &mut o)

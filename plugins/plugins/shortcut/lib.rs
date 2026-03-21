@@ -94,8 +94,12 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 				}
 				let _ = std::fs::write(icon_path, icon);
 
-				let contents =
-					create_linux_shortcut(&name, cli.account.as_deref(), &executable_path);
+				let contents = create_linux_shortcut(
+					&name,
+					&executable_path,
+					cli.account.as_deref(),
+					cli.quick_play.as_deref(),
+				);
 
 				std::fs::write(path, contents).context("Failed to write shortcut")?;
 			}
@@ -107,9 +111,10 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 				create_windows_shortcut(
 					&path,
 					&name,
-					cli.account.as_deref(),
 					&executable_path,
 					&icon_path,
+					cli.account.as_deref(),
+					cli.quick_play.as_deref(),
 				)?;
 			}
 			_ => {}
@@ -131,17 +136,27 @@ struct Cli {
 	/// An optional account to launch the instance with
 	#[arg(short, long)]
 	account: Option<String>,
+	/// An optional world, server, or realm to launch with. Format is world:<world>, server:<ip>, or realm:<realm>
+	#[arg(short, long)]
+	quick_play: Option<String>,
 }
 
-fn create_linux_shortcut(base_name: &str, account: Option<&str>, exec: &Path) -> String {
+fn create_linux_shortcut(
+	base_name: &str,
+	exec: &Path,
+	account: Option<&str>,
+	quick_play: Option<&str>,
+) -> String {
 	let exec_name = exec.file_name().unwrap().to_string_lossy().to_string();
 	let exec = exec.to_string_lossy().to_string();
 
-	let args = if let Some(account) = account {
-		format!(" --account {account}")
-	} else {
-		String::new()
-	};
+	let mut args = String::new();
+	if let Some(account) = account {
+		args += &format!(" --account {account}");
+	}
+	if let Some(quick_play) = quick_play {
+		args += &format!(" --quick-play {quick_play}");
+	}
 
 	return format!(
 		r#"[Desktop Entry]
@@ -161,9 +176,10 @@ Categories=Games;
 fn create_windows_shortcut(
 	shortcut_path: &Path,
 	base_name: &str,
-	account: Option<&str>,
 	exec: &Path,
 	icon_path: &Path,
+	account: Option<&str>,
+	quick_play: Option<&str>,
 ) -> anyhow::Result<()> {
 	// We have to construct the link ourselves since the default impl uses the WASM-unsupported fs::canonicalize
 	let mut link = ShellLink::default();
@@ -174,8 +190,16 @@ fn create_windows_shortcut(
 	link.set_working_dir(Some(exec.parent().unwrap().to_string_lossy().to_string()));
 
 	link.set_name(Some(base_name.to_string()));
-	link.set_arguments(account.map(|x| format!("--account {x}")));
 	link.set_icon_location(Some(icon_path.to_string_lossy().to_string()));
+
+	let mut args = String::new();
+	if let Some(account) = account {
+		args += &format!(" --account {account}");
+	}
+	if let Some(quick_play) = quick_play {
+		args += &format!(" --quick-play {quick_play}");
+	}
+	link.set_arguments(Some(args).filter(|x| !x.is_empty()));
 
 	link.save(shortcut_path).context("Failed to save shortcut")
 }
