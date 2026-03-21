@@ -63,7 +63,6 @@ impl Instance {
 			Some(&settings.ms_client_id),
 			&manager.settings,
 			&client,
-			accounts,
 			plugins,
 			paths,
 			o,
@@ -71,7 +70,9 @@ impl Instance {
 		.await
 		.context("Failed to configure core")?;
 
-		let core_version = core.get_version(&self.config.version, o).await?;
+		let core_version = core
+			.get_version(&self.config.version, manager.settings.depth, o)
+			.await?;
 		let version_info = core_version.get_version_info();
 		std::mem::drop(core_version);
 
@@ -118,13 +119,10 @@ impl Instance {
 		results.all_results(o).await?;
 
 		if self.dir.is_some() && !self.config.custom_launch {
-			self.launch_standard(core, hook_arg, paths, plugins, settings, o)
+			self.launch_standard(core, hook_arg, paths, plugins, settings, accounts, o)
 				.await
 		} else {
-			let account = core
-				.get_accounts()
-				.get_chosen_account()
-				.map(|x| x.get_id().clone());
+			let account = accounts.get_chosen_account().map(|x| x.get_id().clone());
 			self.launch_custom(hook_arg, account, paths, plugins, o)
 				.await
 		}
@@ -133,20 +131,20 @@ impl Instance {
 	/// Standard Java launch
 	async fn launch_standard(
 		&mut self,
-		mut core: NitroCore,
+		core: NitroCore,
 		mut hook_arg: InstanceLaunchArg,
 		paths: &Paths,
 		plugins: &PluginManager,
 		settings: LaunchSettings,
+		accounts: &mut AccountManager,
 		o: &mut impl NitroOutput,
 	) -> anyhow::Result<InstanceHandle> {
-		let selected_account = core
-			.get_accounts()
-			.get_chosen_account()
-			.map(|x| x.get_id().clone());
+		let selected_account = accounts.get_chosen_account().map(|x| x.get_id().clone());
 		let selected_account = selected_account.map(|x| x.to_string());
 
-		let mut core_version = core.get_version(&self.config.version, o).await?;
+		let mut core_version = core
+			.get_version(&self.config.version, UpdateDepth::Shallow, o)
+			.await?;
 
 		let mut instance = self
 			.create_core_instance(&mut core_version, paths, o)
@@ -157,7 +155,7 @@ impl Instance {
 
 		// Launch the instance using core
 		let handle = instance
-			.launch_with_handle(o)
+			.launch_with_handle(accounts, o)
 			.await
 			.context("Failed to launch core instance")?;
 

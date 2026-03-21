@@ -72,7 +72,6 @@ impl Instance {
 			None,
 			&manager.settings,
 			ctx.client,
-			ctx.accounts,
 			ctx.plugins,
 			ctx.paths,
 			ctx.output,
@@ -81,7 +80,7 @@ impl Instance {
 		.context("Failed to configure core")?;
 
 		let version = core
-			.get_version(&self.config.version, ctx.output)
+			.get_version(&self.config.version, manager.settings.depth, ctx.output)
 			.await
 			.context("Failed to set up core version")?;
 

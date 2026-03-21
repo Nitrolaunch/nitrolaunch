@@ -75,7 +75,7 @@ pub async fn get_minecraft_versions(
 			.context("Failed to load config"),
 	)?;
 
-	let mut core = fmt_err(
+	let core = fmt_err(
 		setup_core(
 			None,
 			&UpdateSettings {
@@ -83,7 +83,6 @@ pub async fn get_minecraft_versions(
 				offline_auth: false,
 			},
 			&state.client,
-			&config.accounts,
 			&config.plugins,
 			&state.paths,
 			&mut NoOp,
@@ -91,7 +90,10 @@ pub async fn get_minecraft_versions(
 		.await,
 	)?;
 
-	let version_manifest = fmt_err(core.get_version_manifest(None, &mut NoOp).await)?;
+	let version_manifest = fmt_err(
+		core.get_version_manifest(None, UpdateDepth::Shallow, &mut NoOp)
+			.await,
+	)?;
 
 	if releases_only {
 		Ok(version_manifest
@@ -127,7 +129,7 @@ pub async fn update_version_manifest(
 	let mut output = LauncherOutput::new(state.get_output(app_handle));
 	output.set_task("update_versions");
 
-	let mut core = fmt_err(
+	let core = fmt_err(
 		setup_core(
 			None,
 			&UpdateSettings {
@@ -135,7 +137,6 @@ pub async fn update_version_manifest(
 				offline_auth: false,
 			},
 			&state.client,
-			&config.accounts,
 			&config.plugins,
 			&state.paths,
 			&mut output,
@@ -143,7 +144,10 @@ pub async fn update_version_manifest(
 		.await,
 	)?;
 
-	fmt_err(core.get_version_manifest(None, &mut output).await)?;
+	fmt_err(
+		core.get_version_manifest(None, UpdateDepth::Full, &mut output)
+			.await,
+	)?;
 
 	Ok(())
 }

@@ -439,11 +439,10 @@ pub async fn update_instance_packages(
 
 			let manager = UpdateManager::new(UpdateDepth::Shallow);
 
-			let mut core = setup_core(
+			let core = setup_core(
 				None,
 				&manager.settings,
 				ctx.client,
-				ctx.accounts,
 				ctx.plugins,
 				ctx.paths,
 				ctx.output,
@@ -451,7 +450,11 @@ pub async fn update_instance_packages(
 			.await?;
 
 			let version = core
-				.get_version(&instance.get_config().version, ctx.output)
+				.get_version(
+					&instance.get_config().version,
+					UpdateDepth::Shallow,
+					ctx.output,
+				)
 				.await?;
 			let version_info = version.get_version_info();
 			let mc_version = version_info.version.clone();
@@ -754,7 +757,7 @@ pub async fn canonicalize_version(
 	}
 
 	// Get the latest version
-	let mut core = fmt_err(
+	let core = fmt_err(
 		setup_core(
 			None,
 			&UpdateSettings {
@@ -762,7 +765,6 @@ pub async fn canonicalize_version(
 				offline_auth: true,
 			},
 			&state.client,
-			&config.accounts,
 			&config.plugins,
 			&state.paths,
 			&mut NoOp,
@@ -770,7 +772,10 @@ pub async fn canonicalize_version(
 		.await,
 	)?;
 
-	let manifest = fmt_err(core.get_version_manifest(None, &mut NoOp).await)?;
+	let manifest = fmt_err(
+		core.get_version_manifest(None, UpdateDepth::Shallow, &mut NoOp)
+			.await,
+	)?;
 	let Some(latest) = &manifest.manifest.latest else {
 		return Err("Latest versions missing".into());
 	};

@@ -1,23 +1,23 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
-use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, OnceLock};
 
 use anyhow::Context;
-use nitro_shared::later::Later;
 use nitro_shared::minecraft::{VersionEntry, VersionManifest};
 use nitro_shared::output::MessageContents;
 use nitro_shared::output::NitroOutput;
 use nitro_shared::versions::{VersionInfo, VersionName};
 use nitro_shared::Side;
+use tokio::sync::Mutex;
 
-use crate::account::AccountManager;
 use crate::config::BrandingProperties;
 use crate::instance::{Instance, InstanceConfiguration, InstanceParameters};
 use crate::io::files::paths::Paths;
 use crate::io::java::install::{
 	CustomJavaFunction, JavaInstallParameters, JavaInstallation, JavaInstallationKind,
+	JavaInstallationRegistry,
 };
-use crate::io::java::JavaMajorVersion;
 use crate::io::persistent::PersistentData;
 use crate::io::update::UpdateManager;
 use crate::net::game_files::client_meta::{self, ClientMeta};
@@ -27,12 +27,12 @@ use crate::util::versions::MinecraftVersion;
 
 /// An installed version of the game. This cannot be constructed directly,
 /// only from the NitroCore struct by using the `get_version()` method
-pub struct InstalledVersion<'inner, 'params> {
-	pub(crate) inner: &'inner mut InstalledVersionInner,
-	pub(crate) params: VersionParameters<'params>,
+pub struct InstalledVersion {
+	pub(crate) inner: InstalledVersionInner,
+	pub(crate) params: VersionParameters,
 }
 
-impl InstalledVersion<'_, '_> {
+impl InstalledVersion {
 	/// Get the version name
 	pub fn get_version(&self) -> &VersionName {
 		&self.inner.version
@@ -55,25 +55,24 @@ impl InstalledVersion<'_, '_> {
 	/// Create an instance and its files using this version,
 	/// ready to be launched
 	pub async fn get_instance(
-		&'_ mut self,
+		&self,
 		config: InstanceConfiguration,
 		o: &mut impl NitroOutput,
-	) -> anyhow::Result<Instance<'_>> {
+	) -> anyhow::Result<Instance> {
 		let params = InstanceParameters {
-			version: &self.inner.version,
-			version_manifest: &self.inner.version_manifest,
-			paths: self.params.paths,
-			req_client: self.params.req_client,
-			persistent: self.params.persistent,
-			update_manager: self.params.update_manager,
-			client_meta: &self.inner.client_meta,
-			accounts: self.params.accounts,
-			java_installations: self.params.java_installations,
-			custom_java_fn: self.params.custom_java_fn,
-			client_assets_and_libs: &mut self.inner.client_assets_and_libs,
+			version: self.inner.version.clone(),
+			version_manifest: self.inner.version_manifest.clone(),
+			paths: self.params.paths.clone(),
+			req_client: self.params.req_client.clone(),
+			persistent: self.params.persistent.clone(),
+			update_manager: self.params.update_manager.clone(),
+			client_meta: self.inner.client_meta.clone(),
+			java_installations: self.params.java_installations.clone(),
+			custom_java_fn: self.params.custom_java_fn.clone(),
+			client_assets_and_libs: self.inner.client_assets_and_libs.clone(),
 			censor_secrets: self.params.censor_secrets,
 			disable_hardlinks: self.params.disable_hardlinks,
-			branding: self.params.branding,
+			branding: self.params.branding.clone(),
 		};
 		let instance = Instance::load(config, params, o)
 			.await
@@ -92,10 +91,10 @@ impl InstalledVersion<'_, '_> {
 		let params = ClientAssetsAndLibsParameters {
 			client_meta: &self.inner.client_meta,
 			version: &self.inner.version,
-			paths: self.params.paths,
-			req_client: self.params.req_client,
+			paths: &self.params.paths,
+			req_client: &self.params.req_client,
 			version_manifest: &self.inner.version_manifest,
-			update_manager: self.params.update_manager,
+			update_manager: &self.params.update_manager,
 		};
 		self.inner.client_assets_and_libs.load(params, o).await
 	}
@@ -116,13 +115,20 @@ impl InstalledVersion<'_, '_> {
 				.major_version,
 		);
 
-		if !self.params.java_installations.contains_key(&key) {
+		if !self
+			.params
+			.java_installations
+			.installations
+			.lock()
+			.await
+			.contains_key(&key)
+		{
 			let java_params = JavaInstallParameters {
-				paths: self.params.paths,
-				update_manager: self.params.update_manager,
-				persistent: self.params.persistent,
-				req_client: self.params.req_client,
-				custom_install_func: self.params.custom_java_fn,
+				paths: &self.params.paths,
+				update_manager: &self.params.update_manager,
+				persistent: self.params.persistent.clone(),
+				req_client: &self.params.req_client,
+				custom_install_func: self.params.custom_java_fn.clone(),
 			};
 
 			let java = JavaInstallation::install(kind, key.1, java_params, o)
@@ -131,10 +137,21 @@ impl InstalledVersion<'_, '_> {
 
 			self.params
 				.java_installations
+				.installations
+				.lock()
+				.await
 				.insert(key.clone(), java.clone());
 		}
 
-		Ok(self.params.java_installations.get(&key).unwrap().clone())
+		Ok(self
+			.params
+			.java_installations
+			.installations
+			.lock()
+			.await
+			.get(&key)
+			.unwrap()
+			.clone())
 	}
 
 	/// Gets the vanilla game JAR for the given side, returning the path to it
@@ -147,9 +164,9 @@ impl InstalledVersion<'_, '_> {
 			side,
 			&self.inner.client_meta,
 			&self.inner.version,
-			self.params.paths,
-			self.params.update_manager,
-			self.params.req_client,
+			&self.params.paths,
+			&self.params.update_manager,
+			&self.params.req_client,
 			o,
 		)
 		.await
@@ -164,10 +181,11 @@ impl InstalledVersion<'_, '_> {
 	}
 }
 
+#[derive(Clone)]
 pub(crate) struct InstalledVersionInner {
 	version: VersionName,
 	version_manifest: Arc<VersionManifestAndList>,
-	client_meta: ClientMeta,
+	client_meta: Arc<ClientMeta>,
 	client_assets_and_libs: ClientAssetsAndLibraries,
 }
 
@@ -202,7 +220,7 @@ impl InstalledVersionInner {
 		Ok(Self {
 			version,
 			version_manifest: version_manifest.clone(),
-			client_meta,
+			client_meta: Arc::new(client_meta),
 			client_assets_and_libs: ClientAssetsAndLibraries::new(),
 		})
 	}
@@ -210,27 +228,27 @@ impl InstalledVersionInner {
 
 /// A registry of installed versions
 pub(crate) struct VersionRegistry {
-	versions: HashMap<VersionName, InstalledVersionInner>,
-	version_manifest: Later<Arc<VersionManifestAndList>>,
+	versions: Mutex<HashMap<VersionName, InstalledVersionInner>>,
+	version_manifest: OnceLock<Arc<VersionManifestAndList>>,
 	additional_versions: Vec<VersionEntry>,
 }
 
 impl VersionRegistry {
 	pub fn new() -> Self {
 		Self {
-			versions: HashMap::new(),
-			version_manifest: Later::Empty,
+			versions: Mutex::new(HashMap::new()),
+			version_manifest: OnceLock::new(),
 			additional_versions: Vec::new(),
 		}
 	}
 
 	/// Load a version if it is not already loaded, and get it otherwise
 	pub async fn get_version(
-		&mut self,
+		&self,
 		version: &VersionName,
 		params: LoadVersionParameters<'_>,
 		o: &mut impl NitroOutput,
-	) -> anyhow::Result<&mut InstalledVersionInner> {
+	) -> anyhow::Result<InstalledVersionInner> {
 		// Ensure the version manifest first
 		let requested_version = MinecraftVersion::Version(version.clone());
 		let vm_params = LoadVersionManifestParameters {
@@ -243,29 +261,36 @@ impl VersionRegistry {
 			.await
 			.context("Failed to get version manifest")?;
 
-		if !self.versions.contains_key(version) {
+		let exists = self.versions.lock().await.contains_key(version);
+		if !exists {
 			let installed_version = InstalledVersionInner::load(
 				version.clone(),
-				self.version_manifest.get(),
+				self.version_manifest.get().unwrap(),
 				params,
 				o,
 			)
 			.await?;
-			self.versions.insert(version.clone(), installed_version);
+			self.versions
+				.lock()
+				.await
+				.insert(version.clone(), installed_version);
 		}
 		Ok(self
 			.versions
-			.get_mut(version)
+			.lock()
+			.await
+			.get(version)
+			.cloned()
 			.expect("Version should exist in map"))
 	}
 
 	/// Load the version manifest
 	pub async fn load_version_manifest(
-		&mut self,
+		&self,
 		params: LoadVersionManifestParameters<'_>,
 		o: &mut impl NitroOutput,
 	) -> anyhow::Result<&Arc<VersionManifestAndList>> {
-		if self.version_manifest.is_empty() {
+		if self.version_manifest.get().is_none() {
 			let mut manifest = version_manifest::get_with_output(
 				params.requested_version,
 				params.paths,
@@ -277,14 +302,13 @@ impl VersionRegistry {
 			.context("Failed to get version manifest")?;
 
 			// Add additional versions
-			let additional_versions = std::mem::take(&mut self.additional_versions);
-			add_versions(&mut manifest, additional_versions);
+			add_versions(&mut manifest, self.additional_versions.clone());
 
 			let combo = VersionManifestAndList::new(manifest);
 
-			self.version_manifest.fill(Arc::new(combo));
+			let _ = self.version_manifest.set(Arc::new(combo));
 		}
-		Ok(self.version_manifest.get())
+		Ok(self.version_manifest.get().unwrap())
 	}
 
 	/// Add additional versions to the manifest. Must be called before the manifest is obtained.
@@ -294,18 +318,16 @@ impl VersionRegistry {
 }
 
 /// Container struct for parameters for versions and instances
-pub(crate) struct VersionParameters<'a> {
-	pub paths: &'a Paths,
-	pub req_client: &'a reqwest::Client,
-	pub persistent: &'a mut PersistentData,
-	pub update_manager: &'a mut UpdateManager,
-	pub accounts: &'a mut AccountManager,
-	pub java_installations:
-		&'a mut HashMap<(JavaInstallationKind, JavaMajorVersion), JavaInstallation>,
-	pub custom_java_fn: Option<&'a Arc<dyn CustomJavaFunction>>,
+pub(crate) struct VersionParameters {
+	pub paths: Arc<Paths>,
+	pub req_client: reqwest::Client,
+	pub persistent: Arc<Mutex<PersistentData>>,
+	pub update_manager: UpdateManager,
+	pub java_installations: JavaInstallationRegistry,
+	pub custom_java_fn: Option<Arc<dyn CustomJavaFunction>>,
 	pub censor_secrets: bool,
 	pub disable_hardlinks: bool,
-	pub branding: &'a BrandingProperties,
+	pub branding: BrandingProperties,
 }
 
 /// Container struct for parameters for loading version innards
@@ -327,24 +349,27 @@ pub(crate) struct LoadVersionManifestParameters<'a> {
 
 /// Data for client assets and libraries that are only
 /// loaded when a client needs them
+#[derive(Clone)]
 pub(crate) struct ClientAssetsAndLibraries {
-	loaded: bool,
+	loaded: Arc<AtomicBool>,
 }
 
 impl ClientAssetsAndLibraries {
 	pub fn new() -> Self {
-		Self { loaded: false }
+		Self {
+			loaded: Arc::new(AtomicBool::new(false)),
+		}
 	}
 
 	pub async fn load(
-		&mut self,
+		&self,
 		params: ClientAssetsAndLibsParameters<'_>,
 		o: &mut impl NitroOutput,
 	) -> anyhow::Result<()> {
-		if self.loaded {
+		if self.loaded.load(Ordering::Relaxed) {
 			return Ok(());
 		}
-		let result = assets::get(
+		assets::get(
 			params.client_meta,
 			params.paths,
 			params.version,
@@ -355,9 +380,8 @@ impl ClientAssetsAndLibraries {
 		)
 		.await
 		.context("Failed to get game assets")?;
-		params.update_manager.add_result(result);
 
-		let result = libraries::get(
+		libraries::get(
 			&params.client_meta.libraries,
 			&params.paths.internal,
 			params.version,
@@ -367,9 +391,8 @@ impl ClientAssetsAndLibraries {
 		)
 		.await
 		.context("Failed to get game libraries")?;
-		params.update_manager.add_result(result);
 
-		self.loaded = true;
+		self.loaded.store(true, Ordering::Relaxed);
 		Ok(())
 	}
 }
@@ -381,7 +404,7 @@ pub(crate) struct ClientAssetsAndLibsParameters<'a> {
 	pub paths: &'a Paths,
 	pub req_client: &'a reqwest::Client,
 	pub version_manifest: &'a VersionManifestAndList,
-	pub update_manager: &'a mut UpdateManager,
+	pub update_manager: &'a UpdateManager,
 }
 
 /// Adds extra versions to a manifest

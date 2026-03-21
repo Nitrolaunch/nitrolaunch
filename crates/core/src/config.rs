@@ -1,5 +1,4 @@
 use nitro_auth::mc::ClientId;
-use nitro_shared::UpdateDepth;
 
 use crate::util::secrets::get_ms_client_id;
 
@@ -17,8 +16,6 @@ macro_rules! builder_method {
 pub struct Configuration {
 	/// The Microsoft client ID to use for Microsoft authentication
 	pub(crate) ms_client_id: ClientId,
-	/// The depth of updates to perform
-	pub(crate) update_depth: UpdateDepth,
 	/// Whether to censor account credentials in output messages and logs
 	pub(crate) censor_secrets: bool,
 	/// Whether to use file copies instead of hardlinks. Useful if you
@@ -39,7 +36,6 @@ impl Configuration {
 	pub fn new() -> Self {
 		Self {
 			ms_client_id: get_ms_client_id(),
-			update_depth: UpdateDepth::Full,
 			censor_secrets: true,
 			disable_hardlinks: false,
 			branding: BrandingProperties::default(),
@@ -77,12 +73,6 @@ impl ConfigBuilder {
 	);
 
 	builder_method!(
-		update_depth,
-		UpdateDepth,
-		"Set the depth at which to update files and versions"
-	);
-
-	builder_method!(
 		censor_secrets,
 		bool,
 		"Set whether to censor account credentials in output messages and logs"
@@ -104,6 +94,7 @@ impl Default for ConfigBuilder {
 }
 
 /// Branding properties for the launcher to send to the client
+#[derive(Clone)]
 pub struct BrandingProperties {
 	/// The desired launcher name to send to the client
 	pub(crate) launcher_name: String,

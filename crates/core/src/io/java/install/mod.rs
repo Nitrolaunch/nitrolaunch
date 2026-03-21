@@ -1,10 +1,12 @@
 /// System Java installation
 mod system;
 
+use std::collections::HashMap;
 use std::env::consts::EXE_SUFFIX;
 use std::fs::File;
 use std::io::{BufReader, Read, Seek};
 
+use std::ops::Deref;
 #[cfg(target_family = "unix")]
 use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
@@ -14,6 +16,7 @@ use anyhow::{bail, Context};
 use nitro_shared::output::{MessageContents, NitroOutput};
 use nitro_shared::{translate, UpdateDepth};
 use tar::Archive;
+use tokio::sync::Mutex;
 use zip::ZipArchive;
 
 use crate::io::files::{self, paths::Paths};
@@ -23,6 +26,13 @@ use crate::net::{self, download};
 use nitro_shared::util::preferred_archive_extension;
 
 use super::JavaMajorVersion;
+
+/// Registry of Java installations
+#[derive(Clone)]
+pub struct JavaInstallationRegistry {
+	pub(crate) installations:
+		Arc<Mutex<HashMap<(JavaInstallationKind, JavaMajorVersion), JavaInstallation>>>,
+}
 
 /// Type of Java installation
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
@@ -85,7 +95,7 @@ impl JavaInstallation {
 				let existing_dir = get_existing_dir(
 					id,
 					&vers_str,
-					params.persistent,
+					params.persistent.lock().await.deref(),
 					params.update_manager.get_depth(),
 				);
 
@@ -107,16 +117,16 @@ impl JavaInstallation {
 
 						if let Some(result) = result {
 							// Save the version in the persistence file
-							params
-								.persistent
-								.update_java_installation(
-									id,
-									&vers_str,
-									&result.version,
-									&result.path,
-								)
-								.context("Failed to update persistent Java version")?;
-							params.persistent.dump(params.paths).await?;
+							let mut lock = params.persistent.lock().await;
+
+							lock.update_java_installation(
+								id,
+								&vers_str,
+								&result.version,
+								&result.path,
+							)
+							.context("Failed to update persistent Java version")?;
+							lock.dump(params.paths).await?;
 
 							result.path
 						} else {
@@ -205,10 +215,10 @@ impl JavaInstallation {
 /// Container struct for parameters for loading Java installations
 pub(crate) struct JavaInstallParameters<'a> {
 	pub paths: &'a Paths,
-	pub update_manager: &'a mut UpdateManager,
-	pub persistent: &'a mut PersistentData,
+	pub update_manager: &'a UpdateManager,
+	pub persistent: Arc<Mutex<PersistentData>>,
 	pub req_client: &'a reqwest::Client,
-	pub custom_install_func: Option<&'a Arc<dyn CustomJavaFunction>>,
+	pub custom_install_func: Option<Arc<dyn CustomJavaFunction>>,
 }
 
 /// Gets the existing dir of a Java installation from the persistent file
@@ -252,7 +262,12 @@ async fn install_adoptium(
 	o: &mut impl NitroOutput,
 ) -> anyhow::Result<PathBuf> {
 	if params.update_manager.update_depth == UpdateDepth::Shallow {
-		if let Some(directory) = params.persistent.get_java_path("adoptium", major_version) {
+		let dir = params
+			.persistent
+			.lock()
+			.await
+			.get_java_path("adoptium", major_version);
+		if let Some(directory) = dir {
 			if directory.exists() {
 				Ok(directory)
 			} else {
@@ -291,13 +306,15 @@ async fn update_adoptium(
 
 	if !params
 		.persistent
+		.lock()
+		.await
 		.update_java_installation("adoptium", major_version, &release_name, &extracted_bin_dir)
 		.context("Failed to update Java in lockfile")?
 	{
 		return Ok(extracted_bin_dir);
 	}
 
-	params.persistent.dump(params.paths).await?;
+	params.persistent.lock().await.dump(params.paths).await?;
 
 	let arc_extension = preferred_archive_extension();
 	let arc_name = format!("adoptium{major_version}{arc_extension}");

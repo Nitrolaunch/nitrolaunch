@@ -84,7 +84,9 @@ impl Instance {
 
 		// Get the Java installation and game JAR ahead of time for plugins to use
 
-		let mut version = core.get_version(&self.config.version, o).await?;
+		let mut version = core
+			.get_version(&self.config.version, manager.settings.depth, o)
+			.await?;
 
 		let jvm_path = version
 			.get_java_installation(self.config.launch.java.clone(), o)
@@ -241,12 +243,12 @@ impl Instance {
 	}
 
 	/// Create the core instance
-	pub(super) async fn create_core_instance<'core>(
+	pub(super) async fn create_core_instance(
 		&mut self,
-		version: &'core mut InstalledVersion<'core, 'core>,
+		version: &InstalledVersion,
 		paths: &Paths,
 		o: &mut impl NitroOutput,
-	) -> anyhow::Result<nitro_core::Instance<'core>> {
+	) -> anyhow::Result<nitro_core::Instance> {
 		self.ensure_dir()?;
 		let side = match &self.kind {
 			InstKind::Client { window, .. } => nitro_core::InstanceKind::Client {
@@ -414,27 +416,19 @@ pub async fn setup_core(
 	client_id: Option<&ClientId>,
 	settings: &UpdateSettings,
 	client: &Client,
-	accounts: &AccountManager,
 	plugins: &PluginManager,
 	paths: &Paths,
 	o: &mut impl NitroOutput,
 ) -> anyhow::Result<NitroCore> {
-	let mut core_config = nitro_core::ConfigBuilder::new()
-		.update_depth(settings.depth)
-		.branding(BrandingProperties::new(
-			"Nitrolaunch".into(),
-			crate::VERSION.into(),
-		));
+	let mut core_config = nitro_core::ConfigBuilder::new().branding(BrandingProperties::new(
+		"Nitrolaunch".into(),
+		crate::VERSION.into(),
+	));
 	if let Some(client_id) = client_id {
 		core_config = core_config.ms_client_id(client_id.clone());
 	}
 	let core_config = core_config.build();
-	let mut core = NitroCore::with_config(core_config, accounts.clone())
-		.context("Failed to initialize core")?;
-
-	// Set up account manager
-	core.get_accounts().steal_accounts(accounts);
-	core.get_accounts().set_offline(settings.offline_auth);
+	let mut core = NitroCore::with_config(core_config).context("Failed to initialize core")?;
 
 	// Set up custom plugin integrations
 	core.set_custom_java_install_fn(Arc::new(JavaFunction {

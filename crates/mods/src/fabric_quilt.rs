@@ -61,12 +61,13 @@ pub async fn install_from_core(
 	side: Side,
 	o: &mut impl NitroOutput,
 ) -> anyhow::Result<(Classpath, String)> {
+	let manager = UpdateManager::new(UpdateDepth::Shallow);
 	let meta = get_meta(
 		&version_info.version,
 		fq_version,
 		&mode,
 		&core.get_paths().internal,
-		core.get_update_manager(),
+		&manager,
 		core.get_client(),
 	)
 	.await
@@ -75,7 +76,7 @@ pub async fn install_from_core(
 		&meta,
 		&core.get_paths().libraries,
 		mode,
-		core.get_update_manager(),
+		&manager,
 		core.get_client(),
 		o,
 	)
@@ -86,7 +87,7 @@ pub async fn install_from_core(
 		&meta,
 		&core.get_paths().libraries,
 		side,
-		core.get_update_manager(),
+		&manager,
 		core.get_client(),
 	)
 	.await
