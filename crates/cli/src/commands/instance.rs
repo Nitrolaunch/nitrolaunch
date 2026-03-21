@@ -118,6 +118,11 @@ pub enum InstanceSubcommand {
 		#[arg(short, long)]
 		output: Option<String>,
 	},
+	#[command(about = "View logs for an instance")]
+	Logs {
+		/// The instance to view the logs of
+		instance: Option<String>,
+	},
 	#[command(about = "Print the directory of an instance")]
 	Dir {
 		/// The instance to print the directory of
@@ -159,6 +164,7 @@ pub async fn run(command: InstanceSubcommand, mut data: CmdData<'_>) -> anyhow::
 		} => export(&mut data, instance, format, output).await,
 		InstanceSubcommand::Delete { instance } => delete(&mut data, instance).await,
 		InstanceSubcommand::Edit { instance } => edit(&mut data, instance).await,
+		InstanceSubcommand::Logs { instance } => logs(&mut data, instance).await,
 		InstanceSubcommand::External(args) => {
 			call_plugin_subcommand(args, Some("instance"), &mut data).await
 		}
@@ -700,6 +706,49 @@ async fn edit(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()> 
 
 	data.output
 		.display(MessageContents::Success("Changes saved".into()));
+
+	Ok(())
+}
+
+async fn logs(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()> {
+	data.ensure_config(true).await?;
+	let config = data.config.get_mut();
+
+	let id = pick_instance(id, config)?;
+
+	let instance = config
+		.instances
+		.get_mut(&id)
+		.with_context(|| format!("Unknown instance '{id}'"))?;
+
+	let logs = instance
+		.get_logs(&config.plugins, &data.paths, data.output)
+		.await
+		.context("Failed to get instance logs")?;
+
+	if logs.is_empty() {
+		cprintln!("No logs available");
+		return Ok(());
+	}
+
+	loop {
+		let select = inquire::Select::new("Browsing logs. Press Escape to exit.", logs.clone());
+		let log = select.prompt_skippable()?;
+		if let Some(log) = log {
+			if let Ok(log_text) = instance
+				.get_log(&log, &config.plugins, &data.paths, data.output)
+				.await
+			{
+				cprintln!("<s>Log <g>{log}");
+				println!("{log_text}");
+			} else {
+				cprintln!("<s,r>Failed to read log {log}");
+			}
+			inquire::Confirm::new("Press Escape to return to browse page").prompt_skippable()?;
+		} else {
+			break;
+		}
+	}
 
 	Ok(())
 }
