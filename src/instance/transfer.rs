@@ -140,11 +140,17 @@ impl Instance {
 		std::fs::create_dir_all(&target_dir)
 			.context("Failed to create directory for new instance")?;
 
+		let source_path = if source_path.exists() {
+			source_path.canonicalize()?.to_string_lossy().to_string()
+		} else {
+			source_path.to_string_lossy().to_string()
+		};
+
 		// Import using the plugin
 		let arg = ImportInstanceArg {
 			format: format.info.id.clone(),
 			id: id.to_string(),
-			source_path: source_path.canonicalize()?.to_string_lossy().to_string(),
+			source_path,
 			result_path: target_dir.to_string_lossy().to_string(),
 			side,
 		};
