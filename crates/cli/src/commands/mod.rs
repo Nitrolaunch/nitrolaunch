@@ -16,6 +16,7 @@ use color_print::{cformat, cprintln};
 use nitrolaunch::config::modifications::{apply_modifications_and_write, ConfigModification};
 use nitrolaunch::config::{is_first_run, Config};
 use nitrolaunch::config_crate::ConfigDeser;
+use nitrolaunch::core::QuickPlayType;
 use nitrolaunch::instance::transfer::{load_formats, migrate_instances};
 use nitrolaunch::io::lock::Lockfile;
 use nitrolaunch::io::paths::Paths;
@@ -54,6 +55,19 @@ pub enum Command {
 	},
 	#[command(about = "Launch instances to play the game")]
 	Launch {
+		/// An optional account to choose when launching
+		#[arg(short, long)]
+		account: Option<String>,
+		/// Whether to launch in offline mode, skipping authentication. This only works
+		/// if you have authenticated at least once
+		#[arg(short, long)]
+		offline: bool,
+		/// Whether to skip updating on the first launch. Can cause problems!
+		#[arg(long)]
+		skip_update: bool,
+		/// Launch into a world or server. Can be either world:<world>, server:<ip> or realm:<realm>
+		#[arg(short, long)]
+		quick_play: Option<QuickPlayType>,
 		/// The instance to launch
 		instance: Option<String>,
 	},
@@ -205,9 +219,13 @@ Would you like to do that now?"
 
 		match cli.command {
 			Command::Account { command } => account::run(command, &mut data).await,
-			Command::Launch { instance } => {
-				instance::launch(instance, None, false, false, None, data).await
-			}
+			Command::Launch {
+				account,
+				offline,
+				skip_update,
+				quick_play,
+				instance,
+			} => instance::launch(instance, account, offline, skip_update, quick_play, data).await,
 			Command::Version => {
 				print_version();
 				Ok(())
