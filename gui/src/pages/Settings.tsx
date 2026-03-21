@@ -6,13 +6,17 @@ import InlineSelect from "../components/input/select/InlineSelect";
 import { errorToast, successToast } from "../components/dialog/Toasts";
 import { emit } from "@tauri-apps/api/event";
 import IconTextButton from "../components/input/button/IconTextButton";
-import { Check, Delete, Folder, Gear } from "../icons";
+import { Check, Delete, Folder, Gear, Text } from "../icons";
 import Modal, { ModalButton } from "../components/dialog/Modal";
+import FloatingTabs from "../components/input/select/FloatingTabs";
+import ApplicationLog from "../components/ApplicationLog";
 
 export default function Settings(props: SettingsProps) {
 	let [settings, settingsMethods] = createResource(
 		async () => (await invoke("get_settings")) as LauncherSettings,
 	);
+
+	let [tab, setTab] = createSignal("general");
 
 	let [availableThemes, __] = createResource(async () => {
 		let themes: Theme[] = [];
@@ -117,73 +121,103 @@ export default function Settings(props: SettingsProps) {
 			buttons={buttons()}
 		>
 			<div class="cont fullwidth">
-				<div class="cont fields">
-					<div class="cont start label">
-						<label for="theme">BASE THEME</label>
-					</div>
-					<Show when={availableThemes() != undefined}>
-						<InlineSelect
-							onChange={(x) => {
-								setBaseTheme(x as string);
-								setIsDirty(true);
-							}}
-							selected={baseTheme()}
-							options={availableThemes()!
-								.filter((x) => x.type == "base")
-								.map((theme) => {
-									return {
-										value: theme.id,
-										contents: <div>{theme.name}</div>,
-										tip: theme.description,
-										color: theme.color,
-										selectedTextColor: "var(--fg)",
-									};
-								})}
-							columns={3}
-							allowEmpty={false}
-							connected={false}
-						/>
-					</Show>
-					<div class="cont start label">
-						<label for="theme">OVERLAY THEMES</label>
-					</div>
-					<Show when={availableThemes() != undefined}>
-						<InlineSelect
-							onChangeMulti={(x) => {
-								setOverlayThemes(x as string[]);
-								setIsDirty(true);
-							}}
-							selected={overlayThemes()}
-							options={availableThemes()!
-								.filter((x) => x.type == "overlay")
-								.map((theme) => {
-									return {
-										value: theme.id,
-										contents: <div>{theme.name}</div>,
-										tip: theme.description,
-										color: theme.color,
-										selectedTextColor: "var(--fg)",
-									};
-								})}
-							columns={3}
-							allowEmpty={false}
-							connected={false}
-						/>
-					</Show>
-					<Tip
-						tip="Open the folder where Nitrolaunch stores its instances and data"
-						side="top"
-					>
-						<div class="cont">
-							<IconTextButton
-								icon={Folder}
-								size="1rem"
-								text="Open data folder"
-								onClick={() => invoke("open_data_dir")}
-							/>
+				<FloatingTabs
+					tabs={[
+						{
+							id: "general",
+							title: "General",
+							icon: Gear,
+							color: "var(--instance)",
+							bgColor: "var(--instancebg)",
+						},
+						{
+							id: "logs",
+							title: "Logs",
+							icon: Text,
+							color: "var(--template)",
+							bgColor: "var(--templatebg)",
+						},
+					]}
+					selectedTab={tab()}
+					setTab={setTab}
+				/>
+			</div>
+			<div class="cont fullwidth">
+				<Show when={tab() == "general"}>
+					<div class="cont fields">
+						<div class="cont start label">
+							<label for="theme">BASE THEME</label>
 						</div>
-					</Tip>
-				</div>
+						<Show when={availableThemes() != undefined}>
+							<InlineSelect
+								onChange={(x) => {
+									setBaseTheme(x as string);
+									setIsDirty(true);
+								}}
+								selected={baseTheme()}
+								options={availableThemes()!
+									.filter((x) => x.type == "base")
+									.map((theme) => {
+										return {
+											value: theme.id,
+											contents: <div>{theme.name}</div>,
+											tip: theme.description,
+											color: theme.color,
+											selectedTextColor: "var(--fg)",
+										};
+									})}
+								columns={3}
+								allowEmpty={false}
+								connected={false}
+							/>
+						</Show>
+						<div class="cont start label">
+							<label for="theme">OVERLAY THEMES</label>
+						</div>
+						<Show when={availableThemes() != undefined}>
+							<InlineSelect
+								onChangeMulti={(x) => {
+									setOverlayThemes(x as string[]);
+									setIsDirty(true);
+								}}
+								selected={overlayThemes()}
+								options={availableThemes()!
+									.filter((x) => x.type == "overlay")
+									.map((theme) => {
+										return {
+											value: theme.id,
+											contents: <div>{theme.name}</div>,
+											tip: theme.description,
+											color: theme.color,
+											selectedTextColor: "var(--fg)",
+										};
+									})}
+								columns={3}
+								allowEmpty={false}
+								connected={false}
+							/>
+						</Show>
+						<Tip
+							tip="Open the folder where Nitrolaunch stores its instances and data"
+							side="top"
+						>
+							<div class="cont">
+								<IconTextButton
+									icon={Folder}
+									size="1rem"
+									text="Open data folder"
+									onClick={() => invoke("open_data_dir")}
+								/>
+							</div>
+						</Tip>
+					</div>
+				</Show>
+				<Show when={tab() == "logs"}>
+					<div class="cont col fullwidth">
+						<h2>Logs</h2>
+						<ApplicationLog />
+					</div>
+				</Show>
 			</div>
 		</Modal>
 	);

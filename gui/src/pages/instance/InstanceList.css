@@ -108,4 +108,5 @@
 .instance-list-pin {
 	position: absolute;
 	right: 0.8rem;
+	z-index: 2;
 }

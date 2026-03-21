@@ -32,8 +32,8 @@ pub async fn run(subcommand: LogSubcommand, data: &mut CmdData<'_>) -> anyhow::R
 }
 
 pub async fn browse(data: &mut CmdData<'_>, client_id: Option<String>) -> anyhow::Result<()> {
-	let client_id = client_id.unwrap_or("cli".into());
-	let logs = get_log_files(&data.paths, &client_id).context("Failed to get log files")?;
+	let client_id = client_id.as_deref().unwrap_or("cli");
+	let logs = get_log_files(&data.paths, client_id).context("Failed to get log files")?;
 
 	let browse_entries: Vec<_> = logs.iter().map(|x| BrowseEntry::new(x.clone())).collect();
 

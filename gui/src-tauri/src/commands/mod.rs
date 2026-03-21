@@ -1,5 +1,6 @@
 use anyhow::Context;
 use nitrolaunch::config::Config;
+use nitrolaunch::io::logging::{get_log_file_path, get_log_files};
 use nitrolaunch::io::paths::Paths;
 use nitrolaunch::plugin::PluginManager;
 use nitrolaunch::plugin_crate::hook::wasm::loader::WASMLoader;
@@ -53,4 +54,24 @@ pub async fn cancel_task(state: tauri::State<'_, State>, task: &str) -> Result<(
 	state.task_manager.get().unwrap().lock().await.kill(task);
 
 	Ok(())
+}
+
+/// Gets the available GUI logs
+#[tauri::command]
+pub async fn get_logs(state: tauri::State<'_, State>) -> Result<Vec<String>, String> {
+	let logs = fmt_err(get_log_files(&state.paths, "gui").context("Failed to get log files"))?;
+	let logs = logs
+		.into_iter()
+		.map(|x| x.file_name().unwrap().to_string_lossy().to_string());
+
+	Ok(logs.collect())
+}
+
+/// Gets a single GUI log
+#[tauri::command]
+pub async fn get_log(state: tauri::State<'_, State>, log: &str) -> Result<String, String> {
+	let path = get_log_file_path(&state.paths, "gui", log);
+	let contents = fmt_err(std::fs::read_to_string(path))?;
+
+	Ok(contents)
 }

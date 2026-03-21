@@ -39,8 +39,8 @@ export default function Console(props: ConsoleProps) {
 	}
 
 	return (
-		<div class="cont col instance-console">
-			<div class="cont fullwidth instance-console-header">
+		<div class="cont col console">
+			<div class="cont fullwidth console-header">
 				<InlineSelect
 					options={[
 						{
@@ -119,10 +119,10 @@ export default function Console(props: ConsoleProps) {
 					<SearchBar value={search()} method={setSearch} immediate />
 				</div>
 			</div>
-			<div class="cont col instance-console-output">
+			<div class="cont col console-output">
 				<Switch>
 					<Match when={output() != undefined}>
-						<div class="cont col instance-console-text" ref={outputElem}>
+						<div class="cont col console-text" ref={outputElem}>
 							<For each={output()!}>
 								{(line) => {
 									let cls = line.includes("INFO")
@@ -170,7 +170,7 @@ export default function Console(props: ConsoleProps) {
 							</For>
 						</div>
 						<div
-							class="cont shadow bubble-hover instance-console-scroll"
+							class="cont shadow bubble-hover console-scroll"
 							onclick={() => {
 								scrollToBottom();
 							}}
@@ -178,7 +178,7 @@ export default function Console(props: ConsoleProps) {
 							<Icon icon={AngleDown} size="1.5rem" />
 						</div>
 						<Show when={props.sendMessage != undefined}>
-							<div class="fullwidth instance-console-input">
+							<div class="fullwidth console-input">
 								<form
 									onsubmit={async (e) => {
 										e.preventDefault();
@@ -192,7 +192,7 @@ export default function Console(props: ConsoleProps) {
 										onchange={(e) => setInput(e.target.value)}
 									/>
 								</form>
-								<div class="cont instance-console-input-prompt">
+								<div class="cont console-input-prompt">
 									<Icon icon={AngleRight} size="1rem" />
 								</div>
 							</div>

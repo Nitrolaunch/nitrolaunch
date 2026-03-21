@@ -20,7 +20,8 @@ impl Logger {
 	/// Opens this logger with a client ID (cli, gui, etc) to identify the log files
 	pub fn new(paths: &Paths, client_id: &str) -> anyhow::Result<Self> {
 		let _ = clear_old_logs(paths, client_id);
-		let path = get_log_file_path(paths, client_id).context("Failed to get log file path")?;
+		let path =
+			get_new_log_file_path(paths, client_id).context("Failed to get log file path")?;
 		let _ = create_leading_dirs(&path);
 		let log_file = File::create(path).context("Failed to open log file")?;
 		let latest_log_file = File::create(get_latest_log_file_path(paths, client_id)).ok();
@@ -59,16 +60,21 @@ impl Logger {
 }
 
 /// Get the path to a new log file
-pub fn get_log_file_path(paths: &Paths, client_id: &str) -> anyhow::Result<PathBuf> {
+pub fn get_new_log_file_path(paths: &Paths, client_id: &str) -> anyhow::Result<PathBuf> {
 	Ok(paths
 		.logs
 		.join(client_id)
 		.join(format!("log-{}.txt", utc_timestamp()?)))
 }
 
+/// Get the path to an existing log file
+pub fn get_log_file_path(paths: &Paths, client_id: &str, log_name: &str) -> PathBuf {
+	paths.logs.join(client_id).join(log_name)
+}
+
 /// Get the path to the latest log file
 pub fn get_latest_log_file_path(paths: &Paths, client_id: &str) -> PathBuf {
-	paths.logs.join(client_id).join("latest.txt")
+	get_log_file_path(paths, client_id, "latest.txt")
 }
 
 /// Gets all the log files for the given client ID, sorted so that the oldest are at the end

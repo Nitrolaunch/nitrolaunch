@@ -282,6 +282,8 @@ fn main() {
 			commands::misc::linux_fixes_needed,
 			commands::misc::get_nitro_version,
 			commands::cancel_task,
+			commands::get_logs,
+			commands::get_log,
 		])
 		.run(tauri::generate_context!())
 		.expect("Error while running tauri application");

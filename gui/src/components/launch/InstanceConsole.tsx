@@ -6,7 +6,6 @@ import {
 	createSignal,
 	onCleanup,
 } from "solid-js";
-import "./InstanceConsole.css";
 import { errorToast } from "../dialog/Toasts";
 import Console from "./Console";
 
