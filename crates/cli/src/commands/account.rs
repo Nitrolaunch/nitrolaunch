@@ -216,7 +216,7 @@ async fn login(data: &mut CmdData<'_>, account: Option<String>) -> anyhow::Resul
 	let client = Client::new();
 	config
 		.accounts
-		.authenticate(&data.paths.core, &client, data.output)
+		.authenticate(false, &data.paths.core, &client, data.output)
 		.await
 		.context("Failed to authenticate")?;
 

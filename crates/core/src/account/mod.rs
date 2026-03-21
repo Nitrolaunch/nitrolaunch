@@ -271,6 +271,7 @@ impl AccountManager {
 	/// Ensures that the currently chosen account is authenticated
 	pub async fn authenticate(
 		&mut self,
+		offline: bool,
 		paths: &Paths,
 		client: &Client,
 		o: &mut impl NitroOutput,
@@ -286,7 +287,7 @@ impl AccountManager {
 					req_client: client,
 					paths,
 					force: false,
-					offline: self.offline,
+					offline,
 					client_id: self.ms_client_id.clone(),
 					custom_hooks: self.custom_hooks.clone(),
 				};

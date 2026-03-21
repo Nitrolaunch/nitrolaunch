@@ -50,9 +50,15 @@ pub(crate) async fn launch(
 		let message = translate!(process, StartAuthenticating);
 		process.display(MessageContents::StartProcess(message));
 
+		// if !params.
 		params
 			.accounts
-			.authenticate(params.paths, params.req_client, process.deref_mut())
+			.authenticate(
+				params.offline_auth,
+				params.paths,
+				params.req_client,
+				process.deref_mut(),
+			)
 			.await
 			.context("Failed to ensure authentication")?;
 
@@ -116,6 +122,7 @@ pub(crate) struct LaunchParameters<'a> {
 	pub req_client: &'a reqwest::Client,
 	pub client_meta: &'a ClientMeta,
 	pub accounts: &'a mut AccountManager,
+	pub offline_auth: bool,
 	pub censor_secrets: bool,
 	pub branding: &'a BrandingProperties,
 	pub pipe_stdin: bool,

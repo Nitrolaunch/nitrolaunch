@@ -155,7 +155,7 @@ impl Instance {
 
 		// Launch the instance using core
 		let handle = instance
-			.launch_with_handle(accounts, settings.quick_play, o)
+			.launch_with_handle(accounts, settings.offline_auth, settings.quick_play, o)
 			.await
 			.context("Failed to launch core instance")?;
 

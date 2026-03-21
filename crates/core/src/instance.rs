@@ -226,10 +226,13 @@ impl Instance {
 	pub async fn launch(
 		&mut self,
 		accounts: &mut AccountManager,
+		offline_auth: bool,
 		quick_play: Option<QuickPlayType>,
 		o: &mut impl NitroOutput,
 	) -> anyhow::Result<()> {
-		let mut handle = self.launch_with_handle(accounts, quick_play, o).await?;
+		let mut handle = self
+			.launch_with_handle(accounts, offline_auth, quick_play, o)
+			.await?;
 		handle
 			.wait()
 			.context("Failed to wait for instance process")?;
@@ -240,6 +243,7 @@ impl Instance {
 	pub async fn launch_with_handle(
 		&mut self,
 		accounts: &mut AccountManager,
+		offline_auth: bool,
 		quick_play: Option<QuickPlayType>,
 		o: &mut impl NitroOutput,
 	) -> anyhow::Result<InstanceHandle> {
@@ -260,6 +264,7 @@ impl Instance {
 			req_client: &self.params.req_client,
 			client_meta: &self.params.client_meta,
 			accounts,
+			offline_auth,
 			censor_secrets: self.params.censor_secrets,
 			branding: &self.params.branding,
 			pipe_stdin: self.pipe_stdin,
