@@ -5,7 +5,7 @@ pub mod cosmetics;
 /// Tools for working with UUIDs
 pub mod uuid;
 
-use std::{collections::HashMap, ops::Deref, path::Path, sync::Arc};
+use std::{collections::HashMap, ops::Deref, sync::Arc};
 
 use anyhow::{bail, Context};
 use nitro_auth::mc::{AccessToken, ClientId, Keypair};
@@ -382,7 +382,7 @@ impl AccountManager {
 		&mut self,
 		account: &str,
 		variant: SkinVariant,
-		skin_path: &Path,
+		skin: &[u8],
 		paths: &Paths,
 		client: &Client,
 		o: &mut impl NitroOutput,
@@ -400,7 +400,7 @@ impl AccountManager {
 			client_id: self.ms_client_id.clone(),
 			custom_hooks: self.custom_hooks.clone(),
 		};
-		account.upload_skin(variant, skin_path, params, o).await
+		account.upload_skin(variant, skin, params, o).await
 	}
 
 	/// Unchooses the current account, if one is chosen

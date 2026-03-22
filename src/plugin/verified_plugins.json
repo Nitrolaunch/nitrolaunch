@@ -329,5 +329,13 @@
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Create desktop shortcuts to launch instances"
+	},
+	"skin_stealer": {
+		"id": "skin_stealer",
+		"name": "Skin Stealer",
+		"version": "v6",
+		"github_owner": "Nitrolaunch",
+		"github_repo": "plugins",
+		"description": "Get the skin of other players"
 	}
 }

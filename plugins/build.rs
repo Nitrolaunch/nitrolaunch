@@ -75,6 +75,7 @@ fn main() {
 	add_file!(zip, "plugins/plugins/template_share.md");
 	add_file!(zip, "plugins/plugins/server_restart.md");
 	add_file!(zip, "plugins/plugins/shortcut.md");
+	add_file!(zip, "plugins/plugins/skin_stealer.md");
 	add_file!(zip, "plugins/plugins/smithed.md");
 	add_file!(zip, "plugins/plugins/smithed_api.md");
 	add_file!(zip, "plugins/plugins/stats.md");

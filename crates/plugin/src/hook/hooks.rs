@@ -1144,3 +1144,43 @@ pub struct GetAccountCosmeticsResult {
 	/// The list of available capes
 	pub capes: Vec<Cape>,
 }
+
+def_hook!(
+	AddSkinRepositories,
+	"add_skin_repositories",
+	"Adds repositories for searching custom skins",
+	(),
+	Vec<SkinRepository>,
+	1,
+	true,
+);
+
+/// Result from the AddSkinRepositories hook
+#[derive(Serialize, Deserialize, Default)]
+#[serde(default)]
+pub struct SkinRepository {
+	/// The ID of the repository
+	pub id: String,
+	/// The display name of the repository
+	pub name: String,
+}
+
+def_hook!(
+	SearchSkinRepository,
+	"search_skin_repository",
+	"Searches a skin repository for skins",
+	SearchSkinRepositoryArg,
+	Vec<Skin>,
+	1,
+	true,
+);
+
+/// Argument for the SearchSkinRepository hook
+#[derive(Serialize, Deserialize, Default)]
+#[serde(default)]
+pub struct SearchSkinRepositoryArg {
+	/// The ID of the repository
+	pub repository: String,
+	/// The search string
+	pub search: Option<String>,
+}

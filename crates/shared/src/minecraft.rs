@@ -182,7 +182,11 @@ pub struct Cosmetic {
 	/// The ID of this cosmetic
 	pub id: String,
 	/// The URL to the cosmetic image file
-	pub url: String,
+	#[serde(default)]
+	pub url: Option<String>,
+	/// The path to the cosmetic image file, if it is stored locally
+	#[serde(default)]
+	pub path: Option<String>,
 	/// The state of the cosmetic
 	pub state: CosmeticState,
 }

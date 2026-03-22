@@ -24,6 +24,7 @@ package.cross_platform: build.cross_platform
 	@rm -f release/multiply-universal.zip
 	@rm -f release/nitro_transfer-universal.zip
 	@rm -f release/shortcut-universal.zip
+	@rm -f release/skin_stealer-universal.zip
 	@rm -f release/themes-universal.zip
 	@rm -f release/webtools-universal.zip
 	@rm -f release/weld-universal.zip
@@ -62,6 +63,8 @@ package.cross_platform: build.cross_platform
 	@printf "@ nitro_plugin_multiply.wasm\\n@=plugin.wasm\\n" | zipnote -w release/multiply-universal.zip
 	@zip -j release/shortcut-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_shortcut.wasm plugins/shortcut/plugin.json
 	@printf "@ nitro_plugin_shortcut.wasm\\n@=plugin.wasm\\n" | zipnote -w release/shortcut-universal.zip
+	@zip -j release/skin_stealer-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_skin_stealer.wasm plugins/skin_stealer/plugin.json
+	@printf "@ nitro_plugin_skin_stealer.wasm\\n@=plugin.wasm\\n" | zipnote -w release/skin_stealer-universal.zip
 	@zip -j release/nitro_transfer-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_nitro_transfer.wasm plugins/nitro_transfer/plugin.json
 	@printf "@ nitro_plugin_nitro_transfer.wasm\\n@=plugin.wasm\\n" | zipnote -w release/nitro_transfer-universal.zip
 	@zip -j release/webtools-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_webtools.wasm plugins/webtools/plugin.json
@@ -297,6 +300,11 @@ install.shortcut:
 	@cargo build -p nitro_plugin_shortcut --release --target wasm32-wasip2
 	@cp -r plugins/shortcut ~/.local/share/nitro/plugins
 	@cp -r ../target/wasm32-wasip2/release/nitro_plugin_shortcut.wasm ~/.local/share/nitro/plugins/shortcut/plugin.wasm
+
+install.skin_stealer:
+	@cargo build -p nitro_plugin_skin_stealer --release --target wasm32-wasip2
+	@cp -r plugins/skin_stealer ~/.local/share/nitro/plugins
+	@cp -r ../target/wasm32-wasip2/release/nitro_plugin_skin_stealer.wasm ~/.local/share/nitro/plugins/skin_stealer/plugin.wasm
 
 install.smithed:
 	@cargo install --path . --bin nitro_plugin_smithed --locked --profile fast_release

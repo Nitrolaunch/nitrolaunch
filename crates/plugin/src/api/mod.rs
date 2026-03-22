@@ -169,3 +169,13 @@ hook_interface!(
 	"get_account_cosmetics",
 	GetAccountCosmetics
 );
+hook_interface!(
+	add_skin_repositories,
+	"add_skin_repositories",
+	AddSkinRepositories
+);
+hook_interface!(
+	search_skin_repository,
+	"search_skin_repository",
+	SearchSkinRepository
+);

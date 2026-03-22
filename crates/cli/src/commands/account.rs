@@ -1,5 +1,3 @@
-use std::path::Path;
-
 use super::CmdData;
 use crate::commands::call_plugin_subcommand;
 use crate::output::{icons_enabled, CHECK, HYPHEN_POINT, STAR};
@@ -13,6 +11,10 @@ use nitrolaunch::core::account::{AccountID, AccountKind};
 
 use clap::Subcommand;
 use color_print::{cformat, cprint, cprintln};
+use nitrolaunch::net_crate::load_from_uri;
+use nitrolaunch::plugin_crate::hook::hooks::{
+	AddSkinRepositories, SearchSkinRepository, SearchSkinRepositoryArg,
+};
 use nitrolaunch::shared::minecraft::{CosmeticState, SkinVariant};
 use nitrolaunch::shared::output::{MessageContents, NitroOutput};
 use reqwest::Client;
@@ -67,11 +69,18 @@ pub enum CosmeticSubcommand {
 	Upload {
 		/// The account to use. If not specified, uses the default account
 		account: String,
-		/// The path to the skin file
-		path: String,
+		/// The path or URL to the skin file. It must be in PNG format.
+		skin: String,
 		/// Whether this is a slim (Alex-like) skin
 		#[arg(long)]
 		slim: bool,
+	},
+	#[command(about = "Search for new skins")]
+	Search {
+		/// The repository to use. Install more with plugins
+		repository: String,
+		/// The search term. Can be empty.
+		search: Option<String>,
 	},
 	#[clap(external_subcommand)]
 	External(Vec<String>),
@@ -90,9 +99,12 @@ pub async fn run(subcommand: AccountSubcommand, data: &mut CmdData<'_>) -> anyho
 			CosmeticSubcommand::List { account } => cosmetic_list(data, account).await,
 			CosmeticSubcommand::Upload {
 				account,
-				path,
+				skin,
 				slim,
-			} => cosmetic_upload(data, account, path, slim).await,
+			} => cosmetic_upload(data, account, skin, slim).await,
+			CosmeticSubcommand::Search { repository, search } => {
+				cosmetic_search(data, repository, search).await
+			}
 			CosmeticSubcommand::External(args) => {
 				call_plugin_subcommand(args, Some("account.cosmetic"), data).await
 			}
@@ -313,7 +325,7 @@ async fn cosmetic_list(data: &mut CmdData<'_>, account: Option<String>) -> anyho
 async fn cosmetic_upload(
 	data: &mut CmdData<'_>,
 	account: String,
-	path: String,
+	skin: String,
 	slim: bool,
 ) -> anyhow::Result<()> {
 	data.ensure_config(true).await?;
@@ -321,10 +333,9 @@ async fn cosmetic_upload(
 
 	let client = Client::new();
 
-	let path = Path::new(&path);
-	if !path.exists() {
-		bail!("Skin file does not exist");
-	}
+	let skin = load_from_uri(&skin, &client)
+		.await
+		.context("Failed to load skin")?;
 
 	let variant = if slim {
 		SkinVariant::Slim
@@ -337,7 +348,7 @@ async fn cosmetic_upload(
 		.upload_skin(
 			&account,
 			variant,
-			path,
+			&skin,
 			&data.paths.core,
 			&client,
 			data.output,
@@ -347,6 +358,53 @@ async fn cosmetic_upload(
 
 	data.output
 		.display(MessageContents::Success("Skin uploaded".into()));
+
+	Ok(())
+}
+
+async fn cosmetic_search(
+	data: &mut CmdData<'_>,
+	repository: String,
+	search: Option<String>,
+) -> anyhow::Result<()> {
+	data.ensure_config(true).await?;
+	let config = data.config.get_mut();
+
+	let results = config
+		.plugins
+		.call_hook(AddSkinRepositories, &(), &data.paths, data.output)
+		.await?;
+	let available_repos = results.flatten_all_results(data.output).await?;
+	let Some(repository) = available_repos.into_iter().find(|x| x.id == repository) else {
+		bail!("Skin repository does not exist");
+	};
+
+	let arg = SearchSkinRepositoryArg {
+		repository: repository.id,
+		search,
+	};
+	let results = config
+		.plugins
+		.call_hook(SearchSkinRepository, &arg, &data.paths, data.output)
+		.await?;
+	let skins = results.flatten_all_results(data.output).await?;
+
+	cprintln!("<s>Skins from <m>{}</>:", repository.name);
+	for skin in skins {
+		let uri = if let Some(url) = skin.cosmetic.url {
+			url
+		} else if let Some(path) = skin.cosmetic.path {
+			path
+		} else {
+			cformat!("<r>Unknown location")
+		};
+
+		let variant = match skin.variant {
+			SkinVariant::Classic => "Classic",
+			SkinVariant::Slim => "Slim",
+		};
+		cprintln!("{HYPHEN_POINT}<u>{uri}</> - {variant}");
+	}
 
 	Ok(())
 }

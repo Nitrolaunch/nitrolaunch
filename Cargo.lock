@@ -3840,6 +3840,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "nitro_plugin_skin_stealer"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "base64 0.22.1",
+ "nitro_plugin",
+ "nitro_shared",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "nitro_plugin_webtools"
 version = "0.1.0"
 dependencies = [

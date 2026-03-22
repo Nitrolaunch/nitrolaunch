@@ -1,5 +1,3 @@
-use std::path::Path;
-
 use anyhow::Context;
 use nitro_shared::{
 	minecraft::{Cape, Skin, SkinVariant},
@@ -49,7 +47,7 @@ impl Account {
 	pub(crate) async fn upload_skin(
 		&mut self,
 		variant: SkinVariant,
-		path: &Path,
+		skin: &[u8],
 		params: AuthParameters<'_>,
 		o: &mut impl NitroOutput,
 	) -> anyhow::Result<()> {
@@ -61,7 +59,7 @@ impl Account {
 
 				crate::net::minecraft::upload_skin(
 					variant,
-					path,
+					skin,
 					self.access_token.as_ref().map(|x| x.0.as_str()).unwrap(),
 					&client,
 				)

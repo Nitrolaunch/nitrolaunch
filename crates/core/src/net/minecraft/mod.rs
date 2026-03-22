@@ -1,6 +1,3 @@
-use std::path::Path;
-
-use anyhow::Context;
 use nitro_auth::mc::{call_mc_api, Keypair};
 use nitro_shared::minecraft::{MinecraftUserProfile, SkinVariant};
 use reqwest::{
@@ -50,7 +47,7 @@ pub async fn get_user_certificate(
 /// Uploads a skin
 pub async fn upload_skin(
 	variant: SkinVariant,
-	path: &Path,
+	skin: &[u8],
 	access_token: &str,
 	client: &Client,
 ) -> anyhow::Result<()> {
@@ -58,10 +55,9 @@ pub async fn upload_skin(
 		SkinVariant::Classic => "classic",
 		SkinVariant::Slim => "slim",
 	};
-	let skin_bytes = std::fs::read(path).context("Failed to read skin file")?;
 	let form = Form::new().text("variant", variant).part(
 		"file",
-		Part::bytes(skin_bytes)
+		Part::bytes(skin.to_vec())
 			.file_name("skin.png")
 			.mime_str("image/png")?,
 	);
