@@ -119,6 +119,10 @@ impl Instance {
 			.get(format)
 			.context("Transfer format does not exist")?;
 
+		if format.info.needs_import_side && side.is_none() {
+			bail!("This format requires a side to be specified");
+		}
+
 		let import_info = format
 			.info
 			.import
