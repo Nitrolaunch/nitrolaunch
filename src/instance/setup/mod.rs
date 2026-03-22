@@ -10,7 +10,6 @@ use std::sync::Arc;
 
 use anyhow::{bail, Context};
 use nitro_config::instance::QuickPlay;
-use nitro_core::account::uuid::hyphenate_uuid;
 use nitro_core::account::{Account, AccountManager};
 use nitro_core::auth_crate::mc::ClientId;
 use nitro_core::config::BrandingProperties;
@@ -27,6 +26,7 @@ use nitro_plugin::hook::hooks::{
 };
 use nitro_shared::output::{MessageContents, NitroOutput};
 use nitro_shared::output::{NoOp, OutputProcess};
+use nitro_shared::uuid::hyphenate_uuid;
 use nitro_shared::versions::VersionInfo;
 use nitro_shared::Side;
 use nitro_shared::{translate, UpdateDepth};

@@ -2,7 +2,7 @@ use anyhow::ensure;
 
 /// Converts a hexadecimal uuid to the hyphenated form
 pub fn hyphenate_uuid(uuid: &str) -> anyhow::Result<String> {
-	ensure!(uuid.len() == 32, "UUID is not the correct length of 32");
+	ensure!(uuid.len() >= 20, "UUID is not the correct length");
 
 	let p1 = &uuid[..8];
 	let p2 = &uuid[8..12];

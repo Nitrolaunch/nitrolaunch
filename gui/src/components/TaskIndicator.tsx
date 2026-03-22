@@ -483,6 +483,12 @@ function getTaskDisplayName(task: string) {
 		return "Deleting template";
 	} else if (task == "get_cosmetics") {
 		return "Fetching Cosmetics";
+	} else if (task == "upload_skin") {
+		return "Uploading skin";
+	} else if (task == "activate_cape") {
+		return "Activating cape";
+	} else if (task == "deactivate_cape") {
+		return "Deactivating cape";
 	}
 	return beautifyString(task);
 }
@@ -504,6 +510,9 @@ function getTaskColor(task: string) {
 	} else if (
 		task == "login_account" ||
 		task == "get_cosmetics" ||
+		task == "upload_skin" ||
+		task == "activate_cape" ||
+		task == "deactivate_cape" ||
 		task == "update_versions" ||
 		task == "save_template_config" ||
 		task == "delete_template"

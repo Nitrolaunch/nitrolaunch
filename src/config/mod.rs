@@ -22,11 +22,12 @@ use nitro_core::auth_crate::mc::ClientId;
 use nitro_core::io::{json_from_file, json_to_file_pretty};
 use nitro_pkg::PkgRequest;
 use nitro_plugin::hook::hooks::{
-	AddInstances, AddInstancesArg, AddSupportedLoaders, AddTemplates, GetAccountCosmetics,
-	GetAccountCosmeticsArg, HandleAuth, HandleAuthArg,
+	ActivateCape, ActivateCapeArg, AddInstances, AddInstancesArg, AddSupportedLoaders,
+	AddTemplates, GetAccountCosmetics, GetAccountCosmeticsArg, HandleAuth, HandleAuthArg,
+	UploadSkin, UploadSkinArg,
 };
 use nitro_shared::id::{InstanceID, TemplateID};
-use nitro_shared::minecraft::{Cape, MinecraftUserProfile, Skin};
+use nitro_shared::minecraft::{Cape, MinecraftUserProfile, Skin, SkinVariant};
 use nitro_shared::output::{MessageContents, NitroOutput, NoOp};
 use nitro_shared::util::is_valid_identifier;
 use nitro_shared::{skip_fail, translate};
@@ -499,7 +500,7 @@ impl AccountManagerHooks for AuthFunction {
 			.plugins
 			.call_hook(GetAccountCosmetics, &arg, &self.paths, &mut NoOp)
 			.await
-			.context("Failed to call handle auth hook")?;
+			.context("Failed to call get cosmetics hook")?;
 
 		let mut skins = Vec::new();
 		let mut capes = Vec::new();
@@ -509,6 +510,54 @@ impl AccountManagerHooks for AuthFunction {
 		}
 
 		Ok((skins, capes))
+	}
+
+	async fn upload_skin(
+		&self,
+		id: &str,
+		account_type: &str,
+		skin: &[u8],
+		variant: SkinVariant,
+	) -> anyhow::Result<()> {
+		let arg = UploadSkinArg {
+			id: id.to_string(),
+			kind: account_type.to_string(),
+			data: skin.to_vec(),
+			variant,
+		};
+
+		let results = self
+			.plugins
+			.call_hook(UploadSkin, &arg, &self.paths, &mut NoOp)
+			.await
+			.context("Failed to call upload skin hook")?;
+
+		results.all_results(&mut NoOp).await?;
+
+		Ok(())
+	}
+
+	async fn activate_cape(
+		&self,
+		id: &str,
+		account_type: &str,
+		cape: Option<&str>,
+	) -> anyhow::Result<()> {
+		let arg = ActivateCapeArg {
+			id: id.to_string(),
+			kind: account_type.to_string(),
+			cape: cape.map(|x| x.to_string()),
+		};
+
+		let results = self
+			.plugins
+			.call_hook(ActivateCape, &arg, &self.paths, &mut NoOp)
+			.await
+			.context("Failed to call activate cape hook")?;
+
+		results.all_results(&mut NoOp).await?;
+
+		Ok(())
 	}
 }
 

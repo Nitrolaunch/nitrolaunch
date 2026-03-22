@@ -8,7 +8,7 @@ use nitro_pkg::{PackageContentType, PackageSearchResults, RecommendedPackage, Re
 use nitro_shared::id::{InstanceID, TemplateID};
 use nitro_shared::lang::translate::LanguageMap;
 use nitro_shared::loaders::Loader;
-use nitro_shared::minecraft::AddonKind;
+use nitro_shared::minecraft::{AddonKind, SkinVariant};
 use nitro_shared::minecraft::VersionEntry;
 use nitro_shared::minecraft::{Cape, MinecraftUserProfile, Skin};
 use nitro_shared::pkg::{PackageID, PackageQueryDepth, PackageSearchParameters};
@@ -1143,6 +1143,52 @@ pub struct GetAccountCosmeticsResult {
 	pub skins: Vec<Skin>,
 	/// The list of available capes
 	pub capes: Vec<Cape>,
+}
+
+def_hook!(
+	UploadSkin,
+	"upload_skin",
+	"Uploads and activates a skin for a custom account",
+	UploadSkinArg,
+	(),
+	1,
+	true,
+);
+
+/// Argument for the UploadSkin hook
+#[derive(Serialize, Deserialize, Default)]
+#[serde(default)]
+pub struct UploadSkinArg {
+	/// The ID of the account
+	pub id: String,
+	/// The account kind of the account
+	pub kind: String,
+	/// The skin data in png
+	pub data: Vec<u8>,
+	/// The variant of the skin
+	pub variant: SkinVariant,
+}
+
+def_hook!(
+	ActivateCape,
+	"activate_cape",
+	"Activates a cape for a custom account",
+	ActivateCapeArg,
+	(),
+	1,
+	true,
+);
+
+/// Argument for the ActivateCape hook
+#[derive(Serialize, Deserialize, Default)]
+#[serde(default)]
+pub struct ActivateCapeArg {
+	/// The ID of the account
+	pub id: String,
+	/// The account kind of the account
+	pub kind: String,
+	/// The ID of the cape to activate. If not present, deactivate the cape instead
+	pub cape: Option<String>,
 }
 
 def_hook!(

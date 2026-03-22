@@ -67,7 +67,45 @@ impl Account {
 
 				Ok(())
 			}
-			AccountKind::Unknown(..) => Ok(()),
+			AccountKind::Unknown(ty) => {
+				if let Some(hooks) = params.custom_hooks {
+					hooks.upload_skin(&self.id, ty, skin, variant).await
+				} else {
+					Ok(())
+				}
+			}
+		}
+	}
+
+	/// Activates a cape on this account
+	pub(crate) async fn activate_cape(
+		&mut self,
+		cape: Option<&str>,
+		params: AuthParameters<'_>,
+		o: &mut impl NitroOutput,
+	) -> anyhow::Result<()> {
+		match &self.kind {
+			AccountKind::Demo => Ok(()),
+			AccountKind::Microsoft { .. } => {
+				let client = params.req_client.clone();
+				self.authenticate(params, o).await?;
+
+				let access_token = self.access_token.as_ref().map(|x| x.0.as_str()).unwrap();
+				if let Some(cape) = cape {
+					crate::net::minecraft::activate_cape(cape, access_token, &client).await?;
+				} else {
+					crate::net::minecraft::deactivate_cape(access_token, &client).await?;
+				}
+
+				Ok(())
+			}
+			AccountKind::Unknown(ty) => {
+				if let Some(hooks) = params.custom_hooks {
+					hooks.activate_cape(&self.id, ty, cape).await
+				} else {
+					Ok(())
+				}
+			}
 		}
 	}
 }

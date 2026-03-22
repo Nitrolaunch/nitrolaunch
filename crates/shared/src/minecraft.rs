@@ -157,10 +157,11 @@ pub struct Skin {
 }
 
 /// Variant for a skin
-#[derive(Deserialize, Serialize, Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Deserialize, Serialize, Debug, Copy, Clone, PartialEq, Eq, Default)]
 #[serde(rename_all = "UPPERCASE")]
 pub enum SkinVariant {
 	/// The classic wide-arm player model
+	#[default]
 	Classic,
 	/// The newer slim player model
 	Slim,

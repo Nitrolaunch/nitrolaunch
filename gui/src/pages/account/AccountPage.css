@@ -145,9 +145,13 @@
 
 .cosmetic-thumbnail {
 	width: 100%;
-	height: 10rem;
+	height: 75%;
 	object-fit: cover;
 	image-rendering: pixelated;
+}
+
+.cosmetic-details {
+	height: 25%;
 }
 
 #cosmetic-preview-container {

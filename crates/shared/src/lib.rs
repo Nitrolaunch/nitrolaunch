@@ -24,6 +24,8 @@ pub mod output;
 pub mod pkg;
 /// Other utilities
 pub mod util;
+/// Tools for working with UUIDs
+pub mod uuid;
 /// Tools for dealing with version patterns
 pub mod versions;
 

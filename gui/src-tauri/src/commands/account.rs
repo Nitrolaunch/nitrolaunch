@@ -8,10 +8,14 @@ use nitrolaunch::{
 	},
 	config_crate::account::{AccountConfig, AccountVariant},
 	core::account::AccountKind,
+	net_crate::load_from_uri,
 	plugin::PluginManager,
-	plugin_crate::hook::hooks::{AccountTypeInfo, AddAccountTypes},
+	plugin_crate::hook::hooks::{
+		AccountTypeInfo, AddAccountTypes, AddSkinRepositories, SearchSkinRepository,
+		SearchSkinRepositoryArg, SkinRepository,
+	},
 	shared::{
-		minecraft::{Cape, Skin},
+		minecraft::{Cape, Skin, SkinVariant},
 		output::NoOp,
 	},
 };
@@ -257,4 +261,129 @@ pub async fn get_cosmetics(
 	)?;
 
 	Ok(cosmetics)
+}
+
+#[tauri::command]
+pub async fn upload_skin(
+	state: tauri::State<'_, State>,
+	app_handle: tauri::AppHandle,
+	account: &str,
+	skin_uri: &str,
+	variant: SkinVariant,
+) -> Result<(), String> {
+	let mut config = fmt_err(
+		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
+			.await
+			.context("Failed to load config"),
+	)?;
+
+	let mut output = LauncherOutput::new(state.get_output(app_handle));
+	output.set_task("upload_skin");
+
+	let skin = fmt_err(
+		load_from_uri(skin_uri, &state.client)
+			.await
+			.context("Failed to load skin"),
+	)?;
+
+	fmt_err(
+		config
+			.accounts
+			.upload_skin(
+				&account,
+				variant,
+				&skin,
+				&state.paths.core,
+				&state.client,
+				&mut output,
+			)
+			.await
+			.context("Failed to upload skin"),
+	)?;
+
+	Ok(())
+}
+
+#[tauri::command]
+pub async fn activate_cape(
+	state: tauri::State<'_, State>,
+	app_handle: tauri::AppHandle,
+	account: &str,
+	cape: Option<&str>,
+) -> Result<(), String> {
+	let mut config = fmt_err(
+		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
+			.await
+			.context("Failed to load config"),
+	)?;
+
+	let mut output = LauncherOutput::new(state.get_output(app_handle));
+	if cape.is_some() {
+		output.set_task("activate_cape");
+	} else {
+		output.set_task("deactivate_cape");
+	}
+
+	fmt_err(
+		config
+			.accounts
+			.activate_cape(
+				&account,
+				cape,
+				&state.paths.core,
+				&state.client,
+				&mut output,
+			)
+			.await
+			.context("Failed to activate cape"),
+	)?;
+
+	Ok(())
+}
+
+#[tauri::command]
+pub async fn get_skin_repositories(
+	state: tauri::State<'_, State>,
+) -> Result<Vec<SkinRepository>, String> {
+	let config = fmt_err(
+		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
+			.await
+			.context("Failed to load config"),
+	)?;
+
+	let results = fmt_err(
+		config
+			.plugins
+			.call_hook(AddSkinRepositories, &(), &state.paths, &mut NoOp)
+			.await,
+	)?;
+
+	fmt_err(results.flatten_all_results(&mut NoOp).await)
+}
+
+#[tauri::command]
+pub async fn search_skins(
+	state: tauri::State<'_, State>,
+	app_handle: tauri::AppHandle,
+	repository: String,
+	search: Option<String>,
+) -> Result<Vec<Skin>, String> {
+	let config = fmt_err(
+		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
+			.await
+			.context("Failed to load config"),
+	)?;
+
+	let mut output = LauncherOutput::new(state.get_output(app_handle));
+	output.set_task("search_skins");
+
+	let arg = SearchSkinRepositoryArg { repository, search };
+	let results = fmt_err(
+		config
+			.plugins
+			.call_hook(SearchSkinRepository, &arg, &state.paths, &mut output)
+			.await,
+	)?;
+
+	fmt_err(results.flatten_all_results(&mut output).await)
 }

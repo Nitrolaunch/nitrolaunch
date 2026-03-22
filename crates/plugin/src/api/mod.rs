@@ -169,6 +169,8 @@ hook_interface!(
 	"get_account_cosmetics",
 	GetAccountCosmetics
 );
+hook_interface!(upload_skin, "upload_skin", UploadSkin);
+hook_interface!(activate_cape, "activate_cape", ActivateCape);
 hook_interface!(
 	add_skin_repositories,
 	"add_skin_repositories",

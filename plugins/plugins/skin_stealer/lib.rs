@@ -4,7 +4,10 @@ use base64::Engine;
 use nitro_plugin::api::wasm::net::download_bytes;
 use nitro_plugin::api::wasm::WASMPlugin;
 use nitro_plugin::nitro_wasm_plugin;
-use nitro_shared::minecraft::{Cosmetic, CosmeticState, Skin, SkinVariant};
+use nitro_shared::{
+	minecraft::{Cosmetic, CosmeticState, Skin, SkinVariant},
+	uuid::hyphenate_uuid,
+};
 use serde::Deserialize;
 
 nitro_wasm_plugin!(main, "skin_stealer");
@@ -70,9 +73,12 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 			SkinVariant::Classic
 		};
 
+		let id = hyphenate_uuid(skin.url.split("/").last().unwrap())
+			.context("Failed to hyphenate UUID")?;
+
 		Ok(vec![Skin {
 			cosmetic: Cosmetic {
-				id: skin.url.clone(),
+				id,
 				url: Some(skin.url),
 				path: None,
 				state: CosmeticState::Inactive,

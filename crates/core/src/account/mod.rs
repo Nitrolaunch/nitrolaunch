@@ -2,8 +2,6 @@
 pub mod auth;
 /// Account cosmetics
 pub mod cosmetics;
-/// Tools for working with UUIDs
-pub mod uuid;
 
 use std::{collections::HashMap, ops::Deref, sync::Arc};
 
@@ -403,6 +401,31 @@ impl AccountManager {
 		account.upload_skin(variant, skin, params, o).await
 	}
 
+	/// Activates or deactivates a cape for an account
+	pub async fn activate_cape(
+		&mut self,
+		account: &str,
+		cape: Option<&str>,
+		paths: &Paths,
+		client: &Client,
+		o: &mut impl NitroOutput,
+	) -> anyhow::Result<()> {
+		let account = self
+			.accounts
+			.get_mut(account)
+			.context("Account does not exist")?;
+
+		let params = AuthParameters {
+			req_client: client,
+			paths,
+			force: false,
+			offline: self.offline,
+			client_id: self.ms_client_id.clone(),
+			custom_hooks: self.custom_hooks.clone(),
+		};
+		account.activate_cape(cape, params, o).await
+	}
+
 	/// Unchooses the current account, if one is chosen
 	pub fn unchoose_account(&mut self) {
 		self.state = AuthState::Offline;
@@ -442,6 +465,23 @@ pub trait AccountManagerHooks: Send + Sync {
 		id: &str,
 		account_type: &str,
 	) -> anyhow::Result<(Vec<Skin>, Vec<Cape>)>;
+
+	/// Uploads a skin to a custom account
+	async fn upload_skin(
+		&self,
+		id: &str,
+		account_type: &str,
+		skin: &[u8],
+		variant: SkinVariant,
+	) -> anyhow::Result<()>;
+
+	/// Activates a cape for a custom account
+	async fn activate_cape(
+		&self,
+		id: &str,
+		account_type: &str,
+		cape: Option<&str>,
+	) -> anyhow::Result<()>;
 }
 
 /// Validate a Minecraft username
