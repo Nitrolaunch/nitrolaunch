@@ -55,41 +55,33 @@ pub(crate) fn process_arg(arg: &ArgumentItem, params: &LaunchParameters) -> Vec<
 					}
 				}
 				if let Some(quick_play_support) = &rule.features.has_quick_play_support {
-					if *quick_play_support {
-						let uses_quick_play =
-							!matches!(params.launch_config.quick_play, QuickPlayType::None);
-						if !uses_quick_play {
-							return vec![];
-						}
+					if *quick_play_support
+						&& matches!(params.launch_config.quick_play, QuickPlayType::None)
+					{
+						return vec![];
 					}
 				}
 				if let Some(quick_play_singleplayer) = &rule.features.is_quick_play_singleplayer {
-					if *quick_play_singleplayer {
-						let uses_quick_play =
-							matches!(params.launch_config.quick_play, QuickPlayType::World { .. });
-						if !uses_quick_play {
-							return vec![];
-						}
+					if *quick_play_singleplayer
+						&& !matches!(params.launch_config.quick_play, QuickPlayType::World { .. })
+					{
+						return vec![];
 					}
 				}
 				if let Some(quick_play_multiplayer) = &rule.features.is_quick_play_multiplayer {
-					if *quick_play_multiplayer {
-						let uses_quick_play = matches!(
+					if *quick_play_multiplayer
+						&& !matches!(
 							params.launch_config.quick_play,
 							QuickPlayType::Server { .. }
-						);
-						if !uses_quick_play {
-							return vec![];
-						}
+						) {
+						return vec![];
 					}
 				}
 				if let Some(quick_play_realms) = &rule.features.is_quick_play_realms {
-					if *quick_play_realms {
-						let uses_quick_play =
-							matches!(params.launch_config.quick_play, QuickPlayType::Realm { .. });
-						if !uses_quick_play {
-							return vec![];
-						}
+					if *quick_play_realms
+						&& !matches!(params.launch_config.quick_play, QuickPlayType::Realm { .. })
+					{
+						return vec![];
 					}
 				}
 			}

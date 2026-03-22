@@ -259,7 +259,7 @@ impl Instance {
 			java: &self.java,
 			classpath: &mut self.classpath,
 			main_class: &self.main_class,
-			launch_config: &self.config.launch,
+			launch_config: &launch_config,
 			paths: &self.params.paths,
 			req_client: &self.params.req_client,
 			client_meta: &self.params.client_meta,
