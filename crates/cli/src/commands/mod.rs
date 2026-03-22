@@ -22,7 +22,6 @@ use nitrolaunch::io::lock::Lockfile;
 use nitrolaunch::io::paths::Paths;
 use nitrolaunch::plugin::PluginManager;
 use nitrolaunch::plugin_crate::hook::hooks::{self, AddTranslations, SubcommandArg};
-use nitrolaunch::plugin_crate::plugin::PluginProvidedSubcommand;
 use nitrolaunch::shared::id::InstanceID;
 use nitrolaunch::shared::lang::translate::TranslationKey;
 use nitrolaunch::shared::later::Later;
@@ -426,28 +425,14 @@ async fn call_plugin_subcommand(
 		.first()
 		.context("Subcommand does not have first argument")?;
 
-	{
+	let plugin = {
 		let lock = config.plugins.get_lock().await;
-		let exists = lock.manager.iter_plugins().any(|x| {
-			x.get_manifest()
-				.subcommands
-				.iter()
-				.any(|x| {
-					if x.0 != subcommand {
-						return false;
-					}
-
-					if let Some(supercommand2) = supercommand {
-						matches!(x.1, PluginProvidedSubcommand::Specific { supercommand, .. } if supercommand == supercommand2)
-					} else {
-						matches!(x.1, PluginProvidedSubcommand::Global(..))
-					}
-				})
-		});
-		if !exists {
+		let plugin = lock.manager.get_subcommand(subcommand, supercommand);
+		let Some(plugin) = plugin else {
 			bail!("Subcommand '{subcommand}' does not exist");
-		}
-	}
+		};
+		plugin
+	};
 
 	let mut instance_configs = HashMap::new();
 	for (id, instance) in &config.instances {
@@ -465,12 +450,14 @@ async fn call_plugin_subcommand(
 		instances: instance_configs,
 	};
 
-	let results = config
+	let result = config
 		.plugins
-		.call_hook(hooks::Subcommand, &arg, &data.paths, data.output)
+		.call_hook_on_plugin(hooks::Subcommand, &plugin, &arg, &data.paths, data.output)
 		.await
 		.context("Plugin subcommand failed")?;
-	results.all_results(data.output).await?;
+	if let Some(result) = result {
+		result.result(data.output).await?;
+	}
 
 	Ok(())
 }

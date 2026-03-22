@@ -8,6 +8,7 @@ use crate::hook::hooks::OnLoad;
 use crate::hook::hooks::StartWorker;
 use crate::hook::wasm::loader::WASMLoader;
 use crate::hook::Hook;
+use crate::plugin::PluginProvidedSubcommand;
 use crate::plugin::{HookPriority, Plugin, DEFAULT_PROTOCOL_VERSION, NEWEST_PROTOCOL_VERSION};
 use crate::PluginPaths;
 use anyhow::{bail, Context};
@@ -194,6 +195,27 @@ impl CorePluginManager {
 	/// Checks whether the given plugin is present and enabled in the manager
 	pub fn has_plugin(&self, plugin_id: &str) -> bool {
 		self.plugin_list.iter().any(|x| x == plugin_id)
+	}
+
+	/// Gets the plugin to use for a subcommand. Returns none if no plugin provides that subcommand
+	pub fn get_subcommand(&self, subcommand: &str, supercommand: Option<&str>) -> Option<String> {
+		self.iter_plugins().find(|x| {
+			x.get_manifest()
+				.subcommands
+				.iter()
+				.any(|x| {
+					if x.0 != subcommand {
+						return false;
+					}
+
+					if let Some(supercommand2) = supercommand {
+						matches!(x.1, PluginProvidedSubcommand::Specific { supercommand, .. } if supercommand == supercommand2)
+					} else {
+						matches!(x.1, PluginProvidedSubcommand::Global(..))
+					}
+				})
+		})
+		.map(|x| x.get_id().clone())
 	}
 
 	/// Sets the instance and template list for the manager to pass to plugins
