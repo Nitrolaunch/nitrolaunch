@@ -14,7 +14,9 @@ export default function SkinPreview(props: SkinPreviewProps) {
 			width: canvas.getBoundingClientRect().width,
 			height: canvas.getBoundingClientRect().height,
 			pixelRatio: props.light == true ? 0.5 : "match-device",
-			enableControls: props.light != true
+			enableControls: props.light != true,
+			// Zoom in capes
+			zoom: props.light == true && props.skin == undefined ? 1.5 : undefined,
 		}));
 	});
 
