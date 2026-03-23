@@ -102,18 +102,18 @@ def run():
 	})
 
 	# Figure out the paths to load packs into
-	if arg["game_dir"] is None:
+	if arg["inst_dir"] is None:
 		set_result(hook)
 		return
 	
-	game_dir = Path(arg["game_dir"])
+	inst_dir = Path(arg["inst_dir"])
 	datapack_dirs = []
 	datapack_folder = arg["config"]["datapack_folder"] if "datapack_folder" in arg["config"] else None
 	if datapack_folder is not None:
-		datapack_dirs = [game_dir.joinpath(datapack_folder)]
+		datapack_dirs = [inst_dir.joinpath(datapack_folder)]
 	else:
 		if arg["side"] == "client":
-			saves_dir = game_dir.joinpath("saves")
+			saves_dir = inst_dir.joinpath("saves")
 			# Trick to only get the immediate subdirectories
 			for entry in next(os.walk(saves_dir))[1]:
 				path = saves_dir.joinpath(entry).joinpath("datapacks")
@@ -121,9 +121,9 @@ def run():
 					datapack_dirs.append(path)
 
 		else:
-			datapack_dirs = [game_dir.joinpath("world/datapacks")]
+			datapack_dirs = [inst_dir.joinpath("world/datapacks")]
 
-	resourcepack_dirs = [game_dir.joinpath("resourcepacks")]
+	resourcepack_dirs = [inst_dir.joinpath("resourcepacks")]
 
 	weld_ignore = []
 	if "weld_ignore" in arg["config"]:
