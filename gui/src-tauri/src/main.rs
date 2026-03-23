@@ -28,6 +28,7 @@ use nitrolaunch::io::logging::Logger;
 use nitrolaunch::io::paths::Paths;
 use nitrolaunch::plugin_crate::hook::wasm::loader::WASMLoader;
 use nitrolaunch::shared::id::InstanceID;
+use nitrolaunch::shared::io::config::IO_CONFIG;
 use nitrolaunch::shared::nitro_executable::{NitroClientId, NitroExecutableRegistry};
 use nitrolaunch::shared::output::Message;
 use output::{OutputInner, PromptResponse};
@@ -402,6 +403,13 @@ fn fix_compatability() {
 	if std::env::var("WAYLAND_DISPLAY").is_ok() {
 		unsafe {
 			std::env::set_var("GTK_OVERLAY_SCROLLING", "0");
+		}
+	}
+
+	// User-supplied
+	if IO_CONFIG.get_bool("disable_dmabuf").unwrap_or(false) {
+		unsafe {
+			std::env::set_var("WEBKIT_DISABLE_DMABUF_RENDERER", "1");
 		}
 	}
 }
