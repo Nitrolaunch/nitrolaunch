@@ -1,0 +1,31 @@
+.skin-preview {
+	height: 100%;
+	width: 100%;
+	box-sizing: border-box;
+	gap: 0;
+	overflow: hidden;
+}
+
+.skin-preview-controls {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	height: 10%;
+	box-sizing: border-box;
+	margin-top: 0;
+}
+
+.skin-preview-control {
+	height: 100%;
+	box-sizing: border-box;
+	border-top: var(--border) solid var(--bg3);
+	border-right: var(--border) solid var(--bg3);
+}
+
+.skin-preview-control.active {
+	background-color: var(--instance);
+	color: black;
+}
+
+.skin-preview-control:last-child {
+	border-right: none;
+}

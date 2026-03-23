@@ -1,5 +1,5 @@
 import { useNavigate, useParams } from "@solidjs/router";
-import { createEffect, createResource, createSignal, For, Match, onMount, Show, Switch } from "solid-js";
+import { createEffect, createResource, createSignal, For, Match, Show, Switch } from "solid-js";
 import { loadPagePlugins } from "../../plugins";
 import { errorToast, successToast } from "../../components/dialog/Toasts";
 import { beautifyString, getAccountIcon } from "../../utils";
@@ -11,11 +11,11 @@ import { AccountInfo } from "../../components/account/AccountWidget";
 import { emit, Event, listen } from "@tauri-apps/api/event";
 import InlineSelect from "../../components/input/select/InlineSelect";
 import Icon from "../../components/Icon";
-import { SkinViewer } from "skinview3d";
 import Tip from "../../components/dialog/Tip";
 import Dropdown from "../../components/input/select/Dropdown";
 import SearchBar from "../../components/input/text/SearchBar";
 import { undefinedEmpty } from "../../utils/values";
+import SkinPreview from "../../components/account/SkinPreview";
 
 export default function AccountPage() {
 	let navigate = useNavigate();
@@ -70,20 +70,6 @@ export default function AccountPage() {
 
 	let [cosmeticType, setCosmeticType] = createSignal("skin");
 
-	let [skinViewer, setSkinViewer] = createSignal<SkinViewer | undefined>(undefined);
-
-	let skinViewerElem!: HTMLCanvasElement;
-	onMount(() => {
-		if (skinViewerElem == undefined) {
-			return;
-		}
-		setSkinViewer(new SkinViewer({
-			canvas: skinViewerElem,
-			width: skinViewerElem.getBoundingClientRect().width,
-			height: skinViewerElem.getBoundingClientRect().height,
-		}));
-	});
-
 	let [skins, setSkins] = createSignal<Skin[]>([]);
 
 	let [previewedSkin, setPreviewedSkin] = createSignal<Skin | undefined>();
@@ -111,24 +97,6 @@ export default function AccountPage() {
 			}
 		} else {
 			setSkins(cosmetics()[0]);
-		}
-	})
-
-	createEffect(() => {
-		if (skinViewer() != undefined) {
-			if (previewedSkin() == undefined) {
-				skinViewer()!.resetSkin();
-			} else {
-				skinViewer()!.loadSkin(previewedSkin()!.url, { model: previewedSkin()!.variant == "CLASSIC" ? "default" : "slim" });
-			}
-
-			if (previewedCape() == undefined) {
-				skinViewer()!.resetCape();
-			} else {
-				skinViewer()!.loadCape(previewedCape()!);
-			}
-
-			skinViewer()!.render();
 		}
 	})
 
@@ -296,6 +264,7 @@ export default function AccountPage() {
 												(skin) => <Cosmetic
 													id={skin.id}
 													url={skin.url}
+													path={skin.path}
 													state={skin.state}
 													skinVariant={skin.variant}
 													capeAlias={undefined}
@@ -328,7 +297,13 @@ export default function AccountPage() {
 							</Match>
 						</Switch>
 						<div class="cont col" id="cosmetic-preview-container">
-							<canvas id="cosmetic-preview" ref={skinViewerElem}></canvas>
+							<div id="cosmetic-preview">
+								<SkinPreview
+									skin={previewedSkin() == undefined ? undefined : previewedSkin()!.url}
+									cape={previewedCape()}
+									showControls
+								/>
+							</div>
 						</div>
 					</div>
 				</div>
@@ -384,7 +359,9 @@ function Cosmetic(props: CosmeticProps) {
 				</Tip>
 			</div>
 		</Show>
-		<img class="cosmetic-thumbnail" src={img} />
+		<div class="cosmetic-thumbnail">
+			<SkinPreview skin={isSkin ? img : undefined} cape={isSkin ? undefined : img} showControls={false} light />
+		</div>
 		<div class="split fullwidth cosmetic-details">
 			<div class="cont start">
 				{displayName}
@@ -419,7 +396,8 @@ interface CosmeticProps {
 
 interface Skin {
 	id: string;
-	url: string;
+	url?: string;
+	path?: string;
 	state: "ACTIVE" | "INACTIVE";
 	variant: "CLASSIC" | "SLIM";
 }
