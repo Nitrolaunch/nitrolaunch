@@ -311,6 +311,15 @@ pub struct Download {
 	pub filename: String,
 	/// Whether or not this is the primary file for this version
 	pub primary: bool,
+	/// Hashes for this file
+	pub hashes: Hashes,
+}
+
+/// Hashes for a Modrinth file
+#[derive(Deserialize, Serialize, Clone)]
+pub struct Hashes {
+	/// SHA-512 hash
+	pub sha512: String,
 }
 
 /// A version dependency

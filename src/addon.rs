@@ -1,4 +1,5 @@
 use anyhow::{bail, Context};
+use nitro_instance::addon::storage::get_sha256_addon_path;
 use nitro_instance::addon::Addon;
 use nitro_pkg::addon::PackageAddon;
 use nitro_shared::io::update_link;
@@ -41,6 +42,10 @@ impl AddonExt for PackageAddon {
 	}
 
 	fn get_path(&self, paths: &Paths, instance_id: &str) -> PathBuf {
+		if let Some(hash) = &self.hashes.sha512 {
+			return get_sha256_addon_path(&paths.addons, hash);
+		}
+
 		let pkg_dir = self.get_dir(paths).join(self.pkg_id.to_string());
 		if let Some(version) = &self.version {
 			pkg_dir.join(self.id.clone()).join(version)
