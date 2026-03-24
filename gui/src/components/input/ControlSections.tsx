@@ -12,42 +12,46 @@ export default function ControlSections(props: ControlSectionsProps) {
 					let controls = () => sections()[section];
 					return (
 						<CollapsableSection title={section}>
-							<For each={controls()}>
-								{(control) => {
-									let initialValue = props.getInitialValue(control.id);
+							<div class="cont col fields">
+								<For each={controls()}>
+									{(control) => {
+										let initialValue = props.getInitialValue(control.id);
 
-									return (
-										<Control
-											control={control}
-											initialValue={
-												initialValue == undefined
-													? control.default
-													: initialValue
-											}
-											setValue={props.setValue}
-										/>
-									);
-								}}
-							</For>
+										return (
+											<Control
+												control={control}
+												initialValue={
+													initialValue == undefined
+														? control.default
+														: initialValue
+												}
+												setValue={props.setValue}
+											/>
+										);
+									}}
+								</For>
+							</div>
 						</CollapsableSection>
 					);
 				}}
 			</For>
-			<For each={sections()["_default"]}>
-				{(control) => {
-					let initialValue = props.getInitialValue(control.id);
+			<div class="cont col fields">
+				<For each={sections()["_default"]}>
+					{(control) => {
+						let initialValue = props.getInitialValue(control.id);
 
-					return (
-						<Control
-							control={control}
-							initialValue={
-								initialValue == undefined ? control.default : initialValue
-							}
-							setValue={props.setValue}
-						/>
-					);
-				}}
-			</For>
+						return (
+							<Control
+								control={control}
+								initialValue={
+									initialValue == undefined ? control.default : initialValue
+								}
+								setValue={props.setValue}
+							/>
+						);
+					}}
+				</For>
+			</div>
 		</div>
 	);
 }

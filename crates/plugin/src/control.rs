@@ -64,6 +64,8 @@ pub enum ControlSchema {
 		#[serde(default)]
 		slider: bool,
 	},
+	/// List of simple string values
+	StringList,
 	// /// Optional guard around another control
 	// Optional(Box<ControlSchema>),
 	/// List of sub-objects

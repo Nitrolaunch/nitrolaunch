@@ -8,6 +8,20 @@
 	"hooks": {
 		"on_instance_setup": {
 			"wasm": true
+		},
+		"add_instance_config_controls": {
+			"constant": {
+				"controls": [
+					{
+						"id": "fix_glfw",
+						"name": "Fix GLFW",
+						"description": "Whether to enable GLFW library replacement on this instance. Fixes some crashes.",
+						"schema": {
+							"type": "boolean"
+						}
+					}
+				]
+			}
 		}
 	}
 }

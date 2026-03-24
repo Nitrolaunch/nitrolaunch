@@ -18,6 +18,30 @@
 		"update_world_files": {
 			"executable": "./weld.pyz",
 			"priority": "last"
+		},
+		"add_instance_config_controls": {
+			"constant": {
+				"controls": [
+					{
+						"id": "disable_weld",
+						"name": "Disable",
+						"description": "Whether to disable pack welding on this instance",
+						"section": "Weld",
+						"schema": {
+							"type": "boolean"
+						}
+					},
+					{
+						"id": "weld_ignore",
+						"name": "Ignore",
+						"description": "Filenames of packs to ignore when welding",
+						"section": "Weld",
+						"schema": {
+							"type": "string_list"
+						}
+					}
+				]
+			}
 		}
 	}
 }

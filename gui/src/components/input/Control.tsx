@@ -5,6 +5,7 @@ import SlideSwitch from "./SlideSwitch";
 import Dropdown from "./select/Dropdown";
 import InlineSelect from "./select/InlineSelect";
 import PathSelect from "./text/PathSelect";
+import EditableList from "./text/EditableList";
 
 export default function Control(props: ControlProps) {
 	let [value, setValue] = createSignal<any>(props.initialValue);
@@ -74,6 +75,14 @@ export default function Control(props: ControlProps) {
 						step={props.control.schema.step}
 						min={props.control.schema.min}
 						max={props.control.schema.max}
+					/>
+				);
+			case "string_list":
+				return (
+					<EditableList
+						items={value() == undefined ? [] : value()}
+						setItems={setValue}
+						reorderable
 					/>
 				);
 			case "string":
@@ -146,6 +155,9 @@ export type ControlSchema =
 			max?: number;
 			step: number;
 			slider: boolean;
+	  }
+	| {
+			type: "string_list";
 	  }
 	| {
 			type: "optional";
