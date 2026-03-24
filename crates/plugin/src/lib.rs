@@ -7,6 +7,8 @@ use std::path::PathBuf;
 
 /// API for Rust-based plugins to use
 pub mod api;
+/// Schema definitions for modifiable values
+pub mod control;
 /// Plugin hooks and calling them
 pub mod hook;
 /// System for hosting / running plugins

@@ -1,0 +1,27 @@
+.collapsable-section {
+	border: var(--border) solid var(--bg3);
+	border-radius: var(--round2);
+}
+
+.collapsable-section-header {
+	height: 4rem;
+	box-sizing: border-box;
+	padding: 1rem;
+
+	background-color: var(--bg);
+	border-radius: var(--round2);
+	border-bottom: var(--border) solid transparent;
+
+	cursor: pointer;
+}
+
+.collapsable-section-header.open {
+	border-bottom-left-radius: 0;
+	border-bottom-right-radius: 0;
+	border-bottom-color: var(--bg3);
+}
+
+.collapsable-section-contents {
+	padding: 1rem;
+	box-sizing: border-box;
+}

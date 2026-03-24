@@ -8,6 +8,40 @@
 	"hooks": {
 		"modify_instance_config": {
 			"wasm": true
+		},
+		"add_instance_config_controls": {
+			"constant": {
+				"controls": [
+					{
+						"id": "args_preset",
+						"name": "Args Preset",
+						"description": "Preset for arguments to increase game performance",
+						"section": "Args",
+						"schema": {
+							"type": "choice",
+							"variants": [
+								{
+									"id": "none",
+									"name": "None"
+								},
+								{
+									"id": "aikars",
+									"name": "Aikar's"
+								},
+								{
+									"id": "krusic",
+									"name": "Krusic"
+								},
+								{
+									"id": "obydux",
+									"name": "Obydux"
+								}
+							]
+						},
+						"dropdown": true
+					}
+				]
+			}
 		}
 	}
 }

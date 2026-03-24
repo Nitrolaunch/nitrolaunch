@@ -190,7 +190,7 @@ pub async fn get_instance_config(
 pub async fn get_editable_instance_config(
 	state: tauri::State<'_, State>,
 	id: String,
-) -> Result<Option<InstanceConfig>, String> {
+) -> Result<Option<InstanceConfigAndPluginFields>, String> {
 	let config = fmt_err(
 		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
 			.await
@@ -201,7 +201,16 @@ pub async fn get_editable_instance_config(
 		return Ok(None);
 	};
 
-	Ok(Some(instance.get_config().original_config.clone()))
+	Ok(Some(InstanceConfigAndPluginFields {
+		config: instance.get_config().original_config.clone(),
+		plugin_config: instance.get_config().original_config.plugin_config.clone(),
+	}))
+}
+
+#[derive(Serialize)]
+pub struct InstanceConfigAndPluginFields {
+	pub config: InstanceConfig,
+	pub plugin_config: serde_json::Map<String, serde_json::Value>,
 }
 
 #[tauri::command]
@@ -226,7 +235,7 @@ pub async fn get_template_config(
 pub async fn get_editable_template_config(
 	state: tauri::State<'_, State>,
 	id: String,
-) -> Result<Option<TemplateConfig>, String> {
+) -> Result<Option<TemplateConfigAndPluginFields>, String> {
 	let config = fmt_err(
 		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
 			.await
@@ -237,18 +246,32 @@ pub async fn get_editable_template_config(
 		return Ok(None);
 	};
 
-	Ok(Some(template.clone()))
+	Ok(Some(TemplateConfigAndPluginFields {
+		config: template.clone(),
+		plugin_config: template.instance.plugin_config.clone(),
+	}))
+}
+
+#[derive(Serialize)]
+pub struct TemplateConfigAndPluginFields {
+	pub config: TemplateConfig,
+	pub plugin_config: serde_json::Map<String, serde_json::Value>,
 }
 
 #[tauri::command]
-pub async fn get_base_template(state: tauri::State<'_, State>) -> Result<TemplateConfig, String> {
+pub async fn get_base_template(
+	state: tauri::State<'_, State>,
+) -> Result<TemplateConfigAndPluginFields, String> {
 	let config = fmt_err(
 		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
 			.await
 			.context("Failed to load config"),
 	)?;
 
-	Ok(config.base_template)
+	Ok(TemplateConfigAndPluginFields {
+		config: config.base_template.clone(),
+		plugin_config: config.base_template.instance.plugin_config,
+	})
 }
 
 #[tauri::command]

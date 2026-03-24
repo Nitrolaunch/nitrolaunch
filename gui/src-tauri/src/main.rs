@@ -254,6 +254,7 @@ fn main() {
 			commands::plugin::run_custom_action,
 			commands::plugin::get_dropdown_buttons,
 			commands::plugin::get_instance_tiles,
+			commands::plugin::get_instance_config_controls,
 			commands::account::get_accounts,
 			commands::account::select_account,
 			commands::account::login_account,

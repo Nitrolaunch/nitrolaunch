@@ -2,11 +2,14 @@ use crate::output::LauncherOutput;
 use crate::State;
 use anyhow::Context;
 use itertools::Itertools;
+use nitrolaunch::config_crate::ConfigKind;
 use nitrolaunch::plugin::PluginManager;
+use nitrolaunch::plugin_crate::control::Control;
 use nitrolaunch::plugin_crate::hook::hooks::{
-	AddDropdownButtons, AddInstanceTiles, AddSidebarButtons, AddThemes, CustomAction,
-	CustomActionArg, DropdownButton, DropdownButtonLocation, GetPage, InjectPageScript,
-	InjectPageScriptArg, InstanceTile, SidebarButton, Theme,
+	AddDropdownButtons, AddInstanceConfigControls, AddInstanceConfigControlsArg, AddInstanceTiles,
+	AddSidebarButtons, AddThemes, CustomAction, CustomActionArg, DropdownButton,
+	DropdownButtonLocation, GetPage, InjectPageScript, InjectPageScriptArg, InstanceTile,
+	SidebarButton, Theme,
 };
 use nitrolaunch::plugin_crate::plugin::PluginMetadata;
 use nitrolaunch::{plugin::install::get_verified_plugins, shared::output::NoOp};
@@ -433,6 +436,35 @@ pub async fn get_instance_tiles(
 	)?;
 
 	let out = fmt_err(results.flatten_all_results(&mut output).await)?;
+
+	Ok(out)
+}
+
+#[tauri::command]
+pub async fn get_instance_config_controls(
+	state: tauri::State<'_, State>,
+	id: Option<String>,
+	kind: ConfigKind,
+	plugin: Option<String>,
+) -> Result<Vec<Control>, String> {
+	let config = fmt_err(
+		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
+			.await
+			.context("Failed to load config"),
+	)?;
+
+	let arg = AddInstanceConfigControlsArg { id, kind, plugin };
+	let mut results = fmt_err(
+		config
+			.plugins
+			.call_hook(AddInstanceConfigControls, &arg, &state.paths, &mut NoOp)
+			.await,
+	)?;
+
+	let mut out = Vec::new();
+	while let Some(result) = fmt_err(results.next_result(&mut NoOp).await)? {
+		out.extend(result.controls);
+	}
 
 	Ok(out)
 }

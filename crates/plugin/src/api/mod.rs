@@ -181,3 +181,8 @@ hook_interface!(
 	"search_skin_repository",
 	SearchSkinRepository
 );
+hook_interface!(
+	add_instance_config_controls,
+	"add_instance_config_controls",
+	AddInstanceConfigControls
+);

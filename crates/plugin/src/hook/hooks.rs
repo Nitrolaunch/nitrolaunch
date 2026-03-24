@@ -2,20 +2,23 @@ use std::collections::{HashMap, HashSet};
 
 use nitro_config::instance::InstanceConfig;
 use nitro_config::template::TemplateConfig;
+use nitro_config::ConfigKind;
 use nitro_pkg::repo::{PackageFlag, RepoMetadata};
 use nitro_pkg::script_eval::AddonInstructionData;
 use nitro_pkg::{PackageContentType, PackageSearchResults, RecommendedPackage, RequiredPackage};
 use nitro_shared::id::{InstanceID, TemplateID};
 use nitro_shared::lang::translate::LanguageMap;
 use nitro_shared::loaders::Loader;
-use nitro_shared::minecraft::{AddonKind, SkinVariant};
 use nitro_shared::minecraft::VersionEntry;
+use nitro_shared::minecraft::{AddonKind, SkinVariant};
 use nitro_shared::minecraft::{Cape, MinecraftUserProfile, Skin};
 use nitro_shared::pkg::{PackageID, PackageQueryDepth, PackageSearchParameters};
 use nitro_shared::versions::VersionPattern;
 use nitro_shared::UpdateDepth;
 use nitro_shared::{versions::VersionInfo, Side};
 use serde::{Deserialize, Serialize};
+
+use crate::control::Control;
 
 use super::Hook;
 
@@ -1229,4 +1232,34 @@ pub struct SearchSkinRepositoryArg {
 	pub repository: String,
 	/// The search string
 	pub search: Option<String>,
+}
+
+def_hook!(
+	AddInstanceConfigControls,
+	"add_instance_config_controls",
+	"Define additional config schema for instance or template config",
+	AddInstanceConfigControlsArg,
+	AddInstanceConfigControlsResult,
+	1,
+	true,
+);
+
+/// Argument for the AddInstanceConfigControls hook
+#[derive(Serialize, Deserialize, Default)]
+#[serde(default)]
+pub struct AddInstanceConfigControlsArg {
+	/// ID of the object. None if this is a new config or the base template.
+	pub id: Option<String>,
+	/// Kind of object we are getting schema for
+	pub kind: ConfigKind,
+	/// Plugin this config is from
+	pub plugin: Option<String>,
+}
+
+/// Result from the AddInstanceConfigControls hook
+#[derive(Serialize, Deserialize, Default)]
+#[serde(default)]
+pub struct AddInstanceConfigControlsResult {
+	/// The list of new controls
+	pub controls: Vec<Control>,
 }

@@ -49,3 +49,16 @@ pub struct ConfigDeser {
 	/// The global preferences
 	pub preferences: PrefDeser,
 }
+
+/// Variants of instance-like config
+#[derive(Serialize, Deserialize, Clone, Copy, PartialEq, Eq, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum ConfigKind {
+	/// Instance config
+	#[default]
+	Instance,
+	/// Template config
+	Template,
+	/// Base template config
+	BaseTemplate,
+}

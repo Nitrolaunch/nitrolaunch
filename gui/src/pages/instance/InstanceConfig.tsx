@@ -32,6 +32,7 @@ import {
 } from "../../utils/values";
 import {
 	ConfiguredLoaders,
+	ControlledConfig,
 	createConfiguredPackages,
 	getConfigPackages,
 	getConfiguredLoader,
@@ -62,12 +63,15 @@ import {
 	Controller,
 	Delete,
 	Gear,
+	Jigsaw,
 	Play,
 	Server,
 } from "../../icons";
 import LoaderConfig from "./LoaderConfig";
 import FloatingTabs from "../../components/input/select/FloatingTabs";
 import Modal from "../../components/dialog/Modal";
+import { ControlData } from "../../components/input/Control";
+import ControlSections from "../../components/input/ControlSections";
 
 export default function InstanceConfigModal(props: InstanceConfigProps) {
 	let navigate = useNavigate();
@@ -95,27 +99,32 @@ export default function InstanceConfigModal(props: InstanceConfigProps) {
 
 	let [from, setFrom] = createSignal<string[] | undefined>();
 
+	let [plugin, setPlugin] = createSignal<string | undefined>();
+	let [pluginConfig, setPluginConfig] = createSignal<ControlledConfig>(
+		new ControlledConfig({}),
+	);
+
 	let [config, configOperations] = createResource(
 		async () => {
 			if (props.params == undefined || isCreating()) {
+				setFrom(undefined);
+				setPluginConfig(new ControlledConfig({}));
 				return {};
 			}
 
 			// Get the instance or template
 			try {
-				let configuration = await readEditableInstanceConfig(
-					id(),
-					props.params.mode,
-				);
-				if (configuration == undefined) {
+				let result = await readEditableInstanceConfig(id(), props.params.mode);
+				if (result == undefined) {
 					errorToast(
 						"Could not find instance or template. Please report this issue.",
 					);
 					return {};
 				}
 
+				let [configuration, pluginConfig] = result;
 				setFrom(canonicalizeListOrSingle(configuration.from));
-				console.log(configuration);
+				setPluginConfig(new ControlledConfig(pluginConfig));
 				return configuration;
 			} catch (e) {
 				errorToast("Failed to load configuration: " + e);
@@ -144,6 +153,7 @@ export default function InstanceConfigModal(props: InstanceConfigProps) {
 			parentConfigOperations.refetch();
 			templateMethods.refetch();
 			pluginsSupportingCreationMethods.refetch();
+			controlsMethods.refetch();
 			setReleaseVersionsOnly(true);
 			setTab("general");
 
@@ -205,6 +215,28 @@ export default function InstanceConfigModal(props: InstanceConfigProps) {
 			{ initialValue: [] },
 		);
 
+	let [controls, controlsMethods] = createResource(
+		async () => {
+			if (props.params == undefined) {
+				return [];
+			}
+
+			try {
+				let controls = (await invoke("get_instance_config_controls", {
+					id: id(),
+					kind: props.params.mode,
+					plugin: plugin(),
+				})) as ControlData[];
+
+				return controls;
+			} catch (e) {
+				errorToast("Failed to load controls: " + e);
+				return [];
+			}
+		},
+		{ initialValue: [] },
+	);
+
 	let [tab, setTab] = createSignal("general");
 
 	// Input / convenience signals
@@ -246,8 +278,6 @@ export default function InstanceConfigModal(props: InstanceConfigProps) {
 	let [packageOverrides, setPackageOverrides] = createSignal<PackageOverrides>(
 		{},
 	);
-
-	let [plugin, setPlugin] = createSignal<string | undefined>();
 
 	let message = () =>
 		isInstance()
@@ -498,20 +528,8 @@ export default function InstanceConfigModal(props: InstanceConfigProps) {
 			is_editable: plugin() != undefined,
 		};
 
-		// Handle extra fields
-		for (let key of Object.keys(config())) {
-			if (!Object.keys(newConfig).includes(key)) {
-				newConfig[key] = config()[key];
-			}
-		}
-
-		if (config().launch != undefined) {
-			for (let key of Object.keys(config().launch!)) {
-				if (!Object.keys(newConfig.launch!).includes(key)) {
-					newConfig.launch![key] = config().launch![key];
-				}
-			}
-		}
+		// Handle plugin config
+		newConfig = pluginConfig().apply(newConfig);
 
 		try {
 			await saveInstanceConfig(configId, newConfig, props.params.mode);
@@ -601,6 +619,13 @@ export default function InstanceConfigModal(props: InstanceConfigProps) {
 							icon: Play,
 							color: "var(--template)",
 							bgColor: "var(--templatebg)",
+						},
+						{
+							id: "plugins",
+							title: "Plugins",
+							icon: Jigsaw,
+							color: "var(--plugin)",
+							bgColor: "var(--pluginbg)",
 						},
 					]}
 					selectedTab={tab()}
@@ -1090,6 +1115,19 @@ export default function InstanceConfigModal(props: InstanceConfigProps) {
 					setGameArgs={setGameArgs}
 					parentConfigs={parentConfigs()}
 					onChange={() => setIsDirty(true)}
+				/>
+			</DisplayShow>
+			<DisplayShow when={tab() == "plugins"} style="width:100%">
+				<ControlSections
+					controls={controls()}
+					getInitialValue={(id) => pluginConfig().getControl(id)}
+					setValue={(id, value) => {
+						setIsDirty(true);
+						setPluginConfig((old) => {
+							old.setControl(id, value);
+							return old;
+						});
+					}}
 				/>
 			</DisplayShow>
 			<br />
