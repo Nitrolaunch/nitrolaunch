@@ -1263,3 +1263,13 @@ pub struct AddInstanceConfigControlsResult {
 	/// The list of new controls
 	pub controls: Vec<Control>,
 }
+
+def_hook!(
+	AddPluginConfigControls,
+	"add_plugin_config_controls",
+	"Define config schema for this plugin",
+	(),
+	Vec<Control>,
+	1,
+	true,
+);

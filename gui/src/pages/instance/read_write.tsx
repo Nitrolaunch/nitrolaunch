@@ -5,6 +5,7 @@ import { Loader } from "../../package";
 import { InstanceOrTemplate, Side } from "../../types";
 import { beautifyString } from "../../utils";
 import { emit } from "@tauri-apps/api/event";
+import { ControlData } from "../../components/input/Control";
 
 // Stored configuration for an instance
 export interface InstanceConfig {
@@ -419,11 +420,55 @@ export class ControlledConfig {
 		}
 	}
 
+	removeControl(id: string) {
+		let object = this.fields;
+
+		let i = 0;
+		let split = id.split(".");
+
+		// Move recursively down the tree
+		for (let key of split) {
+			if (i == split.length - 1) {
+				// Set the value
+				delete object[key];
+			} else {
+				// Move down
+				let newObject = object[key];
+				if (newObject == undefined) {
+					break;
+				}
+				object = newObject;
+			}
+
+			i++;
+		}
+	}
+
+	/** Applies these fields on top of a base config, replacing the fields */
 	apply(base: { [key: string]: any }) {
-		return deepMerge(base, this.fields);
+		this.fields = deepMerge(base, this.fields);
+	}
+
+	/** Cleans up config, removing non-serialized default controls from the final output */
+	cleanup(controls: ControlData[]) {
+		// First, remove non-serialized controls
+		for (let control of controls) {
+			if (control.always_serialize) {
+				continue;
+			}
+
+			let value = this.getControl(control.id);
+			if (value == undefined || value == control.default) {
+				this.removeControl(control.id);
+			}
+		}
+
+		// Then, recursively remove any empty objects
+		removeEmptyObjects(this.fields);
 	}
 }
 
+/** Recursively merges two JS objects */
 function deepMerge(obj1: { [key: string]: any }, obj2: { [key: string]: any }) {
 	const result = { ...obj1 }; // Start with a shallow copy of obj1
 	for (const key in obj2) {
@@ -438,4 +483,18 @@ function deepMerge(obj1: { [key: string]: any }, obj2: { [key: string]: any }) {
 		}
 	}
 	return result;
+}
+
+/** Removes empty objects in this object, returning true if this object is now empty as well */
+function removeEmptyObjects(obj: { [key: string]: any }) {
+	for (let key in obj) {
+		if (typeof obj[key] == "object" && !Array.isArray(obj[key])) {
+			let result = removeEmptyObjects(obj[key]);
+			if (result) {
+				delete obj[key];
+			}
+		}
+	}
+
+	return Object.keys(obj).length == 0;
 }

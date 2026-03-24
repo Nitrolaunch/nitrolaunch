@@ -1,11 +1,4 @@
-import {
-	createMemo,
-	createSignal,
-	For,
-	Match,
-	Show,
-	Switch,
-} from "solid-js";
+import { createMemo, createSignal, For, Match, Show, Switch } from "solid-js";
 import "./Console.css";
 import InlineSelect from "../input/select/InlineSelect";
 import SearchBar from "../input/text/SearchBar";
@@ -48,7 +41,7 @@ export default function Console(props: ConsoleProps) {
 							contents: (
 								<div class="cont">
 									<Icon icon={Text} size="1rem" />
-									ALL
+									<Show when={props.smallButtons != true}>ALL</Show>
 								</div>
 							),
 							tip: "Show all messages",
@@ -58,7 +51,7 @@ export default function Console(props: ConsoleProps) {
 							contents: (
 								<div class="cont">
 									<Icon icon={Error} size="1rem" />
-									ERRORS
+									<Show when={props.smallButtons != true}>ERRORS</Show>
 								</div>
 							),
 							color: "var(--error)",
@@ -69,7 +62,7 @@ export default function Console(props: ConsoleProps) {
 							contents: (
 								<div class="cont">
 									<Icon icon={Warning} size="1rem" />
-									WARNINGS
+									<Show when={props.smallButtons != true}>WARNINGS</Show>
 								</div>
 							),
 							color: "var(--warning)",
@@ -80,7 +73,7 @@ export default function Console(props: ConsoleProps) {
 							contents: (
 								<div class="cont">
 									<Icon icon={Info} size="1rem" />
-									INFO
+									<Show when={props.smallButtons != true}>INFO</Show>
 								</div>
 							),
 							color: "var(--fg3)",
@@ -93,30 +86,28 @@ export default function Console(props: ConsoleProps) {
 					columns={4}
 					solidSelect
 				/>
-				<div class="cont">
-					<div class="cont" style="width:14rem">
-						<Dropdown
-							options={[
-								{
-									value: undefined,
-									contents: "Current Output",
-								} as Option,
-							].concat(
-								props.availableLogs.map((x) => {
-									return {
-										value: x,
-										contents: x,
-									};
-								}),
-							)}
-							selected={props.selectedLog}
-							onChange={props.setSelectedLog}
-							zIndex="2"
-						/>
-					</div>
+				<div class="cont fullwidth">
+					<SearchBar value={search()} method={setSearch} immediate />
 				</div>
 				<div class="cont end fullwidth">
-					<SearchBar value={search()} method={setSearch} immediate />
+					<Dropdown
+						options={[
+							{
+								value: undefined,
+								contents: "Current Output",
+							} as Option,
+						].concat(
+							props.availableLogs.map((x) => {
+								return {
+									value: x,
+									contents: x,
+								};
+							}),
+						)}
+						selected={props.selectedLog}
+						onChange={props.setSelectedLog}
+						zIndex="2"
+					/>
 				</div>
 			</div>
 			<div class="cont col console-output">
@@ -171,6 +162,7 @@ export default function Console(props: ConsoleProps) {
 						</div>
 						<div
 							class="cont shadow bubble-hover console-scroll"
+							style={`bottom:${props.sendMessage == undefined ? "1rem" : "3rem"}`}
 							onclick={() => {
 								scrollToBottom();
 							}}
@@ -198,9 +190,7 @@ export default function Console(props: ConsoleProps) {
 							</div>
 						</Show>
 					</Match>
-					<Match when={props.loadState == "errored"}>
-						Failed to load
-					</Match>
+					<Match when={props.loadState == "errored"}>Failed to load</Match>
 					<Match when={props.loadState == "pending"}>Loading...</Match>
 					<Match when={props.loadState == "ready"}>No log found</Match>
 				</Switch>
@@ -217,4 +207,5 @@ export interface ConsoleProps {
 	setSelectedLog: (log: string | undefined) => void;
 	availableLogs: string[];
 	sendMessage?: (message: string) => void;
+	smallButtons?: boolean;
 }

@@ -21,6 +21,9 @@ pub struct Control {
 	/// Name of the section this control is in
 	#[serde(default)]
 	pub section: Option<String>,
+	/// Whether to always serialize this control, even if it is the default value
+	#[serde(default)]
+	pub always_serialize: bool,
 }
 
 /// Schema of possible values and the interface for a controllable value, like a config field
@@ -34,9 +37,6 @@ pub enum ControlSchema {
 	Choice {
 		/// The available variants
 		variants: Vec<Variant>,
-		/// Whether to allow a null value
-		#[serde(default)]
-		allow_none: bool,
 		/// Whether to use a dropdown
 		#[serde(default)]
 		dropdown: bool,
@@ -82,8 +82,8 @@ pub enum ControlSchema {
 #[derive(Serialize, Deserialize, Clone)]
 
 pub struct Variant {
-	/// ID of the variant
-	pub id: String,
+	/// ID of the variant. Can be null to specify a null variant.
+	pub id: Option<String>,
 	/// Display name of the variant
 	pub name: String,
 	/// Color of the variant

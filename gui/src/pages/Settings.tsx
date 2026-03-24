@@ -1,15 +1,24 @@
 import { invoke } from "@tauri-apps/api/core";
-import { createEffect, createResource, createSignal, Show } from "solid-js";
+import {
+	createEffect,
+	createResource,
+	createSignal,
+	For,
+	Show,
+} from "solid-js";
 import { Theme } from "../types";
 import Tip from "../components/dialog/Tip";
 import InlineSelect from "../components/input/select/InlineSelect";
 import { errorToast, successToast } from "../components/dialog/Toasts";
 import { emit } from "@tauri-apps/api/event";
 import IconTextButton from "../components/input/button/IconTextButton";
-import { Check, Delete, Folder, Gear, Text } from "../icons";
+import { Check, Delete, Folder, Gear, Jigsaw, Text } from "../icons";
 import Modal, { ModalButton } from "../components/dialog/Modal";
 import FloatingTabs from "../components/input/select/FloatingTabs";
 import ApplicationLog from "../components/ApplicationLog";
+import { ControlData } from "../components/input/Control";
+import { ControlledConfig } from "./instance/read_write";
+import ControlSections from "../components/input/ControlSections";
 
 export default function Settings(props: SettingsProps) {
 	let [settings, settingsMethods] = createResource(
@@ -59,6 +68,39 @@ export default function Settings(props: SettingsProps) {
 	let [baseTheme, setBaseTheme] = createSignal<string>("dark");
 	let [overlayThemes, setOverlayThemes] = createSignal<string[]>([]);
 
+	let pluginConfig: { [plugin: string]: ControlledConfig } = {};
+	createEffect(async () => {
+		settings();
+
+		try {
+			let config = (await invoke("get_plugin_config")) as {
+				[key: string]: any;
+			};
+			pluginConfig = {};
+			for (let key in config) {
+				pluginConfig[key] = new ControlledConfig(config[key]);
+			}
+		} catch (e) {
+			errorToast("Failed to load plugin config: " + e);
+		}
+	});
+
+	let [pluginControls, pluginControlsMethods] = createResource(
+		async () => {
+			try {
+				let controls = (await invoke("get_plugin_config_controls")) as {
+					[plugin: string]: ControlData[];
+				};
+
+				return controls;
+			} catch (e) {
+				errorToast("Failed to load controls: " + e);
+				return {};
+			}
+		},
+		{ initialValue: {} },
+	);
+
 	createEffect(() => {
 		if (settings() == undefined) {
 			return;
@@ -67,6 +109,7 @@ export default function Settings(props: SettingsProps) {
 		let baseTheme = settings()!.base_theme;
 		setBaseTheme(baseTheme == undefined ? "dark" : baseTheme);
 		setOverlayThemes(settings()!.overlay_themes);
+		pluginControlsMethods.refetch();
 	});
 
 	async function saveSettings() {
@@ -80,7 +123,10 @@ export default function Settings(props: SettingsProps) {
 		};
 
 		try {
-			await invoke("write_settings", { settings: newSettings });
+			await Promise.all([
+				invoke("write_settings", { settings: newSettings }),
+				savePluginConfig(),
+			]);
 			successToast("Changes saved");
 
 			setIsDirty(false);
@@ -89,6 +135,19 @@ export default function Settings(props: SettingsProps) {
 		} catch (e) {
 			errorToast("Failed to save: " + e);
 		}
+	}
+
+	async function savePluginConfig() {
+		let configs: { [key: string]: any } = {};
+		for (let plugin in pluginConfig) {
+			let config = pluginConfig[plugin];
+			if (pluginControls()[plugin] != undefined) {
+				config.cleanup(pluginControls()[plugin]);
+			}
+			configs[plugin] = config.fields;
+		}
+
+		await invoke("write_plugin_config", { config: configs });
 	}
 
 	let buttons = () => {
@@ -136,6 +195,13 @@ export default function Settings(props: SettingsProps) {
 							icon: Text,
 							color: "var(--template)",
 							bgColor: "var(--templatebg)",
+						},
+						{
+							id: "plugins",
+							title: "Plugins",
+							icon: Jigsaw,
+							color: "var(--plugin)",
+							bgColor: "var(--pluginbg)",
 						},
 					]}
 					selectedTab={tab()}
@@ -214,8 +280,33 @@ export default function Settings(props: SettingsProps) {
 				</Show>
 				<Show when={tab() == "logs"}>
 					<div class="cont col fullwidth">
-						<h2>Logs</h2>
 						<ApplicationLog />
+					</div>
+				</Show>
+				<Show when={tab() == "plugins"}>
+					<div class="cont col fullwidth">
+						<For each={Object.keys(pluginControls())}>
+							{(plugin) => (
+								<ControlSections
+									controls={pluginControls()[plugin]}
+									getInitialValue={(id) => {
+										if (pluginConfig[plugin] == undefined) {
+											return undefined;
+										} else {
+											return pluginConfig[plugin].getControl(id);
+										}
+									}}
+									setValue={(id, value) => {
+										if (pluginConfig[plugin] == undefined) {
+											pluginConfig[plugin] = new ControlledConfig({});
+										}
+
+										pluginConfig[plugin].setControl(id, value);
+										setIsDirty(true);
+									}}
+								/>
+							)}
+						</For>
 					</div>
 				</Show>
 			</div>

@@ -17,6 +17,8 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 				} else {
 					bail!("Invalid args preset")
 				}
+			} else if preset.is_null() {
+				Vec::new()
 			} else {
 				bail!("Args preset must be a string")
 			}

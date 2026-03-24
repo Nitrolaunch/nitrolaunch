@@ -1,4 +1,4 @@
-import { createEffect, createSignal, Match, Switch } from "solid-js";
+import { createReaction, createSignal, Match, Switch } from "solid-js";
 import "./Control.css";
 import Tip from "../dialog/Tip";
 import SlideSwitch from "./SlideSwitch";
@@ -9,9 +9,14 @@ import PathSelect from "./text/PathSelect";
 export default function Control(props: ControlProps) {
 	let [value, setValue] = createSignal<any>(props.initialValue);
 
-	createEffect(() => {
+	// We don't want to set the value and dirty the config on the initial value set
+	let track = createReaction(() => {
 		props.setValue(props.control.id, value());
+
+		track(() => value());
 	});
+
+	track(() => value());
 
 	let elem = () => {
 		switch (props.control.schema.type) {
@@ -40,7 +45,6 @@ export default function Control(props: ControlProps) {
 							onChangeMulti={
 								props.control.schema.multiple ? setValue : undefined
 							}
-							allowEmpty={props.control.schema.allow_none}
 						/>
 					);
 				} else {
@@ -54,7 +58,6 @@ export default function Control(props: ControlProps) {
 							onChangeMulti={
 								props.control.schema.multiple ? setValue : undefined
 							}
-							allowEmpty={props.control.schema.allow_none}
 							connected={false}
 						/>
 					);
@@ -121,6 +124,7 @@ export interface ControlData {
 	description?: string;
 	color?: string;
 	section?: string;
+	always_serialize: boolean;
 }
 
 export type ControlSchema =
@@ -128,7 +132,6 @@ export type ControlSchema =
 	| {
 			type: "choice";
 			variants: Variant[];
-			allow_none: boolean;
 			dropdown: boolean;
 			multiple: boolean;
 	  }

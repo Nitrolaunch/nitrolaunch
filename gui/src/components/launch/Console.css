@@ -11,7 +11,7 @@
 
 .console-header {
 	display: grid;
-	grid-template-columns: minmax(0, 1fr) minmax(0, 0.5fr) minmax(0, 0.5fr);
+	grid-template-columns: minmax(0, 20rem) 1fr minmax(0, 15rem);
 	height: 10%;
 	padding: 1rem;
 	padding-bottom: 0rem;
@@ -61,7 +61,6 @@
 
 .console-scroll {
 	position: absolute;
-	bottom: 3rem;
 	right: 1rem;
 
 	padding: 0.25rem;

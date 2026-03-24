@@ -1,8 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import {
-	createResource,
-	createSignal,
-} from "solid-js";
+import { createResource, createSignal } from "solid-js";
 import { errorToast } from "./dialog/Toasts";
 import Console from "./launch/Console";
 
@@ -34,13 +31,16 @@ export default function ApplicationLog() {
 		{ initialValue: [] },
 	);
 
-	return <Console
-		loadState={output.state}
-		output={output()}
-		fetchOutput={outputMethods.refetch}
-		sendMessage={undefined}
-		availableLogs={availableLogs()}
-		selectedLog={selectedLog()}
-		setSelectedLog={setSelectedLog}
-	/>;
+	return (
+		<Console
+			loadState={output.state}
+			output={output()}
+			fetchOutput={outputMethods.refetch}
+			sendMessage={undefined}
+			availableLogs={availableLogs()}
+			selectedLog={selectedLog()}
+			setSelectedLog={setSelectedLog}
+			smallButtons
+		/>
+	);
 }

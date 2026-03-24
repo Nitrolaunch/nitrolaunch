@@ -20,6 +20,20 @@
 		},
 		"add_instance_tiles": {
 			"executable": "${PLUGIN_DIR}/nitro_plugin_stats${EXE_EXTENSION}"
+		},
+		"add_plugin_config_controls": {
+			"constant": [
+				{
+					"id": "live_tracking",
+					"name": "Live Tracking",
+					"description": "Whether to track playtime while the instance is running. Improves reliability.",
+					"section": "Stats",
+					"default": true,
+					"schema": {
+						"type": "boolean"
+					}
+				}
+			]
 		}
 	},
 	"subcommands": {

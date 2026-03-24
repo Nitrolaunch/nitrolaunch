@@ -21,6 +21,10 @@
 							"type": "choice",
 							"variants": [
 								{
+									"id": null,
+									"name": "Unset"
+								},
+								{
 									"id": "none",
 									"name": "None"
 								},

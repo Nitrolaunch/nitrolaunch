@@ -529,7 +529,9 @@ export default function InstanceConfigModal(props: InstanceConfigProps) {
 		};
 
 		// Handle plugin config
-		newConfig = pluginConfig().apply(newConfig);
+		pluginConfig().apply(newConfig);
+		pluginConfig().cleanup(controls());
+		newConfig = pluginConfig().fields;
 
 		try {
 			await saveInstanceConfig(configId, newConfig, props.params.mode);

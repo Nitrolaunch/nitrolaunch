@@ -186,3 +186,8 @@ hook_interface!(
 	"add_instance_config_controls",
 	AddInstanceConfigControls
 );
+hook_interface!(
+	add_plugin_config_controls,
+	"add_plugin_config_controls",
+	AddPluginConfigControls
+);

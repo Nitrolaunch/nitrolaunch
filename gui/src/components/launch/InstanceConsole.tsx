@@ -89,17 +89,20 @@ export default function InstanceConsole(props: InstanceConsoleProps) {
 		} catch (e) {
 			errorToast("Failed to send: " + e);
 		}
-	}
+	};
 
-	return <Console
-		loadState={output.state}
-		output={output()}
-		fetchOutput={outputMethods.refetch}
-		sendMessage={props.isServer ? sendMessage : undefined}
-		availableLogs={availableLogs()}
-		selectedLog={selectedLog()}
-		setSelectedLog={setSelectedLog}
-	/>;
+	return (
+		<Console
+			loadState={output.state}
+			output={output()}
+			fetchOutput={outputMethods.refetch}
+			sendMessage={props.isServer ? sendMessage : undefined}
+			availableLogs={availableLogs()}
+			selectedLog={selectedLog()}
+			setSelectedLog={setSelectedLog}
+			smallButtons
+		/>
+	);
 }
 
 export interface InstanceConsoleProps {
