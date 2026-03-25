@@ -9,8 +9,44 @@
 		"on_instance_launch": {
 			"wasm": true
 		},
+		"while_instance_launch": {
+			"wasm": true
+		},
 		"on_instance_stop": {
 			"wasm": true
+		},
+		"add_instance_config_controls": {
+			"constant": {
+				"controls": [
+					{
+						"id": "before_launch",
+						"name": "Before Launch",
+						"section": "Automate Hooks",
+						"description": "Command to run before the instance is launched. Launch will be blocked until the command finishes.",
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"id": "on_launch",
+						"name": "On Launch",
+						"section": "Automate Hooks",
+						"description": "Command to run when the instance is launched. Launch will not be blocked.",
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"id": "on_stop",
+						"name": "On Stop",
+						"section": "Automate Hooks",
+						"description": "Command to run when the instance exits",
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
 		}
 	}
 }
