@@ -418,7 +418,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 			}
 		>
 			<div class="cont col fullwidth">
-				<div class="cont col" id="instance-container">
+				<div class="cont col" id="instance-container" data-instance={id()}>
 					<div class="cont" id="instance-header-container">
 						<div class="shadow" id="instance-header">
 							<div class="cont start" id="instance-icon">
