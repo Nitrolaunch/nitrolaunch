@@ -23,6 +23,21 @@
 					"on_click": "customAction('shortcut', 'create_shortcut', {instance: document.getElementById('instance-container').dataset.instance})"
 				}
 			]
+		},
+		"add_instance_config_controls": {
+			"constant": {
+				"controls": [
+					{
+						"id": "shortcut_wrapper",
+						"name": "Shortcut Wrapper",
+						"description": "Wrapper command for generated shortcuts. Use $cmd where the launch command should be.",
+						"default": "",
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
 		}
 	},
 	"subcommands": {

@@ -122,10 +122,16 @@ fn create_shortcut(
 		println!("Warning: Nitro executable does not exist");
 	}
 
+	let wrapper = instance
+		.plugin_config
+		.get("shortcut_wrapper")
+		.and_then(|x| x.as_str());
+
 	match get_os_string().as_str() {
 		"linux" => {
-			let icon = include_bytes!("../../../gui/src-tauri/icons/icon_1024x1024.png");
-			let icon_path = home_dir.join(".local/share/icons/hicolor/1024x1024/nitrolaunch.png");
+			let icon = include_bytes!("../../../gui/src-tauri/icons/icon_128x128.png");
+			let icon_path =
+				home_dir.join(".local/share/icons/hicolor/128x128/apps/nitrolaunch.png");
 			if let Some(parent) = icon_path.parent() {
 				let _ = std::fs::create_dir_all(parent);
 			}
@@ -134,6 +140,7 @@ fn create_shortcut(
 			let contents = create_linux_shortcut(
 				&name,
 				&executable_path,
+				wrapper,
 				&instance_id,
 				account.as_deref(),
 				quick_play.as_deref(),
@@ -183,11 +190,11 @@ struct Settings {
 fn create_linux_shortcut(
 	base_name: &str,
 	exec: &Path,
+	wrapper: Option<&str>,
 	instance_id: &str,
 	account: Option<&str>,
 	quick_play: Option<&str>,
 ) -> String {
-	let exec_name = exec.file_name().unwrap().to_string_lossy().to_string();
 	let exec = exec.to_string_lossy().to_string();
 
 	let mut args = String::new();
@@ -199,14 +206,20 @@ fn create_linux_shortcut(
 		args += &format!(" --quick-play {quick_play}");
 	}
 
+	let command = format!("{exec} {args}");
+	let command = if let Some(wrapper) = wrapper {
+		wrapper.replace("$cmd", &command)
+	} else {
+		command
+	};
+
 	return format!(
 		r#"[Desktop Entry]
 Type=Application
 Version=1.0
 Name=Launch {base_name}
 Comment=Nitrolaunch instance
-Path={exec}
-Exec={exec_name} {args}
+Exec={command}
 Icon=nitrolaunch
 Terminal=false
 Categories=Games;	
