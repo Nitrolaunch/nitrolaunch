@@ -1,7 +1,8 @@
-import { createSignal, JSX, Match, Show, Switch } from "solid-js";
+import { createSignal, JSX, Match, Switch } from "solid-js";
 import Icon from "../Icon";
 import { AngleDown, AngleRight } from "../../icons";
 import "./CollapsableSection.css";
+import DisplayShow from "./DisplayShow";
 
 export default function CollapsableSection(props: CollapsableSectionProps) {
 	let [isOpen, setIsOpen] = createSignal(false);
@@ -24,11 +25,11 @@ export default function CollapsableSection(props: CollapsableSectionProps) {
 					</Switch>
 				</div>
 			</div>
-			<Show when={isOpen()}>
+			<DisplayShow when={isOpen()} style="width:100%">
 				<div class="cont fullwidth collapsable-section-contents">
 					{props.children}
 				</div>
-			</Show>
+			</DisplayShow>
 		</div>
 	);
 }

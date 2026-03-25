@@ -1130,6 +1130,7 @@ export default function InstanceConfigModal(props: InstanceConfigProps) {
 							return old;
 						});
 					}}
+					side={isTemplate() || isBaseTemplate() ? undefined : side()}
 				/>
 			</DisplayShow>
 			<br />

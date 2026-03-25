@@ -1,5 +1,5 @@
 import Control, { ControlData } from "./Control";
-import { createMemo, For } from "solid-js";
+import { createMemo, For, Show } from "solid-js";
 import CollapsableSection from "../utility/CollapsableSection";
 
 export default function ControlSections(props: ControlSectionsProps) {
@@ -16,17 +16,30 @@ export default function ControlSections(props: ControlSectionsProps) {
 								<For each={controls()}>
 									{(control) => {
 										let initialValue = props.getInitialValue(control.id);
+										let isShown = () => {
+											if (
+												props.side == undefined ||
+												control.side == undefined
+											) {
+												return true;
+											} else {
+												return props.side == control.side;
+											}
+										};
 
 										return (
-											<Control
-												control={control}
-												initialValue={
-													initialValue == undefined
-														? control.default
-														: initialValue
-												}
-												setValue={props.setValue}
-											/>
+											<Show when={isShown()}>
+												<Control
+													control={control}
+													initialValue={
+														initialValue == undefined
+															? control.default
+															: initialValue
+													}
+													setValue={props.setValue}
+													side={props.side}
+												/>
+											</Show>
 										);
 									}}
 								</For>
@@ -39,15 +52,25 @@ export default function ControlSections(props: ControlSectionsProps) {
 				<For each={sections()["_default"]}>
 					{(control) => {
 						let initialValue = props.getInitialValue(control.id);
+						let isShown = () => {
+							if (props.side == undefined || control.side == undefined) {
+								return true;
+							} else {
+								return props.side == control.side;
+							}
+						};
 
 						return (
-							<Control
-								control={control}
-								initialValue={
-									initialValue == undefined ? control.default : initialValue
-								}
-								setValue={props.setValue}
-							/>
+							<Show when={isShown()}>
+								<Control
+									control={control}
+									initialValue={
+										initialValue == undefined ? control.default : initialValue
+									}
+									setValue={props.setValue}
+									side={props.side}
+								/>
+							</Show>
 						);
 					}}
 				</For>
@@ -60,6 +83,7 @@ export interface ControlSectionsProps {
 	controls: ControlData[];
 	getInitialValue: (id: string) => any;
 	setValue: (id: string, value: any) => void;
+	side?: "client" | "server";
 }
 
 export function getControlSections(controls: ControlData[]): {

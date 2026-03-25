@@ -108,7 +108,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 	let [instance, instanceMethods] = createResource(id, async () => {
 		// Get the instance or template
 		try {
-			let [configuration, editableConfiguration] = await Promise.all([
+			let [configuration, [editableConfiguration, _]] = await Promise.all([
 				readInstanceConfig(id(), InstanceConfigMode.Instance),
 				readEditableInstanceConfig(id(), InstanceConfigMode.Instance),
 			]);

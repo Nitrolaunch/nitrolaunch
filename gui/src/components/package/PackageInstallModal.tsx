@@ -80,7 +80,7 @@ export default function PackageInstallModal(props: PackageInstallModalProps) {
 				: (selectedTemplateLocation() as "client" | "server" | "all");
 
 		try {
-			let config = await readEditableInstanceConfig(
+			let [config, _] = await readEditableInstanceConfig(
 				selectedInstanceOrTemplate(),
 				mode,
 			);

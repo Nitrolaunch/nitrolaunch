@@ -7,9 +7,16 @@ use nitro_options::{
 };
 use nitro_plugin::{
 	api::executable::{ExecutablePlugin, HookContext},
-	hook::{hooks::OnInstanceSetupResult, Hook},
+	hook::{
+		hooks::{AddInstanceConfigControlsResult, OnInstanceSetupResult},
+		Hook,
+	},
 };
 use nitro_shared::Side;
+
+use crate::controls::{all_client_options, all_server_options};
+
+mod controls;
 
 fn main() -> anyhow::Result<()> {
 	let mut plugin = ExecutablePlugin::from_manifest_file("options", include_str!("plugin.json"))?;
@@ -95,6 +102,26 @@ fn main() -> anyhow::Result<()> {
 		}
 
 		Ok(OnInstanceSetupResult::default())
+	})?;
+
+	plugin.add_instance_config_controls(|_, _| {
+		let mut out = Vec::new();
+
+		let client = all_client_options().into_iter().map(|mut x| {
+			x.id = format!("options.client.{}", x.id);
+			x.side = Some(Side::Client);
+			x
+		});
+		out.extend(client);
+
+		let server = all_server_options().into_iter().map(|mut x| {
+			x.id = format!("options.server.{}", x.id);
+			x.side = Some(Side::Server);
+			x
+		});
+		out.extend(server);
+
+		Ok(AddInstanceConfigControlsResult { controls: out })
 	})?;
 
 	Ok(())

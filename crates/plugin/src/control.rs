@@ -1,3 +1,4 @@
+use nitro_shared::Side;
 use serde::{Deserialize, Serialize};
 
 /// A serializable value with a schema
@@ -24,6 +25,9 @@ pub struct Control {
 	/// Whether to always serialize this control, even if it is the default value
 	#[serde(default)]
 	pub always_serialize: bool,
+	/// Optional required side to show this control
+	#[serde(default)]
+	pub side: Option<Side>,
 }
 
 /// Schema of possible values and the interface for a controllable value, like a config field
@@ -78,6 +82,8 @@ pub enum ControlSchema {
 	},
 	/// A raw JSON object
 	Json,
+	/// A keyboard keybind, following the schema of the nitro_options crate
+	Keybind,
 }
 
 /// Variant of a choice control
