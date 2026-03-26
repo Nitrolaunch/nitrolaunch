@@ -2,7 +2,7 @@ import { CrouchAnimation, IdleAnimation, RunningAnimation, SkinViewer, WalkingAn
 import { createEffect, createSignal, onMount, Show } from "solid-js";
 import "./SkinPreview.css";
 import Icon from "../Icon";
-import { AngleDown, ArrowRight, Lightning, Speed } from "../../icons";
+import { AngleDown, ArrowRight, Feather, Speed } from "../../icons";
 
 export default function SkinPreview(props: SkinPreviewProps) {
 	let canvas!: HTMLCanvasElement;
@@ -99,7 +99,7 @@ export default function SkinPreview(props: SkinPreviewProps) {
 					class={`cont skin-preview-control ${elytra() ? "active" : ""}`}
 					onclick={() => setElytra(!elytra())}
 				>
-					<Icon icon={Lightning} size="1rem" />
+					<Icon icon={Feather} size="1rem" />
 				</div>
 			</div>
 		</Show>
