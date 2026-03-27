@@ -86,8 +86,6 @@ This package does not need to be installed, it just has to be in the index."
 	},
 	#[command(about = "List available packages from all repositories")]
 	ListAll {},
-	#[command(about = "Browse packages from the remote repositories")]
-	Browse {},
 	#[command(about = "Add a package to an instance")]
 	Add {
 		/// The package to add to the instance
@@ -147,7 +145,6 @@ pub async fn run(subcommand: PackageSubcommand, data: &mut CmdData<'_>) -> anyho
 		PackageSubcommand::Versions { raw, package } => versions(data, &package, raw).await,
 		PackageSubcommand::Repository { command } => repo(command, data).await,
 		PackageSubcommand::ListAll {} => list_all(data).await,
-		PackageSubcommand::Browse {} => browse(data).await,
 		PackageSubcommand::Add { package, instance } => add(data, package, instance).await,
 		PackageSubcommand::Search {
 			query,
@@ -653,33 +650,6 @@ async fn list_all(data: &mut CmdData<'_>) -> anyhow::Result<()> {
 
 	for package in packages {
 		println!("{package}");
-	}
-
-	Ok(())
-}
-
-async fn browse(data: &mut CmdData<'_>) -> anyhow::Result<()> {
-	data.ensure_config(true).await?;
-	let config = data.config.get_mut();
-
-	let client = Client::new();
-	let mut packages = config
-		.packages
-		.get_all_available_packages(&data.paths, &client, data.output)
-		.await
-		.context("Failed to get list of available packages")?;
-	packages.sort();
-
-	loop {
-		let select =
-			inquire::Select::new("Browse packages. Press Escape to exit.", packages.clone());
-		let package = select.prompt_skippable()?;
-		if let Some(package) = package {
-			info(data, &package.id, false).await?;
-			inquire::Confirm::new("Press Escape to return to browse page").prompt_skippable()?;
-		} else {
-			break;
-		}
 	}
 
 	Ok(())
