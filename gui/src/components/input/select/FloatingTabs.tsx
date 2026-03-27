@@ -17,7 +17,7 @@ export default function FloatingTabs(props: FloatingTabsProps) {
 
 				return <div
 					class={`cont floating-tab ${isSelected() ? "selected" : ""} ${orderClass}`}
-					style={`outline-color:${tab.color};${color()};${bgColor()}`}
+					style={`outline-color:${tab.color};${color()};${bgColor()};--color:${tab.color}`}
 					onclick={() => props.setTab(tab.id)}
 				>
 					<Icon icon={tab.icon} size="1rem" />
