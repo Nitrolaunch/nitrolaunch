@@ -134,6 +134,8 @@ pub enum RepoSubcommand {
 		/// The repository to get info about
 		repo: String,
 	},
+	#[clap(external_subcommand)]
+	External(Vec<String>),
 }
 
 pub async fn run(subcommand: PackageSubcommand, data: &mut CmdData<'_>) -> anyhow::Result<()> {
@@ -548,6 +550,9 @@ async fn repo(subcommand: RepoSubcommand, data: &mut CmdData<'_>) -> anyhow::Res
 	match subcommand {
 		RepoSubcommand::List { raw } => repo_list(data, raw).await,
 		RepoSubcommand::Info { repo } => repo_info(data, repo).await,
+		RepoSubcommand::External(args) => {
+			call_plugin_subcommand(args, Some("package.repository"), data).await
+		}
 	}
 }
 
