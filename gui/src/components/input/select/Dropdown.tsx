@@ -316,7 +316,7 @@ function DropdownOption(props: OptionProps) {
 
 	let contents = (
 		<div
-			class={`cont bubble-hover dropdown-option ${
+			class={`cont dropdown-option ${
 				props.class == undefined ? "" : props.class
 			} ${props.isSelected ? "selected" : ""} ${
 				props.isLast ? "last" : "not-last"
