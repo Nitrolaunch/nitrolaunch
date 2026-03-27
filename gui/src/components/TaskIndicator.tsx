@@ -40,7 +40,7 @@ export default function TaskIndicator() {
 	};
 
 	function createTask(task: string) {
-		if (taskCount() == 1) {
+		if (taskCount() == 0) {
 			setTaskName(getTaskDisplayName(task));
 			setColor(getTaskColor(task));
 		}
