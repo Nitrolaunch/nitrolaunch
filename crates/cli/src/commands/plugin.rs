@@ -48,6 +48,11 @@ pub enum PluginSubcommand {
 	},
 	#[command(about = "Uninstall a plugin")]
 	Uninstall { plugin: String },
+	#[command(about = "Update one or more plugins from the verified list")]
+	Update {
+		/// The plugins to install. Can be empty to update all plugins
+		plugins: Vec<String>,
+	},
 	#[command(about = "Browse installable plugins")]
 	Browse,
 	#[command(about = "Enable a plugin")]
@@ -73,6 +78,7 @@ pub async fn run(command: PluginSubcommand, data: &mut CmdData<'_>) -> anyhow::R
 			files,
 		} => install(data, plugins, version, files).await,
 		PluginSubcommand::Uninstall { plugin } => uninstall(data, plugin).await,
+		PluginSubcommand::Update { plugins } => update(data, plugins).await,
 		PluginSubcommand::Browse => browse(data).await,
 		PluginSubcommand::Enable { plugin } => enable(data, plugin).await,
 		PluginSubcommand::Disable { plugin } => disable(data, plugin).await,
@@ -252,6 +258,46 @@ async fn uninstall(data: &mut CmdData<'_>, plugin: String) -> anyhow::Result<()>
 
 	data.output
 		.display(MessageContents::Success("Plugin removed".into()));
+
+	Ok(())
+}
+
+pub(crate) async fn update(data: &mut CmdData<'_>, plugins: Vec<String>) -> anyhow::Result<()> {
+	let plugins = if plugins.is_empty() {
+		let config =
+			PluginManager::open_config(&data.paths).context("Failed to open plugins config")?;
+		config.plugins.into_iter().collect()
+	} else {
+		plugins
+	};
+
+	let client = Client::new();
+
+	let verified_list = get_verified_plugins(&client, false)
+		.await
+		.context("Failed to get verified plugin list")?;
+
+	for plugin in plugins {
+		let (plugin_id, version) = parse_single_versioned_string(&plugin);
+
+		let Some(plugin) = verified_list.get(plugin_id) else {
+			continue;
+		};
+
+		let mut process = data.output.get_process();
+
+		let message = translate!(process, StartInstallingPlugin, "plugin" = plugin_id);
+		process.display(MessageContents::StartProcess(message));
+		plugin
+			.install(version, &data.paths, &client, process.deref_mut())
+			.await
+			.context("Failed to install plugin")?;
+
+		let message = process
+			.translate(TranslationKey::FinishInstallingPlugin)
+			.to_string();
+		process.display(MessageContents::Success(message));
+	}
 
 	Ok(())
 }
