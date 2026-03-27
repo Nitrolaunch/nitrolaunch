@@ -339,18 +339,12 @@ function Plugin(props: PluginProps) {
 							/>
 						</Tip>
 					</Show>
-					<Tip
-						tip={
-							props.info.installed
-								? "Uninstall"
-								: inProgress()
-									? "Installing..."
-									: "Install"
-						}
-						side="top"
-					>
-						<Switch>
-							<Match when={props.info.installed}>
+					<Switch>
+						<Match when={props.info.installed}>
+							<Tip
+								tip="Uninstall"
+								side="top"
+							>
 								<IconButton
 									icon={Trash}
 									size="1.5rem"
@@ -374,36 +368,37 @@ function Plugin(props: PluginProps) {
 										);
 									}}
 								/>
-							</Match>
-							<Match when={!props.info.installed}>
-								<IconButton
-									icon={Download}
-									size="1.5rem"
-									color="var(--bg2)"
-									border="var(--bg3)"
-									hoverBorder="var(--bg4)"
-									hoverBackground="var(--bg3)"
-									onClick={() => {
-										setInProgress(true);
-										invoke("install_plugin", {
-											plugin: props.info.id,
-											version: undefined,
-										}).then(
-											() => {
-												setInProgress(false);
-												successToast(`Plugin installed`);
-												props.updatePluginList();
-											},
-											(e) => {
-												setInProgress(false);
-												errorToast(`Failed to install plugin: ${e}`);
-											},
-										);
-									}}
-								/>
-							</Match>
-						</Switch>
-					</Tip>
+							</Tip>
+						</Match>
+						<Match when={!props.info.installed}>
+							<IconTextButton
+								icon={Download}
+								text={inProgress()
+									? "Installing..."
+									: "Install"}
+								color="var(--plugin)"
+								bgColor="var(--pluginbg)"
+								size="1.5rem"
+								onClick={() => {
+									setInProgress(true);
+									invoke("install_plugin", {
+										plugin: props.info.id,
+										version: undefined,
+									}).then(
+										() => {
+											setInProgress(false);
+											successToast(`Plugin installed`);
+											props.updatePluginList();
+										},
+										(e) => {
+											setInProgress(false);
+											errorToast(`Failed to install plugin: ${e}`);
+										},
+									);
+								}}
+							/>
+						</Match>
+					</Switch>
 				</div>
 			</div>
 			<div class="cont" style="justify-content:flex-start;width:100%">
