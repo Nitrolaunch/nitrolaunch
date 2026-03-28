@@ -82,6 +82,9 @@ import DiceIcon from "./assets/icons/dice.svg?component-solid";
 import LoginIcon from "./assets/icons/login.svg?component-solid";
 import LogoutIcon from "./assets/icons/logout.svg?component-solid";
 import FeatherIcon from "./assets/icons/feather.svg?component-solid";
+import ManWalkIcon from "./assets/icons/man_walk.svg?component-solid";
+import ManRunIcon from "./assets/icons/man_run.svg?component-solid";
+import ChairIcon from "./assets/icons/chair.svg?component-solid";
 import { HasWidthHeight } from "./components/Icon";
 
 export function Pin({ width, height, viewBox }: HasWidthHeight) {
@@ -428,3 +431,14 @@ export function Feather({ width, height, viewBox }: HasWidthHeight) {
 	return <FeatherIcon width={width} height={height} viewBox={viewBox} />;
 }
 
+export function ManWalk({ width, height, viewBox }: HasWidthHeight) {
+	return <ManWalkIcon width={width} height={height} viewBox={viewBox} />;
+}
+
+export function ManRun({ width, height, viewBox }: HasWidthHeight) {
+	return <ManRunIcon width={width} height={height} viewBox={viewBox} />;
+}
+
+export function Chair({ width, height, viewBox }: HasWidthHeight) {
+	return <ChairIcon width={width} height={height} viewBox={viewBox} />;
+}
