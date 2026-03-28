@@ -2,7 +2,7 @@ import { CrouchAnimation, IdleAnimation, RunningAnimation, SkinViewer, WalkingAn
 import { createEffect, createSignal, onMount, Show } from "solid-js";
 import "./SkinPreview.css";
 import Icon from "../Icon";
-import { AngleDown, ArrowRight, Feather, Speed } from "../../icons";
+import { Feather, ManRun, ManWalk, Chair } from "../../icons";
 
 export default function SkinPreview(props: SkinPreviewProps) {
 	let canvas!: HTMLCanvasElement;
@@ -81,19 +81,19 @@ export default function SkinPreview(props: SkinPreviewProps) {
 					class={`cont skin-preview-control ${animation() == "walking" ? "active" : ""}`}
 					onclick={() => toggleAnimation("walking")}
 				>
-					<Icon icon={ArrowRight} size="1rem" />
+					<Icon icon={ManWalk} size="1rem" />
 				</div>
 				<div
 					class={`cont skin-preview-control ${animation() == "running" ? "active" : ""}`}
 					onclick={() => toggleAnimation("running")}
 				>
-					<Icon icon={Speed} size="1rem" />
+					<Icon icon={ManRun} size="1rem" />
 				</div>
 				<div
 					class={`cont skin-preview-control ${animation() == "crouch" ? "active" : ""}`}
 					onclick={() => toggleAnimation("crouch")}
 				>
-					<Icon icon={AngleDown} size="1rem" />
+					<Icon icon={Chair} size="1rem" />
 				</div>
 				<div
 					class={`cont skin-preview-control ${elytra() ? "active" : ""}`}
