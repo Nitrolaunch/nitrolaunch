@@ -22,6 +22,10 @@
 	cursor: pointer;
 }
 
+.skin-preview-control:hover {
+	background-color: var(--bg3);
+}
+
 .skin-preview-control.active {
 	background-color: var(--instance);
 	color: black;
