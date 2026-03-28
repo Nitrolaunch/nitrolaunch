@@ -19,6 +19,7 @@
 	box-sizing: border-box;
 	border-top: var(--border) solid var(--bg3);
 	border-right: var(--border) solid var(--bg3);
+	cursor: pointer;
 }
 
 .skin-preview-control.active {
