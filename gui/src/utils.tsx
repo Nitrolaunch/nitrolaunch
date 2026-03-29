@@ -126,7 +126,7 @@ export async function getSupportedLoaders(): Promise<string[]> {
 export function getAccountIcon(uuid?: string) {
 	return uuid == undefined
 		? "/default_skin.png"
-		: `https://avatars.cloudhaven.gg/avatars/${uuid}?overlay`;
+		: `https://www.minepic.org/avatar/${uuid}?overlay`;
 }
 
 // Formats a big number
