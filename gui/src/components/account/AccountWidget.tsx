@@ -280,7 +280,7 @@ function AccountTile(props: AccountTileProps) {
 
 	return (
 		<div
-			class={`account-tile ${props.isFeatured ? "" : "bubble-hover"} ${isHovered() && !props.isFeatured ? "hover" : ""}`}
+			class={`account-tile ${isHovered() && !props.isFeatured ? "hover" : ""}`}
 			onclick={() => {
 				if (!props.isFeatured) {
 					props.onclick(props.account.id);

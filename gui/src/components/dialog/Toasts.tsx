@@ -14,7 +14,7 @@ import "./Toasts.css";
 import Icon from "../Icon";
 import { Check, Copy, Delete, Error, Notification, Warning } from "../../icons";
 import IconAndText from "../utility/IconAndText";
-import * as clipboard from "@tauri-apps/plugin-clipboard-manager"
+import * as clipboard from "@tauri-apps/plugin-clipboard-manager";
 
 export default function Toasts() {
 	let [toasts, setToasts] = createSignal<ToastProps[]>([]);
@@ -116,17 +116,17 @@ export default function Toasts() {
 					<Match when={!showRecentToasts()}>
 						<IconAndText
 							icon={Notification}
-							text={`${recentToastCount()} ${recentToastCount() == 1 ? "Alert" : "Alerts"
-								}`}
-							centered
+							text={`${recentToastCount()} ${
+								recentToastCount() == 1 ? "Alert" : "Alerts"
+							}`}
 						/>
 					</Match>
 					<Match when={showRecentToasts()}>
 						<IconAndText
 							icon={Delete}
-							text={`${recentToastCount()} ${recentToastCount() == 1 ? "Alert" : "Alerts"
-								}`}
-							centered
+							text={`${recentToastCount()} ${
+								recentToastCount() == 1 ? "Alert" : "Alerts"
+							}`}
 							onIconClick={() => {
 								setRecentToastCount(0);
 								setRecentToasts([]);
@@ -159,8 +159,8 @@ export default function Toasts() {
 										message={<div style="color:var(--fg3)">No messages</div>}
 										type="message"
 										isFading={() => false}
-										setIsFading={() => { }}
-										onRemove={() => { }}
+										setIsFading={() => {}}
+										onRemove={() => {}}
 										isPersistent
 										isRemovable={false}
 									/>
@@ -219,9 +219,12 @@ function Toast(props: ToastProps) {
 			<div class="toast-message">{props.message}</div>
 			<Show when={props.isRemovable && isHovered()}>
 				<Show when={props.type == "error" || props.type == "warning"}>
-					<div class="toast-copy" onclick={() => {
-						clipboard.writeText(props.message!.toString())
-					}}>
+					<div
+						class="toast-copy"
+						onclick={() => {
+							clipboard.writeText(props.message!.toString());
+						}}
+					>
 						<Icon icon={Copy} size="1rem" />
 					</div>
 				</Show>

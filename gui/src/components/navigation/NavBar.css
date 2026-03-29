@@ -14,8 +14,9 @@
 
 #navbar-container {
 	display: grid;
-	grid-template-columns: minmax(0, 0.55fr) minmax(0, 1.45fr) minmax(0, 1fr) minmax(0,
-			2fr);
+	grid-template-columns:
+		minmax(0, 0.45fr) minmax(0, 1fr) minmax(0, 1.45fr)
+		minmax(0, 1.45fr);
 	width: 100%;
 	height: 100%;
 }
@@ -24,7 +25,7 @@
 	margin: 0px;
 }
 
-#navbar-container>h3 {
+#navbar-container > h3 {
 	margin: 0px;
 	line-height: 0;
 	margin-top: 0.15rem;
@@ -44,12 +45,16 @@
 }
 
 .navbar-button {
-	height: 100%;
+	height: 80%;
 	font-weight: bold;
 	box-sizing: border-box;
-	border-bottom: var(--border) solid var(--bg);
+	border: var(--border) solid var(--bg);
+	border-radius: var(--round2);
 
-	transition: border-color 0.15s, background-color 0.35s, transform var(--bubble);
+	transition:
+		border-color 0.15s,
+		background-color 0.35s,
+		transform var(--bubble);
 }
 
 .navbar-button-text {
@@ -63,8 +68,8 @@
 
 #beta-indicator {
 	position: absolute;
-	right: -3.25rem;
+	right: -2.75rem;
 
-	font-size: 1rem;
+	font-size: 0.75rem;
 	color: var(--warning);
 }

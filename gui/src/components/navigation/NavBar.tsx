@@ -1,4 +1,4 @@
-import { createSignal, JSX } from "solid-js";
+import { JSX } from "solid-js";
 import {
 	ArrowLeft,
 	ArrowRight,
@@ -63,7 +63,25 @@ export default function NavBar(props: NavBarProps) {
 							/>
 						</div>
 					</div>
-					<div class="navbar-item" id="navbar-buttons">
+					<h3 class="cont start navbar-item">
+						<div></div>
+						<a
+							href="/"
+							class="cont link bold"
+							title="Return to the homepage"
+							style="position:relative"
+						>
+							<img
+								src="/Logo.png"
+								style="width:1.5rem;border-radius:var(--round)"
+								class="shadow"
+							/>
+							<div class="cont" id="beta-indicator">
+								BETA
+							</div>
+						</a>
+					</h3>
+					<div class="cont navbar-item" id="navbar-buttons">
 						<NavbarButton
 							icon={Home}
 							text="Home"
@@ -103,24 +121,6 @@ export default function NavBar(props: NavBarProps) {
 							onClick={props.onSidebarClose}
 						/>
 					</div>
-					<h3 class="cont bubble-hover navbar-item">
-						<a
-							href="/"
-							class="cont link bold"
-							title="Return to the homepage"
-							style="position:relative"
-						>
-							<img
-								src="/Logo.png"
-								style="width:1.5rem;border-radius:var(--round)"
-								class="shadow"
-							/>
-							<div id="logo-text">NITRO</div>
-							<div class="cont" id="beta-indicator">
-								BETA
-							</div>
-						</a>
-					</h3>
 					<div class="cont end navbar-item" id="navbar-right">
 						<AccountWidget />
 						<Toasts />
@@ -138,8 +138,6 @@ export interface NavBarProps {
 }
 
 function NavbarButton(props: NavbarButtonProps) {
-	let [isHovered, setIsHovered] = createSignal(false);
-
 	const selected = () => {
 		if (props.selectedPath != undefined) {
 			for (let path of props.selectedPath) {
@@ -160,7 +158,7 @@ function NavbarButton(props: NavbarButtonProps) {
 	};
 
 	let color = () => (selected() ? props.color : "var(--fg)");
-	let borderColor = () => (selected() || isHovered() ? props.color : "");
+	let borderColor = () => (selected() ? props.color : "");
 
 	return (
 		<a
@@ -169,8 +167,6 @@ function NavbarButton(props: NavbarButtonProps) {
 			style={`color:${color()};background-color:${
 				selected() ? props.backgroundColor : "var(--bg)"
 			};border-color:${borderColor()}`}
-			onmouseenter={() => setIsHovered(true)}
-			onmouseleave={() => setIsHovered(false)}
 			onclick={props.onClick}
 		>
 			<Icon icon={props.icon} size="1rem" />
