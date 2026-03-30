@@ -11,7 +11,7 @@ import {
 	Show,
 } from "solid-js";
 import BrowsePackages from "./pages/package/BrowsePackages";
-import ViewPackage from "./pages/package/ViewPackage";
+import { ViewPackagePage } from "./pages/package/ViewPackage";
 import Sidebar from "./components/navigation/Sidebar";
 import Plugins from "./pages/plugin/Plugins";
 import Docs from "./pages/Docs";
@@ -74,7 +74,7 @@ export default function App() {
 				/>
 				<Route
 					path="/packages/package/:id"
-					component={() => <ViewPackage setFooterData={setFooterData} />}
+					component={() => <ViewPackagePage setFooterData={setFooterData} />}
 				/>
 				<Route path="/accounts/:accountId" component={() => <AccountPage />} />
 				<Route path="/plugins" component={() => <Plugins />} />

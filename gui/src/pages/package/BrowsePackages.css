@@ -17,6 +17,20 @@
 	width: 100%;
 }
 
+#browse-container {
+	width: 100%;
+}
+
+#browse-container.alternate {
+	display: grid;
+	grid-template-columns: 1fr 3fr;
+	height: 35rem;
+	border: var(--border) solid var(--bg3);
+	border-radius: var(--round2);
+	overflow: hidden;
+	box-sizing: border-box;
+}
+
 #packages-container {
 	display: grid;
 	grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -24,10 +38,21 @@
 	width: 100%;
 }
 
+#packages-container.alternate {
+	height: 100%;
+	grid-template-columns: 1fr;
+
+	gap: 0;
+	border-right: var(--border) solid var(--bg3);
+
+	overflow-y: scroll;
+}
+
 .package {
 	background-color: var(--bg);
 	box-sizing: border-box;
 	height: 18rem;
+	width: 100%;
 
 	border-radius: var(--round2);
 	border: var(--border) solid var(--bg3);
@@ -38,8 +63,16 @@
 
 	--package-hover-color: var(--bg);
 
-	transition: border-color 0.25s, transform var(--bubble),
+	transition:
+		border-color 0.25s,
+		transform var(--bubble),
 		--package-hover-color 0.25s;
+}
+
+.package.alternate {
+	height: 4rem;
+	border: none;
+	border-radius: 0;
 }
 
 .package:hover {
@@ -51,6 +84,12 @@
 .package.selected {
 	border-color: var(--package);
 	background-color: var(--bg);
+}
+
+.package.alternate.selected {
+	background-color: var(--packagebg);
+	border-top: var(--border) solid var(--package);
+	border-bottom: var(--border) solid var(--package);
 }
 
 .package.selected .package-image {
@@ -65,9 +104,26 @@
 	gap: 0.2rem;
 }
 
+.package.alternate > .package-inner {
+	grid-template-rows: none;
+	grid-template-columns: 4rem 1fr;
+}
+
+.package.alternate .package-image {
+	border-radius: var(--round2);
+	width: 3rem;
+	height: unset;
+	aspect-ratio: 1;
+}
+
 .package-image-container {
 	position: relative;
 	width: 100%;
+}
+
+.package.alternate .package-image-container {
+	width: 100%;
+	height: 100%;
 }
 
 .package-image-gradient {
@@ -94,10 +150,16 @@
 
 .package-header {
 	padding: 0.75rem;
-	justify-content: center;
 	align-items: flex-start;
 	justify-content: flex-start;
 	gap: 0.1rem;
+	box-sizing: border-box;
+}
+
+.package.alternate .package-header {
+	height: 100%;
+	justify-content: center;
+	padding: 0;
 }
 
 .package-name {
@@ -105,16 +167,25 @@
 	margin-top: -0.25rem;
 }
 
+.package.alternate .package-name {
+	font-weight: normal;
+}
+
 .browse-package-description {
 	overflow: hidden;
 	color: var(--fg3);
 	font-size: 0.9rem;
-	line-height: 1.2;
+	/* line-height: 1.2; */
 }
 
 .package-error {
 	border: 0.2rem solid var(--error);
 	border-radius: var(--round2);
+}
+
+#package-preview {
+	height: 100%;
+	overflow-y: auto;
 }
 
 #browse-gradient {

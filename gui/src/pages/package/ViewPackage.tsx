@@ -1,14 +1,7 @@
 import { useLocation, useParams } from "@solidjs/router";
 import "./ViewPackage.css";
 import { invoke } from "@tauri-apps/api/core";
-import {
-	createEffect,
-	createResource,
-	createSignal,
-	For,
-	JSX,
-	Show,
-} from "solid-js";
+import { createEffect, createSignal, For, JSX, Show } from "solid-js";
 import "@thisbeyond/solid-select/style.css";
 import { PackageMeta, PackageProperties } from "../../types";
 import { marked } from "marked";
@@ -24,6 +17,7 @@ import {
 	Globe,
 	Hashtag,
 	Heart,
+	Info,
 	Key,
 	Picture,
 	Popout,
@@ -49,14 +43,51 @@ import IconButton from "../../components/input/button/IconButton";
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 import PackageGallery from "../../components/package/PackageGallery";
 
-export default function ViewPackage(props: ViewPackageProps) {
+export function ViewPackagePage(props: ViewPackagePageProps) {
 	let params = useParams();
 	let searchParams = parseQueryString(useLocation().search);
 
-	let packageId = params.id;
-	let packageReq = parsePkgRequest(packageId);
+	let filters = () => {
+		if (searchParams["filters"] == undefined) {
+			return {
+				minecraft_versions: [],
+				loaders: [],
+				categories: [],
+			};
+		}
 
-	let [meta] = createResource(updateMetaAndProps);
+		try {
+			return JSON.parse(
+				decodeURIComponent(searchParams["filters"]),
+			) as PackageFilterOptions;
+		} catch (e) {
+			console.error("Failed to parse filters: " + e);
+			return {
+				minecraft_versions: [],
+				loaders: [],
+				categories: [],
+			};
+		}
+	};
+
+	return (
+		<ViewPackage
+			id={params.id}
+			filters={filters()}
+			small={false}
+			setFooterData={props.setFooterData}
+		/>
+	);
+}
+
+export interface ViewPackagePageProps {
+	setFooterData: (data: FooterData) => void;
+}
+
+export default function ViewPackage(props: ViewPackageProps) {
+	let packageReq = () => parsePkgRequest(props.id);
+
+	let [meta, setMeta] = createSignal<PackageMeta | undefined>(undefined);
 	let [properties, setProperties] = createSignal<PackageProperties | undefined>(
 		undefined,
 	);
@@ -70,21 +101,6 @@ export default function ViewPackage(props: ViewPackageProps) {
 	let [showInstallModal, setShowInstallModal] = createSignal(false);
 	let [installVersion, setInstallVersion] = createSignal<string | undefined>();
 
-	let filters = () => {
-		if (searchParams["filters"] == undefined) {
-			return undefined;
-		}
-
-		try {
-			return JSON.parse(
-				decodeURIComponent(searchParams["filters"]),
-			) as PackageFilterOptions;
-		} catch (e) {
-			console.error("Failed to parse filters: " + e);
-			return undefined;
-		}
-	};
-
 	createEffect(() => {
 		props.setFooterData({
 			selectedItem: "",
@@ -93,16 +109,23 @@ export default function ViewPackage(props: ViewPackageProps) {
 		});
 	});
 
+	createEffect(() => {
+		props.id;
+		updateMetaAndProps();
+	});
+
 	async function updateMetaAndProps() {
 		try {
+			setMeta(undefined);
+			setProperties(undefined);
 			let [[meta, properties], repos] = (await Promise.all([
 				invoke("get_package_meta_and_props", {
-					package: packageId,
+					package: props.id,
 				}),
 				invoke("get_package_repos"),
 			])) as [[PackageMeta, PackageProperties], RepoInfo[]];
 
-			let request = parsePkgRequest(packageId);
+			let request = parsePkgRequest(props.id);
 			if (request.repository != undefined)
 				for (let repo of repos) {
 					if (repo.id == request.repository) {
@@ -120,14 +143,79 @@ export default function ViewPackage(props: ViewPackageProps) {
 			longDescriptionHtml = replaceExternalLinks(longDescriptionHtml);
 			setLongDescription(longDescriptionHtml);
 
+			setMeta(meta);
 			setProperties(properties);
-
-			return meta;
 		} catch (e) {
 			errorToast("Failed to load package: " + e);
-			return undefined;
+			setMeta(undefined);
+			setProperties(undefined);
 		}
 	}
+
+	let info = () => {
+		return (
+			<>
+				<Show when={meta()!.support_link != undefined}>
+					<Property icon={Heart} label="Donate" color="var(--error)">
+						<OpenButton url={meta()!.support_link} />
+					</Property>
+				</Show>
+				<Show when={meta()!.website != undefined}>
+					<Property icon={Globe} label="Website">
+						<OpenButton url={meta()!.website} />
+					</Property>
+				</Show>
+				<Show when={meta()!.documentation != undefined}>
+					<Property icon={Book} label="Documentation">
+						<OpenButton url={meta()!.documentation} />
+					</Property>
+				</Show>
+				<Show when={meta()!.community != undefined}>
+					<Property icon={User} label="Community">
+						<OpenButton url={meta()!.community} />
+					</Property>
+				</Show>
+				<Show when={meta()!.source != undefined}>
+					<Property icon={CurlyBraces} label="Source">
+						<OpenButton url={meta()!.source} />
+					</Property>
+				</Show>
+				<Show when={meta()!.issues != undefined}>
+					<Property icon={Warning} label="Issue Tracker">
+						<OpenButton url={meta()!.issues} />
+					</Property>
+				</Show>
+				<For each={canonicalizeListOrSingle(meta()!.authors)}>
+					{(author) => (
+						<Property icon={User} label="Author">
+							{author}
+						</Property>
+					)}
+				</For>
+				<Property icon={Key} label="License">
+					{meta()!.license == undefined ? (
+						"Unknown"
+					) : meta()!.license!.startsWith("http") ? (
+						<a href={meta()!.license} target="_blank">
+							Open
+						</a>
+					) : meta()!.license!.length > 17 ? (
+						`${meta()!.license!.slice(0, 17)}...`
+					) : (
+						meta()!.license
+					)}
+				</Property>
+				<Property icon={Hashtag} label="ID">
+					{packageReq().id}
+				</Property>
+				<Show when={meta()!.slug != undefined}>
+					<Property icon={Hashtag} label="Slug">
+						{meta()!.slug}
+					</Property>
+				</Show>
+			</>
+		);
+	};
 
 	return (
 		<Show
@@ -138,7 +226,7 @@ export default function ViewPackage(props: ViewPackageProps) {
 				</div>
 			}
 		>
-			<div class="cont col" style="width:100%">
+			<div class="cont col" style="width:100%;position:relative">
 				<Show when={meta()!.banner != undefined}>
 					<div id="package-banner-container">
 						<img
@@ -224,9 +312,12 @@ export default function ViewPackage(props: ViewPackageProps) {
 							</div>
 						</div>
 					</div>
-					<div id="package-contents">
+					<div id="package-contents" class={props.small ? "small" : ""}>
 						<div id="package-body">
-							<div class="package-shadow" id="package-tabs">
+							<div
+								class={`package-shadow ${props.small ? "small" : ""}`}
+								id="package-tabs"
+							>
 								<div
 									class={`cont package-tab ${
 										selectedTab() == "description" ? "selected" : ""
@@ -254,24 +345,36 @@ export default function ViewPackage(props: ViewPackageProps) {
 									<Icon icon={Picture} size="1rem" />
 									Gallery
 								</div>
+								<Show when={props.small}>
+									<div
+										class={`cont package-tab ${
+											selectedTab() == "info" ? "selected" : ""
+										}`}
+										onclick={() => setSelectedTab("info")}
+									>
+										<Icon icon={Info} size="1rem" />
+										Info
+									</div>
+								</Show>
 							</div>
 							<div class="cont col package-shadow" id="package-tab-contents">
 								<Show when={selectedTab() == "description"}>
 									<div
 										class="cont col package-description"
+										style="padding:1rem"
 										innerHTML={longDescription()}
 									></div>
 								</Show>
 								<Show when={selectedTab() == "versions"}>
 									<div class="cont fullwidth">
 										<PackageVersions
-											packageId={packageId}
+											packageId={props.id}
 											props={properties()!}
 											onInstall={(version) => {
 												setInstallVersion(version);
 												setShowInstallModal(true);
 											}}
-											defaultFilters={filters()}
+											defaultFilters={props.filters}
 										/>
 									</div>
 								</Show>
@@ -284,77 +387,22 @@ export default function ViewPackage(props: ViewPackageProps) {
 										<PackageGallery gallery={meta()!.gallery!} />
 									</div>
 								</Show>
+								<Show when={selectedTab() == "info"}>{info()}</Show>
 							</div>
 						</div>
-						<div class="package-shadow cont col" id="package-properties">
-							<Show when={meta()!.support_link != undefined}>
-								<Property icon={Heart} label="Donate" color="var(--error)">
-									<OpenButton url={meta()!.support_link} />
-								</Property>
-							</Show>
-							<Show when={meta()!.website != undefined}>
-								<Property icon={Globe} label="Website">
-									<OpenButton url={meta()!.website} />
-								</Property>
-							</Show>
-							<Show when={meta()!.documentation != undefined}>
-								<Property icon={Book} label="Documentation">
-									<OpenButton url={meta()!.documentation} />
-								</Property>
-							</Show>
-							<Show when={meta()!.community != undefined}>
-								<Property icon={User} label="Community">
-									<OpenButton url={meta()!.community} />
-								</Property>
-							</Show>
-							<Show when={meta()!.source != undefined}>
-								<Property icon={CurlyBraces} label="Source">
-									<OpenButton url={meta()!.source} />
-								</Property>
-							</Show>
-							<Show when={meta()!.issues != undefined}>
-								<Property icon={Warning} label="Issue Tracker">
-									<OpenButton url={meta()!.issues} />
-								</Property>
-							</Show>
-							<For each={canonicalizeListOrSingle(meta()!.authors)}>
-								{(author) => (
-									<Property icon={User} label="Author">
-										{author}
-									</Property>
-								)}
-							</For>
-							<Property icon={Key} label="License">
-								{meta()!.license == undefined ? (
-									"Unknown"
-								) : meta()!.license!.startsWith("http") ? (
-									<a href={meta()!.license} target="_blank">
-										Open
-									</a>
-								) : meta()!.license!.length > 17 ? (
-									`${meta()!.license!.slice(0, 17)}...`
-								) : (
-									meta()!.license
-								)}
-							</Property>
-							<Property icon={Hashtag} label="ID">
-								{packageReq.id}
-							</Property>
-							<Show when={meta()!.slug != undefined}>
-								<Property icon={Hashtag} label="Slug">
-									{meta()!.slug}
-								</Property>
-							</Show>
-						</div>
+						<Show when={!props.small}>
+							<div class="package-shadow cont col" id="package-properties">
+								{info()}
+							</div>
+						</Show>
 					</div>
 				</div>
 				<br />
 				<br />
-				<br />
 			</div>
 			<PackageInstallModal
-				packageId={parsePkgRequest(packageId).id}
-				packageRepo={parsePkgRequest(packageId).repository}
+				packageId={packageReq().id}
+				packageRepo={packageReq().repository}
 				packageSlug={meta() == undefined ? undefined : meta()!.slug}
 				selectedVersion={installVersion()}
 				visible={showInstallModal()}
@@ -366,6 +414,9 @@ export default function ViewPackage(props: ViewPackageProps) {
 }
 
 export interface ViewPackageProps {
+	id: string;
+	filters: PackageFilterOptions;
+	small: boolean;
 	setFooterData: (data: FooterData) => void;
 }
 

@@ -64,6 +64,15 @@
 	margin: 0px;
 }
 
+body {
+	margin: 0;
+}
+
+#root {
+	width: 100vw;
+	margin: 0;
+}
+
 q.container {
 	margin: 0;
 	padding-top: 10vh;

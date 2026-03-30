@@ -23,7 +23,11 @@
 	gap: 0.3rem;
 }
 
-.package-loader-icon>img {
+.package-loader-icon > img {
 	width: 1.5rem;
 	height: 1.5rem;
+}
+
+.package-loaders {
+	border-color: var(--bg3);
 }

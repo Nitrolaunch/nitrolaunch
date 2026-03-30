@@ -4,6 +4,7 @@
 
 #package-container {
 	width: 97%;
+	position: relative;
 }
 
 #package-header-container {
@@ -15,7 +16,7 @@
 #package-header {
 	display: grid;
 	width: 100%;
-	grid-template-columns: minmax(0, 0.08fr) minmax(0, 1fr);
+	grid-template-columns: minmax(0, 5rem) minmax(0, 1fr);
 	margin-top: 1rem;
 	padding: 0.5rem;
 	background-color: var(--bg);
@@ -93,10 +94,14 @@
 
 #package-contents {
 	display: grid;
-	grid-template-columns: minmax(0, 1fr) 20rem;
+	grid-template-columns: minmax(0, 1fr) 18rem;
 	width: 100%;
 	gap: 1rem;
 	margin-top: 1.5rem;
+}
+
+#package-contents.small {
+	grid-template-columns: 1fr;
 }
 
 #package-tabs {
@@ -106,6 +111,10 @@
 	background-color: var(--transparent-dark);
 	border-top-left-radius: var(--round2);
 	border-top-right-radius: var(--round2);
+}
+
+#package-tabs.small {
+	grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .package-tab {
@@ -132,7 +141,7 @@
 	border-top-left-radius: 0;
 	border-top-right-radius: 0;
 	min-height: 10rem;
-	padding: 2rem;
+	padding: 0.5rem;
 }
 
 #package-properties {
