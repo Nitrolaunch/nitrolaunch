@@ -19,8 +19,11 @@ use nitrolaunch::plugin_crate::hook::hooks::{
 	DeleteInstance, DeleteTemplate, SaveInstanceConfigArg, SaveTemplateConfigArg,
 };
 use nitrolaunch::shared::id::{InstanceID, TemplateID};
+use nitrolaunch::shared::loaders::Loader;
 use nitrolaunch::shared::output::NoOp;
-use nitrolaunch::shared::versions::{MinecraftLatestVersion, MinecraftVersionDeser};
+use nitrolaunch::shared::versions::{
+	parse_versioned_string, MinecraftLatestVersion, MinecraftVersionDeser,
+};
 use nitrolaunch::shared::{Side, UpdateDepth};
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
@@ -56,6 +59,7 @@ pub async fn get_instances(state: tauri::State<'_, State>) -> Result<Vec<Instanc
 				side: Some(instance.get_side()),
 				from_plugin: config.original_config.source_plugin.is_some(),
 				version: Some(config.version.to_string()),
+				loader: config.loader.clone(),
 				is_editable: config.original_config.is_editable
 					|| config.original_config.source_plugin.is_none(),
 				is_deletable: config.original_config.is_deletable
@@ -93,6 +97,12 @@ pub async fn get_templates(state: tauri::State<'_, State>) -> Result<Vec<Instanc
 					.version
 					.as_ref()
 					.map(|x| MinecraftVersion::from_deser(x).to_string()),
+				loader: template
+					.instance
+					.loader
+					.as_ref()
+					.map(|x| Loader::parse_from_str(parse_versioned_string(x).0))
+					.unwrap_or_default(),
 				is_editable: template.instance.is_editable
 					|| template.instance.source_plugin.is_none(),
 				is_deletable: template.instance.is_deletable
@@ -113,6 +123,7 @@ pub struct InstanceInfo {
 	pub pinned: bool,
 	pub from_plugin: bool,
 	pub version: Option<String>,
+	pub loader: Loader,
 	pub is_editable: bool,
 	pub is_deletable: bool,
 }

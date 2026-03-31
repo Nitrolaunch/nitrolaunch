@@ -13,6 +13,7 @@ export interface InstanceInfo {
 	pinned: boolean;
 	from_plugin: boolean;
 	version: string;
+	loader: string;
 	is_editable: boolean;
 	is_deletable: boolean;
 }

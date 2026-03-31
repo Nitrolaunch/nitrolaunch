@@ -33,53 +33,46 @@
 	display: grid;
 	grid-template-columns: repeat(4, minmax(0, 1fr));
 	width: 100%;
+	gap: 1rem;
 }
 
+.instance-list-item-like,
 .instance-list-item {
-	background-color: var(--bg2);
-	margin: 0.5rem;
-	padding: 0.2rem;
-	height: 4.8rem;
-	text-align: center;
+	height: 6rem;
 	box-sizing: border-box;
-	display: flex;
-	flex-direction: row;
-	align-items: center;
-	cursor: pointer;
-	border-radius: var(--round2);
-	gap: 0.5rem;
-	position: relative;
+
+	background-color: var(--bg2);
 	border: var(--border) solid var(--bg3);
+	border-radius: var(--round2);
 	border-top-color: var(--bg4);
 	border-left-color: var(--bg4);
 
-	transition: background-color 0.15s, border-color 0.25s,
+	cursor: pointer;
+}
+
+.instance-list-item {
+	position: relative;
+	display: grid;
+	grid-template-rows: 2fr 1fr;
+
+	transition:
+		background-color 0.15s,
+		border-color 0.25s,
 		transform var(--bubble);
 }
 
-.instance-list-item-details {
-	align-items: flex-start;
-	gap: 0;
-	overflow-x: auto;
-	overflow-y: hidden;
-}
-
-.instance-list-item-upper-details {
-	max-width: 10rem;
+.instance-list-item-name {
 	text-wrap: nowrap;
-	overflow-x: hidden;
 }
 
-.instance-list-item-lower-details {
+.instance-list-item-bottom {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	border-top: var(--border) solid var(--bg3);
+
 	color: var(--fg3);
-	gap: 0.7rem;
-	font-size: 0.9rem;
-}
 
-.instance-list-item-plugin {
-	color: var(--fg);
-	margin-right: -0.3rem;
-	transform: translateY(-1px);
+	transition: border-color 0.25s;
 }
 
 .instance-list-item:hover {
@@ -94,19 +87,48 @@
 	background-color: var(--instancebg);
 }
 
+.instance-list-item.instance.selected .instance-list-item-bottom {
+	border-top-color: var(--instance);
+	color: var(--instance);
+}
+
 .instance-list-item.template.selected {
 	border-color: var(--template);
 	color: var(--template);
 	background-color: var(--templatebg);
 }
 
-.instance-list-icon {
-	width: 2.75rem;
+.instance-list-item.template.selected .instance-list-item-bottom {
+	border-top-color: var(--template);
+	color: var(--template);
+}
+
+.instance-list-icon-container {
 	margin-left: 0.5rem;
+	width: 2.75rem;
+	position: relative;
+}
+
+.instance-list-icon {
+	width: 100%;
 }
 
 .instance-list-pin {
 	position: absolute;
-	right: 0.8rem;
-	z-index: 2;
+	width: 100%;
+	height: 100%;
+}
+
+.instance-list-item-plugin {
+	position: absolute;
+	top: -0.5rem;
+	right: -0.5rem;
+
+	width: 1.5rem;
+	aspect-ratio: 1;
+
+	color: var(--plugin);
+	background-color: var(--pluginbg);
+	border: var(--border) solid var(--plugin);
+	border-radius: var(--round2);
 }

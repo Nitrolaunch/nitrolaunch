@@ -53,6 +53,7 @@ import MigratePrompt from "../../components/instance/MigratePrompt";
 import Tip from "../../components/dialog/Tip";
 import FloatingTabs from "../../components/input/select/FloatingTabs";
 import { InstanceConfigMode } from "./read_write";
+import { getLoaderDisplayName, Loader } from "../../package";
 
 export default function InstanceList(props: InstanceListProps) {
 	onMount(() => loadPagePlugins("instances"));
@@ -65,7 +66,7 @@ export default function InstanceList(props: InstanceListProps) {
 		SelectedItem | undefined
 	>(undefined);
 	const [selectedSection, setSelectedSection] = createSignal<string | null>(
-		null
+		null,
 	);
 	const [instancesOrTemplates, setInstancesOrTemplates] = createSignal<
 		"instance" | "template"
@@ -116,7 +117,7 @@ export default function InstanceList(props: InstanceListProps) {
 					newInstances.push(instance);
 				} catch (e) {
 					console.error(
-						"Failed to fetch instance '" + instanceId + "' from map"
+						"Failed to fetch instance '" + instanceId + "' from map",
 					);
 				}
 			}
@@ -158,7 +159,7 @@ export default function InstanceList(props: InstanceListProps) {
 		async () => {
 			return getDropdownButtons("add_template_or_instance");
 		},
-		{ initialValue: [] }
+		{ initialValue: [] },
 	);
 
 	return (
@@ -207,13 +208,13 @@ export default function InstanceList(props: InstanceListProps) {
 											setInstanceConfigModal(
 												undefined,
 												InstanceConfigMode.Instance,
-												true
+												true,
 											);
 										} else if (selection == "create_template") {
 											setInstanceConfigModal(
 												undefined,
 												InstanceConfigMode.Template,
-												true
+												true,
 											);
 										} else if (selection == "import_instance") {
 											setImportPromptVisible(true);
@@ -368,19 +369,19 @@ function Section(props: SectionProps) {
 							side="top"
 						>
 							<div
-								class="shadow instance-list-item bubble-hover-small"
+								class="cont shadow instance-list-item-like bubble-hover-small"
 								style="background-color:var(--bg)"
 								onclick={() => {
 									setInstanceConfigModal(
 										undefined,
 										InstanceConfigMode.GlobalTemplate,
-										false
+										false,
 									);
 								}}
 								data-section={props.id}
 								data-index={props.items == undefined ? 0 : props.items.length}
 							>
-								<div class="cont instance-list-icon">
+								<div class="cont instance-list-icon-container">
 									<Icon icon={Globe} size="1.5rem" />
 								</div>
 								<div style="" class="bold">
@@ -407,7 +408,7 @@ function Section(props: SectionProps) {
 											isEditable: item.is_editable,
 											isDeletable: item.is_deletable,
 										},
-										props.id
+										props.id,
 									);
 								}}
 								sectionKind={props.kind}
@@ -422,19 +423,19 @@ function Section(props: SectionProps) {
 					{/* Button for creating a new instance */}
 					<Show when={props.kind == "all" || props.kind == "templates"}>
 						<div
-							class="shadow instance-list-item bubble-hover-small noselect"
+							class="cont shadow instance-list-item-like bubble-hover-small noselect"
 							style="background-color:var(--bg)"
 							onclick={() => {
 								setInstanceConfigModal(
 									undefined,
 									props.itemType as InstanceConfigMode,
-									true
+									true,
 								);
 							}}
 							data-section={props.id}
 							data-index={props.items == undefined ? 0 : props.items.length}
 						>
-							<div class="cont instance-list-icon">
+							<div class="cont instance-list-icon-container">
 								<Icon icon={Plus} size="1.5rem" />
 							</div>
 							<div style="" class="bold">
@@ -488,7 +489,7 @@ function Item(props: ItemProps) {
 
 	return (
 		<div
-			class={`shadow bubble-hover-small instance-list-item noselect ${
+			class={`shadow bubble-hover-small instance-list-item ${
 				props.selected ? "selected" : ""
 			} ${props.itemKind}`}
 			onClick={() => {
@@ -501,7 +502,7 @@ function Item(props: ItemProps) {
 							setInstanceConfigModal(
 								props.instance.id,
 								InstanceConfigMode.Template,
-								false
+								false,
 							);
 						}
 					}
@@ -516,82 +517,88 @@ function Item(props: ItemProps) {
 			data-index={props.index}
 			data-section={props.section}
 		>
-			{/* Don't show the pin button when the instance is already pinned and we aren't in the pinned section */}
-			<Show
-				when={
-					isHovered() &&
-					props.itemKind == "instance" &&
-					!(props.instance.pinned && props.sectionKind !== "pinned")
-				}
-			>
-				<div class="instance-list-pin">
-					<IconButton
-						icon={Pin}
-						size="1.7rem"
-						color="transparent"
-						selectedColor="var(--instance)"
-						iconColor={
-							props.sectionKind == "pinned" ? "var(--bg2)" : "var(--fg)"
-						}
-						onClick={(e) => {
-							// Don't select the instance
-							e.stopPropagation();
-							invoke("pin_instance", {
-								instanceId: props.instance.id,
-								pin: !props.instance.pinned,
-							}).then(props.updateList, (e) => {
-								errorToast("Failed to pin instance: " + e);
-							});
-						}}
-						selected={props.sectionKind === "pinned"}
-						hoverBackground="var(--bg4)"
-						circle
-					/>
+			<Show when={props.instance.from_plugin}>
+				<div
+					class="cont instance-list-item-plugin"
+					data-tip="Created by plugin"
+				>
+					<Icon icon={Jigsaw} size="1rem" />
 				</div>
 			</Show>
-			{icon}
-			<div class="cont col instance-list-item-details">
-				<div class="cont start instance-list-item-upper-details">
-					<span class="bold" title={props.instance.id}>
-						{props.instance.name !== null
-							? props.instance.name
-							: props.instance.id}
-					</span>
-					<Show when={props.instance.name !== null}>
-						<div class="cont start" style="color:var(--fg3)">
-							{props.instance.id}
-						</div>
+			<div class="cont start instance-list-item-top">
+				<div class="cont instance-list-icon-container">
+					<Switch>
+						{/* Don't show the pin button when the instance is already pinned and we aren't in the pinned section */}
+						<Match
+							when={
+								isHovered() &&
+								props.itemKind == "instance" &&
+								!(props.instance.pinned && props.sectionKind !== "pinned")
+							}
+						>
+							<div class="cont instance-list-pin">
+								<IconButton
+									icon={Pin}
+									size="1.7rem"
+									color="transparent"
+									selectedColor="var(--instance)"
+									iconColor={
+										props.sectionKind == "pinned" ? "var(--bg2)" : "var(--fg)"
+									}
+									onClick={(e) => {
+										// Don't select the instance
+										e.stopPropagation();
+										invoke("pin_instance", {
+											instanceId: props.instance.id,
+											pin: !props.instance.pinned,
+										}).then(props.updateList, (e) => {
+											errorToast("Failed to pin instance: " + e);
+										});
+									}}
+									selected={props.sectionKind === "pinned"}
+									hoverBackground="var(--bg4)"
+									circle
+								/>
+							</div>
+						</Match>
+						<Match when={true}>{icon}</Match>
+					</Switch>
+				</div>
+				<span class="bold instance-list-item-name" title={props.instance.id}>
+					{props.instance.name !== null
+						? props.instance.name
+						: props.instance.id}
+				</span>
+			</div>
+			<div class="cont subtext instance-list-item-bottom">
+				<div class="cont" style="gap:0.3rem">
+					<Show when={props.instance.side != undefined}>
+						<Switch>
+							<Match when={props.instance.side == "client"}>
+								<Icon icon={Controller} size="1.2rem" />
+								<span style="transform:translateY(0.1em)">Client</span>
+							</Match>
+							<Match when={props.instance.side == "server"}>
+								<Icon icon={Server} size="1rem" />
+								<span style="transform:translateY(0.1em)">Server</span>
+							</Match>
+						</Switch>
 					</Show>
 				</div>
-				<div class="cont start bold instance-list-item-lower-details">
-					<Show when={props.instance.from_plugin}>
-						<div class="cont instance-list-item-plugin">
-							<div class="cont" style="color:var(--plugin)">
-								<Icon icon={Jigsaw} size="1rem" />
-							</div>
-						</div>
+				<div class="cont" style="gap:0.3rem">
+					<Show when={props.instance.loader != undefined}>
+						<Icon icon={Honeycomb} size="1rem" />
+						<span style="transform:translateY(0.1em)">
+							{getLoaderDisplayName(props.instance.loader as Loader)}
+						</span>
 					</Show>
-					<Show when={props.instance.side != undefined}>
-						<div class="cont" style="gap:0.3rem">
-							<Switch>
-								<Match when={props.instance.side == "client"}>
-									<Icon icon={Controller} size="1.2rem" />
-									<span style="transform:translateY(0.1em)">Client</span>
-								</Match>
-								<Match when={props.instance.side == "server"}>
-									<Icon icon={Server} size="1rem" />
-									<span style="transform:translateY(0.1em)">Server</span>
-								</Match>
-							</Switch>
-						</div>
-					</Show>
+				</div>
+				<div class="cont" style="gap:0.3rem">
 					<Show when={props.instance.version != undefined}>
-						<div class="cont" style="gap:0.3rem">
-							<Icon icon={Tag} size="0.8rem" />
-							<span style="transform:translateY(0.1em)">
-								{props.instance.version}
-							</span>
-						</div>
+						<Icon icon={Tag} size="0.8rem" />
+						<span style="transform:translateY(0.1em)">
+							{props.instance.version}
+						</span>
 					</Show>
 				</div>
 			</div>

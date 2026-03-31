@@ -18,7 +18,6 @@ import { setInstanceConfigModal } from "../../App";
 import { InstanceConfigMode } from "../../pages/instance/read_write";
 import Settings from "../../pages/Settings";
 import { Portal } from "solid-js/web";
-import IconTextButton from "../input/button/IconTextButton";
 
 export default function Sidebar(props: SidebarProps) {
 	let [extraButtons, _] = createResource(async () => {
