@@ -34,6 +34,7 @@ import { open } from "@tauri-apps/plugin-shell";
 import PackageDiffsPrompt, {
 	PackageDiff,
 } from "./components/package/PackageDiffsPrompt";
+import Tips from "./components/dialog/Tips";
 
 export default function App() {
 	const [footerData, setFooterData] = createSignal<FooterData>({
@@ -159,6 +160,7 @@ function Layout(props: LayoutProps) {
 	return (
 		<>
 			<Global />
+			<Tips />
 			<NavBar
 				onSidebarToggle={() => setShowSidebar(!showSidebar())}
 				onSidebarClose={() => setShowSidebar(false)}

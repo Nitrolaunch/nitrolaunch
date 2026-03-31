@@ -1,37 +1,23 @@
-import { createSignal, JSX, Show } from "solid-js";
+import { JSX } from "solid-js";
 import "./Tip.css";
 
 export default function Tip(props: TipProps) {
-	let [visible, setVisible] = createSignal(false);
-
-	let side = props.side == undefined ? "right" : props.side;
 	let fullwidth = props.fullwidth == undefined ? false : props.fullwidth;
 
-	let zIndex = props.zIndex == undefined ? "" : `z-index: ${props.zIndex}`;
-
 	return (
-		<div class="tip-container" style={`${fullwidth ? "width:100%" : ""}`}>
-			<div
-				onmouseenter={() => setVisible(true)}
-				onmouseleave={() => setVisible(false)}
-				class={`${props.cont == true ? "cont" : ""}`}
-				style={`${fullwidth ? "width:100%" : ""}`}
-			>
-				{props.children}
-			</div>
-			<Show when={visible()}>
-				<div class={`fade-in pop-in-fast tip ${side}`} style={`${zIndex}`}>
-					<div class={`shadow cont tip-body ${side}`}>{props.tip}</div>
-					<div class={`shadow tip-arrow ${side}`}></div>
-				</div>
-			</Show>
+		<div
+			class={`${props.cont == true ? "cont" : ""}`}
+			style={`${fullwidth ? "width:100%" : ""}`}
+			data-tip={props.tip}
+		>
+			{props.children}
 		</div>
 	);
 }
 
 export interface TipProps {
 	children: JSX.Element;
-	tip: JSX.Element;
+	tip: string;
 	side?: TipSide;
 	fullwidth?: boolean;
 	zIndex?: string;

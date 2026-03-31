@@ -235,9 +235,9 @@ function Plugin(props: PluginProps) {
 					<div class="plugin-id">{props.info.id}</div>
 					<div class="cont plugin-official">
 						<Show when={props.isOfficial}>
-							<Tip tip="Official Nitrolaunch plugin" side="top" cont>
+							<div class="cont" data-tip="Official Nitrolaunch plugin">
 								<Icon icon={Check} size="1rem" />
-							</Tip>
+							</div>
 						</Show>
 					</div>
 				</div>
@@ -341,10 +341,7 @@ function Plugin(props: PluginProps) {
 					</Show>
 					<Switch>
 						<Match when={props.info.installed}>
-							<Tip
-								tip="Uninstall"
-								side="top"
-							>
+							<Tip tip="Uninstall" side="top">
 								<IconButton
 									icon={Trash}
 									size="1.5rem"
@@ -373,9 +370,7 @@ function Plugin(props: PluginProps) {
 						<Match when={!props.info.installed}>
 							<IconTextButton
 								icon={Download}
-								text={inProgress()
-									? "Installing..."
-									: "Install"}
+								text={inProgress() ? "Installing..." : "Install"}
 								color="var(--plugin)"
 								bgColor="var(--pluginbg)"
 								size="1.5rem"

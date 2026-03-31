@@ -227,7 +227,7 @@ export default function ViewPackage(props: ViewPackageProps) {
 			}
 		>
 			<div class="cont col" style="width:100%;position:relative">
-				<Show when={meta()!.banner != undefined}>
+				<Show when={meta()!.banner != undefined && !props.small}>
 					<div id="package-banner-container">
 						<img
 							src={meta()!.banner}

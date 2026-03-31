@@ -32,10 +32,12 @@ export default function InlineSelect(props: InlineSelectProps) {
 
 	return (
 		<div
-			class={`${connected ? "shadow" : ""} inline-select ${connected ? "connected" : "disconnected"
-				}`}
-			style={`display:${grid ? "grid" : "flex"
-				};grid-template-columns:repeat(${columns()}, minmax(0, 1fr))`}
+			class={`${connected ? "shadow" : ""} inline-select ${
+				connected ? "connected" : "disconnected"
+			}`}
+			style={`display:${
+				grid ? "grid" : "flex"
+			};grid-template-columns:repeat(${columns()}, minmax(0, 1fr))`}
 		>
 			<Show when={props.allowEmpty == undefined ? false : props.allowEmpty}>
 				<InlineSelectOption
@@ -46,9 +48,7 @@ export default function InlineSelect(props: InlineSelectProps) {
 					connected={connected}
 					onSelect={selectFunction}
 					selected={props.selected}
-					isLast={
-						props.options.length == 0
-					}
+					isLast={props.options.length == 0}
 					isFirst={true}
 					class={props.optionClass}
 					solidSelect={solidSelect}
@@ -134,10 +134,13 @@ function InlineSelectOption(props: OptionProps) {
 
 	let contents = (
 		<div
-			class={`cont inline-select-option ${props.connected ? "connected" : "disconnected shadow bubble-hover"
-				} ${props.class == undefined ? "" : props.class} ${isSelected() ? "selected" : ""
-				} ${props.isLast ? "last" : "not-last"} ${props.isFirst ? "" : "not-first"
-				}`}
+			class={`cont inline-select-option ${
+				props.connected ? "connected" : "disconnected shadow bubble-hover"
+			} ${props.class == undefined ? "" : props.class} ${
+				isSelected() ? "selected" : ""
+			} ${props.isLast ? "last" : "not-last"} ${
+				props.isFirst ? "" : "not-first"
+			}`}
 			style={`border-color:${borderColor()};color:${textColor()};background-color:${backgroundColor()}`}
 			onclick={() => props.onSelect(props.option.value)}
 			onmouseenter={() => setIsHovered(true)}
@@ -166,7 +169,7 @@ function InlineSelectOption(props: OptionProps) {
 	} else {
 		return (
 			<Tip
-				tip={<div style="color:var(--fg)">{props.option.tip}</div>}
+				tip={props.option.tip}
 				side={props.option.tipSide == undefined ? "top" : props.option.tipSide}
 			>
 				{contents}
@@ -193,6 +196,6 @@ export interface Option {
 	color?: string;
 	selectedTextColor?: string;
 	selectedBgColor?: string;
-	tip?: JSX.Element;
+	tip?: string;
 	tipSide?: TipSide;
 }

@@ -1,0 +1,13 @@
+#tip {
+	position: fixed;
+	z-index: 100;
+
+	padding: 0.5rem;
+	margin: 1rem;
+
+	background-color: var(--bg);
+	border: var(--border) solid var(--bg3);
+	border-radius: var(--round2);
+
+	box-shadow: var(--shadow-offset) var(--shadow-offset) var(--transparent-dark);
+}
