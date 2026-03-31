@@ -7,18 +7,18 @@ import {
 	Show,
 } from "solid-js";
 import "./Sidebar.css";
-import { Box, Gear, Home, Jigsaw, Menu } from "../../icons";
+import { Box, Gear, Menu } from "../../icons";
 import { Location, useNavigate } from "@solidjs/router";
 import { invoke } from "@tauri-apps/api/core";
 import { getInstanceIconSrc, stringCompare } from "../../utils";
 import { listen, UnlistenFn } from "@tauri-apps/api/event";
 import { InstanceInfo, InstanceOrTemplate } from "../../types";
 import Icon from "../Icon";
-import IconButton from "../input/button/IconButton";
 import { setInstanceConfigModal } from "../../App";
 import { InstanceConfigMode } from "../../pages/instance/read_write";
 import Settings from "../../pages/Settings";
 import { Portal } from "solid-js/web";
+import IconTextButton from "../input/button/IconTextButton";
 
 export default function Sidebar(props: SidebarProps) {
 	let [extraButtons, _] = createResource(async () => {
@@ -105,86 +105,35 @@ export default function Sidebar(props: SidebarProps) {
 
 	return (
 		<div
+			class="cont col start"
 			id="sidebar"
 			style={`${
 				props.visible ? "" : "width:0px;border-right-color:var(--bg);opacity:0%"
 			}`}
 			onmouseleave={() => props.setVisible(false)}
 		>
-			<div
-				class="cont"
-				style="padding:0.25rem;width:var(--width);box-sizing:border-box"
-			></div>
-			<div
-				class="split fullwidth"
-				style="padding:0.55rem;box-sizing:border-box"
-			>
-				<div class="cont start">
-					<div class="cont">
-						<IconButton
-							icon={Gear}
-							size="1.75rem"
-							color="var(--bg2)"
-							iconColor="var(--fg)"
-							selectedColor="var(--accent)"
-							onClick={() => {
-								setSettingsVisible(true);
-								props.setVisible(false);
-							}}
-							selected={false}
-							hoverBackground="var(--bg3)"
-							border="var(--bg3)"
-							hoverBorder="var(--bg4)"
-						/>
+			<div class="cont">
+				<Show when={nitroVersion() != undefined}>
+					<div class="cont bold" style="color:var(--fg3)">
+						v{nitroVersion()}
 					</div>
-				</div>
-				<div class="cont end">
-					<Show when={nitroVersion() != undefined}>
-						<div class="cont bold" style="color:var(--fg3)">
-							v{nitroVersion()}
-						</div>
-					</Show>
-				</div>
+				</Show>
 			</div>
-			<div id="sidebar-items">
+			<div class="cont col" id="sidebar-items">
 				<SidebarItem
-					href="/"
+					href="/docs"
 					location={props.location}
-					selectedPath="/"
 					color="var(--instance)"
 					selectedBg="var(--instancebg)"
-					closeSidebar={() => props.setVisible(false)}
-				>
-					<div class="cont" style="margin-top:-0.1rem">
-						<Home />
-					</div>
-					<div class="cont">Home</div>
-				</SidebarItem>
-				<SidebarItem
-					href="/packages/0"
-					location={props.location}
-					selectedPathStart="/packages"
-					color="var(--package)"
-					selectedBg="var(--packagebg)"
+					onClick={() => {
+						setSettingsVisible(true);
+					}}
 					closeSidebar={() => props.setVisible(false)}
 				>
 					<div class="cont">
-						<Box />
+						<Icon icon={Gear} size="1rem" />
 					</div>
-					<div class="cont">Packages</div>
-				</SidebarItem>
-				<SidebarItem
-					href="/plugins"
-					location={props.location}
-					selectedPathStart="/plugins"
-					color="var(--plugin)"
-					selectedBg="var(--pluginbg)"
-					closeSidebar={() => props.setVisible(false)}
-				>
-					<div class="cont" style="margin-top:-0.1rem;">
-						<Jigsaw />
-					</div>
-					<div class="cont">Plugins</div>
+					<div class="cont">Settings</div>
 				</SidebarItem>
 				<SidebarItem
 					href="/docs"
@@ -195,7 +144,7 @@ export default function Sidebar(props: SidebarProps) {
 					closeSidebar={() => props.setVisible(false)}
 				>
 					<div class="cont">
-						<Menu />
+						<Icon icon={Menu} size="1rem" />
 					</div>
 					<div class="cont">Documentation</div>
 				</SidebarItem>
@@ -294,7 +243,7 @@ function SidebarItem(props: SidebarItemProps) {
 	return (
 		<div
 			class={`cont bubble-hover sidebar-item ${selected() ? "selected" : ""}`}
-			style={`border-right-color:${props.color};${color()};${bgColor()}`}
+			style={`${selected() ? `border-color:${props.color};` : ""}${color()};${bgColor()}`}
 			onclick={() => {
 				if (props.onClick != undefined) {
 					props.onClick();

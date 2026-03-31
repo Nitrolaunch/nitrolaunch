@@ -5,7 +5,7 @@
 	background-color: var(--bg);
 	left: 0px;
 	top: 0px;
-	z-index: 1000;
+	z-index: 5;
 	box-sizing: border-box;
 	user-select: none;
 	-webkit-user-select: none;

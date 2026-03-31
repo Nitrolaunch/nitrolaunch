@@ -13,7 +13,6 @@ import {
 import "./Toasts.css";
 import Icon from "../Icon";
 import { Check, Copy, Delete, Error, Notification, Warning } from "../../icons";
-import IconAndText from "../utility/IconAndText";
 import * as clipboard from "@tauri-apps/plugin-clipboard-manager";
 
 export default function Toasts() {
@@ -112,30 +111,7 @@ export default function Toasts() {
 				class={`cont bubble-hover ${showRecentToasts() ? "selected" : ""}`}
 				onclick={() => setShowRecentToasts(!showRecentToasts())}
 			>
-				<Switch>
-					<Match when={!showRecentToasts()}>
-						<IconAndText
-							icon={Notification}
-							text={`${recentToastCount()} ${
-								recentToastCount() == 1 ? "Alert" : "Alerts"
-							}`}
-						/>
-					</Match>
-					<Match when={showRecentToasts()}>
-						<IconAndText
-							icon={Delete}
-							text={`${recentToastCount()} ${
-								recentToastCount() == 1 ? "Alert" : "Alerts"
-							}`}
-							onIconClick={() => {
-								setRecentToastCount(0);
-								setRecentToasts([]);
-							}}
-							iconTip="Clear All"
-							iconTipSide="left"
-						/>
-					</Match>
-				</Switch>
+				<Icon icon={Notification} size="1rem" />
 			</div>
 			<div id="toasts">
 				<Show when={visible()}>
