@@ -163,7 +163,7 @@ export default function InstanceConfigModal(props: InstanceConfigProps) {
 						id: id(),
 						instanceOrTemplate: props.params.mode,
 					});
-				} catch (e) {}
+				} catch (e) { }
 			}
 		}
 	});
@@ -502,9 +502,9 @@ export default function InstanceConfigModal(props: InstanceConfigProps) {
 			jvmArgs() == undefined && gameArgs() == undefined
 				? undefined
 				: {
-						jvm: jvmArgs(),
-						game: gameArgs(),
-					};
+					jvm: jvmArgs(),
+					game: gameArgs(),
+				};
 
 		let overrides =
 			packageOverrides().suppress == undefined ? undefined : packageOverrides();
@@ -817,14 +817,14 @@ export default function InstanceConfigModal(props: InstanceConfigProps) {
 									templates() == undefined
 										? []
 										: templates()!.map((x) => {
-												return {
-													value: x.id,
-													contents: (
-														<div>{x.name == undefined ? x.id : x.name}</div>
-													),
-													color: "var(--template)",
-												};
-											})
+											return {
+												value: x.id,
+												contents: (
+													<div>{x.name == undefined ? x.id : x.name}</div>
+												),
+												color: "var(--template)",
+											};
+										})
 								}
 								selected={from()}
 								onChangeMulti={(x) => {
@@ -944,9 +944,8 @@ export default function InstanceConfigModal(props: InstanceConfigProps) {
 									/>
 									<span
 										class="bold"
-										style={`color:${
-											releaseVersionsOnly() ? "var(--fg3)" : "var(--instance)"
-										}`}
+										style={`color:${releaseVersionsOnly() ? "var(--fg3)" : "var(--instance)"
+											}`}
 									>
 										Include Snapshots
 									</span>
@@ -1021,26 +1020,21 @@ export default function InstanceConfigModal(props: InstanceConfigProps) {
 					derivedGlobalPackages={derivedPackages()[0]}
 					derivedClientPackages={derivedPackages()[1]}
 					derivedServerPackages={derivedPackages()[2]}
-					onRemove={(pkg, category) => {
+					onRemove={(pkg) => {
 						let func = (packages: PackageConfig[]) =>
 							packages.filter((x) => !packageConfigsEqual(x, pkg));
 
-						if (category == "global") {
-							setGlobalPackages(func);
-						} else if (category == "client") {
-							setClientPackages(func);
-						} else if (category == "server") {
-							setServerPackages(func);
-						}
+						setGlobalPackages(func);
+						setClientPackages(func);
+						setServerPackages(func);
 
 						setIsDirty(true);
 					}}
 					onAdd={(pkg, category) => {
 						let func = (packages: PackageConfig[]) => {
 							if (!packages.some((x) => packageConfigsFullyEqual(x, pkg))) {
-								packages.push(pkg);
 								// Force update
-								packages = packages.concat([]);
+								packages = packages.concat([pkg]);
 							}
 							return packages;
 						};
@@ -1053,18 +1047,8 @@ export default function InstanceConfigModal(props: InstanceConfigProps) {
 							setServerPackages(func);
 						}
 
-						setIsDirty(true);
-					}}
-					setGlobalPackages={(packages) => {
-						setGlobalPackages(packages);
-						setIsDirty(true);
-					}}
-					setClientPackages={(packages) => {
-						setClientPackages(packages);
-						setIsDirty(true);
-					}}
-					setServerPackages={(packages) => {
-						setServerPackages(packages);
+						console.log(globalPackages(), clientPackages(), serverPackages());
+
 						setIsDirty(true);
 					}}
 					minecraftVersion={

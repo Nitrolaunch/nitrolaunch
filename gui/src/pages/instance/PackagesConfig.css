@@ -43,7 +43,7 @@
 
 	display: grid;
 	grid-template-columns: minmax(0, 4rem) minmax(0, 2fr) minmax(0, 2fr) minmax(0,
-			0.5fr);
+			1fr);
 
 	background-color: var(--bg0);
 	border: var(--border) solid var(--bg3);

@@ -28,6 +28,7 @@ import {
 } from "../../utils";
 import IconButton from "../../components/input/button/IconButton";
 import {
+	Controller,
 	Delete,
 	Dumbbell,
 	Edit,
@@ -35,6 +36,7 @@ import {
 	Plus,
 	Popout,
 	Search,
+	Server,
 	Trash,
 	Upload,
 } from "../../icons";
@@ -282,7 +284,7 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 				}
 			});
 		},
-		{ initialValue: () => {} },
+		{ initialValue: () => { } },
 	);
 
 	onCleanup(() => unlisten());
@@ -547,8 +549,13 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 											};
 											props.onAdd(pkgRequestToString(req), category);
 										}}
+										onCategoryChange={(category) => {
+											props.onRemove(pkg.pkg);
+											props.onAdd(pkg.pkg, category);
+										}}
 										setOverrides={props.setOverrides}
 										setDirty={props.onChange}
+										isTemplate={props.isTemplate}
 									/>
 								</Show>
 							);
@@ -639,11 +646,8 @@ export interface PackagesConfigProps {
 	derivedClientPackages: PackageConfig[];
 	derivedServerPackages: PackageConfig[];
 	isTemplate: boolean;
-	onRemove: (pkg: string, category: ConfiguredPackageCategory) => void;
+	onRemove: (pkg: string) => void;
 	onAdd: (pkg: string, category: ConfiguredPackageCategory) => void;
-	setGlobalPackages: (packages: PackageConfig[]) => void;
-	setClientPackages: (packages: PackageConfig[]) => void;
-	setServerPackages: (packages: PackageConfig[]) => void;
 	minecraftVersion?: string;
 	loader?: Loader;
 	showBrowseButton: boolean;
@@ -669,6 +673,8 @@ function ConfiguredPackage(props: ConfiguredPackageProps) {
 		props.meta == undefined || props.meta.icon == undefined
 			? "/icons/default_instance.png"
 			: props.meta.icon;
+
+	let category = () => props.pkg.isClient ? "client" : props.pkg.isServer ? "server" : "global";
 
 	return (
 		<div
@@ -729,6 +735,30 @@ function ConfiguredPackage(props: ConfiguredPackageProps) {
 			</div>
 			<div class="cont configured-package-controls">
 				<Show when={isHovered()}>
+					<Show when={category() == "client"}>
+						<Tip tip="Client-Only" side="top">
+							<IconButton
+								icon={Controller}
+								size="1.5rem"
+								color="var(--instancebg)"
+								border="var(--instance)"
+								iconColor="var(--instance)"
+								onClick={() => { }}
+							/>
+						</Tip>
+					</Show>
+					<Show when={category() == "server"}>
+						<Tip tip="Server-Only" side="top">
+							<IconButton
+								icon={Server}
+								size="1.5rem"
+								color="var(--instancebg)"
+								border="var(--instance)"
+								iconColor="var(--instance)"
+								onClick={() => { }}
+							/>
+						</Tip>
+					</Show>
 					<IconButton
 						icon={Popout}
 						size="24px"
@@ -753,12 +783,7 @@ function ConfiguredPackage(props: ConfiguredPackageProps) {
 							onClick={(e) => {
 								e.preventDefault();
 								e.stopPropagation();
-								let category: ConfiguredPackageCategory = props.pkg.isClient
-									? "client"
-									: props.pkg.isServer
-										? "server"
-										: "global";
-								props.onRemove(props.pkg.pkg, category);
+								props.onRemove(props.pkg.pkg);
 								(e.target! as any).parentElement.parentElement.remove();
 							}}
 							selected={false}
@@ -778,17 +803,19 @@ export interface ConfiguredPackageProps {
 	suppressed: Accessor<boolean>;
 	forced: Accessor<boolean>;
 	onClick: (props: ConfiguredPackageProps) => void;
-	onRemove: (pkg: string, category: ConfiguredPackageCategory) => void;
+	onRemove: (pkg: string) => void;
 	onVersionChange: (version: string | undefined) => void;
+	onCategoryChange: (category: ConfiguredPackageCategory) => void;
 	setOverrides: Setter<PackageOverrides>;
 	setDirty: () => void;
+	isTemplate: boolean;
 }
 
 export type PackageConfig =
 	| string
 	| {
-			id: string;
-	  };
+		id: string;
+	};
 
 // Gets the PkgRequest from a PackageConfig
 export function getPackageConfigRequest(config: PackageConfig) {
@@ -838,6 +865,6 @@ export interface InstalledPackage {
 	isDerived: boolean;
 }
 
-interface LockfileAddon {}
+interface LockfileAddon { }
 
 export type ConfiguredPackageCategory = "global" | "client" | "server";

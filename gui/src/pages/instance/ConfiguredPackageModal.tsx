@@ -1,4 +1,4 @@
-import { createMemo, createResource, Show } from "solid-js";
+import { createEffect, createMemo, createResource, createSignal, Show } from "solid-js";
 import Modal from "../../components/dialog/Modal";
 import { ArrowLeft, Box, Delete, Dumbbell, Popout, Trash } from "../../icons";
 import {
@@ -15,11 +15,24 @@ import { useNavigate } from "@solidjs/router";
 import Icon from "../../components/Icon";
 import InlineSelect from "../../components/input/select/InlineSelect";
 import { canonicalizeListOrSingle } from "../../utils/values";
+import Dropdown from "../../components/input/select/Dropdown";
 
 export default function ConfiguredPackageModal(
 	props: ConfiguredPackageModalProps
 ) {
 	let navigate = useNavigate();
+
+	let [category, setCategory] = createSignal<ConfiguredPackageCategory>("global");
+
+	createEffect(() => {
+		if (props.props != undefined) {
+			setCategory(props.props.pkg.isClient
+				? "client"
+				: props.props.pkg.isServer
+					? "server"
+					: "global");
+		}
+	});
 
 	let name = () =>
 		props.props == undefined
@@ -101,42 +114,64 @@ export default function ConfiguredPackageModal(
 				<div class="cont fullwidth">
 					<img id="configured-package-modal-icon" src={icon()} />
 				</div>
-				<div
-					class="cont end fullwidth"
-					id="configured-package-modal-controls"
-				>
-					<IconTextButton
-						icon={Popout}
-						text="Go to Page"
-						size="1.5rem"
-						color="var(--fg3)"
-						onClick={() => {
-							navigate(`/packages/package/${props.props!.pkg.pkg}`);
-						}}
-					/>
-					<Show
-						when={
-							!props.props!.pkg.isDerived && props.props!.pkg.isConfigured
-						}
+				<div class="cont col fullwidth" style="align-items:flex-end">
+					<div
+						class="cont end fullwidth"
+						id="configured-package-modal-controls"
 					>
 						<IconTextButton
-							icon={Trash}
-							text="Remove"
-							size="1.2rem"
-							color="var(--error)"
-							bgColor="var(--errorbg)"
+							icon={Popout}
+							text="Go to Page"
+							size="1.5rem"
+							color="var(--fg3)"
 							onClick={() => {
-								let category: ConfiguredPackageCategory = props.props!.pkg
-									.isClient
-									? "client"
-									: props.props!.pkg.isServer
-										? "server"
-										: "global";
-
-								props.props!.onRemove(props.props!.pkg.pkg, category);
+								navigate(`/packages/package/${props.props!.pkg.pkg}`);
 							}}
 						/>
-					</Show>
+						<Show
+							when={
+								!props.props!.pkg.isDerived && props.props!.pkg.isConfigured
+							}
+						>
+							<IconTextButton
+								icon={Trash}
+								text="Remove"
+								size="1.2rem"
+								color="var(--error)"
+								bgColor="var(--errorbg)"
+								onClick={() => {
+									props.props!.onRemove(props.props!.pkg.pkg);
+								}}
+							/>
+						</Show>
+					</div>
+					<div class="cont end fullwidth">
+						<div class="cont" style="width:12rem">
+							<Show when={props.props != undefined && props.props.isTemplate && false}>
+								<Dropdown
+									options={[
+										{
+											"value": "global",
+											"contents": "Global"
+										},
+										{
+											"value": "client",
+											"contents": "Client-Only"
+										},
+										{
+											"value": "server",
+											"contents": "Server-Only"
+										}
+									]}
+									selected={category()}
+									onChange={(x) => {
+										props.props!.onCategoryChange(x as ConfiguredPackageCategory);
+										setCategory(x as ConfiguredPackageCategory);
+									}}
+								/>
+							</Show>
+						</div>
+					</div>
 				</div>
 			</div>
 			<div class="cont start fullwidth" id="configured-package-modal-tags">

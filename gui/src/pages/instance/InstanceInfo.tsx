@@ -100,7 +100,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 				id: id(),
 				instanceOrTemplate: "instance",
 			});
-		} catch (e) {}
+		} catch (e) { }
 	});
 
 	let [from, setFrom] = createSignal<string[] | undefined>();
@@ -181,7 +181,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 	);
 
 	let [isRunning, setIsRunning] = createSignal(false);
-	let [unlisten, setUnlisten] = createSignal<UnlistenFn>(() => {});
+	let [unlisten, setUnlisten] = createSignal<UnlistenFn>(() => { });
 	createEffect(async () => {
 		id();
 		let unlisten = await listen(
@@ -199,7 +199,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 	});
 
 	// Gets whether the currently selected instance is launchable (it has been updated before)
-	let [unlisten2, setUnlisten2] = createSignal<UnlistenFn>(() => {});
+	let [unlisten2, setUnlisten2] = createSignal<UnlistenFn>(() => { });
 	let [isInstanceLaunchable, methods] = createResource(id, async () => {
 		let unlisten = await listen(
 			"nitro_output_finish_task",
@@ -230,7 +230,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 				},
 			);
 		},
-		{ initialValue: () => {} },
+		{ initialValue: () => { } },
 	);
 
 	onCleanup(() => {
@@ -314,7 +314,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 				props.setFooterData({
 					selectedItem: undefined,
 					mode: FooterMode.SaveInstanceConfig,
-					action: () => {},
+					action: () => { },
 				});
 			} catch (e) {
 				errorToast("Failed to save: " + e);
@@ -683,27 +683,24 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 								style={`grid-template-columns:repeat(3,minmax(0,1fr))`}
 							>
 								<div
-									class={`cont instance-tab ${
-										selectedTab() == "general" ? "selected" : ""
-									}`}
+									class={`cont instance-tab ${selectedTab() == "general" ? "selected" : ""
+										}`}
 									onclick={() => setSelectedTab("general")}
 								>
 									<Icon icon={Gear} size="1rem" />
 									General
 								</div>
 								<div
-									class={`cont instance-tab ${
-										selectedTab() == "packages" ? "selected" : ""
-									}`}
+									class={`cont instance-tab ${selectedTab() == "packages" ? "selected" : ""
+										}`}
 									onclick={() => setSelectedTab("packages")}
 								>
 									<Icon icon={Box} size="1rem" />
 									Packages
 								</div>
 								<div
-									class={`cont instance-tab ${
-										selectedTab() == "console" ? "selected" : ""
-									}`}
+									class={`cont instance-tab ${selectedTab() == "console" ? "selected" : ""
+										}`}
 									onclick={() => setSelectedTab("console")}
 								>
 									<Icon icon={Text} size="1rem" />
@@ -724,17 +721,13 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 										derivedClientPackages={derivedClientPackages()}
 										derivedServerPackages={derivedServerPackages()}
 										isTemplate={false}
-										onRemove={(pkg, category) => {
+										onRemove={(pkg) => {
 											let func = (packages: PackageConfig[]) =>
 												packages.filter((x) => !packageConfigsEqual(x, pkg));
 
-											if (category == "global") {
-												setGlobalPackages(func);
-											} else if (category == "client") {
-												setClientPackages(func);
-											} else if (category == "server") {
-												setServerPackages(func);
-											}
+											setGlobalPackages(func);
+											setClientPackages(func);
+											setServerPackages(func);
 
 											setDirty();
 										}}
@@ -762,9 +755,6 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 
 											setDirty();
 										}}
-										setGlobalPackages={() => {}}
-										setClientPackages={() => {}}
-										setServerPackages={() => {}}
 										minecraftVersion={instance()!.version}
 										loader={
 											parseVersionedString(
