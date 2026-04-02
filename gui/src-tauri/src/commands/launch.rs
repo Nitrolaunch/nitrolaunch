@@ -1,11 +1,14 @@
-use crate::commands::instance::update_instance_impl;
+use crate::commands::instance::{update_instance_impl, MakeSend};
 use crate::data::LauncherData;
+use crate::get_ms_client_id;
 use crate::{output::LauncherOutput, State};
 use anyhow::{bail, Context};
 use nitrolaunch::core::io::open_named_pipe;
 use nitrolaunch::core::QuickPlayType;
 use nitrolaunch::instance::launch::LaunchSettings;
 use nitrolaunch::instance::tracking::RunningInstanceEntry;
+use nitrolaunch::instance::update::manager::UpdateSettings;
+use nitrolaunch::instance::update::InstanceUpdateContext;
 use nitrolaunch::io::lock::Lockfile;
 use nitrolaunch::plugin_crate::try_read::TryReadExt;
 use nitrolaunch::shared::id::InstanceID;
@@ -92,12 +95,32 @@ pub async fn launch_game_impl(
 
 	let paths = state.paths.clone();
 	let plugins = config.plugins.clone();
+	let packages = config.packages.clone();
+	let accounts = config.accounts.clone();
+	let prefs = config.prefs.clone();
+	let client = state.client.clone();
 	let instance_id = InstanceID::from(instance_id);
+
+	let core = config
+		.get_core(
+			Some(&get_ms_client_id()),
+			&UpdateSettings {
+				depth: UpdateDepth::Shallow,
+				offline_auth: offline,
+			},
+			&client,
+			&config.plugins,
+			&paths,
+			&mut o,
+		)
+		.await?;
+
 	o.set_instance(instance_id.clone());
 
 	let task = {
 		let instance_id = instance_id.clone();
-		tokio::spawn(async move {
+		async move {
+			let mut accounts = accounts;
 			let mut o = o;
 
 			let instance = config
@@ -105,13 +128,26 @@ pub async fn launch_game_impl(
 				.get_mut(&instance_id)
 				.context("Instance does not exist")?;
 			let settings = LaunchSettings {
-				ms_client_id: crate::get_ms_client_id(),
 				offline_auth: offline,
 				pipe_stdin: false,
 				quick_play,
 			};
+
+			let mut lock = Lockfile::open(&paths)?;
+			let mut ctx = InstanceUpdateContext {
+				packages: &packages,
+				accounts: &mut accounts,
+				plugins: &plugins,
+				prefs: &prefs,
+				paths: &paths,
+				lock: &mut lock,
+				client: &client,
+				output: &mut o,
+				core: &core,
+			};
+
 			let mut handle = instance
-				.launch(&paths, &mut config.accounts, &plugins, settings, &mut o)
+				.launch(settings, &mut ctx)
 				.await
 				.context("Failed to launch instance")?;
 
@@ -147,8 +183,10 @@ pub async fn launch_game_impl(
 			app.emit("game_finished", instance_id.to_string())?;
 
 			Ok::<(), anyhow::Error>(())
-		})
+		}
 	};
+
+	let task = tokio::spawn(unsafe { MakeSend::new(task) });
 
 	state
 		.register_task(&format!("launch_instance_{instance_id}"), task)

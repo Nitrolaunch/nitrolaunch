@@ -2,13 +2,15 @@
 pub mod manager;
 /// Updating packages on an instance
 pub mod packages;
+/// Basic setup of an instance, creating and downloading core game files
+pub mod setup;
 
 use crate::config::preferences::ConfigPreferences;
-use crate::instance::setup::setup_core;
 #[cfg(not(feature = "disable_instance_update_packages"))]
 use crate::pkg::eval::EvalConstants;
 use crate::plugin::PluginManager;
 use nitro_core::account::AccountManager;
+use nitro_core::NitroCore;
 use nitro_plugin::hook::hooks::{AfterPackagesInstalled, AfterPackagesInstalledArg};
 use nitro_shared::{translate, UpdateDepth};
 #[cfg(not(feature = "disable_instance_update_packages"))]
@@ -34,7 +36,7 @@ pub struct InstanceUpdateContext<'a, O: NitroOutput> {
 	/// The package registry
 	pub packages: &'a PkgRegistry,
 	/// The accounts
-	pub accounts: &'a AccountManager,
+	pub accounts: &'a mut AccountManager,
 	/// The plugins
 	pub plugins: &'a PluginManager,
 	/// The preferences
@@ -45,6 +47,8 @@ pub struct InstanceUpdateContext<'a, O: NitroOutput> {
 	pub lock: &'a mut Lockfile,
 	/// The reqwest client
 	pub client: &'a Client,
+	/// The NitroCore
+	pub core: &'a NitroCore,
 	/// The output object
 	pub output: &'a mut O,
 }
@@ -53,12 +57,17 @@ impl Instance {
 	/// Update this instance
 	pub async fn update<O: NitroOutput>(
 		&mut self,
-		update_packages: bool,
 		depth: UpdateDepth,
+		facets: UpdateFacets,
 		ctx: &mut InstanceUpdateContext<'_, O>,
 	) -> anyhow::Result<()> {
-		#[cfg(feature = "disable_instance_update_packages")]
-		let _update_packages = update_packages;
+		// If the instance has never been fully created, change to full update
+		let has_done_first_update = ctx.lock.has_instance_done_first_update(&self.id);
+		let depth = if !has_done_first_update {
+			UpdateDepth::Full
+		} else {
+			depth
+		};
 
 		let mut manager = UpdateManager::new(depth);
 
@@ -67,19 +76,10 @@ impl Instance {
 			StartUpdatingInstance,
 			"inst" = &self.id
 		)));
+		ctx.output.start_section();
 
-		let mut core = setup_core(
-			None,
-			&manager.settings,
-			ctx.client,
-			ctx.plugins,
-			ctx.paths,
-			ctx.output,
-		)
-		.await
-		.context("Failed to configure core")?;
-
-		let version = core
+		let version = ctx
+			.core
 			.get_version(&self.config.version, manager.settings.depth, ctx.output)
 			.await
 			.context("Failed to set up core version")?;
@@ -89,23 +89,18 @@ impl Instance {
 
 		std::mem::drop(version);
 
-		ctx.lock
-			.finish(ctx.paths)
-			.context("Failed to finish using lockfile")?;
-
 		self.setup(
 			&mut manager,
-			&mut core,
+			ctx.core,
 			&version_info,
 			ctx.plugins,
 			ctx.paths,
-			ctx.accounts,
 			ctx.output,
 		)
 		.await
 		.context("Failed to create instance")?;
 
-		if update_packages {
+		if facets.packages && depth >= UpdateDepth::Full {
 			#[cfg(not(feature = "disable_instance_update_packages"))]
 			{
 				use std::sync::Arc;
@@ -142,10 +137,6 @@ impl Instance {
 
 				all_packages.extend(packages);
 
-				ctx.lock
-					.finish(ctx.paths)
-					.context("Failed to finish using lockfile")?;
-
 				let all_packages = Vec::from_iter(all_packages);
 				let _ = print_package_support_messages(&all_packages, ctx).await;
 
@@ -177,6 +168,47 @@ impl Instance {
 		ctx.lock.update_instance_has_done_first_update(&self.id);
 		let _ = ctx.lock.finish(ctx.paths);
 
+		ctx.output.end_section();
+
 		Ok(())
+	}
+}
+
+/// Parts of an instance to update
+pub struct UpdateFacets {
+	/// Whether to update instance files
+	pub instance: bool,
+	/// Whether to update packages
+	pub packages: bool,
+}
+
+impl UpdateFacets {
+	/// Facets with all facets enabled
+	pub fn all() -> Self {
+		Self {
+			instance: true,
+			packages: true,
+		}
+	}
+
+	/// Only update packages
+	pub fn packages() -> Self {
+		Self {
+			instance: false,
+			packages: true,
+		}
+	}
+
+	/// Creates facets from flags, i.e. if any of the flags are true, turns off instance updating. If all of the flags are false, sets all of them to true
+	pub fn from_flags(packages: bool) -> Self {
+		let all_false = !packages;
+		let any_true = packages;
+
+		let packages = if all_false { true } else { packages };
+
+		Self {
+			instance: !any_true,
+			packages,
+		}
 	}
 }

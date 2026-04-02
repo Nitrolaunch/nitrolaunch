@@ -1,5 +1,5 @@
 use crate::output::{LauncherOutput, SerializableResolutionError};
-use crate::State;
+use crate::{get_ms_client_id, State};
 use anyhow::{bail, Context};
 use itertools::Itertools;
 use nitrolaunch::config::modifications::{apply_modifications_and_write, ConfigModification};
@@ -9,9 +9,8 @@ use nitrolaunch::config_crate::template::TemplateConfig;
 use nitrolaunch::core::io::json_to_file_pretty;
 use nitrolaunch::core::util::versions::MinecraftVersion;
 use nitrolaunch::instance::delete_instance_files;
-use nitrolaunch::instance::setup::setup_core;
-use nitrolaunch::instance::update::manager::{UpdateManager, UpdateSettings};
-use nitrolaunch::instance::update::InstanceUpdateContext;
+use nitrolaunch::instance::update::manager::UpdateSettings;
+use nitrolaunch::instance::update::{InstanceUpdateContext, UpdateFacets};
 use nitrolaunch::io::lock::Lockfile;
 use nitrolaunch::pkg::eval::EvalConstants;
 use nitrolaunch::plugin::PluginManager;
@@ -393,6 +392,23 @@ pub async fn update_instance_impl(
 	let client = state.client.clone();
 	let data = state.data.clone();
 	let mut lock = fmt_err(Lockfile::open(&state.paths).context("Failed to open lockfile"))?;
+
+	let core = fmt_err(
+		config
+			.get_core(
+				Some(&get_ms_client_id()),
+				&UpdateSettings {
+					depth: UpdateDepth::Full,
+					offline_auth: false,
+				},
+				&client,
+				&config.plugins,
+				&paths,
+				&mut output,
+			)
+			.await,
+	)?;
+
 	let task = {
 		let instance_id = instance_id.clone();
 		let paths = paths.clone();
@@ -404,17 +420,18 @@ pub async fn update_instance_impl(
 
 			let mut ctx = InstanceUpdateContext {
 				packages: &mut config.packages,
-				accounts: &config.accounts,
+				accounts: &mut config.accounts,
 				plugins: &config.plugins,
 				prefs: &config.prefs,
 				paths: &paths,
 				lock: &mut lock,
 				client: &client,
 				output: &mut output,
+				core: &core,
 			};
 
 			instance
-				.update(true, depth, &mut ctx)
+				.update(depth, UpdateFacets::all(), &mut ctx)
 				.await
 				.context("Failed to update instance")?;
 
@@ -451,6 +468,23 @@ pub async fn update_instance_packages(
 	let client = state.client.clone();
 	let data = state.data.clone();
 	let mut lock = fmt_err(Lockfile::open(&state.paths).context("Failed to open lockfile"))?;
+
+	let core = fmt_err(
+		config
+			.get_core(
+				Some(&get_ms_client_id()),
+				&UpdateSettings {
+					depth: UpdateDepth::Shallow,
+					offline_auth: false,
+				},
+				&client,
+				&config.plugins,
+				&paths,
+				&mut output,
+			)
+			.await,
+	)?;
+
 	let task = {
 		let instance_id = instance_id.clone();
 		let paths = paths.clone();
@@ -462,28 +496,18 @@ pub async fn update_instance_packages(
 
 			let mut ctx = InstanceUpdateContext {
 				packages: &mut config.packages,
-				accounts: &config.accounts,
+				accounts: &mut config.accounts,
 				plugins: &config.plugins,
 				prefs: &config.prefs,
 				paths: &paths,
 				lock: &mut lock,
 				client: &client,
 				output: &mut output,
+				core: &core,
 			};
 
-			let manager = UpdateManager::new(UpdateDepth::Shallow);
-
-			let core = setup_core(
-				None,
-				&manager.settings,
-				ctx.client,
-				ctx.plugins,
-				ctx.paths,
-				ctx.output,
-			)
-			.await?;
-
-			let version = core
+			let version = ctx
+				.core
 				.get_version(
 					&instance.get_config().version,
 					UpdateDepth::Shallow,
@@ -533,7 +557,7 @@ pub async fn update_instance_packages(
 	Ok(())
 }
 
-struct MakeSend<F: Future>(Pin<Box<F>>);
+pub struct MakeSend<F: Future>(Pin<Box<F>>);
 
 unsafe impl<F: Future> Send for MakeSend<F> {}
 
@@ -549,8 +573,8 @@ impl<F: Future> Future for MakeSend<F> {
 }
 
 impl<F: Future> MakeSend<F> {
-	/// SAFETY: None. The future better actually be send!z
-	unsafe fn new(f: F) -> Self {
+	/// SAFETY: None. The future better actually be send!
+	pub unsafe fn new(f: F) -> Self {
 		Self(Box::pin(f))
 	}
 }
@@ -791,18 +815,19 @@ pub async fn canonicalize_version(
 
 	// Get the latest version
 	let core = fmt_err(
-		setup_core(
-			None,
-			&UpdateSettings {
-				depth: UpdateDepth::Shallow,
-				offline_auth: true,
-			},
-			&state.client,
-			&config.plugins,
-			&state.paths,
-			&mut NoOp,
-		)
-		.await,
+		config
+			.get_core(
+				None,
+				&UpdateSettings {
+					depth: UpdateDepth::Shallow,
+					offline_auth: true,
+				},
+				&state.client,
+				&config.plugins,
+				&state.paths,
+				&mut NoOp,
+			)
+			.await,
 	)?;
 
 	let manifest = fmt_err(

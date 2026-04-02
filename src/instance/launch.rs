@@ -12,7 +12,6 @@ use sysinfo::{Pid, System};
 use anyhow::{bail, Context};
 use nitro_config::instance::{QuickPlay, WrapperCommand};
 use nitro_core::account::{AccountID, AccountManager};
-use nitro_core::auth_crate::mc::ClientId;
 use nitro_core::io::java::install::JavaInstallationKind;
 use nitro_plugin::hook::call::HookHandles;
 use nitro_plugin::hook::hooks::{
@@ -22,14 +21,13 @@ use nitro_shared::id::InstanceID;
 use nitro_shared::java_args::MemoryNum;
 use nitro_shared::output::{MessageContents, NitroOutput};
 use nitro_shared::{translate, Side, UpdateDepth};
-use reqwest::Client;
 use tokio::io::{AsyncWriteExt, Stdout};
 
 use super::tracking::RunningInstanceRegistry;
 use super::update::manager::UpdateManager;
-use crate::instance::setup::setup_core;
 use crate::instance::tracking::{is_process_alive, RunningInstanceEntry};
 use crate::instance::update::manager::UpdateSettings;
+use crate::instance::update::{InstanceUpdateContext, UpdateFacets};
 use crate::instance::world_files::WorldFilesWatcher;
 use crate::io::paths::Paths;
 use crate::plugin::PluginManager;
@@ -38,56 +36,25 @@ use super::Instance;
 
 impl Instance {
 	/// Launch the instance process
-	pub async fn launch(
+	pub async fn launch<'a, O: NitroOutput>(
 		&mut self,
-		paths: &Paths,
-		accounts: &mut AccountManager,
-		plugins: &PluginManager,
 		settings: LaunchSettings,
-		o: &mut impl NitroOutput,
+		ctx: &mut InstanceUpdateContext<'a, O>,
 	) -> anyhow::Result<InstanceHandle> {
-		o.display(MessageContents::StartProcess(translate!(
-			o,
-			StartUpdatingInstance,
-			"inst" = &self.id
-		)));
-
-		let mut manager = UpdateManager::from_settings(UpdateSettings {
+		let manager = UpdateManager::from_settings(UpdateSettings {
 			depth: UpdateDepth::Shallow,
 			offline_auth: settings.offline_auth,
 		});
-		let client = Client::new();
 
-		let mut core = setup_core(
-			Some(&settings.ms_client_id),
-			&manager.settings,
-			&client,
-			plugins,
-			paths,
-			o,
-		)
-		.await
-		.context("Failed to configure core")?;
-
-		let core_version = core
-			.get_version(&self.config.version, manager.settings.depth, o)
+		let core_version = ctx
+			.core
+			.get_version(&self.config.version, manager.settings.depth, ctx.output)
 			.await?;
 		let version_info = core_version.get_version_info();
-		std::mem::drop(core_version);
 
-		let result = self
-			.setup(
-				&mut manager,
-				&mut core,
-				&version_info,
-				plugins,
-				paths,
-				accounts,
-				o,
-			)
+		self.update(UpdateDepth::Shallow, UpdateFacets::all(), ctx)
 			.await
 			.context("Failed to update instance")?;
-		manager.add_result(result);
 
 		let hook_arg = InstanceLaunchArg {
 			id: self.id.to_string(),
@@ -104,23 +71,38 @@ impl Instance {
 		};
 
 		// Make sure that any fluff from the update gets ended
-		o.end_process();
+		ctx.output.end_process();
 
-		o.display(MessageContents::Simple(translate!(o, PreparingLaunch)));
+		ctx.output.display(MessageContents::Simple(translate!(
+			ctx.output,
+			PreparingLaunch
+		)));
 
 		// Run pre-launch hooks
-		let results = plugins
-			.call_hook(OnInstanceLaunch, &hook_arg, paths, o)
+		let results = ctx
+			.plugins
+			.call_hook(OnInstanceLaunch, &hook_arg, ctx.paths, ctx.output)
 			.await
 			.context("Failed to call on launch hook")?;
-		results.all_results(o).await?;
+		results.all_results(ctx.output).await?;
 
 		if self.dir.is_some() && !self.config.custom_launch {
-			self.launch_standard(core, hook_arg, paths, plugins, settings, accounts, o)
-				.await
+			self.launch_standard(
+				ctx.core,
+				hook_arg,
+				ctx.paths,
+				ctx.plugins,
+				settings,
+				ctx.accounts,
+				ctx.output,
+			)
+			.await
 		} else {
-			let account = accounts.get_chosen_account().map(|x| x.get_id().clone());
-			self.launch_custom(hook_arg, account, paths, plugins, o)
+			let account = ctx
+				.accounts
+				.get_chosen_account()
+				.map(|x| x.get_id().clone());
+			self.launch_custom(hook_arg, account, ctx.paths, ctx.plugins, ctx.output)
 				.await
 		}
 	}
@@ -128,7 +110,7 @@ impl Instance {
 	/// Standard Java launch
 	async fn launch_standard(
 		&mut self,
-		core: NitroCore,
+		core: &NitroCore,
 		mut hook_arg: InstanceLaunchArg,
 		paths: &Paths,
 		plugins: &PluginManager,
@@ -258,8 +240,6 @@ impl Instance {
 
 /// Settings for launch provided to the instance launch function
 pub struct LaunchSettings {
-	/// The Microsoft client ID to use
-	pub ms_client_id: ClientId,
 	/// Whether to do offline auth
 	pub offline_auth: bool,
 	/// Whether to pipe the stdin of this process into the instance process

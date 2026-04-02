@@ -1,43 +1,29 @@
-/// Creation of the client
-mod client;
-/// Creation of the server
-mod server;
-
 use std::fs;
 use std::ops::DerefMut;
 use std::path::PathBuf;
-use std::sync::Arc;
 
 use anyhow::{bail, Context};
 use nitro_config::instance::QuickPlay;
-use nitro_core::account::{Account, AccountManager};
-use nitro_core::auth_crate::mc::ClientId;
-use nitro_core::config::BrandingProperties;
+use nitro_core::account::Account;
 use nitro_core::instance::WindowResolution;
 use nitro_core::io::java::classpath::Classpath;
-use nitro_core::io::java::install::{CustomJavaFunction, CustomJavaFunctionResult};
 use nitro_core::io::json_to_file;
 use nitro_core::launch::LaunchConfiguration;
 use nitro_core::version::InstalledVersion;
 use nitro_core::{NitroCore, QuickPlayType};
-use nitro_plugin::hook::hooks::{
-	AddVersions, InstallCustomJava, InstallCustomJavaArg, OnInstanceSetup, OnInstanceSetupArg,
-	RemoveLoader,
-};
+use nitro_plugin::hook::hooks::{OnInstanceSetup, OnInstanceSetupArg, RemoveLoader};
+use nitro_shared::output::OutputProcess;
 use nitro_shared::output::{MessageContents, NitroOutput};
-use nitro_shared::output::{NoOp, OutputProcess};
+use nitro_shared::translate;
 use nitro_shared::uuid::hyphenate_uuid;
 use nitro_shared::versions::VersionInfo;
 use nitro_shared::Side;
-use nitro_shared::{translate, UpdateDepth};
-use reqwest::Client;
 
-use crate::instance::update::manager::UpdateSettings;
 use crate::io::paths::Paths;
 use crate::plugin::PluginManager;
 
-use super::update::manager::{UpdateManager, UpdateMethodResult};
-use super::{InstKind, Instance};
+use super::super::{InstKind, Instance};
+use super::manager::UpdateManager;
 
 /// The default main class for the server
 pub const DEFAULT_SERVER_MAIN_CLASS: &str = "net.minecraft.server.Main";
@@ -47,35 +33,12 @@ impl Instance {
 	pub async fn setup(
 		&mut self,
 		manager: &mut UpdateManager,
-		core: &mut NitroCore,
+		core: &NitroCore,
 		version_info: &VersionInfo,
 		plugins: &PluginManager,
 		paths: &Paths,
-		accounts: &AccountManager,
 		o: &mut impl NitroOutput,
-	) -> anyhow::Result<UpdateMethodResult> {
-		// Start by setting up side-specific stuff
-		let result = match &self.kind {
-			InstKind::Client { .. } => {
-				o.display(MessageContents::Header(translate!(o, StartUpdatingClient)));
-				o.start_section();
-				let result = self
-					.setup_client(accounts)
-					.await
-					.context("Failed to create client")?;
-				Ok::<_, anyhow::Error>(result)
-			}
-			InstKind::Server { .. } => {
-				o.display(MessageContents::Header(translate!(o, StartUpdatingServer)));
-				o.start_section();
-				let result = self
-					.setup_server()
-					.await
-					.context("Failed to create server")?;
-				Ok(result)
-			}
-		}?;
-
+	) -> anyhow::Result<()> {
 		self.ensure_dir()?;
 
 		let update_depth = manager.settings.depth;
@@ -228,7 +191,7 @@ impl Instance {
 
 		o.end_section();
 
-		Ok(result)
+		Ok(())
 	}
 
 	/// Ensure the instance directory exists
@@ -241,7 +204,7 @@ impl Instance {
 	}
 
 	/// Create the core instance
-	pub(super) async fn create_core_instance(
+	pub(crate) async fn create_core_instance(
 		&mut self,
 		version: &InstalledVersion,
 		paths: &Paths,
@@ -348,7 +311,7 @@ impl Instance {
 	}
 
 	/// Create a keypair file in the instance
-	fn create_keypair(&mut self, account: &Account) -> anyhow::Result<()> {
+	pub fn create_keypair(&mut self, account: &Account) -> anyhow::Result<()> {
 		if self.get_side() != Side::Client {
 			return Ok(());
 		}
@@ -406,87 +369,5 @@ impl ModificationData {
 impl Default for ModificationData {
 	fn default() -> Self {
 		Self::new()
-	}
-}
-
-/// Sets up and configures a NitroCore according to Nitrolaunch's features
-pub async fn setup_core(
-	client_id: Option<&ClientId>,
-	settings: &UpdateSettings,
-	client: &Client,
-	plugins: &PluginManager,
-	paths: &Paths,
-	o: &mut impl NitroOutput,
-) -> anyhow::Result<NitroCore> {
-	let mut core_config = nitro_core::ConfigBuilder::new().branding(BrandingProperties::new(
-		"Nitrolaunch".into(),
-		crate::VERSION.into(),
-	));
-	if let Some(client_id) = client_id {
-		core_config = core_config.ms_client_id(client_id.clone());
-	}
-	let core_config = core_config.build();
-	let mut core = NitroCore::with_config(core_config).context("Failed to initialize core")?;
-
-	// Set up custom plugin integrations
-	core.set_custom_java_install_fn(Arc::new(JavaFunction {
-		plugins: plugins.clone(),
-		paths: paths.clone(),
-	}));
-
-	core.set_client(client.clone());
-
-	// Add extra versions to manifest from plugins
-	let mut results = plugins
-		.call_hook(AddVersions, &settings.depth, paths, o)
-		.await
-		.context("Failed to call add_versions hook")?;
-	while let Some(result) = results.next_result(o).await? {
-		core.add_additional_versions(result);
-	}
-
-	Ok(core)
-}
-
-/// CustomJavaFunction implementation using plugins
-struct JavaFunction {
-	plugins: PluginManager,
-	paths: Paths,
-}
-
-#[async_trait::async_trait]
-impl CustomJavaFunction for JavaFunction {
-	async fn install(
-		&self,
-		java: &str,
-		major_version: &str,
-		update_depth: UpdateDepth,
-	) -> anyhow::Result<Option<CustomJavaFunctionResult>> {
-		let arg = InstallCustomJavaArg {
-			kind: java.to_string(),
-			major_version: major_version.to_string(),
-			update_depth,
-		};
-		let mut results = self
-			.plugins
-			.call_hook(InstallCustomJava, &arg, &self.paths, &mut NoOp)
-			.await
-			.context("Failed to call install custom Java hook")?;
-
-		let mut out = None;
-		while let Some(result) = results.next_result(&mut NoOp).await? {
-			if result.is_some() {
-				out = result;
-			}
-		}
-
-		if let Some(out) = out {
-			Ok(Some(CustomJavaFunctionResult {
-				path: PathBuf::from(out.path),
-				version: out.version,
-			}))
-		} else {
-			Ok(None)
-		}
 	}
 }

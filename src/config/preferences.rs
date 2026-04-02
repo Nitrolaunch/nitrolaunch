@@ -21,7 +21,7 @@ use nitro_shared::{
 };
 
 /// Configured user preferences
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct ConfigPreferences {
 	/// The global language
 	pub language: Language,

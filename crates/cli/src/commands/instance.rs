@@ -12,7 +12,8 @@ use nitrolaunch::config::Config;
 use nitrolaunch::config_crate::instance::InstanceConfig;
 use nitrolaunch::core::QuickPlayType;
 use nitrolaunch::instance::transfer::load_formats;
-use nitrolaunch::instance::update::InstanceUpdateContext;
+use nitrolaunch::instance::update::manager::UpdateSettings;
+use nitrolaunch::instance::update::{InstanceUpdateContext, UpdateFacets};
 use nitrolaunch::instance::Instance;
 use nitrolaunch::io::lock::Lockfile;
 use nitrolaunch::plugin_crate::hook::hooks::{DeleteInstance, SaveInstanceConfigArg};
@@ -56,9 +57,6 @@ pub enum InstanceSubcommand {
 		/// if you have authenticated at least once
 		#[arg(short, long)]
 		offline: bool,
-		/// Whether to skip updating on the first launch. Can cause problems!
-		#[arg(long)]
-		skip_update: bool,
 		/// Launch into a world or server. Can be either world:<world>, server:<ip> or realm:<realm>
 		#[arg(short, long)]
 		quick_play: Option<QuickPlayType>,
@@ -73,9 +71,9 @@ pub enum InstanceSubcommand {
 		/// Whether to update all instances
 		#[arg(short, long)]
 		all: bool,
-		/// Whether to skip updating packages
-		#[arg(short = 'P', long)]
-		skip_packages: bool,
+		/// Whether to only update packages
+		#[arg(short, long)]
+		packages: bool,
 		/// Additional instance groups to update
 		#[arg(short, long)]
 		groups: Vec<String>,
@@ -142,18 +140,17 @@ pub async fn run(command: InstanceSubcommand, mut data: CmdData<'_>) -> anyhow::
 		InstanceSubcommand::Launch {
 			account,
 			offline,
-			skip_update,
 			quick_play,
 			instance,
-		} => launch(instance, account, offline, skip_update, quick_play, data).await,
+		} => launch(instance, account, offline, quick_play, data).await,
 		InstanceSubcommand::Info { instance } => info(&mut data, instance).await,
 		InstanceSubcommand::Update {
 			force,
 			all,
-			skip_packages,
+			packages,
 			groups,
 			instances,
-		} => update(&mut data, instances, groups, all, force, skip_packages).await,
+		} => update(&mut data, instances, groups, all, force, packages).await,
 		InstanceSubcommand::Dir { instance } => dir(&mut data, instance).await,
 		InstanceSubcommand::Add { plugin } => add(&mut data, plugin).await,
 		InstanceSubcommand::Import {
@@ -258,7 +255,6 @@ pub async fn launch(
 	instance: Option<String>,
 	account: Option<String>,
 	offline: bool,
-	skip_update: bool,
 	quick_play: Option<QuickPlayType>,
 	mut data: CmdData<'_>,
 ) -> anyhow::Result<()> {
@@ -267,35 +263,25 @@ pub async fn launch(
 
 	let instance_id = pick_instance(instance, config).context("Failed to pick instance")?;
 
+	let client = Client::new();
+	let core = config
+		.get_core(
+			Some(&get_ms_client_id()),
+			&UpdateSettings {
+				depth: UpdateDepth::Shallow,
+				offline_auth: offline,
+			},
+			&client,
+			&config.plugins,
+			&data.paths,
+			data.output,
+		)
+		.await?;
+
 	let instance = config
 		.instances
 		.get_mut(&instance_id)
 		.context("Instance does not exist")?;
-
-	// Perform first update if needed
-	if !skip_update {
-		let mut lock = Lockfile::open(&data.paths).context("Failed to open lockfile")?;
-		if !lock.has_instance_done_first_update(&instance_id) {
-			cprintln!("<s>Performing first update of instance...");
-
-			let client = Client::new();
-			let mut ctx = InstanceUpdateContext {
-				packages: &mut config.packages,
-				accounts: &config.accounts,
-				plugins: &config.plugins,
-				prefs: &config.prefs,
-				paths: &data.paths,
-				lock: &mut lock,
-				client: &client,
-				output: data.output,
-			};
-
-			instance
-				.update(true, UpdateDepth::Full, &mut ctx)
-				.await
-				.context("Failed to perform first update for instance")?;
-		}
-	}
 
 	if let Some(account) = account {
 		config
@@ -305,19 +291,27 @@ pub async fn launch(
 	}
 
 	let launch_settings = LaunchSettings {
-		ms_client_id: get_ms_client_id(),
 		offline_auth: offline,
 		pipe_stdin: true,
 		quick_play,
 	};
+
+	let mut lock = Lockfile::open(&data.paths)?;
+
+	let mut ctx = InstanceUpdateContext {
+		packages: &mut config.packages,
+		accounts: &mut config.accounts,
+		plugins: &config.plugins,
+		prefs: &config.prefs,
+		paths: &data.paths,
+		lock: &mut lock,
+		client: &client,
+		output: data.output,
+		core: &core,
+	};
+
 	let instance_handle = instance
-		.launch(
-			&data.paths,
-			&mut config.accounts,
-			&config.plugins,
-			launch_settings,
-			data.output,
-		)
+		.launch(launch_settings, &mut ctx)
 		.await
 		.context("Instance failed to launch")?;
 
@@ -361,7 +355,7 @@ async fn update(
 	groups: Vec<String>,
 	all: bool,
 	force: bool,
-	skip_packages: bool,
+	packages: bool,
 ) -> anyhow::Result<()> {
 	data.ensure_config(true).await?;
 	let config = data.config.get_mut();
@@ -387,6 +381,20 @@ async fn update(
 
 	let client = Client::new();
 	let mut lock = Lockfile::open(&data.paths).context("Failed to open lockfile")?;
+	let core = config
+		.get_core(
+			Some(&get_ms_client_id()),
+			&UpdateSettings {
+				depth: UpdateDepth::Full,
+				offline_auth: false,
+			},
+			&client,
+			&config.plugins,
+			&data.paths,
+			data.output,
+		)
+		.await?;
+
 	for id in ids {
 		let instance = config
 			.instances
@@ -395,13 +403,14 @@ async fn update(
 
 		let mut ctx = InstanceUpdateContext {
 			packages: &config.packages,
-			accounts: &config.accounts,
+			accounts: &mut config.accounts,
 			plugins: &config.plugins,
 			prefs: &config.prefs,
 			paths: &data.paths,
 			lock: &mut lock,
 			client: &client,
 			output: data.output,
+			core: &core,
 		};
 
 		let depth = if force {
@@ -410,8 +419,10 @@ async fn update(
 			UpdateDepth::Full
 		};
 
+		let facets = UpdateFacets::from_flags(packages);
+
 		instance
-			.update(!skip_packages, depth, &mut ctx)
+			.update(depth, facets, &mut ctx)
 			.await
 			.context("Failed to update instance")?;
 

@@ -6,8 +6,6 @@ pub mod launch;
 pub mod logs;
 /// Managing and installing packages on an instance
 pub mod packages;
-/// Setup of instance contents
-pub mod setup;
 /// Keeping track of running instance processes
 pub mod tracking;
 /// Import and export of instances to other formats
@@ -31,7 +29,7 @@ use nitro_shared::Side;
 use crate::io::paths::Paths;
 
 use self::launch::LaunchOptions;
-use self::setup::ModificationData;
+use self::update::setup::ModificationData;
 
 use super::config::package::PackageConfig;
 use nitro_shared::id::InstanceID;

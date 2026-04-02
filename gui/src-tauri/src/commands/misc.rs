@@ -4,7 +4,7 @@ use crate::{data::InstanceIcon, output::LauncherOutput, State};
 use anyhow::{bail, Context};
 use nitrolaunch::{
 	core::{io::json_from_file, net::game_files::assets::AssetIndex},
-	instance::{setup::setup_core, update::manager::UpdateSettings},
+	instance::update::manager::UpdateSettings,
 	plugin_crate::hook::hooks::{
 		AddInstanceIcons, AddJavaTypes, AddSupportedLoaders, GetLoaderVersions,
 		GetLoaderVersionsArg, JavaTypeInfo,
@@ -76,18 +76,19 @@ pub async fn get_minecraft_versions(
 	)?;
 
 	let core = fmt_err(
-		setup_core(
-			None,
-			&UpdateSettings {
-				depth: UpdateDepth::Shallow,
-				offline_auth: false,
-			},
-			&state.client,
-			&config.plugins,
-			&state.paths,
-			&mut NoOp,
-		)
-		.await,
+		config
+			.get_core(
+				None,
+				&UpdateSettings {
+					depth: UpdateDepth::Shallow,
+					offline_auth: false,
+				},
+				&state.client,
+				&config.plugins,
+				&state.paths,
+				&mut NoOp,
+			)
+			.await,
 	)?;
 
 	let version_manifest = fmt_err(
@@ -130,18 +131,19 @@ pub async fn update_version_manifest(
 	output.set_task("update_versions");
 
 	let core = fmt_err(
-		setup_core(
-			None,
-			&UpdateSettings {
-				depth: UpdateDepth::Full,
-				offline_auth: false,
-			},
-			&state.client,
-			&config.plugins,
-			&state.paths,
-			&mut output,
-		)
-		.await,
+		config
+			.get_core(
+				None,
+				&UpdateSettings {
+					depth: UpdateDepth::Full,
+					offline_auth: false,
+				},
+				&state.client,
+				&config.plugins,
+				&state.paths,
+				&mut output,
+			)
+			.await,
 	)?;
 
 	fmt_err(

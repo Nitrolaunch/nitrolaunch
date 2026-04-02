@@ -1,3 +1,5 @@
+/// Setting up the NitroCore
+mod core_setup;
 /// Configuring instances
 pub mod instance;
 /// Configuring instance modifications
@@ -10,6 +12,8 @@ pub mod plugin;
 pub mod preferences;
 
 use self::instance::read_instance_config;
+use crate::config::core_setup::setup_core;
+use crate::instance::update::manager::UpdateSettings;
 use crate::plugin::PluginManager;
 use anyhow::Context;
 use nitro_config::account::{AccountConfig, AccountVariant};
@@ -20,6 +24,7 @@ use nitro_config::ConfigDeser;
 use nitro_core::account::{Account, AccountKind, AccountManager, AccountManagerHooks};
 use nitro_core::auth_crate::mc::ClientId;
 use nitro_core::io::{json_from_file, json_to_file_pretty};
+use nitro_core::NitroCore;
 use nitro_pkg::PkgRequest;
 use nitro_plugin::hook::hooks::{
 	ActivateCape, ActivateCapeArg, AddInstances, AddInstancesArg, AddSupportedLoaders,
@@ -32,6 +37,7 @@ use nitro_shared::output::{MessageContents, NitroOutput, NoOp};
 use nitro_shared::util::is_valid_identifier;
 use nitro_shared::{skip_fail, translate};
 use preferences::ConfigPreferences;
+use reqwest::Client;
 use version_compare::Version;
 
 use super::instance::Instance;
@@ -333,6 +339,19 @@ impl Config {
 	) -> anyhow::Result<Self> {
 		let obj = Self::open(path)?;
 		Ok(Self::load_from_deser(obj, plugins, show_warnings, paths, client_id, o).await)
+	}
+
+	/// Gets the core from the config
+	pub async fn get_core(
+		&self,
+		client_id: Option<&ClientId>,
+		settings: &UpdateSettings,
+		client: &Client,
+		plugins: &PluginManager,
+		paths: &Paths,
+		o: &mut impl NitroOutput,
+	) -> anyhow::Result<NitroCore> {
+		setup_core(client_id, settings, client, plugins, paths, o).await
 	}
 }
 

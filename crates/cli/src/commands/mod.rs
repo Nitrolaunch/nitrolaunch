@@ -60,9 +60,6 @@ pub enum Command {
 		/// if you have authenticated at least once
 		#[arg(short, long)]
 		offline: bool,
-		/// Whether to skip updating on the first launch. Can cause problems!
-		#[arg(long)]
-		skip_update: bool,
 		/// Launch into a world or server. Can be either world:<world>, server:<ip> or realm:<realm>
 		#[arg(short, long)]
 		quick_play: Option<QuickPlayType>,
@@ -220,10 +217,9 @@ Would you like to do that now?"
 			Command::Launch {
 				account,
 				offline,
-				skip_update,
 				quick_play,
 				instance,
-			} => instance::launch(instance, account, offline, skip_update, quick_play, data).await,
+			} => instance::launch(instance, account, offline, quick_play, data).await,
 			Command::Version => {
 				print_version();
 				Ok(())
