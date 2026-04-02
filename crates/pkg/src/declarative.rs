@@ -4,7 +4,7 @@ use anyhow::Context;
 use nitro_parse::conditions::{ArchCondition, OSCondition};
 use nitro_shared::lang::Language;
 use nitro_shared::loaders::LoaderMatch;
-use nitro_shared::pkg::{PackageAddonOptionalHashes, PackageKind, PackageStability};
+use nitro_shared::pkg::{AddonOptionalHashes, PackageKind, PackageStability};
 use nitro_shared::util::DeserListOrSingle;
 use nitro_shared::versions::VersionPattern;
 use nitro_shared::Side;
@@ -208,8 +208,8 @@ pub struct DeclarativeAddonVersion {
 	#[serde(skip_serializing_if = "Option::is_none")]
 	pub version: Option<String>,
 	/// Hashes for this version file
-	#[serde(skip_serializing_if = "PackageAddonOptionalHashes::is_empty")]
-	pub hashes: PackageAddonOptionalHashes,
+	#[serde(skip_serializing_if = "AddonOptionalHashes::is_empty")]
+	pub hashes: AddonOptionalHashes,
 }
 
 impl DeclarativeAddonVersion {

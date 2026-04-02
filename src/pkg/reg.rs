@@ -88,7 +88,7 @@ impl PkgRegistry {
 			Ok(self.insert(
 				req.clone(),
 				Arc::new(Package::new(
-					req.id.clone(),
+					req.clone(),
 					result.location,
 					result.content_type,
 					result.flags,

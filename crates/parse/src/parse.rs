@@ -1,6 +1,6 @@
 use anyhow::anyhow;
 use anyhow::{bail, Context};
-use nitro_shared::pkg::PackageAddonHashes;
+use nitro_shared::pkg::AddonHashes;
 
 use crate::instruction::ElseBlock;
 use crate::routine::can_call_routines;
@@ -80,7 +80,7 @@ pub fn parse<'a>(tokens: impl Iterator<Item = &'a TokenAndPos>) -> anyhow::Resul
 									url: Value::None,
 									path: Value::None,
 									version: Value::None,
-									hashes: PackageAddonHashes {
+									hashes: AddonHashes {
 										sha256: Value::None,
 										sha512: Value::None,
 									},
@@ -438,7 +438,7 @@ pub fn parse<'a>(tokens: impl Iterator<Item = &'a TokenAndPos>) -> anyhow::Resul
 }
 
 mod addon {
-	use nitro_shared::pkg::PackageAddonHashes;
+	use nitro_shared::pkg::AddonHashes;
 
 	use super::*;
 
@@ -474,7 +474,7 @@ mod addon {
 		pub url: Value,
 		pub path: Value,
 		pub version: Value,
-		pub hashes: PackageAddonHashes<Value>,
+		pub hashes: AddonHashes<Value>,
 	}
 }
 

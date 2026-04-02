@@ -9,7 +9,7 @@ use nitro_pkg::metadata::PackageMetadata;
 use nitro_pkg::properties::PackageProperties;
 use nitro_pkg::RecommendedPackage;
 use nitro_shared::loaders::{Loader, LoaderMatch};
-use nitro_shared::pkg::{PackageAddonHashes, PackageCategory, PackageKind, PackageStability};
+use nitro_shared::pkg::{AddonHashes, PackageCategory, PackageKind, PackageStability};
 use nitro_shared::util::DeserListOrSingle;
 use nitro_shared::versions::VersionPattern;
 
@@ -392,7 +392,7 @@ pub async fn gen(
 			};
 			pkg_version.url = Some(download.url.clone());
 			pkg_version.filename = Some(download.filename.clone());
-			pkg_version.hashes = PackageAddonHashes {
+			pkg_version.hashes = AddonHashes {
 				sha256: None,
 				sha512: Some(download.hashes.sha512.clone()),
 			}

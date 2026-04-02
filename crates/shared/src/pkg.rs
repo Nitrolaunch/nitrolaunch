@@ -165,6 +165,11 @@ impl PkgRequest {
 		}
 	}
 
+	/// Puts this request inside of an Arc
+	pub fn arc(self) -> ArcPkgReq {
+		Arc::new(self)
+	}
+
 	/// Create a dependency list for debugging
 	pub fn debug_sources(&self) -> String {
 		self.debug_sources_inner(String::new())
@@ -281,22 +286,22 @@ pub fn is_valid_package_id(id: &str) -> bool {
 #[derive(Deserialize, Serialize, PartialEq, Debug, Clone, Default)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[serde(default)]
-pub struct PackageAddonHashes<T: Default> {
+pub struct AddonHashes<T: Default> {
 	/// The SHA-256 hash of this addon file
 	pub sha256: T,
 	/// The SHA-512 hash of this addon file
 	pub sha512: T,
 }
 
-impl PackageAddonOptionalHashes {
+impl AddonOptionalHashes {
 	/// Checks if this set of optional hashes is empty
 	pub fn is_empty(&self) -> bool {
 		self.sha256.is_none() && self.sha512.is_none()
 	}
 }
 
-/// Optional PackageAddonHashes
-pub type PackageAddonOptionalHashes = PackageAddonHashes<Option<String>>;
+/// Optional AddonHashes
+pub type AddonOptionalHashes = AddonHashes<Option<String>>;
 
 /// Different types of packages, mostly AddonKinds
 #[derive(Serialize, Deserialize, Clone, Copy, PartialEq, Eq, Hash, Debug)]

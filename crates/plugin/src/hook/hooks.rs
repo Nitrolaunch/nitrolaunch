@@ -560,17 +560,6 @@ pub struct MigrateInstancesResult {
 	pub format: String,
 	/// The configuration of the new instances
 	pub instances: HashMap<String, InstanceConfig>,
-	/// Map of instances to packages installed on the migrated instance
-	pub packages: HashMap<String, Vec<MigratedPackage>>,
-}
-
-/// A package installed on a migrated instance
-#[derive(Serialize, Deserialize)]
-pub struct MigratedPackage {
-	/// The ID of this package
-	pub id: String,
-	/// The addons currently installed with this package
-	pub addons: Vec<MigratedAddon>,
 }
 
 /// An addon installed on a migrated instance

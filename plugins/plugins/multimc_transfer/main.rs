@@ -9,23 +9,25 @@ use nitro_core::io::{extract_zip_dir, files::copy_dir_contents, json_from_file};
 use nitro_pkg::PkgRequest;
 use nitro_plugin::{
 	api::executable::ExecutablePlugin,
-	hook::hooks::{
-		CheckMigrationResult, ImportInstanceResult, MigrateInstancesResult, MigratedAddon,
-		MigratedPackage,
-	},
+	hook::hooks::{CheckMigrationResult, ImportInstanceResult, MigrateInstancesResult},
 };
 use nitro_shared::{
 	loaders::Loader,
 	minecraft::AddonKind,
-	output::{MessageContents, NitroOutput},
+	output::{MessageContents, NitroOutput, NoOp},
+	pkg::AddonOptionalHashes,
 	versions::MinecraftVersionDeser,
 	Side,
 };
-use nitrolaunch::config_crate::{
-	instance::{make_valid_instance_id, InstanceConfig},
-	package::PackageConfigDeser,
+use nitrolaunch::{
+	config_crate::{
+		instance::{make_valid_instance_id, InstanceConfig},
+		package::PackageConfigDeser,
+	},
+	instance_crate::lock::{InstanceLockfile, LockfileAddon},
 };
 use serde::{Deserialize, Serialize};
+use tokio::runtime::Runtime;
 use zip::ZipArchive;
 
 fn main() -> anyhow::Result<()> {
@@ -121,7 +123,6 @@ fn main() -> anyhow::Result<()> {
 		let nitro_instances_dir = nitro_data_dir.join("instances");
 
 		let mut instances = HashMap::new();
-		let mut packages = HashMap::new();
 
 		for name in names {
 			if let Some(requested_instances) = &arg.instances {
@@ -178,31 +179,38 @@ fn main() -> anyhow::Result<()> {
 				inst_packages.extend(addons_to_packages(&mc_dir.join(addon_dir), addon_kind)?);
 			}
 
-			let inst_packages = inst_packages.into_iter().map(|(req, path, kind)| {
+			let mut lock = InstanceLockfile::open(&InstanceLockfile::get_path(
+				Some(&mc_dir),
+				&id,
+				&nitro_data_dir.join("internal"),
+			))
+			.context("Failed to open lockfile")?;
+
+			let runtime = Runtime::new()?;
+			for (req, path, kind) in inst_packages {
 				let addon_id = if req.repository == Some("modrinth".into()) {
 					"addon"
 				} else {
 					"addon"
 				};
 
-				MigratedPackage {
-					id: req.id.to_string(),
-					addons: vec![MigratedAddon {
-						id: addon_id.into(),
-						paths: vec![path.to_string_lossy().to_string()],
-						kind,
-						version: None,
-					}],
-				}
-			});
+				let addon = LockfileAddon {
+					id: Some(addon_id.into()),
+					package: Some(req.to_string_no_version()),
+					from_modpack: false,
+					file_name: path.file_name().unwrap().to_string_lossy().to_string(),
+					files: vec![path.to_string_lossy().to_string()],
+					kind,
+					hashes: AddonOptionalHashes::default(),
+				};
 
-			packages.insert(id, inst_packages.collect());
+				runtime.block_on(lock.update_package(&req, &[addon], None, &mut NoOp))?;
+			}
 		}
 
 		Ok(MigrateInstancesResult {
 			format: arg.format,
 			instances,
-			packages,
 		})
 	})?;
 

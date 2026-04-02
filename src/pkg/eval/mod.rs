@@ -13,6 +13,7 @@ use anyhow::Context;
 use async_trait::async_trait;
 use nitro_config::package::EvalPermissions;
 use nitro_instance::addon::is_filename_valid;
+use nitro_instance::lock::LockfilePackage;
 use nitro_parse::routine::INSTALL_ROUTINE;
 use nitro_parse::vars::HashMapVariableStore;
 use nitro_pkg::addon::{is_addon_version_valid, PackageAddon};
@@ -54,7 +55,6 @@ use super::reg::PkgRegistry;
 use super::Package;
 use crate::addon::{self, AddonLocation, AddonRequest};
 use crate::config::package::PackageConfig;
-use crate::io::lock::LockfilePackage;
 use crate::io::paths::Paths;
 use crate::pkg::PkgContents;
 use crate::plugin::PluginManager;
@@ -199,8 +199,8 @@ pub struct EvalData {
 	pub input: EvalInput,
 	/// Plugins
 	pub plugins: PluginManager,
-	/// ID of the package we are evaluating
-	pub id: PackageID,
+	/// Request of the package we are evaluating
+	pub req: ArcPkgReq,
 	/// Level of evaluation
 	pub reason: EvalReason,
 	/// Package properties
@@ -237,14 +237,14 @@ impl EvalData {
 	/// Create a new EvalData
 	pub fn new(
 		input: EvalInput,
-		id: PackageID,
+		req: ArcPkgReq,
 		properties: Arc<PackageProperties>,
 		routine: &Routine,
 		plugins: PluginManager,
 	) -> Self {
 		Self {
 			input,
-			id,
+			req,
 			plugins,
 			reason: routine.get_reason(),
 			properties,
@@ -282,7 +282,7 @@ impl Package {
 		if !input.params.force && eval_check_properties(&input, &properties)? {
 			return Ok(EvalData::new(
 				input,
-				self.id.clone(),
+				self.req.clone(),
 				properties,
 				&routine,
 				plugins,
@@ -297,13 +297,7 @@ impl Package {
 				};
 
 				let eval = eval_script_package(
-					self.id.clone(),
-					parsed,
-					routine,
-					properties,
-					input,
-					plugins,
-					paths,
+					&self.req, parsed, routine, properties, input, plugins, paths,
 				)
 				.await?;
 				Ok(eval)
@@ -315,12 +309,7 @@ impl Package {
 				};
 
 				let eval = eval_declarative_package(
-					self.id.clone(),
-					contents,
-					input,
-					properties,
-					routine,
-					plugins,
+					&self.req, contents, input, properties, routine, plugins,
 				)?;
 				Ok(eval)
 			}
@@ -381,7 +370,7 @@ pub fn eval_check_properties(
 /// Utility for evaluation that validates addon arguments and creates a request
 pub fn create_valid_addon_request(
 	data: AddonInstructionData,
-	pkg_id: PackageID,
+	pkg: ArcPkgReq,
 	eval_input: &EvalInput,
 ) -> anyhow::Result<AddonRequest> {
 	if !is_valid_identifier(&data.id) {
@@ -400,7 +389,9 @@ pub fn create_valid_addon_request(
 	}
 
 	let file_name = data.file_name.unwrap_or(addon::get_addon_instance_filename(
-		&pkg_id, &data.id, &data.kind,
+		&pkg.to_string_no_version().replace(":", "_"),
+		&data.id,
+		&data.kind,
 	));
 
 	if !is_filename_valid(data.kind, &file_name) {
@@ -435,7 +426,7 @@ pub fn create_valid_addon_request(
 		kind: data.kind,
 		id: data.id.clone(),
 		file_name,
-		pkg_id,
+		pkg,
 		version,
 		hashes: data.hashes,
 	};

@@ -1,4 +1,5 @@
 use anyhow::{bail, Context};
+use nitro_instance::lock::InstanceLockfile;
 use nitro_shared::output::{MessageContents, NitroOutput};
 use nitro_shared::pkg::ArcPkgReq;
 use nitro_shared::translate;
@@ -6,8 +7,6 @@ use nitro_shared::versions::VersionInfo;
 use reqwest::Client;
 
 use crate::addon::{AddonExt, ResolvedPackageAddon};
-use crate::instance::lock::InstanceLockfile;
-use crate::io::lock::LockfileAddon;
 use crate::io::paths::Paths;
 use crate::pkg::eval::EvalData;
 
@@ -107,27 +106,17 @@ impl Instance {
 			.addon_reqs
 			.iter()
 			.map(|x| {
-				let addon = x.addon.addon(x.addon.get_path(paths, &self.id));
-				let targets = self.get_addon_targets(&addon, &pkg_config.worlds, version_info);
+				let mut addon = x.addon.addon(x.addon.get_path(paths, &self.id));
+				self.get_addon_targets(&mut addon, &pkg_config.worlds, version_info);
 
 				ResolvedPackageAddon {
 					pkg_addon: x.addon.clone(),
 					addon,
-					target_paths: targets,
 				}
 			})
 			.collect();
 
-		let lockfile_addons = addons
-			.iter()
-			.map(|x| {
-				Ok(LockfileAddon::from_addon(
-					&x.pkg_addon,
-					x.target_paths.clone(),
-				))
-			})
-			.collect::<anyhow::Result<Vec<LockfileAddon>>>()
-			.context("Failed to convert addons to the lockfile format")?;
+		let lockfile_addons: Vec<_> = addons.iter().map(|x| x.to_lockfile_addon()).collect();
 
 		let files_to_remove = inst_lock
 			.update_package(
@@ -145,8 +134,9 @@ impl Instance {
 		}
 
 		for path in files_to_remove {
-			self.remove_addon_file(&path, paths)
-				.context("Failed to remove addon file from instance")?;
+			if path.exists() {
+				let _ = std::fs::remove_file(path);
+			}
 		}
 
 		Ok(())

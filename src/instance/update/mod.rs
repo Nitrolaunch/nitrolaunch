@@ -100,7 +100,6 @@ impl Instance {
 			ctx.plugins,
 			ctx.paths,
 			ctx.accounts,
-			ctx.lock,
 			ctx.output,
 		)
 		.await

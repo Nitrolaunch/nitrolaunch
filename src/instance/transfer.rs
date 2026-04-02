@@ -1,11 +1,7 @@
-use std::path::PathBuf;
-use std::sync::Arc;
 use std::{collections::HashMap, path::Path};
 
 use anyhow::{bail, Context};
 use nitro_config::instance::InstanceConfig;
-use nitro_pkg::addon::PackageAddon;
-use nitro_pkg::PkgRequest;
 use nitro_plugin::hook::hooks::{
 	AddInstanceTransferFormats, ExportInstance, ExportInstanceArg, ImportInstance,
 	ImportInstanceArg, InstanceTransferFeatureSupport, InstanceTransferFormat,
@@ -13,10 +9,9 @@ use nitro_plugin::hook::hooks::{
 };
 use nitro_shared::lang::translate::TranslationKey;
 use nitro_shared::output::{MessageContents, NitroOutput};
-use nitro_shared::pkg::PackageAddonHashes;
 use nitro_shared::{translate, Side};
 
-use crate::io::lock::{Lockfile, LockfileAddon};
+use crate::io::lock::Lockfile;
 use crate::{io::paths::Paths, plugin::PluginManager};
 
 use super::Instance;
@@ -59,7 +54,7 @@ impl Instance {
 			"plugin" = &format.plugin
 		)));
 
-		let inst_lock = self.get_lockfile(lock, paths)?;
+		let inst_lock = self.get_lockfile(paths)?;
 
 		let Some(minecraft_version) = inst_lock.get_minecraft_version() else {
 			bail!("Version missing. Please update the instance before exporting.");
@@ -190,7 +185,6 @@ pub async fn migrate_instances(
 	formats: &Formats,
 	plugins: &PluginManager,
 	paths: &Paths,
-	lock: &mut Lockfile,
 	o: &mut impl NitroOutput,
 ) -> anyhow::Result<HashMap<String, InstanceConfig>> {
 	let format = formats
@@ -235,40 +229,6 @@ pub async fn migrate_instances(
 	o.display(MessageContents::Success(
 		o.translate(TranslationKey::FinishMigrating).into(),
 	));
-
-	for (inst, packages) in result.packages {
-		for package in packages {
-			let arc_pkg_id: Arc<str> = Arc::from(package.id.clone());
-
-			let addons: Vec<_> = package
-				.addons
-				.into_iter()
-				.map(|x| {
-					LockfileAddon::from_addon(
-						&PackageAddon {
-							kind: x.kind,
-							id: x.id,
-							file_name: "placeholder".into(),
-							pkg_id: arc_pkg_id.clone(),
-							version: None,
-							hashes: PackageAddonHashes::default(),
-						},
-						x.paths.into_iter().map(PathBuf::from).collect(),
-					)
-				})
-				.collect();
-
-			lock.update_package(
-				&PkgRequest::parse(&package.id, nitro_pkg::PkgRequestSource::UserRequire),
-				&inst,
-				&addons,
-				None,
-				o,
-			)
-			.await
-			.context("Failed to add locked package")?;
-		}
-	}
 
 	for inst in result.instances.values_mut() {
 		inst.imported = true;

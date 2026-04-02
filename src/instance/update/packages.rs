@@ -46,7 +46,7 @@ pub async fn update_instance_packages<O: NitroOutput>(
 	)));
 	ctx.output.end_process();
 
-	let mut inst_lock = instance.get_lockfile(ctx.lock, ctx.paths)?;
+	let mut inst_lock = instance.get_lockfile(ctx.paths)?;
 
 	// Prompt to update the packages
 	let current_packages = inst_lock.get_packages();
@@ -149,13 +149,11 @@ pub async fn update_instance_packages<O: NitroOutput>(
 		.iter()
 		.map(|x| x.req.clone())
 		.collect::<Vec<_>>();
-	let files_to_remove = inst_lock
+	let addons_to_remove = inst_lock
 		.remove_unused_packages(&used_package_reqs)
 		.context("Failed to remove unused packages")?;
-	for file in files_to_remove {
-		instance
-			.remove_addon_file(&file, ctx.paths)
-			.with_context(|| format!("Failed to remove addon file {}", file.display()))?;
+	for addon in addons_to_remove {
+		let _ = addon.remove_from_instance();
 	}
 
 	inst_lock.write()?;

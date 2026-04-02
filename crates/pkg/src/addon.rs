@@ -1,9 +1,10 @@
 use std::path::PathBuf;
 
 use nitro_instance::addon::Addon;
-use nitro_shared::{minecraft::AddonKind, pkg::PackageAddonOptionalHashes};
-
-use crate::PackageID;
+use nitro_shared::{
+	minecraft::AddonKind,
+	pkg::{AddonOptionalHashes, ArcPkgReq},
+};
 
 /// Some content that is installed on Minecraft
 #[derive(Debug, Clone)]
@@ -14,12 +15,12 @@ pub struct PackageAddon {
 	pub id: String,
 	/// The addon's file name
 	pub file_name: String,
-	/// The ID of the package that installed this addon
-	pub pkg_id: PackageID,
+	/// The package that installed this addon
+	pub pkg: ArcPkgReq,
 	/// Version of the addon, used for caching
 	pub version: Option<String>,
 	/// Hashes of the addon
-	pub hashes: PackageAddonOptionalHashes,
+	pub hashes: AddonOptionalHashes,
 }
 
 impl PackageAddon {
@@ -28,8 +29,10 @@ impl PackageAddon {
 		Addon {
 			kind: self.kind,
 			file_name: self.file_name.clone(),
-			path: None,
+			original_path: None,
+			target_paths: Vec::new(),
 			source: Some(storage_path),
+			hashes: self.hashes.clone(),
 		}
 	}
 }

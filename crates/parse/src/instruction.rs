@@ -3,7 +3,7 @@ use std::fmt::Display;
 use anyhow::bail;
 use nitro_shared::later::Later;
 use nitro_shared::loaders::LoaderMatch;
-use nitro_shared::pkg::{PackageAddonHashes, PackageCategory};
+use nitro_shared::pkg::{AddonHashes, PackageCategory};
 use nitro_shared::util::yes_no;
 use nitro_shared::versions::VersionPattern;
 use nitro_shared::Side;
@@ -117,7 +117,7 @@ pub enum InstrKind {
 		/// The version of the addon
 		version: Value,
 		/// The addon's hashes
-		hashes: PackageAddonHashes<Value>,
+		hashes: AddonHashes<Value>,
 	},
 	/// Set a variable to a value
 	Set(Later<String>, Value),

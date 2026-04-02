@@ -25,14 +25,14 @@ use anyhow::{anyhow, bail, Context};
 use nitro_parse::parse::{lex_and_parse, Parsed};
 use nitro_pkg::metadata::{eval_metadata, PackageMetadata};
 use nitro_pkg::properties::{eval_properties, PackageProperties};
-use nitro_shared::pkg::PackageID;
+use nitro_shared::pkg::ArcPkgReq;
 use reqwest::Client;
 
 /// An installable package that loads content into your game
 #[derive(Debug)]
 pub struct Package {
-	/// The package ID
-	pub id: PackageID,
+	/// The package request
+	pub req: ArcPkgReq,
 	/// Where the package is being retrieved from
 	pub location: PkgLocation,
 	/// Type of the content in the package
@@ -113,13 +113,13 @@ impl PkgContents {
 impl Package {
 	/// Create a new Package
 	pub fn new(
-		id: PackageID,
+		req: ArcPkgReq,
 		location: PkgLocation,
 		content_type: PackageContentType,
 		flags: HashSet<PackageFlag>,
 	) -> Self {
 		Self {
-			id,
+			req,
 			location,
 			content_type,
 			flags,
@@ -136,7 +136,7 @@ impl Package {
 			PackageContentType::Declarative => ".json",
 			PackageContentType::Script => ".pkg.txt",
 		};
-		format!("{}{extension}", self.id)
+		format!("{}{extension}", self.req.id)
 	}
 
 	/// Get the cached path of the package
@@ -187,8 +187,8 @@ impl Package {
 				}
 			}
 			PkgLocation::Core => {
-				let contents =
-					get_core_package(&self.id).ok_or(anyhow!("Package is not a core package"))?;
+				let contents = get_core_package(&self.req.id)
+					.ok_or(anyhow!("Package is not a core package"))?;
 				let _ = self.text.set(Arc::from(contents));
 			}
 			PkgLocation::Inline(contents) => {
@@ -357,12 +357,14 @@ impl Package {
 
 #[cfg(test)]
 mod tests {
+	use nitro_pkg::PkgRequest;
+
 	use super::*;
 
 	#[test]
 	fn test_package_id() {
 		let package = Package::new(
-			PackageID::from("sodium"),
+			PkgRequest::parse("sodium", nitro_pkg::PkgRequestSource::UserRequire).arc(),
 			PkgLocation::Remote {
 				url: None,
 				repo_id: String::new(),
@@ -373,7 +375,7 @@ mod tests {
 		assert_eq!(package.filename(), "sodium.pkg.txt".to_string());
 
 		let package = Package::new(
-			PackageID::from("fabriclike-api"),
+			PkgRequest::parse("fabriclike-api", nitro_pkg::PkgRequestSource::UserRequire).arc(),
 			PkgLocation::Remote {
 				url: None,
 				repo_id: String::new(),

@@ -1,19 +1,9 @@
-use std::collections::{HashMap, HashSet};
-use std::fs;
+use std::collections::HashSet;
 use std::path::PathBuf;
-use std::sync::Arc;
 
-use anyhow::{anyhow, bail, Context};
+use anyhow::Context;
 use nitro_core::io::{json_from_file, json_to_file_pretty};
-use nitro_pkg::{PkgRequest, PkgRequestSource};
-use nitro_shared::loaders::Loader;
-use nitro_shared::output::{MessageContents, NitroOutput};
-use nitro_shared::translate;
 use serde::{Deserialize, Serialize};
-
-use nitro_pkg::addon::PackageAddon;
-use nitro_shared::minecraft::AddonKind;
-use nitro_shared::pkg::{ArcPkgReq, PackageAddonOptionalHashes, PackageID};
 
 use super::paths::Paths;
 
@@ -26,121 +16,19 @@ pub struct Lockfile {
 #[derive(Serialize, Deserialize, Default, Debug)]
 #[serde(default)]
 struct LockfileContents {
-	packages: HashMap<String, HashMap<String, LockfilePackage>>,
-	instances: HashMap<String, LockfileInstance>,
 	/// Instances that have done their first update
 	created_instances: HashSet<String>,
-}
-
-#[derive(Serialize, Deserialize, Debug, Default)]
-#[serde(default)]
-pub(crate) struct LockfileInstance {
-	pub(crate) version: String,
-	pub(crate) loader: Loader,
-	pub(crate) loader_version: Option<String>,
-}
-
-/// Package stored in the lockfile
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct LockfilePackage {
-	/// The addons of this package
-	pub addons: Vec<LockfileAddon>,
-	/// The selected content version of this package
-	pub content_version: Option<String>,
-}
-
-/// Format for an addon in the lockfile
-#[derive(Serialize, Deserialize, PartialEq, Clone, Debug)]
-pub struct LockfileAddon {
-	/// ID of the addon
-	#[serde(alias = "name")]
-	pub id: String,
-	/// Filename of the addon
-	#[serde(skip_serializing_if = "Option::is_none")]
-	pub file_name: Option<String>,
-	/// Files for the addon
-	pub files: Vec<String>,
-	/// The kind of the addon
-	pub kind: String,
-	/// The version ID of the addon
-	#[serde(skip_serializing_if = "Option::is_none")]
-	pub version: Option<String>,
-	/// Hashes for the addon
-	#[serde(default)]
-	#[serde(skip_serializing_if = "PackageAddonOptionalHashes::is_empty")]
-	pub hashes: PackageAddonOptionalHashes,
-}
-
-impl LockfileAddon {
-	/// Converts an addon to the format used by the lockfile.
-	pub fn from_addon(addon: &PackageAddon, targets: Vec<PathBuf>) -> Self {
-		Self {
-			id: addon.id.clone(),
-			file_name: Some(addon.file_name.clone()),
-			files: targets
-				.iter()
-				.map(|x| x.to_string_lossy().to_string())
-				.collect(),
-			kind: addon.kind.to_string(),
-			version: addon.version.clone(),
-			hashes: addon.hashes.clone(),
-		}
-	}
-
-	/// Converts this LockfileAddon to an Addon
-	pub fn to_addon(&self, pkg_id: PackageID) -> anyhow::Result<PackageAddon> {
-		Ok(PackageAddon {
-			kind: AddonKind::parse_from_str(&self.kind)
-				.ok_or(anyhow!("Invalid addon kind '{}'", self.kind))?,
-			id: self.id.clone(),
-			file_name: self
-				.file_name
-				.clone()
-				.expect("Filename should have been filled in or fixed"),
-			pkg_id,
-			version: self.version.clone(),
-			hashes: self.hashes.clone(),
-		})
-	}
-
-	/// Remove this addon
-	pub fn remove(&self) -> anyhow::Result<()> {
-		for file in self.files.iter() {
-			let path = PathBuf::from(file);
-			if path.exists() {
-				fs::remove_file(path).context("Failed to remove addon")?;
-			}
-		}
-
-		Ok(())
-	}
-}
-
-impl LockfileContents {
-	/// Fix changes in lockfile format
-	pub fn fix(&mut self) {
-		for (.., instance) in &mut self.packages {
-			for (.., package) in instance {
-				for addon in &mut package.addons {
-					if addon.file_name.is_none() {
-						addon.file_name = Some(addon.id.clone())
-					}
-				}
-			}
-		}
-	}
 }
 
 impl Lockfile {
 	/// Open the lockfile
 	pub fn open(paths: &Paths) -> anyhow::Result<Self> {
 		let path = Self::get_path(paths);
-		let mut contents = if path.exists() {
+		let contents = if path.exists() {
 			json_from_file(path).context("Failed to open lockfile")?
 		} else {
 			LockfileContents::default()
 		};
-		contents.fix();
 		Ok(Self { contents })
 	}
 
@@ -157,183 +45,6 @@ impl Lockfile {
 		Ok(())
 	}
 
-	/// Get a specific instance from the lockfile
-	pub(crate) fn get_instance(&self, instance: &str) -> Option<&LockfileInstance> {
-		self.contents.instances.get(instance)
-	}
-
-	/// Updates a package with a new version.
-	/// Returns a list of addon files to be removed
-	pub async fn update_package(
-		&mut self,
-		req: &PkgRequest,
-		instance: &str,
-		addons: &[LockfileAddon],
-		content_version: Option<String>,
-		o: &mut impl NitroOutput,
-	) -> anyhow::Result<Vec<PathBuf>> {
-		if !self.contents.packages.contains_key(instance) {
-			self.contents
-				.packages
-				.insert(instance.to_string(), HashMap::new());
-		}
-
-		let mut files_to_remove = Vec::new();
-		let mut new_files = Vec::new();
-
-		let instance = self.contents.packages.get_mut(instance).unwrap();
-		let req = req.to_string();
-		if let Some(pkg) = instance.get_mut(&req) {
-			let mut indices = Vec::new();
-			// Check for addons that need to be removed
-			for (i, current) in pkg.addons.iter().enumerate() {
-				if !addons.iter().any(|x| x.id == current.id) {
-					indices.push(i);
-					files_to_remove.extend(current.files.iter().map(PathBuf::from));
-				}
-			}
-			for i in indices {
-				pkg.addons.remove(i);
-			}
-			// Check for addons that need to be updated
-			for requested in addons {
-				if let Some(current) = pkg.addons.iter().find(|x| x.id == requested.id) {
-					files_to_remove.extend(
-						current
-							.files
-							.iter()
-							.filter(|x| !requested.files.contains(x))
-							.map(PathBuf::from),
-					);
-					new_files.extend(
-						requested
-							.files
-							.iter()
-							.filter(|x| !current.files.contains(x))
-							.cloned(),
-					);
-				} else {
-					new_files.extend(requested.files.clone());
-				};
-			}
-
-			pkg.addons = addons.to_vec();
-			pkg.content_version = content_version;
-		} else {
-			instance.insert(
-				req.clone(),
-				LockfilePackage {
-					addons: addons.to_vec(),
-					content_version,
-				},
-			);
-			new_files.extend(addons.iter().flat_map(|x| x.files.clone()));
-		}
-
-		for file in &new_files {
-			if PathBuf::from(file).exists() && !file.contains("nitro_") {
-				let allow = o
-					.prompt_yes_no(
-						false,
-						MessageContents::Warning(translate!(
-							o,
-							OverwriteAddonFilePrompt,
-							"file" = file
-						)),
-					)
-					.await
-					.context("Prompt failed")?;
-
-				if !allow {
-					bail!("File '{file}' would be overwritten by an addon");
-				}
-			}
-		}
-
-		Ok(files_to_remove)
-	}
-
-	/// Remove any unused packages for an instance.
-	/// Returns any addon files that need to be removed from the instance.
-	pub fn remove_unused_packages(
-		&mut self,
-		instance: &str,
-		used_packages: &[ArcPkgReq],
-	) -> anyhow::Result<Vec<PathBuf>> {
-		if let Some(inst) = self.contents.packages.get_mut(instance) {
-			let mut pkgs_to_remove = Vec::new();
-			for req in inst.keys() {
-				let req2 = Arc::new(PkgRequest::parse(req, PkgRequestSource::UserRequire));
-				if used_packages.contains(&req2) {
-					continue;
-				}
-
-				pkgs_to_remove.push(req.clone());
-			}
-
-			let mut files_to_remove = Vec::new();
-			for pkg_id in pkgs_to_remove {
-				if let Some(pkg) = inst.remove(&pkg_id) {
-					for addon in pkg.addons {
-						files_to_remove.extend(addon.files.iter().map(PathBuf::from));
-					}
-				}
-			}
-
-			Ok(files_to_remove)
-		} else {
-			Ok(vec![])
-		}
-	}
-
-	/// Ensures that an instance is created
-	pub fn ensure_instance_created(&mut self, instance: &str, version: &str) {
-		if !self.contents.instances.contains_key(instance) {
-			self.contents.instances.insert(
-				instance.to_string(),
-				LockfileInstance {
-					version: version.to_string(),
-					loader_version: None,
-					loader: Loader::Vanilla,
-				},
-			);
-		}
-	}
-
-	/// Updates the version of an instance
-	pub fn update_instance_version(&mut self, instance: &str, version: &str) -> anyhow::Result<()> {
-		if let Some(instance) = self.contents.instances.get_mut(instance) {
-			instance.version = version.to_string();
-			Ok(())
-		} else {
-			bail!("Instance {instance} does not exist")
-		}
-	}
-
-	/// Updates the loader of an instance
-	pub fn update_instance_loader(&mut self, instance: &str, loader: Loader) -> anyhow::Result<()> {
-		if let Some(instance) = self.contents.instances.get_mut(instance) {
-			instance.loader = loader;
-			Ok(())
-		} else {
-			bail!("Instance {instance} does not exist")
-		}
-	}
-
-	/// Updates the loader version of an instance
-	pub fn update_instance_loader_version(
-		&mut self,
-		instance: &str,
-		version: Option<String>,
-	) -> anyhow::Result<()> {
-		if let Some(instance) = self.contents.instances.get_mut(instance) {
-			instance.loader_version = version;
-			Ok(())
-		} else {
-			bail!("Instance {instance} does not exist")
-		}
-	}
-
 	/// Check whether an instance has done its first update successfully
 	pub fn has_instance_done_first_update(&self, instance: &str) -> bool {
 		self.contents.created_instances.contains(instance)
@@ -342,21 +53,5 @@ impl Lockfile {
 	/// Update whether an instance has done its first update
 	pub fn update_instance_has_done_first_update(&mut self, instance: &str) {
 		self.contents.created_instances.insert(instance.to_string());
-	}
-
-	/// Get the locked packages of an instance. Returns None if the instance does not exist.
-	pub fn get_instance_packages(
-		&self,
-		instance: &str,
-	) -> Option<&HashMap<String, LockfilePackage>> {
-		self.contents.packages.get(instance)
-	}
-
-	/// Get the locked version of an instance
-	pub fn get_instance_version(&self, instance: &str) -> Option<&str> {
-		self.contents
-			.instances
-			.get(instance)
-			.map(|x| x.version.as_str())
 	}
 }

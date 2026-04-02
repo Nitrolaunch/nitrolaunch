@@ -182,8 +182,6 @@ pub async fn migrate_instances(
 			.context("Failed to load transfer formats"),
 	)?;
 
-	let mut lock = fmt_err(Lockfile::open(&state.paths).context("Failed to open lockfile"))?;
-
 	let instances = fmt_err(
 		nitrolaunch::instance::transfer::migrate_instances(
 			format,
@@ -192,7 +190,6 @@ pub async fn migrate_instances(
 			&formats,
 			&config.plugins,
 			&state.paths,
-			&mut lock,
 			&mut output,
 		)
 		.await

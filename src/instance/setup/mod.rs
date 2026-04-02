@@ -33,7 +33,6 @@ use nitro_shared::{translate, UpdateDepth};
 use reqwest::Client;
 
 use crate::instance::update::manager::UpdateSettings;
-use crate::io::lock::Lockfile;
 use crate::io::paths::Paths;
 use crate::plugin::PluginManager;
 
@@ -53,7 +52,6 @@ impl Instance {
 		plugins: &PluginManager,
 		paths: &Paths,
 		accounts: &AccountManager,
-		lock: &mut Lockfile,
 		o: &mut impl NitroOutput,
 	) -> anyhow::Result<UpdateMethodResult> {
 		// Start by setting up side-specific stuff
@@ -98,7 +96,7 @@ impl Instance {
 		// Run plugin setup hooks
 
 		let mut inst_lock = self
-			.get_lockfile(lock, paths)
+			.get_lockfile(paths)
 			.context("Failed to open instance lockfile")?;
 
 		let current_version = inst_lock.get_minecraft_version().cloned();

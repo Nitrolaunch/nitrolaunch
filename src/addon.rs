@@ -1,10 +1,11 @@
 use anyhow::{bail, Context};
 use nitro_instance::addon::storage::get_sha256_addon_path;
 use nitro_instance::addon::Addon;
+use nitro_instance::lock::LockfileAddon;
 use nitro_pkg::addon::PackageAddon;
 use nitro_shared::io::update_link;
 use nitro_shared::minecraft::AddonKind;
-use nitro_shared::pkg::PackageAddonOptionalHashes;
+use nitro_shared::pkg::AddonOptionalHashes;
 use reqwest::Client;
 
 use crate::io::paths::Paths;
@@ -46,7 +47,9 @@ impl AddonExt for PackageAddon {
 			return get_sha256_addon_path(&paths.addons, hash);
 		}
 
-		let pkg_dir = self.get_dir(paths).join(self.pkg_id.to_string());
+		let pkg_dir = self
+			.get_dir(paths)
+			.join(self.pkg.to_string_no_version().replace(":", "_"));
 		if let Some(version) = &self.version {
 			pkg_dir.join(self.id.clone()).join(version)
 		} else {
@@ -143,7 +146,7 @@ impl AddonRequest {
 		create_leading_dirs(&path)?;
 
 		let id = self.addon.id.clone();
-		let pkg_id = self.addon.pkg_id.clone();
+		let pkg = self.addon.pkg.clone();
 		let location = self.location.clone();
 		let client = client.clone();
 		let hashes = self.addon.hashes.clone();
@@ -151,7 +154,7 @@ impl AddonRequest {
 			match location {
 				AddonLocation::Remote(url) => {
 					if url.is_empty() {
-						bail!("Empty URL for addon {id} from package {pkg_id}");
+						bail!("Empty URL for addon {id} from package {pkg}");
 					}
 					download::file(url, &path, &client)
 						.await
@@ -181,7 +184,7 @@ impl AddonRequest {
 	}
 
 	/// Implementation for hash checking
-	fn check_hashes_impl(hashes: PackageAddonOptionalHashes, path: &Path) -> anyhow::Result<()> {
+	fn check_hashes_impl(hashes: AddonOptionalHashes, path: &Path) -> anyhow::Result<()> {
 		let best_hash = get_best_hash(&hashes);
 		if let Some(best_hash) = best_hash {
 			let matches = hash_file_with_best_hash(path, best_hash)
@@ -202,13 +205,32 @@ pub struct ResolvedPackageAddon {
 	pub pkg_addon: PackageAddon,
 	/// Target addon
 	pub addon: Addon,
-	/// Target file paths for the addon
-	pub target_paths: Vec<PathBuf>,
+}
+
+impl ResolvedPackageAddon {
+	/// Converts to the addon format in the lockfile
+	pub fn to_lockfile_addon(&self) -> LockfileAddon {
+		LockfileAddon {
+			id: Some(self.pkg_addon.id.clone()),
+			package: Some(self.pkg_addon.pkg.to_string_no_version()),
+			from_modpack: false,
+			file_name: self.addon.file_name.clone(),
+			files: self
+				.addon
+				.target_paths
+				.iter()
+				.map(|x| x.to_string_lossy().to_string())
+				.collect(),
+			kind: self.addon.kind,
+			hashes: self.addon.hashes.clone(),
+		}
+	}
 }
 
 #[cfg(test)]
 mod tests {
-	use nitro_shared::pkg::{PackageAddonOptionalHashes, PackageID};
+	use nitro_pkg::PkgRequest;
+	use nitro_shared::pkg::AddonOptionalHashes;
 
 	use super::*;
 
@@ -218,9 +240,9 @@ mod tests {
 			kind: AddonKind::Mod,
 			id: "foo".into(),
 			file_name: "FooBar.baz.jar".into(),
-			pkg_id: PackageID::from("package"),
+			pkg: PkgRequest::parse("package", nitro_pkg::PkgRequestSource::UserRequire).arc(),
 			version: None,
-			hashes: PackageAddonOptionalHashes::default(),
+			hashes: AddonOptionalHashes::default(),
 		};
 		assert_eq!(addon.split_filename(), ("FooBar", ".baz.jar"));
 	}

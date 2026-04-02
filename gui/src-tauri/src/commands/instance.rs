@@ -777,12 +777,11 @@ pub async fn canonicalize_version(
 
 	if let Some(id) = id {
 		if instance_or_template == InstanceOrTemplate::Instance {
-			let lock = fmt_err(Lockfile::open(&state.paths).context("Failed to open lockfile"))?;
 			let Some(instance) = config.instances.get_mut(id) else {
 				return Err("Instance does not exist".into());
 			};
 
-			let inst_lock = fmt_err(instance.get_lockfile(&lock, &state.paths))?;
+			let inst_lock = fmt_err(instance.get_lockfile(&state.paths))?;
 
 			if let Some(version) = inst_lock.get_minecraft_version() {
 				return Ok(version.clone());

@@ -9,7 +9,7 @@ use nitro_pkg::properties::PackageProperties;
 use nitro_pkg::script_eval::AddonInstructionData;
 use nitro_pkg::RequiredPackage;
 use nitro_shared::loaders::LoaderMatch;
-use nitro_shared::pkg::PackageID;
+use nitro_shared::pkg::{ArcPkgReq, PackageID};
 use nitro_shared::util::DeserListOrSingle;
 
 use crate::plugin::PluginManager;
@@ -22,7 +22,7 @@ use super::{
 
 /// Evaluate a declarative package
 pub fn eval_declarative_package(
-	id: PackageID,
+	req: &ArcPkgReq,
 	contents: &DeclarativePackage,
 	input: EvalInput,
 	properties: Arc<PackageProperties>,
@@ -30,23 +30,21 @@ pub fn eval_declarative_package(
 	plugins: PluginManager,
 ) -> anyhow::Result<EvalData> {
 	let eval_data =
-		eval_declarative_package_impl(id, contents, input, properties, routine, plugins)?;
+		eval_declarative_package_impl(req, contents, input, properties, routine, plugins)?;
 
 	Ok(eval_data)
 }
 
 /// Implementation for evaluating a declarative package
 fn eval_declarative_package_impl(
-	id: PackageID,
+	req: &ArcPkgReq,
 	contents: &DeclarativePackage,
 	input: EvalInput,
 	properties: Arc<PackageProperties>,
 	routine: Routine,
 	plugins: PluginManager,
 ) -> anyhow::Result<EvalData> {
-	let pkg_id = id;
-
-	let mut eval_data = EvalData::new(input, pkg_id.clone(), properties, &routine, plugins);
+	let mut eval_data = EvalData::new(input, req.clone(), properties, &routine, plugins);
 
 	// Vars for the EvalData that are modified by conditions / versions
 	let mut relations = contents.relations.clone();
@@ -92,7 +90,7 @@ fn eval_declarative_package_impl(
 					hashes: version.hashes.clone(),
 				};
 
-				let addon_req = create_valid_addon_request(data, pkg_id.clone(), &eval_data.input)?;
+				let addon_req = create_valid_addon_request(data, req.clone(), &eval_data.input)?;
 
 				eval_data.addon_reqs.push(addon_req);
 			}
@@ -369,7 +367,7 @@ fn match_ordering<'a, T: Ord + Eq + 'a>(
 mod tests {
 	use std::sync::Arc;
 
-	use nitro_pkg::declarative::deserialize_declarative_package;
+	use nitro_pkg::{declarative::deserialize_declarative_package, PkgRequest};
 	use nitro_shared::lang::Language;
 	use nitro_shared::loaders::Loader;
 	use nitro_shared::pkg::PackageStability;
@@ -451,7 +449,7 @@ mod tests {
 
 		let plugins = PluginManager::new(&Paths::new_no_create().unwrap());
 		let eval = eval_declarative_package(
-			PackageID::from("foo"),
+			&PkgRequest::parse("foo", nitro_pkg::PkgRequestSource::UserRequire).arc(),
 			&pkg,
 			input,
 			Arc::new(PackageProperties::default()),

@@ -1,7 +1,7 @@
 use crate::commands::instance::InstanceOrTemplate;
 use crate::{output::LauncherOutput, State};
 use anyhow::Context;
-use nitrolaunch::io::lock::{Lockfile, LockfilePackage};
+use nitrolaunch::instance_crate::lock::LockfilePackage;
 use nitrolaunch::pkg_crate::declarative::DeclarativePackage;
 use nitrolaunch::pkg_crate::metadata::PackageMetadata;
 use nitrolaunch::pkg_crate::properties::PackageProperties;
@@ -349,13 +349,12 @@ pub async fn get_instance_packages(
 			.await
 			.context("Failed to load config"),
 	)?;
-	let lock = fmt_err(Lockfile::open(&state.paths).context("Failed to open lockfile"))?;
 
 	let Some(instance) = config.instances.get_mut(instance) else {
 		return Ok(HashMap::new());
 	};
 
-	let lock = fmt_err(instance.get_lockfile(&lock, &state.paths))?;
+	let lock = fmt_err(instance.get_lockfile(&state.paths))?;
 
 	Ok(lock.get_packages().clone())
 }

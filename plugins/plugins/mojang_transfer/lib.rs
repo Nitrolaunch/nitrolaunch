@@ -78,7 +78,6 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 		Ok(MigrateInstancesResult {
 			format: arg.format,
 			instances,
-			packages: HashMap::new(),
 		})
 	})?;
 

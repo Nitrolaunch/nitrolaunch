@@ -7,7 +7,7 @@ use nitro_parse::FailReason;
 
 use anyhow::{anyhow, bail, Context};
 use nitro_shared::minecraft::AddonKind;
-use nitro_shared::pkg::{PackageAddonOptionalHashes, PackageID};
+use nitro_shared::pkg::{AddonOptionalHashes, PackageID};
 use serde::{Deserialize, Serialize};
 
 use crate::{RecommendedPackage, RequiredPackage};
@@ -292,7 +292,7 @@ pub async fn eval_instr<E: ScriptEvaluator>(
 					if let EvalReason::Install = config.reason {
 						let id = id.get(e.get_variable_store(shared))?;
 						let kind = kind.as_ref().expect("Addon kind missing");
-						let hashes = PackageAddonOptionalHashes {
+						let hashes = AddonOptionalHashes {
 							sha256: hashes.sha256.get_as_option(e.get_variable_store(shared))?,
 							sha512: hashes.sha512.get_as_option(e.get_variable_store(shared))?,
 						};
@@ -365,5 +365,5 @@ pub struct AddonInstructionData {
 	/// The version of the addon
 	pub version: Option<String>,
 	/// The addon's hashes
-	pub hashes: PackageAddonOptionalHashes,
+	pub hashes: AddonOptionalHashes,
 }

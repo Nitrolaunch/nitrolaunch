@@ -18,7 +18,6 @@ use nitrolaunch::config::{is_first_run, Config};
 use nitrolaunch::config_crate::ConfigDeser;
 use nitrolaunch::core::QuickPlayType;
 use nitrolaunch::instance::transfer::{load_formats, migrate_instances};
-use nitrolaunch::io::lock::Lockfile;
 use nitrolaunch::io::paths::Paths;
 use nitrolaunch::plugin::PluginManager;
 use nitrolaunch::plugin_crate::hook::hooks::{self, AddTranslations, SubcommandArg};
@@ -367,8 +366,6 @@ async fn migrate(
 		inquire::Select::new("What launcher do you want to import from?", options).prompt()?
 	};
 
-	let mut lock = Lockfile::open(&data.paths).context("Failed to open lockfile")?;
-
 	let new_configs = migrate_instances(
 		format,
 		Some(instances).filter(|x| !x.is_empty()),
@@ -376,13 +373,10 @@ async fn migrate(
 		&formats,
 		&config.plugins,
 		&data.paths,
-		&mut lock,
 		data.output,
 	)
 	.await
 	.context("Failed to migrate instances")?;
-
-	lock.finish(&data.paths)?;
 
 	let mut config2 = data.get_raw_config()?;
 

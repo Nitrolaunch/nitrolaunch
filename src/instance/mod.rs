@@ -2,8 +2,6 @@
 mod addons;
 /// Launching an instance
 pub mod launch;
-/// Storing install data about an instance like the current version and packages
-pub mod lock;
 /// Accessing log files
 pub mod logs;
 /// Managing and installing packages on an instance
@@ -23,6 +21,8 @@ use std::path::{Path, PathBuf};
 
 use nitro_config::instance::{ClientWindowConfig, InstanceConfig};
 use nitro_core::util::versions::MinecraftVersion;
+use nitro_instance::get_instance_dir;
+use nitro_instance::lock::InstanceLockfile;
 use nitro_shared::loaders::Loader;
 use nitro_shared::pkg::{PackageOverrides, PackageStability};
 use nitro_shared::versions::VersionPattern;
@@ -136,10 +136,7 @@ impl InstanceStoredConfig {
 				Some(inst_dir.to_owned())
 			}
 		} else {
-			match side {
-				Side::Client => Some(base_dir.join(".minecraft")),
-				Side::Server => Some(base_dir),
-			}
+			Some(get_instance_dir(&base_dir, side))
 		}
 	}
 }
@@ -184,6 +181,12 @@ impl Instance {
 	/// Get the instance's stored configuration
 	pub fn get_config(&self) -> &InstanceStoredConfig {
 		&self.config
+	}
+
+	/// Opens the lockfile for this instance and returns it
+	pub fn get_lockfile(&mut self, paths: &Paths) -> anyhow::Result<InstanceLockfile> {
+		let lock_path = InstanceLockfile::get_path(self.dir.as_deref(), &self.id, &paths.internal);
+		InstanceLockfile::open(&lock_path)
 	}
 }
 

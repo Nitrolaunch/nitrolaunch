@@ -31,7 +31,6 @@ use crate::instance::setup::setup_core;
 use crate::instance::tracking::{is_process_alive, RunningInstanceEntry};
 use crate::instance::update::manager::UpdateSettings;
 use crate::instance::world_files::WorldFilesWatcher;
-use crate::io::lock::Lockfile;
 use crate::io::paths::Paths;
 use crate::plugin::PluginManager;
 
@@ -76,7 +75,6 @@ impl Instance {
 		let version_info = core_version.get_version_info();
 		std::mem::drop(core_version);
 
-		let mut lock = Lockfile::open(paths).context("Failed to open lockfile")?;
 		let result = self
 			.setup(
 				&mut manager,
@@ -85,7 +83,6 @@ impl Instance {
 				plugins,
 				paths,
 				accounts,
-				&mut lock,
 				o,
 			)
 			.await

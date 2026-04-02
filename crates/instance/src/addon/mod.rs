@@ -3,6 +3,7 @@ use std::path::{Path, PathBuf};
 use anyhow::Context;
 use nitro_shared::{
 	minecraft::AddonKind,
+	pkg::AddonOptionalHashes,
 	versions::{VersionInfo, VersionPattern},
 	Side,
 };
@@ -20,9 +21,13 @@ pub struct Addon {
 	/// The addon's file name
 	pub file_name: String,
 	/// The original path where the addon was read from. May not be all the paths where the final addon is linked.
-	pub path: Option<PathBuf>,
+	pub original_path: Option<PathBuf>,
+	/// Target paths for the final addon to be linked to on an instance
+	pub target_paths: Vec<PathBuf>,
 	/// The source / link-stored file for the addon
 	pub source: Option<PathBuf>,
+	/// Hashes for the addon
+	pub hashes: AddonOptionalHashes,
 }
 
 impl Addon {
@@ -35,21 +40,23 @@ impl Addon {
 				.context("Addon is not a file")?
 				.to_string_lossy()
 				.to_string(),
-			path: Some(path.to_owned()),
+			original_path: Some(path.to_owned()),
+			target_paths: Vec::new(),
 			source: None,
+			hashes: AddonOptionalHashes::default(),
 		})
 	}
 
 	/// Gets the target paths for this addon on an instance
 	pub fn get_targets(
-		&self,
+		&mut self,
 		side: Side,
 		inst_dir: &Path,
 		selected_worlds: &[String],
 		datapack_folder: Option<&Path>,
 		version_info: &VersionInfo,
-	) -> Vec<PathBuf> {
-		get_addon_dirs(
+	) {
+		self.target_paths = get_addon_dirs(
 			self.kind,
 			side,
 			inst_dir,
@@ -59,17 +66,17 @@ impl Addon {
 		)
 		.into_iter()
 		.map(|x| x.join(&self.file_name))
-		.collect()
+		.collect();
 	}
 
 	/// Links this addon's targets to its source
-	pub fn link(&self, targets: &[PathBuf]) -> std::io::Result<()> {
+	pub fn link(&self) -> std::io::Result<()> {
 		let Some(source) = &self.source else {
 			return Ok(());
 		};
 		let mut result = Ok(());
 
-		for target in targets {
+		for target in &self.target_paths {
 			if let Some(parent) = target.parent() {
 				let _ = std::fs::create_dir_all(parent);
 			}
@@ -84,6 +91,17 @@ impl Addon {
 		}
 
 		result
+	}
+
+	/// Removes all instances of this addon from the instance
+	pub fn remove_from_instance(&self) -> anyhow::Result<()> {
+		for target in &self.target_paths {
+			if target.exists() {
+				std::fs::remove_file(target)?;
+			}
+		}
+
+		Ok(())
 	}
 }
 
