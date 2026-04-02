@@ -5,13 +5,11 @@ use std::{
 	sync::Arc,
 };
 
-use anyhow::{bail, Context};
+use anyhow::Context;
 use nitro_shared::{
 	loaders::Loader,
 	minecraft::AddonKind,
-	output::{MessageContents, NitroOutput},
 	pkg::{AddonOptionalHashes, ArcPkgReq, PkgRequest, PkgRequestSource},
-	translate,
 };
 use serde::{Deserialize, Serialize};
 
@@ -69,10 +67,8 @@ impl InstanceLockfile {
 		req: &PkgRequest,
 		addons: &[LockfileAddon],
 		content_version: Option<String>,
-		o: &mut impl NitroOutput,
 	) -> anyhow::Result<Vec<PathBuf>> {
 		let mut files_to_remove = Vec::new();
-		let mut new_files = Vec::new();
 		let req = req.to_string_no_version();
 
 		// Update the package
@@ -116,41 +112,12 @@ impl InstanceLockfile {
 						.filter(|x| !requested.files.contains(x))
 						.map(PathBuf::from),
 				);
-				new_files.extend(
-					requested
-						.files
-						.iter()
-						.filter(|x| !current.files.contains(x))
-						.cloned(),
-				);
-			} else {
-				new_files.extend(requested.files.clone());
-			};
+			}
 		}
 
 		// Add new addons
 		for requested in addons {
 			self.contents.addons.push(requested.clone());
-		}
-
-		for file in &new_files {
-			if PathBuf::from(file).exists() && !file.contains("nitro_") {
-				let allow = o
-					.prompt_yes_no(
-						false,
-						MessageContents::Warning(translate!(
-							o,
-							OverwriteAddonFilePrompt,
-							"file" = file
-						)),
-					)
-					.await
-					.context("Prompt failed")?;
-
-				if !allow {
-					bail!("File '{file}' would be overwritten by an addon");
-				}
-			}
 		}
 
 		Ok(files_to_remove)

@@ -119,12 +119,7 @@ impl Instance {
 		let lockfile_addons: Vec<_> = addons.iter().map(|x| x.to_lockfile_addon()).collect();
 
 		let files_to_remove = inst_lock
-			.update_package(
-				pkg,
-				&lockfile_addons,
-				eval.selected_content_version.clone(),
-				o,
-			)
+			.update_package(pkg, &lockfile_addons, eval.selected_content_version.clone())
 			.await
 			.context("Failed to update package in lockfile")?;
 

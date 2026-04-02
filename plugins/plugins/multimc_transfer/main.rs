@@ -14,7 +14,7 @@ use nitro_plugin::{
 use nitro_shared::{
 	loaders::Loader,
 	minecraft::AddonKind,
-	output::{MessageContents, NitroOutput, NoOp},
+	output::{MessageContents, NitroOutput},
 	pkg::AddonOptionalHashes,
 	versions::MinecraftVersionDeser,
 	Side,
@@ -204,7 +204,7 @@ fn main() -> anyhow::Result<()> {
 					hashes: AddonOptionalHashes::default(),
 				};
 
-				runtime.block_on(lock.update_package(&req, &[addon], None, &mut NoOp))?;
+				runtime.block_on(lock.update_package(&req, &[addon], None))?;
 			}
 		}
 
