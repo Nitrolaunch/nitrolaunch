@@ -19,6 +19,8 @@ pub struct PackageAddon {
 	pub pkg: ArcPkgReq,
 	/// Version of the addon, used for caching
 	pub version: Option<String>,
+	/// The modpack format of this addon if it is a modpack
+	pub modpack_format: Option<String>,
 	/// Hashes of the addon
 	pub hashes: AddonOptionalHashes,
 }

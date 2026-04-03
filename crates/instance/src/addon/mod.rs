@@ -7,6 +7,7 @@ use nitro_shared::{
 	versions::{VersionInfo, VersionPattern},
 	Side,
 };
+use serde::{Deserialize, Serialize};
 
 /// Modpack formats
 pub mod modpack;
@@ -14,7 +15,7 @@ pub mod modpack;
 pub mod storage;
 
 /// Some content that is installed on Minecraft
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Addon {
 	/// What type of addon this is
 	pub kind: AddonKind,
@@ -134,6 +135,7 @@ pub fn get_addon_dirs(
 			Side::Server => vec![],
 		},
 		AddonKind::Datapack => get_datapack_dirs(side, inst_dir, selected_worlds, datapack_folder),
+		AddonKind::Modpack => vec![],
 	}
 }
 

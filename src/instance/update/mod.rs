@@ -1,5 +1,7 @@
 /// UpdateManager
 pub mod manager;
+/// Modpack installation
+pub mod modpack;
 /// Updating packages on an instance
 pub mod packages;
 /// Basic setup of an instance, creating and downloading core game files
@@ -11,6 +13,7 @@ use crate::pkg::eval::EvalConstants;
 use crate::plugin::PluginManager;
 use nitro_core::account::AccountManager;
 use nitro_core::NitroCore;
+use nitro_pkg::{PkgRequest, PkgRequestSource};
 use nitro_plugin::hook::hooks::{AfterPackagesInstalled, AfterPackagesInstalledArg};
 use nitro_shared::{translate, UpdateDepth};
 #[cfg(not(feature = "disable_instance_update_packages"))]
@@ -100,6 +103,22 @@ impl Instance {
 		.await
 		.context("Failed to create instance")?;
 
+		// Modpack
+		if facets.modpack && depth >= UpdateDepth::Full {
+			if let Some(modpack) = &self
+				.config
+				.original_config_with_templates_and_plugins
+				.modpack
+			{
+				let modpack = PkgRequest::parse(modpack, PkgRequestSource::UserRequire).arc();
+
+				self.update_modpack(&modpack, depth, &version_info, ctx)
+					.await
+					.context("Failed to update modpack")?;
+			}
+		}
+
+		// Packages
 		if facets.packages && depth >= UpdateDepth::Full {
 			#[cfg(not(feature = "disable_instance_update_packages"))]
 			{
@@ -180,6 +199,8 @@ pub struct UpdateFacets {
 	pub instance: bool,
 	/// Whether to update packages
 	pub packages: bool,
+	/// Whether to update the modpack
+	pub modpack: bool,
 }
 
 impl UpdateFacets {
@@ -188,6 +209,7 @@ impl UpdateFacets {
 		Self {
 			instance: true,
 			packages: true,
+			modpack: true,
 		}
 	}
 
@@ -196,19 +218,22 @@ impl UpdateFacets {
 		Self {
 			instance: false,
 			packages: true,
+			modpack: false,
 		}
 	}
 
 	/// Creates facets from flags, i.e. if any of the flags are true, turns off instance updating. If all of the flags are false, sets all of them to true
-	pub fn from_flags(packages: bool) -> Self {
-		let all_false = !packages;
-		let any_true = packages;
+	pub fn from_flags(packages: bool, modpack: bool) -> Self {
+		let all_false = !packages && !modpack;
+		let any_true = packages || modpack;
 
 		let packages = if all_false { true } else { packages };
+		let modpack = if all_false { true } else { modpack };
 
 		Self {
 			instance: !any_true,
 			packages,
+			modpack,
 		}
 	}
 }

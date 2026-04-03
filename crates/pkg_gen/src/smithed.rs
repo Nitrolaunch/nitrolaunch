@@ -93,6 +93,7 @@ pub async fn gen(
 		versions: Vec::new(),
 		conditions: Vec::new(),
 		optional: false,
+		modpack_format: None,
 	};
 
 	let mut resourcepack = DeclarativeAddon {
@@ -100,6 +101,7 @@ pub async fn gen(
 		versions: Vec::new(),
 		conditions: Vec::new(),
 		optional: false,
+		modpack_format: None,
 	};
 
 	let mut all_mc_versions = Vec::new();

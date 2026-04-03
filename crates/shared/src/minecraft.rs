@@ -81,6 +81,8 @@ pub enum AddonKind {
 	Shader,
 	/// A Minecraft datapack
 	Datapack,
+	/// A modpack. Not actually installed on the instance directly.
+	Modpack,
 }
 
 impl AddonKind {
@@ -92,6 +94,7 @@ impl AddonKind {
 			"plugin" => Some(Self::Plugin),
 			"shader" => Some(Self::Shader),
 			"datapack" => Some(Self::Datapack),
+			"modpack" => Some(Self::Modpack),
 			_ => None,
 		}
 	}
@@ -104,6 +107,7 @@ impl AddonKind {
 			Self::Plugin => "plugins".into(),
 			Self::Shader => "shaders".into(),
 			Self::Datapack => "datapacks".into(),
+			Self::Modpack => "modpacks".into(),
 		}
 	}
 
@@ -111,7 +115,10 @@ impl AddonKind {
 	pub fn get_extension(&self) -> &str {
 		match self {
 			AddonKind::Mod | AddonKind::Plugin => ".jar",
-			AddonKind::ResourcePack | AddonKind::Shader | AddonKind::Datapack => ".zip",
+			AddonKind::ResourcePack
+			| AddonKind::Shader
+			| AddonKind::Datapack
+			| AddonKind::Modpack => ".zip",
 		}
 	}
 }
@@ -127,6 +134,7 @@ impl Display for AddonKind {
 				Self::Plugin => "plugin",
 				Self::Shader => "shader",
 				Self::Datapack => "datapack",
+				Self::Modpack => "modpack",
 			}
 		)
 	}

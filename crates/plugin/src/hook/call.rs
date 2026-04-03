@@ -360,6 +360,21 @@ where
 
 		Ok(out)
 	}
+
+	/// Gets the results from all handles along with the plugin ID from each result, flattening them from lists and storing them in a vec
+	pub async fn flatten_all_results_with_ids(
+		mut self,
+		o: &mut impl NitroOutput,
+	) -> anyhow::Result<Vec<(String, T)>> {
+		let mut out = Vec::new();
+		while let Some(result) = self.next() {
+			let id = result.get_id().clone();
+			let result = result.result(o).await?;
+			out.extend(result.into_iter().map(|x| (id.clone(), x)));
+		}
+
+		Ok(out)
+	}
 }
 
 impl<H: Hook, T> HookHandles<H>

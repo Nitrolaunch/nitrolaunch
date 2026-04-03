@@ -191,3 +191,9 @@ hook_interface!(
 	"add_plugin_config_controls",
 	AddPluginConfigControls
 );
+hook_interface!(
+	add_modpack_formats,
+	"add_modpack_formats",
+	AddModpackFormats
+);
+hook_interface!(install_modpack, "install_modpack", InstallModpack);

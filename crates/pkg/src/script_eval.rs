@@ -287,6 +287,7 @@ pub async fn eval_instr<E: ScriptEvaluator>(
 					url,
 					path,
 					version,
+					modpack_format,
 					hashes,
 				} => {
 					if let EvalReason::Install = config.reason {
@@ -303,6 +304,8 @@ pub async fn eval_instr<E: ScriptEvaluator>(
 							url: url.get_as_option(e.get_variable_store(shared))?,
 							path: path.get_as_option(e.get_variable_store(shared))?,
 							version: version.get_as_option(e.get_variable_store(shared))?,
+							modpack_format: modpack_format
+								.get_as_option(e.get_variable_store(shared))?,
 							hashes,
 						};
 						e.add_addon(shared, data)?;
@@ -364,6 +367,8 @@ pub struct AddonInstructionData {
 	pub path: Option<String>,
 	/// The version of the addon
 	pub version: Option<String>,
+	/// Modpack format of the addon if it is a modpack
+	pub modpack_format: Option<String>,
 	/// The addon's hashes
 	pub hashes: AddonOptionalHashes,
 }

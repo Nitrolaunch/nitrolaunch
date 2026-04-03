@@ -27,7 +27,6 @@ use nitrolaunch::{
 	instance_crate::lock::{InstanceLockfile, LockfileAddon},
 };
 use serde::{Deserialize, Serialize};
-use tokio::runtime::Runtime;
 use zip::ZipArchive;
 
 fn main() -> anyhow::Result<()> {
@@ -186,7 +185,6 @@ fn main() -> anyhow::Result<()> {
 			))
 			.context("Failed to open lockfile")?;
 
-			let runtime = Runtime::new()?;
 			for (req, path, kind) in inst_packages {
 				let addon_id = if req.repository == Some("modrinth".into()) {
 					"addon"
@@ -204,7 +202,7 @@ fn main() -> anyhow::Result<()> {
 					hashes: AddonOptionalHashes::default(),
 				};
 
-				runtime.block_on(lock.update_package(&req, &[addon], None))?;
+				lock.update_package(&req, &[addon], None);
 			}
 		}
 

@@ -177,11 +177,19 @@ pub async fn gen(
 			ProjectType::Plugin => PackageKind::Plugin,
 			ProjectType::ResourcePack => PackageKind::ResourcePack,
 			ProjectType::Shader => PackageKind::Shader,
-			ProjectType::Modpack => PackageKind::Bundle,
+			ProjectType::Modpack => PackageKind::Modpack,
 		}
 	};
+
+	let modpack_format = if package_type == PackageKind::Modpack {
+		Some("mrpack".into())
+	} else {
+		None
+	};
+
 	let mut addon = DeclarativeAddon {
 		kind: package_type,
+		modpack_format,
 		versions: Vec::new(),
 		conditions: Vec::new(),
 		optional: false,

@@ -46,6 +46,9 @@ pub struct InstanceConfig {
 	pub window: ClientWindowConfig,
 
 	// Package config
+	/// Modpack package for this instance
+	#[serde(skip_serializing_if = "Option::is_none")]
+	pub modpack: Option<String>,
 	/// Packages for this instance
 	#[serde(skip_serializing_if = "Vec::is_empty")]
 	pub packages: Vec<PackageConfigDeser>,

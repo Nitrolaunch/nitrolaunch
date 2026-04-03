@@ -32,6 +32,7 @@ use nitro_pkg::{
 };
 use nitro_shared::lang::Language;
 use nitro_shared::loaders::Loader;
+use nitro_shared::minecraft::AddonKind;
 use nitro_shared::output;
 use nitro_shared::output::MessageContents;
 use nitro_shared::output::MessageLevel;
@@ -394,7 +395,7 @@ pub fn create_valid_addon_request(
 		&data.kind,
 	));
 
-	if !is_filename_valid(data.kind, &file_name) {
+	if data.kind != AddonKind::Modpack && !is_filename_valid(data.kind, &file_name) {
 		bail!(
 			"Invalid addon filename '{file_name}' in addon '{}'",
 			data.id
@@ -428,6 +429,7 @@ pub fn create_valid_addon_request(
 		file_name,
 		pkg,
 		version,
+		modpack_format: data.modpack_format,
 		hashes: data.hashes,
 	};
 

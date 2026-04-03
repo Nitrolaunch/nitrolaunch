@@ -3,6 +3,7 @@ use std::collections::{HashMap, HashSet};
 use nitro_config::instance::InstanceConfig;
 use nitro_config::template::TemplateConfig;
 use nitro_config::ConfigKind;
+use nitro_instance::addon::Addon;
 use nitro_pkg::repo::{PackageFlag, RepoMetadata};
 use nitro_pkg::script_eval::AddonInstructionData;
 use nitro_pkg::{PackageContentType, PackageSearchResults, RecommendedPackage, RequiredPackage};
@@ -1262,3 +1263,57 @@ def_hook!(
 	1,
 	true,
 );
+
+def_hook!(
+	AddModpackFormats,
+	"add_modpack_formats",
+	"Add new formats for modpacks",
+	(),
+	Vec<ModpackFormat>,
+	1,
+	true,
+);
+
+/// Format for a modpack
+#[derive(Serialize, Deserialize, Default)]
+#[serde(default)]
+pub struct ModpackFormat {
+	/// ID for the format
+	pub id: String,
+	/// Display name of the format
+	pub name: String,
+}
+
+def_hook!(
+	InstallModpack,
+	"install_modpack",
+	"Installs a modpack",
+	InstallModpackArg,
+	InstallModpackResult,
+	1,
+	true,
+);
+
+/// Argument for the InstallModpack hook
+#[derive(Serialize, Deserialize, Default)]
+#[serde(default)]
+pub struct InstallModpackArg {
+	/// Format of the modpack
+	pub format: String,
+	/// Path to the modpack
+	pub path: String,
+	/// Instance directory to install or update the modpack in
+	pub target_path: String,
+}
+
+/// Result from the InstallModpack hook
+#[derive(Serialize, Deserialize, Default)]
+#[serde(default)]
+pub struct InstallModpackResult {
+	/// The name of the modpack
+	pub name: String,
+	/// The list of packages installed by this modpack
+	pub packages: Vec<String>,
+	/// The addons installed by this modpack
+	pub addons: Vec<Addon>,
+}

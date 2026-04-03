@@ -320,6 +320,8 @@ pub enum PackageKind {
 	Shader,
 	/// A package that bundles other packages
 	Bundle,
+	/// A modpack
+	Modpack,
 }
 
 impl PackageKind {
@@ -331,6 +333,7 @@ impl PackageKind {
 			Self::Datapack => Some(AddonKind::Datapack),
 			Self::Plugin => Some(AddonKind::Plugin),
 			Self::Shader => Some(AddonKind::Shader),
+			Self::Modpack => Some(AddonKind::Modpack),
 			Self::Bundle => None,
 		}
 	}
@@ -347,6 +350,7 @@ impl FromStr for PackageKind {
 			"plugin" => Ok(Self::Plugin),
 			"shader" => Ok(Self::Shader),
 			"bundle" => Ok(Self::Bundle),
+			"modpack" => Ok(Self::Modpack),
 			other => bail!("Unknown package type '{other}'"),
 		}
 	}

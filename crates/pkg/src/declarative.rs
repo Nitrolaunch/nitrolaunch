@@ -162,6 +162,10 @@ pub struct DeclarativeConditionalRuleProperties {
 pub struct DeclarativeAddon {
 	/// What kind of addon this is
 	pub kind: PackageKind,
+	/// Modpack format if this addon is a modpack
+	#[serde(default)]
+	#[serde(skip_serializing_if = "Option::is_none")]
+	pub modpack_format: Option<String>,
 	/// The available versions of this addon
 	#[serde(default)]
 	#[serde(skip_serializing_if = "Vec::is_empty")]
@@ -385,6 +389,7 @@ mod tests {
 			"foo".into(),
 			DeclarativeAddon {
 				kind: PackageKind::Mod,
+				modpack_format: None,
 				versions: vec![DeclarativeAddonVersion {
 					version: Some("a".into()),
 					conditional_properties: DeclarativeConditionSet {

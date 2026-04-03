@@ -242,6 +242,7 @@ mod tests {
 			file_name: "FooBar.baz.jar".into(),
 			pkg: PkgRequest::parse("package", nitro_pkg::PkgRequestSource::UserRequire).arc(),
 			version: None,
+			modpack_format: None,
 			hashes: AddonOptionalHashes::default(),
 		};
 		assert_eq!(addon.split_filename(), ("FooBar", ".baz.jar"));

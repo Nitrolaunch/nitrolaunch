@@ -182,9 +182,15 @@ impl Instance {
 	}
 
 	/// Opens the lockfile for this instance and returns it
-	pub fn get_lockfile(&mut self, paths: &Paths) -> anyhow::Result<InstanceLockfile> {
+	pub fn get_lockfile(&self, paths: &Paths) -> anyhow::Result<InstanceLockfile> {
 		let lock_path = InstanceLockfile::get_path(self.dir.as_deref(), &self.id, &paths.internal);
 		InstanceLockfile::open(&lock_path)
+	}
+
+	/// Checks whether the lockfile for this instance exists, letting you check whether it has been successfully updated
+	pub fn lockfile_exists(&self, paths: &Paths) -> bool {
+		let lock_path = InstanceLockfile::get_path(self.dir.as_deref(), &self.id, &paths.internal);
+		lock_path.exists()
 	}
 }
 

@@ -87,6 +87,7 @@ fn eval_declarative_package_impl(
 					kind: addon_kind,
 					file_name: version.filename.clone(),
 					version: version.version.clone(),
+					modpack_format: addon.modpack_format.clone(),
 					hashes: version.hashes.clone(),
 				};
 

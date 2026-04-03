@@ -116,6 +116,8 @@ pub enum InstrKind {
 		path: Value,
 		/// The version of the addon
 		version: Value,
+		/// Modpack format of the addon if it is a modpack
+		modpack_format: Value,
 		/// The addon's hashes
 		hashes: AddonHashes<Value>,
 	},

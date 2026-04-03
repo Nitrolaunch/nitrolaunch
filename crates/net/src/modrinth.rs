@@ -487,7 +487,7 @@ pub async fn search_projects(
 			PackageKind::Datapack => "datapack",
 			PackageKind::Plugin => "plugin",
 			PackageKind::Shader => "shader",
-			PackageKind::Bundle => "modpack",
+			PackageKind::Bundle | PackageKind::Modpack => "modpack",
 		})
 		.map(|x| format!("\"project_types={x}\""))
 		.collect::<Vec<_>>()

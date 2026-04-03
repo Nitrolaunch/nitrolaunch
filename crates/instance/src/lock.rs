@@ -62,12 +62,12 @@ impl InstanceLockfile {
 
 	/// Updates a package with a new version.
 	/// Returns a list of files to be removed
-	pub async fn update_package(
+	pub fn update_package(
 		&mut self,
 		req: &PkgRequest,
 		addons: &[LockfileAddon],
 		content_version: Option<String>,
-	) -> anyhow::Result<Vec<PathBuf>> {
+	) -> Vec<PathBuf> {
 		let mut files_to_remove = Vec::new();
 		let req = req.to_string_no_version();
 
@@ -120,7 +120,7 @@ impl InstanceLockfile {
 			self.contents.addons.push(requested.clone());
 		}
 
-		Ok(files_to_remove)
+		files_to_remove
 	}
 
 	/// Remove any unused packages for an instance.
@@ -186,6 +186,40 @@ impl InstanceLockfile {
 	pub fn get_packages(&self) -> &HashMap<String, LockfilePackage> {
 		&self.contents.packages
 	}
+
+	/// Get the locked modpack
+	pub fn get_modpack(&self) -> Option<&LockfileModpack> {
+		self.contents.modpack.as_ref()
+	}
+
+	/// Updates the locked modpack and it's addons. Returns a list of files to remove
+	pub fn update_modpack(
+		&mut self,
+		modpack: LockfileModpack,
+		addons: &[LockfileAddon],
+	) -> Vec<String> {
+		let mut files_to_remove = Vec::new();
+		self.contents.modpack = Some(modpack);
+
+		self.contents.addons.retain(|x| {
+			if x.from_modpack {
+				// Remove files in the old but not in the new
+				for file in &x.files {
+					if !addons.iter().any(|x| x.files.iter().any(|x| x == file)) {
+						files_to_remove.push(file.clone());
+					}
+				}
+
+				false
+			} else {
+				true
+			}
+		});
+
+		self.contents.addons.extend(addons.iter().cloned());
+
+		files_to_remove
+	}
 }
 
 #[derive(Serialize, Deserialize, Default, Debug)]
@@ -201,6 +235,9 @@ pub(crate) struct InstanceLockfileContents {
 	/// Currently installed addons on the instance
 	#[serde(default)]
 	pub addons: Vec<LockfileAddon>,
+	/// Currently installed modpack on the instance
+	#[serde(default)]
+	pub modpack: Option<LockfileModpack>,
 }
 
 /// Package stored in the instance lockfile
@@ -258,4 +295,13 @@ impl LockfileAddon {
 			hashes: self.hashes.clone(),
 		}
 	}
+}
+
+/// Information about a modpack in the lockfile
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct LockfileModpack {
+	/// Display name of the modpack
+	pub name: String,
+	/// Suppressed packages of the modpack
+	pub packages: Vec<String>,
 }

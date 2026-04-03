@@ -74,6 +74,9 @@ pub enum InstanceSubcommand {
 		/// Whether to only update packages
 		#[arg(short, long)]
 		packages: bool,
+		/// Whether to only update the modpack
+		#[arg(short, long)]
+		modpack: bool,
 		/// Additional instance groups to update
 		#[arg(short, long)]
 		groups: Vec<String>,
@@ -148,9 +151,10 @@ pub async fn run(command: InstanceSubcommand, mut data: CmdData<'_>) -> anyhow::
 			force,
 			all,
 			packages,
+			modpack,
 			groups,
 			instances,
-		} => update(&mut data, instances, groups, all, force, packages).await,
+		} => update(&mut data, instances, groups, all, force, packages, modpack).await,
 		InstanceSubcommand::Dir { instance } => dir(&mut data, instance).await,
 		InstanceSubcommand::Add { plugin } => add(&mut data, plugin).await,
 		InstanceSubcommand::Import {
@@ -356,6 +360,7 @@ async fn update(
 	all: bool,
 	force: bool,
 	packages: bool,
+	modpack: bool,
 ) -> anyhow::Result<()> {
 	data.ensure_config(true).await?;
 	let config = data.config.get_mut();
@@ -419,7 +424,7 @@ async fn update(
 			UpdateDepth::Full
 		};
 
-		let facets = UpdateFacets::from_flags(packages);
+		let facets = UpdateFacets::from_flags(packages, modpack);
 
 		instance
 			.update(depth, facets, &mut ctx)

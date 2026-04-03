@@ -80,6 +80,7 @@ pub fn parse<'a>(tokens: impl Iterator<Item = &'a TokenAndPos>) -> anyhow::Resul
 									url: Value::None,
 									path: Value::None,
 									version: Value::None,
+									modpack_format: Value::None,
 									hashes: AddonHashes {
 										sha256: Value::None,
 										sha512: Value::None,
@@ -259,6 +260,7 @@ pub fn parse<'a>(tokens: impl Iterator<Item = &'a TokenAndPos>) -> anyhow::Resul
 								"url" => *key = addon::Key::Url,
 								"path" => *key = addon::Key::Path,
 								"version" => *key = addon::Key::Version,
+								"modpack_format" => *key = addon::Key::ModpackFormat,
 								"hash_sha256" => *key = addon::Key::HashSHA256,
 								"hash_sha512" => *key = addon::Key::HashSHA512,
 								_ => {
@@ -293,6 +295,7 @@ pub fn parse<'a>(tokens: impl Iterator<Item = &'a TokenAndPos>) -> anyhow::Resul
 								addon::Key::Url => filled_keys.url = arg,
 								addon::Key::Path => filled_keys.path = arg,
 								addon::Key::Version => filled_keys.version = arg,
+								addon::Key::ModpackFormat => filled_keys.modpack_format = arg,
 								addon::Key::HashSHA256 => filled_keys.hashes.sha256 = arg,
 								addon::Key::HashSHA512 => filled_keys.hashes.sha512 = arg,
 								_ => unexpected_token!(tok, pos),
@@ -317,6 +320,7 @@ pub fn parse<'a>(tokens: impl Iterator<Item = &'a TokenAndPos>) -> anyhow::Resul
 									url: filled_keys.url.clone(),
 									path: filled_keys.path.clone(),
 									version: filled_keys.version.clone(),
+									modpack_format: filled_keys.modpack_format.clone(),
 									hashes: filled_keys.hashes.clone(),
 								},
 								pos.clone(),
@@ -463,6 +467,7 @@ mod addon {
 		Url,
 		Path,
 		Version,
+		ModpackFormat,
 		HashSHA256,
 		HashSHA512,
 	}
@@ -474,6 +479,7 @@ mod addon {
 		pub url: Value,
 		pub path: Value,
 		pub version: Value,
+		pub modpack_format: Value,
 		pub hashes: AddonHashes<Value>,
 	}
 }
