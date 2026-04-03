@@ -46,7 +46,7 @@ pub enum Command {
 		#[command(subcommand)]
 		command: InstanceSubcommand,
 	},
-	#[command(about = "Manage accountss and authentication")]
+	#[command(about = "Manage accounts and authentication")]
 	Account {
 		#[command(subcommand)]
 		command: AccountSubcommand,

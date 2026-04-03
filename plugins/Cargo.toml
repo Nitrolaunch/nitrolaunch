@@ -106,6 +106,7 @@ iso8601-timestamp = { workspace = true }
 itertools = { workspace = true }
 nitrolaunch = { workspace = true }
 nitro_core = { workspace = true }
+nitro_instance = { workspace = true, features = ["net"] }
 nitro_mods = { workspace = true }
 nitro_net = { workspace = true }
 nitro_options = { workspace = true }

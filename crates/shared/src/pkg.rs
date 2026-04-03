@@ -453,6 +453,12 @@ pub fn is_package_overridden(package: &PkgRequest, list: &[String]) -> bool {
 		.any(|x| &x == package)
 }
 
+/// Merges two package lists without respect to version
+pub fn merge_package_lists(list1: impl Iterator<Item = String>, list2: &[String]) -> Vec<String> {
+	let list1 = list1.filter(|x| !list2.contains(x));
+	list1.chain(list2.into_iter().cloned()).collect()
+}
+
 /// Error from package resolution
 #[allow(missing_docs)]
 #[derive(thiserror::Error, Debug)]

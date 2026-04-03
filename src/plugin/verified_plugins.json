@@ -314,14 +314,6 @@
 		"github_repo": "plugins",
 		"description": "Adds more themes for you to choose from"
 	},
-	"modpacks": {
-		"id": "modpacks",
-		"name": "Modpacks",
-		"version": "v6",
-		"github_owner": "Nitrolaunch",
-		"github_repo": "plugins",
-		"description": "Install, import, and export modpacks"
-	},
 	"shortcut": {
 		"id": "shortcut",
 		"name": "Shortcut",

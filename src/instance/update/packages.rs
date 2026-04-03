@@ -10,7 +10,7 @@ use nitro_pkg::repo::PackageFlag;
 use nitro_pkg::PkgRequest;
 use nitro_shared::minecraft::AddonKind;
 use nitro_shared::output::{MessageContents, NitroOutput};
-use nitro_shared::pkg::{ArcPkgReq, PackageDiff};
+use nitro_shared::pkg::{merge_package_lists, ArcPkgReq, PackageDiff};
 use nitro_shared::translate;
 use nitro_shared::versions::VersionInfo;
 use tokio::sync::Semaphore;
@@ -219,13 +219,16 @@ async fn resolve_instance<O: NitroOutput>(
 	let mut params = EvalParameters::new(instance.kind.to_side());
 	params.stability = instance.config.package_stability;
 
+	let mut overrides = instance.config.package_overrides.clone();
+	overrides.suppress = merge_package_lists(overrides.suppress.into_iter(), &constants.suppress);
+
 	let instance_pkgs = instance.get_configured_packages();
 	let resolution = resolve(
 		instance_pkgs,
 		&instance.id,
 		constants.clone(),
 		params,
-		instance.config.package_overrides.clone(),
+		overrides,
 		ctx.paths,
 		ctx.packages,
 		ctx.client,

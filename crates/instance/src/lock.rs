@@ -302,6 +302,8 @@ impl LockfileAddon {
 pub struct LockfileModpack {
 	/// Display name of the modpack
 	pub name: String,
+	/// Stored path of the modpack
+	pub path: String,
 	/// Suppressed packages of the modpack
 	pub packages: Vec<String>,
 }

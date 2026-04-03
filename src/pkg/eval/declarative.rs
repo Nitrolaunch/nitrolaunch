@@ -538,6 +538,7 @@ mod tests {
 			loader: Loader::Fabric,
 			language: Language::AmericanEnglish,
 			default_stability: PackageStability::Latest,
+			suppress: Vec::new(),
 		}
 	}
 }

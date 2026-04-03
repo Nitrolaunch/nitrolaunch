@@ -1,7 +1,7 @@
 {
 	"id": "modrinth",
 	"name": "Modrinth",
-	"description": "Install Modrinth packs on templates and instances",
+	"description": "Install Modrinth packages and modpacks",
 	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/modrinth",
 	"version": "v6",
 	"protocol_version": 3,
@@ -81,6 +81,24 @@
 				}
 			]
 		},
+		"add_modpack_formats": {
+			"constant": [
+				{
+					"id": "mrpack",
+					"name": "Modrinth"
+				}
+			]
+		},
+		"add_instance_transfer_formats": {
+			"constant": [
+				{
+					"id": "mrpack",
+					"name": "Modrinth Pack",
+					"import": {},
+					"needs_import_side": true
+				}
+			]
+		},
 		"query_custom_package_repository": {
 			"executable": "${PLUGIN_DIR}/nitro_plugin_modrinth${EXE_EXTENSION}"
 		},
@@ -91,6 +109,12 @@
 			"executable": "${PLUGIN_DIR}/nitro_plugin_modrinth${EXE_EXTENSION}"
 		},
 		"sync_custom_package_repository": {
+			"executable": "${PLUGIN_DIR}/nitro_plugin_modrinth${EXE_EXTENSION}"
+		},
+		"install_modpack": {
+			"executable": "${PLUGIN_DIR}/nitro_plugin_modrinth${EXE_EXTENSION}"
+		},
+		"import_instance": {
 			"executable": "${PLUGIN_DIR}/nitro_plugin_modrinth${EXE_EXTENSION}"
 		}
 	}

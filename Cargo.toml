@@ -68,7 +68,6 @@ members = [
 	"plugins/plugins/custom_files",
 	"plugins/plugins/glfw_fix",
 	"plugins/plugins/graalvm",
-	"plugins/plugins/modpacks",
 	"plugins/plugins/mojang_transfer",
 	"plugins/plugins/multiply",
 	"plugins/plugins/nitro_transfer",

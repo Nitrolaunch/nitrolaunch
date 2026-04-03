@@ -166,11 +166,12 @@ pub mod later {
 }
 
 /// Minecraft game side, client or server
-#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, Deserialize, Serialize)]
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, Deserialize, Serialize, Default)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[serde(rename_all = "snake_case")]
 pub enum Side {
 	/// The default game
+	#[default]
 	Client,
 	/// A dedicated server
 	Server,

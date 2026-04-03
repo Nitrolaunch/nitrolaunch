@@ -19,7 +19,6 @@ package.cross_platform: build.cross_platform
 	@rm -f release/glfw_fix-universal.zip
 	@rm -f release/graalvm-universal.zip
 	@rm -f release/lang-universal.zip
-	@rm -f release/modpacks-universal.zip
 	@rm -f release/mojang_transfer-universal.zip
 	@rm -f release/multiply-universal.zip
 	@rm -f release/nitro_transfer-universal.zip
@@ -55,8 +54,6 @@ package.cross_platform: build.cross_platform
 	@printf "@ nitro_plugin_glfw_fix.wasm\\n@=plugin.wasm\\n" | zipnote -w release/glfw_fix-universal.zip
 	@zip -j release/graalvm-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_graalvm.wasm plugins/graalvm/plugin.json
 	@printf "@ nitro_plugin_graalvm.wasm\\n@=plugin.wasm\\n" | zipnote -w release/graalvm-universal.zip
-	@zip -j release/modpacks-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_modpacks.wasm plugins/modpacks/plugin.json
-	@printf "@ nitro_plugin_modpacks.wasm\\n@=plugin.wasm\\n" | zipnote -w release/modpacks-universal.zip
 	@zip -j release/mojang_transfer-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_mojang_transfer.wasm plugins/mojang_transfer/plugin.json
 	@printf "@ nitro_plugin_mojang_transfer.wasm\\n@=plugin.wasm\\n" | zipnote -w release/mojang_transfer-universal.zip
 	@zip -j release/multiply-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_multiply.wasm plugins/multiply/plugin.json
@@ -250,11 +247,6 @@ install.modrinth_api:
 	@cargo install --path . --bin nitro_plugin_modrinth_api --locked --profile fast_release
 	@mkdir -p ~/.local/share/nitro/plugins/modrinth_api
 	@cat plugins/modrinth_api/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/modrinth_api/plugin.json
-
-install.modpacks:
-	@cargo build -p nitro_plugin_modpacks --release --target wasm32-wasip2
-	@cp -r plugins/modpacks ~/.local/share/nitro/plugins
-	@cp -r ../target/wasm32-wasip2/release/nitro_plugin_modpacks.wasm ~/.local/share/nitro/plugins/modpacks/plugin.wasm
 
 install.mojang_transfer:
 	@cargo build -p nitro_plugin_mojang_transfer --release --target wasm32-wasip2

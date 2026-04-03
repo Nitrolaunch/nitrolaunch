@@ -8,6 +8,7 @@ pub mod packages;
 pub mod setup;
 
 use crate::config::preferences::ConfigPreferences;
+use crate::instance::update::modpack::ModpackInstallResult;
 #[cfg(not(feature = "disable_instance_update_packages"))]
 use crate::pkg::eval::EvalConstants;
 use crate::plugin::PluginManager;
@@ -104,7 +105,7 @@ impl Instance {
 		.context("Failed to create instance")?;
 
 		// Modpack
-		if facets.modpack && depth >= UpdateDepth::Full {
+		let modpack_result = if facets.modpack && depth >= UpdateDepth::Full {
 			if let Some(modpack) = &self
 				.config
 				.original_config_with_templates_and_plugins
@@ -114,9 +115,13 @@ impl Instance {
 
 				self.update_modpack(&modpack, depth, &version_info, ctx)
 					.await
-					.context("Failed to update modpack")?;
+					.context("Failed to update modpack")?
+			} else {
+				ModpackInstallResult::default()
 			}
-		}
+		} else {
+			ModpackInstallResult::default()
+		};
 
 		// Packages
 		if facets.packages && depth >= UpdateDepth::Full {
@@ -139,6 +144,7 @@ impl Instance {
 					version_list: version_info.versions.clone(),
 					language: ctx.prefs.language,
 					default_stability: self.config.package_stability,
+					suppress: modpack_result.supplied_packages,
 				};
 
 				let packages = update_instance_packages(

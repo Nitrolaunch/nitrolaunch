@@ -527,6 +527,7 @@ pub async fn update_instance_packages(
 				version_list: version_info.versions.clone(),
 				language: ctx.prefs.language,
 				default_stability: instance.get_config().package_stability,
+				suppress: Vec::new(),
 			};
 
 			nitrolaunch::instance::update::packages::update_instance_packages(

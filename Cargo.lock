@@ -3778,20 +3778,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "nitro_plugin_modpacks"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "nitro_config",
- "nitro_instance",
- "nitro_plugin",
- "nitro_shared",
- "serde",
- "serde_json",
- "zip 3.0.0",
-]
-
-[[package]]
 name = "nitro_plugin_mojang_transfer"
 version = "0.1.0"
 dependencies = [
@@ -3893,6 +3879,7 @@ dependencies = [
  "iso8601-timestamp",
  "itertools 0.11.0",
  "nitro_core",
+ "nitro_instance",
  "nitro_mods",
  "nitro_net",
  "nitro_options",

@@ -1,4 +1,8 @@
-use std::{ops::DerefMut, path::PathBuf, sync::Arc};
+use std::{
+	ops::DerefMut,
+	path::{Path, PathBuf},
+	sync::Arc,
+};
 
 use anyhow::{bail, Context};
 use nitro_instance::lock::{LockfileAddon, LockfileModpack};
@@ -6,7 +10,7 @@ use nitro_plugin::hook::hooks::{AddModpackFormats, InstallModpack, InstallModpac
 use nitro_shared::{
 	minecraft::AddonKind,
 	output::{MessageContents, NitroOutput},
-	pkg::ArcPkgReq,
+	pkg::{merge_package_lists, ArcPkgReq},
 	versions::VersionInfo,
 	UpdateDepth,
 };
@@ -33,8 +37,9 @@ impl Instance {
 		}
 
 		// Modpack already installed
+		let lock_modpack = inst_lock.get_modpack();
 		if depth <= UpdateDepth::Shallow {
-			if let Some(modpack) = inst_lock.get_modpack() {
+			if let Some(modpack) = lock_modpack {
 				return Ok(ModpackInstallResult {
 					supplied_packages: modpack.packages.clone(),
 				});
@@ -57,6 +62,7 @@ impl Instance {
 			version_list: version_info.versions.clone(),
 			language: ctx.prefs.language,
 			default_stability: self.config.package_stability,
+			suppress: Vec::new(),
 		};
 		let params = EvalParameters::new(self.get_side());
 
@@ -92,6 +98,9 @@ impl Instance {
 			bail!("Modpack addon did not specify a format");
 		};
 
+		let bundled = result.bundled.into_iter().map(|x| x.to_string());
+		let included = result.inclusions.into_iter().map(|x| x.to_string());
+
 		// Download the modpack
 		addon
 			.acquire(ctx.paths, &self.id, ctx.client)
@@ -113,10 +122,31 @@ impl Instance {
 			bail!("Modpack format {format} is not supported. Try installing a plugin for it.");
 		};
 
+		let modpack_path_str = modpack_path.to_string_lossy().to_string();
+
+		// Don't supply the old modpack path if it is the same as the new one
+		let old_path = if let Some(lock_modpack) = lock_modpack {
+			if lock_modpack.path == modpack_path_str {
+				None
+			} else {
+				if !Path::new(&lock_modpack.path).exists() {
+					process.display(MessageContents::Warning(
+						"Old modpack not available. Update may not work properly".into(),
+					));
+				}
+
+				Some(lock_modpack.path.clone())
+			}
+		} else {
+			None
+		};
+
 		let arg = InstallModpackArg {
 			format: format.id.clone(),
-			path: modpack_path.to_string_lossy().to_string(),
+			path: modpack_path_str.clone(),
+			old_path,
 			target_path: self.get_dir().unwrap().to_string_lossy().to_string(),
+			side: self.get_side(),
 		};
 
 		let result = ctx
@@ -154,9 +184,15 @@ impl Instance {
 			})
 			.collect();
 
+		// Combine bundled and included dependencies from the package with the results from the modpack
+		let packages = result.packages;
+		let packages = merge_package_lists(bundled, &packages);
+		let packages = merge_package_lists(included, &packages);
+
 		let lockfile_modpack = LockfileModpack {
 			name: result.name,
-			packages: result.packages,
+			path: modpack_path_str,
+			packages,
 		};
 
 		let files_to_remove = inst_lock.update_modpack(lockfile_modpack, &addons);

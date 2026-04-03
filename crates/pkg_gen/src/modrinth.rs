@@ -332,8 +332,7 @@ pub async fn gen(
 
 			match dep.dependency_type {
 				DependencyType::Required => {
-					// Modpacks bundle all their dependencies
-					if addon.kind == PackageKind::Bundle {
+					if addon.kind == PackageKind::Bundle || addon.kind == PackageKind::Modpack {
 						bundled.push(req);
 					} else if force_extensions.contains(&req) {
 						extensions.push(req);
@@ -347,7 +346,7 @@ pub async fn gen(
 				}),
 				DependencyType::Incompatible => conflicts.push(req),
 				DependencyType::Embedded => {
-					if addon.kind == PackageKind::Bundle {
+					if addon.kind == PackageKind::Bundle || addon.kind == PackageKind::Modpack {
 						bundled.push(req);
 					}
 				}

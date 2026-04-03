@@ -6,6 +6,8 @@ use std::{
 use anyhow::Context;
 use nitro_shared::Side;
 
+use crate::addon::Addon;
+
 /// Modrinth modpack format
 pub mod mrpack;
 
@@ -23,7 +25,7 @@ pub trait Modpack<R: Read + Seek + Send + 'static> {
 	/// Gets the index of this pack
 	fn index(&self) -> &Self::Index;
 
-	/// Downloads all needed files for this modpack
+	/// Downloads all needed files for this modpack, returning a list of addons
 	#[cfg(feature = "net")]
 	async fn download(
 		&mut self,
@@ -37,8 +39,11 @@ pub trait Modpack<R: Read + Seek + Send + 'static> {
 		target: &Path,
 		addons_dir: &Path,
 		side: Side,
-		overwrite: bool,
+		old_modpack: Option<&mut Self>,
 	) -> anyhow::Result<()>;
+
+	/// Gets all the addons of this modpack
+	fn get_addons(&mut self, target: &Path, addons_dir: &Path) -> anyhow::Result<Vec<Addon>>;
 }
 
 /// Method for updating filesystem links

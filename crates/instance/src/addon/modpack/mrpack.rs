@@ -5,13 +5,13 @@ use std::{
 };
 
 use anyhow::Context;
-use nitro_shared::Side;
+use nitro_shared::{minecraft::AddonKind, pkg::AddonOptionalHashes, Side};
 use serde::{Deserialize, Serialize};
 use zip::ZipArchive;
 
 use crate::addon::{
 	modpack::{DefaultLinkMethod, LinkMethod, Modpack},
-	storage,
+	storage, Addon,
 };
 
 /// Modrinth modpack
@@ -77,7 +77,7 @@ impl<R: Read + Seek + Send + 'static> Modpack<R> for ModrinthPack<R> {
 		target: &Path,
 		addons_dir: &Path,
 		side: Side,
-		overwrite: bool,
+		mut old_pack: Option<&mut Self>,
 	) -> anyhow::Result<()> {
 		// Link mods and other addons
 		for file in &self.index.files {
@@ -104,7 +104,7 @@ impl<R: Read + Seek + Send + 'static> Modpack<R> for ModrinthPack<R> {
 				continue;
 			};
 
-			let target_path = if let Ok(path) = name.strip_prefix("overrides/") {
+			let target_rel_path = if let Ok(path) = name.strip_prefix("overrides/") {
 				path
 			} else if let Ok(path) = name.strip_prefix("client-overrides/") {
 				if side != Side::Client {
@@ -120,10 +120,39 @@ impl<R: Read + Seek + Send + 'static> Modpack<R> for ModrinthPack<R> {
 				continue;
 			};
 
-			let target_path = target.join(target_path);
-			if !overwrite && target_path.exists() {
-				continue;
+			let target_path = target.join(&target_rel_path);
+
+			if target_path.exists() {
+				// If this was an override in the old pack that hasn't changed on the filesystem, we will let it update.
+				if let Some(old_pack) = old_pack.as_mut() {
+					if old_pack
+						.zip
+						.file_names()
+						.any(|x| x == &name.to_string_lossy())
+					{
+						let current_data = std::fs::read(&target_path)
+							.context("Failed to read existing override file")?;
+
+						let mut old_file = old_pack
+							.zip
+							.by_name(&name.to_string_lossy())
+							.context("Failed to read old override file")?;
+						let mut old_data = Vec::with_capacity(old_file.size() as usize);
+						old_file
+							.read_to_end(&mut old_data)
+							.context("Failed to read old override file")?;
+
+						if old_data != current_data {
+							continue;
+						}
+					} else {
+						continue;
+					}
+				} else {
+					continue;
+				}
 			}
+
 			if let Some(parent) = target_path.parent() {
 				let _ = std::fs::create_dir_all(parent);
 			}
@@ -134,14 +163,48 @@ impl<R: Read + Seek + Send + 'static> Modpack<R> for ModrinthPack<R> {
 
 		Ok(())
 	}
+
+	fn get_addons(&mut self, target: &Path, addons_dir: &Path) -> anyhow::Result<Vec<Addon>> {
+		let mut out = Vec::new();
+		for file in &self.index.files {
+			let source_path = storage::get_sha256_addon_path(addons_dir, &file.hashes.sha512);
+			let target_path = target.join(&file.path);
+
+			let kind = if file.path.starts_with("mods") {
+				AddonKind::Mod
+			} else if file.path.starts_with("resourcepacks") {
+				AddonKind::ResourcePack
+			} else {
+				AddonKind::Mod
+			};
+
+			let addon = Addon {
+				kind,
+				file_name: target_path
+					.file_name()
+					.unwrap()
+					.to_string_lossy()
+					.to_string(),
+				original_path: None,
+				target_paths: vec![target_path],
+				source: Some(source_path),
+				hashes: AddonOptionalHashes {
+					sha256: Some(file.hashes.sha512.clone()),
+					sha512: None,
+				},
+			};
+
+			out.push(addon);
+		}
+
+		Ok(out)
+	}
 }
 
 impl<R: Read + Seek> ModrinthPack<R> {
-	/// Gets the global, client, and server overrides as relative paths
-	pub fn get_overrides(&mut self) -> anyhow::Result<(Vec<PathBuf>, Vec<PathBuf>, Vec<PathBuf>)> {
-		let mut global = Vec::new();
-		let mut client = Vec::new();
-		let mut server = Vec::new();
+	/// Gets the overrides as relative paths
+	pub fn get_overrides(&mut self, side: Side) -> anyhow::Result<Vec<PathBuf>> {
+		let mut out = Vec::new();
 		for i in 0..self.zip.len() {
 			let file = self.zip.by_index(i)?;
 			if file.is_dir() {
@@ -151,16 +214,22 @@ impl<R: Read + Seek> ModrinthPack<R> {
 				continue;
 			};
 
-			if name.starts_with("overrides") {
-				global.push(name);
-			} else if name.starts_with("client-overrides") {
-				client.push(name);
-			} else if name.starts_with("server-overrides") {
-				server.push(name);
-			}
+			if let Ok(path) = name.strip_prefix("overrides/") {
+				out.push(path.to_owned());
+			} else if let Ok(path) = name.strip_prefix("client-overrides/") {
+				if side != Side::Client {
+					continue;
+				}
+				out.push(path.to_owned());
+			} else if let Ok(path) = name.strip_prefix("server-overrides/") {
+				if side != Side::Server {
+					continue;
+				}
+				out.push(path.to_owned());
+			};
 		}
 
-		Ok((global, client, server))
+		Ok(out)
 	}
 
 	/// Replace the link method of this pack

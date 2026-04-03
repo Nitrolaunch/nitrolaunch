@@ -136,6 +136,8 @@ pub struct EvalConstants {
 	pub language: Language,
 	/// The default requested stability for packages
 	pub default_stability: PackageStability,
+	/// Additional suppressed packages
+	pub suppress: Vec<String>,
 }
 
 /// Constants for the evaluation that may be different for each package

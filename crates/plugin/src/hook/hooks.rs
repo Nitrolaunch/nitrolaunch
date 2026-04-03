@@ -1302,8 +1302,12 @@ pub struct InstallModpackArg {
 	pub format: String,
 	/// Path to the modpack
 	pub path: String,
+	/// Path to the old version of the modpack
+	pub old_path: Option<String>,
 	/// Instance directory to install or update the modpack in
 	pub target_path: String,
+	/// Side of the instance
+	pub side: Side,
 }
 
 /// Result from the InstallModpack hook
