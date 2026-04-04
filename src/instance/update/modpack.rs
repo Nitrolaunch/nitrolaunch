@@ -245,11 +245,13 @@ pub async fn download_modpack_package(
 	};
 
 	// Download the modpack
-	addon
-		.acquire(paths, instance_id, client)
-		.await
-		.context("Failed to download modpack")?;
 	let modpack_path = addon.addon.get_path(paths, instance_id);
+	if !modpack_path.exists() {
+		addon
+			.acquire(paths, instance_id, client)
+			.await
+			.context("Failed to download modpack")?;
+	}
 
 	Ok(Some(ModpackDownloadResult {
 		modpack_path,
