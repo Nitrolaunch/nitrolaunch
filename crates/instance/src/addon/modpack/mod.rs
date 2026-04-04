@@ -60,7 +60,6 @@ impl LinkMethod for DefaultLinkMethod {
 		if link.exists() {
 			let _ = std::fs::remove_file(link);
 		}
-		#[allow(deprecated)]
-		std::fs::soft_link(original, link).context("Failed to soft link")
+		std::fs::hard_link(original, link).context("Failed to hard link")
 	}
 }
