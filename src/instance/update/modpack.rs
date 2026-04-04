@@ -14,11 +14,17 @@ use nitro_shared::{
 	versions::VersionInfo,
 	UpdateDepth,
 };
+use reqwest::Client;
 
 use crate::{
 	addon::AddonExt,
 	instance::{update::InstanceUpdateContext, Instance},
-	pkg::eval::{EvalConstants, EvalInput, EvalParameters, Routine},
+	io::paths::Paths,
+	pkg::{
+		eval::{EvalConstants, EvalInput, EvalParameters, Routine},
+		reg::PkgRegistry,
+	},
+	plugin::PluginManager,
 };
 
 impl Instance {
@@ -49,13 +55,6 @@ impl Instance {
 		let mut process = ctx.output.get_process();
 		process.display(MessageContents::StartProcess("Downloading modpack".into()));
 
-		// Evaluate the package
-		let package = ctx
-			.packages
-			.get(modpack, ctx.paths, ctx.client, process.deref_mut())
-			.await
-			.context("Failed to get modpack package")?;
-
 		let constants = EvalConstants {
 			version: version_info.version.clone(),
 			loader: self.config.loader.clone(),
@@ -71,42 +70,22 @@ impl Instance {
 			params,
 		};
 
-		let result = package
-			.eval(
-				ctx.paths,
-				Routine::Install,
-				input,
-				ctx.client,
-				ctx.plugins.clone(),
-			)
-			.await
-			.context("Failed to evaluate modpack")?;
+		let download_result = download_modpack_package(
+			modpack,
+			input,
+			&self.id,
+			ctx.packages,
+			ctx.plugins,
+			ctx.client,
+			ctx.paths,
+			process.deref_mut(),
+		)
+		.await
+		.context("Failed to download modpack")?;
 
-		let Some(addon) = result.addon_reqs.first() else {
-			process.debug(MessageContents::Simple(
-				"No modpack addon was returned".into(),
-			));
-			process.display(MessageContents::Success("Modpack installed".into()));
+		let Some(download_result) = download_result else {
 			return Ok(ModpackInstallResult::default());
 		};
-
-		if addon.addon.kind != AddonKind::Modpack {
-			bail!("Modpack package did not have a modpack addon");
-		}
-
-		let Some(format) = &addon.addon.modpack_format else {
-			bail!("Modpack addon did not specify a format");
-		};
-
-		let bundled = result.bundled.into_iter().map(|x| x.to_string());
-		let included = result.inclusions.into_iter().map(|x| x.to_string());
-
-		// Download the modpack
-		addon
-			.acquire(ctx.paths, &self.id, ctx.client)
-			.await
-			.context("Failed to download modpack")?;
-		let modpack_path = addon.addon.get_path(ctx.paths, &self.id);
 
 		process.display(MessageContents::Success("Modpack downloaded".into()));
 		process.display(MessageContents::StartProcess("Installing modpack".into()));
@@ -118,11 +97,15 @@ impl Instance {
 			.flatten_all_results_with_ids(process.deref_mut())
 			.await?;
 
-		let Some((plugin_id, format)) = formats.iter().find(|x| x.1.id == *format) else {
-			bail!("Modpack format {format} is not supported. Try installing a plugin for it.");
+		let Some((plugin_id, format)) = formats.iter().find(|x| x.1.id == download_result.format)
+		else {
+			bail!(
+				"Modpack format {} is not supported. Try installing a plugin for it.",
+				download_result.format
+			);
 		};
 
-		let modpack_path_str = modpack_path.to_string_lossy().to_string();
+		let modpack_path_str = download_result.modpack_path.to_string_lossy().to_string();
 
 		// Don't supply the old modpack path if it is the same as the new one
 		let old_path = if let Some(lock_modpack) = lock_modpack {
@@ -186,8 +169,14 @@ impl Instance {
 
 		// Combine bundled and included dependencies from the package with the results from the modpack
 		let packages = result.packages;
-		let packages = merge_package_lists(bundled, &packages);
-		let packages = merge_package_lists(included, &packages);
+		let packages = merge_package_lists(
+			download_result.bundled.into_iter().map(|x| x.to_string()),
+			&packages,
+		);
+		let packages = merge_package_lists(
+			download_result.included.into_iter().map(|x| x.to_string()),
+			&packages,
+		);
 
 		let lockfile_modpack = LockfileModpack {
 			name: result.name,
@@ -215,4 +204,70 @@ impl Instance {
 pub struct ModpackInstallResult {
 	/// Packages provided by the modpack
 	pub supplied_packages: Vec<String>,
+}
+
+/// Evaluates a modpack package and downloads it's addon
+pub async fn download_modpack_package(
+	modpack: &ArcPkgReq,
+	input: EvalInput,
+	instance_id: &str,
+	reg: &PkgRegistry,
+	plugins: &PluginManager,
+	client: &Client,
+	paths: &Paths,
+	o: &mut impl NitroOutput,
+) -> anyhow::Result<Option<ModpackDownloadResult>> {
+	// Evaluate the package
+	let package = reg
+		.get(modpack, paths, client, o)
+		.await
+		.context("Failed to get modpack package")?;
+
+	let result = package
+		.eval(paths, Routine::Install, input, client, plugins.clone())
+		.await
+		.context("Failed to evaluate modpack")?;
+
+	let Some(addon) = result.addon_reqs.first() else {
+		o.debug(MessageContents::Simple(
+			"No modpack addon was returned".into(),
+		));
+		o.display(MessageContents::Success("Modpack installed".into()));
+		return Ok(None);
+	};
+
+	if addon.addon.kind != AddonKind::Modpack {
+		bail!("Modpack package did not have a modpack addon");
+	}
+
+	let Some(format) = &addon.addon.modpack_format else {
+		bail!("Modpack addon did not specify a format");
+	};
+
+	// Download the modpack
+	addon
+		.acquire(paths, instance_id, client)
+		.await
+		.context("Failed to download modpack")?;
+	let modpack_path = addon.addon.get_path(paths, instance_id);
+
+	Ok(Some(ModpackDownloadResult {
+		modpack_path,
+		format: format.clone(),
+		bundled: result.bundled,
+		included: result.inclusions,
+	}))
+}
+
+/// Result from downloading a modpack package
+#[derive(Default, Clone)]
+pub struct ModpackDownloadResult {
+	/// Path to the modpack file
+	pub modpack_path: PathBuf,
+	/// Format of the modpack
+	pub format: String,
+	/// Packages bundled with the modpack, to be included in suppression
+	pub bundled: Vec<Arc<str>>,
+	/// Packages included with the modpack, to be included in suppression
+	pub included: Vec<Arc<str>>,
 }
