@@ -183,15 +183,17 @@ fn main() -> anyhow::Result<()> {
 			None
 		};
 
+		let data_dir = ctx.get_data_dir()?;
+		let addons_dir = data_dir.join("internal/addons");
+
 		let file = BufReader::new(File::open(arg.path).context("Failed to open modpack")?);
 		let mut pack = ModrinthPack::from_stream(file).context("Failed to open modpack")?;
 
-		ctx.get_output().display(MessageContents::StartProcess(
+		let mut process = ctx.get_output().get_process();
+		process.display(MessageContents::StartProcess(
 			"Downloading modpack files".into(),
 		));
 
-		let data_dir = ctx.get_data_dir()?;
-		let addons_dir = data_dir.join("internal/addons");
 		let client = Client::new();
 		let runtime = tokio::runtime::Runtime::new()?;
 
@@ -199,10 +201,11 @@ fn main() -> anyhow::Result<()> {
 			.block_on(pack.download(&addons_dir, &client))
 			.context("Failed to download modpack files")?;
 
-		ctx.get_output()
-			.display(MessageContents::Success("Modpack files downloaded".into()));
-		ctx.get_output()
-			.display(MessageContents::StartProcess("Installing modpack".into()));
+		process.display(MessageContents::Success("Modpack files downloaded".into()));
+		std::mem::drop(process);
+
+		let mut process = ctx.get_output().get_process();
+		process.display(MessageContents::StartProcess("Installing modpack".into()));
 
 		pack.apply(
 			&Path::new(&arg.target_path),
@@ -214,8 +217,7 @@ fn main() -> anyhow::Result<()> {
 
 		let addons = pack.get_addons(&Path::new(&arg.target_path), &addons_dir)?;
 
-		ctx.get_output()
-			.display(MessageContents::Success("Modrinth pack installed".into()));
+		process.display(MessageContents::Success("Modrinth pack installed".into()));
 
 		let mut packages = Vec::new();
 		for file in &pack.index().files {

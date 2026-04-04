@@ -52,8 +52,11 @@ impl Instance {
 			}
 		}
 
-		let mut process = ctx.output.get_process();
-		process.display(MessageContents::StartProcess("Downloading modpack".into()));
+		let mut section = ctx.output.get_section();
+		section.display(MessageContents::Header("Updating modpack".into()));
+
+		let mut process = section.get_process();
+		process.display(MessageContents::StartProcess("Downloading".into()));
 
 		let constants = EvalConstants {
 			version: version_info.version.clone(),
@@ -88,13 +91,13 @@ impl Instance {
 		};
 
 		process.display(MessageContents::Success("Modpack downloaded".into()));
-		process.display(MessageContents::StartProcess("Installing modpack".into()));
+		std::mem::drop(process);
 
 		let formats = ctx
 			.plugins
-			.call_hook(AddModpackFormats, &(), ctx.paths, process.deref_mut())
+			.call_hook(AddModpackFormats, &(), ctx.paths, section.deref_mut())
 			.await?
-			.flatten_all_results_with_ids(process.deref_mut())
+			.flatten_all_results_with_ids(section.deref_mut())
 			.await?;
 
 		let Some((plugin_id, format)) = formats.iter().find(|x| x.1.id == download_result.format)
@@ -113,7 +116,7 @@ impl Instance {
 				None
 			} else {
 				if !Path::new(&lock_modpack.path).exists() {
-					process.display(MessageContents::Warning(
+					section.display(MessageContents::Warning(
 						"Old modpack not available. Update may not work properly".into(),
 					));
 				}
@@ -139,13 +142,13 @@ impl Instance {
 				plugin_id,
 				&arg,
 				ctx.paths,
-				process.deref_mut(),
+				section.deref_mut(),
 			)
 			.await?;
 
 		let result = result.context("Modpack install was not handled by plugin")?;
 		let result = result
-			.result(process.deref_mut())
+			.result(section.deref_mut())
 			.await
 			.context("Failed to install modpack")?;
 
@@ -192,8 +195,6 @@ impl Instance {
 			}
 		}
 		inst_lock.write().context("Failed to write lockfile")?;
-
-		process.display(MessageContents::Success("Modpack installed".into()));
 
 		Ok(ModpackInstallResult::default())
 	}
