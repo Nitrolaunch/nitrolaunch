@@ -202,7 +202,7 @@ fn main() -> anyhow::Result<()> {
 			.context("Failed to download modpack files")?;
 
 		process.display(MessageContents::Success("Modpack files downloaded".into()));
-		std::mem::drop(process);
+		process.finish();
 
 		let mut process = ctx.get_output().get_process();
 		process.display(MessageContents::StartProcess("Installing modpack".into()));
@@ -263,7 +263,7 @@ fn main() -> anyhow::Result<()> {
 			.context("Failed to download modpack files")?;
 
 		process.display(MessageContents::Success("Mods downloaded".into()));
-		std::mem::drop(process);
+		process.finish();
 
 		let target_path = match side {
 			Side::Client => target_path.join(".minecraft"),
@@ -276,7 +276,7 @@ fn main() -> anyhow::Result<()> {
 			.apply(&target_path, &addons_dir, side, None)
 			.context("Failed to install modpack")?;
 		process.display(MessageContents::Success("Modpack installed".into()));
-		std::mem::drop(process);
+		process.finish();
 
 		let config = mrpack_index_to_config(modpack.index(), side);
 

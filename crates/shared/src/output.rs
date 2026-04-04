@@ -403,6 +403,9 @@ where
 		o.start_process();
 		Self(o)
 	}
+
+	/// Finish the proces early
+	pub fn finish(self) {}
 }
 
 impl<O> Drop for OutputProcess<'_, O>
@@ -446,6 +449,9 @@ where
 		o.start_section();
 		Self(o)
 	}
+
+	/// Finish the section early
+	pub fn finish(self) {}
 }
 
 impl<O> Drop for OutputSection<'_, O>

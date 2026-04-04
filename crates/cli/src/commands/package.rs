@@ -287,7 +287,7 @@ async fn sync(data: &mut CmdData<'_>, filter: Vec<String>) -> anyhow::Result<()>
 		};
 	}
 
-	std::mem::drop(section);
+	section.finish();
 
 	let mut process = data.output.get_process();
 	process.display(MessageContents::StartProcess("Updating packages".into()));

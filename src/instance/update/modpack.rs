@@ -91,7 +91,7 @@ impl Instance {
 		};
 
 		process.display(MessageContents::Success("Modpack downloaded".into()));
-		std::mem::drop(process);
+		process.finish();
 
 		let formats = ctx
 			.plugins
