@@ -1282,6 +1282,8 @@ pub struct ModpackFormat {
 	pub id: String,
 	/// Display name of the format
 	pub name: String,
+	/// Corresponding instance transfer format for this modpack
+	pub transfer_format: Option<String>,
 }
 
 def_hook!(

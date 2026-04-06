@@ -10,12 +10,14 @@ use itertools::Itertools;
 use nitrolaunch::config::modifications::{apply_modifications_and_write, ConfigModification};
 use nitrolaunch::config::Config;
 use nitrolaunch::config_crate::instance::InstanceConfig;
+use nitrolaunch::core::util::versions::MinecraftVersion;
 use nitrolaunch::core::QuickPlayType;
 use nitrolaunch::instance::transfer::load_formats;
 use nitrolaunch::instance::update::manager::UpdateSettings;
 use nitrolaunch::instance::update::{InstanceUpdateContext, UpdateFacets};
 use nitrolaunch::instance::Instance;
 use nitrolaunch::io::lock::Lockfile;
+use nitrolaunch::pkg_crate::{PkgRequest, PkgRequestSource};
 use nitrolaunch::plugin_crate::hook::hooks::{DeleteInstance, SaveInstanceConfigArg};
 use nitrolaunch::shared::id::InstanceID;
 use nitrolaunch::shared::output::MessageContents;
@@ -123,6 +125,18 @@ pub enum InstanceSubcommand {
 		#[arg(short, long)]
 		output: Option<String>,
 	},
+	#[command(about = "Import an instance from a modpack package")]
+	ImportModpack {
+		/// The package of the modpack (i.e. modrinth:fabulously-optimized)
+		modpack: String,
+		/// The ID of the new instance
+		instance: String,
+		/// The Minecraft version to use
+		version: String,
+		/// The side of the instance. If not specified, defaults to client
+		#[arg(short, long)]
+		side: Side,
+	},
 	#[command(about = "View logs for an instance")]
 	Logs {
 		/// The instance to view the logs of
@@ -168,6 +182,12 @@ pub async fn run(command: InstanceSubcommand, mut data: CmdData<'_>) -> anyhow::
 			format,
 			output,
 		} => export(&mut data, instance, format, output).await,
+		InstanceSubcommand::ImportModpack {
+			modpack,
+			instance,
+			version,
+			side,
+		} => import_modpack(&mut data, modpack, instance, version, side).await,
 		InstanceSubcommand::Delete { instance } => delete(&mut data, instance).await,
 		InstanceSubcommand::Edit { instance } => edit(&mut data, instance).await,
 		InstanceSubcommand::Logs { instance } => logs(&mut data, instance).await,
@@ -619,6 +639,82 @@ async fn export(
 		)
 		.await
 		.context("Failed to export instance")?;
+
+	Ok(())
+}
+
+async fn import_modpack(
+	data: &mut CmdData<'_>,
+	modpack: String,
+	instance: String,
+	version: String,
+	side: Side,
+) -> anyhow::Result<()> {
+	data.ensure_config(true).await?;
+	let config = data.config.get();
+
+	let instance = InstanceID::from(instance);
+
+	if config.instances.contains_key(&instance) {
+		bail!("An instance with that ID already exists");
+	}
+
+	let client = Client::new();
+
+	let core = config
+		.get_core(
+			Some(&get_ms_client_id()),
+			&UpdateSettings {
+				depth: UpdateDepth::Full,
+				offline_auth: false,
+			},
+			&client,
+			&config.plugins,
+			&data.paths,
+			data.output,
+		)
+		.await?;
+
+	let version = core
+		.get_version(
+			&MinecraftVersion::Version(version.into()),
+			UpdateDepth::Full,
+			data.output,
+		)
+		.await
+		.context("Failed to set up core version")?;
+
+	let version_info = version.get_version_info();
+
+	let modpack = PkgRequest::parse(modpack, PkgRequestSource::UserRequire).arc();
+
+	let new_instance_config = Instance::create_from_modpack_package(
+		&instance,
+		&modpack,
+		side,
+		&version_info,
+		&config.packages,
+		&config.plugins,
+		&client,
+		&data.paths,
+		data.output,
+	)
+	.await
+	.context("Failed to import the new instance")?;
+
+	let mut config2 = data.get_raw_config()?;
+	apply_modifications_and_write(
+		&mut config2,
+		vec![ConfigModification::AddInstance(
+			instance,
+			new_instance_config,
+		)],
+		&data.paths,
+		&config.plugins,
+		data.output,
+	)
+	.await
+	.context("Failed to write modified config")?;
 
 	Ok(())
 }

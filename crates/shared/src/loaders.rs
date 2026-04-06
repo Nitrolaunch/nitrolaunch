@@ -44,6 +44,8 @@ pub enum Loader {
 	Purpur,
 	/// Folia
 	Folia,
+	/// Special loader that matches any loader match
+	Any,
 	/// An unknown loader
 	#[cfg_attr(not(feature = "schema"), serde(untagged))]
 	Unknown(String),
@@ -69,6 +71,7 @@ impl Loader {
 			"pufferfish" => Self::Pufferfish,
 			"purpur" => Self::Purpur,
 			"folia" => Self::Folia,
+			"any" => Self::Any,
 			other => Self::Unknown(other.to_string()),
 		}
 	}
@@ -94,6 +97,7 @@ impl Display for Loader {
 			Self::Pufferfish => write!(f, "Pufferfish"),
 			Self::Purpur => write!(f, "Purpur"),
 			Self::Folia => write!(f, "Folia"),
+			Self::Any => write!(f, "Any"),
 			Self::Unknown(other) => write!(f, "{other}"),
 		}
 	}
@@ -128,6 +132,10 @@ impl LoaderMatch {
 
 	/// Checks if a loader matches
 	pub fn matches(&self, other: &Loader) -> bool {
+		if other == &Loader::Any {
+			return true;
+		}
+
 		match self {
 			Self::FabricLike => matches!(other, Loader::Fabric | Loader::Quilt),
 			Self::ForgeLike => matches!(other, Loader::Forge | Loader::SpongeForge),

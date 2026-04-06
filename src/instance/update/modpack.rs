@@ -5,20 +5,23 @@ use std::{
 };
 
 use anyhow::{bail, Context};
+use nitro_config::instance::InstanceConfig;
 use nitro_instance::lock::{LockfileAddon, LockfileModpack};
 use nitro_plugin::hook::hooks::{AddModpackFormats, InstallModpack, InstallModpackArg};
 use nitro_shared::{
+	lang::Language,
+	loaders::Loader,
 	minecraft::AddonKind,
 	output::{MessageContents, NitroOutput},
-	pkg::{merge_package_lists, ArcPkgReq},
+	pkg::{merge_package_lists, ArcPkgReq, PackageStability},
 	versions::VersionInfo,
-	UpdateDepth,
+	Side, UpdateDepth,
 };
 use reqwest::Client;
 
 use crate::{
 	addon::AddonExt,
-	instance::{update::InstanceUpdateContext, Instance},
+	instance::{transfer::load_formats, update::InstanceUpdateContext, Instance},
 	io::paths::Paths,
 	pkg::{
 		eval::{EvalConstants, EvalInput, EvalParameters, Routine},
@@ -56,7 +59,7 @@ impl Instance {
 		section.display(MessageContents::Header("Updating modpack".into()));
 
 		let mut process = section.get_process();
-		process.display(MessageContents::StartProcess("Downloading".into()));
+		process.display(MessageContents::StartProcess("Downloading modpack".into()));
 
 		let constants = EvalConstants {
 			version: version_info.version.clone(),
@@ -197,6 +200,97 @@ impl Instance {
 		inst_lock.write().context("Failed to write lockfile")?;
 
 		Ok(ModpackInstallResult::default())
+	}
+
+	/// Import an instance by downloading and installing a modpack
+	pub async fn create_from_modpack_package(
+		id: &str,
+		modpack: &ArcPkgReq,
+		side: Side,
+		version_info: &VersionInfo,
+		reg: &PkgRegistry,
+		plugins: &PluginManager,
+		client: &Client,
+		paths: &Paths,
+		o: &mut impl NitroOutput,
+	) -> anyhow::Result<InstanceConfig> {
+		let mut process = o.get_process();
+		process.display(MessageContents::StartProcess("Downloading modpack".into()));
+
+		let constants = EvalConstants {
+			version: version_info.version.clone(),
+			loader: Loader::Any,
+			version_list: version_info.versions.clone(),
+			language: Language::default(),
+			default_stability: PackageStability::Latest,
+			suppress: Vec::new(),
+		};
+		let params = EvalParameters::new(side);
+
+		let input = EvalInput {
+			constants: Arc::new(constants),
+			params,
+		};
+
+		let download_result = download_modpack_package(
+			modpack,
+			input,
+			id,
+			reg,
+			plugins,
+			client,
+			paths,
+			process.deref_mut(),
+		)
+		.await?;
+
+		let Some(download_result) = download_result else {
+			bail!("Modpack package did not return an addon");
+		};
+
+		process.display(MessageContents::Success("Modpack downloaded".into()));
+		process.finish();
+
+		// Install with instance transfer
+
+		let modpack_formats = plugins
+			.call_hook(AddModpackFormats, &(), paths, o)
+			.await?
+			.flatten_all_results_with_ids(o)
+			.await?;
+
+		let Some((_, modpack_format)) = modpack_formats
+			.into_iter()
+			.find(|x| x.1.id == download_result.format)
+		else {
+			bail!(
+				"Modpack format {} is not supported. Try installing a plugin for it.",
+				download_result.format
+			);
+		};
+
+		let Some(transfer_format) = modpack_format.transfer_format else {
+			bail!("Modpack format does not support importing");
+		};
+
+		let transfer_formats = load_formats(plugins, paths, o)
+			.await
+			.context("Failed to load transfer formats")?;
+
+		let config = Self::import(
+			id,
+			&transfer_format,
+			&download_result.modpack_path,
+			Some(side),
+			&transfer_formats,
+			plugins,
+			paths,
+			o,
+		)
+		.await
+		.context("Failed to install modpack")?;
+
+		Ok(config)
 	}
 }
 

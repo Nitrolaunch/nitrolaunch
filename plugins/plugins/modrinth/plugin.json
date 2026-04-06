@@ -85,7 +85,8 @@
 			"constant": [
 				{
 					"id": "mrpack",
-					"name": "Modrinth"
+					"name": "Modrinth",
+					"transfer_format": "mrpack"
 				}
 			]
 		},
