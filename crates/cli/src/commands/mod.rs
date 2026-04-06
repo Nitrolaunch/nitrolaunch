@@ -42,17 +42,6 @@ use super::output::TerminalOutput;
 
 #[derive(Debug, Subcommand)]
 pub enum Command {
-	#[command(about = "Manage instances")]
-	#[clap(alias = "inst")]
-	Instance {
-		#[command(subcommand)]
-		command: InstanceSubcommand,
-	},
-	#[command(about = "Manage accounts and authentication")]
-	Account {
-		#[command(subcommand)]
-		command: AccountSubcommand,
-	},
 	#[command(about = "Launch instances to play the game")]
 	Launch {
 		/// An optional account to choose when launching
@@ -67,6 +56,23 @@ pub enum Command {
 		quick_play: Option<QuickPlayType>,
 		/// The instance to launch
 		instance: Option<String>,
+	},
+	#[command(about = "Manage instances")]
+	#[clap(alias = "inst")]
+	Instance {
+		#[command(subcommand)]
+		command: InstanceSubcommand,
+	},
+	#[command(about = "Do operations with instance templates")]
+	#[clap(alias = "temp")]
+	Template {
+		#[command(subcommand)]
+		command: TemplateSubcommand,
+	},
+	#[command(about = "Manage accounts and authentication")]
+	Account {
+		#[command(subcommand)]
+		command: AccountSubcommand,
 	},
 	#[command(about = "Manage packages")]
 	#[clap(alias = "pkg")]
@@ -85,25 +91,6 @@ pub enum Command {
 		#[command(subcommand)]
 		command: ModpackSubcommand,
 	},
-	#[command(about = "Manage configuration")]
-	#[clap(alias = "cfg", alias = "conf")]
-	Config {
-		#[command(subcommand)]
-		command: ConfigSubcommand,
-	},
-	#[command(about = "Print the Nitrolaunch version")]
-	Version,
-	#[command(about = "Deal with files created by Nitrolaunch")]
-	Files {
-		#[command(subcommand)]
-		command: FilesSubcommand,
-	},
-	#[command(about = "Do operations with instance templates")]
-	#[clap(alias = "temp")]
-	Template {
-		#[command(subcommand)]
-		command: TemplateSubcommand,
-	},
 	#[command(about = "Import instances from another launcher")]
 	Migrate {
 		/// Which format to use
@@ -115,11 +102,24 @@ pub enum Command {
 		#[arg(short = 'c', long)]
 		copy: bool,
 	},
+	#[command(about = "Manage configuration")]
+	#[clap(alias = "cfg", alias = "conf")]
+	Config {
+		#[command(subcommand)]
+		command: ConfigSubcommand,
+	},
 	#[command(about = "Manage global log files for the launcher")]
 	Log {
 		#[command(subcommand)]
 		command: LogSubcommand,
 	},
+	#[command(about = "Deal with files created by Nitrolaunch")]
+	Files {
+		#[command(subcommand)]
+		command: FilesSubcommand,
+	},
+	#[command(about = "Print the Nitrolaunch version")]
+	Version,
 	#[clap(external_subcommand)]
 	External(Vec<String>),
 }
