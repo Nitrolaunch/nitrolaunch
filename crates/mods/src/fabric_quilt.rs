@@ -201,7 +201,7 @@ pub async fn get_all_meta(
 		.await
 		.context("Failed to create parent directories for Fabric/Quilt meta")?;
 
-	let meta = if manager.get_depth() < UpdateDepth::Force && path.exists() {
+	let meta = if manager.get_depth() < UpdateDepth::Full && path.exists() {
 		json_from_file(path).with_context(|| format!("Failed to parse {mode} meta from file"))?
 	} else {
 		let bytes = download::bytes(&meta_url, client)
@@ -228,11 +228,10 @@ pub async fn get_meta(
 	client: &Client,
 ) -> anyhow::Result<FabricQuiltMeta> {
 	let meta = get_all_meta(version, mode, internal_dir, manager, client).await?;
-
 	let meta = if let Some(fq_version) = fq_version {
 		meta.into_iter()
 			.find(|x| x.loader.maven.contains(fq_version))
-			.context("Specified version does not exist")?
+			.with_context(|| format!("Specified version {fq_version} does not exist"))?
 	} else {
 		meta.first()
 			.ok_or(anyhow!("Could not find a valid {mode} version"))?
