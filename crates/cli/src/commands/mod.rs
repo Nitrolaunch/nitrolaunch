@@ -3,6 +3,7 @@ mod config;
 mod files;
 mod instance;
 mod log;
+mod modpack;
 mod package;
 mod plugin;
 mod template;
@@ -32,6 +33,7 @@ use self::config::ConfigSubcommand;
 use self::files::FilesSubcommand;
 use self::instance::InstanceSubcommand;
 use self::log::LogSubcommand;
+use self::modpack::ModpackSubcommand;
 use self::package::PackageSubcommand;
 use self::plugin::PluginSubcommand;
 use self::template::TemplateSubcommand;
@@ -77,6 +79,11 @@ pub enum Command {
 	Plugin {
 		#[command(subcommand)]
 		command: PluginSubcommand,
+	},
+	#[command(about = "Import modpacks")]
+	Modpack {
+		#[command(subcommand)]
+		command: ModpackSubcommand,
 	},
 	#[command(about = "Manage configuration")]
 	#[clap(alias = "cfg", alias = "conf")]
@@ -230,6 +237,7 @@ Would you like to do that now?"
 			Command::Plugin { command } => plugin::run(command, &mut data).await,
 			Command::Config { command } => config::run(command, &mut data).await,
 			Command::Template { command } => template::run(command, &mut data).await,
+			Command::Modpack { command } => modpack::run(command, &mut data).await,
 			Command::Migrate {
 				format,
 				instances,

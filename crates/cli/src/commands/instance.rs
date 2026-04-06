@@ -5,28 +5,23 @@ use std::sync::Arc;
 use anyhow::{bail, Context};
 use clap::Subcommand;
 use color_print::{cprint, cprintln};
-use inquire::{Confirm, MultiSelect, Select};
+use inquire::Confirm;
 use itertools::Itertools;
 use nitrolaunch::config::modifications::{apply_modifications_and_write, ConfigModification};
-use nitrolaunch::config::Config;
 use nitrolaunch::config_crate::instance::InstanceConfig;
-use nitrolaunch::core::util::versions::MinecraftVersion;
 use nitrolaunch::core::QuickPlayType;
 use nitrolaunch::instance::transfer::load_formats;
 use nitrolaunch::instance::update::manager::UpdateSettings;
 use nitrolaunch::instance::update::{InstanceUpdateContext, UpdateFacets};
 use nitrolaunch::instance::Instance;
 use nitrolaunch::io::lock::Lockfile;
-use nitrolaunch::pkg_crate::{PkgRequest, PkgRequestSource};
 use nitrolaunch::plugin_crate::hook::hooks::{DeleteInstance, SaveInstanceConfigArg};
 use nitrolaunch::shared::id::InstanceID;
-use nitrolaunch::shared::output::MessageContents;
+use nitrolaunch::shared::output::{MessageContents, NoOp};
 use nitrolaunch::shared::util::to_string_json;
-use nitrolaunch::shared::versions::{MinecraftLatestVersion, MinecraftVersionDeser};
 
 use nitrolaunch::instance::launch::LaunchSettings;
 use nitrolaunch::shared::lang::translate::TranslationKey;
-use nitrolaunch::shared::loaders::Loader;
 use nitrolaunch::shared::{output::NitroOutput, Side, UpdateDepth};
 use reqwest::Client;
 
@@ -34,6 +29,9 @@ use super::CmdData;
 use crate::commands::call_plugin_subcommand;
 use crate::commands::config::edit_temp_file;
 use crate::output::{icons_enabled, HYPHEN_POINT, INSTANCE, LOADER, PACKAGE, VERSION};
+use crate::prompt::{
+	pick_instance, pick_instances, pick_loader, pick_minecraft_version, pick_side,
+};
 use crate::secrets::get_ms_client_id;
 
 #[derive(Debug, Subcommand)]
@@ -125,18 +123,6 @@ pub enum InstanceSubcommand {
 		#[arg(short, long)]
 		output: Option<String>,
 	},
-	#[command(about = "Import an instance from a modpack package")]
-	ImportModpack {
-		/// The package of the modpack (i.e. modrinth:fabulously-optimized)
-		modpack: String,
-		/// The ID of the new instance
-		instance: String,
-		/// The Minecraft version to use
-		version: String,
-		/// The side of the instance. If not specified, defaults to client
-		#[arg(short, long)]
-		side: Side,
-	},
 	#[command(about = "View logs for an instance")]
 	Logs {
 		/// The instance to view the logs of
@@ -182,12 +168,6 @@ pub async fn run(command: InstanceSubcommand, mut data: CmdData<'_>) -> anyhow::
 			format,
 			output,
 		} => export(&mut data, instance, format, output).await,
-		InstanceSubcommand::ImportModpack {
-			modpack,
-			instance,
-			version,
-			side,
-		} => import_modpack(&mut data, modpack, instance, version, side).await,
 		InstanceSubcommand::Delete { instance } => delete(&mut data, instance).await,
 		InstanceSubcommand::Edit { instance } => edit(&mut data, instance).await,
 		InstanceSubcommand::Logs { instance } => logs(&mut data, instance).await,
@@ -416,7 +396,7 @@ async fn update(
 			&client,
 			&config.plugins,
 			&data.paths,
-			data.output,
+			&mut NoOp,
 		)
 		.await?;
 
@@ -465,49 +445,47 @@ async fn update(
 
 async fn add(data: &mut CmdData<'_>, plugin: Option<String>) -> anyhow::Result<()> {
 	data.ensure_config(true).await?;
-	let mut config = data.get_raw_config()?;
+	let config = data.config.get();
+	let mut raw_config = data.get_raw_config()?;
 
 	// Build the instance
 	let id = inquire::Text::new("What is the ID for the instance?").prompt()?;
 	let id = InstanceID::from(id);
-	let version = inquire::Text::new("What Minecraft version should the instance be?").prompt()?;
-	let version = match version.as_str() {
-		"latest" => MinecraftVersionDeser::Latest(MinecraftLatestVersion::Release),
-		"latest_snapshot" => MinecraftVersionDeser::Latest(MinecraftLatestVersion::Snapshot),
-		other => MinecraftVersionDeser::Version(other.into()),
-	};
-	let side_options = vec![Side::Client, Side::Server];
-	let side =
-		inquire::Select::new("What side should the instance be on?", side_options).prompt()?;
 
-	let loader_options = match side {
-		Side::Client => {
-			vec![Loader::Vanilla, Loader::Fabric, Loader::Quilt]
-		}
-		Side::Server => {
-			vec![
-				Loader::Vanilla,
-				Loader::Fabric,
-				Loader::Quilt,
-				Loader::Paper,
-				Loader::Sponge,
-				Loader::Folia,
-			]
-		}
-	};
-	let loader =
-		inquire::Select::new("What loader should the instance use?", loader_options).prompt()?;
+	let side = pick_side(None)?;
+
+	let client = Client::new();
+	let core = config
+		.get_core(
+			Some(&get_ms_client_id()),
+			&UpdateSettings {
+				depth: UpdateDepth::Full,
+				offline_auth: false,
+			},
+			&client,
+			&config.plugins,
+			&data.paths,
+			&mut NoOp,
+		)
+		.await?;
+	let manifest = core
+		.get_version_manifest(None, UpdateDepth::Shallow, &mut NoOp)
+		.await?;
+
+	let version = pick_minecraft_version(&manifest.list).await?;
+
+	let loader = pick_loader(None, Some(side), &config.plugins, &data.paths).await?;
 
 	let instance_config = InstanceConfig {
 		side: Some(side),
-		version: Some(version),
+		version: Some(version.to_serialized()),
 		loader: Some(to_string_json(&loader)),
 		source_plugin: plugin,
 		..Default::default()
 	};
 
 	apply_modifications_and_write(
-		&mut config,
+		&mut raw_config,
 		vec![ConfigModification::AddInstance(id, instance_config)],
 		&data.paths,
 		&data.config.get().plugins,
@@ -639,82 +617,6 @@ async fn export(
 		)
 		.await
 		.context("Failed to export instance")?;
-
-	Ok(())
-}
-
-async fn import_modpack(
-	data: &mut CmdData<'_>,
-	modpack: String,
-	instance: String,
-	version: String,
-	side: Side,
-) -> anyhow::Result<()> {
-	data.ensure_config(true).await?;
-	let config = data.config.get();
-
-	let instance = InstanceID::from(instance);
-
-	if config.instances.contains_key(&instance) {
-		bail!("An instance with that ID already exists");
-	}
-
-	let client = Client::new();
-
-	let core = config
-		.get_core(
-			Some(&get_ms_client_id()),
-			&UpdateSettings {
-				depth: UpdateDepth::Full,
-				offline_auth: false,
-			},
-			&client,
-			&config.plugins,
-			&data.paths,
-			data.output,
-		)
-		.await?;
-
-	let version = core
-		.get_version(
-			&MinecraftVersion::Version(version.into()),
-			UpdateDepth::Full,
-			data.output,
-		)
-		.await
-		.context("Failed to set up core version")?;
-
-	let version_info = version.get_version_info();
-
-	let modpack = PkgRequest::parse(modpack, PkgRequestSource::UserRequire).arc();
-
-	let new_instance_config = Instance::create_from_modpack_package(
-		&instance,
-		&modpack,
-		side,
-		&version_info,
-		&config.packages,
-		&config.plugins,
-		&client,
-		&data.paths,
-		data.output,
-	)
-	.await
-	.context("Failed to import the new instance")?;
-
-	let mut config2 = data.get_raw_config()?;
-	apply_modifications_and_write(
-		&mut config2,
-		vec![ConfigModification::AddInstance(
-			instance,
-			new_instance_config,
-		)],
-		&data.paths,
-		&config.plugins,
-		data.output,
-	)
-	.await
-	.context("Failed to write modified config")?;
 
 	Ok(())
 }
@@ -870,28 +772,4 @@ async fn logs(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()> 
 	}
 
 	Ok(())
-}
-
-/// Pick which instance to use
-pub fn pick_instance(instance: Option<String>, config: &Config) -> anyhow::Result<InstanceID> {
-	if let Some(instance) = instance {
-		Ok(instance.into())
-	} else {
-		let options = config.instances.keys().sorted().collect();
-		let selection = Select::new("Choose an instance", options)
-			.prompt()
-			.context("Prompt failed")?;
-
-		Ok(selection.to_owned())
-	}
-}
-
-/// Pick which instances to use
-pub fn pick_instances(config: &Config) -> anyhow::Result<Vec<InstanceID>> {
-	let options = config.instances.keys().sorted().cloned().collect();
-	let selection = MultiSelect::new("Choose instances", options)
-		.prompt()
-		.context("Prompt failed")?;
-
-	Ok(selection)
 }

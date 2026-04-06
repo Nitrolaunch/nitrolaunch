@@ -75,6 +75,46 @@ impl Loader {
 			other => Self::Unknown(other.to_string()),
 		}
 	}
+
+	/// Gets whether this loader is supported on the client
+	pub fn is_client(&self) -> bool {
+		match self {
+			Self::Vanilla
+			| Self::Forge
+			| Self::NeoForged
+			| Self::Fabric
+			| Self::Quilt
+			| Self::LiteLoader
+			| Self::Risugamis
+			| Self::Rift
+			| Self::Any
+			| Self::Unknown(..) => true,
+			_ => false,
+		}
+	}
+
+	/// Gets whether this loader is supported on the server
+	pub fn is_server(&self) -> bool {
+		match self {
+			Self::Vanilla
+			| Self::Forge
+			| Self::NeoForged
+			| Self::Fabric
+			| Self::Quilt
+			| Self::Paper
+			| Self::Sponge
+			| Self::SpongeForge
+			| Self::CraftBukkit
+			| Self::Spigot
+			| Self::Glowstone
+			| Self::Pufferfish
+			| Self::Purpur
+			| Self::Folia
+			| Self::Any
+			| Self::Unknown(..) => true,
+			_ => false,
+		}
+	}
 }
 
 impl Display for Loader {

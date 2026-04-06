@@ -1,13 +1,12 @@
 use super::CmdData;
 use crate::commands::call_plugin_subcommand;
 use crate::output::{icons_enabled, CHECK, HYPHEN_POINT, STAR};
+use crate::prompt::pick_account;
 use anyhow::{bail, Context};
-use inquire::Select;
 use itertools::Itertools;
 use nitrolaunch::config::modifications::{apply_modifications_and_write, ConfigModification};
-use nitrolaunch::config::Config;
 use nitrolaunch::config_crate::account::{AccountConfig, AccountVariant};
-use nitrolaunch::core::account::{AccountID, AccountKind};
+use nitrolaunch::core::account::AccountKind;
 
 use clap::Subcommand;
 use color_print::{cformat, cprint, cprintln};
@@ -407,23 +406,4 @@ async fn cosmetic_search(
 	}
 
 	Ok(())
-}
-
-/// Pick which account to use
-pub fn pick_account(account: Option<String>, config: &Config) -> anyhow::Result<AccountID> {
-	if let Some(account) = account {
-		Ok(account.into())
-	} else {
-		let options = config
-			.accounts
-			.iter_accounts()
-			.map(|x| x.0)
-			.sorted()
-			.collect();
-		let selection = Select::new("Choose an account", options)
-			.prompt()
-			.context("Prompt failed")?;
-
-		Ok(selection.clone())
-	}
 }

@@ -1,5 +1,10 @@
+/// CLI commands
 mod commands;
+/// NitroOutput implementation
 mod output;
+/// Utilities for prompting the user
+mod prompt;
+/// :O
 mod secrets;
 
 use std::process::ExitCode;

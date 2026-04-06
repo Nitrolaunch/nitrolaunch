@@ -23,8 +23,8 @@ use reqwest::Client;
 use serde::Serialize;
 
 use crate::commands::call_plugin_subcommand;
-use crate::commands::instance::pick_instance;
 use crate::output::HYPHEN_POINT;
+use crate::prompt::pick_instance;
 
 #[derive(Debug, Subcommand)]
 pub enum PackageSubcommand {
