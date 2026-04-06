@@ -336,10 +336,7 @@ impl<'a> CmdData<'a> {
 
 /// Print the Nitrolaunch version
 fn print_version() {
-	let version = env!("CARGO_PKG_VERSION");
-	let nitrolaunch_version = nitrolaunch::VERSION;
-	cprintln!("CLI version: <g>{}</g>", version);
-	cprintln!("Nitrolaunch version: <g>{}</g>", nitrolaunch_version);
+	cprintln!("Nitrolaunch version: <g>{}</g>", nitrolaunch::VERSION);
 }
 
 /// Runs instance migration
