@@ -136,15 +136,21 @@ impl<H: Hook> HookHandle<H> {
 
 	/// Ensures that this hook has started
 	pub async fn ensure_started(&mut self, o: &mut impl NitroOutput) -> anyhow::Result<()> {
-		if let HookHandleInner::Executable(inner) = &mut self.inner {
-			inner
-				.ensure_started(
-					&mut self.plugin_persistence,
-					&mut self.command_results,
-					&mut self.start_time,
-					o,
-				)
-				.await?;
+		match &mut self.inner {
+			HookHandleInner::Executable(inner) => {
+				inner
+					.ensure_started(
+						&mut self.plugin_persistence,
+						&mut self.command_results,
+						&mut self.start_time,
+						o,
+					)
+					.await?;
+			}
+			HookHandleInner::WASM(inner) => {
+				inner.run(o).await?;
+			}
+			HookHandleInner::Constant(..) => {}
 		}
 
 		Ok(())
