@@ -111,8 +111,8 @@ export interface DeclarativePackageRelations {
 	bundled?: string[] | string;
 	compats?: [string, string][] | [string, string];
 	recommendations?:
-	| { value: string; invert?: boolean }[]
-	| { value: string; invert?: boolean };
+		| { value: string; invert?: boolean }[]
+		| { value: string; invert?: boolean };
 }
 
 export type AddonKind =
@@ -512,6 +512,8 @@ export function getPackageTypeIcon(type: PackageType) {
 		return Sun;
 	} else if (type == "bundle") {
 		return Folder;
+	} else if (type == "modpack") {
+		return Honeycomb;
 	} else {
 		return Box;
 	}
