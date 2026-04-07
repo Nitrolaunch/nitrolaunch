@@ -7,11 +7,9 @@ use crate::instance::{InstKind, Instance, InstanceStoredConfig};
 use crate::io::paths::Paths;
 use anyhow::{bail, ensure, Context};
 use nitro_config::instance::{is_valid_instance_id, InstanceConfig, LaunchConfig, LaunchMemory};
-use nitro_config::package::PackageConfigDeser;
-use nitro_config::template::{TemplateConfig, TemplateLoaderConfiguration};
+use nitro_config::template::TemplateConfig;
 use nitro_core::io::java::install::JavaInstallationKind;
 use nitro_core::util::versions::MinecraftVersion;
-use nitro_pkg::{PkgRequest, PkgRequestSource};
 use nitro_plugin::hook::hooks::{ModifyInstanceConfig, ModifyInstanceConfigArgument};
 use nitro_shared::id::{InstanceID, TemplateID};
 use nitro_shared::java_args::MemoryNum;
@@ -35,57 +33,9 @@ pub async fn read_instance_config(
 		bail!("Invalid instance ID '{}'", id);
 	}
 
-	// Get the parent template if it is specified
-	let templates: anyhow::Result<Vec<_>> = config
-		.from
-		.iter()
-		.map(|x| {
-			templates
-				.get(&TemplateID::from(x.clone()))
-				.with_context(|| format!("Derived template '{x}' does not exist"))
-		})
-		.collect();
-	let templates = templates?;
-
 	let original_config = config.clone();
-
-	// Merge with the template
-	for template in &templates {
-		let mut template_config = template.instance.clone();
-		template_config.merge(config);
-		config = template_config;
-	}
-
-	let mut original_config_with_templates = config.clone();
-
-	let side = config.side.context("Instance type was not specified")?;
-
-	// Consolidate all of the package configs into the instance package config list
-	let packages = consolidate_package_configs(&templates, &config, side);
-
-	original_config_with_templates.packages = packages.clone();
-
-	let read_packages = packages
-		.clone()
-		.into_iter()
-		.map(|x| read_package_config(x, config.package_stability.unwrap_or_default()))
-		.collect();
-
-	// Loader
-	let template_loaders = templates.iter().fold(
-		TemplateLoaderConfiguration::default(),
-		|mut acc, template| {
-			acc.merge(&template.loader);
-			acc
-		},
-	);
-
-	let loader = match side {
-		Side::Client => config.loader.clone().or(template_loaders.client().cloned()),
-		Side::Server => config.loader.clone().or(template_loaders.server().cloned()),
-	};
-
-	original_config_with_templates.loader = loader.clone();
+	let mut config = config.apply_templates(templates)?;
+	let original_config_with_templates = config.clone();
 
 	// Apply plugins
 	let arg = ModifyInstanceConfigArgument {
@@ -99,17 +49,15 @@ pub async fn read_instance_config(
 		config.merge(result.config);
 	}
 
-	let mut original_config_with_templates_and_plugins = config.clone();
-	original_config_with_templates_and_plugins.loader = loader.clone();
-	original_config_with_templates_and_plugins.packages = packages.clone();
+	let original_config_with_templates_and_plugins = config.clone();
 
-	let kind = match side {
+	let kind = match config.side.unwrap() {
 		Side::Client => InstKind::client(config.window),
 		Side::Server => InstKind::server(),
 	};
 
-	let (loader, loader_version) = if let Some(loader) = loader {
-		let (loader, version) = parse_versioned_string(&loader);
+	let (loader, loader_version) = if let Some(loader) = &config.loader {
+		let (loader, version) = parse_versioned_string(loader);
 		(Loader::parse_from_str(loader), Some(version))
 	} else {
 		(Loader::Vanilla, None)
@@ -121,6 +69,13 @@ pub async fn read_instance_config(
 			.clone()
 			.context("Instance is missing a Minecraft version")?,
 	);
+
+	let read_packages = config
+		.packages
+		.clone()
+		.into_iter()
+		.map(|x| read_package_config(x, config.package_stability.unwrap_or_default()))
+		.collect();
 
 	let stored_config = InstanceStoredConfig {
 		name: config.name,
@@ -177,40 +132,6 @@ pub fn launch_config_to_options(config: LaunchConfig) -> anyhow::Result<LaunchOp
 		quick_play: config.quick_play,
 		use_log4j_config: config.use_log4j_config,
 	})
-}
-
-/// Combines all of the package configs from global, template, and instance together into
-/// the configurations for just one instance
-pub fn consolidate_package_configs(
-	templates: &[&TemplateConfig],
-	instance: &InstanceConfig,
-	side: Side,
-) -> Vec<PackageConfigDeser> {
-	// We use a map so that we can override packages from more general sources
-	// with those from more specific ones
-	let mut map = HashMap::new();
-	for template in templates {
-		for pkg in template.packages.iter_global() {
-			map.insert(
-				PkgRequest::parse(pkg.get_pkg_id(), PkgRequestSource::UserRequire).id,
-				pkg.clone(),
-			);
-		}
-		for pkg in template.packages.iter_side(side) {
-			map.insert(
-				PkgRequest::parse(pkg.get_pkg_id(), PkgRequestSource::UserRequire).id,
-				pkg.clone(),
-			);
-		}
-	}
-	for pkg in &instance.packages {
-		map.insert(
-			PkgRequest::parse(pkg.get_pkg_id(), PkgRequestSource::UserRequire).id,
-			pkg.clone(),
-		);
-	}
-
-	map.into_values().collect()
 }
 
 #[cfg(test)]
