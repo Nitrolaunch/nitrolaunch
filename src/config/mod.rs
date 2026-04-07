@@ -360,25 +360,22 @@ fn default_config() -> serde_json::Value {
 	json!(
 		{
 			"accounts": {
-				"example": {
-					"type": "microsoft"
-				}
+				"example": "microsoft"
 			},
 			"default_account": "example",
 			"templates": {
-				"1.20": {
-					"version": "1.19.3",
-					"loader": "vanilla",
-					"server_type": "none"
+				"1.21": {
+					"version": "1.21.11",
+					"loader": "vanilla"
 				}
 			},
 			"instances": {
 				"example-client": {
-					"from": "1.20",
+					"from": "1.21",
 					"type": "client"
 				},
 				"example-server": {
-					"from": "1.20",
+					"from": "1.21",
 					"type": "server"
 				}
 			}
