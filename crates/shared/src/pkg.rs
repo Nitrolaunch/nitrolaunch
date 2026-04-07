@@ -461,10 +461,23 @@ pub fn is_package_overridden(package: &PkgRequest, list: &[String]) -> bool {
 		.any(|x| &x == package)
 }
 
-/// Merges two package lists without respect to version
+/// Merges two package lists, removing duplicates and preferring requests with a version
 pub fn merge_package_lists(list1: impl Iterator<Item = String>, list2: &[String]) -> Vec<String> {
-	let list1 = list1.filter(|x| !list2.contains(x));
-	list1.chain(list2.into_iter().cloned()).collect()
+	let mut out: Vec<_> = list1
+		.map(|x| PkgRequest::parse(x, PkgRequestSource::UserRequire))
+		.collect();
+	for item in list2 {
+		let item = PkgRequest::parse(item, PkgRequestSource::UserRequire);
+		if let Some(existing) = out.iter_mut().find(|x| **x == item) {
+			if existing.content_version == VersionPattern::Any {
+				existing.content_version = item.content_version.clone();
+			}
+		} else {
+			out.push(item);
+		}
+	}
+
+	out.into_iter().map(|x| x.to_string()).collect()
 }
 
 /// Error from package resolution
