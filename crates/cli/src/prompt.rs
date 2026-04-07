@@ -1,5 +1,8 @@
 use anyhow::Context;
-use inquire::{MultiSelect, Select};
+use inquire::{
+	validator::{ErrorMessage, StringValidator, Validation},
+	MultiSelect, Select, Text,
+};
 use itertools::Itertools;
 use nitrolaunch::{
 	config::Config,
@@ -7,7 +10,7 @@ use nitrolaunch::{
 	io::paths::Paths,
 	plugin::PluginManager,
 	plugin_crate::hook::hooks::AddSupportedLoaders,
-	shared::{id::InstanceID, loaders::Loader, output::NoOp, Side},
+	shared::{id::InstanceID, loaders::Loader, output::NoOp, util::is_valid_identifier, Side},
 };
 
 /// Pick which instance to use if the user has not selected one
@@ -112,5 +115,29 @@ pub async fn pick_loader(
 		)
 		.prompt()
 		.context("Prompt failed")
+	}
+}
+
+/// Pick an ID for a new instance
+pub fn pick_instance_id() -> anyhow::Result<InstanceID> {
+	Ok(Text::new("Type an ID for the instance")
+		.with_validator(IDValidator)
+		.prompt()?
+		.into())
+}
+
+#[derive(Clone)]
+struct IDValidator;
+
+impl StringValidator for IDValidator {
+	fn validate(&self, input: &str) -> Result<Validation, inquire::CustomUserError> {
+		if is_valid_identifier(input) {
+			Ok(Validation::Valid)
+		} else {
+			Ok(Validation::Invalid(ErrorMessage::Custom(
+				"IDs must be lowercase and cannot contain special characters other than - or _"
+					.into(),
+			)))
+		}
 	}
 }

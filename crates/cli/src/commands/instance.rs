@@ -30,7 +30,7 @@ use crate::commands::call_plugin_subcommand;
 use crate::commands::config::edit_temp_file;
 use crate::output::{icons_enabled, HYPHEN_POINT, INSTANCE, LOADER, PACKAGE, VERSION};
 use crate::prompt::{
-	pick_instance, pick_instances, pick_loader, pick_minecraft_version, pick_side,
+	pick_instance, pick_instance_id, pick_instances, pick_loader, pick_minecraft_version, pick_side,
 };
 use crate::secrets::get_ms_client_id;
 
@@ -104,7 +104,7 @@ pub enum InstanceSubcommand {
 		/// The path to the instance
 		path: String,
 		/// The ID of the new instance
-		instance: String,
+		instance: Option<String>,
 		/// Which format to use
 		#[arg(short, long)]
 		format: Option<String>,
@@ -449,8 +449,7 @@ async fn add(data: &mut CmdData<'_>, plugin: Option<String>) -> anyhow::Result<(
 	let mut raw_config = data.get_raw_config()?;
 
 	// Build the instance
-	let id = inquire::Text::new("What is the ID for the instance?").prompt()?;
-	let id = InstanceID::from(id);
+	let id = pick_instance_id()?;
 
 	let side = pick_side(None)?;
 
@@ -502,7 +501,7 @@ async fn add(data: &mut CmdData<'_>, plugin: Option<String>) -> anyhow::Result<(
 
 async fn import(
 	data: &mut CmdData<'_>,
-	instance: String,
+	instance: Option<String>,
 	path: String,
 	format: Option<String>,
 	side: Option<Side>,
@@ -510,7 +509,11 @@ async fn import(
 	data.ensure_config(true).await?;
 	let config = data.config.get();
 
-	let instance = InstanceID::from(instance);
+	let instance = if let Some(instance) = instance {
+		InstanceID::from(instance)
+	} else {
+		pick_instance_id()?
+	};
 
 	if config.instances.contains_key(&instance) {
 		bail!("An instance with that ID already exists");

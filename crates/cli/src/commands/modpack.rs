@@ -17,7 +17,7 @@ use reqwest::Client;
 
 use crate::{
 	commands::{call_plugin_subcommand, CmdData},
-	prompt::{pick_minecraft_version, pick_side},
+	prompt::{pick_instance_id, pick_minecraft_version, pick_side},
 	secrets::get_ms_client_id,
 };
 
@@ -81,14 +81,10 @@ async fn install(
 	process.finish();
 
 	let instance = if let Some(instance) = instance {
-		instance
+		InstanceID::from(instance)
 	} else {
-		let prompt = inquire::Text::new("Enter the ID for the new instance");
-
-		prompt.prompt()?
+		pick_instance_id()?
 	};
-
-	let instance = InstanceID::from(instance);
 
 	if config.instances.contains_key(&instance) {
 		bail!("An instance with that ID already exists");
