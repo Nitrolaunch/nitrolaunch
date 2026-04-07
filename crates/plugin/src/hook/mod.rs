@@ -20,9 +20,9 @@ pub mod wasm;
 /// Trait for a hook that can be called
 pub trait Hook {
 	/// The type for the argument that goes into the hook
-	type Arg: Serialize + DeserializeOwned;
+	type Arg: Serialize + DeserializeOwned + Send + 'static;
 	/// The type for the result from the hook
-	type Result: DeserializeOwned + Serialize + Default;
+	type Result: DeserializeOwned + Serialize + Default + Send + 'static;
 
 	/// Get the name of the hook
 	fn get_name(&self) -> &'static str {

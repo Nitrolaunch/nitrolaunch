@@ -215,7 +215,9 @@ impl<H: Hook> HookHandle<H> {
 		match self.inner {
 			HookHandleInner::Constant(result) => Ok(result),
 			HookHandleInner::Executable(inner) => inner.result().await,
-			HookHandleInner::WASM(inner) => Ok(inner.result().expect("Hook has not been polled")),
+			HookHandleInner::WASM(inner) => {
+				inner.result().await.context("Failed to get hook result")
+			}
 		}
 	}
 
@@ -225,7 +227,7 @@ impl<H: Hook> HookHandle<H> {
 		match self.inner {
 			HookHandleInner::Constant(result) => Ok(Some(result)),
 			HookHandleInner::Executable(inner) => inner.kill().await,
-			HookHandleInner::WASM(inner) => Ok(inner.result()),
+			HookHandleInner::WASM(inner) => Ok(inner.result().await),
 		}
 	}
 

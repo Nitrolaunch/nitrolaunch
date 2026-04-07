@@ -22,7 +22,11 @@ use nitro_shared::{
 	util::{ARCH_STRING, OS_STRING},
 	Side,
 };
-use tokio::{process::Command, sync::Mutex, task::JoinSet};
+use tokio::{
+	process::Command,
+	sync::{oneshot, Mutex},
+	task::JoinSet,
+};
 use wasmtime::{
 	component::{HasSelf, Linker},
 	Store,
@@ -66,13 +70,16 @@ pub(crate) async fn call_wasm<H: Hook + Sized>(
 
 	let o = Arc::new(Mutex::new(o));
 
+	let (result_sender, result) = oneshot::channel();
+
 	Ok(HookHandle::wasm(
 		WASMHookHandle {
 			plugin_id: arg.plugin_id.to_string(),
 			o,
 			wasm_path: PathBuf::from(arg.cmd),
 			arg: serde_json::to_string(&arg.arg)?,
-			result: None,
+			result_sender: Some(result_sender),
+			result,
 			custom_config: arg.ctx.custom_config,
 			instances: arg.ctx.instances.cloned(),
 			templates: arg.ctx.templates.cloned(),
@@ -97,7 +104,8 @@ pub(super) struct WASMHookHandle<H: Hook> {
 	o: Arc<Mutex<Box<dyn NitroOutput + Sync>>>,
 	wasm_path: PathBuf,
 	arg: String,
-	result: Option<H::Result>,
+	result_sender: Option<oneshot::Sender<H::Result>>,
+	result: oneshot::Receiver<H::Result>,
 	custom_config: Option<String>,
 	instances: Option<Arc<HashMap<String, InstanceConfig>>>,
 	templates: Option<Arc<HashMap<String, TemplateConfig>>>,
@@ -109,11 +117,15 @@ pub(super) struct WASMHookHandle<H: Hook> {
 }
 
 impl<H: Hook> WASMHookHandle<H> {
-	/// Runs this hook to completion
+	/// Starts this hook
 	pub async fn run(&mut self, o: &mut impl NitroOutput) -> anyhow::Result<()> {
-		if self.result.is_some() {
+		if !self.result.is_empty() {
 			return Ok(());
 		}
+
+		let Some(result_sender) = self.result_sender.take() else {
+			return Ok(());
+		};
 
 		if plugin_debug_enabled() {
 			o.display(MessageContents::Simple(format!(
@@ -155,86 +167,94 @@ impl<H: Hook> WASMHookHandle<H> {
 		let wasi_ctx = wasi_ctx.preopened_dir("C:\\", "C:\\", DirPerms::all(), FilePerms::all())?;
 
 		let wasi_ctx = wasi_ctx.build();
-		wasmtime_wasi::p2::add_to_linker_async(&mut linker)
-			.context("Failed to add WASI functions to linker")?;
 
-		bindings::InterfaceWorld::add_to_linker::<_, HasSelf<_>>(&mut linker, |x| x)?;
-
-		if let Some(start_time) = &mut start_time {
-			let now = Instant::now();
-			println!("Linker initialization: {:?}", now - *start_time);
-			*start_time = now;
-		}
-
-		let mut store = Store::new(
-			&engine,
-			State {
-				wasi_ctx,
-				table: ResourceTable::new(),
-				custom_config: self.custom_config.clone(),
-				instances: self.instances.clone(),
-				templates: self.templates.clone(),
-				data_dir: self.data_dir.clone(),
-				config_dir: self.config_dir.clone(),
-				plugin_dir: self.plugin_dir.clone(),
-				client: Client::new(),
-				o: self.o.clone(),
-			},
-		);
-
-		let instance = bindings::InterfaceWorld::instantiate_async(&mut store, &component, &linker)
-			.await
-			.context("Failed to construct WASM instance")?;
-
-		if let Some(start_time) = &mut start_time {
-			let now = Instant::now();
-			println!("Instance initialization: {:?}", now - *start_time);
-			*start_time = now;
-		}
-
-		let result_code = instance
-			.call_run_plugin(
-				&mut store,
-				H::get_name_static(),
-				&self.arg,
-				H::get_version() as u32,
-			)
-			.await
-			.context("Failed to call plugin entrypoint")?;
-
-		if let Some(start_time) = &mut start_time {
-			let now = Instant::now();
-			println!("Hook runtime: {:?}", now - *start_time);
-			*start_time = now;
-		}
-
-		let result = if H::get_takes_over() {
-			H::Result::default()
-		} else {
-			let mut result = instance.call_get_result(&mut store).await?;
-
-			if result_code == 1 {
-				bail!("Plugin '{}' returned an error: {result}", self.plugin_id);
-			}
-
-			unsafe { simd_json::from_str(&mut result) }
-				.context("Failed to deserialize hook result")?
+		let state = State {
+			wasi_ctx,
+			table: ResourceTable::new(),
+			custom_config: self.custom_config.clone(),
+			instances: self.instances.clone(),
+			templates: self.templates.clone(),
+			data_dir: self.data_dir.clone(),
+			config_dir: self.config_dir.clone(),
+			plugin_dir: self.plugin_dir.clone(),
+			client: Client::new(),
+			o: self.o.clone(),
 		};
 
-		self.result = Some(result);
+		let arg = self.arg.clone();
+		let plugin_id = self.plugin_id.clone();
 
-		if let Some(start_time) = &mut start_time {
-			let now = Instant::now();
-			println!("Result handling: {:?}", now - *start_time);
-			*start_time = now;
-		}
+		tokio::task::spawn(async move {
+			wasmtime_wasi::p2::add_to_linker_async(&mut linker)
+				.context("Failed to add WASI functions to linker")?;
+
+			bindings::InterfaceWorld::add_to_linker::<_, HasSelf<_>>(&mut linker, |x| x)?;
+
+			if let Some(start_time) = &mut start_time {
+				let now = Instant::now();
+				println!("Linker initialization: {:?}", now - *start_time);
+				*start_time = now;
+			}
+
+			let mut store = Store::new(&engine, state);
+
+			let instance =
+				bindings::InterfaceWorld::instantiate_async(&mut store, &component, &linker)
+					.await
+					.context("Failed to construct WASM instance")?;
+
+			if let Some(start_time) = &mut start_time {
+				let now = Instant::now();
+				println!("Instance initialization: {:?}", now - *start_time);
+				*start_time = now;
+			}
+
+			let result_code = instance
+				.call_run_plugin(
+					&mut store,
+					H::get_name_static(),
+					&arg,
+					H::get_version() as u32,
+				)
+				.await
+				.context("Failed to call plugin entrypoint")?;
+
+			if let Some(start_time) = &mut start_time {
+				let now = Instant::now();
+				println!("Hook runtime: {:?}", now - *start_time);
+				*start_time = now;
+			}
+
+			let result = if H::get_takes_over() {
+				H::Result::default()
+			} else {
+				let mut result = instance.call_get_result(&mut store).await?;
+
+				if result_code == 1 {
+					bail!("Plugin '{}' returned an error: {result}", plugin_id);
+				}
+
+				unsafe { simd_json::from_str(&mut result) }
+					.context("Failed to deserialize hook result")?
+			};
+
+			let _ = result_sender.send(result);
+
+			if let Some(start_time) = &mut start_time {
+				let now = Instant::now();
+				println!("Result handling: {:?}", now - *start_time);
+				*start_time = now;
+			}
+
+			Ok(())
+		});
 
 		Ok(())
 	}
 
-	/// Gets the hook result if the hook has been run
-	pub fn result(self) -> Option<H::Result> {
-		self.result
+	/// Awaits the result of the hook. Hook must have been started or this will run indefinitely.
+	pub async fn result(self) -> Option<H::Result> {
+		self.result.await.ok()
 	}
 }
 
