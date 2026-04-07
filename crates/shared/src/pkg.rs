@@ -446,6 +446,14 @@ pub struct PackageOverrides {
 	pub force: Vec<String>,
 }
 
+impl PackageOverrides {
+	/// Merges another set of overrides on top of this one
+	pub fn merge(&mut self, other: Self) {
+		self.suppress = merge_package_lists(self.suppress.clone().into_iter(), &other.suppress);
+		self.force = merge_package_lists(self.force.clone().into_iter(), &other.force);
+	}
+}
+
 /// Checks if a package is overridden in a list
 pub fn is_package_overridden(package: &PkgRequest, list: &[String]) -> bool {
 	list.iter()

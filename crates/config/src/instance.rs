@@ -105,7 +105,7 @@ impl InstanceConfig {
 		self.launch.merge(other.launch);
 		self.datapack_folder = other.datapack_folder.or(self.datapack_folder.clone());
 		self.packages.extend(other.packages);
-		self.overrides.suppress.extend(other.overrides.suppress);
+		self.overrides.merge(other.overrides);
 		nitro_shared::util::merge_json_objects(&mut self.plugin_config, other.plugin_config);
 		self.icon = other.icon.or(self.icon.clone());
 		self.side = other.side.or(self.side);
