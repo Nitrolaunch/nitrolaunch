@@ -49,11 +49,13 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 	onMount(() => loadPagePlugins("packages"));
 
 	createEffect(() => {
-		props.setFooterData({
-			mode: FooterMode.PreviewPackage,
-			selectedItem: undefined,
-			action: () => {},
-		});
+		if (!isAlternate()) {
+			props.setFooterData({
+				mode: FooterMode.PreviewPackage,
+				selectedItem: undefined,
+				action: () => { },
+			});
+		}
 	});
 
 	// Filters and other browse functions
@@ -271,7 +273,7 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 						availablePackageTypes={repoPackageTypes()}
 						filteringVersions={false}
 						features={[]}
-						setFeatures={() => {}}
+						setFeatures={() => { }}
 						availableCategories={repoCategories()}
 					/>
 				</div>
@@ -332,20 +334,21 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 												selected={selectedPackage()}
 												onSelect={(pkg) => {
 													setSelectedPackage(pkg);
-													let url = `/packages/package/${
-														data.id
-													}?filters=${JSON.stringify(
-														createPackageFiltersObject(),
-													)}`;
+													let url = `/packages/package/${data.id
+														}?filters=${JSON.stringify(
+															createPackageFiltersObject(),
+														)}`;
 
-													props.setFooterData({
-														mode: FooterMode.PreviewPackage,
-														selectedItem: "",
-														action: () => {
-															navigate(url);
-														},
-														selectedPackageGallery: data.meta.gallery,
-													});
+													if (!isAlternate()) {
+														props.setFooterData({
+															mode: FooterMode.PreviewPackage,
+															selectedItem: "",
+															action: () => {
+																navigate(url);
+															},
+															selectedPackageGallery: data.meta.gallery,
+														});
+													}
 												}}
 												getPackageFiltersObject={createPackageFiltersObject}
 												alternate={isAlternate()}
@@ -410,9 +413,8 @@ function Package(props: PackageProps) {
 
 	return (
 		<div
-			class={`cont col shadow package ${
-				isSelected() ? "selected" : ""
-			} ${props.alternate ? "alternate" : ""}`}
+			class={`cont col shadow package ${isSelected() ? "selected" : ""
+				} ${props.alternate ? "alternate" : ""}`}
 			style="cursor:pointer"
 			onclick={() => {
 				// Double click to open

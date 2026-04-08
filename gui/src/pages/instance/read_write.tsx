@@ -15,6 +15,7 @@ export interface InstanceConfig {
 	icon?: string;
 	version?: string | "latest" | "latest_snapshot";
 	loader?: ConfiguredLoaders;
+	modpack?: string;
 	datapack_folder?: string;
 	packages?: ConfiguredPackages;
 	launch?: LaunchConfig;

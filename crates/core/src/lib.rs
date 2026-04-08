@@ -172,7 +172,7 @@ impl NitroCore {
 	/// This is useful for doing your own installation of things. This will download
 	/// the version manifest if it is not downloaded already
 	pub async fn get_version_info(
-		&mut self,
+		&self,
 		version: &MinecraftVersion,
 		depth: UpdateDepth,
 	) -> anyhow::Result<VersionInfo> {

@@ -6,13 +6,17 @@ use crate::State;
 use anyhow::Context;
 use nitrolaunch::config::modifications::{apply_modifications_and_write, ConfigModification};
 use nitrolaunch::config::Config;
+use nitrolaunch::core::util::versions::MinecraftVersion;
+use nitrolaunch::instance::update::manager::UpdateSettings;
 use nitrolaunch::instance::{transfer, Instance};
 use nitrolaunch::io::lock::Lockfile;
+use nitrolaunch::pkg_crate::{PkgRequest, PkgRequestSource};
 use nitrolaunch::plugin_crate::hook::hooks::{
 	AddInstanceTransferFormats, CheckMigration, CheckMigrationResult, InstanceTransferFormat,
 };
 use nitrolaunch::shared::id::InstanceID;
 use nitrolaunch::shared::output::NoOp;
+use nitrolaunch::shared::{Side, UpdateDepth};
 
 use super::{fmt_err, load_config};
 
@@ -219,4 +223,66 @@ pub async fn migrate_instances(
 	)?;
 
 	Ok(count)
+}
+
+#[tauri::command]
+pub async fn install_modpack_package(
+	state: tauri::State<'_, State>,
+	app_handle: tauri::AppHandle,
+	modpack: String,
+	instance_id: &str,
+	minecraft_version: String,
+) -> Result<(), String> {
+	let mut output = LauncherOutput::new(state.get_output(app_handle.clone()));
+	output.set_task("install_modpack");
+
+	let req = PkgRequest::parse(modpack, PkgRequestSource::UserRequire).arc();
+
+	let config = fmt_err(
+		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
+			.await
+			.context("Failed to load config"),
+	)?;
+
+	let core = fmt_err(
+		config
+			.get_core(
+				None,
+				&UpdateSettings {
+					depth: UpdateDepth::Shallow,
+					offline_auth: true,
+				},
+				&state.client,
+				&config.plugins,
+				&state.paths,
+				&mut NoOp,
+			)
+			.await,
+	)?;
+
+	let version_info = fmt_err(
+		core.get_version_info(
+			&MinecraftVersion::Version(minecraft_version.into()),
+			UpdateDepth::Full,
+		)
+		.await,
+	)?;
+
+	let config = fmt_err(
+		Instance::create_from_modpack_package(
+			instance_id,
+			&req,
+			Side::Client,
+			&version_info,
+			&config.packages,
+			&config.plugins,
+			&state.client,
+			&state.paths,
+			&mut output,
+		)
+		.await
+		.context("Failed to import the new instance"),
+	)?;
+
+	write_instance_config(state, instance_id.to_string(), config, app_handle).await
 }

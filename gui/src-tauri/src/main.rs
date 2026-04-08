@@ -277,6 +277,7 @@ fn main() {
 			commands::transfer::export_instance,
 			commands::transfer::check_migration,
 			commands::transfer::migrate_instances,
+			commands::transfer::install_modpack_package,
 			commands::misc::get_supported_loaders,
 			commands::misc::get_loader_versions,
 			commands::misc::get_minecraft_versions,

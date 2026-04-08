@@ -122,7 +122,7 @@ export type AddonKind =
 	| "shader"
 	| "plugin";
 
-export type PackageType = AddonKind | "bundle";
+export type PackageType = AddonKind | "bundle" | "modpack";
 
 export enum PackageCategory {
 	Adventure = "adventure",

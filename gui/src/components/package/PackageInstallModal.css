@@ -3,17 +3,9 @@
 	display: grid;
 	grid-template-columns: minmax(0, 0.05fr) minmax(0, 1fr);
 	column-gap: 0.5rem;
-	row-gap: 1.25rem;
+	row-gap: 1rem;
 
 	max-height: 40rem;
-}
-
-#package-install-name {
-	justify-content: flex-start;
-
-	font-weight: bold;
-	font-size: 1.3rem;
-	margin-bottom: 1rem;
 }
 
 #package-install-version {
@@ -29,5 +21,9 @@
 }
 
 #package-install-template-location {
+	justify-content: flex-start;
+}
+
+#package-install-new-name {
 	justify-content: flex-start;
 }

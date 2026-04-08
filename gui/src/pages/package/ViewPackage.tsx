@@ -260,15 +260,13 @@ export default function ViewPackage(props: ViewPackageProps) {
 									<Show when={repoInfo() != undefined}>
 										<div
 											id="package-repo"
-											style={`background-color:${
-												repoInfo()!.meta.color == undefined
-													? "var(--fg2)"
-													: repoInfo()!.meta.color
-											};color:${
-												repoInfo()!.meta.text_color == undefined
+											style={`background-color:${repoInfo()!.meta.color == undefined
+												? "var(--fg2)"
+												: repoInfo()!.meta.color
+												};color:${repoInfo()!.meta.text_color == undefined
 													? "var(--bg)"
 													: repoInfo()!.meta.text_color
-											}`}
+												}`}
 										>
 											{beautifyString(repoInfo()!.id).toLocaleUpperCase()}
 										</div>
@@ -319,27 +317,24 @@ export default function ViewPackage(props: ViewPackageProps) {
 								id="package-tabs"
 							>
 								<div
-									class={`cont package-tab ${
-										selectedTab() == "description" ? "selected" : ""
-									}`}
+									class={`cont package-tab ${selectedTab() == "description" ? "selected" : ""
+										}`}
 									onclick={() => setSelectedTab("description")}
 								>
 									<Icon icon={Text} size="1rem" />
 									Description
 								</div>
 								<div
-									class={`cont package-tab ${
-										selectedTab() == "versions" ? "selected" : ""
-									}`}
+									class={`cont package-tab ${selectedTab() == "versions" ? "selected" : ""
+										}`}
 									onclick={() => setSelectedTab("versions")}
 								>
 									<Icon icon={Folder} size="1rem" />
 									Versions
 								</div>
 								<div
-									class={`cont package-tab ${
-										selectedTab() == "gallery" ? "selected" : ""
-									}`}
+									class={`cont package-tab ${selectedTab() == "gallery" ? "selected" : ""
+										}`}
 									onclick={() => setSelectedTab("gallery")}
 								>
 									<Icon icon={Picture} size="1rem" />
@@ -347,9 +342,8 @@ export default function ViewPackage(props: ViewPackageProps) {
 								</div>
 								<Show when={props.small}>
 									<div
-										class={`cont package-tab ${
-											selectedTab() == "info" ? "selected" : ""
-										}`}
+										class={`cont package-tab ${selectedTab() == "info" ? "selected" : ""
+											}`}
 										onclick={() => setSelectedTab("info")}
 									>
 										<Icon icon={Info} size="1rem" />
@@ -404,7 +398,9 @@ export default function ViewPackage(props: ViewPackageProps) {
 				packageId={packageReq().id}
 				packageRepo={packageReq().repository}
 				packageSlug={meta() == undefined ? undefined : meta()!.slug}
+				packageName={meta() == undefined ? undefined : meta()!.name}
 				selectedVersion={installVersion()}
+				modpackMinecraftVersions={properties() != undefined && canonicalizeListOrSingle(properties()!.types).includes("modpack") ? properties()!.supported_versions : undefined}
 				visible={showInstallModal()}
 				onClose={() => setShowInstallModal(false)}
 				onShowVersions={() => setSelectedTab("versions")}

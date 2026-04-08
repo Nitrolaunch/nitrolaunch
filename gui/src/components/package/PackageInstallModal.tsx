@@ -1,4 +1,4 @@
-import { createResource, createSignal, Match, Show, Switch } from "solid-js";
+import { createMemo, createResource, createSignal, Match, Show, Switch } from "solid-js";
 import "./PackageInstallModal.css";
 import IconTextButton from "../input/button/IconTextButton";
 import {
@@ -11,10 +11,12 @@ import {
 	Folder,
 	Globe,
 	Hashtag,
+	Plus,
 	Server,
+	Tag,
 } from "../../icons";
 import Icon from "../Icon";
-import InlineSelect from "../input/select/InlineSelect";
+import InlineSelect, { Option } from "../input/select/InlineSelect";
 import { InstanceInfo, InstanceOrTemplate } from "../../types";
 import { invoke } from "@tauri-apps/api/core";
 import { errorToast, successToast } from "../dialog/Toasts";
@@ -26,6 +28,9 @@ import {
 } from "../../pages/instance/read_write";
 import { pkgRequestToString } from "../../utils";
 import Modal from "../dialog/Modal";
+import { emptyUndefined } from "../../utils/values";
+import Dropdown from "../input/select/Dropdown";
+import { clearInputError, inputError } from "../../errors";
 
 export default function PackageInstallModal(props: PackageInstallModalProps) {
 	let [selectedTab, setSelectedTab] = createSignal("instance");
@@ -34,6 +39,8 @@ export default function PackageInstallModal(props: PackageInstallModalProps) {
 		createSignal<string | undefined>(undefined);
 	let [selectedTemplateLocation, setSelectedTemplateLocation] =
 		createSignal("all");
+	let [newInstanceId, setNewInstanceId] = createSignal<string | undefined>();
+	let [newInstanceMinecraftVersion, setNewInstanceMinecraftVersion] = createSignal<string | undefined>();
 
 	let [instancesAndTemplates, _] = createResource(async () => {
 		let instances: InstanceInfo[] = [];
@@ -50,6 +57,18 @@ export default function PackageInstallModal(props: PackageInstallModalProps) {
 		return [instances, templates];
 	});
 
+	let name = createMemo(() => {
+		if (props.packageName != undefined) {
+			return props.packageName;
+		} else if (props.packageSlug != undefined) {
+			return props.packageSlug;
+		} else {
+			return props.packageId;
+		}
+	});
+
+	let isModpack = () => props.modpackMinecraftVersions != undefined;
+
 	// Automatically set the type and id based on what the user last added a package to
 	createResource(async () => {
 		let lastAdded = (await invoke("get_last_added_package_location")) as
@@ -64,7 +83,119 @@ export default function PackageInstallModal(props: PackageInstallModalProps) {
 		}
 	});
 
+	let installLocationOptions = createMemo(() => {
+		let options: Option[] = [];
+
+		let instanceOptionName = isModpack() ? "Existing Instance" : "Instance";
+		options.push({
+			value: "instance",
+			contents: (
+				<div class="cont">
+					<Icon icon={Box} size="1rem" /> {instanceOptionName}
+				</div>
+			),
+			color: "var(--instance)",
+			selectedBgColor: "var(--instancebg)",
+		});
+
+		options.push({
+			value: "template",
+			contents: (
+				<div class="cont">
+					<Icon icon={Diagram} size="1rem" /> Template
+				</div>
+			),
+			color: "var(--template)",
+			selectedBgColor: "var(--templatebg)",
+		});
+
+		if (isModpack()) {
+			options.push({
+				value: "new_instance",
+				contents: (
+					<div class="cont">
+						<Icon icon={Plus} size="1rem" /> New Instance
+					</div>
+				),
+				color: "var(--instance)",
+				selectedBgColor: "var(--instancebg)",
+			});
+		} else {
+			options.push({
+				value: "base_template",
+				contents: (
+					<div class="cont">
+						<Icon icon={Globe} size="1rem" /> Globally
+					</div>
+				),
+				color: "var(--template)",
+				selectedBgColor: "var(--templatebg)",
+			});
+		}
+
+		return options;
+	});
+
+	let installModpack = async () => {
+		let pkg = pkgRequestToString({
+			id: props.packageId,
+			slug: props.packageSlug,
+			version: props.selectedVersion,
+			repository: props.packageRepo,
+		});
+
+		if (selectedTab() == "instance" || selectedTab() == "template") {
+			if (selectedInstanceOrTemplate() == undefined) {
+				return;
+			}
+
+			let mode = selectedTab() as InstanceConfigMode;
+			let [config, _] = await readEditableInstanceConfig(
+				selectedInstanceOrTemplate(),
+				mode,
+			);
+
+			config.modpack = pkg;
+
+			successToast("Modpack added");
+		} else {
+			if (newInstanceId() == undefined) {
+				inputError("package-install-instance-id");
+				return;
+			} else {
+				clearInputError("package-install-instance-id");
+			}
+
+			if (newInstanceMinecraftVersion() == undefined) {
+				inputError("package-install-minecraft-version");
+				return;
+			} else {
+				clearInputError("package-install-minecraft-version");
+			}
+
+			await invoke("install_modpack_package", {
+				modpack: pkg,
+				instanceId: newInstanceId(),
+				minecraftVersion: newInstanceMinecraftVersion(),
+			});
+
+			successToast("Modpack imported");
+		}
+	}
+
 	let install = async () => {
+		if (isModpack()) {
+			try {
+				await installModpack();
+
+				props.onClose();
+			} catch (e) {
+				errorToast("Failed to install modpack: " + e);
+			}
+
+			return;
+		}
+
 		if (
 			selectedTab() != "base_template" &&
 			selectedInstanceOrTemplate() == undefined
@@ -75,7 +206,7 @@ export default function PackageInstallModal(props: PackageInstallModalProps) {
 		let mode = selectedTab() as InstanceConfigMode;
 		let location =
 			selectedTemplateLocation() == undefined ||
-			mode == InstanceConfigMode.Instance
+				mode == InstanceConfigMode.Instance
 				? "all"
 				: (selectedTemplateLocation() as "client" | "server" | "all");
 
@@ -116,12 +247,12 @@ export default function PackageInstallModal(props: PackageInstallModalProps) {
 		<Modal
 			visible={props.visible}
 			onClose={props.onClose}
-			width="50rem"
+			width="60rem"
 			height="30rem"
 			title={
 				<>
 					Installing package
-					<div style="color:var(--fg3)">{props.packageId}</div>
+					<div style="color:var(--fg3)">{name()}</div>
 				</>
 			}
 			titleIcon={Download}
@@ -141,13 +272,6 @@ export default function PackageInstallModal(props: PackageInstallModalProps) {
 			]}
 		>
 			<div id="package-install-inner">
-				<div class="cont" style="margin-bottom:1rem">
-					<Icon icon={Download} size="1.2rem" />
-				</div>
-				<div class="cont fullwidth" id="package-install-name">
-					Installing package
-					<div style="color:var(--fg3)">{props.packageId}</div>
-				</div>
 				<Switch>
 					<Match when={props.selectedVersion == undefined}>
 						<div class="cont">
@@ -184,41 +308,10 @@ export default function PackageInstallModal(props: PackageInstallModalProps) {
 					<Icon icon={Folder} size="1.2rem" />
 				</div>
 				<div class="cont" id="package-install-target-category">
-					<div style="width:40%">Where would you like to install?</div>
-					<div class="cont" style="width:60%">
+					<div style="width:30%">Where would you like to install?</div>
+					<div class="cont" style="width:70%">
 						<InlineSelect
-							options={[
-								{
-									value: "instance",
-									contents: (
-										<div class="cont">
-											<Icon icon={Box} size="1rem" /> Instance
-										</div>
-									),
-									color: "var(--instance)",
-									selectedBgColor: "var(--instancebg)",
-								},
-								{
-									value: "template",
-									contents: (
-										<div class="cont">
-											<Icon icon={Diagram} size="1rem" /> Template
-										</div>
-									),
-									color: "var(--template)",
-									selectedBgColor: "var(--templatebg)",
-								},
-								{
-									value: "base_template",
-									contents: (
-										<div class="cont">
-											<Icon icon={Globe} size="1rem" /> Globally
-										</div>
-									),
-									color: "var(--template)",
-									selectedBgColor: "var(--templatebg)",
-								},
-							]}
+							options={installLocationOptions()}
 							selected={selectedTab()}
 							onChange={(tab) => {
 								setSelectedTab(tab!);
@@ -227,7 +320,7 @@ export default function PackageInstallModal(props: PackageInstallModalProps) {
 						/>
 					</div>
 				</div>
-				<Show when={selectedTab() != "base_template"}>
+				<Show when={selectedTab() != "base_template" && selectedTab() != "new_instance"}>
 					<div class="cont">
 						<Icon icon={Box} size="1.2rem" />
 					</div>
@@ -253,7 +346,7 @@ export default function PackageInstallModal(props: PackageInstallModalProps) {
 								})}
 								selected={selectedInstanceOrTemplate()}
 								onChange={setSelectedInstanceOrTemplate}
-								columns={4}
+								columns={3}
 								connected={false}
 							/>
 						</Show>
@@ -307,6 +400,45 @@ export default function PackageInstallModal(props: PackageInstallModalProps) {
 						</div>
 					</div>
 				</Show>
+				<Show when={selectedTab() == "new_instance"}>
+					<div class="cont">
+						<Icon icon={Plus} size="1.2rem" />
+					</div>
+					<div class="cont start fullwidth">
+						<div style="width:40%">
+							What should be the ID for the new instance?
+						</div>
+						<div class="cont" style="width:60%" id="package-install-instance-id">
+							<input
+								id="new-instance-id"
+								style="width:100%"
+								value={emptyUndefined(newInstanceId())}
+								onchange={(e) => setNewInstanceId(e.target.value)}
+							/>
+						</div>
+					</div>
+					<div class="cont">
+						<Icon icon={Tag} size="1.2rem" />
+					</div>
+					<div class="cont start fullwidth">
+						<div style="width:40%">
+							Pick a Minecraft version
+						</div>
+						<div class="cont" style="width:60%" id="package-install-minecraft-version">
+							<Dropdown
+								options={props.modpackMinecraftVersions!.map((x) => {
+									return {
+										value: x,
+										contents: x,
+										color: "var(--instance)"
+									};
+								})}
+								selected={newInstanceMinecraftVersion()}
+								onChange={setNewInstanceMinecraftVersion}
+							/>
+						</div>
+					</div>
+				</Show>
 			</div>
 		</Modal>
 	);
@@ -316,6 +448,8 @@ export interface PackageInstallModalProps {
 	packageId: string;
 	packageRepo?: string;
 	packageSlug?: string;
+	packageName?: string;
+	modpackMinecraftVersions?: string[];
 	selectedVersion?: string;
 	visible: boolean;
 	onClose: () => void;
