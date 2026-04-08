@@ -277,7 +277,7 @@ impl Instance {
 			.await
 			.context("Failed to load transfer formats")?;
 
-		let config = Self::import(
+		let mut config = Self::import(
 			id,
 			&transfer_format,
 			&download_result.modpack_path,
@@ -289,6 +289,8 @@ impl Instance {
 		)
 		.await
 		.context("Failed to install modpack")?;
+
+		config.modpack = Some(modpack.to_string());
 
 		Ok(config)
 	}
