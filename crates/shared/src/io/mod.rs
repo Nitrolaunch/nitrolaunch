@@ -75,3 +75,31 @@ pub fn update_link(path: &Path, link: &Path) -> std::io::Result<()> {
 
 	Ok(())
 }
+
+/// Gets the size of a directory recursively
+pub fn dir_size(path: &Path) -> anyhow::Result<usize> {
+	if !path.exists() {
+		return Ok(0);
+	}
+
+	if path.is_file() {
+		let meta = path.metadata()?;
+		Ok(meta.len() as usize)
+	} else {
+		let mut sum = 0;
+		let read = path.read_dir()?;
+		for entry in read {
+			let Ok(entry) = entry else {
+				continue;
+			};
+
+			let Ok(size) = dir_size(&entry.path()) else {
+				continue;
+			};
+
+			sum += size;
+		}
+
+		Ok(sum)
+	}
+}

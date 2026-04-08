@@ -1,7 +1,7 @@
 use std::fmt::Display;
 
 /// An amount of memory, used for Java memory arguments
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum MemoryNum {
 	/// Bytes
 	B(u64),
@@ -24,6 +24,19 @@ impl MemoryNum {
 		})
 	}
 
+	/// Converts from a large number of bytes to the nicest value
+	pub fn from_bytes(bytes: usize) -> Self {
+		if bytes < 1024 {
+			Self::B(bytes as u64)
+		} else if bytes < 1024 * 1024 {
+			Self::Kb((bytes / 1024) as u64)
+		} else if bytes < 1024 * 1024 * 1024 {
+			Self::Mb((bytes / 1024 / 1024) as u64)
+		} else {
+			Self::Gb((bytes / 1024 / 1024 / 1024) as u64)
+		}
+	}
+
 	/// Converts into the equivalent amount in bytes
 	pub fn to_bytes(&self) -> u64 {
 		match self {
@@ -38,6 +51,21 @@ impl MemoryNum {
 	pub fn avg(left: Self, right: Self) -> Self {
 		Self::B((left.to_bytes() + right.to_bytes()) / 2)
 	}
+
+	/// Converts to the value for the JVM argument
+	pub fn to_jvm(&self) -> String {
+		match self {
+			Self::B(n) => n.to_string(),
+			Self::Kb(n) => n.to_string() + "k",
+			Self::Mb(n) => n.to_string() + "m",
+			Self::Gb(n) => n.to_string() + "g",
+		}
+	}
+
+	/// Converts to the largest possible amount
+	pub fn nicefy(&self) -> Self {
+		Self::from_bytes(self.to_bytes() as usize)
+	}
 }
 
 impl Display for MemoryNum {
@@ -46,10 +74,10 @@ impl Display for MemoryNum {
 			f,
 			"{}",
 			match self {
-				Self::B(n) => n.to_string(),
-				Self::Kb(n) => n.to_string() + "k",
-				Self::Mb(n) => n.to_string() + "m",
-				Self::Gb(n) => n.to_string() + "g",
+				Self::B(n) => n.to_string() + "B",
+				Self::Kb(n) => n.to_string() + "KB",
+				Self::Mb(n) => n.to_string() + "MB",
+				Self::Gb(n) => n.to_string() + "GB",
 			}
 		)
 	}
@@ -77,7 +105,7 @@ impl MemoryArg {
 			Self::Max => "-Xmx".to_string(),
 		};
 
-		arg + &n.to_string()
+		arg + &n.to_jvm()
 	}
 }
 

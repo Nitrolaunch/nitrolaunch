@@ -12,6 +12,7 @@ use nitro_core::launch::LaunchConfiguration;
 use nitro_core::version::InstalledVersion;
 use nitro_core::{NitroCore, QuickPlayType};
 use nitro_plugin::hook::hooks::{OnInstanceSetup, OnInstanceSetupArg, RemoveLoader};
+use nitro_shared::io::dir_size;
 use nitro_shared::output::OutputProcess;
 use nitro_shared::output::{MessageContents, NitroOutput};
 use nitro_shared::translate;
@@ -308,6 +309,19 @@ impl Instance {
 		}
 
 		Ok(())
+	}
+
+	/// Gets the size of this instance on the disk
+	pub async fn get_size(&self) -> anyhow::Result<usize> {
+		let Some(dir) = &self.dir else {
+			return Ok(0);
+		};
+
+		if !dir.exists() {
+			return Ok(0);
+		}
+
+		dir_size(dir)
 	}
 
 	/// Create a keypair file in the instance

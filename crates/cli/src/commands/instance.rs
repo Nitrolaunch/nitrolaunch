@@ -17,6 +17,7 @@ use nitrolaunch::instance::Instance;
 use nitrolaunch::io::lock::Lockfile;
 use nitrolaunch::plugin_crate::hook::hooks::{DeleteInstance, SaveInstanceConfigArg};
 use nitrolaunch::shared::id::InstanceID;
+use nitrolaunch::shared::java_args::MemoryNum;
 use nitrolaunch::shared::output::{MessageContents, NoOp};
 use nitrolaunch::shared::util::to_string_json;
 
@@ -220,6 +221,17 @@ async fn info(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()> 
 		print!("{} ", INSTANCE);
 	}
 	cprintln!("<s><g>Instance <b>{}", id);
+
+	cprintln!("<s>Basic Info:");
+	if !instance.get_config().original_config.from.is_empty() {
+		print_indent();
+		cprint!("<s>Derives from:</> ");
+		for template in instance.get_config().original_config.from.iter() {
+			cprint!("<b>{template}");
+		}
+		cprintln!();
+	}
+
 	print_indent();
 	if icons_enabled() {
 		print!("{} ", VERSION);
@@ -250,6 +262,19 @@ async fn info(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()> 
 		cprint!("{}", HYPHEN_POINT);
 		cprint!("<b!>{}<g!>", pkg.id);
 		cprintln!();
+	}
+
+	cprintln!("<s>Misc Info:");
+
+	print_indent();
+	let size = instance.get_size().await;
+	match size {
+		Ok(size) => {
+			cprintln!("<s>Size on Disk: <g>{}", MemoryNum::from_bytes(size))
+		}
+		Err(e) => {
+			cprintln!("<s,r>Failed to get disk size: {e}");
+		}
 	}
 
 	Ok(())
