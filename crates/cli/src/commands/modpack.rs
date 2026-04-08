@@ -3,13 +3,19 @@ use std::ops::DerefMut;
 use anyhow::{bail, Context};
 use clap::Subcommand;
 use nitrolaunch::{
-	config::modifications::{apply_modifications_and_write, ConfigModification},
+	config::{
+		modifications::{apply_modifications_and_write, ConfigModification},
+		Config,
+	},
+	config_crate::instance::InstanceConfig,
 	core::util::versions::MinecraftVersion,
 	instance::{update::manager::UpdateSettings, Instance},
+	io::paths::Paths,
 	pkg_crate::{PkgRequest, PkgRequestSource},
 	shared::{
 		id::InstanceID,
 		output::{MessageContents, NitroOutput, NoOp},
+		pkg::ArcPkgReq,
 		Side, UpdateDepth,
 	},
 };
@@ -63,28 +69,67 @@ async fn install(
 ) -> anyhow::Result<()> {
 	data.ensure_config(true).await?;
 	let config = data.config.get();
-	let client = Client::new();
 
 	let req = PkgRequest::parse(modpack, PkgRequestSource::UserRequire).arc();
-
-	let mut process = data.output.get_process();
-	process.display(MessageContents::StartProcess("Fetching modpack".into()));
-
-	let modpack = config
-		.packages
-		.get(&req, &data.paths, &client, process.deref_mut())
-		.await?;
-
-	let props = modpack.get_properties(&data.paths, &client).await?;
-
-	process.display(MessageContents::Success("Modpack fetched".into()));
-	process.finish();
 
 	let instance = if let Some(instance) = instance {
 		InstanceID::from(instance)
 	} else {
 		pick_instance_id()?
 	};
+
+	let new_instance_config = install_into_config(
+		&req,
+		instance.clone(),
+		version,
+		side,
+		config,
+		&data.paths,
+		data.output,
+	)
+	.await?;
+
+	let mut config2 = data.get_raw_config()?;
+	apply_modifications_and_write(
+		&mut config2,
+		vec![ConfigModification::AddInstance(
+			instance,
+			new_instance_config,
+		)],
+		&data.paths,
+		&config.plugins,
+		data.output,
+	)
+	.await
+	.context("Failed to write modified config")?;
+
+	Ok(())
+}
+
+/// Downloads and installs a modpack into a new instance folder, returning the config for the instance
+pub async fn install_into_config(
+	req: &ArcPkgReq,
+	instance: InstanceID,
+	version: Option<String>,
+	side: Option<Side>,
+	config: &Config,
+	paths: &Paths,
+	o: &mut impl NitroOutput,
+) -> anyhow::Result<InstanceConfig> {
+	let client = Client::new();
+
+	let mut process = o.get_process();
+	process.display(MessageContents::StartProcess("Fetching modpack".into()));
+
+	let modpack = config
+		.packages
+		.get(&req, &paths, &client, process.deref_mut())
+		.await?;
+
+	let props = modpack.get_properties(&paths, &client).await?;
+
+	process.display(MessageContents::Success("Modpack fetched".into()));
+	process.finish();
 
 	if config.instances.contains_key(&instance) {
 		bail!("An instance with that ID already exists");
@@ -101,8 +146,8 @@ async fn install(
 			},
 			&client,
 			&config.plugins,
-			&data.paths,
-			data.output,
+			&paths,
+			o,
 		)
 		.await?;
 
@@ -141,13 +186,13 @@ async fn install(
 	};
 
 	let version = core
-		.get_version(&version, UpdateDepth::Full, data.output)
+		.get_version(&version, UpdateDepth::Full, o)
 		.await
 		.context("Failed to set up core version")?;
 
 	let version_info = version.get_version_info();
 
-	let new_instance_config = Instance::create_from_modpack_package(
+	Instance::create_from_modpack_package(
 		&instance,
 		&req,
 		side,
@@ -155,25 +200,9 @@ async fn install(
 		&config.packages,
 		&config.plugins,
 		&client,
-		&data.paths,
-		data.output,
+		&paths,
+		o,
 	)
 	.await
-	.context("Failed to import the new instance")?;
-
-	let mut config2 = data.get_raw_config()?;
-	apply_modifications_and_write(
-		&mut config2,
-		vec![ConfigModification::AddInstance(
-			instance,
-			new_instance_config,
-		)],
-		&data.paths,
-		&config.plugins,
-		data.output,
-	)
-	.await
-	.context("Failed to write modified config")?;
-
-	Ok(())
+	.context("Failed to import the new instance")
 }

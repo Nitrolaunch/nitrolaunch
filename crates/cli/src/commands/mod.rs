@@ -7,6 +7,7 @@ mod modpack;
 mod package;
 mod plugin;
 mod template;
+mod r#try;
 
 use std::collections::HashMap;
 
@@ -36,6 +37,7 @@ use self::log::LogSubcommand;
 use self::modpack::ModpackSubcommand;
 use self::package::PackageSubcommand;
 use self::plugin::PluginSubcommand;
+use self::r#try::TrySubcommand;
 use self::template::TemplateSubcommand;
 
 use super::output::TerminalOutput;
@@ -101,6 +103,11 @@ pub enum Command {
 		/// Whether to copy the instance files. By default, will link to the existing ones instead.
 		#[arg(short = 'c', long)]
 		copy: bool,
+	},
+	#[command(about = "Try out a new version or modpack using a temporary instance")]
+	Try {
+		#[command(subcommand)]
+		command: TrySubcommand,
 	},
 	#[command(about = "Manage configuration")]
 	#[clap(alias = "cfg", alias = "conf")]
@@ -244,6 +251,7 @@ Would you like to do that now?"
 				copy,
 			} => migrate(format, instances, copy, &mut data).await,
 			Command::Log { command } => log::run(command, &mut data).await,
+			Command::Try { command } => r#try::run(command, &mut data).await,
 			Command::External(args) => call_plugin_subcommand(args, None, &mut data).await,
 		}
 	};
