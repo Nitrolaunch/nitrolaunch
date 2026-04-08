@@ -484,6 +484,7 @@ function Item(props: ItemProps) {
 			<img
 				src={getInstanceIconSrc(props.instance.icon)}
 				class="instance-list-icon"
+				onerror={(e) => (e as any).target.src = "/icons/default_instance.png"}
 			/>
 		);
 

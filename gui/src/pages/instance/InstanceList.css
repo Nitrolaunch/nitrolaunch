@@ -61,6 +61,11 @@
 		transform var(--bubble);
 }
 
+.instance-list-item-top {
+	width: 100%;
+	overflow-x: auto;
+}
+
 .instance-list-item-name {
 	text-wrap: nowrap;
 }

@@ -53,7 +53,7 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 			props.setFooterData({
 				mode: FooterMode.PreviewPackage,
 				selectedItem: undefined,
-				action: () => { },
+				action: () => {},
 			});
 		}
 	});
@@ -273,7 +273,7 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 						availablePackageTypes={repoPackageTypes()}
 						filteringVersions={false}
 						features={[]}
-						setFeatures={() => { }}
+						setFeatures={() => {}}
 						availableCategories={repoCategories()}
 					/>
 				</div>
@@ -334,10 +334,11 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 												selected={selectedPackage()}
 												onSelect={(pkg) => {
 													setSelectedPackage(pkg);
-													let url = `/packages/package/${data.id
-														}?filters=${JSON.stringify(
-															createPackageFiltersObject(),
-														)}`;
+													let url = `/packages/package/${
+														data.id
+													}?filters=${JSON.stringify(
+														createPackageFiltersObject(),
+													)}`;
 
 													if (!isAlternate()) {
 														props.setFooterData({
@@ -400,21 +401,43 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 function Package(props: PackageProps) {
 	let navigate = useNavigate();
 
-	let image =
-		props.meta.banner == undefined
-			? props.meta.gallery == undefined || props.meta.gallery!.length == 0
-				? props.meta.icon == undefined
-					? "/icons/default_instance.png"
-					: props.meta.icon
-				: props.meta.gallery![0]
-			: props.meta.banner;
+	let baseImage = () => {
+		if (props.alternate) {
+			if (props.meta.icon != undefined) {
+				return props.meta.icon;
+			} else if (props.meta.banner != undefined) {
+				return props.meta.banner;
+			}
+		} else {
+			if (props.meta.banner != undefined) {
+				return props.meta.banner;
+			} else if (
+				props.meta.gallery != undefined &&
+				props.meta.gallery!.length > 0
+			) {
+				return props.meta.gallery[0];
+			} else {
+				return props.meta.icon;
+			}
+		}
+	};
+
+	let image = () => {
+		let base = baseImage();
+		if (base == undefined) {
+			return "/icons/default_instance.png";
+		} else {
+			return base;
+		}
+	};
 
 	let isSelected = () => props.selected == props.id;
 
 	return (
 		<div
-			class={`cont col shadow package ${isSelected() ? "selected" : ""
-				} ${props.alternate ? "alternate" : ""}`}
+			class={`cont col shadow package ${
+				isSelected() ? "selected" : ""
+			} ${props.alternate ? "alternate" : ""}`}
 			style="cursor:pointer"
 			onclick={() => {
 				// Double click to open
@@ -432,7 +455,7 @@ function Package(props: PackageProps) {
 			<div class="package-inner">
 				<div class="cont package-image-container">
 					<img
-						src={image}
+						src={image()}
 						class="package-image"
 						onerror={(e: any) => (e.target.src = "/icons/default_instance.png")}
 					/>
