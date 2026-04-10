@@ -17,7 +17,7 @@ export default function Tip(props: TipProps) {
 
 export interface TipProps {
 	children: JSX.Element;
-	tip: string;
+	tip: string | undefined;
 	side?: TipSide;
 	fullwidth?: boolean;
 	zIndex?: string;

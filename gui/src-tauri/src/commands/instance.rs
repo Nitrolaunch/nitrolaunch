@@ -12,7 +12,6 @@ use nitrolaunch::instance::delete_instance_files;
 use nitrolaunch::instance::update::manager::UpdateSettings;
 use nitrolaunch::instance::update::{InstanceUpdateContext, UpdateFacets};
 use nitrolaunch::io::lock::Lockfile;
-use nitrolaunch::pkg::eval::EvalConstants;
 use nitrolaunch::plugin::PluginManager;
 use nitrolaunch::plugin_crate::hook::hooks::{
 	DeleteInstance, DeleteTemplate, SaveInstanceConfigArg, SaveTemplateConfigArg,
@@ -370,7 +369,14 @@ pub async fn update_instance(
 	instance_id: String,
 	depth: UpdateDepth,
 ) -> Result<(), String> {
-	update_instance_impl(&state, Arc::new(app_handle), instance_id, depth).await
+	update_instance_impl(
+		&state,
+		Arc::new(app_handle),
+		instance_id,
+		depth,
+		UpdateFacets::all(),
+	)
+	.await
 }
 
 pub async fn update_instance_impl(
@@ -378,6 +384,7 @@ pub async fn update_instance_impl(
 	app_handle: Arc<tauri::AppHandle>,
 	instance_id: String,
 	depth: UpdateDepth,
+	facets: UpdateFacets,
 ) -> Result<(), String> {
 	let mut config = fmt_err(
 		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
@@ -431,7 +438,7 @@ pub async fn update_instance_impl(
 			};
 
 			instance
-				.update(depth, UpdateFacets::all(), &mut ctx)
+				.update(depth, facets, &mut ctx)
 				.await
 				.context("Failed to update instance")?;
 
@@ -455,107 +462,14 @@ pub async fn update_instance_packages(
 	app_handle: tauri::AppHandle,
 	instance_id: String,
 ) -> Result<(), String> {
-	let mut config = fmt_err(
-		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
-			.await
-			.context("Failed to load config"),
-	)?;
-
-	let mut output = LauncherOutput::new(state.get_output(app_handle));
-	output.set_task("update_instance_packages");
-
-	let paths = state.paths.clone();
-	let client = state.client.clone();
-	let data = state.data.clone();
-	let mut lock = fmt_err(Lockfile::open(&state.paths).context("Failed to open lockfile"))?;
-
-	let core = fmt_err(
-		config
-			.get_core(
-				Some(&get_ms_client_id()),
-				&UpdateSettings {
-					depth: UpdateDepth::Shallow,
-					offline_auth: false,
-				},
-				&client,
-				&config.plugins,
-				&paths,
-				&mut output,
-			)
-			.await,
-	)?;
-
-	let task = {
-		let instance_id = instance_id.clone();
-		let paths = paths.clone();
-		async move {
-			let instance_id2 = instance_id.clone();
-			let Some(instance) = config.instances.get_mut(&InstanceID::from(instance_id)) else {
-				bail!("Instance does not exist");
-			};
-
-			let mut ctx = InstanceUpdateContext {
-				packages: &mut config.packages,
-				accounts: &mut config.accounts,
-				plugins: &config.plugins,
-				prefs: &config.prefs,
-				paths: &paths,
-				lock: &mut lock,
-				client: &client,
-				output: &mut output,
-				core: &core,
-			};
-
-			let version = ctx
-				.core
-				.get_version(
-					&instance.get_config().version,
-					UpdateDepth::Shallow,
-					ctx.output,
-				)
-				.await?;
-			let version_info = version.get_version_info();
-			let mc_version = version_info.version.clone();
-
-			ctx.lock
-				.finish(ctx.paths)
-				.context("Failed to finish using lockfile")?;
-
-			let constants = EvalConstants {
-				version: mc_version.to_string(),
-				loader: instance.get_config().loader.clone(),
-				version_list: version_info.versions.clone(),
-				language: ctx.prefs.language,
-				default_stability: instance.get_config().package_stability,
-				suppress: Vec::new(),
-			};
-
-			nitrolaunch::instance::update::packages::update_instance_packages(
-				instance,
-				&Arc::new(constants),
-				&mut ctx,
-				false,
-			)
-			.await?;
-
-			ctx.lock
-				.finish(ctx.paths)
-				.context("Failed to finish using lockfile")?;
-
-			let mut data_lock = data.lock().await;
-			data_lock.last_resolution_errors.remove(&instance_id2);
-			let _ = data_lock.write(&paths);
-
-			Ok(())
-		}
-	};
-
-	let task = tokio::spawn(unsafe { MakeSend::new(task) });
-	state.register_task("update_instance_packages", task).await;
-
-	// Update so that there is no resolution error since we must have completed successfully
-
-	Ok(())
+	update_instance_impl(
+		&state,
+		Arc::new(app_handle),
+		instance_id,
+		UpdateDepth::Full,
+		UpdateFacets::packages(),
+	)
+	.await
 }
 
 pub struct MakeSend<F: Future>(Pin<Box<F>>);
