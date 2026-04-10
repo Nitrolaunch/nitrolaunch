@@ -1,14 +1,14 @@
-use crate::commands::instance::{update_instance_impl, MakeSend};
+use crate::commands::instance::MakeSend;
 use crate::data::LauncherData;
 use crate::get_ms_client_id;
 use crate::{output::LauncherOutput, State};
-use anyhow::{bail, Context};
+use anyhow::Context;
 use nitrolaunch::core::io::open_named_pipe;
 use nitrolaunch::core::QuickPlayType;
 use nitrolaunch::instance::launch::LaunchSettings;
 use nitrolaunch::instance::tracking::RunningInstanceEntry;
 use nitrolaunch::instance::update::manager::UpdateSettings;
-use nitrolaunch::instance::update::{InstanceUpdateContext, UpdateFacets};
+use nitrolaunch::instance::update::InstanceUpdateContext;
 use nitrolaunch::io::lock::Lockfile;
 use nitrolaunch::plugin_crate::try_read::TryReadExt;
 use nitrolaunch::shared::id::InstanceID;
@@ -79,24 +79,6 @@ pub async fn launch_game_impl(
 		.context("Failed to load config")?;
 	if let Some(account) = account {
 		config.accounts.choose_account(account)?;
-	}
-
-	// Check first update
-	let lock = Lockfile::open(&state.paths).context("Failed to open lockfile")?;
-	if !lock.has_instance_done_first_update(&instance_id) {
-		if let Err(e) = update_instance_impl(
-			&state,
-			app.clone(),
-			instance_id.clone(),
-			UpdateDepth::Full,
-			UpdateFacets::all(),
-		)
-		.await
-		{
-			bail!("{e}");
-		};
-
-		return Ok(());
 	}
 
 	let paths = state.paths.clone();

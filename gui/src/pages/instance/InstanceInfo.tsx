@@ -198,25 +198,6 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 		await invoke("update_running_instances");
 	});
 
-	// Gets whether the currently selected instance is launchable (it has been updated before)
-	let [unlisten2, setUnlisten2] = createSignal<UnlistenFn>(() => { });
-	let [isInstanceLaunchable, methods] = createResource(id, async () => {
-		let unlisten = await listen(
-			"nitro_output_finish_task",
-			(e: Event<string>) => {
-				if (e.payload == "update_instance") {
-					methods.refetch();
-				}
-			},
-		);
-
-		setUnlisten2(() => unlisten);
-
-		return await invoke("get_instance_has_updated", {
-			instance: id(),
-		});
-	});
-
 	// Update the page when the config changes
 	let [unlisten3, ___] = createResource(
 		id,
@@ -235,7 +216,6 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 
 	onCleanup(() => {
 		unlisten()();
-		unlisten2()();
 		unlisten3()();
 	});
 
@@ -471,77 +451,75 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 									</div>
 								</div>
 								<div class="cont end" style="margin-right:1rem">
-									<Show when={isInstanceLaunchable()}>
-										<div style="width:4.5rem;font-weight:bold">
-											<Tip tip="Launch" side="top">
-												<Dropdown
-													options={launchOptions()}
-													previewText={
-														<Switch>
-															<Match when={!isRunning()}>
+									<div style="width:4.5rem;font-weight:bold">
+										<Tip tip="Launch" side="top">
+											<Dropdown
+												options={launchOptions()}
+												previewText={
+													<Switch>
+														<Match when={!isRunning()}>
+															<div
+																class="cont start fullwidth"
+																style="padding-left:0.75rem"
+															>
 																<div
-																	class="cont start fullwidth"
-																	style="padding-left:0.75rem"
+																	class="cont"
+																	style="color:var(--instance)"
 																>
-																	<div
-																		class="cont"
-																		style="color:var(--instance)"
-																	>
-																		<Icon icon={Play} size="1.25rem" />
-																	</div>
+																	<Icon icon={Play} size="1.25rem" />
 																</div>
-															</Match>
-															<Match when={isRunning()}>
-																<div
-																	class="cont start fullwidth"
-																	style="padding-left:0.75rem"
-																>
-																	<div class="cont" style="color:var(--error)">
-																		<Icon icon={Stop} size="0.85rem" />
-																	</div>
+															</div>
+														</Match>
+														<Match when={isRunning()}>
+															<div
+																class="cont start fullwidth"
+																style="padding-left:0.75rem"
+															>
+																<div class="cont" style="color:var(--error)">
+																	<Icon icon={Stop} size="0.85rem" />
 																</div>
-															</Match>
-														</Switch>
+															</div>
+														</Match>
+													</Switch>
+												}
+												onChange={async (selection) => {
+													if (selection == "launch") {
+														launchInstance(id(), false);
+													} else if (selection == "launch_offline") {
+														launchInstance(id(), true);
+													} else if (selection == "kill") {
+														try {
+															await invoke("kill_instance", {
+																instance: id(),
+															});
+															await invoke("update_running_instances");
+														} catch (e) {
+															errorToast("Failed to kill instance: " + e);
+														}
+													} else {
+														runDropdownButtonClick(selection!);
 													}
-													onChange={async (selection) => {
-														if (selection == "launch") {
-															launchInstance(id(), false);
-														} else if (selection == "launch_offline") {
-															launchInstance(id(), true);
-														} else if (selection == "kill") {
-															try {
-																await invoke("kill_instance", {
-																	instance: id(),
-																});
-																await invoke("update_running_instances");
-															} catch (e) {
-																errorToast("Failed to kill instance: " + e);
-															}
-														} else {
-															runDropdownButtonClick(selection!);
+												}}
+												onHeaderClick={async () => {
+													if (isRunning()) {
+														try {
+															await invoke("kill_instance", {
+																instance: id(),
+															});
+															await invoke("update_running_instances");
+														} catch (e) {
+															errorToast("Failed to kill instance: " + e);
 														}
-													}}
-													onHeaderClick={async () => {
-														if (isRunning()) {
-															try {
-																await invoke("kill_instance", {
-																	instance: id(),
-																});
-																await invoke("update_running_instances");
-															} catch (e) {
-																errorToast("Failed to kill instance: " + e);
-															}
-														} else {
-															launchInstance(id(), false);
-														}
-													}}
-													optionsWidth="12rem"
-													isSearchable={false}
-													zIndex="5"
-												/>
-											</Tip>
-										</div>
-									</Show>
+													} else {
+														launchInstance(id(), false);
+													}
+												}}
+												optionsWidth="12rem"
+												isSearchable={false}
+												zIndex="5"
+											/>
+										</Tip>
+									</div>
 									<div style="width:4.5rem;font-weight:bold">
 										<Tip tip="Update the instance" side="top">
 											<Dropdown
