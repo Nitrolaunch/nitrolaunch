@@ -3,7 +3,7 @@ use std::fmt::Display;
 
 use anyhow::bail;
 use nitro_shared::pkg::{is_valid_package_id, PackageID, PackageStability};
-use nitro_shared::util::is_valid_identifier;
+use nitro_shared::util::{is_valid_identifier, DefaultExt};
 #[cfg(feature = "schema")]
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -25,26 +25,33 @@ pub enum PackageConfigDeser {
 pub struct FullPackageConfig {
 	/// The ID of the pcakage
 	pub id: PackageID,
-	#[serde(default)]
 	/// The package's enabled features
+	#[serde(default)]
+	#[serde(skip_serializing_if = "Vec::is_empty")]
 	pub features: Vec<String>,
 	/// Whether or not to use the package's default features
 	#[serde(default = "use_default_features_default")]
+	#[serde(skip_serializing_if = "DefaultExt::is_default")]
 	pub use_default_features: bool,
 	/// Permissions for the package
 	#[serde(default)]
+	#[serde(skip_serializing_if = "DefaultExt::is_default")]
 	pub permissions: EvalPermissions,
 	/// Expected stability for the package
 	#[serde(default)]
+	#[serde(skip_serializing_if = "Option::is_none")]
 	pub stability: Option<PackageStability>,
 	/// Worlds to use for the package
 	#[serde(default)]
+	#[serde(skip_serializing_if = "Vec::is_empty")]
 	pub worlds: Vec<String>,
 	/// Desired content version for this package
 	#[serde(default)]
+	#[serde(skip_serializing_if = "Option::is_none")]
 	pub content_version: Option<String>,
 	/// Whether this package is optional
 	#[serde(default)]
+	#[serde(skip_serializing_if = "DefaultExt::is_default")]
 	pub optional: bool,
 }
 
@@ -158,7 +165,7 @@ impl PackageConfigDeser {
 }
 
 /// Permissions level for an evaluation
-#[derive(Deserialize, Serialize, Debug, Copy, Clone, Default)]
+#[derive(Deserialize, Serialize, Debug, Copy, Clone, Default, PartialEq, Eq)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[serde(rename_all = "snake_case")]
 pub enum EvalPermissions {
