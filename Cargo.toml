@@ -57,7 +57,7 @@ members = [
 	"crates/tools",
 	"gui/src-tauri",
 	"plugins",
-	"plugins/plugins/addon_share",
+	"plugins/plugins/share",
 	"plugins/plugins/args",
 	"plugins/plugins/auto_mcs",
 	"plugins/plugins/automate",
@@ -160,7 +160,9 @@ wasmtime = { version = "41.0.0", default-features = false, features = [
 	"component-model",
 ] }
 wasmtime-wasi = "41.0.0"
+wasmtime-wasi-http = "41.0.0"
 wit-bindgen = "0.48.1"
+wstd = "0.6.1"
 which = "6.0.1"
 zip = { version = "3.0.0", default-features = false, features = ["deflate"] }
 

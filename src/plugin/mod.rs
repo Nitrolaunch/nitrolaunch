@@ -1,7 +1,9 @@
+/// Context implementation for the inner manager
+pub mod context;
 /// Online plugin installation from verified GitHub repos
 pub mod install;
 
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::fs::File;
 use std::io::{Read, Seek};
 use std::path::{Path, PathBuf};
@@ -10,13 +12,11 @@ use std::sync::Arc;
 use crate::config::plugin::{PluginConfig, PluginsConfig};
 use crate::io::paths::Paths;
 use anyhow::{bail, Context};
-use nitro_config::instance::InstanceConfig;
-use nitro_config::template::TemplateConfig;
 use nitro_core::io::{json_from_file, json_to_file_pretty};
 use nitro_plugin::hook::call::{HookHandle, HookHandles};
 use nitro_plugin::hook::wasm::loader::WASMLoader;
 use nitro_plugin::hook::{Hook, WASM_FILE_NAME};
-use nitro_plugin::host::CorePluginManager;
+use nitro_plugin::host::{CorePluginManager, PluginContext};
 use nitro_plugin::plugin::{HookHandler, Plugin, PluginManifest};
 use nitro_plugin::PluginPaths;
 use nitro_shared::output::MessageContents;
@@ -400,17 +400,9 @@ impl PluginManager {
 		self.inner.lock().await.manager.set_wasm_loader(loader);
 	}
 
-	/// Sets the instance and template list for the core manager to pass to plugins
-	pub async fn set_instances_and_templates(
-		&self,
-		instances: HashMap<String, InstanceConfig>,
-		templates: HashMap<String, TemplateConfig>,
-	) {
-		self.inner
-			.lock()
-			.await
-			.manager
-			.set_instances_and_templates(instances, templates);
+	/// Sets the global context for the manager to pass to plugins
+	pub async fn set_context(&self, context: Arc<dyn PluginContext>) {
+		self.inner.lock().await.manager.set_context(context);
 	}
 
 	/// Gets the mutex lock for the inner part of this plugin manager

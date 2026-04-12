@@ -73,15 +73,18 @@ pub(crate) async fn call_executable<H: Hook + Sized>(
 	let plugin_list = arg.ctx.plugin_list.join(",");
 	cmd.env(PLUGIN_LIST_ENV, plugin_list);
 
-	if arg.ctx.subscriptions.contains(&HookSubscription::Instances) {
-		if let Some(instances) = arg.ctx.instances {
-			cmd.env(INSTANCE_LIST_ENV, serde_json::to_string(instances)?);
+	if let Some(context) = arg.ctx.global_context {
+		if arg.ctx.subscriptions.contains(&HookSubscription::Instances) {
+			cmd.env(
+				INSTANCE_LIST_ENV,
+				serde_json::to_string(&context.get_instances())?,
+			);
 		}
-	}
-
-	if arg.ctx.subscriptions.contains(&HookSubscription::Templates) {
-		if let Some(templates) = arg.ctx.templates {
-			cmd.env(TEMPLATE_LIST_ENV, serde_json::to_string(templates)?);
+		if arg.ctx.subscriptions.contains(&HookSubscription::Templates) {
+			cmd.env(
+				TEMPLATE_LIST_ENV,
+				serde_json::to_string(&context.get_templates())?,
+			);
 		}
 	}
 

@@ -222,14 +222,14 @@
 		"description": "Uses BetterJSONs versions for improved compatability",
 		"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/better_jsons"
 	},
-	"template_share": {
-		"id": "template_share",
-		"name": "Template Share",
+	"share": {
+		"id": "share",
+		"name": "Share",
 		"version": "v6",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
-		"description": "Easily share templates with friends",
-		"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/template_share"
+		"description": "Share templates and addons with friends",
+		"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/share"
 	},
 	"multiply": {
 		"id": "multiply",

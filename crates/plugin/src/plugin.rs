@@ -6,8 +6,6 @@ use std::sync::Arc;
 
 use anyhow::bail;
 use anyhow::Context;
-use nitro_config::instance::InstanceConfig;
-use nitro_config::template::TemplateConfig;
 use nitro_shared::output::NitroOutput;
 use serde::Serialize;
 use serde::{Deserialize, Deserializer};
@@ -22,6 +20,7 @@ use crate::hook::wasm::loader::WASMLoader;
 use crate::hook::Hook;
 use crate::hook::PLUGIN_DIR_TOKEN;
 use crate::hook::WASM_FILE_NAME;
+use crate::host::PluginContext;
 use crate::PluginPaths;
 
 /// The newest protocol version for plugin communication
@@ -76,8 +75,7 @@ impl Plugin {
 		nitro_version: Option<&str>,
 		plugin_list: &[String],
 		wasm_loader: Arc<Mutex<WASMLoader>>,
-		instances: Option<&Arc<HashMap<String, InstanceConfig>>>,
-		templates: Option<&Arc<HashMap<String, TemplateConfig>>>,
+		context: Option<&Arc<dyn PluginContext>>,
 		o: &mut impl NitroOutput,
 	) -> anyhow::Result<Option<HookHandle<H>>> {
 		let Some(handler) = self.manifest.hooks.get(hook.get_name()) else {
@@ -92,8 +90,7 @@ impl Plugin {
 			nitro_version,
 			plugin_list,
 			wasm_loader,
-			instances,
-			templates,
+			context,
 			o,
 		)
 		.await
@@ -109,8 +106,7 @@ impl Plugin {
 		nitro_version: Option<&str>,
 		plugin_list: &[String],
 		wasm_loader: Arc<Mutex<WASMLoader>>,
-		instances: Option<&Arc<HashMap<String, InstanceConfig>>>,
-		templates: Option<&Arc<HashMap<String, TemplateConfig>>>,
+		context: Option<&Arc<dyn PluginContext>>,
 		o: &mut impl NitroOutput,
 	) -> anyhow::Result<Option<HookHandle<H>>> {
 		match handler {
@@ -129,8 +125,7 @@ impl Plugin {
 					custom_config: self.custom_config.clone(),
 					nitro_version,
 					plugin_list,
-					instances,
-					templates,
+					global_context: context,
 				};
 
 				let arg = HookCallArg {
@@ -162,8 +157,7 @@ impl Plugin {
 					custom_config: self.custom_config.clone(),
 					nitro_version,
 					plugin_list,
-					instances,
-					templates,
+					global_context: context,
 				};
 
 				let arg = HookCallArg {
@@ -244,8 +238,7 @@ impl Plugin {
 							nitro_version,
 							plugin_list,
 							wasm_loader,
-							instances,
-							templates,
+							context,
 							o,
 						))
 						.await;

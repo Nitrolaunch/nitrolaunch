@@ -1,5 +1,5 @@
 use std::{
-	collections::{HashMap, HashSet, VecDeque},
+	collections::{HashSet, VecDeque},
 	path::Path,
 	sync::Arc,
 	time::{Duration, Instant},
@@ -11,11 +11,11 @@ use crate::{
 		wasm::{loader::WASMLoader, WASMHookHandle},
 		Hook,
 	},
+	host::PluginContext,
 	plugin::HookSubscription,
 	PluginPaths,
 };
 use anyhow::Context;
-use nitro_config::{instance::InstanceConfig, template::TemplateConfig};
 use nitro_shared::output::{MessageContents, NitroOutput, NoOp};
 use tokio::sync::Mutex;
 
@@ -60,10 +60,8 @@ pub struct HookCallContext<'a> {
 	pub custom_config: Option<String>,
 	/// The list of all enabled plugins and their versions
 	pub plugin_list: &'a [String],
-	/// Configured instances
-	pub instances: Option<&'a Arc<HashMap<String, InstanceConfig>>>,
-	/// Configured templates
-	pub templates: Option<&'a Arc<HashMap<String, TemplateConfig>>>,
+	/// Global context object
+	pub global_context: Option<&'a Arc<dyn PluginContext>>,
 }
 
 /// Handle returned by running a hook. Make sure to await it if you need to.
@@ -233,7 +231,7 @@ impl<H: Hook> HookHandle<H> {
 		match self.inner {
 			HookHandleInner::Constant(result) => Ok(Some(result)),
 			HookHandleInner::Executable(inner) => inner.kill().await,
-			HookHandleInner::WASM(inner) => Ok(inner.result().await),
+			HookHandleInner::WASM(inner) => inner.result().await.map(Some),
 		}
 	}
 

@@ -2,7 +2,6 @@
 pub mod loader;
 
 use std::{
-	collections::HashMap,
 	fs::File,
 	marker::PhantomData,
 	path::{Path, PathBuf},
@@ -12,7 +11,6 @@ use std::{
 };
 
 use anyhow::{bail, Context};
-use nitro_config::{instance::InstanceConfig, template::TemplateConfig};
 use nitro_net::download::{self, Client};
 use nitro_shared::{
 	io::{home_dir, update_link},
@@ -34,6 +32,7 @@ use wasmtime::{
 use wasmtime_wasi::{
 	DirPerms, FilePerms, ResourceTable, WasiCtx, WasiCtxBuilder, WasiCtxView, WasiView,
 };
+use wasmtime_wasi_http::{WasiHttpCtx, WasiHttpView};
 
 use crate::{
 	hook::{
@@ -41,6 +40,7 @@ use crate::{
 		wasm::loader::WASMLoader,
 		Hook,
 	},
+	host::PluginContext,
 	plugin_debug_enabled,
 };
 
@@ -81,8 +81,7 @@ pub(crate) async fn call_wasm<H: Hook + Sized>(
 			result_sender: Some(result_sender),
 			result,
 			custom_config: arg.ctx.custom_config,
-			instances: arg.ctx.instances.cloned(),
-			templates: arg.ctx.templates.cloned(),
+			context: arg.ctx.global_context.cloned(),
 			wasm_loader: arg.wasm_loader,
 			data_dir: arg.paths.data_dir.to_string_lossy().to_string(),
 			config_dir: arg.paths.config_dir.to_string_lossy().to_string(),
@@ -104,11 +103,10 @@ pub(super) struct WASMHookHandle<H: Hook> {
 	o: Arc<Mutex<Box<dyn NitroOutput + Sync>>>,
 	wasm_path: PathBuf,
 	arg: String,
-	result_sender: Option<oneshot::Sender<H::Result>>,
-	result: oneshot::Receiver<H::Result>,
+	result_sender: Option<oneshot::Sender<anyhow::Result<H::Result>>>,
+	result: oneshot::Receiver<anyhow::Result<H::Result>>,
 	custom_config: Option<String>,
-	instances: Option<Arc<HashMap<String, InstanceConfig>>>,
-	templates: Option<Arc<HashMap<String, TemplateConfig>>>,
+	context: Option<Arc<dyn PluginContext>>,
 	wasm_loader: Arc<Mutex<WASMLoader>>,
 	data_dir: String,
 	config_dir: String,
@@ -168,12 +166,14 @@ impl<H: Hook> WASMHookHandle<H> {
 
 		let wasi_ctx = wasi_ctx.build();
 
+		let http_ctx = WasiHttpCtx::new();
+
 		let state = State {
 			wasi_ctx,
+			http_ctx,
 			table: ResourceTable::new(),
 			custom_config: self.custom_config.clone(),
-			instances: self.instances.clone(),
-			templates: self.templates.clone(),
+			context: self.context.clone(),
 			data_dir: self.data_dir.clone(),
 			config_dir: self.config_dir.clone(),
 			plugin_dir: self.plugin_dir.clone(),
@@ -182,89 +182,93 @@ impl<H: Hook> WASMHookHandle<H> {
 		};
 
 		let arg = self.arg.clone();
-		let plugin_id = self.plugin_id.clone();
 
 		tokio::task::spawn(async move {
-			wasmtime_wasi::p2::add_to_linker_async(&mut linker)
-				.context("Failed to add WASI functions to linker")?;
+			let fun = async move || {
+				wasmtime_wasi::p2::add_to_linker_async(&mut linker)
+					.context("Failed to add WASI functions to linker")?;
+				wasmtime_wasi_http::add_only_http_to_linker_async(&mut linker)
+					.context("Failed to add HTTP functions to linker")?;
 
-			bindings::InterfaceWorld::add_to_linker::<_, HasSelf<_>>(&mut linker, |x| x)?;
+				bindings::InterfaceWorld::add_to_linker::<_, HasSelf<_>>(&mut linker, |x| x)?;
 
-			if let Some(start_time) = &mut start_time {
-				let now = Instant::now();
-				println!("Linker initialization: {:?}", now - *start_time);
-				*start_time = now;
-			}
-
-			let mut store = Store::new(&engine, state);
-
-			let instance =
-				bindings::InterfaceWorld::instantiate_async(&mut store, &component, &linker)
-					.await
-					.context("Failed to construct WASM instance")?;
-
-			if let Some(start_time) = &mut start_time {
-				let now = Instant::now();
-				println!("Instance initialization: {:?}", now - *start_time);
-				*start_time = now;
-			}
-
-			let result_code = instance
-				.call_run_plugin(
-					&mut store,
-					H::get_name_static(),
-					&arg,
-					H::get_version() as u32,
-				)
-				.await
-				.context("Failed to call plugin entrypoint")?;
-
-			if let Some(start_time) = &mut start_time {
-				let now = Instant::now();
-				println!("Hook runtime: {:?}", now - *start_time);
-				*start_time = now;
-			}
-
-			let result = if H::get_takes_over() {
-				H::Result::default()
-			} else {
-				let mut result = instance.call_get_result(&mut store).await?;
-
-				if result_code == 1 {
-					bail!("Plugin '{}' returned an error: {result}", plugin_id);
+				if let Some(start_time) = &mut start_time {
+					let now = Instant::now();
+					println!("Linker initialization: {:?}", now - *start_time);
+					*start_time = now;
 				}
 
-				unsafe { simd_json::from_str(&mut result) }
-					.context("Failed to deserialize hook result")?
+				let mut store = Store::new(&engine, state);
+
+				let instance =
+					bindings::InterfaceWorld::instantiate_async(&mut store, &component, &linker)
+						.await
+						.context("Failed to construct WASM instance")?;
+
+				if let Some(start_time) = &mut start_time {
+					let now = Instant::now();
+					println!("Instance initialization: {:?}", now - *start_time);
+					*start_time = now;
+				}
+
+				let result_code = instance
+					.call_run_plugin(
+						&mut store,
+						H::get_name_static(),
+						&arg,
+						H::get_version() as u32,
+					)
+					.await
+					.context("Failed to call plugin entrypoint")?;
+
+				if let Some(start_time) = &mut start_time {
+					let now = Instant::now();
+					println!("Hook runtime: {:?}", now - *start_time);
+					*start_time = now;
+				}
+
+				let result = if H::get_takes_over() {
+					H::Result::default()
+				} else {
+					let mut result = instance.call_get_result(&mut store).await?;
+
+					if result_code == 1 {
+						bail!("Plugin returned an error: {result}");
+					}
+
+					unsafe { simd_json::from_str(&mut result) }
+						.context("Failed to deserialize hook result")?
+				};
+
+				if let Some(start_time) = &mut start_time {
+					let now = Instant::now();
+					println!("Result handling: {:?}", now - *start_time);
+					*start_time = now;
+				}
+
+				Ok(result)
 			};
 
+			let result = fun().await;
 			let _ = result_sender.send(result);
-
-			if let Some(start_time) = &mut start_time {
-				let now = Instant::now();
-				println!("Result handling: {:?}", now - *start_time);
-				*start_time = now;
-			}
-
-			Ok(())
 		});
 
 		Ok(())
 	}
 
 	/// Awaits the result of the hook. Hook must have been started or this will run indefinitely.
-	pub async fn result(self) -> Option<H::Result> {
-		self.result.await.ok()
+	pub async fn result(self) -> anyhow::Result<H::Result> {
+		self.result.await.context("Channel closed").flatten()
 	}
 }
 
 /// Host function environment
 struct State {
 	wasi_ctx: WasiCtx,
+	http_ctx: WasiHttpCtx,
 	table: ResourceTable,
 	custom_config: Option<String>,
-	instances: Option<Arc<HashMap<String, InstanceConfig>>>,
-	templates: Option<Arc<HashMap<String, TemplateConfig>>>,
+	context: Option<Arc<dyn PluginContext>>,
 	data_dir: String,
 	config_dir: String,
 	plugin_dir: String,
@@ -278,6 +282,16 @@ impl WasiView for State {
 			ctx: &mut self.wasi_ctx,
 			table: &mut self.table,
 		}
+	}
+}
+
+impl WasiHttpView for State {
+	fn ctx(&mut self) -> &mut WasiHttpCtx {
+		&mut self.http_ctx
+	}
+
+	fn table(&mut self) -> &mut ResourceTable {
+		&mut self.table
 	}
 }
 
@@ -444,9 +458,10 @@ impl bindings::InterfaceWorldImports for State {
 	}
 
 	async fn get_instances(&mut self) -> Option<Vec<(String, String)>> {
-		let Some(instances) = &self.instances else {
+		let Some(context) = &self.context else {
 			return None;
 		};
+		let instances = context.get_instances();
 
 		Some(
 			instances
@@ -463,9 +478,10 @@ impl bindings::InterfaceWorldImports for State {
 	}
 
 	async fn get_templates(&mut self) -> Option<Vec<(String, String)>> {
-		let Some(templates) = &self.templates else {
+		let Some(context) = &self.context else {
 			return None;
 		};
+		let templates = context.get_templates();
 
 		Some(
 			templates
@@ -482,9 +498,10 @@ impl bindings::InterfaceWorldImports for State {
 	}
 
 	async fn get_instance_dir(&mut self, instance: String) -> Result<Option<String>, String> {
-		let Some(instances) = &self.instances else {
-			return Ok(None);
+		let Some(context) = &self.context else {
+			return Err("Missing context".into());
 		};
+		let instances = context.get_instances();
 		let Some(config) = instances.get(&instance) else {
 			return Err("Instance does not exist".into());
 		};
@@ -505,6 +522,36 @@ impl bindings::InterfaceWorldImports for State {
 		};
 
 		Ok(Some(inst_dir))
+	}
+
+	async fn create_instance(&mut self, id: String, config: String) -> Result<(), String> {
+		if let Some(context) = &self.context {
+			let Ok(config) = serde_json::from_str(&config) else {
+				return Err("Failed to deserialize config".into());
+			};
+			context
+				.create_instance(id, config)
+				.await
+				.map_err(|e| e.to_string())?;
+			Ok(())
+		} else {
+			Err("Context missing".into())
+		}
+	}
+
+	async fn create_template(&mut self, id: String, config: String) -> Result<(), String> {
+		if let Some(context) = &self.context {
+			let Ok(config) = serde_json::from_str(&config) else {
+				return Err("Failed to deserialize config".into());
+			};
+			context
+				.create_template(id, config)
+				.await
+				.map_err(|e| e.to_string())?;
+			Ok(())
+		} else {
+			Err("Context missing".into())
+		}
 	}
 
 	async fn launch_instance(

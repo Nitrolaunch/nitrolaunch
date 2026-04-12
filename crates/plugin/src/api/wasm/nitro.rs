@@ -31,6 +31,20 @@ pub fn get_instance_dir(instance: &str) -> anyhow::Result<Option<PathBuf>> {
 		.map_err(|e| anyhow!(e))
 }
 
+/// Creates a new instance and adds it to the config
+pub fn create_instance(id: &str, config: &InstanceConfig) -> anyhow::Result<()> {
+	let config = serde_json::to_string(config)?;
+
+	super::interface::create_instance(id, &config).map_err(|e| anyhow!(e))
+}
+
+/// Creates a new template and adds it to the config
+pub fn create_template(id: &str, config: &TemplateConfig) -> anyhow::Result<()> {
+	let config = serde_json::to_string(config)?;
+
+	super::interface::create_template(id, &config).map_err(|e| anyhow!(e))
+}
+
 /// Launches an instance in the background
 pub fn launch_instance(instance: &str, account: Option<&str>) -> anyhow::Result<()> {
 	super::interface::launch_instance(instance, account).map_err(|e| anyhow!(e))
@@ -47,8 +61,7 @@ impl<T: DeserializeOwned> WASMMap<T> {
 	pub fn get<K>(&self, k: &K) -> anyhow::Result<Option<T>>
 	where
 		String: Borrow<K>,
-		K: Hash,
-		K: Eq,
+		K: Eq + Hash + ?Sized,
 	{
 		let Some(x) = self.map.get(k) else {
 			return Ok(None);

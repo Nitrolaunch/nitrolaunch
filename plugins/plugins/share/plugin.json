@@ -1,23 +1,23 @@
 {
-	"id": "template_share",
-	"name": "Template Share",
-	"description": "Easily share instance templates with friends",
-	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/template_share",
+	"id": "share",
+	"name": "Share",
+	"description": "Share templates and addons with friends",
+	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/share",
 	"version": "v6",
 	"protocol_version": 3,
 	"hooks": {
 		"subcommand": {
-			"executable": "${PLUGIN_DIR}/nitro_plugin_template_share${EXE_EXTENSION}"
+			"wasm": true
 		},
 		"add_dropdown_buttons": {
 			"constant": [
 				{
-					"plugin": "template_share",
+					"plugin": "share",
 					"location": "add_template_or_instance",
 					"icon": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 16 16\" fill=\"currentColor\"><path d=\"m11 2c1.662 0 3 1.338 3 3v2h1c0.554 0 1 0.446 1 1s-0.446 1-1 1h-1v2c0 1.662-1.338 3-3 3-0.55228 0-1-0.44772-1-1s0.44772-1 1-1c0.554 0 1-0.446 1-1v-6c0-0.554-0.446-1-1-1-0.55228 0-1-0.44772-1-1s0.44772-1 1-1zm-6 0c-1.662 0-3 1.338-3 3v2h-1c-0.554 0-1 0.446-1 1s0.446 1 1 1h1v2c0 1.662 1.338 3 3 3 0.55228 0 1-0.44772 1-1s-0.44772-1-1-1c-0.554 0-1-0.446-1-1v-6c0-0.554 0.446-1 1-1 0.55228 0 1-0.44772 1-1s-0.44772-1-1-1z\" /></svg>",
 					"text": "Template from Code",
 					"tip": "Import a template from a Template Share Code",
-					"on_click": "$file:import.js"
+					"on_click": "$file:import_template.js"
 				}
 			]
 		},
@@ -25,15 +25,19 @@
 			"property": "page",
 			"cases": {
 				"\"instances\"": {
-					"file": "export.js"
+					"file": "export_template.js"
 				}
 			}
 		},
 		"custom_action": {
-			"executable": "${PLUGIN_DIR}/nitro_plugin_template_share${EXE_EXTENSION}"
+			"wasm": true
 		}
 	},
 	"subcommands": {
+		"share-addons": {
+			"supercommand": "instance",
+			"description": "Share addons as a zip file"
+		},
 		"share": {
 			"supercommand": "template",
 			"description": "Share a template with a code"

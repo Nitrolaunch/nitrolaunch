@@ -50,7 +50,6 @@ fn main() {
 	add_file!(zip, "plugins/development/hooks.md");
 	add_file!(zip, "plugins/plugins/index.md");
 
-	add_file!(zip, "plugins/plugins/addon_share.md");
 	add_file!(zip, "plugins/plugins/args.md");
 	add_file!(zip, "plugins/plugins/auto_mcs.md");
 	add_file!(zip, "plugins/plugins/automate.md");
@@ -71,8 +70,8 @@ fn main() {
 	add_file!(zip, "plugins/plugins/multimc_transfer.md");
 	add_file!(zip, "plugins/plugins/nitro_transfer.md");
 	add_file!(zip, "plugins/plugins/options.md");
-	add_file!(zip, "plugins/plugins/template_share.md");
 	add_file!(zip, "plugins/plugins/server_restart.md");
+	add_file!(zip, "plugins/plugins/share.md");
 	add_file!(zip, "plugins/plugins/shortcut.md");
 	add_file!(zip, "plugins/plugins/skin_stealer.md");
 	add_file!(zip, "plugins/plugins/smithed.md");

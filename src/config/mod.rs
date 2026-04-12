@@ -14,6 +14,7 @@ pub mod preferences;
 use self::instance::read_instance_config;
 use crate::config::core_setup::setup_core;
 use crate::instance::update::manager::UpdateSettings;
+use crate::plugin::context::NitroPluginContext;
 use crate::plugin::PluginManager;
 use anyhow::Context;
 use nitro_config::account::{AccountConfig, AccountVariant};
@@ -311,9 +312,14 @@ impl Config {
 			.map(|(k, v)| (k.to_string(), v.clone()))
 			.collect();
 
-		plugins
-			.set_instances_and_templates(plugin_manager_instances, plugin_manager_templates)
-			.await;
+		let context = NitroPluginContext {
+			instances: Arc::new(plugin_manager_instances),
+			templates: Arc::new(plugin_manager_templates),
+			paths: paths.clone(),
+			plugins: plugins.clone(),
+		};
+
+		plugins.set_context(Arc::new(context)).await;
 
 		Self {
 			accounts,

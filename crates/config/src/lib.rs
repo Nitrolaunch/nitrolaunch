@@ -26,7 +26,7 @@ pub mod preferences;
 pub mod template;
 
 /// Deserialization struct for user configuration
-#[derive(Deserialize, Serialize, Default)]
+#[derive(Deserialize, Serialize, Default, Clone)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[serde(default)]
 pub struct ConfigDeser {

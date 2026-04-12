@@ -25,8 +25,7 @@ pub struct CorePluginManager {
 	plugin_list: Vec<String>,
 	nitro_version: Option<&'static str>,
 	wasm_loader: Arc<Mutex<WASMLoader>>,
-	instances: Option<Arc<HashMap<String, InstanceConfig>>>,
-	templates: Option<Arc<HashMap<String, TemplateConfig>>>,
+	context: Option<Arc<dyn PluginContext>>,
 }
 
 impl CorePluginManager {
@@ -37,8 +36,7 @@ impl CorePluginManager {
 			plugin_list: Vec::new(),
 			nitro_version: None,
 			wasm_loader: Arc::new(Mutex::new(WASMLoader::new(&paths.data_dir))),
-			instances: None,
-			templates: None,
+			context: None,
 		}
 	}
 
@@ -81,8 +79,7 @@ impl CorePluginManager {
 				self.nitro_version,
 				&self.plugin_list,
 				self.wasm_loader.clone(),
-				self.instances.as_ref(),
-				self.templates.as_ref(),
+				self.context.as_ref(),
 				o,
 			)
 			.await
@@ -100,8 +97,7 @@ impl CorePluginManager {
 				self.nitro_version,
 				&self.plugin_list,
 				self.wasm_loader.clone(),
-				self.instances.as_ref(),
-				self.templates.as_ref(),
+				self.context.as_ref(),
 				o,
 			)
 			.await
@@ -139,8 +135,7 @@ impl CorePluginManager {
 					self.nitro_version,
 					&self.plugin_list,
 					self.wasm_loader.clone(),
-					self.instances.as_ref(),
-					self.templates.as_ref(),
+					self.context.as_ref(),
 					o,
 				)
 				.await
@@ -174,8 +169,7 @@ impl CorePluginManager {
 						self.nitro_version,
 						&self.plugin_list,
 						self.wasm_loader.clone(),
-						self.instances.as_ref(),
-						self.templates.as_ref(),
+						self.context.as_ref(),
 						o,
 					)
 					.await
@@ -218,14 +212,9 @@ impl CorePluginManager {
 		.map(|x| x.get_id().clone())
 	}
 
-	/// Sets the instance and template list for the manager to pass to plugins
-	pub fn set_instances_and_templates(
-		&mut self,
-		instances: HashMap<String, InstanceConfig>,
-		templates: HashMap<String, TemplateConfig>,
-	) {
-		self.instances = Some(Arc::new(instances));
-		self.templates = Some(Arc::new(templates));
+	/// Sets the context to be passed to plugins
+	pub fn set_context(&mut self, context: Arc<dyn PluginContext>) {
+		self.context = Some(context);
 	}
 }
 
@@ -233,4 +222,20 @@ impl CorePluginManager {
 struct PluginSort {
 	priority: HookPriority,
 	id: String,
+}
+
+/// Context for plugin functions
+#[async_trait::async_trait]
+pub trait PluginContext: Send + Sync + 'static {
+	/// Gets the available instances
+	fn get_instances(&self) -> Arc<HashMap<String, InstanceConfig>>;
+
+	/// Gets the available templates
+	fn get_templates(&self) -> Arc<HashMap<String, TemplateConfig>>;
+
+	/// Creates a new instance
+	async fn create_instance(&self, id: String, config: InstanceConfig) -> anyhow::Result<()>;
+
+	/// Creates a new template
+	async fn create_template(&self, id: String, config: TemplateConfig) -> anyhow::Result<()>;
 }

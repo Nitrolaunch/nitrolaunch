@@ -450,6 +450,7 @@ async fn call_plugin_subcommand(
 
 	let arg = SubcommandArg {
 		args,
+		supercommand: supercommand.map(|x| x.to_string()),
 		instances: instance_configs,
 	};
 
