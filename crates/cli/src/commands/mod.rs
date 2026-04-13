@@ -239,7 +239,7 @@ Would you like to do that now?"
 				Ok(())
 			}
 			Command::Files { command } => files::run(command, &mut data).await,
-			Command::Package { command } => package::run(command, &mut data).await,
+			Command::Package { command } => package::run(command, data).await,
 			Command::Instance { command } => instance::run(command, data).await,
 			Command::Plugin { command } => plugin::run(command, &mut data).await,
 			Command::Config { command } => config::run(command, &mut data).await,

@@ -26,8 +26,13 @@ use crate::commands::call_plugin_subcommand;
 use crate::output::HYPHEN_POINT;
 use crate::prompt::pick_instance;
 
+/// Package browsing
+mod browse;
+
 #[derive(Debug, Subcommand)]
 pub enum PackageSubcommand {
+	#[command(about = "Browse packages in a TUI")]
+	Browse {},
 	#[command(about = "List all installed packages across all instances")]
 	#[clap(alias = "ls")]
 	List {
@@ -138,16 +143,17 @@ pub enum RepoSubcommand {
 	External(Vec<String>),
 }
 
-pub async fn run(subcommand: PackageSubcommand, data: &mut CmdData<'_>) -> anyhow::Result<()> {
+pub async fn run(subcommand: PackageSubcommand, mut data: CmdData<'_>) -> anyhow::Result<()> {
 	match subcommand {
-		PackageSubcommand::List { raw, instance } => list(data, raw, instance).await,
-		PackageSubcommand::Sync { filter } => sync(data, filter).await,
-		PackageSubcommand::Cat { raw, package } => cat(data, &package, raw).await,
-		PackageSubcommand::Info { raw, package } => info(data, &package, raw).await,
-		PackageSubcommand::Versions { raw, package } => versions(data, &package, raw).await,
-		PackageSubcommand::Repository { command } => repo(command, data).await,
-		PackageSubcommand::ListAll {} => list_all(data).await,
-		PackageSubcommand::Add { package, instance } => add(data, package, instance).await,
+		PackageSubcommand::Browse {} => browse::run(data).await,
+		PackageSubcommand::List { raw, instance } => list(&mut data, raw, instance).await,
+		PackageSubcommand::Sync { filter } => sync(&mut data, filter).await,
+		PackageSubcommand::Cat { raw, package } => cat(&mut data, &package, raw).await,
+		PackageSubcommand::Info { raw, package } => info(&mut data, &package, raw).await,
+		PackageSubcommand::Versions { raw, package } => versions(&mut data, &package, raw).await,
+		PackageSubcommand::Repository { command } => repo(command, &mut data).await,
+		PackageSubcommand::ListAll {} => list_all(&mut data).await,
+		PackageSubcommand::Add { package, instance } => add(&mut data, package, instance).await,
 		PackageSubcommand::Search {
 			query,
 			repo,
@@ -173,7 +179,7 @@ pub async fn run(subcommand: PackageSubcommand, data: &mut CmdData<'_>) -> anyho
 				.collect();
 
 			search(
-				data,
+				&mut data,
 				PackageSearchParameters {
 					count: count.unwrap_or(5),
 					skip: 0,
@@ -188,7 +194,7 @@ pub async fn run(subcommand: PackageSubcommand, data: &mut CmdData<'_>) -> anyho
 			.await
 		}
 		PackageSubcommand::External(args) => {
-			call_plugin_subcommand(args, Some("package"), data).await
+			call_plugin_subcommand(args, Some("package"), &mut data).await
 		}
 	}
 }

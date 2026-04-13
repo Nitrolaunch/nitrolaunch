@@ -75,6 +75,12 @@ pub mod later {
 			*self = Self::Empty;
 		}
 
+		/// Takes the value in the Later
+		#[inline(always)]
+		pub fn take(&mut self) -> Option<T> {
+			std::mem::replace(self, Self::Empty).into_option()
+		}
+
 		/// Checks if the Later does not contain a value
 		#[must_use]
 		#[inline(always)]

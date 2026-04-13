@@ -25,6 +25,8 @@ crossterm = { workspace = true }
 inquire = { workspace = true }
 itertools = { workspace = true }
 nitrolaunch = { workspace = true }
+ratatui = { workspace = true }
+ratatui-textarea = { workspace = true }
 reqwest = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
