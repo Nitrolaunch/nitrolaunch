@@ -356,6 +356,24 @@ impl FromStr for PackageKind {
 	}
 }
 
+impl Display for PackageKind {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		write!(
+			f,
+			"{}",
+			match self {
+				Self::Mod => "mod",
+				Self::ResourcePack => "resource_pack",
+				Self::Datapack => "datapack",
+				Self::Plugin => "plugin",
+				Self::Shader => "shader",
+				Self::Modpack => "modpack",
+				Self::Bundle => "bundle",
+			}
+		)
+	}
+}
+
 /// Parameters for a package search
 #[derive(Serialize, Deserialize, Default, Clone)]
 pub struct PackageSearchParameters {
