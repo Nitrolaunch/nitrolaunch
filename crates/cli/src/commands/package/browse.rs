@@ -87,6 +87,7 @@ fn renderer(
 
 		if let Ok(info) = state.package_info_rx.try_recv() {
 			state.package_info = Some(info);
+			state.preview_scroll = 0;
 			should_render = true;
 		}
 
@@ -106,9 +107,19 @@ fn renderer(
 					KeyCode::Char('s') | KeyCode::Char('/') => state.focus = FocusState::Search,
 					KeyCode::Char('r') => state.focus = FocusState::Popup(Popup::Repository),
 					KeyCode::Char('t') => state.focus = FocusState::Popup(Popup::PackageType),
-					KeyCode::Up | KeyCode::Char('k') => state.package_list_state.select_previous(),
-					KeyCode::Down | KeyCode::Char('j') => state.package_list_state.select_next(),
-					KeyCode::Enter => state.select_package(),
+					KeyCode::Char('p') | KeyCode::Tab => state.focus = FocusState::Preview,
+					KeyCode::Up | KeyCode::Char('k') => {
+						state.package_list_state.select_previous();
+						state.preview_package();
+					}
+					KeyCode::Down | KeyCode::Char('j') => {
+						state.package_list_state.select_next();
+						state.preview_package();
+					}
+					KeyCode::Enter => {
+						state.select_package();
+						state.focus = FocusState::Preview;
+					}
 					_ => {}
 				},
 				FocusState::Search => match key.code {
@@ -128,6 +139,14 @@ fn renderer(
 					}
 				},
 				FocusState::Popup(popup) => popup.input(&mut state, key),
+				FocusState::Preview => match key.code {
+					KeyCode::Char('p') | KeyCode::Tab => state.focus = FocusState::None,
+					KeyCode::Up | KeyCode::Char('k') if state.preview_scroll > 0 => {
+						state.preview_scroll -= 1
+					}
+					KeyCode::Down | KeyCode::Char('j') => state.preview_scroll += 1,
+					_ => {}
+				},
 			}
 		};
 
@@ -156,12 +175,21 @@ fn render(frame: &mut Frame, state: &mut State) {
 	// Draw panes
 
 	// Status bar
-	let status_layout = Layout::horizontal([Constraint::Fill(1), Constraint::Fill(1)]);
+	let status_layout = Layout::horizontal([Constraint::Fill(3), Constraint::Fill(1)]);
 	let status_layout = status_pane.layout::<2>(&status_layout);
 	let keybinds_pane = status_layout[0];
 	let state_pane = status_layout[1];
 
-	let keybinds = Paragraph::new("q to quit; s to search; k/j for up/down; enter to select;");
+	let keybinds_text = match state.focus {
+		FocusState::None => {
+			"q to quit; s to search; k/j for up/down; enter to select; tab/p to focus package"
+		}
+		FocusState::Search => "esc to exit search; enter to submit",
+		FocusState::Popup(..) => "esc to exit popup; k/j for up/down; enter to select",
+		FocusState::Preview => "esc to exit preview; k/j for scroll",
+	};
+
+	let keybinds = Paragraph::new(keybinds_text);
 	frame.render_widget(keybinds, keybinds_pane);
 
 	let worker_state = match &state.worker_state {
@@ -202,13 +230,19 @@ fn render(frame: &mut Frame, state: &mut State) {
 		}
 	});
 	state.package_list = state.package_list.clone().items(package_items);
-	let block = Block::bordered().title("Packages");
+	let mut block = Block::bordered().title("Packages");
+	if state.focus == FocusState::None {
+		block = block.border_style(Style::new().green());
+	}
 	let inner = block.inner(list_pane);
 	frame.render_widget(block, list_pane);
 	frame.render_stateful_widget(&state.package_list, inner, &mut state.package_list_state);
 
 	// Preview pane
-	let block = Block::bordered().title("Preview");
+	let mut block = Block::bordered().title("Preview");
+	if state.focus == FocusState::Preview {
+		block = block.border_style(Style::new().green());
+	}
 	let inner_area = block.inner(preview_pane);
 	frame.render_widget(block, preview_pane);
 	if let Some(req) = state.get_selected_package() {
@@ -229,14 +263,12 @@ fn render(frame: &mut Frame, state: &mut State) {
 	let repo_pane = filter_layout[0];
 	let type_pane = filter_layout[1];
 
-	let repo = Paragraph::new(
-		state
+	let repo = format!("Repository: {}", state
 			.search_params
 			.repo
-			.clone()
-			.unwrap_or("All Repos".into()),
-	)
-	.style(Style::new().bold());
+			.as_deref()
+			.unwrap_or("All"));
+	let repo = Paragraph::new(repo).style(Style::new().bold());
 	frame.render_widget(repo, repo_pane);
 
 	let ty = Paragraph::new(
@@ -282,18 +314,22 @@ struct State<'a> {
 	image_cache: ImageCache,
 	/// Set to true when a new image was loaded and we should re-render
 	image_available: Arc<AtomicBool>,
+	/// Current focus state
+	focus: FocusState,
 	/// Search parameters
 	search_params: SearchParams,
 	/// Search bar
 	search: TextArea<'a>,
 	/// List of packages
 	package_list: List<'a>,
-	/// Available repositories
-	repositories: Vec<AddCustomPackageRepositoriesResult>,
-	/// Current focus state
-	focus: FocusState,
 	/// List state for package list
 	package_list_state: ListState,
+	/// Last selected package
+	last_selected_package: Option<ArcPkgReq>,
+	/// Available repositories
+	repositories: Vec<AddCustomPackageRepositoriesResult>,
+	/// Current scroll of preview pane body
+	preview_scroll: u16,
 }
 
 impl<'a> State<'a> {
@@ -354,9 +390,11 @@ impl<'a> State<'a> {
 			},
 			search,
 			package_list,
+			package_list_state,
+			last_selected_package: None,
 			repositories,
 			focus: FocusState::None,
-			package_list_state,
+			preview_scroll: 0,
 		})
 	}
 
@@ -375,12 +413,27 @@ impl<'a> State<'a> {
 			.try_send(Task::FetchPackages(self.search_params.clone()));
 	}
 
+	/// Previews the currently highlighted package in the list
+	fn preview_package(&mut self) {
+		let Some(req) = self.get_selected_package() else {
+			return;
+		};
+
+		if let Some(preview) = self.results.previews.get(&req.to_string()) {
+			self.package_info = Some(PackageInfo {
+				meta: Arc::new(preview.0.clone()),
+			});
+			self.preview_scroll = 0;
+		}
+	}
+
 	/// Selects the currently highlighted package in the list and sends a request to fetch it
 	fn select_package(&mut self) {
 		let Some(req) = self.get_selected_package() else {
 			return;
 		};
 
+		self.last_selected_package = Some(req.clone());
 		let _ = self.task_tx.try_send(Task::FetchPackageInfo(req));
 	}
 
@@ -486,6 +539,7 @@ enum FocusState {
 	None,
 	Search,
 	Popup(Popup),
+	Preview,
 }
 
 /// Different selection popups
@@ -686,7 +740,7 @@ impl<'a> Widget for PackageInfoWidget<'a> {
 
 		// Top pane
 		let block = Block::new().borders(Borders::BOTTOM);
-		let inner_area = block.inner(area);
+		let inner_area = block.inner(top_pane);
 		block.render(top_pane, buf);
 
 		let layout = Layout::horizontal([Constraint::Length(6), Constraint::Fill(1)]);
@@ -708,8 +762,8 @@ impl<'a> Widget for PackageInfoWidget<'a> {
 		}
 
 		// Details
-		let layout = Layout::horizontal(Constraint::from_fills([1, 1, 1, 1]));
-		let layout = details_pane.layout::<4>(&layout);
+		let layout = Layout::horizontal(Constraint::from_fills([1, 1, 1]));
+		let layout = details_pane.layout::<3>(&layout);
 		let title_pane = layout[0];
 
 		// Title
@@ -730,9 +784,19 @@ impl<'a> Widget for PackageInfoWidget<'a> {
 		let title = Paragraph::new(title).style(Style::new().bold());
 		title.render(title_pane, buf);
 
+		// Subtitle
+		let mut subtitle_area = details_pane;
+		subtitle_area.y += 1;
+
+		if let Some(short_description) = &info.meta.description {
+			let short_description = Paragraph::new(short_description.as_str());
+			short_description.style(Style::new().gray()).render(subtitle_area, buf);
+		}
+
 		// Body pane
 		if let Some(body) = &info.meta.long_description {
-			let markdown = tui_markdown::from_str(body);
+			let markdown =
+				Paragraph::new(tui_markdown::from_str(body)).scroll((self.state.preview_scroll, 0));
 			markdown.render(bottom_pane.inner(Margin::new(1, 1)), buf);
 		}
 	}
