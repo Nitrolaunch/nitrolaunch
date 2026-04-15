@@ -631,14 +631,15 @@ impl ResolutionAndEvalResult {
 
 		for new_pkg in &self.packages {
 			if let Some(existing_pkg) = current_packages.get(&new_pkg.req) {
-				let old_version = new_pkg
-					.eval
-					.selected_content_version
+				let old_version = existing_pkg
+					.content_version
 					.as_ref()
 					.cloned()
 					.unwrap_or("None".into());
-				let new_version = existing_pkg
-					.content_version
+
+				let new_version = new_pkg
+					.eval
+					.selected_content_version
 					.as_ref()
 					.cloned()
 					.unwrap_or("None".into());
