@@ -22,15 +22,19 @@ async-trait = { workspace = true }
 clap = { workspace = true }
 color-print = { workspace = true }
 crossterm = { workspace = true }
+dashmap = { workspace = true }
+image = { workspace = true }
 inquire = { workspace = true }
 itertools = { workspace = true }
 nitrolaunch = { workspace = true }
 ratatui = { workspace = true }
+ratatui-image = { workspace = true }
 ratatui-textarea = { workspace = true }
 reqwest = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 termimad = { workspace = true }
+tui-markdown = { workspace = true }
 tokio = { workspace = true, features = ["macros", "fs"] }
 
 [target.'cfg(target_os = "linux")'.dependencies]

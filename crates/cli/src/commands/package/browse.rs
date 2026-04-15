@@ -1,20 +1,31 @@
-use std::time::Duration;
+use std::{
+	sync::{
+		atomic::{AtomicBool, Ordering},
+		Arc,
+	},
+	time::Duration,
+};
 
 use anyhow::Context;
 use crossterm::event::{self, KeyCode, KeyEvent};
+use image::DynamicImage;
 use nitrolaunch::{
 	config::Config,
 	io::paths::Paths,
-	pkg_crate::PackageSearchResults,
+	pkg_crate::{metadata::PackageMetadata, PackageSearchResults, PkgRequest, PkgRequestSource},
 	plugin_crate::hook::hooks::{AddCustomPackageRepositories, AddCustomPackageRepositoriesResult},
-	shared::{output::NoOp, pkg::PackageSearchParameters},
+	shared::{
+		output::NoOp,
+		pkg::{ArcPkgReq, PackageSearchParameters},
+	},
 };
 use ratatui::{
 	layout::{Constraint, Layout, Margin, Rect},
 	style::Style,
-	widgets::{Block, Clear, List, ListState, Paragraph},
+	widgets::{Block, Borders, Clear, List, ListState, Paragraph, StatefulWidget, Widget},
 	DefaultTerminal, Frame,
 };
+use ratatui_image::{picker::Picker, StatefulImage};
 use ratatui_textarea::TextArea;
 use reqwest::Client;
 use tokio::{
@@ -22,7 +33,7 @@ use tokio::{
 	task::JoinHandle,
 };
 
-use crate::commands::CmdData;
+use crate::{commands::CmdData, image_cache::ImageCache};
 
 pub async fn run(mut data: CmdData<'_>) -> anyhow::Result<()> {
 	data.ensure_config(true).await?;
@@ -60,57 +71,70 @@ fn renderer(
 	terminal.draw(|frame| render(frame, &mut state))?;
 
 	loop {
+		let mut should_render = false;
+
 		// Check for results or state updates
 		if let Ok(update) = state.worker_state_rx.try_recv() {
 			state.worker_state = update;
-			terminal.draw(|frame| render(frame, &mut state))?;
+			should_render = true;
 		}
 
 		if let Ok(results) = state.results_rx.try_recv() {
 			state.results = results;
-			terminal.draw(|frame| render(frame, &mut state))?;
+			state.package_list_state.select_first();
+			should_render = true;
+		}
+
+		if let Ok(info) = state.package_info_rx.try_recv() {
+			state.package_info = Some(info);
+			should_render = true;
+		}
+
+		if state.image_available.swap(false, Ordering::Relaxed) {
+			should_render = true;
 		}
 
 		// Key checks. If there is no key event, no need to re-render
 		let key = get_key()?;
-		let Some(key) = key else {
-			continue;
+		if let Some(key) = key {
+			should_render = true;
+
+			match state.focus {
+				_ if key.code == KeyCode::Esc => state.focus = FocusState::None,
+				_ if key.code == KeyCode::Char('q') && state.focus != FocusState::Search => break,
+				FocusState::None => match key.code {
+					KeyCode::Char('s') | KeyCode::Char('/') => state.focus = FocusState::Search,
+					KeyCode::Char('r') => state.focus = FocusState::Popup(Popup::Repository),
+					KeyCode::Char('t') => state.focus = FocusState::Popup(Popup::PackageType),
+					KeyCode::Up | KeyCode::Char('k') => state.package_list_state.select_previous(),
+					KeyCode::Down | KeyCode::Char('j') => state.package_list_state.select_next(),
+					KeyCode::Enter => state.select_package(),
+					_ => {}
+				},
+				FocusState::Search => match key.code {
+					KeyCode::Enter => {
+						if let Some(line) = state.search.lines().first() {
+							if line.is_empty() {
+								state.search_params.inner.search = None;
+							} else {
+								state.search_params.inner.search = Some(line.clone());
+							}
+						}
+						state.search();
+						state.focus = FocusState::None;
+					}
+					_ => {
+						state.search.input(key);
+					}
+				},
+				FocusState::Popup(popup) => popup.input(&mut state, key),
+			}
 		};
 
-		match state.focus {
-			FocusState::None => match key.code {
-				KeyCode::Char('q') => break,
-				KeyCode::Char('s') | KeyCode::Char('/') => state.focus = FocusState::Search,
-				KeyCode::Char('r') => state.focus = FocusState::Popup(Popup::Repository),
-				KeyCode::Char('t') => state.focus = FocusState::Popup(Popup::PackageType),
-				_ => {}
-			},
-			FocusState::Search => match key.code {
-				KeyCode::Esc => {
-					state.focus = FocusState::None;
-				}
-				KeyCode::Enter => {
-					if let Some(line) = state.search.lines().first() {
-						if line.is_empty() {
-							state.search_params.inner.search = None;
-						} else {
-							state.search_params.inner.search = Some(line.clone());
-						}
-					}
-					state.search();
-				}
-				_ => {
-					state.search.input(key);
-				}
-			},
-			FocusState::Popup(popup) => match key.code {
-				KeyCode::Esc | KeyCode::Char('q') => state.focus = FocusState::None,
-				_ => popup.input(&mut state, key),
-			},
-		}
-
 		// Re-render
-		terminal.draw(|frame| render(frame, &mut state))?;
+		if should_render {
+			terminal.draw(|frame| render(frame, &mut state))?;
+		}
 	}
 	Ok(())
 }
@@ -137,7 +161,7 @@ fn render(frame: &mut Frame, state: &mut State) {
 	let keybinds_pane = status_layout[0];
 	let state_pane = status_layout[1];
 
-	let keybinds = Paragraph::new("q to quit; s to search;");
+	let keybinds = Paragraph::new("q to quit; s to search; k/j for up/down; enter to select;");
 	frame.render_widget(keybinds, keybinds_pane);
 
 	let worker_state = match &state.worker_state {
@@ -160,24 +184,44 @@ fn render(frame: &mut Frame, state: &mut State) {
 	frame.render_widget(&state.search, search_pane);
 
 	// Package preview
-	let preview_layout = Layout::horizontal([Constraint::Fill(1), Constraint::Fill(3)]);
+	let preview_layout = Layout::horizontal([Constraint::Fill(1), Constraint::Fill(4)]);
 	let preview_layout = preview_pane.layout::<2>(&preview_layout);
 	let list_pane = preview_layout[0];
 	let preview_pane = preview_layout[1];
 
 	// Package list
-	state.package_list = state
-		.package_list
-		.clone()
-		.items(state.results.results.clone());
+	let package_items = state.results.results.iter().map(|x| {
+		if let Some(preview) = state.results.previews.get(x) {
+			if let Some(name) = &preview.0.name {
+				name.clone()
+			} else {
+				x.clone()
+			}
+		} else {
+			x.clone()
+		}
+	});
+	state.package_list = state.package_list.clone().items(package_items);
 	let block = Block::bordered().title("Packages");
 	let inner = block.inner(list_pane);
 	frame.render_widget(block, list_pane);
-	frame.render_widget(&state.package_list, inner);
+	frame.render_stateful_widget(&state.package_list, inner, &mut state.package_list_state);
 
 	// Preview pane
 	let block = Block::bordered().title("Preview");
+	let inner_area = block.inner(preview_pane);
 	frame.render_widget(block, preview_pane);
+	if let Some(req) = state.get_selected_package() {
+		let widget = PackageInfoWidget {
+			req,
+			info: state.package_info.as_ref(),
+			state: state,
+		};
+
+		frame.render_widget(widget, inner_area);
+	} else {
+		frame.render_widget(Clear, inner_area);
+	};
 
 	// Filters
 	let filter_layout = Layout::horizontal(Constraint::from_fills([1, 1, 1]));
@@ -230,6 +274,14 @@ struct State<'a> {
 	results_rx: Receiver<PackageSearchResults>,
 	/// Finalized search results
 	results: PackageSearchResults,
+	/// Receiver for package info
+	package_info_rx: Receiver<PackageInfo>,
+	/// Finalized package info
+	package_info: Option<PackageInfo>,
+	/// Image cache
+	image_cache: ImageCache,
+	/// Set to true when a new image was loaded and we should re-render
+	image_available: Arc<AtomicBool>,
 	/// Search parameters
 	search_params: SearchParams,
 	/// Search bar
@@ -240,6 +292,8 @@ struct State<'a> {
 	repositories: Vec<AddCustomPackageRepositoriesResult>,
 	/// Current focus state
 	focus: FocusState,
+	/// List state for package list
+	package_list_state: ListState,
 }
 
 impl<'a> State<'a> {
@@ -255,7 +309,15 @@ impl<'a> State<'a> {
 		let (state_tx, state_rx) = tokio::sync::mpsc::channel(2);
 		let (task_tx, task_rx) = tokio::sync::mpsc::channel(2);
 		let (results_tx, results_rx) = tokio::sync::mpsc::channel(2);
-		let handle = tokio::spawn(worker_thread(config, paths, state_tx, task_rx, results_tx));
+		let (package_info_tx, package_info_rx) = tokio::sync::mpsc::channel(2);
+		let handle = tokio::spawn(worker_thread(
+			config,
+			paths,
+			state_tx,
+			task_rx,
+			results_tx,
+			package_info_tx,
+		));
 
 		// Search bar
 		let mut search = TextArea::new(Vec::new());
@@ -265,7 +327,11 @@ impl<'a> State<'a> {
 		search.set_block(search_block);
 
 		// Package list
-		let package_list = List::default();
+		let package_list = List::default()
+			.highlight_style(Style::new().green())
+			.highlight_symbol(">");
+		let mut package_list_state = ListState::default();
+		package_list_state.select_first();
 
 		Ok(Self {
 			worker: handle,
@@ -273,10 +339,14 @@ impl<'a> State<'a> {
 			worker_state_rx: state_rx,
 			task_tx,
 			results_rx,
+			package_info_rx,
+			package_info: None,
+			image_cache: ImageCache::new(Client::new()),
+			image_available: Arc::new(AtomicBool::new(false)),
 			results: PackageSearchResults::default(),
 			search_params: SearchParams {
 				inner: PackageSearchParameters {
-					count: 25,
+					count: 35,
 					skip: 0,
 					..Default::default()
 				},
@@ -286,7 +356,16 @@ impl<'a> State<'a> {
 			package_list,
 			repositories,
 			focus: FocusState::None,
+			package_list_state,
 		})
+	}
+
+	/// Gets the currently selected package
+	fn get_selected_package(&self) -> Option<ArcPkgReq> {
+		let pos = self.package_list_state.selected()?;
+		let pkg = self.results.results.get(pos)?;
+
+		Some(PkgRequest::parse(pkg, PkgRequestSource::UserRequire).arc())
 	}
 
 	/// Sends a request to search for packages given the current parameters
@@ -294,6 +373,27 @@ impl<'a> State<'a> {
 		let _ = self
 			.task_tx
 			.try_send(Task::FetchPackages(self.search_params.clone()));
+	}
+
+	/// Selects the currently highlighted package in the list and sends a request to fetch it
+	fn select_package(&mut self) {
+		let Some(req) = self.get_selected_package() else {
+			return;
+		};
+
+		let _ = self.task_tx.try_send(Task::FetchPackageInfo(req));
+	}
+
+	/// Requests an image to be downloaded
+	fn request_image(&self, url: &str) {
+		let url = url.to_string();
+		let cache = self.image_cache.clone();
+		let signal = self.image_available.clone();
+
+		tokio::spawn(async move {
+			let _ = cache.get(&url).await;
+			signal.store(true, Ordering::Relaxed);
+		});
 	}
 }
 
@@ -310,6 +410,7 @@ async fn worker_thread(
 	state_tx: Sender<WorkerState>,
 	mut task_rx: Receiver<Task>,
 	results_tx: Sender<PackageSearchResults>,
+	package_info_tx: Sender<PackageInfo>,
 ) {
 	let client = Client::new();
 
@@ -342,6 +443,25 @@ async fn worker_thread(
 					}
 				}
 			}
+			Task::FetchPackageInfo(req) => {
+				let _ = state_tx.try_send(WorkerState::Running);
+				let pkg = config.packages.get(&req, &paths, &client, &mut NoOp).await;
+				let pkg = match pkg {
+					Ok(pkg) => pkg,
+					Err(e) => {
+						let _ = state_tx.try_send(WorkerState::Error(e.to_string()));
+						continue;
+					}
+				};
+
+				let Ok(meta) = pkg.get_metadata(&paths, &client).await else {
+					let _ = state_tx.try_send(WorkerState::Error("Failed to get metadata".into()));
+					continue;
+				};
+
+				let _ = package_info_tx.send(PackageInfo { meta }).await;
+				let _ = state_tx.try_send(WorkerState::Success);
+			}
 		}
 	}
 }
@@ -349,6 +469,7 @@ async fn worker_thread(
 /// Task that the worker thread can run
 enum Task {
 	FetchPackages(SearchParams),
+	FetchPackageInfo(ArcPkgReq),
 }
 
 /// State of the worker thread
@@ -406,8 +527,10 @@ impl Popup {
 		};
 
 		match input.code {
-			KeyCode::Up if pos > 0 => self.select(state, pos - 1),
-			KeyCode::Down if pos < self.get_option_count(state) => self.select(state, pos + 1),
+			KeyCode::Up | KeyCode::Char('k') if pos > 0 => self.select(state, pos - 1),
+			KeyCode::Down | KeyCode::Char('j') if pos < self.get_option_count(state) => {
+				self.select(state, pos + 1)
+			}
 			KeyCode::Enter => match self {
 				Self::Repository | Self::PackageType => {
 					self.select(state, pos);
@@ -522,6 +645,11 @@ struct SearchParams {
 	repo: Option<String>,
 }
 
+/// Info about a package
+struct PackageInfo {
+	meta: Arc<PackageMetadata>,
+}
+
 /// Gets a key
 fn get_key() -> anyhow::Result<Option<KeyEvent>> {
 	if !event::poll(Duration::from_millis(10)).context("Event poll failed")? {
@@ -536,4 +664,76 @@ fn get_key() -> anyhow::Result<Option<KeyEvent>> {
 	};
 
 	Ok(Some(event))
+}
+
+struct PackageInfoWidget<'a> {
+	req: ArcPkgReq,
+	info: Option<&'a PackageInfo>,
+	state: &'a State<'a>,
+}
+
+impl<'a> Widget for PackageInfoWidget<'a> {
+	fn render(self, area: Rect, buf: &mut ratatui::prelude::Buffer) {
+		let Some(info) = self.info else {
+			Clear.render(area, buf);
+			return;
+		};
+
+		let layout = Layout::vertical([Constraint::Length(4), Constraint::Fill(1)]);
+		let layout = area.layout::<2>(&layout);
+		let top_pane = layout[0];
+		let bottom_pane = layout[1];
+
+		// Top pane
+		let block = Block::new().borders(Borders::BOTTOM);
+		let inner_area = block.inner(area);
+		block.render(top_pane, buf);
+
+		let layout = Layout::horizontal([Constraint::Length(6), Constraint::Fill(1)]);
+		let layout = inner_area.layout::<2>(&layout);
+		let icon_pane = layout[0];
+		let details_pane = layout[1].inner(Margin::new(1, 1));
+
+		// Icon
+		if let Some(icon) = &info.meta.icon {
+			if let Some(image) = self.state.image_cache.get_from_cache(icon) {
+				let picker = Picker::from_query_stdio().unwrap_or(Picker::halfblocks());
+				let image = (*image).clone();
+				let mut image = picker.new_resize_protocol(DynamicImage::ImageRgb8(image));
+				let widget = StatefulImage::new();
+				widget.render(icon_pane, buf, &mut image);
+			} else {
+				self.state.request_image(icon);
+			}
+		}
+
+		// Details
+		let layout = Layout::horizontal(Constraint::from_fills([1, 1, 1, 1]));
+		let layout = details_pane.layout::<4>(&layout);
+		let title_pane = layout[0];
+
+		// Title
+		let title_name = if let Some(name) = &info.meta.name {
+			name.as_str()
+		} else if let Some(slug) = &info.meta.slug {
+			slug.as_str()
+		} else {
+			&self.req.id
+		};
+
+		let title = if let Some(repo) = &self.req.repository {
+			format!("{title_name} - {repo}")
+		} else {
+			title_name.to_string()
+		};
+
+		let title = Paragraph::new(title).style(Style::new().bold());
+		title.render(title_pane, buf);
+
+		// Body pane
+		if let Some(body) = &info.meta.long_description {
+			let markdown = tui_markdown::from_str(body);
+			markdown.render(bottom_pane.inner(Margin::new(1, 1)), buf);
+		}
+	}
 }
