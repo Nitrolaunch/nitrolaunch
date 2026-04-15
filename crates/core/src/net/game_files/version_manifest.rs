@@ -1,5 +1,5 @@
 use anyhow::Context;
-use nitro_shared::minecraft::VersionManifest;
+use nitro_shared::minecraft::{VersionManifest, VersionType};
 use nitro_shared::output::{MessageContents, NitroOutput};
 use nitro_shared::{translate, UpdateDepth};
 use reqwest::Client;
@@ -145,5 +145,20 @@ impl VersionManifestAndList {
 		self.manifest = manifest;
 
 		Ok(())
+	}
+
+	/// Get the list of release versions only
+	pub fn get_releases(&self) -> Vec<String> {
+		self.manifest
+			.versions
+			.iter()
+			.filter_map(|x| {
+				if x.ty == VersionType::Release {
+					Some(x.id.clone())
+				} else {
+					None
+				}
+			})
+			.collect()
 	}
 }

@@ -11,12 +11,14 @@ use crossterm::event::{self, KeyCode, KeyEvent};
 use image::DynamicImage;
 use nitrolaunch::{
 	config::Config,
+	instance::update::manager::UpdateSettings,
 	io::paths::Paths,
 	pkg_crate::{metadata::PackageMetadata, PackageSearchResults, PkgRequest, PkgRequestSource},
 	plugin_crate::hook::hooks::{AddCustomPackageRepositories, AddCustomPackageRepositoriesResult},
 	shared::{
 		output::NoOp,
 		pkg::{ArcPkgReq, PackageSearchParameters},
+		UpdateDepth,
 	},
 };
 use ratatui::{
@@ -47,12 +49,34 @@ pub async fn run(mut data: CmdData<'_>) -> anyhow::Result<()> {
 		.flatten_all_results(&mut NoOp)
 		.await?;
 
+	let client = Client::new();
+	let core = data
+		.config
+		.get()
+		.get_core(
+			None,
+			&UpdateSettings {
+				depth: UpdateDepth::Shallow,
+				offline_auth: false,
+			},
+			&client,
+			&data.config.get().plugins,
+			&data.paths,
+			&mut NoOp,
+		)
+		.await?;
+	let versions = core
+		.get_version_manifest(None, UpdateDepth::Shallow, &mut NoOp)
+		.await?
+		.get_releases();
+
 	ratatui::run(move |terminal| {
 		renderer(
 			terminal,
 			data.config.take().unwrap(),
 			data.paths.clone(),
 			repos,
+			versions,
 		)
 	})
 	.context("Failed to run app")
@@ -64,8 +88,9 @@ fn renderer(
 	config: Config,
 	paths: Paths,
 	available_repos: Vec<AddCustomPackageRepositoriesResult>,
+	available_versions: Vec<String>,
 ) -> anyhow::Result<()> {
-	let mut state = State::new(config, paths, available_repos)?;
+	let mut state = State::new(config, paths, available_repos, available_versions)?;
 
 	// Initial draw
 	terminal.draw(|frame| render(frame, &mut state))?;
@@ -105,8 +130,9 @@ fn renderer(
 				_ if key.code == KeyCode::Char('q') && state.focus != FocusState::Search => break,
 				FocusState::None => match key.code {
 					KeyCode::Char('s') | KeyCode::Char('/') => state.focus = FocusState::Search,
-					KeyCode::Char('r') => state.focus = FocusState::Popup(Popup::Repository),
-					KeyCode::Char('t') => state.focus = FocusState::Popup(Popup::PackageType),
+					KeyCode::Char('r') => state.focus_popup(Popup::Repository),
+					KeyCode::Char('t') => state.focus_popup(Popup::PackageType),
+					KeyCode::Char('v') => state.focus_popup(Popup::Version),
 					KeyCode::Char('p') | KeyCode::Tab => state.focus = FocusState::Preview,
 					KeyCode::Up | KeyCode::Char('k') => {
 						state.package_list_state.select_previous();
@@ -258,30 +284,45 @@ fn render(frame: &mut Frame, state: &mut State) {
 	};
 
 	// Filters
-	let filter_layout = Layout::horizontal(Constraint::from_fills([1, 1, 1]));
-	let filter_layout = filters_pane.layout::<3>(&filter_layout);
+	let filter_layout = Layout::horizontal(Constraint::from_fills([1, 1, 1, 1]));
+	let filter_layout = filters_pane.layout::<4>(&filter_layout);
 	let repo_pane = filter_layout[0];
 	let type_pane = filter_layout[1];
+	let version_pane = filter_layout[2];
 
-	let repo = format!("Repository: {}", state
-			.search_params
-			.repo
-			.as_deref()
-			.unwrap_or("All"));
+	let repo = format!(
+		"Repository: {}",
+		state.search_params.repo.as_deref().unwrap_or("All")
+	);
 	let repo = Paragraph::new(repo).style(Style::new().bold());
 	frame.render_widget(repo, repo_pane);
 
-	let ty = Paragraph::new(
+	let ty = format!(
+		"Package type: {}",
 		state
 			.search_params
 			.inner
 			.types
 			.first()
 			.map(|x| x.to_string())
-			.unwrap_or("Any Type".into()),
-	)
-	.style(Style::new().bold());
+			.unwrap_or("Any".into())
+	);
+	let ty = Paragraph::new(ty).style(Style::new().bold());
 	frame.render_widget(ty, type_pane);
+
+	let version = match state.search_params.inner.minecraft_versions.len() {
+		0 => "Any",
+		1 => state
+			.search_params
+			.inner
+			.minecraft_versions
+			.first()
+			.unwrap()
+			.as_str(),
+		_ => "Multiple",
+	};
+	let version = Paragraph::new(format!("Version: {version}"));
+	frame.render_widget(version, version_pane);
 
 	// Popup
 	if let FocusState::Popup(popup) = state.focus {
@@ -320,6 +361,8 @@ struct State<'a> {
 	search_params: SearchParams,
 	/// Search bar
 	search: TextArea<'a>,
+	/// Popup list state
+	popup_list_state: ListState,
 	/// List of packages
 	package_list: List<'a>,
 	/// List state for package list
@@ -328,6 +371,8 @@ struct State<'a> {
 	last_selected_package: Option<ArcPkgReq>,
 	/// Available repositories
 	repositories: Vec<AddCustomPackageRepositoriesResult>,
+	/// Available Minecraft versions
+	versions: Vec<String>,
 	/// Current scroll of preview pane body
 	preview_scroll: u16,
 }
@@ -338,6 +383,7 @@ impl<'a> State<'a> {
 		config: Config,
 		paths: Paths,
 		repositories: Vec<AddCustomPackageRepositoriesResult>,
+		versions: Vec<String>,
 	) -> anyhow::Result<Self> {
 		// Get info
 
@@ -388,14 +434,22 @@ impl<'a> State<'a> {
 				},
 				repo: None,
 			},
+			popup_list_state: ListState::default(),
 			search,
 			package_list,
 			package_list_state,
 			last_selected_package: None,
 			repositories,
+			versions,
 			focus: FocusState::None,
 			preview_scroll: 0,
 		})
+	}
+
+	/// Focuses a popup
+	fn focus_popup(&mut self, popup: Popup) {
+		self.popup_list_state.select_first();
+		self.focus = FocusState::Popup(popup);
 	}
 
 	/// Gets the currently selected package
@@ -547,49 +601,61 @@ enum FocusState {
 enum Popup {
 	Repository,
 	PackageType,
+	Version,
 }
 
 impl Popup {
 	fn render(&self, state: &mut State, frame: &mut Frame, area: Rect) {
-		let layout = Layout::horizontal(Constraint::from_fills([1, 1, 1]));
-		let layout = area.layout::<3>(&layout);
+		let layout = Layout::horizontal(Constraint::from_fills([1, 1, 1, 1]));
+		let layout = area.layout::<4>(&layout);
 
 		let block = Block::bordered()
 			.border_style(Style::new().green())
 			.title(self.title());
+
+		let selected = self.get_selected(state);
+		let items = self.get_items(state);
+		let items = items.into_iter().enumerate().map(|(i, x)| {
+			if selected.contains(&i) {
+				format!("{x} (Selected)")
+			} else {
+				x
+			}
+		});
+
 		let list = List::default()
 			.block(block)
-			.items(self.get_items(state))
+			.items(items)
 			.highlight_symbol(">")
 			.highlight_style(Style::new().green());
 
 		let area = match self {
 			Self::Repository => layout[0],
 			Self::PackageType => layout[1],
+			Self::Version => layout[2],
 		};
 
-		let mut list_state = ListState::default();
-		list_state.select(self.get_select_position(state));
-
 		frame.render_widget(Clear, area);
-		frame.render_stateful_widget(list, area, &mut list_state);
+		frame.render_stateful_widget(list, area, &mut state.popup_list_state);
 	}
 
 	fn input(&self, state: &mut State, input: KeyEvent) {
-		let Some(pos) = self.get_select_position(state) else {
-			return;
-		};
-
 		match input.code {
-			KeyCode::Up | KeyCode::Char('k') if pos > 0 => self.select(state, pos - 1),
-			KeyCode::Down | KeyCode::Char('j') if pos < self.get_option_count(state) => {
-				self.select(state, pos + 1)
-			}
+			KeyCode::Up | KeyCode::Char('k') => state.popup_list_state.select_previous(),
+			KeyCode::Down | KeyCode::Char('j') => state.popup_list_state.select_next(),
 			KeyCode::Enter => match self {
 				Self::Repository | Self::PackageType => {
-					self.select(state, pos);
-					state.focus = FocusState::None;
-					state.search();
+					if let Some(selected) = state.popup_list_state.selected() {
+						self.select(state, selected);
+						state.search();
+						state.focus = FocusState::None;
+					}
+				}
+				Self::Version => {
+					if let Some(selected) = state.popup_list_state.selected() {
+						self.select(state, selected);
+						state.search();
+					}
 				}
 			},
 			_ => {}
@@ -619,18 +685,47 @@ impl Popup {
 
 				state.search_params.inner.types = vec![ty.clone()];
 			}
+			Self::Version => {
+				let Some(version) = state.versions.get(pos) else {
+					return;
+				};
+
+				if state
+					.search_params
+					.inner
+					.minecraft_versions
+					.contains(version)
+				{
+					state
+						.search_params
+						.inner
+						.minecraft_versions
+						.retain(|x| x != version);
+				} else {
+					state
+						.search_params
+						.inner
+						.minecraft_versions
+						.push(version.clone());
+				}
+			}
 		}
 	}
 
-	fn get_select_position(&self, state: &State) -> Option<usize> {
+	fn get_selected(&self, state: &State) -> Vec<usize> {
 		match self {
 			Self::Repository => match &state.search_params.repo {
-				Some(repo) => state.repositories.iter().position(|y| y.id == *repo),
-				None => Some(0),
+				Some(repo) => state
+					.repositories
+					.iter()
+					.position(|y| y.id == *repo)
+					.into_iter()
+					.collect(),
+				None => Vec::new(),
 			},
 			Self::PackageType => {
 				let Some(ty) = state.search_params.inner.types.first() else {
-					return Some(0);
+					return Vec::new();
 				};
 
 				let Some(repo) = state
@@ -638,28 +733,23 @@ impl Popup {
 					.iter()
 					.find(|x| Some(&x.id) == state.search_params.repo.as_ref())
 				else {
-					return None;
+					return Vec::new();
 				};
 
-				repo.metadata.package_types.iter().position(|x| x == ty)
-			}
-		}
-	}
-
-	fn get_option_count(&self, state: &State) -> usize {
-		match self {
-			Self::Repository => state.repositories.len(),
-			Self::PackageType => {
-				let Some(repo) = state
-					.repositories
+				repo.metadata
+					.package_types
 					.iter()
-					.find(|x| Some(&x.id) == state.search_params.repo.as_ref())
-				else {
-					return 0;
-				};
-
-				repo.metadata.package_types.len()
+					.position(|x| x == ty)
+					.into_iter()
+					.collect()
 			}
+			Self::Version => state
+				.search_params
+				.inner
+				.minecraft_versions
+				.iter()
+				.filter_map(|x| state.versions.iter().position(|y| y == x))
+				.collect(),
 		}
 	}
 
@@ -681,6 +771,7 @@ impl Popup {
 					.map(|x| x.to_string())
 					.collect()
 			}
+			Self::Version => state.versions.clone(),
 		}
 	}
 
@@ -688,6 +779,7 @@ impl Popup {
 		match self {
 			Self::Repository => "Select repository",
 			Self::PackageType => "Select package type",
+			Self::Version => "Select Minecraft versions",
 		}
 	}
 }
@@ -790,7 +882,9 @@ impl<'a> Widget for PackageInfoWidget<'a> {
 
 		if let Some(short_description) = &info.meta.description {
 			let short_description = Paragraph::new(short_description.as_str());
-			short_description.style(Style::new().gray()).render(subtitle_area, buf);
+			short_description
+				.style(Style::new().gray())
+				.render(subtitle_area, buf);
 		}
 
 		// Body pane

@@ -40,7 +40,7 @@ pub struct VersionEntry {
 }
 
 /// Type of a version in the version manifest
-#[derive(Deserialize, Serialize, Debug, Clone, Default)]
+#[derive(Deserialize, Serialize, Debug, Clone, Default, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 pub enum VersionType {
 	/// A release version
