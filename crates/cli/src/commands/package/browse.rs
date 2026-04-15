@@ -14,15 +14,19 @@ use nitrolaunch::{
 	instance::update::manager::UpdateSettings,
 	io::paths::Paths,
 	pkg_crate::{metadata::PackageMetadata, PackageSearchResults, PkgRequest, PkgRequestSource},
-	plugin_crate::hook::hooks::{AddCustomPackageRepositories, AddCustomPackageRepositoriesResult},
+	plugin_crate::hook::hooks::{
+		AddCustomPackageRepositories, AddCustomPackageRepositoriesResult, AddSupportedLoaders,
+	},
 	shared::{
+		loaders::Loader,
 		output::NoOp,
 		pkg::{ArcPkgReq, PackageSearchParameters},
+		util::to_string_json,
 		UpdateDepth,
 	},
 };
 use ratatui::{
-	layout::{Constraint, Layout, Margin, Rect},
+	layout::{Constraint, HorizontalAlignment, Layout, Margin, Rect},
 	style::Style,
 	widgets::{Block, Borders, Clear, List, ListState, Paragraph, StatefulWidget, Widget},
 	DefaultTerminal, Frame,
@@ -45,6 +49,15 @@ pub async fn run(mut data: CmdData<'_>) -> anyhow::Result<()> {
 		.get_mut()
 		.plugins
 		.call_hook(AddCustomPackageRepositories, &(), &data.paths, &mut NoOp)
+		.await?
+		.flatten_all_results(&mut NoOp)
+		.await?;
+
+	let loaders = data
+		.config
+		.get_mut()
+		.plugins
+		.call_hook(AddSupportedLoaders, &(), &data.paths, &mut NoOp)
 		.await?
 		.flatten_all_results(&mut NoOp)
 		.await?;
@@ -77,6 +90,7 @@ pub async fn run(mut data: CmdData<'_>) -> anyhow::Result<()> {
 			data.paths.clone(),
 			repos,
 			versions,
+			loaders,
 		)
 	})
 	.context("Failed to run app")
@@ -89,8 +103,15 @@ fn renderer(
 	paths: Paths,
 	available_repos: Vec<AddCustomPackageRepositoriesResult>,
 	available_versions: Vec<String>,
+	available_loaders: Vec<Loader>,
 ) -> anyhow::Result<()> {
-	let mut state = State::new(config, paths, available_repos, available_versions)?;
+	let mut state = State::new(
+		config,
+		paths,
+		available_repos,
+		available_versions,
+		available_loaders,
+	)?;
 
 	// Initial draw
 	terminal.draw(|frame| render(frame, &mut state))?;
@@ -126,13 +147,16 @@ fn renderer(
 			should_render = true;
 
 			match state.focus {
-				_ if key.code == KeyCode::Esc => state.focus = FocusState::None,
+				_ if key.code == KeyCode::Esc => state.focus_none(),
 				_ if key.code == KeyCode::Char('q') && state.focus != FocusState::Search => break,
 				FocusState::None => match key.code {
 					KeyCode::Char('s') | KeyCode::Char('/') => state.focus = FocusState::Search,
+					KeyCode::Char('x') => state.reset_filters(),
 					KeyCode::Char('r') => state.focus_popup(Popup::Repository),
 					KeyCode::Char('t') => state.focus_popup(Popup::PackageType),
 					KeyCode::Char('v') => state.focus_popup(Popup::Version),
+					KeyCode::Char('l') => state.focus_popup(Popup::Loader),
+					KeyCode::Char('c') => state.focus_popup(Popup::Category),
 					KeyCode::Char('p') | KeyCode::Tab => state.focus = FocusState::Preview,
 					KeyCode::Up | KeyCode::Char('k') => {
 						state.package_list_state.select_previous();
@@ -158,7 +182,7 @@ fn renderer(
 							}
 						}
 						state.search();
-						state.focus = FocusState::None;
+						state.focus_none();
 					}
 					_ => {
 						state.search.input(key);
@@ -166,7 +190,10 @@ fn renderer(
 				},
 				FocusState::Popup(popup) => popup.input(&mut state, key),
 				FocusState::Preview => match key.code {
-					KeyCode::Char('p') | KeyCode::Tab => state.focus = FocusState::None,
+					KeyCode::Char('p') | KeyCode::Tab => state.focus_none(),
+					KeyCode::Char('d') => state.preview_tab = PreviewTab::Description,
+					KeyCode::Char('v') => state.preview_tab = PreviewTab::Versions,
+					KeyCode::Char('g') => state.preview_tab = PreviewTab::Gallery,
 					KeyCode::Up | KeyCode::Char('k') if state.preview_scroll > 0 => {
 						state.preview_scroll -= 1
 					}
@@ -284,21 +311,23 @@ fn render(frame: &mut Frame, state: &mut State) {
 	};
 
 	// Filters
-	let filter_layout = Layout::horizontal(Constraint::from_fills([1, 1, 1, 1]));
-	let filter_layout = filters_pane.layout::<4>(&filter_layout);
+	let filter_layout = Layout::horizontal(Constraint::from_fills([1, 1, 1, 1, 1]));
+	let filter_layout = filters_pane.layout::<5>(&filter_layout);
 	let repo_pane = filter_layout[0];
 	let type_pane = filter_layout[1];
 	let version_pane = filter_layout[2];
+	let loader_pane = filter_layout[3];
+	let category_pane = filter_layout[4];
 
 	let repo = format!(
-		"Repository: {}",
-		state.search_params.repo.as_deref().unwrap_or("All")
+		"[r] Repository: {}",
+		state.search_params.repo.as_deref().unwrap_or("Any")
 	);
-	let repo = Paragraph::new(repo).style(Style::new().bold());
+	let repo = Paragraph::new(repo).style(Style::new().bold().light_blue());
 	frame.render_widget(repo, repo_pane);
 
 	let ty = format!(
-		"Package type: {}",
+		"[t] Package type: {}",
 		state
 			.search_params
 			.inner
@@ -307,7 +336,7 @@ fn render(frame: &mut Frame, state: &mut State) {
 			.map(|x| x.to_string())
 			.unwrap_or("Any".into())
 	);
-	let ty = Paragraph::new(ty).style(Style::new().bold());
+	let ty = Paragraph::new(ty).style(Style::new().bold().light_blue());
 	frame.render_widget(ty, type_pane);
 
 	let version = match state.search_params.inner.minecraft_versions.len() {
@@ -321,8 +350,33 @@ fn render(frame: &mut Frame, state: &mut State) {
 			.as_str(),
 		_ => "Multiple",
 	};
-	let version = Paragraph::new(format!("Version: {version}"));
+	let version =
+		Paragraph::new(format!("[v] Version: {version}")).style(Style::new().bold().light_blue());
 	frame.render_widget(version, version_pane);
+
+	let loader = match state.search_params.inner.loaders.len() {
+		0 => "Any".to_string(),
+		1 => state
+			.search_params
+			.inner
+			.loaders
+			.first()
+			.unwrap()
+			.to_string(),
+		_ => "Multiple".to_string(),
+	};
+	let loader =
+		Paragraph::new(format!("[l] Loader: {loader}")).style(Style::new().bold().light_blue());
+	frame.render_widget(loader, loader_pane);
+
+	let category = match state.search_params.inner.categories.len() {
+		0 => "Any".to_string(),
+		1 => to_string_json(state.search_params.inner.categories.first().unwrap()),
+		_ => "Multiple".to_string(),
+	};
+	let category =
+		Paragraph::new(format!("[c] Category: {category}")).style(Style::new().bold().light_blue());
+	frame.render_widget(category, category_pane);
 
 	// Popup
 	if let FocusState::Popup(popup) = state.focus {
@@ -373,8 +427,12 @@ struct State<'a> {
 	repositories: Vec<AddCustomPackageRepositoriesResult>,
 	/// Available Minecraft versions
 	versions: Vec<String>,
+	/// Available loaders
+	loaders: Vec<Loader>,
 	/// Current scroll of preview pane body
 	preview_scroll: u16,
+	/// Current tab of preview pane
+	preview_tab: PreviewTab,
 }
 
 impl<'a> State<'a> {
@@ -384,6 +442,7 @@ impl<'a> State<'a> {
 		paths: Paths,
 		repositories: Vec<AddCustomPackageRepositoriesResult>,
 		versions: Vec<String>,
+		loaders: Vec<Loader>,
 	) -> anyhow::Result<Self> {
 		// Get info
 
@@ -441,15 +500,11 @@ impl<'a> State<'a> {
 			last_selected_package: None,
 			repositories,
 			versions,
+			loaders,
 			focus: FocusState::None,
 			preview_scroll: 0,
+			preview_tab: PreviewTab::Description,
 		})
-	}
-
-	/// Focuses a popup
-	fn focus_popup(&mut self, popup: Popup) {
-		self.popup_list_state.select_first();
-		self.focus = FocusState::Popup(popup);
 	}
 
 	/// Gets the currently selected package
@@ -458,6 +513,37 @@ impl<'a> State<'a> {
 		let pkg = self.results.results.get(pos)?;
 
 		Some(PkgRequest::parse(pkg, PkgRequestSource::UserRequire).arc())
+	}
+
+	/// Gets info for the currently selected repository
+	fn get_selected_repo_info(&self) -> Option<&AddCustomPackageRepositoriesResult> {
+		self.repositories
+			.iter()
+			.find(|x| Some(&x.id) == self.search_params.repo.as_ref())
+	}
+
+	/// Returns focus to the default
+	fn focus_none(&mut self) {
+		// Search when a multi-select closes
+		if let FocusState::Popup(Popup::Version | Popup::Loader | Popup::Category) = self.focus {
+			self.search();
+		}
+		self.focus = FocusState::None;
+	}
+
+	/// Focuses a popup
+	fn focus_popup(&mut self, popup: Popup) {
+		self.popup_list_state.select_first();
+		self.focus = FocusState::Popup(popup);
+	}
+
+	/// Resets package filters
+	fn reset_filters(&mut self) {
+		self.search_params.inner.types = Vec::new();
+		self.search_params.inner.minecraft_versions = Vec::new();
+		self.search_params.inner.loaders = Vec::new();
+		self.search_params.inner.categories = Vec::new();
+		self.search();
 	}
 
 	/// Sends a request to search for packages given the current parameters
@@ -602,12 +688,22 @@ enum Popup {
 	Repository,
 	PackageType,
 	Version,
+	Loader,
+	Category,
 }
 
 impl Popup {
 	fn render(&self, state: &mut State, frame: &mut Frame, area: Rect) {
-		let layout = Layout::horizontal(Constraint::from_fills([1, 1, 1, 1]));
-		let layout = area.layout::<4>(&layout);
+		let layout = Layout::horizontal(Constraint::from_fills([1, 1, 1, 1, 1]));
+		let layout = area.layout::<5>(&layout);
+
+		let area = match self {
+			Self::Repository => layout[0],
+			Self::PackageType => layout[1],
+			Self::Version => layout[2],
+			Self::Loader => layout[3],
+			Self::Category => layout[4],
+		};
 
 		let block = Block::bordered()
 			.border_style(Style::new().green())
@@ -629,21 +725,21 @@ impl Popup {
 			.highlight_symbol(">")
 			.highlight_style(Style::new().green());
 
-		let area = match self {
-			Self::Repository => layout[0],
-			Self::PackageType => layout[1],
-			Self::Version => layout[2],
-		};
-
 		frame.render_widget(Clear, area);
 		frame.render_stateful_widget(list, area, &mut state.popup_list_state);
 	}
 
 	fn input(&self, state: &mut State, input: KeyEvent) {
 		match input.code {
+			KeyCode::Char('r') if *self == Popup::Repository => state.focus_none(),
+			KeyCode::Char('t') if *self == Popup::PackageType => state.focus_none(),
+			KeyCode::Char('v') if *self == Popup::Version => state.focus_none(),
+			KeyCode::Char('l') if *self == Popup::Loader => state.focus_none(),
+			KeyCode::Char('c') if *self == Popup::Category => state.focus_none(),
 			KeyCode::Up | KeyCode::Char('k') => state.popup_list_state.select_previous(),
 			KeyCode::Down | KeyCode::Char('j') => state.popup_list_state.select_next(),
 			KeyCode::Enter => match self {
+				// Single select
 				Self::Repository | Self::PackageType => {
 					if let Some(selected) = state.popup_list_state.selected() {
 						self.select(state, selected);
@@ -651,7 +747,8 @@ impl Popup {
 						state.focus = FocusState::None;
 					}
 				}
-				Self::Version => {
+				// Multi select
+				Self::Version | Self::Loader | Self::Category => {
 					if let Some(selected) = state.popup_list_state.selected() {
 						self.select(state, selected);
 						state.search();
@@ -672,11 +769,7 @@ impl Popup {
 				state.search_params.repo = Some(repo.id.clone());
 			}
 			Self::PackageType => {
-				let Some(repo) = state
-					.repositories
-					.iter()
-					.find(|x| Some(&x.id) == state.search_params.repo.as_ref())
-				else {
+				let Some(repo) = state.get_selected_repo_info() else {
 					return;
 				};
 				let Some(ty) = repo.metadata.package_types.get(pos) else {
@@ -709,6 +802,36 @@ impl Popup {
 						.push(version.clone());
 				}
 			}
+			Self::Loader => {
+				let Some(loader) = state.loaders.get(pos) else {
+					return;
+				};
+
+				if state.search_params.inner.loaders.contains(loader) {
+					state.search_params.inner.loaders.retain(|x| x != loader);
+				} else {
+					state.search_params.inner.loaders.push(loader.clone());
+				}
+			}
+			Self::Category => {
+				let Some(repo) = state.get_selected_repo_info() else {
+					return;
+				};
+				let Some(category) = repo.metadata.package_categories.get(pos) else {
+					return;
+				};
+				let category = category.clone();
+
+				if state.search_params.inner.categories.contains(&category) {
+					state
+						.search_params
+						.inner
+						.categories
+						.retain(|x| x != &category);
+				} else {
+					state.search_params.inner.categories.push(category.clone());
+				}
+			}
 		}
 	}
 
@@ -728,11 +851,7 @@ impl Popup {
 					return Vec::new();
 				};
 
-				let Some(repo) = state
-					.repositories
-					.iter()
-					.find(|x| Some(&x.id) == state.search_params.repo.as_ref())
-				else {
+				let Some(repo) = state.get_selected_repo_info() else {
 					return Vec::new();
 				};
 
@@ -750,6 +869,26 @@ impl Popup {
 				.iter()
 				.filter_map(|x| state.versions.iter().position(|y| y == x))
 				.collect(),
+			Self::Loader => state
+				.search_params
+				.inner
+				.loaders
+				.iter()
+				.filter_map(|x| state.loaders.iter().position(|y| y == x))
+				.collect(),
+			Self::Category => {
+				let Some(repo) = state.get_selected_repo_info() else {
+					return Vec::new();
+				};
+
+				state
+					.search_params
+					.inner
+					.categories
+					.iter()
+					.filter_map(|x| repo.metadata.package_categories.iter().position(|y| y == x))
+					.collect()
+			}
 		}
 	}
 
@@ -757,11 +896,7 @@ impl Popup {
 		match self {
 			Self::Repository => state.repositories.iter().map(|x| x.id.clone()).collect(),
 			Self::PackageType => {
-				let Some(repo) = state
-					.repositories
-					.iter()
-					.find(|x| Some(&x.id) == state.search_params.repo.as_ref())
-				else {
+				let Some(repo) = state.get_selected_repo_info() else {
 					return Vec::new();
 				};
 
@@ -772,6 +907,18 @@ impl Popup {
 					.collect()
 			}
 			Self::Version => state.versions.clone(),
+			Self::Loader => state.loaders.iter().map(|x| x.to_string()).collect(),
+			Self::Category => {
+				let Some(repo) = state.get_selected_repo_info() else {
+					return Vec::new();
+				};
+
+				repo.metadata
+					.package_categories
+					.iter()
+					.map(|x| to_string_json(x))
+					.collect()
+			}
 		}
 	}
 
@@ -780,6 +927,8 @@ impl Popup {
 			Self::Repository => "Select repository",
 			Self::PackageType => "Select package type",
 			Self::Version => "Select Minecraft versions",
+			Self::Loader => "Select loaders",
+			Self::Category => "Select categories",
 		}
 	}
 }
@@ -810,6 +959,23 @@ fn get_key() -> anyhow::Result<Option<KeyEvent>> {
 	};
 
 	Ok(Some(event))
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum PreviewTab {
+	Description,
+	Versions,
+	Gallery,
+}
+
+impl PreviewTab {
+	fn title(&self) -> &'static str {
+		match self {
+			Self::Description => "Description [d]",
+			Self::Versions => "Versions [v]",
+			Self::Gallery => "Gallery [g]",
+		}
+	}
 }
 
 struct PackageInfoWidget<'a> {
@@ -887,11 +1053,46 @@ impl<'a> Widget for PackageInfoWidget<'a> {
 				.render(subtitle_area, buf);
 		}
 
-		// Body pane
-		if let Some(body) = &info.meta.long_description {
-			let markdown =
-				Paragraph::new(tui_markdown::from_str(body)).scroll((self.state.preview_scroll, 0));
-			markdown.render(bottom_pane.inner(Margin::new(1, 1)), buf);
+		// Bottom pane
+		let layout = Layout::vertical([Constraint::Length(1), Constraint::Fill(1)]);
+		let layout = bottom_pane.layout::<2>(&layout);
+		let tabs_pane = layout[0];
+		let body_pane = layout[1].inner(Margin::new(1, 1));
+
+		// Tabs
+		let layout = Layout::horizontal(Constraint::from_fills([1, 1, 1]));
+		let layout = tabs_pane.layout::<3>(&layout);
+
+		for (i, id) in [
+			PreviewTab::Description,
+			PreviewTab::Versions,
+			PreviewTab::Gallery,
+		]
+		.into_iter()
+		.enumerate()
+		{
+			let mut tab = Paragraph::new(id.title()).alignment(HorizontalAlignment::Center);
+			if self.state.preview_tab == id {
+				tab = tab.style(Style::new().reversed());
+			}
+			tab.render(layout[i], buf);
+		}
+
+		// Body
+		match self.state.preview_tab {
+			PreviewTab::Description => {
+				if let Some(body) = &info.meta.long_description {
+					let markdown =
+						Paragraph::new(tui_markdown::from_str(body)).scroll((self.state.preview_scroll, 0));
+					markdown.render(body_pane, buf);
+				}
+			}
+			PreviewTab::Versions => {
+				Clear.render(body_pane, buf);
+			},
+			PreviewTab::Gallery => {
+				Clear.render(body_pane, buf);
+			}
 		}
 	}
 }
