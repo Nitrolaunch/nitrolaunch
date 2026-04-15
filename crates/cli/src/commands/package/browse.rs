@@ -28,10 +28,10 @@ use nitrolaunch::{
 use ratatui::{
 	layout::{Constraint, HorizontalAlignment, Layout, Margin, Rect},
 	style::Style,
-	widgets::{Block, Borders, Clear, List, ListState, Paragraph, StatefulWidget, Widget},
+	widgets::{Block, Borders, Clear, List, ListState, Paragraph, Widget},
 	DefaultTerminal, Frame,
 };
-use ratatui_image::{picker::Picker, StatefulImage};
+use ratatui_image::{picker::Picker, Image, Resize};
 use ratatui_textarea::TextArea;
 use reqwest::Client;
 use tokio::{
@@ -128,6 +128,7 @@ fn renderer(
 		if let Ok(results) = state.results_rx.try_recv() {
 			state.results = results;
 			state.package_list_state.select_first();
+			state.select_package();
 			should_render = true;
 		}
 
@@ -191,13 +192,17 @@ fn renderer(
 				FocusState::Popup(popup) => popup.input(&mut state, key),
 				FocusState::Preview => match key.code {
 					KeyCode::Char('p') | KeyCode::Tab => state.focus_none(),
-					KeyCode::Char('d') => state.preview_tab = PreviewTab::Description,
-					KeyCode::Char('v') => state.preview_tab = PreviewTab::Versions,
-					KeyCode::Char('g') => state.preview_tab = PreviewTab::Gallery,
+					KeyCode::Char('d') => state.focus_preview_tab(PreviewTab::Description),
+					KeyCode::Char('v') => state.focus_preview_tab(PreviewTab::Versions),
+					KeyCode::Char('g') => state.focus_preview_tab(PreviewTab::Gallery),
 					KeyCode::Up | KeyCode::Char('k') if state.preview_scroll > 0 => {
 						state.preview_scroll -= 1
 					}
-					KeyCode::Down | KeyCode::Char('j') => state.preview_scroll += 1,
+					KeyCode::Down | KeyCode::Char('j')
+						if state.preview_scroll < state.preview_scroll_height =>
+					{
+						state.preview_scroll += 1
+					}
 					_ => {}
 				},
 			}
@@ -299,13 +304,16 @@ fn render(frame: &mut Frame, state: &mut State) {
 	let inner_area = block.inner(preview_pane);
 	frame.render_widget(block, preview_pane);
 	if let Some(req) = state.get_selected_package() {
+		let mut scroll_height = 0;
 		let widget = PackageInfoWidget {
 			req,
 			info: state.package_info.as_ref(),
 			state: state,
+			scroll_height: &mut scroll_height,
 		};
 
 		frame.render_widget(widget, inner_area);
+		state.preview_scroll_height = scroll_height;
 	} else {
 		frame.render_widget(Clear, inner_area);
 	};
@@ -431,6 +439,8 @@ struct State<'a> {
 	loaders: Vec<Loader>,
 	/// Current scroll of preview pane body
 	preview_scroll: u16,
+	/// Max height scroll of preview pane body
+	preview_scroll_height: u16,
 	/// Current tab of preview pane
 	preview_tab: PreviewTab,
 }
@@ -503,6 +513,7 @@ impl<'a> State<'a> {
 			loaders,
 			focus: FocusState::None,
 			preview_scroll: 0,
+			preview_scroll_height: 0,
 			preview_tab: PreviewTab::Description,
 		})
 	}
@@ -535,6 +546,12 @@ impl<'a> State<'a> {
 	fn focus_popup(&mut self, popup: Popup) {
 		self.popup_list_state.select_first();
 		self.focus = FocusState::Popup(popup);
+	}
+
+	/// Focuses a different preview tab
+	fn focus_preview_tab(&mut self, tab: PreviewTab) {
+		self.preview_tab = tab;
+		self.preview_scroll = 0;
 	}
 
 	/// Resets package filters
@@ -982,6 +999,7 @@ struct PackageInfoWidget<'a> {
 	req: ArcPkgReq,
 	info: Option<&'a PackageInfo>,
 	state: &'a State<'a>,
+	scroll_height: &'a mut u16,
 }
 
 impl<'a> Widget for PackageInfoWidget<'a> {
@@ -1011,9 +1029,14 @@ impl<'a> Widget for PackageInfoWidget<'a> {
 			if let Some(image) = self.state.image_cache.get_from_cache(icon) {
 				let picker = Picker::from_query_stdio().unwrap_or(Picker::halfblocks());
 				let image = (*image).clone();
-				let mut image = picker.new_resize_protocol(DynamicImage::ImageRgb8(image));
-				let widget = StatefulImage::new();
-				widget.render(icon_pane, buf, &mut image);
+				if let Ok(image) = picker.new_protocol(
+					DynamicImage::ImageRgb8(image),
+					icon_pane,
+					Resize::Scale(None),
+				) {
+					let image = Image::new(&image);
+					image.render(icon_pane, buf);
+				}
 			} else {
 				self.state.request_image(icon);
 			}
@@ -1021,8 +1044,7 @@ impl<'a> Widget for PackageInfoWidget<'a> {
 
 		// Details
 		let layout = Layout::horizontal(Constraint::from_fills([1, 1, 1]));
-		let layout = details_pane.layout::<3>(&layout);
-		let title_pane = layout[0];
+		let [title_pane, _, _] = details_pane.layout::<3>(&layout);
 
 		// Title
 		let title_name = if let Some(name) = &info.meta.name {
@@ -1082,17 +1104,81 @@ impl<'a> Widget for PackageInfoWidget<'a> {
 		match self.state.preview_tab {
 			PreviewTab::Description => {
 				if let Some(body) = &info.meta.long_description {
-					let markdown =
-						Paragraph::new(tui_markdown::from_str(body)).scroll((self.state.preview_scroll, 0));
+					let text = tui_markdown::from_str(body);
+					*self.scroll_height = text.lines.len() as u16;
+					let markdown = Paragraph::new(text).scroll((self.state.preview_scroll, 0));
 					markdown.render(body_pane, buf);
 				}
 			}
 			PreviewTab::Versions => {
 				Clear.render(body_pane, buf);
-			},
+			}
 			PreviewTab::Gallery => {
 				Clear.render(body_pane, buf);
+				if let Some(gallery) = &info.meta.gallery {
+					*self.scroll_height = render_gallery(gallery, self.state, body_pane, buf);
+				}
 			}
 		}
+	}
+}
+
+/// Renders a package gallery, returning the scroll height
+fn render_gallery(
+	gallery: &[String],
+	state: &State,
+	area: Rect,
+	buf: &mut ratatui::prelude::Buffer,
+) -> u16 {
+	const WIDTH: usize = 3;
+	const HEIGHT: usize = 4;
+
+	let picker = Picker::from_query_stdio().unwrap_or(Picker::halfblocks());
+
+	let vertical_layout = Layout::vertical(Constraint::from_fills([1; HEIGHT]));
+	for (row_i, row) in vertical_layout.split(area).into_iter().enumerate() {
+		let horizontal_layout = Layout::horizontal(Constraint::from_fills([1; WIDTH]));
+		let horizontal_layout = horizontal_layout.split(*row);
+
+		let start = (row_i + state.preview_scroll as usize) * WIDTH;
+		let end = start + WIDTH;
+
+		let mut col = 0;
+		for i in start..end {
+			if i >= gallery.len() {
+				continue;
+			}
+
+			let area = horizontal_layout[col];
+			let url = &gallery[i];
+
+			if let Some(image) = state.image_cache.get_from_cache(url) {
+				let image = (*image).clone();
+				if let Ok(image) =
+					picker.new_protocol(DynamicImage::ImageRgb8(image), area, Resize::Scale(None))
+				{
+					let image = Image::new(&image);
+					image.render(area, buf);
+				}
+			} else {
+				state.request_image(url);
+			}
+
+			col += 1;
+		}
+	}
+
+	// Account for trailing incomplete rows
+	let scroll_height = if gallery.len() % WIDTH == 0 {
+		gallery.len() / WIDTH
+	} else {
+		gallery.len() / WIDTH + 1
+	};
+
+	// Scroll height is equal to how much we need to go beyond the normally visible contents
+	if scroll_height > HEIGHT {
+		(scroll_height - HEIGHT) as u16
+	} else {
+		0
 	}
 }
