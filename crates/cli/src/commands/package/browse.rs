@@ -28,6 +28,7 @@ use nitrolaunch::{
 use ratatui::{
 	layout::{Constraint, HorizontalAlignment, Layout, Margin, Rect},
 	style::Style,
+	symbols,
 	widgets::{Block, Borders, Clear, List, ListState, Paragraph, Widget},
 	DefaultTerminal, Frame,
 };
@@ -39,7 +40,10 @@ use tokio::{
 	task::JoinHandle,
 };
 
-use crate::{commands::CmdData, image_cache::ImageCache};
+use crate::{
+	commands::CmdData,
+	image_cache::{crop_image_to_ratio, ImageCache},
+};
 
 pub async fn run(mut data: CmdData<'_>) -> anyhow::Result<()> {
 	data.ensure_config(true).await?;
@@ -133,9 +137,12 @@ fn renderer(
 		}
 
 		if let Ok(info) = state.package_info_rx.try_recv() {
-			state.package_info = Some(info);
-			state.preview_scroll = 0;
-			should_render = true;
+			// Only update the preview if we are still actually looking at that package
+			if Some(info.req.clone()) == state.get_selected_package() {
+				state.package_info = Some(info);
+				state.preview_scroll = 0;
+				should_render = true;
+			}
 		}
 
 		if state.image_available.swap(false, Ordering::Relaxed) {
@@ -158,7 +165,6 @@ fn renderer(
 					KeyCode::Char('v') => state.focus_popup(Popup::Version),
 					KeyCode::Char('l') => state.focus_popup(Popup::Loader),
 					KeyCode::Char('c') => state.focus_popup(Popup::Category),
-					KeyCode::Char('p') | KeyCode::Tab => state.focus = FocusState::Preview,
 					KeyCode::Up | KeyCode::Char('k') => {
 						state.package_list_state.select_previous();
 						state.preview_package();
@@ -167,7 +173,7 @@ fn renderer(
 						state.package_list_state.select_next();
 						state.preview_package();
 					}
-					KeyCode::Enter => {
+					KeyCode::Enter | KeyCode::Tab | KeyCode::Char('p') => {
 						state.select_package();
 						state.focus = FocusState::Preview;
 					}
@@ -288,7 +294,7 @@ fn render(frame: &mut Frame, state: &mut State) {
 		}
 	});
 	state.package_list = state.package_list.clone().items(package_items);
-	let mut block = Block::bordered().title("Packages");
+	let mut block = rounded_block().title("Packages");
 	if state.focus == FocusState::None {
 		block = block.border_style(Style::new().green());
 	}
@@ -297,7 +303,7 @@ fn render(frame: &mut Frame, state: &mut State) {
 	frame.render_stateful_widget(&state.package_list, inner, &mut state.package_list_state);
 
 	// Preview pane
-	let mut block = Block::bordered().title("Preview");
+	let mut block = rounded_block().title("Preview");
 	if state.focus == FocusState::Preview {
 		block = block.border_style(Style::new().green());
 	}
@@ -474,7 +480,7 @@ impl<'a> State<'a> {
 		let mut search = TextArea::new(Vec::new());
 		search.set_style(Style::new().white());
 		search.set_placeholder_text("Enter search...");
-		let search_block = Block::bordered().title("Search");
+		let search_block = rounded_block().title("Search");
 		search.set_block(search_block);
 
 		// Package list
@@ -578,6 +584,7 @@ impl<'a> State<'a> {
 
 		if let Some(preview) = self.results.previews.get(&req.to_string()) {
 			self.package_info = Some(PackageInfo {
+				req,
 				meta: Arc::new(preview.0.clone()),
 			});
 			self.preview_scroll = 0;
@@ -589,6 +596,10 @@ impl<'a> State<'a> {
 		let Some(req) = self.get_selected_package() else {
 			return;
 		};
+
+		if Some(req.clone()) == self.last_selected_package {
+			return;
+		}
 
 		self.last_selected_package = Some(req.clone());
 		let _ = self.task_tx.try_send(Task::FetchPackageInfo(req));
@@ -669,7 +680,7 @@ async fn worker_thread(
 					continue;
 				};
 
-				let _ = package_info_tx.send(PackageInfo { meta }).await;
+				let _ = package_info_tx.send(PackageInfo { req, meta }).await;
 				let _ = state_tx.try_send(WorkerState::Success);
 			}
 		}
@@ -722,7 +733,7 @@ impl Popup {
 			Self::Category => layout[4],
 		};
 
-		let block = Block::bordered()
+		let block = rounded_block()
 			.border_style(Style::new().green())
 			.title(self.title());
 
@@ -959,6 +970,7 @@ struct SearchParams {
 
 /// Info about a package
 struct PackageInfo {
+	req: ArcPkgReq,
 	meta: Arc<PackageMetadata>,
 }
 
@@ -1101,11 +1113,25 @@ impl<'a> Widget for PackageInfoWidget<'a> {
 		}
 
 		// Body
+		let not_loaded_indicator = Paragraph::new("Press enter to load package").centered();
 		match self.state.preview_tab {
 			PreviewTab::Description => {
-				if let Some(body) = &info.meta.long_description {
+				if Some(self.state.package_info.as_ref().unwrap().req.clone())
+					!= self.state.last_selected_package
+				{
+					not_loaded_indicator.render(body_pane, buf);
+				} else if let Some(body) = &info.meta.long_description {
 					let text = tui_markdown::from_str(body);
-					*self.scroll_height = text.lines.len() as u16;
+
+					let visible_lines = body_pane.height;
+					let scroll_height = text.lines.len() as u16;
+					let scroll_height = if scroll_height > visible_lines {
+						scroll_height - visible_lines
+					} else {
+						0
+					};
+					*self.scroll_height = scroll_height;
+
 					let markdown = Paragraph::new(text).scroll((self.state.preview_scroll, 0));
 					markdown.render(body_pane, buf);
 				}
@@ -1131,9 +1157,13 @@ fn render_gallery(
 	buf: &mut ratatui::prelude::Buffer,
 ) -> u16 {
 	const WIDTH: usize = 3;
-	const HEIGHT: usize = 4;
+	const HEIGHT: usize = 3;
 
 	let picker = Picker::from_query_stdio().unwrap_or(Picker::halfblocks());
+	let cell_size = get_cell_size();
+	if cell_size.0 == 0 || cell_size.1 == 0 {
+		return 0;
+	}
 
 	let vertical_layout = Layout::vertical(Constraint::from_fills([1; HEIGHT]));
 	for (row_i, row) in vertical_layout.split(area).into_iter().enumerate() {
@@ -1149,14 +1179,24 @@ fn render_gallery(
 				continue;
 			}
 
-			let area = horizontal_layout[col];
+			let area = horizontal_layout[col].inner(Margin::new(1, 1));
 			let url = &gallery[i];
 
+			let border = rounded_block();
+			border.render(area, buf);
+
 			if let Some(image) = state.image_cache.get_from_cache(url) {
-				let image = (*image).clone();
-				if let Ok(image) =
-					picker.new_protocol(DynamicImage::ImageRgb8(image), area, Resize::Scale(None))
-				{
+				// Crop to aspect ratio
+				let width_pixels = area.width * cell_size.0 as u16;
+				let height_pixels = area.height * cell_size.1 as u16;
+				let aspect_ratio = width_pixels as f32 / height_pixels as f32;
+				let image = crop_image_to_ratio(&image, aspect_ratio).to_image();
+
+				if let Ok(image) = picker.new_protocol(
+					DynamicImage::ImageRgb8(image),
+					area,
+					Resize::Scale(Some(ratatui_image::FilterType::CatmullRom)),
+				) {
 					let image = Image::new(&image);
 					image.render(area, buf);
 				}
@@ -1181,4 +1221,21 @@ fn render_gallery(
 	} else {
 		0
 	}
+}
+
+fn rounded_block<'a>() -> Block<'a> {
+	Block::bordered().border_set(symbols::border::ROUNDED)
+}
+
+/// Attempts to get the width and height in pixels of an individual terminal character
+fn get_cell_size() -> (u8, u8) {
+	let default = (1, 2);
+	let Ok(total_size) = crossterm::terminal::window_size() else {
+		return default;
+	};
+
+	let cell_width = total_size.width as f32 / total_size.columns as f32;
+	let cell_height = total_size.height as f32 / total_size.rows as f32;
+
+	(cell_width as u8, cell_height as u8)
 }
