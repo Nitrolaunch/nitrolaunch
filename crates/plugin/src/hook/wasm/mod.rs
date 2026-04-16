@@ -260,6 +260,11 @@ impl<H: Hook> WASMHookHandle<H> {
 	pub async fn result(self) -> anyhow::Result<H::Result> {
 		self.result.await.context("Channel closed").flatten()
 	}
+
+	/// Checks whether the handle has a result
+	pub fn has_result(&self) -> bool {
+		!self.result.is_empty()
+	}
 }
 
 /// Host function environment

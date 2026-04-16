@@ -172,8 +172,7 @@ impl<H: Hook> HookHandle<H> {
 				.context("Failed to poll executable hook")?,
 			HookHandleInner::WASM(inner) => {
 				inner.run(o).await?;
-
-				true
+				inner.has_result()
 			}
 			HookHandleInner::Constant(..) => true,
 		};
@@ -206,7 +205,7 @@ impl<H: Hook> HookHandle<H> {
 
 	/// Get the result of the hook by waiting for it
 	pub async fn result(mut self, o: &mut impl NitroOutput) -> anyhow::Result<H::Result> {
-		if let HookHandleInner::Executable(..) | HookHandleInner::WASM(..) = &self.inner {
+		if let HookHandleInner::Executable(..) = &self.inner {
 			loop {
 				let result = self.poll(o).await?;
 				if result {
