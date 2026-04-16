@@ -458,11 +458,6 @@ async fn info(data: &mut CmdData<'_>, id: &str, raw: bool) -> anyhow::Result<()>
 			cprintln!("   <s>{}", description);
 		}
 	}
-	if let Some(long_description) = &metadata.long_description {
-		if !long_description.is_empty() {
-			termimad::print_text(long_description);
-		}
-	}
 	cprintln!("   <s>ID:</s> <g>{}", id);
 	if let Some(authors) = &metadata.authors {
 		if !authors.is_empty() {

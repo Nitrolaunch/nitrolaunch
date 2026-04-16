@@ -4085,7 +4085,6 @@ dependencies = [
  "serde",
  "serde_json",
  "static_vcruntime",
- "termimad",
  "tokio",
  "tui-markdown",
  "which",
