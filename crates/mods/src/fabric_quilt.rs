@@ -146,6 +146,13 @@ pub struct MainLibrary {
 	pub maven: String,
 }
 
+impl MainLibrary {
+	/// Gets the parts of the maven library for this main library
+	pub fn get_maven(&self) -> Option<MavenLibraryParts> {
+		MavenLibraryParts::parse_from_str(&self.maven)
+	}
+}
+
 /// The struct of libraries for different sides
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct Libraries {

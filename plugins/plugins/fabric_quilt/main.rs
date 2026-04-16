@@ -92,8 +92,10 @@ fn main() -> anyhow::Result<()> {
 			.get_main_class_string(side)
 			.to_string();
 
+		let new_version = meta.loader.get_maven().map(|x| x.version);
+
 		// Cleanup files when the version changes
-		if arg.old_version != Some(arg.version_info.version.clone()) {
+		if arg.old_version != new_version {
 			cleanup_files(&Path::new(inst_dir));
 		}
 
@@ -101,6 +103,7 @@ fn main() -> anyhow::Result<()> {
 			main_class_override: Some(main_class),
 			classpath_extension: classpath.get_entries().to_vec(),
 			jvm_args: vec!["-Dsodium.checks.issue2561=false".to_string()],
+			loader_version: new_version,
 			..Default::default()
 		})
 	})?;
