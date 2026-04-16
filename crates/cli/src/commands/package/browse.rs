@@ -1021,6 +1021,9 @@ impl<'a> Widget for PackageInfoWidget<'a> {
 			return;
 		};
 
+		let is_loaded = Some(self.state.package_info.as_ref().unwrap().req.clone())
+			== self.state.last_selected_package;
+
 		let layout = Layout::vertical([Constraint::Length(4), Constraint::Fill(1)]);
 		let layout = area.layout::<2>(&layout);
 		let top_pane = layout[0];
@@ -1056,7 +1059,7 @@ impl<'a> Widget for PackageInfoWidget<'a> {
 
 		// Details
 		let layout = Layout::horizontal(Constraint::from_fills([1, 1, 1]));
-		let [title_pane, _, _] = details_pane.layout::<3>(&layout);
+		let [title_pane, _, not_loaded_pane] = details_pane.layout::<3>(&layout);
 
 		// Title
 		let title_name = if let Some(name) = &info.meta.name {
@@ -1087,6 +1090,16 @@ impl<'a> Widget for PackageInfoWidget<'a> {
 				.render(subtitle_area, buf);
 		}
 
+		// Not loaded indicator
+		if !is_loaded {
+			Paragraph::new("Press enter to load package")
+				.centered()
+				.style(Style::new().green().bold())
+				.render(not_loaded_pane, buf);
+		} else {
+			Clear.render(not_loaded_pane, buf);
+		}
+
 		// Bottom pane
 		let layout = Layout::vertical([Constraint::Length(1), Constraint::Fill(1)]);
 		let layout = bottom_pane.layout::<2>(&layout);
@@ -1114,12 +1127,11 @@ impl<'a> Widget for PackageInfoWidget<'a> {
 
 		// Body
 		let not_loaded_indicator = Paragraph::new("Press enter to load package").centered();
+		let not_loaded_area = body_pane.centered(Constraint::Ratio(1, 3), Constraint::Ratio(1, 2));
 		match self.state.preview_tab {
 			PreviewTab::Description => {
-				if Some(self.state.package_info.as_ref().unwrap().req.clone())
-					!= self.state.last_selected_package
-				{
-					not_loaded_indicator.render(body_pane, buf);
+				if !is_loaded {
+					not_loaded_indicator.render(not_loaded_area, buf);
 				} else if let Some(body) = &info.meta.long_description {
 					let text = tui_markdown::from_str(body);
 
