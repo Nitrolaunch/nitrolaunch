@@ -1,6 +1,7 @@
 import Control, { ControlData } from "./Control";
 import { createMemo, For, Show } from "solid-js";
 import CollapsableSection from "../utility/CollapsableSection";
+import { InstanceConfig } from "../../pages/instance/read_write";
 
 export default function ControlSections(props: ControlSectionsProps) {
 	let sections = createMemo(() => getControlSections(props.controls));
@@ -38,6 +39,7 @@ export default function ControlSections(props: ControlSectionsProps) {
 													}
 													setValue={props.setValue}
 													side={props.side}
+													parentConfigs={props.parentConfigs}
 												/>
 											</Show>
 										);
@@ -69,6 +71,7 @@ export default function ControlSections(props: ControlSectionsProps) {
 									}
 									setValue={props.setValue}
 									side={props.side}
+									parentConfigs={props.parentConfigs}
 								/>
 							</Show>
 						);
@@ -84,6 +87,7 @@ export interface ControlSectionsProps {
 	getInitialValue: (id: string) => any;
 	setValue: (id: string, value: any) => void;
 	side?: "client" | "server";
+	parentConfigs: InstanceConfig[];
 }
 
 export function getControlSections(controls: ControlData[]): {

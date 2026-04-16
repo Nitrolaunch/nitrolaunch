@@ -367,8 +367,12 @@ export function readArgs(args: string | string[] | undefined) {
 export class ControlledConfig {
 	fields: { [key: string]: any };
 
-	constructor(fields: { [key: string]: any }) {
-		this.fields = fields;
+	constructor(fields: { [key: string]: any } | undefined ) {
+		if (fields == undefined) {
+			this.fields = {};
+		} else {
+			this.fields = fields;
+		}
 	}
 
 	getControl(id: string): any {
@@ -489,7 +493,11 @@ function deepMerge(obj1: { [key: string]: any }, obj2: { [key: string]: any }) {
 /** Removes empty objects in this object, returning true if this object is now empty as well */
 function removeEmptyObjects(obj: { [key: string]: any }) {
 	for (let key in obj) {
-		if (typeof obj[key] == "object" && !Array.isArray(obj[key])) {
+		if (
+			obj[key] != undefined &&
+			typeof obj[key] == "object" &&
+			!Array.isArray(obj[key])
+		) {
 			let result = removeEmptyObjects(obj[key]);
 			if (result) {
 				delete obj[key];

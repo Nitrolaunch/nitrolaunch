@@ -32,7 +32,6 @@ export default function Tips() {
 				return;
 			}
 			let tipText = elem.dataset.tip!;
-			console.log(elem, tipText);
 
 			tip.style.display = "";
 			tip.innerText = tipText;

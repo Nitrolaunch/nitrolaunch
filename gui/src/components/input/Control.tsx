@@ -1,4 +1,4 @@
-import { createReaction, createSignal, Match, Switch } from "solid-js";
+import { createReaction, createSignal, For, Match, Switch } from "solid-js";
 import "./Control.css";
 import Tip from "../dialog/Tip";
 import SlideSwitch from "./SlideSwitch";
@@ -6,6 +6,12 @@ import Dropdown, { Option } from "./select/Dropdown";
 import InlineSelect from "./select/InlineSelect";
 import PathSelect from "./text/PathSelect";
 import EditableList from "./text/EditableList";
+import {
+	ControlledConfig,
+	InstanceConfig,
+} from "../../pages/instance/read_write";
+import DeriveIndicator from "../../pages/instance/DeriveIndicator";
+import { canonicalizeListOrSingle } from "../../utils/values";
 
 export default function Control(props: ControlProps) {
 	let [value, setValue] = createSignal<any>(props.initialValue);
@@ -18,6 +24,16 @@ export default function Control(props: ControlProps) {
 	});
 
 	track(() => value());
+
+	let deriveIndicator = (
+		<DeriveIndicator
+			parentConfigs={props.parentConfigs}
+			currentValue={value()}
+			property={(template) =>
+				new ControlledConfig(template).getControl(props.control.id)
+			}
+		/>
+	);
 
 	let elem = () => {
 		switch (props.control.schema.type) {
@@ -106,6 +122,55 @@ export default function Control(props: ControlProps) {
 						onChange={setValue}
 					/>
 				);
+			case "list":
+				let isMap = props.control.schema.is_map;
+				let fields = props.control.schema.fields;
+				let listValue = () =>
+					value() == undefined
+						? []
+						: isMap
+							? Object.keys(value())
+							: canonicalizeListOrSingle(value());
+
+				return (
+					<For each={listValue()}>
+						{(item, i) => {
+							let itemValue = isMap ? value()[item] : item;
+
+							return (
+								<div class="cont col list-control-item">
+									<For each={fields}>
+										{(control) => {
+											return (
+												<Control
+													control={control}
+													initialValue={itemValue}
+													setValue={(id, newValue) => {
+														if (isMap) {
+															setValue((current) => {
+																let map = new ControlledConfig(current[item]);
+																map.setControl(id, newValue);
+																return { ...current };
+															});
+														} else {
+															setValue((current) => {
+																let map = new ControlledConfig(current[i()]);
+																map.setControl(id, newValue);
+																return [...current];
+															});
+														}
+													}}
+													side={props.side}
+													parentConfigs={props.parentConfigs}
+												/>
+											);
+										}}
+									</For>
+								</div>
+							);
+						}}
+					</For>
+				);
 			default:
 				return <div>Unimplemented</div>;
 		}
@@ -113,7 +178,10 @@ export default function Control(props: ControlProps) {
 
 	return (
 		<div class="cont col fullwidth" style="align-items:flex-start">
-			<label class="label">{props.control.name.toLocaleUpperCase()}</label>
+			<label class="cont start label">
+				{props.control.name.toLocaleUpperCase()}
+				{deriveIndicator}
+			</label>
 			<Switch>
 				<Match when={props.control.description == undefined}>{elem()}</Match>
 				<Match when={props.control.description != undefined}>
@@ -131,6 +199,7 @@ export interface ControlProps {
 	initialValue: any;
 	setValue: (id: string, value: any) => void;
 	side?: "client" | "server";
+	parentConfigs: InstanceConfig[];
 }
 
 // A serializable value with a schema

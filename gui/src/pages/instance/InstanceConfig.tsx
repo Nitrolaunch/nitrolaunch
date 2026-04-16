@@ -163,7 +163,7 @@ export default function InstanceConfigModal(props: InstanceConfigProps) {
 						id: id(),
 						instanceOrTemplate: props.params.mode,
 					});
-				} catch (e) { }
+				} catch (e) {}
 			}
 		}
 	});
@@ -502,9 +502,9 @@ export default function InstanceConfigModal(props: InstanceConfigProps) {
 			jvmArgs() == undefined && gameArgs() == undefined
 				? undefined
 				: {
-					jvm: jvmArgs(),
-					game: gameArgs(),
-				};
+						jvm: jvmArgs(),
+						game: gameArgs(),
+					};
 
 		let overrides =
 			packageOverrides().suppress == undefined ? undefined : packageOverrides();
@@ -817,14 +817,14 @@ export default function InstanceConfigModal(props: InstanceConfigProps) {
 									templates() == undefined
 										? []
 										: templates()!.map((x) => {
-											return {
-												value: x.id,
-												contents: (
-													<div>{x.name == undefined ? x.id : x.name}</div>
-												),
-												color: "var(--template)",
-											};
-										})
+												return {
+													value: x.id,
+													contents: (
+														<div>{x.name == undefined ? x.id : x.name}</div>
+													),
+													color: "var(--template)",
+												};
+											})
 								}
 								selected={from()}
 								onChangeMulti={(x) => {
@@ -944,8 +944,9 @@ export default function InstanceConfigModal(props: InstanceConfigProps) {
 									/>
 									<span
 										class="bold"
-										style={`color:${releaseVersionsOnly() ? "var(--fg3)" : "var(--instance)"
-											}`}
+										style={`color:${
+											releaseVersionsOnly() ? "var(--fg3)" : "var(--instance)"
+										}`}
 									>
 										Include Snapshots
 									</span>
@@ -1115,6 +1116,7 @@ export default function InstanceConfigModal(props: InstanceConfigProps) {
 						});
 					}}
 					side={isTemplate() || isBaseTemplate() ? undefined : side()}
+					parentConfigs={parentConfigs()}
 				/>
 			</DisplayShow>
 			<br />

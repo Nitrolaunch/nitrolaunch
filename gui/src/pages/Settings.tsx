@@ -304,6 +304,7 @@ export default function Settings(props: SettingsProps) {
 										pluginConfig[plugin].setControl(id, value);
 										setIsDirty(true);
 									}}
+									parentConfigs={[]}
 								/>
 							)}
 						</For>
