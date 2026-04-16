@@ -2,6 +2,7 @@ mod backup;
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
+use std::time::{Duration, SystemTime};
 
 use anyhow::Context;
 use backup::{get_backup_directory, BackupAutoHook, Config, Index, DEFAULT_GROUP};
@@ -86,50 +87,47 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 		Ok(())
 	})?;
 
-	plugin.while_instance_launch(|_| {
-		// let inst_dir = PathBuf::from(&arg.dir);
-		// let mut index = get_index(&arg.id)?;
+	plugin.while_instance_launch(|arg| {
+		let Some(inst_dir) = arg.inst_dir else {
+			return Ok(());
+		};
+		let inst_dir = PathBuf::from(&inst_dir);
+		let mut index = get_index(&arg.id)?;
 
-		// let mut last_update_times = HashMap::new();
+		let mut last_update_times = HashMap::new();
 
-		// let groups = index.config.groups.clone();
+		let groups = index.config.groups.clone();
 
-		// // Don't do this process if there are no interval hooks
-		// if !groups
-		// 	.values()
-		// 	.any(|x| x.on == Some(BackupAutoHook::Interval))
-		// {
-		// 	return Ok(());
-		// }
+		// Don't do this process if there are no interval hooks
+		if !groups
+			.values()
+			.any(|x| x.on == Some(BackupAutoHook::Interval))
+		{
+			return Ok(());
+		}
 
-		// loop {
-		// 	if let Some(InputAction::Terminate) = ctx.poll()? {
-		// 		break;
-		// 	}
+		loop {
+			for (group_id, group) in &groups {
+				if group.on != Some(BackupAutoHook::Interval) {
+					continue;
+				}
+				let Some(interval) = &group.interval else {
+					continue;
+				};
+				let Some(interval) = parse_duration(interval) else {
+					continue;
+				};
 
-		// 	for (group_id, group) in &groups {
-		// 		if group.on != Some(BackupAutoHook::Interval) {
-		// 			continue;
-		// 		}
-		// 		let Some(interval) = &group.interval else {
-		// 			continue;
-		// 		};
-		// 		let Some(interval) = parse_duration(interval) else {
-		// 			continue;
-		// 		};
+				let now = SystemTime::now();
+				let last_update_time = last_update_times.entry(group_id).or_insert(now);
 
-		// 		let now = SystemTime::now();
-		// 		let last_update_time = last_update_times.entry(group_id).or_insert(now);
+				if now.duration_since(*last_update_time).unwrap_or_default() >= interval {
+					index.create_backup(BackupSource::Auto, Some(group_id), &inst_dir)?;
+				}
+			}
 
-		// 		if now.duration_since(*last_update_time).unwrap_or_default() >= interval {
-		// 			index.create_backup(BackupSource::Auto, Some(group_id), &inst_dir)?;
-		// 		}
-		// 	}
-
-		// 	std::thread::sleep(Duration::from_secs(1));
-		// }
-
-		Ok(())
+			std::thread::sleep(Duration::from_secs(1));
+		}
 	})?;
 
 	Ok(())
@@ -345,19 +343,19 @@ fn check_auto_hook(
 	Ok(())
 }
 
-// /// Parses a duration ending in 's', 'm', 'h', or 'd'
-// fn parse_duration(string: &str) -> Option<Duration> {
-// 	if string.is_empty() {
-// 		return None;
-// 	}
-// 	let num: u64 = string[0..string.len() - 1].parse().ok()?;
-// 	if string.ends_with("s") {
-// 		Some(Duration::from_secs(num))
-// 	} else if string.ends_with("m") {
-// 		Some(Duration::from_secs(num * 60))
-// 	} else if string.ends_with("h") {
-// 		Some(Duration::from_secs(num * 3600))
-// 	} else {
-// 		Some(Duration::from_secs(num * 3600 * 24))
-// 	}
-// }
+/// Parses a duration ending in 's', 'm', 'h', or 'd'
+fn parse_duration(string: &str) -> Option<Duration> {
+	if string.is_empty() {
+		return None;
+	}
+	let num: u64 = string[0..string.len() - 1].parse().ok()?;
+	if string.ends_with("s") {
+		Some(Duration::from_secs(num))
+	} else if string.ends_with("m") {
+		Some(Duration::from_secs(num * 60))
+	} else if string.ends_with("h") {
+		Some(Duration::from_secs(num * 3600))
+	} else {
+		Some(Duration::from_secs(num * 3600 * 24))
+	}
+}
