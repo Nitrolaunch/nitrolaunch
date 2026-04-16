@@ -134,8 +134,8 @@ fn print_stats() -> anyhow::Result<()> {
 
 	#[derive(PartialEq, Eq, PartialOrd, Ord)]
 	struct Ordering {
-		launches: Reverse<u32>,
 		playtime: Reverse<u64>,
+		launches: Reverse<u32>,
 		instance_id: String,
 	}
 
