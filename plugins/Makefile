@@ -24,6 +24,7 @@ package.cross_platform: build.cross_platform
 	@rm -f release/share-universal.zip
 	@rm -f release/shortcut-universal.zip
 	@rm -f release/skin_stealer-universal.zip
+	@rm -f release/stats-universal.zip
 	@rm -f release/themes-universal.zip
 	@rm -f release/webtools-universal.zip
 	@rm -f release/weld-universal.zip
@@ -64,6 +65,8 @@ package.cross_platform: build.cross_platform
 	@printf "@ nitro_plugin_shortcut.wasm\\n@=plugin.wasm\\n" | zipnote -w release/shortcut-universal.zip
 	@zip -j release/skin_stealer-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_skin_stealer.wasm plugins/skin_stealer/plugin.json
 	@printf "@ nitro_plugin_skin_stealer.wasm\\n@=plugin.wasm\\n" | zipnote -w release/skin_stealer-universal.zip
+	@zip -j release/stats-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_stats.wasm plugins/stats/plugin.json
+	@printf "@ nitro_plugin_stats.wasm\\n@=plugin.wasm\\n" | zipnote -w release/stats-universal.zip
 	@zip -j release/nitro_transfer-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_nitro_transfer.wasm plugins/nitro_transfer/plugin.json
 	@printf "@ nitro_plugin_nitro_transfer.wasm\\n@=plugin.wasm\\n" | zipnote -w release/nitro_transfer-universal.zip
 	@zip -j release/webtools-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_webtools.wasm plugins/webtools/plugin.json
@@ -106,7 +109,6 @@ package_zips.platform_dependent:
 	@rm -f release/smithed-${OS}.zip
 	@rm -f release/smithed_api-${OS}.zip
 	@rm -f release/sponge-${OS}.zip
-	@rm -f release/stats-${OS}.zip
 	@rm -f release/weld-${OS}.zip
 	@rm -f release/xmcl_transfer-${OS}.zip
 
@@ -128,7 +130,6 @@ package_zips.platform_dependent:
 	@zip -j release/smithed-${OS}.zip $(TARGET_DIR)/nitro_plugin_smithed${EXTENSION} plugins/smithed/plugin.json plugins/smithed/page.html
 	@zip -j release/smithed_api-${OS}.zip $(TARGET_DIR)/nitro_plugin_smithed_api${EXTENSION} plugins/smithed_api/plugin.json
 	@zip -j release/sponge-${OS}.zip $(TARGET_DIR)/nitro_plugin_sponge${EXTENSION} plugins/sponge/plugin.json
-	@zip -j release/stats-${OS}.zip $(TARGET_DIR)/nitro_plugin_stats${EXTENSION} plugins/stats/plugin.json
 	@zip -j release/xmcl_transfer-${OS}.zip $(TARGET_DIR)/nitro_plugin_xmcl_transfer${EXTENSION} plugins/xmcl_transfer/plugin.json
 
 build.weld:
@@ -314,9 +315,9 @@ install.sponge:
 	@cat plugins/sponge/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/sponge/plugin.json
 
 install.stats:
-	@cargo install --path . --bin nitro_plugin_stats --locked --profile fast_release
-	@mkdir -p ~/.local/share/nitro/plugins/stats
-	@cat plugins/stats/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/stats/plugin.json
+	@cargo build -p nitro_plugin_stats --release --target wasm32-wasip2
+	@cp -r plugins/stats ~/.local/share/nitro/plugins
+	@cp -r ../target/wasm32-wasip2/release/nitro_plugin_stats.wasm ~/.local/share/nitro/plugins/stats/plugin.wasm
 	
 install.template_share:
 	@cargo install --path . --bin nitro_plugin_template_share --locked --profile fast_release

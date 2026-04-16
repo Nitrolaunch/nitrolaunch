@@ -205,14 +205,18 @@ impl<H: Hook> HookHandle<H> {
 
 	/// Get the result of the hook by waiting for it
 	pub async fn result(mut self, o: &mut impl NitroOutput) -> anyhow::Result<H::Result> {
-		if let HookHandleInner::Executable(..) = &self.inner {
-			loop {
+		match &mut self.inner {
+			HookHandleInner::Executable(..) => loop {
 				let result = self.poll(o).await?;
 				if result {
 					break;
 				}
 				tokio::time::sleep(Duration::from_micros(50)).await;
+			},
+			HookHandleInner::WASM(inner) => {
+				inner.run(o).await?;
 			}
+			HookHandleInner::Constant(..) => {}
 		}
 
 		match self.inner {

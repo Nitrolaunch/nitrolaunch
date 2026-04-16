@@ -7,19 +7,19 @@
 	"protocol_version": 3,
 	"hooks": {
 		"subcommand": {
-			"executable": "${PLUGIN_DIR}/nitro_plugin_stats${EXE_EXTENSION}"
+			"wasm": true
 		},
 		"on_instance_launch": {
-			"executable": "${PLUGIN_DIR}/nitro_plugin_stats${EXE_EXTENSION}"
+			"wasm": true
 		},
 		"on_instance_stop": {
-			"executable": "${PLUGIN_DIR}/nitro_plugin_stats${EXE_EXTENSION}"
+			"wasm": true
 		},
 		"while_instance_launch": {
-			"executable": "${PLUGIN_DIR}/nitro_plugin_stats${EXE_EXTENSION}"
+			"wasm": true
 		},
 		"add_instance_tiles": {
-			"executable": "${PLUGIN_DIR}/nitro_plugin_stats${EXE_EXTENSION}"
+			"wasm": true
 		},
 		"add_plugin_config_controls": {
 			"constant": [

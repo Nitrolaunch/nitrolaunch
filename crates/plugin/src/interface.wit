@@ -5,6 +5,9 @@ world interface-world {
 	export get-result: func() -> string;
 
 	import get-custom-config: func() -> option<string>;
+	import get-persistent-state: func() -> string;
+	import set-persistent-state: func(state: string);
+
 	import get-data-dir: func() -> string;
 	import get-config-dir: func() -> string;
 	import get-plugin-dir: func() -> string;

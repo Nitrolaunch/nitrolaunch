@@ -73,6 +73,7 @@ members = [
 	"plugins/plugins/nitro_transfer",
 	"plugins/plugins/shortcut",
 	"plugins/plugins/skin_stealer",
+	"plugins/plugins/stats",
 	"plugins/plugins/webtools",
 	"plugins/plugins/zulu",
 ]

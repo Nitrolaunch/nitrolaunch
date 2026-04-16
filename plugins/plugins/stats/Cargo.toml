@@ -1,0 +1,23 @@
+[package]
+name = "nitro_plugin_stats"
+version = "0.1.0"
+rust-version.workspace = true
+edition.workspace = true
+
+[lib]
+path = "lib.rs"
+crate-type = ["cdylib"]
+
+[dependencies]
+anyhow = { workspace = true }
+clap = { workspace = true }
+chrono = { workspace = true }
+itertools = { workspace = true }
+nitro_config = { workspace = true }
+nitro_instance = { workspace = true }
+nitro_plugin = { version = "0.29.0", path = "../../../crates/plugin", default-features = false, features = [
+	"wasm_api",
+] }
+nitro_shared = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }

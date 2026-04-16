@@ -41,6 +41,7 @@ use crate::{
 		Hook,
 	},
 	host::PluginContext,
+	plugin::PluginPersistence,
 	plugin_debug_enabled,
 };
 
@@ -82,6 +83,7 @@ pub(crate) async fn call_wasm<H: Hook + Sized>(
 			result,
 			custom_config: arg.ctx.custom_config,
 			context: arg.ctx.global_context.cloned(),
+			persistence: arg.persistence.clone(),
 			wasm_loader: arg.wasm_loader,
 			data_dir: arg.paths.data_dir.to_string_lossy().to_string(),
 			config_dir: arg.paths.config_dir.to_string_lossy().to_string(),
@@ -107,6 +109,7 @@ pub(super) struct WASMHookHandle<H: Hook> {
 	result: oneshot::Receiver<anyhow::Result<H::Result>>,
 	custom_config: Option<String>,
 	context: Option<Arc<dyn PluginContext>>,
+	persistence: Arc<Mutex<PluginPersistence>>,
 	wasm_loader: Arc<Mutex<WASMLoader>>,
 	data_dir: String,
 	config_dir: String,
@@ -174,6 +177,7 @@ impl<H: Hook> WASMHookHandle<H> {
 			table: ResourceTable::new(),
 			custom_config: self.custom_config.clone(),
 			context: self.context.clone(),
+			persistence: self.persistence.clone(),
 			data_dir: self.data_dir.clone(),
 			config_dir: self.config_dir.clone(),
 			plugin_dir: self.plugin_dir.clone(),
@@ -274,6 +278,7 @@ struct State {
 	table: ResourceTable,
 	custom_config: Option<String>,
 	context: Option<Arc<dyn PluginContext>>,
+	persistence: Arc<Mutex<PluginPersistence>>,
 	data_dir: String,
 	config_dir: String,
 	plugin_dir: String,
@@ -303,6 +308,17 @@ impl WasiHttpView for State {
 impl bindings::InterfaceWorldImports for State {
 	async fn get_custom_config(&mut self) -> Option<String> {
 		self.custom_config.clone()
+	}
+
+	async fn get_persistent_state(&mut self) -> String {
+		serde_json::to_string(&self.persistence.lock().await.state)
+			.unwrap_or_else(|_| "null".into())
+	}
+
+	async fn set_persistent_state(&mut self, state: String) {
+		if let Ok(state) = serde_json::from_str(&state) {
+			self.persistence.lock().await.state = state;
+		}
 	}
 
 	async fn get_data_dir(&mut self) -> String {

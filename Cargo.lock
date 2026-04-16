@@ -4475,6 +4475,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "nitro_plugin_stats"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "clap",
+ "itertools 0.11.0",
+ "nitro_config",
+ "nitro_instance",
+ "nitro_plugin",
+ "nitro_shared",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "nitro_plugin_webtools"
 version = "0.1.0"
 dependencies = [

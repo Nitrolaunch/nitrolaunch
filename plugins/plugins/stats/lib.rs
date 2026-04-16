@@ -1,24 +1,28 @@
 use std::cmp::Reverse;
+use std::fs::File;
 use std::time::Duration;
 use std::{collections::HashMap, path::PathBuf};
 
 use anyhow::Context;
 use chrono::DateTime;
 use clap::Parser;
-use color_print::cprintln;
 use itertools::Itertools;
-use nitro_core::io::{json_from_file, json_to_file};
-use nitro_plugin::api::executable::{ExecutablePlugin, HookContext};
-use nitro_plugin::hook::hooks::{InstanceTile, InstanceTileSize, Subcommand};
-use nitro_plugin::hook::Hook;
+use nitro_plugin::api::wasm::output::WASMPluginOutput;
+use nitro_plugin::api::wasm::sys::get_data_dir;
+use nitro_plugin::api::wasm::util::{
+	get_custom_config, get_persistent_state, set_persistent_state,
+};
+use nitro_plugin::api::wasm::WASMPlugin;
+use nitro_plugin::hook::hooks::{InstanceTile, InstanceTileSize};
+use nitro_plugin::nitro_wasm_plugin;
 use nitro_shared::output::{MessageContents, NitroOutput};
 use nitro_shared::util::utc_timestamp;
 use serde::{Deserialize, Serialize};
-use sysinfo::{Pid, ProcessesToUpdate, System};
 
-fn main() -> anyhow::Result<()> {
-	let mut plugin = ExecutablePlugin::from_manifest_file("stats", include_str!("plugin.json"))?;
-	plugin.subcommand(|ctx, arg| {
+nitro_wasm_plugin!(main, "stats");
+
+fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
+	plugin.subcommand(|arg| {
 		let Some(subcommand) = arg.args.first() else {
 			return Ok(());
 		};
@@ -27,16 +31,15 @@ fn main() -> anyhow::Result<()> {
 		}
 		// Trick the parser to give it the right bin name
 		let it = std::iter::once(format!("nitro {subcommand}")).chain(arg.args.into_iter().skip(1));
-		Cli::parse_from(it);
-		print_stats(ctx)?;
+		Cli::try_parse_from(it)?;
+		print_stats()?;
 
 		Ok(())
 	})?;
 
-	plugin.on_instance_launch(|mut ctx, arg| {
-		let Ok(mut stats) = Stats::open(&ctx) else {
-			ctx.get_output()
-				.display(MessageContents::Error("Failed to open stats".into()));
+	plugin.on_instance_launch(|arg| {
+		let Ok(mut stats) = Stats::open() else {
+			WASMPluginOutput::new().display(MessageContents::Error("Failed to open stats".into()));
 			return Ok(());
 		};
 
@@ -46,52 +49,39 @@ fn main() -> anyhow::Result<()> {
 		if let Ok(timestamp) = utc_timestamp() {
 			entry.last_launch = Some(timestamp);
 		}
-		let _ = stats.write(&ctx);
+		let _ = stats.write();
 
 		// Track when the instance started in persistent state to get playtime
-		let state = ctx
-			.get_persistent_state(HashMap::<String, u64>::new())
-			.context("Failed to get persistent state")?;
-		let mut state: HashMap<String, u64> = serde_json::from_value(state.clone())?;
+		let mut state: HashMap<String, u64> = get_persistent_state().unwrap_or_default();
 		state.insert(arg.id.clone(), utc_timestamp()?);
-		ctx.set_persistent_state(state)
-			.context("Failed to set persistent state")?;
+		set_persistent_state(&state);
 
 		Ok(())
 	})?;
 
-	plugin.on_instance_stop(|mut ctx, arg| update_playtime(&mut ctx, &arg.id, false))?;
+	plugin.on_instance_stop(|arg| update_playtime(&arg.id, false))?;
 
-	plugin.while_instance_launch(|mut ctx, arg| {
-		let config = ctx.get_custom_config().unwrap_or("{}");
+	plugin.while_instance_launch(|arg| {
+		let config = get_custom_config().unwrap_or("{}".into());
 		let config: Config =
-			serde_json::from_str(config).context("Failed to deserialize custom config")?;
+			serde_json::from_str(&config).context("Failed to deserialize custom config")?;
 
 		if !config.live_tracking {
 			return Ok(());
 		}
 
-		let mut system = System::new();
-		let pid = Pid::from_u32(arg.pid.unwrap_or_default());
-
 		loop {
 			std::thread::sleep(Duration::from_secs(10));
-			system.refresh_processes(ProcessesToUpdate::Some(&[pid]), true);
-			if system.process(pid).is_none() {
-				break;
-			}
 
-			let res = update_playtime(&mut ctx, &arg.id, true).context("Failed to update playtime");
+			let res = update_playtime(&arg.id, true).context("Failed to update playtime");
 			if let Err(e) = res {
 				println!("$_{e:?}");
 			}
 		}
-
-		Ok(())
 	})?;
 
-	plugin.add_instance_tiles(|ctx, arg| {
-		let stats = Stats::open(&ctx).context("Failed to open stats")?;
+	plugin.add_instance_tiles(|arg| {
+		let stats = Stats::open().context("Failed to open stats")?;
 
 		let default = InstanceStats::default();
 		let stats = stats.instances.get(&arg).unwrap_or(&default);
@@ -108,15 +98,8 @@ fn main() -> anyhow::Result<()> {
 
 /// Update the playtime. When update_state is true, the persistent state is updated for the next update
 /// so that the time delta is correct
-fn update_playtime<H: Hook>(
-	ctx: &mut HookContext<'_, H>,
-	instance: &str,
-	update_state: bool,
-) -> anyhow::Result<()> {
-	let state = ctx
-		.get_persistent_state(HashMap::<String, u64>::new())
-		.context("Failed to get persistent state")?;
-	let mut state: HashMap<String, u64> = serde_json::from_value(state.clone())?;
+fn update_playtime(instance: &str, update_state: bool) -> anyhow::Result<()> {
+	let mut state: HashMap<String, u64> = get_persistent_state().unwrap_or_default();
 	let Some(start_time) = state.get_mut(instance) else {
 		return Ok(());
 	};
@@ -124,7 +107,7 @@ fn update_playtime<H: Hook>(
 	let diff_minutes = (now - *start_time) / 60;
 
 	if diff_minutes > 0 {
-		let mut stats = Stats::open(ctx).context("Failed to open stats")?;
+		let mut stats = Stats::open().context("Failed to open stats")?;
 		stats
 			.instances
 			.entry(instance.to_string())
@@ -134,10 +117,10 @@ fn update_playtime<H: Hook>(
 		// Update start time so that the next update doesn't grow exponentially, but only if we actually made a difference to the number of minutes
 		if update_state {
 			*start_time = now;
-			ctx.set_persistent_state(state)?;
+			set_persistent_state(&state);
 		}
 
-		stats.write(ctx).context("Failed to write stats")?;
+		stats.write().context("Failed to write stats")?;
 	}
 
 	Ok(())
@@ -146,8 +129,8 @@ fn update_playtime<H: Hook>(
 #[derive(clap::Parser)]
 struct Cli {}
 
-fn print_stats(ctx: HookContext<'_, Subcommand>) -> anyhow::Result<()> {
-	let stats = Stats::open(&ctx).context("Failed to open stats")?;
+fn print_stats() -> anyhow::Result<()> {
+	let stats = Stats::open().context("Failed to open stats")?;
 
 	#[derive(PartialEq, Eq, PartialOrd, Ord)]
 	struct Ordering {
@@ -162,7 +145,7 @@ fn print_stats(ctx: HookContext<'_, Subcommand>) -> anyhow::Result<()> {
 		.map(|x| x.calculate_playtime())
 		.sum();
 	let total = format_time(total);
-	cprintln!("<s>Total playtime: <m!>{total}");
+	println!("Total playtime: {total}");
 
 	for (instance, stats) in stats
 		.instances
@@ -172,8 +155,8 @@ fn print_stats(ctx: HookContext<'_, Subcommand>) -> anyhow::Result<()> {
 			playtime: Reverse(stats.calculate_playtime()),
 			instance_id: inst_id.clone(),
 		}) {
-		cprintln!(
-			"<k!> - </><b,s>{instance}</> - Launched <m>{}</> times for a total of <m!>{}</>",
+		println!(
+			" - {instance} - Launched {} times for a total of {}",
 			stats.launches,
 			format_time(stats.calculate_playtime())
 		);
@@ -207,25 +190,25 @@ struct Stats {
 }
 
 impl Stats {
-	fn open<H: Hook>(ctx: &HookContext<'_, H>) -> anyhow::Result<Self> {
-		let path = Self::get_path(ctx)?;
+	fn open() -> anyhow::Result<Self> {
+		let path = Self::get_path();
 		if path.exists() {
-			json_from_file(path).context("Failed to open stats file")
+			serde_json::from_reader(File::open(path)?).context("Failed to read stats from file")
 		} else {
 			let out = Self::default();
-			json_to_file(path, &out).context("Failed to write default stats to file")?;
+			serde_json::to_writer(File::create(path)?, &out)?;
 			Ok(out)
 		}
 	}
 
-	fn write<H: Hook>(self, ctx: &HookContext<'_, H>) -> anyhow::Result<()> {
-		let path = Self::get_path(ctx)?;
-		json_to_file(path, &self).context("Failed to write stats to file")?;
+	fn write(self) -> anyhow::Result<()> {
+		let path = Self::get_path();
+		serde_json::to_writer(File::create(path)?, &self)?;
 		Ok(())
 	}
 
-	fn get_path<H: Hook>(ctx: &HookContext<'_, H>) -> anyhow::Result<PathBuf> {
-		Ok(ctx.get_data_dir()?.join("internal").join("stats.json"))
+	fn get_path() -> PathBuf {
+		get_data_dir().join("internal").join("stats.json")
 	}
 }
 
