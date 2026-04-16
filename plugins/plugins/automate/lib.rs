@@ -2,32 +2,39 @@ use anyhow::{bail, Context};
 use nitro_plugin::{
 	api::wasm::{output::WASMPluginOutput, sys::get_os_string, WASMPlugin},
 	nitro_wasm_plugin,
-	shared::output::{MessageContents, NitroOutput},
+	shared::{
+		output::{MessageContents, NitroOutput},
+		util::DeserListOrSingle,
+	},
 };
 
 nitro_wasm_plugin!(main, "automate");
 
 fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 	plugin.on_instance_launch(|arg| {
-		if let Some(cmd) = arg.config.plugin_config.get("before_launch") {
-			let cmd: String =
-				serde_json::from_value(cmd.clone()).context("Invalid command format")?;
+		if let Some(commands) = arg.config.plugin_config.get("before_launch") {
+			let commands: DeserListOrSingle<String> =
+				serde_json::from_value(commands.clone()).context("Invalid command format")?;
 
-			run_hook(&cmd).context("Failed to run script")?;
+			for command in commands.iter() {
+				run_hook(command).context("Failed to run script")?;
+			}
 		}
 
 		Ok(())
 	})?;
 
 	plugin.on_instance_launch(|arg| {
-		if let Some(cmd) = arg.config.plugin_config.get("on_launch") {
-			let cmd: String =
-				serde_json::from_value(cmd.clone()).context("Invalid command format")?;
+		if let Some(commands) = arg.config.plugin_config.get("on_launch") {
+			let commands: DeserListOrSingle<String> =
+				serde_json::from_value(commands.clone()).context("Invalid command format")?;
 
-			if let Err(e) = run_hook(&cmd) {
-				WASMPluginOutput::new().display(MessageContents::Error(format!(
-					"Failed to run on-launch hook: {e}"
-				)));
+			for command in commands.iter() {
+				if let Err(e) = run_hook(command) {
+					WASMPluginOutput::new().display(MessageContents::Error(format!(
+						"Failed to run on-launch hook: {e}"
+					)));
+				}
 			}
 		}
 
@@ -35,14 +42,16 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 	})?;
 
 	plugin.on_instance_stop(|arg| {
-		if let Some(cmd) = arg.config.plugin_config.get("on_stop") {
-			let cmd: String =
-				serde_json::from_value(cmd.clone()).context("Invalid command format")?;
+		if let Some(commands) = arg.config.plugin_config.get("on_stop") {
+			let commands: DeserListOrSingle<String> =
+				serde_json::from_value(commands.clone()).context("Invalid command format")?;
 
-			if let Err(e) = run_hook(&cmd) {
-				WASMPluginOutput::new().display(MessageContents::Error(format!(
-					"Failed to run on-stop hook: {e}"
-				)));
+			for command in commands.iter() {
+				if let Err(e) = run_hook(command) {
+					WASMPluginOutput::new().display(MessageContents::Error(format!(
+						"Failed to run on-stop hook: {e}"
+					)));
+				}
 			}
 		}
 

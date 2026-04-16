@@ -22,27 +22,27 @@
 						"id": "before_launch",
 						"name": "Before Launch",
 						"section": "Automate Hooks",
-						"description": "Command to run before the instance is launched. Launch will be blocked until the command finishes.",
+						"description": "Commands to run before the instance is launched. Launch will be blocked until the command finishes.",
 						"schema": {
-							"type": "string"
+							"type": "string_list"
 						}
 					},
 					{
 						"id": "on_launch",
 						"name": "On Launch",
 						"section": "Automate Hooks",
-						"description": "Command to run when the instance is launched. Launch will not be blocked.",
+						"description": "Commands to run when the instance is launched. Launch will not be blocked.",
 						"schema": {
-							"type": "string"
+							"type": "string_list"
 						}
 					},
 					{
 						"id": "on_stop",
 						"name": "On Stop",
 						"section": "Automate Hooks",
-						"description": "Command to run when the instance exits",
+						"description": "Commands to run when the instance exits",
 						"schema": {
-							"type": "string"
+							"type": "string_list"
 						}
 					}
 				]
