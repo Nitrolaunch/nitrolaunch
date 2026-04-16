@@ -1059,7 +1059,7 @@ impl<'a> Widget for PackageInfoWidget<'a> {
 
 		// Details
 		let layout = Layout::horizontal(Constraint::from_fills([1, 1, 1]));
-		let [title_pane, _, not_loaded_pane] = details_pane.layout::<3>(&layout);
+		let [title_pane, req_pane, not_loaded_pane] = details_pane.layout::<3>(&layout);
 
 		// Title
 		let title_name = if let Some(name) = &info.meta.name {
@@ -1078,6 +1078,15 @@ impl<'a> Widget for PackageInfoWidget<'a> {
 
 		let title = Paragraph::new(title).style(Style::new().bold());
 		title.render(title_pane, buf);
+
+		// Request
+		let req = Paragraph::new(
+			self.req
+				.with_slug(info.meta.slug.clone())
+				.to_string_no_version(),
+		)
+		.style(Style::new().gray());
+		req.render(req_pane, buf);
 
 		// Subtitle
 		let mut subtitle_area = details_pane;

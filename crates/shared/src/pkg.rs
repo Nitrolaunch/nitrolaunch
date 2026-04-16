@@ -165,6 +165,17 @@ impl PkgRequest {
 		}
 	}
 
+	/// Create a new request with the slug changed if it is not already present
+	pub fn with_slug(&self, slug: Option<String>) -> Self {
+		Self {
+			source: self.source.clone(),
+			id: self.id.clone(),
+			repository: self.repository.clone(),
+			content_version: self.content_version.clone(),
+			slug: slug.or(self.slug.clone()),
+		}
+	}
+
 	/// Puts this request inside of an Arc
 	pub fn arc(self) -> ArcPkgReq {
 		Arc::new(self)
