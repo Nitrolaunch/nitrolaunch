@@ -53,7 +53,7 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 			props.setFooterData({
 				mode: FooterMode.PreviewPackage,
 				selectedItem: undefined,
-				action: () => { },
+				action: () => {},
 			});
 		}
 	});
@@ -225,7 +225,7 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 							<IconButton
 								icon={Properties}
 								size="1.5rem"
-								onClick={() => { }}
+								onClick={() => {}}
 								color="transparent"
 								border={undefined}
 								iconColor={undefined}
@@ -278,7 +278,7 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 						availablePackageTypes={repoPackageTypes()}
 						filteringVersions={false}
 						features={[]}
-						setFeatures={() => { }}
+						setFeatures={() => {}}
 						availableCategories={repoCategories()}
 					/>
 				</div>
@@ -339,10 +339,11 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 												selected={selectedPackage()}
 												onSelect={(pkg) => {
 													setSelectedPackage(pkg);
-													let url = `/packages/package/${data.id
-														}?filters=${JSON.stringify(
-															createPackageFiltersObject(),
-														)}`;
+													let url = `/packages/package/${
+														data.id
+													}?filters=${JSON.stringify(
+														createPackageFiltersObject(),
+													)}`;
 
 													if (!isAlternate()) {
 														props.setFooterData({
@@ -439,8 +440,9 @@ function Package(props: PackageProps) {
 
 	return (
 		<div
-			class={`cont col shadow package ${isSelected() ? "selected" : ""
-				} ${props.alternate ? "alternate" : ""}`}
+			class={`cont col ${props.alternate ? "" : "shadow"} package ${
+				isSelected() ? "selected" : ""
+			} ${props.alternate ? "alternate" : ""}`}
 			style="cursor:pointer"
 			onclick={() => {
 				// Double click to open
