@@ -29,7 +29,7 @@ import RepoSelector from "../../components/package/RepoSelector";
 import { searchPackages } from "../../utils/package";
 import Tip from "../../components/dialog/Tip";
 import IconTextButton from "../../components/input/button/IconTextButton";
-import { Download, Grid, Honeycomb, Menu, Refresh } from "../../icons";
+import { Download, Grid, Menu, Properties, Refresh } from "../../icons";
 import { invoke } from "@tauri-apps/api/core";
 import { loadPagePlugins } from "../../plugins";
 import Icon from "../../components/Icon";
@@ -53,7 +53,7 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 			props.setFooterData({
 				mode: FooterMode.PreviewPackage,
 				selectedItem: undefined,
-				action: () => {},
+				action: () => { },
 			});
 		}
 	});
@@ -144,7 +144,6 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 	let [repoCategories, setRepoCategories] = createSignal<
 		PackageCategory[] | undefined
 	>();
-	let [repoColor, setRepoColor] = createSignal<string | undefined>();
 
 	async function updatePackages() {
 		if (selectedRepo() == undefined) {
@@ -201,13 +200,10 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 							setFinalSelectedRepo={setSelectedRepo}
 							setRepoPackageTypes={setRepoPackageTypes}
 							setRepoCategories={setRepoCategories}
-							setRepoColor={setRepoColor}
+							setRepoColor={() => {}}
 						/>
 					</div>
-					<h1 class="cont">
-						<Icon icon={Honeycomb} size="1.5rem" />
-						Packages
-					</h1>
+					<div></div>
 					<div class="cont" style="justify-content:flex-end">
 						<div class="cont">
 							<IconButton
@@ -226,6 +222,14 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 								border={isAlternate() ? "var(--fg2)" : undefined}
 								iconColor={isAlternate() ? "var(--fg2)" : undefined}
 							/>
+							<IconButton
+								icon={Properties}
+								size="1.5rem"
+								onClick={() => { }}
+								color="transparent"
+								border={undefined}
+								iconColor={undefined}
+							/>
 						</div>
 						<SearchBar
 							placeholder="Search for packages..."
@@ -242,9 +246,10 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 						/>
 					</div>
 				</div>
-				<Show when={repoColor() != undefined}>
+				{/* <Show when={repoColor() != undefined}>
 					<div id="browse-gradient" style={`--repo-color:${repoColor()}`}></div>
-				</Show>
+				</Show> */}
+				<div></div>
 				<div id="browse-subheader">
 					<PackageFilters
 						packageType={filteredPackageType()}
@@ -273,7 +278,7 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 						availablePackageTypes={repoPackageTypes()}
 						filteringVersions={false}
 						features={[]}
-						setFeatures={() => {}}
+						setFeatures={() => { }}
 						availableCategories={repoCategories()}
 					/>
 				</div>
@@ -334,11 +339,10 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 												selected={selectedPackage()}
 												onSelect={(pkg) => {
 													setSelectedPackage(pkg);
-													let url = `/packages/package/${
-														data.id
-													}?filters=${JSON.stringify(
-														createPackageFiltersObject(),
-													)}`;
+													let url = `/packages/package/${data.id
+														}?filters=${JSON.stringify(
+															createPackageFiltersObject(),
+														)}`;
 
 													if (!isAlternate()) {
 														props.setFooterData({
@@ -435,9 +439,8 @@ function Package(props: PackageProps) {
 
 	return (
 		<div
-			class={`cont col shadow package ${
-				isSelected() ? "selected" : ""
-			} ${props.alternate ? "alternate" : ""}`}
+			class={`cont col shadow package ${isSelected() ? "selected" : ""
+				} ${props.alternate ? "alternate" : ""}`}
 			style="cursor:pointer"
 			onclick={() => {
 				// Double click to open
@@ -466,7 +469,7 @@ function Package(props: PackageProps) {
 				<div class="cont col package-header">
 					<div class="cont start package-name">
 						{props.meta.name}
-						<Show when={props.meta.downloads != undefined}>
+						<Show when={props.meta.downloads != undefined && !props.alternate}>
 							<div
 								class="cont"
 								style="color: var(--fg3);gap:0.2rem;font-size:0.95rem"

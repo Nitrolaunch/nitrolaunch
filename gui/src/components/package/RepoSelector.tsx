@@ -112,7 +112,6 @@ export default function RepoSelector(props: RepoSelectorProps) {
 						selectedTextColor: x.meta.text_color,
 					};
 				})}
-				connected={false}
 				grid={true}
 				selected={selectedRepo()}
 				columns={repos()!.length}

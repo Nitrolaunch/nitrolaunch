@@ -336,7 +336,6 @@ export default function PackageInstallModal(props: PackageInstallModalProps) {
 								selected={selectedInstanceOrTemplate()}
 								onChange={setSelectedInstanceOrTemplate}
 								columns={3}
-								connected={false}
 							/>
 						</Show>
 					</div>

@@ -23,7 +23,6 @@
 	border-top: var(--border) solid transparent;
 	border-bottom: var(--border) solid var(--bg3);
 	box-sizing: border-box;
-	font-weight: bold;
 
 	cursor: pointer;
 	transition: background-color 0.25s;
@@ -42,7 +41,7 @@
 
 .package-filter-contents {
 	width: 100%;
-	min-height: 3.5rem;
+	min-height: 4.3rem;
 
 	background-color: var(--bg);
 

@@ -75,7 +75,6 @@ export default function Control(props: ControlProps) {
 							onChangeMulti={
 								props.control.schema.multiple ? setValue : undefined
 							}
-							connected={false}
 						/>
 					);
 				}
@@ -218,38 +217,38 @@ export interface ControlData {
 export type ControlSchema =
 	| { type: "boolean" }
 	| {
-			type: "choice";
-			variants: Variant[];
-			dropdown: boolean;
-			multiple: boolean;
-	  }
+		type: "choice";
+		variants: Variant[];
+		dropdown: boolean;
+		multiple: boolean;
+	}
 	| {
-			type: "string";
-			lowercase: boolean;
-	  }
+		type: "string";
+		lowercase: boolean;
+	}
 	| { type: "path" }
 	| {
-			type: "number";
-			min?: number;
-			max?: number;
-			step: number;
-			slider: boolean;
-	  }
+		type: "number";
+		min?: number;
+		max?: number;
+		step: number;
+		slider: boolean;
+	}
 	| {
-			type: "string_list";
-	  }
+		type: "string_list";
+	}
 	| {
-			type: "optional";
-			value: ControlSchema;
-	  }
+		type: "optional";
+		value: ControlSchema;
+	}
 	| {
-			type: "list";
-			fields: ControlData[];
-			is_map: boolean;
-	  }
+		type: "list";
+		fields: ControlData[];
+		is_map: boolean;
+	}
 	| {
-			type: "keybind";
-	  };
+		type: "keybind";
+	};
 
 // Variant of a choice control
 export interface Variant {

@@ -6,7 +6,6 @@ import { Check } from "../../../icons";
 
 export default function InlineSelect(props: InlineSelectProps) {
 	let columns = () => (props.columns == undefined ? 3 : props.columns);
-	let connected = props.connected == undefined ? true : props.connected;
 	let grid = props.grid == undefined ? true : props.grid;
 	let solidSelect = props.solidSelect == undefined ? false : props.solidSelect;
 
@@ -32,12 +31,9 @@ export default function InlineSelect(props: InlineSelectProps) {
 
 	return (
 		<div
-			class={`${connected ? "shadow" : ""} inline-select ${
-				connected ? "connected" : "disconnected"
-			}`}
-			style={`display:${
-				grid ? "grid" : "flex"
-			};grid-template-columns:repeat(${columns()}, minmax(0, 1fr))`}
+			class="inline-select"
+			style={`display:${grid ? "grid" : "flex"
+				};grid-template-columns:repeat(${columns()}, minmax(0, 1fr))`}
 		>
 			<Show when={props.allowEmpty == undefined ? false : props.allowEmpty}>
 				<InlineSelectOption
@@ -45,7 +41,6 @@ export default function InlineSelect(props: InlineSelectProps) {
 						value: undefined,
 						contents: "None",
 					}}
-					connected={connected}
 					onSelect={selectFunction}
 					selected={props.selected}
 					isLast={props.options.length == 0}
@@ -59,7 +54,6 @@ export default function InlineSelect(props: InlineSelectProps) {
 				{(option, index) => (
 					<InlineSelectOption
 						option={option}
-						connected={connected}
 						onSelect={selectFunction}
 						selected={props.selected}
 						isLast={index() == props.options.length - 1}
@@ -81,7 +75,6 @@ export interface InlineSelectProps {
 	onChangeMulti?: (options: string[] | undefined) => void;
 	columns?: number;
 	allowEmpty?: boolean;
-	connected?: boolean;
 	optionClass?: string;
 	grid?: boolean;
 	solidSelect?: boolean;
@@ -134,13 +127,8 @@ function InlineSelectOption(props: OptionProps) {
 
 	let contents = (
 		<div
-			class={`cont inline-select-option ${
-				props.connected ? "connected" : "disconnected shadow bubble-hover"
-			} ${props.class == undefined ? "" : props.class} ${
-				isSelected() ? "selected" : ""
-			} ${props.isLast ? "last" : "not-last"} ${
-				props.isFirst ? "" : "not-first"
-			}`}
+			class={`cont inline-select-option shadow bubble-hover ${props.class == undefined ? "" : props.class}
+			${isSelected() ? "selected" : ""}`}
 			style={`border-color:${borderColor()};color:${textColor()};background-color:${backgroundColor()}`}
 			onclick={() => props.onSelect(props.option.value)}
 			onmouseenter={() => setIsHovered(true)}
@@ -181,7 +169,6 @@ function InlineSelectOption(props: OptionProps) {
 interface OptionProps {
 	option: Option;
 	selected?: string | string[];
-	connected: boolean;
 	solidSelect: boolean;
 	class?: string;
 	isFirst: boolean;

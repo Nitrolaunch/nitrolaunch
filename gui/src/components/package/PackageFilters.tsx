@@ -27,7 +27,7 @@ import InlineSelect from "../input/select/InlineSelect";
 import { invoke } from "@tauri-apps/api/core";
 import { PackageType } from "../../package";
 import Dropdown from "../input/select/Dropdown";
-import { beautifyString, fixCenter } from "../../utils";
+import { beautifyString } from "../../utils";
 import IconTextButton from "../input/button/IconTextButton";
 import IconAndText from "../utility/IconAndText";
 
@@ -66,13 +66,13 @@ export default function PackageFilters(props: PackageFiltersProps) {
 	let availablePackageTypes = () =>
 		props.availablePackageTypes == undefined
 			? ([
-					"mod",
-					"resource_pack",
-					"datapack",
-					"plugin",
-					"shader",
-					"bundle",
-			  ] as PackageType[])
+				"mod",
+				"resource_pack",
+				"datapack",
+				"plugin",
+				"shader",
+				"bundle",
+			] as PackageType[])
 			: props.availablePackageTypes;
 
 	return (
@@ -80,9 +80,8 @@ export default function PackageFilters(props: PackageFiltersProps) {
 			<div class="cont package-filters-tabs">
 				<Show when={!props.filteringVersions}>
 					<div
-						class={`cont package-filter-tab ${
-							tab() == "types" ? "selected" : ""
-						}`}
+						class={`cont package-filter-tab ${tab() == "types" ? "selected" : ""
+							}`}
 						onclick={() => setTab("types")}
 					>
 						<Icon icon={Jigsaw} size="0.8rem" />
@@ -90,18 +89,16 @@ export default function PackageFilters(props: PackageFiltersProps) {
 					</div>
 				</Show>
 				<div
-					class={`cont package-filter-tab ${
-						tab() == "minecraft_versions" ? "selected" : ""
-					}`}
+					class={`cont package-filter-tab ${tab() == "minecraft_versions" ? "selected" : ""
+						}`}
 					onclick={() => setTab("minecraft_versions")}
 				>
 					<Icon icon={Minecraft} size="0.8rem" />
 					Version
 				</div>
 				<div
-					class={`cont package-filter-tab ${
-						tab() == "loaders" ? "selected" : ""
-					}`}
+					class={`cont package-filter-tab ${tab() == "loaders" ? "selected" : ""
+						}`}
 					onclick={() => setTab("loaders")}
 				>
 					<Icon icon={Download} size="0.8rem" />
@@ -109,9 +106,8 @@ export default function PackageFilters(props: PackageFiltersProps) {
 				</div>
 				<Show when={!props.filteringVersions}>
 					<div
-						class={`cont package-filter-tab ${
-							tab() == "categories" ? "selected" : ""
-						}`}
+						class={`cont package-filter-tab ${tab() == "categories" ? "selected" : ""
+							}`}
 						onclick={() => setTab("categories")}
 					>
 						<Icon icon={Tag} size="0.8rem" />
@@ -120,9 +116,8 @@ export default function PackageFilters(props: PackageFiltersProps) {
 				</Show>
 				<Show when={props.filteringVersions}>
 					<div
-						class={`cont package-filter-tab ${
-							tab() == "stability" ? "selected" : ""
-						}`}
+						class={`cont package-filter-tab ${tab() == "stability" ? "selected" : ""
+							}`}
 						onclick={() => setTab("stability")}
 					>
 						<Icon icon={Lock} size="0.8rem" />
@@ -131,9 +126,8 @@ export default function PackageFilters(props: PackageFiltersProps) {
 				</Show>
 				<Show when={props.filteringVersions}>
 					<div
-						class={`cont package-filter-tab ${
-							tab() == "features" ? "selected" : ""
-						}`}
+						class={`cont package-filter-tab ${tab() == "features" ? "selected" : ""
+							}`}
 						onclick={() => setTab("features")}
 					>
 						<Icon icon={Properties} size="0.8rem" />
@@ -148,7 +142,7 @@ export default function PackageFilters(props: PackageFiltersProps) {
 					More
 				</div>
 			</div>
-			<div class="cont package-filter-contents">
+			<div class="cont package-filter-contents" style={props.filteringVersions ? "" : "border-bottom:none"}>
 				<Show when={tab() == "types"}>
 					<div class="cont package-filter-tab-contents" style="padding:0.5rem">
 						<InlineSelect
@@ -156,20 +150,17 @@ export default function PackageFilters(props: PackageFiltersProps) {
 								return {
 									value: packageType,
 									contents: (
-										<div class="cont" style="font-size:0.9rem;font-weight:bold">
+										<>
 											<Icon
 												icon={getPackageTypeIcon(packageType)}
 												size="1.2rem"
 											/>
 											<div
 												class="cont"
-												style={fixCenter(
-													getPackageTypeDisplayName(packageType)
-												)}
 											>
 												{`${getPackageTypeDisplayName(packageType)}s`}
 											</div>
-										</div>
+										</>
 									),
 									color: "var(--package)",
 									selectedBgColor: "var(--packagebg)",
@@ -179,7 +170,6 @@ export default function PackageFilters(props: PackageFiltersProps) {
 							selected={props.packageType}
 							onChange={(value) => props.setPackageType(value as PackageType)}
 							columns={availablePackageTypes().length}
-							connected={false}
 						/>
 					</div>
 				</Show>
@@ -211,12 +201,12 @@ export default function PackageFilters(props: PackageFiltersProps) {
 								return {
 									value: loader,
 									contents: (
-										<div class="cont">
+										<>
 											<img src={getLoaderImage(loader)} style="width:1.2rem" />
-											<div style="font-size:0.9rem;font-weight:bold">
+											<div>
 												{getLoaderDisplayName(loader)}
 											</div>
-										</div>
+										</>
 									),
 									color: getLoaderColor(loader),
 								};
@@ -226,7 +216,6 @@ export default function PackageFilters(props: PackageFiltersProps) {
 								props.setLoaders(values == undefined ? [] : values)
 							}
 							columns={props.filteringVersions ? 4 : 6}
-							connected={false}
 							checkboxes
 						/>
 					</div>
@@ -250,7 +239,7 @@ export default function PackageFilters(props: PackageFiltersProps) {
 										return {
 											value: category,
 											contents: (
-												<div class="cont">
+												<>
 													<Icon
 														icon={packageCategoryIcon(category)}
 														size="1rem"
@@ -258,13 +247,12 @@ export default function PackageFilters(props: PackageFiltersProps) {
 													<div class="cont">
 														{packageCategoryDisplayName(category)}
 													</div>
-												</div>
+												</>
 											),
 											color: "var(--package)",
 											selectedBgColor: "var(--packagebg)",
 										};
 									})}
-								connected={false}
 								columns={4}
 								selected={props.categories}
 								onChangeMulti={(x) =>
@@ -310,27 +298,26 @@ export default function PackageFilters(props: PackageFiltersProps) {
 								{
 									value: "stable",
 									contents: (
-										<div class="cont">
+										<>
 											<Icon icon={Lock} size="1.2rem" />
-											<div style="font-size:0.9rem;font-weight:bold">
+											<div class="cont">
 												Stable
 											</div>
-										</div>
+										</>
 									),
 									color: "var(--instance)",
 								},
 								{
 									value: "latest",
 									contents: (
-										<div class="cont">
+										<>
 											<Icon icon={Warning} size="1.2rem" />
 											<div
 												class="cont"
-												style="font-size:0.9rem;font-weight:bold"
 											>
 												Development
 											</div>
-										</div>
+										</>
 									),
 									color: "var(--warning)",
 								},
@@ -341,7 +328,6 @@ export default function PackageFilters(props: PackageFiltersProps) {
 								props.setStability(x as "stable" | "latest" | undefined)
 							}
 							columns={3}
-							connected={false}
 						/>
 					</div>
 				</Show>
@@ -353,7 +339,7 @@ export default function PackageFilters(props: PackageFiltersProps) {
 							options={props.availableFeatures!.map((feature) => {
 								return {
 									value: feature,
-									contents: <div class="cont">{beautifyString(feature)}</div>,
+									contents: beautifyString(feature),
 									color: "var(--package)",
 									selectedBgColor: "var(--packagebg)",
 								};
@@ -363,7 +349,6 @@ export default function PackageFilters(props: PackageFiltersProps) {
 								props.setFeatures(values == undefined ? [] : values)
 							}
 							columns={props.availableFeatures!.length}
-							connected={false}
 							checkboxes
 						/>
 					</div>
@@ -426,12 +411,12 @@ function MinecraftVersionsTab(props: MinecraftVersionsTabProps) {
 						return {
 							value: version,
 							contents: (
-								<span
+								<div
 									class="cont"
-									style="font-size:0.9rem;font-weight:bold;overflow-x:auto;text-wrap:nowrap;transform:translateY(0.1rem)"
+									style="overflow-x:auto;text-wrap:nowrap"
 								>
 									{version}
-								</span>
+								</div>
 							),
 							color: "var(--package)",
 							selectedBgColor: "var(--packagebg)",
@@ -442,17 +427,15 @@ function MinecraftVersionsTab(props: MinecraftVersionsTabProps) {
 						props.setMinecraftVersions(values == undefined ? [] : values)
 					}
 					columns={props.options.length}
-					connected={false}
 					checkboxes
 				/>
 			</div>
 			<div
 				class="cont"
-				style={`${
-					props.options.length > 5
-						? "width:calc(100%/7*1)"
-						: "width:calc(100%/5*1)"
-				};height:100%`}
+				style={`${props.options.length > 5
+					? "width:calc(100%/7*1)"
+					: "width:calc(100%/5*1)"
+					};height:100%`}
 			>
 				<Dropdown
 					options={props.extraOptions.map((version) => {

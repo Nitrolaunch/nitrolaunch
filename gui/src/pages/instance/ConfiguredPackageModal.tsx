@@ -265,7 +265,6 @@ export default function ConfiguredPackageModal(
 						props.props!.setDirty();
 					}}
 					columns={2}
-					connected={false}
 					checkboxes
 				/>
 			</div>

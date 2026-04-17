@@ -422,7 +422,6 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 						selected={filter()}
 						onChange={setFilter}
 						grid={false}
-						connected={false}
 					/>
 				</div>
 				<div>
@@ -455,7 +454,6 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 							selected={sideFilter()}
 							onChange={setSideFilter}
 							grid={false}
-							connected={false}
 						/>
 					</Show>
 				</div>

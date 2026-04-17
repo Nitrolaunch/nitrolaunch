@@ -144,7 +144,6 @@ export default function PackageQuickAdd(props: PackageQuickAddProps) {
 								packageMethods.refetch();
 							}}
 							columns={6}
-							connected={false}
 						/>
 					</div>
 					<div class="cont end">

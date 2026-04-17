@@ -163,7 +163,6 @@ export default function InstanceTransferPrompt(
 									})}
 									selected={selectedFormat()}
 									onChange={setSelectedFormat}
-									connected={false}
 									columns={1}
 								/>
 

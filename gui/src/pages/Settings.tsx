@@ -234,7 +234,6 @@ export default function Settings(props: SettingsProps) {
 									})}
 								columns={3}
 								allowEmpty={false}
-								connected={false}
 							/>
 						</Show>
 						<div class="cont start label">
@@ -260,7 +259,6 @@ export default function Settings(props: SettingsProps) {
 									})}
 								columns={3}
 								allowEmpty={false}
-								connected={false}
 							/>
 						</Show>
 						<Tip

@@ -82,7 +82,6 @@ export default function Console(props: ConsoleProps) {
 					]}
 					selected={filter()}
 					onChange={setFilter}
-					connected={false}
 					columns={4}
 					solidSelect
 				/>
