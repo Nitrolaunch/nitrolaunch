@@ -256,7 +256,11 @@ async fn info(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()> 
 		print!("{} ", PACKAGE);
 	}
 	cprintln!("<s>Packages:");
-	for pkg in instance.get_configured_packages() {
+	for pkg in instance
+		.get_configured_packages()
+		.into_iter()
+		.sorted_by_key(|x| x.get_request())
+	{
 		print_indent();
 		cprint!("{}", HYPHEN_POINT);
 		cprint!("<b!>{}<g!>", pkg.id);
