@@ -133,37 +133,3 @@ pub fn launch_config_to_options(config: LaunchConfig) -> anyhow::Result<LaunchOp
 		use_log4j_config: config.use_log4j_config,
 	})
 }
-
-#[cfg(test)]
-mod tests {
-	use nitro_config::instance::QuickPlay;
-	use serde::Deserialize;
-
-	#[test]
-	fn test_quickplay_deser() {
-		#[derive(Deserialize)]
-		struct Test {
-			quick_play: QuickPlay,
-		}
-
-		let test = serde_json::from_str::<Test>(
-			r#"{
-			"quick_play": {
-				"type": "server",
-				"server": "localhost",
-				"port": 25565,
-				"world": "test",
-				"realm": "my_realm"
-			}	
-		}"#,
-		)
-		.unwrap();
-		assert_eq!(
-			test.quick_play,
-			QuickPlay::Server {
-				server: "localhost".into(),
-				port: Some(25565)
-			}
-		);
-	}
-}

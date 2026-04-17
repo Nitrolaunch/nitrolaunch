@@ -391,6 +391,18 @@ impl NitroOutput for Simple {
 	}
 }
 
+/// Dummy NitroOutput that records messages for testing
+#[derive(Clone)]
+pub struct TestOutput(pub Vec<Message>);
+
+impl NitroOutput for TestOutput {
+	fn display_text(&mut self, _text: String, _level: MessageLevel) {}
+
+	fn display_message(&mut self, message: Message) {
+		self.0.push(message);
+	}
+}
+
 /// RAII struct that opens and closes an output process
 pub struct OutputProcess<'a, O: NitroOutput>(&'a mut O);
 

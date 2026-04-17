@@ -405,3 +405,36 @@ pub fn make_valid_instance_id(string: &str) -> String {
 pub fn can_install_loader(loader: &Loader) -> bool {
 	matches!(loader, Loader::Vanilla)
 }
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	fn test_quickplay_deser() {
+		#[derive(Deserialize)]
+		struct Test {
+			quick_play: QuickPlay,
+		}
+
+		let test = serde_json::from_str::<Test>(
+			r#"{
+			"quick_play": {
+				"type": "server",
+				"server": "localhost",
+				"port": 25565,
+				"world": "test",
+				"realm": "my_realm"
+			}	
+		}"#,
+		)
+		.unwrap();
+		assert_eq!(
+			test.quick_play,
+			QuickPlay::Server {
+				server: "localhost".into(),
+				port: Some(25565)
+			}
+		);
+	}
+}
