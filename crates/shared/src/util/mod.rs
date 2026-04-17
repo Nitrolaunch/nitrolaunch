@@ -356,6 +356,13 @@ impl<T: PartialEq> DeserListOrSingle<T> {
 }
 
 impl<T: Clone> DeserListOrSingle<T> {
+	/// Creates from an iterator
+	pub fn from_iter(it: impl IntoIterator<Item = T>) -> Self {
+		let mut out = Self::List(Vec::new());
+		out.extend(it);
+		out
+	}
+
 	/// Get the contained value as a Vec
 	pub fn get_vec(&self) -> Vec<T> {
 		match &self {

@@ -17,6 +17,7 @@ use nitrolaunch::{
 	shared::{
 		id::InstanceID,
 		output::{MessageContents, NitroOutput},
+		util::DeserListOrSingle,
 		versions::MinecraftVersionDeser,
 		Side, UpdateDepth,
 	},
@@ -34,6 +35,12 @@ pub enum TrySubcommand {
 	Version {
 		/// The Minecraft version
 		version: String,
+		/// Optional loader to use for the instance
+		#[arg(long)]
+		loader: Option<String>,
+		/// Optional template to derive from for the instance
+		#[arg(long)]
+		template: Option<String>,
 	},
 	#[command(about = "Try a modpack")]
 	Modpack {
@@ -50,12 +57,18 @@ pub async fn run(command: TrySubcommand, data: &mut CmdData<'_>) -> anyhow::Resu
 	let config = data.config.get_mut();
 
 	let mut instance = match command {
-		TrySubcommand::Version { version } => {
+		TrySubcommand::Version {
+			version,
+			loader,
+			template,
+		} => {
 			let id = format!("try-{version}");
 
 			let instance_config = InstanceConfig {
 				side: Some(Side::Client),
 				version: Some(MinecraftVersionDeser::Version(version.into())),
+				loader,
+				from: DeserListOrSingle::from_iter(template),
 				..Default::default()
 			};
 
