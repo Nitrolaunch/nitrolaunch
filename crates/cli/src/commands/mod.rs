@@ -8,6 +8,7 @@ mod package;
 mod plugin;
 mod template;
 mod r#try;
+mod version;
 
 use std::collections::HashMap;
 
@@ -39,6 +40,7 @@ use self::package::PackageSubcommand;
 use self::plugin::PluginSubcommand;
 use self::r#try::TrySubcommand;
 use self::template::TemplateSubcommand;
+use self::version::VersionSubcommand;
 
 use super::output::TerminalOutput;
 
@@ -126,7 +128,10 @@ pub enum Command {
 		command: FilesSubcommand,
 	},
 	#[command(about = "Print the Nitrolaunch version")]
-	Version,
+	Version {
+		#[command(subcommand)]
+		command: VersionSubcommand,
+	},
 	#[clap(external_subcommand)]
 	External(Vec<String>),
 }
@@ -139,6 +144,8 @@ pub struct Cli {
 	debug: bool,
 	#[arg(short = 'D', long)]
 	trace: bool,
+	#[arg(long)]
+	version: bool,
 }
 
 /// Run the command line interface
@@ -226,6 +233,11 @@ Would you like to do that now?"
 		let log_level = get_log_level(&cli);
 		data.output.set_log_level(log_level);
 
+		if cli.version {
+			print_version();
+			return Ok(());
+		}
+
 		match cli.command {
 			Command::Account { command } => account::run(command, &mut data).await,
 			Command::Launch {
@@ -234,10 +246,6 @@ Would you like to do that now?"
 				quick_play,
 				instance,
 			} => instance::launch(instance, account, offline, quick_play, data).await,
-			Command::Version => {
-				print_version();
-				Ok(())
-			}
 			Command::Files { command } => files::run(command, &mut data).await,
 			Command::Package { command } => package::run(command, data).await,
 			Command::Instance { command } => instance::run(command, data).await,
@@ -252,6 +260,7 @@ Would you like to do that now?"
 			} => migrate(format, instances, copy, &mut data).await,
 			Command::Log { command } => log::run(command, &mut data).await,
 			Command::Try { command } => r#try::run(command, &mut data).await,
+			Command::Version { command } => version::run(command, &mut data).await,
 			Command::External(args) => call_plugin_subcommand(args, None, &mut data).await,
 		}
 	};
