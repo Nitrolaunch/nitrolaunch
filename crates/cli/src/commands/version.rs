@@ -78,19 +78,19 @@ async fn list(
 
 	let limit = if all { None } else { Some(30) };
 
-	for version in versions
+	let versions: Vec<_> = versions
 		.manifest
 		.versions
 		.iter()
+		.filter(|x| match &x.ty {
+			VersionType::Release if !release => false,
+			VersionType::Snapshot if !snapshot => false,
+			_ => true,
+		})
 		.take(limit.unwrap_or(versions.manifest.versions.len()))
-		.rev()
-	{
-		match &version.ty {
-			VersionType::Release if !release => continue,
-			VersionType::Snapshot if !snapshot => continue,
-			_ => {}
-		}
+		.collect();
 
+	for version in versions.into_iter().rev() {
 		cprint!("{HYPHEN_POINT}");
 		match &version.ty {
 			VersionType::Release => cprint!("[<s,g>Release] "),
