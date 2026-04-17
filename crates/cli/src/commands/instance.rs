@@ -15,7 +15,6 @@ use nitrolaunch::instance::update::manager::UpdateSettings;
 use nitrolaunch::instance::update::{InstanceUpdateContext, UpdateFacets};
 use nitrolaunch::instance::Instance;
 use nitrolaunch::io::lock::Lockfile;
-use nitrolaunch::plugin_crate::hook::hooks::{DeleteInstance, SaveInstanceConfigArg};
 use nitrolaunch::shared::id::InstanceID;
 use nitrolaunch::shared::java_args::MemoryNum;
 use nitrolaunch::shared::output::{MessageContents, NoOp};
@@ -651,7 +650,6 @@ async fn export(
 
 async fn delete(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()> {
 	data.ensure_config(true).await?;
-	let mut raw_config = data.get_raw_config()?;
 	let config = data.config.get_mut();
 
 	let id = pick_instance(id, config)?;
@@ -673,45 +671,9 @@ async fn delete(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()
 	process.display(MessageContents::StartProcess("Deleting instance".into()));
 
 	instance
-		.delete_files()
+		.delete(&data.paths, &config.plugins, process.deref_mut())
 		.await
 		.context("Failed to delete instance")?;
-
-	if let Some(source_plugin) = &instance.get_config().original_config.source_plugin {
-		if !instance.get_config().original_config.is_deletable {
-			bail!("Plugin instance does not support deletion");
-		}
-
-		let arg = SaveInstanceConfigArg {
-			id: id.to_string(),
-			config: instance.get_config().original_config.clone(),
-		};
-
-		let result = config
-			.plugins
-			.call_hook_on_plugin(
-				DeleteInstance,
-				source_plugin,
-				&arg,
-				&data.paths,
-				process.deref_mut(),
-			)
-			.await?;
-		if let Some(result) = result {
-			result.result(process.deref_mut()).await?;
-		}
-	} else {
-		let modifications = vec![ConfigModification::RemoveInstance(id.into())];
-		apply_modifications_and_write(
-			&mut raw_config,
-			modifications,
-			&data.paths,
-			&config.plugins,
-			process.deref_mut(),
-		)
-		.await
-		.context("Failed to modify and write config")?;
-	}
 
 	process.display(MessageContents::Success("Instance deleted".into()));
 

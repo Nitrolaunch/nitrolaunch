@@ -8,14 +8,11 @@ use nitrolaunch::config_crate::instance::InstanceConfig;
 use nitrolaunch::config_crate::template::TemplateConfig;
 use nitrolaunch::core::io::json_to_file_pretty;
 use nitrolaunch::core::util::versions::MinecraftVersion;
-use nitrolaunch::instance::delete_instance_files;
 use nitrolaunch::instance::update::manager::UpdateSettings;
 use nitrolaunch::instance::update::{InstanceUpdateContext, UpdateFacets};
 use nitrolaunch::io::lock::Lockfile;
 use nitrolaunch::plugin::PluginManager;
-use nitrolaunch::plugin_crate::hook::hooks::{
-	DeleteInstance, DeleteTemplate, SaveInstanceConfigArg, SaveTemplateConfigArg,
-};
+use nitrolaunch::plugin_crate::hook::hooks::{DeleteTemplate, SaveTemplateConfigArg};
 use nitrolaunch::shared::id::{InstanceID, TemplateID};
 use nitrolaunch::shared::loaders::Loader;
 use nitrolaunch::shared::output::NoOp;
@@ -513,62 +510,18 @@ pub async fn delete_instance(
 	let mut output = LauncherOutput::new(state.get_output(app_handle));
 	output.set_task("delete_instance");
 
-	fmt_err(
-		delete_instance_files(instance, &state.paths)
-			.await
-			.context("Failed to delete instance files"),
-	)?;
-
 	let config = fmt_err(load_config(&state.paths, &state.wasm_loader, &mut NoOp).await)?;
 
-	let instance_id = instance;
 	let Some(instance) = config.instances.get(instance) else {
 		return Err("Instance does not exist".into());
 	};
 
-	if let Some(source_plugin) = &instance.get_config().original_config.source_plugin {
-		if !instance.get_config().original_config.is_deletable {
-			return Err("Plugin instance does not support deletion".into());
-		}
+	fmt_err(
+		instance
+			.delete(&state.paths, &config.plugins, &mut output)
+			.await,
+	)?;
 
-		let arg = SaveInstanceConfigArg {
-			id: instance_id.to_string(),
-			config: instance.get_config().original_config.clone(),
-		};
-
-		let result = fmt_err(
-			config
-				.plugins
-				.call_hook_on_plugin(
-					DeleteInstance,
-					source_plugin,
-					&arg,
-					&state.paths,
-					&mut output,
-				)
-				.await,
-		)?;
-		if let Some(result) = result {
-			fmt_err(result.result(&mut output).await)?;
-		}
-	} else {
-		let mut raw_config = fmt_err(
-			Config::open(&Config::get_path(&state.paths)).context("Failed to load config"),
-		)?;
-
-		let modifications = vec![ConfigModification::RemoveInstance(instance_id.into())];
-		fmt_err(
-			apply_modifications_and_write(
-				&mut raw_config,
-				modifications,
-				&state.paths,
-				&config.plugins,
-				&mut output,
-			)
-			.await
-			.context("Failed to modify and write config"),
-		)?;
-	}
 	Ok(())
 }
 

@@ -4,6 +4,8 @@ mod addons;
 pub mod launch;
 /// Accessing log files
 pub mod logs;
+/// Operations on the instance, like deleting, modifying, or querying files
+pub mod operations;
 /// Managing and installing packages on an instance
 pub mod packages;
 /// Keeping track of running instance processes
@@ -192,14 +194,4 @@ impl Instance {
 		let lock_path = InstanceLockfile::get_path(self.dir.as_deref(), &self.id, &paths.internal);
 		lock_path.exists()
 	}
-}
-
-/// Deletes files for the given instance ID, including saves. Use with caution!!!
-pub async fn delete_instance_files(instance_id: &str, paths: &Paths) -> anyhow::Result<()> {
-	let path = paths.data.join("instances").join(instance_id);
-	if path.exists() {
-		tokio::fs::remove_dir_all(path).await?;
-	}
-
-	Ok(())
 }

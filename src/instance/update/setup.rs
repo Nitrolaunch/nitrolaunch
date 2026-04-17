@@ -12,7 +12,6 @@ use nitro_core::launch::LaunchConfiguration;
 use nitro_core::version::InstalledVersion;
 use nitro_core::{NitroCore, QuickPlayType};
 use nitro_plugin::hook::hooks::{OnInstanceSetup, OnInstanceSetupArg, RemoveLoader};
-use nitro_shared::io::dir_size;
 use nitro_shared::output::OutputProcess;
 use nitro_shared::output::{MessageContents, NitroOutput};
 use nitro_shared::translate;
@@ -298,46 +297,6 @@ impl Instance {
 		}
 
 		Ok(())
-	}
-
-	/// Removes all game files for an instance, including saves. Be wary when using this!
-	pub async fn delete_files(&self) -> anyhow::Result<()> {
-		if let Some(dir) = &self.dir {
-			// Remove the parent directory above .minecraft for clients
-			let path = if self.config.inst_dir_override.is_none() && self.get_side() == Side::Client
-			{
-				if let Some(parent) = dir.parent() {
-					if parent
-						.file_name()
-						.is_some_and(|x| x.to_string_lossy() == "instances")
-					{
-						bail!("Attempted to remove instances directory");
-					}
-					parent
-				} else {
-					dir
-				}
-			} else {
-				dir
-			};
-
-			tokio::fs::remove_dir_all(path).await?;
-		}
-
-		Ok(())
-	}
-
-	/// Gets the size of this instance on the disk
-	pub async fn get_size(&self) -> anyhow::Result<usize> {
-		let Some(dir) = &self.dir else {
-			return Ok(0);
-		};
-
-		if !dir.exists() {
-			return Ok(0);
-		}
-
-		dir_size(dir)
 	}
 
 	/// Create a keypair file in the instance
