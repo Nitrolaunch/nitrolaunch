@@ -96,6 +96,14 @@ fn eval_declarative_package_impl(
 				eval_data.addon_reqs.push(addon_req);
 			}
 
+			if let Some(versions) = &version.conditional_properties.minecraft_versions {
+				eval_data.available_minecraft_versions.extend(
+					versions
+						.iter()
+						.flat_map(|x| x.get_matches(&eval_data.input.constants.version_list)),
+				);
+			}
+
 			relations.merge(version.relations.clone());
 			notices.extend(version.notices.iter().cloned());
 			if let Some(content_version) = version
@@ -284,12 +292,14 @@ fn check_condition_set(
 		}
 	}
 
-	if let Some(minecraft_versions) = &conditions.minecraft_versions {
-		if !minecraft_versions
-			.iter()
-			.any(|x| x.matches_single(&input.constants.version, &input.constants.version_list))
-		{
-			return false;
+	if let Some(minecraft_version) = &input.constants.version {
+		if let Some(minecraft_versions) = &conditions.minecraft_versions {
+			if !minecraft_versions
+				.iter()
+				.any(|x| x.matches_single(minecraft_version, &input.constants.version_list))
+			{
+				return false;
+			}
 		}
 	}
 
@@ -533,7 +543,7 @@ mod tests {
 
 	fn get_eval_constants() -> EvalConstants {
 		EvalConstants {
-			version: "1.19.2".into(),
+			version: Some("1.19.2".into()),
 			version_list: vec!["1.19.2".to_string(), "1.19.3".to_string()],
 			loader: Loader::Fabric,
 			language: Language::AmericanEnglish,

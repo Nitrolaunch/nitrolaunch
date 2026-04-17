@@ -13,7 +13,6 @@ import {
 	Hashtag,
 	Plus,
 	Server,
-	Tag,
 } from "../../icons";
 import Icon from "../Icon";
 import InlineSelect, { Option } from "../input/select/InlineSelect";
@@ -29,7 +28,6 @@ import {
 import { pkgRequestToString } from "../../utils";
 import Modal from "../dialog/Modal";
 import { emptyUndefined } from "../../utils/values";
-import Dropdown from "../input/select/Dropdown";
 import { clearInputError, inputError } from "../../errors";
 
 export default function PackageInstallModal(props: PackageInstallModalProps) {
@@ -40,7 +38,6 @@ export default function PackageInstallModal(props: PackageInstallModalProps) {
 	let [selectedTemplateLocation, setSelectedTemplateLocation] =
 		createSignal("all");
 	let [newInstanceId, setNewInstanceId] = createSignal<string | undefined>();
-	let [newInstanceMinecraftVersion, setNewInstanceMinecraftVersion] = createSignal<string | undefined>();
 
 	let [instancesAndTemplates, _] = createResource(async () => {
 		let instances: InstanceInfo[] = [];
@@ -166,17 +163,9 @@ export default function PackageInstallModal(props: PackageInstallModalProps) {
 				clearInputError("package-install-instance-id");
 			}
 
-			if (newInstanceMinecraftVersion() == undefined) {
-				inputError("package-install-minecraft-version");
-				return;
-			} else {
-				clearInputError("package-install-minecraft-version");
-			}
-
 			await invoke("install_modpack_package", {
 				modpack: pkg,
 				instanceId: newInstanceId(),
-				minecraftVersion: newInstanceMinecraftVersion(),
 			});
 
 			successToast("Modpack imported");
@@ -414,27 +403,6 @@ export default function PackageInstallModal(props: PackageInstallModalProps) {
 								style="width:100%"
 								value={emptyUndefined(newInstanceId())}
 								onchange={(e) => setNewInstanceId(e.target.value)}
-							/>
-						</div>
-					</div>
-					<div class="cont">
-						<Icon icon={Tag} size="1.2rem" />
-					</div>
-					<div class="cont start fullwidth">
-						<div style="width:40%">
-							Pick a Minecraft version
-						</div>
-						<div class="cont" style="width:60%" id="package-install-minecraft-version">
-							<Dropdown
-								options={props.modpackMinecraftVersions!.map((x) => {
-									return {
-										value: x,
-										contents: x,
-										color: "var(--instance)"
-									};
-								})}
-								selected={newInstanceMinecraftVersion()}
-								onChange={setNewInstanceMinecraftVersion}
 							/>
 						</div>
 					</div>

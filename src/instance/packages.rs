@@ -23,6 +23,7 @@ impl Instance {
 		&mut self,
 		pkg: &ArcPkgReq,
 		eval: &EvalData,
+		mc_version: &str,
 		paths: &Paths,
 		inst_lock: &mut InstanceLockfile,
 		force: bool,
@@ -30,7 +31,7 @@ impl Instance {
 		o: &mut impl NitroOutput,
 	) -> anyhow::Result<()> {
 		let version_info = VersionInfo {
-			version: eval.input.constants.version.clone(),
+			version: mc_version.to_string(),
 			versions: eval.input.constants.version_list.clone(),
 		};
 

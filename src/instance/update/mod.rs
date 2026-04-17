@@ -139,7 +139,7 @@ impl Instance {
 				ctx.output.start_section();
 
 				let constants = EvalConstants {
-					version: mc_version.to_string(),
+					version: Some(mc_version.clone()),
 					loader: self.config.loader.clone(),
 					version_list: version_info.versions.clone(),
 					language: ctx.prefs.language,
@@ -150,6 +150,7 @@ impl Instance {
 				let packages = update_instance_packages(
 					self,
 					&Arc::new(constants),
+					mc_version,
 					ctx,
 					depth == UpdateDepth::Force,
 				)

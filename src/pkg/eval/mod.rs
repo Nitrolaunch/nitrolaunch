@@ -127,7 +127,7 @@ impl EvalInputTrait for EvalInput {
 #[derive(Debug, Clone)]
 pub struct EvalConstants {
 	/// The Minecraft version
-	pub version: String,
+	pub version: Option<String>,
 	/// The loader used
 	pub loader: Loader,
 	/// The list of available Minecraft versions
@@ -232,6 +232,8 @@ pub struct EvalData {
 	pub commands: Vec<Vec<String>>,
 	/// The output selected content version of the package
 	pub selected_content_version: Option<String>,
+	/// The available Minecraft versions of the selected addon version
+	pub available_minecraft_versions: Vec<String>,
 	/// Whether the package uses custom instructions
 	pub uses_custom_instructions: bool,
 }
@@ -263,6 +265,7 @@ impl EvalData {
 			notices: Vec::new(),
 			commands: Vec::new(),
 			selected_content_version: None,
+			available_minecraft_versions: Vec::new(),
 			uses_custom_instructions: false,
 		}
 	}
@@ -325,13 +328,15 @@ pub fn eval_check_properties(
 	input: &EvalInput,
 	properties: &PackageProperties,
 ) -> anyhow::Result<bool> {
-	if let Some(supported_versions) = &properties.supported_versions {
-		if !supported_versions.is_empty()
-			&& !supported_versions
-				.iter()
-				.any(|x| x.matches_single(&input.constants.version, &input.constants.version_list))
-		{
-			bail!("Package does not support this Minecraft version");
+	if let Some(version) = &input.constants.version {
+		if let Some(supported_versions) = &properties.supported_versions {
+			if !supported_versions.is_empty()
+				&& !supported_versions
+					.iter()
+					.any(|x| x.matches_single(version, &input.constants.version_list))
+			{
+				bail!("Package does not support this Minecraft version");
+			}
 		}
 	}
 

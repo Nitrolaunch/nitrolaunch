@@ -6,7 +6,6 @@ use crate::State;
 use anyhow::Context;
 use nitrolaunch::config::modifications::{apply_modifications_and_write, ConfigModification};
 use nitrolaunch::config::Config;
-use nitrolaunch::core::util::versions::MinecraftVersion;
 use nitrolaunch::instance::update::manager::UpdateSettings;
 use nitrolaunch::instance::{transfer, Instance};
 use nitrolaunch::io::lock::Lockfile;
@@ -231,7 +230,6 @@ pub async fn install_modpack_package(
 	app_handle: tauri::AppHandle,
 	modpack: String,
 	instance_id: &str,
-	minecraft_version: String,
 ) -> Result<(), String> {
 	let mut output = LauncherOutput::new(state.get_output(app_handle.clone()));
 	output.set_task("install_modpack");
@@ -260,12 +258,9 @@ pub async fn install_modpack_package(
 			.await,
 	)?;
 
-	let version_info = fmt_err(
-		core.get_version_info(
-			&MinecraftVersion::Version(minecraft_version.into()),
-			UpdateDepth::Full,
-		)
-		.await,
+	let version_manifest = fmt_err(
+		core.get_version_manifest(None, UpdateDepth::Full, &mut NoOp)
+			.await,
 	)?;
 
 	let config = fmt_err(
@@ -273,7 +268,7 @@ pub async fn install_modpack_package(
 			instance_id,
 			&req,
 			Side::Client,
-			&version_info,
+			version_manifest.list.clone(),
 			&config.packages,
 			&config.plugins,
 			&state.client,

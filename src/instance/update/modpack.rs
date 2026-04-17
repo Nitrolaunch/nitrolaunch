@@ -62,7 +62,7 @@ impl Instance {
 		process.display(MessageContents::StartProcess("Downloading modpack".into()));
 
 		let constants = EvalConstants {
-			version: version_info.version.clone(),
+			version: Some(version_info.version.clone()),
 			loader: self.config.loader.clone(),
 			version_list: version_info.versions.clone(),
 			language: ctx.prefs.language,
@@ -207,7 +207,7 @@ impl Instance {
 		id: &str,
 		modpack: &ArcPkgReq,
 		side: Side,
-		version_info: &VersionInfo,
+		version_list: Vec<String>,
 		reg: &PkgRegistry,
 		plugins: &PluginManager,
 		client: &Client,
@@ -218,9 +218,9 @@ impl Instance {
 		process.display(MessageContents::StartProcess("Downloading modpack".into()));
 
 		let constants = EvalConstants {
-			version: version_info.version.clone(),
+			version: None,
 			loader: Loader::Any,
-			version_list: version_info.versions.clone(),
+			version_list,
 			language: Language::default(),
 			default_stability: PackageStability::Latest,
 			suppress: Vec::new(),

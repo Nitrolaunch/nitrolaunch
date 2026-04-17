@@ -77,7 +77,6 @@ pub async fn run(command: TrySubcommand, data: &mut CmdData<'_>) -> anyhow::Resu
 			let instance_config = super::modpack::install_into_config(
 				&req,
 				instance_id.clone(),
-				None,
 				Some(Side::Client),
 				config,
 				&data.paths,

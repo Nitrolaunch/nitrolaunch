@@ -40,7 +40,7 @@ pub async fn eval_script_package(
 	let mut eval = EvalData::new(input, req.clone(), properties, &routine, plugins);
 
 	eval.vars.set_reserved_constants(ReservedConstantVariables {
-		mc_version: &eval.input.constants.version,
+		mc_version: eval.input.constants.version.as_deref(),
 	});
 
 	let reason = eval.reason;

@@ -15,12 +15,12 @@ pub fn eval_condition(condition: &ConditionKind, eval: &EvalData) -> anyhow::Res
 			Ok(eval_condition(left, eval)? || eval_condition(right.get(), eval)?)
 		}
 		ConditionKind::Version(version) => {
+			let Some(actual_version) = &eval.input.constants.version else {
+				return Ok(false);
+			};
 			let version = version.get(&eval.vars)?;
 			let version = VersionPattern::from(&version);
-			Ok(version.matches_single(
-				&eval.input.constants.version,
-				&eval.input.constants.version_list,
-			))
+			Ok(version.matches_single(actual_version, &eval.input.constants.version_list))
 		}
 		ConditionKind::Side(side) => Ok(eval.input.params.side == *side.get()),
 		ConditionKind::Loader(loader) => Ok(loader.get().matches(&eval.input.constants.loader)),

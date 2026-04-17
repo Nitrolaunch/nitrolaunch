@@ -28,6 +28,7 @@ use anyhow::{bail, Context};
 pub async fn update_instance_packages<O: NitroOutput>(
 	instance: &mut Instance,
 	constants: &Arc<EvalConstants>,
+	mc_version: String,
 	ctx: &mut InstanceUpdateContext<'_, O>,
 	force: bool,
 ) -> anyhow::Result<HashSet<ArcPkgReq>> {
@@ -73,7 +74,12 @@ pub async fn update_instance_packages<O: NitroOutput>(
 		}
 	}
 
-	remove_existing_addons(instance, constants)?;
+	let version_info = VersionInfo {
+		version: mc_version.clone(),
+		versions: constants.version_list.clone(),
+	};
+
+	remove_existing_addons(instance, &version_info)?;
 
 	// Evaluate first to install all of the addons
 	ctx.output.display(MessageContents::Header(translate!(
@@ -125,10 +131,6 @@ pub async fn update_instance_packages<O: NitroOutput>(
 		StartInstallingPackages
 	)));
 
-	let version_info = VersionInfo {
-		version: constants.version.clone(),
-		versions: constants.version_list.clone(),
-	};
 	for package in &resolution.packages {
 		instance
 			.install_eval_data(
@@ -248,7 +250,7 @@ async fn resolve_instance<O: NitroOutput>(
 /// Removes existing addons on an instance just in case there are lockfile issues
 fn remove_existing_addons(
 	instance: &mut Instance,
-	constants: &EvalConstants,
+	version_info: &VersionInfo,
 ) -> anyhow::Result<()> {
 	let addon_kinds = [
 		AddonKind::Datapack,
@@ -271,10 +273,7 @@ fn remove_existing_addons(
 			inst_dir,
 			&[],
 			instance.config.datapack_folder.as_ref().map(Path::new),
-			&VersionInfo {
-				version: constants.version.clone(),
-				versions: constants.version_list.clone(),
-			},
+			version_info,
 		);
 		for dir in dirs {
 			remove_nitro_addons(&dir);
