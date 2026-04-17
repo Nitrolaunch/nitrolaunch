@@ -303,9 +303,25 @@ impl Instance {
 	/// Removes all game files for an instance, including saves. Be wary when using this!
 	pub async fn delete_files(&self) -> anyhow::Result<()> {
 		if let Some(dir) = &self.dir {
-			if dir.exists() {
-				tokio::fs::remove_dir_all(dir).await?;
-			}
+			// Remove the parent directory above .minecraft for clients
+			let path = if self.config.inst_dir_override.is_none() && self.get_side() == Side::Client
+			{
+				if let Some(parent) = dir.parent() {
+					if parent
+						.file_name()
+						.is_some_and(|x| x.to_string_lossy() == "instances")
+					{
+						bail!("Attempted to remove instances directory");
+					}
+					parent
+				} else {
+					dir
+				}
+			} else {
+				dir
+			};
+
+			tokio::fs::remove_dir_all(path).await?;
 		}
 
 		Ok(())
