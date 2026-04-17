@@ -6,11 +6,12 @@ use std::{
 	time::Duration,
 };
 
-use anyhow::Context;
+use anyhow::{bail, Context};
 use crossterm::event::{self, KeyCode, KeyEvent};
 use image::DynamicImage;
 use nitrolaunch::{
 	config::Config,
+	core::{util::versions::MinecraftVersion, NitroCore},
 	instance::update::manager::UpdateSettings,
 	io::paths::Paths,
 	pkg_crate::{metadata::PackageMetadata, PackageSearchResults, PkgRequest, PkgRequestSource},
@@ -18,10 +19,12 @@ use nitrolaunch::{
 		AddCustomPackageRepositories, AddCustomPackageRepositoriesResult, AddSupportedLoaders,
 	},
 	shared::{
+		id::{InstanceID, TemplateID},
 		loaders::Loader,
 		output::NoOp,
 		pkg::{ArcPkgReq, PackageSearchParameters},
 		util::to_string_json,
+		versions::parse_single_versioned_string,
 		UpdateDepth,
 	},
 };
@@ -45,7 +48,11 @@ use crate::{
 	image_cache::{crop_image_to_ratio, ImageCache},
 };
 
-pub async fn run(mut data: CmdData<'_>) -> anyhow::Result<()> {
+pub async fn run(
+	mut data: CmdData<'_>,
+	instance: Option<String>,
+	template: Option<String>,
+) -> anyhow::Result<()> {
 	data.ensure_config(true).await?;
 
 	let repos = data
@@ -87,36 +94,69 @@ pub async fn run(mut data: CmdData<'_>) -> anyhow::Result<()> {
 		.await?
 		.get_releases();
 
-	ratatui::run(move |terminal| {
-		renderer(
-			terminal,
-			data.config.take().unwrap(),
-			data.paths.clone(),
-			repos,
-			versions,
-			loaders,
-		)
-	})
-	.context("Failed to run app")
+	let filters = create_filters(instance, template, data.config.get(), &core)
+		.await
+		.context("Failed to create initial filters")?;
+
+	let state = State::new(
+		data.config.take().unwrap(),
+		data.paths.clone(),
+		filters,
+		repos,
+		versions,
+		loaders,
+	)?;
+
+	ratatui::run(move |terminal| renderer(terminal, state)).context("Failed to run app")
+}
+
+/// Create initial filters
+async fn create_filters(
+	instance: Option<String>,
+	template: Option<String>,
+	config: &Config,
+	core: &NitroCore,
+) -> anyhow::Result<PackageSearchParameters> {
+	let mut params = PackageSearchParameters {
+		count: 35,
+		skip: 0,
+		..Default::default()
+	};
+
+	if let Some(instance) = instance {
+		let Some(instance) = config.instances.get(&InstanceID::from(instance)) else {
+			bail!("Instance does not exist");
+		};
+
+		if instance.get_config().loader != Loader::Vanilla {
+			params.loaders = vec![instance.get_config().loader.clone()];
+		}
+		let version = core.resolve_version(&instance.get_config().version).await?;
+		params.minecraft_versions = vec![version.to_string()];
+	} else if let Some(template) = template {
+		let Some(template) = config.templates.get(&TemplateID::from(template)) else {
+			bail!("Template does not exist");
+		};
+
+		if let Some(loader) = &template.instance.loader {
+			let (loader, _) = parse_single_versioned_string(loader);
+			let loader = Loader::parse_from_str(loader);
+			if loader != Loader::Vanilla {
+				params.loaders = vec![loader];
+			}
+		}
+		if let Some(version) = &template.instance.version {
+			let version = MinecraftVersion::from_deser(version);
+			let version = core.resolve_version(&version).await?;
+			params.minecraft_versions = vec![version.to_string()];
+		}
+	}
+
+	Ok(params)
 }
 
 /// Main event loop
-fn renderer(
-	terminal: &mut DefaultTerminal,
-	config: Config,
-	paths: Paths,
-	available_repos: Vec<AddCustomPackageRepositoriesResult>,
-	available_versions: Vec<String>,
-	available_loaders: Vec<Loader>,
-) -> anyhow::Result<()> {
-	let mut state = State::new(
-		config,
-		paths,
-		available_repos,
-		available_versions,
-		available_loaders,
-	)?;
-
+fn renderer(terminal: &mut DefaultTerminal, mut state: State<'_>) -> anyhow::Result<()> {
 	// Initial draw
 	terminal.draw(|frame| render(frame, &mut state))?;
 
@@ -456,6 +496,7 @@ impl<'a> State<'a> {
 	fn new(
 		config: Config,
 		paths: Paths,
+		filters: PackageSearchParameters,
 		repositories: Vec<AddCustomPackageRepositoriesResult>,
 		versions: Vec<String>,
 		loaders: Vec<Loader>,
@@ -502,11 +543,7 @@ impl<'a> State<'a> {
 			image_available: Arc::new(AtomicBool::new(false)),
 			results: PackageSearchResults::default(),
 			search_params: SearchParams {
-				inner: PackageSearchParameters {
-					count: 35,
-					skip: 0,
-					..Default::default()
-				},
+				inner: filters,
 				repo: None,
 			},
 			popup_list_state: ListState::default(),

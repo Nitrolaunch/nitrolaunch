@@ -36,8 +36,8 @@ use io::java::JavaMajorVersion;
 use io::{persistent::PersistentData, update::UpdateManager};
 use net::game_files::version_manifest::{make_version_list, VersionManifestAndList};
 use nitro_shared::minecraft::VersionEntry;
-use nitro_shared::output::{self, NitroOutput};
-use nitro_shared::versions::VersionInfo;
+use nitro_shared::output::{self, NitroOutput, NoOp};
+use nitro_shared::versions::{VersionInfo, VersionName};
 use nitro_shared::UpdateDepth;
 use tokio::sync::Mutex;
 use util::versions::MinecraftVersion;
@@ -124,6 +124,17 @@ impl NitroCore {
 			req_client: &self.req_client,
 		};
 		self.versions.load_version_manifest(params, o).await
+	}
+
+	/// Canonicalizes a version identifier like `latest` to it's actual version
+	pub async fn resolve_version(&self, version: &MinecraftVersion) -> anyhow::Result<VersionName> {
+		let manifest = self
+			.get_version_manifest(Some(version), UpdateDepth::Shallow, &mut NoOp)
+			.await?;
+
+		version
+			.get_version(&manifest.manifest)
+			.context("Version does not exist")
 	}
 
 	/// Load or install a version of the game

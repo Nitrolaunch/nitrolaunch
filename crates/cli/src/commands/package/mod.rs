@@ -32,7 +32,14 @@ mod browse;
 #[derive(Debug, Subcommand)]
 pub enum PackageSubcommand {
 	#[command(about = "Browse packages in a TUI")]
-	Browse {},
+	Browse {
+		/// Optional instance to create filters from
+		#[arg(long)]
+		instance: Option<String>,
+		/// Optional template to create filters from
+		#[arg(long)]
+		template: Option<String>,
+	},
 	#[command(about = "List all installed packages across all instances")]
 	#[clap(alias = "ls")]
 	List {
@@ -145,7 +152,9 @@ pub enum RepoSubcommand {
 
 pub async fn run(subcommand: PackageSubcommand, mut data: CmdData<'_>) -> anyhow::Result<()> {
 	match subcommand {
-		PackageSubcommand::Browse {} => browse::run(data).await,
+		PackageSubcommand::Browse { instance, template } => {
+			browse::run(data, instance, template).await
+		}
 		PackageSubcommand::List { raw, instance } => list(&mut data, raw, instance).await,
 		PackageSubcommand::Sync { filter } => sync(&mut data, filter).await,
 		PackageSubcommand::Cat { raw, package } => cat(&mut data, &package, raw).await,
