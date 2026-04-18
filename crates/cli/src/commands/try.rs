@@ -72,15 +72,7 @@ pub async fn run(command: TrySubcommand, data: &mut CmdData<'_>) -> anyhow::Resu
 				..Default::default()
 			};
 
-			read_instance_config(
-				id.into(),
-				instance_config,
-				&HashMap::new(),
-				&config.plugins,
-				&data.paths,
-				data.output,
-			)
-			.await?
+			read_instance_config(id.into(), instance_config, &HashMap::new(), &data.paths).await?
 		}
 		TrySubcommand::Modpack { modpack } => {
 			let req = PkgRequest::parse(&modpack, PkgRequestSource::UserRequire).arc();
@@ -101,9 +93,7 @@ pub async fn run(command: TrySubcommand, data: &mut CmdData<'_>) -> anyhow::Resu
 				instance_id.clone(),
 				instance_config,
 				&HashMap::new(),
-				&config.plugins,
 				&data.paths,
-				data.output,
 			)
 			.await?
 		}
