@@ -10,7 +10,7 @@ use nitrolaunch::{
 	io::paths::Paths,
 	plugin::PluginManager,
 	plugin_crate::hook::hooks::AddSupportedLoaders,
-	shared::{id::InstanceID, loaders::Loader, output::NoOp, util::is_valid_identifier, Side},
+	shared::{Side, id::{InstanceID, TemplateID}, loaders::Loader, output::NoOp, util::is_valid_identifier},
 };
 
 /// Pick which instance to use if the user has not selected one
@@ -35,6 +35,22 @@ pub fn pick_instances(config: &Config) -> anyhow::Result<Vec<InstanceID>> {
 		.prompt()
 		.context("Prompt failed")
 }
+
+
+/// Pick which template to use
+pub fn pick_template(template: Option<String>, config: &Config) -> anyhow::Result<TemplateID> {
+	if let Some(template) = template {
+		Ok(template.into())
+	} else {
+		let options = config.templates.keys().sorted().collect();
+		let selection = Select::new("Choose a template", options)
+			.prompt()
+			.context("Prompt failed")?;
+
+		Ok(selection.to_owned())
+	}
+}
+
 
 /// Pick which account to use if the user has not selected one
 pub fn pick_account(account: Option<String>, config: &Config) -> anyhow::Result<AccountID> {

@@ -8,12 +8,39 @@ use nitro_plugin::hook::hooks::{
 	SaveInstanceConfig, SaveInstanceConfigArg, SaveTemplateConfig, SaveTemplateConfigArg,
 };
 use nitro_shared::output::NitroOutput;
+use nitro_shared::util::DeserListOrSingle;
 
 use crate::io::paths::Paths;
 use crate::plugin::PluginManager;
 use nitro_shared::id::{InstanceID, TemplateID};
 
 use super::Config;
+
+impl Config {
+	/// Consolidates the parents of a template into a template, saving the modified config
+	pub async fn consolidate_template(
+		&self,
+		template_id: &TemplateID,
+		paths: &Paths,
+		plugins: &PluginManager,
+		o: &mut impl NitroOutput,
+	) -> anyhow::Result<()> {
+		let mut template = self
+			.consolidated_templates
+			.get(template_id)
+			.context("Template does not exist")?
+			.clone();
+		template.instance.from = DeserListOrSingle::default();
+
+		let modifications = vec![ConfigModification::AddTemplate(
+			template_id.clone(),
+			template,
+		)];
+		let mut config = Self::open(&Self::get_path(paths))?;
+
+		apply_modifications_and_write(&mut config, modifications, paths, plugins, o).await
+	}
+}
 
 /// A modification operation that can be applied to the config
 pub enum ConfigModification {

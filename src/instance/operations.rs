@@ -1,6 +1,6 @@
 use anyhow::{bail, Context};
 use nitro_plugin::hook::hooks::{DeleteInstance, SaveInstanceConfigArg};
-use nitro_shared::{io::dir_size, output::NitroOutput, Side};
+use nitro_shared::{io::dir_size, output::NitroOutput, util::DeserListOrSingle, Side};
 
 use crate::{
 	config::{
@@ -13,6 +13,22 @@ use crate::{
 };
 
 impl Instance {
+	/// Consolidates the parent configs of this instance into it's config, and saves the result
+	pub async fn consolidate(
+		&self,
+		paths: &Paths,
+		plugins: &PluginManager,
+		o: &mut impl NitroOutput,
+	) -> anyhow::Result<()> {
+		let mut config = self.config.original_config_with_templates.clone();
+		config.from = DeserListOrSingle::default();
+
+		let modifications = vec![ConfigModification::AddInstance(self.id.clone(), config)];
+		let mut config = Config::open(&Config::get_path(paths))?;
+
+		apply_modifications_and_write(&mut config, modifications, paths, plugins, o).await
+	}
+
 	/// Deletes this instance and all of its files. Use with caution!
 	pub async fn delete(
 		&self,

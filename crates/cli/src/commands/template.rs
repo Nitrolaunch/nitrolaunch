@@ -1,6 +1,7 @@
 use crate::{
 	commands::{call_plugin_subcommand, config::edit_temp_file},
 	output::{icons_enabled, HYPHEN_POINT, INSTANCE, LOADER, PACKAGE, VERSION},
+	prompt::pick_template,
 };
 use std::ops::DerefMut;
 
@@ -9,18 +10,14 @@ use super::CmdData;
 use anyhow::{bail, Context};
 use clap::Subcommand;
 use color_print::{cprint, cprintln};
-use inquire::{Confirm, Select};
+use inquire::Confirm;
 use itertools::Itertools;
 use nitrolaunch::{
-	config::{
-		modifications::{apply_modifications_and_write, ConfigModification},
-		Config,
-	},
+	config::modifications::{apply_modifications_and_write, ConfigModification},
 	config_crate::template::{TemplateConfig, TemplateLoaderConfiguration},
 	core::util::versions::MinecraftVersion,
 	plugin_crate::hook::hooks::{DeleteTemplate, SaveTemplateConfigArg},
 	shared::{
-		id::TemplateID,
 		output::{MessageContents, NitroOutput},
 		Side,
 	},
@@ -47,6 +44,11 @@ pub enum TemplateSubcommand {
 		/// The template to delete
 		template: Option<String>,
 	},
+	#[command(about = "Unlink a template from its parents and combine into a single config")]
+	Consolidate {
+		/// The template to consolidate
+		template: Option<String>,
+	},
 	#[clap(external_subcommand)]
 	External(Vec<String>),
 }
@@ -57,6 +59,7 @@ pub async fn run(subcommand: TemplateSubcommand, data: &mut CmdData<'_>) -> anyh
 		TemplateSubcommand::Info { template } => info(data, template).await,
 		TemplateSubcommand::Delete { template } => delete(data, template).await,
 		TemplateSubcommand::Edit { template } => edit(data, template).await,
+		TemplateSubcommand::Consolidate { template } => consolidate(data, template).await,
 		TemplateSubcommand::External(args) => {
 			call_plugin_subcommand(args, Some("template"), data).await
 		}
@@ -271,16 +274,18 @@ async fn edit(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()> 
 	Ok(())
 }
 
-/// Pick which template to use
-pub fn pick_template(template: Option<String>, config: &Config) -> anyhow::Result<TemplateID> {
-	if let Some(template) = template {
-		Ok(template.into())
-	} else {
-		let options = config.templates.keys().sorted().collect();
-		let selection = Select::new("Choose a template", options)
-			.prompt()
-			.context("Prompt failed")?;
+async fn consolidate(data: &mut CmdData<'_>, template: Option<String>) -> anyhow::Result<()> {
+	data.ensure_config(true).await?;
+	let config = data.config.get();
 
-		Ok(selection.to_owned())
-	}
+	let template = pick_template(template, config)?;
+
+	config
+		.consolidate_template(&template, &data.paths, &config.plugins, data.output)
+		.await?;
+
+	data.output
+		.display(MessageContents::Success("Changes saved".into()));
+
+	Ok(())
 }

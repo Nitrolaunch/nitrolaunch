@@ -128,6 +128,13 @@ pub enum InstanceSubcommand {
 		/// The instance to view the logs of
 		instance: Option<String>,
 	},
+	#[command(
+		about = "Unlink an instance from its parent templates and combine into a single config"
+	)]
+	Consolidate {
+		/// The instance to consolidate
+		instance: Option<String>,
+	},
 	#[command(about = "Print the directory of an instance")]
 	Dir {
 		/// The instance to print the directory of
@@ -170,6 +177,7 @@ pub async fn run(command: InstanceSubcommand, mut data: CmdData<'_>) -> anyhow::
 		} => export(&mut data, instance, format, output).await,
 		InstanceSubcommand::Delete { instance } => delete(&mut data, instance).await,
 		InstanceSubcommand::Edit { instance } => edit(&mut data, instance).await,
+		InstanceSubcommand::Consolidate { instance } => consolidate(&mut data, instance).await,
 		InstanceSubcommand::Logs { instance } => logs(&mut data, instance).await,
 		InstanceSubcommand::External(args) => {
 			call_plugin_subcommand(args, Some("instance"), &mut data).await
@@ -764,6 +772,26 @@ async fn logs(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()> 
 			break;
 		}
 	}
+
+	Ok(())
+}
+
+async fn consolidate(data: &mut CmdData<'_>, instance: Option<String>) -> anyhow::Result<()> {
+	data.ensure_config(true).await?;
+	let config = data.config.get();
+
+	let instance = pick_instance(instance, config)?;
+	let instance = config
+		.instances
+		.get(&instance)
+		.context("Instance does not exist")?;
+
+	instance
+		.consolidate(&data.paths, &config.plugins, data.output)
+		.await?;
+
+	data.output
+		.display(MessageContents::Success("Changes saved".into()));
 
 	Ok(())
 }
