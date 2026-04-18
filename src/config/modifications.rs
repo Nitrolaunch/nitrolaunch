@@ -40,6 +40,30 @@ impl Config {
 
 		apply_modifications_and_write(&mut config, modifications, paths, plugins, o).await
 	}
+
+	/// Duplicates a template into a new one
+	pub async fn duplicate_template(
+		&self,
+		template_id: &TemplateID,
+		new_template_id: &TemplateID,
+		paths: &Paths,
+		plugins: &PluginManager,
+		o: &mut impl NitroOutput,
+	) -> anyhow::Result<()> {
+		let template = self
+			.templates
+			.get(template_id)
+			.context("Template does not exist")?
+			.clone();
+
+		let modifications = vec![ConfigModification::AddTemplate(
+			new_template_id.clone(),
+			template,
+		)];
+		let mut config = Self::open(&Self::get_path(paths))?;
+
+		apply_modifications_and_write(&mut config, modifications, paths, plugins, o).await
+	}
 }
 
 /// A modification operation that can be applied to the config

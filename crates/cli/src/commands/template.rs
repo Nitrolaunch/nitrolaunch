@@ -1,7 +1,7 @@
 use crate::{
 	commands::{call_plugin_subcommand, config::edit_temp_file},
 	output::{icons_enabled, HYPHEN_POINT, INSTANCE, LOADER, PACKAGE, VERSION},
-	prompt::pick_template,
+	prompt::{pick_instance_id, pick_template},
 };
 use std::ops::DerefMut;
 
@@ -44,6 +44,13 @@ pub enum TemplateSubcommand {
 		/// The template to delete
 		template: Option<String>,
 	},
+	#[command(about = "Duplicates a template into a new one")]
+	Duplicate {
+		/// The template to duplicate
+		template: Option<String>,
+		/// The ID of the new template
+		new_id: Option<String>,
+	},
 	#[command(about = "Unlink a template from its parents and combine into a single config")]
 	Consolidate {
 		/// The template to consolidate
@@ -59,6 +66,9 @@ pub async fn run(subcommand: TemplateSubcommand, data: &mut CmdData<'_>) -> anyh
 		TemplateSubcommand::Info { template } => info(data, template).await,
 		TemplateSubcommand::Delete { template } => delete(data, template).await,
 		TemplateSubcommand::Edit { template } => edit(data, template).await,
+		TemplateSubcommand::Duplicate { template, new_id } => {
+			duplicate(data, template, new_id).await
+		}
 		TemplateSubcommand::Consolidate { template } => consolidate(data, template).await,
 		TemplateSubcommand::External(args) => {
 			call_plugin_subcommand(args, Some("template"), data).await
@@ -267,6 +277,38 @@ async fn edit(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()> 
 	)
 	.await
 	.context("Failed to modify and write config")?;
+
+	data.output
+		.display(MessageContents::Success("Changes saved".into()));
+
+	Ok(())
+}
+
+async fn duplicate(
+	data: &mut CmdData<'_>,
+	template: Option<String>,
+	new_id: Option<String>,
+) -> anyhow::Result<()> {
+	data.ensure_config(true).await?;
+	let config = data.config.get();
+
+	let template = pick_template(template, config)?;
+
+	let new_id = if let Some(new_id) = new_id {
+		new_id.into()
+	} else {
+		pick_instance_id()?
+	};
+
+	config
+		.duplicate_template(
+			&template,
+			&new_id,
+			&data.paths,
+			&config.plugins,
+			data.output,
+		)
+		.await?;
 
 	data.output
 		.display(MessageContents::Success("Changes saved".into()));

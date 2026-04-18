@@ -1,6 +1,8 @@
 use anyhow::{bail, Context};
 use nitro_plugin::hook::hooks::{DeleteInstance, SaveInstanceConfigArg};
-use nitro_shared::{io::dir_size, output::NitroOutput, util::DeserListOrSingle, Side};
+use nitro_shared::{
+	id::InstanceID, io::dir_size, output::NitroOutput, util::DeserListOrSingle, Side,
+};
 
 use crate::{
 	config::{
@@ -24,6 +26,22 @@ impl Instance {
 		config.from = DeserListOrSingle::default();
 
 		let modifications = vec![ConfigModification::AddInstance(self.id.clone(), config)];
+		let mut config = Config::open(&Config::get_path(paths))?;
+
+		apply_modifications_and_write(&mut config, modifications, paths, plugins, o).await
+	}
+
+	/// Duplicates this instance to create a new one
+	pub async fn duplicate(
+		&self,
+		new_id: &InstanceID,
+		paths: &Paths,
+		plugins: &PluginManager,
+		o: &mut impl NitroOutput,
+	) -> anyhow::Result<()> {
+		let config = self.config.original_config.clone();
+
+		let modifications = vec![ConfigModification::AddInstance(new_id.clone(), config)];
 		let mut config = Config::open(&Config::get_path(paths))?;
 
 		apply_modifications_and_write(&mut config, modifications, paths, plugins, o).await

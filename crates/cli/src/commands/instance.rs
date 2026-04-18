@@ -128,6 +128,13 @@ pub enum InstanceSubcommand {
 		/// The instance to view the logs of
 		instance: Option<String>,
 	},
+	#[command(about = "Duplicates an instance into a new one")]
+	Duplicate {
+		/// The instance to duplicate
+		instance: Option<String>,
+		/// The ID of the new instance
+		new_id: Option<String>,
+	},
 	#[command(
 		about = "Unlink an instance from its parent templates and combine into a single config"
 	)]
@@ -177,6 +184,9 @@ pub async fn run(command: InstanceSubcommand, mut data: CmdData<'_>) -> anyhow::
 		} => export(&mut data, instance, format, output).await,
 		InstanceSubcommand::Delete { instance } => delete(&mut data, instance).await,
 		InstanceSubcommand::Edit { instance } => edit(&mut data, instance).await,
+		InstanceSubcommand::Duplicate { instance, new_id } => {
+			duplicate(&mut data, instance, new_id).await
+		}
 		InstanceSubcommand::Consolidate { instance } => consolidate(&mut data, instance).await,
 		InstanceSubcommand::Logs { instance } => logs(&mut data, instance).await,
 		InstanceSubcommand::External(args) => {
@@ -772,6 +782,36 @@ async fn logs(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()> 
 			break;
 		}
 	}
+
+	Ok(())
+}
+
+async fn duplicate(
+	data: &mut CmdData<'_>,
+	instance: Option<String>,
+	new_id: Option<String>,
+) -> anyhow::Result<()> {
+	data.ensure_config(true).await?;
+	let config = data.config.get();
+
+	let instance = pick_instance(instance, config)?;
+	let instance = config
+		.instances
+		.get(&instance)
+		.context("Instance does not exist")?;
+
+	let new_id = if let Some(new_id) = new_id {
+		new_id.into()
+	} else {
+		pick_instance_id()?
+	};
+
+	instance
+		.duplicate(&new_id, &data.paths, &config.plugins, data.output)
+		.await?;
+
+	data.output
+		.display(MessageContents::Success("Changes saved".into()));
 
 	Ok(())
 }
