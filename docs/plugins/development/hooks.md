@@ -94,26 +94,6 @@ Runs an arbitrary custom action, basically allowing you to define your own hooks
 
 ## Configuration Hooks
 
-### `modify_instance_config`
-
-Called on every instance to possibly modify its config. The output config will be merged with the instance's current config in the same way as templates are. Note that the input is not sequential: All plugins will be given the same config before modification, instead of applying one after the other, and the results will all be merged together.
-
-- Argument:
-
-```
-{
-	"config": InstanceConfig
-}
-```
-
-- Result:
-
-```
-{
-	"config": InstanceConfig
-}
-```
-
 ### `add_instances`
 
 Adds new instances to the config

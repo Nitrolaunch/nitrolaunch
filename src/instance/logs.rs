@@ -16,14 +16,14 @@ impl Instance {
 	) -> anyhow::Result<Vec<String>> {
 		if let Some(plugin) = &self
 			.config
-			.original_config_with_templates_and_plugins
+			.original_config_with_templates
 			.custom_logging_plugin
 		{
 			let arg = GetInstanceLogsArg {
 				id: self.id.to_string(),
 				config: self
 					.config
-					.original_config_with_templates_and_plugins
+					.original_config_with_templates
 					.clone(),
 			};
 
@@ -55,7 +55,7 @@ impl Instance {
 	) -> anyhow::Result<String> {
 		if let Some(plugin) = &self
 			.config
-			.original_config_with_templates_and_plugins
+			.original_config_with_templates
 			.custom_logging_plugin
 		{
 			let arg = GetInstanceLogArg {
@@ -63,7 +63,7 @@ impl Instance {
 				log_id: log_id.to_string(),
 				config: self
 					.config
-					.original_config_with_templates_and_plugins
+					.original_config_with_templates
 					.clone(),
 			};
 

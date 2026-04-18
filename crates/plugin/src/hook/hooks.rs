@@ -100,32 +100,6 @@ pub struct SubcommandArg {
 }
 
 def_hook!(
-	ModifyInstanceConfig,
-	"modify_instance_config",
-	"Hook for modifying an instance's configuration",
-	ModifyInstanceConfigArgument,
-	ModifyInstanceConfigResult,
-	2,
-	true,
-);
-
-/// Argument to the ModifyInstanceConfig hook
-#[derive(Serialize, Deserialize, Default)]
-#[serde(default)]
-pub struct ModifyInstanceConfigArgument {
-	/// The instance's configuration
-	pub config: InstanceConfig,
-}
-
-/// Result from the ModifyInstanceConfig hook
-#[derive(Serialize, Deserialize, Default)]
-#[serde(default)]
-pub struct ModifyInstanceConfigResult {
-	/// Configuration to apply
-	pub config: InstanceConfig,
-}
-
-def_hook!(
 	AddVersions,
 	"add_versions",
 	"Hook for adding extra versions to the version manifest",

@@ -1,15 +1,14 @@
 use std::str::FromStr;
 
 use anyhow::bail;
-use nitro_config::instance::{InstanceConfig, LaunchArgs, LaunchConfig};
 use nitro_plugin::api::wasm::WASMPlugin;
-use nitro_plugin::hook::hooks::ModifyInstanceConfigResult;
+use nitro_plugin::hook::hooks::OnInstanceSetupResult;
 use nitro_plugin::nitro_wasm_plugin;
 
 nitro_wasm_plugin!(main, "args");
 
 fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
-	plugin.modify_instance_config(|arg| {
+	plugin.on_instance_setup(|arg| {
 		let args = if let Some(preset) = arg.config.plugin_config.get("args_preset") {
 			if let Some(preset) = preset.as_str() {
 				if let Ok(preset) = ArgsPreset::from_str(preset) {
@@ -26,17 +25,9 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 			Vec::new()
 		};
 
-		Ok(ModifyInstanceConfigResult {
-			config: InstanceConfig {
-				launch: LaunchConfig {
-					args: LaunchArgs {
-						jvm: nitro_config::instance::Args::List(args),
-						..Default::default()
-					},
-					..Default::default()
-				},
-				..Default::default()
-			},
+		Ok(OnInstanceSetupResult {
+			jvm_args: args,
+			..Default::default()
 		})
 	})?;
 

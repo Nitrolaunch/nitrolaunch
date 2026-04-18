@@ -27,7 +27,7 @@ impl Instance {
 		version_info: &VersionInfo,
 	) {
 		if let Some(inst_dir) = &self.dir {
-			let config = &self.config.original_config_with_templates_and_plugins;
+			let config = &self.config.original_config_with_templates;
 			addon.get_targets(
 				self.get_side(),
 				inst_dir,

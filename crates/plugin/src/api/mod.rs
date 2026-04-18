@@ -52,11 +52,6 @@ macro_rules! hook_interface {
 hook_interface!(on_load, "on_load", OnLoad, |_| Ok(()));
 hook_interface!(start_worker, "start_worker", StartWorker, |_| Ok(()));
 hook_interface!(subcommand, "subcommand", Subcommand);
-hook_interface!(
-	modify_instance_config,
-	"modify_instance_config",
-	ModifyInstanceConfig
-);
 hook_interface!(add_versions, "add_versions", AddVersions);
 hook_interface!(on_instance_setup, "on_instance_setup", OnInstanceSetup);
 hook_interface!(on_instance_launch, "on_instance_launch", OnInstanceLaunch);

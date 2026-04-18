@@ -108,7 +108,7 @@ impl Instance {
 		let modpack_result = if facets.modpack && depth >= UpdateDepth::Full {
 			if let Some(modpack) = &self
 				.config
-				.original_config_with_templates_and_plugins
+				.original_config_with_templates
 				.modpack
 			{
 				let modpack = PkgRequest::parse(modpack, PkgRequestSource::UserRequire).arc();
@@ -179,7 +179,7 @@ impl Instance {
 			loader: self.config.loader.clone(),
 			config: self
 				.config
-				.original_config_with_templates_and_plugins
+				.original_config_with_templates
 				.clone(),
 			internal_dir: ctx.paths.internal.to_string_lossy().to_string(),
 			update_depth: manager.settings.depth,

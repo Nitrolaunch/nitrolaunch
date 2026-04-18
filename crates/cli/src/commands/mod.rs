@@ -452,7 +452,7 @@ async fn call_plugin_subcommand(
 			id.clone(),
 			instance
 				.get_config()
-				.original_config_with_templates_and_plugins
+				.original_config_with_templates
 				.clone(),
 		);
 	}

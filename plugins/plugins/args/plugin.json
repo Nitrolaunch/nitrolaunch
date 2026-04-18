@@ -6,7 +6,7 @@
 	"version": "v6",
 	"protocol_version": 3,
 	"hooks": {
-		"modify_instance_config": {
+		"on_instance_setup": {
 			"wasm": true
 		},
 		"add_instance_config_controls": {

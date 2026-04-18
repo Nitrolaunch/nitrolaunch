@@ -10,46 +10,26 @@ use nitro_config::instance::{is_valid_instance_id, InstanceConfig, LaunchConfig,
 use nitro_config::template::TemplateConfig;
 use nitro_core::io::java::install::JavaInstallationKind;
 use nitro_core::util::versions::MinecraftVersion;
-use nitro_plugin::hook::hooks::{ModifyInstanceConfig, ModifyInstanceConfigArgument};
 use nitro_shared::id::{InstanceID, TemplateID};
 use nitro_shared::java_args::MemoryNum;
 use nitro_shared::loaders::Loader;
-use nitro_shared::output::NitroOutput;
 use nitro_shared::versions::parse_versioned_string;
 use nitro_shared::Side;
-
-use crate::plugin::PluginManager;
 
 /// Read the config for an instance to create the instance
 pub async fn read_instance_config(
 	id: InstanceID,
 	mut config: InstanceConfig,
 	templates: &HashMap<TemplateID, TemplateConfig>,
-	plugins: &PluginManager,
 	paths: &Paths,
-	o: &mut impl NitroOutput,
 ) -> anyhow::Result<Instance> {
 	if !is_valid_instance_id(&id) {
 		bail!("Invalid instance ID '{}'", id);
 	}
 
 	let original_config = config.clone();
-	let mut config = config.apply_templates(templates)?;
+	let config = config.apply_templates(templates)?;
 	let original_config_with_templates = config.clone();
-
-	// Apply plugins
-	let arg = ModifyInstanceConfigArgument {
-		config: config.clone(),
-	};
-	let mut results = plugins
-		.call_hook(ModifyInstanceConfig, &arg, paths, o)
-		.await
-		.context("Failed to apply plugin instance modifications")?;
-	while let Some(result) = results.next_result(o).await? {
-		config.merge(result.config);
-	}
-
-	let original_config_with_templates_and_plugins = config.clone();
 
 	let kind = match config.side.unwrap() {
 		Side::Client => InstKind::client(config.window),
@@ -92,7 +72,6 @@ pub async fn read_instance_config(
 		custom_launch: config.custom_launch,
 		original_config,
 		original_config_with_templates,
-		original_config_with_templates_and_plugins,
 		plugin_config: config.plugin_config,
 	};
 

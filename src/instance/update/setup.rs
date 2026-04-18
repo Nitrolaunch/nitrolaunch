@@ -77,7 +77,7 @@ impl Instance {
 			desired_loader_version: self.config.loader_version.clone(),
 			config: self
 				.config
-				.original_config_with_templates_and_plugins
+				.original_config_with_templates
 				.clone(),
 			internal_dir: paths.internal.to_string_lossy().to_string(),
 			update_depth,

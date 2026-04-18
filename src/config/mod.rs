@@ -253,9 +253,7 @@ impl Config {
 				instance_id.clone(),
 				instance_config,
 				&consolidated_templates,
-				&plugins,
 				paths,
-				o,
 			)
 			.await;
 
@@ -300,7 +298,7 @@ impl Config {
 			.map(|(k, v)| {
 				(
 					k.to_string(),
-					v.config.original_config_with_templates_and_plugins.clone(),
+					v.config.original_config_with_templates.clone(),
 				)
 			})
 			.collect();

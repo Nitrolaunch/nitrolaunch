@@ -63,7 +63,7 @@ impl Instance {
 			version_info: version_info.clone(),
 			config: self
 				.config
-				.original_config_with_templates_and_plugins
+				.original_config_with_templates
 				.clone(),
 			pid: None,
 			stdout_path: None,

@@ -187,7 +187,7 @@ pub async fn get_instance_config(
 	Ok(Some(
 		instance
 			.get_config()
-			.original_config_with_templates_and_plugins
+			.original_config_with_templates
 			.clone(),
 	))
 }
