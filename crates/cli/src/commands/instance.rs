@@ -380,18 +380,17 @@ pub async fn launch(
 
 async fn dir(data: &mut CmdData<'_>, instance: Option<String>) -> anyhow::Result<()> {
 	data.ensure_config(true).await?;
+	let config = data.config.get();
 
-	let instance = pick_instance(instance, data.config.get()).context("Failed to pick instance")?;
-	let instance = data
-		.config
-		.get_mut()
+	let instance = pick_instance(instance, config).context("Failed to pick instance")?;
+	let instance = config
 		.instances
-		.get_mut(&instance)
+		.get(&instance)
 		.context("Instance does not exist")?;
 	instance.ensure_dir()?;
 
-	if let Some(inst_dir) = &instance.get_dir() {
-		println!("{inst_dir:?}");
+	if let Some(dir) = &instance.get_dir() {
+		println!("{}", dir.to_string_lossy());
 	} else {
 		bail!("Instance has no directory");
 	}
