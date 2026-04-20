@@ -324,6 +324,14 @@ impl<T> DeserListOrSingle<T> {
 		val.is_none() || matches!(val, Some(val) if val.is_empty())
 	}
 
+	/// Gets the length of the contents
+	pub fn len(&self) -> usize {
+		match self {
+			Self::Single(..) => 1,
+			Self::List(list) => list.len(),
+		}
+	}
+
 	/// Iterates over this DeserListOrSingle
 	pub fn iter(&self) -> DeserListOrSingleIter<'_, T> {
 		match &self {

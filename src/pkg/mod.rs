@@ -9,12 +9,17 @@ pub mod repo;
 
 use crate::io::paths::Paths;
 use nitro_core::net::download;
-use nitro_pkg::declarative::{deserialize_declarative_package, DeclarativePackage};
+use nitro_pkg::declarative::{
+	deserialize_declarative_package, DeclarativeAddonVersion, DeclarativeConditionSet,
+	DeclarativePackage,
+};
 use nitro_pkg::repo::PackageFlag;
 use nitro_pkg::PackageContentType;
 use nitro_shared::try_3;
+use nitro_shared::util::DeserListOrSingle;
 
-use std::collections::HashSet;
+use std::borrow::Cow;
+use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::future::Future;
 use std::path::PathBuf;
@@ -339,6 +344,62 @@ impl Package {
 		} else {
 			Ok(None)
 		}
+	}
+
+	/// Gets the content versions of this addon
+	pub async fn get_content_versions(
+		&self,
+		paths: &Paths,
+		client: &Client,
+	) -> anyhow::Result<Vec<Cow<'_, DeclarativeAddonVersion>>> {
+		let contents = self.get_declarative_contents(paths, client).await?;
+		let Some(contents) = contents else {
+			let properties = self.get_properties(paths, client).await?;
+
+			return Ok(properties
+				.content_versions
+				.iter()
+				.flatten()
+				.map(|x| {
+					Cow::Owned(DeclarativeAddonVersion {
+						conditional_properties: DeclarativeConditionSet {
+							content_versions: Some(DeserListOrSingle::Single(x.clone())),
+							..Default::default()
+						},
+						..Default::default()
+					})
+				})
+				.collect());
+		};
+
+		// Combine the same content version across multiple addons into a single version if possible
+		let mut versions_with_ids = HashMap::new();
+		let mut versions_without_ids = Vec::new();
+
+		for addon in contents.addons.values() {
+			for version in &addon.versions {
+				let content_version =
+					if let Some(versions) = &version.conditional_properties.content_versions {
+						versions.first()
+					} else {
+						None
+					};
+
+				if let Some(content_version) = content_version {
+					if !versions_with_ids.contains_key(content_version) {
+						versions_with_ids.insert(content_version.clone(), version);
+					}
+				} else {
+					versions_without_ids.push(version);
+				}
+			}
+		}
+
+		Ok(versions_without_ids
+			.into_iter()
+			.chain(versions_with_ids.into_values())
+			.map(Cow::Borrowed)
+			.collect())
 	}
 
 	/// Get the text contents of the package

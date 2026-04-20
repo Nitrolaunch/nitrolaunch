@@ -465,6 +465,45 @@ fn wrap_message_width(message: &'_ str, width: usize) -> Cow<'_, str> {
 	Cow::Owned(out)
 }
 
+/// Cuts or pads a message to exactly `width` characters
+pub fn fit_message_width(message: &str, width: usize) -> Cow<'_, str> {
+	if width == 0 {
+		return Cow::Borrowed("");
+	}
+
+	let mut char_count = 0;
+	let mut end_byte = message.len();
+
+	// Find where to cut (if needed) and count chars
+	for (i, _) in message.char_indices() {
+		if char_count == width {
+			end_byte = i;
+			break;
+		}
+		char_count += 1;
+	}
+
+	// Truncate if string is longer
+	if char_count == width && end_byte < message.len() {
+		return Cow::Owned(message[..end_byte].to_string());
+	}
+
+	// Return if correct width
+	if char_count == width {
+		return Cow::Borrowed(message);
+	}
+
+	// Pad if string is shorter
+	let mut out = String::with_capacity(message.len() + (width - char_count));
+	out.push_str(message);
+
+	for _ in 0..(width - char_count) {
+		out.push(' ');
+	}
+
+	Cow::Owned(out)
+}
+
 /// Get whether icons are enabled
 pub fn icons_enabled() -> bool {
 	IO_CONFIG.get_bool("cli_icons").unwrap_or_default()

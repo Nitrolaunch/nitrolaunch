@@ -193,6 +193,17 @@ impl LoaderMatch {
 	}
 }
 
+impl Display for LoaderMatch {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		match self {
+			Self::FabricLike => write!(f, "Fabric-like"),
+			Self::ForgeLike => write!(f, "Forge-like"),
+			Self::Bukkit => write!(f, "Bukkit"),
+			Self::Loader(loader) => loader.fmt(f),
+		}
+	}
+}
+
 /// Different proxies
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]

@@ -9,12 +9,16 @@ use std::{
 use anyhow::{bail, Context};
 use crossterm::event::{self, KeyCode, KeyEvent};
 use image::DynamicImage;
+use itertools::Itertools;
 use nitrolaunch::{
 	config::Config,
 	core::{util::versions::MinecraftVersion, NitroCore},
 	instance::update::manager::UpdateSettings,
 	io::paths::Paths,
-	pkg_crate::{metadata::PackageMetadata, PackageSearchResults, PkgRequest, PkgRequestSource},
+	pkg_crate::{
+		declarative::DeclarativeAddonVersion, metadata::PackageMetadata, PackageSearchResults,
+		PkgRequest, PkgRequestSource,
+	},
 	plugin_crate::hook::hooks::{
 		AddCustomPackageRepositories, AddCustomPackageRepositoriesResult, AddSupportedLoaders,
 	},
@@ -22,7 +26,7 @@ use nitrolaunch::{
 		id::{InstanceID, TemplateID},
 		loaders::Loader,
 		output::NoOp,
-		pkg::{ArcPkgReq, PackageSearchParameters},
+		pkg::{ArcPkgReq, PackageSearchParameters, PackageStability},
 		util::to_string_json,
 		versions::parse_single_versioned_string,
 		UpdateDepth,
@@ -32,7 +36,10 @@ use ratatui::{
 	layout::{Constraint, HorizontalAlignment, Layout, Margin, Rect},
 	style::Style,
 	symbols,
-	widgets::{Block, Borders, Clear, List, ListState, Paragraph, Widget},
+	text::{Line, Span},
+	widgets::{
+		Block, Borders, Clear, List, ListItem, ListState, Paragraph, StatefulWidget, Widget,
+	},
 	DefaultTerminal, Frame,
 };
 use ratatui_image::{picker::Picker, Image, Resize};
@@ -46,6 +53,7 @@ use tokio::{
 use crate::{
 	commands::CmdData,
 	image_cache::{crop_image_to_ratio, ImageCache},
+	output::fit_message_width,
 };
 
 pub async fn run(
@@ -623,6 +631,7 @@ impl<'a> State<'a> {
 			self.package_info = Some(PackageInfo {
 				req,
 				meta: Arc::new(preview.0.clone()),
+				versions: Vec::new(),
 			});
 			self.preview_scroll = 0;
 		}
@@ -717,7 +726,21 @@ async fn worker_thread(
 					continue;
 				};
 
-				let _ = package_info_tx.send(PackageInfo { req, meta }).await;
+				let versions = match pkg.get_content_versions(&paths, &client).await {
+					Ok(versions) => versions.into_iter().map(|x| x.into_owned()).collect(),
+					Err(e) => {
+						let _ = state_tx.try_send(WorkerState::Error(e.to_string()));
+						Vec::new()
+					}
+				};
+
+				let _ = package_info_tx
+					.send(PackageInfo {
+						req,
+						meta,
+						versions,
+					})
+					.await;
 				let _ = state_tx.try_send(WorkerState::Success);
 			}
 		}
@@ -1009,6 +1032,7 @@ struct SearchParams {
 struct PackageInfo {
 	req: ArcPkgReq,
 	meta: Arc<PackageMetadata>,
+	versions: Vec<DeclarativeAddonVersion>,
 }
 
 /// Gets a key
@@ -1196,6 +1220,12 @@ impl<'a> Widget for PackageInfoWidget<'a> {
 			}
 			PreviewTab::Versions => {
 				Clear.render(body_pane, buf);
+				if !is_loaded {
+					not_loaded_indicator.render(not_loaded_area, buf);
+				} else {
+					*self.scroll_height =
+						render_versions(&info.versions, self.state, body_pane, buf);
+				}
 			}
 			PreviewTab::Gallery => {
 				Clear.render(body_pane, buf);
@@ -1205,6 +1235,88 @@ impl<'a> Widget for PackageInfoWidget<'a> {
 			}
 		}
 	}
+}
+
+/// Renders package versions, returning the scroll height
+fn render_versions(
+	versions: &[DeclarativeAddonVersion],
+	state: &State,
+	area: Rect,
+	buf: &mut ratatui::prelude::Buffer,
+) -> u16 {
+	let list = List::default()
+		.highlight_symbol(">")
+		.highlight_style(Style::new());
+
+	let items = versions.into_iter().map(|x| {
+		let layout = Layout::horizontal([
+			Constraint::Length(9),
+			Constraint::Fill(1),
+			Constraint::Fill(3),
+			Constraint::Fill(1),
+		]);
+		let [_, name_pane, versions_pane, loaders_pane] = area.layout(&layout);
+
+		// Stability
+		let stability = x.conditional_properties.stability.unwrap_or_default();
+		let stability = match stability {
+			PackageStability::Stable => Span::styled("[stable] ", Style::new().green()),
+			PackageStability::Latest => Span::styled("[debug]  ", Style::new().yellow()),
+		};
+
+		// Version name
+		let version_name = x
+			.conditional_properties
+			.content_versions
+			.as_ref()
+			.and_then(|x| x.first())
+			.map(|x| x.as_str())
+			.unwrap_or("Unknown");
+		let version_name = fit_message_width(version_name, name_pane.width as usize);
+		let version_name = Span::styled(version_name, Style::new().bold());
+
+		// Versions
+		let versions = if let Some(versions) = &x.conditional_properties.minecraft_versions {
+			let out = versions.iter().take(4).map(|x| x.to_string()).join(" ");
+			if versions.len() > 4 {
+				out + "..."
+			} else {
+				out
+			}
+		} else {
+			String::new()
+		};
+		let versions = fit_message_width(&versions, versions_pane.width as usize);
+		let versions = Span::styled(versions.to_string(), Style::new().light_green());
+
+		// Loaders
+		let loaders = if let Some(loaders) = &x.conditional_properties.loaders {
+			let out = loaders.iter().take(3).map(|x| x.to_string()).join(" ");
+			if loaders.len() > 3 {
+				out + "..."
+			} else {
+				out
+			}
+		} else {
+			String::new()
+		};
+		let loaders = fit_message_width(&loaders, loaders_pane.width as usize);
+		let loaders = Span::styled(loaders.to_string(), Style::new().blue());
+
+		let line = Line::from(vec![stability, version_name, versions, loaders]);
+
+		ListItem::new(line)
+	});
+	let list = list.items(items);
+
+	let len = list.len() as u16;
+
+	let mut list_state = ListState::default();
+	list_state.select(Some(state.preview_scroll as usize));
+
+	StatefulWidget::render(list, area, buf, &mut list_state);
+
+	len
 }
 
 /// Renders a package gallery, returning the scroll height
