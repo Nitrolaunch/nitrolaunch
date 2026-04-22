@@ -118,6 +118,15 @@ def_hook!(
 	5,
 );
 
+def_hook!(
+	AfterInstanceSetup,
+	"after_instance_setup",
+	"Hook for doing instance setup work after the core instance has been created",
+	OnInstanceSetupArg,
+	OnInstanceSetupResult,
+	1,
+);
+
 /// Argument for the OnInstanceSetup hook
 #[derive(Serialize, Deserialize, Default)]
 #[serde(default)]
@@ -148,6 +157,8 @@ pub struct OnInstanceSetupArg {
 	pub jvm_path: String,
 	/// Path to the vanilla game JAR
 	pub game_jar_path: String,
+	/// Classpath for the launched instance. May be slightly incomplete, and only available for AfterInstanceSetup
+	pub classpath: Option<String>,
 }
 
 /// Result from the OnInstanceSetup hook

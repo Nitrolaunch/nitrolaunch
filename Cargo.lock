@@ -4328,9 +4328,13 @@ name = "nitro_plugin_octane"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "hex",
  "nitro_config",
  "nitro_plugin",
  "nitro_shared",
+ "serde",
+ "serde_json",
+ "sha2",
 ]
 
 [[package]]

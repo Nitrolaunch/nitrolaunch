@@ -10,24 +10,24 @@ use std::{
 	time::Instant,
 };
 
-use anyhow::{bail, Context};
+use anyhow::{Context, bail};
 use nitro_net::download::{self, Client};
 use nitro_shared::{
+	Side,
 	io::{home_dir, update_link},
 	nitro_executable::NitroExecutableRegistry,
 	no_window,
 	output::{Message, MessageContents, MessageLevel, NitroOutput},
 	util::{ARCH_STRING, OS_STRING},
-	Side,
 };
 use tokio::{
 	process::Command,
-	sync::{oneshot, Mutex},
+	sync::{Mutex, oneshot},
 	task::JoinSet,
 };
 use wasmtime::{
-	component::{HasSelf, Linker},
 	Store,
+	component::{HasSelf, Linker},
 };
 use wasmtime_wasi::{
 	DirPerms, FilePerms, ResourceTable, WasiCtx, WasiCtxBuilder, WasiCtxView, WasiView,
@@ -36,9 +36,9 @@ use wasmtime_wasi_http::{WasiHttpCtx, WasiHttpView};
 
 use crate::{
 	hook::{
+		Hook,
 		call::{HookCallArg, HookHandle},
 		wasm::loader::WASMLoader,
-		Hook,
 	},
 	host::PluginContext,
 	plugin::PluginPersistence,
@@ -186,6 +186,7 @@ impl<H: Hook> WASMHookHandle<H> {
 		};
 
 		let arg = self.arg.clone();
+		let plugin_id = self.plugin_id.clone();
 
 		tokio::task::spawn(async move {
 			let fun = async move || {
@@ -253,7 +254,9 @@ impl<H: Hook> WASMHookHandle<H> {
 				Ok(result)
 			};
 
-			let result = fun().await;
+			let result = fun()
+				.await
+				.context(format!("Hook for plugin {plugin_id} failed"));
 			let _ = result_sender.send(result);
 		});
 

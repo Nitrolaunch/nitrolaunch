@@ -9,6 +9,12 @@
 		"on_instance_setup": {
 			"wasm": true
 		},
+		"after_instance_setup": {
+			"wasm": true
+		},
+		"while_instance_launch": {
+			"wasm": true
+		},
 		"add_instance_config_controls": {
 			"constant": {
 				"controls": [

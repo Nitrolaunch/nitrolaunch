@@ -1,185 +1,151 @@
+use std::collections::HashMap;
+use std::path::PathBuf;
 use std::str::FromStr;
+use std::time::Duration;
 
 use anyhow::bail;
 use nitro_plugin::api::wasm::WASMPlugin;
+use nitro_plugin::api::wasm::output::WASMPluginOutput;
+use nitro_plugin::api::wasm::util::{get_persistent_state, set_persistent_state};
 use nitro_plugin::hook::hooks::OnInstanceSetupResult;
 use nitro_plugin::nitro_wasm_plugin;
+use nitro_shared::loaders::Loader;
+use nitro_shared::output::{MessageContents, NitroOutput};
+use serde::{Deserialize, Serialize};
+
+use crate::args::ArgsPreset;
+use crate::cds::{
+	create_dump, get_cached_paths, get_dump_use_args, get_list_creation_args, hash_classpath,
+};
+
+/// JVM argument presets
+mod args;
+/// Class-loading cache
+mod cds;
 
 nitro_wasm_plugin!(main, "octane");
 
 fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 	plugin.on_instance_setup(|arg| {
-		let args = if let Some(preset) = arg.config.plugin_config.get("args_preset") {
+		let mut jvm_args = Vec::new();
+
+		// Arg presets
+		if let Some(preset) = arg.config.plugin_config.get("args_preset") {
 			if let Some(preset) = preset.as_str() {
 				if let Ok(preset) = ArgsPreset::from_str(preset) {
-					preset.generate_args()
+					jvm_args.extend(preset.generate_args());
 				} else {
 					bail!("Invalid args preset")
 				}
-			} else if preset.is_null() {
-				Vec::new()
-			} else {
+			} else if !preset.is_null() {
 				bail!("Args preset must be a string")
 			}
+		}
+
+		Ok(OnInstanceSetupResult {
+			jvm_args,
+			..Default::default()
+		})
+	})?;
+
+	plugin.after_instance_setup(|arg| {
+		if arg.loader != Loader::Vanilla {
+			return Ok(OnInstanceSetupResult::default());
+		}
+
+		let Some(cds) = arg.config.plugin_config.get("cds") else {
+			return Ok(OnInstanceSetupResult::default());
+		};
+
+		if *cds != serde_json::Value::Bool(true) {
+			return Ok(OnInstanceSetupResult::default());
+		};
+
+		let Some(classpath) = arg.classpath else {
+			return Ok(OnInstanceSetupResult::default());
+		};
+
+		let mut o = WASMPluginOutput::new();
+
+		let hash = hash_classpath(&classpath);
+		let (list_path, dump_path) = get_cached_paths(&hash);
+
+		// Pick whether to use the dump, create the list, or neither
+		let jvm_args = if dump_path.exists() {
+			o.debug(MessageContents::Simple(format!(
+				"Using CDS with hash {hash}"
+			)));
+
+			get_dump_use_args(&dump_path)
+		} else if !list_path.exists() {
+			o.debug(MessageContents::Simple(format!(
+				"Creating CDS class list with hash {hash}"
+			)));
+
+			if let Some(parent) = list_path.parent() {
+				let _ = std::fs::create_dir_all(parent);
+			}
+			get_list_creation_args(&list_path)
 		} else {
 			Vec::new()
 		};
 
+		// Save the JVM path in state
+		let mut state: PersistentState = get_persistent_state().unwrap_or_default();
+		state.cds_context.insert(
+			arg.id,
+			CDSContext {
+				jvm_path: arg.jvm_path.into(),
+			},
+		);
+		set_persistent_state(&state);
+
 		Ok(OnInstanceSetupResult {
-			jvm_args: args,
+			jvm_args,
 			..Default::default()
 		})
+	})?;
+
+	plugin.while_instance_launch(|arg| {
+		let Some(classpath) = arg.classpath else {
+			return Ok(());
+		};
+
+		let state: PersistentState = get_persistent_state().unwrap_or_default();
+		let Some(context) = state.cds_context.get(&arg.id) else {
+			return Ok(());
+		};
+
+		let mut o = WASMPluginOutput::new();
+
+		let hash = hash_classpath(&classpath);
+		let (list_path, dump_path) = get_cached_paths(&hash);
+
+		// Create the CDS dump if it does not exist, after some heuristic to determine if enough of the class list has been created
+		if !dump_path.exists() && list_path.exists() {
+			std::thread::sleep(Duration::from_secs(20));
+
+			o.debug(MessageContents::Simple("Dumping CDS classes".into()));
+			if let Err(e) = create_dump(&list_path, &dump_path, classpath, &context.jvm_path) {
+				o.debug(MessageContents::Error(format!(
+					"Failed to create CDS dump: {e}"
+				)));
+			}
+		}
+
+		Ok(())
 	})?;
 
 	Ok(())
 }
 
-/// Preset for generating game arguments (Usually for optimization)
-#[derive(Debug, Clone, Copy)]
-pub enum ArgsPreset {
-	/// No preset
-	None,
-	/// Aikar's args
-	Aikars,
-	/// Krusic's args
-	Krusic,
-	/// Obydux's args
-	Obydux,
+#[derive(Serialize, Deserialize, Default)]
+struct PersistentState {
+	/// Map of instance IDs to context about the launch for CDS
+	cds_context: HashMap<String, CDSContext>,
 }
 
-impl FromStr for ArgsPreset {
-	type Err = anyhow::Error;
-	fn from_str(s: &str) -> Result<Self, Self::Err> {
-		match s {
-			"aikars" => Ok(Self::Aikars),
-			"krusic" => Ok(Self::Krusic),
-			"obydux" => Ok(Self::Obydux),
-			"none" => Ok(Self::None),
-			_ => bail!("Unknown argument preset '{s}'"),
-		}
-	}
-}
-
-impl ArgsPreset {
-	/// Generate the JVM arguments for this arguments preset
-	pub fn generate_args(&self) -> Vec<String> {
-		match self {
-			Self::None => vec![],
-			Self::Aikars => {
-				let (
-					new_size_percent,
-					max_new_size_percent,
-					heap_region_size,
-					reserve_percent,
-					ihop,
-				) = ("40", "50", "16M", "15", "20");
-
-				vec![
-					"-XX:+UseG1GC".to_string(),
-					"-XX:+ParallelRefProcEnabled".to_string(),
-					"-XX:MaxGCPauseMillis=200".to_string(),
-					"-XX:+UnlockExperimentalVMOptions".to_string(),
-					"-XX:+DisableExplicitGC".to_string(),
-					"-XX:+AlwaysPreTouch".to_string(),
-					format!("-XX:G1NewSizePercent={new_size_percent}"),
-					format!("-XX:G1MaxNewSizePercent={max_new_size_percent}"),
-					format!("-XX:G1HeapRegionSize={heap_region_size}"),
-					format!("-XX:G1ReservePercent={reserve_percent}"),
-					"-XX:G1HeapWastePercent=5".to_string(),
-					"-XX:G1MixedGCCountTarget=4".to_string(),
-					format!("-XX:InitiatingHeapOccupancyPercent={ihop}"),
-					"-XX:G1MixedGCLiveThresholdPercent=90".to_string(),
-					"-XX:G1RSetUpdatingPauseTimePercent=5".to_string(),
-					"-XX:SurvivorRatio=32".to_string(),
-					"-XX:+PerfDisableSharedMem".to_string(),
-					"-XX:MaxTenuringThreshold=1".to_string(),
-					"-Dusing.aikars.flags=https://mcflags.emc.gs".to_string(),
-					"-Daikars.new.flags=true".to_string(),
-				]
-			}
-			Self::Krusic => vec![
-				"-XX:+UnlockExperimentalVMOptions".to_string(),
-				"-XX:+DisableExplicitGC".to_string(),
-				"-XX:-UseParallelGC".to_string(),
-				"-XX:-UseG1GC".to_string(),
-				"-XX:+UseZGC".to_string(),
-			],
-			Self::Obydux => vec![
-				"-XX:+UnlockExperimentalVMOptions".to_string(),
-				"-XX:+UnlockDiagnosticVMOptions".to_string(),
-				"-Dterminal.jline=false".to_string(),
-				"-Dterminal.ansi=true".to_string(),
-				"-Djline.terminal=jline.UnsupportedTerminal".to_string(),
-				"-Dlog4j2.formatMsgNoLookups=true".to_string(),
-				"-XX:+AlwaysActAsServerClassMachine".to_string(),
-				"-XX:+AlwaysPreTouch".to_string(),
-				"-XX:+DisableExplicitGC".to_string(),
-				"-XX:+UseNUMA".to_string(),
-				"-XX:AllocatePrefetchStyle=3".to_string(),
-				"-XX:NmethodSweepActivity=1".to_string(),
-				"-XX:ReservedCodeCacheSize=400M".to_string(),
-				"-XX:NonNMethodCodeHeapSize=12M".to_string(),
-				"-XX:ProfiledCodeHeapSize=194M".to_string(),
-				"-XX:NonProfiledCodeHeapSize=194M".to_string(),
-				"-XX:+PerfDisableSharedMem".to_string(),
-				"-XX:+UseFastUnorderedTimeStamps".to_string(),
-				"-XX:+UseCriticalJavaThreadPriority".to_string(),
-				"-XX:+EagerJVMCI".to_string(),
-				"-Dgraal.TuneInlinerExploration=1".to_string(),
-				"-Dgraal.CompilerConfiguration=enterprise".to_string(),
-				"-XX:+UseG1GC".to_string(),
-				"-XX:+ParallelRefProcEnabled".to_string(),
-				"-XX:MaxGCPauseMillis=200".to_string(),
-				"-XX:+UnlockExperimentalVMOptions".to_string(),
-				"-XX:+UnlockDiagnosticVMOptions".to_string(),
-				"-XX:+DisableExplicitGC".to_string(),
-				"-XX:+AlwaysPreTouch".to_string(),
-				"-XX:G1NewSizePercent=30".to_string(),
-				"-XX:G1MaxNewSizePercent=40".to_string(),
-				"-XX:G1HeapRegionSize=8M".to_string(),
-				"-XX:G1ReservePercent=20".to_string(),
-				"-XX:G1HeapWastePercent=5".to_string(),
-				"-XX:G1MixedGCCountTarget=4".to_string(),
-				"-XX:InitiatingHeapOccupancyPercent=15".to_string(),
-				"-XX:G1MixedGCLiveThresholdPercent=90".to_string(),
-				"-XX:G1RSetUpdatingPauseTimePercent=5".to_string(),
-				"-XX:SurvivorRatio=32".to_string(),
-				"-XX:+PerfDisableSharedMem".to_string(),
-				"-XX:MaxTenuringThreshold=1".to_string(),
-				"-XX:-UseBiasedLocking".to_string(),
-				"-XX:+UseStringDeduplication".to_string(),
-				"-XX:+UseFastUnorderedTimeStamps".to_string(),
-				"-XX:+UseAES".to_string(),
-				"-XX:+UseAESIntrinsics".to_string(),
-				"-XX:+UseFMA".to_string(),
-				"-XX:+UseLoopPredicate".to_string(),
-				"-XX:+RangeCheckElimination".to_string(),
-				"-XX:+EliminateLocks".to_string(),
-				"-XX:+DoEscapeAnalysis".to_string(),
-				"-XX:+UseCodeCacheFlushing".to_string(),
-				"-XX:+SegmentedCodeCache".to_string(),
-				"-XX:+UseFastJNIAccessors".to_string(),
-				"-XX:+OptimizeStringConcat".to_string(),
-				"-XX:+UseCompressedOops".to_string(),
-				"-XX:+UseThreadPriorities".to_string(),
-				"-XX:+OmitStackTraceInFastThrow".to_string(),
-				"-XX:+TrustFinalNonStaticFields".to_string(),
-				"-XX:ThreadPriorityPolicy=1".to_string(),
-				"-XX:+UseInlineCaches".to_string(),
-				"-XX:+RewriteBytecodes".to_string(),
-				"-XX:+RewriteFrequentPairs".to_string(),
-				"-XX:+UseNUMA".to_string(),
-				"-XX:-DontCompileHugeMethods".to_string(),
-				"-XX:+UseFPUForSpilling".to_string(),
-				"-XX:+UseVectorCmov".to_string(),
-				"-XX:+UseXMMForArrayCopy".to_string(),
-				"-XX:+UseTransparentHugePages".to_string(),
-				"-XX:+UseLargePages".to_string(),
-				"-Dfile.encoding=UTF-8".to_string(),
-				"-Xlog:async".to_string(),
-				"--add-modules".to_string(),
-				"jdk.incubator.vector".to_string(),
-			],
-		}
-	}
+#[derive(Serialize, Deserialize)]
+struct CDSContext {
+	jvm_path: PathBuf,
 }

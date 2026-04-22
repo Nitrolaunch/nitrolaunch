@@ -1,11 +1,11 @@
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use anyhow::{bail, Context};
+use anyhow::{Context, bail};
 use nitro_shared::io::update_link;
 use nitro_shared::output::{MessageContents, NitroOutput};
 use nitro_shared::versions::VersionName;
-use nitro_shared::{translate, Side};
+use nitro_shared::{Side, translate};
 use tokio::sync::Mutex;
 
 use crate::account::AccountManager;
@@ -187,6 +187,10 @@ impl Instance {
 			classpath.add_path(&jar_path)?;
 		}
 
+		// Deduplicate the classpath for common libraries
+		classpath.deduplicate_java_lib("asm");
+		classpath.deduplicate_java_libs();
+
 		// Main class
 		let main_class = if let Some(main_class) = &config.main_class {
 			main_class.clone()
@@ -288,6 +292,11 @@ impl Instance {
 	/// Get the Java installation of the instance
 	pub fn get_java(&self) -> &JavaInstallation {
 		&self.java
+	}
+
+	/// Get the classpath of the instance
+	pub fn get_classpath(&self) -> &Classpath {
+		&self.classpath
 	}
 }
 

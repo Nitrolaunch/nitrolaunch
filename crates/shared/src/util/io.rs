@@ -30,3 +30,35 @@ pub fn replace_tilde(path: &str) -> PathBuf {
 
 	PathBuf::from(path)
 }
+
+/// Utility to automatically run a drop function if the code is not completed successful
+/// (often to prevent invalid data from being saved on disk)
+pub struct CorruptionGuard<F: FnOnce() -> ()> {
+	f: Option<F>,
+	is_successful: bool,
+}
+
+impl<F: FnOnce() -> ()> CorruptionGuard<F> {
+	/// Creates a new corruption guard
+	pub fn new(f: F) -> Self {
+		Self {
+			f: Some(f),
+			is_successful: false,
+		}
+	}
+
+	/// Marks the guard as successful. The drop function will not run.
+	pub fn succeed(&mut self) {
+		self.is_successful = true;
+	}
+}
+
+impl<F: FnOnce() -> ()> Drop for CorruptionGuard<F> {
+	fn drop(&mut self) {
+		if !self.is_successful {
+			if let Some(f) = self.f.take() {
+				f();
+			}
+		}
+	}
+}

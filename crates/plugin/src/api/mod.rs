@@ -54,6 +54,11 @@ hook_interface!(start_worker, "start_worker", StartWorker, |_| Ok(()));
 hook_interface!(subcommand, "subcommand", Subcommand);
 hook_interface!(add_versions, "add_versions", AddVersions);
 hook_interface!(on_instance_setup, "on_instance_setup", OnInstanceSetup);
+hook_interface!(
+	after_instance_setup,
+	"after_instance_setup",
+	AfterInstanceSetup
+);
 hook_interface!(on_instance_launch, "on_instance_launch", OnInstanceLaunch);
 hook_interface!(
 	while_instance_launch,
