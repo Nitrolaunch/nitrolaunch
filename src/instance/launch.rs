@@ -63,6 +63,7 @@ impl Instance {
 			version_info: version_info.clone(),
 			config: self.config.clone(),
 			pid: None,
+			classpath: None,
 			stdout_path: None,
 			stdin_path: None,
 		};
@@ -136,6 +137,7 @@ impl Instance {
 			.context("Failed to launch core instance")?;
 
 		hook_arg.pid = Some(handle.get_pid());
+		hook_arg.classpath = Some(handle.classpath().get_str());
 		hook_arg.stdout_path = Some(handle.stdout_path().to_string_lossy().to_string());
 		hook_arg.stdin_path = handle.stdin_path().map(|x| x.to_string_lossy().to_string());
 

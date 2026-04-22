@@ -1079,9 +1079,10 @@ Installs a custom Java installation added with `add_java_types`.
 	},
 	"config": InstanceConfig,
 	"pid": integer | null,
+	"classpath": string | null,
 	"stdout_path": string | null,
 	"stdin_path": string | null
 }
 ```
 
-Note: The `pid`, `stdout_path`, and `stdin_path` fields will all be `null` for the `on_instance_launch` hook, and are only available in the other hooks.
+Note: The `pid`, `classpath`, `stdout_path`, and `stdin_path` fields will all be `null` for the `on_instance_launch` hook, and are only available in the other hooks.

@@ -14,6 +14,7 @@ use nitro_shared::{no_window, translate};
 use crate::instance::InstanceKind;
 use crate::io::create_named_pipe;
 use crate::io::files::open_file_append;
+use crate::io::java::classpath::Classpath;
 use crate::{InstanceHandle, Paths, WrapperCommand};
 
 use super::LaunchConfiguration;
@@ -76,6 +77,7 @@ pub(crate) fn launch_game_process(
 		stdout,
 		stdin_file,
 		stdin,
+		params.classpath,
 	))
 }
 
@@ -220,6 +222,8 @@ pub(crate) struct LaunchGameProcessParameters<'a> {
 	pub cwd: &'a Path,
 	/// The Java main class to run
 	pub main_class: Option<&'a str>,
+	/// Copy of the classpath
+	pub classpath: Classpath,
 	pub paths: &'a Paths,
 	pub props: LaunchProcessProperties,
 	pub launch_config: &'a LaunchConfiguration,

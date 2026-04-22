@@ -12,16 +12,16 @@ use std::io::Write;
 use std::ops::DerefMut;
 use std::path::{Path, PathBuf};
 
-use anyhow::{bail, Context};
+use anyhow::{Context, bail};
 use nitro_shared::java_args::MemoryArg;
 use nitro_shared::output::{MessageContents, NitroOutput};
 use nitro_shared::versions::VersionName;
-use nitro_shared::{translate, Side};
+use nitro_shared::{Side, translate};
 
 use self::client::create_quick_play_args;
-use self::process::{launch_game_process, LaunchGameProcessParameters};
-use crate::account::auth::check_game_ownership;
+use self::process::{LaunchGameProcessParameters, launch_game_process};
 use crate::account::AccountManager;
+use crate::account::auth::check_game_ownership;
 use crate::config::BrandingProperties;
 use crate::instance::InstanceKind;
 use crate::io::files::paths::Paths;
@@ -67,7 +67,9 @@ pub(crate) async fn launch(
 			check_game_ownership(params.paths).context("Failed to check for game ownership")?;
 
 		if !owns_game {
-			bail!("Could not prove game ownership. If using an alternative auth system, like from a plugin, you must login with a Microsoft account that owns Minecraft first.");
+			bail!(
+				"Could not prove game ownership. If using an alternative auth system, like from a plugin, you must login with a Microsoft account that owns Minecraft first."
+			);
 		}
 
 		let message = translate!(process, FinishAuthenticating);
@@ -94,6 +96,7 @@ pub(crate) async fn launch(
 		command: command.as_os_str(),
 		cwd: params.launch_dir,
 		main_class: Some(params.main_class),
+		classpath: params.classpath.clone(),
 		paths: params.paths,
 		props,
 		launch_config: params.launch_config,
@@ -195,6 +198,8 @@ pub struct InstanceHandle {
 	stdin: Option<File>,
 	/// The stdin path of the process
 	stdin_path: Option<PathBuf>,
+	/// The classpath used to launch the instance
+	classpath: Classpath,
 }
 
 impl InstanceHandle {
@@ -205,6 +210,7 @@ impl InstanceHandle {
 		stdout_path: PathBuf,
 		stdin: Option<File>,
 		stdin_path: Option<PathBuf>,
+		classpath: Classpath,
 	) -> Self {
 		Self {
 			process,
@@ -212,6 +218,7 @@ impl InstanceHandle {
 			stdout_path,
 			stdin,
 			stdin_path,
+			classpath,
 		}
 	}
 
@@ -268,5 +275,10 @@ impl InstanceHandle {
 		} else {
 			Ok(())
 		}
+	}
+
+	/// Gets the classpath used to launch the instance
+	pub fn classpath(&self) -> &Classpath {
+		&self.classpath
 	}
 }
