@@ -2,10 +2,11 @@ use std::path::{Path, PathBuf};
 
 use anyhow::Context;
 use nitro_shared::{
+	Side,
+	io::update_link,
 	minecraft::AddonKind,
 	pkg::AddonOptionalHashes,
 	versions::{VersionInfo, VersionPattern},
-	Side,
 };
 use serde::{Deserialize, Serialize};
 
@@ -84,8 +85,7 @@ impl Addon {
 			if target.exists() {
 				let _ = std::fs::remove_file(target);
 			}
-			#[allow(deprecated)]
-			let single_result = std::fs::soft_link(source, target);
+			let single_result = update_link(source, target);
 			if result.is_ok() {
 				result = single_result;
 			}

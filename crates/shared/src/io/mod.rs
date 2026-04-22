@@ -23,13 +23,11 @@ pub fn home_dir() -> anyhow::Result<PathBuf> {
 pub fn get_link_method() -> LinkMethod {
 	let method = IO_CONFIG.get_string("link_method");
 	let Some(method) = method else {
-		#[cfg(target_family = "unix")]
-		return LinkMethod::Soft;
-		// Soft links require admin priveleges on Windows
+		// Hard links require admin privileges on Windows
 		#[cfg(target_os = "windows")]
-		return LinkMethod::Hard;
-		#[cfg(not(any(target_os = "windows", target_family = "unix")))]
 		return LinkMethod::Soft;
+		#[cfg(not(target_os = "windows"))]
+		return LinkMethod::Hard;
 	};
 
 	match method.as_str() {
