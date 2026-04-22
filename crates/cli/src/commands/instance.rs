@@ -725,7 +725,7 @@ async fn edit(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()> 
 		.context("Failed to serialize. Make sure your config is valid JSON")?;
 	new_config.restore_plugin_only_fields(&inst_config);
 
-	let modifications = vec![ConfigModification::AddInstance(id.into(), new_config)];
+	let modifications = vec![ConfigModification::UpdateInstance(id.into(), new_config)];
 	apply_modifications_and_write(
 		&mut raw_config,
 		modifications,

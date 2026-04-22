@@ -25,7 +25,7 @@ impl Instance {
 		let mut config = self.config.clone();
 		config.from = DeserListOrSingle::default();
 
-		let modifications = vec![ConfigModification::AddInstance(self.id.clone(), config)];
+		let modifications = vec![ConfigModification::UpdateInstance(self.id.clone(), config)];
 		let mut config = Config::open(&Config::get_path(paths))?;
 
 		apply_modifications_and_write(&mut config, modifications, paths, plugins, o).await

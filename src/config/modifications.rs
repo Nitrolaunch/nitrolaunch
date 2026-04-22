@@ -32,7 +32,7 @@ impl Config {
 			.clone();
 		template.instance.from = DeserListOrSingle::default();
 
-		let modifications = vec![ConfigModification::AddTemplate(
+		let modifications = vec![ConfigModification::UpdateTemplate(
 			template_id.clone(),
 			template,
 		)];
@@ -70,10 +70,14 @@ impl Config {
 pub enum ConfigModification {
 	/// Adds a new account
 	AddAccount(String, AccountConfig),
-	/// Adds or updates an instance
+	/// Adds a new instance
 	AddInstance(InstanceID, InstanceConfig),
-	/// Adds or updates a template
+	/// Updates config for an instance
+	UpdateInstance(InstanceID, InstanceConfig),
+	/// Adds a new template
 	AddTemplate(TemplateID, TemplateConfig),
+	/// Updates config for a template
+	UpdateTemplate(InstanceID, TemplateConfig),
 	/// Adds a new package to an instance
 	AddPackage(InstanceID, PackageConfigDeser),
 	/// Removes an account
@@ -93,13 +97,29 @@ pub async fn apply_modifications(
 	o: &mut impl NitroOutput,
 ) -> anyhow::Result<()> {
 	for modification in modifications {
+		// Existence checks
+		let mut adds_new = false;
+		if let ConfigModification::AddInstance(id, ..) = &modification {
+			if config.instances.contains_key(id) {
+				bail!("Instance {id} already exists");
+			}
+			adds_new = true;
+		}
+		if let ConfigModification::AddTemplate(id, ..) = &modification {
+			if config.templates.contains_key(id) {
+				bail!("Template {id} already exists");
+			}
+			adds_new = true;
+		}
+
 		match modification {
 			ConfigModification::AddAccount(id, account) => {
 				config.accounts.insert(id, account);
 			}
-			ConfigModification::AddInstance(instance_id, instance) => {
+			ConfigModification::AddInstance(instance_id, instance)
+			| ConfigModification::UpdateInstance(instance_id, instance) => {
 				if let Some(plugin) = &instance.source_plugin {
-					if !instance.is_editable {
+					if !adds_new && !instance.is_editable {
 						bail!("Plugin instance is not editable");
 					}
 
@@ -122,9 +142,10 @@ pub async fn apply_modifications(
 					config.instances.insert(instance_id, instance);
 				}
 			}
-			ConfigModification::AddTemplate(template_id, template) => {
+			ConfigModification::AddTemplate(template_id, template)
+			| ConfigModification::UpdateTemplate(template_id, template) => {
 				if let Some(plugin) = &template.instance.source_plugin {
-					if !template.instance.is_editable {
+					if !adds_new && !template.instance.is_editable {
 						bail!("Plugin template is not editable");
 					}
 

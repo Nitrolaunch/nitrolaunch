@@ -267,7 +267,7 @@ async fn edit(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()> 
 		.instance
 		.restore_plugin_only_fields(&temp_config.instance);
 
-	let modifications = vec![ConfigModification::AddTemplate(id.into(), new_config)];
+	let modifications = vec![ConfigModification::UpdateTemplate(id.into(), new_config)];
 	apply_modifications_and_write(
 		&mut raw_config,
 		modifications,

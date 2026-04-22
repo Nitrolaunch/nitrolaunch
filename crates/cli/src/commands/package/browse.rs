@@ -1709,7 +1709,7 @@ async fn worker_thread(
 							.packages
 							.push(PackageConfigDeser::Basic(req.to_string().into()));
 
-						ConfigModification::AddInstance(id, config)
+						ConfigModification::UpdateInstance(id, config)
 					}
 					InstallLocation::Template => {
 						let id = TemplateID::from(id);
@@ -1722,7 +1722,7 @@ async fn worker_thread(
 							.packages
 							.add_global_package(PackageConfigDeser::Basic(req.to_string().into()));
 
-						ConfigModification::AddTemplate(id, config)
+						ConfigModification::UpdateTemplate(id, config)
 					}
 					InstallLocation::NewInstance => {
 						let instance_config = install_into_config(

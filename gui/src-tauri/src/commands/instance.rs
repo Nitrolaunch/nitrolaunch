@@ -288,7 +288,7 @@ pub async fn write_instance_config(
 
 	let plugins = fmt_err(PluginManager::load(&state.paths, &mut NoOp).await)?;
 
-	let modifications = vec![ConfigModification::AddInstance(id.into(), config)];
+	let modifications = vec![ConfigModification::UpdateInstance(id.into(), config)];
 	fmt_err(
 		apply_modifications_and_write(
 			&mut configuration,
@@ -319,7 +319,7 @@ pub async fn write_template_config(
 
 	let plugins = fmt_err(PluginManager::load(&state.paths, &mut NoOp).await)?;
 
-	let modifications = vec![ConfigModification::AddTemplate(id.into(), config)];
+	let modifications = vec![ConfigModification::UpdateTemplate(id.into(), config)];
 	fmt_err(
 		apply_modifications_and_write(
 			&mut configuration,
