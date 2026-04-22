@@ -4176,16 +4176,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "nitro_plugin_args"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "nitro_config",
- "nitro_plugin",
- "nitro_shared",
-]
-
-[[package]]
 name = "nitro_plugin_auto_mcs"
 version = "0.1.0"
 dependencies = [
@@ -4331,6 +4321,16 @@ dependencies = [
  "serde",
  "serde_json",
  "zip 3.0.0",
+]
+
+[[package]]
+name = "nitro_plugin_octane"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "nitro_config",
+ "nitro_plugin",
+ "nitro_shared",
 ]
 
 [[package]]

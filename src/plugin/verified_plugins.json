@@ -1,12 +1,12 @@
 {
-	"args": {
-		"id": "args",
-		"name": "Args",
+	"octane": {
+		"id": "octane",
+		"name": "Octane",
 		"version": "v6",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
-		"description": "Use argument presets to improve game performance",
-		"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/args"
+		"description": "Use multiple methods to improve Minecraft performance",
+		"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/octane"
 	},
 	"backup": {
 		"id": "backup",

@@ -5,7 +5,6 @@ package: package.platform_dependent package.cross_platform
 package.cross_platform: build.cross_platform
 	@mkdir -p release
 
-	@rm -f release/args-universal.zip
 	@rm -f release/auto_mcs-universal.zip
 	@rm -f release/automate-universal.zip
 	@rm -f release/backup-universal.zip
@@ -21,6 +20,7 @@ package.cross_platform: build.cross_platform
 	@rm -f release/mojang_transfer-universal.zip
 	@rm -f release/multiply-universal.zip
 	@rm -f release/nitro_transfer-universal.zip
+	@rm -f release/octane-universal.zip
 	@rm -f release/share-universal.zip
 	@rm -f release/shortcut-universal.zip
 	@rm -f release/skin_stealer-universal.zip
@@ -30,8 +30,6 @@ package.cross_platform: build.cross_platform
 	@rm -f release/weld-universal.zip
 	@rm -f release/zulu-universal.zip
 
-	@zip -j release/args-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_args.wasm plugins/args/plugin.json
-	@printf "@ nitro_plugin_args.wasm\\n@=plugin.wasm\\n" | zipnote -w release/args-universal.zip
 	@zip -j release/auto_mcs-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_auto_mcs.wasm plugins/auto_mcs/plugin.json
 	@printf "@ nitro_plugin_auto_mcs.wasm\\n@=plugin.wasm\\n" | zipnote -w release/auto_mcs-universal.zip
 	@zip -j release/automate-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_automate.wasm plugins/automate/plugin.json
@@ -57,6 +55,10 @@ package.cross_platform: build.cross_platform
 	@printf "@ nitro_plugin_mojang_transfer.wasm\\n@=plugin.wasm\\n" | zipnote -w release/mojang_transfer-universal.zip
 	@zip -j release/multiply-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_multiply.wasm plugins/multiply/plugin.json
 	@printf "@ nitro_plugin_multiply.wasm\\n@=plugin.wasm\\n" | zipnote -w release/multiply-universal.zip
+	@zip -j release/nitro_transfer-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_nitro_transfer.wasm plugins/nitro_transfer/plugin.json
+	@printf "@ nitro_plugin_nitro_transfer.wasm\\n@=plugin.wasm\\n" | zipnote -w release/nitro_transfer-universal.zip
+	@zip -j release/octane-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_octane.wasm plugins/octane/plugin.json
+	@printf "@ nitro_plugin_octane.wasm\\n@=plugin.wasm\\n" | zipnote -w release/octane-universal.zip
 
 	@zip -j release/share-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_share.wasm plugins/share/plugin.json plugins/share/export_template.js plugins/share/import_template.js
 	@printf "@ nitro_plugin_share.wasm\\n@=plugin.wasm\\n" | zipnote -w release/share-universal.zip
@@ -67,8 +69,6 @@ package.cross_platform: build.cross_platform
 	@printf "@ nitro_plugin_skin_stealer.wasm\\n@=plugin.wasm\\n" | zipnote -w release/skin_stealer-universal.zip
 	@zip -j release/stats-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_stats.wasm plugins/stats/plugin.json
 	@printf "@ nitro_plugin_stats.wasm\\n@=plugin.wasm\\n" | zipnote -w release/stats-universal.zip
-	@zip -j release/nitro_transfer-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_nitro_transfer.wasm plugins/nitro_transfer/plugin.json
-	@printf "@ nitro_plugin_nitro_transfer.wasm\\n@=plugin.wasm\\n" | zipnote -w release/nitro_transfer-universal.zip
 	@zip -j release/webtools-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_webtools.wasm plugins/webtools/plugin.json
 	@printf "@ nitro_plugin_webtools.wasm\\n@=plugin.wasm\\n" | zipnote -w release/webtools-universal.zip
 	@zip -j release/zulu-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_zulu.wasm plugins/zulu/plugin.json
@@ -134,11 +134,6 @@ package_zips.platform_dependent:
 
 build.weld:
 	@shiv -o plugins/weld/weld.pyz -e nitro_weld.main --site-packages plugins/weld smithed
-
-install.args:
-	@cargo build -p nitro_plugin_args --release --target wasm32-wasip2
-	@cp -r plugins/args ~/.local/share/nitro/plugins
-	@cp -r ../target/wasm32-wasip2/release/nitro_plugin_args.wasm ~/.local/share/nitro/plugins/args/plugin.wasm
 
 install.auto_mcs:
 	@cargo build -p nitro_plugin_auto_mcs --release --target wasm32-wasip2
@@ -263,6 +258,11 @@ install.nitro_transfer:
 	@cargo build -p nitro_plugin_nitro_transfer --release --target wasm32-wasip2
 	@cp -r plugins/nitro_transfer ~/.local/share/nitro/plugins
 	@cp -r ../target/wasm32-wasip2/release/nitro_plugin_nitro_transfer.wasm ~/.local/share/nitro/plugins/nitro_transfer/plugin.wasm
+
+install.octane:
+	@cargo build -p nitro_plugin_octane --release --target wasm32-wasip2
+	@cp -r plugins/octane ~/.local/share/nitro/plugins
+	@cp -r ../target/wasm32-wasip2/release/nitro_plugin_octane.wasm ~/.local/share/nitro/plugins/octane/plugin.wasm
 
 install.options:
 	@cargo install --path . --bin nitro_plugin_options --locked --profile fast_release

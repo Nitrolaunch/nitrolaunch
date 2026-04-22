@@ -5,7 +5,7 @@ use nitro_plugin::api::wasm::WASMPlugin;
 use nitro_plugin::hook::hooks::OnInstanceSetupResult;
 use nitro_plugin::nitro_wasm_plugin;
 
-nitro_wasm_plugin!(main, "args");
+nitro_wasm_plugin!(main, "octane");
 
 fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 	plugin.on_instance_setup(|arg| {

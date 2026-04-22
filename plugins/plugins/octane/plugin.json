@@ -1,8 +1,8 @@
 {
-	"id": "args",
-	"name": "Args",
-	"description": "Use argument presets to increase game performance",
-	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/args",
+	"id": "octane",
+	"name": "Octane",
+	"description": "Use multiple methods to improve Minecraft performance",
+	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/octane",
 	"version": "v6",
 	"protocol_version": 3,
 	"hooks": {
