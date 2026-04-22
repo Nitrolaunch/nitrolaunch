@@ -4,8 +4,8 @@ use std::io::{BufReader, BufWriter, Read, Seek};
 use std::path::Path;
 
 use anyhow::Context;
-use serde::de::DeserializeOwned;
 use serde::Serialize;
+use serde::de::DeserializeOwned;
 use zip::ZipArchive;
 
 /// Utilities for dealing with the filesystem
@@ -85,7 +85,7 @@ pub fn extract_zip_dir<R: Read + Seek>(
 }
 
 #[cfg(target_family = "unix")]
-extern "C" {
+unsafe extern "C" {
 	fn mkfifo(path: *const i8, mode: u32) -> i32;
 
 	fn open(path: *const i8, flags: i32, mode: u32) -> i32;

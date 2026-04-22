@@ -14,10 +14,10 @@ use nitro_shared::versions::VersionPattern;
 
 use nitro_net::smithed::{Pack, PackMeta};
 
-use crate::relation_substitution::{substitute_multiple, RelationSubFunction};
+use crate::relation_substitution::{RelationSubFunction, substitute_multiple};
 
 /// Generates a Smithed package from a Smithed pack ID
-pub async fn gen_from_id(
+pub async fn generate_from_id(
 	id: &str,
 	body: Option<String>,
 	meta: Option<PackMeta>,
@@ -29,7 +29,7 @@ pub async fn gen_from_id(
 		.await
 		.expect("Failed to get pack");
 
-	gen(
+	generate(
 		pack,
 		body,
 		meta,
@@ -41,7 +41,7 @@ pub async fn gen_from_id(
 }
 
 /// Generates a Smithed package from a Smithed pack
-pub async fn gen(
+pub async fn generate(
 	pack: Pack,
 	body: Option<String>,
 	meta: Option<PackMeta>,

@@ -13,13 +13,13 @@ pub mod sys;
 /// General utilities for the API
 pub mod util;
 
-use anyhow::{bail, Context};
+use anyhow::{Context, bail};
 use serde::de::DeserializeOwned;
 
 use crate::hook::Hook;
 
-pub use interface::export;
 pub use interface::Guest;
+pub use interface::export;
 
 /// Static where the hook result data is placed
 static mut HOOK_RESULT: String = String::new();
@@ -123,7 +123,9 @@ impl WASMPlugin {
 ///
 /// SAFETY: Do not call from multiple threads
 pub unsafe fn _set_hook_result(result: String) {
-	HOOK_RESULT = result;
+	unsafe {
+		HOOK_RESULT = result;
+	}
 }
 
 /// Get the result from the hook that was run. Internal function only used by the ABI.
@@ -131,5 +133,7 @@ pub unsafe fn _set_hook_result(result: String) {
 /// SAFETY: Do not call from multiple threads
 pub unsafe fn _get_hook_result() -> String {
 	#[allow(static_mut_refs)]
-	HOOK_RESULT.clone()
+	unsafe {
+		HOOK_RESULT.clone()
+	}
 }

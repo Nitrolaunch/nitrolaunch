@@ -7,11 +7,11 @@ use std::{
 	time::SystemTime,
 };
 
-use anyhow::{bail, Context};
+use anyhow::{Context, bail};
 use nitro_core::io::{files::create_leading_dirs, json_from_file, json_to_file};
 use nitro_instance::addon::modpack::{
-	mrpack::{ModrinthIndex, ModrinthPack},
 	Modpack,
+	mrpack::{ModrinthIndex, ModrinthPack},
 };
 use nitro_net::{
 	download::Client,
@@ -24,10 +24,10 @@ use nitro_plugin::{
 	hook::hooks::{CustomRepoQueryResult, ImportInstanceResult, InstallModpackResult},
 };
 use nitro_shared::{
+	Side,
 	io::update_link,
 	output::{MessageContents, NitroOutput},
 	versions::{MinecraftVersionDeser, VersionPattern},
-	Side,
 };
 use nitrolaunch::config_crate::instance::InstanceConfig;
 use serde::{Deserialize, Serialize};
@@ -130,7 +130,7 @@ fn main() -> anyhow::Result<()> {
 				let req_str = req.to_string();
 
 				projects.push(req_str.clone());
-				let package = nitro_pkg_gen::modrinth::gen(
+				let package = nitro_pkg_gen::modrinth::generate(
 					get_preview(result),
 					&[],
 					&[],
@@ -302,7 +302,7 @@ async fn query_package(
 		return Ok(None);
 	};
 
-	let mut package = nitro_pkg_gen::modrinth::gen(
+	let mut package = nitro_pkg_gen::modrinth::generate(
 		project_info.project,
 		&project_info.versions,
 		&project_info.members,

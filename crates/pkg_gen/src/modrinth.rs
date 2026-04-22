@@ -1,13 +1,13 @@
 use std::collections::{HashMap, HashSet};
 
 use anyhow::Context;
+use nitro_pkg::RecommendedPackage;
 use nitro_pkg::declarative::{
 	DeclarativeAddon, DeclarativeAddonVersion, DeclarativeConditionSet, DeclarativePackage,
 	DeclarativePackageRelations,
 };
 use nitro_pkg::metadata::PackageMetadata;
 use nitro_pkg::properties::PackageProperties;
-use nitro_pkg::RecommendedPackage;
 use nitro_shared::loaders::{Loader, LoaderMatch};
 use nitro_shared::pkg::{AddonHashes, PackageCategory, PackageKind, PackageStability};
 use nitro_shared::util::DeserListOrSingle;
@@ -19,10 +19,10 @@ use nitro_net::modrinth::{
 };
 use nitro_shared::Side;
 
-use crate::relation_substitution::{substitute_multiple, RelationSubFunction};
+use crate::relation_substitution::{RelationSubFunction, substitute_multiple};
 
 /// Generates a Modrinth package from a Modrinth project ID
-pub async fn gen_from_id(
+pub async fn generate_from_id(
 	id: &str,
 	relation_substitution: impl RelationSubFunction,
 	force_extensions: &[String],
@@ -43,7 +43,7 @@ pub async fn gen_from_id(
 		.await
 		.expect("Failed to get project team members from Modrinth");
 
-	gen(
+	generate(
 		project,
 		&versions,
 		&members,
@@ -57,7 +57,7 @@ pub async fn gen_from_id(
 }
 
 /// Generates a Modrinth package from a Modrinth project
-pub async fn gen(
+pub async fn generate(
 	project: Project,
 	versions: &[Version],
 	members: &[Member],

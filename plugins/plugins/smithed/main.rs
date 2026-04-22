@@ -4,7 +4,7 @@ use std::{
 	time::SystemTime,
 };
 
-use anyhow::{bail, Context};
+use anyhow::{Context, bail};
 use nitro_core::io::{files::create_leading_dirs, json_from_file, json_to_file};
 use nitro_net::{
 	download::{self, Client},
@@ -132,7 +132,7 @@ fn main() -> anyhow::Result<()> {
 
 				packs.push(req_str.clone());
 
-				let package = nitro_pkg_gen::smithed::gen(
+				let package = nitro_pkg_gen::smithed::generate(
 					result.data,
 					None,
 					Some(PackMeta {
@@ -204,7 +204,7 @@ async fn query_package(
 		storage_dir,
 	};
 
-	let mut package = nitro_pkg_gen::smithed::gen(
+	let mut package = nitro_pkg_gen::smithed::generate(
 		pack_info.pack,
 		pack_info.body,
 		pack_info.meta,

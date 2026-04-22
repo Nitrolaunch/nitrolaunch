@@ -7,8 +7,8 @@ use nitro_pkg_gen::relation_substitution::RelationSubMap;
 use nitro_pkg_gen::{modrinth, smithed};
 use nitro_plugin::api::executable::ExecutablePlugin;
 use serde::{Deserialize, Serialize};
-use serde_json::ser::PrettyFormatter;
 use serde_json::Serializer;
+use serde_json::ser::PrettyFormatter;
 
 /// Generation of many packages
 pub mod batched;
@@ -34,7 +34,7 @@ fn main() -> anyhow::Result<()> {
 					)
 					.expect("Failed to deserialize config")
 				});
-				gen(cli.source, config, &cli.id).await;
+				generate(cli.source, config, &cli.id).await;
 			} else if subcommand == "gen-pkg-batched" {
 				let cli = GenPkgBatched::parse_from(it);
 				let config = serde_json::from_reader(
@@ -113,10 +113,10 @@ impl PackageGenerationConfig {
 }
 
 /// Generates a package from a source and config
-pub async fn gen(source: PackageSource, config: Option<PackageGenerationConfig>, id: &str) {
+pub async fn generate(source: PackageSource, config: Option<PackageGenerationConfig>, id: &str) {
 	let config = config.unwrap_or_default();
 	let mut pkg = match source {
-		PackageSource::Smithed => smithed::gen_from_id(
+		PackageSource::Smithed => smithed::generate_from_id(
 			id,
 			None,
 			None,
@@ -126,7 +126,7 @@ pub async fn gen(source: PackageSource, config: Option<PackageGenerationConfig>,
 		)
 		.await
 		.expect("Failed to generate package"),
-		PackageSource::Modrinth => modrinth::gen_from_id(
+		PackageSource::Modrinth => modrinth::generate_from_id(
 			id,
 			RelationSubMap(config.relation_substitutions),
 			&config.force_extensions,
