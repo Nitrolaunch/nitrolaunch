@@ -3,14 +3,12 @@ use std::collections::HashMap;
 use anyhow::Context;
 use clap::Subcommand;
 use nitrolaunch::{
-	config::{
-		instance::read_instance_config,
-		modifications::{apply_modifications_and_write, ConfigModification},
-	},
+	config::modifications::{apply_modifications_and_write, ConfigModification},
 	config_crate::instance::InstanceConfig,
 	instance::{
 		launch::LaunchSettings,
 		update::{manager::UpdateSettings, InstanceUpdateContext},
+		Instance,
 	},
 	io::lock::Lockfile,
 	pkg_crate::{PkgRequest, PkgRequestSource},
@@ -72,7 +70,7 @@ pub async fn run(command: TrySubcommand, data: &mut CmdData<'_>) -> anyhow::Resu
 				..Default::default()
 			};
 
-			read_instance_config(id.into(), instance_config, &HashMap::new(), &data.paths).await?
+			Instance::from_config(id.into(), instance_config, &HashMap::new(), &data.paths)?
 		}
 		TrySubcommand::Modpack { modpack } => {
 			let req = PkgRequest::parse(&modpack, PkgRequestSource::UserRequire).arc();
@@ -89,13 +87,12 @@ pub async fn run(command: TrySubcommand, data: &mut CmdData<'_>) -> anyhow::Resu
 			)
 			.await?;
 
-			read_instance_config(
+			Instance::from_config(
 				instance_id.clone(),
 				instance_config,
 				&HashMap::new(),
 				&data.paths,
-			)
-			.await?
+			)?
 		}
 		TrySubcommand::External(args) => {
 			call_plugin_subcommand(args, Some("try"), data).await?;
@@ -159,8 +156,8 @@ pub async fn run(command: TrySubcommand, data: &mut CmdData<'_>) -> anyhow::Resu
 		apply_modifications_and_write(
 			&mut raw_config,
 			vec![ConfigModification::AddInstance(
-				instance.get_id().clone(),
-				instance.get_config().original_config.clone(),
+				instance.id().clone(),
+				instance.original_config().clone(),
 			)],
 			&data.paths,
 			&config.plugins,

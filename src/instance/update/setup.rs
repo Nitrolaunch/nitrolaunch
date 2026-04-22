@@ -46,15 +46,15 @@ impl Instance {
 		// Get the Java installation and game JAR ahead of time for plugins to use
 
 		let mut version = core
-			.get_version(&self.config.version, manager.settings.depth, o)
+			.get_version(&self.version, manager.settings.depth, o)
 			.await?;
 
 		let jvm_path = version
-			.get_java_installation(self.config.launch.java.clone(), o)
+			.get_java_installation(self.launch.java.clone(), o)
 			.await?
 			.get_jvm_path();
 
-		let game_jar_path = version.get_game_jar(self.get_side(), o).await?;
+		let game_jar_path = version.get_game_jar(self.side(), o).await?;
 
 		// Run plugin setup hooks
 
@@ -68,17 +68,14 @@ impl Instance {
 
 		let mut arg = OnInstanceSetupArg {
 			id: self.id.to_string(),
-			side: Some(self.get_side()),
+			side: Some(self.side()),
 			inst_dir: self.dir.as_ref().map(|x| x.to_string_lossy().to_string()),
 			version_info: version_info.clone(),
 			old_version: current_version.clone(),
-			loader: self.config.loader.clone(),
+			loader: self.loader.clone(),
 			current_loader_version,
-			desired_loader_version: self.config.loader_version.clone(),
-			config: self
-				.config
-				.original_config_with_templates
-				.clone(),
+			desired_loader_version: self.loader_version.clone(),
+			config: self.config.clone(),
 			internal_dir: paths.internal.to_string_lossy().to_string(),
 			update_depth,
 			jvm_path: jvm_path.to_string_lossy().to_string(),
@@ -89,7 +86,7 @@ impl Instance {
 		let is_version_different = current_version
 			.as_ref()
 			.is_some_and(|x| x != &version_info.version);
-		let is_loader_different = self.config.loader != current_loader;
+		let is_loader_different = self.loader != current_loader;
 
 		if is_version_different || is_loader_different {
 			let mut process = OutputProcess::new(o);
@@ -123,7 +120,7 @@ impl Instance {
 
 			// The current loader version is no longer valid as it is referring to the old loader
 			arg.current_loader_version = None;
-			arg.loader = self.config.loader.clone();
+			arg.loader = self.loader.clone();
 			arg.version_info.version = version_info.version.clone();
 
 			let message =
@@ -176,7 +173,7 @@ impl Instance {
 
 		// Update the loaders and version
 		inst_lock.update_minecraft_version(&version_info.version);
-		inst_lock.update_loader(self.config.loader.clone());
+		inst_lock.update_loader(self.loader.clone());
 
 		inst_lock
 			.write()
@@ -240,22 +237,22 @@ impl Instance {
 				args: x.args.clone(),
 			});
 
-		let mut jvm_args = self.config.launch.jvm_args.clone();
+		let mut jvm_args = self.launch.jvm_args.clone();
 		jvm_args.extend(self.modification_data.jvm_args.clone());
 
-		let mut game_args = self.config.launch.game_args.clone();
+		let mut game_args = self.launch.game_args.clone();
 		game_args.extend(self.modification_data.game_args.clone());
 
 		let launch_config = LaunchConfiguration {
-			java: self.config.launch.java.clone(),
+			java: self.launch.java.clone(),
 			jvm_args,
 			game_args,
-			min_mem: self.config.launch.min_mem.clone(),
-			max_mem: self.config.launch.max_mem.clone(),
-			env: self.config.launch.env.clone(),
+			min_mem: self.launch.min_mem.clone(),
+			max_mem: self.launch.max_mem.clone(),
+			env: self.launch.env.clone(),
 			wrappers: Vec::from_iter(wrapper),
 			quick_play,
-			use_log4j_config: self.config.launch.use_log4j_config,
+			use_log4j_config: self.launch.use_log4j_config,
 		};
 		let inst_dir = self
 			.dir
@@ -301,7 +298,7 @@ impl Instance {
 
 	/// Create a keypair file in the instance
 	pub fn create_keypair(&mut self, account: &Account) -> anyhow::Result<()> {
-		if self.get_side() != Side::Client {
+		if self.side() != Side::Client {
 			return Ok(());
 		}
 

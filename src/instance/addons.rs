@@ -27,12 +27,11 @@ impl Instance {
 		version_info: &VersionInfo,
 	) {
 		if let Some(inst_dir) = &self.dir {
-			let config = &self.config.original_config_with_templates;
 			addon.get_targets(
-				self.get_side(),
+				self.side(),
 				inst_dir,
 				selected_worlds,
-				config.datapack_folder.as_ref().map(|x| Path::new(x)),
+				self.config.datapack_folder.as_ref().map(|x| Path::new(x)),
 				version_info,
 			);
 		}

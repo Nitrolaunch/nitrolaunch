@@ -146,10 +146,10 @@ async fn create_filters(
 			bail!("Instance does not exist");
 		};
 
-		if instance.get_config().loader != Loader::Vanilla {
-			params.loaders = vec![instance.get_config().loader.clone()];
+		if instance.loader() != &Loader::Vanilla {
+			params.loaders = vec![instance.loader().clone()];
 		}
-		let version = core.resolve_version(&instance.get_config().version).await?;
+		let version = core.resolve_version(instance.version()).await?;
 		params.minecraft_versions = vec![version.to_string()];
 	} else if let Some(template) = template {
 		let Some(template) = config.templates.get(&TemplateID::from(template)) else {
@@ -1704,7 +1704,7 @@ async fn worker_thread(
 							continue;
 						};
 
-						let mut config = instance.get_config().original_config.clone();
+						let mut config = instance.original_config().clone();
 						config
 							.packages
 							.push(PackageConfigDeser::Basic(req.to_string().into()));

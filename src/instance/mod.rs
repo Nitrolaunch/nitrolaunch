@@ -17,38 +17,184 @@ pub mod update;
 /// Updating shared world files
 pub mod world_files;
 
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
-use nitro_config::instance::{ClientWindowConfig, InstanceConfig};
+use anyhow::{bail, ensure, Context};
+use nitro_config::instance::{
+	is_valid_instance_id, ClientWindowConfig, InstanceConfig, LaunchConfig, LaunchMemory,
+};
+use nitro_config::template::TemplateConfig;
+use nitro_core::io::java::install::JavaInstallationKind;
 use nitro_core::util::versions::MinecraftVersion;
 use nitro_instance::get_instance_dir;
 use nitro_instance::lock::InstanceLockfile;
+use nitro_shared::java_args::MemoryNum;
 use nitro_shared::loaders::Loader;
-use nitro_shared::pkg::{PackageOverrides, PackageStability};
-use nitro_shared::versions::VersionPattern;
+use nitro_shared::versions::{parse_versioned_string, VersionPattern};
 use nitro_shared::Side;
 
+use crate::config::package::read_package_config;
 use crate::io::paths::Paths;
 
 use self::launch::LaunchOptions;
 use self::update::setup::ModificationData;
 
 use super::config::package::PackageConfig;
-use nitro_shared::id::InstanceID;
+use nitro_shared::id::{InstanceID, TemplateID};
 
 /// An instance of the game on a template
 #[derive(Debug)]
 pub struct Instance {
 	/// What type of instance this is
-	pub(crate) kind: InstKind,
+	kind: InstKind,
 	/// The ID of this instance
-	pub(crate) id: InstanceID,
+	id: InstanceID,
 	/// Directory for the instance's files
-	pub(crate) dir: Option<PathBuf>,
-	/// Configuration for the instance
-	pub(crate) config: InstanceStoredConfig,
+	dir: Option<PathBuf>,
+	/// The Minecraft version
+	version: MinecraftVersion,
+	/// Loader for the instance
+	loader: Loader,
+	/// Version for the loader
+	loader_version: VersionPattern,
+	/// Launch options for the instance
+	launch: LaunchOptions,
+	/// The packages on the instance, consolidated from all parent sources
+	packages: Vec<PackageConfig>,
+	/// The instance configuration after applying templates
+	config: InstanceConfig,
+	/// The original instance configuration before applying templates
+	original_config: InstanceConfig,
 	/// Modification data
 	modification_data: ModificationData,
+}
+
+impl Instance {
+	/// Create a new instance from configuration
+	pub fn from_config(
+		id: InstanceID,
+		mut config: InstanceConfig,
+		templates: &HashMap<TemplateID, TemplateConfig>,
+		paths: &Paths,
+	) -> anyhow::Result<Self> {
+		if !is_valid_instance_id(&id) {
+			bail!("Invalid instance ID '{}'", id);
+		}
+
+		let original_config = config.clone();
+		let config = config.apply_templates(templates)?;
+
+		let kind = match config.side.unwrap() {
+			Side::Client => InstKind::client(config.window.clone()),
+			Side::Server => InstKind::server(),
+		};
+
+		let (loader, loader_version) = if let Some(loader) = &config.loader {
+			let (loader, version) = parse_versioned_string(loader);
+			(Loader::parse_from_str(loader), version)
+		} else {
+			(Loader::Vanilla, VersionPattern::Any)
+		};
+
+		let version = MinecraftVersion::from_deser(
+			&config
+				.version
+				.clone()
+				.context("Instance is missing a Minecraft version")?,
+		);
+
+		let read_packages = config
+			.packages
+			.clone()
+			.into_iter()
+			.map(|x| read_package_config(x, config.package_stability.unwrap_or_default()))
+			.collect();
+
+		let base_dir = paths.data.join("instances").join(&*id);
+
+		let inst_dir = if let Some(inst_dir) = &config.dir {
+			// 'none' can be used to specify a missing game dir
+			if inst_dir == "none" {
+				None
+			} else {
+				Some(inst_dir.into())
+			}
+		} else {
+			Some(get_instance_dir(&base_dir, kind.to_side()))
+		};
+
+		Ok(Self {
+			dir: inst_dir,
+			kind,
+			id,
+			launch: launch_config_to_options(config.launch.clone())?,
+			version,
+			loader,
+			loader_version,
+			packages: read_packages,
+			original_config,
+			config,
+			modification_data: ModificationData::new(),
+		})
+	}
+
+	/// Get the kind of the instance
+	pub fn kind(&self) -> &InstKind {
+		&self.kind
+	}
+
+	/// Get the side of the instance
+	pub fn side(&self) -> Side {
+		self.kind.to_side()
+	}
+
+	/// Get the ID of the instance
+	pub fn id(&self) -> &InstanceID {
+		&self.id
+	}
+
+	/// Get the instance's directory
+	pub fn dir(&self) -> Option<&Path> {
+		self.dir.as_deref()
+	}
+
+	/// Get the instance's version
+	pub fn version(&self) -> &MinecraftVersion {
+		&self.version
+	}
+
+	/// Get the instance's loader
+	pub fn loader(&self) -> &Loader {
+		&self.loader
+	}
+
+	/// Get the instance's loader version
+	pub fn loader_version(&self) -> &VersionPattern {
+		&self.loader_version
+	}
+
+	/// Get the instance's stored configuration
+	pub fn config(&self) -> &InstanceConfig {
+		&self.config
+	}
+
+	/// Get the original, editable config before templates are applied
+	pub fn original_config(&self) -> &InstanceConfig {
+		&self.config
+	}
+
+	/// Opens the lockfile for this instance and returns it
+	pub fn get_lockfile(&self, paths: &Paths) -> anyhow::Result<InstanceLockfile> {
+		let lock_path = InstanceLockfile::get_path(self.dir.as_deref(), &self.id, &paths.internal);
+		InstanceLockfile::open(&lock_path)
+	}
+
+	/// Checks whether the lockfile for this instance exists, letting you check whether it has been successfully updated
+	pub fn lockfile_exists(&self, paths: &Paths) -> bool {
+		let lock_path = InstanceLockfile::get_path(self.dir.as_deref(), &self.id, &paths.internal);
+		lock_path.exists()
+	}
 }
 
 /// Different kinds of instances and their associated data
@@ -86,110 +232,34 @@ impl InstKind {
 	}
 }
 
-/// The stored configuration on an instance
-#[derive(Debug)]
-pub struct InstanceStoredConfig {
-	/// The instance display name
-	pub name: Option<String>,
-	/// A path to an icon for the instance
-	pub icon: Option<String>,
-	/// The Minecraft version
-	pub version: MinecraftVersion,
-	/// Loader for the instance
-	pub loader: Loader,
-	/// Version for the loader
-	pub loader_version: Option<VersionPattern>,
-	/// Launch options for the instance
-	pub launch: LaunchOptions,
-	/// The instance's global datapack folder
-	pub datapack_folder: Option<String>,
-	/// The packages on the instance, consolidated from all parent sources
-	pub packages: Vec<PackageConfig>,
-	/// Default stability for packages
-	pub package_stability: PackageStability,
-	/// Package overrides
-	pub package_overrides: PackageOverrides,
-	/// Inst dir override
-	pub inst_dir_override: Option<PathBuf>,
-	/// Whether custom launch behavior is enabled
-	pub custom_launch: bool,
-	/// The original instance configuration before applying templates
-	pub original_config: InstanceConfig,
-	/// The original instance configuration after applying templates
-	pub original_config_with_templates: InstanceConfig,
-	/// Custom plugin config
-	pub plugin_config: serde_json::Map<String, serde_json::Value>,
-}
-
-impl InstanceStoredConfig {
-	/// Gets the final instance dir
-	pub fn get_dir(&self, paths: &Paths, instance_id: &str, side: Side) -> Option<PathBuf> {
-		let base_dir = paths.data.join("instances").join(instance_id);
-
-		if let Some(inst_dir) = &self.inst_dir_override {
-			// 'none' can be used to specify a missing game dir
-			if inst_dir.to_string_lossy() == "none" {
-				None
-			} else {
-				Some(inst_dir.to_owned())
-			}
-		} else {
-			Some(get_instance_dir(&base_dir, side))
+fn launch_config_to_options(config: LaunchConfig) -> anyhow::Result<LaunchOptions> {
+	let min_mem = match &config.memory {
+		LaunchMemory::None => None,
+		LaunchMemory::Single(string) => MemoryNum::parse(string),
+		LaunchMemory::Both { min, .. } => MemoryNum::parse(min),
+	};
+	let max_mem = match &config.memory {
+		LaunchMemory::None => None,
+		LaunchMemory::Single(string) => MemoryNum::parse(string),
+		LaunchMemory::Both { max, .. } => MemoryNum::parse(max),
+	};
+	if let Some(min_mem) = &min_mem {
+		if let Some(max_mem) = &max_mem {
+			ensure!(
+				min_mem.to_bytes() <= max_mem.to_bytes(),
+				"Minimum memory must be less than or equal to maximum memory"
+			);
 		}
 	}
-}
-
-impl Instance {
-	/// Create a new instance
-	pub fn new(
-		kind: InstKind,
-		id: InstanceID,
-		config: InstanceStoredConfig,
-		paths: &Paths,
-	) -> Self {
-		Self {
-			dir: config.get_dir(paths, &id, kind.to_side()),
-			kind,
-			id,
-			config,
-			modification_data: ModificationData::new(),
-		}
-	}
-
-	/// Get the kind of the instance
-	pub fn get_kind(&self) -> &InstKind {
-		&self.kind
-	}
-
-	/// Get the side of the instance
-	pub fn get_side(&self) -> Side {
-		self.kind.to_side()
-	}
-
-	/// Get the ID of the instance
-	pub fn get_id(&self) -> &InstanceID {
-		&self.id
-	}
-
-	/// Get the instance's directory
-	pub fn get_dir(&self) -> Option<&Path> {
-		self.dir.as_deref()
-	}
-
-	/// Get the instance's stored configuration
-	pub fn get_config(&self) -> &InstanceStoredConfig {
-		&self.config
-	}
-
-	/// Opens the lockfile for this instance and returns it
-	pub fn get_lockfile(&self, paths: &Paths) -> anyhow::Result<InstanceLockfile> {
-		let lock_path = InstanceLockfile::get_path(self.dir.as_deref(), &self.id, &paths.internal);
-		InstanceLockfile::open(&lock_path)
-	}
-
-	/// Checks whether the lockfile for this instance exists, letting you check whether it has been successfully updated
-	pub fn lockfile_exists(&self, paths: &Paths) -> bool {
-		let lock_path = InstanceLockfile::get_path(self.dir.as_deref(), &self.id, &paths.internal);
-		lock_path.exists()
-	}
+	Ok(LaunchOptions {
+		jvm_args: config.args.jvm.parse(),
+		game_args: config.args.game.parse(),
+		min_mem,
+		max_mem,
+		java: JavaInstallationKind::parse(config.java.as_deref().unwrap_or("auto")),
+		env: config.env,
+		wrapper: config.wrapper,
+		quick_play: config.quick_play,
+		use_log4j_config: config.use_log4j_config,
+	})
 }

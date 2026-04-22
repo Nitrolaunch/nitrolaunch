@@ -40,16 +40,10 @@ fn main() -> anyhow::Result<()> {
 			))
 			.context("Failed to get list of Sponge versions")?;
 
-		let artifact = if let Some(version) = arg.desired_loader_version {
-			version
-				.get_match(&artifacts)
-				.context("Sponge version does not exist")?
-		} else {
-			artifacts
-				.last()
-				.context("Failed to find a valid Sponge version")?
-				.clone()
-		};
+		let artifact = arg
+			.desired_loader_version
+			.get_match(&artifacts)
+			.context("Sponge version does not exist")?;
 
 		let artifact_info = runtime
 			.block_on(sponge::get_artifact_info(mode, &artifact, &client))

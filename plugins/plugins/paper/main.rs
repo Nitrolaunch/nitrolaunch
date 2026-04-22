@@ -14,7 +14,6 @@ use nitro_plugin::{api::executable::ExecutablePlugin, hook::hooks::OnInstanceSet
 use nitro_shared::{
 	loaders::Loader,
 	output::{MessageContents, NitroOutput, OutputProcess},
-	versions::VersionPattern,
 	Side, UpdateDepth,
 };
 use tokio::runtime::Runtime;
@@ -97,7 +96,6 @@ fn main() -> anyhow::Result<()> {
 
 		let desired_version = arg
 			.desired_loader_version
-			.unwrap_or(VersionPattern::Any)
 			.get_match(&build_nums_strings)
 			.with_context(|| format!("Failed to find the given {mode} version"))?;
 		let desired_build_num: u16 = desired_version

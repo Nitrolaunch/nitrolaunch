@@ -45,20 +45,18 @@ pub async fn get_instances(state: tauri::State<'_, State>) -> Result<Vec<Instanc
 		.sorted_by_key(|x| x.0)
 		.map(|(id, instance)| {
 			let id = id.to_string();
-			let config = instance.get_config();
+			let config = instance.original_config();
 			InstanceInfo {
-				icon: config.icon.clone(),
+				icon: instance.config().icon.clone(),
 				pinned: data.pinned.contains(&id),
 				id,
-				name: config.name.clone(),
-				side: Some(instance.get_side()),
-				from_plugin: config.original_config.source_plugin.is_some(),
-				version: Some(config.version.to_string()),
-				loader: config.loader.clone(),
-				is_editable: config.original_config.is_editable
-					|| config.original_config.source_plugin.is_none(),
-				is_deletable: config.original_config.is_deletable
-					|| config.original_config.source_plugin.is_none(),
+				name: instance.config().name.clone(),
+				side: Some(instance.side()),
+				from_plugin: config.source_plugin.is_some(),
+				version: Some(instance.version().to_string()),
+				loader: instance.loader().clone(),
+				is_editable: config.is_editable || config.source_plugin.is_none(),
+				is_deletable: config.is_deletable || config.source_plugin.is_none(),
 			}
 		})
 		.collect();
@@ -184,12 +182,7 @@ pub async fn get_instance_config(
 		return Ok(None);
 	};
 
-	Ok(Some(
-		instance
-			.get_config()
-			.original_config_with_templates
-			.clone(),
-	))
+	Ok(Some(instance.config().clone()))
 }
 
 #[tauri::command]
@@ -208,8 +201,8 @@ pub async fn get_editable_instance_config(
 	};
 
 	Ok(Some(InstanceConfigAndPluginFields {
-		config: instance.get_config().original_config.clone(),
-		plugin_config: instance.get_config().original_config.plugin_config.clone(),
+		config: instance.original_config().clone(),
+		plugin_config: instance.original_config().plugin_config.clone(),
 	}))
 }
 

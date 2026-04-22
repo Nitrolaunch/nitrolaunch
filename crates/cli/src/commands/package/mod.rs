@@ -221,11 +221,7 @@ async fn list(data: &mut CmdData<'_>, raw: bool, instance: Option<String>) -> an
 		if !raw {
 			cprintln!("<s>Packages in instance <b>{}</b>:", instance_id);
 		}
-		for pkg in instance
-			.get_configured_packages()
-			.iter()
-			.sorted_by_key(|x| &x.id)
-		{
+		for pkg in instance.packages().iter().sorted_by_key(|x| &x.id) {
 			if raw {
 				println!("{}", pkg.id);
 			} else {
@@ -235,7 +231,7 @@ async fn list(data: &mut CmdData<'_>, raw: bool, instance: Option<String>) -> an
 	} else {
 		let mut found_pkgs: HashMap<PackageID, Vec<TemplateID>> = HashMap::new();
 		for (id, instance) in config.instances.iter() {
-			for pkg in instance.get_configured_packages() {
+			for pkg in instance.packages() {
 				found_pkgs
 					.entry(pkg.id.clone())
 					.or_default()

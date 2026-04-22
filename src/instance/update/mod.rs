@@ -84,7 +84,7 @@ impl Instance {
 
 		let version = ctx
 			.core
-			.get_version(&self.config.version, manager.settings.depth, ctx.output)
+			.get_version(&self.version, manager.settings.depth, ctx.output)
 			.await
 			.context("Failed to set up core version")?;
 
@@ -106,11 +106,7 @@ impl Instance {
 
 		// Modpack
 		let modpack_result = if facets.modpack && depth >= UpdateDepth::Full {
-			if let Some(modpack) = &self
-				.config
-				.original_config_with_templates
-				.modpack
-			{
+			if let Some(modpack) = &self.config.modpack {
 				let modpack = PkgRequest::parse(modpack, PkgRequestSource::UserRequire).arc();
 
 				self.update_modpack(&modpack, depth, &version_info, ctx)
@@ -140,10 +136,10 @@ impl Instance {
 
 				let constants = EvalConstants {
 					version: Some(mc_version.clone()),
-					loader: self.config.loader.clone(),
+					loader: self.loader.clone(),
 					version_list: version_info.versions.clone(),
 					language: ctx.prefs.language,
-					default_stability: self.config.package_stability,
+					default_stability: self.config.package_stability.unwrap_or_default(),
 					suppress: modpack_result.supplied_packages,
 				};
 
@@ -173,14 +169,11 @@ impl Instance {
 		// Run hook after packages installed
 		let arg = AfterPackagesInstalledArg {
 			id: self.id.to_string(),
-			side: Some(self.get_side()),
+			side: Some(self.side()),
 			inst_dir: self.dir.as_ref().map(|x| x.to_string_lossy().to_string()),
 			version_info: version_info.clone(),
-			loader: self.config.loader.clone(),
-			config: self
-				.config
-				.original_config_with_templates
-				.clone(),
+			loader: self.loader.clone(),
+			config: self.config.clone(),
 			internal_dir: ctx.paths.internal.to_string_lossy().to_string(),
 			update_depth: manager.settings.depth,
 		};

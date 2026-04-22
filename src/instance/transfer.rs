@@ -68,7 +68,7 @@ impl Instance {
 		let arg = ExportInstanceArg {
 			id: self.id.to_string(),
 			format: format.info.id.clone(),
-			config: self.config.original_config_with_templates.clone(),
+			config: self.config.clone(),
 			minecraft_version: minecraft_version.clone(),
 			loader_version: inst_lock.get_loader_version().cloned(),
 			inst_dir: inst_dir.to_string_lossy().to_string(),

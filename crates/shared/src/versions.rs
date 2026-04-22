@@ -185,6 +185,14 @@ impl VersionPattern {
 		}
 	}
 
+	/// Converts Self::Any to None
+	pub fn optional(&self) -> Option<&Self> {
+		match self {
+			Self::Any => None,
+			other => Some(other),
+		}
+	}
+
 	/// Checks that a string contains no pattern-special characters
 	#[cfg(test)]
 	pub fn validate(text: &str) -> bool {

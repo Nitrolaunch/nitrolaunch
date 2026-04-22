@@ -14,17 +14,10 @@ impl Instance {
 		paths: &Paths,
 		o: &mut impl NitroOutput,
 	) -> anyhow::Result<Vec<String>> {
-		if let Some(plugin) = &self
-			.config
-			.original_config_with_templates
-			.custom_logging_plugin
-		{
+		if let Some(plugin) = &self.config.custom_logging_plugin {
 			let arg = GetInstanceLogsArg {
 				id: self.id.to_string(),
-				config: self
-					.config
-					.original_config_with_templates
-					.clone(),
+				config: self.config.clone(),
 			};
 
 			let result = plugins
@@ -53,18 +46,11 @@ impl Instance {
 		paths: &Paths,
 		o: &mut impl NitroOutput,
 	) -> anyhow::Result<String> {
-		if let Some(plugin) = &self
-			.config
-			.original_config_with_templates
-			.custom_logging_plugin
-		{
+		if let Some(plugin) = &self.config.custom_logging_plugin {
 			let arg = GetInstanceLogArg {
 				instance_id: self.id.to_string(),
 				log_id: log_id.to_string(),
-				config: self
-					.config
-					.original_config_with_templates
-					.clone(),
+				config: self.config.clone(),
 			};
 
 			let result = plugins

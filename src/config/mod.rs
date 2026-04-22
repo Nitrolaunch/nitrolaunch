@@ -4,8 +4,6 @@ mod account;
 mod checks;
 /// Setting up the NitroCore
 mod core_setup;
-/// Configuring instances
-pub mod instance;
 /// Configuring instance modifications
 pub mod modifications;
 /// Configuring packages
@@ -15,7 +13,6 @@ pub mod plugin;
 /// Configuring global preferences
 pub mod preferences;
 
-use self::instance::read_instance_config;
 use crate::config::account::{read_account_config, AuthFunction};
 use crate::config::checks::{check_configured_packages, check_nitro_version};
 use crate::config::core_setup::setup_core;
@@ -249,13 +246,12 @@ impl Config {
 
 		// Instances
 		for (instance_id, instance_config) in config.instances {
-			let result = read_instance_config(
+			let result = Instance::from_config(
 				instance_id.clone(),
 				instance_config,
 				&consolidated_templates,
 				paths,
-			)
-			.await;
+			);
 
 			let instance = match result {
 				Ok(instance) => instance,
@@ -271,13 +267,13 @@ impl Config {
 			};
 
 			if show_warnings
-				&& !nitro_config::instance::can_install_loader(&instance.config.loader)
-				&& !supported_loaders.contains(&instance.config.loader)
+				&& !nitro_config::instance::can_install_loader(instance.loader())
+				&& !supported_loaders.contains(instance.loader())
 			{
 				o.display(MessageContents::Warning(translate!(
 					o,
 					ModificationNotSupported,
-					"mod" = &format!("{}", instance.config.loader)
+					"mod" = &format!("{}", instance.loader())
 				)));
 			}
 
@@ -295,12 +291,7 @@ impl Config {
 		// Add instances and templates to plugin manager
 		let plugin_manager_instances = instances
 			.iter()
-			.map(|(k, v)| {
-				(
-					k.to_string(),
-					v.config.original_config_with_templates.clone(),
-				)
-			})
+			.map(|(k, v)| (k.to_string(), v.config().clone()))
 			.collect();
 		let plugin_manager_templates = config
 			.templates

@@ -137,13 +137,13 @@ impl Instance {
 	}
 
 	/// Gets all of the configured packages for this instance
-	pub fn get_configured_packages(&self) -> &Vec<PackageConfig> {
-		&self.config.packages
+	pub fn packages(&self) -> &Vec<PackageConfig> {
+		&self.packages
 	}
 
 	/// Gets the configuration for a specific package on this instance
 	pub fn get_package_config(&self, package: &ArcPkgReq) -> Option<&PackageConfig> {
-		let configured_packages = self.get_configured_packages();
+		let configured_packages = self.packages();
 
 		configured_packages
 			.iter()

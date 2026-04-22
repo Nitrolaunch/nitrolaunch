@@ -201,7 +201,7 @@ async fn list(data: &mut CmdData<'_>, raw: bool, side: Option<Side>) -> anyhow::
 
 	for (id, instance) in config.instances.iter().sorted_by_key(|x| x.0) {
 		if let Some(side) = side {
-			if instance.get_side() != side {
+			if instance.side() != side {
 				continue;
 			}
 		}
@@ -209,7 +209,7 @@ async fn list(data: &mut CmdData<'_>, raw: bool, side: Option<Side>) -> anyhow::
 		if raw {
 			println!("{id}");
 		} else {
-			match instance.get_side() {
+			match instance.side() {
 				Side::Client => cprintln!("{}<g>{}", HYPHEN_POINT, id),
 				Side::Server => cprintln!("{}<b>{}", HYPHEN_POINT, id),
 			}
@@ -240,10 +240,10 @@ async fn info(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()> 
 	cprintln!("<s><g>Instance <b>{}", id);
 
 	cprintln!("<s>Basic Info:");
-	if !instance.get_config().original_config.from.is_empty() {
+	if !instance.original_config().from.is_empty() {
 		print_indent();
 		cprint!("<s>Derives from:</> ");
-		for template in instance.get_config().original_config.from.iter() {
+		for template in instance.original_config().from.iter() {
 			cprint!("<b>{template}");
 		}
 		cprintln!();
@@ -253,11 +253,11 @@ async fn info(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()> 
 	if icons_enabled() {
 		print!("{} ", VERSION);
 	}
-	cprintln!("<s>Version:</s> <g>{}", instance.get_config().version);
+	cprintln!("<s>Version:</s> <g>{}", instance.version());
 
 	print_indent();
 	cprint!("<s>Type: ");
-	match instance.get_side() {
+	match instance.side() {
 		Side::Client => cprint!("<y!>Client"),
 		Side::Server => cprint!("<c!>Server"),
 	}
@@ -267,7 +267,7 @@ async fn info(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()> 
 	if icons_enabled() {
 		print!("{} ", LOADER);
 	}
-	cprintln!("<s>Loader:</s> <g>{}", instance.get_config().loader);
+	cprintln!("<s>Loader:</s> <g>{}", instance.loader());
 
 	print_indent();
 	if icons_enabled() {
@@ -275,7 +275,7 @@ async fn info(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()> 
 	}
 	cprintln!("<s>Packages:");
 	for pkg in instance
-		.get_configured_packages()
+		.packages()
 		.into_iter()
 		.sorted_by_key(|x| x.get_request())
 	{
@@ -389,7 +389,7 @@ async fn dir(data: &mut CmdData<'_>, instance: Option<String>) -> anyhow::Result
 		.context("Instance does not exist")?;
 	instance.ensure_dir()?;
 
-	if let Some(dir) = &instance.get_dir() {
+	if let Some(dir) = instance.dir() {
 		println!("{}", dir.to_string_lossy());
 	} else {
 		bail!("Instance has no directory");
@@ -480,7 +480,7 @@ async fn update(
 		config.packages.clear();
 
 		// Mark the instance as having completed its first update
-		lock.update_instance_has_done_first_update(instance.get_id());
+		lock.update_instance_has_done_first_update(instance.id());
 		lock.finish(&data.paths)
 			.context("Failed to finish using lockfile")?;
 	}
@@ -713,7 +713,7 @@ async fn edit(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()> 
 		.get_mut(&id)
 		.with_context(|| format!("Unknown instance '{id}'"))?;
 
-	let mut inst_config = instance.get_config().original_config.clone();
+	let mut inst_config = instance.original_config().clone();
 	if inst_config.source_plugin.is_some() && !inst_config.is_editable {
 		bail!("This plugin instance does not support editing");
 	}

@@ -73,7 +73,7 @@ async fn link(instance: String, world: String) -> anyhow::Result<()> {
 
 	instance.ensure_dir()?;
 	let game_dir = instance
-		.get_dir()
+		.dir()
 		.clone()
 		.context("Instance has no local directory")?;
 

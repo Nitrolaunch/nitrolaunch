@@ -448,13 +448,7 @@ async fn call_plugin_subcommand(
 
 	let mut instance_configs = HashMap::new();
 	for (id, instance) in &config.instances {
-		instance_configs.insert(
-			id.clone(),
-			instance
-				.get_config()
-				.original_config_with_templates
-				.clone(),
-		);
+		instance_configs.insert(id.clone(), instance.config().clone());
 	}
 
 	let arg = SubcommandArg {

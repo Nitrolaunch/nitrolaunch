@@ -219,14 +219,13 @@ async fn resolve_instance<O: NitroOutput>(
 	ctx: &mut InstanceUpdateContext<'_, O>,
 ) -> anyhow::Result<ResolutionAndEvalResult> {
 	let mut params = EvalParameters::new(instance.kind.to_side());
-	params.stability = instance.config.package_stability;
+	params.stability = instance.config.package_stability.unwrap_or_default();
 
-	let mut overrides = instance.config.package_overrides.clone();
+	let mut overrides = instance.config.overrides.clone();
 	overrides.suppress = merge_package_lists(overrides.suppress.into_iter(), &constants.suppress);
 
-	let instance_pkgs = instance.get_configured_packages();
 	let resolution = resolve(
-		instance_pkgs,
+		&instance.packages,
 		&instance.id,
 		constants.clone(),
 		params,
@@ -263,13 +262,13 @@ fn remove_existing_addons(
 	instance.ensure_dir()?;
 
 	for adddon_kind in addon_kinds {
-		let Some(inst_dir) = instance.get_dir() else {
+		let Some(inst_dir) = &instance.dir else {
 			continue;
 		};
 
 		let dirs = get_addon_dirs(
 			adddon_kind,
-			instance.get_side(),
+			instance.side(),
 			inst_dir,
 			&[],
 			instance.config.datapack_folder.as_ref().map(Path::new),

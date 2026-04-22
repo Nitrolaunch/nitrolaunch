@@ -22,7 +22,7 @@ impl Instance {
 		plugins: &PluginManager,
 		o: &mut impl NitroOutput,
 	) -> anyhow::Result<()> {
-		let mut config = self.config.original_config_with_templates.clone();
+		let mut config = self.config.clone();
 		config.from = DeserListOrSingle::default();
 
 		let modifications = vec![ConfigModification::AddInstance(self.id.clone(), config)];
@@ -39,7 +39,7 @@ impl Instance {
 		plugins: &PluginManager,
 		o: &mut impl NitroOutput,
 	) -> anyhow::Result<()> {
-		let config = self.config.original_config.clone();
+		let config = self.original_config.clone();
 
 		let modifications = vec![ConfigModification::AddInstance(new_id.clone(), config)];
 		let mut config = Config::open(&Config::get_path(paths))?;
@@ -58,14 +58,14 @@ impl Instance {
 			.await
 			.context("Failed to delete files")?;
 
-		if let Some(source_plugin) = &self.config.original_config.source_plugin {
-			if !self.config.original_config.is_deletable {
+		if let Some(source_plugin) = &self.original_config.source_plugin {
+			if !self.original_config.is_deletable {
 				bail!("Plugin instance does not support deletion");
 			}
 
 			let arg = SaveInstanceConfigArg {
 				id: self.id.to_string(),
-				config: self.config.original_config.clone(),
+				config: self.original_config.clone(),
 			};
 
 			let result = plugins
@@ -89,8 +89,7 @@ impl Instance {
 	pub async fn delete_files(&self) -> anyhow::Result<()> {
 		if let Some(dir) = &self.dir {
 			// Remove the parent directory above .minecraft for clients
-			let path = if self.config.inst_dir_override.is_none() && self.get_side() == Side::Client
-			{
+			let path = if self.config.dir.is_none() && self.side() == Side::Client {
 				if let Some(parent) = dir.parent() {
 					if parent
 						.file_name()

@@ -41,13 +41,11 @@ fn main() -> anyhow::Result<()> {
 
 		let runtime = tokio::runtime::Runtime::new()?;
 
-		let desired_fq_version = arg.desired_loader_version.and_then(|x| {
-			if let VersionPattern::Single(pat) = x {
-				Some(pat)
-			} else {
-				None
-			}
-		});
+		let desired_fq_version = if let VersionPattern::Single(pat) = arg.desired_loader_version {
+			Some(pat)
+		} else {
+			None
+		};
 
 		let meta = runtime
 			.block_on(fabric_quilt::get_meta(

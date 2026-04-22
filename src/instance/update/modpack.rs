@@ -41,7 +41,7 @@ impl Instance {
 	) -> anyhow::Result<ModpackInstallResult> {
 		let mut inst_lock = self.get_lockfile(ctx.paths)?;
 
-		if self.get_dir().is_none() {
+		if self.dir.is_none() {
 			return Ok(ModpackInstallResult::default());
 		}
 
@@ -63,13 +63,13 @@ impl Instance {
 
 		let constants = EvalConstants {
 			version: Some(version_info.version.clone()),
-			loader: self.config.loader.clone(),
+			loader: self.loader.clone(),
 			version_list: version_info.versions.clone(),
 			language: ctx.prefs.language,
-			default_stability: self.config.package_stability,
+			default_stability: self.config.package_stability.unwrap_or_default(),
 			suppress: Vec::new(),
 		};
-		let params = EvalParameters::new(self.get_side());
+		let params = EvalParameters::new(self.side());
 
 		let input = EvalInput {
 			constants: Arc::new(constants),
@@ -134,8 +134,8 @@ impl Instance {
 			format: format.id.clone(),
 			path: modpack_path_str.clone(),
 			old_path,
-			target_path: self.get_dir().unwrap().to_string_lossy().to_string(),
-			side: self.get_side(),
+			target_path: self.dir().unwrap().to_string_lossy().to_string(),
+			side: self.side(),
 		};
 
 		let result = ctx

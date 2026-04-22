@@ -48,7 +48,7 @@ impl Instance {
 
 		let core_version = ctx
 			.core
-			.get_version(&self.config.version, manager.settings.depth, ctx.output)
+			.get_version(&self.version, manager.settings.depth, ctx.output)
 			.await?;
 		let version_info = core_version.get_version_info();
 
@@ -58,13 +58,10 @@ impl Instance {
 
 		let hook_arg = InstanceLaunchArg {
 			id: self.id.to_string(),
-			side: Some(self.get_side()),
+			side: Some(self.side()),
 			inst_dir: self.dir.as_ref().map(|x| x.to_string_lossy().into()),
 			version_info: version_info.clone(),
-			config: self
-				.config
-				.original_config_with_templates
-				.clone(),
+			config: self.config.clone(),
 			pid: None,
 			stdout_path: None,
 			stdin_path: None,
@@ -122,7 +119,7 @@ impl Instance {
 		let selected_account = selected_account.map(|x| x.to_string());
 
 		let mut core_version = core
-			.get_version(&self.config.version, UpdateDepth::Shallow, o)
+			.get_version(&self.version, UpdateDepth::Shallow, o)
 			.await?;
 
 		let mut instance = self
@@ -148,7 +145,7 @@ impl Instance {
 			.await
 			.context("Failed to call while launch hook")?;
 
-		let world_files = if self.get_side() == Side::Client {
+		let world_files = if self.side() == Side::Client {
 			Some(
 				WorldFilesWatcher::new(self.dir.as_ref().unwrap(), plugins.clone())
 					.context("Failed to setup world files watcher")?,

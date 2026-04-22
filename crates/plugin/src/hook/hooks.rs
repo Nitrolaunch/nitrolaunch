@@ -137,7 +137,7 @@ pub struct OnInstanceSetupArg {
 	/// The current version of the loader, as stored in the lockfile. Can be used to detect version changes.
 	pub current_loader_version: Option<String>,
 	/// The desired version of the loader
-	pub desired_loader_version: Option<VersionPattern>,
+	pub desired_loader_version: VersionPattern,
 	/// Instance configuration
 	pub config: InstanceConfig,
 	/// Path to the Nitrolaunch internal dir

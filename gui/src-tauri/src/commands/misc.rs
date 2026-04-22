@@ -260,7 +260,7 @@ pub async fn open_instance_dir(
 
 	let _ = instance.ensure_dir();
 
-	let path = instance.get_dir().map(|x| x.to_owned());
+	let path = instance.dir().map(|x| x.to_owned());
 	let Some(path) = path else {
 		return Err("Instance has no game dir".into());
 	};
