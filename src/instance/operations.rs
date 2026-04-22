@@ -1,13 +1,18 @@
-use anyhow::{bail, Context};
+use anyhow::{Context, bail};
+use nitro_config::{instance::InstanceConfig, template::TemplateConfig};
 use nitro_plugin::hook::hooks::{DeleteInstance, SaveInstanceConfigArg};
 use nitro_shared::{
-	id::InstanceID, io::dir_size, output::NitroOutput, util::DeserListOrSingle, Side,
+	Side,
+	id::{InstanceID, TemplateID},
+	io::dir_size,
+	output::NitroOutput,
+	util::DeserListOrSingle,
 };
 
 use crate::{
 	config::{
-		modifications::{apply_modifications_and_write, ConfigModification},
 		Config,
+		modifications::{ConfigModification, apply_modifications_and_write},
 	},
 	instance::Instance,
 	io::paths::Paths,
@@ -42,6 +47,35 @@ impl Instance {
 		let config = self.original_config.clone();
 
 		let modifications = vec![ConfigModification::AddInstance(new_id.clone(), config)];
+		let mut config = Config::open(&Config::get_path(paths))?;
+
+		apply_modifications_and_write(&mut config, modifications, paths, plugins, o).await
+	}
+
+	/// Extracts a template from this instance
+	pub async fn extract(
+		&self,
+		new_id: &TemplateID,
+		paths: &Paths,
+		plugins: &PluginManager,
+		o: &mut impl NitroOutput,
+	) -> anyhow::Result<()> {
+		let mut config = self.original_config.clone();
+		config.side = None;
+		let config = TemplateConfig {
+			instance: config,
+			..Default::default()
+		};
+
+		let inst_config = InstanceConfig {
+			side: Some(self.side()),
+			..Default::default()
+		};
+
+		let modifications = vec![
+			ConfigModification::AddTemplate(new_id.clone(), config),
+			ConfigModification::UpdateInstance(self.id.clone(), inst_config),
+		];
 		let mut config = Config::open(&Config::get_path(paths))?;
 
 		apply_modifications_and_write(&mut config, modifications, paths, plugins, o).await

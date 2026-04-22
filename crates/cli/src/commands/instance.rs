@@ -2,18 +2,18 @@ use std::ops::DerefMut;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use anyhow::{bail, Context};
+use anyhow::{Context, bail};
 use clap::Subcommand;
 use color_print::{cprint, cprintln};
 use inquire::Confirm;
 use itertools::Itertools;
-use nitrolaunch::config::modifications::{apply_modifications_and_write, ConfigModification};
+use nitrolaunch::config::modifications::{ConfigModification, apply_modifications_and_write};
 use nitrolaunch::config_crate::instance::InstanceConfig;
 use nitrolaunch::core::QuickPlayType;
+use nitrolaunch::instance::Instance;
 use nitrolaunch::instance::transfer::load_formats;
 use nitrolaunch::instance::update::manager::UpdateSettings;
 use nitrolaunch::instance::update::{InstanceUpdateContext, UpdateFacets};
-use nitrolaunch::instance::Instance;
 use nitrolaunch::io::lock::Lockfile;
 use nitrolaunch::shared::id::InstanceID;
 use nitrolaunch::shared::java_args::MemoryNum;
@@ -22,13 +22,13 @@ use nitrolaunch::shared::util::to_string_json;
 
 use nitrolaunch::instance::launch::LaunchSettings;
 use nitrolaunch::shared::lang::translate::TranslationKey;
-use nitrolaunch::shared::{output::NitroOutput, Side, UpdateDepth};
+use nitrolaunch::shared::{Side, UpdateDepth, output::NitroOutput};
 use reqwest::Client;
 
 use super::CmdData;
 use crate::commands::call_plugin_subcommand;
 use crate::commands::config::edit_temp_file;
-use crate::output::{icons_enabled, HYPHEN_POINT, INSTANCE, LOADER, PACKAGE, VERSION};
+use crate::output::{HYPHEN_POINT, INSTANCE, LOADER, PACKAGE, VERSION, icons_enabled};
 use crate::prompt::{
 	pick_instance, pick_instance_id, pick_instances, pick_loader, pick_minecraft_version, pick_side,
 };
@@ -142,6 +142,15 @@ pub enum InstanceSubcommand {
 		/// The instance to consolidate
 		instance: Option<String>,
 	},
+	#[command(
+		about = "Extract a template from an instance to let you share it with other instances"
+	)]
+	Extract {
+		/// The instance to extract the template from
+		instance: Option<String>,
+		/// The ID of the new template
+		new_id: Option<String>,
+	},
 	#[command(about = "Print the directory of an instance")]
 	Dir {
 		/// The instance to print the directory of
@@ -188,6 +197,9 @@ pub async fn run(command: InstanceSubcommand, mut data: CmdData<'_>) -> anyhow::
 			duplicate(&mut data, instance, new_id).await
 		}
 		InstanceSubcommand::Consolidate { instance } => consolidate(&mut data, instance).await,
+		InstanceSubcommand::Extract { instance, new_id } => {
+			extract(&mut data, instance, new_id).await
+		}
 		InstanceSubcommand::Logs { instance } => logs(&mut data, instance).await,
 		InstanceSubcommand::External(args) => {
 			call_plugin_subcommand(args, Some("instance"), &mut data).await
@@ -827,6 +839,36 @@ async fn consolidate(data: &mut CmdData<'_>, instance: Option<String>) -> anyhow
 
 	instance
 		.consolidate(&data.paths, &config.plugins, data.output)
+		.await?;
+
+	data.output
+		.display(MessageContents::Success("Changes saved".into()));
+
+	Ok(())
+}
+
+async fn extract(
+	data: &mut CmdData<'_>,
+	instance: Option<String>,
+	new_id: Option<String>,
+) -> anyhow::Result<()> {
+	data.ensure_config(true).await?;
+	let config = data.config.get();
+
+	let instance = pick_instance(instance, config)?;
+	let instance = config
+		.instances
+		.get(&instance)
+		.context("Instance does not exist")?;
+
+	let new_id = if let Some(new_id) = new_id {
+		new_id.into()
+	} else {
+		pick_instance_id()?
+	};
+
+	instance
+		.extract(&new_id, &data.paths, &config.plugins, data.output)
 		.await?;
 
 	data.output
