@@ -98,7 +98,7 @@ use std::os::windows::prelude::RawHandle;
 
 #[cfg(target_os = "windows")]
 #[link(name = "kernel32")]
-extern "system" {
+unsafe extern "system" {
 	fn CreateNamedPipeA(
 		lpName: *const i8,
 		dwOpenMode: u32,
