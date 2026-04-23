@@ -210,6 +210,20 @@ export default function Plugins() {
 					</For>
 				</Show>
 			</div>
+			{/* <button
+				onclick={async () => {
+					emit("nitro_output_create_task", "task");
+					setTimeout(() => emit("nitro_output_start_process", "task"), 1000);
+					setTimeout(() => emit("nitro_output_message", {task: "task", type: "start_process", message: "Doing stuff"}), 1500);
+					setTimeout(() => emit("nitro_output_finish_process", "task"), 2000);
+					setTimeout(() => emit("nitro_output_start_process", "task"), 2500);
+					setTimeout(() => emit("nitro_output_message", {task: "task", type: "start_process", message: "Doing stuff 2"}), 3000);
+					setTimeout(() => emit("nitro_output_finish_process", "task"), 3500);
+					setTimeout(() => emit("nitro_output_finish_task", "task"), 5000);
+				}}
+			>
+				Fooood
+			</button> */}
 			<br />
 			<br />
 			<br />

@@ -39,6 +39,12 @@ export default function TaskIndicator() {
 		setTaskCount(Object.keys(messages()).length);
 	};
 
+	let updateMessages = () => {
+		setMessages((messages) => {
+			return { ...messages };
+		});
+	};
+
 	function createTask(task: string) {
 		if (taskCount() == 0) {
 			setTaskName(getTaskDisplayName(task));
@@ -108,7 +114,7 @@ export default function TaskIndicator() {
 							task.progressBar = undefined;
 							updateSelectedProgress();
 						}
-						return messages;
+						return { ...messages };
 					});
 				}
 			},
@@ -246,6 +252,7 @@ export default function TaskIndicator() {
 	});
 
 	let selectedTaskData = createMemo(() => {
+		console.log("RUNNN");
 		if (selectedTask() == undefined) {
 			return undefined;
 		} else {
@@ -254,9 +261,8 @@ export default function TaskIndicator() {
 	});
 
 	function updateSelectedProgress() {
-		if (selectedTask() != undefined) {
-			let selectedTaskData = Object.values(messages())[selectedTask()!]!;
-			setSelectedTaskProgress(selectedTaskData.progressBar);
+		if (selectedTaskData() != undefined) {
+			setSelectedTaskProgress(selectedTaskData()!.progressBar);
 		} else {
 			setSelectedTaskProgress(undefined);
 		}
