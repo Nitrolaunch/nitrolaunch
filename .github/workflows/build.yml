@@ -1,4 +1,4 @@
-name: Build
+name: Build and Test
 on:
   push:
     branches: ["main", "dev"]
@@ -32,7 +32,10 @@ jobs:
             ~/.cargo/git
           key: ${{ matrix.target }}-cargo-${{ hashFiles('**/Cargo.lock') }}
       - name: Build CLI
-        run: cargo build -p nitro_cli --release --verbose --locked
+        run: cargo build --package nitro_cli --release --verbose --locked
+      - if: ${{ matrix.os == 'ubuntu-latest'}}
+        name: Run tests
+        run: cargo test --release --exclude nitro_gui
       - uses: actions/upload-artifact@v4
         name: Upload CLI artifact
         with:
