@@ -107,7 +107,9 @@ export default function Sidebar(props: SidebarProps) {
 			class="cont col start"
 			id="sidebar"
 			style={`${
-				props.visible ? "" : "width:0px;border-right-color:var(--bg);opacity:0%"
+				props.visible
+					? ""
+					: "width:0px;border-right-color:var(--bg);opacity:0%;pointer-events:none"
 			}`}
 			onmouseleave={() => props.setVisible(false)}
 		>
