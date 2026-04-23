@@ -3,8 +3,8 @@ import { PackageCategory, PackageType, RepoInfo } from "../../package";
 import { invoke } from "@tauri-apps/api/core";
 import { createSignal, Show, createResource, createEffect } from "solid-js";
 import InlineSelect from "../input/select/InlineSelect";
-import Icon from "../Icon";
-import { Home } from "../../icons";
+import Icon, { HTMLIcon } from "../Icon";
+import { Honeycomb } from "../../icons";
 
 export default function RepoSelector(props: RepoSelectorProps) {
 	let [repos, setRepos] = createSignal<RepoInfo[] | undefined>();
@@ -69,14 +69,14 @@ export default function RepoSelector(props: RepoSelectorProps) {
 					repo.meta.package_types == undefined ||
 						repo.meta.package_types.length == 0
 						? undefined
-						: repo.meta.package_types!
+						: repo.meta.package_types!,
 				);
 
 				props.setRepoCategories(
 					repo.meta.package_categories == undefined ||
 						repo.meta.package_categories.length == 0
 						? undefined
-						: repo.meta.package_categories!
+						: repo.meta.package_categories!,
 				);
 
 				props.setRepoColor(repo.meta.color);
@@ -93,26 +93,44 @@ export default function RepoSelector(props: RepoSelectorProps) {
 					if (x.id == "std") {
 						return {
 							value: "std",
-							contents: <Icon icon={Home} size="1rem" />,
+							contents: (
+								<div class="cont" style="width:1.5rem;aspect-ratio:1">
+									<Icon icon={Honeycomb} size="1rem" />
+								</div>
+							),
 							color: "var(--package)",
 							selectedBgColor: "var(--packagebg)",
 							selectedTextColor: "var(--package)",
+							tip: "Standard Repository",
 						};
 					}
-					return {
-						value: x.id,
-						contents: (
+
+					let contents;
+					if (x.meta.icon == undefined) {
+						contents = (
 							<div style="padding:0rem 0.3rem">
 								{x.meta.name == undefined
 									? x.id.replace(/\_/g, " ").toLocaleUpperCase()
 									: x.meta.name.toLocaleUpperCase()}
 							</div>
-						),
+						);
+					} else {
+						contents = (
+							<div class="cont" style="width:1.5rem;aspect-ratio:1">
+								<Icon icon={HTMLIcon(x.meta.icon)} size="1rem" />
+							</div>
+						);
+					}
+
+					return {
+						value: x.id,
+						contents: contents,
 						color: x.meta.color,
 						selectedTextColor: x.meta.text_color,
+						tip: x.meta.name,
 					};
 				})}
-				grid={true}
+				grid={false}
 				selected={selectedRepo()}
 				columns={repos()!.length}
 				onChange={(x) => {

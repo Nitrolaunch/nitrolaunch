@@ -26,7 +26,7 @@
 #browse-container.alternate {
 	display: grid;
 	grid-template-columns: 1fr 3fr;
-	height: 35rem;
+	height: 68vh;
 	margin-top: -0.6rem;
 
 	border: var(--border) solid var(--bg3);

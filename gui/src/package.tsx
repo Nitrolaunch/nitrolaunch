@@ -54,6 +54,7 @@ export interface RepoMetadata {
 	nitro_version?: string;
 	color?: string;
 	text_color?: string;
+	icon?: string;
 	package_types?: PackageType[];
 	package_categories?: PackageCategory[];
 }

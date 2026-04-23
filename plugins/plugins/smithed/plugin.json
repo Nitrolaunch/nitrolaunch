@@ -45,6 +45,7 @@
 						"description": "Package repository for packs from the Smithed website",
 						"color": "#1b48c4",
 						"text_color": "#f6f6f6",
+						"icon": "$file:icon.svg",
 						"package_types": [
 							"resource_pack",
 							"datapack"

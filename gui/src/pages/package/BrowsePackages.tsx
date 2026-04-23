@@ -29,7 +29,7 @@ import RepoSelector from "../../components/package/RepoSelector";
 import { searchPackages } from "../../utils/package";
 import Tip from "../../components/dialog/Tip";
 import IconTextButton from "../../components/input/button/IconTextButton";
-import { Download, Grid, Menu, Properties, Refresh } from "../../icons";
+import { Download, Grid, Menu, Refresh } from "../../icons";
 import { invoke } from "@tauri-apps/api/core";
 import { loadPagePlugins } from "../../plugins";
 import Icon from "../../components/Icon";
@@ -206,30 +206,26 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 					<div></div>
 					<div class="cont" style="justify-content:flex-end">
 						<div class="cont">
-							<IconButton
-								icon={Grid}
-								size="1.5rem"
-								onClick={() => setIsAlternate(false)}
-								color="transparent"
-								border={isAlternate() ? undefined : "var(--fg2)"}
-								iconColor={isAlternate() ? undefined : "var(--fg2)"}
-							/>
-							<IconButton
-								icon={Menu}
-								size="1.5rem"
-								onClick={() => setIsAlternate(true)}
-								color="transparent"
-								border={isAlternate() ? "var(--fg2)" : undefined}
-								iconColor={isAlternate() ? "var(--fg2)" : undefined}
-							/>
-							<IconButton
-								icon={Properties}
-								size="1.5rem"
-								onClick={() => {}}
-								color="transparent"
-								border={undefined}
-								iconColor={undefined}
-							/>
+							<Tip tip="Gallery View">
+								<IconButton
+									icon={Grid}
+									size="1.5rem"
+									onClick={() => setIsAlternate(false)}
+									color="transparent"
+									border={isAlternate() ? undefined : "var(--fg2)"}
+									iconColor={isAlternate() ? undefined : "var(--fg2)"}
+								/>
+							</Tip>
+							<Tip tip="List View">
+								<IconButton
+									icon={Menu}
+									size="1.5rem"
+									onClick={() => setIsAlternate(true)}
+									color="transparent"
+									border={isAlternate() ? "var(--fg2)" : undefined}
+									iconColor={isAlternate() ? "var(--fg2)" : undefined}
+								/>
+							</Tip>
 						</div>
 						<SearchBar
 							placeholder="Search for packages..."
@@ -394,10 +390,10 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 							updateFilters();
 						}}
 					/>
+					<br />
+					<br />
+					<br />
 				</Show>
-				<br />
-				<br />
-				<br />
 			</div>
 		</div>
 	);

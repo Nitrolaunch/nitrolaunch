@@ -1,9 +1,7 @@
 .inline-select {
 	border-radius: var(--round);
 	width: 100%;
-	flex-direction: row;
-	align-items: center;
-	justify-content: center;
+	justify-content: flex-start;
 	gap: 0.7rem;
 }
 
@@ -18,7 +16,11 @@
 
 	cursor: pointer;
 
-	transition: border-color 0.25s, background-color 0.25s, color 0.25s, transform var(--bubble);
+	transition:
+		border-color 0.25s,
+		background-color 0.25s,
+		color 0.25s,
+		transform var(--bubble);
 }
 
 .inline-select-option.selected {

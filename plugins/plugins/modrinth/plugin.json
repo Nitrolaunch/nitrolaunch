@@ -29,6 +29,7 @@
 						"description": "Package repository for packs from the Modrinth website",
 						"color": "#1bd96a",
 						"text_color": "black",
+						"icon": "$file:icon.svg",
 						"package_types": [
 							"mod",
 							"resource_pack",
