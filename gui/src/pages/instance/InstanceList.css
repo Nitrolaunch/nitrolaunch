@@ -80,6 +80,11 @@
 	transition: border-color 0.25s;
 }
 
+.instance-list-item-bottom > div {
+	text-wrap: nowrap;
+	overflow-x: hidden;
+}
+
 .instance-list-item:hover {
 	background-color: var(--bg3);
 	border-right-color: var(--bg4);

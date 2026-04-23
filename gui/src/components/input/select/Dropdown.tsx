@@ -346,10 +346,7 @@ function DropdownOption(props: OptionProps) {
 		return contents;
 	} else {
 		return (
-			<Tip
-				tip={<div style="color:var(--fg)">{props.option.tip}</div>}
-				side="right"
-			>
+			<Tip tip={props.option.tip} side="right">
 				{contents}
 			</Tip>
 		);
@@ -370,7 +367,7 @@ export interface Option {
 	contents: JSX.Element;
 	color?: string;
 	selectedTextColor?: string;
-	tip?: JSX.Element;
+	tip?: string;
 	isSelectable?: boolean;
 	backgroundColor?: string;
 }

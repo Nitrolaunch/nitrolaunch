@@ -46,13 +46,14 @@
 }
 
 #packages-container.alternate {
+	display: block;
+
 	height: 100%;
-	grid-template-columns: 1fr;
 
 	gap: 0;
 	border-right: var(--border) solid var(--bg3);
 
-	overflow-y: scroll;
+	overflow-y: auto;
 }
 
 .package {
@@ -80,6 +81,7 @@
 	height: 4rem;
 	border: none;
 	border-radius: 0;
+	overflow-y: hidden;
 }
 
 .package:hover {
