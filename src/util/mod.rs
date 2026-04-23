@@ -25,7 +25,7 @@ pub fn select_random_n_items_from_list<T>(list: &[T], n: usize) -> Vec<&T> {
 
 #[cfg(target_os = "windows")]
 #[link(name = "kernel32")]
-extern "system" {
+unsafe extern "system" {
 	fn GetStdHandle(nStdHandle: u32) -> *mut std::ffi::c_void;
 }
 
