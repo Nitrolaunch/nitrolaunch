@@ -3,8 +3,13 @@
 }
 
 #package-container {
-	width: 97%;
+	width: 100%;
+	padding: 1rem;
 	position: relative;
+}
+
+#package-container.small {
+	padding: 0;
 }
 
 #package-header-container {
@@ -17,12 +22,18 @@
 	display: grid;
 	width: 100%;
 	grid-template-columns: minmax(0, 5rem) minmax(0, 1fr);
-	margin-top: 1rem;
+
 	padding: 0.5rem;
 	background-color: var(--bg);
 	border: var(--border) solid var(--bg4);
 	border-radius: var(--round2);
+
 	overflow: hidden;
+}
+
+#package-container.small #package-header {
+	border: none;
+	border-radius: 0;
 }
 
 #package-icon {
@@ -102,6 +113,7 @@
 
 #package-contents.small {
 	grid-template-columns: 1fr;
+	margin-top: 0;
 }
 
 #package-tabs {
@@ -142,6 +154,12 @@
 	border-top-right-radius: 0;
 	min-height: 10rem;
 	padding: 0.5rem;
+}
+
+#package-container.small #package-tab-contents {
+	border-left: none;
+	border-right: none;
+	border-radius: 0;
 }
 
 #package-properties {

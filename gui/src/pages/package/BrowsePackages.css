@@ -54,6 +54,7 @@
 	border-right: var(--border) solid var(--bg3);
 
 	overflow-y: auto;
+	box-sizing: border-box;
 }
 
 .package {
