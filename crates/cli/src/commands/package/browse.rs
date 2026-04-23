@@ -602,7 +602,7 @@ fn renderer(terminal: &mut DefaultTerminal, mut state: State<'_>) -> anyhow::Res
 						state.install_package();
 						state.focus_none();
 					}
-					other if state.install_prompt.new_id_focused => {
+					_ if state.install_prompt.new_id_focused => {
 						state.install_prompt.new_id_state.input(key);
 					}
 					KeyCode::Char('i') => state.install_prompt.location = InstallLocation::Instance,
