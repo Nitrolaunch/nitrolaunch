@@ -166,8 +166,6 @@ impl Instance {
 			}
 		}
 
-		o.end_section();
-
 		Ok(())
 	}
 

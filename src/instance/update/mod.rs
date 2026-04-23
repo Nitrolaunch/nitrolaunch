@@ -12,11 +12,11 @@ use crate::instance::update::modpack::ModpackInstallResult;
 #[cfg(not(feature = "disable_instance_update_packages"))]
 use crate::pkg::eval::EvalConstants;
 use crate::plugin::PluginManager;
-use nitro_core::account::AccountManager;
 use nitro_core::NitroCore;
+use nitro_core::account::AccountManager;
 use nitro_pkg::{PkgRequest, PkgRequestSource};
 use nitro_plugin::hook::hooks::{AfterPackagesInstalled, AfterPackagesInstalledArg};
-use nitro_shared::{translate, UpdateDepth};
+use nitro_shared::{UpdateDepth, translate};
 #[cfg(not(feature = "disable_instance_update_packages"))]
 use packages::print_package_support_messages;
 use packages::update_instance_packages;
@@ -104,6 +104,8 @@ impl Instance {
 		.await
 		.context("Failed to create instance")?;
 
+		ctx.output.end_section();
+
 		// Modpack
 		let modpack_result = if facets.modpack && depth >= UpdateDepth::Full {
 			if let Some(modpack) = &self.config.modpack {
@@ -152,11 +154,6 @@ impl Instance {
 				)
 				.await?;
 
-				ctx.output.display(MessageContents::Success(translate!(
-					ctx.output,
-					FinishUpdatingPackages
-				)));
-
 				all_packages.extend(packages);
 
 				let all_packages = Vec::from_iter(all_packages);
@@ -186,8 +183,6 @@ impl Instance {
 
 		ctx.lock.update_instance_has_done_first_update(&self.id);
 		let _ = ctx.lock.finish(ctx.paths);
-
-		ctx.output.end_section();
 
 		Ok(())
 	}

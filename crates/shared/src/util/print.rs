@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 use std::io::Write;
-use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 /// String used program-wide for most indentation
 pub const INDENT_STR: &str = "    ";
@@ -82,13 +82,7 @@ impl ReplPrinter {
 
 	/// Print text on a new line
 	pub fn println(&self, text: &str) {
-		let mut lock = std::io::stdout().lock();
-
-		self.chars_written.store(0, Ordering::Relaxed);
-
-		let _ = writeln!(&mut lock);
-		std::mem::drop(lock);
-
+		self.newline();
 		self.print(text);
 	}
 
@@ -109,8 +103,13 @@ impl ReplPrinter {
 	}
 
 	/// Make a line break
-	pub fn newline(&mut self) {
-		self.println("");
+	pub fn newline(&self) {
+		let mut lock = std::io::stdout().lock();
+
+		self.chars_written.store(0, Ordering::Relaxed);
+
+		let _ = writeln!(&mut lock);
+		std::mem::drop(lock);
 	}
 }
 
