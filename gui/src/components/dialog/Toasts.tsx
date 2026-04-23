@@ -12,7 +12,7 @@ import {
 } from "solid-js";
 import "./Toasts.css";
 import Icon from "../Icon";
-import { Check, Copy, Delete, Error, Notification, Warning } from "../../icons";
+import { Check, Copy, Delete, Notification } from "../../icons";
 import * as clipboard from "@tauri-apps/plugin-clipboard-manager";
 
 export default function Toasts() {
@@ -168,10 +168,6 @@ function Toast(props: ToastProps) {
 			return <div></div>;
 		} else if (props.type == "success") {
 			return <Check />;
-		} else if (props.type == "warning") {
-			return <Warning />;
-		} else if (props.type == "error") {
-			return <Error />;
 		} else {
 			return <div></div>;
 		}

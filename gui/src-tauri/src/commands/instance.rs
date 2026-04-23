@@ -1,9 +1,9 @@
 use crate::output::{LauncherOutput, SerializableResolutionError};
-use crate::{get_ms_client_id, State};
-use anyhow::{bail, Context};
+use crate::{State, get_ms_client_id};
+use anyhow::{Context, bail};
 use itertools::Itertools;
-use nitrolaunch::config::modifications::{apply_modifications_and_write, ConfigModification};
 use nitrolaunch::config::Config;
+use nitrolaunch::config::modifications::{ConfigModification, apply_modifications_and_write};
 use nitrolaunch::config_crate::instance::InstanceConfig;
 use nitrolaunch::config_crate::template::TemplateConfig;
 use nitrolaunch::core::io::json_to_file_pretty;
@@ -14,10 +14,11 @@ use nitrolaunch::io::lock::Lockfile;
 use nitrolaunch::plugin::PluginManager;
 use nitrolaunch::plugin_crate::hook::hooks::{DeleteTemplate, SaveTemplateConfigArg};
 use nitrolaunch::shared::id::{InstanceID, TemplateID};
+use nitrolaunch::shared::java_args::MemoryNum;
 use nitrolaunch::shared::loaders::Loader;
 use nitrolaunch::shared::output::NoOp;
 use nitrolaunch::shared::versions::{
-	parse_versioned_string, MinecraftLatestVersion, MinecraftVersionDeser,
+	MinecraftLatestVersion, MinecraftVersionDeser, parse_versioned_string,
 };
 use nitrolaunch::shared::{Side, UpdateDepth};
 use serde::{Deserialize, Serialize};
@@ -748,6 +749,27 @@ pub async fn get_plugins_supporting_creation(
 pub struct PluginAndName {
 	pub id: String,
 	pub name: Option<String>,
+}
+
+#[tauri::command]
+pub async fn get_instance_size(
+	state: tauri::State<'_, State>,
+	instance: &str,
+) -> Result<String, String> {
+	let config = fmt_err(
+		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
+			.await
+			.context("Failed to load config"),
+	)?;
+
+	let Some(instance) = config.instances.get(&InstanceID::from(instance)) else {
+		return Err(format!("Instance {instance} does not exist"));
+	};
+
+	let size = fmt_err(instance.get_size().await)?;
+	let size = MemoryNum::from_bytes(size).nicefy();
+
+	Ok(size.to_string())
 }
 
 #[derive(Deserialize, Serialize, Clone, Copy, PartialEq, Eq)]

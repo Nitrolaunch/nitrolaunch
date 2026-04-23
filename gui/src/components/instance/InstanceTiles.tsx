@@ -1,15 +1,29 @@
-import { createResource, For, Match, Switch } from "solid-js";
+import { createResource, For, JSX, Match, Switch } from "solid-js";
 import "./InstanceTiles.css";
 import { invoke } from "@tauri-apps/api/core";
 import { stringCompare } from "../../utils";
+import { errorToast } from "../dialog/Toasts";
 
 export default function InstanceTiles(props: InstanceTilesProps) {
 	let [rows, _] = createResource(
 		() => props.instanceId,
 		async () => {
-			let tiles: TileData[] = await invoke("get_instance_tiles", {
-				instanceId: props.instanceId,
-			});
+			let tiles: TileData[] = [
+				{
+					id: "base",
+					size: "small",
+					contents: "",
+					_specialContents: <InstanceInfoTile id={props.instanceId} />,
+				},
+			];
+			try {
+				let pluginTiles: TileData[] = await invoke("get_instance_tiles", {
+					instanceId: props.instanceId,
+				});
+				tiles = tiles.concat(pluginTiles);
+			} catch (e) {
+				errorToast("Failed to load tiles: " + e);
+			}
 
 			// Sort by ID, then move each tile into a bucket of large or small
 			let smallTiles = [];
@@ -44,8 +58,20 @@ export default function InstanceTiles(props: InstanceTilesProps) {
 
 			return rows;
 		},
-		{ initialValue: [] }
+		{ initialValue: [] },
 	);
+
+	let createTileContents = (tile: TileData | undefined) => {
+		if (tile == undefined) {
+			return <div class="cont instance-tile"></div>;
+		}
+
+		if (tile._specialContents == undefined) {
+			return <div class="cont instance-tile" innerHTML={tile.contents}></div>;
+		} else {
+			return <div class="cont instance-tile">{tile._specialContents}</div>;
+		}
+	};
 
 	return (
 		<Switch>
@@ -58,18 +84,8 @@ export default function InstanceTiles(props: InstanceTilesProps) {
 				<div class="cont col instance-tiles">
 					<For each={rows()}>
 						{(row, i) => {
-							let smallTile = (
-								<div
-									class="cont instance-tile"
-									innerHTML={row[0] == undefined ? "" : row[0].contents}
-								></div>
-							);
-							let largeTile = (
-								<div
-									class="cont instance-tile"
-									innerHTML={row[1] == undefined ? "" : row[1].contents}
-								></div>
-							);
+							let smallTile = createTileContents(row[0]);
+							let largeTile = createTileContents(row[1]);
 
 							let bothSmall =
 								row[0] != undefined &&
@@ -80,8 +96,8 @@ export default function InstanceTiles(props: InstanceTilesProps) {
 							let cls = bothSmall
 								? "small-small"
 								: i() % 2 == 0
-								? "small-large"
-								: "large-small";
+									? "small-large"
+									: "large-small";
 
 							// Alternate the order of small and large tiles for more variety
 							return (
@@ -110,8 +126,25 @@ export interface InstanceTilesProps {
 	instanceId: string;
 }
 
+function InstanceInfoTile(props: InstanceInfoTileProps) {
+	let [size, _] = createResource(
+		() => props.id,
+		async (id) => {
+			return (await invoke("get_instance_size", { instance: id })) as string;
+		},
+		{ initialValue: "Unknown" },
+	);
+
+	return <div class="cont col">Size: {size()}</div>;
+}
+
+interface InstanceInfoTileProps {
+	id: string;
+}
+
 interface TileData {
 	id: string;
 	contents: string;
 	size: "small" | "large";
+	_specialContents?: JSX.Element;
 }

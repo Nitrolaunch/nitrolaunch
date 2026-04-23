@@ -26,8 +26,7 @@ export default function IconTextButton(props: IconTextButtonProps) {
 
 	return (
 		<button
-			class={`cont ${shadow ? "shadow" : ""
-				} bubble-hover icon-text-button bold`}
+			class={`cont ${shadow ? "shadow" : ""} bubble-hover icon-text-button`}
 			style={`${colorStyle()};${props.style == undefined ? "" : props.style}`}
 			onClick={props.onClick}
 			onmouseenter={() => setIsHovered(true)}
@@ -35,8 +34,9 @@ export default function IconTextButton(props: IconTextButtonProps) {
 		>
 			<Show when={props.icon != undefined}>
 				<div
-					class={`cont icon-text-button-icon ${props.animate == true ? "rotating" : ""
-						}`}
+					class={`cont icon-text-button-icon ${
+						props.animate == true ? "rotating" : ""
+					}`}
 				>
 					<Icon icon={props.icon!} size={`calc(${props.size} * 0.7)`} />
 				</div>
