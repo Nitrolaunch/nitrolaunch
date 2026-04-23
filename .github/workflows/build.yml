@@ -35,7 +35,7 @@ jobs:
         run: cargo build --package nitro_cli --release --verbose --locked
       - if: ${{ matrix.os == 'ubuntu-latest'}}
         name: Run tests
-        run: cargo test --workspace --release --exclude nitro_gui
+        run: cargo test --workspace --exclude nitro_gui
       - uses: actions/upload-artifact@v4
         name: Upload CLI artifact
         with:
