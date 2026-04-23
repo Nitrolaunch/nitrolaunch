@@ -363,7 +363,10 @@ export default function ViewPackage(props: ViewPackageProps) {
 									</div>
 								</Show>
 							</div>
-							<div class="cont col package-shadow" id="package-tab-contents">
+							<div
+								class={`cont col ${props.small ? "" : "package-shadow"}`}
+								id="package-tab-contents"
+							>
 								<Show when={selectedTab() == "description"}>
 									<div
 										class="cont col package-description"
@@ -403,8 +406,10 @@ export default function ViewPackage(props: ViewPackageProps) {
 						</Show>
 					</div>
 				</div>
-				<br />
-				<br />
+				<Show when={!props.small}>
+					<br />
+					<br />
+				</Show>
 			</div>
 			<PackageInstallModal
 				packageId={packageReq().id}

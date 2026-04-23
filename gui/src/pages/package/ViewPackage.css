@@ -44,7 +44,6 @@
 #package-icon-image {
 	width: 4.3rem;
 	height: 4.3rem;
-	border: var(--border) solid var(--bg4);
 	border-radius: var(--round2);
 }
 
@@ -158,8 +157,7 @@
 }
 
 #package-container.small #package-tab-contents {
-	border-left: none;
-	border-right: none;
+	border: none;
 	border-radius: 0;
 }
 
