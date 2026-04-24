@@ -72,8 +72,10 @@ jobs:
           rustup target add x86_64-apple-darwin
       - run: cd gui && npm i
       - name: Set Cargo Profile
+        if: ${{ $github.ref == 'dev' }}
+        shell: bash
         run: |
-          [[ $GITHUB_REF_NAME == "dev" ]] && echo "CARGO_PROFILE=fast_release" >> "$GITHUB_ENV"
+          echo "CARGO_PROFILE=fast_release" >> "$GITHUB_ENV"
       - if: ${{ matrix.os == 'macos-latest'}}
         name: Build App MacOS
         run: cd gui && cargo tauri build --target universal-apple-darwin
