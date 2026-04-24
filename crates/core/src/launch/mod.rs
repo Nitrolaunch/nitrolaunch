@@ -115,6 +115,7 @@ pub(crate) struct LaunchParameters<'a> {
 	pub launch_dir: &'a Path,
 	pub java: &'a JavaInstallation,
 	pub classpath: &'a Classpath,
+	pub jar_path: &'a Path,
 	pub main_class: &'a str,
 	pub launch_config: &'a LaunchConfiguration,
 	pub paths: &'a Paths,
