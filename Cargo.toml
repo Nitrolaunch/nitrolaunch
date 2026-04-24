@@ -183,13 +183,6 @@ dashmap = { workspace = true }
 directories = { workspace = true }
 hex = { workspace = true }
 itertools = { workspace = true }
-rand = { workspace = true }
-reqwest = { workspace = true }
-schemars = { workspace = true, optional = true }
-serde = { workspace = true }
-serde_json = { workspace = true }
-simd-json = { workspace = true }
-sha2 = { workspace = true }
 nitro_config = { workspace = true }
 nitro_core = { workspace = true }
 nitro_instance = { workspace = true }
@@ -198,6 +191,13 @@ nitro_parse = { workspace = true }
 nitro_pkg = { workspace = true }
 nitro_plugin = { workspace = true }
 nitro_shared = { workspace = true }
+rand = { workspace = true }
+reqwest = { workspace = true }
+schemars = { workspace = true, optional = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+simd-json = { workspace = true }
+sha2 = { workspace = true }
 sysinfo = { workspace = true }
 tokio = { workspace = true, features = ["fs", "io-std"] }
 version-compare = { workspace = true }
