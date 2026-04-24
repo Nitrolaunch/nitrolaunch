@@ -94,6 +94,9 @@ pub struct Variant {
 	pub id: Option<String>,
 	/// Display name of the variant
 	pub name: String,
+	/// Description of the variant
+	#[serde(default)]
+	pub description: Option<String>,
 	/// Color of the variant
 	#[serde(default)]
 	pub color: Option<String>,

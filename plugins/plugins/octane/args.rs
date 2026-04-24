@@ -7,8 +7,20 @@ use anyhow::bail;
 pub enum ArgsPreset {
 	/// No preset
 	None,
+	/// Balanced performance enhancer
+	Balanced,
+	/// Max FPS with occasional stutter
+	Aggressive,
+	/// Minimal GC pauses
+	Smooth,
+	/// Low-memory
+	RamSaver,
+	/// Faster game startup
+	FastLaunch,
+	/// Large memory capacity
+	Modded,
 	/// Aikar's args
-	Aikars,
+	Aikar,
 	/// Krusic's args
 	Krusic,
 	/// Obydux's args
@@ -19,10 +31,16 @@ impl FromStr for ArgsPreset {
 	type Err = anyhow::Error;
 	fn from_str(s: &str) -> Result<Self, Self::Err> {
 		match s {
-			"aikars" => Ok(Self::Aikars),
+			"none" => Ok(Self::None),
+			"balanced" => Ok(Self::Balanced),
+			"aggressive" => Ok(Self::Aggressive),
+			"smooth" => Ok(Self::Smooth),
+			"ram_saver" => Ok(Self::RamSaver),
+			"fast_launch" => Ok(Self::FastLaunch),
+			"modded" => Ok(Self::Modded),
+			"aikar" => Ok(Self::Aikar),
 			"krusic" => Ok(Self::Krusic),
 			"obydux" => Ok(Self::Obydux),
-			"none" => Ok(Self::None),
 			_ => bail!("Unknown argument preset '{s}'"),
 		}
 	}
@@ -33,7 +51,60 @@ impl ArgsPreset {
 	pub fn generate_args(&self) -> Vec<String> {
 		match self {
 			Self::None => vec![],
-			Self::Aikars => {
+			Self::Balanced => vec![
+				"-Xms2G".into(),
+				"-Xmx4G".into(),
+				"-XX:+UseG1GC".into(),
+				"-XX:MaxGCPauseMillis=50".into(),
+				"-XX:+UnlockExperimentalVMOptions".into(),
+				"-XX:G1NewSizePercent=20".into(),
+				"-XX:G1MaxNewSizePercent=40".into(),
+				"-XX:G1HeapRegionSize=8M".into(),
+				"-XX:G1ReservePercent=15".into(),
+			],
+			Self::Aggressive => vec![
+				"-Xms4G".into(),
+				"-Xmx6G".into(),
+				"-XX:+UseG1GC".into(),
+				"-XX:MaxGCPauseMillis=100".into(),
+				"-XX:G1HeapRegionSize=16M".into(),
+				"-XX:G1ReservePercent=10".into(),
+				"-XX:InitiatingHeapOccupancyPercent=20".into(),
+				"-XX:+AlwaysPreTouch".into(),
+			],
+			Self::Smooth => vec![
+				"-Xms4G".into(),
+				"-Xmx4G".into(),
+				"-XX:+UseG1GC".into(),
+				"-XX:MaxGCPauseMillis=30".into(),
+				"-XX:G1ReservePercent=20".into(),
+				"-XX:InitiatingHeapOccupancyPercent=35".into(),
+				"-XX:+ParallelRefProcEnabled".into(),
+			],
+			Self::RamSaver => vec![
+				"-Xms1G".into(),
+				"-Xmx2G".into(),
+				"-XX:+UseSerialGC".into(),
+				"-XX:+UseStringDeduplication".into(),
+			],
+			Self::FastLaunch => vec![
+				"-Xms512M".into(),
+				"-Xmx4G".into(),
+				"-XX:+UseG1GC".into(),
+				"-XX:+TieredCompilation".into(),
+				"-XX:TieredStopAtLevel=1".into(),
+			],
+			Self::Modded => vec![
+				"-Xms6G".into(),
+				"-Xmx8G".into(),
+				"-XX:+UseG1GC".into(),
+				"-XX:MaxGCPauseMillis=75".into(),
+				"-XX:G1HeapRegionSize=16M".into(),
+				"-XX:G1ReservePercent=20".into(),
+				"-XX:+UseStringDeduplication".into(),
+				"-XX:+ParallelRefProcEnabled".into(),
+			],
+			Self::Aikar => {
 				let (
 					new_size_percent,
 					max_new_size_percent,

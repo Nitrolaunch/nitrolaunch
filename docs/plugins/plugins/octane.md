@@ -4,4 +4,16 @@ ID: `octane`
 The Octane plugin is used to improve Minecraft's performance.
 
 ## Usage
-Use the `args_preset` field in the configuration for an instance or template to choose a preset for the arguments to use. There are three options, `"aikars"`, `"krusic"`, and `"obydux"`. You can look up each of these presets online to see their explanations and use cases. Keep in mind that these arguments usually only work for servers with a lot of available memory, and you might not see an improvement at all.
+
+### Presets
+Use the `octane_preset` field in the configuration for an instance or template to choose a preset that will affect game performance. Try out a couple to see what works for your system.
+- `none`: No preset, used to clear a preset that was inherited from a template
+- `balanced`: Well-rounded profile that improves performance with low stutter
+- `aggressive`: Best FPS boost, but with occasional FPS drops
+- `smooth`: Consistent FPS with low stutter
+- `ram_saver`: Reduces RAM usage for constrained systems
+- `fast_launch`: Slightly faster launch time
+- `modded`: For large modpacks, allocates a lot more RAM to prevent crashes
+- `aikar`: Aikar's arguments for servers
+- `krusic`: Krusic's arguments for servers
+- `obydux`: Obydux's arguments for servers

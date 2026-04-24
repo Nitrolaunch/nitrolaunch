@@ -30,7 +30,7 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 		let mut jvm_args = Vec::new();
 
 		// Arg presets
-		if let Some(preset) = arg.config.plugin_config.get("args_preset") {
+		if let Some(preset) = arg.config.plugin_config.get("octane_preset") {
 			if let Some(preset) = preset.as_str() {
 				if let Ok(preset) = ArgsPreset::from_str(preset) {
 					jvm_args.extend(preset.generate_args());

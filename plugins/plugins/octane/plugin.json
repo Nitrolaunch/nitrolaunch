@@ -19,10 +19,10 @@
 			"constant": {
 				"controls": [
 					{
-						"id": "args_preset",
-						"name": "Args Preset",
-						"description": "Preset for arguments to increase game performance",
-						"section": "Args",
+						"id": "octane_preset",
+						"name": "Preset",
+						"description": "Performance preset for the game",
+						"section": "Octane",
 						"schema": {
 							"type": "choice",
 							"variants": [
@@ -35,16 +35,49 @@
 									"name": "None"
 								},
 								{
-									"id": "aikars",
-									"name": "Aikar's"
+									"id": "balanced",
+									"name": "Balanced",
+									"description": "Well-rounded profile that improves performance with low stutter"
+								},
+								{
+									"id": "aggressive",
+									"name": "Aggressive",
+									"description": "Best FPS boost, but with occasional FPS drops"
+								},
+								{
+									"id": "smooth",
+									"name": "Smooth",
+									"description": "Consistent FPS with low stutter"
+								},
+								{
+									"id": "ram_saver",
+									"name": "RAM Saver",
+									"description": "Reduces RAM usage for constrained systems"
+								},
+								{
+									"id": "fast_launch",
+									"name": "Fast Launch",
+									"description": "Slightly faster launch time"
+								},
+								{
+									"id": "modded",
+									"name": "Modded",
+									"description": "For large modpacks, allocates a lot more RAM to prevent crashes"
+								},
+								{
+									"id": "aikar",
+									"name": "Aikar's",
+									"description": "Aikar's arguments for servers"
 								},
 								{
 									"id": "krusic",
-									"name": "Krusic"
+									"name": "Krusic",
+									"description": "Krusic's arguments for servers"
 								},
 								{
 									"id": "obydux",
-									"name": "Obydux"
+									"name": "Obydux",
+									"description": "Obydux's arguments for servers"
 								}
 							]
 						},
