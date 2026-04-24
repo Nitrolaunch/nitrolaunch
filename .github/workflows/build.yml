@@ -31,10 +31,10 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
           key: ${{ matrix.target }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-      - if: ${{ github.ref_name == "main" }}
+      - if: ${{ github.ref_name == 'main' }}
         name: Build CLI Release
         run: cargo build --package nitro_cli --release --locked
-      - if: ${{ github.ref_name == "dev" }}
+      - if: ${{ github.ref_name == 'dev' }}
         name: Build CLI Fast Release
         run: cargo build --package nitro_cli --profile fast_release --locked
       - if: ${{ matrix.os == 'ubuntu-latest'}}
