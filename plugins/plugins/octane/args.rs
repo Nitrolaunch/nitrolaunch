@@ -1,9 +1,8 @@
-use std::str::FromStr;
-
-use anyhow::bail;
+use serde::Deserialize;
 
 /// Preset for generating game arguments (Usually for optimization)
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum ArgsPreset {
 	/// No preset
 	None,
@@ -25,25 +24,6 @@ pub enum ArgsPreset {
 	Krusic,
 	/// Obydux's args
 	Obydux,
-}
-
-impl FromStr for ArgsPreset {
-	type Err = anyhow::Error;
-	fn from_str(s: &str) -> Result<Self, Self::Err> {
-		match s {
-			"none" => Ok(Self::None),
-			"balanced" => Ok(Self::Balanced),
-			"aggressive" => Ok(Self::Aggressive),
-			"smooth" => Ok(Self::Smooth),
-			"ram_saver" => Ok(Self::RamSaver),
-			"fast_launch" => Ok(Self::FastLaunch),
-			"modded" => Ok(Self::Modded),
-			"aikar" => Ok(Self::Aikar),
-			"krusic" => Ok(Self::Krusic),
-			"obydux" => Ok(Self::Obydux),
-			_ => bail!("Unknown argument preset '{s}'"),
-		}
-	}
 }
 
 impl ArgsPreset {

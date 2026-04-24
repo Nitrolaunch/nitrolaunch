@@ -1,11 +1,12 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
-use std::str::FromStr;
 use std::time::Duration;
 
-use anyhow::bail;
+use anyhow::Context;
+use nitro_config::instance::WrapperCommand;
 use nitro_plugin::api::wasm::WASMPlugin;
 use nitro_plugin::api::wasm::output::WASMPluginOutput;
+use nitro_plugin::api::wasm::sys::get_os_string;
 use nitro_plugin::api::wasm::util::{get_persistent_state, set_persistent_state};
 use nitro_plugin::hook::hooks::OnInstanceSetupResult;
 use nitro_plugin::nitro_wasm_plugin;
@@ -29,21 +30,30 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 	plugin.on_instance_setup(|arg| {
 		let mut jvm_args = Vec::new();
 
-		// Arg presets
+		// Presets
 		if let Some(preset) = arg.config.plugin_config.get("octane_preset") {
-			if let Some(preset) = preset.as_str() {
-				if let Ok(preset) = ArgsPreset::from_str(preset) {
-					jvm_args.extend(preset.generate_args());
-				} else {
-					bail!("Invalid args preset")
-				}
-			} else if !preset.is_null() {
-				bail!("Args preset must be a string")
+			if !preset.is_null() {
+				let preset: ArgsPreset = serde_json::from_value(preset.clone())
+					.context("Failed to deserialize preset")?;
+				jvm_args.extend(preset.generate_args());
 			}
 		}
 
+		let wrapper = if let Some(priority) = arg.config.plugin_config.get("octane_priority") {
+			if !priority.is_null() {
+				let priority: Priority = serde_json::from_value(priority.clone())
+					.context("Failed to deserialize priority")?;
+				priority.to_wrapper()
+			} else {
+				None
+			}
+		} else {
+			None
+		};
+
 		Ok(OnInstanceSetupResult {
 			jvm_args,
+			wrappers: Vec::from_iter(wrapper),
 			..Default::default()
 		})
 	})?;
@@ -148,4 +158,49 @@ struct PersistentState {
 #[derive(Serialize, Deserialize)]
 struct CDSContext {
 	jvm_path: PathBuf,
+}
+
+/// Process priority preset
+#[derive(Deserialize)]
+#[serde(rename_all = "snake_case")]
+enum Priority {
+	None,
+	High,
+	Background,
+}
+
+impl Priority {
+	fn to_wrapper(&self) -> Option<WrapperCommand> {
+		match get_os_string().as_str() {
+			"windows" => self.to_windows_command(),
+			"linux" | "macos" => self.to_nice_command(),
+			_ => None,
+		}
+	}
+
+	fn to_nice_command(&self) -> Option<WrapperCommand> {
+		let level = match self {
+			Self::None => return None,
+			Self::High => 0,
+			Self::Background => 5,
+		};
+
+		Some(WrapperCommand {
+			cmd: "nice".into(),
+			args: vec!["-n".into(), level.to_string()],
+		})
+	}
+
+	fn to_windows_command(&self) -> Option<WrapperCommand> {
+		let flag = match self {
+			Self::None => return None,
+			Self::High => "/high",
+			Self::Background => "/belownormal",
+		};
+
+		Some(WrapperCommand {
+			cmd: "start".into(),
+			args: vec![flag.into()],
+		})
+	}
 }

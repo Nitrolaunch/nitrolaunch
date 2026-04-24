@@ -3,7 +3,7 @@ use std::ops::DerefMut;
 use std::path::PathBuf;
 
 use anyhow::{Context, bail};
-use nitro_config::instance::QuickPlay;
+use nitro_config::instance::{QuickPlay, WrapperCommand};
 use nitro_core::account::Account;
 use nitro_core::instance::WindowResolution;
 use nitro_core::io::java::classpath::Classpath;
@@ -192,6 +192,7 @@ impl Instance {
 
 		self.modification_data.jvm_args.extend(result.jvm_args);
 		self.modification_data.game_args.extend(result.game_args);
+		self.modification_data.wrappers.extend(result.wrappers);
 
 		self.modification_data.exclude_game_jar |= result.exclude_game_jar;
 
@@ -247,6 +248,13 @@ impl Instance {
 				cmd: x.cmd.clone(),
 				args: x.args.clone(),
 			});
+		let mut wrappers = Vec::from_iter(wrapper);
+		wrappers.extend(self.modification_data.wrappers.iter().map(|x| {
+			nitro_core::WrapperCommand {
+				cmd: x.cmd.clone(),
+				args: x.args.clone(),
+			}
+		}));
 
 		let mut jvm_args = self.launch.jvm_args.clone();
 		jvm_args.extend(self.modification_data.jvm_args.clone());
@@ -261,7 +269,7 @@ impl Instance {
 			min_mem: self.launch.min_mem.clone(),
 			max_mem: self.launch.max_mem.clone(),
 			env: self.launch.env.clone(),
-			wrappers: Vec::from_iter(wrapper),
+			wrappers,
 			quick_play,
 			use_log4j_config: self.launch.use_log4j_config,
 		};
@@ -345,6 +353,8 @@ pub struct ModificationData {
 	pub jvm_args: Vec<String>,
 	/// Extra arguments for the game
 	pub game_args: Vec<String>,
+	/// Extra wrapper commands for the game
+	pub wrappers: Vec<WrapperCommand>,
 	/// Whether to skip adding the game JAR to the classpath
 	pub exclude_game_jar: bool,
 }
@@ -358,6 +368,7 @@ impl ModificationData {
 			classpath_extension: Classpath::new(),
 			jvm_args: Vec::new(),
 			game_args: Vec::new(),
+			wrappers: Vec::new(),
 			exclude_game_jar: false,
 		}
 	}

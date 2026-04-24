@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
-use nitro_config::instance::InstanceConfig;
+use nitro_config::instance::{InstanceConfig, WrapperCommand};
 use nitro_config::template::TemplateConfig;
 use nitro_config::ConfigKind;
 use nitro_instance::addon::Addon;
@@ -177,6 +177,8 @@ pub struct OnInstanceSetupResult {
 	pub jvm_args: Vec<String>,
 	/// Optional additional game args
 	pub game_args: Vec<String>,
+	/// Additional wrapper commands
+	pub wrappers: Vec<WrapperCommand>,
 	/// Whether to skip adding the game JAR to the final classpath
 	pub exclude_game_jar: bool,
 }

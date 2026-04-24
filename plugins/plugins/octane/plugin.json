@@ -79,9 +79,39 @@
 									"name": "Obydux",
 									"description": "Obydux's arguments for servers"
 								}
-							]
-						},
-						"dropdown": true
+							],
+							"dropdown": true
+						}
+					},
+					{
+						"id": "octane_priority",
+						"name": "CPU Priority",
+						"description": "Sets CPU priority of the game process. Often has little to no effect.",
+						"section": "Octane",
+						"schema": {
+							"type": "choice",
+							"variants": [
+								{
+									"id": null,
+									"name": "Unset"
+								},
+								{
+									"id": "none",
+									"name": "None"
+								},
+								{
+									"id": "high",
+									"name": "High",
+									"description": "High priority and lower latency"
+								},
+								{
+									"id": "background",
+									"name": "Background",
+									"description": "Lower priority, good if you run the game in the background"
+								}
+							],
+							"dropdown": true
+						}
 					}
 				]
 			}
