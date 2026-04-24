@@ -30,6 +30,7 @@ jobs:
             target
             ~/.cargo/registry
             ~/.cargo/git
+            ~/.cargo/bin
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
       - name: Use Node.js
         uses: actions/setup-node@v6
