@@ -1,10 +1,9 @@
 use std::path::{Path, PathBuf};
 
-use anyhow::{bail, Context};
-use nitro_core::io::update::UpdateManager;
+use anyhow::{Context, bail};
 use nitro_mods::fabric_quilt;
 use nitro_plugin::{api::executable::ExecutablePlugin, hook::hooks::OnInstanceSetupResult};
-use nitro_shared::{loaders::Loader, versions::VersionPattern, UpdateDepth};
+use nitro_shared::{UpdateDepth, loaders::Loader, versions::VersionPattern};
 
 fn main() -> anyhow::Result<()> {
 	let mut plugin =
@@ -34,11 +33,7 @@ fn main() -> anyhow::Result<()> {
 		};
 
 		let internal_dir = PathBuf::from(arg.internal_dir);
-
-		let manager = UpdateManager::new(UpdateDepth::Full);
-
 		let client = nitro_net::download::Client::new();
-
 		let runtime = tokio::runtime::Runtime::new()?;
 
 		let desired_fq_version = if let VersionPattern::Single(pat) = arg.desired_loader_version {
@@ -53,7 +48,7 @@ fn main() -> anyhow::Result<()> {
 				desired_fq_version.as_deref(),
 				&mode,
 				&internal_dir,
-				&manager,
+				arg.update_depth,
 				&client,
 			))
 			.context("Failed to get metadata")?;
@@ -65,7 +60,7 @@ fn main() -> anyhow::Result<()> {
 				&meta,
 				&libraries_dir,
 				mode,
-				&manager,
+				arg.update_depth,
 				&client,
 				ctx.get_output(),
 			))
@@ -76,7 +71,7 @@ fn main() -> anyhow::Result<()> {
 				&meta,
 				&libraries_dir,
 				side,
-				&manager,
+				arg.update_depth,
 				&client,
 			))
 			.context("Failed to download side-specific files")?;
@@ -113,7 +108,6 @@ fn main() -> anyhow::Result<()> {
 
 		let runtime = tokio::runtime::Runtime::new()?;
 		let internal_dir = ctx.get_data_dir()?.join("internal");
-		let manager = UpdateManager::new(UpdateDepth::Full);
 		let client = nitro_net::download::Client::new();
 
 		let mode = if arg.loader == Loader::Fabric {
@@ -127,7 +121,7 @@ fn main() -> anyhow::Result<()> {
 				&arg.minecraft_version,
 				&mode,
 				&internal_dir,
-				&manager,
+				UpdateDepth::Full,
 				&client,
 			))
 			.context("Failed to get metadata")?;
