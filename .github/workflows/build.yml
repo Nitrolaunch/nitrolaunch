@@ -31,8 +31,12 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
           key: ${{ matrix.target }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-      - name: Build CLI
-        run: cargo build --package nitro_cli --release --verbose --locked
+      - if: ${{ github.ref_name == "main" }}
+        name: Build CLI Release
+        run: cargo build --package nitro_cli --release --locked
+      - if: ${{ github.ref_name == "dev" }}
+        name: Build CLI Fast Release
+        run: cargo build --package nitro_cli --profile fast_release --locked
       - if: ${{ matrix.os == 'ubuntu-latest'}}
         name: Run tests
         run: cargo test --workspace --exclude nitro_gui
