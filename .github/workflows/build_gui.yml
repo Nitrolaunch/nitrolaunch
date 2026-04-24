@@ -47,7 +47,7 @@ jobs:
       - name: Setup Tauri
         shell: bash
         run: |
-            [ ! -f ~/.cargo/bin/cargo-tauri ] && cargo install tauri-cli --version "^2.9.3" --locked
+            if [[ ! -f ~/.cargo/bin/cargo-tauri ]]; then; cargo install tauri-cli --version "^2.9.3" --locked; fi
 
       - if: ${{ matrix.os == 'ubuntu-latest'}}
         name: Install Ubuntu Dependencies
