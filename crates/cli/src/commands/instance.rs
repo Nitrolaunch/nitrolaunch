@@ -377,10 +377,12 @@ pub async fn launch(
 		.await
 		.context("Instance failed to launch")?;
 
-	// Drop the config early so that it isn't wasting memory while the instance is running
+	// Drop items early so that they aren't wasting memory while the instance is running
 	let plugins = config.plugins.clone();
 	std::mem::drop(data.config);
-	// Unload plugins that we don't need anymore
+	lock.finish(&data.paths)?;
+	std::mem::drop(lock);
+	std::mem::drop(client);
 
 	instance_handle
 		.wait(&plugins, &data.paths, data.output)
