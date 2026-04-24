@@ -82,7 +82,7 @@
 
 .instance-list-item-bottom > div {
 	text-wrap: nowrap;
-	overflow-x: hidden;
+	overflow: hidden;
 }
 
 .instance-list-item:hover {
