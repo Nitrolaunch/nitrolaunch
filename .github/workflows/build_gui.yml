@@ -46,7 +46,9 @@ jobs:
           ACTIONS_ALLOW_UNSECURE_COMMANDS: true
       - name: Setup Tauri
         run: |
-          [! -f ~/.cargo/bin/tauri ] && cargo install tauri-cli --version "^2.9.3" --locked
+          if [[! -f ~/.cargo/bin/tauri ]]; then
+            cargo install tauri-cli --version "^2.9.3" --locked
+          fi
 
       - if: ${{ matrix.os == 'ubuntu-latest'}}
         name: Install Ubuntu Dependencies
