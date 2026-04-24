@@ -8,7 +8,7 @@ use nitro_shared::minecraft::{VersionEntry, VersionManifest};
 use nitro_shared::output::MessageContents;
 use nitro_shared::output::NitroOutput;
 use nitro_shared::versions::{VersionInfo, VersionName};
-use nitro_shared::Side;
+use nitro_shared::{Side, UpdateDepth};
 use tokio::sync::Mutex;
 
 use crate::config::BrandingProperties;
@@ -198,10 +198,15 @@ impl InstalledVersionInner {
 		o: &mut impl NitroOutput,
 	) -> anyhow::Result<Self> {
 		// Get the client meta
-		o.start_process();
-		o.display(MessageContents::StartProcess(
-			"Obtaining client metadata".into(),
-		));
+		let show_output = !(params.update_manager.get_depth() < UpdateDepth::Full
+			&& client_meta::get_path(&version, params.paths).exists());
+
+		if show_output {
+			o.start_process();
+			o.display(MessageContents::StartProcess(
+				"Obtaining client metadata".into(),
+			));
+		}
 
 		let client_meta = client_meta::get(
 			&version,
@@ -214,8 +219,10 @@ impl InstalledVersionInner {
 		.await
 		.context("Failed to get client meta")?;
 
-		o.display(MessageContents::Success("Client meta obtained".into()));
-		o.end_process();
+		if show_output {
+			o.display(MessageContents::Success("Client meta obtained".into()));
+			o.end_process();
+		}
 
 		Ok(Self {
 			version,

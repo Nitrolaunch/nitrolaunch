@@ -1,15 +1,17 @@
 use std::io::{Cursor, Read};
+use std::path::PathBuf;
 
-use anyhow::{bail, Context};
+use anyhow::{Context, bail};
 use nitro_shared::minecraft::VersionManifest;
 use nitro_shared::output::{MessageContents, NitroOutput};
 use nitro_shared::util::DeserListOrSingle;
-use nitro_shared::{translate, UpdateDepth};
+use nitro_shared::{UpdateDepth, translate};
 use reqwest::Client;
 use serde::Deserialize;
 use zip::ZipArchive;
 
-use crate::io::files::{self, paths::Paths};
+use crate::io::files::create_leading_dirs;
+use crate::io::files::paths::Paths;
 use crate::io::java::JavaMajorVersion;
 use crate::io::json_from_file;
 use crate::io::update::UpdateManager;
@@ -358,10 +360,8 @@ pub async fn get(
 		bail!("Minecraft version does not exist or was not found in the manifest");
 	};
 
-	let client_meta_name: String = version_string.clone() + ".json";
-	let version_dir = paths.internal.join("versions").join(version_string);
-	files::create_dir(&version_dir).context("Failed to create versions directory")?;
-	let path = version_dir.join(client_meta_name);
+	let path = get_path(&version_string, paths);
+	create_leading_dirs(&path)?;
 
 	let meta = if manager.update_depth < UpdateDepth::Full && path.exists() {
 		json_from_file(path).context("Failed to read client meta contents from file")?
@@ -415,4 +415,12 @@ pub async fn get(
 	};
 
 	Ok(meta)
+}
+
+/// Gets the path to the client meta for a given version
+pub fn get_path(version: &str, paths: &Paths) -> PathBuf {
+	paths
+		.internal
+		.join("versions")
+		.join(format!("{version}.json"))
 }

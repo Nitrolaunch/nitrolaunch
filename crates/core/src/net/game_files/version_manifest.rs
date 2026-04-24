@@ -1,10 +1,13 @@
+use std::path::PathBuf;
+
 use anyhow::Context;
 use nitro_shared::minecraft::{VersionManifest, VersionType};
 use nitro_shared::output::{MessageContents, NitroOutput};
-use nitro_shared::{translate, UpdateDepth};
+use nitro_shared::{UpdateDepth, translate};
 use reqwest::Client;
 
-use crate::io::files::{self, paths::Paths};
+use crate::io::files::create_leading_dirs;
+use crate::io::files::paths::Paths;
 use crate::io::update::UpdateManager;
 use crate::io::{json_from_file, json_to_file};
 use crate::net::download::ProgressiveDownload;
@@ -43,17 +46,23 @@ pub async fn get_with_output(
 	client: &Client,
 	o: &mut impl NitroOutput,
 ) -> anyhow::Result<VersionManifest> {
-	o.start_process();
-	o.display(MessageContents::StartProcess(
-		"Obtaining version manifest".into(),
-	));
+	let show_output = !(manager.get_depth() < UpdateDepth::Full && get_path(paths).exists());
+
+	if show_output {
+		o.start_process();
+		o.display(MessageContents::StartProcess(
+			"Obtaining version manifest".into(),
+		));
+	}
 
 	let manifest = get(requested_version, paths, manager, client, o)
 		.await
 		.context("Failed to get version manifest")?;
 
-	o.display(MessageContents::Success("Version manifest obtained".into()));
-	o.end_process();
+	if show_output {
+		o.display(MessageContents::Success("Version manifest obtained".into()));
+		o.end_process();
+	}
 
 	Ok(manifest)
 }
@@ -67,9 +76,8 @@ async fn get_contents(
 	force: bool,
 	o: &mut impl NitroOutput,
 ) -> anyhow::Result<VersionManifest> {
-	let mut path = paths.internal.join("versions");
-	files::create_dir(&path)?;
-	path.push("manifest.json");
+	let path = get_path(paths);
+	create_leading_dirs(&path)?;
 
 	if let Some(requested_version) = requested_version {
 		if !force && manager.update_depth < UpdateDepth::Full && path.exists() {
@@ -110,6 +118,10 @@ async fn get_contents(
 	json_to_file(path, &manifest).context("Failed to write manifest to a file")?;
 
 	Ok(manifest)
+}
+
+fn get_path(paths: &Paths) -> PathBuf {
+	paths.internal.join("versions/manifest.json")
 }
 
 /// Make an ordered list of versions from the manifest to use for matching
