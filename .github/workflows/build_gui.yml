@@ -72,7 +72,7 @@ jobs:
           rustup target add x86_64-apple-darwin
       - run: cd gui && npm i
       - name: Set Cargo Profile
-        if: ${{ $github.ref == 'dev' }}
+        if: ${{ github.ref == 'dev' }}
         shell: bash
         run: |
           echo "CARGO_PROFILE=fast_release" >> "$GITHUB_ENV"
