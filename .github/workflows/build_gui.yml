@@ -56,6 +56,7 @@ jobs:
         run: |
           mkdir -p ~/.cache/tauri && \
           curl -L -O https://github.com/linuxdeploy/linuxdeploy/releases/download/1-alpha-20240109-1/linuxdeploy-x86_64.AppImage && \
+          chmod +x linuxdeploy-x86_64.AppImage && \
           cp linuxdeploy-x86_64.AppImage ~/.cache/tauri
       - if: ${{ matrix.os == 'ubuntu-latest'}}
         name: Install Ubuntu Dependencies
@@ -80,7 +81,7 @@ jobs:
           rustup target add x86_64-apple-darwin
       - run: cd gui && npm i
       - name: Set Cargo Profile
-        if: ${{ github.ref == 'dev' }}
+        if: ${{ github.ref_name == 'dev' }}
         shell: bash
         run: |
           echo "CARGO_PROFILE=fast_release" >> "$GITHUB_ENV"
