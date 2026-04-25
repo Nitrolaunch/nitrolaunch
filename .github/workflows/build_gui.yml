@@ -55,7 +55,7 @@ jobs:
         name: Fix Linux Libraries
         run: |
           mkdir -p ~/.cache/tauri && \
-          curl -o linuxdeploy-x86_64.AppImage https://github.com/linuxdeploy/linuxdeploy/releases/download/1-alpha-20240109-1/linuxdeploy-x86_64.AppImage && \
+          curl -L -O https://github.com/linuxdeploy/linuxdeploy/releases/download/1-alpha-20240109-1/linuxdeploy-x86_64.AppImage && \
           cp linuxdeploy-x86_64.AppImage ~/.cache/tauri
       - if: ${{ matrix.os == 'ubuntu-latest'}}
         name: Install Ubuntu Dependencies
