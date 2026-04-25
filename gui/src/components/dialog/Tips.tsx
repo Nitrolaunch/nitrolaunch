@@ -35,8 +35,17 @@ export default function Tips() {
 
 			tip.style.display = "";
 			tip.innerText = tipText;
-			tip.style.top = `${e.clientY}px`;
 			tip.style.left = `${e.clientX}px`;
+
+			// Move up if it's at the bottom of the screen
+			let height = tip.getBoundingClientRect().height;
+			if (e.clientY + height > window.innerHeight) {
+				tip.style.bottom = `${window.innerHeight - e.clientY}px`;
+				tip.style.top = "unset";
+			} else {
+				tip.style.top = `${e.clientY}px`;
+				tip.style.bottom = "unset";
+			}
 		});
 	});
 
