@@ -772,6 +772,68 @@ pub async fn get_instance_size(
 	Ok(size.to_string())
 }
 
+#[tauri::command]
+pub async fn consolidate_instance(
+	state: tauri::State<'_, State>,
+	instance: &str,
+) -> Result<(), String> {
+	let config = fmt_err(load_config(&state.paths, &state.wasm_loader, &mut NoOp).await)?;
+
+	let Some(instance) = config.instances.get(instance) else {
+		return Err("Instance does not exist".into());
+	};
+
+	fmt_err(
+		instance
+			.consolidate(&state.paths, &config.plugins, &mut NoOp)
+			.await,
+	)?;
+
+	Ok(())
+}
+
+#[tauri::command]
+pub async fn duplicate_instance(
+	state: tauri::State<'_, State>,
+	instance: &str,
+	new_id: &str,
+) -> Result<(), String> {
+	let config = fmt_err(load_config(&state.paths, &state.wasm_loader, &mut NoOp).await)?;
+
+	let Some(instance) = config.instances.get(instance) else {
+		return Err("Instance does not exist".into());
+	};
+
+	fmt_err(
+		instance
+			.duplicate(&new_id.into(), &state.paths, &config.plugins, &mut NoOp)
+			.await,
+	)?;
+
+	Ok(())
+}
+
+#[tauri::command]
+pub async fn extract_instance(
+	state: tauri::State<'_, State>,
+	instance: &str,
+	new_id: &str,
+) -> Result<(), String> {
+	let config = fmt_err(load_config(&state.paths, &state.wasm_loader, &mut NoOp).await)?;
+
+	let Some(instance) = config.instances.get(instance) else {
+		return Err("Instance does not exist".into());
+	};
+
+	fmt_err(
+		instance
+			.extract(&new_id.into(), &state.paths, &config.plugins, &mut NoOp)
+			.await,
+	)?;
+
+	Ok(())
+}
+
 #[derive(Deserialize, Serialize, Clone, Copy, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 pub enum InstanceOrTemplate {

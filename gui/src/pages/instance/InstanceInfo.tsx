@@ -1,4 +1,4 @@
-import { useNavigate, useParams } from "@solidjs/router";
+import { useParams } from "@solidjs/router";
 import {
 	createEffect,
 	createResource,
@@ -35,7 +35,7 @@ import { Loader } from "../../package";
 import Icon from "../../components/Icon";
 import {
 	Box,
-	Delete,
+	Copy,
 	Download,
 	Elipsis,
 	Folder,
@@ -66,13 +66,11 @@ import { convertFileSrc } from "@tauri-apps/api/core";
 import Dropdown, { Option } from "../../components/input/select/Dropdown";
 import IconAndText from "../../components/utility/IconAndText";
 import InstanceTransferPrompt from "../../components/instance/InstanceTransferPrompt";
-import { updateInstanceList } from "./InstanceList";
 import InstanceTiles from "../../components/instance/InstanceTiles";
-import Modal from "../../components/dialog/Modal";
 import Tip from "../../components/dialog/Tip";
+import InstanceOperationPrompt, { InstanceOperation } from "../../components/instance/InstanceOperationPrompt";
 
 export default function InstanceInfo(props: InstanceInfoProps) {
-	let navigate = useNavigate();
 
 	let params = useParams();
 	let id = () => params.instanceId;
@@ -243,6 +241,14 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 		{ initialValue: [] },
 	);
 
+	let isFromPlugin = () => {
+		if (instance() == undefined) {
+			return false;
+		}
+
+		return instance()!.source_plugin != undefined;
+	};
+
 	let isEditable = () => {
 		if (instance() == undefined) {
 			return true;
@@ -269,7 +275,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 
 	let [selectedTab, setSelectedTab] = createSignal("general");
 
-	let [showDeleteConfirm, setShowDeleteConfirm] = createSignal(false);
+	let [operationPrompt, setOperationPrompt] = createSignal<InstanceOperation | undefined>();
 	let [showExportPrompt, setShowExportPrompt] = createSignal(false);
 
 	async function saveConfig() {
@@ -371,6 +377,30 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 				tip: "Open this instance's files in your explorer",
 			},
 		];
+
+		if (!isFromPlugin()) {
+			options.push({
+				value: "duplicate",
+				contents: (
+					<IconAndText icon={Copy} text="Duplicate" />
+				),
+				tip: "Copy this instance",
+			});
+			options.push({
+				value: "consolidate",
+				contents: (
+					<IconAndText icon={Download} text="Consolidate" />
+				),
+				tip: "Combine parent templates into this instance",
+			});
+			options.push({
+				value: "extract",
+				contents: (
+					<IconAndText icon={Upload} text="Extract" />
+				),
+				tip: "Create a shared template from this instance",
+			});
+		}
 
 		if (isDeletable()) {
 			options.push({
@@ -621,13 +651,19 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 															instance: id(),
 														});
 													} else if (selection == "delete") {
-														setShowDeleteConfirm(true);
+														setOperationPrompt("delete");
+													} else if (selection == "consolidate") {
+														setOperationPrompt("consolidate");
+													} else if (selection == "duplicate") {
+														setOperationPrompt("duplicate");
+													} else if (selection == "extract") {
+														setOperationPrompt("extract");
 													} else {
 														runDropdownButtonClick(selection!);
 													}
 												}}
-												optionsWidth="11rem"
-												optionsOffset="-8.5rem"
+												optionsWidth="15rem"
+												optionsOffset="-12.5rem"
 												isSearchable={false}
 												zIndex="5"
 												showArrow={false}
@@ -761,43 +797,12 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 						</div>
 					</div>
 				</div>
-				<Modal
-					visible={showDeleteConfirm()}
-					onClose={setShowDeleteConfirm}
-					title="Delete instance"
-					titleIcon={Trash}
-					buttons={[
-						{
-							text: "Cancel",
-							icon: Delete,
-							color: "var(--confirm)",
-							bgColor: "var(--confirmbg)",
-							onClick: () => setShowDeleteConfirm(false),
-						},
-						{
-							text: "Delete instance",
-							icon: Trash,
-							color: "var(--fg3)",
-							onClick: async () => {
-								try {
-									await invoke("delete_instance", { instance: id() });
-									successToast("Instance deleted");
-									setShowDeleteConfirm(false);
-									updateInstanceList();
-									navigate("/");
-								} catch (e) {
-									errorToast("Failed to delete instance: " + e);
-									setShowDeleteConfirm(false);
-								}
-							},
-						},
-					]}
-				>
-					<h3>Are you sure you want to delete this instance?</h3>
-					<div class="cont bold" style="font-size:0.9rem;color:var(--fg2)">
-						This will delete ALL of your worlds and data for the instance!
-					</div>
-				</Modal>
+				<InstanceOperationPrompt
+					instanceId={id()}
+					operation={operationPrompt() == undefined ? "delete" : operationPrompt()!}
+					visible={operationPrompt() != undefined}
+					onClose={() => setOperationPrompt(undefined)}
+				/>
 				<InstanceTransferPrompt
 					visible={showExportPrompt()}
 					onClose={() => setShowExportPrompt(false)}
