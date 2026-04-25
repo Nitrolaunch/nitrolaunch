@@ -31,6 +31,7 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             ~/.cargo/bin
+            ~/.cache/tauri
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
       - name: Use Node.js
         uses: actions/setup-node@v6
@@ -48,7 +49,12 @@ jobs:
         shell: bash
         run: |
             if [[ ! -f ~/.cargo/bin/cargo-tauri ]]; then cargo install tauri-cli --version "^2.9.3" --locked; fi
-
+      - if: ${{ matrix.os == 'ubuntu-latest' }}
+        name: Fix Linux Libraries
+        run: |
+          mkdir -p ~/.cache/tauri && \
+          curl https://github.com/linuxdeploy/linuxdeploy/releases/download/1-alpha-20240109-1/linuxdeploy-x86_64.AppImage && \
+          cp linuxdeploy-x86_64.AppImage ~/.cache/tauri
       - if: ${{ matrix.os == 'ubuntu-latest'}}
         name: Install Ubuntu Dependencies
         run: |
