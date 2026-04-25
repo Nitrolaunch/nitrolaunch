@@ -7,9 +7,9 @@ import { errorToast, successToast } from "../dialog/Toasts";
 import { clearInputError, inputError } from "../../errors";
 import { open, save } from "@tauri-apps/plugin-dialog";
 import Tip from "../dialog/Tip";
-import { sanitizeInstanceId } from "../../pages/instance/InstanceConfig";
 import { updateInstanceList } from "../../pages/instance/InstanceList";
 import Modal from "../dialog/Modal";
+import IdInput from "../input/text/IdInput";
 
 export default function InstanceTransferPrompt(
 	props: InstanceTransferPromptProps
@@ -175,18 +175,7 @@ export default function InstanceTransferPrompt(
 						<label for="id">ID</label>
 					</div>
 					<Tip tip="A unique ID for the new instance" fullwidth>
-						<input
-							type="text"
-							id="instance-transfer-id"
-							name="id"
-							onChange={(e) => {
-								e.target.value = sanitizeInstanceId(e.target.value);
-								setNewInstanceId(e.target.value);
-							}}
-							onKeyUp={(e: any) => {
-								e.target.value = sanitizeInstanceId(e.target.value);
-							}}
-						></input>
+						<IdInput value={newInstanceId()} onChange={setNewInstanceId} />
 					</Tip>
 				</Show>
 			</div>
