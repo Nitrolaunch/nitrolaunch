@@ -91,6 +91,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 	let [derivedServerPackages, setDerivedServerPackages] = createSignal<
 		PackageConfig[]
 	>([]);
+	let [modpack, setModpack] = createSignal<string | undefined>();
 
 	createEffect(async () => {
 		try {
@@ -117,6 +118,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 			setGlobalPackages(global);
 			setClientPackages(client);
 			setServerPackages(server);
+			setModpack(configuration.modpack);
 
 			let [allGlobal, allClient, allServer] = getConfigPackages(configuration);
 			// Derived packages are in the full config but not the editable one
@@ -287,6 +289,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 				serverPackages(),
 				true,
 			);
+			config.modpack = modpack();
 
 			let overrides =
 				packageOverrides().suppress == undefined
@@ -734,7 +737,12 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 										derivedGlobalPackages={derivedGlobalPackages()}
 										derivedClientPackages={derivedClientPackages()}
 										derivedServerPackages={derivedServerPackages()}
+										modpack={modpack()}
 										isTemplate={false}
+										setModpack={(modpack) => {
+											setModpack(modpack);
+											setDirty();
+										}}
 										onRemove={(pkg) => {
 											let func = (packages: PackageConfig[]) =>
 												packages.filter((x) => !packageConfigsEqual(x, pkg));

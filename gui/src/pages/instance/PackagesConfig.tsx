@@ -33,6 +33,7 @@ import {
 	Dumbbell,
 	Edit,
 	Error,
+	Honeycomb,
 	Plus,
 	Popout,
 	Search,
@@ -208,14 +209,19 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 			let packages = allPackages!
 				.map((pkg) => pkg.pkg)
 				.filter((pkg) => out[pkg] == undefined);
+			if (props.modpack != undefined) {
+				packages.push(props.modpack);
+			}
 
-			try {
-				await invoke("preload_packages", {
-					packages: packages,
-					repo: undefined,
-				});
-			} catch (e) {
-				console.error("Failed to preload: " + e);
+			if (packages.length > 5) {
+				try {
+					await invoke("preload_packages", {
+						packages: packages,
+						repo: undefined,
+					});
+				} catch (e) {
+					console.error("Failed to preload: " + e);
+				}
 			}
 
 			try {
@@ -248,6 +254,7 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 		props.derivedGlobalPackages;
 		props.derivedClientPackages;
 		props.derivedServerPackages;
+		props.modpack;
 
 		allPackagesMethods.refetch();
 		packageDataMethods.refetch();
@@ -289,6 +296,25 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 
 	onCleanup(() => unlisten());
 
+	let modpackData = () => {
+		return props.modpack == undefined ? undefined : packageData()[props.modpack];
+	};
+	let modpackMeta = createMemo(() =>
+		modpackData() == undefined || typeof modpackData() == "string"
+			? undefined
+			: (modpackData()![0] as PackageMeta),
+	);
+	let modpackProperties = createMemo(() =>
+		modpackData() == undefined || typeof modpackData() == "string"
+			? undefined
+			: (modpackData()![1] as PackageProperties),
+	);
+	let modpackError = createMemo(() =>
+		modpackData() == undefined || typeof modpackData() != "string"
+			? undefined
+			: (modpackData() as string),
+	);
+
 	return (
 		<div class="cont col" id="packages-config">
 			<Show when={resolutionError() != undefined}>
@@ -314,9 +340,18 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 									style="position:absolute; top: calc(100% + 1rem);z-index:15"
 								>
 									<PackageQuickAdd
-										onAdd={(pkg) =>
-											props.onAdd(pkgRequestToString(pkg), "global")
-										}
+										onAdd={(pkg, isModpack) => {
+											if (isModpack) {
+												console.log("Adding modpack");
+												if (props.modpack != undefined) {
+													errorToast("This config already has a modpack. Please remove it before adding a new one.");
+												} else {
+													props.setModpack(pkgRequestToString(pkg));
+												}
+											} else {
+												props.onAdd(pkgRequestToString(pkg), "global");
+											}
+										}}
 										version={canonicalVersion()}
 										loader={props.loader}
 									/>
@@ -463,6 +498,36 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 					when={!allPackages.loading}
 					fallback={<LoadingSpinner size="5rem" />}
 				>
+					<Show when={props.modpack != undefined}>
+						<ConfiguredPackage
+							pkg={{
+								pkg: props.modpack!,
+								req: parsePkgRequest(props.modpack!),
+								isConfigured: true,
+								isInstalled: true,
+								isClient: false,
+								isServer: false,
+								isDerived: false,
+							}}
+							meta={modpackMeta()}
+							props={modpackProperties()}
+							error={modpackError()}
+							suppressed={() => false}
+							forced={() => false}
+							onClick={setSelectedPackage}
+							onRemove={() => props.setModpack(undefined)}
+							onVersionChange={(version) => {
+								let req = parsePkgRequest(props.modpack!);
+								req.version = version;
+								props.setModpack(pkgRequestToString(req));
+							}}
+							onCategoryChange={() => { }}
+							setOverrides={props.setOverrides}
+							setDirty={props.onChange}
+							isTemplate={props.isTemplate}
+							isModpack
+						/>
+					</Show>
 					<For each={allPackages()}>
 						{(pkg) => {
 							let isFilteredShown = createMemo(() => {
@@ -554,6 +619,7 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 										setOverrides={props.setOverrides}
 										setDirty={props.onChange}
 										isTemplate={props.isTemplate}
+										isModpack={false}
 									/>
 								</Show>
 							);
@@ -637,6 +703,7 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 
 export interface PackagesConfigProps {
 	id?: string;
+	modpack?: string;
 	globalPackages: PackageConfig[];
 	clientPackages: PackageConfig[];
 	serverPackages: PackageConfig[];
@@ -644,6 +711,7 @@ export interface PackagesConfigProps {
 	derivedClientPackages: PackageConfig[];
 	derivedServerPackages: PackageConfig[];
 	isTemplate: boolean;
+	setModpack: (modpack: string | undefined) => void;
 	onRemove: (pkg: string) => void;
 	onAdd: (pkg: string, category: ConfiguredPackageCategory) => void;
 	minecraftVersion?: string;
@@ -676,7 +744,7 @@ function ConfiguredPackage(props: ConfiguredPackageProps) {
 
 	return (
 		<div
-			class="shadow bubble-hover-small configured-package"
+			class={`shadow bubble-hover-small configured-package ${props.isModpack ? "modpack" : ""}`}
 			onmouseenter={() => setIsHovered(true)}
 			onmouseleave={() => setIsHovered(false)}
 			onclick={() => props.onClick(props)}
@@ -711,6 +779,15 @@ function ConfiguredPackage(props: ConfiguredPackageProps) {
 			<div class="cont fullwidth fullheight">
 				<Show when={props.pkg.isDerived}>
 					<div class="cont configured-package-derive-indicator">DERIVED</div>
+				</Show>
+				<Show when={props.isModpack}>
+					<div
+						class="cont tag"
+						style="color:var(--instance);border-color:var(--instance);background-color:var(--instancebg);font-size:0.8rem;height:1.5rem"
+					>
+						<Icon icon={Honeycomb} size="1rem" />
+						MODPACK
+					</div>
 				</Show>
 				<Show when={props.suppressed()}>
 					<div
@@ -807,6 +884,7 @@ export interface ConfiguredPackageProps {
 	setOverrides: Setter<PackageOverrides>;
 	setDirty: () => void;
 	isTemplate: boolean;
+	isModpack: boolean;
 }
 
 export type PackageConfig =

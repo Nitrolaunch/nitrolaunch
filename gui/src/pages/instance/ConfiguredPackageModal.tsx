@@ -220,54 +220,56 @@ export default function ConfiguredPackageModal(
 			</div>
 			<div></div>
 			<div></div>
-			<div class="cont bold">Overrides</div>
-			<div class="cont col start fullwidth" style="align-items:flex-start">
-				<InlineSelect
-					options={[
-						{
-							value: "suppressed",
-							contents: "Suppress",
-							color: "var(--warning)",
-							selectedBgColor: "var(--packagebg)"
-						},
-						{
-							value: "forced",
-							contents: "Force",
-							color: "var(--error)",
-							selectedBgColor: "var(--errorbg)",
-						}
-					]}
-					selected={selectedOverrides()}
-					onChangeMulti={(values) => {
-						props.props!.setOverrides((overrides) => {
-							let suppressed = canonicalizeListOrSingle(overrides.suppress);
-							let forced = canonicalizeListOrSingle(overrides.force);
-							let pkg = props.props!.pkg.pkg;
-
-							if (values!.includes("suppressed")) {
-								if (!suppressed.includes(pkg)) {
-									suppressed.push(pkg);
-								}
-							} else {
-								suppressed = suppressed.filter((x) => x != pkg);
+			<Show when={!props.props!.isModpack}>
+				<div class="cont bold">Overrides</div>
+				<div class="cont col start fullwidth" style="align-items:flex-start">
+					<InlineSelect
+						options={[
+							{
+								value: "suppressed",
+								contents: "Suppress",
+								color: "var(--warning)",
+								selectedBgColor: "var(--packagebg)"
+							},
+							{
+								value: "forced",
+								contents: "Force",
+								color: "var(--error)",
+								selectedBgColor: "var(--errorbg)",
 							}
+						]}
+						selected={selectedOverrides()}
+						onChangeMulti={(values) => {
+							props.props!.setOverrides((overrides) => {
+								let suppressed = canonicalizeListOrSingle(overrides.suppress);
+								let forced = canonicalizeListOrSingle(overrides.force);
+								let pkg = props.props!.pkg.pkg;
 
-							if (values!.includes("forced")) {
-								if (!forced.includes(pkg)) {
-									forced.push(pkg);
+								if (values!.includes("suppressed")) {
+									if (!suppressed.includes(pkg)) {
+										suppressed.push(pkg);
+									}
+								} else {
+									suppressed = suppressed.filter((x) => x != pkg);
 								}
-							} else {
-								forced = forced.filter((x) => x != pkg);
-							}
 
-							return { suppress: suppressed, force: forced };
-						});
-						props.props!.setDirty();
-					}}
-					columns={2}
-					checkboxes
-				/>
-			</div>
+								if (values!.includes("forced")) {
+									if (!forced.includes(pkg)) {
+										forced.push(pkg);
+									}
+								} else {
+									forced = forced.filter((x) => x != pkg);
+								}
+
+								return { suppress: suppressed, force: forced };
+							});
+							props.props!.setDirty();
+						}}
+						columns={2}
+						checkboxes
+					/>
+				</div>
+			</Show>
 		</Modal>
 	);
 }

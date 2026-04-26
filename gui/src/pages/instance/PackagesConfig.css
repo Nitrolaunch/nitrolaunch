@@ -91,3 +91,8 @@
 	justify-content: flex-end;
 	margin-right: 0.75rem;
 }
+
+.configured-package.modpack {
+	height: 6.5rem;
+	background-color: var(--bg2);
+}

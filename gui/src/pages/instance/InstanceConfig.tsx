@@ -267,6 +267,7 @@ export default function InstanceConfigModal(props: InstanceConfigProps) {
 	let [globalPackages, setGlobalPackages] = createSignal<PackageConfig[]>([]);
 	let [clientPackages, setClientPackages] = createSignal<PackageConfig[]>([]);
 	let [serverPackages, setServerPackages] = createSignal<PackageConfig[]>([]);
+	let [modpack, setModpack] = createSignal<string | undefined>();
 
 	let [javaType, setJavaType] = createSignal<JavaType | undefined>(undefined);
 	let [initMemory, setInitMemory] = createSignal<number | undefined>(undefined);
@@ -340,6 +341,8 @@ export default function InstanceConfigModal(props: InstanceConfigProps) {
 		setGlobalPackages(global);
 		setClientPackages(client);
 		setServerPackages(server);
+		setModpack(config().modpack);
+		console.log("Modpack " + modpack());
 
 		// Launch config
 		setJavaType(
@@ -517,6 +520,7 @@ export default function InstanceConfigModal(props: InstanceConfigProps) {
 			version: undefinedEmpty(version()),
 			loader: loader() as ConfiguredLoaders | undefined,
 			packages: packages,
+			modpack: modpack(),
 			launch: {
 				memory: launchMemory,
 				env: Object.keys(env).length == 0 ? undefined : env,
@@ -1015,12 +1019,17 @@ export default function InstanceConfigModal(props: InstanceConfigProps) {
 				<PackagesConfig
 					id={id()}
 					isTemplate={isTemplate()}
+					modpack={modpack()}
 					globalPackages={globalPackages()}
 					clientPackages={clientPackages()}
 					serverPackages={serverPackages()}
 					derivedGlobalPackages={derivedPackages()[0]}
 					derivedClientPackages={derivedPackages()[1]}
 					derivedServerPackages={derivedPackages()[2]}
+					setModpack={(modpack) => {
+						setModpack(modpack);
+						setIsDirty(true);
+					}}
 					onRemove={(pkg) => {
 						let func = (packages: PackageConfig[]) =>
 							packages.filter((x) => !packageConfigsEqual(x, pkg));

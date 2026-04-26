@@ -229,7 +229,8 @@ export default function PackageQuickAdd(props: PackageQuickAddProps) {
 											let req: PkgRequest = parsePkgRequest(
 												previewedPackage()!,
 											);
-											props.onAdd(req);
+											let isModpack = canonicalizeListOrSingle(previewedPackageData()![1].types).includes("modpack");
+											props.onAdd(req, isModpack);
 										}}
 										shadow={false}
 									/>
@@ -260,7 +261,7 @@ export default function PackageQuickAdd(props: PackageQuickAddProps) {
 }
 
 export interface PackageQuickAddProps {
-	onAdd: (pkg: PkgRequest) => void;
+	onAdd: (pkg: PkgRequest, isModpack: boolean) => void;
 	version?: string;
 	loader?: Loader;
 }
