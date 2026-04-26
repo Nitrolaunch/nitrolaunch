@@ -93,16 +93,18 @@ impl Instance {
 
 		std::mem::drop(version);
 
-		self.setup(
-			&mut manager,
-			ctx.core,
-			&version_info,
-			ctx.plugins,
-			ctx.paths,
-			ctx.output,
-		)
-		.await
-		.context("Failed to create instance")?;
+		if facets.instance {
+			self.setup(
+				&mut manager,
+				ctx.core,
+				&version_info,
+				ctx.plugins,
+				ctx.paths,
+				ctx.output,
+			)
+			.await
+			.context("Failed to create instance")?;
+		}
 
 		ctx.output.end_section();
 
@@ -181,7 +183,9 @@ impl Instance {
 			.await?;
 		results.all_results(ctx.output).await?;
 
-		ctx.lock.update_instance_has_done_first_update(&self.id);
+		if facets.instance {
+			ctx.lock.update_instance_has_done_first_update(&self.id);
+		}
 		let _ = ctx.lock.finish(ctx.paths);
 
 		Ok(())
