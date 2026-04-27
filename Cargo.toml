@@ -45,6 +45,7 @@ members = [
 	"crates/cli",
 	"crates/config",
 	"crates/core",
+	"crates/gui2",
 	"crates/instance",
 	"crates/mods",
 	"crates/net",
@@ -103,6 +104,9 @@ dashmap = "7.0.0-rc2"
 directories = "5.0.0"
 discord-rich-presence = "1.1.0"
 glob = "0.3.1"
+gpui = "0.2.2"
+gpui-component = "0.5.1"
+gpui-rsx = "0.3.2"
 hex = "0.4.3"
 home = "=0.5.11"
 image = "0.25.10"
