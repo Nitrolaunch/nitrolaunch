@@ -4,7 +4,7 @@ use std::{
 	path::{Path, PathBuf},
 };
 
-use anyhow::{bail, Context};
+use anyhow::{Context, bail};
 use nitro_core::io::{extract_zip_dir, files::copy_dir_contents, json_from_file};
 use nitro_pkg::PkgRequest;
 use nitro_plugin::{
@@ -12,16 +12,16 @@ use nitro_plugin::{
 	hook::hooks::{CheckMigrationResult, ImportInstanceResult, MigrateInstancesResult},
 };
 use nitro_shared::{
+	Side,
 	loaders::Loader,
 	minecraft::AddonKind,
 	output::{MessageContents, NitroOutput},
 	pkg::AddonOptionalHashes,
 	versions::MinecraftVersionDeser,
-	Side,
 };
 use nitrolaunch::{
 	config_crate::{
-		instance::{make_valid_instance_id, InstanceConfig},
+		instance::{InstanceConfig, make_valid_instance_id},
 		package::PackageConfigDeser,
 	},
 	instance_crate::lock::{InstanceLockfile, LockfileAddon},
@@ -403,7 +403,7 @@ fn data_folder(format: &str) -> anyhow::Result<PathBuf> {
 		#[cfg(target_os = "linux")]
 		let data_folder = format!("{}/.local/share/multimc", std::env::var("HOME")?);
 		#[cfg(target_os = "windows")]
-		let data_folder = format!("{}/Roaming/MultiMC", std::env::var("%APPDATA%")?);
+		let data_folder = format!("{}/Roaming/MultiMC", std::env::var("APPDATA")?);
 		#[cfg(target_os = "macos")]
 		let data_folder = format!(
 			"{}/Library/Application Support/MultiMC",
@@ -415,7 +415,7 @@ fn data_folder(format: &str) -> anyhow::Result<PathBuf> {
 		#[cfg(target_os = "linux")]
 		let data_folder = format!("{}/.local/share/PrismLauncher", std::env::var("HOME")?);
 		#[cfg(target_os = "windows")]
-		let data_folder = format!("{}/Roaming/PrismLauncher", std::env::var("%APPDATA%")?);
+		let data_folder = format!("{}/Roaming/PrismLauncher", std::env::var("APPDATA")?);
 		#[cfg(target_os = "macos")]
 		let data_folder = format!(
 			"{}/Library/Application Support/PrismLauncher",
