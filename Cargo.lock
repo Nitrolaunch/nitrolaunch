@@ -5940,6 +5940,7 @@ version = "0.29.0"
 dependencies = [
  "anyhow",
  "gpui",
+ "gpui-component",
  "gpui-rsx",
  "itertools 0.11.0",
  "nitrolaunch",
@@ -6395,7 +6396,6 @@ dependencies = [
  "cfg-match",
  "dashmap",
  "directories",
- "gpui-component",
  "hex",
  "itertools 0.11.0",
  "nitro_config",
