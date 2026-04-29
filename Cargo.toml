@@ -24,6 +24,11 @@ categories = ["games"]
 [lints]
 workspace = true
 
+[profile.dev]
+debug = 1
+incremental = true
+codegen-units = 256
+
 [profile.release]
 lto = true
 codegen-units = 1
@@ -40,6 +45,7 @@ name = "nitrolaunch"
 path = "src/lib.rs"
 
 [workspace]
+resolver = "2"
 members = [
 	"crates/auth",
 	"crates/cli",
@@ -96,10 +102,10 @@ async-trait = "0.1.73"
 base64 = "0.22.0"
 bytes = "1.4.0"
 cfg-match = "0.2.1"
-chrono = "0.4.42"
+chrono = { version = "0.4.42", default-features = false, features = ["std"] }
 clap = { version = "4.5.4", features = ["derive"] }
 color-print = "0.3.6"
-crossterm = "0.29.0"
+crossterm = { version = "0.29.0", default-features = false, features = ["events", "windows"] }
 dashmap = "7.0.0-rc2"
 directories = "5.0.0"
 discord-rich-presence = "1.1.0"
@@ -110,7 +116,7 @@ gpui_platform = { git = "https://github.com/zed-industries/zed", features = ["fo
 gpui-rsx = "0.3.2"
 hex = "0.4.3"
 home = "=0.5.11"
-image = "0.25.10"
+image = { version = "0.25.10", default-features = false, features = ["jpeg", "gif", "png", "webp"] }
 inquire = { version = "0.6.2", default-features = false, features = [
 	"crossterm",
 ] }
@@ -137,10 +143,9 @@ oauth2 = "4.4.2"
 pin-project-lite = "0.2.16"
 rand = "0.8.5"
 rand_chacha = "0.3.1"
-ratatui = "0.30.0"
+ratatui = { version = "0.30.0", default-features = false, features = ["crossterm", "layout-cache", "underline-color"] }
 ratatui-image = { version = "10.0.6", default-features = false, features = [
-	"crossterm",
-	"image-defaults",
+	"crossterm"
 ] }
 ratatui-textarea = "0.9.0"
 reqwest = { version = "0.12.15", default-features = false, features = [
@@ -159,13 +164,13 @@ serde_json = "1.0.117"
 sha2 = "0.10.8"
 showfile = "0.1.1"
 simd-json = { version = "0.13.10", features = ["value-no-dup-keys"] }
-sysinfo = "0.34.2"
+sysinfo = { version = "0.34.2", default-features = false, features = ["system"] }
 sys-locale = "0.3.1"
-tar = "0.4.38"
+tar = { version = "0.4.38", default-features = false }
 termimad = "0.31.1"
 thiserror = "1.0.61"
 tokio = { version = "1.37.0", features = ["rt-multi-thread"] }
-tui-markdown = "0.3.7"
+tui-markdown = { version = "0.3.7", default-features = false }
 version-compare = "0.2.0"
 wasmtime = { version = "41.0.0", default-features = false, features = [
 	"runtime",
@@ -173,7 +178,7 @@ wasmtime = { version = "41.0.0", default-features = false, features = [
 	"async",
 	"component-model",
 ] }
-wasmtime-wasi = "41.0.0"
+wasmtime-wasi = { version = "41.0.0", default-features = false, features = ["p2"] }
 wasmtime-wasi-http = "41.0.0"
 wit-bindgen = "0.48.1"
 wstd = "0.6.1"
