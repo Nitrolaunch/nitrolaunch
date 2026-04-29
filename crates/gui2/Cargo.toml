@@ -22,6 +22,7 @@ async-trait = { workspace = true }
 itertools = { workspace = true }
 gpui = { workspace = true }
 gpui-component = { workspace = true }
+gpui_platform = { workspace = true }
 gpui-rsx = { workspace = true }
 nitrolaunch = { workspace = true }
 reqwest = { workspace = true }

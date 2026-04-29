@@ -45,7 +45,7 @@ impl NavBar {
 impl Render for NavBar {
 	fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
 		gpui_rsx::rsx! {
-			<div id="navbar" grid grid_cols={3} w_full h={px(22.0)} absolute top_0 left_0>
+			<div id="navbar" grid grid_cols={3} w_full h={px(22.0)}>
 				<div id="navbar-left">{"Nitrolaunch"}</div>
 				<div id="navbar-center" grid grid_cols={3}>
 					{navbar_button(PageCategory::Home, self.tab, cx.entity())}

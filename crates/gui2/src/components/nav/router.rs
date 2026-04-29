@@ -59,7 +59,7 @@ impl Render for Router {
 		};
 
 		gpui_rsx::rsx! {
-			<div id="router" size_full>
+			<div id="router" flex flex_col flex_grow w_full overflow_hidden>
 				{route}
 			</div>
 		}

@@ -16,7 +16,8 @@ mod util;
 
 #[tokio::main]
 async fn main() {
-	let app = Application::new();
+	println!("{}", gpui::guess_compositor());
+	let app = gpui_platform::application();
 	app.run(move |cx| {
 		gpui_component::init(cx);
 
@@ -52,9 +53,9 @@ impl HelloWorld {
 impl Render for HelloWorld {
 	fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
 		gpui_rsx::rsx! {
-			<div size_full>
+			<div size_full flex flex_col>
 				{self.nav_bar.clone()}
-				<div size_full>{self.router.clone()}</div>
+				<div w_full flex_grow flex_basis={px(0.0)}>{self.router.clone()}</div>
 			</div>
 		}
 	}

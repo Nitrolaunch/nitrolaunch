@@ -1,5 +1,7 @@
 use gpui::prelude::*;
 use gpui::*;
+use gpui_component::scroll::ScrollableElement;
+use itertools::Itertools;
 use nitrolaunch::config_crate::ConfigKind;
 
 use crate::components::instance::{InstanceItemInfo, InstanceListItem};
@@ -25,16 +27,16 @@ impl HomePage {
 		let app_state = self.app_state.clone();
 
 		self.instances.fetch(cx, async move |_| {
-			// return Ok(Vec::new());
-			println!("Start config");
 			let config = app_state.config().await?;
-			println!("Finish config");
-			
-			let instances = config.instances.values().map(|x| InstanceItemInfo {
-				id: x.id().to_string(),
-				ty: ConfigKind::Instance,
-			});
-			println!("Finish");
+
+			let instances = config
+				.instances
+				.values()
+				.sorted_by_cached_key(|x| x.id())
+				.map(|x| InstanceItemInfo {
+					id: x.id().to_string(),
+					ty: ConfigKind::Instance,
+				});
 
 			Ok(instances.collect())
 		});
@@ -65,7 +67,10 @@ impl Render for HomePage {
 		};
 
 		gpui_rsx::rsx! {
-			<div size_full flex grid grid_cols=5>{...instances}</div>
+			<div size_full overflow_scrollbar>
+				// <div h={px(5000.0)} bg={blue()}></div>
+				<div grid grid_cols=4 gap_3 p_3>{...instances}</div>
+			</div>
 		}
 	}
 }
