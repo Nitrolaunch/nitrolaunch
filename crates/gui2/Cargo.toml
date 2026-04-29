@@ -18,6 +18,7 @@ path = "src/main.rs"
 
 [dependencies]
 anyhow = { workspace = true }
+async-trait = { workspace = true }
 itertools = { workspace = true }
 gpui = { workspace = true }
 gpui-component = { workspace = true }

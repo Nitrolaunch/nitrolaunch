@@ -1,7 +1,6 @@
 use gpui::prelude::*;
 use gpui::*;
 
-use crate::event::AppEvent;
 use crate::pages::home::HomePage;
 use crate::state::AppState;
 
@@ -13,12 +12,19 @@ pub struct Router {
 
 impl Router {
 	pub fn new(app_state: AppState, window: &Window, cx: &mut Context<Self>) -> Self {
-		let mut rx = app_state.subscribe();
+		let mut rx = app_state.subscribe_route();
 		cx.spawn(async move |this, cx| {
 			loop {
-				if let Ok(AppEvent::RouteChanged(route)) = rx.recv().await {
+				if let Ok(()) = rx.changed().await {
+					let route = rx.borrow().clone();
 					let _ = this.update(cx, move |this, cx| {
 						this.route = route;
+
+						match &this.route {
+							Page::Home => this.focus_home_page(cx),
+							_ => {}
+						}
+
 						cx.notify();
 					});
 				}
@@ -26,11 +32,21 @@ impl Router {
 		})
 		.detach();
 
-		Self {
+		let out = Self {
 			home_page: cx.new(|cx| HomePage::new(app_state.clone(), window, cx)),
 			app_state,
 			route: Page::Home,
-		}
+		};
+
+		out.focus_home_page(cx);
+
+		out
+	}
+
+	fn focus_home_page(&self, cx: &mut Context<Self>) {
+		self.home_page.update(cx, |home_page, _| {
+			home_page.visible();
+		});
 	}
 }
 
