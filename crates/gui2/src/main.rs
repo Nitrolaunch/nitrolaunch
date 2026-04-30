@@ -25,6 +25,11 @@ async fn main() {
 		let mut themes: ThemeSet = serde_json::from_slice(include_bytes!("../theme.json")).unwrap();
 		Theme::global_mut(cx).apply_config(&Rc::new(themes.themes.remove(0)));
 
+		let inter = include_bytes!("assets/inter.regular.ttf");
+		if let Err(e) = cx.text_system().add_fonts(vec![Cow::Borrowed(inter)]) {
+			eprintln!("Failed to add Inter font: {e}");
+		}
+
 		cx.spawn(async move |cx| {
 			let window = WindowOptions {
 				// window_min_size: Some(gpui::Size {
@@ -92,7 +97,7 @@ impl HelloWorld {
 impl Render for HelloWorld {
 	fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
 		rsx! {
-			<v_flex size_full text_size={px(12.0)}>
+			<v_flex size_full text_size={px(16.0)} font={font("Rubik")}>
 				{self.nav_bar.clone()}
 				<sect w_full>{self.router.clone()}</sect>
 			</v_flex>

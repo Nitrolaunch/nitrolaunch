@@ -2,7 +2,6 @@ use crate::prelude::*;
 
 use crate::components::center;
 use crate::components::nav::router::{Page, PageCategory};
-use crate::event::AppEvent;
 use crate::state::AppState;
 
 pub mod router;
@@ -14,10 +13,11 @@ pub struct NavBar {
 
 impl NavBar {
 	pub fn new(app_state: AppState, _: &Window, cx: &mut Context<Self>) -> Self {
-		let mut rx = app_state.subscribe();
+		let mut rx = app_state.subscribe_route();
 		cx.spawn(async move |this, cx| {
 			loop {
-				if let Ok(AppEvent::RouteChanged(route)) = rx.recv().await {
+				if let Ok(()) = rx.changed().await {
+					let route = rx.borrow().clone();
 					let _ = this.update(cx, move |this, cx| {
 						this.tab = route.get_category();
 						cx.notify();

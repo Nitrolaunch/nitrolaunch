@@ -5,6 +5,8 @@ pub use gpui_component::{ActiveTheme, Icon, Selectable, StyledExt, h_flex, v_fle
 
 pub use gpui_rsx::rsx;
 
-pub use crate::components::{CustomStyles, center, cont, sect, show};
+pub use crate::components::{
+	CustomStyles, CustomStylesInteractive, center, cont, sect, show, show_multi,
+};
 pub use crate::state::AppState;
-pub use crate::util::state::{Resource, ResourceState, Trigger};
+pub use crate::util::state::{Resource, ResourceState, Trigger, setter};

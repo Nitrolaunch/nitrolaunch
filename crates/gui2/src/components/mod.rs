@@ -1,5 +1,10 @@
-use gpui::{App, Context, Div, IntoElement, RenderOnce, Styled, div, px};
-use gpui_component::{ActiveTheme, h_flex};
+use std::sync::Arc;
+
+use gpui::{
+	App, Context, Div, InteractiveElement, IntoElement, RenderOnce, SharedString,
+	StatefulInteractiveElement, Styled, div, px,
+};
+use gpui_component::{ActiveTheme, h_flex, tooltip::Tooltip};
 
 pub mod instance;
 pub mod nav;
@@ -66,41 +71,26 @@ impl<T: Styled> CustomStyles for T {
 	}
 }
 
-pub fn show<T: IntoElement>() -> Show<T> {
-	Show {
-		elem: None,
-		show: false,
+pub trait CustomStylesInteractive {
+	/// Adds a tooltip
+	fn tip(self, tip: &str) -> Self;
+}
+
+impl<T: Styled + StatefulInteractiveElement> CustomStylesInteractive for T {
+	fn tip(self, tip: &str) -> Self {
+		let tip = SharedString::from(tip);
+		self.tooltip(move |window, cx| Tooltip::new(tip.clone()).build(window, cx))
 	}
 }
 
-#[derive(IntoElement)]
-pub struct Show<T: IntoElement + 'static> {
-	elem: Option<T>,
-	show: bool,
-}
-
-impl<T: IntoElement> Show<T> {
-	pub fn child(mut self, e: T) -> Self {
-		self.elem = Some(e);
-		self
-	}
-
-	pub fn show(mut self, show: bool) -> Self {
-		self.show = show;
-		self
+pub fn show<T: IntoElement, F: FnOnce() -> T>(show: bool, elem: F) -> impl IntoElement {
+	if show {
+		elem().into_any_element()
+	} else {
+		div().into_any_element()
 	}
 }
 
-impl<T: IntoElement + 'static> RenderOnce for Show<T> {
-	fn render(self, _: &mut gpui::Window, _: &mut App) -> impl IntoElement {
-		if let Some(elem) = self.elem {
-			if self.show {
-				elem.into_any_element()
-			} else {
-				div().into_any_element()
-			}
-		} else {
-			div().into_any_element()
-		}
-	}
+pub fn show_multi<T: IntoElement, F: FnOnce() -> Vec<T>>(show: bool, elem: F) -> Vec<T> {
+	if show { elem() } else { Vec::new() }
 }

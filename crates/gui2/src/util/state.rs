@@ -3,13 +3,26 @@ use std::sync::Arc;
 use gpui::{AsyncApp, Context, Entity};
 use tokio::sync::{Mutex, MutexGuard};
 
-pub fn setter<T: 'static, V: 'static, F: Fn(&mut V, T) + Clone>(
+/// Creates a setter function that can be passed down to a subcomponent
+/// without giving full entity access
+/// 
+/// Usage:
+/// ```ignore
+/// let set_name = setter::<_, Foo, Bar>(cx.entity(), |this, name, cx| {
+/// 	this.name = name;
+/// 	cx.notify();
+/// });
+/// 
+/// // In Bar component
+/// set_name(cx, "Foo".into());
+/// ```
+pub fn setter<T: 'static, V: 'static, W: 'static>(
 	entity: Entity<V>,
-	f: F,
-) -> impl Fn(T, &mut Context<V>) + Clone {
+	f: impl Fn(&mut V, T, &mut Context<V>) + Clone,
+) -> impl Fn(T, &mut Context<W>) + Clone {
 	move |value, cx| {
 		entity.update(cx, |this, cx| {
-			f(this, value);
+			f(this, value, cx);
 			cx.notify();
 		});
 	}

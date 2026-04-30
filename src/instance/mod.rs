@@ -20,19 +20,19 @@ pub mod world_files;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
-use anyhow::{bail, ensure, Context};
+use anyhow::{Context, bail, ensure};
 use nitro_config::instance::{
-	is_valid_instance_id, ClientWindowConfig, InstanceConfig, LaunchConfig, LaunchMemory,
+	ClientWindowConfig, InstanceConfig, LaunchConfig, LaunchMemory, is_valid_instance_id,
 };
 use nitro_config::template::TemplateConfig;
 use nitro_core::io::java::install::JavaInstallationKind;
 use nitro_core::util::versions::MinecraftVersion;
 use nitro_instance::get_instance_dir;
 use nitro_instance::lock::InstanceLockfile;
+use nitro_shared::Side;
 use nitro_shared::java_args::MemoryNum;
 use nitro_shared::loaders::Loader;
-use nitro_shared::versions::{parse_versioned_string, VersionPattern};
-use nitro_shared::Side;
+use nitro_shared::versions::{VersionPattern, parse_versioned_string};
 
 use crate::config::package::read_package_config;
 use crate::io::paths::Paths;
@@ -91,8 +91,7 @@ impl Instance {
 		};
 
 		let (loader, loader_version) = if let Some(loader) = &config.loader {
-			let (loader, version) = parse_versioned_string(loader);
-			(Loader::parse_from_str(loader), version)
+			parse_loader_config(loader)
 		} else {
 			(Loader::Vanilla, VersionPattern::Any)
 		};
@@ -230,6 +229,12 @@ impl InstKind {
 			Self::Server { .. } => Side::Server,
 		}
 	}
+}
+
+/// Parses a loader from configuration
+pub fn parse_loader_config(loader: &str) -> (Loader, VersionPattern) {
+	let (loader, version) = parse_versioned_string(loader);
+	(Loader::parse_from_str(loader), version)
 }
 
 fn launch_config_to_options(config: LaunchConfig) -> anyhow::Result<LaunchOptions> {
