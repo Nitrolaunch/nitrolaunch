@@ -1,14 +1,16 @@
-use gpui::*;
-use gpui_component::*;
+use anyhow::anyhow;
+use gpui_component::{Root, Theme, ThemeSet};
+use std::borrow::Cow;
+use std::rc::Rc;
 
-use crate::{
-	components::nav::{NavBar, router::Router},
-	state::AppState,
-};
+use crate::prelude::*;
+
+use crate::components::nav::{NavBar, router::Router};
 
 mod components;
 mod event;
 mod pages;
+mod prelude;
 /// :O
 mod secrets;
 mod state;
@@ -16,13 +18,28 @@ mod util;
 
 #[tokio::main]
 async fn main() {
-	println!("{}", gpui::guess_compositor());
-	let app = gpui_platform::application();
+	let app = gpui_platform::application().with_assets(Assets);
+
 	app.run(move |cx| {
 		gpui_component::init(cx);
+		let mut themes: ThemeSet = serde_json::from_slice(include_bytes!("../theme.json")).unwrap();
+		Theme::global_mut(cx).apply_config(&Rc::new(themes.themes.remove(0)));
 
 		cx.spawn(async move |cx| {
-			cx.open_window(WindowOptions::default(), |window, cx| {
+			let window = WindowOptions {
+				// window_min_size: Some(gpui::Size {
+				// 	width: px(1000.0),
+				// 	height: px(700.0),
+				// }),
+				kind: WindowKind::Floating,
+				titlebar: Some(TitlebarOptions {
+					title: Some("Nitrolaunch".into()),
+					..Default::default()
+				}),
+				..Default::default()
+			};
+
+			cx.open_window(window, |window, cx| {
 				let view = cx.new(|cx| HelloWorld::new(window, cx));
 
 				cx.new(|cx| Root::new(view, window, cx))
@@ -31,6 +48,28 @@ async fn main() {
 		})
 		.detach();
 	});
+}
+
+#[derive(rust_embed::RustEmbed)]
+#[folder = "./src/assets"]
+struct Assets;
+
+impl AssetSource for Assets {
+	fn load(&self, path: &str) -> Result<Option<Cow<'static, [u8]>>> {
+		if path.is_empty() {
+			return Ok(None);
+		}
+
+		Self::get(path)
+			.map(|f| Some(f.data))
+			.ok_or_else(|| anyhow!("could not find asset at path \"{path}\""))
+	}
+
+	fn list(&self, path: &str) -> Result<Vec<SharedString>> {
+		Ok(Self::iter()
+			.filter_map(|p| p.starts_with(path).then(|| p.into()))
+			.collect())
+	}
 }
 
 struct HelloWorld {
@@ -52,11 +91,11 @@ impl HelloWorld {
 
 impl Render for HelloWorld {
 	fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
-		gpui_rsx::rsx! {
-			<div size_full flex flex_col>
+		rsx! {
+			<v_flex size_full text_size={px(12.0)}>
 				{self.nav_bar.clone()}
-				<div w_full flex_grow flex_basis={px(0.0)}>{self.router.clone()}</div>
-			</div>
+				<sect w_full>{self.router.clone()}</sect>
+			</v_flex>
 		}
 	}
 }

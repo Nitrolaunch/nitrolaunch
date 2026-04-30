@@ -192,6 +192,14 @@ impl Side {
 			_ => None,
 		}
 	}
+
+	/// Print a side to a pretty string
+	pub fn to_string_pretty(&self) -> &'static str {
+		match self {
+			Self::Client => "Client",
+			Self::Server => "Server",
+		}
+	}
 }
 
 impl FromStr for Side {

@@ -1,8 +1,6 @@
-use gpui::prelude::*;
-use gpui::*;
-use gpui_component::Selectable;
-use gpui_component::button::Button;
+use crate::prelude::*;
 
+use crate::components::center;
 use crate::components::nav::router::{Page, PageCategory};
 use crate::event::AppEvent;
 use crate::state::AppState;
@@ -44,15 +42,17 @@ impl NavBar {
 
 impl Render for NavBar {
 	fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-		gpui_rsx::rsx! {
-			<div id="navbar" grid grid_cols={3} w_full h={px(22.0)}>
-				<div id="navbar-left">{"Nitrolaunch"}</div>
-				<div id="navbar-center" grid grid_cols={3}>
-					{navbar_button(PageCategory::Home, self.tab, cx.entity())}
-					{navbar_button(PageCategory::Packages, self.tab, cx.entity())}
-					{navbar_button(PageCategory::Plugins, self.tab, cx.entity())}
-				</div>
-				<div id="navbar-right"></div>
+		rsx! {
+			<div id="navbar" grid grid_cols={3} w_full h={px(40.0)} bg={cx.theme().title_bar}>
+				<center id="navbar-left">{"Nitrolaunch"}</center>
+				<center id="navbar-center">
+					<div grid grid_cols={3} gap_1>
+						{navbar_button(PageCategory::Home, self.tab, cx.entity())}
+						{navbar_button(PageCategory::Packages, self.tab, cx.entity())}
+						{navbar_button(PageCategory::Plugins, self.tab, cx.entity())}
+					</div>
+				</center>
+				<center id="navbar-right"></center>
 			</div>
 		}
 	}
@@ -68,12 +68,18 @@ fn navbar_button(
 		PageCategory::Packages => "Packages",
 		PageCategory::Plugins => "Plugins",
 	};
+	let icon = match tab {
+		PageCategory::Home => Icon::empty().path("icons/home.svg"),
+		PageCategory::Packages => Icon::empty().path("icons/honeycomb.svg"),
+		PageCategory::Plugins => Icon::empty().path("icons/jigsaw.svg"),
+	};
 	let selected = tab == selected_tab;
 
 	Button::new(ElementId::Name(SharedString::new(format!(
 		"nav-tab-{title}"
 	))))
 	.label(title)
+	.icon(icon)
 	.selected(selected)
 	.on_click(move |_, _, cx| {
 		navbar.update(cx, |nav_bar, cx| {

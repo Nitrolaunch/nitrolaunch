@@ -1,12 +1,8 @@
-use gpui::prelude::*;
-use gpui::*;
-use gpui_component::scroll::ScrollableElement;
+use crate::prelude::*;
 use itertools::Itertools;
 use nitrolaunch::config_crate::ConfigKind;
 
 use crate::components::instance::{InstanceItemInfo, InstanceListItem};
-use crate::state::AppState;
-use crate::util::state::{Resource, ResourceState, Trigger};
 
 pub struct HomePage {
 	app_state: AppState,
@@ -36,6 +32,10 @@ impl HomePage {
 				.map(|x| InstanceItemInfo {
 					id: x.id().to_string(),
 					ty: ConfigKind::Instance,
+					name: x.config().name.clone(),
+					side: Some(x.side()),
+					version: Some(x.version().clone()),
+					loader: Some(x.loader().clone()),
 				});
 
 			Ok(instances.collect())
@@ -60,17 +60,16 @@ impl Render for HomePage {
 			Some(ResourceState::Loaded(instances)) => instances
 				.iter()
 				.map(|x| {
-					cx.new(|cx| InstanceListItem::new(x.id.clone(), x.ty.clone(), window, cx))
+					cx.new(|cx| InstanceListItem::new(x.clone(), window, cx))
 						.into_any_element()
 				})
 				.collect(),
 		};
 
-		gpui_rsx::rsx! {
-			<div size_full overflow_scrollbar>
-				// <div h={px(5000.0)} bg={blue()}></div>
-				<div grid grid_cols=4 gap_3 p_3>{...instances}</div>
-			</div>
+		rsx! {
+			<v_flex id="home-container" size_full overflow_y_scrollbar>
+				<div grid grid_cols=5 gap_5 p_3 px_8>{...instances}</div>
+			</v_flex>
 		}
 	}
 }

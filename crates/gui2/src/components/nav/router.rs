@@ -1,11 +1,8 @@
-use gpui::prelude::*;
-use gpui::*;
+use crate::prelude::*;
 
 use crate::pages::home::HomePage;
-use crate::state::AppState;
 
 pub struct Router {
-	app_state: AppState,
 	route: Page,
 	home_page: Entity<HomePage>,
 }
@@ -34,7 +31,6 @@ impl Router {
 
 		let out = Self {
 			home_page: cx.new(|cx| HomePage::new(app_state.clone(), window, cx)),
-			app_state,
 			route: Page::Home,
 		};
 
@@ -54,15 +50,11 @@ impl Render for Router {
 	fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
 		let route = match &self.route {
 			Page::Home => self.home_page.clone().into_any_element(),
-			Page::Packages => (gpui_rsx::rsx! { <div></div> }).into_any_element(),
-			Page::Plugins => (gpui_rsx::rsx! { <div></div> }).into_any_element(),
+			Page::Packages => div().into_any_element(),
+			Page::Plugins => div().into_any_element(),
 		};
 
-		gpui_rsx::rsx! {
-			<div id="router" flex flex_col flex_grow w_full overflow_hidden>
-				{route}
-			</div>
-		}
+		route
 	}
 }
 

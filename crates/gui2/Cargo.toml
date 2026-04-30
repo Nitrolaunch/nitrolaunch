@@ -26,6 +26,7 @@ gpui_platform = { workspace = true }
 gpui-rsx = { workspace = true }
 nitrolaunch = { workspace = true }
 reqwest = { workspace = true }
+rust-embed = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 tokio = { workspace = true, features = ["macros", "fs"] }
