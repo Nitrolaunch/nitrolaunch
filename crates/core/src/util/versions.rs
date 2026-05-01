@@ -6,7 +6,7 @@ use nitro_shared::{
 };
 
 /// User-supplied Minecraft version pattern
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum MinecraftVersion {
 	/// A generic version
 	Version(VersionName),

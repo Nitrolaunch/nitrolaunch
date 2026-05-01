@@ -1,35 +1,79 @@
-use crate::prelude::*;
-use gpui_component::tab::TabBar;
+use std::hash::Hash;
+
+use crate::{components::instance::InstanceListItem, prelude::*};
 use itertools::Itertools;
 use nitrolaunch::{
 	config_crate::ConfigKind, core::util::versions::MinecraftVersion, instance::parse_loader_config,
 };
 
-use crate::components::instance::{InstanceItemInfo, InstanceListItem};
+use crate::components::instance::InstanceItemInfo;
 
-pub struct HomePage {
-	app_state: AppState,
-	items: Resource<InstancesAndTemplates>,
-	visible_trigger: Trigger,
-	tab: Tab,
-	selected_item: Option<SelectedLocation>,
+#[derive(PartialEq)]
+pub struct HomePage;
+
+impl Component for HomePage {
+	fn render(&self) -> impl IntoElement {
+		let app_state = use_radio(AppChannel::Default);
+		let items_query = use_query(Query::new(
+			(),
+			FetchItems {
+				app_state: app_state.read().cloned(),
+			},
+		));
+
+		let tab = use_state(|| Tab::Instances);
+
+		let items = items_query.read();
+		let items_elem = match &*items.state() {
+			QueryStateData::Pending
+			| QueryStateData::Loading { res: _ }
+			| QueryStateData::Settled { res: Err(..), .. } => rect().into_element(),
+			QueryStateData::Settled { res: Ok(res), .. } => {
+				let items = match &*tab.read() {
+					Tab::Instances => &res.instances,
+					Tab::Templates => &res.templates,
+				};
+
+				let items = items
+					.into_iter()
+					.map(|x| InstanceListItem::new(x.clone(), false));
+
+				grid(5, items).gap(25.0).into_element()
+			}
+		};
+
+		let items_elem = ScrollView::new().child(items_elem);
+
+		rect().fill().child(items_elem)
+	}
 }
 
-impl HomePage {
-	pub fn new(app_state: AppState, _: &Window, _: &mut Context<Self>) -> Self {
-		Self {
-			app_state,
-			items: Resource::new(),
-			visible_trigger: Trigger::new(),
-			tab: Tab::Instances,
-			selected_item: None,
-		}
-	}
+#[derive(Clone)]
+struct FetchItems {
+	app_state: AppState,
+}
 
-	fn fetch_items(&self, cx: &mut Context<Self>) {
+impl PartialEq for FetchItems {
+	fn eq(&self, _: &Self) -> bool {
+		true
+	}
+}
+
+impl Eq for FetchItems {}
+
+impl Hash for FetchItems {
+	fn hash<H: std::hash::Hasher>(&self, _: &mut H) {}
+}
+
+impl QueryCapability for FetchItems {
+	type Ok = InstancesAndTemplates;
+	type Err = anyhow::Error;
+	type Keys = ();
+
+	fn run(&self, _: &Self::Keys) -> impl Future<Output = Result<Self::Ok, Self::Err>> {
 		let app_state = self.app_state.clone();
 
-		self.items.fetch(cx, async move |_| {
+		query_spawn(async move {
 			let config = app_state.config().await?;
 
 			let instances = config
@@ -75,69 +119,7 @@ impl HomePage {
 				instances: instances.collect(),
 				templates: std::iter::once(base_template).chain(templates).collect(),
 			})
-		});
-	}
-
-	pub fn visible(&mut self) {
-		self.visible_trigger.trigger();
-	}
-
-	pub fn select(&mut self, selected: SelectedLocation, cx: &mut Context<Self>) {
-		self.selected_item = Some(selected);
-		cx.notify();
-	}
-}
-
-impl Render for HomePage {
-	fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-		if self.visible_trigger.check() {
-			self.fetch_items(cx);
-		}
-
-		let items = match self.items.state().as_deref() {
-			None | Some(ResourceState::Loading | ResourceState::Err(..)) => {
-				vec![div().into_any_element()]
-			}
-			Some(ResourceState::Loaded(items)) => {
-				let items = match &self.tab {
-					Tab::Instances => &items.instances,
-					Tab::Templates => &items.templates,
-				};
-
-				items
-					.iter()
-					.map(|x| {
-						let entity = cx.entity();
-						let selected = self
-							.selected_item
-							.as_ref()
-							.is_some_and(|y| y.is_selected(x));
-
-						cx.new(|cx| InstanceListItem::new(x.clone(), selected, entity, window, cx))
-							.into_any_element()
-					})
-					.collect()
-			}
-		};
-
-		let entity = cx.entity();
-		let tabs = TabBar::new("home-tabs")
-			.selected_index(self.tab.to_index())
-			.on_click(move |idx, _, cx| {
-				entity.update(cx, |this, cx| {
-					this.tab = Tab::from_index(*idx);
-					cx.notify();
-				});
-			})
-			.child(gpui_component::tab::Tab::new().label("Instances"))
-			.child(gpui_component::tab::Tab::new().label("Templates"));
-
-		rsx! {
-			<v_flex id="home-container" size_full overflow_y_scrollbar gap_3>
-				<div>{tabs}</div>
-				<div grid grid_cols=5 gap_5 p_3 px_8>{...items}</div>
-			</v_flex>
-		}
+		})
 	}
 }
 

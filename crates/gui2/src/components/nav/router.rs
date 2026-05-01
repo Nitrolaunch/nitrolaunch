@@ -1,60 +1,14 @@
-use crate::prelude::*;
+use crate::{pages::home::HomePage, prelude::*};
 
-use crate::pages::home::HomePage;
+#[derive(PartialEq)]
+pub struct Router;
 
-pub struct Router {
-	route: Page,
-	home_page: Entity<HomePage>,
-}
-
-impl Router {
-	pub fn new(app_state: AppState, window: &Window, cx: &mut Context<Self>) -> Self {
-		let mut rx = app_state.subscribe_route();
-		cx.spawn(async move |this, cx| {
-			loop {
-				if let Ok(()) = rx.changed().await {
-					let route = rx.borrow().clone();
-					let _ = this.update(cx, move |this, cx| {
-						this.route = route;
-
-						match &this.route {
-							Page::Home => this.focus_home_page(cx),
-							_ => {}
-						}
-
-						cx.notify();
-					});
-				}
-			}
-		})
-		.detach();
-
-		let out = Self {
-			home_page: cx.new(|cx| HomePage::new(app_state.clone(), window, cx)),
-			route: Page::Home,
-		};
-
-		out.focus_home_page(cx);
-
-		out
-	}
-
-	fn focus_home_page(&self, cx: &mut Context<Self>) {
-		self.home_page.update(cx, |home_page, _| {
-			home_page.visible();
-		});
-	}
-}
-
-impl Render for Router {
-	fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
-		let route = match &self.route {
-			Page::Home => self.home_page.clone().into_any_element(),
-			Page::Packages => div().into_any_element(),
-			Page::Plugins => div().into_any_element(),
-		};
-
-		route
+impl Component for Router {
+	fn render(&self) -> impl IntoElement {
+		rect()
+			.width(Size::fill())
+			.height(Size::fill())
+			.child(HomePage)
 	}
 }
 

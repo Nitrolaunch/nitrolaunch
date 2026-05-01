@@ -1,96 +1,65 @@
-use std::sync::Arc;
-
-use gpui::{
-	App, Context, Div, InteractiveElement, IntoElement, RenderOnce, SharedString,
-	StatefulInteractiveElement, Styled, div, px,
+use freya::prelude::{
+	ChildrenExt, Component, ContainerExt, ContainerSizeExt, ContainerWithContentExt, IntoElement,
+	Size, rect,
 };
-use gpui_component::{ActiveTheme, h_flex, tooltip::Tooltip};
 
 pub mod instance;
 pub mod nav;
 
-/// Centered horizontal flex
-pub fn center() -> Div {
-	h_flex().justify_center().content_center()
-}
-
-/// Flex-grow block (like a section of a grid) with min-height set to 0 to prevent growing to content
-pub fn sect() -> Div {
-	div().flex_1().min_h_0()
-}
-
-/// Gapped flexbox
-pub fn cont() -> Div {
-	center().gap(px(6.0))
-}
-
 pub trait CustomStyles {
-	/// Sets flex-grow
-	fn grow(self, size: f32) -> Self;
-
-	/// Sets flex, justify-center, and items-center
-	fn center(self) -> Self;
-
-	/// Sets flex, justify-start, and items-center
-	fn start(self) -> Self;
-
-	/// Sets flex, justify-end, and items-center
-	fn end(self) -> Self;
-
-	/// Sets border to consistent style
-	fn bordered<T: 'static>(self, cx: &Context<T>) -> Self;
-
-	/// Sets border radius to consistent style
-	fn round(self) -> Self;
+	/// Sets full width and height
+	fn fill(self) -> Self;
 }
 
-impl<T: Styled> CustomStyles for T {
-	fn grow(mut self, size: f32) -> Self {
-		self.style().flex_grow = Some(size);
+impl<T: ContainerSizeExt> CustomStyles for T {
+	fn fill(self) -> Self {
+		self.width(Size::fill()).height(Size::fill())
+	}
+}
+
+pub fn grid<T: Component + 'static>(cols: u8, items: impl IntoIterator<Item = T>) -> Grid<T> {
+	Grid {
+		cols,
+		gap: 0.0,
+		items: items.into_iter().collect(),
+	}
+}
+
+#[derive(PartialEq)]
+pub struct Grid<T: Component + 'static> {
+	cols: u8,
+	gap: f32,
+	items: Vec<T>,
+}
+
+impl<T: Component + 'static> Grid<T> {
+	pub fn gap(mut self, gap: f32) -> Self {
+		self.gap = gap;
 		self
 	}
-
-	fn center(self) -> Self {
-		self.flex().justify_center().items_center()
-	}
-
-	fn start(self) -> Self {
-		self.flex().justify_start().items_center()
-	}
-
-	fn end(self) -> Self {
-		self.flex().justify_end().items_center()
-	}
-
-	fn bordered<V: 'static>(self, cx: &Context<V>) -> Self {
-		self.border_2().border_color(cx.theme().border)
-	}
-
-	fn round(self) -> Self {
-		self.rounded_md()
-	}
 }
 
-pub trait CustomStylesInteractive {
-	/// Adds a tooltip
-	fn tip(self, tip: &str) -> Self;
-}
+impl<T: Component + 'static> Component for Grid<T> {
+	fn render(&self) -> impl IntoElement {
+		let rows = self.items.chunks(self.cols as usize).map(|items| {
+			rect()
+				.horizontal()
+				.width(Size::fill())
+				.spacing(self.gap)
+				.children(items.iter().map(|x| {
+					rect()
+						.width(Size::percent(100.0 / (self.cols as f32)))
+						.child(x.render())
+						.into_element()
+				}))
+				.into_element()
+		});
 
-impl<T: Styled + StatefulInteractiveElement> CustomStylesInteractive for T {
-	fn tip(self, tip: &str) -> Self {
-		let tip = SharedString::from(tip);
-		self.tooltip(move |window, cx| Tooltip::new(tip.clone()).build(window, cx))
+		rect()
+			.vertical()
+			.width(Size::fill())
+			.spacing(self.gap)
+			.padding(self.gap)
+			.children(rows)
 	}
-}
-
-pub fn show<T: IntoElement, F: FnOnce() -> T>(show: bool, elem: F) -> impl IntoElement {
-	if show {
-		elem().into_any_element()
-	} else {
-		div().into_any_element()
-	}
-}
-
-pub fn show_multi<T: IntoElement, F: FnOnce() -> Vec<T>>(show: bool, elem: F) -> Vec<T> {
-	if show { elem() } else { Vec::new() }
 }
