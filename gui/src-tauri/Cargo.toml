@@ -24,7 +24,7 @@ nitrolaunch = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 showfile = { workspace = true }
-tauri = { version = "=2.10.3", features = ["protocol-asset"] }
+tauri = { version = "=2.11.0", features = ["protocol-asset"] }
 tauri-plugin-clipboard-manager = "2"
 tauri-plugin-dialog = "=2.7.0"
 tauri-plugin-shell = "2"
