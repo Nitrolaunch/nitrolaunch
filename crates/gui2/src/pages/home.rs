@@ -22,6 +22,7 @@ impl Component for HomePage {
 		));
 
 		let tab = use_state(|| Tab::Instances);
+		let selected = use_state::<Option<SelectedLocation>>(|| None);
 
 		let items = items_query.read();
 		let items_elem = match &*items.state() {
@@ -36,9 +37,9 @@ impl Component for HomePage {
 
 				let items = items
 					.into_iter()
-					.map(|x| InstanceListItem::new(x.clone(), false));
+					.map(|x| InstanceListItem::new(x.clone(), selected.clone()));
 
-				grid(5, items).gap(25.0).into_element()
+				grid(4, items).gap(15.0).into_element()
 			}
 		};
 
@@ -157,7 +158,14 @@ pub struct SelectedLocation {
 }
 
 impl SelectedLocation {
-	fn is_selected(&self, info: &InstanceItemInfo) -> bool {
+	pub fn from_item(info: &InstanceItemInfo) -> Self {
+		Self {
+			id: info.id.clone(),
+			ty: info.ty.clone(),
+		}
+	}
+
+	pub fn is_selected(&self, info: &InstanceItemInfo) -> bool {
 		info.id == self.id && info.ty == self.ty
 	}
 }

@@ -7,16 +7,22 @@ use crate::state::{AppChannel, AppState};
 
 mod components;
 mod event;
+mod icons;
 mod pages;
 mod prelude;
 /// :O
 mod secrets;
 mod state;
+mod theme;
 mod util;
 
 #[tokio::main]
 async fn main() {
-	let window = WindowConfig::new(app).with_size(1200.0, 900.0);
+	let window = WindowConfig::new(app)
+		.with_size(1200.0, 900.0)
+		.with_title("Nitrolaunch")
+		.with_decorations(false)
+		.with_app_id("Nitrolaunch");
 	let config = LaunchConfig::new().with_window(window);
 
 	launch(config);
@@ -24,6 +30,7 @@ async fn main() {
 
 fn app() -> impl IntoElement {
 	use_init_radio_station::<AppState, AppChannel>(|| AppState::new());
+	let theme = use_theme();
 
 	let router = rect()
 		.width(Size::fill())
@@ -33,8 +40,9 @@ fn app() -> impl IntoElement {
 	rect()
 		.width(Size::fill())
 		.height(Size::fill())
-		.background((35, 35, 35))
-		.color(Color::WHITE)
+		.background(theme.bg)
+		.color(theme.fg)
+		.font_size(14.0)
 		.child(NavBar)
 		.child(router)
 }
