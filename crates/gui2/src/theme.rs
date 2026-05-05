@@ -9,7 +9,6 @@ use crate::state::AppChannel;
 #[derive(Deserialize)]
 pub struct Theme {
 	// Base Colors
-
 	/// Foreground / text color
 	pub fg: HexColor,
 	/// Background color
@@ -30,12 +29,18 @@ pub struct Theme {
 	pub disabled: HexColor,
 
 	// Navbar
-
 	pub navbar: HexColor,
 	pub navbar_height: f32,
 
-	// Other
+	// Bottom bar
+	pub footer: HexColor,
+	pub footer_height: f32,
 
+	// Side bar
+	pub sidebar: HexColor,
+	pub sidebar_width: f32,
+
+	// Other
 	/// Border width
 	pub border: f32,
 	/// Smaller border radius
@@ -57,7 +62,11 @@ impl Theme {
 			item_border: HexColor(0xff2b2b2b),
 			disabled: HexColor(0xff777777),
 			navbar: HexColor(0xff0c0c0c),
-			navbar_height: 32.0,
+			navbar_height: 42.0,
+			footer: HexColor(0xff111111),
+			footer_height: 48.0,
+			sidebar: HexColor(0xff111111),
+			sidebar_width: 42.0,
 			border: 2.0,
 			round: 6.0,
 			round2: 12.0,

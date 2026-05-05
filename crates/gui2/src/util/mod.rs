@@ -3,6 +3,8 @@ use std::time::SystemTime;
 use anyhow::anyhow;
 use freya::prelude::Color;
 
+pub mod assets;
+
 /// Utility function to spawn for queries with a flattened error type
 pub async fn query_spawn<F, T>(f: F) -> anyhow::Result<T>
 where

@@ -1,15 +1,17 @@
 use freya::{
-	components::{Button, ButtonColorsThemePartialExt},
-	elements::extensions::{EventHandlersExt, LayoutExt, StyleExt},
+	components::{Button, ButtonColorsThemePartialExt, ButtonLayoutThemePartialExt},
+	elements::extensions::{EventHandlersExt, StyleExt},
 	prelude::{
-		Border, BorderAlignment, ChildrenExt, Component, ContainerExt, ContainerSizeExt,
-		ContainerWithContentExt, Cursor, IntoElement, Size, rect,
+		Border, BorderAlignment, BorderWidth, ChildrenExt, Color, Component, ContainerExt,
+		ContainerSizeExt, ContainerWithContentExt, Content, Cursor, Element, IntoElement, Size,
+		rect,
 	},
 	winit::window::CursorIcon,
 };
 
 use crate::theme::Theme;
 
+pub mod footer;
 pub mod instance;
 pub mod nav;
 
@@ -17,8 +19,20 @@ pub fn button(theme: &Theme) -> Button {
 	Button::new()
 		.color(theme.fg)
 		.background(theme.bg)
-		.hover_background(theme.panel)
+		.hover_background(theme.item)
 		.border_fill(theme.item_border)
+}
+
+pub fn icon_button(icon: &str, theme: &Theme) -> Button {
+	let size = 24.0;
+
+	button(theme)
+		.background(Color::TRANSPARENT)
+		.border_fill(Color::TRANSPARENT)
+		.child(crate::icons::icon(icon, 16.0))
+		.width(Size::px(size))
+		.height(Size::px(size))
+		.corner_radius(size / 2.0)
 }
 
 pub trait CustomStyles {
@@ -27,6 +41,9 @@ pub trait CustomStyles {
 
 	/// Sets a gap and horizontal layout
 	fn cont(self) -> Self;
+
+	/// Sets flex content
+	fn flex(self) -> Self;
 
 	/// Sets item border
 	fn item_border(self, theme: &Theme) -> Self;
@@ -38,7 +55,11 @@ impl<T: ContainerSizeExt + StyleExt + ContainerWithContentExt> CustomStyles for 
 	}
 
 	fn cont(self) -> Self {
-		self.horizontal().spacing(6.0)
+		self.horizontal().spacing(6.0).flex()
+	}
+
+	fn flex(self) -> Self {
+		self.content(Content::Flex)
 	}
 
 	fn item_border(self, theme: &Theme) -> Self {
@@ -66,29 +87,29 @@ impl<T: EventHandlersExt> CustomEvents for T {
 	}
 }
 
-pub fn grid<T: Component + 'static>(cols: u8, items: impl IntoIterator<Item = T>) -> Grid<T> {
+pub fn grid<T: IntoElement + 'static>(cols: u8, items: impl IntoIterator<Item = T>) -> Grid {
 	Grid {
 		cols,
 		gap: 0.0,
-		items: items.into_iter().collect(),
+		items: items.into_iter().map(|x| x.into_element()).collect(),
 	}
 }
 
 #[derive(PartialEq)]
-pub struct Grid<T: Component + 'static> {
+pub struct Grid {
 	cols: u8,
 	gap: f32,
-	items: Vec<T>,
+	items: Vec<Element>,
 }
 
-impl<T: Component + 'static> Grid<T> {
+impl Grid {
 	pub fn gap(mut self, gap: f32) -> Self {
 		self.gap = gap;
 		self
 	}
 }
 
-impl<T: Component + 'static> Component for Grid<T> {
+impl Component for Grid {
 	fn render(&self) -> impl IntoElement {
 		let rows = self.items.chunks(self.cols as usize).map(|items| {
 			rect()
@@ -98,7 +119,7 @@ impl<T: Component + 'static> Component for Grid<T> {
 				.children(items.iter().map(|x| {
 					rect()
 						.width(Size::percent(100.0 / (self.cols as f32)))
-						.child(x.render())
+						.child(x.clone())
 						.margin(self.gap / 2.0)
 						.into_element()
 				}))
@@ -110,5 +131,27 @@ impl<T: Component + 'static> Component for Grid<T> {
 			.width(Size::fill())
 			.padding(self.gap / 2.0)
 			.children(rows)
+	}
+}
+
+pub fn border_bottom(width: f32, color: impl Into<Color>) -> Border {
+	Border {
+		fill: color.into(),
+		width: BorderWidth {
+			bottom: width,
+			..Default::default()
+		},
+		alignment: BorderAlignment::Inner,
+	}
+}
+
+pub fn border_right(width: f32, color: impl Into<Color>) -> Border {
+	Border {
+		fill: color.into(),
+		width: BorderWidth {
+			right: width,
+			..Default::default()
+		},
+		alignment: BorderAlignment::Inner,
 	}
 }
