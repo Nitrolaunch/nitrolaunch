@@ -89,14 +89,6 @@ impl RunningInstanceManager {
 
 	/// Sends out an event to update running instances
 	pub async fn emit_update_event(&self) {
-		let _ = self.event_tx.send(BackEvent::UpdateRunningInstances(
-			self.get_running_instances().await,
-		));
+		let _ = self.event_tx.send(BackEvent::UpdateRunningInstances);
 	}
-}
-
-/// Event data for updating running instances
-#[derive(Serialize, Deserialize, Clone)]
-pub struct RunningInstancesEvent {
-	running_instances: Vec<RunningInstanceEntry>,
 }

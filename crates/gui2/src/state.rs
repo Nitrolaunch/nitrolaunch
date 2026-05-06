@@ -181,5 +181,5 @@ impl BackState {
 /// Events sent from the backend
 #[derive(Clone)]
 pub enum BackEvent {
-	UpdateRunningInstances(Vec<RunningInstanceEntry>),
+	UpdateRunningInstances,
 }

@@ -1,7 +1,7 @@
 use nitrolaunch::config_crate::ConfigKind;
 
 use crate::{
-	components::instance::{InstanceItemInfo, running_instances::RunningInstances},
+	components::instance::running_instances::RunningInstances, ops::instance::InstanceItemInfo,
 	prelude::*,
 };
 

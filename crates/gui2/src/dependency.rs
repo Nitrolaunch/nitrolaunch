@@ -1,6 +1,6 @@
 use freya::{prelude::spawn, query::QueriesStorage};
 
-use crate::{components::instance::running_instances::FetchRunningInstances, pages::home::FetchItems};
+use crate::ops::{instance::FetchItems, launch::FetchRunningInstances};
 
 /// Backend dependency that can be invalidated
 pub enum BackDependency {

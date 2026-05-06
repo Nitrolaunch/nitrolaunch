@@ -12,6 +12,7 @@ mod components;
 mod dependency;
 mod icons;
 mod instance_manager;
+mod ops;
 mod pages;
 mod prelude;
 mod routing;

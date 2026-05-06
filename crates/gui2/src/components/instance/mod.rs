@@ -1,9 +1,7 @@
+use crate::ops::instance::InstanceItemInfo;
 use crate::prelude::*;
 use crate::util::assets::get_instance_icon;
-use nitrolaunch::config_crate::ConfigKind;
-use nitrolaunch::core::util::versions::MinecraftVersion;
 use nitrolaunch::shared::Side;
-use nitrolaunch::shared::loaders::Loader;
 
 pub mod running_instances;
 
@@ -161,16 +159,4 @@ impl Component for InstanceListItem {
 			.child(top)
 			.child(bottom)
 	}
-}
-
-/// Simple info about an instance or template
-#[derive(Clone, PartialEq)]
-pub struct InstanceItemInfo {
-	pub id: String,
-	pub ty: ConfigKind,
-	pub name: Option<String>,
-	pub icon: Option<String>,
-	pub side: Option<Side>,
-	pub version: Option<MinecraftVersion>,
-	pub loader: Option<Loader>,
 }

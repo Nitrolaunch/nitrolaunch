@@ -1,13 +1,13 @@
 pub use freya::prelude::*;
 pub use freya::query::{
-	Mutation, MutationCapability, Query, QueryCapability, QueryStateData, use_mutation, use_query,
+	Captured, Mutation, MutationCapability, Query, QueryCapability, QueryStateData, use_mutation,
+	use_query,
 };
 pub use freya::radio::use_radio;
 
 pub use crate::components::input::select::{InlineSelect, SelectOption};
 pub use crate::components::{
 	CustomEvents, CustomStyles, border_bottom, border_right, button, grid, icon_button,
-	item_colorway,
 };
 pub use crate::icons::icon;
 pub use crate::state::{BackState, FrontChannel, use_front_state};
