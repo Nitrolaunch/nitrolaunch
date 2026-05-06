@@ -1,4 +1,3 @@
-use crate::pages::home::SelectedLocation;
 use crate::prelude::*;
 use crate::util::assets::get_instance_icon;
 use nitrolaunch::config_crate::ConfigKind;
@@ -6,14 +5,16 @@ use nitrolaunch::core::util::versions::MinecraftVersion;
 use nitrolaunch::shared::Side;
 use nitrolaunch::shared::loaders::Loader;
 
+pub mod running_instances;
+
 #[derive(PartialEq)]
 pub struct InstanceListItem {
 	info: InstanceItemInfo,
-	selected: State<Option<SelectedLocation>>,
+	selected: State<Option<InstanceItemInfo>>,
 }
 
 impl InstanceListItem {
-	pub fn new(info: InstanceItemInfo, selected: State<Option<SelectedLocation>>) -> Self {
+	pub fn new(info: InstanceItemInfo, selected: State<Option<InstanceItemInfo>>) -> Self {
 		Self { info, selected }
 	}
 }
@@ -22,20 +23,15 @@ impl Component for InstanceListItem {
 	fn render(&self) -> impl IntoElement {
 		let theme = use_theme();
 
-		let location = SelectedLocation::from_item(&self.info);
+		let is_hovered = use_state(|| false);
+
 		let is_selected = self
 			.selected
 			.read()
 			.as_ref()
-			.is_some_and(|x| x.is_selected(&self.info));
+			.is_some_and(|x| x == &self.info);
 
 		let mut selected = self.selected.clone();
-
-		let colors = if is_selected {
-			(theme.primary, theme.primary, theme.primary_bg)
-		} else {
-			(theme.fg, theme.item_border, theme.item)
-		};
 
 		let name = if let Some(name) = &self.info.name {
 			name
@@ -45,11 +41,16 @@ impl Component for InstanceListItem {
 
 		let inst_icon = get_instance_icon(self.info.icon.as_deref());
 
+		let name_weight = if is_selected {
+			FontWeight::BOLD
+		} else {
+			FontWeight::NORMAL
+		};
+
 		let top = rect()
 			.cont()
 			.width(Size::fill())
 			.height(Size::px(72.0))
-			.border(Some(border_bottom(theme.border, colors.1)))
 			.child(
 				rect()
 					.width(Size::px(72.0))
@@ -67,6 +68,7 @@ impl Component for InstanceListItem {
 					.height(Size::fill())
 					.horizontal()
 					.cross_align(Alignment::Center)
+					.font_weight(name_weight)
 					.child(name.as_str()),
 			);
 
@@ -102,9 +104,9 @@ impl Component for InstanceListItem {
 		};
 
 		let bottom_color = if is_selected {
-			colors.0
+			theme.primary
 		} else {
-			theme.disabled
+			theme.fg3
 		};
 
 		let bottom = rect()
@@ -113,13 +115,13 @@ impl Component for InstanceListItem {
 			.horizontal()
 			.flex()
 			.color(bottom_color)
+			.font_weight(FontWeight::BOLD)
 			.child(
 				rect()
 					.width(Size::flex(1.0))
 					.height(Size::fill())
 					.cont()
 					.center()
-					.border(Some(border_right(theme.border, colors.1)))
 					.text_overflow(TextOverflow::Clip)
 					.overflow(Overflow::Clip)
 					.child(side),
@@ -130,7 +132,6 @@ impl Component for InstanceListItem {
 					.height(Size::fill())
 					.cont()
 					.center()
-					.border(Some(border_right(theme.border, colors.1)))
 					.text_overflow(TextOverflow::Clip)
 					.overflow(Overflow::Clip)
 					.child(loader),
@@ -146,20 +147,17 @@ impl Component for InstanceListItem {
 					.child(version),
 			);
 
+		let info = self.info.clone();
+
 		rect()
 			.width(Size::fill())
-			.height(Size::px(100.0))
+			.height(Size::px(110.0))
 			.flex()
 			.corner_radius(theme.round2)
-			.color(colors.0)
-			.background(colors.2)
-			.border(Some(Border {
-				fill: colors.1.into(),
-				width: theme.border.into(),
-				alignment: BorderAlignment::Inner,
-			}))
-			.on_press(move |_| selected.set(Some(location.clone())))
+			.item_colorway(&theme, *is_hovered.read(), is_selected)
+			.on_press(move |_| selected.set(Some(info.clone())))
 			.clickable()
+			.hover(is_hovered)
 			.child(top)
 			.child(bottom)
 	}

@@ -11,9 +11,10 @@ impl Router {
 
 impl Component for Router {
 	fn render(&self) -> impl IntoElement {
-		let state = use_radio(AppChannel::Route);
+		let front_state = use_front_state();
+		front_state.read().subscribe(FrontChannel::Route);
 
-		let child = match state.read().navigator.route() {
+		let child = match front_state.read().route() {
 			Page::Home => HomePage.into_element(),
 			Page::Packages => rect().into_element(),
 			Page::Plugins => rect().into_element(),

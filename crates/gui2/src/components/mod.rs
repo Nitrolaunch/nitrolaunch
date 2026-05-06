@@ -1,17 +1,18 @@
 use freya::{
 	components::{Button, ButtonColorsThemePartialExt, ButtonLayoutThemePartialExt},
-	elements::extensions::{EventHandlersExt, StyleExt},
+	elements::extensions::{EventHandlersExt, StyleExt, TextStyleExt},
 	prelude::{
 		Border, BorderAlignment, BorderWidth, ChildrenExt, Color, Component, ContainerExt,
 		ContainerSizeExt, ContainerWithContentExt, Content, Cursor, Element, IntoElement, Size,
-		rect,
+		State, WritableUtils, rect,
 	},
 	winit::window::CursorIcon,
 };
 
-use crate::theme::Theme;
+use crate::theme::{HexColor, Theme};
 
 pub mod footer;
+pub mod input;
 pub mod instance;
 pub mod nav;
 
@@ -21,6 +22,7 @@ pub fn button(theme: &Theme) -> Button {
 		.background(theme.bg)
 		.hover_background(theme.item)
 		.border_fill(theme.item_border)
+		.corner_radius(theme.round2)
 }
 
 pub fn icon_button(icon: &str, theme: &Theme) -> Button {
@@ -45,11 +47,11 @@ pub trait CustomStyles {
 	/// Sets flex content
 	fn flex(self) -> Self;
 
-	/// Sets item border
-	fn item_border(self, theme: &Theme) -> Self;
+	/// Sets full item colorway based off hover / select state
+	fn item_colorway(self, theme: &Theme, hovered: bool, selected: bool) -> Self;
 }
 
-impl<T: ContainerSizeExt + StyleExt + ContainerWithContentExt> CustomStyles for T {
+impl<T: ContainerSizeExt + StyleExt + ContainerWithContentExt + TextStyleExt> CustomStyles for T {
 	fn fill(self) -> Self {
 		self.width(Size::fill()).height(Size::fill())
 	}
@@ -62,18 +64,40 @@ impl<T: ContainerSizeExt + StyleExt + ContainerWithContentExt> CustomStyles for 
 		self.content(Content::Flex)
 	}
 
-	fn item_border(self, theme: &Theme) -> Self {
-		self.border(Some(Border {
-			fill: theme.item_border.into(),
-			width: theme.border.into(),
-			alignment: BorderAlignment::Inner,
-		}))
+	fn item_colorway(self, theme: &Theme, hovered: bool, selected: bool) -> Self {
+		let (fg, border, bg) = item_colorway(theme, hovered, selected);
+
+		self.color(fg)
+			.border(Some(Border {
+				fill: border.into(),
+				width: theme.border.into(),
+				alignment: BorderAlignment::Inner,
+			}))
+			.background(bg)
+	}
+}
+
+/// Picks foreground, border and background colors from hover and select state for an item
+pub fn item_colorway(
+	theme: &Theme,
+	hovered: bool,
+	selected: bool,
+) -> (HexColor, HexColor, HexColor) {
+	if selected {
+		(theme.primary, theme.item_select_border, theme.item_select)
+	} else if hovered {
+		(theme.fg, theme.item_border, theme.item_hover)
+	} else {
+		(theme.fg, theme.item_border, theme.item)
 	}
 }
 
 pub trait CustomEvents {
 	/// Sets cursor to pointer on mouse over
 	fn clickable(self) -> Self;
+
+	/// Updates a state with hover status
+	fn hover(self, state: State<bool>) -> Self;
 }
 
 impl<T: EventHandlersExt> CustomEvents for T {
@@ -83,6 +107,17 @@ impl<T: EventHandlersExt> CustomEvents for T {
 		})
 		.on_pointer_leave(|_| {
 			Cursor::set(CursorIcon::default());
+		})
+	}
+
+	fn hover(self, mut state: State<bool>) -> Self {
+		self.on_pointer_enter(move |_| {
+			Cursor::set(CursorIcon::Pointer);
+			state.set(true);
+		})
+		.on_pointer_leave(move |_| {
+			Cursor::set(CursorIcon::default());
+			state.set(false);
 		})
 	}
 }

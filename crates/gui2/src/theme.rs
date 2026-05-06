@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
-use freya::{prelude::Color, radio::use_radio};
+use freya::prelude::Color;
 use serde::Deserialize;
 
-use crate::state::AppChannel;
+use crate::state::use_front_state;
 
 /// Theme for the app
 #[derive(Deserialize)]
@@ -11,6 +11,10 @@ pub struct Theme {
 	// Base Colors
 	/// Foreground / text color
 	pub fg: HexColor,
+	/// Secondary foreground color
+	pub fg2: HexColor,
+	/// Tertiary foreground color
+	pub fg3: HexColor,
 	/// Background color
 	pub bg: HexColor,
 	/// Primary hero color
@@ -23,6 +27,9 @@ pub struct Theme {
 	pub panel_border: HexColor,
 	/// Background color for items, smaller UI objects inside panels
 	pub item: HexColor,
+	pub item_hover: HexColor,
+	pub item_select: HexColor,
+	pub item_select_border: HexColor,
 	/// Border color for items
 	pub item_border: HexColor,
 	/// Disabled foreground
@@ -47,36 +54,58 @@ pub struct Theme {
 	pub round: f32,
 	/// Larger border radius
 	pub round2: f32,
+	/// Height for inputs
+	pub input_height: f32,
 }
 
 impl Theme {
 	pub fn dark() -> Self {
 		Self {
-			fg: HexColor(0xfff6f6f6),
-			bg: HexColor(0xff0c0c0c),
+			fg: HexColor(0xfff0f0f0),
+			fg2: HexColor(0xffb5b5b5),
+			fg3: HexColor(0xff757575),
+			bg: HexColor(0xff0c0c0d),
 			primary: HexColor(0xff7ee91b),
-			primary_bg: HexColor(0xff051d1d),
-			panel: HexColor(0xff111111),
-			panel_border: HexColor(0xff2b2b2b),
-			item: HexColor(0xff1a1a1a),
-			item_border: HexColor(0xff2b2b2b),
-			disabled: HexColor(0xff777777),
-			navbar: HexColor(0xff0c0c0c),
+			primary_bg: HexColor(0xff021b1e),
+			panel: HexColor(0xff131315),
+			panel_border: HexColor(0xff2b2b2c),
+			item: HexColor(0xff1a1a1b),
+			item_border: HexColor(0xff2b2b2c),
+			item_hover: HexColor(0xff1d1d1e),
+			item_select: HexColor(0xff202021),
+			item_select_border: HexColor(0xff282829),
+			disabled: HexColor(0xff656565),
+			navbar: HexColor(0xff0c0c0d),
 			navbar_height: 42.0,
-			footer: HexColor(0xff111111),
+			footer: HexColor(0xff111112),
 			footer_height: 48.0,
-			sidebar: HexColor(0xff111111),
+			sidebar: HexColor(0xff111112),
 			sidebar_width: 42.0,
 			border: 2.0,
 			round: 6.0,
 			round2: 12.0,
+			input_height: 32.0,
+		}
+	}
+
+	pub fn dark_minimal() -> Self {
+		let dark = Self::dark();
+
+		Self {
+			item: dark.panel,
+			item_border: HexColor(0xff212122),
+			item_hover: dark.item,
+			item_select: dark.primary_bg,
+			item_select_border: dark.primary,
+			border: 1.0,
+			..dark
 		}
 	}
 }
 
 /// Gets the theme
 pub fn use_theme() -> Arc<Theme> {
-	let state = use_radio(AppChannel::Theme);
+	let state = use_front_state();
 	state.read().theme()
 }
 

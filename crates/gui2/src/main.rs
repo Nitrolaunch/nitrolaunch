@@ -1,13 +1,17 @@
 use freya::radio::use_init_radio_station;
+use tokio::sync::broadcast;
 
 use crate::components::footer::Footer;
 use crate::prelude::*;
 
 use crate::components::nav::{NavBar, router::Router};
-use crate::state::{AppChannel, AppState};
+use crate::state::{BackEvent, BackState, FrontChannel, FrontState};
+use crate::util::Shared;
 
 mod components;
+mod dependency;
 mod icons;
+mod instance_manager;
 mod pages;
 mod prelude;
 mod routing;
@@ -19,9 +23,10 @@ mod util;
 
 #[tokio::main]
 async fn main() {
-	let app_state = AppState::new().await.unwrap();
+	let (event_tx, event_rx) = broadcast::channel(100);
+	let back_state = BackState::new(event_tx).await.unwrap();
 
-	let window = WindowConfig::new(move || app(app_state.clone()))
+	let window = WindowConfig::new(move || app(back_state.clone(), event_rx.resubscribe()))
 		.with_size(1200.0, 900.0)
 		.with_title("Nitrolaunch")
 		.with_decorations(false)
@@ -31,8 +36,10 @@ async fn main() {
 	launch(config);
 }
 
-fn app(app_state: AppState) -> impl IntoElement {
-	use_init_radio_station::<AppState, AppChannel>(|| app_state);
+fn app(back_state: BackState, event_rx: broadcast::Receiver<BackEvent>) -> impl IntoElement {
+	let station = use_init_radio_station::<(), FrontChannel>(|| ());
+	use_provide_context(|| Shared::new(FrontState::new(station, event_rx)));
+	use_provide_context(|| back_state);
 
 	App
 }
@@ -43,6 +50,7 @@ struct App;
 impl Component for App {
 	fn render(&self) -> impl IntoElement {
 		let theme = use_theme();
+		use_radio(FrontChannel::Theme).read();
 
 		let show_sidebar = use_state(|| false);
 

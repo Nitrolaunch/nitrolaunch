@@ -9,24 +9,27 @@ pub struct NavBar {
 
 impl Component for NavBar {
 	fn render(&self) -> impl IntoElement {
-		let mut state = use_radio(AppChannel::Route);
+		let front_state = use_front_state();
+		front_state.read().subscribe(FrontChannel::Route);
 		let theme = use_theme();
 
 		let mut show_sidebar = self.show_sidebar.clone();
 		let menu_button = icon_button("menu", &theme).on_press(move |_| show_sidebar.toggle());
 
+		let front_state2 = front_state.clone();
 		let mut back_button = icon_button("arrow_left", &theme)
-			.on_press(move |_| state.write().navigator.back())
-			.enabled(state.read().navigator.can_go_back());
-		if !state.read().navigator.can_go_back() {
+			.on_press(move |_| front_state2.write().back())
+			.enabled(front_state.read().can_go_back());
+		if !front_state.read().can_go_back() {
 			back_button = back_button.color(theme.disabled);
 		}
 
+		let front_state2 = front_state.clone();
 		let mut forward_button = icon_button("arrow_right", &theme)
-			.on_press(move |_| state.write().navigator.forward())
-			.enabled(state.read().navigator.can_go_forward());
+			.on_press(move |_| front_state2.write().forward())
+			.enabled(front_state.read().can_go_forward());
 
-		if !state.read().navigator.can_go_forward() {
+		if !front_state.read().can_go_forward() {
 			forward_button = forward_button.color(theme.disabled);
 		}
 
@@ -76,7 +79,8 @@ struct PageButton {
 
 impl Component for PageButton {
 	fn render(&self) -> impl IntoElement {
-		let mut state = use_radio(AppChannel::Route);
+		let front_state = use_front_state();
+		front_state.read().subscribe(FrontChannel::Route);
 		let theme = use_theme();
 
 		let title = match self.category {
@@ -90,7 +94,7 @@ impl Component for PageButton {
 			PageCategory::Plugins => "jigsaw",
 		};
 
-		let (fg, bg) = if state.read().navigator.route().get_category() == self.category {
+		let (fg, bg) = if front_state.read().route().get_category() == self.category {
 			(theme.primary, theme.primary_bg)
 		} else {
 			(theme.disabled, theme.navbar)
@@ -110,7 +114,7 @@ impl Component for PageButton {
 					.hover_background(bg)
 					.color(fg)
 					.border_fill(fg)
-					.on_press(move |_| state.write().navigator.navigate(page.clone())),
+					.on_press(move |_| front_state.write().navigate(page.clone())),
 			)
 	}
 }

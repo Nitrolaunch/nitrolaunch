@@ -1,4 +1,8 @@
-use std::time::SystemTime;
+use std::{
+	cell::{Ref, RefCell, RefMut},
+	rc::Rc,
+	time::SystemTime,
+};
 
 use anyhow::anyhow;
 use freya::prelude::Color;
@@ -26,6 +30,27 @@ pub trait AnyhowResult<T> {
 impl<T> AnyhowResult<T> for anyhow::Result<T> {
 	fn into_result(self) -> anyhow::Result<T> {
 		self
+	}
+}
+
+#[derive(Clone)]
+pub struct Shared<T> {
+	inner: Rc<RefCell<T>>,
+}
+
+impl<T> Shared<T> {
+	pub fn new(value: T) -> Self {
+		Self {
+			inner: Rc::new(RefCell::new(value)),
+		}
+	}
+
+	pub fn read(&self) -> Ref<'_, T> {
+		self.inner.borrow()
+	}
+
+	pub fn write(&self) -> RefMut<'_, T> {
+		self.inner.borrow_mut()
 	}
 }
 

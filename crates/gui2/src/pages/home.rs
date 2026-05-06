@@ -1,10 +1,14 @@
-use std::{hash::Hash, time::Duration};
+use std::{hash::Hash, rc::Rc, time::Duration};
 
-use crate::{components::instance::InstanceListItem, prelude::*};
+use crate::{
+	components::{footer::FooterItem, instance::InstanceListItem},
+	prelude::*,
+};
 use freya::query::Captured;
 use itertools::Itertools;
 use nitrolaunch::{
-	config_crate::ConfigKind, core::util::versions::MinecraftVersion, instance::parse_loader_config,
+	config_crate::ConfigKind, core::util::versions::MinecraftVersion,
+	instance::parse_loader_config, shared::Side,
 };
 
 use crate::components::instance::InstanceItemInfo;
@@ -14,23 +18,24 @@ pub struct HomePage;
 
 impl Component for HomePage {
 	fn render(&self) -> impl IntoElement {
-		let theme = use_theme();
-		let app_state = use_radio(AppChannel::Default);
-		let items_query = use_query(
-			Query::new(
-				(),
-				FetchItems {
-					app_state: Captured(app_state.read().cloned()),
-				},
-			)
-			.stale_time(Duration::from_secs(3)),
-		);
+		let back_state = use_consume::<BackState>();
+		let front_state = use_front_state();
+		let items_query = use_query(FetchItems::new(back_state.clone()));
 
-		let mut tab = use_state(|| Tab::Instances);
-		let selected = use_state::<Option<SelectedLocation>>(|| None);
+		let tab = use_state(|| "instances".to_string());
+		let filter = use_state(|| "all".to_string());
+		let selected = use_state::<Option<InstanceItemInfo>>(|| None);
+
+		use_side_effect(move || {
+			if let Some(selected) = selected.read().clone() {
+				front_state
+					.write()
+					.set_footer(FooterItem::InstanceOrTemplate(selected));
+			}
+		});
 
 		let items_gap = 20.0;
-		let items_side_padding = 32.0;
+		let items_side_padding = 24.0;
 		let items = items_query.read();
 		let items = match &*items.state() {
 			QueryStateData::Pending
@@ -42,78 +47,77 @@ impl Component for HomePage {
 			QueryStateData::Settled { res: Ok(res), .. } => res.clone(),
 		};
 
-		let items = match &*tab.read() {
-			Tab::Instances => &items.instances,
-			Tab::Templates => &items.templates,
+		let items = match tab.read().as_str() {
+			"instances" => &items.instances,
+			"templates" => &items.templates,
+			_ => unreachable!(),
 		};
 
 		let items = items
 			.into_iter()
+			.filter(|x| {
+				if &*filter.read() == "client" && x.side != Some(Side::Client) {
+					false
+				} else if &*filter.read() == "server" && x.side != Some(Side::Server) {
+					false
+				} else {
+					true
+				}
+			})
 			.map(|x| InstanceListItem::new(x.clone(), selected.clone()));
 
 		let items_elem = grid(3, items).gap(items_gap);
 
 		let items_elem = rect().child(items_elem).width(Size::fill());
 
-		let tab_color = if &*tab.read() == &Tab::Instances {
-			theme.primary.into()
-		} else {
-			theme.disabled.into()
-		};
-
-		let instances_tab = rect()
-			.cont()
-			.center()
-			.corner_radius(theme.round)
-			.width(Size::px(128.0))
-			.height(Size::fill())
-			.color(tab_color)
-			.border(Some(Border {
-				fill: tab_color,
-				width: theme.border.into(),
-				alignment: BorderAlignment::Center,
-			}))
-			.background(theme.item)
-			.on_press(move |_| tab.set(Tab::Instances))
-			.clickable()
-			.child(icon("box", 16.0))
-			.child("Instances");
-
-		let tab_color = if &*tab.read() == &Tab::Templates {
-			theme.primary.into()
-		} else {
-			theme.disabled.into()
-		};
-
-		let templates_tab = rect()
-			.cont()
-			.center()
-			.corner_radius(theme.round)
-			.width(Size::px(128.0))
-			.height(Size::fill())
-			.color(tab_color)
-			.border(Some(Border {
-				fill: tab_color,
-				width: theme.border.into(),
-				alignment: BorderAlignment::Center,
-			}))
-			.background(theme.item)
-			.on_press(move |_| tab.set(Tab::Templates))
-			.clickable()
-			.child(icon("diagram", 16.0))
-			.child("Templates");
+		let on_select_tab = Rc::new(move |new_tab| tab.clone().set(new_tab));
+		let tabs = InlineSelect::new(Some(tab.read().clone()), on_select_tab)
+			.child(SelectOption {
+				id: "instances".into(),
+				title: "Instances".into(),
+				icon: Some("box".into()),
+			})
+			.child(SelectOption {
+				id: "templates".into(),
+				title: "Templates".into(),
+				icon: Some("diagram".into()),
+			});
 
 		let bar_left = rect()
 			.width(Size::flex(1.0))
 			.height(Size::fill())
 			.cont()
-			.spacing(12.0)
 			.cross_align(Alignment::Center)
-			.child(instances_tab)
-			.child(templates_tab);
+			.child(rect().width(Size::px(350.0)).child(tabs));
 
 		let bar_center = rect().width(Size::flex(1.0));
-		let bar_right = rect().width(Size::flex(1.0));
+
+		let on_select_filter = Rc::new(move |new_filter| filter.clone().set(new_filter));
+		let filters = InlineSelect::new(Some(filter.read().clone()), on_select_filter)
+			.align_end()
+			.child(SelectOption {
+				id: "all".into(),
+				title: "All".into(),
+				icon: Some("box".into()),
+			})
+			.child(SelectOption {
+				id: "client".into(),
+				title: "Client".into(),
+				icon: Some("controller".into()),
+			})
+			.child(SelectOption {
+				id: "server".into(),
+				title: "Server".into(),
+				icon: Some("server".into()),
+			});
+
+		let bar_right = rect()
+			.width(Size::flex(1.0))
+			.height(Size::fill())
+			.cont()
+			.cross_align(Alignment::Center)
+			.main_align(Alignment::End)
+			.child(rect().width(Size::px(350.0)).child(filters));
 
 		let bar_elem = rect()
 			.width(Size::fill())
@@ -136,8 +140,20 @@ impl Component for HomePage {
 }
 
 #[derive(Clone, PartialEq, Eq, Hash)]
-struct FetchItems {
-	app_state: Captured<AppState>,
+pub struct FetchItems {
+	back_state: Captured<BackState>,
+}
+
+impl FetchItems {
+	pub fn new(back_state: BackState) -> Query<Self> {
+		Query::new(
+			(),
+			Self {
+				back_state: Captured(back_state),
+			},
+		)
+		.stale_time(Duration::from_secs(30))
+	}
 }
 
 impl QueryCapability for FetchItems {
@@ -146,10 +162,10 @@ impl QueryCapability for FetchItems {
 	type Keys = ();
 
 	fn run(&self, _: &Self::Keys) -> impl Future<Output = Result<Self::Ok, Self::Err>> {
-		let app_state = self.app_state.clone();
+		let back_state = self.back_state.clone();
 
 		query_spawn(async move {
-			let config = app_state.config().await?;
+			let config = back_state.config().await?;
 
 			let instances = config
 				.instances
@@ -201,33 +217,8 @@ impl QueryCapability for FetchItems {
 	}
 }
 
-#[derive(PartialEq)]
-enum Tab {
-	Instances,
-	Templates,
-}
-
-#[derive(Clone)]
-struct InstancesAndTemplates {
-	instances: Vec<InstanceItemInfo>,
-	templates: Vec<InstanceItemInfo>,
-}
-
-#[derive(Clone)]
-pub struct SelectedLocation {
-	pub id: String,
-	pub ty: ConfigKind,
-}
-
-impl SelectedLocation {
-	pub fn from_item(info: &InstanceItemInfo) -> Self {
-		Self {
-			id: info.id.clone(),
-			ty: info.ty.clone(),
-		}
-	}
-
-	pub fn is_selected(&self, info: &InstanceItemInfo) -> bool {
-		info.id == self.id && info.ty == self.ty
-	}
+#[derive(Clone, Default)]
+pub struct InstancesAndTemplates {
+	pub instances: Vec<InstanceItemInfo>,
+	pub templates: Vec<InstanceItemInfo>,
 }
