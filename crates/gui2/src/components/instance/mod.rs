@@ -39,12 +39,6 @@ impl Component for InstanceListItem {
 
 		let inst_icon = get_instance_icon(self.info.icon.as_deref());
 
-		let name_weight = if is_selected {
-			FontWeight::BOLD
-		} else {
-			FontWeight::NORMAL
-		};
-
 		let top = rect()
 			.cont()
 			.width(Size::fill())
@@ -66,7 +60,7 @@ impl Component for InstanceListItem {
 					.height(Size::fill())
 					.horizontal()
 					.cross_align(Alignment::Center)
-					.font_weight(name_weight)
+					.font_weight(FontWeight::BOLD)
 					.child(name.as_str()),
 			);
 

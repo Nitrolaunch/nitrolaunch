@@ -1,7 +1,11 @@
 use nitrolaunch::config_crate::ConfigKind;
 
 use crate::{
-	components::instance::running_instances::RunningInstances, ops::instance::InstanceItemInfo,
+	components::instance::running_instances::RunningInstances,
+	ops::{
+		instance::InstanceItemInfo,
+		launch::{LaunchInstance, LaunchInstanceParams},
+	},
 	prelude::*,
 };
 
@@ -48,6 +52,8 @@ struct FooterButton {
 impl Component for FooterButton {
 	fn render(&self) -> impl IntoElement {
 		let theme = use_theme();
+		let back_state = use_consume::<BackState>();
+		let launch_instance = use_mutation(LaunchInstance::new(back_state));
 
 		let left = rect().height(Size::fill()).width(Size::flex(1.0));
 
@@ -55,6 +61,21 @@ impl Component for FooterButton {
 			(theme.disabled, theme.disabled, theme.bg)
 		} else {
 			(theme.primary, theme.primary, theme.primary_bg)
+		};
+
+		let item = self.item.clone();
+		let on_press = move |_| match &item {
+			FooterItem::None => {}
+			FooterItem::InstanceOrTemplate(info) => match info.ty {
+				ConfigKind::Instance => {
+					launch_instance.mutate(LaunchInstanceParams {
+						id: info.id.clone(),
+						account: None,
+						offline: false,
+					});
+				}
+				ConfigKind::Template | ConfigKind::BaseTemplate => {}
+			},
 		};
 
 		let center = rect()
@@ -69,6 +90,7 @@ impl Component for FooterButton {
 					.border_fill(border)
 					.background(bg)
 					.hover_background(bg)
+					.on_press(on_press)
 					.child(
 						rect()
 							.cont()

@@ -5,10 +5,7 @@ use freya::{
 	prelude::use_consume,
 	radio::{RadioChannel, RadioStation, use_radio},
 };
-use nitrolaunch::{
-	config::Config, instance::tracking::RunningInstanceEntry, io::paths::Paths,
-	plugin::PluginManager, shared::output::NoOp,
-};
+use nitrolaunch::{config::Config, io::paths::Paths, plugin::PluginManager, shared::output::NoOp};
 use reqwest::Client;
 use tokio::sync::broadcast;
 

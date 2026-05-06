@@ -12,6 +12,8 @@ use crate::{
 	util::assets::get_instance_icon,
 };
 
+const ITEM_SIZE: f32 = 28.0;
+
 #[derive(PartialEq)]
 pub struct RunningInstances;
 
@@ -95,20 +97,19 @@ impl Component for RunningInstance {
 		));
 
 		let icon = get_instance_icon(self.item.icon.as_deref());
-		let size = 32.0;
 
 		rect()
 			.center()
-			.width(Size::px(size))
-			.height(Size::px(size))
+			.width(Size::px(ITEM_SIZE))
+			.height(Size::px(ITEM_SIZE))
 			.item_colorway(&theme, *is_hovered.read(), false)
-			.corner_radius(size / 2.0)
+			.corner_radius(ITEM_SIZE / 2.0)
 			.hover(is_hovered)
 			.on_press(move |_| on_kill.mutate(()))
 			.child(
 				ImageViewer::new(icon)
-					.width(Size::px(28.0))
-					.height(Size::px(28.0)),
+					.width(Size::px(24.0))
+					.height(Size::px(24.0)),
 			)
 	}
 }

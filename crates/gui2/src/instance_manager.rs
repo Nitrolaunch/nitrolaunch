@@ -5,7 +5,6 @@ use nitrolaunch::{
 	instance::tracking::{RunningInstanceEntry, RunningInstanceRegistry},
 	io::paths::Paths,
 };
-use serde::{Deserialize, Serialize};
 use tokio::sync::{Mutex, broadcast};
 
 use crate::state::BackEvent;
