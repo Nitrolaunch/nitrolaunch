@@ -76,18 +76,13 @@ def set_result(hook: str):
 
 def run():
 	hook = sys.argv[1]
-	if hook != "after_packages_installed" and hook != "on_instance_setup" and hook != "update_world_files":
+	if hook != "after_packages_installed" and hook != "update_world_files":
 		print("$_Incorrect hook")
 		set_result(hook)
 	
 	arg_raw = sys.argv[2]
 
 	arg = json.loads(arg_raw)
-
-	# If this is a full instance update we want to weld after packages are installed
-	if hook == "on_instance_setup" and "update_depth" in arg and arg["update_depth"] == "full":
-		set_result(hook)
-		return
 	
 	if "disable_weld" in arg["config"] and arg["config"]["disable_weld"]:
 		set_result(hook)
@@ -151,12 +146,7 @@ def main():
 	try:
 		run()
 	except Exception as e:
-		output("message", {
-			"contents": {
-				"Error": "Failed to weld packs:\n" + str(e),
-			},
-			"level": "important"
-		})
+		output("set_error", "Failed to weld packs:\n" + str(e))
 
 if __name__ == "__main__":
 	main()
