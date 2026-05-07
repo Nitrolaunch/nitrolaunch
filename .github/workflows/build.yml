@@ -31,6 +31,17 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
           key: ${{ matrix.target }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      - if: ${{ matrix.os == 'ubuntu-latest' }}
+        name: Install Linux dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y \
+            libfreetype6-dev \
+            libfontconfig1-dev \
+            libegl1-mesa-dev \
+            libgl1-mesa-dev \
+            libgles2-mesa-dev \
+            libwayland-dev
       - if: ${{ github.ref_name == 'main' }}
         name: Build CLI Release
         run: cargo build --package nitro_cli --release --locked
