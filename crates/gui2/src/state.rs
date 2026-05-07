@@ -1,17 +1,27 @@
-use std::{rc::Rc, sync::Arc};
+use std::{collections::HashMap, rc::Rc, sync::Arc};
 
 use anyhow::Context;
 use freya::{
 	prelude::use_consume,
 	radio::{RadioChannel, RadioStation, use_radio},
 };
-use nitrolaunch::{config::Config, io::paths::Paths, plugin::PluginManager, shared::output::NoOp};
+use nitrolaunch::{
+	config::Config,
+	io::{logging::Logger, paths::Paths},
+	plugin::PluginManager,
+	shared::{
+		output::{Message, MessageContents, NoOp},
+		pkg::{PackageDiff, ResolutionError},
+	},
+};
 use reqwest::Client;
-use tokio::sync::broadcast;
+use tokio::sync::{Mutex, broadcast, mpsc};
 
 use crate::{
 	components::footer::FooterItem,
 	instance_manager::RunningInstanceManager,
+	ops::task::TaskManager,
+	output::{LauncherOutput, OutputInner},
 	routing::{Navigator, Page},
 	secrets::get_ms_client_id,
 	theme::Theme,
@@ -135,6 +145,8 @@ pub struct BackState {
 	pub client: Client,
 	pub plugins: PluginManager,
 	pub running_instances: RunningInstanceManager,
+	output_inner: OutputInner,
+	task_manager: Arc<Mutex<TaskManager>>,
 }
 
 impl BackState {
@@ -147,7 +159,26 @@ impl BackState {
 
 		tokio::spawn(running_instances.clone().get_run_task());
 
+		let (logger_tx, mut logger_rx) = mpsc::channel::<Message>(25);
+		let mut logger = Logger::new(&paths, "gui").context("Failed to set up logger")?;
+		tokio::spawn(async move {
+			if let Some(message) = logger_rx.recv().await {
+				let _ = logger.log_message(message.contents, message.level);
+			}
+		});
+
+		let task_manager = Arc::new(Mutex::new(TaskManager::new(event_tx.clone())));
+		tokio::spawn(TaskManager::get_run_task(task_manager.clone()));
+
 		Ok(Self {
+			output_inner: OutputInner {
+				event_tx: event_tx.clone(),
+				password_prompt: Arc::new(Mutex::new(None)),
+				yes_no_prompt: Arc::new(Mutex::new(None)),
+				passkeys: Arc::new(Mutex::new(HashMap::new())),
+				logger: logger_tx,
+			},
+			task_manager,
 			event_tx,
 			paths,
 			plugins,
@@ -173,10 +204,44 @@ impl BackState {
 		})
 		.await?
 	}
+
+	pub fn output(&self) -> LauncherOutput {
+		LauncherOutput::new(&self.output_inner)
+	}
+
+	pub fn register_task(&self, task_id: &str, task: tokio::task::JoinHandle<anyhow::Result<()>>) {
+		let manager = self.task_manager.clone();
+		let task_id = task_id.to_string();
+		tokio::spawn(async move { manager.lock().await.register_task(task_id, task) });
+	}
 }
 
 /// Events sent from the backend
 #[derive(Clone)]
 pub enum BackEvent {
+	OutputMessage {
+		message: MessageContents,
+		task: Option<String>,
+	},
+	OutputStartTask(String),
+	OutputEndTask(String),
+	OutputEndProcess(Option<String>),
+	OutputEndSection(Option<String>),
+	OutputResolutionError {
+		error: Arc<ResolutionError>,
+		instance_id: String,
+	},
 	UpdateRunningInstances,
+	ShowAuthPrompt {
+		url: String,
+		device_code: String,
+	},
+	CloseAuthPrompt,
+	ShowYesNoPrompt {
+		message: String,
+	},
+	ShowPasskeyPrompt,
+	ShowPackageDiffsPrompt {
+		diffs: Vec<PackageDiff>,
+	},
 }

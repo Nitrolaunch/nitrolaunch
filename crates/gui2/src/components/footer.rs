@@ -1,7 +1,9 @@
 use nitrolaunch::config_crate::ConfigKind;
 
 use crate::{
-	components::instance::running_instances::RunningInstances,
+	components::{
+		instance::running_instances::RunningInstances, output_indicator::OutputIndicator,
+	},
 	ops::{
 		instance::InstanceItemInfo,
 		launch::{LaunchInstance, LaunchInstanceParams},
@@ -18,7 +20,10 @@ impl Component for Footer {
 		let state = use_front_state();
 		state.read().subscribe(FrontChannel::FooterItem);
 
-		let left = rect().height(Size::fill()).width(Size::flex(1.0));
+		let left = rect()
+			.height(Size::fill())
+			.width(Size::flex(1.0))
+			.child(RunningInstances);
 
 		let center = rect()
 			.height(Size::fill())
@@ -30,7 +35,10 @@ impl Component for Footer {
 		let right = rect()
 			.height(Size::fill())
 			.width(Size::flex(1.0))
-			.child(RunningInstances);
+			.cont()
+			.cross_align(Alignment::Center)
+			.child(rect().width(Size::flex(2.0)).child(OutputIndicator))
+			.child(rect().width(Size::flex(1.0)));
 
 		rect()
 			.width(Size::fill())

@@ -2,6 +2,7 @@ use std::pin::Pin;
 
 pub mod instance;
 pub mod launch;
+pub mod task;
 
 /// Utility to get around some Rust incapabilities, forcing a future to be send
 pub struct MakeSend<F: Future>(Pin<Box<F>>);

@@ -535,6 +535,7 @@ pub enum ResolutionError {
 }
 
 /// A change to an installed package, used for user display
+#[derive(Clone)]
 pub enum PackageDiff {
 	/// A new package was added
 	Added(ArcPkgReq),

@@ -6,7 +6,7 @@ use nitrolaunch::{
 		update::{InstanceUpdateContext, manager::UpdateSettings},
 	},
 	io::lock::Lockfile,
-	shared::{UpdateDepth, id::InstanceID, output::NoOp},
+	shared::{UpdateDepth, id::InstanceID},
 };
 
 use crate::{ops::MakeSend, prelude::*, secrets::get_ms_client_id};
@@ -44,6 +44,10 @@ impl MutationCapability for LaunchInstance {
 
 		let task = async move {
 			let mut config = back_state.config().await?;
+			let mut output = back_state.output();
+			output.set_task(&format!("launch_instance_{id}"));
+			output.set_instance(id.clone().into());
+
 			if let Some(account) = account {
 				let _ = config.accounts.choose_account(&account);
 			}
@@ -58,7 +62,7 @@ impl MutationCapability for LaunchInstance {
 					&back_state.client,
 					&config.plugins,
 					&back_state.paths,
-					&mut NoOp,
+					&mut output,
 				)
 				.await?;
 
@@ -82,7 +86,7 @@ impl MutationCapability for LaunchInstance {
 				paths: &back_state.paths,
 				lock: &mut lock,
 				client: &back_state.client,
-				output: &mut NoOp,
+				output: &mut output,
 				core: &core,
 			};
 
@@ -92,15 +96,20 @@ impl MutationCapability for LaunchInstance {
 				.context("Failed to launch instance")?;
 
 			handle.silence_output(true);
+			output.finish_task();
 
 			handle
-				.wait(&config.plugins, &back_state.paths, &mut NoOp)
+				.wait(&config.plugins, &back_state.paths, &mut output)
 				.await?;
 
 			Ok(())
 		};
 
-		query_spawn(unsafe { MakeSend::new(task) })
+		let task = unsafe { MakeSend::new(task) };
+		self.back_state
+			.register_task(&format!("launch_instance_{}", keys.id), tokio::spawn(task));
+
+		async { Ok(()) }
 	}
 }
 

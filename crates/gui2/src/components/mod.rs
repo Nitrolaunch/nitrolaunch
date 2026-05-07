@@ -15,6 +15,7 @@ pub mod footer;
 pub mod input;
 pub mod instance;
 pub mod nav;
+pub mod output_indicator;
 
 pub fn button(theme: &Theme) -> Button {
 	Button::new()

@@ -71,9 +71,9 @@ impl Component for RunningInstances {
 			.width(Size::fill())
 			.height(Size::fill())
 			.cont()
-			.main_align(Alignment::End)
+			.main_align(Alignment::Start)
 			.cross_align(Alignment::Center)
-			.padding(6.0)
+			.padding(10.0)
 			.children(running_instances)
 	}
 }
@@ -98,7 +98,7 @@ impl Component for RunningInstance {
 
 		let icon = get_instance_icon(self.item.icon.as_deref());
 
-		rect()
+		let out = rect()
 			.center()
 			.width(Size::px(ITEM_SIZE))
 			.height(Size::px(ITEM_SIZE))
@@ -110,6 +110,19 @@ impl Component for RunningInstance {
 				ImageViewer::new(icon)
 					.width(Size::px(24.0))
 					.height(Size::px(24.0)),
+			);
+
+		let indicator = if *is_hovered.read() {
+			Some(
+				rect()
+					.padding(6.0)
+					.margin((0.0, 0.0, 8.0, 0.0))
+					.child(self.instance_id.as_str()),
 			)
+		} else {
+			None
+		};
+
+		Attached::new(out).top().maybe_child(indicator)
 	}
 }
