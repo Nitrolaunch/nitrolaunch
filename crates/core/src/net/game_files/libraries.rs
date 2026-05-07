@@ -3,7 +3,7 @@ use std::fs::File;
 use std::path::Path;
 use std::sync::Arc;
 
-use anyhow::{anyhow, Context};
+use anyhow::{Context, anyhow};
 use nitro_shared::output::{MessageContents, NitroOutput};
 use nitro_shared::translate;
 use reqwest::Client;
@@ -33,9 +33,9 @@ pub async fn get(
 ) -> anyhow::Result<UpdateMethodResult> {
 	let mut out = UpdateMethodResult::new();
 	let libraries_path = internal_dir.join("libraries");
-	files::create_dir(&libraries_path)?;
+	tokio::fs::create_dir_all(&libraries_path).await?;
 	let natives_path = internal_dir.join("versions").join(version).join("natives");
-	files::create_dir(&natives_path)?;
+	tokio::fs::create_dir_all(&natives_path).await?;
 	let natives_jars_path = internal_dir.join("natives");
 
 	let mut natives = Vec::new();

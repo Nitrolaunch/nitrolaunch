@@ -75,7 +75,7 @@ impl Component for SelectOptionComponent {
 			.center()
 			.corner_radius(theme.round)
 			.height(Size::px(theme.input_height))
-			.padding(6.0)
+			.padding((6.0, 12.0))
 			.item_colorway(&theme, *is_hovered.read(), self.is_selected)
 			.on_press(move |_| on_select(id.clone()))
 			.clickable();
