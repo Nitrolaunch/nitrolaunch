@@ -28,7 +28,6 @@ jobs:
         with:
           path: |
             target
-            ~/.cargo/registry
             ~/.cargo/git
             ~/.cargo/bin
             ~/.cache/tauri
@@ -133,7 +132,6 @@ jobs:
             target/universal-apple-darwin/release/bundle/dmg/*.dmg*
       - name: Save cache
         uses: actions/cache/save@v4
-        if: always()
         with:
           path: |
             target
