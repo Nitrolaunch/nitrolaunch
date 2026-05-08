@@ -1,9 +1,9 @@
 import sys
-from smithed.weld import run_weld
 import json
 from pathlib import Path
 import os
 import traceback
+import importlib
 
 def output(method: str, data: object | str | None = None):
 	if data is None:
@@ -102,7 +102,10 @@ def weld_dir(dir: Path, ignore: list, mode: str, lockfile: object | None, mc_ver
 	if len(packs) == 0 and not target_pack_path.exists():
 		return
 	
-	with run_weld(packs=packs,config=beet_config,directory=dir) as ctx:
+	# Lazy import to reduce visible startup time
+	weld = importlib.import_module("weld", "smithed")
+	
+	with weld.run_weld(packs=packs,config=beet_config,directory=dir) as ctx:
 		if mode == "data":
 			ctx.data.save(path=target_pack_path, overwrite=True)
 		elif mode == "resource":
