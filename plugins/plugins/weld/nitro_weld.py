@@ -83,6 +83,10 @@ def run():
 	arg_raw = sys.argv[2]
 
 	arg = json.loads(arg_raw)
+
+	if hook == "after_packages_installed" and arg["update_depth"] == "shallow":
+		set_result(hook)
+		return
 	
 	if "disable_weld" in arg["config"] and arg["config"]["disable_weld"]:
 		set_result(hook)
