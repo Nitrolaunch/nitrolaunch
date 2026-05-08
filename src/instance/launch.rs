@@ -119,7 +119,7 @@ impl Instance {
 		let selected_account = accounts.get_chosen_account().map(|x| x.get_id().clone());
 		let selected_account = selected_account.map(|x| x.to_string());
 
-		let mut core_version = core
+		let core_version = core
 			.get_version(&self.version, UpdateDepth::Shallow, o)
 			.await?;
 
