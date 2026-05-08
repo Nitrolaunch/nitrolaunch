@@ -2,7 +2,7 @@
 	"id": "forge",
 	"name": "Forge",
 	"description": "Install NeoForge instances",
-	"version": "v6",
+	"version": "v7",
 	"protocol_version": 3,
 	"hooks": {
 		"on_instance_setup": {

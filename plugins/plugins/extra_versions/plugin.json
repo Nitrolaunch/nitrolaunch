@@ -3,7 +3,7 @@
 	"name": "Extra Versions",
 	"description": "Add versions of Minecraft that are not normally available",
 	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/extra_versions",
-	"version": "v6",
+	"version": "v7",
 	"hooks": {
 		"add_versions": {
 			"constant": [

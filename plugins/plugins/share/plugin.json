@@ -3,7 +3,7 @@
 	"name": "Share",
 	"description": "Share templates and addons with friends",
 	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/share",
-	"version": "v6",
+	"version": "v7",
 	"protocol_version": 3,
 	"hooks": {
 		"subcommand": {

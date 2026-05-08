@@ -2,7 +2,7 @@
 	"id": "discord_status",
 	"name": "Discord Status",
 	"description": "Show your running instances to Discord",
-	"version": "v6",
+	"version": "v7",
 	"protocol_version": 3,
 	"hooks": {
 		"while_instance_launch": {

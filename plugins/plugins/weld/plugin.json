@@ -3,7 +3,7 @@
 	"name": "Weld",
 	"description": "Weld data and resource packs together for better compatability",
 	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/weld",
-	"version": "v6",
+	"version": "v7",
 	"install_message": "Python is required to run Weld. Please ensure it is installed.",
 	"protocol_version": 3,
 	"raw_transfer": true,
