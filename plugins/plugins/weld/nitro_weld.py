@@ -3,8 +3,9 @@ from smithed.weld import run_weld
 import json
 from pathlib import Path
 import os
+import traceback
 
-def output(method: str, data: object | None | str = None):
+def output(method: str, data: object | str | None = None):
 	if data is None:
 		print(f"%_\"{method}\"")
 	else:
@@ -16,8 +17,44 @@ def output(method: str, data: object | None | str = None):
 		out2 = json.dumps(out)
 		print(f"%_{out2}")
 
+# Gets the lockfile path
+def get_lockfile_path(inst_dir: Path) -> Path:
+	return inst_dir.joinpath("nitro_lock.json")
+
+# Opens the lockfile for the instance
+def open_lockfile(inst_dir: Path) -> object | None:
+	lock_path = get_lockfile_path(inst_dir)
+
+	if not lock_path.exists():
+		return None
+	
+	with open(lock_path, "r") as lockfile:
+		return json.load(lockfile)
+
+# Writes the lockfile for the instance
+def save_lockfile(lockfile: object, inst_dir: Path | None):
+	lock_path = get_lockfile_path(inst_dir)
+	
+	if not lock_path.exists():
+		return
+	
+	with open(lock_path, "w") as file:
+		json.dump(lockfile, file)
+
+# Updates the lockfile for the instance, moving an old addon path to a new one
+def update_lockfile(lockfile: object, old_path: Path, new_path: Path):
+	if not "addons" in lockfile:
+		return
+
+	for entry in lockfile["addons"]:
+		if not "files" in entry:
+			continue
+		for i in range(len(entry["files"])):
+			if entry["files"][i] == str(old_path):
+				entry["files"][i] = str(new_path)
+
 # Welds a single datapack / resourcepack directory. Mode should be either "data" or "resource".
-def weld_dir(dir: Path, ignore: list, mode: str):
+def weld_dir(dir: Path, ignore: list, mode: str, lockfile: object | None, mc_version: str):
 	# Dir to store unwelded files so that they persist across updates
 	unwelded_path = dir.joinpath("unwelded")
 	if not unwelded_path.exists():
@@ -40,6 +77,9 @@ def weld_dir(dir: Path, ignore: list, mode: str):
 				os.remove(target)
 			os.rename(path, target)
 
+			if lockfile is not None:
+				update_lockfile(lockfile, path, target)
+
 	# Move any ignored packs out of the unwelded dir
 	for entry in os.listdir(unwelded_path):
 		for ignored in ignore:
@@ -52,14 +92,16 @@ def weld_dir(dir: Path, ignore: list, mode: str):
 
 	# Now Weld
 	beet_config = {
-		"output": str(dir)
+		"output": str(dir),
+		"minecraft": mc_version
 	}
 
 	packs = [str(unwelded_path.joinpath(x)) for x in os.listdir(unwelded_path)]
-	if len(packs) == 0:
+	target_pack_path = dir.joinpath("Welded Packs.zip")
+
+	if len(packs) == 0 and not target_pack_path.exists():
 		return
 	
-	target_pack_path = dir.joinpath("Welded Packs.zip")
 	with run_weld(packs=packs,config=beet_config,directory=dir) as ctx:
 		if mode == "data":
 			ctx.data.save(path=target_pack_path, overwrite=True)
@@ -134,12 +176,18 @@ def run():
 	if "weld_ignore" in arg["config"]:
 		weld_ignore = arg["config"]["weld_ignore"]
 
+	lockfile = open_lockfile(inst_dir)
+	mc_version = arg["version_info"]["version"]
+
 	# Run Weld on each directory
 	for dir in datapack_dirs:
-		weld_dir(dir, weld_ignore, "data")
+		weld_dir(dir, weld_ignore, "data", lockfile, mc_version)
 
 	for dir in resourcepack_dirs:
-		weld_dir(dir, weld_ignore, "resource")
+		weld_dir(dir, weld_ignore, "resource", lockfile, mc_version)
+
+	if lockfile is not None:
+		save_lockfile(lockfile, inst_dir)
 
 	output("message", {
 		"contents": {
@@ -157,7 +205,7 @@ def main():
 	try:
 		run()
 	except Exception as e:
-		output("set_error", "Failed to weld packs:\n" + str(e))
+		output("set_error", "Failed to weld packs:\n" + traceback.print_exc(e))
 
 if __name__ == "__main__":
 	main()
