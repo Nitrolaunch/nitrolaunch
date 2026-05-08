@@ -3,7 +3,7 @@
 	"name": "Skin Stealer",
 	"description": "Get the skin of other players",
 	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/skin_stealer",
-	"version": "v6",
+	"version": "v7",
 	"protocol_version": 3,
 	"hooks": {
 		"add_skin_repositories": {

@@ -151,6 +151,9 @@ async fn info(data: &mut CmdData<'_>, plugin: String) -> anyhow::Result<()> {
 		cprintln!("{}", description);
 	}
 	cprintln!("{}<s>ID:</> {}", HYPHEN_POINT, plugin.get_id());
+	if let Some(version) = &plugin.get_manifest().version {
+		cprintln!("{}<s>Version:</> {}", HYPHEN_POINT, version);
+	}
 
 	Ok(())
 }

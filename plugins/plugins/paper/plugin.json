@@ -2,7 +2,7 @@
 	"id": "paper",
 	"name": "Paper",
 	"description": "Install Paper and Folia instances",
-	"version": "v6",
+	"version": "v7",
 	"protocol_version": 3,
 	"hooks": {
 		"on_instance_setup": {

@@ -3,7 +3,7 @@
 	"name": "Octane",
 	"description": "Use multiple methods to improve Minecraft performance",
 	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/octane",
-	"version": "v6",
+	"version": "v7",
 	"protocol_version": 3,
 	"hooks": {
 		"on_instance_setup": {

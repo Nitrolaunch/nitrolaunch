@@ -3,7 +3,7 @@
 	"name": "XMCL Transfer",
 	"description": "Instance transfer for XMCL",
 	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/xmcl_transfer",
-	"version": "v6",
+	"version": "v7",
 	"protocol_version": 3,
 	"hooks": {
 		"add_instance_transfer_formats": {
