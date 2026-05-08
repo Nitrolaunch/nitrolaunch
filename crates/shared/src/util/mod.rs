@@ -149,11 +149,7 @@ pub fn cap_first_letter(string: &str) -> String {
 /// assert_eq!(merge_options(x, y), Some(5));
 /// ```
 pub fn merge_options<T>(left: Option<T>, right: Option<T>) -> Option<T> {
-	if right.is_some() {
-		right
-	} else {
-		left
-	}
+	if right.is_some() { right } else { left }
 }
 
 /// Gets the current UTC timestamp in seconds
@@ -253,11 +249,11 @@ pub fn merge_json_objects(
 
 /// Utility function to merge serde_json values
 pub fn merge(a: &mut Value, b: Value) {
-	if let Value::Object(a) = a {
-		if let Value::Object(b) = b {
-			merge_json_objects(a, b);
-			return;
-		}
+	if let Value::Object(a) = a
+		&& let Value::Object(b) = b
+	{
+		merge_json_objects(a, b);
+		return;
 	}
 
 	*a = b;
@@ -458,11 +454,7 @@ macro_rules! try_3 {
 		if let Ok(out) = $op {
 			Ok(out)
 		} else {
-			if let Ok(out) = $op {
-				Ok(out)
-			} else {
-				$op
-			}
+			if let Ok(out) = $op { Ok(out) } else { $op }
 		}
 	};
 }

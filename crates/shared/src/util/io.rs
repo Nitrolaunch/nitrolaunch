@@ -33,12 +33,12 @@ pub fn replace_tilde(path: &str) -> PathBuf {
 
 /// Utility to automatically run a drop function if the code is not completed successful
 /// (often to prevent invalid data from being saved on disk)
-pub struct CorruptionGuard<F: FnOnce() -> ()> {
+pub struct CorruptionGuard<F: FnOnce()> {
 	f: Option<F>,
 	is_successful: bool,
 }
 
-impl<F: FnOnce() -> ()> CorruptionGuard<F> {
+impl<F: FnOnce()> CorruptionGuard<F> {
 	/// Creates a new corruption guard
 	pub fn new(f: F) -> Self {
 		Self {
@@ -53,12 +53,12 @@ impl<F: FnOnce() -> ()> CorruptionGuard<F> {
 	}
 }
 
-impl<F: FnOnce() -> ()> Drop for CorruptionGuard<F> {
+impl<F: FnOnce()> Drop for CorruptionGuard<F> {
 	fn drop(&mut self) {
-		if !self.is_successful {
-			if let Some(f) = self.f.take() {
-				f();
-			}
+		if !self.is_successful
+			&& let Some(f) = self.f.take()
+		{
+			f();
 		}
 	}
 }

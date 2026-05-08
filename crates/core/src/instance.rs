@@ -202,16 +202,16 @@ impl Instance {
 		};
 
 		// Server EULA
-		if let InstanceKind::Server { create_eula, .. } = &config.side {
-			if *create_eula {
-				let eula_path = config.path.join("eula.txt");
-				if !eula_path.exists() {
-					tokio::fs::write(eula_path, "eula = true\n")
-						.await
-						.context("Failed to create eula.txt")?;
+		if let InstanceKind::Server { create_eula, .. } = &config.side
+			&& *create_eula
+		{
+			let eula_path = config.path.join("eula.txt");
+			if !eula_path.exists() {
+				tokio::fs::write(eula_path, "eula = true\n")
+					.await
+					.context("Failed to create eula.txt")?;
 
-					o.display(MessageContents::Notice(translate!(o, AgreeToEula)));
-				}
+				o.display(MessageContents::Notice(translate!(o, AgreeToEula)));
 			}
 		}
 

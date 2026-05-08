@@ -4,11 +4,11 @@ use anyhow::bail;
 use nitro_parse::conditions::ConditionKind;
 use nitro_parse::parse::Parsed;
 use nitro_parse::vars::{HashMapVariableStore, ReservedConstantVariables, VariableStore};
+use nitro_pkg::RecommendedPackage;
 use nitro_pkg::properties::PackageProperties;
 use nitro_pkg::script_eval::{
 	AddonInstructionData, ScriptEvalConfig, ScriptEvaluator as ScriptEvaluatorTrait,
 };
-use nitro_pkg::RecommendedPackage;
 use nitro_plugin::hook::hooks::{CustomPackageInstruction, CustomPackageInstructionArg};
 use nitro_shared::output::NoOp;
 use nitro_shared::pkg::{ArcPkgReq, PackageID};
@@ -18,8 +18,8 @@ use crate::plugin::PluginManager;
 
 use super::conditions::eval_condition;
 use super::{
-	create_valid_addon_request, EvalData, EvalInput, EvalPermissions, RequiredPackage, Routine,
-	MAX_NOTICE_CHARACTERS, MAX_NOTICE_INSTRUCTIONS,
+	EvalData, EvalInput, EvalPermissions, MAX_NOTICE_CHARACTERS, MAX_NOTICE_INSTRUCTIONS,
+	RequiredPackage, Routine, create_valid_addon_request,
 };
 
 struct SharedData<'a> {

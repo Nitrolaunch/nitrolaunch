@@ -1,19 +1,19 @@
 use crate::commands::instance::MakeSend;
 use crate::data::LauncherData;
 use crate::get_ms_client_id;
-use crate::{output::LauncherOutput, State};
+use crate::{State, output::LauncherOutput};
 use anyhow::Context;
-use nitrolaunch::core::io::open_named_pipe;
 use nitrolaunch::core::QuickPlayType;
+use nitrolaunch::core::io::open_named_pipe;
 use nitrolaunch::instance::launch::LaunchSettings;
 use nitrolaunch::instance::tracking::RunningInstanceEntry;
-use nitrolaunch::instance::update::manager::UpdateSettings;
 use nitrolaunch::instance::update::InstanceUpdateContext;
+use nitrolaunch::instance::update::manager::UpdateSettings;
 use nitrolaunch::io::lock::Lockfile;
 use nitrolaunch::plugin_crate::try_read::TryReadExt;
+use nitrolaunch::shared::UpdateDepth;
 use nitrolaunch::shared::id::InstanceID;
 use nitrolaunch::shared::output::NoOp;
-use nitrolaunch::shared::UpdateDepth;
 use std::io::Write;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -334,10 +334,10 @@ async fn emit_instance_stdio_changes(
 	let mut buf = [0u8; 512];
 
 	loop {
-		if let Ok(Some(bytes_read)) = file.try_read(&mut buf).await {
-			if bytes_read > 0 {
-				let _ = app.emit("update_instance_stdio", &instance_id);
-			}
+		if let Ok(Some(bytes_read)) = file.try_read(&mut buf).await
+			&& bytes_read > 0
+		{
+			let _ = app.emit("update_instance_stdio", &instance_id);
 		}
 
 		tokio::time::sleep(Duration::from_millis(1)).await;

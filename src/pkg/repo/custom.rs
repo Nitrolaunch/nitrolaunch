@@ -1,7 +1,7 @@
 use std::{collections::HashSet, sync::Arc};
 
 use anyhow::Context;
-use nitro_pkg::{repo::RepoMetadata, PackageSearchResults};
+use nitro_pkg::{PackageSearchResults, repo::RepoMetadata};
 use nitro_plugin::{
 	hook::call::HookHandle,
 	hook::hooks::{

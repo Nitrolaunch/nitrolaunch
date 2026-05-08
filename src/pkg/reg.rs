@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Context};
+use anyhow::{Context, anyhow};
 use dashmap::DashMap;
 use itertools::Itertools;
 use nitro_core::net::get_transfer_limit;
@@ -15,8 +15,8 @@ use reqwest::Client;
 use tokio::sync::Semaphore;
 use tokio::task::JoinSet;
 
-use super::repo::{query_all, PackageRepository};
 use super::Package;
+use super::repo::{PackageRepository, query_all};
 use crate::io::paths::Paths;
 use crate::plugin::PluginManager;
 

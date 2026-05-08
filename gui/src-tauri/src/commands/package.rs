@@ -1,5 +1,5 @@
 use crate::commands::instance::InstanceOrTemplate;
-use crate::{output::LauncherOutput, State};
+use crate::{State, output::LauncherOutput};
 use anyhow::Context;
 use nitrolaunch::instance_crate::lock::LockfilePackage;
 use nitrolaunch::pkg_crate::declarative::DeclarativePackage;

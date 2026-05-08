@@ -1,7 +1,7 @@
-use anyhow::{anyhow, bail, Context};
+use anyhow::{Context, anyhow, bail};
+use nitro_config::ConfigDeser;
 use nitro_config::instance::InstanceConfig;
 use nitro_config::template::TemplateConfig;
-use nitro_config::ConfigDeser;
 use nitro_config::{account::AccountConfig, package::PackageConfigDeser};
 use nitro_core::io::json_to_file_pretty;
 use nitro_plugin::hook::hooks::{

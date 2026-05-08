@@ -1,6 +1,6 @@
 use std::{ops::DerefMut, path::PathBuf};
 
-use anyhow::{bail, Context};
+use anyhow::{Context, bail};
 use nitro_mods::forge::{self, Mode};
 use nitro_net::neoforge;
 use nitro_plugin::{api::executable::ExecutablePlugin, hook::hooks::OnInstanceSetupResult};

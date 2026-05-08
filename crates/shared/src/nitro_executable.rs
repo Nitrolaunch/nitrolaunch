@@ -7,7 +7,7 @@ use std::{
 	process::Command,
 };
 
-use anyhow::{bail, Context};
+use anyhow::{Context, bail};
 use serde::{Deserialize, Serialize};
 
 /// Stored registry of executable
@@ -78,7 +78,7 @@ impl NitroExecutableRegistry {
 
 		self.executables.insert(NitroExecutable {
 			path: path.to_string_lossy().to_string(),
-			client_id: client_id,
+			client_id,
 		});
 
 		self.write()

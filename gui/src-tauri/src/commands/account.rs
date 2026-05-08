@@ -1,10 +1,10 @@
-use crate::output::LauncherOutput;
 use crate::State;
+use crate::output::LauncherOutput;
 use anyhow::Context;
 use nitrolaunch::{
 	config::{
-		modifications::{apply_modifications_and_write, ConfigModification},
 		Config,
+		modifications::{ConfigModification, apply_modifications_and_write},
 	},
 	config_crate::account::{AccountConfig, AccountVariant},
 	core::account::AccountKind,
@@ -255,7 +255,7 @@ pub async fn get_cosmetics(
 	let cosmetics = fmt_err(
 		config
 			.accounts
-			.get_account_cosmetics(&account, &state.paths.core, &state.client, &mut output)
+			.get_account_cosmetics(account, &state.paths.core, &state.client, &mut output)
 			.await
 			.context("Failed to get cosmetics"),
 	)?;
@@ -290,7 +290,7 @@ pub async fn upload_skin(
 		config
 			.accounts
 			.upload_skin(
-				&account,
+				account,
 				variant,
 				&skin,
 				&state.paths.core,
@@ -327,13 +327,7 @@ pub async fn activate_cape(
 	fmt_err(
 		config
 			.accounts
-			.activate_cape(
-				&account,
-				cape,
-				&state.paths.core,
-				&state.client,
-				&mut output,
-			)
+			.activate_cape(account, cape, &state.paths.core, &state.client, &mut output)
 			.await
 			.context("Failed to activate cape"),
 	)?;

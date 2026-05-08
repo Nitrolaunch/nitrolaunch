@@ -2,8 +2,8 @@ use std::borrow::Cow;
 use std::fmt::Display;
 
 use anyhow::bail;
-use nitro_shared::pkg::{is_valid_package_id, PackageID, PackageStability};
-use nitro_shared::util::{is_valid_identifier, DefaultExt};
+use nitro_shared::pkg::{PackageID, PackageStability, is_valid_package_id};
+use nitro_shared::util::{DefaultExt, is_valid_identifier};
 #[cfg(feature = "schema")]
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};

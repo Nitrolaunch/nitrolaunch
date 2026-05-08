@@ -6,7 +6,7 @@ use std::io::{BufWriter, Write};
 use std::path::Path;
 
 use anyhow::ensure;
-use nitro_shared::io::{get_link_method, LinkMethod};
+use nitro_shared::io::{LinkMethod, get_link_method};
 
 /// Create a directory that may already exist without an error
 pub fn create_dir(path: &Path) -> std::io::Result<()> {

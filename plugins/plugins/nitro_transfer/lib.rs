@@ -9,7 +9,7 @@ use nitro_config::instance::InstanceConfig;
 use nitro_plugin::{api::wasm::WASMPlugin, hook::hooks::ImportInstanceResult, nitro_wasm_plugin};
 use nitro_shared::Side;
 use serde::{Deserialize, Serialize};
-use zip::{write::FileOptions, ZipArchive, ZipWriter};
+use zip::{ZipArchive, ZipWriter, write::FileOptions};
 
 nitro_wasm_plugin!(main, "nitro_transfer");
 

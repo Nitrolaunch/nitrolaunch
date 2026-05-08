@@ -1,10 +1,10 @@
-use anyhow::{bail, Context};
+use anyhow::{Context, bail};
 use clap::Subcommand;
 use color_print::cprintln;
 use itertools::Itertools;
 use nitrolaunch::core::io::{json_from_file, json_to_file_pretty};
-use nitrolaunch::plugin::install::get_verified_plugins;
 use nitrolaunch::plugin::PluginManager;
+use nitrolaunch::plugin::install::get_verified_plugins;
 use nitrolaunch::plugin_crate::plugin::PluginManifest;
 use nitrolaunch::shared::lang::translate::TranslationKey;
 use nitrolaunch::shared::output::{MessageContents, NitroOutput};
@@ -199,8 +199,8 @@ pub(crate) async fn install(
 		process.display(MessageContents::Success(message));
 	}
 
-	if !files.is_empty() {
-		if !data.output.prompt_yes_no(
+	if !files.is_empty()
+		&& !data.output.prompt_yes_no(
 			false,
 			MessageContents::Warning(
 				"Installing a plugin from a file is not verified by Nitrolaunch and could pose security risks. Please make sure you trust the plugin before installing.".into()
@@ -208,7 +208,6 @@ pub(crate) async fn install(
 		).await? {
 			bail!("Cancelled");
 		}
-	}
 
 	for file in files {
 		let path = PathBuf::from(file);
@@ -363,10 +362,10 @@ async fn edit(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()> 
 	let new_config: serde_json::Value = serde_json::from_str(&edited)
 		.context("Failed to serialize. Make sure your config is valid JSON")?;
 
-	if let serde_json::Value::Object(obj) = &new_config {
-		if obj.is_empty() {
-			return Ok(());
-		}
+	if let serde_json::Value::Object(obj) = &new_config
+		&& obj.is_empty()
+	{
+		return Ok(());
 	}
 
 	config.config.insert(id, new_config);

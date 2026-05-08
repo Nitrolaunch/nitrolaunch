@@ -4,24 +4,24 @@ use std::fmt::Debug;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use anyhow::bail;
 use anyhow::Context;
+use anyhow::bail;
 use nitro_shared::output::NitroOutput;
 use serde::Serialize;
 use serde::{Deserialize, Deserializer};
 use tokio::sync::Mutex;
 
+use crate::PluginPaths;
+use crate::hook::Hook;
+use crate::hook::PLUGIN_DIR_TOKEN;
+use crate::hook::WASM_FILE_NAME;
 use crate::hook::call::HookCallArg;
 use crate::hook::call::HookCallContext;
 use crate::hook::call::HookHandle;
 use crate::hook::hooks::StartWorker;
 use crate::hook::wasm::call_wasm;
 use crate::hook::wasm::loader::WASMLoader;
-use crate::hook::Hook;
-use crate::hook::PLUGIN_DIR_TOKEN;
-use crate::hook::WASM_FILE_NAME;
 use crate::host::PluginContext;
-use crate::PluginPaths;
 
 /// The newest protocol version for plugin communication
 pub const NEWEST_PROTOCOL_VERSION: u16 = 3;

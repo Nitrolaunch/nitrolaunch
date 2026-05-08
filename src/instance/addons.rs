@@ -31,7 +31,7 @@ impl Instance {
 				self.side(),
 				inst_dir,
 				selected_worlds,
-				self.config.datapack_folder.as_ref().map(|x| Path::new(x)),
+				self.config.datapack_folder.as_ref().map(Path::new),
 				version_info,
 			);
 		}

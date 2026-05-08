@@ -13,7 +13,7 @@ pub use args::create_quick_play_args;
 
 use crate::net::game_files::client_meta::args::Arguments;
 
-use super::{process::LaunchProcessProperties, LaunchParameters};
+use super::{LaunchParameters, process::LaunchProcessProperties};
 
 /// Create launch properties for the client
 pub(crate) async fn get_launch_props(
@@ -28,14 +28,13 @@ pub(crate) async fn get_launch_props(
 	let mut jvm_args = Vec::new();
 	let mut game_args = Vec::new();
 
-	if params.launch_config.use_log4j_config {
-		if let Some(logging) = &params.client_meta.logging {
-			let logging_arg = logging.client.argument.clone();
-			let logging_arg =
-				args::fill_logging_path_arg(logging_arg, params.version, params.paths)
-					.ok_or(anyhow!("Failed to convert logging path to a string"))?;
-			jvm_args.push(logging_arg);
-		}
+	if params.launch_config.use_log4j_config
+		&& let Some(logging) = &params.client_meta.logging
+	{
+		let logging_arg = logging.client.argument.clone();
+		let logging_arg = args::fill_logging_path_arg(logging_arg, params.version, params.paths)
+			.ok_or(anyhow!("Failed to convert logging path to a string"))?;
+		jvm_args.push(logging_arg);
 	}
 
 	match &params.client_meta.arguments {

@@ -1,7 +1,7 @@
 use std::{path::PathBuf, time::Duration};
 
-use crate::{data::InstanceIcon, output::LauncherOutput, State};
-use anyhow::{bail, Context};
+use crate::{State, data::InstanceIcon, output::LauncherOutput};
+use anyhow::{Context, bail};
 use nitrolaunch::{
 	core::{io::json_from_file, net::game_files::assets::AssetIndex},
 	instance::update::manager::UpdateSettings,
@@ -9,7 +9,7 @@ use nitrolaunch::{
 		AddInstanceIcons, AddJavaTypes, AddSupportedLoaders, GetLoaderVersions,
 		GetLoaderVersionsArg, JavaTypeInfo,
 	},
-	shared::{id::InstanceID, loaders::Loader, minecraft::VersionType, output::NoOp, UpdateDepth},
+	shared::{UpdateDepth, id::InstanceID, loaders::Loader, minecraft::VersionType, output::NoOp},
 };
 
 use super::{fmt_err, load_config};

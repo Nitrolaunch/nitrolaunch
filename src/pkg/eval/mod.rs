@@ -8,24 +8,24 @@ pub mod script;
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use anyhow::bail;
 use anyhow::Context;
+use anyhow::bail;
 use async_trait::async_trait;
 use nitro_config::package::EvalPermissions;
 use nitro_instance::addon::is_filename_valid;
 use nitro_instance::lock::LockfilePackage;
 use nitro_parse::routine::INSTALL_ROUTINE;
 use nitro_parse::vars::HashMapVariableStore;
-use nitro_pkg::addon::{is_addon_version_valid, PackageAddon};
-use nitro_pkg::properties::PackageProperties;
-use nitro_pkg::script_eval::AddonInstructionData;
-use nitro_pkg::script_eval::EvalReason;
 use nitro_pkg::ConfiguredPackage;
 use nitro_pkg::PackageContentType;
 use nitro_pkg::PkgRequest;
 use nitro_pkg::PkgRequestSource;
 use nitro_pkg::RecommendedPackage;
 use nitro_pkg::RequiredPackage;
+use nitro_pkg::addon::{PackageAddon, is_addon_version_valid};
+use nitro_pkg::properties::PackageProperties;
+use nitro_pkg::script_eval::AddonInstructionData;
+use nitro_pkg::script_eval::EvalReason;
 use nitro_pkg::{
 	EvalInput as EvalInputTrait, PackageEvalRelationsResult,
 	PackageEvaluator as PackageEvaluatorTrait,
@@ -52,18 +52,18 @@ use self::conditions::check_os_condition;
 use self::declarative::eval_declarative_package;
 use self::script::eval_script_package;
 
-use super::reg::PkgRegistry;
 use super::Package;
+use super::reg::PkgRegistry;
 use crate::addon::{self, AddonLocation, AddonRequest};
 use crate::config::package::PackageConfig;
 use crate::io::paths::Paths;
 use crate::pkg::PkgContents;
 use crate::plugin::PluginManager;
 use crate::util::hash::{
-	get_hash_str_as_hex, HASH_SHA256_RESULT_LENGTH, HASH_SHA512_RESULT_LENGTH,
+	HASH_SHA256_RESULT_LENGTH, HASH_SHA512_RESULT_LENGTH, get_hash_str_as_hex,
 };
-use nitro_shared::pkg::PackageStability;
 use nitro_shared::Side;
+use nitro_shared::pkg::PackageStability;
 
 /// Max notice instructions per package
 const MAX_NOTICE_INSTRUCTIONS: usize = 10;
@@ -328,48 +328,44 @@ pub fn eval_check_properties(
 	input: &EvalInput,
 	properties: &PackageProperties,
 ) -> anyhow::Result<bool> {
-	if let Some(version) = &input.constants.version {
-		if let Some(supported_versions) = &properties.supported_versions {
-			if !supported_versions.is_empty()
-				&& !supported_versions
-					.iter()
-					.any(|x| x.matches_single(version, &input.constants.version_list))
-			{
-				bail!("Package does not support this Minecraft version");
-			}
-		}
+	if let Some(version) = &input.constants.version
+		&& let Some(supported_versions) = &properties.supported_versions
+		&& !supported_versions.is_empty()
+		&& !supported_versions
+			.iter()
+			.any(|x| x.matches_single(version, &input.constants.version_list))
+	{
+		bail!("Package does not support this Minecraft version");
 	}
 
-	if let Some(supported_loaders) = &properties.supported_loaders {
-		if !supported_loaders.is_empty()
-			&& !supported_loaders
-				.iter()
-				.any(|x| x.matches(&input.constants.loader))
-		{
-			bail!("Package does not support this loader");
-		}
+	if let Some(supported_loaders) = &properties.supported_loaders
+		&& !supported_loaders.is_empty()
+		&& !supported_loaders
+			.iter()
+			.any(|x| x.matches(&input.constants.loader))
+	{
+		bail!("Package does not support this loader");
 	}
 
-	if let Some(supported_sides) = &properties.supported_sides {
-		if !supported_sides.is_empty() && !supported_sides.contains(&input.params.side) {
-			return Ok(true);
-		}
+	if let Some(supported_sides) = &properties.supported_sides
+		&& !supported_sides.is_empty()
+		&& !supported_sides.contains(&input.params.side)
+	{
+		return Ok(true);
 	}
 
-	if let Some(supported_operating_systems) = &properties.supported_operating_systems {
-		if !supported_operating_systems.is_empty()
-			&& !supported_operating_systems.iter().any(check_os_condition)
-		{
-			bail!("Package does not support your operating system");
-		}
+	if let Some(supported_operating_systems) = &properties.supported_operating_systems
+		&& !supported_operating_systems.is_empty()
+		&& !supported_operating_systems.iter().any(check_os_condition)
+	{
+		bail!("Package does not support your operating system");
 	}
 
-	if let Some(supported_architectures) = &properties.supported_architectures {
-		if !supported_architectures.is_empty()
-			&& !supported_architectures.iter().any(check_arch_condition)
-		{
-			bail!("Package does not support your system architecture");
-		}
+	if let Some(supported_architectures) = &properties.supported_architectures
+		&& !supported_architectures.is_empty()
+		&& !supported_architectures.iter().any(check_arch_condition)
+	{
+		bail!("Package does not support your system architecture");
 	}
 
 	Ok(false)
@@ -387,13 +383,13 @@ pub fn create_valid_addon_request(
 
 	// Empty strings will break the filename so we convert them to none
 	let version = data.version.filter(|x| !x.is_empty());
-	if let Some(version) = &version {
-		if !is_addon_version_valid(version) {
-			bail!(
-				"Invalid addon version identifier '{version}' for addon '{}'",
-				data.id
-			);
-		}
+	if let Some(version) = &version
+		&& !is_addon_version_valid(version)
+	{
+		bail!(
+			"Invalid addon version identifier '{version}' for addon '{}'",
+			data.id
+		);
 	}
 
 	let file_name = data.file_name.unwrap_or(addon::get_addon_instance_filename(
@@ -785,7 +781,11 @@ pub fn print_recommendation_warning(
 	if package.invert {
 		let message = if package.invert {
 			if let Some(source) = source {
-				MessageContents::Warning(format!("The package '{}' recommends against the use of the package '{}', which is installed", source.debug_sources(), package.req))
+				MessageContents::Warning(format!(
+					"The package '{}' recommends against the use of the package '{}', which is installed",
+					source.debug_sources(),
+					package.req
+				))
 			} else {
 				MessageContents::Warning(format!(
 					"A package recommends against the use of the package '{}', which is installed",

@@ -2,12 +2,12 @@ use std::sync::Arc;
 
 use anyhow::bail;
 use itertools::Itertools;
+use nitro_pkg::RequiredPackage;
 use nitro_pkg::declarative::{
 	DeclarativeAddon, DeclarativeAddonVersion, DeclarativeConditionSet, DeclarativePackage,
 };
 use nitro_pkg::properties::PackageProperties;
 use nitro_pkg::script_eval::AddonInstructionData;
-use nitro_pkg::RequiredPackage;
 use nitro_shared::loaders::LoaderMatch;
 use nitro_shared::pkg::{ArcPkgReq, PackageID};
 use nitro_shared::util::DeserListOrSingle;
@@ -16,8 +16,8 @@ use crate::plugin::PluginManager;
 
 use super::conditions::{check_arch_condition, check_os_condition};
 use super::{
-	create_valid_addon_request, EvalData, EvalInput, Routine, MAX_NOTICE_CHARACTERS,
-	MAX_NOTICE_INSTRUCTIONS,
+	EvalData, EvalInput, MAX_NOTICE_CHARACTERS, MAX_NOTICE_INSTRUCTIONS, Routine,
+	create_valid_addon_request,
 };
 
 /// Evaluate a declarative package
@@ -209,26 +209,27 @@ pub fn pick_best_addon_version<'a>(
 	let versions: Vec<_> = versions.collect();
 
 	// Check preferred content versions first
-	if !input.params.preferred_content_versions.is_empty() {
-		if let Some(content_versions) = &properties.content_versions {
-			// Sort so newest comes first
-			let preferred_content_versions = match_ordering(
-				input.params.preferred_content_versions.iter(),
-				&content_versions,
-			)
-			.rev();
+	if !input.params.preferred_content_versions.is_empty()
+		&& let Some(content_versions) = &properties.content_versions
+	{
+		// Sort so newest comes first
+		let preferred_content_versions = match_ordering(
+			input.params.preferred_content_versions.iter(),
+			content_versions,
+		)
+		.rev();
 
-			let default = DeserListOrSingle::default();
-			for version in preferred_content_versions {
-				if let Some(version) = versions.iter().find(|x| {
-					x.conditional_properties
-						.content_versions
-						.as_ref()
-						.unwrap_or(&default)
-						.contains(version) || x.version.as_ref().is_some_and(|x| x == version)
-				}) {
-					return Some(*version);
-				}
+		let default = DeserListOrSingle::default();
+		for version in preferred_content_versions {
+			if let Some(version) = versions.iter().find(|x| {
+				x.conditional_properties
+					.content_versions
+					.as_ref()
+					.unwrap_or(&default)
+					.contains(version)
+					|| x.version.as_ref().is_some_and(|x| x == version)
+			}) {
+				return Some(*version);
 			}
 		}
 	}
@@ -272,16 +273,16 @@ fn check_condition_set(
 	input: &EvalInput,
 	skip_content_versions: bool,
 ) -> bool {
-	if let Some(stability) = &conditions.stability {
-		if stability > &input.params.stability {
-			return false;
-		}
+	if let Some(stability) = &conditions.stability
+		&& stability > &input.params.stability
+	{
+		return false;
 	}
 
-	if let Some(side) = conditions.side {
-		if side != input.params.side {
-			return false;
-		}
+	if let Some(side) = conditions.side
+		&& side != input.params.side
+	{
+		return false;
 	}
 
 	if let Some(features) = &conditions.features {
@@ -292,51 +293,47 @@ fn check_condition_set(
 		}
 	}
 
-	if let Some(minecraft_version) = &input.constants.version {
-		if let Some(minecraft_versions) = &conditions.minecraft_versions {
-			if !minecraft_versions
-				.iter()
-				.any(|x| x.matches_single(minecraft_version, &input.constants.version_list))
-			{
-				return false;
-			}
-		}
+	if let Some(minecraft_version) = &input.constants.version
+		&& let Some(minecraft_versions) = &conditions.minecraft_versions
+		&& !minecraft_versions
+			.iter()
+			.any(|x| x.matches_single(minecraft_version, &input.constants.version_list))
+	{
+		return false;
 	}
 
-	if let Some(loaders) = &conditions.loaders {
-		if !loaders.iter().any(|x| x.matches(&input.constants.loader)) {
-			return false;
-		}
+	if let Some(loaders) = &conditions.loaders
+		&& !loaders.iter().any(|x| x.matches(&input.constants.loader))
+	{
+		return false;
 	}
 
-	if let Some(operating_systems) = &conditions.operating_systems {
-		if !operating_systems.iter().any(check_os_condition) {
-			return false;
-		}
+	if let Some(operating_systems) = &conditions.operating_systems
+		&& !operating_systems.iter().any(check_os_condition)
+	{
+		return false;
 	}
 
-	if let Some(architectures) = &conditions.architectures {
-		if !architectures.iter().any(check_arch_condition) {
-			return false;
-		}
+	if let Some(architectures) = &conditions.architectures
+		&& !architectures.iter().any(check_arch_condition)
+	{
+		return false;
 	}
 
-	if let Some(languages) = &conditions.languages {
-		if !languages.iter().any(|x| x == &input.constants.language) {
-			return false;
-		}
+	if let Some(languages) = &conditions.languages
+		&& !languages.iter().any(|x| x == &input.constants.language)
+	{
+		return false;
 	}
 
-	if !skip_content_versions {
-		if let Some(content_versions) = &conditions.content_versions {
-			if !input.params.required_content_versions.is_empty()
-				&& !content_versions
-					.iter()
-					.any(|x| input.params.required_content_versions.contains(x))
-			{
-				return false;
-			}
-		}
+	if !skip_content_versions
+		&& let Some(content_versions) = &conditions.content_versions
+		&& !input.params.required_content_versions.is_empty()
+		&& !content_versions
+			.iter()
+			.any(|x| input.params.required_content_versions.contains(x))
+	{
+		return false;
 	}
 
 	true
@@ -365,7 +362,7 @@ fn get_loader_matches(loader: &LoaderMatch) -> u16 {
 fn match_ordering<'a, T: Ord + Eq + 'a>(
 	input: impl Iterator<Item = &'a T>,
 	reference: &[T],
-) -> impl Iterator + DoubleEndedIterator<Item = &'a T> {
+) -> impl DoubleEndedIterator<Item = &'a T> {
 	input.sorted_by_cached_key(|x| {
 		reference
 			.iter()
@@ -378,12 +375,12 @@ fn match_ordering<'a, T: Ord + Eq + 'a>(
 mod tests {
 	use std::sync::Arc;
 
-	use nitro_pkg::{declarative::deserialize_declarative_package, PkgRequest};
+	use nitro_pkg::{PkgRequest, declarative::deserialize_declarative_package};
+	use nitro_shared::Side;
 	use nitro_shared::lang::Language;
 	use nitro_shared::loaders::Loader;
 	use nitro_shared::pkg::PackageStability;
 	use nitro_shared::util::DeserListOrSingle;
-	use nitro_shared::Side;
 
 	use crate::{
 		io::paths::Paths,

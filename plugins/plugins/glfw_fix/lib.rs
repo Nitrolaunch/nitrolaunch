@@ -1,16 +1,16 @@
-use anyhow::{bail, Context};
+use anyhow::{Context, bail};
 use nitro_plugin::{
 	api::wasm::{
+		WASMPlugin,
 		net::download_file,
 		output::WASMPluginOutput,
 		sys::{get_data_dir, get_os_string},
-		WASMPlugin,
 	},
 	hook::hooks::OnInstanceSetupResult,
 	nitro_wasm_plugin,
 };
-use nitro_shared::output::{MessageContents, NitroOutput};
 use nitro_shared::UpdateDepth;
+use nitro_shared::output::{MessageContents, NitroOutput};
 use serde_json::Value;
 
 nitro_wasm_plugin!(main, "glfw_fix");

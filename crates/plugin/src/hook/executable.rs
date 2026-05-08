@@ -1,6 +1,6 @@
 use std::{collections::VecDeque, env::consts::EXE_SUFFIX, sync::Arc, time::Instant};
 
-use anyhow::{anyhow, bail, Context};
+use anyhow::{Context, anyhow, bail};
 use nitro_shared::{
 	no_window,
 	output::{MessageContents, NitroOutput},
@@ -13,10 +13,10 @@ use tokio::{
 
 use crate::{
 	hook::{
-		call::{HookCallArg, HookHandle},
-		Hook, CONFIG_DIR_ENV, CUSTOM_CONFIG_ENV, DATA_DIR_ENV, EXE_EXTENSION_TOKEN,
-		HOOK_VERSION_ENV, INSTANCE_LIST_ENV, NITRO_PLUGIN_ENV, NITRO_VERSION_ENV, PLUGIN_DIR_TOKEN,
+		CONFIG_DIR_ENV, CUSTOM_CONFIG_ENV, DATA_DIR_ENV, EXE_EXTENSION_TOKEN, HOOK_VERSION_ENV,
+		Hook, INSTANCE_LIST_ENV, NITRO_PLUGIN_ENV, NITRO_VERSION_ENV, PLUGIN_DIR_TOKEN,
 		PLUGIN_LIST_ENV, PLUGIN_STATE_ENV, TEMPLATE_LIST_ENV,
+		call::{HookCallArg, HookHandle},
 	},
 	input_output::{CommandResult, InputAction, OutputAction},
 	plugin::{HookSubscription, PluginPersistence},

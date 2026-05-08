@@ -133,11 +133,7 @@ impl VersionPattern {
 			.zip(other.get_matches(versions))
 			.filter_map(
 				|(left, right)| {
-					if *left == right {
-						Some(right)
-					} else {
-						None
-					}
+					if *left == right { Some(right) } else { None }
 				},
 			)
 			.collect()

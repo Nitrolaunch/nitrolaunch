@@ -2,12 +2,12 @@ use clap::Subcommand;
 use color_print::{cprint, cprintln};
 use nitrolaunch::{
 	instance::update::manager::UpdateSettings,
-	shared::{minecraft::VersionType, UpdateDepth},
+	shared::{UpdateDepth, minecraft::VersionType},
 };
 use reqwest::Client;
 
 use crate::{
-	commands::{call_plugin_subcommand, CmdData},
+	commands::{CmdData, call_plugin_subcommand},
 	output::HYPHEN_POINT,
 };
 

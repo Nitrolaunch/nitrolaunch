@@ -1,6 +1,6 @@
 use std::{borrow::Borrow, collections::HashMap, hash::Hash, marker::PhantomData, path::PathBuf};
 
-use anyhow::{anyhow, Context};
+use anyhow::{Context, anyhow};
 use nitro_config::{instance::InstanceConfig, template::TemplateConfig};
 use serde::de::DeserializeOwned;
 

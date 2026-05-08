@@ -377,7 +377,7 @@ impl bindings::InterfaceWorldImports for State {
 	}
 
 	async fn update_link(&mut self, src: String, tgt: String) -> Result<(), String> {
-		let result = update_link(&Path::new(&tgt), &Path::new(&src));
+		let result = update_link(Path::new(&tgt), Path::new(&src));
 		match result {
 			Ok(..) => Ok(()),
 			Err(e) => Err(format!("{e:?}")),

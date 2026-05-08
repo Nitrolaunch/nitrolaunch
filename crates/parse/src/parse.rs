@@ -1,15 +1,15 @@
 use anyhow::anyhow;
-use anyhow::{bail, Context};
+use anyhow::{Context, bail};
 use nitro_shared::pkg::AddonHashes;
 
 use crate::instruction::ElseBlock;
-use crate::routine::can_call_routines;
 use crate::routine::RESERVED_ROUTINES;
+use crate::routine::can_call_routines;
 
 use super::conditions::Condition;
 use super::conditions::ConditionKind;
-use super::instruction::{parse_arg, InstrKind, Instruction};
-use super::lex::{lex, reduce_tokens, Side, Token, TokenAndPos};
+use super::instruction::{InstrKind, Instruction, parse_arg};
+use super::lex::{Side, Token, TokenAndPos, lex, reduce_tokens};
 use super::vars::Value;
 use nitro_shared::minecraft::AddonKind;
 
@@ -562,10 +562,10 @@ impl ParseData {
 
 	/// Finish the current block
 	pub fn finish_block(&mut self) {
-		if let Some(block) = self.parsed.blocks.get_mut(&self.block) {
-			if let Some(parent) = block.parent {
-				self.block = parent;
-			}
+		if let Some(block) = self.parsed.blocks.get_mut(&self.block)
+			&& let Some(parent) = block.parent
+		{
+			self.block = parent;
 		}
 	}
 
@@ -747,15 +747,21 @@ mod tests {
 	fn test_routine_parse() {
 		let text = "@install {} @meta {} @foo {}";
 		let parsed = lex_and_parse(text).unwrap();
-		assert!(parsed
-			.blocks
-			.contains_key(parsed.routines.get(INSTALL_ROUTINE).unwrap()));
-		assert!(parsed
-			.blocks
-			.contains_key(parsed.routines.get(METADATA_ROUTINE).unwrap()));
-		assert!(parsed
-			.blocks
-			.contains_key(parsed.routines.get("foo").unwrap()));
+		assert!(
+			parsed
+				.blocks
+				.contains_key(parsed.routines.get(INSTALL_ROUTINE).unwrap())
+		);
+		assert!(
+			parsed
+				.blocks
+				.contains_key(parsed.routines.get(METADATA_ROUTINE).unwrap())
+		);
+		assert!(
+			parsed
+				.blocks
+				.contains_key(parsed.routines.get("foo").unwrap())
+		);
 	}
 
 	#[test]

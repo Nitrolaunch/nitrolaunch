@@ -1,12 +1,13 @@
 use std::collections::{HashMap, HashSet};
 
+use nitro_config::ConfigKind;
 use nitro_config::instance::{InstanceConfig, WrapperCommand};
 use nitro_config::template::TemplateConfig;
-use nitro_config::ConfigKind;
 use nitro_instance::addon::Addon;
 use nitro_pkg::repo::{PackageFlag, RepoMetadata};
 use nitro_pkg::script_eval::AddonInstructionData;
 use nitro_pkg::{PackageContentType, PackageSearchResults, RecommendedPackage, RequiredPackage};
+use nitro_shared::UpdateDepth;
 use nitro_shared::id::{InstanceID, TemplateID};
 use nitro_shared::lang::translate::LanguageMap;
 use nitro_shared::loaders::Loader;
@@ -15,8 +16,7 @@ use nitro_shared::minecraft::{AddonKind, SkinVariant};
 use nitro_shared::minecraft::{Cape, MinecraftUserProfile, Skin};
 use nitro_shared::pkg::{PackageID, PackageQueryDepth, PackageSearchParameters};
 use nitro_shared::versions::VersionPattern;
-use nitro_shared::UpdateDepth;
-use nitro_shared::{versions::VersionInfo, Side};
+use nitro_shared::{Side, versions::VersionInfo};
 use serde::{Deserialize, Serialize};
 
 use crate::control::Control;

@@ -3,8 +3,8 @@ use std::{
 	path::{Path, PathBuf},
 };
 
-use anyhow::{bail, Context};
-use nitro_shared::{versions::VersionInfo, Side};
+use anyhow::{Context, bail};
+use nitro_shared::{Side, versions::VersionInfo};
 use serde::Deserialize;
 use zip::ZipArchive;
 

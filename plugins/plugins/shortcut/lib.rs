@@ -1,14 +1,14 @@
 use std::path::Path;
 
-use anyhow::{bail, Context};
+use anyhow::{Context, bail};
 use clap::Parser;
 use lnk::ShellLink;
 use nitro_plugin::{
 	api::wasm::{
+		WASMPlugin,
 		nitro::get_instances,
 		output::WASMPluginOutput,
 		sys::{get_data_dir, get_home_dir, get_os_string},
-		WASMPlugin,
 	},
 	nitro_wasm_plugin,
 };
@@ -213,7 +213,7 @@ fn create_linux_shortcut(
 		command
 	};
 
-	return format!(
+	format!(
 		r#"[Desktop Entry]
 Type=Application
 Version=1.0
@@ -224,7 +224,7 @@ Icon=nitrolaunch
 Terminal=false
 Categories=Games;	
 "#
-	);
+	)
 }
 
 fn create_windows_shortcut(

@@ -1,4 +1,4 @@
-use anyhow::{bail, Context};
+use anyhow::{Context, bail};
 use nitro_instance::lock::InstanceLockfile;
 use nitro_shared::output::{MessageContents, NitroOutput};
 use nitro_shared::pkg::ArcPkgReq;
@@ -44,7 +44,7 @@ impl Instance {
 			task.await.context("Failed to install addon")?;
 		}
 
-		self.install_eval_data(pkg, &eval, &version_info, paths, inst_lock, o)
+		self.install_eval_data(pkg, eval, &version_info, paths, inst_lock, o)
 			.await
 			.context("Failed to install evaluation data on instance")?;
 

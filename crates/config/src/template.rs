@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 
 use anyhow::Context;
+use nitro_shared::Side;
 use nitro_shared::id::TemplateID;
 use nitro_shared::output::{MessageContents, NitroOutput};
 use nitro_shared::pkg::{PkgRequest, PkgRequestSource};
-use nitro_shared::Side;
 #[cfg(feature = "schema")]
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};

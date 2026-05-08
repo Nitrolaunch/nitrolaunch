@@ -1,11 +1,11 @@
+use nitro_parse::FailReason;
 use nitro_parse::conditions::ConditionKind;
 use nitro_parse::instruction::{InstrKind, Instruction};
 use nitro_parse::parse::{Block, Parsed};
 use nitro_parse::routine::INSTALL_ROUTINE;
 use nitro_parse::vars::{Value, VariableStore};
-use nitro_parse::FailReason;
 
-use anyhow::{anyhow, bail, Context};
+use anyhow::{Context, anyhow, bail};
 use nitro_shared::minecraft::AddonKind;
 use nitro_shared::pkg::{AddonOptionalHashes, PackageID};
 use serde::{Deserialize, Serialize};
@@ -42,7 +42,7 @@ pub trait ScriptEvaluator {
 
 	/// Add a conflict
 	fn add_conflict(&mut self, shared: &mut Self::Shared<'_>, pkg: PackageID)
-		-> anyhow::Result<()>;
+	-> anyhow::Result<()>;
 
 	/// Add a recommendation
 	fn add_recommendation(
@@ -188,10 +188,10 @@ pub async fn eval_instr<E: ScriptEvaluator>(
 					} else {
 						// Eval the else block chain
 						for else_block in else_blocks {
-							if let Some(condition) = &else_block.condition {
-								if !e.eval_condition(shared, &condition.kind)? {
-									continue;
-								}
+							if let Some(condition) = &else_block.condition
+								&& !e.eval_condition(shared, &condition.kind)?
+							{
+								continue;
 							}
 							let block = parsed
 								.blocks

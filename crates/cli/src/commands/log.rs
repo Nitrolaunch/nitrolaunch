@@ -10,7 +10,7 @@ use clap::Subcommand;
 use color_print::{cprintln, cwrite};
 use nitrolaunch::io::logging::get_log_files;
 
-use crate::commands::{call_plugin_subcommand, CmdData};
+use crate::commands::{CmdData, call_plugin_subcommand};
 
 #[derive(Debug, Subcommand)]
 pub enum LogSubcommand {

@@ -6,7 +6,7 @@ use std::{
 
 use anyhow::Context;
 use nitro_shared::{pkg::PackageSearchParameters, util::utc_timestamp};
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use serde::{Deserialize, Serialize, de::DeserializeOwned};
 
 /// A cache for search results in a custom plugin repository that holds entries for a certain amount of time
 pub struct PackageSearchCache {

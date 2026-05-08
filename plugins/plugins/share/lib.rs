@@ -5,19 +5,19 @@ use std::{
 	str::FromStr,
 };
 
-use anyhow::{bail, Context};
+use anyhow::{Context, bail};
 use clap::Parser;
 use nitro_instance::addon::{get_addon_dirs, get_resource_pack_dir};
 use nitro_plugin::{
 	api::wasm::{
-		sys::{get_current_dir, get_data_dir},
 		WASMPlugin,
+		sys::{get_current_dir, get_data_dir},
 	},
 	nitro_wasm_plugin,
 };
-use nitro_shared::{id::InstanceID, minecraft::AddonKind, versions::VersionInfo, Side};
+use nitro_shared::{Side, id::InstanceID, minecraft::AddonKind, versions::VersionInfo};
 use wstd::{http::Client, runtime::block_on};
-use zip::{write::SimpleFileOptions, ZipWriter};
+use zip::{ZipWriter, write::SimpleFileOptions};
 
 use crate::template::{export_template, import_template};
 

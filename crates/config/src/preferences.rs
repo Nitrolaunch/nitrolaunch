@@ -42,6 +42,7 @@ pub struct RepoDeser {
 #[derive(Deserialize, Serialize, Clone)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[serde(default)]
+#[derive(Default)]
 pub struct RepositoriesDeser {
 	/// The preferred repositories over the default ones
 	#[serde(skip_serializing_if = "Vec::is_empty")]
@@ -49,13 +50,4 @@ pub struct RepositoriesDeser {
 	/// The backup repositories included after the default ones
 	#[serde(skip_serializing_if = "Vec::is_empty")]
 	pub backup: Vec<RepoDeser>,
-}
-
-impl Default for RepositoriesDeser {
-	fn default() -> Self {
-		Self {
-			preferred: Vec::new(),
-			backup: Vec::new(),
-		}
-	}
 }

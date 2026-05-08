@@ -216,15 +216,15 @@ fn get_natives_classifier_key(classifiers: &HashMap<String, String>) -> Option<S
 fn is_allowed(lib: &Library) -> bool {
 	for rule in &lib.rules {
 		let allowed = rule.action.is_allowed();
-		if let Some(os_name) = &rule.os.name {
-			if allowed != (os_name.to_string() == util::OS_STRING) {
-				return false;
-			}
+		if let Some(os_name) = &rule.os.name
+			&& allowed != (os_name.to_string() == util::OS_STRING)
+		{
+			return false;
 		}
-		if let Some(os_arch) = &rule.os.arch {
-			if allowed != (os_arch.to_string() == util::ARCH_STRING) {
-				return false;
-			}
+		if let Some(os_arch) = &rule.os.arch
+			&& allowed != (os_arch.to_string() == util::ARCH_STRING)
+		{
+			return false;
 		}
 	}
 
@@ -247,10 +247,10 @@ fn extract_native(
 		let rel_path = file
 			.enclosed_name()
 			.context("Invalid compressed file path")?;
-		if let Some(rel_path_str) = rel_path.to_str() {
-			if extraction_rules.exclude.iter().any(|x| x == rel_path_str) {
-				continue;
-			}
+		if let Some(rel_path_str) = rel_path.to_str()
+			&& extraction_rules.exclude.iter().any(|x| x == rel_path_str)
+		{
+			continue;
 		}
 		if let Some(extension) = rel_path.extension() {
 			match extension.to_str() {

@@ -11,14 +11,14 @@ use std::sync::Arc;
 
 use crate::config::plugin::{PluginConfig, PluginsConfig};
 use crate::io::paths::Paths;
-use anyhow::{bail, Context};
+use anyhow::{Context, bail};
 use nitro_core::io::{json_from_file, json_to_file_pretty};
+use nitro_plugin::PluginPaths;
 use nitro_plugin::hook::call::{HookHandle, HookHandles};
 use nitro_plugin::hook::wasm::loader::WASMLoader;
 use nitro_plugin::hook::{Hook, WASM_FILE_NAME};
 use nitro_plugin::host::{CorePluginManager, PluginContext};
 use nitro_plugin::plugin::{HookHandler, Plugin, PluginManifest};
-use nitro_plugin::PluginPaths;
 use nitro_shared::output::MessageContents;
 use nitro_shared::output::NitroOutput;
 use nitro_shared::translate;
@@ -132,19 +132,17 @@ impl PluginManager {
 			plugin.set_working_dir(plugin_dir.to_owned());
 		}
 
-		if let Some(plugin_nitro_version) = &plugin.get_manifest().nitro_version {
-			if let (Some(nitro_version), Some(plugin_nitro_version)) = (
+		if let Some(plugin_nitro_version) = &plugin.get_manifest().nitro_version
+			&& let (Some(nitro_version), Some(plugin_nitro_version)) = (
 				version_compare::Version::from(crate::VERSION),
 				version_compare::Version::from(plugin_nitro_version),
-			) {
-				if plugin_nitro_version > nitro_version {
-					o.display(MessageContents::Warning(translate!(
-						o,
-						PluginForNewerVersion,
-						"plugin" = plugin.get_id()
-					)));
-				}
-			}
+			) && plugin_nitro_version > nitro_version
+		{
+			o.display(MessageContents::Warning(translate!(
+				o,
+				PluginForNewerVersion,
+				"plugin" = plugin.get_id()
+			)));
 		}
 
 		inner

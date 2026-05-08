@@ -1,7 +1,7 @@
 use anyhow::Context;
 use inquire::{
-	validator::{ErrorMessage, StringValidator, Validation},
 	MultiSelect, Select, Text,
+	validator::{ErrorMessage, StringValidator, Validation},
 };
 use itertools::Itertools;
 use nitrolaunch::{
@@ -10,7 +10,13 @@ use nitrolaunch::{
 	io::paths::Paths,
 	plugin::PluginManager,
 	plugin_crate::hook::hooks::AddSupportedLoaders,
-	shared::{Side, id::{InstanceID, TemplateID}, loaders::Loader, output::NoOp, util::is_valid_identifier},
+	shared::{
+		Side,
+		id::{InstanceID, TemplateID},
+		loaders::Loader,
+		output::NoOp,
+		util::is_valid_identifier,
+	},
 };
 
 /// Pick which instance to use if the user has not selected one
@@ -36,7 +42,6 @@ pub fn pick_instances(config: &Config) -> anyhow::Result<Vec<InstanceID>> {
 		.context("Prompt failed")
 }
 
-
 /// Pick which template to use
 pub fn pick_template(template: Option<String>, config: &Config) -> anyhow::Result<TemplateID> {
 	if let Some(template) = template {
@@ -50,7 +55,6 @@ pub fn pick_template(template: Option<String>, config: &Config) -> anyhow::Resul
 		Ok(selection.to_owned())
 	}
 }
-
 
 /// Pick which account to use if the user has not selected one
 pub fn pick_account(account: Option<String>, config: &Config) -> anyhow::Result<AccountID> {
@@ -85,7 +89,7 @@ pub fn pick_side(side: Option<Side>) -> anyhow::Result<Side> {
 /// Pick which Minecraft version to use
 pub async fn pick_minecraft_version(versions: &[String]) -> anyhow::Result<MinecraftVersion> {
 	let versions = versions
-		.into_iter()
+		.iter()
 		.map(|x| MinecraftVersion::Version(x.clone().into()));
 	let mut all_versions = vec![MinecraftVersion::Latest, MinecraftVersion::LatestSnapshot];
 	all_versions.extend(versions.rev());
@@ -116,13 +120,10 @@ pub async fn pick_loader(
 		loaders.extend(new_loaders);
 
 		if let Some(side) = side {
-			loaders = loaders
-				.into_iter()
-				.filter(|x| match side {
-					Side::Client => x.is_client(),
-					Side::Server => x.is_server(),
-				})
-				.collect();
+			loaders.retain(|x| match side {
+				Side::Client => x.is_client(),
+				Side::Server => x.is_server(),
+			});
 		}
 
 		Select::new(

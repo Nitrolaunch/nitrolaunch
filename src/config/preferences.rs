@@ -4,16 +4,16 @@ use std::path::PathBuf;
 use crate::{
 	io::paths::Paths,
 	pkg::repo::{
+		PackageRepository,
 		basic::{BasicPackageRepository, RepoLocation},
 		custom::CustomPackageRepository,
-		PackageRepository,
 	},
 	plugin::PluginManager,
 };
 use nitro_config::preferences::{PrefDeser, RepoDeser};
 use nitro_core::net::download::validate_url;
 
-use anyhow::{bail, Context};
+use anyhow::{Context, bail};
 use nitro_plugin::hook::hooks::AddCustomPackageRepositories;
 use nitro_shared::{
 	lang::Language,
@@ -73,26 +73,26 @@ impl ConfigPreferences {
 		}
 
 		for repo in prefs.repositories.preferred.iter() {
-			if !repo.disable {
-				if let Err(e) = add_repo(&mut repositories, repo) {
-					o.display(MessageContents::Error(format!(
-						"Failed to add repository {}: {e:?}",
-						repo.id
-					)));
-				}
+			if !repo.disable
+				&& let Err(e) = add_repo(&mut repositories, repo)
+			{
+				o.display(MessageContents::Error(format!(
+					"Failed to add repository {}: {e:?}",
+					repo.id
+				)));
 			}
 		}
 		repositories.extend(preferred_plugin_repositories);
 		repositories.extend(PackageRepository::default_repos());
 		repositories.extend(backup_plugin_repositories);
 		for repo in prefs.repositories.backup.iter() {
-			if !repo.disable {
-				if let Err(e) = add_repo(&mut repositories, repo) {
-					o.display(MessageContents::Error(format!(
-						"Failed to add repository {}: {e:?}",
-						repo.id
-					)));
-				}
+			if !repo.disable
+				&& let Err(e) = add_repo(&mut repositories, repo)
+			{
+				o.display(MessageContents::Error(format!(
+					"Failed to add repository {}: {e:?}",
+					repo.id
+				)));
 			}
 		}
 

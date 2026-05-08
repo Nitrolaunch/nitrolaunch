@@ -3,8 +3,8 @@ use std::str::FromStr;
 use clap::Parser;
 use nitro_plugin::{
 	api::wasm::{
-		sys::{get_os_string, run_command},
 		WASMPlugin,
+		sys::{get_os_string, run_command},
 	},
 	hook::hooks::SidebarButton,
 	nitro_wasm_plugin,
@@ -71,7 +71,9 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 	plugin.add_sidebar_buttons(|_| {
 		let icon = include_str!("gear.svg");
 		Ok(vec![SidebarButton {
-			html: format!("<div style=\"margin-top:0.3rem;margin-right:-0.2rem\">{icon}</div><div>Webtools</div>"),
+			html: format!(
+				"<div style=\"margin-top:0.3rem;margin-right:-0.2rem\">{icon}</div><div>Webtools</div>"
+			),
 			href: "/custom/webtools".into(),
 			selected_url_start: Some("/custom/webtools".into()),
 			color: "#777777".into(),

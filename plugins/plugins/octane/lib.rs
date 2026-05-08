@@ -31,12 +31,12 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 		let mut jvm_args = Vec::new();
 
 		// Presets
-		if let Some(preset) = arg.config.plugin_config.get("octane_preset") {
-			if !preset.is_null() {
-				let preset: ArgsPreset = serde_json::from_value(preset.clone())
-					.context("Failed to deserialize preset")?;
-				jvm_args.extend(preset.generate_args());
-			}
+		if let Some(preset) = arg.config.plugin_config.get("octane_preset")
+			&& !preset.is_null()
+		{
+			let preset: ArgsPreset =
+				serde_json::from_value(preset.clone()).context("Failed to deserialize preset")?;
+			jvm_args.extend(preset.generate_args());
 		}
 
 		let wrapper = if let Some(priority) = arg.config.plugin_config.get("octane_priority") {

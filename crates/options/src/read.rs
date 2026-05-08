@@ -1,6 +1,6 @@
 use std::{collections::HashMap, fmt::Display, io::Read};
 
-use anyhow::{anyhow, Context};
+use anyhow::{Context, anyhow};
 #[cfg(feature = "schema")]
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};

@@ -1,6 +1,6 @@
 #[cfg(feature = "host")]
 use nitro_shared::output::NitroOutput;
-use serde::{de::DeserializeOwned, Serialize};
+use serde::{Serialize, de::DeserializeOwned};
 
 #[cfg(feature = "host")]
 use crate::hook::call::{HookCallArg, HookHandle};

@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use dashmap::DashMap;
-use image::{imageops, GenericImageView, RgbImage, SubImage};
+use image::{GenericImageView, RgbImage, SubImage, imageops};
 use nitrolaunch::net_crate::download;
 use reqwest::Client;
 

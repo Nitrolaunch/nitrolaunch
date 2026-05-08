@@ -3,27 +3,27 @@ use std::collections::HashMap;
 use anyhow::Context;
 use clap::Subcommand;
 use nitrolaunch::{
-	config::modifications::{apply_modifications_and_write, ConfigModification},
+	config::modifications::{ConfigModification, apply_modifications_and_write},
 	config_crate::instance::InstanceConfig,
 	instance::{
-		launch::LaunchSettings,
-		update::{manager::UpdateSettings, InstanceUpdateContext},
 		Instance,
+		launch::LaunchSettings,
+		update::{InstanceUpdateContext, manager::UpdateSettings},
 	},
 	io::lock::Lockfile,
 	pkg_crate::{PkgRequest, PkgRequestSource},
 	shared::{
+		Side, UpdateDepth,
 		id::InstanceID,
 		output::{MessageContents, NitroOutput},
 		util::DeserListOrSingle,
 		versions::MinecraftVersionDeser,
-		Side, UpdateDepth,
 	},
 };
 use reqwest::Client;
 
 use crate::{
-	commands::{call_plugin_subcommand, CmdData},
+	commands::{CmdData, call_plugin_subcommand},
 	secrets::get_ms_client_id,
 };
 

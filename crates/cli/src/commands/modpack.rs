@@ -1,20 +1,20 @@
-use anyhow::{bail, Context};
+use anyhow::{Context, bail};
 use clap::Subcommand;
 use nitrolaunch::{
 	config::{
-		modifications::{apply_modifications_and_write, ConfigModification},
 		Config,
+		modifications::{ConfigModification, apply_modifications_and_write},
 	},
 	config_crate::instance::InstanceConfig,
-	instance::{update::manager::UpdateSettings, Instance},
+	instance::{Instance, update::manager::UpdateSettings},
 	io::paths::Paths,
 	pkg_crate::{PkgRequest, PkgRequestSource},
-	shared::{id::InstanceID, output::NitroOutput, pkg::ArcPkgReq, Side, UpdateDepth},
+	shared::{Side, UpdateDepth, id::InstanceID, output::NitroOutput, pkg::ArcPkgReq},
 };
 use reqwest::Client;
 
 use crate::{
-	commands::{call_plugin_subcommand, CmdData},
+	commands::{CmdData, call_plugin_subcommand},
 	prompt::{pick_instance_id, pick_side},
 	secrets::get_ms_client_id,
 };
@@ -118,7 +118,7 @@ pub async fn install_into_config(
 			},
 			&client,
 			&config.plugins,
-			&paths,
+			paths,
 			o,
 		)
 		.await?;
@@ -129,13 +129,13 @@ pub async fn install_into_config(
 
 	Instance::create_from_modpack_package(
 		&instance,
-		&req,
+		req,
 		side,
 		version_manifest.list.clone(),
 		&config.packages,
 		&config.plugins,
 		&client,
-		&paths,
+		paths,
 		o,
 	)
 	.await

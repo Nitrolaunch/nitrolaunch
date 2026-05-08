@@ -1,8 +1,8 @@
 use std::time::Duration;
 
 use discord_rich_presence::{
-	activity::{Activity, ActivityType, StatusDisplayType, Timestamps},
 	DiscordIpc, DiscordIpcClient,
+	activity::{Activity, ActivityType, StatusDisplayType, Timestamps},
 };
 use nitro_plugin::api::executable::ExecutablePlugin;
 use nitro_shared::{
@@ -18,13 +18,15 @@ fn main() -> anyhow::Result<()> {
 	let mut plugin =
 		ExecutablePlugin::from_manifest_file("discord_status", include_str!("plugin.json"))?;
 
-	plugin.while_instance_launch(|mut ctx, _| loop {
-		std::thread::sleep(Duration::from_secs(5));
+	plugin.while_instance_launch(|mut ctx, _| {
+		loop {
+			std::thread::sleep(Duration::from_secs(5));
 
-		if let Err(e) = update_presence() {
-			ctx.get_output().debug(MessageContents::Error(format!(
-				"Failed to update Discord rich presence:\n{e}"
-			)));
+			if let Err(e) = update_presence() {
+				ctx.get_output().debug(MessageContents::Error(format!(
+					"Failed to update Discord rich presence:\n{e}"
+				)));
+			}
 		}
 	})?;
 

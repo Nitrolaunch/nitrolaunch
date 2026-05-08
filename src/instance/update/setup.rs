@@ -152,7 +152,7 @@ impl Instance {
 		// Create the core instance only if this is a local instance
 		if self.dir.is_some() {
 			let instance = self
-				.create_core_instance(&mut version, paths, o)
+				.create_core_instance(&version, paths, o)
 				.await
 				.context("Failed to create core instance")?;
 			arg.classpath = Some(instance.get_classpath().get_str());
@@ -266,8 +266,8 @@ impl Instance {
 			java: self.launch.java.clone(),
 			jvm_args,
 			game_args,
-			min_mem: self.launch.min_mem.clone(),
-			max_mem: self.launch.max_mem.clone(),
+			min_mem: self.launch.min_mem,
+			max_mem: self.launch.max_mem,
 			env: self.launch.env.clone(),
 			wrappers,
 			quick_play,
@@ -321,18 +321,17 @@ impl Instance {
 			return Ok(());
 		}
 
-		if let Some(uuid) = account.get_uuid() {
-			if let Some(keypair) = account.get_keypair() {
-				self.ensure_dir()?;
-				if let Some(inst_dir) = &self.dir {
-					let keys_dir = inst_dir.join("profilekeys");
-					let hyphenated_uuid =
-						hyphenate_uuid(uuid).context("Failed to hyphenate UUID")?;
-					let path = keys_dir.join(format!("{hyphenated_uuid}.json"));
-					nitro_core::io::files::create_leading_dirs(&path)?;
+		if let Some(uuid) = account.get_uuid()
+			&& let Some(keypair) = account.get_keypair()
+		{
+			self.ensure_dir()?;
+			if let Some(inst_dir) = &self.dir {
+				let keys_dir = inst_dir.join("profilekeys");
+				let hyphenated_uuid = hyphenate_uuid(uuid).context("Failed to hyphenate UUID")?;
+				let path = keys_dir.join(format!("{hyphenated_uuid}.json"));
+				nitro_core::io::files::create_leading_dirs(&path)?;
 
-					json_to_file(path, keypair).context("Failed to write keypair to file")?;
-				}
+				json_to_file(path, keypair).context("Failed to write keypair to file")?;
 			}
 		}
 

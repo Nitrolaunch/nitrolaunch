@@ -1,4 +1,4 @@
-use crate::{commands::fmt_err, State};
+use crate::{State, commands::fmt_err};
 
 use serde::{Deserialize, Serialize};
 

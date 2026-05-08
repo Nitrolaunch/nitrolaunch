@@ -1,13 +1,13 @@
 use std::path::PathBuf;
 
+use crate::State;
 use crate::commands::instance::write_instance_config;
 use crate::output::LauncherOutput;
-use crate::State;
 use anyhow::Context;
-use nitrolaunch::config::modifications::{apply_modifications_and_write, ConfigModification};
 use nitrolaunch::config::Config;
+use nitrolaunch::config::modifications::{ConfigModification, apply_modifications_and_write};
 use nitrolaunch::instance::update::manager::UpdateSettings;
-use nitrolaunch::instance::{transfer, Instance};
+use nitrolaunch::instance::{Instance, transfer};
 use nitrolaunch::io::lock::Lockfile;
 use nitrolaunch::pkg_crate::{PkgRequest, PkgRequestSource};
 use nitrolaunch::plugin_crate::hook::hooks::{

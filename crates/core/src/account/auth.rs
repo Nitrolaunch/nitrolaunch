@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use anyhow::{bail, Context};
+use anyhow::{Context, bail};
 use nitro_auth::RsaPrivateKey;
 use nitro_shared::minecraft::MinecraftUserProfile;
 use nitro_shared::output::{MessageContents, NitroOutput};
@@ -11,8 +11,8 @@ use crate::Paths;
 use nitro_auth::db::{AuthDatabase, DatabaseAccount, SensitiveAccountInfo};
 use nitro_auth::mc::Keypair;
 use nitro_auth::mc::{
-	self as auth, authenticate_microsoft_account, authenticate_microsoft_account_from_token,
-	AccessToken, ClientId, RefreshToken,
+	self as auth, AccessToken, ClientId, RefreshToken, authenticate_microsoft_account,
+	authenticate_microsoft_account_from_token,
 };
 
 use super::{Account, AccountKind, AccountManagerHooks};
@@ -33,7 +33,9 @@ impl Account {
 						.await
 						.context("Failed to get account from database")?
 					else {
-						bail!("Account not present in database. Make sure to authenticate at least once before logging in in offline mode");
+						bail!(
+							"Account not present in database. Make sure to authenticate at least once before logging in in offline mode"
+						);
 					};
 
 					self.name = Some(account.username.clone());

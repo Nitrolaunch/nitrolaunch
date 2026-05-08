@@ -6,9 +6,9 @@ use std::io::{Stdin, Write};
 use std::marker::PhantomData;
 use std::path::PathBuf;
 
-use anyhow::{bail, Context};
-use serde::de::DeserializeOwned;
+use anyhow::{Context, bail};
 use serde::Serialize;
+use serde::de::DeserializeOwned;
 
 use crate::hook::Hook;
 use crate::hook::{
@@ -16,7 +16,7 @@ use crate::hook::{
 	PLUGIN_STATE_ENV,
 };
 use crate::input_output::{InputAction, OutputAction};
-use crate::plugin::{PluginManifest, NEWEST_PROTOCOL_VERSION};
+use crate::plugin::{NEWEST_PROTOCOL_VERSION, PluginManifest};
 
 use self::output::ExecutablePluginOutput;
 
@@ -89,10 +89,10 @@ impl ExecutablePlugin {
 		if self.hook == H::get_name_static() {
 			// Check that the hook version of Nitrolaunch matches our hook version
 			let expected_version = std::env::var(HOOK_VERSION_ENV);
-			if let Ok(expected_version) = expected_version {
-				if expected_version != H::get_version().to_string() {
-					bail!("Hook version does not match. Try updating the plugin or Nitrolaunch.");
-				}
+			if let Ok(expected_version) = expected_version
+				&& expected_version != H::get_version().to_string()
+			{
+				bail!("Hook version does not match. Try updating the plugin or Nitrolaunch.");
 			}
 
 			let arg = arg(self)?;
@@ -126,17 +126,15 @@ impl ExecutablePlugin {
 
 			if !H::get_takes_over() {
 				// Output state
-				if state_has_changed {
-					if let Some(state) = state {
-						let action = OutputAction::SetState(state);
-						let _ = writeln!(
-							&mut stdout,
-							"{}",
-							action
-								.serialize(self.settings.use_base64, self.settings.protocol_version)
-								.context("Failed to serialize new hook state")?
-						);
-					}
+				if state_has_changed && let Some(state) = state {
+					let action = OutputAction::SetState(state);
+					let _ = writeln!(
+						&mut stdout,
+						"{}",
+						action
+							.serialize(self.settings.use_base64, self.settings.protocol_version)
+							.context("Failed to serialize new hook state")?
+					);
 				}
 
 				// Output result last as it will make the plugin runner stop listening

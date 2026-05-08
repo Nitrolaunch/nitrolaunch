@@ -12,12 +12,12 @@ mod version;
 
 use std::collections::HashMap;
 
-use anyhow::{bail, Context};
+use anyhow::{Context, bail};
 use clap::{Parser, Subcommand};
 use color_print::{cformat, cprintln};
 
-use nitrolaunch::config::modifications::{apply_modifications_and_write, ConfigModification};
-use nitrolaunch::config::{is_first_run, Config};
+use nitrolaunch::config::modifications::{ConfigModification, apply_modifications_and_write};
+use nitrolaunch::config::{Config, is_first_run};
 use nitrolaunch::config_crate::ConfigDeser;
 use nitrolaunch::core::QuickPlayType;
 use nitrolaunch::instance::transfer::{load_formats, migrate_instances};
@@ -38,8 +38,8 @@ use self::log::LogSubcommand;
 use self::modpack::ModpackSubcommand;
 use self::package::PackageSubcommand;
 use self::plugin::PluginSubcommand;
-use self::r#try::TrySubcommand;
 use self::template::TemplateSubcommand;
+use self::r#try::TrySubcommand;
 use self::version::VersionSubcommand;
 
 use super::output::TerminalOutput;

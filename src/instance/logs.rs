@@ -28,13 +28,11 @@ impl Instance {
 			};
 
 			result.result(o).await
+		} else if let Some(inst_dir) = &self.dir {
+			let logs_dir = inst_dir.join("logs");
+			list_logs(&logs_dir)
 		} else {
-			if let Some(inst_dir) = &self.dir {
-				let logs_dir = inst_dir.join("logs");
-				list_logs(&logs_dir)
-			} else {
-				Ok(Vec::new())
-			}
+			Ok(Vec::new())
 		}
 	}
 
@@ -61,13 +59,11 @@ impl Instance {
 			};
 
 			result.result(o).await
+		} else if let Some(inst_dir) = &self.dir {
+			let logs_dir = inst_dir.join("logs");
+			read_log(&logs_dir.join(log_id))
 		} else {
-			if let Some(inst_dir) = &self.dir {
-				let logs_dir = inst_dir.join("logs");
-				read_log(&logs_dir.join(log_id))
-			} else {
-				Ok(String::new())
-			}
+			Ok(String::new())
 		}
 	}
 }

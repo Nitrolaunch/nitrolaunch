@@ -12,9 +12,9 @@ use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use anyhow::{bail, Context};
+use anyhow::{Context, bail};
 use nitro_shared::output::{MessageContents, NitroOutput};
-use nitro_shared::{translate, UpdateDepth};
+use nitro_shared::{UpdateDepth, translate};
 use tar::Archive;
 use tokio::sync::Mutex;
 use zip::ZipArchive;

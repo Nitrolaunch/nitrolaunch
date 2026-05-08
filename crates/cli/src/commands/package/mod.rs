@@ -4,7 +4,7 @@ use std::{collections::HashMap, sync::Arc};
 
 use super::CmdData;
 use itertools::Itertools;
-use nitrolaunch::config::modifications::{apply_modifications_and_write, ConfigModification};
+use nitrolaunch::config::modifications::{ConfigModification, apply_modifications_and_write};
 use nitrolaunch::config_crate::package::PackageConfigDeser;
 use nitrolaunch::parse::lex::Token;
 use nitrolaunch::pkg_crate::metadata::PackageMetadata;
@@ -14,7 +14,7 @@ use nitrolaunch::shared::id::{InstanceID, TemplateID};
 use nitrolaunch::shared::loaders::Loader;
 use nitrolaunch::shared::output::{MessageContents, NitroOutput};
 
-use anyhow::{bail, Context};
+use anyhow::{Context, bail};
 use clap::Subcommand;
 use color_print::{cformat, cprint, cprintln};
 use nitrolaunch::shared::pkg::{PackageID, PackageKind, PackageSearchParameters};
@@ -332,12 +332,10 @@ async fn cat(data: &mut CmdData<'_>, id: &str, raw: bool) -> anyhow::Result<()> 
 
 	if raw {
 		print!("{contents}");
+	} else if package.content_type == PackageContentType::Script {
+		pretty_print_package_script(&contents)?;
 	} else {
-		if package.content_type == PackageContentType::Script {
-			pretty_print_package_script(&contents)?;
-		} else {
-			print!("{contents}");
-		}
+		print!("{contents}");
 	}
 
 	Ok(())
@@ -458,59 +456,59 @@ async fn info(data: &mut CmdData<'_>, id: &str, raw: bool) -> anyhow::Result<()>
 	} else {
 		cprintln!("<s><g>Package</g> <b>{}</b>", id);
 	}
-	if let Some(description) = &metadata.description {
-		if !description.is_empty() {
-			cprintln!("   <s>{}", description);
-		}
+	if let Some(description) = &metadata.description
+		&& !description.is_empty()
+	{
+		cprintln!("   <s>{}", description);
 	}
 	cprintln!("   <s>ID:</s> <g>{}", id);
-	if let Some(authors) = &metadata.authors {
-		if !authors.is_empty() {
-			cprintln!("   <s>Authors:</s> <g>{}", authors.join(", "));
-		}
+	if let Some(authors) = &metadata.authors
+		&& !authors.is_empty()
+	{
+		cprintln!("   <s>Authors:</s> <g>{}", authors.join(", "));
 	}
-	if let Some(maintainers) = &metadata.package_maintainers {
-		if !maintainers.is_empty() {
-			cprintln!(
-				"   <s>Package Maintainers:</s> <g>{}",
-				maintainers.join(", ")
-			);
-		}
+	if let Some(maintainers) = &metadata.package_maintainers
+		&& !maintainers.is_empty()
+	{
+		cprintln!(
+			"   <s>Package Maintainers:</s> <g>{}",
+			maintainers.join(", ")
+		);
 	}
-	if let Some(website) = &metadata.website {
-		if !website.is_empty() {
-			cprintln!("   <s>Website:</s> <b!>{}", website);
-		}
+	if let Some(website) = &metadata.website
+		&& !website.is_empty()
+	{
+		cprintln!("   <s>Website:</s> <b!>{}", website);
 	}
-	if let Some(support_link) = &metadata.support_link {
-		if !support_link.is_empty() {
-			cprintln!("   <s>Support Link:</s> <b!>{}", support_link);
-		}
+	if let Some(support_link) = &metadata.support_link
+		&& !support_link.is_empty()
+	{
+		cprintln!("   <s>Support Link:</s> <b!>{}", support_link);
 	}
-	if let Some(documentation) = &metadata.documentation {
-		if !documentation.is_empty() {
-			cprintln!("   <s>Documentation:</s> <b!>{}", documentation);
-		}
+	if let Some(documentation) = &metadata.documentation
+		&& !documentation.is_empty()
+	{
+		cprintln!("   <s>Documentation:</s> <b!>{}", documentation);
 	}
-	if let Some(source) = &metadata.source {
-		if !source.is_empty() {
-			cprintln!("   <s>Source:</s> <b!>{}", source);
-		}
+	if let Some(source) = &metadata.source
+		&& !source.is_empty()
+	{
+		cprintln!("   <s>Source:</s> <b!>{}", source);
 	}
-	if let Some(issues) = &metadata.issues {
-		if !issues.is_empty() {
-			cprintln!("   <s>Issue Tracker:</s> <b!>{}", issues);
-		}
+	if let Some(issues) = &metadata.issues
+		&& !issues.is_empty()
+	{
+		cprintln!("   <s>Issue Tracker:</s> <b!>{}", issues);
 	}
-	if let Some(community) = &metadata.community {
-		if !community.is_empty() {
-			cprintln!("   <s>Community Link:</s> <b!>{}", community);
-		}
+	if let Some(community) = &metadata.community
+		&& !community.is_empty()
+	{
+		cprintln!("   <s>Community Link:</s> <b!>{}", community);
 	}
-	if let Some(license) = &metadata.license {
-		if !license.is_empty() {
-			cprintln!("   <s>License:</s> <b!>{}", license);
-		}
+	if let Some(license) = &metadata.license
+		&& !license.is_empty()
+	{
+		cprintln!("   <s>License:</s> <b!>{}", license);
 	}
 
 	Ok(())

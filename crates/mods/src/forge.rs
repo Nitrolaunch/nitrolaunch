@@ -1,26 +1,25 @@
 use std::{fmt::Display, ops::DerefMut, path::Path, process::Command};
 
-use anyhow::{bail, Context};
+use anyhow::{Context, bail};
 use nitro_core::{
 	io::{
 		files::create_leading_dirs,
-		java::classpath::{Classpath, CLASSPATH_SEP},
+		java::classpath::{CLASSPATH_SEP, Classpath},
 		json_from_file,
 	},
 	net::game_files::{
 		client_meta::{
-			args::{ArgumentItem, Arguments},
 			ClientMeta,
+			args::{ArgumentItem, Arguments},
 		},
 		libraries::get_classpath,
 	},
 };
 use nitro_net::neoforge;
 use nitro_shared::{
-	no_window,
+	Side, UpdateDepth, no_window,
 	output::{MessageContents, NitroOutput},
 	versions::VersionInfo,
-	Side, UpdateDepth,
 };
 use reqwest::Client;
 
@@ -261,8 +260,7 @@ fn create_mojang_launcher_jsons(dir: &Path) -> anyhow::Result<()> {
 /// Processes an argument from the version JSON to replace tokens
 fn process_arg(arg: &str, libraries_dir: &Path, version_name: &str) -> String {
 	let arg = arg.replace("${classpath_separator}", &format!("{CLASSPATH_SEP}"));
-	let arg = arg.replace("${library_directory}", &*libraries_dir.to_string_lossy());
-	let arg = arg.replace("${version_name}", version_name);
+	let arg = arg.replace("${library_directory}", &libraries_dir.to_string_lossy());
 
-	arg
+	arg.replace("${version_name}", version_name)
 }

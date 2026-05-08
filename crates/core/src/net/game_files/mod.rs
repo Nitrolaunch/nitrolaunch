@@ -9,9 +9,9 @@ pub mod version_manifest;
 
 use crate::io::files::paths::Paths;
 use crate::io::update::UpdateManager;
+use nitro_shared::Side;
 use nitro_shared::translate;
 use nitro_shared::util::cap_first_letter;
-use nitro_shared::Side;
 
 use reqwest::Client;
 

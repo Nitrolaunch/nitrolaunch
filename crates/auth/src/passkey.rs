@@ -1,7 +1,7 @@
 use anyhow::Context;
 use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
-use rsa::{rand_core::CryptoRngCore, traits::PaddingScheme, BigUint, RsaPrivateKey, RsaPublicKey};
+use rsa::{BigUint, RsaPrivateKey, RsaPublicKey, rand_core::CryptoRngCore, traits::PaddingScheme};
 
 /// Create the RSA public and private key from a passkey
 pub fn generate_keys(passkey: &str) -> anyhow::Result<RsaPrivateKey> {

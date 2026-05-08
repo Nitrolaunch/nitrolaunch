@@ -4,8 +4,8 @@ use std::{
 	time::UNIX_EPOCH,
 };
 
-use anyhow::{bail, Context};
-use wasmtime::{component::Component, Config, Engine};
+use anyhow::{Context, bail};
+use wasmtime::{Config, Engine, component::Component};
 
 /// Manager for loading and caching WASM efficiently
 pub struct WASMLoader {
@@ -85,12 +85,11 @@ impl WASMLoader {
 				.await
 				.context("Failed to compile WASM file")??;
 
-			if let Ok(bytes) = component.serialize() {
-				if tokio::fs::write(cached_file_path, bytes).await.is_ok() {
-					if let Some(last_modified) = last_modified {
-						let _ = tokio::fs::write(timestamp_path, last_modified.to_string()).await;
-					}
-				}
+			if let Ok(bytes) = component.serialize()
+				&& tokio::fs::write(cached_file_path, bytes).await.is_ok()
+				&& let Some(last_modified) = last_modified
+			{
+				let _ = tokio::fs::write(timestamp_path, last_modified.to_string()).await;
 			}
 
 			component

@@ -89,7 +89,7 @@ fn main() -> anyhow::Result<()> {
 
 		// Cleanup files when the version changes
 		if arg.old_version != new_version {
-			cleanup_files(&Path::new(inst_dir));
+			cleanup_files(Path::new(inst_dir));
 		}
 
 		Ok(OnInstanceSetupResult {

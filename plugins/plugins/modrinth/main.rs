@@ -208,14 +208,14 @@ fn main() -> anyhow::Result<()> {
 		process.display(MessageContents::StartProcess("Installing modpack".into()));
 
 		pack.apply(
-			&Path::new(&arg.target_path),
+			Path::new(&arg.target_path),
 			&addons_dir,
 			arg.side,
 			old_pack.as_mut(),
 		)
 		.context("Failed to apply modpack")?;
 
-		let addons = pack.get_addons(&Path::new(&arg.target_path), &addons_dir)?;
+		let addons = pack.get_addons(Path::new(&arg.target_path), &addons_dir)?;
 
 		process.display(MessageContents::Success("Modrinth pack installed".into()));
 
@@ -596,10 +596,10 @@ async fn download_multiple_projects(
 		for project in &project_infos {
 			for version in &project.versions {
 				for dep in &version.dependencies {
-					if let Some(project_id) = &dep.project_id {
-						if !all_dependencies.contains(project_id) {
-							all_dependencies.push(project_id.clone());
-						}
+					if let Some(project_id) = &dep.project_id
+						&& !all_dependencies.contains(project_id)
+					{
+						all_dependencies.push(project_id.clone());
 					}
 				}
 			}
@@ -702,10 +702,12 @@ fn mrpack_index_to_config(index: &ModrinthIndex, side: Side) -> InstanceConfig {
 		Some(format!("neoforged@{version}"))
 	} else if let Some(version) = &index.dependencies.fabric_loader {
 		Some(format!("fabric@{version}"))
-	} else if let Some(version) = &index.dependencies.quilt_loader {
-		Some(format!("quilt@{version}"))
 	} else {
-		None
+		index
+			.dependencies
+			.quilt_loader
+			.as_ref()
+			.map(|version| format!("quilt@{version}"))
 	};
 
 	InstanceConfig {

@@ -1,8 +1,8 @@
-use nitro_auth::mc::{call_mc_api, Keypair};
+use nitro_auth::mc::{Keypair, call_mc_api};
 use nitro_shared::minecraft::{MinecraftUserProfile, SkinVariant};
 use reqwest::{
-	multipart::{Form, Part},
 	Client,
+	multipart::{Form, Part},
 };
 use serde::{Deserialize, Serialize};
 

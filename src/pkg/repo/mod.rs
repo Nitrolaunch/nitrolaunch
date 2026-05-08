@@ -2,8 +2,8 @@ use crate::io::paths::Paths;
 use crate::plugin::PluginManager;
 use basic::{BasicPackageRepository, RepoLocation};
 use custom::CustomPackageRepository;
-use nitro_pkg::repo::{PackageFlag, RepoMetadata, RepoPkgEntry};
 use nitro_pkg::PackageContentType;
+use nitro_pkg::repo::{PackageFlag, RepoMetadata, RepoPkgEntry};
 
 use anyhow::Context;
 use nitro_shared::output::{MessageContents, NitroOutput};
@@ -14,10 +14,10 @@ use reqwest::Client;
 use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};
 
+use super::PkgLocation;
 use super::core::{
 	get_all_core_packages, get_core_package_content_type, get_core_package_count, is_core_package,
 };
-use super::PkgLocation;
 
 /// Basic index-based repositories
 pub mod basic;
@@ -195,16 +195,16 @@ pub async fn query_all(
 	o: &mut impl NitroOutput,
 ) -> anyhow::Result<Option<RepoQueryResult>> {
 	for repo in repos {
-		if let PackageRepository::Custom(..) = &repo {
-			if !include_custom_repos {
-				continue;
-			}
+		if let PackageRepository::Custom(..) = &repo
+			&& !include_custom_repos
+		{
+			continue;
 		}
 
-		if let Some(requested_repo) = &pkg.repository {
-			if repo.get_id() != requested_repo {
-				continue;
-			}
+		if let Some(requested_repo) = &pkg.repository
+			&& repo.get_id() != requested_repo
+		{
+			continue;
 		}
 
 		let query = match repo.query(&pkg.id, paths, client, plugins, o).await {

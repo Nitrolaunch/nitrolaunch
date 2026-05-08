@@ -1,11 +1,11 @@
 use std::collections::HashMap;
 
+use nitro_shared::Side;
 use nitro_shared::java_args::MemoryNum;
 use nitro_shared::loaders::Loader;
 use nitro_shared::pkg::{PackageOverrides, PackageStability};
-use nitro_shared::util::{merge_options, DefaultExt, DeserListOrSingle};
+use nitro_shared::util::{DefaultExt, DeserListOrSingle, merge_options};
 use nitro_shared::versions::MinecraftVersionDeser;
-use nitro_shared::Side;
 #[cfg(feature = "schema")]
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};

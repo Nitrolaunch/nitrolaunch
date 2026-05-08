@@ -248,13 +248,13 @@ fn launch_config_to_options(config: LaunchConfig) -> anyhow::Result<LaunchOption
 		LaunchMemory::Single(string) => MemoryNum::parse(string),
 		LaunchMemory::Both { max, .. } => MemoryNum::parse(max),
 	};
-	if let Some(min_mem) = &min_mem {
-		if let Some(max_mem) = &max_mem {
-			ensure!(
-				min_mem.to_bytes() <= max_mem.to_bytes(),
-				"Minimum memory must be less than or equal to maximum memory"
-			);
-		}
+	if let Some(min_mem) = &min_mem
+		&& let Some(max_mem) = &max_mem
+	{
+		ensure!(
+			min_mem.to_bytes() <= max_mem.to_bytes(),
+			"Minimum memory must be less than or equal to maximum memory"
+		);
 	}
 	Ok(LaunchOptions {
 		jvm_args: config.args.jvm.parse(),

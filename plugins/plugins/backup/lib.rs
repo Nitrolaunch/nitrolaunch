@@ -5,13 +5,13 @@ use std::path::{Path, PathBuf};
 use std::time::{Duration, SystemTime};
 
 use anyhow::Context;
-use backup::{get_backup_directory, BackupAutoHook, Config, Index, DEFAULT_GROUP};
+use backup::{BackupAutoHook, Config, DEFAULT_GROUP, Index, get_backup_directory};
 use clap::Parser;
+use nitro_plugin::api::wasm::WASMPlugin;
 use nitro_plugin::api::wasm::nitro::get_instance_dir;
 use nitro_plugin::api::wasm::output::WASMPluginOutput;
 use nitro_plugin::api::wasm::sys::get_data_dir;
 use nitro_plugin::api::wasm::util::get_custom_config;
-use nitro_plugin::api::wasm::WASMPlugin;
 use nitro_plugin::nitro_wasm_plugin;
 use nitro_shared::output::{MessageContents, NitroOutput};
 
@@ -66,7 +66,7 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 			check_auto_hook(
 				BackupAutoHook::Launch,
 				&arg.id,
-				&Path::new(inst_dir),
+				Path::new(inst_dir),
 				&mut WASMPluginOutput::new(),
 			)?;
 		}
@@ -79,7 +79,7 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 			check_auto_hook(
 				BackupAutoHook::Stop,
 				&arg.id,
-				&Path::new(inst_dir),
+				Path::new(inst_dir),
 				&mut WASMPluginOutput::new(),
 			)?;
 		}
@@ -326,10 +326,10 @@ fn check_auto_hook(
 	}
 
 	for (group_id, group) in groups {
-		if let Some(on) = &group.on {
-			if on == &hook {
-				index.create_backup(BackupSource::Auto, Some(&group_id), inst_dir)?;
-			}
+		if let Some(on) = &group.on
+			&& on == &hook
+		{
+			index.create_backup(BackupSource::Auto, Some(&group_id), inst_dir)?;
 		}
 	}
 

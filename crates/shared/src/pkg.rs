@@ -11,7 +11,7 @@ use std::sync::Arc;
 use crate::loaders::Loader;
 use crate::minecraft::AddonKind;
 use crate::util::is_valid_identifier;
-use crate::versions::{parse_versioned_string, VersionPattern};
+use crate::versions::{VersionPattern, parse_versioned_string};
 
 /// Type for the ID of a package
 pub type PackageID = Arc<str>;
@@ -524,7 +524,9 @@ pub enum ResolutionError {
 	NoValidVersionsFound(ArcPkgReq, Vec<VersionPattern>),
 	#[error("{pkg} extends the functionality of the package {1}, which is not installed", pkg = .0.as_ref().map(|x| format!("The package {}", x.debug_sources())).unwrap_or("A package".into()))]
 	ExtensionNotFulfilled(Option<ArcPkgReq>, ArcPkgReq),
-	#[error("Package {0} has been explicitly required by package {1}. This means it must be required by the user in their config.")]
+	#[error(
+		"Package {0} has been explicitly required by package {1}. This means it must be required by the user in their config."
+	)]
 	ExplicitRequireNotFulfilled(ArcPkgReq, ArcPkgReq),
 	#[error("Package {0} is incompatible with the packages {refusers}", refusers = .1.iter().join(", "))]
 	IncompatiblePackage(ArcPkgReq, Vec<Arc<str>>),

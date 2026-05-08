@@ -1,6 +1,6 @@
-use anyhow::{bail, Context};
-use nitro_instance::addon::storage::get_sha256_addon_path;
+use anyhow::{Context, bail};
 use nitro_instance::addon::Addon;
+use nitro_instance::addon::storage::get_sha256_addon_path;
 use nitro_instance::lock::LockfileAddon;
 use nitro_pkg::addon::PackageAddon;
 use nitro_shared::io::update_link;

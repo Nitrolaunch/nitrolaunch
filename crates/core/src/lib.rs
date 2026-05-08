@@ -31,14 +31,14 @@ pub mod util;
 pub mod version;
 
 use anyhow::Context;
-use io::java::install::{JavaInstallParameters, JavaInstallation, JavaInstallationKind};
 use io::java::JavaMajorVersion;
+use io::java::install::{JavaInstallParameters, JavaInstallation, JavaInstallationKind};
 use io::{persistent::PersistentData, update::UpdateManager};
-use net::game_files::version_manifest::{make_version_list, VersionManifestAndList};
+use net::game_files::version_manifest::{VersionManifestAndList, make_version_list};
+use nitro_shared::UpdateDepth;
 use nitro_shared::minecraft::VersionEntry;
 use nitro_shared::output::{self, NitroOutput, NoOp};
 use nitro_shared::versions::{VersionInfo, VersionName};
-use nitro_shared::UpdateDepth;
 use tokio::sync::Mutex;
 use util::versions::MinecraftVersion;
 use version::{

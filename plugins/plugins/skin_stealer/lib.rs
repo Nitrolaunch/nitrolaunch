@@ -1,8 +1,8 @@
-use anyhow::{bail, Context};
-use base64::engine::GeneralPurposeConfig;
+use anyhow::{Context, bail};
 use base64::Engine;
-use nitro_plugin::api::wasm::net::download_bytes;
+use base64::engine::GeneralPurposeConfig;
 use nitro_plugin::api::wasm::WASMPlugin;
+use nitro_plugin::api::wasm::net::download_bytes;
 use nitro_plugin::nitro_wasm_plugin;
 use nitro_shared::{
 	minecraft::{Cosmetic, CosmeticState, Skin, SkinVariant},

@@ -5,8 +5,8 @@ use nitro_shared::{
 };
 
 use crate::account::{
-	auth::{update_microsoft_account_auth, AuthParameters},
 	Account, AccountKind,
+	auth::{AuthParameters, update_microsoft_account_auth},
 };
 
 impl Account {

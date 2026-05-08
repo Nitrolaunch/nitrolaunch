@@ -5,7 +5,7 @@ pub mod cosmetics;
 
 use std::{collections::HashMap, ops::Deref, sync::Arc};
 
-use anyhow::{bail, Context};
+use anyhow::{Context, bail};
 use nitro_auth::mc::{AccessToken, ClientId, Keypair};
 use nitro_shared::{
 	minecraft::{Cape, MinecraftUserProfile, Skin, SkinVariant},

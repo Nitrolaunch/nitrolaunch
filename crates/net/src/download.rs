@@ -2,7 +2,7 @@ use std::fs::File;
 use std::io::{BufWriter, Cursor, Write};
 use std::path::Path;
 
-use anyhow::{ensure, Context};
+use anyhow::{Context, ensure};
 use nitro_shared::output::MessageContents;
 use reqwest::{IntoUrl, Url};
 use serde::de::DeserializeOwned;

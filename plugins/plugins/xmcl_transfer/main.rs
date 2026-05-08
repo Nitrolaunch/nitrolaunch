@@ -4,20 +4,20 @@ use std::{
 	path::{Path, PathBuf},
 };
 
-use anyhow::{bail, Context};
+use anyhow::{Context, bail};
 use nitro_core::io::java::install::JavaInstallationKind;
 use nitro_plugin::{api::executable::ExecutablePlugin, hook::hooks::ImportInstanceResult};
 use nitro_shared::{
+	Side,
 	loaders::Loader,
 	output::{MessageContents, NitroOutput},
-	versions::{parse_versioned_string, MinecraftVersionDeser},
-	Side,
+	versions::{MinecraftVersionDeser, parse_versioned_string},
 };
 use nitrolaunch::config_crate::instance::{
 	Args, InstanceConfig, LaunchArgs, LaunchConfig, LaunchMemory, QuickPlay,
 };
 use serde::{Deserialize, Serialize};
-use zip::{write::FileOptions, ZipArchive, ZipWriter};
+use zip::{ZipArchive, ZipWriter, write::FileOptions};
 
 fn main() -> anyhow::Result<()> {
 	let mut plugin =

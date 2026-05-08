@@ -1,6 +1,6 @@
 use std::{collections::HashMap, path::Path};
 
-use anyhow::{bail, Context};
+use anyhow::{Context, bail};
 use nitro_config::instance::InstanceConfig;
 use nitro_plugin::hook::hooks::{
 	AddInstanceTransferFormats, ExportInstance, ExportInstanceArg, ImportInstance,
@@ -9,7 +9,7 @@ use nitro_plugin::hook::hooks::{
 };
 use nitro_shared::lang::translate::TranslationKey;
 use nitro_shared::output::{MessageContents, NitroOutput};
-use nitro_shared::{translate, Side};
+use nitro_shared::{Side, translate};
 
 use crate::io::lock::Lockfile;
 use crate::{io::paths::Paths, plugin::PluginManager};

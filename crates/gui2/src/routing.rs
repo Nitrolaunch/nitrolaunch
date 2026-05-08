@@ -20,7 +20,7 @@ impl Navigator {
 		// If we are not at the end, replace the forward history with just the new route (we are making a new branch)
 		self.history.truncate(self.current + 1);
 		self.history.push_back(route);
-        self.current = self.history.len() - 1;
+		self.current = self.history.len() - 1;
 	}
 
 	pub fn route(&self) -> &Page {

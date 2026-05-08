@@ -1,18 +1,18 @@
 use std::fmt::Display;
 
 use anyhow::bail;
+use nitro_shared::Side;
 use nitro_shared::later::Later;
 use nitro_shared::loaders::LoaderMatch;
 use nitro_shared::pkg::{AddonHashes, PackageCategory};
 use nitro_shared::util::yes_no;
 use nitro_shared::versions::VersionPattern;
-use nitro_shared::Side;
 
+use super::FailReason;
 use super::conditions::Condition;
 use super::lex::{TextPos, Token};
 use super::parse::BlockId;
 use super::vars::Value;
-use super::FailReason;
 use crate::conditions::{ArchCondition, OSCondition};
 use crate::unexpected_token;
 use nitro_shared::minecraft::AddonKind;
@@ -477,17 +477,18 @@ impl Instruction {
 					}
 					_ => unexpected_token!(tok, pos),
 				},
-				InstrKind::Call(routine) => {
-					match tok {
-						Token::Ident(name) => {
-							if crate::routine::is_reserved(name) {
-								bail!("Cannot use reserved routine name '{name}' in call instruction {}", pos.clone());
-							}
-							routine.fill(name.clone())
+				InstrKind::Call(routine) => match tok {
+					Token::Ident(name) => {
+						if crate::routine::is_reserved(name) {
+							bail!(
+								"Cannot use reserved routine name '{name}' in call instruction {}",
+								pos.clone()
+							);
 						}
-						_ => unexpected_token!(tok, pos),
+						routine.fill(name.clone())
 					}
-				}
+					_ => unexpected_token!(tok, pos),
+				},
 				_ => {}
 			}
 

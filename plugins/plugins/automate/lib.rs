@@ -1,6 +1,6 @@
-use anyhow::{bail, Context};
+use anyhow::{Context, bail};
 use nitro_plugin::{
-	api::wasm::{output::WASMPluginOutput, sys::get_os_string, WASMPlugin},
+	api::wasm::{WASMPlugin, output::WASMPluginOutput, sys::get_os_string},
 	nitro_wasm_plugin,
 	shared::{
 		output::{MessageContents, NitroOutput},

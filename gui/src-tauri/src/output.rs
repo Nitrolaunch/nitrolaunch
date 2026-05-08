@@ -7,7 +7,7 @@ use nitrolaunch::shared::output::{Message, MessageContents, MessageLevel, NitroO
 use nitrolaunch::shared::pkg::{ArcPkgReq, PackageDiff, ResolutionError};
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter};
-use tokio::sync::{mpsc::Sender, Mutex};
+use tokio::sync::{Mutex, mpsc::Sender};
 
 /// Response to a prompt in the frontend, shared with a mutex
 pub type PromptResponse = Arc<Mutex<Option<String>>>;

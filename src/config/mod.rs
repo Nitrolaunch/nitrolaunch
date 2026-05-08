@@ -13,20 +13,20 @@ pub mod plugin;
 /// Configuring global preferences
 pub mod preferences;
 
-use crate::config::account::{read_account_config, AuthFunction};
+use crate::config::account::{AuthFunction, read_account_config};
 use crate::config::checks::{check_configured_packages, check_nitro_version};
 use crate::config::core_setup::setup_core;
 use crate::instance::update::manager::UpdateSettings;
-use crate::plugin::context::NitroPluginContext;
 use crate::plugin::PluginManager;
+use crate::plugin::context::NitroPluginContext;
 use anyhow::Context;
-use nitro_config::template::consolidate_template_configs;
-use nitro_config::template::TemplateConfig;
 use nitro_config::ConfigDeser;
+use nitro_config::template::TemplateConfig;
+use nitro_config::template::consolidate_template_configs;
+use nitro_core::NitroCore;
 use nitro_core::account::AccountManager;
 use nitro_core::auth_crate::mc::ClientId;
 use nitro_core::io::{json_from_file, json_to_file_pretty};
-use nitro_core::NitroCore;
 use nitro_plugin::hook::hooks::{AddInstances, AddInstancesArg, AddSupportedLoaders, AddTemplates};
 use nitro_shared::id::{InstanceID, TemplateID};
 use nitro_shared::output::{MessageContents, NitroOutput};

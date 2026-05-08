@@ -6,23 +6,23 @@ use std::sync::Arc;
 use itertools::Itertools;
 use nitro_core::net::get_transfer_limit;
 use nitro_instance::addon::get_addon_dirs;
-use nitro_pkg::repo::PackageFlag;
 use nitro_pkg::PkgRequest;
+use nitro_pkg::repo::PackageFlag;
 use nitro_shared::minecraft::AddonKind;
 use nitro_shared::output::{MessageContents, NitroOutput};
-use nitro_shared::pkg::{merge_package_lists, ArcPkgReq, PackageDiff};
+use nitro_shared::pkg::{ArcPkgReq, PackageDiff, merge_package_lists};
 use nitro_shared::translate;
 use nitro_shared::versions::VersionInfo;
 use tokio::sync::Semaphore;
 use tokio::task::JoinSet;
 
 use crate::instance::Instance;
-use crate::pkg::eval::{resolve, EvalConstants, EvalParameters, ResolutionAndEvalResult};
+use crate::pkg::eval::{EvalConstants, EvalParameters, ResolutionAndEvalResult, resolve};
 use crate::util::select_random_n_items_from_list;
 
 use super::InstanceUpdateContext;
 
-use anyhow::{bail, Context};
+use anyhow::{Context, bail};
 
 /// Install packages on an instance. Returns a set of all unique packages
 pub async fn update_instance_packages<O: NitroOutput>(
@@ -68,10 +68,8 @@ pub async fn update_instance_packages<O: NitroOutput>(
 		}
 	}
 
-	if !diffs.is_empty() {
-		if !ctx.output.prompt_special_package_diffs(diffs).await? {
-			bail!("Package update aborted");
-		}
+	if !diffs.is_empty() && !ctx.output.prompt_special_package_diffs(diffs).await? {
+		bail!("Package update aborted");
 	}
 
 	let version_info = VersionInfo {

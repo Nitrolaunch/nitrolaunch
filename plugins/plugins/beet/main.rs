@@ -72,10 +72,7 @@ async fn link(instance: String, world: String) -> anyhow::Result<()> {
 		.context("Instance does not exist")?;
 
 	instance.ensure_dir()?;
-	let game_dir = instance
-		.dir()
-		.clone()
-		.context("Instance has no local directory")?;
+	let game_dir = instance.dir().context("Instance has no local directory")?;
 
 	// Run the beet link command
 	let mut command = Command::new("beet");

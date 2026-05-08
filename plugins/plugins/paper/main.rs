@@ -3,18 +3,18 @@ use std::{
 	path::{Path, PathBuf},
 };
 
-use anyhow::{bail, Context};
+use anyhow::{Context, bail};
 use nitro_core::{
-	io::{files::create_leading_dirs, json_from_file, json_to_file},
 	Paths,
+	io::{files::create_leading_dirs, json_from_file, json_to_file},
 };
 use nitro_mods::paper::{self, BuildInfoResponse};
 use nitro_net::download::Client;
 use nitro_plugin::{api::executable::ExecutablePlugin, hook::hooks::OnInstanceSetupResult};
 use nitro_shared::{
+	Side, UpdateDepth,
 	loaders::Loader,
 	output::{MessageContents, NitroOutput, OutputProcess},
-	Side, UpdateDepth,
 };
 use tokio::runtime::Runtime;
 
@@ -107,26 +107,26 @@ fn main() -> anyhow::Result<()> {
 
 		// If the new and current build nums mismatch, then get info for the current build num and
 		// use it to teardown
-		if let Some(current_build_num) = current_build_num {
-			if desired_build_num != current_build_num {
-				process.display(MessageContents::StartProcess(
-					"Removing old build".to_string(),
-				));
-				let build_info = get_build_info(
-					&paths,
-					mode,
-					&arg.version_info.version,
-					current_build_num,
-					arg.update_depth,
-					&runtime,
-					&client,
-					process.deref_mut(),
-				)
-				.context("Failed to get old version build info")?;
+		if let Some(current_build_num) = current_build_num
+			&& desired_build_num != current_build_num
+		{
+			process.display(MessageContents::StartProcess(
+				"Removing old build".to_string(),
+			));
+			let build_info = get_build_info(
+				&paths,
+				mode,
+				&arg.version_info.version,
+				current_build_num,
+				arg.update_depth,
+				&runtime,
+				&client,
+				process.deref_mut(),
+			)
+			.context("Failed to get old version build info")?;
 
-				remove_paper(&Path::new(inst_dir), build_info.downloads.application.name)
-					.with_context(|| format!("Failed to remove {mode} from the instance"))?;
-			}
+			remove_paper(Path::new(inst_dir), build_info.downloads.application.name)
+				.with_context(|| format!("Failed to remove {mode} from the instance"))?;
 		}
 
 		// Get the name of the remote JAR file we need to download

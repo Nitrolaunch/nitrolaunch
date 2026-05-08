@@ -124,10 +124,11 @@ fn main() -> anyhow::Result<()> {
 		let mut instances = HashMap::new();
 
 		for name in names {
-			if let Some(requested_instances) = &arg.instances {
-				if !requested_instances.is_empty() && !requested_instances.contains(&name) {
-					continue;
-				}
+			if let Some(requested_instances) = &arg.instances
+				&& !requested_instances.is_empty()
+				&& !requested_instances.contains(&name)
+			{
+				continue;
 			}
 
 			let path = instances_folder.join(&name);

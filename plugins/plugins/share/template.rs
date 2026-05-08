@@ -1,12 +1,12 @@
-use anyhow::{bail, Context};
+use anyhow::{Context, bail};
 use base64::{
-	engine::{GeneralPurpose, GeneralPurposeConfig},
 	Engine,
+	engine::{GeneralPurpose, GeneralPurposeConfig},
 };
 use nitro_config::{instance::is_valid_instance_id, template::TemplateConfig};
 use nitro_plugin::api::wasm::nitro::{create_template, get_templates};
 use nitro_shared::id::TemplateID;
-use rand::{rngs::StdRng, RngCore, SeedableRng};
+use rand::{RngCore, SeedableRng, rngs::StdRng};
 use wstd::http::{Client, Request};
 
 /// Filename for the online bin
@@ -72,7 +72,7 @@ async fn upload(
 	client: &Client,
 ) -> anyhow::Result<()> {
 	let request = Request::post(format!("https://filebin.net/{bin_id}/{filename}"))
-		.header("Content-Length", contents.as_bytes().len())
+		.header("Content-Length", contents.len())
 		.body(contents)?;
 	let response = client.send(request).await?;
 	if !response.status().is_success() {

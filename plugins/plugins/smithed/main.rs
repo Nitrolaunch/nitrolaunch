@@ -276,13 +276,14 @@ async fn get_cached_pack(
 		let mut pack_info: PackInfo =
 			json_from_file(&pack_path).context("Failed to read pack info from file")?;
 
-		if download_body && pack_info.body_exists && pack_info.body.is_none() {
-			if let Some(body) = &pack_info.pack.display.web_page {
-				if let Ok(text) = download::text(body, client).await {
-					pack_info.body = Some(text);
-					let _ = json_to_file(&pack_path, &pack_info);
-				}
-			}
+		if download_body
+			&& pack_info.body_exists
+			&& pack_info.body.is_none()
+			&& let Some(body) = &pack_info.pack.display.web_page
+			&& let Ok(text) = download::text(body, client).await
+		{
+			pack_info.body = Some(text);
+			let _ = json_to_file(&pack_path, &pack_info);
 		}
 
 		Ok(Some(pack_info))

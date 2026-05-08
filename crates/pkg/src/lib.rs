@@ -191,10 +191,10 @@ pub fn is_open_source(meta: &PackageMetadata, properties: &PackageProperties) ->
 	}
 
 	// Infer from the license
-	if let Some(license) = &meta.license {
-		if let "ARR" | "All Rights Reserved" = license.as_str() {
-			return false;
-		}
+	if let Some(license) = &meta.license
+		&& let "ARR" | "All Rights Reserved" = license.as_str()
+	{
+		return false;
 	}
 
 	true

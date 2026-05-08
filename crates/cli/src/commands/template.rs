@@ -1,25 +1,25 @@
 use crate::{
 	commands::{call_plugin_subcommand, config::edit_temp_file},
-	output::{icons_enabled, HYPHEN_POINT, INSTANCE, LOADER, PACKAGE, VERSION},
+	output::{HYPHEN_POINT, INSTANCE, LOADER, PACKAGE, VERSION, icons_enabled},
 	prompt::{pick_instance_id, pick_template},
 };
 use std::ops::DerefMut;
 
 use super::CmdData;
 
-use anyhow::{bail, Context};
+use anyhow::{Context, bail};
 use clap::Subcommand;
 use color_print::{cprint, cprintln};
 use inquire::Confirm;
 use itertools::Itertools;
 use nitrolaunch::{
-	config::modifications::{apply_modifications_and_write, ConfigModification},
+	config::modifications::{ConfigModification, apply_modifications_and_write},
 	config_crate::template::{TemplateConfig, TemplateLoaderConfiguration},
 	core::util::versions::MinecraftVersion,
 	plugin_crate::hook::hooks::{DeleteTemplate, SaveTemplateConfigArg},
 	shared::{
-		output::{MessageContents, NitroOutput},
 		Side,
+		output::{MessageContents, NitroOutput},
 	},
 };
 
@@ -224,7 +224,7 @@ async fn delete(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()
 			result.result(process.deref_mut()).await?;
 		}
 	} else {
-		let modifications = vec![ConfigModification::RemoveTemplate(id.into())];
+		let modifications = vec![ConfigModification::RemoveTemplate(id)];
 		apply_modifications_and_write(
 			&mut raw_config,
 			modifications,
@@ -267,7 +267,7 @@ async fn edit(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()> 
 		.instance
 		.restore_plugin_only_fields(&temp_config.instance);
 
-	let modifications = vec![ConfigModification::UpdateTemplate(id.into(), new_config)];
+	let modifications = vec![ConfigModification::UpdateTemplate(id, new_config)];
 	apply_modifications_and_write(
 		&mut raw_config,
 		modifications,

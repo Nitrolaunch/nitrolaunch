@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use itertools::Itertools;
 use nitro_shared::pkg::{
-	is_package_overridden, ArcPkgReq, PackageID, PackageOverrides, ResolutionError,
+	ArcPkgReq, PackageID, PackageOverrides, ResolutionError, is_package_overridden,
 };
 use nitro_shared::versions::VersionPattern;
 
@@ -33,7 +33,7 @@ pub async fn resolve<'a, E: PackageEvaluator<'a>>(
 		overrides,
 	};
 
-	let suppressed: Vec<_> = resolver.overrides.suppress.iter().cloned().collect();
+	let suppressed: Vec<_> = resolver.overrides.suppress.to_vec();
 	for package in suppressed {
 		resolver.suppress_package(Arc::new(PkgRequest::parse(
 			package,
@@ -85,12 +85,12 @@ pub async fn resolve<'a, E: PackageEvaluator<'a>>(
 			if let Some(task) = resolver.tasks.pop_front() {
 				// Skip this task if it is not preloaded
 				#[allow(irrefutable_let_patterns)]
-				if let Task::EvalPackage { dest, .. } = &task {
-					if !preloaded_packages.contains(dest) {
-						num_skipped += 1;
-						resolver.tasks.push_back(task);
-						continue;
-					}
+				if let Task::EvalPackage { dest, .. } = &task
+					&& !preloaded_packages.contains(dest)
+				{
+					num_skipped += 1;
+					resolver.tasks.push_back(task);
+					continue;
 				}
 
 				if let Err(mut e) =
@@ -231,12 +231,11 @@ async fn resolve_task<'a, E: PackageEvaluator<'a>>(
 					return Err(e);
 				};
 
-				if let Some(original_source) = dest.source.get_original_source() {
-					if let Some(config) = resolver.package_configs.get(original_source) {
-						if config.is_optional() {
-							return Ok(());
-						}
-					}
+				if let Some(original_source) = dest.source.get_original_source()
+					&& let Some(config) = resolver.package_configs.get(original_source)
+					&& config.is_optional()
+				{
+					return Ok(());
 				}
 
 				if !config.is_optional() {
@@ -398,12 +397,11 @@ fn override_eval_input<'a, E: PackageEvaluator<'a>>(
 			.set_content_versions(required_content_versions, preferred_content_versions);
 		constant_eval_input.set_force(force);
 
-		if let Some(config) = config {
-			if let Err(e) =
+		if let Some(config) = config
+			&& let Err(e) =
 				config.override_configured_package_input(properties, &mut constant_eval_input)
-			{
-				return Err(ResolutionError::Misc(e));
-			}
+		{
+			return Err(ResolutionError::Misc(e));
 		}
 		constant_eval_input
 	};

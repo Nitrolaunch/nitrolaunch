@@ -1,5 +1,5 @@
 use crate::download::{self, user_agent};
-use anyhow::{anyhow, Context};
+use anyhow::{Context, anyhow};
 use nitro_shared::{
 	loaders::Loader,
 	pkg::{PackageCategory, PackageKind, PackageSearchParameters},

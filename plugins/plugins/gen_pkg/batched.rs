@@ -11,7 +11,7 @@ use nitro_net::modrinth::Version;
 use nitro_pkg_gen::relation_substitution::RelationSubMap;
 use nitro_pkg_gen::{modrinth, smithed};
 use serde::{Deserialize, Serialize};
-use serde_json::{ser::PrettyFormatter, Serializer};
+use serde_json::{Serializer, ser::PrettyFormatter};
 use tokio::sync::Mutex;
 use tokio::task::JoinSet;
 

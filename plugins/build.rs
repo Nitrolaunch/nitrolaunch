@@ -1,7 +1,7 @@
 use std::fs::File;
 use std::path::PathBuf;
 
-use zip::{write::FileOptions, CompressionMethod, ZipWriter};
+use zip::{CompressionMethod, ZipWriter, write::FileOptions};
 
 macro_rules! add_file {
 	($zip:expr, $path:literal) => {

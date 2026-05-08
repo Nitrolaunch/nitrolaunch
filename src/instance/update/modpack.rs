@@ -4,24 +4,24 @@ use std::{
 	sync::Arc,
 };
 
-use anyhow::{bail, Context};
+use anyhow::{Context, bail};
 use nitro_config::instance::InstanceConfig;
 use nitro_instance::lock::{LockfileAddon, LockfileModpack};
 use nitro_plugin::hook::hooks::{AddModpackFormats, InstallModpack, InstallModpackArg};
 use nitro_shared::{
+	Side, UpdateDepth,
 	lang::Language,
 	loaders::Loader,
 	minecraft::AddonKind,
 	output::{MessageContents, NitroOutput},
-	pkg::{merge_package_lists, ArcPkgReq, PackageStability},
+	pkg::{ArcPkgReq, PackageStability, merge_package_lists},
 	versions::VersionInfo,
-	Side, UpdateDepth,
 };
 use reqwest::Client;
 
 use crate::{
 	addon::AddonExt,
-	instance::{transfer::load_formats, update::InstanceUpdateContext, Instance},
+	instance::{Instance, transfer::load_formats, update::InstanceUpdateContext},
 	io::paths::Paths,
 	pkg::{
 		eval::{EvalConstants, EvalInput, EvalParameters, Routine},
@@ -47,12 +47,12 @@ impl Instance {
 
 		// Modpack already installed
 		let lock_modpack = inst_lock.get_modpack();
-		if depth <= UpdateDepth::Shallow {
-			if let Some(modpack) = lock_modpack {
-				return Ok(ModpackInstallResult {
-					supplied_packages: modpack.packages.clone(),
-				});
-			}
+		if depth <= UpdateDepth::Shallow
+			&& let Some(modpack) = lock_modpack
+		{
+			return Ok(ModpackInstallResult {
+				supplied_packages: modpack.packages.clone(),
+			});
 		}
 
 		let mut section = ctx.output.get_section();

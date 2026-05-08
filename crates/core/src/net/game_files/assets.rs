@@ -6,7 +6,7 @@ use anyhow::Context;
 use nitro_shared::output::{MessageContents, NitroOutput};
 use nitro_shared::versions::VersionName;
 use nitro_shared::versions::VersionPattern;
-use nitro_shared::{translate, try_3, UpdateDepth};
+use nitro_shared::{UpdateDepth, translate, try_3};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use tokio::{sync::Semaphore, task::JoinSet};

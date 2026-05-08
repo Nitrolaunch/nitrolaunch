@@ -123,10 +123,10 @@ impl RunningInstanceRegistry {
 		account: Option<&str>,
 	) -> Option<&'this RunningInstanceEntry> {
 		self.data.instances.iter().find(|x| {
-			if let Some(account) = account {
-				if !x.account.as_ref().is_some_and(|x| x == account) {
-					return false;
-				}
+			if let Some(account) = account
+				&& x.account.as_ref().is_none_or(|x| x != account)
+			{
+				return false;
 			}
 
 			x.instance_id == instance
@@ -136,10 +136,10 @@ impl RunningInstanceRegistry {
 	/// Removes an instance from the registry
 	pub fn remove_instance(&mut self, pid: u32, instance: &str, account: Option<&str>) {
 		let index = self.data.instances.iter().position(|x| {
-			if let Some(account) = account {
-				if !x.account.as_ref().is_some_and(|x| x == account) {
-					return false;
-				}
+			if let Some(account) = account
+				&& x.account.as_ref().is_none_or(|x| x != account)
+			{
+				return false;
 			}
 
 			x.pid == pid && x.instance_id == instance
@@ -156,10 +156,10 @@ impl RunningInstanceRegistry {
 	pub fn kill_instance(&mut self, instance: &str, account: Option<&str>) {
 		let mut pids = Vec::new();
 		for entry in &self.data.instances {
-			if let Some(account) = account {
-				if !entry.account.as_ref().is_some_and(|x| x == account) {
-					continue;
-				}
+			if let Some(account) = account
+				&& entry.account.as_ref().is_none_or(|x| x != account)
+			{
+				continue;
 			}
 
 			if entry.instance_id == instance {

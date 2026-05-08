@@ -79,21 +79,22 @@ async fn get_contents(
 	let path = get_path(paths);
 	create_leading_dirs(&path)?;
 
-	if let Some(requested_version) = requested_version {
-		if !force && manager.update_depth < UpdateDepth::Full && path.exists() {
-			let contents: VersionManifest =
-				json_from_file(&path).context("Failed to read manifest contents from file")?;
-			let version = requested_version.get_version(&contents);
-			// We can avoid redownloading even on full depth if the version is already in the manifest
-			if let Some(version) = version {
-				if contents
-					.versions
-					.iter()
-					.any(|x| x.id.as_str() == version.as_ref())
-				{
-					return Ok(contents);
-				}
-			}
+	if let Some(requested_version) = requested_version
+		&& !force
+		&& manager.update_depth < UpdateDepth::Full
+		&& path.exists()
+	{
+		let contents: VersionManifest =
+			json_from_file(&path).context("Failed to read manifest contents from file")?;
+		let version = requested_version.get_version(&contents);
+		// We can avoid redownloading even on full depth if the version is already in the manifest
+		if let Some(version) = version
+			&& contents
+				.versions
+				.iter()
+				.any(|x| x.id.as_str() == version.as_ref())
+		{
+			return Ok(contents);
 		}
 	}
 

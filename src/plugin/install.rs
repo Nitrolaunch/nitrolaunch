@@ -4,9 +4,9 @@ use std::{
 	io::Cursor,
 };
 
-use anyhow::{bail, Context};
+use anyhow::{Context, bail};
 use nitro_core::net::download;
-use nitro_net::github::{get_github_releases, GithubAsset};
+use nitro_net::github::{GithubAsset, get_github_releases};
 use nitro_plugin::plugin::PluginMetadata;
 use nitro_shared::{output::NitroOutput, util::TARGET_BITS_STR};
 use reqwest::Client;
@@ -41,15 +41,14 @@ pub async fn get_verified_plugins(
 		serde_json::from_str(include_str!("verified_plugins.json"))
 			.context("Failed to deserialize core verified list")?;
 
-	if !offline {
-		if let Ok(remote_list) = download::json::<HashMap<String, VerifiedPlugin>>(
+	if !offline
+		&& let Ok(remote_list) = download::json::<HashMap<String, VerifiedPlugin>>(
 			"https://github.com/Nitrolaunch/nitrolaunch/blob/main/src/plugin/verified_plugins.json",
 			client,
 		)
 		.await
-		{
-			list.extend(remote_list);
-		}
+	{
+		list.extend(remote_list);
 	}
 
 	Ok(list)
@@ -80,10 +79,10 @@ impl VerifiedPlugin {
 			};
 
 			// Check the plugin version
-			if let Some(requested_version) = &version {
-				if requested_version != &release_version {
-					continue;
-				}
+			if let Some(requested_version) = &version
+				&& requested_version != &release_version
+			{
+				continue;
 			}
 
 			// Select the correct asset

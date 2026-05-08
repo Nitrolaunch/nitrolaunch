@@ -1,8 +1,8 @@
-use anyhow::{bail, Context};
+use anyhow::{Context, bail};
 use nitro_core::Paths;
 use nitro_mods::sponge;
 use nitro_plugin::{api::executable::ExecutablePlugin, hook::hooks::OnInstanceSetupResult};
-use nitro_shared::{loaders::Loader, Side};
+use nitro_shared::{Side, loaders::Loader};
 
 fn main() -> anyhow::Result<()> {
 	let mut plugin = ExecutablePlugin::from_manifest_file("sponge", include_str!("plugin.json"))?;

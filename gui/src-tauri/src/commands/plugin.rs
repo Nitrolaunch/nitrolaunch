@@ -1,5 +1,5 @@
-use crate::output::LauncherOutput;
 use crate::State;
+use crate::output::LauncherOutput;
 use anyhow::Context;
 use itertools::Itertools;
 use nitrolaunch::config_crate::ConfigKind;
@@ -63,13 +63,11 @@ pub async fn get_remote_plugins(
 		let mut output = LauncherOutput::new(state.get_output(app_handle));
 		output.set_task("get_plugins");
 
-		let verified_plugins = fmt_err(
+		fmt_err(
 			get_verified_plugins(&state.client, false)
 				.await
 				.context("Failed to get verified plugins"),
-		)?;
-
-		verified_plugins
+		)?
 	};
 
 	let verified_plugins = verified_plugins.into_values().map(|x| PluginInfo {

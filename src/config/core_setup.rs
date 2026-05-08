@@ -2,15 +2,15 @@ use std::{path::PathBuf, sync::Arc};
 
 use anyhow::Context;
 use nitro_core::{
+	NitroCore,
 	auth_crate::mc::ClientId,
 	config::BrandingProperties,
 	io::java::install::{CustomJavaFunction, CustomJavaFunctionResult},
-	NitroCore,
 };
 use nitro_plugin::hook::hooks::{AddVersions, InstallCustomJava, InstallCustomJavaArg};
 use nitro_shared::{
-	output::{NitroOutput, NoOp},
 	UpdateDepth,
+	output::{NitroOutput, NoOp},
 };
 use reqwest::Client;
 

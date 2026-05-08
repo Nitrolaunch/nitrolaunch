@@ -1,9 +1,9 @@
 use std::{fmt::Display, path::PathBuf, sync::OnceLock};
 
-use anyhow::{bail, Context};
+use anyhow::{Context, bail};
 use nitro_core::io::json_from_file;
 use nitro_net::download;
-use nitro_pkg::repo::{get_api_url, get_index_url, RepoIndex, RepoMetadata, RepoPkgEntry};
+use nitro_pkg::repo::{RepoIndex, RepoMetadata, RepoPkgEntry, get_api_url, get_index_url};
 use nitro_shared::{
 	output::{MessageContents, NitroOutput},
 	translate,
@@ -12,7 +12,7 @@ use reqwest::Client;
 
 use crate::{io::paths::Paths, pkg::PkgLocation};
 
-use super::{get_content_type, RepoQueryResult};
+use super::{RepoQueryResult, get_content_type};
 
 /// A basic repository using a package index
 #[derive(Debug)]
@@ -126,14 +126,14 @@ impl BasicPackageRepository {
 		if let Some(repo_version) = repo_version {
 			let repo_version = version_compare::Version::from(repo_version);
 			let program_version = version_compare::Version::from(crate::VERSION);
-			if let (Some(repo_version), Some(program_version)) = (repo_version, program_version) {
-				if repo_version > program_version {
-					o.display(MessageContents::Warning(translate!(
-						o,
-						RepoVersionWarning,
-						"repo" = &self.id
-					)));
-				}
+			if let (Some(repo_version), Some(program_version)) = (repo_version, program_version)
+				&& repo_version > program_version
+			{
+				o.display(MessageContents::Warning(translate!(
+					o,
+					RepoVersionWarning,
+					"repo" = &self.id
+				)));
 			}
 		}
 	}

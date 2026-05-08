@@ -6,8 +6,8 @@ use nitro_shared::output::NoOp;
 
 use crate::{
 	config::{
-		modifications::{apply_modifications_and_write, ConfigModification},
 		Config,
+		modifications::{ConfigModification, apply_modifications_and_write},
 	},
 	io::paths::Paths,
 	plugin::PluginManager,

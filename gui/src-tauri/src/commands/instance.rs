@@ -661,17 +661,17 @@ pub async fn canonicalize_version(
 
 	let mut config = fmt_err(load_config(&state.paths, &state.wasm_loader, &mut NoOp).await)?;
 
-	if let Some(id) = id {
-		if instance_or_template == InstanceOrTemplate::Instance {
-			let Some(instance) = config.instances.get_mut(id) else {
-				return Err("Instance does not exist".into());
-			};
+	if let Some(id) = id
+		&& instance_or_template == InstanceOrTemplate::Instance
+	{
+		let Some(instance) = config.instances.get_mut(id) else {
+			return Err("Instance does not exist".into());
+		};
 
-			let inst_lock = fmt_err(instance.get_lockfile(&state.paths))?;
+		let inst_lock = fmt_err(instance.get_lockfile(&state.paths))?;
 
-			if let Some(version) = inst_lock.get_minecraft_version() {
-				return Ok(version.clone());
-			}
+		if let Some(version) = inst_lock.get_minecraft_version() {
+			return Ok(version.clone());
 		}
 	}
 

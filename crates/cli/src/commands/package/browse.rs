@@ -1,43 +1,44 @@
 use std::{
 	ops::Deref,
 	sync::{
-		atomic::{AtomicBool, Ordering},
 		Arc,
+		atomic::{AtomicBool, Ordering},
 	},
 	time::Duration,
 };
 
-use anyhow::{bail, Context};
+use anyhow::{Context, bail};
 use crossterm::event::{self, KeyCode, KeyEvent};
 use image::DynamicImage;
 use itertools::Itertools;
 use nitrolaunch::{
 	config::{
-		modifications::{apply_modifications_and_write, ConfigModification},
 		Config,
+		modifications::{ConfigModification, apply_modifications_and_write},
 	},
 	config_crate::{instance::is_valid_instance_id, package::PackageConfigDeser},
-	core::{util::versions::MinecraftVersion, NitroCore},
+	core::{NitroCore, util::versions::MinecraftVersion},
 	instance::update::manager::UpdateSettings,
 	io::paths::Paths,
 	pkg_crate::{
-		declarative::DeclarativeAddonVersion, metadata::PackageMetadata,
-		properties::PackageProperties, PackageSearchResults, PkgRequest, PkgRequestSource,
+		PackageSearchResults, PkgRequest, PkgRequestSource, declarative::DeclarativeAddonVersion,
+		metadata::PackageMetadata, properties::PackageProperties,
 	},
 	plugin_crate::hook::hooks::{
 		AddCustomPackageRepositories, AddCustomPackageRepositoriesResult, AddSupportedLoaders,
 	},
 	shared::{
+		Side, UpdateDepth,
 		id::{InstanceID, TemplateID},
 		loaders::Loader,
 		output::NoOp,
 		pkg::{ArcPkgReq, PackageKind, PackageSearchParameters, PackageStability},
 		util::to_string_json,
-		versions::{parse_single_versioned_string, VersionPattern},
-		Side, UpdateDepth,
+		versions::{VersionPattern, parse_single_versioned_string},
 	},
 };
 use ratatui::{
+	DefaultTerminal, Frame,
 	layout::{Constraint, HorizontalAlignment, Layout, Margin, Rect},
 	style::Style,
 	symbols,
@@ -45,9 +46,8 @@ use ratatui::{
 	widgets::{
 		Block, Borders, Clear, List, ListItem, ListState, Paragraph, StatefulWidget, Widget,
 	},
-	DefaultTerminal, Frame,
 };
-use ratatui_image::{picker::Picker, Image, Resize};
+use ratatui_image::{Image, Resize, picker::Picker};
 use ratatui_textarea::TextArea;
 use reqwest::Client;
 use tokio::{
@@ -56,8 +56,8 @@ use tokio::{
 };
 
 use crate::{
-	commands::{modpack::install_into_config, CmdData},
-	image_cache::{crop_image_to_ratio, ImageCache},
+	commands::{CmdData, modpack::install_into_config},
+	image_cache::{ImageCache, crop_image_to_ratio},
 	output::fit_message_width,
 };
 
@@ -608,10 +608,10 @@ fn renderer(terminal: &mut DefaultTerminal, mut state: State<'_>) -> anyhow::Res
 					KeyCode::Char('i') => state.install_prompt.location = InstallLocation::Instance,
 					KeyCode::Char('t') => state.install_prompt.location = InstallLocation::Template,
 					KeyCode::Char('n') => {
-						if let Some(info) = &state.package_info {
-							if info.is_modpack() {
-								state.install_prompt.location = InstallLocation::NewInstance;
-							}
+						if let Some(info) = &state.package_info
+							&& info.is_modpack()
+						{
+							state.install_prompt.location = InstallLocation::NewInstance;
 						}
 					}
 					KeyCode::Char('e')
@@ -731,7 +731,7 @@ fn render(frame: &mut Frame, state: &mut State) {
 		let widget = PackageInfoWidget {
 			req,
 			info: state.package_info.as_ref(),
-			state: state,
+			state,
 			scroll_height: &mut scroll_height,
 		};
 
@@ -928,7 +928,7 @@ impl Popup {
 					return;
 				};
 
-				state.search_params.inner.types = vec![ty.clone()];
+				state.search_params.inner.types = vec![*ty];
 			}
 			Self::Version => {
 				let Some(version) = state.versions.get(pos) else {
@@ -972,7 +972,7 @@ impl Popup {
 				let Some(category) = repo.metadata.package_categories.get(pos) else {
 					return;
 				};
-				let category = category.clone();
+				let category = *category;
 
 				if state.search_params.inner.categories.contains(&category) {
 					state
@@ -981,7 +981,7 @@ impl Popup {
 						.categories
 						.retain(|x| x != &category);
 				} else {
-					state.search_params.inner.categories.push(category.clone());
+					state.search_params.inner.categories.push(category);
 				}
 			}
 		}
@@ -1068,7 +1068,7 @@ impl Popup {
 				repo.metadata
 					.package_categories
 					.iter()
-					.map(|x| to_string_json(x))
+					.map(to_string_json)
 					.collect()
 			}
 		}
@@ -1278,11 +1278,7 @@ impl<'a> Widget for PackageInfoWidget<'a> {
 
 					let visible_lines = body_pane.height;
 					let scroll_height = text.lines.len() as u16;
-					let scroll_height = if scroll_height > visible_lines {
-						scroll_height - visible_lines
-					} else {
-						0
-					};
+					let scroll_height = scroll_height.saturating_sub(visible_lines);
 					*self.scroll_height = scroll_height;
 
 					let markdown = Paragraph::new(text).scroll((self.state.preview_scroll, 0));
@@ -1319,7 +1315,7 @@ fn render_versions(
 		.highlight_symbol(">")
 		.highlight_style(Style::new());
 
-	let items = versions.into_iter().map(|x| {
+	let items = versions.iter().map(|x| {
 		let layout = Layout::horizontal([
 			Constraint::Length(9),
 			Constraint::Fill(1),
@@ -1349,11 +1345,7 @@ fn render_versions(
 		// Versions
 		let versions = if let Some(versions) = &x.conditional_properties.minecraft_versions {
 			let out = versions.iter().take(4).map(|x| x.to_string()).join(" ");
-			if versions.len() > 4 {
-				out + "..."
-			} else {
-				out
-			}
+			if versions.len() > 4 { out + "..." } else { out }
 		} else {
 			String::new()
 		};
@@ -1363,11 +1355,7 @@ fn render_versions(
 		// Loaders
 		let loaders = if let Some(loaders) = &x.conditional_properties.loaders {
 			let out = loaders.iter().take(3).map(|x| x.to_string()).join(" ");
-			if loaders.len() > 3 {
-				out + "..."
-			} else {
-				out
-			}
+			if loaders.len() > 3 { out + "..." } else { out }
 		} else {
 			String::new()
 		};
@@ -1407,7 +1395,7 @@ fn render_gallery(
 	}
 
 	let vertical_layout = Layout::vertical(Constraint::from_fills([1; HEIGHT]));
-	for (row_i, row) in vertical_layout.split(area).into_iter().enumerate() {
+	for (row_i, row) in vertical_layout.split(area).iter().enumerate() {
 		let horizontal_layout = Layout::horizontal(Constraint::from_fills([1; WIDTH]));
 		let horizontal_layout = horizontal_layout.split(*row);
 
@@ -1450,7 +1438,7 @@ fn render_gallery(
 	}
 
 	// Account for trailing incomplete rows
-	let scroll_height = if gallery.len() % WIDTH == 0 {
+	let scroll_height = if gallery.len().is_multiple_of(WIDTH) {
 		gallery.len() / WIDTH
 	} else {
 		gallery.len() / WIDTH + 1

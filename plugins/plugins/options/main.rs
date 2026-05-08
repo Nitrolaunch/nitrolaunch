@@ -3,13 +3,13 @@ use std::{collections::HashMap, path::PathBuf};
 use anyhow::Context;
 use nitro_core::Paths;
 use nitro_options::{
-	client::write_options_txt, read_options, server::write_server_properties, Options,
+	Options, client::write_options_txt, read_options, server::write_server_properties,
 };
 use nitro_plugin::{
 	api::executable::{ExecutablePlugin, HookContext},
 	hook::{
-		hooks::{AddInstanceConfigControlsResult, OnInstanceSetupResult},
 		Hook,
+		hooks::{AddInstanceConfigControlsResult, OnInstanceSetupResult},
 	},
 };
 use nitro_shared::Side;

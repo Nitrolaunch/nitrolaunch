@@ -5,13 +5,14 @@ use std::{
 };
 
 use anyhow::Context;
-use nitro_shared::{minecraft::AddonKind, pkg::AddonOptionalHashes, Side};
+use nitro_shared::{Side, minecraft::AddonKind, pkg::AddonOptionalHashes};
 use serde::{Deserialize, Serialize};
 use zip::ZipArchive;
 
 use crate::addon::{
+	Addon,
 	modpack::{DefaultLinkMethod, LinkMethod, Modpack},
-	storage, Addon,
+	storage,
 };
 
 /// Modrinth modpack
@@ -120,7 +121,7 @@ impl<R: Read + Seek + Send + 'static> Modpack<R> for ModrinthPack<R> {
 				continue;
 			};
 
-			let target_path = target.join(&target_rel_path);
+			let target_path = target.join(target_rel_path);
 
 			if target_path.exists() {
 				// If this was an override in the old pack that hasn't changed on the filesystem, we will let it update.
@@ -128,7 +129,7 @@ impl<R: Read + Seek + Send + 'static> Modpack<R> for ModrinthPack<R> {
 					if old_pack
 						.zip
 						.file_names()
-						.any(|x| x == &name.to_string_lossy())
+						.any(|x| x == name.to_string_lossy())
 					{
 						let current_data = std::fs::read(&target_path)
 							.context("Failed to read existing override file")?;

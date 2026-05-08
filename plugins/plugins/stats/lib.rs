@@ -7,12 +7,12 @@ use anyhow::Context;
 use chrono::DateTime;
 use clap::Parser;
 use itertools::Itertools;
+use nitro_plugin::api::wasm::WASMPlugin;
 use nitro_plugin::api::wasm::output::WASMPluginOutput;
 use nitro_plugin::api::wasm::sys::get_data_dir;
 use nitro_plugin::api::wasm::util::{
 	get_custom_config, get_persistent_state, set_persistent_state,
 };
-use nitro_plugin::api::wasm::WASMPlugin;
 use nitro_plugin::hook::hooks::{InstanceTile, InstanceTileSize};
 use nitro_plugin::nitro_wasm_plugin;
 use nitro_shared::output::{MessageContents, NitroOutput};

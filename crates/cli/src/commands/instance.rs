@@ -212,10 +212,10 @@ async fn list(data: &mut CmdData<'_>, raw: bool, side: Option<Side>) -> anyhow::
 	let config = data.config.get_mut();
 
 	for (id, instance) in config.instances.iter().sorted_by_key(|x| x.0) {
-		if let Some(side) = side {
-			if instance.side() != side {
-				continue;
-			}
+		if let Some(side) = side
+			&& instance.side() != side
+		{
+			continue;
 		}
 
 		if raw {
@@ -288,7 +288,7 @@ async fn info(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()> 
 	cprintln!("<s>Packages:");
 	for pkg in instance
 		.packages()
-		.into_iter()
+		.iter()
 		.sorted_by_key(|x| x.get_request())
 	{
 		print_indent();
@@ -739,7 +739,7 @@ async fn edit(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()> 
 		.context("Failed to serialize. Make sure your config is valid JSON")?;
 	new_config.restore_plugin_only_fields(&inst_config);
 
-	let modifications = vec![ConfigModification::UpdateInstance(id.into(), new_config)];
+	let modifications = vec![ConfigModification::UpdateInstance(id, new_config)];
 	apply_modifications_and_write(
 		&mut raw_config,
 		modifications,

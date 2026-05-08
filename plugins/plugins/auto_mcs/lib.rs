@@ -5,19 +5,19 @@ use std::{
 	time::{Duration, SystemTime},
 };
 
-use anyhow::{bail, Context};
-use nitro_config::instance::{make_valid_instance_id, InstanceConfig};
+use anyhow::{Context, bail};
+use nitro_config::instance::{InstanceConfig, make_valid_instance_id};
 use nitro_plugin::{
 	api::wasm::{
+		WASMPlugin,
 		output::WASMPluginOutput,
 		sys::{get_os_string, run_command},
 		util::get_custom_config,
-		WASMPlugin,
 	},
 	hook::hooks::{ImportInstanceResult, ReplaceInstanceLaunchResult},
 	nitro_wasm_plugin,
 };
-use nitro_shared::{id::InstanceID, loaders::Loader, versions::MinecraftVersionDeser, Side};
+use nitro_shared::{Side, id::InstanceID, loaders::Loader, versions::MinecraftVersionDeser};
 use nitro_shared::{
 	output::{MessageContents, NitroOutput},
 	util::to_string_json,
@@ -166,10 +166,10 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 		// Keep checking for new log files, then pick the newest one when the entries change
 		let log_file_path = loop {
 			let logs = get_dir_file_timestamps(&log_dir).unwrap_or_default();
-			if original_logs != logs {
-				if let Some(result) = logs.into_iter().max_by_key(|x| x.1) {
-					break result.0;
-				}
+			if original_logs != logs
+				&& let Some(result) = logs.into_iter().max_by_key(|x| x.1)
+			{
+				break result.0;
 			}
 
 			std::thread::sleep(Duration::from_millis(50));

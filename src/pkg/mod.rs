@@ -9,12 +9,12 @@ pub mod repo;
 
 use crate::io::paths::Paths;
 use nitro_core::net::download;
+use nitro_pkg::PackageContentType;
 use nitro_pkg::declarative::{
-	deserialize_declarative_package, DeclarativeAddonVersion, DeclarativeConditionSet,
-	DeclarativePackage,
+	DeclarativeAddonVersion, DeclarativeConditionSet, DeclarativePackage,
+	deserialize_declarative_package,
 };
 use nitro_pkg::repo::PackageFlag;
-use nitro_pkg::PackageContentType;
 use nitro_shared::try_3;
 use nitro_shared::util::DeserListOrSingle;
 
@@ -26,10 +26,10 @@ use std::path::PathBuf;
 use std::sync::{Arc, OnceLock};
 
 use self::core::get_core_package;
-use anyhow::{anyhow, bail, Context};
-use nitro_parse::parse::{lex_and_parse, Parsed};
-use nitro_pkg::metadata::{eval_metadata, PackageMetadata};
-use nitro_pkg::properties::{eval_properties, PackageProperties};
+use anyhow::{Context, anyhow, bail};
+use nitro_parse::parse::{Parsed, lex_and_parse};
+use nitro_pkg::metadata::{PackageMetadata, eval_metadata};
+use nitro_pkg::properties::{PackageProperties, eval_properties};
 use nitro_shared::pkg::ArcPkgReq;
 use reqwest::Client;
 
@@ -242,11 +242,11 @@ impl Package {
 
 		match self.content_type {
 			PackageContentType::Script => {
-				let parsed = lex_and_parse(&text)?;
+				let parsed = lex_and_parse(text)?;
 				let _ = self.contents.set(PkgContents::Script(parsed));
 			}
 			PackageContentType::Declarative => {
-				let contents = deserialize_declarative_package(&text)
+				let contents = deserialize_declarative_package(text)
 					.context("Failed to deserialize declarative package")?;
 				let _ = self
 					.contents
@@ -340,7 +340,7 @@ impl Package {
 
 		let contents = self.contents.get().unwrap();
 		if let PkgContents::Declarative(contents) = contents {
-			Ok(Some(&contents))
+			Ok(Some(contents))
 		} else {
 			Ok(None)
 		}

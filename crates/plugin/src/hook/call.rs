@@ -6,14 +6,14 @@ use std::{
 };
 
 use crate::{
+	PluginPaths,
 	hook::{
-		executable::ExecutableHookHandle,
-		wasm::{loader::WASMLoader, WASMHookHandle},
 		Hook,
+		executable::ExecutableHookHandle,
+		wasm::{WASMHookHandle, loader::WASMLoader},
 	},
 	host::PluginContext,
 	plugin::HookSubscription,
-	PluginPaths,
 };
 use anyhow::Context;
 use nitro_shared::output::{MessageContents, NitroOutput, NoOp};

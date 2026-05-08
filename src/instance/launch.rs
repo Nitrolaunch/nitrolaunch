@@ -9,7 +9,7 @@ use std::process::ExitStatus;
 use std::time::Duration;
 use sysinfo::{Pid, System};
 
-use anyhow::{bail, Context};
+use anyhow::{Context, bail};
 use nitro_config::instance::{QuickPlay, WrapperCommand};
 use nitro_core::account::{AccountID, AccountManager};
 use nitro_core::io::java::install::JavaInstallationKind;
@@ -20,12 +20,12 @@ use nitro_plugin::hook::hooks::{
 use nitro_shared::id::InstanceID;
 use nitro_shared::java_args::MemoryNum;
 use nitro_shared::output::{MessageContents, NitroOutput};
-use nitro_shared::{translate, Side, UpdateDepth};
+use nitro_shared::{Side, UpdateDepth, translate};
 use tokio::io::{AsyncWriteExt, Stdout};
 
 use super::tracking::RunningInstanceRegistry;
 use super::update::manager::UpdateManager;
-use crate::instance::tracking::{is_process_alive, RunningInstanceEntry};
+use crate::instance::tracking::{RunningInstanceEntry, is_process_alive};
 use crate::instance::update::manager::UpdateSettings;
 use crate::instance::update::{InstanceUpdateContext, UpdateFacets};
 use crate::instance::world_files::WorldFilesWatcher;
@@ -124,7 +124,7 @@ impl Instance {
 			.await?;
 
 		let mut instance = self
-			.create_core_instance(&mut core_version, paths, o)
+			.create_core_instance(&core_version, paths, o)
 			.await
 			.context("Failed to create core instance")?;
 

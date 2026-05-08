@@ -1,10 +1,10 @@
 use super::CmdData;
 use crate::commands::call_plugin_subcommand;
-use crate::output::{icons_enabled, CHECK, HYPHEN_POINT, STAR};
+use crate::output::{CHECK, HYPHEN_POINT, STAR, icons_enabled};
 use crate::prompt::pick_account;
-use anyhow::{bail, Context};
+use anyhow::{Context, bail};
 use itertools::Itertools;
-use nitrolaunch::config::modifications::{apply_modifications_and_write, ConfigModification};
+use nitrolaunch::config::modifications::{ConfigModification, apply_modifications_and_write};
 use nitrolaunch::config_crate::account::{AccountConfig, AccountVariant};
 use nitrolaunch::core::account::AccountKind;
 
@@ -133,13 +133,13 @@ async fn list(data: &mut CmdData<'_>, raw: bool) -> anyhow::Result<()> {
 				AccountKind::Demo => cprint!("<s><c!>{}</c!>", id),
 				AccountKind::Unknown(other) => cprint!("<s><k!>({other}) {}</k!>", id),
 			}
-			if let Some(chosen) = config.accounts.get_chosen_account() {
-				if chosen.get_id() == id {
-					if icons_enabled() {
-						cprint!("<y> {}", STAR);
-					} else {
-						cprint!("<s> (Default)");
-					}
+			if let Some(chosen) = config.accounts.get_chosen_account()
+				&& chosen.get_id() == id
+			{
+				if icons_enabled() {
+					cprint!("<y> {}", STAR);
+				} else {
+					cprint!("<s> (Default)");
 				}
 			}
 			println!();
