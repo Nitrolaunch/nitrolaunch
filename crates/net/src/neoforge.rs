@@ -47,8 +47,9 @@ pub async fn download_installer(
 	path: &Path,
 	client: &Client,
 ) -> anyhow::Result<()> {
-	let url =
-		format!("https://maven.neoforged.net/releases/net/neoforged/neoforge/{neoforge_version}/neoforge-{neoforge_version}-installer.jar");
+	let url = format!(
+		"https://maven.neoforged.net/releases/net/neoforged/neoforge/{neoforge_version}/neoforge-{neoforge_version}-installer.jar"
+	);
 
 	download::file(&url, path, client).await
 }

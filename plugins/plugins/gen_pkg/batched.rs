@@ -11,7 +11,7 @@ use nitro_net::modrinth::Version;
 use nitro_pkg_gen::relation_substitution::RelationSubMap;
 use nitro_pkg_gen::{modrinth, smithed};
 use serde::{Deserialize, Serialize};
-use serde_json::{ser::PrettyFormatter, Serializer};
+use serde_json::{Serializer, ser::PrettyFormatter};
 use tokio::sync::Mutex;
 use tokio::task::JoinSet;
 
@@ -234,7 +234,7 @@ pub async fn batched_gen(mut config: BatchedConfig, filter: Vec<String>) {
 					.iter()
 					.find(|x| x.id == pkg.id)
 					.expect("Smithed pack should have been downloaded");
-				smithed::gen(
+				smithed::generate(
 					pack.clone(),
 					None,
 					None,
@@ -264,7 +264,7 @@ pub async fn batched_gen(mut config: BatchedConfig, filter: Vec<String>) {
 					.find(|team| team.iter().any(|member| member.team_id == project.team))
 					.unwrap_or(&empty_vec);
 
-				modrinth::gen(
+				modrinth::generate(
 					project.clone(),
 					versions,
 					team,

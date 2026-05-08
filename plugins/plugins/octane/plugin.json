@@ -1,0 +1,120 @@
+{
+	"id": "octane",
+	"name": "Octane",
+	"description": "Use multiple methods to improve Minecraft performance",
+	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/octane",
+	"version": "v6",
+	"protocol_version": 3,
+	"hooks": {
+		"on_instance_setup": {
+			"wasm": true
+		},
+		"after_instance_setup": {
+			"wasm": true
+		},
+		"while_instance_launch": {
+			"wasm": true
+		},
+		"add_instance_config_controls": {
+			"constant": {
+				"controls": [
+					{
+						"id": "octane_preset",
+						"name": "Preset",
+						"description": "Performance preset for the game",
+						"section": "Octane",
+						"schema": {
+							"type": "choice",
+							"variants": [
+								{
+									"id": null,
+									"name": "Unset"
+								},
+								{
+									"id": "none",
+									"name": "None"
+								},
+								{
+									"id": "balanced",
+									"name": "Balanced",
+									"description": "Well-rounded profile that improves performance with low stutter"
+								},
+								{
+									"id": "aggressive",
+									"name": "Aggressive",
+									"description": "Best FPS boost, but with occasional FPS drops"
+								},
+								{
+									"id": "smooth",
+									"name": "Smooth",
+									"description": "Consistent FPS with low stutter"
+								},
+								{
+									"id": "ram_saver",
+									"name": "RAM Saver",
+									"description": "Reduces RAM usage for constrained systems"
+								},
+								{
+									"id": "fast_launch",
+									"name": "Fast Launch",
+									"description": "Slightly faster launch time"
+								},
+								{
+									"id": "modded",
+									"name": "Modded",
+									"description": "For large modpacks, allocates a lot more RAM to prevent crashes"
+								},
+								{
+									"id": "aikar",
+									"name": "Aikar's",
+									"description": "Aikar's arguments for servers"
+								},
+								{
+									"id": "krusic",
+									"name": "Krusic",
+									"description": "Krusic's arguments for servers"
+								},
+								{
+									"id": "obydux",
+									"name": "Obydux",
+									"description": "Obydux's arguments for servers"
+								}
+							],
+							"dropdown": true
+						}
+					},
+					{
+						"id": "octane_priority",
+						"name": "CPU Priority",
+						"description": "Sets CPU priority of the game process. Often has little to no effect.",
+						"section": "Octane",
+						"schema": {
+							"type": "choice",
+							"variants": [
+								{
+									"id": null,
+									"name": "Unset"
+								},
+								{
+									"id": "none",
+									"name": "None"
+								},
+								{
+									"id": "high",
+									"name": "High",
+									"description": "High priority and lower latency"
+								},
+								{
+									"id": "background",
+									"name": "Background",
+									"description": "Lower priority, good if you run the game in the background"
+								}
+							],
+							"dropdown": true
+						}
+					}
+				]
+			}
+		}
+	}
+}

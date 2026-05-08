@@ -1,24 +1,27 @@
 use std::collections::HashMap;
+use std::collections::HashSet;
 use std::fmt::Debug;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use anyhow::bail;
 use anyhow::Context;
+use anyhow::bail;
 use nitro_shared::output::NitroOutput;
 use serde::Serialize;
 use serde::{Deserialize, Deserializer};
 use tokio::sync::Mutex;
 
+use crate::PluginPaths;
+use crate::hook::Hook;
+use crate::hook::PLUGIN_DIR_TOKEN;
+use crate::hook::WASM_FILE_NAME;
 use crate::hook::call::HookCallArg;
+use crate::hook::call::HookCallContext;
 use crate::hook::call::HookHandle;
 use crate::hook::hooks::StartWorker;
 use crate::hook::wasm::call_wasm;
 use crate::hook::wasm::loader::WASMLoader;
-use crate::hook::Hook;
-use crate::hook::PLUGIN_DIR_TOKEN;
-use crate::hook::WASM_FILE_NAME;
-use crate::PluginPaths;
+use crate::host::PluginContext;
 
 /// The newest protocol version for plugin communication
 pub const NEWEST_PROTOCOL_VERSION: u16 = 3;
@@ -32,7 +35,7 @@ pub struct Plugin {
 	/// The plugin's ID
 	id: String,
 	/// The plugin's manifest
-	manifest: PluginManifest,
+	pub manifest: PluginManifest,
 	/// The custom config for the plugin, serialized from JSON
 	custom_config: Option<String>,
 	/// The working directory for the plugin
@@ -72,6 +75,7 @@ impl Plugin {
 		nitro_version: Option<&str>,
 		plugin_list: &[String],
 		wasm_loader: Arc<Mutex<WASMLoader>>,
+		context: Option<&Arc<dyn PluginContext>>,
 		o: &mut impl NitroOutput,
 	) -> anyhow::Result<Option<HookHandle<H>>> {
 		let Some(handler) = self.manifest.hooks.get(hook.get_name()) else {
@@ -86,6 +90,7 @@ impl Plugin {
 			nitro_version,
 			plugin_list,
 			wasm_loader,
+			context,
 			o,
 		)
 		.await
@@ -101,6 +106,7 @@ impl Plugin {
 		nitro_version: Option<&str>,
 		plugin_list: &[String],
 		wasm_loader: Arc<Mutex<WASMLoader>>,
+		context: Option<&Arc<dyn PluginContext>>,
 		o: &mut impl NitroOutput,
 	) -> anyhow::Result<Option<HookHandle<H>>> {
 		match handler {
@@ -113,18 +119,25 @@ impl Plugin {
 					.to_string_lossy()
 					.to_string();
 
+				let subscriptions = HashSet::new();
+				let ctx = HookCallContext {
+					subscriptions: &subscriptions,
+					custom_config: self.custom_config.clone(),
+					nitro_version,
+					plugin_list,
+					global_context: context,
+				};
+
 				let arg = HookCallArg {
 					cmd: &file,
 					arg,
 					additional_args: &[],
 					working_dir: self.working_dir.as_deref(),
+					ctx,
 					use_base64: !self.manifest.raw_transfer,
-					custom_config: self.custom_config.clone(),
 					persistence: self.persistence.clone(),
 					paths,
-					nitro_version,
 					plugin_id: &self.id,
-					plugin_list,
 					protocol_version: self
 						.manifest
 						.protocol_version
@@ -137,19 +150,26 @@ impl Plugin {
 				executable,
 				args,
 				priority: _,
+				subscriptions,
 			} => {
+				let ctx = HookCallContext {
+					subscriptions,
+					custom_config: self.custom_config.clone(),
+					nitro_version,
+					plugin_list,
+					global_context: context,
+				};
+
 				let arg = HookCallArg {
 					cmd: executable,
 					arg,
 					additional_args: args,
 					working_dir: self.working_dir.as_deref(),
+					ctx,
 					use_base64: !self.manifest.raw_transfer,
-					custom_config: self.custom_config.clone(),
 					persistence: self.persistence.clone(),
 					paths,
-					nitro_version,
 					plugin_id: &self.id,
-					plugin_list,
 					protocol_version: self
 						.manifest
 						.protocol_version
@@ -184,15 +204,8 @@ impl Plugin {
 				// Try to read the result with quotes wrapping it if it doesn't deserialize properly the first time
 				let result = match serde_json::from_str(&contents) {
 					Ok(result) => result,
-					Err(_) => {
-						let sanitized = format!("\"{}\"", contents.replace("\"", "\\\""))
-							.replace("\t", "\\t")
-							.replace("\n", "\\n");
-						match serde_json::from_str(&sanitized) {
-							Ok(result) => result,
-							Err(e) => bail!("Failed to deserialize hook result: {e}"),
-						}
-					}
+					Err(_) => serde_json::from_value(serde_json::Value::String(contents))
+						.context("Failed to deserialize hook result")?,
 				};
 
 				Ok(Some(HookHandle::constant(result, self.id.clone())))
@@ -225,6 +238,7 @@ impl Plugin {
 							nitro_version,
 							plugin_list,
 							wasm_loader,
+							context,
 							o,
 						))
 						.await;
@@ -291,6 +305,8 @@ impl Plugin {
 #[derive(Deserialize, Debug, Default)]
 #[serde(default)]
 pub struct PluginManifest {
+	/// ID for the plugin
+	pub id: Option<String>,
 	/// Metadata for the plugin
 	#[serde(flatten)]
 	pub meta: PluginMetadata,
@@ -301,8 +317,6 @@ pub struct PluginManifest {
 	pub nitro_version: Option<String>,
 	/// The hook handlers for the plugin
 	pub hooks: HashMap<String, HookHandler>,
-	/// The subcommands the plugin provides
-	pub subcommands: HashMap<String, PluginProvidedSubcommand>,
 	/// Plugins that this plugin depends on
 	pub dependencies: Vec<String>,
 	/// Message to display when the plugin is installed
@@ -311,6 +325,12 @@ pub struct PluginManifest {
 	pub protocol_version: Option<u16>,
 	/// Whether to disable base64 encoding in the protocol
 	pub raw_transfer: bool,
+	/// Whether the plugin supports creating custom instances
+	pub supports_instance_creation: bool,
+	/// Whether the plugin supports creating custom templates
+	pub supports_template_creation: bool,
+	/// The subcommands the plugin provides
+	pub subcommands: HashMap<String, PluginProvidedSubcommand>,
 }
 
 impl PluginManifest {
@@ -328,6 +348,8 @@ pub struct PluginMetadata {
 	pub name: Option<String>,
 	/// The short description of the plugin
 	pub description: Option<String>,
+	/// URL for plugin documentation
+	pub documentation: Option<String>,
 }
 
 /// A CLI subcommand provided by a plugin
@@ -368,6 +390,9 @@ pub enum HookHandler {
 		/// The priority for the hook
 		#[serde(default)]
 		priority: HookPriority,
+		/// Data for the hook to subscribe to
+		#[serde(default)]
+		subscriptions: HashSet<HookSubscription>,
 	},
 	/// Handle this hook by returning a constant result
 	Constant {
@@ -424,6 +449,16 @@ pub enum HookPriority {
 	Any,
 	/// The plugin will try to run after other ones
 	Last,
+}
+
+/// Data that an executable handler can subscribe to receiving
+#[derive(Deserialize, PartialEq, Eq, Clone, Copy, Hash)]
+#[serde(rename_all = "snake_case")]
+pub enum HookSubscription {
+	/// List of instances
+	Instances,
+	/// List of templates
+	Templates,
 }
 
 /// Deserialize function for the native hook. No plugin manifests should ever use this,

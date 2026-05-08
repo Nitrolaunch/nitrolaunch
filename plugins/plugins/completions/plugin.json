@@ -1,6 +1,8 @@
 {
+	"id": "completions",
 	"name": "Completions",
 	"description": "Shell completions for zsh and other shells",
+	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/completions",
 	"version": "v6",
 	"protocol_version": 3,
 	"hooks": {

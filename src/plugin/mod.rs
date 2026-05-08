@@ -1,24 +1,29 @@
+/// Context implementation for the inner manager
+pub mod context;
 /// Online plugin installation from verified GitHub repos
 pub mod install;
 
 use std::collections::HashSet;
+use std::fs::File;
+use std::io::{Read, Seek};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use crate::config::plugin::{PluginConfig, PluginsConfig};
 use crate::io::paths::Paths;
-use anyhow::Context;
+use anyhow::{Context, bail};
 use nitro_core::io::{json_from_file, json_to_file_pretty};
+use nitro_plugin::PluginPaths;
 use nitro_plugin::hook::call::{HookHandle, HookHandles};
 use nitro_plugin::hook::wasm::loader::WASMLoader;
-use nitro_plugin::hook::Hook;
-use nitro_plugin::host::CorePluginManager;
-use nitro_plugin::plugin::{Plugin, PluginManifest};
-use nitro_plugin::PluginPaths;
+use nitro_plugin::hook::{Hook, WASM_FILE_NAME};
+use nitro_plugin::host::{CorePluginManager, PluginContext};
+use nitro_plugin::plugin::{HookHandler, Plugin, PluginManifest};
+use nitro_shared::output::MessageContents;
 use nitro_shared::output::NitroOutput;
-use nitro_shared::output::{MessageContents, MessageLevel};
 use nitro_shared::translate;
 use tokio::sync::Mutex;
+use zip::ZipArchive;
 
 /// Manager for plugin configs and the actual loaded plugin manager
 #[derive(Clone)]
@@ -127,22 +132,17 @@ impl PluginManager {
 			plugin.set_working_dir(plugin_dir.to_owned());
 		}
 
-		if let Some(plugin_nitro_version) = &plugin.get_manifest().nitro_version {
-			if let (Some(nitro_version), Some(plugin_nitro_version)) = (
+		if let Some(plugin_nitro_version) = &plugin.get_manifest().nitro_version
+			&& let (Some(nitro_version), Some(plugin_nitro_version)) = (
 				version_compare::Version::from(crate::VERSION),
 				version_compare::Version::from(plugin_nitro_version),
-			) {
-				if plugin_nitro_version > nitro_version {
-					o.display(
-						MessageContents::Warning(translate!(
-							o,
-							PluginForNewerVersion,
-							"plugin" = plugin.get_id()
-						)),
-						MessageLevel::Important,
-					);
-				}
-			}
+			) && plugin_nitro_version > nitro_version
+		{
+			o.display(MessageContents::Warning(translate!(
+				o,
+				PluginForNewerVersion,
+				"plugin" = plugin.get_id()
+			)));
 		}
 
 		inner
@@ -178,23 +178,21 @@ impl PluginManager {
 		// Get the path for the manifest
 		let path = paths.plugins.join(format!("{}.json", plugin.id));
 		let (path, plugin_dir) = if path.exists() {
-			o.display(
-				MessageContents::Warning(format!(
-					"Plugin '{}' is using outdated JSON-only format",
-					plugin.id
-				)),
-				MessageLevel::Important,
-			);
+			o.display(MessageContents::Warning(format!(
+				"Plugin '{}' is using outdated JSON-only format",
+				plugin.id
+			)));
 			(path, None)
 		} else {
 			let dir = paths.plugins.join(&plugin.id);
 			(dir.join("plugin.json"), Some(dir))
 		};
 		if !path.exists() {
-			o.display(
-				MessageContents::Error(translate!(o, PluginNotFound, "plugin" = &plugin.id)),
-				MessageLevel::Important,
-			);
+			o.display(MessageContents::Error(translate!(
+				o,
+				PluginNotFound,
+				"plugin" = &plugin.id
+			)));
 
 			return Ok(());
 		}
@@ -253,6 +251,61 @@ impl PluginManager {
 		}
 
 		Ok(())
+	}
+
+	/// Installs a plugin ZIP. If no ID is provided, it will be inferred from the manifest.
+	pub async fn install_plugin<R: Read + Seek>(
+		r: &mut R,
+		plugin_id: Option<String>,
+		paths: &Paths,
+		o: &mut impl NitroOutput,
+	) -> anyhow::Result<()> {
+		let mut zip = ZipArchive::new(r).context("Failed to read zip archive")?;
+
+		// Read manifest
+		let manifest = zip
+			.by_name("plugin.json")
+			.context("Plugin manifest file missing")?;
+		let manifest: PluginManifest =
+			serde_json::from_reader(manifest).context("Failed to read plugin manifest")?;
+
+		let Some(id) = plugin_id.or(manifest.id.clone()) else {
+			bail!("ID missing in plugin manifest");
+		};
+
+		// Remove existing plugin files
+		Self::remove_plugin(&id, paths).context("Failed to remove existing plugin")?;
+
+		// Extract new plugin files
+		let dir = paths.plugins.join(&id);
+		std::fs::create_dir_all(&dir).context("Failed to create plugin directory")?;
+
+		zip.extract(&dir)
+			.context("Failed to extract plugin files")?;
+
+		// Precompile WASM
+		if let Err(e) = precompile_wasm(&id, &manifest, &dir, paths).await {
+			o.display(MessageContents::Error(format!(
+				"Failed to precompile WASM: {e}"
+			)));
+		}
+
+		if let Some(install_message) = manifest.install_message {
+			o.display(MessageContents::Warning(install_message));
+		}
+
+		let _ = PluginManager::enable_plugin(&id, paths);
+
+		Ok(())
+	}
+
+	/// Installs a plugin from a .zip file
+	pub async fn install_from_file(
+		path: &Path,
+		paths: &Paths,
+		o: &mut impl NitroOutput,
+	) -> anyhow::Result<()> {
+		Self::install_plugin(&mut File::open(path)?, None, paths, o).await
 	}
 
 	/// Uninstalls a plugin by removing its files and disabling it
@@ -324,15 +377,12 @@ impl PluginManager {
 		for plugin in inner.manager.iter_plugins() {
 			for dependency in &plugin.get_manifest().dependencies {
 				if !ids.contains(dependency) {
-					o.display(
-						MessageContents::Warning(translate!(
-							o,
-							PluginDependencyMissing,
-							"dependency" = dependency,
-							"plugin" = plugin.get_id()
-						)),
-						MessageLevel::Important,
-					);
+					o.display(MessageContents::Warning(translate!(
+						o,
+						PluginDependencyMissing,
+						"dependency" = dependency,
+						"plugin" = plugin.get_id()
+					)));
 				}
 			}
 		}
@@ -348,6 +398,11 @@ impl PluginManager {
 		self.inner.lock().await.manager.set_wasm_loader(loader);
 	}
 
+	/// Sets the global context for the manager to pass to plugins
+	pub async fn set_context(&self, context: Arc<dyn PluginContext>) {
+		self.inner.lock().await.manager.set_context(context);
+	}
+
 	/// Gets the mutex lock for the inner part of this plugin manager
 	pub async fn get_lock(&self) -> tokio::sync::MutexGuard<'_, PluginManagerInner> {
 		self.inner.lock().await
@@ -359,4 +414,27 @@ fn make_paths(paths: &Paths) -> PluginPaths {
 		data_dir: paths.data.clone(),
 		config_dir: paths.config.clone(),
 	}
+}
+
+/// Precompiles WASM for a plugin
+pub async fn precompile_wasm(
+	plugin_id: &str,
+	manifest: &PluginManifest,
+	plugin_dir: &Path,
+	paths: &Paths,
+) -> anyhow::Result<()> {
+	let uses_wasm = manifest
+		.hooks
+		.values()
+		.any(|x| matches!(x, HookHandler::Wasm { .. }));
+
+	if uses_wasm {
+		let wasm_path = plugin_dir.join(WASM_FILE_NAME);
+		if wasm_path.exists() {
+			let mut loader = WASMLoader::new(&paths.data);
+			loader.load(plugin_id.to_string(), &wasm_path).await?;
+		}
+	}
+
+	Ok(())
 }

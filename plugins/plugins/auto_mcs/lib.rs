@@ -5,21 +5,21 @@ use std::{
 	time::{Duration, SystemTime},
 };
 
-use anyhow::{bail, Context};
-use nitro_config::instance::{make_valid_instance_id, InstanceConfig};
+use anyhow::{Context, bail};
+use nitro_config::instance::{InstanceConfig, make_valid_instance_id};
 use nitro_plugin::{
 	api::wasm::{
+		WASMPlugin,
 		output::WASMPluginOutput,
 		sys::{get_os_string, run_command},
 		util::get_custom_config,
-		WASMPlugin,
 	},
 	hook::hooks::{ImportInstanceResult, ReplaceInstanceLaunchResult},
 	nitro_wasm_plugin,
 };
-use nitro_shared::{id::InstanceID, loaders::Loader, versions::MinecraftVersionDeser, Side};
+use nitro_shared::{Side, id::InstanceID, loaders::Loader, versions::MinecraftVersionDeser};
 use nitro_shared::{
-	output::{MessageContents, MessageLevel, NitroOutput},
+	output::{MessageContents, NitroOutput},
 	util::to_string_json,
 };
 use serde::Deserialize;
@@ -94,7 +94,7 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 				continue;
 			};
 
-			config.game_dir = Some(path.to_string_lossy().to_string());
+			config.dir = Some(path.to_string_lossy().to_string());
 			config.custom_launch = true;
 			config.is_editable = false;
 
@@ -161,18 +161,15 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 		.context("Failed to spawn auto-mcs server")?;
 
 		let mut o = WASMPluginOutput::new();
-		o.display(
-			MessageContents::Simple("Checking log file dir".into()),
-			MessageLevel::Debug,
-		);
+		o.debug(MessageContents::Simple("Checking log file dir".into()));
 
 		// Keep checking for new log files, then pick the newest one when the entries change
 		let log_file_path = loop {
 			let logs = get_dir_file_timestamps(&log_dir).unwrap_or_default();
-			if original_logs != logs {
-				if let Some(result) = logs.into_iter().max_by_key(|x| x.1) {
-					break result.0;
-				}
+			if original_logs != logs
+				&& let Some(result) = logs.into_iter().max_by_key(|x| x.1)
+			{
+				break result.0;
 			}
 
 			std::thread::sleep(Duration::from_millis(50));
@@ -180,10 +177,9 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 
 		let log_file_path = log_file_path.to_string_lossy().to_string();
 
-		o.display(
-			MessageContents::Simple(format!("Found log file {log_file_path}")),
-			MessageLevel::Debug,
-		);
+		o.debug(MessageContents::Simple(format!(
+			"Found log file {log_file_path}"
+		)));
 
 		Ok(Some(ReplaceInstanceLaunchResult {
 			pid,

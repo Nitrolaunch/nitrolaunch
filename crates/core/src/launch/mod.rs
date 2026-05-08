@@ -12,16 +12,16 @@ use std::io::Write;
 use std::ops::DerefMut;
 use std::path::{Path, PathBuf};
 
-use anyhow::{bail, Context};
+use anyhow::{Context, bail};
 use nitro_shared::java_args::MemoryArg;
-use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
+use nitro_shared::output::{MessageContents, NitroOutput};
 use nitro_shared::versions::VersionName;
-use nitro_shared::{translate, Side};
+use nitro_shared::{Side, translate};
 
 use self::client::create_quick_play_args;
-use self::process::{launch_game_process, LaunchGameProcessParameters};
-use crate::account::auth::check_game_ownership;
+use self::process::{LaunchGameProcessParameters, launch_game_process};
 use crate::account::AccountManager;
+use crate::account::auth::check_game_ownership;
 use crate::config::BrandingProperties;
 use crate::instance::InstanceKind;
 use crate::io::files::paths::Paths;
@@ -48,14 +48,17 @@ pub(crate) async fn launch(
 	if let InstanceKind::Client { .. } = &params.side {
 		let mut process = o.get_process();
 		let message = translate!(process, StartAuthenticating);
-		process.display(
-			MessageContents::StartProcess(message),
-			MessageLevel::Important,
-		);
+		process.display(MessageContents::StartProcess(message));
 
+		// if !params.
 		params
 			.accounts
-			.authenticate(params.paths, params.req_client, process.deref_mut())
+			.authenticate(
+				params.offline_auth,
+				params.paths,
+				params.req_client,
+				process.deref_mut(),
+			)
 			.await
 			.context("Failed to ensure authentication")?;
 
@@ -64,16 +67,14 @@ pub(crate) async fn launch(
 			check_game_ownership(params.paths).context("Failed to check for game ownership")?;
 
 		if !owns_game {
-			bail!("Could not prove game ownership. If using an alternative auth system, like from a plugin, you must login with a Microsoft account that owns Minecraft first.");
+			bail!(
+				"Could not prove game ownership. If using an alternative auth system, like from a plugin, you must login with a Microsoft account that owns Minecraft first."
+			);
 		}
 
 		let message = translate!(process, FinishAuthenticating);
-		process.display(MessageContents::Success(message), MessageLevel::Important);
+		process.display(MessageContents::Success(message));
 	}
-
-	// Deduplicate the classpath for common libraries
-	params.classpath.deduplicate_java_lib("asm");
-	params.classpath.deduplicate_java_libs();
 
 	// Get side-specific launch properties
 	let props = match params.side.get_side() {
@@ -91,6 +92,7 @@ pub(crate) async fn launch(
 		command: command.as_os_str(),
 		cwd: params.launch_dir,
 		main_class: Some(params.main_class),
+		classpath: params.classpath.clone(),
 		paths: params.paths,
 		props,
 		launch_config: params.launch_config,
@@ -112,13 +114,15 @@ pub(crate) struct LaunchParameters<'a> {
 	pub side: &'a InstanceKind,
 	pub launch_dir: &'a Path,
 	pub java: &'a JavaInstallation,
-	pub classpath: &'a mut Classpath,
+	pub classpath: &'a Classpath,
+	pub jar_path: &'a Path,
 	pub main_class: &'a str,
 	pub launch_config: &'a LaunchConfiguration,
 	pub paths: &'a Paths,
 	pub req_client: &'a reqwest::Client,
 	pub client_meta: &'a ClientMeta,
 	pub accounts: &'a mut AccountManager,
+	pub offline_auth: bool,
 	pub censor_secrets: bool,
 	pub branding: &'a BrandingProperties,
 	pub pipe_stdin: bool,
@@ -191,6 +195,8 @@ pub struct InstanceHandle {
 	stdin: Option<File>,
 	/// The stdin path of the process
 	stdin_path: Option<PathBuf>,
+	/// The classpath used to launch the instance
+	classpath: Classpath,
 }
 
 impl InstanceHandle {
@@ -201,6 +207,7 @@ impl InstanceHandle {
 		stdout_path: PathBuf,
 		stdin: Option<File>,
 		stdin_path: Option<PathBuf>,
+		classpath: Classpath,
 	) -> Self {
 		Self {
 			process,
@@ -208,6 +215,7 @@ impl InstanceHandle {
 			stdout_path,
 			stdin,
 			stdin_path,
+			classpath,
 		}
 	}
 
@@ -264,5 +272,10 @@ impl InstanceHandle {
 		} else {
 			Ok(())
 		}
+	}
+
+	/// Gets the classpath used to launch the instance
+	pub fn classpath(&self) -> &Classpath {
+		&self.classpath
 	}
 }

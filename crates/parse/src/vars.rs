@@ -118,7 +118,7 @@ pub trait VariableStore {
 	fn set_reserved_constants(&mut self, constants: ReservedConstantVariables) {
 		self.set_var(
 			CONSTANT_VAR_MC_VERSION.to_string(),
-			constants.mc_version.to_string(),
+			constants.mc_version.unwrap_or("").to_string(),
 		);
 	}
 
@@ -166,7 +166,7 @@ pub fn is_reserved_constant_var(var: &str) -> bool {
 /// Struct for reserved constant variables
 pub struct ReservedConstantVariables<'a> {
 	/// The Minecraft version
-	pub mc_version: &'a str,
+	pub mc_version: Option<&'a str>,
 }
 
 #[cfg(test)]

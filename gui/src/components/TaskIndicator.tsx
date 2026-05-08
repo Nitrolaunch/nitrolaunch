@@ -28,22 +28,27 @@ export default function TaskIndicator() {
 
 	// The task visible in the popup
 	let [selectedTask, setSelectedTask] = createSignal<number | undefined>(
-		undefined
+		undefined,
 	);
 
 	let [selectedTaskProgress, setSelectedTaskProgress] = createSignal<
 		number | undefined
 	>(undefined);
 
+	let updateTaskCount = () => {
+		setTaskCount(Object.keys(messages()).length);
+	};
+
+	let updateMessages = () => {
+		setMessages((messages) => {
+			return { ...messages };
+		});
+	};
+
 	function createTask(task: string) {
-		if (messages()[task] == undefined) {
-			setTaskCount((taskCount) => taskCount + 1);
-		}
-		if (taskCount() == 1) {
+		if (taskCount() == 0) {
 			setTaskName(getTaskDisplayName(task));
 			setColor(getTaskColor(task));
-		} else {
-			setColor("running");
 		}
 		setMessages((messages) => {
 			messages[task] = {
@@ -57,6 +62,7 @@ export default function TaskIndicator() {
 			};
 			return messages;
 		});
+		updateTaskCount();
 	}
 
 	let [eventUnlistens, _] = createResource(async () => {
@@ -64,7 +70,7 @@ export default function TaskIndicator() {
 			"nitro_output_create_task",
 			(event: Event<string>) => {
 				createTask(event.payload);
-			}
+			},
 		);
 
 		(window as any).foo = messages;
@@ -108,19 +114,15 @@ export default function TaskIndicator() {
 							task.progressBar = undefined;
 							updateSelectedProgress();
 						}
-						return messages;
+						return { ...messages };
 					});
 				}
-			}
+			},
 		);
 
 		let unlisten3 = listen(
 			"nitro_output_finish_task",
 			(event: Event<string>) => {
-				if (messages()[event.payload] != undefined) {
-					setTaskCount((taskCount) => taskCount - 1);
-				}
-
 				// TODO: Keep the same task focused
 				if (selectedTask() != undefined && selectedTask()! >= taskCount() - 1) {
 					if (taskCount() == 0) {
@@ -134,12 +136,13 @@ export default function TaskIndicator() {
 					delete messages[event.payload];
 					return messages;
 				});
+				updateTaskCount();
 				if (taskCount() == 0) {
 					setColor("disabled");
 				} else if (taskCount() == 1) {
 					setTaskName(getTaskDisplayName(Object.keys(messages())[0]!));
 				}
-			}
+			},
 		);
 
 		let unlisten4 = listen(
@@ -154,7 +157,7 @@ export default function TaskIndicator() {
 						return messages;
 					});
 				}
-			}
+			},
 		);
 
 		let unlisten5 = listen(
@@ -169,7 +172,7 @@ export default function TaskIndicator() {
 						return messages;
 					});
 				}
-			}
+			},
 		);
 
 		let unlisten6 = listen(
@@ -184,7 +187,7 @@ export default function TaskIndicator() {
 						return messages;
 					});
 				}
-			}
+			},
 		);
 
 		let unlisten7 = listen(
@@ -199,7 +202,7 @@ export default function TaskIndicator() {
 						return messages;
 					});
 				}
-			}
+			},
 		);
 
 		let unlisten8 = listen(
@@ -217,14 +220,14 @@ export default function TaskIndicator() {
 
 					updateSelectedProgress();
 				}
-			}
+			},
 		);
 
 		let unlisten9 = listen(
 			"nitro_display_resolution_error",
 			(event: Event<ResolutionErrorEvent>) => {
 				errorToast(<ResolutionError error={event.payload.error} />);
-			}
+			},
 		);
 
 		return await Promise.all([
@@ -249,6 +252,7 @@ export default function TaskIndicator() {
 	});
 
 	let selectedTaskData = createMemo(() => {
+		console.log("RUNNN");
 		if (selectedTask() == undefined) {
 			return undefined;
 		} else {
@@ -257,9 +261,8 @@ export default function TaskIndicator() {
 	});
 
 	function updateSelectedProgress() {
-		if (selectedTask() != undefined) {
-			let selectedTaskData = Object.values(messages())[selectedTask()!]!;
-			setSelectedTaskProgress(selectedTaskData.progressBar);
+		if (selectedTaskData() != undefined) {
+			setSelectedTaskProgress(selectedTaskData()!.progressBar);
 		} else {
 			setSelectedTaskProgress(undefined);
 		}
@@ -484,6 +487,14 @@ function getTaskDisplayName(task: string) {
 		return "Deleting instance";
 	} else if (task == "delete_template") {
 		return "Deleting template";
+	} else if (task == "get_cosmetics") {
+		return "Fetching Cosmetics";
+	} else if (task == "upload_skin") {
+		return "Uploading skin";
+	} else if (task == "activate_cape") {
+		return "Activating cape";
+	} else if (task == "deactivate_cape") {
+		return "Deactivating cape";
 	}
 	return beautifyString(task);
 }
@@ -504,6 +515,10 @@ function getTaskColor(task: string) {
 		return "instance";
 	} else if (
 		task == "login_account" ||
+		task == "get_cosmetics" ||
+		task == "upload_skin" ||
+		task == "activate_cape" ||
+		task == "deactivate_cape" ||
 		task == "update_versions" ||
 		task == "save_template_config" ||
 		task == "delete_template"

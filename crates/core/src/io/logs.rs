@@ -1,6 +1,6 @@
 use std::{fs::File, path::Path};
 
-use anyhow::{bail, Context};
+use anyhow::{Context, bail};
 use itertools::Itertools;
 use libflate::gzip::Decoder;
 

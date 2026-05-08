@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 
-use anyhow::{bail, Context};
+use anyhow::{Context, bail};
 use nitro_config::instance::InstanceConfig;
 use nitro_plugin::{
-	api::wasm::{util::get_custom_config, WASMPlugin},
+	api::wasm::{WASMPlugin, util::get_custom_config},
 	nitro_wasm_plugin,
 };
 use nitro_shared::id::InstanceID;
@@ -27,7 +27,9 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 
 		for (id, config) in config.instances {
 			if !id.contains(INDEX_TOKEN) {
-				bail!("Template {id} is missing the index token ({INDEX_TOKEN}) to make each copy unique");
+				bail!(
+					"Template {id} is missing the index token ({INDEX_TOKEN}) to make each copy unique"
+				);
 			}
 			multiply(id, config, &mut out);
 		}

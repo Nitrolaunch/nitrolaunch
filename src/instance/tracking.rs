@@ -17,6 +17,7 @@ pub struct RunningInstanceRegistry {
 	is_dirty: bool,
 	system: System,
 	path: PathBuf,
+	internal_dir: PathBuf,
 }
 
 impl RunningInstanceRegistry {
@@ -40,6 +41,7 @@ impl RunningInstanceRegistry {
 			is_dirty: false,
 			system,
 			path,
+			internal_dir: paths.internal.clone(),
 		};
 
 		// Remove any dead instances so we start with a good state
@@ -87,9 +89,21 @@ impl RunningInstanceRegistry {
 			.refresh_processes(sysinfo::ProcessesToUpdate::All, true);
 
 		let original_lenth = self.data.instances.len();
-		self.data
-			.instances
-			.retain(|x| is_process_alive(x.pid, &self.system, x.is_java));
+		self.data.instances.retain(|x| {
+			// Remove old stdio files
+			let is_alive = is_process_alive(x.pid, &self.system, x.is_java);
+			if !is_alive {
+				let stdio_dir = self.internal_dir.join("stdio");
+				if let Some(stdin_file) = &x.stdin_file {
+					let _ = std::fs::remove_file(stdio_dir.join(stdin_file));
+				}
+				if let Some(stdout_file) = &x.stdout_file {
+					let _ = std::fs::remove_file(stdio_dir.join(stdout_file));
+				}
+			}
+
+			is_alive
+		});
 
 		if original_lenth != self.data.instances.len() {
 			self.is_dirty = true;
@@ -97,25 +111,35 @@ impl RunningInstanceRegistry {
 	}
 
 	/// Adds an instance to the registry
-	pub fn add_instance(&mut self, pid: u32, instance: &str, is_java: bool, account: Option<String>) {
-		let entry = RunningInstanceEntry {
-			pid,
-			parent_pid: std::process::id(),
-			instance_id: instance.to_string(),
-			is_java,
-			account,
-		};
+	pub fn add_instance(&mut self, entry: RunningInstanceEntry) {
 		self.data.instances.push(entry);
 		self.is_dirty = true;
+	}
+
+	/// Gets an instance in the registry
+	pub fn get_instance<'this>(
+		&'this self,
+		instance: &str,
+		account: Option<&str>,
+	) -> Option<&'this RunningInstanceEntry> {
+		self.data.instances.iter().find(|x| {
+			if let Some(account) = account
+				&& x.account.as_ref().is_none_or(|x| x != account)
+			{
+				return false;
+			}
+
+			x.instance_id == instance
+		})
 	}
 
 	/// Removes an instance from the registry
 	pub fn remove_instance(&mut self, pid: u32, instance: &str, account: Option<&str>) {
 		let index = self.data.instances.iter().position(|x| {
-			if let Some(account) = account {
-				if !x.account.as_ref().is_some_and(|x| x == account) {
-					return false;
-				}
+			if let Some(account) = account
+				&& x.account.as_ref().is_none_or(|x| x != account)
+			{
+				return false;
 			}
 
 			x.pid == pid && x.instance_id == instance
@@ -132,10 +156,10 @@ impl RunningInstanceRegistry {
 	pub fn kill_instance(&mut self, instance: &str, account: Option<&str>) {
 		let mut pids = Vec::new();
 		for entry in &self.data.instances {
-			if let Some(account) = account {
-				if !entry.account.as_ref().is_some_and(|x| x == account) {
-					continue;
-				}
+			if let Some(account) = account
+				&& entry.account.as_ref().is_none_or(|x| x != account)
+			{
+				continue;
 			}
 
 			if entry.instance_id == instance {
@@ -188,6 +212,12 @@ pub struct RunningInstanceEntry {
 	/// Whether this is a Java instance
 	#[serde(default = "default_is_java")]
 	pub is_java: bool,
+	/// The stdin pipe file name for this launch
+	#[serde(default)]
+	pub stdin_file: Option<String>,
+	/// The stdout pipe file name for this launch
+	#[serde(default)]
+	pub stdout_file: Option<String>,
 	/// The account that launched this instance
 	#[serde(default)]
 	#[serde(alias = "user")]

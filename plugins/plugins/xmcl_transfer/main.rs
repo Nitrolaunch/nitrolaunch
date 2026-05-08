@@ -4,20 +4,20 @@ use std::{
 	path::{Path, PathBuf},
 };
 
-use anyhow::{bail, Context};
+use anyhow::{Context, bail};
 use nitro_core::io::java::install::JavaInstallationKind;
 use nitro_plugin::{api::executable::ExecutablePlugin, hook::hooks::ImportInstanceResult};
 use nitro_shared::{
-	loaders::Loader,
-	output::{MessageContents, MessageLevel, NitroOutput},
-	versions::{parse_versioned_string, MinecraftVersionDeser},
 	Side,
+	loaders::Loader,
+	output::{MessageContents, NitroOutput},
+	versions::{MinecraftVersionDeser, parse_versioned_string},
 };
 use nitrolaunch::config_crate::instance::{
 	Args, InstanceConfig, LaunchArgs, LaunchConfig, LaunchMemory, QuickPlay,
 };
 use serde::{Deserialize, Serialize};
-use zip::{write::FileOptions, ZipArchive, ZipWriter};
+use zip::{ZipArchive, ZipWriter, write::FileOptions};
 
 fn main() -> anyhow::Result<()> {
 	let mut plugin =
@@ -28,14 +28,14 @@ fn main() -> anyhow::Result<()> {
 			bail!("Servers cannot be exported to XMCL");
 		}
 
-		let game_dir = PathBuf::from(arg.game_dir);
+		let inst_dir = PathBuf::from(arg.inst_dir);
 		let target_path = PathBuf::from(arg.result_path);
 		let target_file = File::create(target_path).context("Failed to open target file")?;
 
 		// Write the instance files
 		let mut zip = ZipWriter::new(target_file);
 
-		visit_dir(&game_dir, &mut zip, &game_dir).context("Failed to read instance directory")?;
+		visit_dir(&inst_dir, &mut zip, &inst_dir).context("Failed to read instance directory")?;
 
 		fn visit_dir(dir: &Path, zip: &mut ZipWriter<File>, game_dir: &Path) -> anyhow::Result<()> {
 			let dir_read = dir.read_dir().context("Failed to read directory")?;
@@ -172,12 +172,9 @@ fn main() -> anyhow::Result<()> {
 		} else if !meta.runtime.quilt_loader.is_empty() {
 			(Loader::Quilt, Some(meta.runtime.quilt_loader))
 		} else if !meta.runtime.optifine.is_empty() || !meta.runtime.yarn.is_empty() {
-			ctx.get_output().display(
-				MessageContents::Warning(
-					"Nitrolaunch does not understand the instance's loader".into(),
-				),
-				MessageLevel::Important,
-			);
+			ctx.get_output().display(MessageContents::Warning(
+				"Nitrolaunch does not understand the instance's loader".into(),
+			));
 			(Loader::Vanilla, None)
 		} else {
 			(Loader::Vanilla, None)

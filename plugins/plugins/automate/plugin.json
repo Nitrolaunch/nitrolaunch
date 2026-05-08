@@ -1,14 +1,52 @@
 {
+	"id": "automate",
 	"name": "Automate",
 	"description": "Run commands at different parts of the instance lifecycle with no coding knowledge",
+	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/automate",
 	"version": "v6",
 	"protocol_version": 3,
 	"hooks": {
 		"on_instance_launch": {
 			"wasm": true
 		},
+		"while_instance_launch": {
+			"wasm": true
+		},
 		"on_instance_stop": {
 			"wasm": true
+		},
+		"add_instance_config_controls": {
+			"constant": {
+				"controls": [
+					{
+						"id": "before_launch",
+						"name": "Before Launch",
+						"section": "Automate Hooks",
+						"description": "Commands to run before the instance is launched. Launch will be blocked until the command finishes.",
+						"schema": {
+							"type": "string_list"
+						}
+					},
+					{
+						"id": "on_launch",
+						"name": "On Launch",
+						"section": "Automate Hooks",
+						"description": "Commands to run when the instance is launched. Launch will not be blocked.",
+						"schema": {
+							"type": "string_list"
+						}
+					},
+					{
+						"id": "on_stop",
+						"name": "On Stop",
+						"section": "Automate Hooks",
+						"description": "Commands to run when the instance exits",
+						"schema": {
+							"type": "string_list"
+						}
+					}
+				]
+			}
 		}
 	}
 }

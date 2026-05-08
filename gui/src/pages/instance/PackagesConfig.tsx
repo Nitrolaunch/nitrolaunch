@@ -1,17 +1,24 @@
 import {
 	Accessor,
 	createEffect,
+	createMemo,
 	createResource,
 	createSignal,
 	For,
 	Match,
+	onCleanup,
 	Setter,
 	Show,
 	Switch,
 } from "solid-js";
 import InlineSelect from "../../components/input/select/InlineSelect";
 import "./PackagesConfig.css";
-import { PackageMeta, PackageProperties, PkgRequest } from "../../types";
+import {
+	PackageMeta,
+	PackageMetaAndProps,
+	PackageProperties,
+	PkgRequest,
+} from "../../types";
 import { invoke } from "@tauri-apps/api/core";
 import {
 	parsePkgRequest,
@@ -21,13 +28,16 @@ import {
 } from "../../utils";
 import IconButton from "../../components/input/button/IconButton";
 import {
+	Controller,
 	Delete,
 	Dumbbell,
 	Edit,
 	Error,
+	Honeycomb,
 	Plus,
 	Popout,
 	Search,
+	Server,
 	Trash,
 	Upload,
 } from "../../icons";
@@ -51,6 +61,7 @@ import SearchBar from "../../components/input/text/SearchBar";
 import Modal from "../../components/dialog/Modal";
 import ConfiguredPackageModal from "./ConfiguredPackageModal";
 import PackageVersion from "../../components/input/text/PackageVersion";
+import { Event, listen } from "@tauri-apps/api/event";
 
 export default function PackagesConfig(props: PackagesConfigProps) {
 	let navigate = useNavigate();
@@ -59,15 +70,6 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 	let [sideFilter, setSideFilter] = createSignal("all");
 	let [search, setSearch] = createSignal<string | undefined>(undefined);
 
-	let [packageMetas, setPackageMetas] = createSignal<
-		{ [key: string]: PackageMeta } | undefined
-	>();
-	let [packageProps, setPackageProps] = createSignal<
-		{ [key: string]: PackageProperties } | undefined
-	>();
-	let [errors, setErrors] = createSignal<{ [key: string]: string | undefined }>(
-		{},
-	);
 	let [selectedPackage, setSelectedPackage] = createSignal<
 		ConfiguredPackageProps | undefined
 	>();
@@ -100,148 +102,150 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 		},
 	);
 
-	let [allPackages, allPackagesMethods] = createResource(async () => {
-		let installedPackages: InstalledPackage[] = [];
-		if (!props.isTemplate && props.id != undefined) {
-			let map: { [key: string]: LockfilePackage } = await invoke(
-				"get_instance_packages",
-				{ instance: props.id },
-			);
-			for (let pkg of Object.keys(map)) {
-				let val = map[pkg];
-				installedPackages.push({
-					pkg: pkg,
-					req: parsePkgRequest(pkg),
-					contentVersion: val.content_version,
-					isInstalled: true,
-					// We can set these to defaults since they will be replaced
-					isConfigured: false,
-					isClient: false,
-					isServer: false,
-					isDerived: false,
-				});
-			}
-		}
-
-		// Get a list of all packages. We fetch and list all of the packages, and each one is then filtered by checking which groups it is in.
-		let allPackages = installedPackages.concat([]);
-
-		function addPackages(
-			list: PackageConfig[],
-			modifier: (pkg: InstalledPackage) => InstalledPackage,
-		) {
-			for (let config of list) {
-				let req = getPackageConfigRequest(config);
-				let existingPackage = allPackages.find(
-					(x) => x.isInstalled && pkgRequestsEqual(x.req, req),
+	let [installedPackages, installedPackagesMethods] = createResource(
+		() => props.id,
+		async () => {
+			let out: InstalledPackage[] = [];
+			if (!props.isTemplate && props.id != undefined) {
+				let map: { [key: string]: LockfilePackage } = await invoke(
+					"get_instance_packages",
+					{ instance: props.id },
 				);
-				allPackages = allPackages.filter(
-					(x) => !packageConfigsEqual(x.req, req),
-				);
-
-				let pkg: InstalledPackage = {
-					pkg: pkgRequestToString(req),
-					req: req,
-					contentVersion:
-						existingPackage == undefined
-							? undefined
-							: existingPackage.contentVersion,
-					config: config,
-					isInstalled: existingPackage != undefined,
-					isConfigured: true,
-					isClient: false,
-					isServer: false,
-					isDerived: false,
-				};
-
-				pkg = modifier(pkg);
-
-				allPackages.push(pkg);
+				for (let pkg of Object.keys(map)) {
+					let val = map[pkg];
+					out.push({
+						pkg: pkg,
+						req: parsePkgRequest(pkg),
+						contentVersion: val.content_version,
+						isInstalled: true,
+						// We can set these to defaults since they will be replaced
+						isConfigured: false,
+						isClient: false,
+						isServer: false,
+						isDerived: false,
+					});
+				}
 			}
-		}
 
-		addPackages(props.derivedGlobalPackages, (x) => {
-			x.isDerived = true;
-			return x;
-		});
-		addPackages(props.derivedClientPackages, (x) => {
-			x.isDerived = true;
-			x.isClient = true;
-			return x;
-		});
-		addPackages(props.derivedServerPackages, (x) => {
-			x.isDerived = true;
-			x.isServer = true;
-			return x;
-		});
-		addPackages(props.globalPackages, (x) => x);
-		addPackages(props.clientPackages, (x) => {
-			x.isClient = true;
-			return x;
-		});
-		addPackages(props.serverPackages, (x) => {
-			x.isServer = true;
-			return x;
-		});
+			return out;
+		},
+	);
 
-		// Get metadata and properties
-		let metas: any = {};
-		let properties: any = {};
-		let errors: any = {};
+	let [allPackages, allPackagesMethods] = createResource(
+		() => installedPackages(),
+		async (installed) => {
+			// Get a list of all packages. We fetch and list all of the packages, and each one is then filtered by checking which groups it is in.
+			let allPackages = installed.concat([]);
 
-		try {
-			await invoke("preload_packages", {
-				packages: allPackages.map((pkg) => pkg.pkg),
-				repo: undefined,
+			function addPackages(
+				list: PackageConfig[],
+				modifier: (pkg: InstalledPackage) => InstalledPackage,
+			) {
+				for (let config of list) {
+					let req = getPackageConfigRequest(config);
+					let existingPackage = allPackages.find(
+						(x) => x.isInstalled && pkgRequestsEqual(x.req, req),
+					);
+					allPackages = allPackages.filter(
+						(x) => !packageConfigsEqual(x.req, req),
+					);
+
+					let pkg: InstalledPackage = {
+						pkg: pkgRequestToString(req),
+						req: req,
+						contentVersion:
+							existingPackage == undefined
+								? undefined
+								: existingPackage.contentVersion,
+						config: config,
+						isInstalled: existingPackage != undefined,
+						isConfigured: true,
+						isClient: false,
+						isServer: false,
+						isDerived: false,
+					};
+
+					pkg = modifier(pkg);
+
+					allPackages.push(pkg);
+				}
+			}
+
+			addPackages(props.derivedGlobalPackages, (x) => {
+				x.isDerived = true;
+				return x;
 			});
-		} catch (e) {
-			console.error("Failed to preload: " + e);
-		}
+			addPackages(props.derivedClientPackages, (x) => {
+				x.isDerived = true;
+				x.isClient = true;
+				return x;
+			});
+			addPackages(props.derivedServerPackages, (x) => {
+				x.isDerived = true;
+				x.isServer = true;
+				return x;
+			});
+			addPackages(props.globalPackages, (x) => x);
+			addPackages(props.clientPackages, (x) => {
+				x.isClient = true;
+				return x;
+			});
+			addPackages(props.serverPackages, (x) => {
+				x.isServer = true;
+				return x;
+			});
 
-		let promises = [];
-		for (let pkg of allPackages) {
-			promises.push(
-				(async () => {
-					try {
-						return [
-							pkg.pkg,
-							await invoke("get_package_meta_and_props", { package: pkg.pkg }),
-						];
-					} catch (e) {
-						console.error("Failed to load package: " + e);
-						errors[pkg.pkg] = e;
-						return undefined;
-					}
-				})(),
-			);
-		}
+			allPackages.sort((a, b) => stringCompare(a.req.id, b.req.id));
 
-		let results = await Promise.all(promises);
-		for (let result of results) {
-			if (result == undefined) {
-				continue;
+			return allPackages;
+		},
+	);
+
+	let [packageData, packageDataMethods] = createResource(
+		() => allPackages(),
+		async (allPackages) => {
+			let out: { [pkg: string]: string | PackageMetaAndProps } = {};
+
+			let packages = allPackages!
+				.map((pkg) => pkg.pkg)
+				.filter((pkg) => out[pkg] == undefined);
+			if (props.modpack != undefined) {
+				packages.push(props.modpack);
 			}
 
-			let [id, [meta, props]] = result as [
-				string,
-				[PackageMeta, PackageProperties],
-			];
-			metas[id] = meta;
-			properties[id] = props;
-		}
+			if (packages.length > 5) {
+				try {
+					await invoke("preload_packages", {
+						packages: packages,
+						repo: undefined,
+					});
+				} catch (e) {
+					console.error("Failed to preload: " + e);
+				}
+			}
 
-		if (Object.keys(errors).length > 0) {
-			console.log("One or more packages failed to load");
-		}
+			try {
+				let results = (await invoke("get_multiple_package_meta_and_props", {
+					packages: packages,
+				})) as { [pkg: string]: string | PackageMetaAndProps };
 
-		setPackageMetas(metas);
-		setPackageProps(properties);
-		setErrors(errors);
+				out = results;
 
-		allPackages.sort((a, b) => stringCompare(a.req.id, b.req.id));
+				let errorCount = Object.values(results).filter(
+					(x) => typeof x == "string",
+				).length;
 
-		return allPackages;
-	});
+				if (errorCount > 0) {
+					console.log(`${errorCount} packages failed to load`);
+				}
+			} catch (e) {
+				errorToast("Failed to load packages: " + e);
+			}
+
+			return out;
+		},
+		{ initialValue: {} },
+	);
 
 	createEffect(() => {
 		props.globalPackages;
@@ -250,8 +254,10 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 		props.derivedGlobalPackages;
 		props.derivedClientPackages;
 		props.derivedServerPackages;
+		props.modpack;
 
 		allPackagesMethods.refetch();
+		packageDataMethods.refetch();
 	});
 
 	let [resolutionError, resolutionErrorMethods] = createResource(async () => {
@@ -274,10 +280,45 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 	let [showQuickAdd, setShowQuickAdd] = createSignal(false);
 	let [showOverridesModal, setShowOverridesModal] = createSignal(false);
 
+	let [unlisten, __] = createResource(
+		async () => {
+			return await listen("nitro_output_finish_task", (e: Event<string>) => {
+				if (
+					e.payload == "update_instance_packages" ||
+					e.payload == "update_instance"
+				) {
+					installedPackagesMethods.refetch();
+				}
+			});
+		},
+		{ initialValue: () => { } },
+	);
+
+	onCleanup(() => unlisten());
+
+	let modpackData = () => {
+		return props.modpack == undefined ? undefined : packageData()[props.modpack];
+	};
+	let modpackMeta = createMemo(() =>
+		modpackData() == undefined || typeof modpackData() == "string"
+			? undefined
+			: (modpackData()![0] as PackageMeta),
+	);
+	let modpackProperties = createMemo(() =>
+		modpackData() == undefined || typeof modpackData() == "string"
+			? undefined
+			: (modpackData()![1] as PackageProperties),
+	);
+	let modpackError = createMemo(() =>
+		modpackData() == undefined || typeof modpackData() != "string"
+			? undefined
+			: (modpackData() as string),
+	);
+
 	return (
 		<div class="cont col" id="packages-config">
 			<Show when={resolutionError() != undefined}>
-				<div class="cont" id="packages-config-resolution-error">
+				<div class="cont col start" id="packages-config-resolution-error">
 					<ResolutionError error={resolutionError()!} />
 				</div>
 			</Show>
@@ -299,9 +340,18 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 									style="position:absolute; top: calc(100% + 1rem);z-index:15"
 								>
 									<PackageQuickAdd
-										onAdd={(pkg) =>
-											props.onAdd(pkgRequestToString(pkg), "global")
-										}
+										onAdd={(pkg, isModpack) => {
+											if (isModpack) {
+												console.log("Adding modpack");
+												if (props.modpack != undefined) {
+													errorToast("This config already has a modpack. Please remove it before adding a new one.");
+												} else {
+													props.setModpack(pkgRequestToString(pkg));
+												}
+											} else {
+												props.onAdd(pkgRequestToString(pkg), "global");
+											}
+										}}
 										version={canonicalVersion()}
 										loader={props.loader}
 									/>
@@ -407,7 +457,6 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 						selected={filter()}
 						onChange={setFilter}
 						grid={false}
-						connected={false}
 					/>
 				</div>
 				<div>
@@ -440,7 +489,6 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 							selected={sideFilter()}
 							onChange={setSideFilter}
 							grid={false}
-							connected={false}
 						/>
 					</Show>
 				</div>
@@ -450,9 +498,39 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 					when={!allPackages.loading}
 					fallback={<LoadingSpinner size="5rem" />}
 				>
+					<Show when={props.modpack != undefined}>
+						<ConfiguredPackage
+							pkg={{
+								pkg: props.modpack!,
+								req: parsePkgRequest(props.modpack!),
+								isConfigured: true,
+								isInstalled: true,
+								isClient: false,
+								isServer: false,
+								isDerived: false,
+							}}
+							meta={modpackMeta()}
+							props={modpackProperties()}
+							error={modpackError()}
+							suppressed={() => false}
+							forced={() => false}
+							onClick={setSelectedPackage}
+							onRemove={() => props.setModpack(undefined)}
+							onVersionChange={(version) => {
+								let req = parsePkgRequest(props.modpack!);
+								req.version = version;
+								props.setModpack(pkgRequestToString(req));
+							}}
+							onCategoryChange={() => { }}
+							setOverrides={props.setOverrides}
+							setDirty={props.onChange}
+							isTemplate={props.isTemplate}
+							isModpack
+						/>
+					</Show>
 					<For each={allPackages()}>
 						{(pkg) => {
-							let isVisible = () => {
+							let isFilteredShown = createMemo(() => {
 								if (!pkg.isConfigured && filter() == "user") {
 									return false;
 								} else if (filter() == "bundled") {
@@ -463,13 +541,23 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 									return false;
 								} else if (sideFilter() == "server" && !pkg.isServer) {
 									return false;
-								} else if (
+								} else {
+									return true;
+								}
+							});
+
+							let isVisible = () => {
+								if (!isFilteredShown()) {
+									return false;
+								}
+
+								if (
 									search() != undefined &&
 									!pkg.req.id.includes(search()!) &&
 									!(
 										meta != undefined &&
 										meta.name != undefined &&
-										meta.name.includes(search()!)
+										meta.name.toLocaleLowerCase().includes(search()!)
 									)
 								) {
 									return false;
@@ -477,22 +565,30 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 								return true;
 							};
 
-							let meta =
-								packageMetas() == undefined
+							let data = () => packageData()[pkg.pkg];
+							let meta = createMemo(() =>
+								data() == undefined || typeof data() == "string"
 									? undefined
-									: packageMetas()![pkg.pkg];
-							let properties =
-								packageProps() == undefined
+									: (data()[0] as PackageMeta),
+							);
+							let properties = createMemo(() =>
+								data() == undefined || typeof data() == "string"
 									? undefined
-									: packageProps()![pkg.pkg];
+									: (data()[1] as PackageProperties),
+							);
+							let error = createMemo(() =>
+								data() == undefined || typeof data() != "string"
+									? undefined
+									: (data() as string),
+							);
 
 							return (
 								<Show when={isVisible()}>
 									<ConfiguredPackage
 										pkg={pkg}
-										meta={meta}
-										props={properties}
-										error={errors()[pkg.pkg]}
+										meta={meta()}
+										props={properties()}
+										error={error()}
 										suppressed={() =>
 											props.overrides.suppress != undefined &&
 											props.overrides.suppress.includes(pkg.pkg)
@@ -516,8 +612,14 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 											};
 											props.onAdd(pkgRequestToString(req), category);
 										}}
+										onCategoryChange={(category) => {
+											props.onRemove(pkg.pkg);
+											props.onAdd(pkg.pkg, category);
+										}}
 										setOverrides={props.setOverrides}
 										setDirty={props.onChange}
+										isTemplate={props.isTemplate}
+										isModpack={false}
 									/>
 								</Show>
 							);
@@ -601,6 +703,7 @@ export default function PackagesConfig(props: PackagesConfigProps) {
 
 export interface PackagesConfigProps {
 	id?: string;
+	modpack?: string;
 	globalPackages: PackageConfig[];
 	clientPackages: PackageConfig[];
 	serverPackages: PackageConfig[];
@@ -608,11 +711,9 @@ export interface PackagesConfigProps {
 	derivedClientPackages: PackageConfig[];
 	derivedServerPackages: PackageConfig[];
 	isTemplate: boolean;
-	onRemove: (pkg: string, category: ConfiguredPackageCategory) => void;
+	setModpack: (modpack: string | undefined) => void;
+	onRemove: (pkg: string) => void;
 	onAdd: (pkg: string, category: ConfiguredPackageCategory) => void;
-	setGlobalPackages: (packages: PackageConfig[]) => void;
-	setClientPackages: (packages: PackageConfig[]) => void;
-	setServerPackages: (packages: PackageConfig[]) => void;
 	minecraftVersion?: string;
 	loader?: Loader;
 	showBrowseButton: boolean;
@@ -627,19 +728,23 @@ function ConfiguredPackage(props: ConfiguredPackageProps) {
 	let navigate = useNavigate();
 
 	let [isHovered, setIsHovered] = createSignal(false);
-	let name =
+	let name = () =>
 		props.meta == undefined || props.meta.name == undefined
-			? props.pkg.req.id
+			? props.pkg.req.slug == undefined
+				? props.pkg.req.id
+				: props.pkg.req.slug
 			: props.meta.name;
 
-	let icon =
+	let icon = () =>
 		props.meta == undefined || props.meta.icon == undefined
 			? "/icons/default_instance.png"
 			: props.meta.icon;
 
+	let category = () => props.pkg.isClient ? "client" : props.pkg.isServer ? "server" : "global";
+
 	return (
 		<div
-			class="shadow bubble-hover-small configured-package"
+			class={`shadow bubble-hover-small configured-package ${props.isModpack ? "modpack" : ""}`}
 			onmouseenter={() => setIsHovered(true)}
 			onmouseleave={() => setIsHovered(false)}
 			onclick={() => props.onClick(props)}
@@ -655,13 +760,13 @@ function ConfiguredPackage(props: ConfiguredPackageProps) {
 						<LoadingSpinner size="2rem" />
 					</Match>
 					<Match when={props.meta != undefined}>
-						<img src={icon} class="configured-package-icon" />
+						<img src={icon()} class="configured-package-icon" />
 					</Match>
 				</Switch>
 			</div>
 			<div class="cont col configured-package-details">
 				<div class="cont configured-package-details-top">
-					<div class="configured-package-name">{name}</div>
+					<div class="configured-package-name">{name()}</div>
 					<PackageVersion
 						configuredVersion={props.pkg.req.version}
 						installedVersion={props.pkg.contentVersion}
@@ -674,6 +779,15 @@ function ConfiguredPackage(props: ConfiguredPackageProps) {
 			<div class="cont fullwidth fullheight">
 				<Show when={props.pkg.isDerived}>
 					<div class="cont configured-package-derive-indicator">DERIVED</div>
+				</Show>
+				<Show when={props.isModpack}>
+					<div
+						class="cont tag"
+						style="color:var(--instance);border-color:var(--instance);background-color:var(--instancebg);font-size:0.8rem;height:1.5rem"
+					>
+						<Icon icon={Honeycomb} size="1rem" />
+						MODPACK
+					</div>
 				</Show>
 				<Show when={props.suppressed()}>
 					<div
@@ -696,6 +810,30 @@ function ConfiguredPackage(props: ConfiguredPackageProps) {
 			</div>
 			<div class="cont configured-package-controls">
 				<Show when={isHovered()}>
+					<Show when={category() == "client"}>
+						<Tip tip="Client-Only" side="top">
+							<IconButton
+								icon={Controller}
+								size="1.5rem"
+								color="var(--instancebg)"
+								border="var(--instance)"
+								iconColor="var(--instance)"
+								onClick={() => { }}
+							/>
+						</Tip>
+					</Show>
+					<Show when={category() == "server"}>
+						<Tip tip="Server-Only" side="top">
+							<IconButton
+								icon={Server}
+								size="1.5rem"
+								color="var(--instancebg)"
+								border="var(--instance)"
+								iconColor="var(--instance)"
+								onClick={() => { }}
+							/>
+						</Tip>
+					</Show>
 					<IconButton
 						icon={Popout}
 						size="24px"
@@ -720,12 +858,7 @@ function ConfiguredPackage(props: ConfiguredPackageProps) {
 							onClick={(e) => {
 								e.preventDefault();
 								e.stopPropagation();
-								let category: ConfiguredPackageCategory = props.pkg.isClient
-									? "client"
-									: props.pkg.isServer
-										? "server"
-										: "global";
-								props.onRemove(props.pkg.pkg, category);
+								props.onRemove(props.pkg.pkg);
 								(e.target! as any).parentElement.parentElement.remove();
 							}}
 							selected={false}
@@ -745,17 +878,20 @@ export interface ConfiguredPackageProps {
 	suppressed: Accessor<boolean>;
 	forced: Accessor<boolean>;
 	onClick: (props: ConfiguredPackageProps) => void;
-	onRemove: (pkg: string, category: ConfiguredPackageCategory) => void;
+	onRemove: (pkg: string) => void;
 	onVersionChange: (version: string | undefined) => void;
+	onCategoryChange: (category: ConfiguredPackageCategory) => void;
 	setOverrides: Setter<PackageOverrides>;
 	setDirty: () => void;
+	isTemplate: boolean;
+	isModpack: boolean;
 }
 
 export type PackageConfig =
 	| string
 	| {
-			id: string;
-	  };
+		id: string;
+	};
 
 // Gets the PkgRequest from a PackageConfig
 export function getPackageConfigRequest(config: PackageConfig) {
@@ -805,6 +941,6 @@ export interface InstalledPackage {
 	isDerived: boolean;
 }
 
-interface LockfileAddon {}
+interface LockfileAddon { }
 
 export type ConfiguredPackageCategory = "global" | "client" | "server";

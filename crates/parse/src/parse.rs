@@ -1,17 +1,17 @@
 use anyhow::anyhow;
-use anyhow::{bail, Context};
-use nitro_shared::pkg::PackageAddonHashes;
+use anyhow::{Context, bail};
+use nitro_shared::pkg::AddonHashes;
 
 use crate::instruction::ElseBlock;
-use crate::routine::can_call_routines;
 use crate::routine::RESERVED_ROUTINES;
+use crate::routine::can_call_routines;
 
 use super::conditions::Condition;
 use super::conditions::ConditionKind;
-use super::instruction::{parse_arg, InstrKind, Instruction};
-use super::lex::{lex, reduce_tokens, Side, Token, TokenAndPos};
+use super::instruction::{InstrKind, Instruction, parse_arg};
+use super::lex::{Side, Token, TokenAndPos, lex, reduce_tokens};
 use super::vars::Value;
-use nitro_shared::addon::AddonKind;
+use nitro_shared::minecraft::AddonKind;
 
 use std::collections::{HashMap, VecDeque};
 
@@ -80,7 +80,8 @@ pub fn parse<'a>(tokens: impl Iterator<Item = &'a TokenAndPos>) -> anyhow::Resul
 									url: Value::None,
 									path: Value::None,
 									version: Value::None,
-									hashes: PackageAddonHashes {
+									modpack_format: Value::None,
+									hashes: AddonHashes {
 										sha256: Value::None,
 										sha512: Value::None,
 									},
@@ -259,6 +260,7 @@ pub fn parse<'a>(tokens: impl Iterator<Item = &'a TokenAndPos>) -> anyhow::Resul
 								"url" => *key = addon::Key::Url,
 								"path" => *key = addon::Key::Path,
 								"version" => *key = addon::Key::Version,
+								"modpack_format" => *key = addon::Key::ModpackFormat,
 								"hash_sha256" => *key = addon::Key::HashSHA256,
 								"hash_sha512" => *key = addon::Key::HashSHA512,
 								_ => {
@@ -293,6 +295,7 @@ pub fn parse<'a>(tokens: impl Iterator<Item = &'a TokenAndPos>) -> anyhow::Resul
 								addon::Key::Url => filled_keys.url = arg,
 								addon::Key::Path => filled_keys.path = arg,
 								addon::Key::Version => filled_keys.version = arg,
+								addon::Key::ModpackFormat => filled_keys.modpack_format = arg,
 								addon::Key::HashSHA256 => filled_keys.hashes.sha256 = arg,
 								addon::Key::HashSHA512 => filled_keys.hashes.sha512 = arg,
 								_ => unexpected_token!(tok, pos),
@@ -317,6 +320,7 @@ pub fn parse<'a>(tokens: impl Iterator<Item = &'a TokenAndPos>) -> anyhow::Resul
 									url: filled_keys.url.clone(),
 									path: filled_keys.path.clone(),
 									version: filled_keys.version.clone(),
+									modpack_format: filled_keys.modpack_format.clone(),
 									hashes: filled_keys.hashes.clone(),
 								},
 								pos.clone(),
@@ -438,7 +442,7 @@ pub fn parse<'a>(tokens: impl Iterator<Item = &'a TokenAndPos>) -> anyhow::Resul
 }
 
 mod addon {
-	use nitro_shared::pkg::PackageAddonHashes;
+	use nitro_shared::pkg::AddonHashes;
 
 	use super::*;
 
@@ -463,6 +467,7 @@ mod addon {
 		Url,
 		Path,
 		Version,
+		ModpackFormat,
 		HashSHA256,
 		HashSHA512,
 	}
@@ -474,7 +479,8 @@ mod addon {
 		pub url: Value,
 		pub path: Value,
 		pub version: Value,
-		pub hashes: PackageAddonHashes<Value>,
+		pub modpack_format: Value,
+		pub hashes: AddonHashes<Value>,
 	}
 }
 
@@ -556,10 +562,10 @@ impl ParseData {
 
 	/// Finish the current block
 	pub fn finish_block(&mut self) {
-		if let Some(block) = self.parsed.blocks.get_mut(&self.block) {
-			if let Some(parent) = block.parent {
-				self.block = parent;
-			}
+		if let Some(block) = self.parsed.blocks.get_mut(&self.block)
+			&& let Some(parent) = block.parent
+		{
+			self.block = parent;
 		}
 	}
 
@@ -741,15 +747,21 @@ mod tests {
 	fn test_routine_parse() {
 		let text = "@install {} @meta {} @foo {}";
 		let parsed = lex_and_parse(text).unwrap();
-		assert!(parsed
-			.blocks
-			.contains_key(parsed.routines.get(INSTALL_ROUTINE).unwrap()));
-		assert!(parsed
-			.blocks
-			.contains_key(parsed.routines.get(METADATA_ROUTINE).unwrap()));
-		assert!(parsed
-			.blocks
-			.contains_key(parsed.routines.get("foo").unwrap()));
+		assert!(
+			parsed
+				.blocks
+				.contains_key(parsed.routines.get(INSTALL_ROUTINE).unwrap())
+		);
+		assert!(
+			parsed
+				.blocks
+				.contains_key(parsed.routines.get(METADATA_ROUTINE).unwrap())
+		);
+		assert!(
+			parsed
+				.blocks
+				.contains_key(parsed.routines.get("foo").unwrap())
+		);
 	}
 
 	#[test]

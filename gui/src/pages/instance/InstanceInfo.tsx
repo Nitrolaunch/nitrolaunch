@@ -1,4 +1,4 @@
-import { useNavigate, useParams } from "@solidjs/router";
+import { useParams } from "@solidjs/router";
 import {
 	createEffect,
 	createResource,
@@ -35,7 +35,7 @@ import { Loader } from "../../package";
 import Icon from "../../components/Icon";
 import {
 	Box,
-	Delete,
+	Copy,
 	Download,
 	Elipsis,
 	Folder,
@@ -66,13 +66,11 @@ import { convertFileSrc } from "@tauri-apps/api/core";
 import Dropdown, { Option } from "../../components/input/select/Dropdown";
 import IconAndText from "../../components/utility/IconAndText";
 import InstanceTransferPrompt from "../../components/instance/InstanceTransferPrompt";
-import { updateInstanceList } from "./InstanceList";
 import InstanceTiles from "../../components/instance/InstanceTiles";
-import Modal from "../../components/dialog/Modal";
 import Tip from "../../components/dialog/Tip";
+import InstanceOperationPrompt, { InstanceOperation } from "../../components/instance/InstanceOperationPrompt";
 
 export default function InstanceInfo(props: InstanceInfoProps) {
-	let navigate = useNavigate();
 
 	let params = useParams();
 	let id = () => params.instanceId;
@@ -93,6 +91,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 	let [derivedServerPackages, setDerivedServerPackages] = createSignal<
 		PackageConfig[]
 	>([]);
+	let [modpack, setModpack] = createSignal<string | undefined>();
 
 	createEffect(async () => {
 		try {
@@ -100,7 +99,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 				id: id(),
 				instanceOrTemplate: "instance",
 			});
-		} catch (e) {}
+		} catch (e) { }
 	});
 
 	let [from, setFrom] = createSignal<string[] | undefined>();
@@ -108,7 +107,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 	let [instance, instanceMethods] = createResource(id, async () => {
 		// Get the instance or template
 		try {
-			let [configuration, editableConfiguration] = await Promise.all([
+			let [configuration, [editableConfiguration, _]] = await Promise.all([
 				readInstanceConfig(id(), InstanceConfigMode.Instance),
 				readEditableInstanceConfig(id(), InstanceConfigMode.Instance),
 			]);
@@ -119,29 +118,30 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 			setGlobalPackages(global);
 			setClientPackages(client);
 			setServerPackages(server);
+			setModpack(configuration.modpack);
 
 			let [allGlobal, allClient, allServer] = getConfigPackages(configuration);
 			// Derived packages are in the full config but not the editable one
 			setDerivedGlobalPackages(
 				allGlobal.filter(
-					(x) => !globalPackages().some((y) => packageConfigsEqual(x, y))
-				)
+					(x) => !globalPackages().some((y) => packageConfigsEqual(x, y)),
+				),
 			);
 			setDerivedClientPackages(
 				allClient.filter(
-					(x) => !clientPackages().some((y) => packageConfigsEqual(x, y))
-				)
+					(x) => !clientPackages().some((y) => packageConfigsEqual(x, y)),
+				),
 			);
 			setDerivedServerPackages(
 				allServer.filter(
-					(x) => !serverPackages().some((y) => packageConfigsEqual(x, y))
-				)
+					(x) => !serverPackages().some((y) => packageConfigsEqual(x, y)),
+				),
 			);
 
 			setPackageOverrides(
 				editableConfiguration.overrides == undefined
 					? {}
-					: editableConfiguration.overrides
+					: editableConfiguration.overrides,
 			);
 
 			setEditableConfig(editableConfiguration);
@@ -157,7 +157,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 		async () => {
 			return await getParentTemplates(from(), InstanceConfigMode.Instance);
 		},
-		{ initialValue: [] }
+		{ initialValue: [] },
 	);
 
 	let [bannerImages, __] = createResource(
@@ -177,44 +177,25 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 				console.error("Failed to get banner images: " + e);
 				return undefined;
 			}
-		}
+		},
 	);
 
 	let [isRunning, setIsRunning] = createSignal(false);
-	let [unlisten, setUnlisten] = createSignal<UnlistenFn>(() => {});
+	let [unlisten, setUnlisten] = createSignal<UnlistenFn>(() => { });
 	createEffect(async () => {
 		id();
 		let unlisten = await listen(
 			"nitro_update_running_instances",
 			(e: Event<RunningInstancesEvent>) => {
 				setIsRunning(
-					e.payload.running_instances.some((x) => x.instance_id == id())
+					e.payload.running_instances.some((x) => x.instance_id == id()),
 				);
-			}
+			},
 		);
 
 		setUnlisten(() => unlisten);
 
 		await invoke("update_running_instances");
-	});
-
-	// Gets whether the currently selected instance is launchable (it has been updated before)
-	let [unlisten2, setUnlisten2] = createSignal<UnlistenFn>(() => {});
-	let [isInstanceLaunchable, methods] = createResource(id, async () => {
-		let unlisten = await listen(
-			"nitro_output_finish_task",
-			(e: Event<string>) => {
-				if (e.payload == "update_instance") {
-					methods.refetch();
-				}
-			}
-		);
-
-		setUnlisten2(() => unlisten);
-
-		return await invoke("get_instance_has_updated", {
-			instance: id(),
-		});
 	});
 
 	// Update the page when the config changes
@@ -227,15 +208,14 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 					if (e.payload.id == id() && e.payload.type == "instance") {
 						instanceMethods.refetch();
 					}
-				}
+				},
 			);
 		},
-		{ initialValue: () => {} }
+		{ initialValue: () => { } },
 	);
 
 	onCleanup(() => {
 		unlisten()();
-		unlisten2()();
 		unlisten3()();
 	});
 
@@ -244,7 +224,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 		async () => {
 			return getDropdownButtons("instance_launch");
 		},
-		{ initialValue: [] }
+		{ initialValue: [] },
 	);
 
 	let [updateDropdownButtons, _2] = createResource(
@@ -252,7 +232,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 		async () => {
 			return getDropdownButtons("instance_update");
 		},
-		{ initialValue: [] }
+		{ initialValue: [] },
 	);
 
 	let [moreDropdownButtons, _3] = createResource(
@@ -260,8 +240,16 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 		async () => {
 			return getDropdownButtons("instance_more_options");
 		},
-		{ initialValue: [] }
+		{ initialValue: [] },
 	);
+
+	let isFromPlugin = () => {
+		if (instance() == undefined) {
+			return false;
+		}
+
+		return instance()!.source_plugin != undefined;
+	};
 
 	let isEditable = () => {
 		if (instance() == undefined) {
@@ -284,12 +272,12 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 	};
 
 	let [packageOverrides, setPackageOverrides] = createSignal<PackageOverrides>(
-		{}
+		{},
 	);
 
 	let [selectedTab, setSelectedTab] = createSignal("general");
 
-	let [showDeleteConfirm, setShowDeleteConfirm] = createSignal(false);
+	let [operationPrompt, setOperationPrompt] = createSignal<InstanceOperation | undefined>();
 	let [showExportPrompt, setShowExportPrompt] = createSignal(false);
 
 	async function saveConfig() {
@@ -299,8 +287,9 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 				globalPackages(),
 				clientPackages(),
 				serverPackages(),
-				true
+				true,
 			);
+			config.modpack = modpack();
 
 			let overrides =
 				packageOverrides().suppress == undefined
@@ -314,7 +303,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 				props.setFooterData({
 					selectedItem: undefined,
 					mode: FooterMode.SaveInstanceConfig,
-					action: () => {},
+					action: () => { },
 				});
 			} catch (e) {
 				errorToast("Failed to save: " + e);
@@ -372,7 +361,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 		}
 
 		options = options.concat(
-			launchDropdownButtons().map(dropdownButtonToOption)
+			launchDropdownButtons().map(dropdownButtonToOption),
 		);
 
 		return options;
@@ -391,6 +380,30 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 				tip: "Open this instance's files in your explorer",
 			},
 		];
+
+		if (!isFromPlugin()) {
+			options.push({
+				value: "duplicate",
+				contents: (
+					<IconAndText icon={Copy} text="Duplicate" />
+				),
+				tip: "Copy this instance",
+			});
+			options.push({
+				value: "consolidate",
+				contents: (
+					<IconAndText icon={Download} text="Consolidate" />
+				),
+				tip: "Combine parent templates into this instance",
+			});
+			options.push({
+				value: "extract",
+				contents: (
+					<IconAndText icon={Upload} text="Extract" />
+				),
+				tip: "Create a shared template from this instance",
+			});
+		}
 
 		if (isDeletable()) {
 			options.push({
@@ -418,7 +431,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 			}
 		>
 			<div class="cont col fullwidth">
-				<div class="cont col" id="instance-container">
+				<div class="cont col" id="instance-container" data-instance={id()}>
 					<div class="cont" id="instance-header-container">
 						<div class="shadow" id="instance-header">
 							<div class="cont start" id="instance-icon">
@@ -471,77 +484,75 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 									</div>
 								</div>
 								<div class="cont end" style="margin-right:1rem">
-									<Show when={isInstanceLaunchable()}>
-										<div style="width:4.5rem;font-weight:bold">
-											<Tip tip="Launch" side="top">
-												<Dropdown
-													options={launchOptions()}
-													previewText={
-														<Switch>
-															<Match when={!isRunning()}>
+									<div style="width:4.5rem;font-weight:bold">
+										<Tip tip="Launch" side="top">
+											<Dropdown
+												options={launchOptions()}
+												previewText={
+													<Switch>
+														<Match when={!isRunning()}>
+															<div
+																class="cont start fullwidth"
+																style="padding-left:0.75rem"
+															>
 																<div
-																	class="cont start fullwidth"
-																	style="padding-left:0.75rem"
+																	class="cont"
+																	style="color:var(--instance)"
 																>
-																	<div
-																		class="cont"
-																		style="color:var(--instance)"
-																	>
-																		<Icon icon={Play} size="1.25rem" />
-																	</div>
+																	<Icon icon={Play} size="1.25rem" />
 																</div>
-															</Match>
-															<Match when={isRunning()}>
-																<div
-																	class="cont start fullwidth"
-																	style="padding-left:0.75rem"
-																>
-																	<div class="cont" style="color:var(--error)">
-																		<Icon icon={Stop} size="0.85rem" />
-																	</div>
+															</div>
+														</Match>
+														<Match when={isRunning()}>
+															<div
+																class="cont start fullwidth"
+																style="padding-left:0.75rem"
+															>
+																<div class="cont" style="color:var(--error)">
+																	<Icon icon={Stop} size="0.85rem" />
 																</div>
-															</Match>
-														</Switch>
+															</div>
+														</Match>
+													</Switch>
+												}
+												onChange={async (selection) => {
+													if (selection == "launch") {
+														launchInstance(id(), false);
+													} else if (selection == "launch_offline") {
+														launchInstance(id(), true);
+													} else if (selection == "kill") {
+														try {
+															await invoke("kill_instance", {
+																instance: id(),
+															});
+															await invoke("update_running_instances");
+														} catch (e) {
+															errorToast("Failed to kill instance: " + e);
+														}
+													} else {
+														runDropdownButtonClick(selection!);
 													}
-													onChange={async (selection) => {
-														if (selection == "launch") {
-															launchInstance(id(), false);
-														} else if (selection == "launch_offline") {
-															launchInstance(id(), true);
-														} else if (selection == "kill") {
-															try {
-																await invoke("kill_instance", {
-																	instance: id(),
-																});
-																await invoke("update_running_instances");
-															} catch (e) {
-																errorToast("Failed to kill instance: " + e);
-															}
-														} else {
-															runDropdownButtonClick(selection!);
+												}}
+												onHeaderClick={async () => {
+													if (isRunning()) {
+														try {
+															await invoke("kill_instance", {
+																instance: id(),
+															});
+															await invoke("update_running_instances");
+														} catch (e) {
+															errorToast("Failed to kill instance: " + e);
 														}
-													}}
-													onHeaderClick={async () => {
-														if (isRunning()) {
-															try {
-																await invoke("kill_instance", {
-																	instance: id(),
-																});
-																await invoke("update_running_instances");
-															} catch (e) {
-																errorToast("Failed to kill instance: " + e);
-															}
-														} else {
-															launchInstance(id(), false);
-														}
-													}}
-													optionsWidth="12rem"
-													isSearchable={false}
-													zIndex="5"
-												/>
-											</Tip>
-										</div>
-									</Show>
+													} else {
+														launchInstance(id(), false);
+													}
+												}}
+												optionsWidth="12rem"
+												isSearchable={false}
+												zIndex="5"
+											/>
+										</Tip>
+									</div>
 									<div style="width:4.5rem;font-weight:bold">
 										<Tip tip="Update the instance" side="top">
 											<Dropdown
@@ -568,7 +579,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 														},
 													] as Option[]
 												).concat(
-													updateDropdownButtons().map(dropdownButtonToOption)
+													updateDropdownButtons().map(dropdownButtonToOption),
 												)}
 												previewText={
 													<div
@@ -624,7 +635,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 													setInstanceConfigModal(
 														id(),
 														InstanceConfigMode.Instance,
-														false
+														false,
 													);
 												}}
 											/>
@@ -643,13 +654,19 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 															instance: id(),
 														});
 													} else if (selection == "delete") {
-														setShowDeleteConfirm(true);
+														setOperationPrompt("delete");
+													} else if (selection == "consolidate") {
+														setOperationPrompt("consolidate");
+													} else if (selection == "duplicate") {
+														setOperationPrompt("duplicate");
+													} else if (selection == "extract") {
+														setOperationPrompt("extract");
 													} else {
 														runDropdownButtonClick(selection!);
 													}
 												}}
-												optionsWidth="11rem"
-												optionsOffset="-8.5rem"
+												optionsWidth="15rem"
+												optionsOffset="-12.5rem"
 												isSearchable={false}
 												zIndex="5"
 												showArrow={false}
@@ -683,27 +700,24 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 								style={`grid-template-columns:repeat(3,minmax(0,1fr))`}
 							>
 								<div
-									class={`cont instance-tab ${
-										selectedTab() == "general" ? "selected" : ""
-									}`}
+									class={`cont instance-tab ${selectedTab() == "general" ? "selected" : ""
+										}`}
 									onclick={() => setSelectedTab("general")}
 								>
 									<Icon icon={Gear} size="1rem" />
 									General
 								</div>
 								<div
-									class={`cont instance-tab ${
-										selectedTab() == "packages" ? "selected" : ""
-									}`}
+									class={`cont instance-tab ${selectedTab() == "packages" ? "selected" : ""
+										}`}
 									onclick={() => setSelectedTab("packages")}
 								>
 									<Icon icon={Box} size="1rem" />
 									Packages
 								</div>
 								<div
-									class={`cont instance-tab ${
-										selectedTab() == "console" ? "selected" : ""
-									}`}
+									class={`cont instance-tab ${selectedTab() == "console" ? "selected" : ""
+										}`}
 									onclick={() => setSelectedTab("console")}
 								>
 									<Icon icon={Text} size="1rem" />
@@ -723,18 +737,19 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 										derivedGlobalPackages={derivedGlobalPackages()}
 										derivedClientPackages={derivedClientPackages()}
 										derivedServerPackages={derivedServerPackages()}
+										modpack={modpack()}
 										isTemplate={false}
-										onRemove={(pkg, category) => {
+										setModpack={(modpack) => {
+											setModpack(modpack);
+											setDirty();
+										}}
+										onRemove={(pkg) => {
 											let func = (packages: PackageConfig[]) =>
 												packages.filter((x) => !packageConfigsEqual(x, pkg));
 
-											if (category == "global") {
-												setGlobalPackages(func);
-											} else if (category == "client") {
-												setClientPackages(func);
-											} else if (category == "server") {
-												setServerPackages(func);
-											}
+											setGlobalPackages(func);
+											setClientPackages(func);
+											setServerPackages(func);
 
 											setDirty();
 										}}
@@ -742,7 +757,7 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 											let func = (packages: PackageConfig[]) => {
 												if (
 													!packages.some((x) =>
-														packageConfigsFullyEqual(x, pkg)
+														packageConfigsFullyEqual(x, pkg),
 													)
 												) {
 													packages.push(pkg);
@@ -762,13 +777,10 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 
 											setDirty();
 										}}
-										setGlobalPackages={() => {}}
-										setClientPackages={() => {}}
-										setServerPackages={() => {}}
 										minecraftVersion={instance()!.version}
 										loader={
 											parseVersionedString(
-												instance()!.loader as string
+												instance()!.loader as string,
 											)[0] as Loader
 										}
 										showBrowseButton={true}
@@ -793,43 +805,12 @@ export default function InstanceInfo(props: InstanceInfoProps) {
 						</div>
 					</div>
 				</div>
-				<Modal
-					visible={showDeleteConfirm()}
-					onClose={setShowDeleteConfirm}
-					title="Delete instance"
-					titleIcon={Trash}
-					buttons={[
-						{
-							text: "Cancel",
-							icon: Delete,
-							color: "var(--confirm)",
-							bgColor: "var(--confirmbg)",
-							onClick: () => setShowDeleteConfirm(false),
-						},
-						{
-							text: "Delete instance",
-							icon: Trash,
-							color: "var(--fg3)",
-							onClick: async () => {
-								try {
-									await invoke("delete_instance", { instance: id });
-									successToast("Instance deleted");
-									setShowDeleteConfirm(false);
-									updateInstanceList();
-									navigate("/");
-								} catch (e) {
-									errorToast("Failed to delete instance: " + e);
-									setShowDeleteConfirm(false);
-								}
-							},
-						},
-					]}
-				>
-					<h3>Are you sure you want to delete this instance?</h3>
-					<div class="cont bold" style="font-size:0.9rem;color:var(--fg2)">
-						This will delete ALL of your worlds and data for the instance!
-					</div>
-				</Modal>
+				<InstanceOperationPrompt
+					instanceId={id()}
+					operation={operationPrompt() == undefined ? "delete" : operationPrompt()!}
+					visible={operationPrompt() != undefined}
+					onClose={() => setOperationPrompt(undefined)}
+				/>
 				<InstanceTransferPrompt
 					visible={showExportPrompt()}
 					onClose={() => setShowExportPrompt(false)}

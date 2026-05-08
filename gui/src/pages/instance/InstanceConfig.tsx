@@ -32,6 +32,7 @@ import {
 } from "../../utils/values";
 import {
 	ConfiguredLoaders,
+	ControlledConfig,
 	createConfiguredPackages,
 	getConfigPackages,
 	getConfiguredLoader,
@@ -62,12 +63,15 @@ import {
 	Controller,
 	Delete,
 	Gear,
+	Jigsaw,
 	Play,
 	Server,
 } from "../../icons";
 import LoaderConfig from "./LoaderConfig";
 import FloatingTabs from "../../components/input/select/FloatingTabs";
 import Modal from "../../components/dialog/Modal";
+import { ControlData } from "../../components/input/Control";
+import ControlSections from "../../components/input/ControlSections";
 
 export default function InstanceConfigModal(props: InstanceConfigProps) {
 	let navigate = useNavigate();
@@ -95,32 +99,40 @@ export default function InstanceConfigModal(props: InstanceConfigProps) {
 
 	let [from, setFrom] = createSignal<string[] | undefined>();
 
-	let [config, configOperations] = createResource(async () => {
-		if (props.params == undefined || isCreating()) {
-			return undefined;
-		}
+	let [plugin, setPlugin] = createSignal<string | undefined>();
+	let [pluginConfig, setPluginConfig] = createSignal<ControlledConfig>(
+		new ControlledConfig({}),
+	);
 
-		// Get the instance or template
-		try {
-			let configuration = await readEditableInstanceConfig(
-				id(),
-				props.params.mode
-			);
-			if (configuration == undefined) {
-				errorToast(
-					"Could not find instance or template. Please report this issue."
-				);
-				return undefined;
+	let [config, configOperations] = createResource(
+		async () => {
+			if (props.params == undefined || isCreating()) {
+				setFrom(undefined);
+				setPluginConfig(new ControlledConfig({}));
+				return {};
 			}
 
-			setFrom(canonicalizeListOrSingle(configuration.from));
-			console.log(configuration);
-			return configuration;
-		} catch (e) {
-			errorToast("Failed to load configuration: " + e);
-			return undefined;
-		}
-	});
+			// Get the instance or template
+			try {
+				let result = await readEditableInstanceConfig(id(), props.params.mode);
+				if (result == undefined) {
+					errorToast(
+						"Could not find instance or template. Please report this issue.",
+					);
+					return {};
+				}
+
+				let [configuration, pluginConfig] = result;
+				setFrom(canonicalizeListOrSingle(configuration.from));
+				setPluginConfig(new ControlledConfig(pluginConfig));
+				return configuration;
+			} catch (e) {
+				errorToast("Failed to load configuration: " + e);
+				return {};
+			}
+		},
+		{ initialValue: {} },
+	);
 	let [parentConfigs, parentConfigOperations] = createResource(
 		() => from(),
 		async () => {
@@ -130,7 +142,7 @@ export default function InstanceConfigModal(props: InstanceConfigProps) {
 				return await getParentTemplates(from(), props.params.mode);
 			}
 		},
-		{ initialValue: [] }
+		{ initialValue: [] },
 	);
 
 	createEffect(async () => {
@@ -139,6 +151,9 @@ export default function InstanceConfigModal(props: InstanceConfigProps) {
 
 			configOperations.refetch();
 			parentConfigOperations.refetch();
+			templateMethods.refetch();
+			pluginsSupportingCreationMethods.refetch();
+			controlsMethods.refetch();
 			setReleaseVersionsOnly(true);
 			setTab("general");
 
@@ -148,7 +163,7 @@ export default function InstanceConfigModal(props: InstanceConfigProps) {
 						id: id(),
 						instanceOrTemplate: props.params.mode,
 					});
-				} catch (e) { }
+				} catch (e) {}
 			}
 		}
 	});
@@ -167,7 +182,7 @@ export default function InstanceConfigModal(props: InstanceConfigProps) {
 			} else {
 				return ["latest", "latest_snapshot"].concat(availableVersions);
 			}
-		}
+		},
 	);
 
 	createEffect(() => {
@@ -181,9 +196,46 @@ export default function InstanceConfigModal(props: InstanceConfigProps) {
 	});
 
 	// Available templates to derive from
-	let [templates, ___] = createResource(async () => {
+	let [templates, templateMethods] = createResource(async () => {
 		return (await invoke("get_templates")) as InstanceInfo[];
 	});
+
+	let [pluginsSupportingCreation, pluginsSupportingCreationMethods] =
+		createResource(
+			() => props.params,
+			async () => {
+				if (isBaseTemplate()) {
+					return [];
+				}
+
+				return (await invoke("get_plugins_supporting_creation", {
+					instanceOrTemplate: props.params!.mode,
+				})) as PluginAndName[];
+			},
+			{ initialValue: [] },
+		);
+
+	let [controls, controlsMethods] = createResource(
+		async () => {
+			if (props.params == undefined) {
+				return [];
+			}
+
+			try {
+				let controls = (await invoke("get_instance_config_controls", {
+					id: id(),
+					kind: props.params.mode,
+					plugin: plugin(),
+				})) as ControlData[];
+
+				return controls;
+			} catch (e) {
+				errorToast("Failed to load controls: " + e);
+				return [];
+			}
+		},
+		{ initialValue: [] },
+	);
 
 	let [tab, setTab] = createSignal("general");
 
@@ -215,6 +267,7 @@ export default function InstanceConfigModal(props: InstanceConfigProps) {
 	let [globalPackages, setGlobalPackages] = createSignal<PackageConfig[]>([]);
 	let [clientPackages, setClientPackages] = createSignal<PackageConfig[]>([]);
 	let [serverPackages, setServerPackages] = createSignal<PackageConfig[]>([]);
+	let [modpack, setModpack] = createSignal<string | undefined>();
 
 	let [javaType, setJavaType] = createSignal<JavaType | undefined>(undefined);
 	let [initMemory, setInitMemory] = createSignal<number | undefined>(undefined);
@@ -224,7 +277,7 @@ export default function InstanceConfigModal(props: InstanceConfigProps) {
 	let [gameArgs, setGameArgs] = createSignal<string[]>([]);
 
 	let [packageOverrides, setPackageOverrides] = createSignal<PackageOverrides>(
-		{}
+		{},
 	);
 
 	let message = () =>
@@ -240,91 +293,90 @@ export default function InstanceConfigModal(props: InstanceConfigProps) {
 
 	// Initialize config signals from config
 	createEffect(() => {
-		if (config() != undefined) {
-			setName(config()!.name);
-			setSide(config()!.type);
-			setIcon(config()!.icon);
-			setVersion(config()!.version);
+		setName(config().name);
+		setSide(config().type);
+		setIcon(config().icon);
+		setVersion(config().version);
 
-			// Loader madness
-			let [clientLoader, clientLoaderVersion]: [
-				string | undefined,
-				string | undefined
-			] = [undefined, undefined];
-			let [serverLoader, serverLoaderVersion]: [
-				string | undefined,
-				string | undefined
-			] = [undefined, undefined];
-			let configuredLoader = config()!.loader;
-			if (configuredLoader != undefined) {
-				if (typeof configuredLoader == "object") {
-					if (configuredLoader.client != undefined) {
-						[clientLoader, clientLoaderVersion] = parseVersionedString(
-							configuredLoader.client
-						);
-					}
-					if (configuredLoader.server != undefined) {
-						[serverLoader, serverLoaderVersion] = parseVersionedString(
-							configuredLoader.server
-						);
-					}
-				} else {
-					let [loader, loaderVersion] = parseVersionedString(configuredLoader);
-					clientLoader = loader;
-					clientLoaderVersion = loaderVersion;
-					serverLoader = loader;
-					serverLoaderVersion = loaderVersion;
+		// Loader madness
+		let [clientLoader, clientLoaderVersion]: [
+			string | undefined,
+			string | undefined,
+		] = [undefined, undefined];
+		let [serverLoader, serverLoaderVersion]: [
+			string | undefined,
+			string | undefined,
+		] = [undefined, undefined];
+		let configuredLoader = config().loader;
+		if (configuredLoader != undefined) {
+			if (typeof configuredLoader == "object") {
+				if (configuredLoader.client != undefined) {
+					[clientLoader, clientLoaderVersion] = parseVersionedString(
+						configuredLoader.client,
+					);
 				}
-			}
-
-			setClientLoader(clientLoader);
-			setClientLoaderVersion(clientLoaderVersion);
-			setServerLoader(serverLoader);
-			setServerLoaderVersion(serverLoaderVersion);
-
-			setDatapackFolder(config()!.datapack_folder);
-
-			// Packages
-			let [global, client, server] = getConfigPackages(config()!);
-			setGlobalPackages(global);
-			setClientPackages(client);
-			setServerPackages(server);
-
-			// Launch config
-			setJavaType(
-				config()!.launch == undefined ? undefined : config()!.launch!.java
-			);
-
-			let [init, max] = parseLaunchMemory(
-				config()!.launch == undefined ? undefined : config()!.launch!.memory
-			);
-			setInitMemory(init);
-			setMaxMemory(max);
-
-			if (config()!.launch == undefined || config()!.launch!.env == undefined) {
-				setEnvVars([]);
-			} else {
-				let out: string[] = [];
-				for (let key of Object.keys(config()!.launch!.env!)) {
-					out.push(`${key}=${config()!.launch!.env![key]}`);
+				if (configuredLoader.server != undefined) {
+					[serverLoader, serverLoaderVersion] = parseVersionedString(
+						configuredLoader.server,
+					);
 				}
-			}
-
-			if (
-				config()!.launch == undefined ||
-				config()!.launch!.args == undefined
-			) {
-				setJvmArgs([]);
-				setGameArgs([]);
 			} else {
-				setJvmArgs(readArgs(config()!.launch!.args?.jvm));
-				setGameArgs(readArgs(config()!.launch!.args?.game));
+				let [loader, loaderVersion] = parseVersionedString(configuredLoader);
+				clientLoader = loader;
+				clientLoaderVersion = loaderVersion;
+				serverLoader = loader;
+				serverLoaderVersion = loaderVersion;
 			}
-
-			setPackageOverrides(
-				config()!.overrides == undefined ? {} : config()!.overrides!
-			);
 		}
+
+		setClientLoader(clientLoader);
+		setClientLoaderVersion(clientLoaderVersion);
+		setServerLoader(serverLoader);
+		setServerLoaderVersion(serverLoaderVersion);
+
+		setDatapackFolder(config().datapack_folder);
+
+		// Packages
+		let [global, client, server] = getConfigPackages(config());
+		setGlobalPackages(global);
+		setClientPackages(client);
+		setServerPackages(server);
+		setModpack(config().modpack);
+		console.log("Modpack " + modpack());
+
+		// Launch config
+		setJavaType(
+			config().launch == undefined ? undefined : config().launch!.java,
+		);
+
+		let [init, max] = parseLaunchMemory(
+			config().launch == undefined ? undefined : config().launch!.memory,
+		);
+		setInitMemory(init);
+		setMaxMemory(max);
+
+		if (config().launch == undefined || config().launch!.env == undefined) {
+			setEnvVars([]);
+		} else {
+			let out: string[] = [];
+			for (let key of Object.keys(config().launch!.env!)) {
+				out.push(`${key}=${config().launch!.env![key]}`);
+			}
+		}
+
+		if (config().launch == undefined || config().launch!.args == undefined) {
+			setJvmArgs([]);
+			setGameArgs([]);
+		} else {
+			setJvmArgs(readArgs(config().launch!.args?.jvm));
+			setGameArgs(readArgs(config().launch!.args?.game));
+		}
+
+		setPackageOverrides(
+			config().overrides == undefined ? {} : config().overrides!,
+		);
+
+		setPlugin(config().source_plugin);
 
 		// Default side
 		if (isCreating() && isInstance()) {
@@ -352,7 +404,7 @@ export default function InstanceConfigModal(props: InstanceConfigProps) {
 				setTab("general");
 				inputError("id");
 				errorToast(
-					`${beautifyString(props.params.mode)} with this ID already exists`
+					`${beautifyString(props.params.mode)} with this ID already exists`,
 				);
 				return;
 			} else {
@@ -430,7 +482,7 @@ export default function InstanceConfigModal(props: InstanceConfigProps) {
 			globalPackages(),
 			clientPackages(),
 			serverPackages(),
-			isInstance()
+			isInstance(),
 		);
 
 		// Launch
@@ -453,9 +505,9 @@ export default function InstanceConfigModal(props: InstanceConfigProps) {
 			jvmArgs() == undefined && gameArgs() == undefined
 				? undefined
 				: {
-					jvm: jvmArgs(),
-					game: gameArgs(),
-				};
+						jvm: jvmArgs(),
+						game: gameArgs(),
+					};
 
 		let overrides =
 			packageOverrides().suppress == undefined ? undefined : packageOverrides();
@@ -468,6 +520,7 @@ export default function InstanceConfigModal(props: InstanceConfigProps) {
 			version: undefinedEmpty(version()),
 			loader: loader() as ConfiguredLoaders | undefined,
 			packages: packages,
+			modpack: modpack(),
 			launch: {
 				memory: launchMemory,
 				env: Object.keys(env).length == 0 ? undefined : env,
@@ -475,24 +528,14 @@ export default function InstanceConfigModal(props: InstanceConfigProps) {
 				args: args,
 			},
 			overrides: overrides,
+			source_plugin: plugin(),
+			is_editable: plugin() != undefined,
 		};
 
-		// Handle extra fields
-		if (config() != undefined) {
-			for (let key of Object.keys(config()!)) {
-				if (!Object.keys(newConfig).includes(key)) {
-					newConfig[key] = config()![key];
-				}
-			}
-
-			if (config()!.launch != undefined) {
-				for (let key of Object.keys(config()!.launch!)) {
-					if (!Object.keys(newConfig.launch!).includes(key)) {
-						newConfig.launch![key] = config()!.launch![key];
-					}
-				}
-			}
-		}
+		// Handle plugin config
+		pluginConfig().apply(newConfig);
+		pluginConfig().cleanup(controls());
+		newConfig = pluginConfig().fields;
 
 		try {
 			await saveInstanceConfig(configId, newConfig, props.params.mode);
@@ -583,6 +626,13 @@ export default function InstanceConfigModal(props: InstanceConfigProps) {
 							color: "var(--template)",
 							bgColor: "var(--templatebg)",
 						},
+						{
+							id: "plugins",
+							title: "Plugins",
+							icon: Jigsaw,
+							color: "var(--plugin)",
+							bgColor: "var(--pluginbg)",
+						},
 					]}
 					selectedTab={tab()}
 					setTab={setTab}
@@ -672,7 +722,7 @@ export default function InstanceConfigModal(props: InstanceConfigProps) {
 											}
 											if (!isIconDirty()) {
 												setIcon(
-													"builtin:" + getLoaderImage(autofillLoader as Loader)
+													"builtin:" + getLoaderImage(autofillLoader as Loader),
 												);
 											}
 										}
@@ -728,6 +778,29 @@ export default function InstanceConfigModal(props: InstanceConfigProps) {
 								></input>
 							</Tip>
 						</Show>
+						<Show when={isCreating() && !isBaseTemplate()}>
+							<label class="label">PLUGIN</label>
+							<Tip
+								tip={`Plugin to use to create this ${props.params!.mode}`}
+								side="left"
+								fullwidth
+							>
+								<Dropdown
+									options={pluginsSupportingCreation().map((x) => {
+										return {
+											value: x.id,
+											contents: x.name,
+											color: "var(--plugin)",
+										};
+									})}
+									selected={plugin()}
+									onChange={setPlugin}
+									allowEmpty
+									isSearchable={false}
+									zIndex="15"
+								/>
+							</Tip>
+						</Show>
 					</div>
 				</div>
 				<br />
@@ -748,14 +821,14 @@ export default function InstanceConfigModal(props: InstanceConfigProps) {
 									templates() == undefined
 										? []
 										: templates()!.map((x) => {
-											return {
-												value: x.id,
-												contents: (
-													<div>{x.name == undefined ? x.id : x.name}</div>
-												),
-												color: "var(--template)",
-											};
-										})
+												return {
+													value: x.id,
+													contents: (
+														<div>{x.name == undefined ? x.id : x.name}</div>
+													),
+													color: "var(--template)",
+												};
+											})
 								}
 								selected={from()}
 								onChangeMulti={(x) => {
@@ -875,8 +948,9 @@ export default function InstanceConfigModal(props: InstanceConfigProps) {
 									/>
 									<span
 										class="bold"
-										style={`color:${releaseVersionsOnly() ? "var(--fg3)" : "var(--instance)"
-											}`}
+										style={`color:${
+											releaseVersionsOnly() ? "var(--fg3)" : "var(--instance)"
+										}`}
 									>
 										Include Snapshots
 									</span>
@@ -932,7 +1006,7 @@ export default function InstanceConfigModal(props: InstanceConfigProps) {
 							}}
 							placeholder={getDerivedValue(
 								parentConfigs(),
-								(x) => x.datapack_folder
+								(x) => x.datapack_folder,
 							)}
 						></input>
 					</Tip>
@@ -945,32 +1019,32 @@ export default function InstanceConfigModal(props: InstanceConfigProps) {
 				<PackagesConfig
 					id={id()}
 					isTemplate={isTemplate()}
+					modpack={modpack()}
 					globalPackages={globalPackages()}
 					clientPackages={clientPackages()}
 					serverPackages={serverPackages()}
 					derivedGlobalPackages={derivedPackages()[0]}
 					derivedClientPackages={derivedPackages()[1]}
 					derivedServerPackages={derivedPackages()[2]}
-					onRemove={(pkg, category) => {
+					setModpack={(modpack) => {
+						setModpack(modpack);
+						setIsDirty(true);
+					}}
+					onRemove={(pkg) => {
 						let func = (packages: PackageConfig[]) =>
 							packages.filter((x) => !packageConfigsEqual(x, pkg));
 
-						if (category == "global") {
-							setGlobalPackages(func);
-						} else if (category == "client") {
-							setClientPackages(func);
-						} else if (category == "server") {
-							setServerPackages(func);
-						}
+						setGlobalPackages(func);
+						setClientPackages(func);
+						setServerPackages(func);
 
 						setIsDirty(true);
 					}}
 					onAdd={(pkg, category) => {
 						let func = (packages: PackageConfig[]) => {
 							if (!packages.some((x) => packageConfigsFullyEqual(x, pkg))) {
-								packages.push(pkg);
 								// Force update
-								packages = packages.concat([]);
+								packages = packages.concat([pkg]);
 							}
 							return packages;
 						};
@@ -983,18 +1057,8 @@ export default function InstanceConfigModal(props: InstanceConfigProps) {
 							setServerPackages(func);
 						}
 
-						setIsDirty(true);
-					}}
-					setGlobalPackages={(packages) => {
-						setGlobalPackages(packages);
-						setIsDirty(true);
-					}}
-					setClientPackages={(packages) => {
-						setClientPackages(packages);
-						setIsDirty(true);
-					}}
-					setServerPackages={(packages) => {
-						setServerPackages(packages);
+						console.log(globalPackages(), clientPackages(), serverPackages());
+
 						setIsDirty(true);
 					}}
 					minecraftVersion={
@@ -1006,7 +1070,7 @@ export default function InstanceConfigModal(props: InstanceConfigProps) {
 						if (side() == "client") {
 							if (clientLoader() == undefined) {
 								return getDerivedValue(parentConfigs(), (x) =>
-									getConfiguredLoader(x.loader, "client")
+									getConfiguredLoader(x.loader, "client"),
 								);
 							} else {
 								return clientLoader();
@@ -1014,7 +1078,7 @@ export default function InstanceConfigModal(props: InstanceConfigProps) {
 						} else if (side() == "server") {
 							if (serverLoader() == undefined) {
 								return getDerivedValue(parentConfigs(), (x) =>
-									getConfiguredLoader(x.loader, "server")
+									getConfiguredLoader(x.loader, "server"),
 								);
 							} else {
 								return serverLoader();
@@ -1047,6 +1111,21 @@ export default function InstanceConfigModal(props: InstanceConfigProps) {
 					setGameArgs={setGameArgs}
 					parentConfigs={parentConfigs()}
 					onChange={() => setIsDirty(true)}
+				/>
+			</DisplayShow>
+			<DisplayShow when={tab() == "plugins"} style="width:100%">
+				<ControlSections
+					controls={controls()}
+					getInitialValue={(id) => pluginConfig().getControl(id)}
+					setValue={(id, value) => {
+						setIsDirty(true);
+						setPluginConfig((old) => {
+							old.setControl(id, value);
+							return old;
+						});
+					}}
+					side={isTemplate() || isBaseTemplate() ? undefined : side()}
+					parentConfigs={parentConfigs()}
 				/>
 			</DisplayShow>
 			<br />
@@ -1087,7 +1166,7 @@ export function sanitizeInstanceId(id: string): string {
 // Checks if an instance or template ID exists already
 async function idExists(
 	id: string,
-	mode: InstanceConfigMode
+	mode: InstanceConfigMode,
 ): Promise<boolean> {
 	let command = `get_${mode}_config`;
 	try {
@@ -1097,4 +1176,9 @@ async function idExists(
 		console.error(e);
 		return false;
 	}
+}
+
+interface PluginAndName {
+	id: string;
+	name?: string;
 }

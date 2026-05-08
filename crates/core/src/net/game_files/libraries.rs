@@ -3,8 +3,8 @@ use std::fs::File;
 use std::path::Path;
 use std::sync::Arc;
 
-use anyhow::{anyhow, Context};
-use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
+use anyhow::{Context, anyhow};
+use nitro_shared::output::{MessageContents, NitroOutput};
 use nitro_shared::translate;
 use reqwest::Client;
 use tokio::{sync::Semaphore, task::JoinSet};
@@ -33,9 +33,9 @@ pub async fn get(
 ) -> anyhow::Result<UpdateMethodResult> {
 	let mut out = UpdateMethodResult::new();
 	let libraries_path = internal_dir.join("libraries");
-	files::create_dir(&libraries_path)?;
+	tokio::fs::create_dir_all(&libraries_path).await?;
 	let natives_path = internal_dir.join("versions").join(version).join("natives");
-	files::create_dir(&natives_path)?;
+	tokio::fs::create_dir_all(&natives_path).await?;
 	let natives_jars_path = internal_dir.join("natives");
 
 	let mut natives = Vec::new();
@@ -91,14 +91,11 @@ pub async fn get(
 
 	let count = libs_to_download.len();
 	if count > 0 {
-		o.display(
-			MessageContents::StartProcess(translate!(
-				o,
-				StartDownloadingLibraries,
-				"count" = &format!("{count}")
-			)),
-			MessageLevel::Important,
-		);
+		o.display(MessageContents::StartProcess(translate!(
+			o,
+			StartDownloadingLibraries,
+			"count" = &format!("{count}")
+		)));
 
 		o.start_process();
 	}
@@ -129,51 +126,46 @@ pub async fn get(
 	}
 
 	if count > 0 {
-		o.display(
-			MessageContents::Associated(
-				Box::new(MessageContents::Progress {
-					current: 0,
-					total: count as u32,
-				}),
-				Box::new(MessageContents::Simple(String::new())),
-			),
-			MessageLevel::Important,
-		);
+		o.display(MessageContents::Associated(
+			Box::new(MessageContents::Progress {
+				current: 0,
+				total: count as u32,
+			}),
+			Box::new(MessageContents::Simple(String::new())),
+		));
 	}
 	let mut num_done = 0;
 	while let Some(lib) = join.join_next().await {
 		let name = lib??;
 		num_done += 1;
-		o.display(
-			MessageContents::Associated(
-				Box::new(MessageContents::Progress {
-					current: num_done,
-					total: count as u32,
-				}),
-				Box::new(MessageContents::Simple(translate!(
-					o,
-					DownloadedLibrary,
-					"lib" = &name
-				))),
-			),
-			MessageLevel::Important,
-		);
+		o.display(MessageContents::Associated(
+			Box::new(MessageContents::Progress {
+				current: num_done,
+				total: count as u32,
+			}),
+			Box::new(MessageContents::Simple(translate!(
+				o,
+				DownloadedLibrary,
+				"lib" = &name
+			))),
+		));
 	}
 
 	for (path, name, extract) in natives {
-		o.display(
-			MessageContents::StartProcess(translate!(o, StartExtractingNative, "lib" = name)),
-			MessageLevel::Debug,
-		);
+		o.debug(MessageContents::StartProcess(translate!(
+			o,
+			StartExtractingNative,
+			"lib" = name
+		)));
 		let natives_result = extract_native(&path, &natives_path, extract, manager, o)
 			.with_context(|| format!("Failed to extract native library {name}"))?;
 		out.merge(natives_result);
 	}
 
-	o.display(
-		MessageContents::Success(translate!(o, FinishDownloadingLibraries)),
-		MessageLevel::Important,
-	);
+	o.display(MessageContents::Success(translate!(
+		o,
+		FinishDownloadingLibraries
+	)));
 	o.end_process();
 
 	Ok(out)
@@ -224,15 +216,15 @@ fn get_natives_classifier_key(classifiers: &HashMap<String, String>) -> Option<S
 fn is_allowed(lib: &Library) -> bool {
 	for rule in &lib.rules {
 		let allowed = rule.action.is_allowed();
-		if let Some(os_name) = &rule.os.name {
-			if allowed != (os_name.to_string() == util::OS_STRING) {
-				return false;
-			}
+		if let Some(os_name) = &rule.os.name
+			&& allowed != (os_name.to_string() == util::OS_STRING)
+		{
+			return false;
 		}
-		if let Some(os_arch) = &rule.os.arch {
-			if allowed != (os_arch.to_string() == util::ARCH_STRING) {
-				return false;
-			}
+		if let Some(os_arch) = &rule.os.arch
+			&& allowed != (os_arch.to_string() == util::ARCH_STRING)
+		{
+			return false;
 		}
 	}
 
@@ -255,10 +247,10 @@ fn extract_native(
 		let rel_path = file
 			.enclosed_name()
 			.context("Invalid compressed file path")?;
-		if let Some(rel_path_str) = rel_path.to_str() {
-			if extraction_rules.exclude.iter().any(|x| x == rel_path_str) {
-				continue;
-			}
+		if let Some(rel_path_str) = rel_path.to_str()
+			&& extraction_rules.exclude.iter().any(|x| x == rel_path_str)
+		{
+			continue;
 		}
 		if let Some(extension) = rel_path.extension() {
 			match extension.to_str() {
@@ -271,14 +263,11 @@ fn extract_native(
 						File::create(&out_path).context("Failed to open output file for native")?;
 					std::io::copy(&mut file, &mut out_file)
 						.context("Failed to copy compressed file")?;
-					o.display(
-						MessageContents::Simple(translate!(
-							o,
-							ExtractedNativeFile,
-							"file" = &out_path.to_string_lossy()
-						)),
-						MessageLevel::Debug,
-					);
+					o.debug(MessageContents::Simple(translate!(
+						o,
+						ExtractedNativeFile,
+						"file" = &out_path.to_string_lossy()
+					)));
 					out.files_updated.insert(out_path);
 				}
 				_ => continue,

@@ -7,10 +7,13 @@ export default function DisplayShow(props: DisplayShowProps) {
 	let style = () => (props.style == undefined ? "" : props.style);
 
 	return (
-		<div class="display-show-container" style={style()}>
+		<div
+			class="display-show-container"
+			style={`${when() ? "" : "display:none"};${style()}`}
+		>
 			<div
 				class="display-show"
-				style={`${when() ? "" : "display:none"};${style}`}
+				style={`${when() ? "" : "display:none"};${style()}`}
 			>
 				{props.children}
 			</div>

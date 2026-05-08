@@ -1,15 +1,15 @@
 use std::collections::{HashMap, HashSet};
 
 use anyhow::Context;
+use nitro_pkg::RecommendedPackage;
 use nitro_pkg::declarative::{
 	DeclarativeAddon, DeclarativeAddonVersion, DeclarativeConditionSet, DeclarativePackage,
 	DeclarativePackageRelations,
 };
 use nitro_pkg::metadata::PackageMetadata;
 use nitro_pkg::properties::PackageProperties;
-use nitro_pkg::RecommendedPackage;
 use nitro_shared::loaders::{Loader, LoaderMatch};
-use nitro_shared::pkg::{PackageCategory, PackageKind, PackageStability};
+use nitro_shared::pkg::{AddonHashes, PackageCategory, PackageKind, PackageStability};
 use nitro_shared::util::DeserListOrSingle;
 use nitro_shared::versions::VersionPattern;
 
@@ -19,10 +19,10 @@ use nitro_net::modrinth::{
 };
 use nitro_shared::Side;
 
-use crate::relation_substitution::{substitute_multiple, RelationSubFunction};
+use crate::relation_substitution::{RelationSubFunction, substitute_multiple};
 
 /// Generates a Modrinth package from a Modrinth project ID
-pub async fn gen_from_id(
+pub async fn generate_from_id(
 	id: &str,
 	relation_substitution: impl RelationSubFunction,
 	force_extensions: &[String],
@@ -43,7 +43,7 @@ pub async fn gen_from_id(
 		.await
 		.expect("Failed to get project team members from Modrinth");
 
-	gen(
+	generate(
 		project,
 		&versions,
 		&members,
@@ -57,7 +57,7 @@ pub async fn gen_from_id(
 }
 
 /// Generates a Modrinth package from a Modrinth project
-pub async fn gen(
+pub async fn generate(
 	project: Project,
 	versions: &[Version],
 	members: &[Member],
@@ -177,11 +177,19 @@ pub async fn gen(
 			ProjectType::Plugin => PackageKind::Plugin,
 			ProjectType::ResourcePack => PackageKind::ResourcePack,
 			ProjectType::Shader => PackageKind::Shader,
-			ProjectType::Modpack => PackageKind::Bundle,
+			ProjectType::Modpack => PackageKind::Modpack,
 		}
 	};
+
+	let modpack_format = if package_type == PackageKind::Modpack {
+		Some("mrpack".into())
+	} else {
+		None
+	};
+
 	let mut addon = DeclarativeAddon {
 		kind: package_type,
+		modpack_format,
 		versions: Vec::new(),
 		conditions: Vec::new(),
 		optional: false,
@@ -324,8 +332,7 @@ pub async fn gen(
 
 			match dep.dependency_type {
 				DependencyType::Required => {
-					// Modpacks bundle all their dependencies
-					if addon.kind == PackageKind::Bundle {
+					if addon.kind == PackageKind::Bundle || addon.kind == PackageKind::Modpack {
 						bundled.push(req);
 					} else if force_extensions.contains(&req) {
 						extensions.push(req);
@@ -339,7 +346,7 @@ pub async fn gen(
 				}),
 				DependencyType::Incompatible => conflicts.push(req),
 				DependencyType::Embedded => {
-					if addon.kind == PackageKind::Bundle {
+					if addon.kind == PackageKind::Bundle || addon.kind == PackageKind::Modpack {
 						bundled.push(req);
 					}
 				}
@@ -381,6 +388,7 @@ pub async fn gen(
 				conflicts: DeserListOrSingle::List(conflicts),
 				..Default::default()
 			},
+
 			..Default::default()
 		};
 
@@ -390,6 +398,11 @@ pub async fn gen(
 				continue;
 			};
 			pkg_version.url = Some(download.url.clone());
+			pkg_version.filename = Some(download.filename.clone());
+			pkg_version.hashes = AddonHashes {
+				sha256: None,
+				sha512: Some(download.hashes.sha512.clone()),
+			}
 		}
 
 		addon.versions.push(pkg_version);

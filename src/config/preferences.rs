@@ -4,24 +4,24 @@ use std::path::PathBuf;
 use crate::{
 	io::paths::Paths,
 	pkg::repo::{
+		PackageRepository,
 		basic::{BasicPackageRepository, RepoLocation},
 		custom::CustomPackageRepository,
-		PackageRepository,
 	},
 	plugin::PluginManager,
 };
 use nitro_config::preferences::{PrefDeser, RepoDeser};
 use nitro_core::net::download::validate_url;
 
-use anyhow::{bail, Context};
+use anyhow::{Context, bail};
 use nitro_plugin::hook::hooks::AddCustomPackageRepositories;
 use nitro_shared::{
 	lang::Language,
-	output::{MessageContents, MessageLevel, NitroOutput},
+	output::{MessageContents, NitroOutput},
 };
 
 /// Configured user preferences
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct ConfigPreferences {
 	/// The global language
 	pub language: Language,
@@ -66,42 +66,33 @@ impl ConfigPreferences {
 				}
 			}
 			Err(e) => {
-				o.display(
-					MessageContents::Error(format!(
-						"Failed to get repositories from plugins: {e:?}"
-					)),
-					MessageLevel::Important,
-				);
+				o.display(MessageContents::Error(format!(
+					"Failed to get repositories from plugins: {e:?}"
+				)));
 			}
 		}
 
 		for repo in prefs.repositories.preferred.iter() {
-			if !repo.disable {
-				if let Err(e) = add_repo(&mut repositories, repo) {
-					o.display(
-						MessageContents::Error(format!(
-							"Failed to add repository {}: {e:?}",
-							repo.id
-						)),
-						MessageLevel::Important,
-					);
-				}
+			if !repo.disable
+				&& let Err(e) = add_repo(&mut repositories, repo)
+			{
+				o.display(MessageContents::Error(format!(
+					"Failed to add repository {}: {e:?}",
+					repo.id
+				)));
 			}
 		}
 		repositories.extend(preferred_plugin_repositories);
 		repositories.extend(PackageRepository::default_repos());
 		repositories.extend(backup_plugin_repositories);
 		for repo in prefs.repositories.backup.iter() {
-			if !repo.disable {
-				if let Err(e) = add_repo(&mut repositories, repo) {
-					o.display(
-						MessageContents::Error(format!(
-							"Failed to add repository {}: {e:?}",
-							repo.id
-						)),
-						MessageLevel::Important,
-					);
-				}
+			if !repo.disable
+				&& let Err(e) = add_repo(&mut repositories, repo)
+			{
+				o.display(MessageContents::Error(format!(
+					"Failed to add repository {}: {e:?}",
+					repo.id
+				)));
 			}
 		}
 
@@ -109,10 +100,10 @@ impl ConfigPreferences {
 		let mut existing = HashSet::new();
 		for repo in &repositories {
 			if existing.contains(&repo.get_id()) {
-				o.display(
-					MessageContents::Error(format!("Duplicate repository ID '{}'", repo.get_id())),
-					MessageLevel::Important,
-				);
+				o.display(MessageContents::Error(format!(
+					"Duplicate repository ID '{}'",
+					repo.get_id()
+				)));
 			}
 			existing.insert(repo.get_id());
 		}

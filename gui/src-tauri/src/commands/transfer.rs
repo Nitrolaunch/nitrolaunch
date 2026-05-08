@@ -1,18 +1,21 @@
 use std::path::PathBuf;
 
+use crate::State;
 use crate::commands::instance::write_instance_config;
 use crate::output::LauncherOutput;
-use crate::State;
 use anyhow::Context;
-use nitrolaunch::config::modifications::{apply_modifications_and_write, ConfigModification};
 use nitrolaunch::config::Config;
-use nitrolaunch::instance::{transfer, Instance};
+use nitrolaunch::config::modifications::{ConfigModification, apply_modifications_and_write};
+use nitrolaunch::instance::update::manager::UpdateSettings;
+use nitrolaunch::instance::{Instance, transfer};
 use nitrolaunch::io::lock::Lockfile;
+use nitrolaunch::pkg_crate::{PkgRequest, PkgRequestSource};
 use nitrolaunch::plugin_crate::hook::hooks::{
 	AddInstanceTransferFormats, CheckMigration, CheckMigrationResult, InstanceTransferFormat,
 };
 use nitrolaunch::shared::id::InstanceID;
 use nitrolaunch::shared::output::NoOp;
+use nitrolaunch::shared::{Side, UpdateDepth};
 
 use super::{fmt_err, load_config};
 
@@ -69,6 +72,7 @@ pub async fn import_instance(
 			&id,
 			&format,
 			&PathBuf::from(path),
+			None,
 			&formats,
 			&config.plugins,
 			&state.paths,
@@ -181,8 +185,6 @@ pub async fn migrate_instances(
 			.context("Failed to load transfer formats"),
 	)?;
 
-	let mut lock = fmt_err(Lockfile::open(&state.paths).context("Failed to open lockfile"))?;
-
 	let instances = fmt_err(
 		nitrolaunch::instance::transfer::migrate_instances(
 			format,
@@ -191,7 +193,6 @@ pub async fn migrate_instances(
 			&formats,
 			&config.plugins,
 			&state.paths,
-			&mut lock,
 			&mut output,
 		)
 		.await
@@ -221,4 +222,62 @@ pub async fn migrate_instances(
 	)?;
 
 	Ok(count)
+}
+
+#[tauri::command]
+pub async fn install_modpack_package(
+	state: tauri::State<'_, State>,
+	app_handle: tauri::AppHandle,
+	modpack: String,
+	instance_id: &str,
+) -> Result<(), String> {
+	let mut output = LauncherOutput::new(state.get_output(app_handle.clone()));
+	output.set_task("install_modpack");
+
+	let req = PkgRequest::parse(modpack, PkgRequestSource::UserRequire).arc();
+
+	let config = fmt_err(
+		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
+			.await
+			.context("Failed to load config"),
+	)?;
+
+	let core = fmt_err(
+		config
+			.get_core(
+				None,
+				&UpdateSettings {
+					depth: UpdateDepth::Shallow,
+					offline_auth: true,
+				},
+				&state.client,
+				&config.plugins,
+				&state.paths,
+				&mut NoOp,
+			)
+			.await,
+	)?;
+
+	let version_manifest = fmt_err(
+		core.get_version_manifest(None, UpdateDepth::Full, &mut NoOp)
+			.await,
+	)?;
+
+	let config = fmt_err(
+		Instance::create_from_modpack_package(
+			instance_id,
+			&req,
+			Side::Client,
+			version_manifest.list.clone(),
+			&config.packages,
+			&config.plugins,
+			&state.client,
+			&state.paths,
+			&mut output,
+		)
+		.await
+		.context("Failed to import the new instance"),
+	)?;
+
+	write_instance_config(state, instance_id.to_string(), config, app_handle).await
 }

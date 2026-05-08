@@ -1,8 +1,10 @@
 use std::collections::HashMap;
 
-use nitro_shared::id::TemplateID;
-use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
+use anyhow::Context;
 use nitro_shared::Side;
+use nitro_shared::id::TemplateID;
+use nitro_shared::output::{MessageContents, NitroOutput};
+use nitro_shared::pkg::{PkgRequest, PkgRequestSource};
 #[cfg(feature = "schema")]
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -288,12 +290,9 @@ pub fn consolidate_template_configs(
 					} else {
 						// Check if the parent template actually doesn't exist or if we just haven't consolidated it yet
 						if !templates.contains_key(&parent_id) {
-							o.display(
-								MessageContents::Error(format!(
-									"Parent template '{parent}' does not exist"
-								)),
-								MessageLevel::Important,
-							);
+							o.display(MessageContents::Error(format!(
+								"Parent template '{parent}' does not exist"
+							)));
 						}
 					}
 				}
@@ -309,6 +308,92 @@ pub fn consolidate_template_configs(
 	}
 
 	out
+}
+
+impl InstanceConfig {
+	/// Applies the derived templates of this config
+	pub fn apply_templates(
+		&mut self,
+		templates: &HashMap<TemplateID, TemplateConfig>,
+	) -> anyhow::Result<Self> {
+		let templates: anyhow::Result<Vec<_>> = self
+			.from
+			.iter()
+			.map(|x| {
+				templates
+					.get(&TemplateID::from(x.clone()))
+					.with_context(|| format!("Derived template '{x}' does not exist"))
+			})
+			.collect();
+		let templates = templates?;
+
+		// Merge with the template
+		let mut config = self.clone();
+		for template in &templates {
+			let mut template_config = template.instance.clone();
+			template_config.merge(config);
+			config = template_config;
+		}
+
+		let side = config.side.context("Instance type was not specified")?;
+
+		// Consolidate all of the package configs into the instance package config list
+		let packages = consolidate_package_configs(&templates, &config, side);
+
+		config.packages = packages.clone();
+
+		// Loader
+		let template_loaders = templates.iter().fold(
+			TemplateLoaderConfiguration::default(),
+			|mut acc, template| {
+				acc.merge(&template.loader);
+				acc
+			},
+		);
+
+		let loader = match side {
+			Side::Client => config.loader.clone().or(template_loaders.client().cloned()),
+			Side::Server => config.loader.clone().or(template_loaders.server().cloned()),
+		};
+
+		config.loader = loader.clone();
+
+		Ok(config)
+	}
+}
+
+/// Combines all of the package configs from global, template, and instance together into
+/// the configurations for just one instance
+pub fn consolidate_package_configs(
+	templates: &[&TemplateConfig],
+	instance: &InstanceConfig,
+	side: Side,
+) -> Vec<PackageConfigDeser> {
+	// We use a map so that we can override packages from more general sources
+	// with those from more specific ones
+	let mut map = HashMap::new();
+	for template in templates {
+		for pkg in template.packages.iter_global() {
+			map.insert(
+				PkgRequest::parse(pkg.get_pkg_id(), PkgRequestSource::UserRequire).id,
+				pkg.clone(),
+			);
+		}
+		for pkg in template.packages.iter_side(side) {
+			map.insert(
+				PkgRequest::parse(pkg.get_pkg_id(), PkgRequestSource::UserRequire).id,
+				pkg.clone(),
+			);
+		}
+	}
+	for pkg in &instance.packages {
+		map.insert(
+			PkgRequest::parse(pkg.get_pkg_id(), PkgRequestSource::UserRequire).id,
+			pkg.clone(),
+		);
+	}
+
+	map.into_values().collect()
 }
 
 #[cfg(test)]

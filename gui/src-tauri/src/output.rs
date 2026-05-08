@@ -7,7 +7,7 @@ use nitrolaunch::shared::output::{Message, MessageContents, MessageLevel, NitroO
 use nitrolaunch::shared::pkg::{ArcPkgReq, PackageDiff, ResolutionError};
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter};
-use tokio::sync::{mpsc::Sender, Mutex};
+use tokio::sync::{Mutex, mpsc::Sender};
 
 /// Response to a prompt in the frontend, shared with a mutex
 pub type PromptResponse = Arc<Mutex<Option<String>>>;
@@ -60,7 +60,7 @@ impl NitroOutput for LauncherOutput {
 			let _ = logger.send(message2).await;
 		});
 
-		if !message.level.at_least(&MessageLevel::Extra) {
+		if message.level < MessageLevel::Important {
 			return;
 		}
 
@@ -403,8 +403,12 @@ impl SerializableResolutionError {
 pub enum SerializablePackageDiff {
 	/// A new package was added
 	Added(String),
+	/// A large number of packages were added
+	ManyAdded(u16),
 	/// An existing package was removed
 	Removed(String),
+	/// A large number of packages were removed
+	ManyRemoved(u16),
 	/// An existing package had it's version changed. Contains the old and new version
 	VersionChanged(String, String, String),
 }
@@ -417,6 +421,8 @@ impl SerializablePackageDiff {
 			PackageDiff::VersionChanged(pkg, old_version, new_version) => {
 				Self::VersionChanged(pkg.to_string(), old_version, new_version)
 			}
+			PackageDiff::ManyAdded(count) => Self::ManyAdded(count),
+			PackageDiff::ManyRemoved(count) => Self::ManyRemoved(count),
 		}
 	}
 }

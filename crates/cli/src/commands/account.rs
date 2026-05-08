@@ -1,15 +1,21 @@
 use super::CmdData;
 use crate::commands::call_plugin_subcommand;
-use crate::output::{icons_enabled, HYPHEN_POINT, STAR};
-use anyhow::{bail, Context};
+use crate::output::{CHECK, HYPHEN_POINT, STAR, icons_enabled};
+use crate::prompt::pick_account;
+use anyhow::{Context, bail};
 use itertools::Itertools;
-use nitrolaunch::config::modifications::{apply_modifications_and_write, ConfigModification};
+use nitrolaunch::config::modifications::{ConfigModification, apply_modifications_and_write};
 use nitrolaunch::config_crate::account::{AccountConfig, AccountVariant};
 use nitrolaunch::core::account::AccountKind;
 
 use clap::Subcommand;
-use color_print::{cprint, cprintln};
-use nitrolaunch::shared::output::{MessageContents, MessageLevel, NitroOutput};
+use color_print::{cformat, cprint, cprintln};
+use nitrolaunch::net_crate::load_from_uri;
+use nitrolaunch::plugin_crate::hook::hooks::{
+	AddSkinRepositories, SearchSkinRepository, SearchSkinRepositoryArg,
+};
+use nitrolaunch::shared::minecraft::{CosmeticState, SkinVariant};
+use nitrolaunch::shared::output::{MessageContents, NitroOutput};
 use reqwest::Client;
 
 #[derive(Debug, Subcommand)]
@@ -21,28 +27,60 @@ pub enum AccountSubcommand {
 		#[arg(short, long)]
 		raw: bool,
 	},
+	#[command(about = "Switch to another default account")]
+	Switch { account: Option<String> },
 	#[command(about = "Get current authentication status")]
 	Status,
 	#[command(about = "Update the passkey for an account")]
 	Passkey {
 		/// The account to update the passkey for. If not specified, uses the default account
-		#[arg(short, long)]
 		account: Option<String>,
 	},
-	#[command(about = "Ensure that an account is authenticated")]
-	Auth {
+	#[command(about = "Log in an account")]
+	Login {
 		/// The account to authenticate. If not specified, uses the default account
-		#[arg(short, long)]
 		account: Option<String>,
 	},
 	#[command(about = "Log out an account")]
 	Logout {
 		/// The account to log out. If not specified, uses the default account
-		#[arg(short, long)]
 		account: Option<String>,
 	},
 	#[command(about = "Add new accounts to your config")]
 	Add {},
+	#[command(about = "Get or set skins and capes")]
+	Cosmetic {
+		#[command(subcommand)]
+		subcommand: CosmeticSubcommand,
+	},
+	#[clap(external_subcommand)]
+	External(Vec<String>),
+}
+
+#[derive(Debug, Subcommand)]
+pub enum CosmeticSubcommand {
+	#[command(about = "List cosmetics")]
+	List {
+		/// The account to use. If not specified, uses the default account
+		account: Option<String>,
+	},
+	#[command(about = "Upload a new skin to an account")]
+	Upload {
+		/// The account to use. If not specified, uses the default account
+		account: String,
+		/// The path or URL to the skin file. It must be in PNG format.
+		skin: String,
+		/// Whether this is a slim (Alex-like) skin
+		#[arg(long)]
+		slim: bool,
+	},
+	#[command(about = "Search for new skins")]
+	Search {
+		/// The repository to use. Install more with plugins
+		repository: String,
+		/// The search term. Can be empty.
+		search: Option<String>,
+	},
 	#[clap(external_subcommand)]
 	External(Vec<String>),
 }
@@ -50,11 +88,26 @@ pub enum AccountSubcommand {
 pub async fn run(subcommand: AccountSubcommand, data: &mut CmdData<'_>) -> anyhow::Result<()> {
 	match subcommand {
 		AccountSubcommand::List { raw } => list(data, raw).await,
+		AccountSubcommand::Switch { account } => switch(data, account).await,
 		AccountSubcommand::Status => status(data).await,
 		AccountSubcommand::Passkey { account } => passkey(data, account).await,
-		AccountSubcommand::Auth { account } => auth(data, account).await,
+		AccountSubcommand::Login { account } => login(data, account).await,
 		AccountSubcommand::Logout { account } => logout(data, account).await,
 		AccountSubcommand::Add {} => add(data).await,
+		AccountSubcommand::Cosmetic { subcommand } => match subcommand {
+			CosmeticSubcommand::List { account } => cosmetic_list(data, account).await,
+			CosmeticSubcommand::Upload {
+				account,
+				skin,
+				slim,
+			} => cosmetic_upload(data, account, skin, slim).await,
+			CosmeticSubcommand::Search { repository, search } => {
+				cosmetic_search(data, repository, search).await
+			}
+			CosmeticSubcommand::External(args) => {
+				call_plugin_subcommand(args, Some("account.cosmetic"), data).await
+			}
+		},
 		AccountSubcommand::External(args) => {
 			call_plugin_subcommand(args, Some("account"), data).await
 		}
@@ -80,18 +133,37 @@ async fn list(data: &mut CmdData<'_>, raw: bool) -> anyhow::Result<()> {
 				AccountKind::Demo => cprint!("<s><c!>{}</c!>", id),
 				AccountKind::Unknown(other) => cprint!("<s><k!>({other}) {}</k!>", id),
 			}
-			if let Some(chosen) = config.accounts.get_chosen_account() {
-				if chosen.get_id() == id {
-					if icons_enabled() {
-						cprint!("<y> {}", STAR);
-					} else {
-						cprint!("<s> (Default)");
-					}
+			if let Some(chosen) = config.accounts.get_chosen_account()
+				&& chosen.get_id() == id
+			{
+				if icons_enabled() {
+					cprint!("<y> {}", STAR);
+				} else {
+					cprint!("<s> (Default)");
 				}
 			}
 			println!();
 		}
 	}
+
+	Ok(())
+}
+
+async fn switch(data: &mut CmdData<'_>, account: Option<String>) -> anyhow::Result<()> {
+	data.ensure_config(true).await?;
+	let mut raw_config = data.get_raw_config()?;
+
+	let account = pick_account(account, data.config.get())?;
+	raw_config.default_account = Some(account.to_string());
+
+	apply_modifications_and_write(
+		&mut raw_config,
+		Vec::new(),
+		&data.paths,
+		&data.config.get().plugins,
+		data.output,
+	)
+	.await?;
 
 	Ok(())
 }
@@ -145,7 +217,7 @@ async fn passkey(data: &mut CmdData<'_>, account: Option<String>) -> anyhow::Res
 	Ok(())
 }
 
-async fn auth(data: &mut CmdData<'_>, account: Option<String>) -> anyhow::Result<()> {
+async fn login(data: &mut CmdData<'_>, account: Option<String>) -> anyhow::Result<()> {
 	data.ensure_config(true).await?;
 	let config = data.config.get_mut();
 	if let Some(account) = account {
@@ -155,7 +227,7 @@ async fn auth(data: &mut CmdData<'_>, account: Option<String>) -> anyhow::Result
 	let client = Client::new();
 	config
 		.accounts
-		.authenticate(&data.paths.core, &client, data.output)
+		.authenticate(false, &data.paths.core, &client, data.output)
 		.await
 		.context("Failed to authenticate")?;
 
@@ -203,10 +275,135 @@ async fn add(data: &mut CmdData<'_>) -> anyhow::Result<()> {
 	.await
 	.context("Failed to write modified config")?;
 
-	data.output.display(
-		MessageContents::Success("Account added".into()),
-		MessageLevel::Important,
-	);
+	data.output
+		.display(MessageContents::Success("Account added".into()));
+
+	Ok(())
+}
+
+async fn cosmetic_list(data: &mut CmdData<'_>, account: Option<String>) -> anyhow::Result<()> {
+	data.ensure_config(true).await?;
+	let config = data.config.get_mut();
+	if let Some(account) = account {
+		config.accounts.choose_account(&account)?;
+	}
+
+	let client = Client::new();
+	let (skins, capes) = config
+		.accounts
+		.get_cosmetics(&data.paths.core, &client, data.output)
+		.await
+		.context("Failed to get cosmetics")?;
+
+	if !skins.is_empty() {
+		cprintln!("<s,m>Skins:");
+		for skin in skins {
+			let line = cformat!("<m>{}", skin.cosmetic.id);
+			let line = match skin.cosmetic.state {
+				CosmeticState::Active => cformat!("{line} <s,g>{CHECK} Selected"),
+				CosmeticState::Inactive => line,
+			};
+			println!("{HYPHEN_POINT}{line}");
+		}
+	}
+	if !capes.is_empty() {
+		cprintln!("<s,y>Capes:");
+		for cape in capes {
+			let line = cformat!("<y>{} - {}", cape.alias, cape.cosmetic.id);
+			let line = match cape.cosmetic.state {
+				CosmeticState::Active => cformat!("{line} <s,g>{CHECK} Selected"),
+				CosmeticState::Inactive => line,
+			};
+			println!("{HYPHEN_POINT}{line}");
+		}
+	}
+
+	Ok(())
+}
+
+async fn cosmetic_upload(
+	data: &mut CmdData<'_>,
+	account: String,
+	skin: String,
+	slim: bool,
+) -> anyhow::Result<()> {
+	data.ensure_config(true).await?;
+	let config = data.config.get_mut();
+
+	let client = Client::new();
+
+	let skin = load_from_uri(&skin, &client)
+		.await
+		.context("Failed to load skin")?;
+
+	let variant = if slim {
+		SkinVariant::Slim
+	} else {
+		SkinVariant::Classic
+	};
+
+	config
+		.accounts
+		.upload_skin(
+			&account,
+			variant,
+			&skin,
+			&data.paths.core,
+			&client,
+			data.output,
+		)
+		.await
+		.context("Failed to upload skin")?;
+
+	data.output
+		.display(MessageContents::Success("Skin uploaded".into()));
+
+	Ok(())
+}
+
+async fn cosmetic_search(
+	data: &mut CmdData<'_>,
+	repository: String,
+	search: Option<String>,
+) -> anyhow::Result<()> {
+	data.ensure_config(true).await?;
+	let config = data.config.get_mut();
+
+	let results = config
+		.plugins
+		.call_hook(AddSkinRepositories, &(), &data.paths, data.output)
+		.await?;
+	let available_repos = results.flatten_all_results(data.output).await?;
+	let Some(repository) = available_repos.into_iter().find(|x| x.id == repository) else {
+		bail!("Skin repository does not exist");
+	};
+
+	let arg = SearchSkinRepositoryArg {
+		repository: repository.id,
+		search,
+	};
+	let results = config
+		.plugins
+		.call_hook(SearchSkinRepository, &arg, &data.paths, data.output)
+		.await?;
+	let skins = results.flatten_all_results(data.output).await?;
+
+	cprintln!("<s>Skins from <m>{}</>:", repository.name);
+	for skin in skins {
+		let uri = if let Some(url) = skin.cosmetic.url {
+			url
+		} else if let Some(path) = skin.cosmetic.path {
+			path
+		} else {
+			cformat!("<r>Unknown location")
+		};
+
+		let variant = match skin.variant {
+			SkinVariant::Classic => "Classic",
+			SkinVariant::Slim => "Slim",
+		};
+		cprintln!("{HYPHEN_POINT}<u>{uri}</> - {variant}");
+	}
 
 	Ok(())
 }

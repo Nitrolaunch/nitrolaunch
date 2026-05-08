@@ -1,4 +1,5 @@
 {
+	"id": "themes",
 	"name": "Themes",
 	"description": "Adds more themes for you to choose from",
 	"version": "v6",
@@ -9,15 +10,33 @@
 					"id": "sleek",
 					"name": "Sleek",
 					"description": "A sleek, modern dark theme",
+					"type": "base",
 					"css": "$file:sleek.css",
-					"color": "#000000"
+					"color": "var(--bg4)"
+				},
+				{
+					"id": "minecraft",
+					"name": "Minecraft",
+					"description": "Blocky theme with the Minecraft font",
+					"type": "base",
+					"css": "$file:minecraft.css",
+					"color": "rgb(60, 133, 39)"
 				},
 				{
 					"id": "ghost",
 					"name": "Ghost",
-					"description": "Dark theme with white accent colors",
+					"description": "White accent colors",
+					"type": "overlay",
 					"css": "$file:ghost.css",
 					"color": "#ffffff"
+				},
+				{
+					"id": "vertical_instance_list",
+					"name": "Vertical Instance List",
+					"description": "Tweak to the instance list",
+					"type": "overlay",
+					"css": "$file:vertical_instance_list.css",
+					"color": "#dddddd"
 				}
 			]
 		}

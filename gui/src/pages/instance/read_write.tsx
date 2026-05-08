@@ -5,6 +5,7 @@ import { Loader } from "../../package";
 import { InstanceOrTemplate, Side } from "../../types";
 import { beautifyString } from "../../utils";
 import { emit } from "@tauri-apps/api/event";
+import { ControlData } from "../../components/input/Control";
 
 // Stored configuration for an instance
 export interface InstanceConfig {
@@ -14,6 +15,7 @@ export interface InstanceConfig {
 	icon?: string;
 	version?: string | "latest" | "latest_snapshot";
 	loader?: ConfiguredLoaders;
+	modpack?: string;
 	datapack_folder?: string;
 	packages?: ConfiguredPackages;
 	launch?: LaunchConfig;
@@ -34,7 +36,7 @@ export type ConfiguredLoaders =
 
 export function getConfiguredLoader(
 	loaders: ConfiguredLoaders | undefined,
-	side: Side | undefined
+	side: Side | undefined,
 ) {
 	if (loaders == undefined) {
 		return undefined;
@@ -44,8 +46,8 @@ export function getConfiguredLoader(
 		return side == "client"
 			? loaders.client
 			: side == "server"
-			? loaders.server
-			: undefined;
+				? loaders.server
+				: undefined;
 	}
 }
 
@@ -113,14 +115,14 @@ export enum InstanceConfigMode {
 
 export async function readInstanceConfig(
 	id: string | undefined,
-	mode: InstanceConfigMode
+	mode: InstanceConfigMode,
 ) {
 	let method =
 		mode == InstanceConfigMode.Instance
 			? "get_instance_config"
 			: mode == InstanceConfigMode.Template
-			? "get_template_config"
-			: "get_base_template";
+				? "get_template_config"
+				: "get_base_template";
 	try {
 		return (await invoke(method, { id: id })) as InstanceConfig;
 	} catch (e) {
@@ -131,16 +133,20 @@ export async function readInstanceConfig(
 // Gets the config for an instance or template that can actually be edited and isn't inherited
 export async function readEditableInstanceConfig(
 	id: string | undefined,
-	mode: InstanceConfigMode
-) {
+	mode: InstanceConfigMode,
+): Promise<[InstanceConfig, { [key: string]: any }]> {
 	let method =
 		mode == InstanceConfigMode.Instance
 			? "get_editable_instance_config"
 			: mode == InstanceConfigMode.Template
-			? "get_editable_template_config"
-			: "get_base_template";
+				? "get_editable_template_config"
+				: "get_base_template";
 	try {
-		return (await invoke(method, { id: id })) as InstanceConfig;
+		let result = (await invoke(method, { id: id })) as {
+			config: InstanceConfig;
+			plugin_config: { [key: string]: any };
+		};
+		return [result.config, result.plugin_config];
 	} catch (e) {
 		throw e;
 	}
@@ -149,14 +155,14 @@ export async function readEditableInstanceConfig(
 export async function saveInstanceConfig(
 	id: string | undefined,
 	config: InstanceConfig,
-	mode: InstanceConfigMode
+	mode: InstanceConfigMode,
 ) {
 	let method =
 		mode == InstanceConfigMode.Instance
 			? "write_instance_config"
 			: mode == InstanceConfigMode.Template
-			? "write_template_config"
-			: "write_base_template";
+				? "write_template_config"
+				: "write_base_template";
 
 	try {
 		await invoke(method, {
@@ -168,7 +174,10 @@ export async function saveInstanceConfig(
 	}
 
 	if (mode != InstanceConfigMode.GlobalTemplate) {
-		emit("instance_or_template_changed", { id: id, type: mode } as InstanceOrTemplateChangedEvent);
+		emit("instance_or_template_changed", {
+			id: id,
+			type: mode,
+		} as InstanceOrTemplateChangedEvent);
 	}
 }
 
@@ -180,7 +189,7 @@ export interface InstanceOrTemplateChangedEvent {
 // Gets parent template configs for a config
 export async function getParentTemplates(
 	from: string[] | undefined,
-	mode: InstanceConfigMode
+	mode: InstanceConfigMode,
 ) {
 	let parentResults: InstanceConfig[] = [];
 	if (mode == InstanceConfigMode.GlobalTemplate) {
@@ -202,7 +211,7 @@ export async function getParentTemplates(
 
 // Gets the global, client, and server packages configured on an instance or template
 export function getConfigPackages(
-	config: InstanceConfig
+	config: InstanceConfig,
 ): [PackageConfig[], PackageConfig[], PackageConfig[]] {
 	if (config.packages == undefined) {
 		return [[], [], []];
@@ -224,7 +233,7 @@ export function createConfiguredPackages(
 	global: PackageConfig[],
 	client: PackageConfig[],
 	server: PackageConfig[],
-	isInstance: boolean
+	isInstance: boolean,
 ): ConfiguredPackages {
 	if (isInstance) {
 		return global;
@@ -246,7 +255,7 @@ export function createConfiguredPackages(
 export function addPackage(
 	config: InstanceConfig,
 	pkg: PackageConfig,
-	location: "client" | "server" | "all"
+	location: "client" | "server" | "all",
 ) {
 	let req = getPackageConfigRequest(pkg);
 
@@ -306,7 +315,7 @@ export function getDerivedPackages(templates: InstanceConfig[]) {
 // Get the derived value from a list of template configs and a property function
 export function getDerivedValue(
 	templates: InstanceConfig[],
-	property: (template: InstanceConfig) => any | undefined
+	property: (template: InstanceConfig) => any | undefined,
 ) {
 	let reversed = templates.concat([]).reverse();
 	return reversed.map(property).find((x) => x != undefined);
@@ -352,4 +361,149 @@ export function readArgs(args: string | string[] | undefined) {
 	} else {
 		return args;
 	}
+}
+
+// Configuration fields modified with controls
+export class ControlledConfig {
+	fields: { [key: string]: any };
+
+	constructor(fields: { [key: string]: any } | undefined ) {
+		if (fields == undefined) {
+			this.fields = {};
+		} else {
+			this.fields = fields;
+		}
+	}
+
+	getControl(id: string): any {
+		let object = this.fields;
+
+		let i = 0;
+		let split = id.split(".");
+
+		// Move recursively down the tree
+		for (let key of split) {
+			if (i == split.length - 1) {
+				return object[key];
+			} else {
+				// Move down
+				let newObject = object[key];
+				if (newObject == undefined) {
+					return undefined;
+				}
+				object = newObject;
+			}
+
+			i++;
+		}
+
+		return undefined;
+	}
+
+	setControl(id: string, value: any) {
+		let object = this.fields;
+
+		let i = 0;
+		let split = id.split(".");
+
+		// Move recursively down the tree
+		for (let key of split) {
+			if (i == split.length - 1) {
+				// Set the value
+				object[key] = value;
+			} else {
+				// Move down
+				let newObject = object[key];
+				if (newObject == undefined) {
+					object[key] = {};
+					newObject = object[key];
+				}
+				object = newObject;
+			}
+
+			i++;
+		}
+	}
+
+	removeControl(id: string) {
+		let object = this.fields;
+
+		let i = 0;
+		let split = id.split(".");
+
+		// Move recursively down the tree
+		for (let key of split) {
+			if (i == split.length - 1) {
+				// Set the value
+				delete object[key];
+			} else {
+				// Move down
+				let newObject = object[key];
+				if (newObject == undefined) {
+					break;
+				}
+				object = newObject;
+			}
+
+			i++;
+		}
+	}
+
+	/** Applies these fields on top of a base config, replacing the fields */
+	apply(base: { [key: string]: any }) {
+		this.fields = deepMerge(base, this.fields);
+	}
+
+	/** Cleans up config, removing non-serialized default controls from the final output */
+	cleanup(controls: ControlData[]) {
+		// First, remove non-serialized controls
+		for (let control of controls) {
+			if (control.always_serialize) {
+				continue;
+			}
+
+			let value = this.getControl(control.id);
+			if (value == undefined || value == control.default) {
+				this.removeControl(control.id);
+			}
+		}
+
+		// Then, recursively remove any empty objects
+		removeEmptyObjects(this.fields);
+	}
+}
+
+/** Recursively merges two JS objects */
+function deepMerge(obj1: { [key: string]: any }, obj2: { [key: string]: any }) {
+	const result = { ...obj1 }; // Start with a shallow copy of obj1
+	for (const key in obj2) {
+		if (
+			obj2[key] &&
+			typeof obj2[key] === "object" &&
+			!Array.isArray(obj2[key])
+		) {
+			result[key] = deepMerge(result[key] || {}, obj2[key]);
+		} else {
+			result[key] = obj2[key];
+		}
+	}
+	return result;
+}
+
+/** Removes empty objects in this object, returning true if this object is now empty as well */
+function removeEmptyObjects(obj: { [key: string]: any }) {
+	for (let key in obj) {
+		if (
+			obj[key] != undefined &&
+			typeof obj[key] == "object" &&
+			!Array.isArray(obj[key])
+		) {
+			let result = removeEmptyObjects(obj[key]);
+			if (result) {
+				delete obj[key];
+			}
+		}
+	}
+
+	return Object.keys(obj).length == 0;
 }

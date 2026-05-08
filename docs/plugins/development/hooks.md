@@ -94,26 +94,6 @@ Runs an arbitrary custom action, basically allowing you to define your own hooks
 
 ## Configuration Hooks
 
-### `modify_instance_config`
-
-Called on every instance to possibly modify its config. The output config will be merged with the instance's current config in the same way as templates are. Note that the input is not sequential: All plugins will be given the same config before modification, instead of applying one after the other, and the results will all be merged together.
-
-- Argument:
-
-```
-{
-	"config": InstanceConfig
-}
-```
-
-- Result:
-
-```
-{
-	"config": InstanceConfig
-}
-```
-
 ### `add_instances`
 
 Adds new instances to the config
@@ -176,7 +156,7 @@ Adds or updates config for an editable custom template from this plugin, whateve
 
 ### `delete_instance`
 
-Deletes a plugin instance
+Deletes a plugin instance and it's files
 
 - Argument:
 
@@ -485,6 +465,114 @@ Handles authentication with custom account types
 
 - `profile.id`: The UUID of the account
 
+### `get_account_cosmetics`
+
+Gets the cosmetics available on a custom account
+
+- Argument:
+```
+{
+	"id": string,
+	"kind": string
+}
+```
+
+- Result:
+
+```
+{
+	"skins": [
+		{
+			"id": string,
+			"url": string,
+			"state": "ACTIVE" | "INACTIVE",
+			"variant": "CLASSIC" | "SLIM"
+		},
+		...
+	],
+	"capes": [
+		{
+			"id": string,
+			"url": string,
+			"state": "ACTIVE" | "INACTIVE",
+			"alias": string
+		},
+		...
+	]
+}
+```
+
+### `upload_skin`
+
+Uploads and activates a new skin for a custom account
+
+- Argument:
+```
+{
+	"id": string,
+	"kind": string,
+	"data": number[],
+	"variant": "CLASSIC" | "SLIM"
+}
+```
+
+- Result: None
+
+- `data`: The skin data as PNG bytes
+
+### `activate_cape`
+
+Activates or deactivates a cape for a custom account
+
+- Argument:
+```
+{
+	"id": string,
+	"kind": string,
+	"cape": string | null
+}
+```
+
+- Result: None
+
+### `add_skin_repositories`
+
+Adds a repository to search for skins from
+
+- Argument: None
+
+- Result:
+
+```
+[
+	{
+		"id": string,
+		"name": string
+	}
+]
+```
+
+### `search_skin_repository`
+
+Searches a custom skin repository
+
+- Argument:
+```
+{
+	"repository": string,
+	"search": string | null
+}
+```
+
+- Result:
+
+```
+[
+	Skin,
+	...
+]
+```
+
 ## Instance Transfer Hooks
 
 ### `add_instance_transfer_formats`
@@ -577,24 +665,6 @@ Hook called to migrate all instances from another launcher using one of the form
 	"format": string,
 	"instances": {
 		"id": InstanceConfig,
-		...
-	},
-	"packages": {
-		"instance-id": [
-			{
-				"id": string,
-				"addons": [
-					{
-						"id": string,
-						"paths": string[],
-						"kind": "resource_pack" | "mod" | "datapack" | "shader" | "plugin",
-						"version": string | null
-					},
-					...
-				]
-			},
-			...
-		],
 		...
 	}
 }
@@ -698,6 +768,111 @@ Synchronizes the cache for a custom repository that this plugin registered with 
 ```
 
 - Result: None
+
+## Control Hooks
+
+### `add_instance_config_controls`
+
+Defines additional schema for instance or template configuration
+
+- Argument:
+
+```
+{
+	"id": string,
+	"kind": "instance" | "template" | "base_template",
+	"plugin": string | null
+}
+```
+
+- Result:
+```
+{
+	"controls": [
+		Control,
+		...
+	]
+}
+```
+
+### `add_plugin_config_controls`
+
+Defines additional schema for configuring this plugin globally
+
+- Argument: None
+
+- Result:
+```
+[
+	Control,
+	...
+]
+```
+
+## Modpack Hooks
+
+### `add_modpack_formats`
+
+Add new formats for modpacks
+
+- Argument: None
+
+- Result:
+```
+[
+	{
+		"id": string,
+		"name": string,
+		"transfer_format": string | null
+	}
+	...
+]
+```
+
+- `transfer_format`: The instance transfer format associated with this modpack format. It is necessary to implement instance transfer if you want to be able to import a modpack instance from a file or package.
+
+### `install_modpack`
+
+Installs a modpack on an existing instance. Use instance transfer for supporting importing an instance.
+
+- Argument:
+```
+{
+	"format": string,
+	"path": string,
+	"old_path": string | null,
+	"target_path": string,
+	"side": "client" | "server"
+}
+```
+
+- Result:
+```
+{
+	"name": string,
+	"packages": string[],
+	"addons": [
+		{
+			"kind": "mod" | "resource_pack" | "datapack" | "shader" | "plugin",
+			"file_name": string,
+			"original_path": string | null,
+			"target_paths": string[],
+			"source": string | null,
+			"hashes": {
+				"sha256": string | null,
+				"sha512": string | null
+			}
+		}
+	]
+}
+```
+
+- `path`: Path to the modpack file
+- `old_path`: Path to the previous version of the modpack. Will not be passed if it is equal to the path.
+- `target_path`: The instance directory to install files in
+- `name`: The name of the modpack
+- `packages`: List of packages that this modpack provides that can be suppressed in package resolution
+- `addons`: List of addons, like mods or resource packs, that this modpack provides and can be used to prevent duplicates and manage updates
 
 ## GUI Hooks
 
@@ -904,9 +1079,10 @@ Installs a custom Java installation added with `add_java_types`.
 	},
 	"config": InstanceConfig,
 	"pid": integer | null,
+	"classpath": string | null,
 	"stdout_path": string | null,
 	"stdin_path": string | null
 }
 ```
 
-Note: The `pid`, `stdout_path`, and `stdin_path` fields will all be `null` for the `on_instance_launch` hook, and are only available in the other hooks.
+Note: The `pid`, `classpath`, `stdout_path`, and `stdin_path` fields will all be `null` for the `on_instance_launch` hook, and are only available in the other hooks.

@@ -1,22 +1,17 @@
-use std::path::PathBuf;
-use std::sync::Arc;
 use std::{collections::HashMap, path::Path};
 
-use anyhow::{bail, Context};
+use anyhow::{Context, bail};
 use nitro_config::instance::InstanceConfig;
-use nitro_pkg::PkgRequest;
 use nitro_plugin::hook::hooks::{
 	AddInstanceTransferFormats, ExportInstance, ExportInstanceArg, ImportInstance,
 	ImportInstanceArg, InstanceTransferFeatureSupport, InstanceTransferFormat,
 	InstanceTransferFormatDirection, MigrateInstances, MigrateInstancesArg,
 };
-use nitro_shared::addon::Addon;
 use nitro_shared::lang::translate::TranslationKey;
-use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
-use nitro_shared::pkg::PackageAddonHashes;
-use nitro_shared::translate;
+use nitro_shared::output::{MessageContents, NitroOutput};
+use nitro_shared::{Side, translate};
 
-use crate::io::lock::{Lockfile, LockfileAddon};
+use crate::io::lock::Lockfile;
 use crate::{io::paths::Paths, plugin::PluginManager};
 
 use super::Instance;
@@ -51,43 +46,33 @@ impl Instance {
 			bail!("Instance has not done it's first update and is not ready for transfer");
 		}
 
-		self.ensure_dirs(paths)
-			.context("Failed to ensure instance directories")?;
-		if self.dirs.get().game_dir.is_none() {
+		o.display(MessageContents::StartProcess(translate!(
+			o,
+			StartExporting,
+			"instance" = &self.id,
+			"format" = &format.info.id,
+			"plugin" = &format.plugin
+		)));
+
+		let inst_lock = self.get_lockfile(paths)?;
+
+		let Some(minecraft_version) = inst_lock.get_minecraft_version() else {
+			bail!("Version missing. Please update the instance before exporting.");
+		};
+
+		let Some(inst_dir) = &self.dir else {
 			bail!("This instance has no game directory and cannot be exported");
-		}
-
-		o.display(
-			MessageContents::StartProcess(translate!(
-				o,
-				StartExporting,
-				"instance" = &self.id,
-				"format" = &format.info.id,
-				"plugin" = &format.plugin
-			)),
-			MessageLevel::Important,
-		);
-
-		let lock_instance = lock
-			.get_instance(&self.id)
-			.context("Instance does not exist in lockfile. Try updating it before exporting.")?;
+		};
 
 		// Export using the plugin
 		let arg = ExportInstanceArg {
 			id: self.id.to_string(),
 			format: format.info.id.clone(),
-			config: self.config.original_config_with_templates.clone(),
-			minecraft_version: lock_instance.version.clone(),
-			loader_version: lock_instance.loader_version.clone(),
-			game_dir: self
-				.dirs
-				.get()
-				.game_dir
-				.as_ref()
-				.unwrap()
-				.to_string_lossy()
-				.to_string(),
-			result_path: result_path.to_string_lossy().to_string(),
+			config: self.config.clone(),
+			minecraft_version: minecraft_version.clone(),
+			loader_version: inst_lock.get_loader_version().cloned(),
+			inst_dir: inst_dir.to_string_lossy().to_string(),
+			result_path: result_path.canonicalize()?.to_string_lossy().to_string(),
 		};
 		let result = plugins
 			.call_hook_on_plugin(ExportInstance, &format.plugin, &arg, paths, o)
@@ -96,15 +81,13 @@ impl Instance {
 
 		if let Some(result) = result {
 			result.result(o).await?;
-			o.display(
-				MessageContents::Success(o.translate(TranslationKey::FinishExporting).into()),
-				MessageLevel::Important,
-			);
+			o.display(MessageContents::Success(
+				o.translate(TranslationKey::FinishExporting).into(),
+			));
 		} else {
-			o.display(
-				MessageContents::Error(o.translate(TranslationKey::ExportPluginNoResult).into()),
-				MessageLevel::Debug,
-			);
+			o.debug(MessageContents::Error(
+				o.translate(TranslationKey::ExportPluginNoResult).into(),
+			));
 		}
 
 		Ok(())
@@ -115,16 +98,25 @@ impl Instance {
 		id: &str,
 		format: &str,
 		source_path: &Path,
+		side: Option<Side>,
 		formats: &Formats,
 		plugins: &PluginManager,
 		paths: &Paths,
 		o: &mut impl NitroOutput,
 	) -> anyhow::Result<InstanceConfig> {
+		if !source_path.exists() {
+			bail!("Imported instance file does not exist");
+		}
+
 		// Get and print info about the format
 		let format = formats
 			.formats
 			.get(format)
 			.context("Transfer format does not exist")?;
+
+		if format.info.needs_import_side && side.is_none() {
+			bail!("This format requires a side to be specified");
+		}
 
 		let import_info = format
 			.info
@@ -134,28 +126,32 @@ impl Instance {
 
 		output_support_warnings(import_info, o);
 
-		o.display(
-			MessageContents::StartProcess(translate!(
-				o,
-				StartImporting,
-				"instance" = id,
-				"format" = &format.info.id,
-				"plugin" = &format.plugin
-			)),
-			MessageLevel::Important,
-		);
+		o.display(MessageContents::Header(translate!(
+			o,
+			StartImporting,
+			"instance" = id,
+			"format" = &format.info.id,
+			"plugin" = &format.plugin
+		)));
 
 		// Create the target directory
 		let target_dir = paths.data.join("instances").join(id);
 		std::fs::create_dir_all(&target_dir)
 			.context("Failed to create directory for new instance")?;
 
+		let source_path = if source_path.exists() {
+			source_path.canonicalize()?.to_string_lossy().to_string()
+		} else {
+			source_path.to_string_lossy().to_string()
+		};
+
 		// Import using the plugin
 		let arg = ImportInstanceArg {
 			format: format.info.id.clone(),
 			id: id.to_string(),
-			source_path: source_path.to_string_lossy().to_string(),
+			source_path,
 			result_path: target_dir.to_string_lossy().to_string(),
+			side,
 		};
 		let result = plugins
 			.call_hook_on_plugin(ImportInstance, &format.plugin, &arg, paths, o)
@@ -163,19 +159,17 @@ impl Instance {
 			.context("Failed to import instance using plugin")?;
 
 		let Some(result) = result else {
-			o.display(
-				MessageContents::Error(o.translate(TranslationKey::ImportPluginNoResult).into()),
-				MessageLevel::Debug,
-			);
+			o.debug(MessageContents::Error(
+				o.translate(TranslationKey::ImportPluginNoResult).into(),
+			));
 
 			bail!("Import plugin did not return a result");
 		};
 
 		let mut result = result.result(o).await?;
-		o.display(
-			MessageContents::Success(o.translate(TranslationKey::FinishImporting).into()),
-			MessageLevel::Important,
-		);
+		o.debug(MessageContents::Success(
+			o.translate(TranslationKey::FinishImporting).into(),
+		));
 
 		result.config.imported = true;
 
@@ -191,7 +185,6 @@ pub async fn migrate_instances(
 	formats: &Formats,
 	plugins: &PluginManager,
 	paths: &Paths,
-	lock: &mut Lockfile,
 	o: &mut impl NitroOutput,
 ) -> anyhow::Result<HashMap<String, InstanceConfig>> {
 	let format = formats
@@ -207,15 +200,12 @@ pub async fn migrate_instances(
 
 	output_support_warnings(migrate_info, o);
 
-	o.display(
-		MessageContents::StartProcess(translate!(
-			o,
-			StartMigrating,
-			"format" = &format.info.id,
-			"plugin" = &format.plugin
-		)),
-		MessageLevel::Important,
-	);
+	o.display(MessageContents::StartProcess(translate!(
+		o,
+		StartMigrating,
+		"format" = &format.info.id,
+		"plugin" = &format.plugin
+	)));
 
 	let arg = MigrateInstancesArg {
 		format: format.info.id.clone(),
@@ -228,53 +218,17 @@ pub async fn migrate_instances(
 		.context("Failed to import instances using plugin")?;
 
 	let Some(result) = result else {
-		o.display(
-			MessageContents::Error(o.translate(TranslationKey::ImportPluginNoResult).into()),
-			MessageLevel::Debug,
-		);
+		o.debug(MessageContents::Error(
+			o.translate(TranslationKey::ImportPluginNoResult).into(),
+		));
 
 		bail!("Migration plugin did not return a result");
 	};
 
 	let mut result = result.result(o).await?;
-	o.display(
-		MessageContents::Success(o.translate(TranslationKey::FinishMigrating).into()),
-		MessageLevel::Important,
-	);
-
-	for (inst, packages) in result.packages {
-		for package in packages {
-			let arc_pkg_id: Arc<str> = Arc::from(package.id.clone());
-
-			let addons: Vec<_> = package
-				.addons
-				.into_iter()
-				.map(|x| {
-					LockfileAddon::from_addon(
-						&Addon {
-							kind: x.kind,
-							id: x.id,
-							file_name: "placeholder".into(),
-							pkg_id: arc_pkg_id.clone(),
-							version: None,
-							hashes: PackageAddonHashes::default(),
-						},
-						x.paths.into_iter().map(PathBuf::from).collect(),
-					)
-				})
-				.collect();
-
-			lock.update_package(
-				&PkgRequest::parse(&package.id, nitro_pkg::PkgRequestSource::UserRequire),
-				&inst,
-				&addons,
-				None,
-				o,
-			)
-			.await
-			.context("Failed to add locked package")?;
-		}
-	}
+	o.display(MessageContents::Success(
+		o.translate(TranslationKey::FinishMigrating).into(),
+	));
 
 	for inst in result.instances.values_mut() {
 		inst.imported = true;
@@ -345,22 +299,20 @@ fn output_support_warnings(info: &InstanceTransferFormatDirection, o: &mut impl 
 		let feat = o.translate(name);
 		match support {
 			InstanceTransferFeatureSupport::Supported => {}
-			InstanceTransferFeatureSupport::FormatUnsupported => o.display(
-				MessageContents::Warning(translate!(
+			InstanceTransferFeatureSupport::FormatUnsupported => {
+				o.display(MessageContents::Warning(translate!(
 					o,
 					TransferFeatureUnsupportedByFormat,
 					"feat" = feat
-				)),
-				MessageLevel::Important,
-			),
-			InstanceTransferFeatureSupport::PluginUnsupported => o.display(
-				MessageContents::Warning(translate!(
+				)))
+			}
+			InstanceTransferFeatureSupport::PluginUnsupported => {
+				o.display(MessageContents::Warning(translate!(
 					o,
 					TransferFeatureUnsupportedByPlugin,
 					"feat" = feat
-				)),
-				MessageLevel::Important,
-			),
+				)))
+			}
 		}
 	}
 }

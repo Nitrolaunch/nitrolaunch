@@ -8,10 +8,10 @@ use std::hash::Hash;
 use std::str::FromStr;
 use std::sync::Arc;
 
-use crate::addon::AddonKind;
 use crate::loaders::Loader;
+use crate::minecraft::AddonKind;
 use crate::util::is_valid_identifier;
-use crate::versions::{parse_versioned_string, VersionPattern};
+use crate::versions::{VersionPattern, parse_versioned_string};
 
 /// Type for the ID of a package
 pub type PackageID = Arc<str>;
@@ -165,6 +165,22 @@ impl PkgRequest {
 		}
 	}
 
+	/// Create a new request with the slug changed if it is not already present
+	pub fn with_slug(&self, slug: Option<String>) -> Self {
+		Self {
+			source: self.source.clone(),
+			id: self.id.clone(),
+			repository: self.repository.clone(),
+			content_version: self.content_version.clone(),
+			slug: slug.or(self.slug.clone()),
+		}
+	}
+
+	/// Puts this request inside of an Arc
+	pub fn arc(self) -> ArcPkgReq {
+		Arc::new(self)
+	}
+
 	/// Create a dependency list for debugging
 	pub fn debug_sources(&self) -> String {
 		self.debug_sources_inner(String::new())
@@ -209,7 +225,6 @@ impl Hash for PkgRequest {
 	fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
 		self.id.hash(state);
 		self.repository.hash(state);
-		self.slug.hash(state);
 	}
 }
 
@@ -282,22 +297,22 @@ pub fn is_valid_package_id(id: &str) -> bool {
 #[derive(Deserialize, Serialize, PartialEq, Debug, Clone, Default)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[serde(default)]
-pub struct PackageAddonHashes<T: Default> {
+pub struct AddonHashes<T: Default> {
 	/// The SHA-256 hash of this addon file
 	pub sha256: T,
 	/// The SHA-512 hash of this addon file
 	pub sha512: T,
 }
 
-impl PackageAddonOptionalHashes {
+impl AddonOptionalHashes {
 	/// Checks if this set of optional hashes is empty
 	pub fn is_empty(&self) -> bool {
 		self.sha256.is_none() && self.sha512.is_none()
 	}
 }
 
-/// Optional PackageAddonHashes
-pub type PackageAddonOptionalHashes = PackageAddonHashes<Option<String>>;
+/// Optional AddonHashes
+pub type AddonOptionalHashes = AddonHashes<Option<String>>;
 
 /// Different types of packages, mostly AddonKinds
 #[derive(Serialize, Deserialize, Clone, Copy, PartialEq, Eq, Hash, Debug)]
@@ -316,6 +331,8 @@ pub enum PackageKind {
 	Shader,
 	/// A package that bundles other packages
 	Bundle,
+	/// A modpack
+	Modpack,
 }
 
 impl PackageKind {
@@ -327,6 +344,7 @@ impl PackageKind {
 			Self::Datapack => Some(AddonKind::Datapack),
 			Self::Plugin => Some(AddonKind::Plugin),
 			Self::Shader => Some(AddonKind::Shader),
+			Self::Modpack => Some(AddonKind::Modpack),
 			Self::Bundle => None,
 		}
 	}
@@ -343,8 +361,27 @@ impl FromStr for PackageKind {
 			"plugin" => Ok(Self::Plugin),
 			"shader" => Ok(Self::Shader),
 			"bundle" => Ok(Self::Bundle),
+			"modpack" => Ok(Self::Modpack),
 			other => bail!("Unknown package type '{other}'"),
 		}
+	}
+}
+
+impl Display for PackageKind {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		write!(
+			f,
+			"{}",
+			match self {
+				Self::Mod => "mod",
+				Self::ResourcePack => "resource_pack",
+				Self::Datapack => "datapack",
+				Self::Plugin => "plugin",
+				Self::Shader => "shader",
+				Self::Modpack => "modpack",
+				Self::Bundle => "bundle",
+			}
+		)
 	}
 }
 
@@ -427,6 +464,51 @@ pub enum PackageCategory {
 	Worldgen,
 }
 
+/// A list of overrides that apply to the package installation process
+#[derive(Serialize, Deserialize, Default, Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
+#[serde(default)]
+pub struct PackageOverrides {
+	/// Packages to not install
+	pub suppress: Vec<String>,
+	/// Packages to force installation of
+	pub force: Vec<String>,
+}
+
+impl PackageOverrides {
+	/// Merges another set of overrides on top of this one
+	pub fn merge(&mut self, other: Self) {
+		self.suppress = merge_package_lists(self.suppress.clone().into_iter(), &other.suppress);
+		self.force = merge_package_lists(self.force.clone().into_iter(), &other.force);
+	}
+}
+
+/// Checks if a package is overridden in a list
+pub fn is_package_overridden(package: &PkgRequest, list: &[String]) -> bool {
+	list.iter()
+		.map(|x| PkgRequest::parse(x, PkgRequestSource::UserRequire))
+		.any(|x| &x == package)
+}
+
+/// Merges two package lists, removing duplicates and preferring requests with a version
+pub fn merge_package_lists(list1: impl Iterator<Item = String>, list2: &[String]) -> Vec<String> {
+	let mut out: Vec<_> = list1
+		.map(|x| PkgRequest::parse(x, PkgRequestSource::UserRequire))
+		.collect();
+	for item in list2 {
+		let item = PkgRequest::parse(item, PkgRequestSource::UserRequire);
+		if let Some(existing) = out.iter_mut().find(|x| **x == item) {
+			if existing.content_version == VersionPattern::Any {
+				existing.content_version = item.content_version.clone();
+			}
+		} else {
+			out.push(item);
+		}
+	}
+
+	out.into_iter().map(|x| x.to_string()).collect()
+}
+
 /// Error from package resolution
 #[allow(missing_docs)]
 #[derive(thiserror::Error, Debug)]
@@ -442,7 +524,9 @@ pub enum ResolutionError {
 	NoValidVersionsFound(ArcPkgReq, Vec<VersionPattern>),
 	#[error("{pkg} extends the functionality of the package {1}, which is not installed", pkg = .0.as_ref().map(|x| format!("The package {}", x.debug_sources())).unwrap_or("A package".into()))]
 	ExtensionNotFulfilled(Option<ArcPkgReq>, ArcPkgReq),
-	#[error("Package {0} has been explicitly required by package {1}. This means it must be required by the user in their config.")]
+	#[error(
+		"Package {0} has been explicitly required by package {1}. This means it must be required by the user in their config."
+	)]
 	ExplicitRequireNotFulfilled(ArcPkgReq, ArcPkgReq),
 	#[error("Package {0} is incompatible with the packages {refusers}", refusers = .1.iter().join(", "))]
 	IncompatiblePackage(ArcPkgReq, Vec<Arc<str>>),
@@ -453,11 +537,16 @@ pub enum ResolutionError {
 }
 
 /// A change to an installed package, used for user display
+#[derive(Clone)]
 pub enum PackageDiff {
 	/// A new package was added
 	Added(ArcPkgReq),
+	/// A large number of packages were added
+	ManyAdded(u16),
 	/// An existing package was removed
 	Removed(ArcPkgReq),
+	/// A large number of packages were removed
+	ManyRemoved(u16),
 	/// An existing package had it's version changed. Contains the old and new version
 	VersionChanged(ArcPkgReq, String, String),
 }

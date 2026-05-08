@@ -11,7 +11,7 @@ pub struct ConfigPreferences {
 }
 
 /// Deserialization struct for user preferences
-#[derive(Deserialize, Serialize, Default)]
+#[derive(Deserialize, Serialize, Default, Clone)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[serde(default)]
 pub struct PrefDeser {
@@ -22,7 +22,7 @@ pub struct PrefDeser {
 }
 
 /// Deserialization struct for a package repo
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Clone)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 pub struct RepoDeser {
 	/// The ID of the repository
@@ -39,9 +39,10 @@ pub struct RepoDeser {
 }
 
 /// Deserialization struct for all configured package repositories
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Clone)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[serde(default)]
+#[derive(Default)]
 pub struct RepositoriesDeser {
 	/// The preferred repositories over the default ones
 	#[serde(skip_serializing_if = "Vec::is_empty")]
@@ -49,13 +50,4 @@ pub struct RepositoriesDeser {
 	/// The backup repositories included after the default ones
 	#[serde(skip_serializing_if = "Vec::is_empty")]
 	pub backup: Vec<RepoDeser>,
-}
-
-impl Default for RepositoriesDeser {
-	fn default() -> Self {
-		Self {
-			preferred: Vec::new(),
-			backup: Vec::new(),
-		}
-	}
 }

@@ -1,6 +1,8 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+/// Command-line interface (for launching instances)
+mod cli;
 /// Commands for Tauri
 mod commands;
 /// Storage and reading for GUI-specific data
@@ -18,21 +20,28 @@ use std::sync::{Arc, OnceLock};
 use std::time::Duration;
 
 use anyhow::Context;
+use clap::Parser;
 use data::LauncherData;
 use nitrolaunch::core::auth_crate::mc::ClientId;
-use nitrolaunch::core::{net::download::Client, account::AccountManager};
+use nitrolaunch::core::{account::AccountManager, net::download::Client};
 use nitrolaunch::io::logging::Logger;
 use nitrolaunch::io::paths::Paths;
 use nitrolaunch::plugin_crate::hook::wasm::loader::WASMLoader;
+use nitrolaunch::shared::id::InstanceID;
+use nitrolaunch::shared::io::config::IO_CONFIG;
+use nitrolaunch::shared::nitro_executable::{NitroClientId, NitroExecutableRegistry};
 use nitrolaunch::shared::output::Message;
 use output::{OutputInner, PromptResponse};
 use tauri::async_runtime::{Mutex, Sender};
 use tauri::process::restart;
 use tauri::{AppHandle, Emitter, Listener, Manager};
 
+use crate::cli::Cli;
 use crate::commands::misc::update_version_manifest;
 use crate::instance_manager::RunningInstanceManager;
-use crate::output::{MessageEvent, MessageType, ResolutionErrorEvent, YesNoPromptResponse};
+use crate::output::{
+	LauncherOutput, MessageEvent, MessageType, ResolutionErrorEvent, YesNoPromptResponse,
+};
 use crate::task_manager::TaskManager;
 
 fn main() {
@@ -45,7 +54,13 @@ fn main() {
 	let data = state.data.clone();
 	let paths = state.paths.clone();
 
+	if let Ok(mut exec_registry) = NitroExecutableRegistry::open(&paths.internal) {
+		let _ = exec_registry.add_this(NitroClientId::Gui);
+	}
+
 	let state2 = state.clone();
+
+	let cli = Cli::parse();
 
 	tauri::Builder::default()
 		.plugin(tauri_plugin_clipboard_manager::init())
@@ -140,6 +155,41 @@ fn main() {
 				});
 			}
 
+			// CLI launching
+			{
+				let state = state2.clone();
+				let app_handle = app.app_handle().clone();
+
+				if let Some(instance) = cli.launch {
+					let state = Arc::new(state);
+					let app_handle = Arc::new(app_handle);
+					let mut output = LauncherOutput::new(state.get_output_arc(app_handle.clone()));
+					output.set_task(&format!("launch_instance_{instance}"));
+
+					let instance_id = InstanceID::from(instance);
+
+					let stdio_paths = Arc::new(Mutex::new(None));
+
+					tauri::async_runtime::spawn(async move {
+						let data = LauncherData::open(&state.paths)
+							.context("Failed to open launcher data")?;
+						let account = cli.account.as_deref().or(data.current_account.as_deref());
+
+						commands::launch::launch_game_impl(
+							instance_id.to_string(),
+							false,
+							account,
+							cli.quick_play,
+							&state,
+							app_handle,
+							stdio_paths.clone(),
+							output,
+						)
+						.await
+					});
+				}
+			}
+
 			Ok(())
 		})
 		.manage(state)
@@ -175,11 +225,17 @@ fn main() {
 			commands::instance::set_last_opened_instance,
 			commands::instance::get_instance_has_updated,
 			commands::instance::canonicalize_version,
+			commands::instance::get_plugins_supporting_creation,
+			commands::instance::get_instance_size,
+			commands::instance::consolidate_instance,
+			commands::instance::duplicate_instance,
+			commands::instance::extract_instance,
 			commands::package::get_packages,
 			commands::package::preload_packages,
 			commands::package::get_package_meta,
 			commands::package::get_package_props,
 			commands::package::get_package_meta_and_props,
+			commands::package::get_multiple_package_meta_and_props,
 			commands::package::get_declarative_package_contents,
 			commands::package::get_package_repos,
 			commands::package::get_instance_packages,
@@ -202,6 +258,10 @@ fn main() {
 			commands::plugin::run_custom_action,
 			commands::plugin::get_dropdown_buttons,
 			commands::plugin::get_instance_tiles,
+			commands::plugin::get_instance_config_controls,
+			commands::plugin::get_plugin_config_controls,
+			commands::plugin::get_plugin_config,
+			commands::plugin::write_plugin_config,
 			commands::account::get_accounts,
 			commands::account::select_account,
 			commands::account::login_account,
@@ -209,6 +269,11 @@ fn main() {
 			commands::account::create_account,
 			commands::account::remove_account,
 			commands::account::get_supported_account_types,
+			commands::account::get_cosmetics,
+			commands::account::upload_skin,
+			commands::account::activate_cape,
+			commands::account::get_skin_repositories,
+			commands::account::search_skins,
 			commands::settings::get_settings,
 			commands::settings::write_settings,
 			commands::transfer::get_instance_transfer_formats,
@@ -216,6 +281,7 @@ fn main() {
 			commands::transfer::export_instance,
 			commands::transfer::check_migration,
 			commands::transfer::migrate_instances,
+			commands::transfer::install_modpack_package,
 			commands::misc::get_supported_loaders,
 			commands::misc::get_loader_versions,
 			commands::misc::get_minecraft_versions,
@@ -228,9 +294,11 @@ fn main() {
 			commands::misc::save_icon,
 			commands::misc::get_supported_java_types,
 			commands::misc::answer_yes_no_prompt,
-			commands::misc::custom_scrollbar_needed,
+			commands::misc::linux_fixes_needed,
 			commands::misc::get_nitro_version,
 			commands::cancel_task,
+			commands::get_logs,
+			commands::get_log,
 		])
 		.run(tauri::generate_context!())
 		.expect("Error while running tauri application");
@@ -344,6 +412,13 @@ fn fix_compatability() {
 	if std::env::var("WAYLAND_DISPLAY").is_ok() {
 		unsafe {
 			std::env::set_var("GTK_OVERLAY_SCROLLING", "0");
+		}
+	}
+
+	// User-supplied
+	if IO_CONFIG.get_bool("disable_dmabuf").unwrap_or(false) {
+		unsafe {
+			std::env::set_var("WEBKIT_DISABLE_DMABUF_RENDERER", "1");
 		}
 	}
 }

@@ -133,11 +133,7 @@ impl VersionPattern {
 			.zip(other.get_matches(versions))
 			.filter_map(
 				|(left, right)| {
-					if *left == right {
-						Some(right)
-					} else {
-						None
-					}
+					if *left == right { Some(right) } else { None }
 				},
 			)
 			.collect()
@@ -182,6 +178,14 @@ impl VersionPattern {
 
 				Self::Single(text.replace('\\', ""))
 			}
+		}
+	}
+
+	/// Converts Self::Any to None
+	pub fn optional(&self) -> Option<&Self> {
+		match self {
+			Self::Any => None,
+			other => Some(other),
 		}
 	}
 

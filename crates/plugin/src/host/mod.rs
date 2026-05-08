@@ -1,16 +1,20 @@
+use std::collections::HashMap;
 use std::collections::VecDeque;
 use std::sync::Arc;
 
+use crate::PluginPaths;
+use crate::hook::Hook;
 use crate::hook::call::HookHandle;
 use crate::hook::call::HookHandles;
 use crate::hook::hooks::OnLoad;
 use crate::hook::hooks::StartWorker;
 use crate::hook::wasm::loader::WASMLoader;
-use crate::hook::Hook;
-use crate::plugin::{HookPriority, Plugin, DEFAULT_PROTOCOL_VERSION, NEWEST_PROTOCOL_VERSION};
-use crate::PluginPaths;
-use anyhow::{bail, Context};
+use crate::plugin::PluginProvidedSubcommand;
+use crate::plugin::{DEFAULT_PROTOCOL_VERSION, HookPriority, NEWEST_PROTOCOL_VERSION, Plugin};
+use anyhow::{Context, bail};
 use itertools::Itertools;
+use nitro_config::instance::InstanceConfig;
+use nitro_config::template::TemplateConfig;
 use nitro_shared::output::NitroOutput;
 use tokio::sync::Mutex;
 
@@ -21,6 +25,7 @@ pub struct CorePluginManager {
 	plugin_list: Vec<String>,
 	nitro_version: Option<&'static str>,
 	wasm_loader: Arc<Mutex<WASMLoader>>,
+	context: Option<Arc<dyn PluginContext>>,
 }
 
 impl CorePluginManager {
@@ -31,6 +36,7 @@ impl CorePluginManager {
 			plugin_list: Vec::new(),
 			nitro_version: None,
 			wasm_loader: Arc::new(Mutex::new(WASMLoader::new(&paths.data_dir))),
+			context: None,
 		}
 	}
 
@@ -73,6 +79,7 @@ impl CorePluginManager {
 				self.nitro_version,
 				&self.plugin_list,
 				self.wasm_loader.clone(),
+				self.context.as_ref(),
 				o,
 			)
 			.await
@@ -90,6 +97,7 @@ impl CorePluginManager {
 				self.nitro_version,
 				&self.plugin_list,
 				self.wasm_loader.clone(),
+				self.context.as_ref(),
 				o,
 			)
 			.await
@@ -127,6 +135,7 @@ impl CorePluginManager {
 					self.nitro_version,
 					&self.plugin_list,
 					self.wasm_loader.clone(),
+					self.context.as_ref(),
 					o,
 				)
 				.await
@@ -160,6 +169,7 @@ impl CorePluginManager {
 						self.nitro_version,
 						&self.plugin_list,
 						self.wasm_loader.clone(),
+						self.context.as_ref(),
 						o,
 					)
 					.await
@@ -180,10 +190,52 @@ impl CorePluginManager {
 	pub fn has_plugin(&self, plugin_id: &str) -> bool {
 		self.plugin_list.iter().any(|x| x == plugin_id)
 	}
+
+	/// Gets the plugin to use for a subcommand. Returns none if no plugin provides that subcommand
+	pub fn get_subcommand(&self, subcommand: &str, supercommand: Option<&str>) -> Option<String> {
+		self.iter_plugins().find(|x| {
+			x.get_manifest()
+				.subcommands
+				.iter()
+				.any(|x| {
+					if x.0 != subcommand {
+						return false;
+					}
+
+					if let Some(supercommand2) = supercommand {
+						matches!(x.1, PluginProvidedSubcommand::Specific { supercommand, .. } if supercommand == supercommand2)
+					} else {
+						matches!(x.1, PluginProvidedSubcommand::Global(..))
+					}
+				})
+		})
+		.map(|x| x.get_id().clone())
+	}
+
+	/// Sets the context to be passed to plugins
+	pub fn set_context(&mut self, context: Arc<dyn PluginContext>) {
+		self.context = Some(context);
+	}
 }
 
 #[derive(PartialEq, PartialOrd, Eq, Ord)]
 struct PluginSort {
 	priority: HookPriority,
 	id: String,
+}
+
+/// Context for plugin functions
+#[async_trait::async_trait]
+pub trait PluginContext: Send + Sync + 'static {
+	/// Gets the available instances
+	fn get_instances(&self) -> Arc<HashMap<String, InstanceConfig>>;
+
+	/// Gets the available templates
+	fn get_templates(&self) -> Arc<HashMap<String, TemplateConfig>>;
+
+	/// Creates a new instance
+	async fn create_instance(&self, id: String, config: InstanceConfig) -> anyhow::Result<()>;
+
+	/// Creates a new template
+	async fn create_template(&self, id: String, config: TemplateConfig) -> anyhow::Result<()>;
 }

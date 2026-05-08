@@ -8,29 +8,31 @@ pub mod script;
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use anyhow::bail;
 use anyhow::Context;
+use anyhow::bail;
 use async_trait::async_trait;
 use nitro_config::package::EvalPermissions;
+use nitro_instance::addon::is_filename_valid;
+use nitro_instance::lock::LockfilePackage;
 use nitro_parse::routine::INSTALL_ROUTINE;
 use nitro_parse::vars::HashMapVariableStore;
-use nitro_pkg::overrides::PackageOverrides;
-use nitro_pkg::properties::PackageProperties;
-use nitro_pkg::script_eval::AddonInstructionData;
-use nitro_pkg::script_eval::EvalReason;
 use nitro_pkg::ConfiguredPackage;
 use nitro_pkg::PackageContentType;
 use nitro_pkg::PkgRequest;
 use nitro_pkg::PkgRequestSource;
 use nitro_pkg::RecommendedPackage;
 use nitro_pkg::RequiredPackage;
+use nitro_pkg::addon::{PackageAddon, is_addon_version_valid};
+use nitro_pkg::properties::PackageProperties;
+use nitro_pkg::script_eval::AddonInstructionData;
+use nitro_pkg::script_eval::EvalReason;
 use nitro_pkg::{
 	EvalInput as EvalInputTrait, PackageEvalRelationsResult,
 	PackageEvaluator as PackageEvaluatorTrait,
 };
-use nitro_shared::addon::{is_addon_version_valid, is_filename_valid, Addon};
 use nitro_shared::lang::Language;
 use nitro_shared::loaders::Loader;
+use nitro_shared::minecraft::AddonKind;
 use nitro_shared::output;
 use nitro_shared::output::MessageContents;
 use nitro_shared::output::MessageLevel;
@@ -39,6 +41,7 @@ use nitro_shared::output::Simple;
 use nitro_shared::pkg::ArcPkgReq;
 use nitro_shared::pkg::PackageDiff;
 use nitro_shared::pkg::PackageID;
+use nitro_shared::pkg::PackageOverrides;
 use nitro_shared::util::io::replace_tilde;
 use nitro_shared::util::is_valid_identifier;
 use nitro_shared::versions::VersionPattern;
@@ -49,23 +52,25 @@ use self::conditions::check_os_condition;
 use self::declarative::eval_declarative_package;
 use self::script::eval_script_package;
 
-use super::reg::PkgRegistry;
 use super::Package;
+use super::reg::PkgRegistry;
 use crate::addon::{self, AddonLocation, AddonRequest};
 use crate::config::package::PackageConfig;
-use crate::io::lock::LockfilePackage;
 use crate::io::paths::Paths;
+use crate::pkg::PkgContents;
 use crate::plugin::PluginManager;
 use crate::util::hash::{
-	get_hash_str_as_hex, HASH_SHA256_RESULT_LENGTH, HASH_SHA512_RESULT_LENGTH,
+	HASH_SHA256_RESULT_LENGTH, HASH_SHA512_RESULT_LENGTH, get_hash_str_as_hex,
 };
-use nitro_shared::pkg::PackageStability;
 use nitro_shared::Side;
+use nitro_shared::pkg::PackageStability;
 
 /// Max notice instructions per package
 const MAX_NOTICE_INSTRUCTIONS: usize = 10;
 /// Max characters per notice instruction
 const MAX_NOTICE_CHARACTERS: usize = 128;
+/// Max number of add/delete package diffs until we replace them with a many diff
+const MAX_DIFF_COUNT: usize = 50;
 
 /// Context / purpose for when we are evaluating
 pub enum Routine {
@@ -122,7 +127,7 @@ impl EvalInputTrait for EvalInput {
 #[derive(Debug, Clone)]
 pub struct EvalConstants {
 	/// The Minecraft version
-	pub version: String,
+	pub version: Option<String>,
 	/// The loader used
 	pub loader: Loader,
 	/// The list of available Minecraft versions
@@ -131,6 +136,8 @@ pub struct EvalConstants {
 	pub language: Language,
 	/// The default requested stability for packages
 	pub default_stability: PackageStability,
+	/// Additional suppressed packages
+	pub suppress: Vec<String>,
 }
 
 /// Constants for the evaluation that may be different for each package
@@ -195,12 +202,12 @@ pub struct EvalData {
 	pub input: EvalInput,
 	/// Plugins
 	pub plugins: PluginManager,
-	/// ID of the package we are evaluating
-	pub id: PackageID,
+	/// Request of the package we are evaluating
+	pub req: ArcPkgReq,
 	/// Level of evaluation
 	pub reason: EvalReason,
 	/// Package properties
-	pub properties: PackageProperties,
+	pub properties: Arc<PackageProperties>,
 	/// Variables, used for script evaluation
 	pub vars: HashMapVariableStore,
 	/// The output of addon requests
@@ -217,12 +224,16 @@ pub struct EvalData {
 	pub compats: Vec<(PackageID, PackageID)>,
 	/// The output package extensions
 	pub extensions: Vec<PackageID>,
+	/// The output package inclusions
+	pub inclusions: Vec<PackageID>,
 	/// The output notices
 	pub notices: Vec<String>,
 	/// The output commands
 	pub commands: Vec<Vec<String>>,
 	/// The output selected content version of the package
 	pub selected_content_version: Option<String>,
+	/// The available Minecraft versions of the selected addon version
+	pub available_minecraft_versions: Vec<String>,
 	/// Whether the package uses custom instructions
 	pub uses_custom_instructions: bool,
 }
@@ -231,14 +242,14 @@ impl EvalData {
 	/// Create a new EvalData
 	pub fn new(
 		input: EvalInput,
-		id: PackageID,
-		properties: PackageProperties,
+		req: ArcPkgReq,
+		properties: Arc<PackageProperties>,
 		routine: &Routine,
 		plugins: PluginManager,
 	) -> Self {
 		Self {
 			input,
-			id,
+			req,
 			plugins,
 			reason: routine.get_reason(),
 			properties,
@@ -250,9 +261,11 @@ impl EvalData {
 			bundled: Vec::new(),
 			compats: Vec::new(),
 			extensions: Vec::new(),
+			inclusions: Vec::new(),
 			notices: Vec::new(),
 			commands: Vec::new(),
 			selected_content_version: None,
+			available_minecraft_versions: Vec::new(),
 			uses_custom_instructions: false,
 		}
 	}
@@ -261,7 +274,7 @@ impl EvalData {
 impl Package {
 	/// Evaluate a routine on a package
 	pub async fn eval(
-		&mut self,
+		&self,
 		paths: &Paths,
 		routine: Routine,
 		input: EvalInput,
@@ -275,7 +288,7 @@ impl Package {
 		if !input.params.force && eval_check_properties(&input, &properties)? {
 			return Ok(EvalData::new(
 				input,
-				self.id.clone(),
+				self.req.clone(),
 				properties,
 				&routine,
 				plugins,
@@ -284,28 +297,25 @@ impl Package {
 
 		match self.content_type {
 			PackageContentType::Script => {
-				let parsed = self.data.get_mut().contents.get_mut().get_script_contents();
+				let contents = self.contents.get().unwrap();
+				let PkgContents::Script(parsed) = contents else {
+					bail!("Content type does not match");
+				};
+
 				let eval = eval_script_package(
-					self.id.clone(),
-					parsed,
-					routine,
-					properties,
-					input,
-					plugins,
-					paths,
+					&self.req, parsed, routine, properties, input, plugins, paths,
 				)
 				.await?;
 				Ok(eval)
 			}
 			PackageContentType::Declarative => {
-				let contents = self.data.get().contents.get().get_declarative_contents();
+				let contents = self.contents.get().unwrap();
+				let PkgContents::Declarative(contents) = contents else {
+					bail!("Content type does not match");
+				};
+
 				let eval = eval_declarative_package(
-					self.id.clone(),
-					contents,
-					input,
-					properties,
-					routine,
-					plugins,
+					&self.req, contents, input, properties, routine, plugins,
 				)?;
 				Ok(eval)
 			}
@@ -318,46 +328,44 @@ pub fn eval_check_properties(
 	input: &EvalInput,
 	properties: &PackageProperties,
 ) -> anyhow::Result<bool> {
-	if let Some(supported_versions) = &properties.supported_versions {
-		if !supported_versions.is_empty()
-			&& !supported_versions
-				.iter()
-				.any(|x| x.matches_single(&input.constants.version, &input.constants.version_list))
-		{
-			bail!("Package does not support this Minecraft version");
-		}
+	if let Some(version) = &input.constants.version
+		&& let Some(supported_versions) = &properties.supported_versions
+		&& !supported_versions.is_empty()
+		&& !supported_versions
+			.iter()
+			.any(|x| x.matches_single(version, &input.constants.version_list))
+	{
+		bail!("Package does not support this Minecraft version");
 	}
 
-	if let Some(supported_loaders) = &properties.supported_loaders {
-		if !supported_loaders.is_empty()
-			&& !supported_loaders
-				.iter()
-				.any(|x| x.matches(&input.constants.loader))
-		{
-			bail!("Package does not support this loader");
-		}
+	if let Some(supported_loaders) = &properties.supported_loaders
+		&& !supported_loaders.is_empty()
+		&& !supported_loaders
+			.iter()
+			.any(|x| x.matches(&input.constants.loader))
+	{
+		bail!("Package does not support this loader");
 	}
 
-	if let Some(supported_sides) = &properties.supported_sides {
-		if !supported_sides.is_empty() && !supported_sides.contains(&input.params.side) {
-			return Ok(true);
-		}
+	if let Some(supported_sides) = &properties.supported_sides
+		&& !supported_sides.is_empty()
+		&& !supported_sides.contains(&input.params.side)
+	{
+		return Ok(true);
 	}
 
-	if let Some(supported_operating_systems) = &properties.supported_operating_systems {
-		if !supported_operating_systems.is_empty()
-			&& !supported_operating_systems.iter().any(check_os_condition)
-		{
-			bail!("Package does not support your operating system");
-		}
+	if let Some(supported_operating_systems) = &properties.supported_operating_systems
+		&& !supported_operating_systems.is_empty()
+		&& !supported_operating_systems.iter().any(check_os_condition)
+	{
+		bail!("Package does not support your operating system");
 	}
 
-	if let Some(supported_architectures) = &properties.supported_architectures {
-		if !supported_architectures.is_empty()
-			&& !supported_architectures.iter().any(check_arch_condition)
-		{
-			bail!("Package does not support your system architecture");
-		}
+	if let Some(supported_architectures) = &properties.supported_architectures
+		&& !supported_architectures.is_empty()
+		&& !supported_architectures.iter().any(check_arch_condition)
+	{
+		bail!("Package does not support your system architecture");
 	}
 
 	Ok(false)
@@ -366,7 +374,7 @@ pub fn eval_check_properties(
 /// Utility for evaluation that validates addon arguments and creates a request
 pub fn create_valid_addon_request(
 	data: AddonInstructionData,
-	pkg_id: PackageID,
+	pkg: ArcPkgReq,
 	eval_input: &EvalInput,
 ) -> anyhow::Result<AddonRequest> {
 	if !is_valid_identifier(&data.id) {
@@ -375,20 +383,22 @@ pub fn create_valid_addon_request(
 
 	// Empty strings will break the filename so we convert them to none
 	let version = data.version.filter(|x| !x.is_empty());
-	if let Some(version) = &version {
-		if !is_addon_version_valid(version) {
-			bail!(
-				"Invalid addon version identifier '{version}' for addon '{}'",
-				data.id
-			);
-		}
+	if let Some(version) = &version
+		&& !is_addon_version_valid(version)
+	{
+		bail!(
+			"Invalid addon version identifier '{version}' for addon '{}'",
+			data.id
+		);
 	}
 
 	let file_name = data.file_name.unwrap_or(addon::get_addon_instance_filename(
-		&pkg_id, &data.id, &data.kind,
+		&pkg.to_string_no_version().replace(":", "_"),
+		&data.id,
+		&data.kind,
 	));
 
-	if !is_filename_valid(data.kind, &file_name) {
+	if data.kind != AddonKind::Modpack && !is_filename_valid(data.kind, &file_name) {
 		bail!(
 			"Invalid addon filename '{file_name}' in addon '{}'",
 			data.id
@@ -416,12 +426,13 @@ pub fn create_valid_addon_request(
 		}
 	}
 
-	let addon = Addon {
+	let addon = PackageAddon {
 		kind: data.kind,
 		id: data.id.clone(),
 		file_name,
-		pkg_id,
+		pkg,
 		version,
+		modpack_format: data.modpack_format,
 		hashes: data.hashes,
 	};
 
@@ -452,7 +463,7 @@ pub fn create_valid_addon_request(
 
 /// Evaluator used as an input for dependency resolution
 struct PackageEvaluator<'a> {
-	reg: &'a mut PkgRegistry,
+	reg: &'a PkgRegistry,
 	results: &'a mut HashMap<ArcPkgReq, EvalData>,
 }
 
@@ -503,15 +514,24 @@ impl<'a> PackageEvaluatorTrait<'a> for PackageEvaluator<'a> {
 		input: &Self::EvalInput,
 		common_input: &Self::CommonInput,
 	) -> anyhow::Result<PackageEvalRelationsResult> {
-		let eval = self
+		let package = self
 			.reg
-			.eval(
+			.get(
 				pkg,
+				common_input.paths,
+				common_input.client,
+				&mut output::NoOp,
+			)
+			.await
+			.context("Failed to get package")?;
+
+		let eval = package
+			.eval(
 				common_input.paths,
 				Routine::InstallResolve,
 				input.clone(),
 				common_input.client,
-				&mut output::NoOp,
+				self.reg.get_plugins().clone(),
 			)
 			.await
 			.context("Failed to evaluate package")?;
@@ -523,6 +543,7 @@ impl<'a> PackageEvaluatorTrait<'a> for PackageEvaluator<'a> {
 			bundled: eval.bundled.clone(),
 			compats: eval.compats.clone(),
 			extensions: eval.extensions.clone(),
+			inclusions: eval.inclusions.clone(),
 		};
 
 		self.results.insert(pkg.clone(), eval);
@@ -534,17 +555,21 @@ impl<'a> PackageEvaluatorTrait<'a> for PackageEvaluator<'a> {
 		&'b mut self,
 		pkg: &ArcPkgReq,
 		common_input: &Self::CommonInput,
-	) -> anyhow::Result<&'b PackageProperties> {
-		let properties = self
+	) -> anyhow::Result<Arc<PackageProperties>> {
+		let package = self
 			.reg
-			.get_properties(
+			.get(
 				pkg,
 				common_input.paths,
 				common_input.client,
 				&mut output::NoOp,
 			)
-			.await?;
-		Ok(properties)
+			.await
+			.context("Failed to get package")?;
+
+		package
+			.get_properties(common_input.paths, common_input.client)
+			.await
 	}
 
 	async fn preload_packages<'b>(
@@ -607,14 +632,15 @@ impl ResolutionAndEvalResult {
 
 		for new_pkg in &self.packages {
 			if let Some(existing_pkg) = current_packages.get(&new_pkg.req) {
-				let old_version = new_pkg
-					.eval
-					.selected_content_version
+				let old_version = existing_pkg
+					.content_version
 					.as_ref()
 					.cloned()
 					.unwrap_or("None".into());
-				let new_version = existing_pkg
-					.content_version
+
+				let new_version = new_pkg
+					.eval
+					.selected_content_version
 					.as_ref()
 					.cloned()
 					.unwrap_or("None".into());
@@ -647,6 +673,25 @@ impl ResolutionAndEvalResult {
 			}
 		}
 
+		// Consolidate many additions or deletions into a single item
+		let add_count = out
+			.iter()
+			.filter(|x| matches!(x, PackageDiff::Added(..)))
+			.count();
+		if add_count > MAX_DIFF_COUNT {
+			out.retain(|x| !matches!(x, PackageDiff::Added(..)));
+			out.insert(0, PackageDiff::ManyAdded(add_count as u16));
+		}
+
+		let remove_count = out
+			.iter()
+			.filter(|x| matches!(x, PackageDiff::Removed(..)))
+			.count();
+		if remove_count > MAX_DIFF_COUNT {
+			out.retain(|x| !matches!(x, PackageDiff::Removed(..)));
+			out.insert(0, PackageDiff::ManyRemoved(remove_count as u16));
+		}
+
 		out
 	}
 }
@@ -668,7 +713,7 @@ pub async fn resolve(
 	default_params: EvalParameters,
 	overrides: PackageOverrides,
 	paths: &Paths,
-	reg: &mut PkgRegistry,
+	reg: &PkgRegistry,
 	client: &Client,
 	o: &mut impl NitroOutput,
 ) -> anyhow::Result<ResolutionAndEvalResult> {
@@ -703,9 +748,13 @@ pub async fn resolve(
 
 	let mut packages = Vec::new();
 	for package in result.packages {
-		let eval = results
-			.remove(&package.req)
-			.with_context(|| format!("Evaluation for package {} not in map", package.req))?;
+		let Some(eval) = results.remove(&package.req) else {
+			o.debug(MessageContents::Warning(format!(
+				"Evaluation for package {} not in map. Hopefully it is optional.",
+				package.req
+			)));
+			continue;
+		};
 		packages.push(ResolvedPackage {
 			req: package.req,
 			eval,
@@ -723,32 +772,39 @@ pub async fn resolve(
 }
 
 /// Prints an unfulfilled recommendation warning
-fn print_recommendation_warning(
+pub fn print_recommendation_warning(
 	package: &nitro_pkg::resolve::RecommendedPackage,
 	o: &mut impl NitroOutput,
 ) {
 	let source = package.req.source.get_source();
-	let message = if package.invert {
-		if let Some(source) = source {
-			MessageContents::Warning(format!("The package '{}' recommends against the use of the package '{}', which is installed", source.debug_sources(), package.req))
-		} else {
+	// NOTE: This check only added because I don't think we want to show positive recommendations (they get very cluttered)
+	if package.invert {
+		let message = if package.invert {
+			if let Some(source) = source {
+				MessageContents::Warning(format!(
+					"The package '{}' recommends against the use of the package '{}', which is installed",
+					source.debug_sources(),
+					package.req
+				))
+			} else {
+				MessageContents::Warning(format!(
+					"A package recommends against the use of the package '{}', which is installed",
+					package.req
+				))
+			}
+		} else if let Some(source) = source {
 			MessageContents::Warning(format!(
-				"A package recommends against the use of the package '{}', which is installed",
+				"The package '{}' recommends the use of the package '{}', which is not installed",
+				source.debug_sources(),
 				package.req
 			))
-		}
-	} else if let Some(source) = source {
-		MessageContents::Warning(format!(
-			"The package '{}' recommends the use of the package '{}', which is not installed",
-			source.debug_sources(),
-			package.req
-		))
-	} else {
-		MessageContents::Warning(format!(
-			"A package recommends the use of the package '{}', which is not installed",
-			package.req
-		))
-	};
+		} else {
+			MessageContents::Warning(format!(
+				"A package recommends the use of the package '{}', which is not installed",
+				package.req
+			))
+		};
 
-	o.display(message, MessageLevel::Important);
+		o.display(message);
+	}
 }

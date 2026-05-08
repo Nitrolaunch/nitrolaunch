@@ -3,10 +3,10 @@ use std::{collections::HashMap, path::Path, sync::Arc};
 use anyhow::Context;
 use nitro_config::{instance::InstanceConfig, template::TemplateConfig};
 use nitro_plugin::{
-	api::wasm::{sys::get_config_dir, WASMPlugin},
+	api::wasm::{WASMPlugin, sys::get_config_dir},
 	nitro_wasm_plugin,
 };
-use serde::{de::DeserializeOwned, Serialize};
+use serde::{Serialize, de::DeserializeOwned};
 
 nitro_wasm_plugin!(main, "config_split");
 

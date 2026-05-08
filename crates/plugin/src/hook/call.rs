@@ -1,20 +1,22 @@
 use std::{
-	collections::VecDeque,
+	collections::{HashSet, VecDeque},
 	path::Path,
 	sync::Arc,
 	time::{Duration, Instant},
 };
 
 use crate::{
-	hook::{
-		executable::ExecutableHookHandle,
-		wasm::{loader::WASMLoader, WASMHookHandle},
-		Hook,
-	},
 	PluginPaths,
+	hook::{
+		Hook,
+		executable::ExecutableHookHandle,
+		wasm::{WASMHookHandle, loader::WASMLoader},
+	},
+	host::PluginContext,
+	plugin::HookSubscription,
 };
 use anyhow::Context;
-use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput, NoOp};
+use nitro_shared::output::{MessageContents, NitroOutput, NoOp};
 use tokio::sync::Mutex;
 
 use crate::{
@@ -28,28 +30,38 @@ pub struct HookCallArg<'a, H: Hook> {
 	pub cmd: &'a str,
 	/// The argument to the hook
 	pub arg: &'a H::Arg,
-	/// Additional arguments for the executable
+	/// Additional arguments for executable hooks
 	pub additional_args: &'a [String],
-	/// The working directory for the executable
+	/// The working directory for the plugin
 	pub working_dir: Option<&'a Path>,
-	/// Whether to use base64 encoding
+	/// Context for the hook call
+	pub ctx: HookCallContext<'a>,
+	/// Whether to use base64 encoding for executable hooks
 	pub use_base64: bool,
-	/// Custom configuration for the plugin
-	pub custom_config: Option<String>,
 	/// Persistent data for the plugin
 	pub persistence: Arc<Mutex<PluginPersistence>>,
 	/// Paths
 	pub paths: &'a PluginPaths,
-	/// The version of Nitrolaunch
-	pub nitro_version: Option<&'a str>,
 	/// The ID of the plugin
 	pub plugin_id: &'a str,
-	/// The list of all enabled plugins and their versions
-	pub plugin_list: &'a [String],
 	/// The protocol version
 	pub protocol_version: u16,
 	/// The WASM file loader
 	pub wasm_loader: Arc<Mutex<WASMLoader>>,
+}
+
+/// Context information for a hook call that could be passed to the hook
+pub struct HookCallContext<'a> {
+	/// Data to send for executable hooks
+	pub subscriptions: &'a HashSet<HookSubscription>,
+	/// The version of Nitrolaunch
+	pub nitro_version: Option<&'a str>,
+	/// Custom configuration for the plugin
+	pub custom_config: Option<String>,
+	/// The list of all enabled plugins and their versions
+	pub plugin_list: &'a [String],
+	/// Global context object
+	pub global_context: Option<&'a Arc<dyn PluginContext>>,
 }
 
 /// Handle returned by running a hook. Make sure to await it if you need to.
@@ -122,15 +134,21 @@ impl<H: Hook> HookHandle<H> {
 
 	/// Ensures that this hook has started
 	pub async fn ensure_started(&mut self, o: &mut impl NitroOutput) -> anyhow::Result<()> {
-		if let HookHandleInner::Executable(inner) = &mut self.inner {
-			inner
-				.ensure_started(
-					&mut self.plugin_persistence,
-					&mut self.command_results,
-					&mut self.start_time,
-					o,
-				)
-				.await?;
+		match &mut self.inner {
+			HookHandleInner::Executable(inner) => {
+				inner
+					.ensure_started(
+						&mut self.plugin_persistence,
+						&mut self.command_results,
+						&mut self.start_time,
+						o,
+					)
+					.await?;
+			}
+			HookHandleInner::WASM(inner) => {
+				inner.run(o).await?;
+			}
+			HookHandleInner::Constant(..) => {}
 		}
 
 		Ok(())
@@ -154,8 +172,7 @@ impl<H: Hook> HookHandle<H> {
 				.context("Failed to poll executable hook")?,
 			HookHandleInner::WASM(inner) => {
 				inner.run(o).await?;
-
-				true
+				inner.has_result()
 			}
 			HookHandleInner::Constant(..) => true,
 		};
@@ -166,14 +183,11 @@ impl<H: Hook> HookHandle<H> {
 			if let Some(start_time) = &self.start_time {
 				let now = Instant::now();
 				let delta = now.duration_since(*start_time);
-				o.display(
-					MessageContents::Simple(format!(
-						"Plugin '{}' took {delta:?} to run hook '{}'",
-						self.plugin_id,
-						H::get_name_static()
-					)),
-					MessageLevel::Important,
-				);
+				o.display(MessageContents::Simple(format!(
+					"Plugin '{}' took {delta:?} to run hook '{}'",
+					self.plugin_id,
+					H::get_name_static()
+				)));
 			}
 		}
 
@@ -191,20 +205,26 @@ impl<H: Hook> HookHandle<H> {
 
 	/// Get the result of the hook by waiting for it
 	pub async fn result(mut self, o: &mut impl NitroOutput) -> anyhow::Result<H::Result> {
-		if let HookHandleInner::Executable(..) | HookHandleInner::WASM(..) = &self.inner {
-			loop {
+		match &mut self.inner {
+			HookHandleInner::Executable(..) => loop {
 				let result = self.poll(o).await?;
 				if result {
 					break;
 				}
 				tokio::time::sleep(Duration::from_micros(50)).await;
+			},
+			HookHandleInner::WASM(inner) => {
+				inner.run(o).await?;
 			}
+			HookHandleInner::Constant(..) => {}
 		}
 
 		match self.inner {
 			HookHandleInner::Constant(result) => Ok(result),
 			HookHandleInner::Executable(inner) => inner.result().await,
-			HookHandleInner::WASM(inner) => Ok(inner.result().expect("Hook has not been polled")),
+			HookHandleInner::WASM(inner) => {
+				inner.result().await.context("Failed to get hook result")
+			}
 		}
 	}
 
@@ -214,7 +234,7 @@ impl<H: Hook> HookHandle<H> {
 		match self.inner {
 			HookHandleInner::Constant(result) => Ok(Some(result)),
 			HookHandleInner::Executable(inner) => inner.kill().await,
-			HookHandleInner::WASM(inner) => Ok(inner.result()),
+			HookHandleInner::WASM(inner) => inner.result().await.map(Some),
 		}
 	}
 
@@ -345,6 +365,21 @@ where
 		let mut out = Vec::new();
 		while let Some(result) = self.next_result(o).await? {
 			out.extend(result);
+		}
+
+		Ok(out)
+	}
+
+	/// Gets the results from all handles along with the plugin ID from each result, flattening them from lists and storing them in a vec
+	pub async fn flatten_all_results_with_ids(
+		mut self,
+		o: &mut impl NitroOutput,
+	) -> anyhow::Result<Vec<(String, T)>> {
+		let mut out = Vec::new();
+		while let Some(result) = self.next() {
+			let id = result.get_id().clone();
+			let result = result.result(o).await?;
+			out.extend(result.into_iter().map(|x| (id.clone(), x)));
 		}
 
 		Ok(out)

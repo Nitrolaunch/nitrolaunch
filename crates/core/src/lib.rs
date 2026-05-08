@@ -30,15 +30,16 @@ pub mod util;
 /// Installable versions of the game
 pub mod version;
 
-use account::AccountManager;
 use anyhow::Context;
-use io::java::install::{JavaInstallParameters, JavaInstallation, JavaInstallationKind};
 use io::java::JavaMajorVersion;
+use io::java::install::{JavaInstallParameters, JavaInstallation, JavaInstallationKind};
 use io::{persistent::PersistentData, update::UpdateManager};
-use net::game_files::version_manifest::{make_version_list, VersionManifestAndList};
+use net::game_files::version_manifest::{VersionManifestAndList, make_version_list};
+use nitro_shared::UpdateDepth;
 use nitro_shared::minecraft::VersionEntry;
-use nitro_shared::output::{self, NitroOutput};
-use nitro_shared::versions::VersionInfo;
+use nitro_shared::output::{self, NitroOutput, NoOp};
+use nitro_shared::versions::{VersionInfo, VersionName};
+use tokio::sync::Mutex;
 use util::versions::MinecraftVersion;
 use version::{
 	InstalledVersion, LoadVersionManifestParameters, LoadVersionParameters, VersionParameters,
@@ -50,27 +51,20 @@ pub use instance::{ClientWindowConfig, Instance, InstanceConfiguration, Instance
 pub use io::files::paths::Paths;
 pub use launch::{InstanceHandle, QuickPlayType, WrapperCommand};
 
-use crate::io::java::install::CustomJavaFunction;
+use crate::io::java::install::{CustomJavaFunction, JavaInstallationRegistry};
 
 /// Wrapper around all usage of `nitro_core`
 pub struct NitroCore {
 	config: Configuration,
-	paths: Paths,
+	paths: Arc<Paths>,
 	req_client: reqwest::Client,
-	persistent: PersistentData,
-	update_manager: UpdateManager,
+	persistent: Arc<Mutex<PersistentData>>,
 	versions: VersionRegistry,
-	accounts: AccountManager,
-	java_installations: HashMap<(JavaInstallationKind, JavaMajorVersion), JavaInstallation>,
+	java_installations: JavaInstallationRegistry,
 	custom_java_fn: Option<Arc<dyn CustomJavaFunction>>,
 }
 
 impl NitroCore {
-	/// Construct a new core with default settings
-	pub fn new() -> anyhow::Result<Self> {
-		Self::with_config(Configuration::new())
-	}
-
 	/// Construct a new core with set configuration
 	pub fn with_config(config: Configuration) -> anyhow::Result<Self> {
 		Self::with_config_and_paths(config, Paths::new().context("Failed to create core paths")?)
@@ -81,14 +75,14 @@ impl NitroCore {
 		let persistent =
 			PersistentData::open(&paths).context("Failed to open persistent data file")?;
 		let out = Self {
-			paths,
+			paths: Arc::new(paths),
 			req_client: reqwest::Client::new(),
-			persistent,
-			update_manager: UpdateManager::new(config.update_depth),
+			persistent: Arc::new(Mutex::new(persistent)),
 			versions: VersionRegistry::new(),
-			accounts: AccountManager::new(config.ms_client_id.clone()),
 			config,
-			java_installations: HashMap::new(),
+			java_installations: JavaInstallationRegistry {
+				installations: Arc::new(Mutex::new(HashMap::new())),
+			},
 			custom_java_fn: None,
 		};
 		Ok(out)
@@ -116,56 +110,54 @@ impl NitroCore {
 		&self.paths
 	}
 
-	/// Get the AccountManager in order to add, remove, and auth users
-	pub fn get_accounts(&mut self) -> &mut AccountManager {
-		&mut self.accounts
-	}
-
-	/// Get the UpdateManager in order to help with custom installation
-	/// routines
-	pub fn get_update_manager(&self) -> &UpdateManager {
-		&self.update_manager
-	}
-
-	/// Get the UpdateManager mutably in order to help with custom installation
-	/// routines. Don't modify this unless you know what you are doing!
-	pub fn get_update_manager_mut(&mut self) -> &mut UpdateManager {
-		&mut self.update_manager
-	}
-
 	/// Get the version manifest
 	pub async fn get_version_manifest(
-		&mut self,
+		&self,
 		requested_version: Option<&MinecraftVersion>,
+		depth: UpdateDepth,
 		o: &mut impl NitroOutput,
 	) -> anyhow::Result<&Arc<VersionManifestAndList>> {
 		let params = LoadVersionManifestParameters {
 			requested_version,
 			paths: &self.paths,
-			update_manager: &self.update_manager,
+			update_manager: &UpdateManager::new(depth),
 			req_client: &self.req_client,
 		};
 		self.versions.load_version_manifest(params, o).await
 	}
 
+	/// Canonicalizes a version identifier like `latest` to it's actual version
+	pub async fn resolve_version(&self, version: &MinecraftVersion) -> anyhow::Result<VersionName> {
+		let manifest = self
+			.get_version_manifest(Some(version), UpdateDepth::Shallow, &mut NoOp)
+			.await?;
+
+		version
+			.get_version(&manifest.manifest)
+			.context("Version does not exist")
+	}
+
 	/// Load or install a version of the game
 	pub async fn get_version(
-		&'_ mut self,
+		&self,
 		version: &MinecraftVersion,
+		depth: UpdateDepth,
 		o: &mut impl NitroOutput,
-	) -> anyhow::Result<InstalledVersion<'_, '_>> {
+	) -> anyhow::Result<InstalledVersion> {
 		let version_manifest = self
-			.get_version_manifest(Some(version), o)
+			.get_version_manifest(Some(version), depth, o)
 			.await
 			.context("Failed to ensure version manifest exists")?;
 		let version = version
 			.get_version(&version_manifest.manifest)
 			.context("Latest release or snapshot is not present in manifest")?;
 
+		let manager = UpdateManager::new(depth);
+
 		let params = LoadVersionParameters {
 			paths: &self.paths,
 			req_client: &self.req_client,
-			update_manager: &self.update_manager,
+			update_manager: &manager,
 		};
 		let inner = self
 			.versions
@@ -174,16 +166,15 @@ impl NitroCore {
 			.context("Failed to get or install version")?;
 
 		let params = VersionParameters {
-			paths: &self.paths,
-			req_client: &self.req_client,
-			persistent: &mut self.persistent,
-			update_manager: &mut self.update_manager,
-			accounts: &mut self.accounts,
-			java_installations: &mut self.java_installations,
+			paths: self.paths.clone(),
+			req_client: self.req_client.clone(),
+			persistent: self.persistent.clone(),
+			update_manager: manager.clone(),
+			java_installations: self.java_installations.clone(),
 			censor_secrets: self.config.censor_secrets,
 			disable_hardlinks: self.config.disable_hardlinks,
-			branding: &self.config.branding,
-			custom_java_fn: self.custom_java_fn.as_ref(),
+			branding: self.config.branding.clone(),
+			custom_java_fn: self.custom_java_fn.clone(),
 		};
 		Ok(InstalledVersion { inner, params })
 	}
@@ -192,12 +183,13 @@ impl NitroCore {
 	/// This is useful for doing your own installation of things. This will download
 	/// the version manifest if it is not downloaded already
 	pub async fn get_version_info(
-		&mut self,
+		&self,
 		version: &MinecraftVersion,
+		depth: UpdateDepth,
 	) -> anyhow::Result<VersionInfo> {
 		let mut o = output::NoOp;
 		let manifest = self
-			.get_version_manifest(Some(version), &mut o)
+			.get_version_manifest(Some(version), depth, &mut o)
 			.await
 			.context("Failed to get version manifest")?;
 		let version = version
@@ -211,32 +203,37 @@ impl NitroCore {
 	}
 
 	/// Installs Java
-	pub async fn get_java_installation<'this>(
-		&'this mut self,
+	pub async fn get_java_installation(
+		&self,
 		major_version: JavaMajorVersion,
 		kind: JavaInstallationKind,
+		depth: UpdateDepth,
 		o: &mut impl NitroOutput,
-	) -> anyhow::Result<&'this JavaInstallation> {
+	) -> anyhow::Result<JavaInstallation> {
 		let key = (kind.clone(), major_version);
 
-		if self.java_installations.contains_key(&key) {
-			return Ok(self.java_installations.get(&key).unwrap());
+		if let Some(existing) = self.java_installations.installations.lock().await.get(&key) {
+			return Ok(existing.clone());
 		}
 
 		let java_params = JavaInstallParameters {
 			paths: &self.paths,
-			update_manager: &mut self.update_manager,
-			persistent: &mut self.persistent,
+			update_manager: &UpdateManager::new(depth),
+			persistent: self.persistent.clone(),
 			req_client: &self.req_client,
-			custom_install_func: self.custom_java_fn.as_ref(),
+			custom_install_func: self.custom_java_fn.clone(),
 		};
 		let java = JavaInstallation::install(kind.clone(), major_version, java_params, o)
 			.await
 			.context("Failed to install or update Java")?;
 
-		self.java_installations.insert(key.clone(), java);
+		self.java_installations
+			.installations
+			.lock()
+			.await
+			.insert(key.clone(), java.clone());
 
-		Ok(self.java_installations.get(&key).unwrap())
+		Ok(java)
 	}
 
 	/// Add additional versions to the version manifest. Must be called before the version manifest is obtained,

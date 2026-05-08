@@ -4,20 +4,27 @@ use std::{
 	path::{Path, PathBuf},
 };
 
-use anyhow::{bail, Context};
+use anyhow::{Context, bail};
 use nitro_core::io::{extract_zip_dir, files::copy_dir_contents, json_from_file};
 use nitro_pkg::PkgRequest;
 use nitro_plugin::{
 	api::executable::ExecutablePlugin,
-	hook::hooks::{
-		CheckMigrationResult, ImportInstanceResult, MigrateInstancesResult, MigratedAddon,
-		MigratedPackage,
-	},
+	hook::hooks::{CheckMigrationResult, ImportInstanceResult, MigrateInstancesResult},
 };
-use nitro_shared::{addon::AddonKind, loaders::Loader, versions::MinecraftVersionDeser, Side};
-use nitrolaunch::config_crate::{
-	instance::{make_valid_instance_id, InstanceConfig},
-	package::PackageConfigDeser,
+use nitro_shared::{
+	Side,
+	loaders::Loader,
+	minecraft::AddonKind,
+	output::{MessageContents, NitroOutput},
+	pkg::AddonOptionalHashes,
+	versions::MinecraftVersionDeser,
+};
+use nitrolaunch::{
+	config_crate::{
+		instance::{InstanceConfig, make_valid_instance_id},
+		package::PackageConfigDeser,
+	},
+	instance_crate::lock::{InstanceLockfile, LockfileAddon},
 };
 use serde::{Deserialize, Serialize};
 use zip::ZipArchive;
@@ -96,84 +103,39 @@ fn main() -> anyhow::Result<()> {
 		})
 	})?;
 
-	plugin.check_migration(|_, arg| {
+	plugin.check_migration(|mut ctx, arg| {
 		let data_folder = data_folder(&arg)?;
 		let instances_folder = data_folder.join("instances");
-		if instances_folder.exists() {
-			let mut instances = Vec::new();
+		let instances = get_available_instances(&instances_folder, ctx.get_output())?;
 
-			let read = instances_folder
-				.read_dir()
-				.context("Failed to read instances")?;
-			for entry in read {
-				let entry = entry?;
-
-				if entry.file_type()?.is_file() {
-					continue;
-				}
-
-				let name = entry.file_name().to_string_lossy().to_string();
-				if name == "_LAUNCHER_TEMP" {
-					continue;
-				}
-
-				instances.push(name);
-			}
-
-			Ok(Some(CheckMigrationResult { instances }))
-		} else {
-			Ok(None)
-		}
+		Ok(instances.map(|instances| CheckMigrationResult { instances }))
 	})?;
 
-	plugin.migrate_instances(|ctx, arg| {
+	plugin.migrate_instances(|mut ctx, arg| {
+		// Get instances
 		let data_folder = data_folder(&arg.format)?;
 		let instances_folder = data_folder.join("instances");
-		if !instances_folder.exists() {
-			return Ok(MigrateInstancesResult {
-				format: arg.format,
-				instances: HashMap::new(),
-				packages: HashMap::new(),
-			});
-		}
+		let names =
+			get_available_instances(&instances_folder, ctx.get_output())?.unwrap_or_default();
 
 		let nitro_data_dir = ctx.get_data_dir()?;
 		let nitro_instances_dir = nitro_data_dir.join("instances");
 
 		let mut instances = HashMap::new();
-		let mut packages = HashMap::new();
 
-		let read = instances_folder
-			.read_dir()
-			.context("Failed to read instances")?;
-		for entry in read {
-			let entry = entry?;
-
-			if entry.file_type()?.is_file() {
+		for name in names {
+			if let Some(requested_instances) = &arg.instances
+				&& !requested_instances.is_empty()
+				&& !requested_instances.contains(&name)
+			{
 				continue;
 			}
 
-			let name = entry.file_name().to_string_lossy().to_string();
-			if name == "_LAUNCHER_TEMP" {
-				continue;
-			}
-			if let Some(requested_instances) = &arg.instances {
-				if !requested_instances.contains(&name) {
-					continue;
-				}
-			}
-
-			let path = entry.path();
+			let path = instances_folder.join(&name);
 
 			let mc_dir = path.join(".minecraft");
-			if !mc_dir.exists() {
-				continue;
-			}
 
 			let cfg_path = path.join("instance.cfg");
-			if !cfg_path.exists() {
-				continue;
-			}
 
 			let cfg =
 				std::fs::read_to_string(cfg_path).context("Failed to read instance config")?;
@@ -189,7 +151,7 @@ fn main() -> anyhow::Result<()> {
 
 			// File migration
 			if arg.link {
-				config.game_dir = Some(mc_dir.to_string_lossy().to_string());
+				config.dir = Some(mc_dir.to_string_lossy().to_string());
 			} else {
 				let target_dir = nitro_instances_dir.join(&id).join(".minecraft");
 				std::fs::create_dir_all(&target_dir)?;
@@ -217,31 +179,37 @@ fn main() -> anyhow::Result<()> {
 				inst_packages.extend(addons_to_packages(&mc_dir.join(addon_dir), addon_kind)?);
 			}
 
-			let inst_packages = inst_packages.into_iter().map(|(req, path, kind)| {
+			let mut lock = InstanceLockfile::open(&InstanceLockfile::get_path(
+				Some(&mc_dir),
+				&id,
+				&nitro_data_dir.join("internal"),
+			))
+			.context("Failed to open lockfile")?;
+
+			for (req, path, kind) in inst_packages {
 				let addon_id = if req.repository == Some("modrinth".into()) {
 					"addon"
 				} else {
 					"addon"
 				};
 
-				MigratedPackage {
-					id: req.id.to_string(),
-					addons: vec![MigratedAddon {
-						id: addon_id.into(),
-						paths: vec![path.to_string_lossy().to_string()],
-						kind,
-						version: None,
-					}],
-				}
-			});
+				let addon = LockfileAddon {
+					id: Some(addon_id.into()),
+					package: Some(req.to_string_no_version()),
+					from_modpack: false,
+					file_name: path.file_name().unwrap().to_string_lossy().to_string(),
+					files: vec![path.to_string_lossy().to_string()],
+					kind,
+					hashes: AddonOptionalHashes::default(),
+				};
 
-			packages.insert(id, inst_packages.collect());
+				lock.update_package(&req, &[addon], None);
+			}
 		}
 
 		Ok(MigrateInstancesResult {
 			format: arg.format,
 			instances,
-			packages,
 		})
 	})?;
 
@@ -381,13 +349,62 @@ fn read_pw_toml(contents: &str) -> HashMap<&str, HashMap<&str, &str>> {
 	sections
 }
 
+/// Gets the list of available instance names, returning None specifically if the launcher instance folder does not exist
+fn get_available_instances(
+	instances_folder: &Path,
+	o: &mut impl NitroOutput,
+) -> anyhow::Result<Option<Vec<String>>> {
+	if !instances_folder.exists() {
+		return Ok(None);
+	}
+
+	let read = instances_folder
+		.read_dir()
+		.context("Failed to read instances")?;
+	let mut out = Vec::new();
+	for entry in read {
+		let entry = entry?;
+
+		if entry.file_type()?.is_file() {
+			continue;
+		}
+
+		let name = entry.file_name().to_string_lossy().to_string();
+		if name == "_LAUNCHER_TEMP" {
+			continue;
+		}
+
+		let path = entry.path();
+
+		let mc_dir = path.join(".minecraft");
+		if !mc_dir.exists() {
+			o.debug(MessageContents::Simple(format!(
+				"Skipping {name}, Minecraft dir missing"
+			)));
+			continue;
+		}
+
+		let cfg_path = path.join("instance.cfg");
+		if !cfg_path.exists() {
+			o.debug(MessageContents::Simple(format!(
+				"Skipping {name}, Cfg file missing"
+			)));
+			continue;
+		}
+
+		out.push(name);
+	}
+
+	Ok(Some(out))
+}
+
 /// Gets the data folder depending on the format and operating system
 fn data_folder(format: &str) -> anyhow::Result<PathBuf> {
 	if format == "multimc" {
 		#[cfg(target_os = "linux")]
 		let data_folder = format!("{}/.local/share/multimc", std::env::var("HOME")?);
 		#[cfg(target_os = "windows")]
-		let data_folder = format!("{}/Roaming/MultiMC", std::env::var("%APPDATA%")?);
+		let data_folder = format!("{}/Roaming/MultiMC", std::env::var("APPDATA")?);
 		#[cfg(target_os = "macos")]
 		let data_folder = format!(
 			"{}/Library/Application Support/MultiMC",
@@ -399,7 +416,7 @@ fn data_folder(format: &str) -> anyhow::Result<PathBuf> {
 		#[cfg(target_os = "linux")]
 		let data_folder = format!("{}/.local/share/PrismLauncher", std::env::var("HOME")?);
 		#[cfg(target_os = "windows")]
-		let data_folder = format!("{}/Roaming/PrismLauncher", std::env::var("%APPDATA%")?);
+		let data_folder = format!("{}/Roaming/PrismLauncher", std::env::var("APPDATA")?);
 		#[cfg(target_os = "macos")]
 		let data_folder = format!(
 			"{}/Library/Application Support/PrismLauncher",

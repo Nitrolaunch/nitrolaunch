@@ -1,9 +1,9 @@
 use anyhow::{bail, ensure};
 use nitro_parse::conditions::{ArchCondition, OSCondition};
+use nitro_shared::Side;
 use nitro_shared::loaders::LoaderMatch;
 use nitro_shared::pkg::PackageKind;
 use nitro_shared::versions::VersionPattern;
-use nitro_shared::Side;
 #[cfg(feature = "schema")]
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -64,14 +64,14 @@ impl PackageProperties {
 	/// Check the validity of the properties
 	pub fn check_validity(&self) -> anyhow::Result<()> {
 		// Validate features
-		if let Some(default_features) = &self.default_features {
-			if let Some(features) = &self.features {
-				for feature in default_features {
-					ensure!(
-						features.contains(feature),
-						"Default feature '{feature}' does not exist"
-					);
-				}
+		if let Some(default_features) = &self.default_features
+			&& let Some(features) = &self.features
+		{
+			for feature in default_features {
+				ensure!(
+					features.contains(feature),
+					"Default feature '{feature}' does not exist"
+				);
 			}
 		}
 

@@ -1,14 +1,17 @@
 use std::{
 	collections::{HashMap, HashSet},
+	fs::File,
+	io::BufReader,
 	path::{Path, PathBuf},
 	sync::Arc,
 	time::SystemTime,
 };
 
-use anyhow::Context;
-use nitro_core::io::{
-	files::{create_leading_dirs, update_link},
-	json_from_file, json_to_file,
+use anyhow::{Context, bail};
+use nitro_core::io::{files::create_leading_dirs, json_from_file, json_to_file};
+use nitro_instance::addon::modpack::{
+	Modpack,
+	mrpack::{ModrinthIndex, ModrinthPack},
 };
 use nitro_net::{
 	download::Client,
@@ -17,10 +20,16 @@ use nitro_net::{
 use nitro_pkg::{PackageSearchResults, PkgRequest, PkgRequestSource};
 use nitro_pkg_gen::{modrinth::get_preview, relation_substitution::RelationSubNone};
 use nitro_plugin::{
-	api::executable::ExecutablePlugin, api::utils::PackageSearchCache,
-	hook::hooks::CustomRepoQueryResult,
+	api::{executable::ExecutablePlugin, utils::PackageSearchCache},
+	hook::hooks::{CustomRepoQueryResult, ImportInstanceResult, InstallModpackResult},
 };
-use nitro_shared::versions::VersionPattern;
+use nitro_shared::{
+	Side,
+	io::update_link,
+	output::{MessageContents, NitroOutput},
+	versions::{MinecraftVersionDeser, VersionPattern},
+};
+use nitrolaunch::config_crate::instance::InstanceConfig;
 use serde::{Deserialize, Serialize};
 use tokio::sync::Mutex;
 
@@ -121,7 +130,7 @@ fn main() -> anyhow::Result<()> {
 				let req_str = req.to_string();
 
 				projects.push(req_str.clone());
-				let package = nitro_pkg_gen::modrinth::gen(
+				let package = nitro_pkg_gen::modrinth::generate(
 					get_preview(result),
 					&[],
 					&[],
@@ -166,6 +175,117 @@ fn main() -> anyhow::Result<()> {
 		Ok(())
 	})?;
 
+	plugin.install_modpack(|mut ctx, arg| {
+		let mut old_pack = if let Some(old_path) = arg.old_path {
+			let file = BufReader::new(File::open(old_path).context("Failed to open old modpack")?);
+			Some(ModrinthPack::from_stream(file).context("Failed to open old modpack")?)
+		} else {
+			None
+		};
+
+		let data_dir = ctx.get_data_dir()?;
+		let addons_dir = data_dir.join("internal/addons");
+
+		let file = BufReader::new(File::open(arg.path).context("Failed to open modpack")?);
+		let mut pack = ModrinthPack::from_stream(file).context("Failed to open modpack")?;
+
+		let mut process = ctx.get_output().get_process();
+		process.display(MessageContents::StartProcess(
+			"Downloading modpack files".into(),
+		));
+
+		let client = Client::new();
+		let runtime = tokio::runtime::Runtime::new()?;
+
+		runtime
+			.block_on(pack.download(&addons_dir, &client))
+			.context("Failed to download modpack files")?;
+
+		process.display(MessageContents::Success("Modpack files downloaded".into()));
+		process.finish();
+
+		let mut process = ctx.get_output().get_process();
+		process.display(MessageContents::StartProcess("Installing modpack".into()));
+
+		pack.apply(
+			Path::new(&arg.target_path),
+			&addons_dir,
+			arg.side,
+			old_pack.as_mut(),
+		)
+		.context("Failed to apply modpack")?;
+
+		let addons = pack.get_addons(Path::new(&arg.target_path), &addons_dir)?;
+
+		process.display(MessageContents::Success("Modrinth pack installed".into()));
+
+		let mut packages = Vec::new();
+		for file in &pack.index().files {
+			let (Some(project_id), _) = file.get_modrinth_info() else {
+				continue;
+			};
+
+			packages.push(format!("modrinth:{project_id}"));
+		}
+
+		Ok(InstallModpackResult {
+			name: pack.index().name.clone(),
+			packages,
+			addons,
+		})
+	})?;
+
+	plugin.import_instance(|mut ctx, arg| {
+		if arg.format != "mrpack" {
+			bail!("Invalid format");
+		}
+
+		let source_path = PathBuf::from(arg.source_path);
+		let target_path = PathBuf::from(arg.result_path);
+
+		let addons_dir = ctx.get_data_dir()?.join("internal/addons");
+
+		let output = ctx.get_output();
+
+		let side = arg.side.context("Side not specified")?;
+
+		let file = File::open(source_path).context("Failed to open pack file")?;
+		let mut modpack = ModrinthPack::from_stream(file).context("Failed to open mrpack")?;
+
+		// Download files
+		let mut process = output.get_process();
+		process.display(MessageContents::StartProcess("Downloading mods".into()));
+
+		let runtime = tokio::runtime::Runtime::new()?;
+		let client = Client::new();
+		runtime
+			.block_on(modpack.download(&addons_dir, &client))
+			.context("Failed to download modpack files")?;
+
+		process.display(MessageContents::Success("Mods downloaded".into()));
+		process.finish();
+
+		let target_path = match side {
+			Side::Client => target_path.join(".minecraft"),
+			Side::Server => target_path,
+		};
+
+		let mut process = output.get_process();
+		process.display(MessageContents::StartProcess("Installing modpack".into()));
+		modpack
+			.apply(&target_path, &addons_dir, side, None)
+			.context("Failed to install modpack")?;
+		process.display(MessageContents::Success("Modpack installed".into()));
+		process.finish();
+
+		let config = mrpack_index_to_config(modpack.index(), side);
+
+		Ok(ImportInstanceResult {
+			format: arg.format,
+			config,
+		})
+	})?;
+
 	Ok(())
 }
 
@@ -182,7 +302,7 @@ async fn query_package(
 		return Ok(None);
 	};
 
-	let mut package = nitro_pkg_gen::modrinth::gen(
+	let mut package = nitro_pkg_gen::modrinth::generate(
 		project_info.project,
 		&project_info.versions,
 		&project_info.members,
@@ -476,10 +596,10 @@ async fn download_multiple_projects(
 		for project in &project_infos {
 			for version in &project.versions {
 				for dep in &version.dependencies {
-					if let Some(project_id) = &dep.project_id {
-						if !all_dependencies.contains(project_id) {
-							all_dependencies.push(project_id.clone());
-						}
+					if let Some(project_id) = &dep.project_id
+						&& !all_dependencies.contains(project_id)
+					{
+						all_dependencies.push(project_id.clone());
 					}
 				}
 			}
@@ -561,5 +681,42 @@ impl StorageDirs {
 	/// Get the placeholder path for a project that does not exist
 	fn get_missing_path(&self, project_id: &str) -> PathBuf {
 		self.projects.join(format!("__missing__{project_id}"))
+	}
+}
+
+/// Creates InstanceConfig from an mrpack index
+fn mrpack_index_to_config(index: &ModrinthIndex, side: Side) -> InstanceConfig {
+	// Suppress mods that this pack provides
+	let mut suppress = Vec::new();
+	for file in &index.files {
+		let (Some(project_id), _) = file.get_modrinth_info() else {
+			continue;
+		};
+
+		suppress.push(format!("modrinth:{project_id}"));
+	}
+
+	let loader = if let Some(version) = &index.dependencies.forge {
+		Some(format!("forge@{version}"))
+	} else if let Some(version) = &index.dependencies.neoforge {
+		Some(format!("neoforged@{version}"))
+	} else if let Some(version) = &index.dependencies.fabric_loader {
+		Some(format!("fabric@{version}"))
+	} else {
+		index
+			.dependencies
+			.quilt_loader
+			.as_ref()
+			.map(|version| format!("quilt@{version}"))
+	};
+
+	InstanceConfig {
+		side: Some(side),
+		name: Some(index.name.clone()),
+		version: Some(MinecraftVersionDeser::Version(
+			index.dependencies.minecraft.clone().into(),
+		)),
+		loader,
+		..Default::default()
 	}
 }

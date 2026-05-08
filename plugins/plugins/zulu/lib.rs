@@ -7,9 +7,9 @@ use std::{
 use anyhow::Context;
 use nitro_plugin::{
 	api::wasm::{
+		WASMPlugin,
 		net::{download_bytes, download_file},
 		sys::{get_arch_string, get_data_dir, get_os_string},
-		WASMPlugin,
 	},
 	hook::hooks::InstallCustomJavaResult,
 	nitro_wasm_plugin,
@@ -40,7 +40,7 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 
 		let arc_path = out_dir.join(&package.name);
 
-		download_file(package.download_url, &arc_path)
+		download_file(&package.download_url, &arc_path)
 			.context("Failed to download JRE binaries")?;
 
 		// Extraction
@@ -59,7 +59,7 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 /// Gets the newest Zulu package for a major Java version
 fn get_latest(major_version: &str) -> anyhow::Result<PackageFormat> {
 	let url = json_url(major_version);
-	let bytes = download_bytes(url).context("Failed to download manifest of Zulu versions")?;
+	let bytes = download_bytes(&url).context("Failed to download manifest of Zulu versions")?;
 	let manifest: Vec<PackageFormat> = serde_json::from_slice(&bytes)
 		.context("Failed to deserialize manifest of Zulu versions")?;
 	let package = manifest
@@ -75,8 +75,8 @@ fn json_url(major_version: &str) -> String {
 	let arch = get_arch_string();
 	let preferred_archive = get_preferred_archive();
 	format!(
-			"https://api.azul.com/metadata/v1/zulu/packages/?java_version={major_version}&os={os}&arch={arch}&archive_type={preferred_archive}&java_package_type=jre&latest=true&java_package_features=headfull&release_status=ga&availability_types=CA&certifications=tck&page=1&page_size=100"
-		)
+		"https://api.azul.com/metadata/v1/zulu/packages/?java_version={major_version}&os={os}&arch={arch}&archive_type={preferred_archive}&java_package_type=jre&latest=true&java_package_features=headfull&release_status=ga&availability_types=CA&certifications=tck&page=1&page_size=100"
+	)
 }
 
 /// Format of the metadata JSON with download info for Zulu
@@ -159,10 +159,10 @@ fn extract_archive<R: Read + Seek>(reader: R, out_dir: &Path) -> anyhow::Result<
 				continue;
 			}
 
-			if let Some(parent) = dest_path.parent() {
-				if !parent.exists() {
-					std::fs::create_dir_all(parent)?;
-				}
+			if let Some(parent) = dest_path.parent()
+				&& !parent.exists()
+			{
+				std::fs::create_dir_all(parent)?;
 			}
 
 			let mut out_file =

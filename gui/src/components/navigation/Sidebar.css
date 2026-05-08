@@ -1,27 +1,40 @@
 #sidebar {
 	position: fixed;
-	background-color: var(--bg0);
 	top: 2.7rem;
 	left: 0rem;
+
 	--width: 15rem;
 	width: var(--width);
 	height: 100%;
+	padding: 0.5rem;
+	gap: 0.5rem;
 	box-sizing: border-box;
+
+	background-color: var(--bg0);
 	border: var(--border) solid var(--bg2);
 	border-left-width: 0px;
 
 	overflow-x: hidden;
 	overflow-y: auto;
 
-	transition: width 0.2s, opacity 0.2s;
+	transition:
+		width 0.2s,
+		opacity 0.2s;
+}
+
+#sidebar-items {
+	gap: 0.5rem;
 }
 
 .sidebar-item {
 	height: 2.3rem;
-	width: var(--width);
-	border-bottom: var(--border) solid var(--bg2);
+	width: calc(var(--width) - 0.5rem * 2);
 	justify-content: flex-start;
 	box-sizing: border-box;
+
+	background-color: var(--bg2);
+	border: var(--border) solid var(--bg3);
+	border-radius: var(--round2);
 
 	font-size: 0.9rem;
 	font-weight: bold;
@@ -31,26 +44,14 @@
 
 	overflow-x: hidden;
 
-	transition: background-color 0.15s, transform var(--bubble);
+	transition:
+		background-color 0.15s,
+		transform var(--bubble);
 }
 
 .sidebar-item svg,
 .sidebar-item img {
 	margin-left: 0.7rem;
-}
-
-.sidebar-item.selected,
-.sidebar-item:hover {
-	border-right: 0.3rem solid var(--fg2);
-}
-
-.sidebar-item:hover {
-	background-color: var(--bg2);
-}
-
-.sidebar-item.sidebar-item.selected {
-	background-color: var(--bg2);
-	border-top-color: var(--fg3);
 }
 
 .sidebar-divider {

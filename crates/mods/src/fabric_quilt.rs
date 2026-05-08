@@ -1,15 +1,14 @@
 use std::fmt::Display;
 use std::path::Path;
 
-use anyhow::{anyhow, Context};
+use anyhow::{Context, anyhow};
+use nitro_core::NitroCore;
 use nitro_core::io::java::classpath::Classpath;
 use nitro_core::io::java::maven::MavenLibraryParts;
 use nitro_core::io::json_from_file;
-use nitro_core::io::update::UpdateManager;
 use nitro_core::io::{files, json_to_file};
 use nitro_core::net::download;
-use nitro_core::NitroCore;
-use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput, OutputProcess};
+use nitro_shared::output::{MessageContents, NitroOutput, OutputProcess};
 use nitro_shared::versions::VersionInfo;
 use nitro_shared::{Side, UpdateDepth};
 use reqwest::Client;
@@ -66,7 +65,7 @@ pub async fn install_from_core(
 		fq_version,
 		&mode,
 		&core.get_paths().internal,
-		core.get_update_manager(),
+		UpdateDepth::Full,
 		core.get_client(),
 	)
 	.await
@@ -75,7 +74,7 @@ pub async fn install_from_core(
 		&meta,
 		&core.get_paths().libraries,
 		mode,
-		core.get_update_manager(),
+		UpdateDepth::Full,
 		core.get_client(),
 		o,
 	)
@@ -86,7 +85,7 @@ pub async fn install_from_core(
 		&meta,
 		&core.get_paths().libraries,
 		side,
-		core.get_update_manager(),
+		UpdateDepth::Full,
 		core.get_client(),
 	)
 	.await
@@ -145,6 +144,13 @@ pub struct MainLibrary {
 	pub maven: String,
 }
 
+impl MainLibrary {
+	/// Gets the parts of the maven library for this main library
+	pub fn get_maven(&self) -> Option<MavenLibraryParts> {
+		MavenLibraryParts::parse_from_str(&self.maven)
+	}
+}
+
 /// The struct of libraries for different sides
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct Libraries {
@@ -186,7 +192,7 @@ pub async fn get_all_meta(
 	version: &str,
 	mode: &Mode,
 	internal_dir: &Path,
-	manager: &UpdateManager,
+	depth: UpdateDepth,
 	client: &Client,
 ) -> anyhow::Result<Vec<FabricQuiltMeta>> {
 	let meta_url = match mode {
@@ -200,7 +206,7 @@ pub async fn get_all_meta(
 		.await
 		.context("Failed to create parent directories for Fabric/Quilt meta")?;
 
-	let meta = if manager.get_depth() < UpdateDepth::Force && path.exists() {
+	let meta = if depth < UpdateDepth::Full && path.exists() {
 		json_from_file(path).with_context(|| format!("Failed to parse {mode} meta from file"))?
 	} else {
 		let bytes = download::bytes(&meta_url, client)
@@ -223,15 +229,14 @@ pub async fn get_meta(
 	fq_version: Option<&str>,
 	mode: &Mode,
 	internal_dir: &Path,
-	manager: &UpdateManager,
+	depth: UpdateDepth,
 	client: &Client,
 ) -> anyhow::Result<FabricQuiltMeta> {
-	let meta = get_all_meta(version, mode, internal_dir, manager, client).await?;
-
+	let meta = get_all_meta(version, mode, internal_dir, depth, client).await?;
 	let meta = if let Some(fq_version) = fq_version {
 		meta.into_iter()
 			.find(|x| x.loader.maven.contains(fq_version))
-			.context("Specified version does not exist")?
+			.with_context(|| format!("Specified version {fq_version} does not exist"))?
 	} else {
 		meta.first()
 			.ok_or(anyhow!("Could not find a valid {mode} version"))?
@@ -246,17 +251,14 @@ pub async fn download_files(
 	meta: &FabricQuiltMeta,
 	libraries_dir: &Path,
 	mode: Mode,
-	manager: &UpdateManager,
+	depth: UpdateDepth,
 	client: &Client,
 	o: &mut impl NitroOutput,
 ) -> anyhow::Result<()> {
-	let force = manager.get_depth() == UpdateDepth::Force;
+	let force = depth == UpdateDepth::Force;
 
 	let mut process = OutputProcess::new(o);
-	process.display(
-		MessageContents::StartProcess(format!("Downloading {mode}")),
-		MessageLevel::Important,
-	);
+	process.display(MessageContents::StartProcess(format!("Downloading {mode}")));
 
 	let libs = meta.launcher_meta.libraries.common.clone();
 	let libraries_dir_clone = libraries_dir.to_path_buf();
@@ -300,10 +302,7 @@ pub async fn download_files(
 	res1.with_context(|| format!("Failed to download {mode} common libraries"))?;
 	res2.with_context(|| format!("Failed to download {mode} main libraries"))?;
 
-	process.display(
-		MessageContents::Success(format!("{mode} downloaded")),
-		MessageLevel::Important,
-	);
+	process.display(MessageContents::Success(format!("{mode} downloaded")));
 
 	Ok(())
 }
@@ -313,7 +312,7 @@ pub async fn download_side_specific_files(
 	meta: &FabricQuiltMeta,
 	libraries_dir: &Path,
 	side: Side,
-	manager: &UpdateManager,
+	depth: UpdateDepth,
 	client: &Client,
 ) -> anyhow::Result<()> {
 	let libs = match side {
@@ -321,13 +320,7 @@ pub async fn download_side_specific_files(
 		Side::Server => &meta.launcher_meta.libraries.server,
 	};
 
-	download_libraries(
-		libs,
-		libraries_dir,
-		client,
-		manager.get_depth() == UpdateDepth::Force,
-	)
-	.await?;
+	download_libraries(libs, libraries_dir, client, depth == UpdateDepth::Force).await?;
 
 	Ok(())
 }

@@ -6,7 +6,7 @@ use std::path::Path;
 use anyhow::Context;
 use itertools::Itertools;
 
-use crate::read::{read_options_file, EnumOrNumber};
+use crate::read::{EnumOrNumber, read_options_file};
 use crate::{match_key, match_key_int};
 use nitro_shared::util::ToInt;
 

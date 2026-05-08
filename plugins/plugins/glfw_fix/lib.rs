@@ -1,23 +1,23 @@
-use anyhow::{bail, Context};
+use anyhow::{Context, bail};
 use nitro_plugin::{
 	api::wasm::{
+		WASMPlugin,
 		net::download_file,
 		output::WASMPluginOutput,
 		sys::{get_data_dir, get_os_string},
-		WASMPlugin,
 	},
 	hook::hooks::OnInstanceSetupResult,
 	nitro_wasm_plugin,
 };
-use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
 use nitro_shared::UpdateDepth;
+use nitro_shared::output::{MessageContents, NitroOutput};
 use serde_json::Value;
 
 nitro_wasm_plugin!(main, "glfw_fix");
 
 fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 	plugin.on_instance_setup(|arg| {
-		if arg.game_dir.is_none() {
+		if arg.inst_dir.is_none() {
 			return Ok(OnInstanceSetupResult::default());
 		};
 
@@ -60,17 +60,11 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 		let mut o = WASMPluginOutput::new();
 
 		let mut process = o.get_process();
-		process.display(
-			MessageContents::StartProcess("Downloading GLFW".into()),
-			MessageLevel::Important,
-		);
+		process.display(MessageContents::StartProcess("Downloading GLFW".into()));
 
-		download_file(url.to_string(), lib_path).context("Failed to download GLFW")?;
+		download_file(url, lib_path).context("Failed to download GLFW")?;
 
-		process.display(
-			MessageContents::Success("GLFW downloaded".into()),
-			MessageLevel::Important,
-		);
+		process.display(MessageContents::Success("GLFW downloaded".into()));
 
 		Ok(output)
 	})?;

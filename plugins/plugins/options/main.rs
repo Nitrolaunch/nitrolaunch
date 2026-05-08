@@ -3,18 +3,25 @@ use std::{collections::HashMap, path::PathBuf};
 use anyhow::Context;
 use nitro_core::Paths;
 use nitro_options::{
-	client::write_options_txt, read_options, server::write_server_properties, Options,
+	Options, client::write_options_txt, read_options, server::write_server_properties,
 };
 use nitro_plugin::{
 	api::executable::{ExecutablePlugin, HookContext},
-	hook::{hooks::OnInstanceSetupResult, Hook},
+	hook::{
+		Hook,
+		hooks::{AddInstanceConfigControlsResult, OnInstanceSetupResult},
+	},
 };
 use nitro_shared::Side;
+
+use crate::controls::{all_client_options, all_server_options};
+
+mod controls;
 
 fn main() -> anyhow::Result<()> {
 	let mut plugin = ExecutablePlugin::from_manifest_file("options", include_str!("plugin.json"))?;
 	plugin.on_instance_setup(|ctx, arg| {
-		let Some(game_dir) = arg.game_dir else {
+		let Some(inst_dir) = arg.inst_dir else {
 			return Ok(OnInstanceSetupResult::default());
 		};
 
@@ -79,7 +86,7 @@ fn main() -> anyhow::Result<()> {
 		if !keys.is_empty() {
 			match arg.side.unwrap() {
 				Side::Client => {
-					let options_path = PathBuf::from(game_dir).join("options.txt");
+					let options_path = PathBuf::from(inst_dir).join("options.txt");
 					let paths = Paths::new()?;
 					let data_version =
 						nitro_core::io::minecraft::get_data_version(&arg.version_info, &paths.jars);
@@ -87,7 +94,7 @@ fn main() -> anyhow::Result<()> {
 						.context("Failed to write options.txt")?;
 				}
 				Side::Server => {
-					let options_path = PathBuf::from(game_dir).join("server.properties");
+					let options_path = PathBuf::from(inst_dir).join("server.properties");
 					write_server_properties(keys, &options_path)
 						.context("Failed to write server.properties")?;
 				}
@@ -95,6 +102,26 @@ fn main() -> anyhow::Result<()> {
 		}
 
 		Ok(OnInstanceSetupResult::default())
+	})?;
+
+	plugin.add_instance_config_controls(|_, _| {
+		let mut out = Vec::new();
+
+		let client = all_client_options().into_iter().map(|mut x| {
+			x.id = format!("options.client.{}", x.id);
+			x.side = Some(Side::Client);
+			x
+		});
+		out.extend(client);
+
+		let server = all_server_options().into_iter().map(|mut x| {
+			x.id = format!("options.server.{}", x.id);
+			x.side = Some(Side::Server);
+			x
+		});
+		out.extend(server);
+
+		Ok(AddInstanceConfigControlsResult { controls: out })
 	})?;
 
 	Ok(())

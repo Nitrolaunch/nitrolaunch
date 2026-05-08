@@ -1,28 +1,25 @@
 use crate::{
 	commands::{call_plugin_subcommand, config::edit_temp_file},
-	output::{icons_enabled, HYPHEN_POINT, INSTANCE, LOADER, PACKAGE, VERSION},
+	output::{HYPHEN_POINT, INSTANCE, LOADER, PACKAGE, VERSION, icons_enabled},
+	prompt::{pick_instance_id, pick_template},
 };
 use std::ops::DerefMut;
 
 use super::CmdData;
 
-use anyhow::{bail, Context};
+use anyhow::{Context, bail};
 use clap::Subcommand;
 use color_print::{cprint, cprintln};
-use inquire::{Confirm, Select};
+use inquire::Confirm;
 use itertools::Itertools;
 use nitrolaunch::{
-	config::{
-		modifications::{apply_modifications_and_write, ConfigModification},
-		Config,
-	},
+	config::modifications::{ConfigModification, apply_modifications_and_write},
 	config_crate::template::{TemplateConfig, TemplateLoaderConfiguration},
 	core::util::versions::MinecraftVersion,
 	plugin_crate::hook::hooks::{DeleteTemplate, SaveTemplateConfigArg},
 	shared::{
-		id::TemplateID,
-		output::{MessageContents, MessageLevel, NitroOutput},
 		Side,
+		output::{MessageContents, NitroOutput},
 	},
 };
 
@@ -47,6 +44,18 @@ pub enum TemplateSubcommand {
 		/// The template to delete
 		template: Option<String>,
 	},
+	#[command(about = "Duplicates a template into a new one")]
+	Duplicate {
+		/// The template to duplicate
+		template: Option<String>,
+		/// The ID of the new template
+		new_id: Option<String>,
+	},
+	#[command(about = "Unlink a template from its parents and combine into a single config")]
+	Consolidate {
+		/// The template to consolidate
+		template: Option<String>,
+	},
 	#[clap(external_subcommand)]
 	External(Vec<String>),
 }
@@ -57,6 +66,10 @@ pub async fn run(subcommand: TemplateSubcommand, data: &mut CmdData<'_>) -> anyh
 		TemplateSubcommand::Info { template } => info(data, template).await,
 		TemplateSubcommand::Delete { template } => delete(data, template).await,
 		TemplateSubcommand::Edit { template } => edit(data, template).await,
+		TemplateSubcommand::Duplicate { template, new_id } => {
+			duplicate(data, template, new_id).await
+		}
+		TemplateSubcommand::Consolidate { template } => consolidate(data, template).await,
 		TemplateSubcommand::External(args) => {
 			call_plugin_subcommand(args, Some("template"), data).await
 		}
@@ -185,10 +198,7 @@ async fn delete(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()
 	}
 
 	let mut process = data.output.get_process();
-	process.display(
-		MessageContents::StartProcess("Deleting template".into()),
-		MessageLevel::Important,
-	);
+	process.display(MessageContents::StartProcess("Deleting template".into()));
 
 	if let Some(source_plugin) = &template.instance.source_plugin {
 		if !template.instance.is_deletable {
@@ -214,7 +224,7 @@ async fn delete(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()
 			result.result(process.deref_mut()).await?;
 		}
 	} else {
-		let modifications = vec![ConfigModification::RemoveTemplate(id.into())];
+		let modifications = vec![ConfigModification::RemoveTemplate(id)];
 		apply_modifications_and_write(
 			&mut raw_config,
 			modifications,
@@ -226,10 +236,7 @@ async fn delete(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()
 		.context("Failed to modify and write config")?;
 	}
 
-	process.display(
-		MessageContents::Success("Template deleted".into()),
-		MessageLevel::Important,
-	);
+	process.display(MessageContents::Success("Template deleted".into()));
 
 	Ok(())
 }
@@ -260,7 +267,7 @@ async fn edit(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()> 
 		.instance
 		.restore_plugin_only_fields(&temp_config.instance);
 
-	let modifications = vec![ConfigModification::AddTemplate(id.into(), new_config)];
+	let modifications = vec![ConfigModification::UpdateTemplate(id, new_config)];
 	apply_modifications_and_write(
 		&mut raw_config,
 		modifications,
@@ -271,24 +278,56 @@ async fn edit(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()> 
 	.await
 	.context("Failed to modify and write config")?;
 
-	data.output.display(
-		MessageContents::Success("Changes saved".into()),
-		MessageLevel::Important,
-	);
+	data.output
+		.display(MessageContents::Success("Changes saved".into()));
 
 	Ok(())
 }
 
-/// Pick which template to use
-pub fn pick_template(template: Option<String>, config: &Config) -> anyhow::Result<TemplateID> {
-	if let Some(template) = template {
-		Ok(template.into())
-	} else {
-		let options = config.templates.keys().sorted().collect();
-		let selection = Select::new("Choose a template", options)
-			.prompt()
-			.context("Prompt failed")?;
+async fn duplicate(
+	data: &mut CmdData<'_>,
+	template: Option<String>,
+	new_id: Option<String>,
+) -> anyhow::Result<()> {
+	data.ensure_config(true).await?;
+	let config = data.config.get();
 
-		Ok(selection.to_owned())
-	}
+	let template = pick_template(template, config)?;
+
+	let new_id = if let Some(new_id) = new_id {
+		new_id.into()
+	} else {
+		pick_instance_id()?
+	};
+
+	config
+		.duplicate_template(
+			&template,
+			&new_id,
+			&data.paths,
+			&config.plugins,
+			data.output,
+		)
+		.await?;
+
+	data.output
+		.display(MessageContents::Success("Changes saved".into()));
+
+	Ok(())
+}
+
+async fn consolidate(data: &mut CmdData<'_>, template: Option<String>) -> anyhow::Result<()> {
+	data.ensure_config(true).await?;
+	let config = data.config.get();
+
+	let template = pick_template(template, config)?;
+
+	config
+		.consolidate_template(&template, &data.paths, &config.plugins, data.output)
+		.await?;
+
+	data.output
+		.display(MessageContents::Success("Changes saved".into()));
+
+	Ok(())
 }

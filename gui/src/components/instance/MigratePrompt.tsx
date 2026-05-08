@@ -95,7 +95,6 @@ export function MigratePromptContents(props: MigratePromptProps) {
 										}
 										setSelectedFormat(x);
 									}}
-									connected={false}
 									columns={1}
 								/>
 							</Match>
@@ -146,7 +145,6 @@ export function MigratePromptContents(props: MigratePromptProps) {
 									]}
 									selected={instanceMode()}
 									onChange={setInstanceMode}
-									connected
 									columns={2}
 								/>
 							</div>
@@ -164,7 +162,6 @@ export function MigratePromptContents(props: MigratePromptProps) {
 									})}
 									selected={selectedInstances()}
 									onChangeMulti={setSelectedInstances}
-									connected={false}
 									columns={3}
 								/>
 							</div>
@@ -209,7 +206,6 @@ export function MigratePromptContents(props: MigratePromptProps) {
 									]}
 									selected={method()}
 									onChange={setMethod}
-									connected
 									columns={2}
 								/>
 							</div>

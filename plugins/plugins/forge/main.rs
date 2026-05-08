@@ -1,12 +1,12 @@
 use std::{ops::DerefMut, path::PathBuf};
 
-use anyhow::{bail, Context};
+use anyhow::{Context, bail};
 use nitro_mods::forge::{self, Mode};
 use nitro_net::neoforge;
 use nitro_plugin::{api::executable::ExecutablePlugin, hook::hooks::OnInstanceSetupResult};
 use nitro_shared::{
 	loaders::Loader,
-	output::{MessageContents, MessageLevel, NitroOutput},
+	output::{MessageContents, NitroOutput},
 };
 
 fn main() -> anyhow::Result<()> {
@@ -34,10 +34,7 @@ fn main() -> anyhow::Result<()> {
 
 		let mut process = ctx.get_output().get_process();
 
-		process.display(
-			MessageContents::StartProcess(format!("Updating {mode}")),
-			MessageLevel::Important,
-		);
+		process.display(MessageContents::StartProcess(format!("Updating {mode}")));
 
 		let loader_version;
 
@@ -67,10 +64,7 @@ fn main() -> anyhow::Result<()> {
 			}
 		};
 
-		process.display(
-			MessageContents::Success(format!("{mode} updated")),
-			MessageLevel::Important,
-		);
+		process.display(MessageContents::Success(format!("{mode} updated")));
 
 		Ok(OnInstanceSetupResult {
 			classpath_extension: result.classpath.get_entries().to_vec(),

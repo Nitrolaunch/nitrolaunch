@@ -1,17 +1,18 @@
-use anyhow::{bail, Context};
+use anyhow::{Context, bail};
 use clap::Subcommand;
 use color_print::cprintln;
 use itertools::Itertools;
 use nitrolaunch::core::io::{json_from_file, json_to_file_pretty};
-use nitrolaunch::plugin::install::get_verified_plugins;
 use nitrolaunch::plugin::PluginManager;
+use nitrolaunch::plugin::install::get_verified_plugins;
 use nitrolaunch::plugin_crate::plugin::PluginManifest;
 use nitrolaunch::shared::lang::translate::TranslationKey;
-use nitrolaunch::shared::output::{MessageContents, MessageLevel, NitroOutput};
+use nitrolaunch::shared::output::{MessageContents, NitroOutput};
 use nitrolaunch::shared::translate;
 use nitrolaunch::shared::versions::parse_single_versioned_string;
 use reqwest::Client;
 use std::ops::DerefMut;
+use std::path::PathBuf;
 
 use super::CmdData;
 use crate::commands::call_plugin_subcommand;
@@ -41,9 +42,17 @@ pub enum PluginSubcommand {
 		/// this global version per-plugin
 		#[arg(short, long)]
 		version: Option<String>,
+		/// Plugin ZIP files to install
+		#[arg(short, long)]
+		files: Vec<String>,
 	},
 	#[command(about = "Uninstall a plugin")]
 	Uninstall { plugin: String },
+	#[command(about = "Update one or more plugins from the verified list")]
+	Update {
+		/// The plugins to install. Can be empty to update all plugins
+		plugins: Vec<String>,
+	},
 	#[command(about = "Browse installable plugins")]
 	Browse,
 	#[command(about = "Enable a plugin")]
@@ -63,8 +72,13 @@ pub async fn run(command: PluginSubcommand, data: &mut CmdData<'_>) -> anyhow::R
 	match command {
 		PluginSubcommand::List { raw, loaded } => list(data, raw, loaded).await,
 		PluginSubcommand::Info { plugin } => info(data, plugin).await,
-		PluginSubcommand::Install { plugins, version } => install(data, plugins, version).await,
+		PluginSubcommand::Install {
+			plugins,
+			version,
+			files,
+		} => install(data, plugins, version, files).await,
 		PluginSubcommand::Uninstall { plugin } => uninstall(data, plugin).await,
+		PluginSubcommand::Update { plugins } => update(data, plugins).await,
 		PluginSubcommand::Browse => browse(data).await,
 		PluginSubcommand::Enable { plugin } => enable(data, plugin).await,
 		PluginSubcommand::Disable { plugin } => disable(data, plugin).await,
@@ -145,6 +159,7 @@ pub(crate) async fn install(
 	data: &mut CmdData<'_>,
 	plugins: Vec<String>,
 	version: Option<String>,
+	files: Vec<String>,
 ) -> anyhow::Result<()> {
 	if plugins.is_empty() {
 		bail!("No plugins were provided to install");
@@ -172,10 +187,7 @@ pub(crate) async fn install(
 		let mut process = data.output.get_process();
 
 		let message = translate!(process, StartInstallingPlugin, "plugin" = plugin_id);
-		process.display(
-			MessageContents::StartProcess(message),
-			MessageLevel::Important,
-		);
+		process.display(MessageContents::StartProcess(message));
 		plugin
 			.install(version, &data.paths, &client, process.deref_mut())
 			.await
@@ -184,7 +196,42 @@ pub(crate) async fn install(
 		let message = process
 			.translate(TranslationKey::FinishInstallingPlugin)
 			.to_string();
-		process.display(MessageContents::Success(message), MessageLevel::Important);
+		process.display(MessageContents::Success(message));
+	}
+
+	if !files.is_empty()
+		&& !data.output.prompt_yes_no(
+			false,
+			MessageContents::Warning(
+				"Installing a plugin from a file is not verified by Nitrolaunch and could pose security risks. Please make sure you trust the plugin before installing.".into()
+			)
+		).await? {
+			bail!("Cancelled");
+		}
+
+	for file in files {
+		let path = PathBuf::from(file);
+		if !path.exists() {
+			bail!("Plugin file {path:?} does not exist");
+		}
+
+		let mut process = data.output.get_process();
+
+		let message = translate!(
+			process,
+			StartInstallingPlugin,
+			"plugin" = &path.to_string_lossy()
+		);
+		process.display(MessageContents::StartProcess(message));
+
+		PluginManager::install_from_file(&path, &data.paths, process.deref_mut())
+			.await
+			.context("Failed to install plugin")?;
+
+		let message = process
+			.translate(TranslationKey::FinishInstallingPlugin)
+			.to_string();
+		process.display(MessageContents::Success(message));
 	}
 
 	Ok(())
@@ -208,10 +255,48 @@ async fn uninstall(data: &mut CmdData<'_>, plugin: String) -> anyhow::Result<()>
 
 	PluginManager::uninstall_plugin(&plugin, &data.paths).context("Failed to remove plugin")?;
 
-	data.output.display(
-		MessageContents::Success("Plugin removed".into()),
-		MessageLevel::Important,
-	);
+	data.output
+		.display(MessageContents::Success("Plugin removed".into()));
+
+	Ok(())
+}
+
+pub(crate) async fn update(data: &mut CmdData<'_>, plugins: Vec<String>) -> anyhow::Result<()> {
+	let plugins = if plugins.is_empty() {
+		let config =
+			PluginManager::open_config(&data.paths).context("Failed to open plugins config")?;
+		config.plugins.into_iter().collect()
+	} else {
+		plugins
+	};
+
+	let client = Client::new();
+
+	let verified_list = get_verified_plugins(&client, false)
+		.await
+		.context("Failed to get verified plugin list")?;
+
+	for plugin in plugins {
+		let (plugin_id, version) = parse_single_versioned_string(&plugin);
+
+		let Some(plugin) = verified_list.get(plugin_id) else {
+			continue;
+		};
+
+		let mut process = data.output.get_process();
+
+		let message = translate!(process, StartInstallingPlugin, "plugin" = plugin_id);
+		process.display(MessageContents::StartProcess(message));
+		plugin
+			.install(version, &data.paths, &client, process.deref_mut())
+			.await
+			.context("Failed to install plugin")?;
+
+		let message = process
+			.translate(TranslationKey::FinishInstallingPlugin)
+			.to_string();
+		process.display(MessageContents::Success(message));
+	}
 
 	Ok(())
 }
@@ -225,10 +310,8 @@ async fn browse(data: &mut CmdData<'_>) -> anyhow::Result<()> {
 		.await
 		.context("Failed to get verified plugin list")?;
 
-	data.output.display(
-		MessageContents::Header("Available plugins:".into()),
-		MessageLevel::Important,
-	);
+	data.output
+		.display(MessageContents::Header("Available plugins:".into()));
 	for plugin in verified_list
 		.values()
 		.sorted_by_cached_key(|x| x.id.clone())
@@ -246,10 +329,8 @@ async fn browse(data: &mut CmdData<'_>) -> anyhow::Result<()> {
 async fn enable(data: &mut CmdData<'_>, plugin: String) -> anyhow::Result<()> {
 	PluginManager::enable_plugin(&plugin, &data.paths)?;
 
-	data.output.display(
-		MessageContents::Success("Plugin enabled".into()),
-		MessageLevel::Important,
-	);
+	data.output
+		.display(MessageContents::Success("Plugin enabled".into()));
 
 	Ok(())
 }
@@ -257,10 +338,8 @@ async fn enable(data: &mut CmdData<'_>, plugin: String) -> anyhow::Result<()> {
 async fn disable(data: &mut CmdData<'_>, plugin: String) -> anyhow::Result<()> {
 	PluginManager::disable_plugin(&plugin, &data.paths)?;
 
-	data.output.display(
-		MessageContents::Success("Plugin disabled".into()),
-		MessageLevel::Important,
-	);
+	data.output
+		.display(MessageContents::Success("Plugin disabled".into()));
 
 	Ok(())
 }
@@ -283,20 +362,18 @@ async fn edit(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()> 
 	let new_config: serde_json::Value = serde_json::from_str(&edited)
 		.context("Failed to serialize. Make sure your config is valid JSON")?;
 
-	if let serde_json::Value::Object(obj) = &new_config {
-		if obj.is_empty() {
-			return Ok(());
-		}
+	if let serde_json::Value::Object(obj) = &new_config
+		&& obj.is_empty()
+	{
+		return Ok(());
 	}
 
 	config.config.insert(id, new_config);
 
 	json_to_file_pretty(config_path, &config).context("Failed to write to plugin config file")?;
 
-	data.output.display(
-		MessageContents::Success("Changes saved".into()),
-		MessageLevel::Important,
-	);
+	data.output
+		.display(MessageContents::Success("Changes saved".into()));
 
 	Ok(())
 }

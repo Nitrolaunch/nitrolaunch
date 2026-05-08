@@ -1,6 +1,6 @@
 use clap::Parser;
 use nitro_plugin::{
-	api::wasm::{sys::get_plugin_dir, WASMPlugin},
+	api::wasm::{WASMPlugin, sys::get_plugin_dir},
 	nitro_wasm_plugin,
 };
 
@@ -22,7 +22,10 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 		match cli.command {
 			Subcommand::Zsh => {
 				let plugin_dir = get_plugin_dir();
-				let path = plugin_dir.join("zsh").to_string_lossy().to_string();
+				let path = plugin_dir
+					.join("completions/zsh")
+					.to_string_lossy()
+					.to_string();
 				println!("Add the following line to your .zshrc");
 				println!("if [[ $fpath[(Ie){path}] == 0 ]]; then fpath+=(\"{path}\");fi");
 			}

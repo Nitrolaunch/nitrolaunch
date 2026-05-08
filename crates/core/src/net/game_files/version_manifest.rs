@@ -1,10 +1,13 @@
+use std::path::PathBuf;
+
 use anyhow::Context;
-use nitro_shared::minecraft::VersionManifest;
-use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
-use nitro_shared::{translate, UpdateDepth};
+use nitro_shared::minecraft::{VersionManifest, VersionType};
+use nitro_shared::output::{MessageContents, NitroOutput};
+use nitro_shared::{UpdateDepth, translate};
 use reqwest::Client;
 
-use crate::io::files::{self, paths::Paths};
+use crate::io::files::create_leading_dirs;
+use crate::io::files::paths::Paths;
 use crate::io::update::UpdateManager;
 use crate::io::{json_from_file, json_to_file};
 use crate::net::download::ProgressiveDownload;
@@ -22,18 +25,11 @@ pub async fn get(
 	let manifest = match manifest {
 		Ok(manifest) => manifest,
 		Err(err) => {
-			o.display(
-				MessageContents::Error("Failed to obtain version manifest".into()),
-				MessageLevel::Important,
-			);
-			o.display(
-				MessageContents::Error(format!("{}", err)),
-				MessageLevel::Important,
-			);
-			o.display(
-				MessageContents::StartProcess("Redownloading".into()),
-				MessageLevel::Important,
-			);
+			o.display(MessageContents::Error(
+				"Failed to obtain version manifest".into(),
+			));
+			o.display(MessageContents::Error(format!("{}", err)));
+			o.display(MessageContents::StartProcess("Redownloading".into()));
 			get_contents(requested_version, paths, manager, client, true, o)
 				.await
 				.context("Failed to download manifest contents")?
@@ -50,21 +46,23 @@ pub async fn get_with_output(
 	client: &Client,
 	o: &mut impl NitroOutput,
 ) -> anyhow::Result<VersionManifest> {
-	o.start_process();
-	o.display(
-		MessageContents::StartProcess("Obtaining version manifest".into()),
-		MessageLevel::Important,
-	);
+	let show_output = !(manager.get_depth() < UpdateDepth::Full && get_path(paths).exists());
+
+	if show_output {
+		o.start_process();
+		o.display(MessageContents::StartProcess(
+			"Obtaining version manifest".into(),
+		));
+	}
 
 	let manifest = get(requested_version, paths, manager, client, o)
 		.await
 		.context("Failed to get version manifest")?;
 
-	o.display(
-		MessageContents::Success("Version manifest obtained".into()),
-		MessageLevel::Important,
-	);
-	o.end_process();
+	if show_output {
+		o.display(MessageContents::Success("Version manifest obtained".into()));
+		o.end_process();
+	}
 
 	Ok(manifest)
 }
@@ -78,25 +76,25 @@ async fn get_contents(
 	force: bool,
 	o: &mut impl NitroOutput,
 ) -> anyhow::Result<VersionManifest> {
-	let mut path = paths.internal.join("versions");
-	files::create_dir(&path)?;
-	path.push("manifest.json");
+	let path = get_path(paths);
+	create_leading_dirs(&path)?;
 
-	if let Some(requested_version) = requested_version {
-		if !force && manager.update_depth < UpdateDepth::Full && path.exists() {
-			let contents: VersionManifest =
-				json_from_file(&path).context("Failed to read manifest contents from file")?;
-			let version = requested_version.get_version(&contents);
-			// We can avoid redownloading even on full depth if the version is already in the manifest
-			if let Some(version) = version {
-				if contents
-					.versions
-					.iter()
-					.any(|x| x.id.as_str() == version.as_ref())
-				{
-					return Ok(contents);
-				}
-			}
+	if let Some(requested_version) = requested_version
+		&& !force
+		&& manager.update_depth < UpdateDepth::Full
+		&& path.exists()
+	{
+		let contents: VersionManifest =
+			json_from_file(&path).context("Failed to read manifest contents from file")?;
+		let version = requested_version.get_version(&contents);
+		// We can avoid redownloading even on full depth if the version is already in the manifest
+		if let Some(version) = version
+			&& contents
+				.versions
+				.iter()
+				.any(|x| x.id.as_str() == version.as_ref())
+		{
+			return Ok(contents);
 		}
 	}
 
@@ -108,22 +106,23 @@ async fn get_contents(
 
 	while !download.is_finished() {
 		download.poll_download().await?;
-		o.display(
-			MessageContents::Associated(
-				Box::new(download.get_progress()),
-				Box::new(MessageContents::Simple(translate!(
-					o,
-					StartDownloadingVersionManifest
-				))),
-			),
-			MessageLevel::Important,
-		);
+		o.display(MessageContents::Associated(
+			Box::new(download.get_progress()),
+			Box::new(MessageContents::Simple(translate!(
+				o,
+				StartDownloadingVersionManifest
+			))),
+		));
 	}
 	let manifest = download.finish_json()?;
 
 	json_to_file(path, &manifest).context("Failed to write manifest to a file")?;
 
 	Ok(manifest)
+}
+
+fn get_path(paths: &Paths) -> PathBuf {
+	paths.internal.join("versions/manifest.json")
 }
 
 /// Make an ordered list of versions from the manifest to use for matching
@@ -159,5 +158,20 @@ impl VersionManifestAndList {
 		self.manifest = manifest;
 
 		Ok(())
+	}
+
+	/// Get the list of release versions only
+	pub fn get_releases(&self) -> Vec<String> {
+		self.manifest
+			.versions
+			.iter()
+			.filter_map(|x| {
+				if x.ty == VersionType::Release {
+					Some(x.id.clone())
+				} else {
+					None
+				}
+			})
+			.collect()
 	}
 }

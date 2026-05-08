@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
-use anyhow::{bail, Context};
+use anyhow::{Context, bail};
 use nitro_auth::RsaPrivateKey;
 use nitro_shared::minecraft::MinecraftUserProfile;
-use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
+use nitro_shared::output::{MessageContents, NitroOutput};
 use nitro_shared::translate;
 use nitro_shared::util::utc_timestamp;
 
@@ -11,11 +11,11 @@ use crate::Paths;
 use nitro_auth::db::{AuthDatabase, DatabaseAccount, SensitiveAccountInfo};
 use nitro_auth::mc::Keypair;
 use nitro_auth::mc::{
-	self as auth, authenticate_microsoft_account, authenticate_microsoft_account_from_token,
-	AccessToken, ClientId, RefreshToken,
+	self as auth, AccessToken, ClientId, RefreshToken, authenticate_microsoft_account,
+	authenticate_microsoft_account_from_token,
 };
 
-use super::{Account, AccountKind, CustomAuthFunction};
+use super::{Account, AccountKind, AccountManagerHooks};
 
 impl Account {
 	/// Authenticate the account
@@ -33,7 +33,9 @@ impl Account {
 						.await
 						.context("Failed to get account from database")?
 					else {
-						bail!("Account not present in database. Make sure to authenticate at least once before logging in in offline mode");
+						bail!(
+							"Account not present in database. Make sure to authenticate at least once before logging in in offline mode"
+						);
 					};
 
 					self.name = Some(account.username.clone());
@@ -54,14 +56,11 @@ impl Account {
 			}
 			AccountKind::Demo => {}
 			AccountKind::Unknown(other) => {
-				if let Some(func) = params.custom_auth_fn {
-					o.display(
-						MessageContents::Simple(
-							"Handling custom account type with authentication function".into(),
-						),
-						MessageLevel::Debug,
-					);
-					let profile = func
+				if let Some(hooks) = params.custom_hooks {
+					o.debug(MessageContents::Simple(
+						"Handling custom account type with authentication function".into(),
+					));
+					let profile = hooks
 						.auth(&self.id, other)
 						.await
 						.context("Custom auth function failed")?;
@@ -70,12 +69,9 @@ impl Account {
 						self.uuid = Some(profile.uuid);
 					}
 				} else {
-					o.display(
-						MessageContents::Simple(
-							"Authentication for custom account type not handled".into(),
-						),
-						MessageLevel::Debug,
-					);
+					o.debug(MessageContents::Simple(
+						"Authentication for custom account type not handled".into(),
+					));
 				}
 			}
 		}
@@ -164,15 +160,15 @@ impl Account {
 }
 
 /// Data for a Microsoft account
-pub struct MicrosoftAccountData {
-	access_token: AccessToken,
-	profile: MinecraftUserProfile,
-	xbox_uid: Option<String>,
-	keypair: Option<Keypair>,
+pub(crate) struct MicrosoftAccountData {
+	pub access_token: AccessToken,
+	pub profile: MinecraftUserProfile,
+	pub xbox_uid: Option<String>,
+	pub keypair: Option<Keypair>,
 }
 
 /// Updates authentication for a Microsoft account using either the database or updating from the API
-async fn update_microsoft_account_auth(
+pub(crate) async fn update_microsoft_account_auth(
 	account_id: &str,
 	params: AuthParameters<'_>,
 	o: &mut impl NitroOutput,
@@ -414,10 +410,7 @@ async fn get_sensitive_info(
 		let out = db_account
 			.get_sensitive_info_with_key(&private_key)
 			.context("Failed to get sensitive account info using key")?;
-		o.display(
-			MessageContents::Success(translate!(o, PasskeyAccepted)),
-			MessageLevel::Important,
-		);
+		o.display(MessageContents::Success(translate!(o, PasskeyAccepted)));
 
 		out
 	} else {
@@ -449,10 +442,7 @@ async fn get_private_key(
 					return Ok(private_key.expect("Account should have passkey"));
 				}
 				Err(e) => {
-					o.display(
-						MessageContents::Error(format!("{e:?}")),
-						MessageLevel::Important,
-					);
+					o.display(MessageContents::Error(format!("{e:?}")));
 				}
 			}
 		}
@@ -468,7 +458,7 @@ pub(crate) struct AuthParameters<'a> {
 	pub client_id: ClientId,
 	pub paths: &'a Paths,
 	pub req_client: &'a reqwest::Client,
-	pub custom_auth_fn: Option<Arc<dyn CustomAuthFunction>>,
+	pub custom_hooks: Option<Arc<dyn AccountManagerHooks>>,
 }
 
 /// Checks whether an account in the database is logged in

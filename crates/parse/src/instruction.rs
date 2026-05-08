@@ -1,21 +1,21 @@
 use std::fmt::Display;
 
 use anyhow::bail;
+use nitro_shared::Side;
 use nitro_shared::later::Later;
 use nitro_shared::loaders::LoaderMatch;
-use nitro_shared::pkg::{PackageAddonHashes, PackageCategory};
+use nitro_shared::pkg::{AddonHashes, PackageCategory};
 use nitro_shared::util::yes_no;
 use nitro_shared::versions::VersionPattern;
-use nitro_shared::Side;
 
+use super::FailReason;
 use super::conditions::Condition;
 use super::lex::{TextPos, Token};
 use super::parse::BlockId;
 use super::vars::Value;
-use super::FailReason;
 use crate::conditions::{ArchCondition, OSCondition};
 use crate::unexpected_token;
-use nitro_shared::addon::AddonKind;
+use nitro_shared::minecraft::AddonKind;
 
 /// A command / statement run in a package script
 #[derive(Debug, Clone)]
@@ -40,6 +40,8 @@ pub enum InstrKind {
 	},
 	/// Set the package name metadata
 	Name(Later<String>),
+	/// Set the package slug metadata
+	Slug(Later<String>),
 	/// Set the package description metadata
 	Description(Later<String>),
 	/// Set the package long description metadata
@@ -114,8 +116,10 @@ pub enum InstrKind {
 		path: Value,
 		/// The version of the addon
 		version: Value,
+		/// Modpack format of the addon if it is a modpack
+		modpack_format: Value,
 		/// The addon's hashes
-		hashes: PackageAddonHashes<Value>,
+		hashes: AddonHashes<Value>,
 	},
 	/// Set a variable to a value
 	Set(Later<String>, Value),
@@ -131,6 +135,8 @@ pub enum InstrKind {
 	Compat(Value, Value),
 	/// Extend a package
 	Extend(Value),
+	/// Include a package
+	Include(Value),
 	/// Finish evaluation early
 	Finish(),
 	/// Fail evaluation
@@ -162,6 +168,7 @@ impl Display for InstrKind {
 			match self {
 				Self::If { .. } => "if",
 				Self::Name(..) => "name",
+				Self::Slug(..) => "slug",
 				Self::Description(..) => "description",
 				Self::LongDescription(..) => "long_description",
 				Self::Authors(..) => "authors",
@@ -200,6 +207,7 @@ impl Display for InstrKind {
 				Self::Bundle(..) => "bundle",
 				Self::Compat(..) => "compat",
 				Self::Extend(..) => "extend",
+				Self::Include(..) => "include",
 				Self::Finish() => "finish",
 				Self::Fail(..) => "fail",
 				Self::Notice(..) => "notice",
@@ -221,6 +229,7 @@ impl Instruction {
 	pub fn from_str(string: &str, pos: TextPos) -> anyhow::Result<Self> {
 		let kind = match string {
 			"name" => Ok::<InstrKind, anyhow::Error>(InstrKind::Name(Later::Empty)),
+			"slug" => Ok(InstrKind::Slug(Later::Empty)),
 			"description" => Ok(InstrKind::Description(Later::Empty)),
 			"long_description" => Ok(InstrKind::LongDescription(Later::Empty)),
 			"authors" => Ok(InstrKind::Authors(Vec::new())),
@@ -258,6 +267,7 @@ impl Instruction {
 			"bundle" => Ok(InstrKind::Bundle(Value::None)),
 			"compat" => Ok(InstrKind::Compat(Value::None, Value::None)),
 			"extend" => Ok(InstrKind::Extend(Value::None)),
+			"include" => Ok(InstrKind::Include(Value::None)),
 			"notice" => Ok(InstrKind::Notice(Value::None)),
 			"call" => Ok(InstrKind::Call(Later::Empty)),
 			"custom" => Ok(InstrKind::Custom(Later::Empty, Vec::new())),
@@ -272,6 +282,7 @@ impl Instruction {
 	pub fn is_finished_parsing(&self) -> bool {
 		match &self.kind {
 			InstrKind::Name(val)
+			| InstrKind::Slug(val)
 			| InstrKind::Description(val)
 			| InstrKind::LongDescription(val)
 			| InstrKind::SupportLink(val)
@@ -300,7 +311,8 @@ impl Instruction {
 			| InstrKind::Recommend(_, val)
 			| InstrKind::Bundle(val)
 			| InstrKind::Extend(val)
-			| InstrKind::Notice(val) => val.is_some(),
+			| InstrKind::Notice(val)
+			| InstrKind::Include(val) => val.is_some(),
 			InstrKind::Categories(val) => !val.is_empty(),
 			InstrKind::SupportedVersions(val) => !val.is_empty(),
 			InstrKind::SupportedLoaders(val) => !val.is_empty(),
@@ -329,6 +341,7 @@ impl Instruction {
 		} else {
 			match &mut self.kind {
 				InstrKind::Name(text)
+				| InstrKind::Slug(text)
 				| InstrKind::Description(text)
 				| InstrKind::LongDescription(text)
 				| InstrKind::Website(text)
@@ -351,7 +364,8 @@ impl Instruction {
 				InstrKind::Refuse(val)
 				| InstrKind::Bundle(val)
 				| InstrKind::Notice(val)
-				| InstrKind::Extend(val) => {
+				| InstrKind::Extend(val)
+				| InstrKind::Include(val) => {
 					if let Value::None = val {
 						*val = parse_arg(tok, pos)?;
 					} else {
@@ -463,17 +477,18 @@ impl Instruction {
 					}
 					_ => unexpected_token!(tok, pos),
 				},
-				InstrKind::Call(routine) => {
-					match tok {
-						Token::Ident(name) => {
-							if crate::routine::is_reserved(name) {
-								bail!("Cannot use reserved routine name '{name}' in call instruction {}", pos.clone());
-							}
-							routine.fill(name.clone())
+				InstrKind::Call(routine) => match tok {
+					Token::Ident(name) => {
+						if crate::routine::is_reserved(name) {
+							bail!(
+								"Cannot use reserved routine name '{name}' in call instruction {}",
+								pos.clone()
+							);
 						}
-						_ => unexpected_token!(tok, pos),
+						routine.fill(name.clone())
 					}
-				}
+					_ => unexpected_token!(tok, pos),
+				},
 				_ => {}
 			}
 

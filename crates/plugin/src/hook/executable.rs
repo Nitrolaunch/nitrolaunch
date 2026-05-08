@@ -1,9 +1,9 @@
 use std::{collections::VecDeque, env::consts::EXE_SUFFIX, sync::Arc, time::Instant};
 
-use anyhow::{anyhow, bail, Context};
+use anyhow::{Context, anyhow, bail};
 use nitro_shared::{
 	no_window,
-	output::{MessageContents, MessageLevel, NitroOutput},
+	output::{MessageContents, NitroOutput},
 };
 use tokio::{
 	io::AsyncWriteExt,
@@ -13,13 +13,13 @@ use tokio::{
 
 use crate::{
 	hook::{
+		CONFIG_DIR_ENV, CUSTOM_CONFIG_ENV, DATA_DIR_ENV, EXE_EXTENSION_TOKEN, HOOK_VERSION_ENV,
+		Hook, INSTANCE_LIST_ENV, NITRO_PLUGIN_ENV, NITRO_VERSION_ENV, PLUGIN_DIR_TOKEN,
+		PLUGIN_LIST_ENV, PLUGIN_STATE_ENV, TEMPLATE_LIST_ENV,
 		call::{HookCallArg, HookHandle},
-		Hook, CONFIG_DIR_ENV, CUSTOM_CONFIG_ENV, DATA_DIR_ENV, EXE_EXTENSION_TOKEN,
-		HOOK_VERSION_ENV, NITRO_PLUGIN_ENV, NITRO_VERSION_ENV, PLUGIN_DIR_TOKEN, PLUGIN_LIST_ENV,
-		PLUGIN_STATE_ENV,
 	},
 	input_output::{CommandResult, InputAction, OutputAction},
-	plugin::PluginPersistence,
+	plugin::{HookSubscription, PluginPersistence},
 	plugin_debug_enabled,
 	try_read::TryLineReader,
 };
@@ -48,12 +48,12 @@ pub(crate) async fn call_executable<H: Hook + Sized>(
 	cmd.arg(hook_arg);
 
 	// Set up environment
-	if let Some(custom_config) = arg.custom_config {
+	if let Some(custom_config) = arg.ctx.custom_config {
 		cmd.env(CUSTOM_CONFIG_ENV, custom_config);
 	}
 	cmd.env(DATA_DIR_ENV, &arg.paths.data_dir);
 	cmd.env(CONFIG_DIR_ENV, &arg.paths.config_dir);
-	if let Some(nitro_version) = arg.nitro_version {
+	if let Some(nitro_version) = arg.ctx.nitro_version {
 		cmd.env(NITRO_VERSION_ENV, nitro_version);
 	}
 	cmd.env(NITRO_PLUGIN_ENV, "1");
@@ -70,16 +70,28 @@ pub(crate) async fn call_executable<H: Hook + Sized>(
 			cmd.env(PLUGIN_STATE_ENV, state);
 		}
 	}
-	let plugin_list = arg.plugin_list.join(",");
+	let plugin_list = arg.ctx.plugin_list.join(",");
 	cmd.env(PLUGIN_LIST_ENV, plugin_list);
+
+	if let Some(context) = arg.ctx.global_context {
+		if arg.ctx.subscriptions.contains(&HookSubscription::Instances) {
+			cmd.env(
+				INSTANCE_LIST_ENV,
+				serde_json::to_string(&context.get_instances())?,
+			);
+		}
+		if arg.ctx.subscriptions.contains(&HookSubscription::Templates) {
+			cmd.env(
+				TEMPLATE_LIST_ENV,
+				serde_json::to_string(&context.get_templates())?,
+			);
+		}
+	}
 
 	no_window!(cmd);
 
 	if plugin_debug_enabled() {
-		o.display(
-			MessageContents::Simple(format!("{cmd:?}")),
-			MessageLevel::Important,
-		);
+		o.display(MessageContents::Simple(format!("{cmd:?}")));
 	}
 
 	if H::get_takes_over() {

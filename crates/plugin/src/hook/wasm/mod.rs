@@ -10,28 +10,38 @@ use std::{
 	time::Instant,
 };
 
-use anyhow::{bail, Context};
+use anyhow::{Context, bail};
 use nitro_net::download::{self, Client};
 use nitro_shared::{
+	Side,
+	io::{home_dir, update_link},
+	nitro_executable::NitroExecutableRegistry,
 	no_window,
-	output::{MessageContents, MessageLevel, NitroOutput},
+	output::{Message, MessageContents, MessageLevel, NitroOutput},
 	util::{ARCH_STRING, OS_STRING},
 };
-use tokio::{process::Command, sync::Mutex};
+use tokio::{
+	process::Command,
+	sync::{Mutex, oneshot},
+	task::JoinSet,
+};
 use wasmtime::{
-	component::{HasSelf, Linker},
 	Store,
+	component::{HasSelf, Linker},
 };
 use wasmtime_wasi::{
 	DirPerms, FilePerms, ResourceTable, WasiCtx, WasiCtxBuilder, WasiCtxView, WasiView,
 };
+use wasmtime_wasi_http::{WasiHttpCtx, WasiHttpView};
 
 use crate::{
 	hook::{
+		Hook,
 		call::{HookCallArg, HookHandle},
 		wasm::loader::WASMLoader,
-		Hook,
 	},
+	host::PluginContext,
+	plugin::PluginPersistence,
 	plugin_debug_enabled,
 };
 
@@ -61,14 +71,19 @@ pub(crate) async fn call_wasm<H: Hook + Sized>(
 
 	let o = Arc::new(Mutex::new(o));
 
+	let (result_sender, result) = oneshot::channel();
+
 	Ok(HookHandle::wasm(
 		WASMHookHandle {
 			plugin_id: arg.plugin_id.to_string(),
 			o,
 			wasm_path: PathBuf::from(arg.cmd),
 			arg: serde_json::to_string(&arg.arg)?,
-			result: None,
-			custom_config: arg.custom_config,
+			result_sender: Some(result_sender),
+			result,
+			custom_config: arg.ctx.custom_config,
+			context: arg.ctx.global_context.cloned(),
+			persistence: arg.persistence.clone(),
 			wasm_loader: arg.wasm_loader,
 			data_dir: arg.paths.data_dir.to_string_lossy().to_string(),
 			config_dir: arg.paths.config_dir.to_string_lossy().to_string(),
@@ -90,8 +105,11 @@ pub(super) struct WASMHookHandle<H: Hook> {
 	o: Arc<Mutex<Box<dyn NitroOutput + Sync>>>,
 	wasm_path: PathBuf,
 	arg: String,
-	result: Option<H::Result>,
+	result_sender: Option<oneshot::Sender<anyhow::Result<H::Result>>>,
+	result: oneshot::Receiver<anyhow::Result<H::Result>>,
 	custom_config: Option<String>,
+	context: Option<Arc<dyn PluginContext>>,
+	persistence: Arc<Mutex<PluginPersistence>>,
 	wasm_loader: Arc<Mutex<WASMLoader>>,
 	data_dir: String,
 	config_dir: String,
@@ -100,21 +118,22 @@ pub(super) struct WASMHookHandle<H: Hook> {
 }
 
 impl<H: Hook> WASMHookHandle<H> {
-	/// Runs this hook to completion
+	/// Starts this hook
 	pub async fn run(&mut self, o: &mut impl NitroOutput) -> anyhow::Result<()> {
-		if self.result.is_some() {
+		if !self.result.is_empty() {
 			return Ok(());
 		}
 
+		let Some(result_sender) = self.result_sender.take() else {
+			return Ok(());
+		};
+
 		if plugin_debug_enabled() {
-			o.display(
-				MessageContents::Simple(format!(
-					"Running hook '{}' on plugin '{}'",
-					H::get_name_static(),
-					self.plugin_id
-				)),
-				MessageLevel::Important,
-			);
+			o.display(MessageContents::Simple(format!(
+				"Running hook '{}' on plugin '{}'",
+				H::get_name_static(),
+				self.plugin_id
+			)));
 		}
 
 		let mut start_time = if std::env::var("NITRO_PLUGIN_PROFILE").is_ok_and(|x| x == "1") {
@@ -149,92 +168,120 @@ impl<H: Hook> WASMHookHandle<H> {
 		let wasi_ctx = wasi_ctx.preopened_dir("C:\\", "C:\\", DirPerms::all(), FilePerms::all())?;
 
 		let wasi_ctx = wasi_ctx.build();
-		wasmtime_wasi::p2::add_to_linker_async(&mut linker)
-			.context("Failed to add WASI functions to linker")?;
 
-		bindings::InterfaceWorld::add_to_linker::<_, HasSelf<_>>(&mut linker, |x| x)?;
+		let http_ctx = WasiHttpCtx::new();
 
-		if let Some(start_time) = &mut start_time {
-			let now = Instant::now();
-			println!("Linker initialization: {:?}", now - *start_time);
-			*start_time = now;
-		}
-
-		let mut store = Store::new(
-			&engine,
-			State {
-				wasi_ctx,
-				table: ResourceTable::new(),
-				custom_config: self.custom_config.clone(),
-				data_dir: self.data_dir.clone(),
-				config_dir: self.config_dir.clone(),
-				plugin_dir: self.plugin_dir.clone(),
-				client: Client::new(),
-				o: self.o.clone(),
-			},
-		);
-
-		let instance = bindings::InterfaceWorld::instantiate_async(&mut store, &component, &linker)
-			.await
-			.context("Failed to construct WASM instance")?;
-
-		if let Some(start_time) = &mut start_time {
-			let now = Instant::now();
-			println!("Instance initialization: {:?}", now - *start_time);
-			*start_time = now;
-		}
-
-		let result_code = instance
-			.call_run_plugin(
-				&mut store,
-				H::get_name_static(),
-				&self.arg,
-				H::get_version() as u32,
-			)
-			.await
-			.context("Failed to call plugin entrypoint")?;
-
-		if let Some(start_time) = &mut start_time {
-			let now = Instant::now();
-			println!("Hook runtime: {:?}", now - *start_time);
-			*start_time = now;
-		}
-
-		let result = if H::get_takes_over() {
-			H::Result::default()
-		} else {
-			let mut result = instance.call_get_result(&mut store).await?;
-
-			if result_code == 1 {
-				bail!("Plugin '{}' returned an error: {result}", self.plugin_id);
-			}
-
-			unsafe { simd_json::from_str(&mut result) }
-				.context("Failed to deserialize hook result")?
+		let state = State {
+			wasi_ctx,
+			http_ctx,
+			table: ResourceTable::new(),
+			custom_config: self.custom_config.clone(),
+			context: self.context.clone(),
+			persistence: self.persistence.clone(),
+			data_dir: self.data_dir.clone(),
+			config_dir: self.config_dir.clone(),
+			plugin_dir: self.plugin_dir.clone(),
+			client: Client::new(),
+			o: self.o.clone(),
 		};
 
-		self.result = Some(result);
+		let arg = self.arg.clone();
+		let plugin_id = self.plugin_id.clone();
 
-		if let Some(start_time) = &mut start_time {
-			let now = Instant::now();
-			println!("Result handling: {:?}", now - *start_time);
-			*start_time = now;
-		}
+		tokio::task::spawn(async move {
+			let fun = async move || {
+				wasmtime_wasi::p2::add_to_linker_async(&mut linker)
+					.context("Failed to add WASI functions to linker")?;
+				wasmtime_wasi_http::add_only_http_to_linker_async(&mut linker)
+					.context("Failed to add HTTP functions to linker")?;
+
+				bindings::InterfaceWorld::add_to_linker::<_, HasSelf<_>>(&mut linker, |x| x)?;
+
+				if let Some(start_time) = &mut start_time {
+					let now = Instant::now();
+					println!("Linker initialization: {:?}", now - *start_time);
+					*start_time = now;
+				}
+
+				let mut store = Store::new(&engine, state);
+
+				let instance =
+					bindings::InterfaceWorld::instantiate_async(&mut store, &component, &linker)
+						.await
+						.context("Failed to construct WASM instance")?;
+
+				if let Some(start_time) = &mut start_time {
+					let now = Instant::now();
+					println!("Instance initialization: {:?}", now - *start_time);
+					*start_time = now;
+				}
+
+				let result_code = instance
+					.call_run_plugin(
+						&mut store,
+						H::get_name_static(),
+						&arg,
+						H::get_version() as u32,
+					)
+					.await
+					.context("Failed to call plugin entrypoint")?;
+
+				if let Some(start_time) = &mut start_time {
+					let now = Instant::now();
+					println!("Hook runtime: {:?}", now - *start_time);
+					*start_time = now;
+				}
+
+				let result = if H::get_takes_over() {
+					H::Result::default()
+				} else {
+					let mut result = instance.call_get_result(&mut store).await?;
+
+					if result_code == 1 {
+						bail!("Plugin returned an error: {result}");
+					}
+
+					unsafe { simd_json::from_str(&mut result) }
+						.context("Failed to deserialize hook result")?
+				};
+
+				if let Some(start_time) = &mut start_time {
+					let now = Instant::now();
+					println!("Result handling: {:?}", now - *start_time);
+					*start_time = now;
+				}
+
+				Ok(result)
+			};
+
+			let result = fun()
+				.await
+				.context(format!("Hook for plugin {plugin_id} failed"));
+			let _ = result_sender.send(result);
+		});
 
 		Ok(())
 	}
 
-	/// Gets the hook result if the hook has been run
-	pub fn result(self) -> Option<H::Result> {
-		self.result
+	/// Awaits the result of the hook. Hook must have been started or this will run indefinitely.
+	pub async fn result(self) -> anyhow::Result<H::Result> {
+		self.result.await.context("Channel closed").flatten()
+	}
+
+	/// Checks whether the handle has a result
+	pub fn has_result(&self) -> bool {
+		!self.result.is_empty()
 	}
 }
 
 /// Host function environment
 struct State {
 	wasi_ctx: WasiCtx,
+	http_ctx: WasiHttpCtx,
 	table: ResourceTable,
 	custom_config: Option<String>,
+	context: Option<Arc<dyn PluginContext>>,
+	persistence: Arc<Mutex<PluginPersistence>>,
 	data_dir: String,
 	config_dir: String,
 	plugin_dir: String,
@@ -251,9 +298,30 @@ impl WasiView for State {
 	}
 }
 
+impl WasiHttpView for State {
+	fn ctx(&mut self) -> &mut WasiHttpCtx {
+		&mut self.http_ctx
+	}
+
+	fn table(&mut self) -> &mut ResourceTable {
+		&mut self.table
+	}
+}
+
 impl bindings::InterfaceWorldImports for State {
 	async fn get_custom_config(&mut self) -> Option<String> {
 		self.custom_config.clone()
+	}
+
+	async fn get_persistent_state(&mut self) -> String {
+		serde_json::to_string(&self.persistence.lock().await.state)
+			.unwrap_or_else(|_| "null".into())
+	}
+
+	async fn set_persistent_state(&mut self, state: String) {
+		if let Ok(state) = serde_json::from_str(&state) {
+			self.persistence.lock().await.state = state;
+		}
 	}
 
 	async fn get_data_dir(&mut self) -> String {
@@ -275,6 +343,12 @@ impl bindings::InterfaceWorldImports for State {
 			.to_string()
 	}
 
+	async fn get_home_dir(&mut self) -> String {
+		home_dir()
+			.map(|x| x.to_string_lossy().to_string())
+			.unwrap_or_else(|_| "/home/none".into())
+	}
+
 	async fn get_os_string(&mut self) -> String {
 		OS_STRING.to_string()
 	}
@@ -292,10 +366,18 @@ impl bindings::InterfaceWorldImports for State {
 
 	async fn update_hardlink(&mut self, src: String, tgt: String) -> Result<(), String> {
 		let result = if !PathBuf::from(&tgt).exists() {
-			tokio::fs::hard_link(src, tgt).await
+			tokio::fs::hard_link(tgt, src).await
 		} else {
 			Ok(())
 		};
+		match result {
+			Ok(..) => Ok(()),
+			Err(e) => Err(format!("{e:?}")),
+		}
+	}
+
+	async fn update_link(&mut self, src: String, tgt: String) -> Result<(), String> {
+		let result = update_link(Path::new(&tgt), Path::new(&src));
 		match result {
 			Ok(..) => Ok(()),
 			Err(e) => Err(format!("{e:?}")),
@@ -324,6 +406,38 @@ impl bindings::InterfaceWorldImports for State {
 			Ok(..) => Ok(()),
 			Err(e) => Err(format!("{e:?}")),
 		}
+	}
+
+	async fn download_files(
+		&mut self,
+		urls: Vec<String>,
+		paths: Vec<String>,
+		skip_existing: bool,
+	) -> Result<(), String> {
+		let mut tasks = JoinSet::new();
+		for (url, path) in urls.into_iter().zip(paths) {
+			let path = PathBuf::from(path);
+			if skip_existing && path.exists() {
+				continue;
+			}
+
+			let client = self.client.clone();
+			tasks.spawn(async move { download::file(url, path, &client).await });
+		}
+
+		let mut final_result = Ok(());
+		while let Some(result) = tasks.join_next().await {
+			match result {
+				Ok(result) => {
+					if final_result.is_ok() {
+						final_result = result.map_err(|e| format!("{e:?}"));
+					}
+				}
+				Err(e) => final_result = Err(e.to_string()),
+			}
+		}
+
+		final_result
 	}
 
 	async fn run_command(
@@ -367,12 +481,128 @@ impl bindings::InterfaceWorldImports for State {
 		}
 	}
 
+	async fn get_instances(&mut self) -> Option<Vec<(String, String)>> {
+		let Some(context) = &self.context else {
+			return None;
+		};
+		let instances = context.get_instances();
+
+		Some(
+			instances
+				.iter()
+				.filter_map(|(k, v)| {
+					if let Ok(config) = serde_json::to_string(v) {
+						Some((k.clone(), config))
+					} else {
+						None
+					}
+				})
+				.collect(),
+		)
+	}
+
+	async fn get_templates(&mut self) -> Option<Vec<(String, String)>> {
+		let Some(context) = &self.context else {
+			return None;
+		};
+		let templates = context.get_templates();
+
+		Some(
+			templates
+				.iter()
+				.filter_map(|(k, v)| {
+					if let Ok(config) = serde_json::to_string(v) {
+						Some((k.clone(), config))
+					} else {
+						None
+					}
+				})
+				.collect(),
+		)
+	}
+
+	async fn get_instance_dir(&mut self, instance: String) -> Result<Option<String>, String> {
+		let Some(context) = &self.context else {
+			return Err("Missing context".into());
+		};
+		let instances = context.get_instances();
+		let Some(config) = instances.get(&instance) else {
+			return Err("Instance does not exist".into());
+		};
+
+		let inst_dir = if let Some(inst_dir) = &config.dir {
+			if inst_dir == "none" {
+				return Ok(None);
+			} else {
+				inst_dir.clone()
+			}
+		} else {
+			let base_dir = Path::new(&self.data_dir).join("instances").join(instance);
+			if config.side == Some(Side::Client) {
+				base_dir.join(".minecraft").to_string_lossy().to_string()
+			} else {
+				base_dir.to_string_lossy().to_string()
+			}
+		};
+
+		Ok(Some(inst_dir))
+	}
+
+	async fn create_instance(&mut self, id: String, config: String) -> Result<(), String> {
+		if let Some(context) = &self.context {
+			let Ok(config) = serde_json::from_str(&config) else {
+				return Err("Failed to deserialize config".into());
+			};
+			context
+				.create_instance(id, config)
+				.await
+				.map_err(|e| e.to_string())?;
+			Ok(())
+		} else {
+			Err("Context missing".into())
+		}
+	}
+
+	async fn create_template(&mut self, id: String, config: String) -> Result<(), String> {
+		if let Some(context) = &self.context {
+			let Ok(config) = serde_json::from_str(&config) else {
+				return Err("Failed to deserialize config".into());
+			};
+			context
+				.create_template(id, config)
+				.await
+				.map_err(|e| e.to_string())?;
+			Ok(())
+		} else {
+			Err("Context missing".into())
+		}
+	}
+
+	async fn launch_instance(
+		&mut self,
+		instance: String,
+		account: Option<String>,
+	) -> Result<(), String> {
+		let executable_registry = fmt_err(NitroExecutableRegistry::open(
+			&PathBuf::from(&self.data_dir).join("internal"),
+		))?;
+
+		let mut command = fmt_err(
+			executable_registry
+				.launch_instance(&instance, account.as_deref(), None)
+				.context("No executable available"),
+		)?;
+
+		fmt_err(command.spawn().context("Failed to launch instance"))?;
+
+		Ok(())
+	}
+
 	async fn output_display_text(&mut self, text: String, level: u8) {
 		let level = match level {
 			0 => MessageLevel::Important,
-			1 => MessageLevel::Extra,
-			2 => MessageLevel::Debug,
-			3 => MessageLevel::Trace,
+			1 => MessageLevel::Debug,
+			2 => MessageLevel::Trace,
 			_ => return,
 		};
 
@@ -386,13 +616,15 @@ impl bindings::InterfaceWorldImports for State {
 
 		let level = match level {
 			0 => MessageLevel::Important,
-			1 => MessageLevel::Extra,
-			2 => MessageLevel::Debug,
-			3 => MessageLevel::Trace,
+			1 => MessageLevel::Debug,
+			2 => MessageLevel::Trace,
 			_ => return,
 		};
 
-		self.o.lock().await.display(message, level);
+		self.o.lock().await.display_message(Message {
+			contents: message,
+			level,
+		});
 	}
 
 	async fn output_start_process(&mut self) {
@@ -410,4 +642,8 @@ impl bindings::InterfaceWorldImports for State {
 	async fn output_end_section(&mut self) {
 		self.o.lock().await.end_section();
 	}
+}
+
+fn fmt_err<T>(x: anyhow::Result<T>) -> Result<T, String> {
+	x.map_err(|e| e.to_string())
 }

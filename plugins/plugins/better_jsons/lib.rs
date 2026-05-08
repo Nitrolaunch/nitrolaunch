@@ -2,10 +2,10 @@ use std::fs::File;
 
 use anyhow::Context;
 use nitro_plugin::{
-	api::wasm::{net::download_bytes, sys::get_data_dir, WASMPlugin},
+	api::wasm::{WASMPlugin, net::download_bytes, sys::get_data_dir},
 	nitro_wasm_plugin,
 };
-use nitro_shared::{minecraft::VersionManifest, UpdateDepth};
+use nitro_shared::{UpdateDepth, minecraft::VersionManifest};
 
 nitro_wasm_plugin!(main, "better_jsons");
 
@@ -25,7 +25,7 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 				// 	MessageLevel::Important,
 				// );
 
-				let out = download_bytes("https://raw.githubusercontent.com/MCPHackers/BetterJSONs/refs/heads/main/version_manifest_v2.json".into()).context("Failed to download BetterJSONs manifest")?;
+				let out = download_bytes("https://raw.githubusercontent.com/MCPHackers/BetterJSONs/refs/heads/main/version_manifest_v2.json").context("Failed to download BetterJSONs manifest")?;
 
 				let versions =  serde_json::from_slice(&out).context("Failed to deserialize better JSONS")?;
 

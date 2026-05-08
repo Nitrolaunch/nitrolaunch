@@ -1,4 +1,5 @@
 {
+	"id": "paper",
 	"name": "Paper",
 	"description": "Install Paper and Folia instances",
 	"version": "v6",

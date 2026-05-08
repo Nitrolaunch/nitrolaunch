@@ -1,6 +1,6 @@
 use anyhow::Context;
 use reqwest::Client;
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use serde::{Deserialize, Serialize, de::DeserializeOwned};
 
 use crate::download::user_agent;
 

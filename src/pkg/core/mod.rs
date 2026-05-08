@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use nitro_pkg::{repo::RepoPkgEntry, PackageContentType};
+use nitro_pkg::{PackageContentType, repo::RepoPkgEntry};
 
 macro_rules! define_core_packages {
 	($($pkg:literal,$ext:literal,$id:ident,$content:ident);*$(;)?) => {

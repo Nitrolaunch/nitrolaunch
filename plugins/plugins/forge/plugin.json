@@ -1,4 +1,5 @@
 {
+	"id": "forge",
 	"name": "Forge",
 	"description": "Install NeoForge instances",
 	"version": "v6",

@@ -17,7 +17,7 @@
   },
   "productName": "Nitrolaunch",
   "mainBinaryName": "Nitrolaunch",
-  "version": "0.29.0",
+  "version": "0.30.0",
   "identifier": "nitro-gui",
   "plugins": {
     "updater": {
@@ -34,6 +34,7 @@
           "allow": [
             "$APPCACHE/**",
             "$RESOURCE/**",
+            "**/.local/share/**/*",
             "/home/**"
           ],
           "deny": [],

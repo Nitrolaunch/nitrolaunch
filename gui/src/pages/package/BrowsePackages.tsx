@@ -5,8 +5,10 @@ import {
 	createResource,
 	createSignal,
 	For,
+	Match,
 	onMount,
 	Show,
+	Switch,
 } from "solid-js";
 import "@thisbeyond/solid-select/style.css";
 import PageButtons from "../../components/input/button/PageButtons";
@@ -27,10 +29,12 @@ import RepoSelector from "../../components/package/RepoSelector";
 import { searchPackages } from "../../utils/package";
 import Tip from "../../components/dialog/Tip";
 import IconTextButton from "../../components/input/button/IconTextButton";
-import { Download, Honeycomb, Refresh } from "../../icons";
+import { Download, Grid, Menu, Refresh } from "../../icons";
 import { invoke } from "@tauri-apps/api/core";
 import { loadPagePlugins } from "../../plugins";
 import Icon from "../../components/Icon";
+import ViewPackage from "./ViewPackage";
+import IconButton from "../../components/input/button/IconButton";
 
 const PACKAGES_PER_PAGE = 12;
 
@@ -40,14 +44,18 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 	let params = useParams();
 	let searchParams = parseQueryString(useLocation().search);
 
+	let [isAlternate, setIsAlternate] = createSignal(true);
+
 	onMount(() => loadPagePlugins("packages"));
 
 	createEffect(() => {
-		props.setFooterData({
-			mode: FooterMode.PreviewPackage,
-			selectedItem: undefined,
-			action: () => { },
-		});
+		if (!isAlternate()) {
+			props.setFooterData({
+				mode: FooterMode.PreviewPackage,
+				selectedItem: undefined,
+				action: () => {},
+			});
+		}
 	});
 
 	// Filters and other browse functions
@@ -59,7 +67,7 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 
 		try {
 			return JSON.parse(
-				decodeURIComponent(searchParams["filters"])
+				decodeURIComponent(searchParams["filters"]),
 			) as PackageFilterOptions;
 		} catch (e) {
 			console.error("Failed to parse filters: " + e);
@@ -76,13 +84,13 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 	let [filteredPackageType, setFilteredPackageType] = createSignal<PackageType>(
 		searchParams["package_type"] == undefined
 			? "mod"
-			: (searchParams["package_type"] as PackageType)
+			: (searchParams["package_type"] as PackageType),
 	);
 	let [filteredMinecraftVersions, setFilteredMinecraftVersions] = createSignal<
 		string[]
 	>(filters().minecraft_versions);
 	let [filteredLoaders, setFilteredLoaders] = createSignal<string[]>(
-		filters().loaders
+		filters().loaders,
 	);
 	let [filteredCategories, setFilteredCategories] = createSignal<
 		PackageCategory[]
@@ -107,7 +115,7 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 			selectedRepo(),
 			filteredPackageType(),
 			search(),
-			createPackageFiltersObject()
+			createPackageFiltersObject(),
 		);
 		window.history.replaceState("", "", url);
 	};
@@ -121,7 +129,7 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 	// Packages and repos
 	let [packages, packageMethods] = createResource(
 		() => selectedRepo(),
-		updatePackages
+		updatePackages,
 	);
 	let refetchPackages = () => {
 		packageMethods.mutate(undefined);
@@ -136,7 +144,6 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 	let [repoCategories, setRepoCategories] = createSignal<
 		PackageCategory[] | undefined
 	>();
-	let [repoColor, setRepoColor] = createSignal<string | undefined>();
 
 	async function updatePackages() {
 		if (selectedRepo() == undefined) {
@@ -151,7 +158,7 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 				[filteredPackageType()],
 				filteredMinecraftVersions(),
 				filteredLoaders() as Loader[],
-				filteredCategories()
+				filteredCategories(),
 			);
 
 			if (result != undefined) {
@@ -164,15 +171,15 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 	}
 
 	let [selectedPackage, setSelectedPackage] = createSignal<string | undefined>(
-		undefined
+		undefined,
 	);
 
 	// Placeholder when packages are loading
 	let packagePlaceholders = () => (
 		<For each={Array.from({ length: PACKAGES_PER_PAGE })}>
 			{() => (
-				<div class="cont package">
-					<LoadingSpinner size="3rem" />
+				<div class={`cont package ${isAlternate() ? "alternate" : ""}`}>
+					<LoadingSpinner size={isAlternate() ? "2rem" : "3rem"} />
 				</div>
 			)}
 		</For>
@@ -193,14 +200,33 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 							setFinalSelectedRepo={setSelectedRepo}
 							setRepoPackageTypes={setRepoPackageTypes}
 							setRepoCategories={setRepoCategories}
-							setRepoColor={setRepoColor}
+							setRepoColor={() => {}}
 						/>
 					</div>
-					<h1 class="cont">
-						<Icon icon={Honeycomb} size="1.5rem" />
-						Packages
-					</h1>
+					<div></div>
 					<div class="cont" style="justify-content:flex-end">
+						<div class="cont">
+							<Tip tip="Gallery View">
+								<IconButton
+									icon={Grid}
+									size="1.5rem"
+									onClick={() => setIsAlternate(false)}
+									color="transparent"
+									border={isAlternate() ? undefined : "var(--fg2)"}
+									iconColor={isAlternate() ? undefined : "var(--fg2)"}
+								/>
+							</Tip>
+							<Tip tip="List View">
+								<IconButton
+									icon={Menu}
+									size="1.5rem"
+									onClick={() => setIsAlternate(true)}
+									color="transparent"
+									border={isAlternate() ? "var(--fg2)" : undefined}
+									iconColor={isAlternate() ? "var(--fg2)" : undefined}
+								/>
+							</Tip>
+						</div>
 						<SearchBar
 							placeholder="Search for packages..."
 							value={
@@ -216,9 +242,10 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 						/>
 					</div>
 				</div>
-				<Show when={repoColor() != undefined}>
+				{/* <Show when={repoColor() != undefined}>
 					<div id="browse-gradient" style={`--repo-color:${repoColor()}`}></div>
-				</Show>
+				</Show> */}
+				<div></div>
 				<div id="browse-subheader">
 					<PackageFilters
 						packageType={filteredPackageType()}
@@ -247,12 +274,114 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 						availablePackageTypes={repoPackageTypes()}
 						filteringVersions={false}
 						features={[]}
-						setFeatures={() => { }}
+						setFeatures={() => {}}
 						availableCategories={repoCategories()}
 					/>
 				</div>
-				<div class="split3 fullwidth">
-					<div></div>
+				<Show when={!isAlternate()}>
+					<div class="split3 fullwidth">
+						<div></div>
+						<PageButtons
+							page={page()}
+							pageCount={Math.floor(packageCount() / PACKAGES_PER_PAGE)}
+							pageFunction={(page) => {
+								setPage(page);
+								updateFilters();
+							}}
+						/>
+						<div class="cont end">
+							<Tip
+								tip="Refetches packages and their new versions"
+								side="left"
+								zIndex="10"
+							>
+								<IconTextButton
+									icon={Refresh}
+									text="Sync Packages"
+									size="1.5rem"
+									color="var(--package)"
+									bgColor="var(--packagebg)"
+									onClick={async () => {
+										try {
+											await invoke("sync_packages");
+										} catch (e) {
+											errorToast("Failed to sync packages: " + e);
+										}
+									}}
+								/>
+							</Tip>
+						</div>
+					</div>
+				</Show>
+				<div id="browse-container" class={isAlternate() ? "alternate" : ""}>
+					<div id="packages-container" class={isAlternate() ? "alternate" : ""}>
+						<Show
+							when={packages() != undefined}
+							fallback={packagePlaceholders()}
+						>
+							<For each={packages()}>
+								{(data) => {
+									if (data == "error") {
+										return (
+											<div class="cont package package-error">
+												Error with package
+											</div>
+										);
+									} else {
+										return (
+											<Package
+												id={data.id}
+												meta={data.meta}
+												selected={selectedPackage()}
+												onSelect={(pkg) => {
+													setSelectedPackage(pkg);
+													let url = `/packages/package/${
+														data.id
+													}?filters=${JSON.stringify(
+														createPackageFiltersObject(),
+													)}`;
+
+													if (!isAlternate()) {
+														props.setFooterData({
+															mode: FooterMode.PreviewPackage,
+															selectedItem: "",
+															action: () => {
+																navigate(url);
+															},
+															selectedPackageGallery: data.meta.gallery,
+														});
+													}
+												}}
+												getPackageFiltersObject={createPackageFiltersObject}
+												alternate={isAlternate()}
+											/>
+										);
+									}
+								}}
+							</For>
+						</Show>
+					</div>
+					<Show when={isAlternate()}>
+						<div id="package-preview">
+							<Switch>
+								<Match when={selectedPackage() != undefined}>
+									<ViewPackage
+										id={selectedPackage()!}
+										filters={createPackageFiltersObject()}
+										small
+										setFooterData={props.setFooterData}
+									/>
+								</Match>
+								<Match when={selectedPackage() == undefined}>
+									<div class="cont fullwidth fullheight">
+										No package selected
+									</div>
+								</Match>
+							</Switch>
+						</div>
+					</Show>
+				</div>
+				<Show when={!isAlternate()}>
 					<PageButtons
 						page={page()}
 						pageCount={Math.floor(packageCount() / PACKAGES_PER_PAGE)}
@@ -261,80 +390,10 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 							updateFilters();
 						}}
 					/>
-					<div class="cont end">
-						<Tip
-							tip="Refetches packages and their new versions"
-							side="left"
-							zIndex="10"
-						>
-							<IconTextButton
-								icon={Refresh}
-								text="Sync Packages"
-								size="1.5rem"
-								color="var(--package)"
-								bgColor="var(--packagebg)"
-								onClick={async () => {
-									try {
-										await invoke("sync_packages");
-									} catch (e) {
-										errorToast("Failed to sync packages: " + e);
-									}
-								}}
-							/>
-						</Tip>
-					</div>
-				</div>
-				<div id="packages-container">
-					<Show when={packages() != undefined} fallback={packagePlaceholders()}>
-						<For each={packages()}>
-							{(data) => {
-								if (data == "error") {
-									return (
-										<div class="cont package package-error">
-											Error with package
-										</div>
-									);
-								} else {
-									return (
-										<Package
-											id={data.id}
-											meta={data.meta}
-											selected={selectedPackage()}
-											onSelect={(pkg) => {
-												setSelectedPackage(pkg);
-												let url = `/packages/package/${data.id
-													}?filters=${JSON.stringify(
-														createPackageFiltersObject()
-													)}`;
-
-												props.setFooterData({
-													mode: FooterMode.PreviewPackage,
-													selectedItem: "",
-													action: () => {
-														navigate(url);
-													},
-													selectedPackageGallery: data.meta.gallery,
-												});
-											}}
-											getPackageFiltersObject={createPackageFiltersObject}
-										/>
-									);
-								}
-							}}
-						</For>
-					</Show>
-				</div>
-				<PageButtons
-					page={page()}
-					pageCount={Math.floor(packageCount() / PACKAGES_PER_PAGE)}
-					pageFunction={(page) => {
-						setPage(page);
-						updateFilters();
-					}}
-				/>
-				<br />
-				<br />
-				<br />
+					<br />
+					<br />
+					<br />
+				</Show>
 			</div>
 		</div>
 	);
@@ -343,29 +402,51 @@ export default function BrowsePackages(props: BrowsePackagesProps) {
 function Package(props: PackageProps) {
 	let navigate = useNavigate();
 
-	let image =
-		props.meta.banner == undefined
-			? props.meta.gallery == undefined || props.meta.gallery!.length == 0
-				? props.meta.icon == undefined
-					? "/icons/default_instance.png"
-					: props.meta.icon
-				: props.meta.gallery![0]
-			: props.meta.banner;
+	let baseImage = () => {
+		if (props.alternate) {
+			if (props.meta.icon != undefined) {
+				return props.meta.icon;
+			} else if (props.meta.banner != undefined) {
+				return props.meta.banner;
+			}
+		} else {
+			if (props.meta.banner != undefined) {
+				return props.meta.banner;
+			} else if (
+				props.meta.gallery != undefined &&
+				props.meta.gallery!.length > 0
+			) {
+				return props.meta.gallery[0];
+			} else {
+				return props.meta.icon;
+			}
+		}
+	};
+
+	let image = () => {
+		let base = baseImage();
+		if (base == undefined) {
+			return "/icons/default_instance.png";
+		} else {
+			return base;
+		}
+	};
 
 	let isSelected = () => props.selected == props.id;
 
 	return (
 		<div
-			class={`cont col shadow bubble-hover-small package ${isSelected() ? "selected" : ""
-				}`}
+			class={`cont col ${props.alternate ? "" : "shadow"} package ${
+				isSelected() ? "selected" : ""
+			} ${props.alternate ? "alternate" : ""}`}
 			style="cursor:pointer"
 			onclick={() => {
 				// Double click to open
 				if (isSelected()) {
 					navigate(
 						`/packages/package/${props.id}?filters=${JSON.stringify(
-							props.getPackageFiltersObject()
-						)}`
+							props.getPackageFiltersObject(),
+						)}`,
 					);
 				} else {
 					props.onSelect(props.id);
@@ -373,18 +454,20 @@ function Package(props: PackageProps) {
 			}}
 		>
 			<div class="package-inner">
-				<div class="package-image-container">
+				<div class="cont package-image-container">
 					<img
-						src={image}
+						src={image()}
 						class="package-image"
 						onerror={(e: any) => (e.target.src = "/icons/default_instance.png")}
 					/>
-					<div class="package-image-gradient"></div>
+					<Show when={!props.alternate}>
+						<div class="package-image-gradient"></div>
+					</Show>
 				</div>
 				<div class="cont col package-header">
 					<div class="cont start package-name">
 						{props.meta.name}
-						<Show when={props.meta.downloads != undefined}>
+						<Show when={props.meta.downloads != undefined && !props.alternate}>
 							<div
 								class="cont"
 								style="color: var(--fg3);gap:0.2rem;font-size:0.95rem"
@@ -405,7 +488,11 @@ function Package(props: PackageProps) {
 							/>
 						</div>
 					</Show>
-					<div class="browse-package-description">{props.meta.description}</div>
+					<Show when={!props.alternate}>
+						<div class="browse-package-description">
+							{props.meta.description}
+						</div>
+					</Show>
 				</div>
 			</div>
 		</div>
@@ -418,6 +505,7 @@ interface PackageProps {
 	selected?: string;
 	onSelect: (pkg: string) => void;
 	getPackageFiltersObject: () => PackageFilterOptions;
+	alternate: boolean;
 }
 
 export interface BrowsePackagesProps {
@@ -429,7 +517,7 @@ export function getBrowseUrl(
 	repo: string | undefined,
 	packageType: PackageType,
 	search: string | undefined,
-	filters: PackageFilterOptions
+	filters: PackageFilterOptions,
 ) {
 	let query = search == undefined ? "" : `&search=${search}`;
 	let filters2 = JSON.stringify(filters);

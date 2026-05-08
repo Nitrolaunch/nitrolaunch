@@ -6,12 +6,12 @@
 //!
 //! - `schema`: Enable generation of JSON schemas using the `schemars` crate
 
+/// Addons from packages
+pub mod addon;
 /// Standard declarative package format
 pub mod declarative;
 /// Package metadata
 pub mod metadata;
-/// Manual overrides for packages
-pub mod overrides;
 /// Package properties
 pub mod properties;
 /// Standard repository format
@@ -21,7 +21,7 @@ pub mod resolve;
 /// Framework for evaluating script packages
 pub mod script_eval;
 
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Arc};
 
 use anyhow::Context;
 use async_trait::async_trait;
@@ -114,7 +114,7 @@ pub trait PackageEvaluator<'a> {
 		&'b mut self,
 		pkg: &ArcPkgReq,
 		common_input: &Self::CommonInput,
-	) -> anyhow::Result<&'b PackageProperties>;
+	) -> anyhow::Result<Arc<PackageProperties>>;
 
 	/// Preload multiple packages
 	async fn preload_packages<'b>(
@@ -179,6 +179,8 @@ pub struct PackageEvalRelationsResult {
 	pub compats: Vec<(PackageID, PackageID)>,
 	/// The evaluated extensions
 	pub extensions: Vec<PackageID>,
+	/// The evaluated inclusions
+	pub inclusions: Vec<PackageID>,
 }
 
 /// Checks if a package is open source
@@ -189,10 +191,10 @@ pub fn is_open_source(meta: &PackageMetadata, properties: &PackageProperties) ->
 	}
 
 	// Infer from the license
-	if let Some(license) = &meta.license {
-		if let "ARR" | "All Rights Reserved" = license.as_str() {
-			return false;
-		}
+	if let Some(license) = &meta.license
+		&& let "ARR" | "All Rights Reserved" = license.as_str()
+	{
+		return false;
 	}
 
 	true

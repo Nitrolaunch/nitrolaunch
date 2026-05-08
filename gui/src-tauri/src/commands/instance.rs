@@ -1,26 +1,25 @@
 use crate::output::{LauncherOutput, SerializableResolutionError};
-use crate::State;
-use anyhow::{bail, Context};
+use crate::{State, get_ms_client_id};
+use anyhow::{Context, bail};
 use itertools::Itertools;
-use nitrolaunch::config::modifications::{apply_modifications_and_write, ConfigModification};
 use nitrolaunch::config::Config;
+use nitrolaunch::config::modifications::{ConfigModification, apply_modifications_and_write};
 use nitrolaunch::config_crate::instance::InstanceConfig;
 use nitrolaunch::config_crate::template::TemplateConfig;
 use nitrolaunch::core::io::json_to_file_pretty;
 use nitrolaunch::core::util::versions::MinecraftVersion;
-use nitrolaunch::instance::delete_instance_files;
-use nitrolaunch::instance::setup::setup_core;
-use nitrolaunch::instance::update::manager::{UpdateManager, UpdateSettings};
-use nitrolaunch::instance::update::InstanceUpdateContext;
+use nitrolaunch::instance::update::manager::UpdateSettings;
+use nitrolaunch::instance::update::{InstanceUpdateContext, UpdateFacets};
 use nitrolaunch::io::lock::Lockfile;
-use nitrolaunch::pkg::eval::EvalConstants;
 use nitrolaunch::plugin::PluginManager;
-use nitrolaunch::plugin_crate::hook::hooks::{
-	DeleteInstance, DeleteTemplate, SaveInstanceConfigArg, SaveTemplateConfigArg,
-};
+use nitrolaunch::plugin_crate::hook::hooks::{DeleteTemplate, SaveTemplateConfigArg};
 use nitrolaunch::shared::id::{InstanceID, TemplateID};
+use nitrolaunch::shared::java_args::MemoryNum;
+use nitrolaunch::shared::loaders::Loader;
 use nitrolaunch::shared::output::NoOp;
-use nitrolaunch::shared::versions::{MinecraftLatestVersion, MinecraftVersionDeser};
+use nitrolaunch::shared::versions::{
+	MinecraftLatestVersion, MinecraftVersionDeser, parse_versioned_string,
+};
 use nitrolaunch::shared::{Side, UpdateDepth};
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
@@ -47,19 +46,18 @@ pub async fn get_instances(state: tauri::State<'_, State>) -> Result<Vec<Instanc
 		.sorted_by_key(|x| x.0)
 		.map(|(id, instance)| {
 			let id = id.to_string();
-			let config = instance.get_config();
+			let config = instance.original_config();
 			InstanceInfo {
-				icon: config.icon.clone(),
+				icon: instance.config().icon.clone(),
 				pinned: data.pinned.contains(&id),
 				id,
-				name: config.name.clone(),
-				side: Some(instance.get_side()),
-				from_plugin: config.original_config.source_plugin.is_some(),
-				version: Some(config.version.to_string()),
-				is_editable: config.original_config.is_editable
-					|| config.original_config.source_plugin.is_none(),
-				is_deletable: config.original_config.is_deletable
-					|| config.original_config.source_plugin.is_none(),
+				name: instance.config().name.clone(),
+				side: Some(instance.side()),
+				from_plugin: config.source_plugin.is_some(),
+				version: Some(instance.version().to_string()),
+				loader: instance.loader().clone(),
+				is_editable: config.is_editable || config.source_plugin.is_none(),
+				is_deletable: config.is_deletable || config.source_plugin.is_none(),
 			}
 		})
 		.collect();
@@ -93,6 +91,12 @@ pub async fn get_templates(state: tauri::State<'_, State>) -> Result<Vec<Instanc
 					.version
 					.as_ref()
 					.map(|x| MinecraftVersion::from_deser(x).to_string()),
+				loader: template
+					.instance
+					.loader
+					.as_ref()
+					.map(|x| Loader::parse_from_str(parse_versioned_string(x).0))
+					.unwrap_or_default(),
 				is_editable: template.instance.is_editable
 					|| template.instance.source_plugin.is_none(),
 				is_deletable: template.instance.is_deletable
@@ -113,6 +117,7 @@ pub struct InstanceInfo {
 	pub pinned: bool,
 	pub from_plugin: bool,
 	pub version: Option<String>,
+	pub loader: Loader,
 	pub is_editable: bool,
 	pub is_deletable: bool,
 }
@@ -178,19 +183,14 @@ pub async fn get_instance_config(
 		return Ok(None);
 	};
 
-	Ok(Some(
-		instance
-			.get_config()
-			.original_config_with_templates_and_plugins
-			.clone(),
-	))
+	Ok(Some(instance.config().clone()))
 }
 
 #[tauri::command]
 pub async fn get_editable_instance_config(
 	state: tauri::State<'_, State>,
 	id: String,
-) -> Result<Option<InstanceConfig>, String> {
+) -> Result<Option<InstanceConfigAndPluginFields>, String> {
 	let config = fmt_err(
 		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
 			.await
@@ -201,7 +201,16 @@ pub async fn get_editable_instance_config(
 		return Ok(None);
 	};
 
-	Ok(Some(instance.get_config().original_config.clone()))
+	Ok(Some(InstanceConfigAndPluginFields {
+		config: instance.original_config().clone(),
+		plugin_config: instance.original_config().plugin_config.clone(),
+	}))
+}
+
+#[derive(Serialize)]
+pub struct InstanceConfigAndPluginFields {
+	pub config: InstanceConfig,
+	pub plugin_config: serde_json::Map<String, serde_json::Value>,
 }
 
 #[tauri::command]
@@ -226,7 +235,7 @@ pub async fn get_template_config(
 pub async fn get_editable_template_config(
 	state: tauri::State<'_, State>,
 	id: String,
-) -> Result<Option<TemplateConfig>, String> {
+) -> Result<Option<TemplateConfigAndPluginFields>, String> {
 	let config = fmt_err(
 		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
 			.await
@@ -237,18 +246,32 @@ pub async fn get_editable_template_config(
 		return Ok(None);
 	};
 
-	Ok(Some(template.clone()))
+	Ok(Some(TemplateConfigAndPluginFields {
+		config: template.clone(),
+		plugin_config: template.instance.plugin_config.clone(),
+	}))
+}
+
+#[derive(Serialize)]
+pub struct TemplateConfigAndPluginFields {
+	pub config: TemplateConfig,
+	pub plugin_config: serde_json::Map<String, serde_json::Value>,
 }
 
 #[tauri::command]
-pub async fn get_base_template(state: tauri::State<'_, State>) -> Result<TemplateConfig, String> {
+pub async fn get_base_template(
+	state: tauri::State<'_, State>,
+) -> Result<TemplateConfigAndPluginFields, String> {
 	let config = fmt_err(
 		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
 			.await
 			.context("Failed to load config"),
 	)?;
 
-	Ok(config.base_template)
+	Ok(TemplateConfigAndPluginFields {
+		config: config.base_template.clone(),
+		plugin_config: config.base_template.instance.plugin_config,
+	})
 }
 
 #[tauri::command]
@@ -266,7 +289,7 @@ pub async fn write_instance_config(
 
 	let plugins = fmt_err(PluginManager::load(&state.paths, &mut NoOp).await)?;
 
-	let modifications = vec![ConfigModification::AddInstance(id.into(), config)];
+	let modifications = vec![ConfigModification::UpdateInstance(id.into(), config)];
 	fmt_err(
 		apply_modifications_and_write(
 			&mut configuration,
@@ -297,7 +320,7 @@ pub async fn write_template_config(
 
 	let plugins = fmt_err(PluginManager::load(&state.paths, &mut NoOp).await)?;
 
-	let modifications = vec![ConfigModification::AddTemplate(id.into(), config)];
+	let modifications = vec![ConfigModification::UpdateTemplate(id.into(), config)];
 	fmt_err(
 		apply_modifications_and_write(
 			&mut configuration,
@@ -337,7 +360,14 @@ pub async fn update_instance(
 	instance_id: String,
 	depth: UpdateDepth,
 ) -> Result<(), String> {
-	update_instance_impl(&state, Arc::new(app_handle), instance_id, depth).await
+	update_instance_impl(
+		&state,
+		Arc::new(app_handle),
+		instance_id,
+		depth,
+		UpdateFacets::all(),
+	)
+	.await
 }
 
 pub async fn update_instance_impl(
@@ -345,6 +375,7 @@ pub async fn update_instance_impl(
 	app_handle: Arc<tauri::AppHandle>,
 	instance_id: String,
 	depth: UpdateDepth,
+	facets: UpdateFacets,
 ) -> Result<(), String> {
 	let mut config = fmt_err(
 		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
@@ -359,6 +390,23 @@ pub async fn update_instance_impl(
 	let client = state.client.clone();
 	let data = state.data.clone();
 	let mut lock = fmt_err(Lockfile::open(&state.paths).context("Failed to open lockfile"))?;
+
+	let core = fmt_err(
+		config
+			.get_core(
+				Some(&get_ms_client_id()),
+				&UpdateSettings {
+					depth: UpdateDepth::Full,
+					offline_auth: false,
+				},
+				&client,
+				&config.plugins,
+				&paths,
+				&mut output,
+			)
+			.await,
+	)?;
+
 	let task = {
 		let instance_id = instance_id.clone();
 		let paths = paths.clone();
@@ -370,17 +418,18 @@ pub async fn update_instance_impl(
 
 			let mut ctx = InstanceUpdateContext {
 				packages: &mut config.packages,
-				accounts: &config.accounts,
+				accounts: &mut config.accounts,
 				plugins: &config.plugins,
 				prefs: &config.prefs,
 				paths: &paths,
 				lock: &mut lock,
 				client: &client,
 				output: &mut output,
+				core: &core,
 			};
 
 			instance
-				.update(true, depth, &mut ctx)
+				.update(depth, facets, &mut ctx)
 				.await
 				.context("Failed to update instance")?;
 
@@ -404,99 +453,17 @@ pub async fn update_instance_packages(
 	app_handle: tauri::AppHandle,
 	instance_id: String,
 ) -> Result<(), String> {
-	let mut config = fmt_err(
-		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
-			.await
-			.context("Failed to load config"),
-	)?;
-
-	let mut output = LauncherOutput::new(state.get_output(app_handle));
-	output.set_task("update_instance_packages");
-
-	let paths = state.paths.clone();
-	let client = state.client.clone();
-	let data = state.data.clone();
-	let mut lock = fmt_err(Lockfile::open(&state.paths).context("Failed to open lockfile"))?;
-	let task = {
-		let instance_id = instance_id.clone();
-		let paths = paths.clone();
-		async move {
-			let instance_id2 = instance_id.clone();
-			let Some(instance) = config.instances.get_mut(&InstanceID::from(instance_id)) else {
-				bail!("Instance does not exist");
-			};
-
-			let mut ctx = InstanceUpdateContext {
-				packages: &mut config.packages,
-				accounts: &config.accounts,
-				plugins: &config.plugins,
-				prefs: &config.prefs,
-				paths: &paths,
-				lock: &mut lock,
-				client: &client,
-				output: &mut output,
-			};
-
-			let manager = UpdateManager::new(UpdateDepth::Shallow);
-
-			let mut core = setup_core(
-				None,
-				&manager.settings,
-				ctx.client,
-				ctx.accounts,
-				ctx.plugins,
-				ctx.paths,
-				ctx.output,
-			)
-			.await?;
-
-			let version = core
-				.get_version(&instance.get_config().version, ctx.output)
-				.await?;
-			let version_info = version.get_version_info();
-			let mc_version = version_info.version.clone();
-
-			ctx.lock
-				.finish(ctx.paths)
-				.context("Failed to finish using lockfile")?;
-
-			let constants = EvalConstants {
-				version: mc_version.to_string(),
-				loader: instance.get_config().loader.clone(),
-				version_list: version_info.versions.clone(),
-				language: ctx.prefs.language,
-				default_stability: instance.get_config().package_stability,
-			};
-
-			nitrolaunch::instance::update::packages::update_instance_packages(
-				instance,
-				&Arc::new(constants),
-				&mut ctx,
-				false,
-			)
-			.await?;
-
-			ctx.lock
-				.finish(ctx.paths)
-				.context("Failed to finish using lockfile")?;
-
-			let mut data_lock = data.lock().await;
-			data_lock.last_resolution_errors.remove(&instance_id2);
-			let _ = data_lock.write(&paths);
-
-			Ok(())
-		}
-	};
-
-	let task = tokio::spawn(unsafe { MakeSend::new(task) });
-	state.register_task("update_instance_packages", task).await;
-
-	// Update so that there is no resolution error since we must have completed successfully
-
-	Ok(())
+	update_instance_impl(
+		&state,
+		Arc::new(app_handle),
+		instance_id,
+		UpdateDepth::Full,
+		UpdateFacets::packages(),
+	)
+	.await
 }
 
-struct MakeSend<F: Future>(Pin<Box<F>>);
+pub struct MakeSend<F: Future>(Pin<Box<F>>);
 
 unsafe impl<F: Future> Send for MakeSend<F> {}
 
@@ -512,8 +479,8 @@ impl<F: Future> Future for MakeSend<F> {
 }
 
 impl<F: Future> MakeSend<F> {
-	/// SAFETY: None. The future better actually be send!z
-	unsafe fn new(f: F) -> Self {
+	/// SAFETY: None. The future better actually be send!
+	pub unsafe fn new(f: F) -> Self {
 		Self(Box::pin(f))
 	}
 }
@@ -537,62 +504,18 @@ pub async fn delete_instance(
 	let mut output = LauncherOutput::new(state.get_output(app_handle));
 	output.set_task("delete_instance");
 
-	fmt_err(
-		delete_instance_files(instance, &state.paths)
-			.await
-			.context("Failed to delete instance files"),
-	)?;
-
 	let config = fmt_err(load_config(&state.paths, &state.wasm_loader, &mut NoOp).await)?;
 
-	let instance_id = instance;
 	let Some(instance) = config.instances.get(instance) else {
 		return Err("Instance does not exist".into());
 	};
 
-	if let Some(source_plugin) = &instance.get_config().original_config.source_plugin {
-		if !instance.get_config().original_config.is_deletable {
-			return Err("Plugin instance does not support deletion".into());
-		}
+	fmt_err(
+		instance
+			.delete(&state.paths, &config.plugins, &mut output)
+			.await,
+	)?;
 
-		let arg = SaveInstanceConfigArg {
-			id: instance_id.to_string(),
-			config: instance.get_config().original_config.clone(),
-		};
-
-		let result = fmt_err(
-			config
-				.plugins
-				.call_hook_on_plugin(
-					DeleteInstance,
-					source_plugin,
-					&arg,
-					&state.paths,
-					&mut output,
-				)
-				.await,
-		)?;
-		if let Some(result) = result {
-			fmt_err(result.result(&mut output).await)?;
-		}
-	} else {
-		let mut raw_config = fmt_err(
-			Config::open(&Config::get_path(&state.paths)).context("Failed to load config"),
-		)?;
-
-		let modifications = vec![ConfigModification::RemoveInstance(instance_id.into())];
-		fmt_err(
-			apply_modifications_and_write(
-				&mut raw_config,
-				modifications,
-				&state.paths,
-				&config.plugins,
-				&mut output,
-			)
-			.await
-			.context("Failed to modify and write config"),
-		)?;
-	}
 	Ok(())
 }
 
@@ -736,40 +659,43 @@ pub async fn canonicalize_version(
 		return Ok(version.to_string());
 	}
 
-	if let Some(id) = id {
-		if instance_or_template == InstanceOrTemplate::Instance {
-			let lock = fmt_err(Lockfile::open(&state.paths).context("Failed to open lockfile"))?;
-			if let Some(version) = lock.get_instance_version(id) {
-				return Ok(version.to_string());
-			}
+	let mut config = fmt_err(load_config(&state.paths, &state.wasm_loader, &mut NoOp).await)?;
+
+	if let Some(id) = id
+		&& instance_or_template == InstanceOrTemplate::Instance
+	{
+		let Some(instance) = config.instances.get_mut(id) else {
+			return Err("Instance does not exist".into());
+		};
+
+		let inst_lock = fmt_err(instance.get_lockfile(&state.paths))?;
+
+		if let Some(version) = inst_lock.get_minecraft_version() {
+			return Ok(version.clone());
 		}
 	}
 
 	// Get the latest version
-
-	let config = fmt_err(
-		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
-			.await
-			.context("Failed to load config"),
+	let core = fmt_err(
+		config
+			.get_core(
+				None,
+				&UpdateSettings {
+					depth: UpdateDepth::Shallow,
+					offline_auth: true,
+				},
+				&state.client,
+				&config.plugins,
+				&state.paths,
+				&mut NoOp,
+			)
+			.await,
 	)?;
 
-	let mut core = fmt_err(
-		setup_core(
-			None,
-			&UpdateSettings {
-				depth: UpdateDepth::Shallow,
-				offline_auth: true,
-			},
-			&state.client,
-			&config.accounts,
-			&config.plugins,
-			&state.paths,
-			&mut NoOp,
-		)
-		.await,
+	let manifest = fmt_err(
+		core.get_version_manifest(None, UpdateDepth::Shallow, &mut NoOp)
+			.await,
 	)?;
-
-	let manifest = fmt_err(core.get_version_manifest(None, &mut NoOp).await)?;
 	let Some(latest) = &manifest.manifest.latest else {
 		return Err("Latest versions missing".into());
 	};
@@ -785,6 +711,127 @@ pub async fn canonicalize_version(
 	};
 
 	Ok(version)
+}
+
+/// Gets the plugins supporting creation of custom instances or templates
+#[tauri::command]
+pub async fn get_plugins_supporting_creation(
+	state: tauri::State<'_, State>,
+	instance_or_template: InstanceOrTemplate,
+) -> Result<Vec<PluginAndName>, String> {
+	let config = fmt_err(
+		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
+			.await
+			.context("Failed to load config"),
+	)?;
+
+	let out = config
+		.plugins
+		.get_lock()
+		.await
+		.manager
+		.iter_plugins()
+		.filter(|x| match instance_or_template {
+			InstanceOrTemplate::Instance => x.manifest.supports_instance_creation,
+			InstanceOrTemplate::Template => x.manifest.supports_template_creation,
+		})
+		.map(|x| PluginAndName {
+			id: x.get_id().clone(),
+			name: x.manifest.meta.name.clone(),
+		})
+		.collect();
+
+	Ok(out)
+}
+
+#[derive(Deserialize, Serialize, Clone)]
+#[serde(rename_all = "snake_case")]
+pub struct PluginAndName {
+	pub id: String,
+	pub name: Option<String>,
+}
+
+#[tauri::command]
+pub async fn get_instance_size(
+	state: tauri::State<'_, State>,
+	instance: &str,
+) -> Result<String, String> {
+	let config = fmt_err(
+		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
+			.await
+			.context("Failed to load config"),
+	)?;
+
+	let Some(instance) = config.instances.get(&InstanceID::from(instance)) else {
+		return Err(format!("Instance {instance} does not exist"));
+	};
+
+	let size = fmt_err(instance.get_size().await)?;
+	let size = MemoryNum::from_bytes(size).nicefy();
+
+	Ok(size.to_string())
+}
+
+#[tauri::command]
+pub async fn consolidate_instance(
+	state: tauri::State<'_, State>,
+	instance: &str,
+) -> Result<(), String> {
+	let config = fmt_err(load_config(&state.paths, &state.wasm_loader, &mut NoOp).await)?;
+
+	let Some(instance) = config.instances.get(instance) else {
+		return Err("Instance does not exist".into());
+	};
+
+	fmt_err(
+		instance
+			.consolidate(&state.paths, &config.plugins, &mut NoOp)
+			.await,
+	)?;
+
+	Ok(())
+}
+
+#[tauri::command]
+pub async fn duplicate_instance(
+	state: tauri::State<'_, State>,
+	instance: &str,
+	new_id: &str,
+) -> Result<(), String> {
+	let config = fmt_err(load_config(&state.paths, &state.wasm_loader, &mut NoOp).await)?;
+
+	let Some(instance) = config.instances.get(instance) else {
+		return Err("Instance does not exist".into());
+	};
+
+	fmt_err(
+		instance
+			.duplicate(&new_id.into(), &state.paths, &config.plugins, &mut NoOp)
+			.await,
+	)?;
+
+	Ok(())
+}
+
+#[tauri::command]
+pub async fn extract_instance(
+	state: tauri::State<'_, State>,
+	instance: &str,
+	new_id: &str,
+) -> Result<(), String> {
+	let config = fmt_err(load_config(&state.paths, &state.wasm_loader, &mut NoOp).await)?;
+
+	let Some(instance) = config.instances.get(instance) else {
+		return Err("Instance does not exist".into());
+	};
+
+	fmt_err(
+		instance
+			.extract(&new_id.into(), &state.paths, &config.plugins, &mut NoOp)
+			.await,
+	)?;
+
+	Ok(())
 }
 
 #[derive(Deserialize, Serialize, Clone, Copy, PartialEq, Eq)]

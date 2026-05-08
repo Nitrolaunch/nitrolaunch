@@ -3,9 +3,9 @@ use std::fs::{self, File};
 use std::io::{BufReader, BufWriter, Read};
 use std::path::{Path, PathBuf};
 
-use anyhow::{anyhow, bail, ensure, Context};
-use base64::engine::GeneralPurposeConfig;
+use anyhow::{Context, anyhow, bail, ensure};
 use base64::Engine;
+use base64::engine::GeneralPurposeConfig;
 use nitro_shared::util::utc_timestamp;
 use serde::{Deserialize, Serialize};
 use zip::{ZipArchive, ZipWriter};
@@ -226,17 +226,17 @@ impl Index {
 		let Some(group_entry) = self.contents.groups.get(group_id) else {
 			return Ok(());
 		};
-		if let Some(limit) = group_config.common.max_count {
-			if group_entry.backups.len() > (limit as usize) {
-				let num_to_remove = group_entry.backups.len() - (limit as usize);
-				let to_remove: Vec<String> = group_entry.backups[0..num_to_remove - 1]
-					.iter()
-					.map(|x| x.id.clone())
-					.collect();
-				for id in to_remove {
-					self.remove_backup(group_id, &id)
-						.with_context(|| format!("Failed to remove old backup '{id}'"))?;
-				}
+		if let Some(limit) = group_config.common.max_count
+			&& group_entry.backups.len() > (limit as usize)
+		{
+			let num_to_remove = group_entry.backups.len() - (limit as usize);
+			let to_remove: Vec<String> = group_entry.backups[0..num_to_remove - 1]
+				.iter()
+				.map(|x| x.id.clone())
+				.collect();
+			for id in to_remove {
+				self.remove_backup(group_id, &id)
+					.with_context(|| format!("Failed to remove old backup '{id}'"))?;
 			}
 		}
 

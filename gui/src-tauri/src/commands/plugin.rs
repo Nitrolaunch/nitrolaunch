@@ -1,16 +1,21 @@
-use crate::output::LauncherOutput;
 use crate::State;
+use crate::output::LauncherOutput;
 use anyhow::Context;
 use itertools::Itertools;
+use nitrolaunch::config_crate::ConfigKind;
+use nitrolaunch::core::io::json_to_file_pretty;
 use nitrolaunch::plugin::PluginManager;
+use nitrolaunch::plugin_crate::control::Control;
 use nitrolaunch::plugin_crate::hook::hooks::{
-	AddDropdownButtons, AddInstanceTiles, AddSidebarButtons, AddThemes, CustomAction,
-	CustomActionArg, DropdownButton, DropdownButtonLocation, GetPage, InjectPageScript,
-	InjectPageScriptArg, InstanceTile, SidebarButton, Theme,
+	AddDropdownButtons, AddInstanceConfigControls, AddInstanceConfigControlsArg, AddInstanceTiles,
+	AddPluginConfigControls, AddSidebarButtons, AddThemes, CustomAction, CustomActionArg,
+	DropdownButton, DropdownButtonLocation, GetPage, InjectPageScript, InjectPageScriptArg,
+	InstanceTile, SidebarButton, Theme,
 };
 use nitrolaunch::plugin_crate::plugin::PluginMetadata;
 use nitrolaunch::{plugin::install::get_verified_plugins, shared::output::NoOp};
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::fmt::Debug;
 
 use super::{fmt_err, load_config};
@@ -58,13 +63,11 @@ pub async fn get_remote_plugins(
 		let mut output = LauncherOutput::new(state.get_output(app_handle));
 		output.set_task("get_plugins");
 
-		let verified_plugins = fmt_err(
+		fmt_err(
 			get_verified_plugins(&state.client, false)
 				.await
 				.context("Failed to get verified plugins"),
-		)?;
-
-		verified_plugins
+		)?
 	};
 
 	let verified_plugins = verified_plugins.into_values().map(|x| PluginInfo {
@@ -435,4 +438,91 @@ pub async fn get_instance_tiles(
 	let out = fmt_err(results.flatten_all_results(&mut output).await)?;
 
 	Ok(out)
+}
+
+#[tauri::command]
+pub async fn get_instance_config_controls(
+	state: tauri::State<'_, State>,
+	id: Option<String>,
+	kind: ConfigKind,
+	plugin: Option<String>,
+) -> Result<Vec<Control>, String> {
+	let config = fmt_err(
+		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
+			.await
+			.context("Failed to load config"),
+	)?;
+
+	let arg = AddInstanceConfigControlsArg { id, kind, plugin };
+	let mut results = fmt_err(
+		config
+			.plugins
+			.call_hook(AddInstanceConfigControls, &arg, &state.paths, &mut NoOp)
+			.await,
+	)?;
+
+	let mut out = Vec::new();
+	while let Some(result) = fmt_err(results.next_result(&mut NoOp).await)? {
+		out.extend(result.controls);
+	}
+
+	Ok(out)
+}
+
+#[tauri::command]
+pub async fn get_plugin_config_controls(
+	state: tauri::State<'_, State>,
+) -> Result<HashMap<String, Vec<Control>>, String> {
+	let config = fmt_err(
+		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
+			.await
+			.context("Failed to load config"),
+	)?;
+
+	let mut results = fmt_err(
+		config
+			.plugins
+			.call_hook(AddPluginConfigControls, &(), &state.paths, &mut NoOp)
+			.await,
+	)?;
+
+	let mut out = HashMap::new();
+	while let Some(result) = results.next() {
+		let plugin_id = result.get_id().clone();
+		let result = fmt_err(result.result(&mut NoOp).await)?;
+
+		out.insert(plugin_id, result);
+	}
+
+	Ok(out)
+}
+
+#[tauri::command]
+pub async fn get_plugin_config(
+	state: tauri::State<'_, State>,
+) -> Result<HashMap<String, serde_json::Value>, String> {
+	let config =
+		fmt_err(PluginManager::open_config(&state.paths).context("Failed to open plugin config"))?;
+
+	Ok(config.config)
+}
+
+#[tauri::command]
+pub async fn write_plugin_config(
+	state: tauri::State<'_, State>,
+	config: HashMap<String, serde_json::Value>,
+) -> Result<(), String> {
+	let config_path = PluginManager::get_config_path(&state.paths);
+
+	let mut base_config =
+		fmt_err(PluginManager::open_config(&state.paths).context("Failed to open plugin config"))?;
+
+	base_config.config = config;
+
+	fmt_err(
+		json_to_file_pretty(config_path, &base_config)
+			.context("Failed to write to plugin config file"),
+	)?;
+
+	Ok(())
 }

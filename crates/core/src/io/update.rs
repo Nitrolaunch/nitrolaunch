@@ -5,7 +5,7 @@ use nitro_shared::UpdateDepth;
 
 /// Manager for when we are updating instance files.
 /// It will keep track of files we have already downloaded, manage task requirements, etc
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct UpdateManager {
 	/// The depth to perform updates at.
 	pub(crate) update_depth: UpdateDepth,

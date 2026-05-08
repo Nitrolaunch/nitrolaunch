@@ -4,17 +4,13 @@ use std::{
 	io::Cursor,
 };
 
-use anyhow::{bail, Context};
-use nitro_core::{io::json_from_file, net::download};
-use nitro_net::github::{get_github_releases, GithubAsset};
-use nitro_plugin::plugin::{PluginManifest, PluginMetadata};
-use nitro_shared::{
-	output::{MessageContents, MessageLevel, NitroOutput},
-	util::TARGET_BITS_STR,
-};
+use anyhow::{Context, bail};
+use nitro_core::net::download;
+use nitro_net::github::{GithubAsset, get_github_releases};
+use nitro_plugin::plugin::PluginMetadata;
+use nitro_shared::{output::NitroOutput, util::TARGET_BITS_STR};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
-use zip::ZipArchive;
 
 use crate::io::paths::Paths;
 
@@ -45,15 +41,14 @@ pub async fn get_verified_plugins(
 		serde_json::from_str(include_str!("verified_plugins.json"))
 			.context("Failed to deserialize core verified list")?;
 
-	if !offline {
-		if let Ok(remote_list) = download::json::<HashMap<String, VerifiedPlugin>>(
+	if !offline
+		&& let Ok(remote_list) = download::json::<HashMap<String, VerifiedPlugin>>(
 			"https://github.com/Nitrolaunch/nitrolaunch/blob/main/src/plugin/verified_plugins.json",
 			client,
 		)
 		.await
-		{
-			list.extend(remote_list);
-		}
+	{
+		list.extend(remote_list);
 	}
 
 	Ok(list)
@@ -84,10 +79,10 @@ impl VerifiedPlugin {
 			};
 
 			// Check the plugin version
-			if let Some(requested_version) = &version {
-				if requested_version != &release_version {
-					continue;
-				}
+			if let Some(requested_version) = &version
+				&& requested_version != &release_version
+			{
+				continue;
 			}
 
 			// Select the correct asset
@@ -147,27 +142,9 @@ impl VerifiedPlugin {
 			.await
 			.context("Failed to download zipped plugin")?;
 
-		let mut zip = ZipArchive::new(Cursor::new(zip)).context("Failed to read zip archive")?;
-
-		PluginManager::remove_plugin(&self.id, paths)
-			.context("Failed to remove existing plugin")?;
-		let dir = paths.plugins.join(&self.id);
-		std::fs::create_dir_all(&dir).context("Failed to create plugin directory")?;
-
-		zip.extract(&dir)
-			.context("Failed to extract plugin files")?;
-
-		let manifest: PluginManifest =
-			json_from_file(dir.join("plugin.json")).context("Failed to read plugin manifest")?;
-
-		if let Some(install_message) = manifest.install_message {
-			o.display(
-				MessageContents::Warning(install_message),
-				MessageLevel::Important,
-			);
-		}
-
-		let _ = PluginManager::enable_plugin(&self.id, paths);
+		PluginManager::install_plugin(&mut Cursor::new(zip), Some(self.id.clone()), paths, o)
+			.await
+			.context("Failed to install downloaded plugin")?;
 
 		Ok(())
 	}

@@ -1,23 +1,25 @@
+use std::sync::Arc;
+
 use anyhow::bail;
 use nitro_parse::conditions::ConditionKind;
 use nitro_parse::parse::Parsed;
 use nitro_parse::vars::{HashMapVariableStore, ReservedConstantVariables, VariableStore};
+use nitro_pkg::RecommendedPackage;
 use nitro_pkg::properties::PackageProperties;
 use nitro_pkg::script_eval::{
 	AddonInstructionData, ScriptEvalConfig, ScriptEvaluator as ScriptEvaluatorTrait,
 };
-use nitro_pkg::RecommendedPackage;
 use nitro_plugin::hook::hooks::{CustomPackageInstruction, CustomPackageInstructionArg};
 use nitro_shared::output::NoOp;
-use nitro_shared::pkg::PackageID;
+use nitro_shared::pkg::{ArcPkgReq, PackageID};
 
 use crate::io::paths::Paths;
 use crate::plugin::PluginManager;
 
 use super::conditions::eval_condition;
 use super::{
-	create_valid_addon_request, EvalData, EvalInput, EvalPermissions, RequiredPackage, Routine,
-	MAX_NOTICE_CHARACTERS, MAX_NOTICE_INSTRUCTIONS,
+	EvalData, EvalInput, EvalPermissions, MAX_NOTICE_CHARACTERS, MAX_NOTICE_INSTRUCTIONS,
+	RequiredPackage, Routine, create_valid_addon_request,
 };
 
 struct SharedData<'a> {
@@ -27,18 +29,18 @@ struct SharedData<'a> {
 
 /// Evaluate a script package
 pub async fn eval_script_package(
-	pkg_id: PackageID,
+	req: &ArcPkgReq,
 	parsed: &Parsed,
 	routine: Routine,
-	properties: PackageProperties,
+	properties: Arc<PackageProperties>,
 	input: EvalInput,
 	plugins: PluginManager,
 	paths: &Paths,
 ) -> anyhow::Result<EvalData> {
-	let mut eval = EvalData::new(input, pkg_id, properties, &routine, plugins);
+	let mut eval = EvalData::new(input, req.clone(), properties, &routine, plugins);
 
 	eval.vars.set_reserved_constants(ReservedConstantVariables {
-		mc_version: &eval.input.constants.version,
+		mc_version: eval.input.constants.version.as_deref(),
 	});
 
 	let reason = eval.reason;
@@ -92,7 +94,7 @@ impl ScriptEvaluatorTrait for ScriptEvaluator {
 		}
 
 		let addon_req =
-			create_valid_addon_request(addon, shared.eval.id.clone(), &shared.eval.input)?;
+			create_valid_addon_request(addon, shared.eval.req.clone(), &shared.eval.input)?;
 		shared.eval.addon_reqs.push(addon_req);
 
 		Ok(())
@@ -152,6 +154,15 @@ impl ScriptEvaluatorTrait for ScriptEvaluator {
 		Ok(())
 	}
 
+	fn add_inclusion(
+		&mut self,
+		shared: &mut Self::Shared<'_>,
+		pkg: PackageID,
+	) -> anyhow::Result<()> {
+		shared.eval.inclusions.push(pkg);
+		Ok(())
+	}
+
 	fn add_notice(&mut self, shared: &mut Self::Shared<'_>, notice: String) -> anyhow::Result<()> {
 		if shared.eval.notices.len() > MAX_NOTICE_INSTRUCTIONS {
 			bail!("Max number of notice instructions was exceded (>{MAX_NOTICE_INSTRUCTIONS})");
@@ -179,7 +190,7 @@ impl ScriptEvaluatorTrait for ScriptEvaluator {
 		args: Vec<String>,
 	) -> anyhow::Result<()> {
 		let arg = CustomPackageInstructionArg {
-			pkg_id: shared.eval.id.to_string(),
+			pkg_id: shared.eval.req.to_string(),
 			command,
 			args,
 		};

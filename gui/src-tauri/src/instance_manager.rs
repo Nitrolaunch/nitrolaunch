@@ -57,8 +57,19 @@ impl RunningInstanceManager {
 
 	/// Kills an instance
 	pub fn kill(&mut self, instance: &str, account: Option<&str>) {
-		self.running_instance_registry.kill_instance(instance, account);
+		self.running_instance_registry
+			.kill_instance(instance, account);
 		let _ = self.running_instance_registry.write();
+	}
+
+	/// Gets an instance entry
+	pub fn get_entry<'this>(
+		&'this self,
+		instance: &str,
+		account: Option<&str>,
+	) -> Option<&'this RunningInstanceEntry> {
+		self.running_instance_registry
+			.get_instance(instance, account)
 	}
 
 	/// Gets the list of running instances

@@ -1,10 +1,15 @@
 {
+	"id": "options",
 	"name": "Options",
 	"description": "Manage game options for client and server",
+	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/options",
 	"version": "v6",
 	"protocol_version": 3,
 	"hooks": {
 		"on_instance_setup": {
+			"executable": "${PLUGIN_DIR}/nitro_plugin_options${EXE_EXTENSION}"
+		},
+		"add_instance_config_controls": {
 			"executable": "${PLUGIN_DIR}/nitro_plugin_options${EXE_EXTENSION}"
 		}
 	}

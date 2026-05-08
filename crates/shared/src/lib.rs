@@ -6,8 +6,8 @@
 //!
 //! - `schema`: Enable generation of JSON schemas using the `schemars` crate
 
-/// Common addon constructs
-pub mod addon;
+/// Filesystem
+pub mod io;
 /// Operating Java memory arguments
 pub mod java_args;
 /// Tools for languages and language detection
@@ -16,12 +16,16 @@ pub mod lang;
 pub mod loaders;
 /// Common Mojang / Microsoft API types
 pub mod minecraft;
+/// Finding viable Nitrolaunch executables for launching instances
+pub mod nitro_executable;
 /// Nitrolaunch output
 pub mod output;
 /// Common package constructs
 pub mod pkg;
 /// Other utilities
 pub mod util;
+/// Tools for working with UUIDs
+pub mod uuid;
 /// Tools for dealing with version patterns
 pub mod versions;
 
@@ -69,6 +73,12 @@ pub mod later {
 		#[inline(always)]
 		pub fn clear(&mut self) {
 			*self = Self::Empty;
+		}
+
+		/// Takes the value in the Later
+		#[inline(always)]
+		pub fn take(&mut self) -> Option<T> {
+			std::mem::replace(self, Self::Empty).into_option()
 		}
 
 		/// Checks if the Later does not contain a value
@@ -162,11 +172,12 @@ pub mod later {
 }
 
 /// Minecraft game side, client or server
-#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, Deserialize, Serialize)]
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, Deserialize, Serialize, Default)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[serde(rename_all = "snake_case")]
 pub enum Side {
 	/// The default game
+	#[default]
 	Client,
 	/// A dedicated server
 	Server,
@@ -179,6 +190,14 @@ impl Side {
 			"client" => Some(Self::Client),
 			"server" => Some(Self::Server),
 			_ => None,
+		}
+	}
+
+	/// Print a side to a pretty string
+	pub fn to_string_pretty(&self) -> &'static str {
+		match self {
+			Self::Client => "Client",
+			Self::Server => "Server",
 		}
 	}
 }

@@ -1,13 +1,13 @@
+use nitro_parse::FailReason;
 use nitro_parse::conditions::ConditionKind;
 use nitro_parse::instruction::{InstrKind, Instruction};
 use nitro_parse::parse::{Block, Parsed};
 use nitro_parse::routine::INSTALL_ROUTINE;
 use nitro_parse::vars::{Value, VariableStore};
-use nitro_parse::FailReason;
 
-use anyhow::{anyhow, bail, Context};
-use nitro_shared::addon::AddonKind;
-use nitro_shared::pkg::{PackageAddonOptionalHashes, PackageID};
+use anyhow::{Context, anyhow, bail};
+use nitro_shared::minecraft::AddonKind;
+use nitro_shared::pkg::{AddonOptionalHashes, PackageID};
 use serde::{Deserialize, Serialize};
 
 use crate::{RecommendedPackage, RequiredPackage};
@@ -42,7 +42,7 @@ pub trait ScriptEvaluator {
 
 	/// Add a conflict
 	fn add_conflict(&mut self, shared: &mut Self::Shared<'_>, pkg: PackageID)
-		-> anyhow::Result<()>;
+	-> anyhow::Result<()>;
 
 	/// Add a recommendation
 	fn add_recommendation(
@@ -63,6 +63,13 @@ pub trait ScriptEvaluator {
 
 	/// Add an extension
 	fn add_extension(
+		&mut self,
+		shared: &mut Self::Shared<'_>,
+		pkg: PackageID,
+	) -> anyhow::Result<()>;
+
+	/// Add an inclusion
+	fn add_inclusion(
 		&mut self,
 		shared: &mut Self::Shared<'_>,
 		pkg: PackageID,
@@ -181,10 +188,10 @@ pub async fn eval_instr<E: ScriptEvaluator>(
 					} else {
 						// Eval the else block chain
 						for else_block in else_blocks {
-							if let Some(condition) = &else_block.condition {
-								if !e.eval_condition(shared, &condition.kind)? {
-									continue;
-								}
+							if let Some(condition) = &else_block.condition
+								&& !e.eval_condition(shared, &condition.kind)?
+							{
+								continue;
 							}
 							let block = parsed
 								.blocks
@@ -280,12 +287,13 @@ pub async fn eval_instr<E: ScriptEvaluator>(
 					url,
 					path,
 					version,
+					modpack_format,
 					hashes,
 				} => {
 					if let EvalReason::Install = config.reason {
 						let id = id.get(e.get_variable_store(shared))?;
 						let kind = kind.as_ref().expect("Addon kind missing");
-						let hashes = PackageAddonOptionalHashes {
+						let hashes = AddonOptionalHashes {
 							sha256: hashes.sha256.get_as_option(e.get_variable_store(shared))?,
 							sha512: hashes.sha512.get_as_option(e.get_variable_store(shared))?,
 						};
@@ -296,6 +304,8 @@ pub async fn eval_instr<E: ScriptEvaluator>(
 							url: url.get_as_option(e.get_variable_store(shared))?,
 							path: path.get_as_option(e.get_variable_store(shared))?,
 							version: version.get_as_option(e.get_variable_store(shared))?,
+							modpack_format: modpack_format
+								.get_as_option(e.get_variable_store(shared))?,
 							hashes,
 						};
 						e.add_addon(shared, data)?;
@@ -357,6 +367,8 @@ pub struct AddonInstructionData {
 	pub path: Option<String>,
 	/// The version of the addon
 	pub version: Option<String>,
+	/// Modpack format of the addon if it is a modpack
+	pub modpack_format: Option<String>,
 	/// The addon's hashes
-	pub hashes: PackageAddonOptionalHashes,
+	pub hashes: AddonOptionalHashes,
 }

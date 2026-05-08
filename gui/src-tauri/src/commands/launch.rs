@@ -1,15 +1,19 @@
-use crate::commands::instance::update_instance_impl;
-use crate::data::{InstanceLaunch, LauncherData};
-use crate::{output::LauncherOutput, State};
-use anyhow::{bail, Context};
+use crate::commands::instance::MakeSend;
+use crate::data::LauncherData;
+use crate::get_ms_client_id;
+use crate::{State, output::LauncherOutput};
+use anyhow::Context;
+use nitrolaunch::core::QuickPlayType;
 use nitrolaunch::core::io::open_named_pipe;
 use nitrolaunch::instance::launch::LaunchSettings;
 use nitrolaunch::instance::tracking::RunningInstanceEntry;
+use nitrolaunch::instance::update::InstanceUpdateContext;
+use nitrolaunch::instance::update::manager::UpdateSettings;
 use nitrolaunch::io::lock::Lockfile;
 use nitrolaunch::plugin_crate::try_read::TryReadExt;
+use nitrolaunch::shared::UpdateDepth;
 use nitrolaunch::shared::id::InstanceID;
 use nitrolaunch::shared::output::NoOp;
-use nitrolaunch::shared::UpdateDepth;
 use std::io::Write;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -25,8 +29,9 @@ pub async fn launch_game(
 	state: tauri::State<'_, State>,
 	instance_id: String,
 	offline: bool,
+	account: Option<&str>,
 ) -> Result<(), String> {
-	let state = Arc::new(state);
+	// let state = Arc::new(state);
 	let app_handle = Arc::new(app_handle);
 	let mut output = LauncherOutput::new(state.get_output_arc(app_handle.clone()));
 	output.set_task(&format!("launch_instance_{instance_id}"));
@@ -37,15 +42,17 @@ pub async fn launch_game(
 
 	let data = fmt_err(LauncherData::open(&state.paths).context("Failed to open launcher data"))?;
 
+	let account = account.or(data.current_account.as_deref());
+
 	fmt_err(
 		launch_game_impl(
 			instance_id.to_string(),
 			offline,
-			data.current_account.as_deref(),
-			state.clone(),
+			account,
+			None,
+			&state,
 			app_handle,
 			stdio_paths.clone(),
-			state.data.clone(),
 			output,
 		)
 		.await
@@ -55,14 +62,14 @@ pub async fn launch_game(
 	Ok(())
 }
 
-async fn launch_game_impl(
+pub async fn launch_game_impl(
 	instance_id: String,
 	offline: bool,
 	account: Option<&str>,
-	state: Arc<tauri::State<'_, State>>,
+	quick_play: Option<QuickPlayType>,
+	state: &State,
 	app: Arc<AppHandle>,
 	stdio_paths: Arc<Mutex<Option<(PathBuf, Option<PathBuf>)>>>,
-	data: Arc<Mutex<LauncherData>>,
 	mut o: LauncherOutput,
 ) -> anyhow::Result<()> {
 	println!("Launching game!");
@@ -74,26 +81,34 @@ async fn launch_game_impl(
 		config.accounts.choose_account(account)?;
 	}
 
-	// Check first update
-	let lock = Lockfile::open(&state.paths).context("Failed to open lockfile")?;
-	if !lock.has_instance_done_first_update(&instance_id) {
-		if let Err(e) =
-			update_instance_impl(&state, app.clone(), instance_id.clone(), UpdateDepth::Full).await
-		{
-			bail!("{e}");
-		};
-
-		return Ok(());
-	}
-
 	let paths = state.paths.clone();
 	let plugins = config.plugins.clone();
+	let packages = config.packages.clone();
+	let accounts = config.accounts.clone();
+	let prefs = config.prefs.clone();
+	let client = state.client.clone();
 	let instance_id = InstanceID::from(instance_id);
+
+	let core = config
+		.get_core(
+			Some(&get_ms_client_id()),
+			&UpdateSettings {
+				depth: UpdateDepth::Shallow,
+				offline_auth: offline,
+			},
+			&client,
+			&config.plugins,
+			&paths,
+			&mut o,
+		)
+		.await?;
+
 	o.set_instance(instance_id.clone());
 
 	let task = {
 		let instance_id = instance_id.clone();
-		tokio::spawn(async move {
+		async move {
+			let mut accounts = accounts;
 			let mut o = o;
 
 			let instance = config
@@ -101,30 +116,32 @@ async fn launch_game_impl(
 				.get_mut(&instance_id)
 				.context("Instance does not exist")?;
 			let settings = LaunchSettings {
-				ms_client_id: crate::get_ms_client_id(),
 				offline_auth: offline,
 				pipe_stdin: false,
+				quick_play,
 			};
+
+			let mut lock = Lockfile::open(&paths)?;
+			let mut ctx = InstanceUpdateContext {
+				packages: &packages,
+				accounts: &mut accounts,
+				plugins: &plugins,
+				prefs: &prefs,
+				paths: &paths,
+				lock: &mut lock,
+				client: &client,
+				output: &mut o,
+				core: &core,
+			};
+
 			let mut handle = instance
-				.launch(&paths, &mut config.accounts, &plugins, settings, &mut o)
+				.launch(settings, &mut ctx)
 				.await
 				.context("Failed to launch instance")?;
 
 			o.finish_task();
 
 			handle.silence_output(true);
-
-			// Record the launch
-			let mut data = data.lock().await;
-			data.last_launches.insert(
-				instance_id.to_string(),
-				InstanceLaunch {
-					stdout: handle.stdout().to_string_lossy().to_string(),
-					stdin: handle.stdin().map(|x| x.to_string_lossy().to_string()),
-				},
-			);
-			let _ = data.write(&paths);
-			std::mem::drop(data);
 
 			*stdio_paths.lock().await = Some((
 				handle.stdout().to_owned(),
@@ -154,8 +171,10 @@ async fn launch_game_impl(
 			app.emit("game_finished", instance_id.to_string())?;
 
 			Ok::<(), anyhow::Error>(())
-		})
+		}
 	};
+
+	let task = tokio::spawn(unsafe { MakeSend::new(task) });
 
 	state
 		.register_task(&format!("launch_instance_{instance_id}"), task)
@@ -223,12 +242,16 @@ pub async fn get_instance_output(
 	instance_id: &str,
 ) -> Result<Option<String>, String> {
 	let path = {
-		let data = state.data.lock().await;
-		if let Some(last_launch) = data.last_launches.get(instance_id) {
-			PathBuf::from(&last_launch.stdout)
-		} else {
+		let lock = state.running_instances.get().unwrap().lock().await;
+		let Some(entry) = lock.get_entry(instance_id, None) else {
 			return Ok(None);
-		}
+		};
+
+		let Some(path) = &entry.stdout_file else {
+			return Ok(None);
+		};
+
+		state.paths.internal.join("stdio").join(path)
 	};
 
 	let contents = fmt_err(
@@ -247,16 +270,16 @@ pub async fn write_instance_input(
 	input: &str,
 ) -> Result<(), String> {
 	let path = {
-		let data = state.data.lock().await;
-		if let Some(last_launch) = data.last_launches.get(instance_id) {
-			if let Some(stdin) = &last_launch.stdin {
-				PathBuf::from(stdin)
-			} else {
-				return Ok(());
-			}
-		} else {
+		let lock = state.running_instances.get().unwrap().lock().await;
+		let Some(entry) = lock.get_entry(instance_id, None) else {
 			return Ok(());
-		}
+		};
+
+		let Some(path) = &entry.stdin_file else {
+			return Ok(());
+		};
+
+		state.paths.internal.join("stdio").join(path)
 	};
 
 	let mut file = fmt_err(open_named_pipe(path))?;
@@ -311,10 +334,10 @@ async fn emit_instance_stdio_changes(
 	let mut buf = [0u8; 512];
 
 	loop {
-		if let Ok(Some(bytes_read)) = file.try_read(&mut buf).await {
-			if bytes_read > 0 {
-				let _ = app.emit("update_instance_stdio", &instance_id);
-			}
+		if let Ok(Some(bytes_read)) = file.try_read(&mut buf).await
+			&& bytes_read > 0
+		{
+			let _ = app.emit("update_instance_stdio", &instance_id);
 		}
 
 		tokio::time::sleep(Duration::from_millis(1)).await;

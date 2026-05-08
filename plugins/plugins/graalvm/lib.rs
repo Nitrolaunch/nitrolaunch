@@ -4,12 +4,12 @@ use std::{
 	path::Path,
 };
 
-use anyhow::{bail, Context};
+use anyhow::{Context, bail};
 use nitro_plugin::{
 	api::wasm::{
+		WASMPlugin,
 		net::download_bytes,
 		sys::{get_arch_string, get_data_dir, get_os_string},
-		WASMPlugin,
 	},
 	hook::hooks::InstallCustomJavaResult,
 	nitro_wasm_plugin,
@@ -55,17 +55,17 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 /// Downloads the contents of the GraalVM archive
 fn get_latest(major_version: &str) -> anyhow::Result<Vec<u8>> {
 	let url = download_url(major_version);
-	download_bytes(url)
+	download_bytes(&url)
 }
 
 /// Gets the download URL
 fn download_url(major_version: &str) -> String {
 	format!(
-			"https://download.oracle.com/graalvm/{major_version}/latest/graalvm-jdk-{major_version}_{}-{}_bin.{}",
-			get_os_string(),
-			get_arch_string().replace("x86_64", "x64"),
-			get_preferred_archive()
-		)
+		"https://download.oracle.com/graalvm/{major_version}/latest/graalvm-jdk-{major_version}_{}-{}_bin.{}",
+		get_os_string(),
+		get_arch_string().replace("x86_64", "x64"),
+		get_preferred_archive()
+	)
 }
 
 /// Gets the preferred archive
@@ -122,10 +122,10 @@ fn extract_archive<R: Read + Seek>(reader: R, out_dir: &Path) -> anyhow::Result<
 				continue;
 			}
 
-			if let Some(parent) = dest_path.parent() {
-				if !parent.exists() {
-					std::fs::create_dir_all(parent)?;
-				}
+			if let Some(parent) = dest_path.parent()
+				&& !parent.exists()
+			{
+				std::fs::create_dir_all(parent)?;
 			}
 
 			let mut out_file =

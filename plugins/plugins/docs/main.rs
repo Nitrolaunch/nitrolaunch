@@ -1,6 +1,6 @@
 mod docs;
 
-use anyhow::{bail, Context};
+use anyhow::{Context, bail};
 use clap::Parser;
 use color_print::{cprint, cprintln};
 use docs::Docs;

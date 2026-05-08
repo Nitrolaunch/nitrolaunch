@@ -1,4 +1,5 @@
 {
+	"id": "sponge",
 	"name": "Sponge",
 	"description": "Install Sponge server instances",
 	"version": "v6",

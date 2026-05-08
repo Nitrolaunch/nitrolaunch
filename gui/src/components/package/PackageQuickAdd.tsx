@@ -144,7 +144,6 @@ export default function PackageQuickAdd(props: PackageQuickAddProps) {
 								packageMethods.refetch();
 							}}
 							columns={6}
-							connected={false}
 						/>
 					</div>
 					<div class="cont end">
@@ -227,11 +226,11 @@ export default function PackageQuickAdd(props: PackageQuickAddProps) {
 										color="var(--package)"
 										bgColor="var(--packagebg)"
 										onClick={() => {
-											let req: PkgRequest = {
-												id: previewedPackage()!,
-												slug: previewedPackageData()![0].slug,
-											};
-											props.onAdd(req);
+											let req: PkgRequest = parsePkgRequest(
+												previewedPackage()!,
+											);
+											let isModpack = canonicalizeListOrSingle(previewedPackageData()![1].types).includes("modpack");
+											props.onAdd(req, isModpack);
 										}}
 										shadow={false}
 									/>
@@ -262,7 +261,7 @@ export default function PackageQuickAdd(props: PackageQuickAddProps) {
 }
 
 export interface PackageQuickAddProps {
-	onAdd: (pkg: PkgRequest) => void;
+	onAdd: (pkg: PkgRequest, isModpack: boolean) => void;
 	version?: string;
 	loader?: Loader;
 }

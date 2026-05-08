@@ -1,19 +1,20 @@
 use crate::commands::instance::InstanceOrTemplate;
-use crate::{output::LauncherOutput, State};
+use crate::{State, output::LauncherOutput};
 use anyhow::Context;
-use nitrolaunch::io::lock::{Lockfile, LockfilePackage};
+use nitrolaunch::instance_crate::lock::LockfilePackage;
 use nitrolaunch::pkg_crate::declarative::DeclarativePackage;
 use nitrolaunch::pkg_crate::metadata::PackageMetadata;
 use nitrolaunch::pkg_crate::properties::PackageProperties;
 use nitrolaunch::pkg_crate::repo::RepoMetadata;
 use nitrolaunch::pkg_crate::{PackageSearchResults, PkgRequest, PkgRequestSource};
 use nitrolaunch::shared::loaders::Loader;
-use nitrolaunch::shared::output::{MessageContents, MessageLevel, NitroOutput, NoOp};
+use nitrolaunch::shared::output::{MessageContents, NitroOutput, NoOp};
 use nitrolaunch::shared::pkg::{PackageCategory, PackageKind, PackageSearchParameters};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::ops::DerefMut;
 use std::sync::Arc;
+use tokio::task::JoinSet;
 
 use super::{fmt_err, load_config};
 
@@ -33,7 +34,7 @@ pub async fn get_packages(
 ) -> Result<PackageSearchResults, String> {
 	let mut output = LauncherOutput::new(state.get_output(app_handle));
 	output.set_task("search_packages");
-	let mut config = fmt_err(
+	let config = fmt_err(
 		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
 			.await
 			.context("Failed to load config"),
@@ -67,7 +68,7 @@ pub async fn preload_packages(
 	packages: Vec<String>,
 	repo: Option<&str>,
 ) -> Result<(), String> {
-	let mut config = fmt_err(
+	let config = fmt_err(
 		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
 			.await
 			.context("Failed to load config"),
@@ -82,11 +83,7 @@ pub async fn preload_packages(
 	output.set_task("load_packages");
 
 	if let Some(repo) = repo {
-		let repo = config
-			.packages
-			.repos
-			.iter_mut()
-			.find(|x| x.get_id() == repo);
+		let repo = config.packages.repos.iter().find(|x| x.get_id() == repo);
 		let Some(repo) = repo else {
 			return Err("Repository does not exist".into());
 		};
@@ -114,8 +111,8 @@ pub async fn get_package_meta(
 	state: tauri::State<'_, State>,
 	app_handle: tauri::AppHandle,
 	package: &str,
-) -> Result<PackageMetadata, String> {
-	let mut config = fmt_err(
+) -> Result<Arc<PackageMetadata>, String> {
+	let config = fmt_err(
 		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
 			.await
 			.context("Failed to load config"),
@@ -123,20 +120,23 @@ pub async fn get_package_meta(
 
 	let mut output = LauncherOutput::new(state.get_output(app_handle));
 
-	let meta = fmt_err(
+	let req = Arc::new(PkgRequest::parse(package, PkgRequestSource::UserRequire));
+
+	let package = fmt_err(
 		config
 			.packages
-			.get_metadata(
-				&Arc::new(PkgRequest::parse(package, PkgRequestSource::UserRequire)),
-				&state.paths,
-				&state.client,
-				&mut output,
-			)
+			.get(&req, &state.paths, &state.client, &mut output)
+			.await,
+	)?;
+
+	let meta = fmt_err(
+		package
+			.get_metadata(&state.paths, &state.client)
 			.await
 			.context("Failed to get metadata"),
 	)?;
 
-	Ok(meta.clone())
+	Ok(meta)
 }
 
 #[tauri::command]
@@ -144,8 +144,8 @@ pub async fn get_package_props(
 	state: tauri::State<'_, State>,
 	app_handle: tauri::AppHandle,
 	package: &str,
-) -> Result<PackageProperties, String> {
-	let mut config = fmt_err(
+) -> Result<Arc<PackageProperties>, String> {
+	let config = fmt_err(
 		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
 			.await
 			.context("Failed to load config"),
@@ -153,20 +153,23 @@ pub async fn get_package_props(
 
 	let mut output = LauncherOutput::new(state.get_output(app_handle));
 
-	let props = fmt_err(
+	let req = Arc::new(PkgRequest::parse(package, PkgRequestSource::UserRequire));
+
+	let package = fmt_err(
 		config
 			.packages
-			.get_properties(
-				&Arc::new(PkgRequest::parse(package, PkgRequestSource::UserRequire)),
-				&state.paths,
-				&state.client,
-				&mut output,
-			)
+			.get(&req, &state.paths, &state.client, &mut output)
+			.await,
+	)?;
+
+	let props = fmt_err(
+		package
+			.get_properties(&state.paths, &state.client)
 			.await
 			.context("Failed to get properties"),
 	)?;
 
-	Ok(props.clone())
+	Ok(props)
 }
 
 #[tauri::command]
@@ -174,36 +177,102 @@ pub async fn get_package_meta_and_props(
 	state: tauri::State<'_, State>,
 	app_handle: tauri::AppHandle,
 	package: &str,
-) -> Result<(PackageMetadata, PackageProperties), String> {
-	let mut config = fmt_err(
+) -> Result<(Arc<PackageMetadata>, Arc<PackageProperties>), String> {
+	let config = fmt_err(
 		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
 			.await
 			.context("Failed to load config"),
 	)?;
 
-	let request = Arc::new(PkgRequest::parse(package, PkgRequestSource::UserRequire));
-
 	let mut output = LauncherOutput::new(state.get_output(app_handle));
 
-	let meta = fmt_err(
+	let req = Arc::new(PkgRequest::parse(package, PkgRequestSource::UserRequire));
+
+	let package = fmt_err(
 		config
 			.packages
-			.get_metadata(&request, &state.paths, &state.client, &mut output)
+			.get(&req, &state.paths, &state.client, &mut output)
+			.await,
+	)?;
+
+	let meta = fmt_err(
+		package
+			.get_metadata(&state.paths, &state.client)
 			.await
 			.context("Failed to get metadata"),
-	)?
-	.clone();
+	)?;
 
 	let props = fmt_err(
-		config
-			.packages
-			.get_properties(&request, &state.paths, &state.client, &mut output)
+		package
+			.get_properties(&state.paths, &state.client)
 			.await
 			.context("Failed to get properties"),
-	)?
-	.clone();
+	)?;
 
 	Ok((meta, props))
+}
+
+#[tauri::command]
+pub async fn get_multiple_package_meta_and_props(
+	state: tauri::State<'_, State>,
+	app_handle: tauri::AppHandle,
+	packages: Vec<&str>,
+) -> Result<HashMap<String, MultiPackageMetaAndPropsResult>, String> {
+	let config = fmt_err(
+		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
+			.await
+			.context("Failed to load config"),
+	)?;
+
+	let output = LauncherOutput::new(state.get_output(app_handle));
+
+	let paths = Arc::new(state.paths.clone());
+
+	let mut tasks = JoinSet::new();
+	for pkg in packages {
+		let req = Arc::new(PkgRequest::parse(pkg, PkgRequestSource::UserRequire));
+
+		let pkg = pkg.to_string();
+		let reg = config.packages.clone();
+		let paths = paths.clone();
+		let client = state.client.clone();
+		let mut output = output.get_greater_copy();
+		tasks.spawn(async move {
+			let package = match fmt_err(reg.get(&req, &paths, &client, &mut output).await) {
+				Ok(package) => package,
+				Err(e) => return (pkg, MultiPackageMetaAndPropsResult::Error(e)),
+			};
+			let meta = match fmt_err(package.get_metadata(&paths, &client).await) {
+				Ok(meta) => meta,
+				Err(e) => return (pkg, MultiPackageMetaAndPropsResult::Error(e)),
+			};
+			let props = match fmt_err(package.get_properties(&paths, &client).await) {
+				Ok(props) => props,
+				Err(e) => return (pkg, MultiPackageMetaAndPropsResult::Error(e)),
+			};
+
+			(
+				pkg,
+				MultiPackageMetaAndPropsResult::MetaAndProps(meta, props),
+			)
+		});
+	}
+
+	let mut out = HashMap::new();
+
+	while let Some(task) = tasks.join_next().await {
+		let (pkg, result) = fmt_err(task)?;
+		out.insert(pkg, result);
+	}
+
+	Ok(out)
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum MultiPackageMetaAndPropsResult {
+	Error(String),
+	MetaAndProps(Arc<PackageMetadata>, Arc<PackageProperties>),
 }
 
 #[tauri::command]
@@ -212,7 +281,7 @@ pub async fn get_declarative_package_contents(
 	app_handle: tauri::AppHandle,
 	package: &str,
 ) -> Result<Option<DeclarativePackage>, String> {
-	let mut config = fmt_err(
+	let config = fmt_err(
 		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
 			.await
 			.context("Failed to load config"),
@@ -220,32 +289,35 @@ pub async fn get_declarative_package_contents(
 
 	let mut output = LauncherOutput::new(state.get_output(app_handle));
 
-	let contents = fmt_err(
+	let req = Arc::new(PkgRequest::parse(package, PkgRequestSource::UserRequire));
+
+	let package = fmt_err(
 		config
 			.packages
-			.parse(
-				&Arc::new(PkgRequest::parse(package, PkgRequestSource::UserRequire)),
-				&state.paths,
-				&state.client,
-				&mut output,
-			)
-			.await
-			.context("Failed to get properties"),
+			.get(&req, &state.paths, &state.client, &mut output)
+			.await,
 	)?;
 
-	Ok(contents.get_declarative_contents_optional().cloned())
+	let contents = fmt_err(
+		package
+			.get_declarative_contents(&state.paths, &state.client)
+			.await
+			.context("Failed to get declarative contents"),
+	)?;
+
+	Ok(contents.cloned())
 }
 
 #[tauri::command]
 pub async fn get_package_repos(state: tauri::State<'_, State>) -> Result<Vec<RepoInfo>, String> {
-	let mut config = fmt_err(
+	let config = fmt_err(
 		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
 			.await
 			.context("Failed to load config"),
 	)?;
 
 	let mut repos = Vec::new();
-	for repo in &mut config.packages.repos {
+	for repo in &config.packages.repos {
 		let id = repo.get_id().to_string();
 		let meta = fmt_err(
 			repo.get_metadata(&state.paths, &state.client, &mut NoOp)
@@ -272,12 +344,19 @@ pub async fn get_instance_packages(
 	state: tauri::State<'_, State>,
 	instance: &str,
 ) -> Result<HashMap<String, LockfilePackage>, String> {
-	let lock = fmt_err(Lockfile::open(&state.paths).context("Failed to open lockfile"))?;
+	let mut config = fmt_err(
+		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
+			.await
+			.context("Failed to load config"),
+	)?;
 
-	let default = HashMap::new();
-	let packages = lock.get_instance_packages(instance).unwrap_or(&default);
+	let Some(instance) = config.instances.get_mut(instance) else {
+		return Ok(HashMap::new());
+	};
 
-	Ok(packages.clone())
+	let lock = fmt_err(instance.get_lockfile(&state.paths))?;
+
+	Ok(lock.get_packages().clone())
 }
 
 #[tauri::command]
@@ -285,7 +364,7 @@ pub async fn sync_packages(
 	state: tauri::State<'_, State>,
 	app_handle: tauri::AppHandle,
 ) -> Result<(), String> {
-	let mut config = fmt_err(
+	let config = fmt_err(
 		load_config(&state.paths, &state.wasm_loader, &mut NoOp)
 			.await
 			.context("Failed to load config"),
@@ -294,11 +373,11 @@ pub async fn sync_packages(
 	let mut output = LauncherOutput::new(state.get_output(app_handle));
 	output.set_task("sync_packages");
 
-	for repo in config.packages.repos.iter_mut() {
-		output.display(
-			MessageContents::StartProcess(format!("Syncing repository {}", repo.get_id())),
-			MessageLevel::Important,
-		);
+	for repo in config.packages.repos.iter() {
+		output.display(MessageContents::StartProcess(format!(
+			"Syncing repository {}",
+			repo.get_id()
+		)));
 		let mut process = output.get_process();
 		match repo
 			.sync(
@@ -310,28 +389,24 @@ pub async fn sync_packages(
 			.await
 		{
 			Ok(..) => {
-				process.display(
-					MessageContents::Success(format!("Synced repository {}", repo.get_id())),
-					MessageLevel::Important,
-				);
+				process.display(MessageContents::Success(format!(
+					"Synced repository {}",
+					repo.get_id()
+				)));
 			}
 			Err(e) => {
-				process.display(
-					MessageContents::Error(format!(
-						"Failed to sync repository {}: {e}",
-						repo.get_id()
-					)),
-					MessageLevel::Important,
-				);
+				process.display(MessageContents::Error(format!(
+					"Failed to sync repository {}: {e}",
+					repo.get_id()
+				)));
 			}
 		};
 	}
 
 	let mut process = output.get_process();
-	process.display(
-		MessageContents::StartProcess("Updating standard packages".into()),
-		MessageLevel::Important,
-	);
+	process.display(MessageContents::StartProcess(
+		"Updating standard packages".into(),
+	));
 	fmt_err(
 		config
 			.packages
@@ -339,10 +414,7 @@ pub async fn sync_packages(
 			.await
 			.context("Failed to update cached packages"),
 	)?;
-	process.display(
-		MessageContents::Success("Packages updated".into()),
-		MessageLevel::Important,
-	);
+	process.display(MessageContents::Success("Packages updated".into()));
 
 	Ok(())
 }

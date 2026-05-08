@@ -1,6 +1,6 @@
 use nitro_core::io::files::open_file_append;
 use nitro_core::launch::get_stdio_file_path;
-use nitro_core::NitroCore;
+use nitro_core::{NitroCore, QuickPlayType};
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{Read, Write};
@@ -9,10 +9,9 @@ use std::process::ExitStatus;
 use std::time::Duration;
 use sysinfo::{Pid, System};
 
-use anyhow::{bail, Context};
+use anyhow::{Context, bail};
 use nitro_config::instance::{QuickPlay, WrapperCommand};
 use nitro_core::account::{AccountID, AccountManager};
-use nitro_core::auth_crate::mc::ClientId;
 use nitro_core::io::java::install::JavaInstallationKind;
 use nitro_plugin::hook::call::HookHandles;
 use nitro_plugin::hook::hooks::{
@@ -20,18 +19,16 @@ use nitro_plugin::hook::hooks::{
 };
 use nitro_shared::id::InstanceID;
 use nitro_shared::java_args::MemoryNum;
-use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
-use nitro_shared::{translate, Side, UpdateDepth};
-use reqwest::Client;
+use nitro_shared::output::{MessageContents, NitroOutput};
+use nitro_shared::{Side, UpdateDepth, translate};
 use tokio::io::{AsyncWriteExt, Stdout};
 
 use super::tracking::RunningInstanceRegistry;
 use super::update::manager::UpdateManager;
-use crate::instance::setup::setup_core;
-use crate::instance::tracking::is_process_alive;
+use crate::instance::tracking::{RunningInstanceEntry, is_process_alive};
 use crate::instance::update::manager::UpdateSettings;
+use crate::instance::update::{InstanceUpdateContext, UpdateFacets};
 use crate::instance::world_files::WorldFilesWatcher;
-use crate::io::lock::Lockfile;
 use crate::io::paths::Paths;
 use crate::plugin::PluginManager;
 
@@ -39,101 +36,71 @@ use super::Instance;
 
 impl Instance {
 	/// Launch the instance process
-	pub async fn launch(
+	pub async fn launch<'a, O: NitroOutput>(
 		&mut self,
-		paths: &Paths,
-		accounts: &mut AccountManager,
-		plugins: &PluginManager,
 		settings: LaunchSettings,
-		o: &mut impl NitroOutput,
+		ctx: &mut InstanceUpdateContext<'a, O>,
 	) -> anyhow::Result<InstanceHandle> {
-		o.display(
-			MessageContents::StartProcess(translate!(o, StartUpdatingInstance, "inst" = &self.id)),
-			MessageLevel::Important,
-		);
-
-		let mut manager = UpdateManager::from_settings(UpdateSettings {
+		let manager = UpdateManager::from_settings(UpdateSettings {
 			depth: UpdateDepth::Shallow,
 			offline_auth: settings.offline_auth,
 		});
-		let client = Client::new();
 
-		let mut core = setup_core(
-			Some(&settings.ms_client_id),
-			&manager.settings,
-			&client,
-			accounts,
-			plugins,
-			paths,
-			o,
-		)
-		.await
-		.context("Failed to configure core")?;
-
-		let core_version = core.get_version(&self.config.version, o).await?;
+		let core_version = ctx
+			.core
+			.get_version(&self.version, manager.settings.depth, ctx.output)
+			.await?;
 		let version_info = core_version.get_version_info();
-		std::mem::drop(core_version);
 
-		let mut lock = Lockfile::open(paths).context("Failed to open lockfile")?;
-		let result = self
-			.setup(
-				&mut manager,
-				&mut core,
-				&version_info,
-				plugins,
-				paths,
-				accounts,
-				&mut lock,
-				o,
-			)
+		self.update(UpdateDepth::Shallow, UpdateFacets::all(), ctx)
 			.await
 			.context("Failed to update instance")?;
-		manager.add_result(result);
 
 		let hook_arg = InstanceLaunchArg {
 			id: self.id.to_string(),
-			side: Some(self.get_side()),
-			dir: self.dirs.get().inst_dir.to_string_lossy().into(),
-			game_dir: self
-				.dirs
-				.get()
-				.game_dir
-				.as_ref()
-				.map(|x| x.to_string_lossy().into()),
+			side: Some(self.side()),
+			inst_dir: self.dir.as_ref().map(|x| x.to_string_lossy().into()),
 			version_info: version_info.clone(),
-			config: self
-				.config
-				.original_config_with_templates_and_plugins
-				.clone(),
+			config: self.config.clone(),
 			pid: None,
+			classpath: None,
 			stdout_path: None,
 			stdin_path: None,
 		};
 
 		// Make sure that any fluff from the update gets ended
-		o.end_process();
+		ctx.output.end_process();
 
-		o.display(
-			MessageContents::Simple(translate!(o, PreparingLaunch)),
-			MessageLevel::Important,
-		);
+		ctx.output.display(MessageContents::Simple(translate!(
+			ctx.output,
+			PreparingLaunch
+		)));
 
 		// Run pre-launch hooks
-		let results = plugins
-			.call_hook(OnInstanceLaunch, &hook_arg, paths, o)
+		let results = ctx
+			.plugins
+			.call_hook(OnInstanceLaunch, &hook_arg, ctx.paths, ctx.output)
 			.await
 			.context("Failed to call on launch hook")?;
-		results.all_results(o).await?;
+		results.all_results(ctx.output).await?;
 
-		if self.dirs.get().game_dir.is_some() && !self.config.custom_launch {
-			self.launch_standard(core, hook_arg, paths, plugins, settings, o)
-				.await
+		if self.dir.is_some() && !self.config.custom_launch {
+			self.launch_standard(
+				ctx.core,
+				hook_arg,
+				ctx.paths,
+				ctx.plugins,
+				settings,
+				ctx.accounts,
+				ctx.output,
+			)
+			.await
 		} else {
-			let account = core
-				.get_accounts()
+			let account = ctx
+				.accounts
 				.get_chosen_account()
 				.map(|x| x.get_id().clone());
-			self.launch_custom(hook_arg, account, paths, plugins, o)
+			self.launch_custom(hook_arg, account, ctx.paths, ctx.plugins, ctx.output)
 				.await
 		}
 	}
@@ -141,23 +108,23 @@ impl Instance {
 	/// Standard Java launch
 	async fn launch_standard(
 		&mut self,
-		mut core: NitroCore,
+		core: &NitroCore,
 		mut hook_arg: InstanceLaunchArg,
 		paths: &Paths,
 		plugins: &PluginManager,
 		settings: LaunchSettings,
+		accounts: &mut AccountManager,
 		o: &mut impl NitroOutput,
 	) -> anyhow::Result<InstanceHandle> {
-		let selected_account = core
-			.get_accounts()
-			.get_chosen_account()
-			.map(|x| x.get_id().clone());
+		let selected_account = accounts.get_chosen_account().map(|x| x.get_id().clone());
 		let selected_account = selected_account.map(|x| x.to_string());
 
-		let mut core_version = core.get_version(&self.config.version, o).await?;
+		let core_version = core
+			.get_version(&self.version, UpdateDepth::Shallow, o)
+			.await?;
 
 		let mut instance = self
-			.create_core_instance(&mut core_version, paths, o)
+			.create_core_instance(&core_version, paths, o)
 			.await
 			.context("Failed to create core instance")?;
 
@@ -165,11 +132,12 @@ impl Instance {
 
 		// Launch the instance using core
 		let handle = instance
-			.launch_with_handle(o)
+			.launch_with_handle(accounts, settings.offline_auth, settings.quick_play, o)
 			.await
 			.context("Failed to launch core instance")?;
 
 		hook_arg.pid = Some(handle.get_pid());
+		hook_arg.classpath = Some(handle.classpath().get_str());
 		hook_arg.stdout_path = Some(handle.stdout_path().to_string_lossy().to_string());
 		hook_arg.stdin_path = handle.stdin_path().map(|x| x.to_string_lossy().to_string());
 
@@ -179,9 +147,9 @@ impl Instance {
 			.await
 			.context("Failed to call while launch hook")?;
 
-		let world_files = if self.get_side() == Side::Client {
+		let world_files = if self.side() == Side::Client {
 			Some(
-				WorldFilesWatcher::new(self.dirs.get().game_dir.as_ref().unwrap(), plugins.clone())
+				WorldFilesWatcher::new(self.dir.as_ref().unwrap(), plugins.clone())
 					.context("Failed to setup world files watcher")?,
 			)
 		} else {
@@ -201,11 +169,7 @@ impl Instance {
 			},
 		};
 
-		// Update the running instance registry
-		let mut running_instance_registry = RunningInstanceRegistry::open(paths)
-			.context("Failed to open registry of running instances")?;
-		running_instance_registry.add_instance(handle.get_pid(), &self.id, true, selected_account);
-		let _ = running_instance_registry.write();
+		let _ = handle.create_tracking_entry(paths);
 
 		Ok(handle)
 	}
@@ -267,11 +231,7 @@ impl Instance {
 			},
 		};
 
-		// Update the running instance registry
-		let mut running_instance_registry = RunningInstanceRegistry::open(paths)
-			.context("Failed to open registry of running instances")?;
-		running_instance_registry.add_instance(handle.get_pid(), &self.id, true, selected_account);
-		let _ = running_instance_registry.write();
+		let _ = handle.create_tracking_entry(paths);
 
 		Ok(handle)
 	}
@@ -279,12 +239,12 @@ impl Instance {
 
 /// Settings for launch provided to the instance launch function
 pub struct LaunchSettings {
-	/// The Microsoft client ID to use
-	pub ms_client_id: ClientId,
 	/// Whether to do offline auth
 	pub offline_auth: bool,
 	/// Whether to pipe the stdin of this process into the instance process
 	pub pipe_stdin: bool,
+	/// Quick play for the launch
+	pub quick_play: Option<QuickPlayType>,
 }
 
 /// Options for launching after conversion from the deserialized version
@@ -352,6 +312,30 @@ enum InstanceHandleInner {
 }
 
 impl InstanceHandle {
+	fn create_tracking_entry(&self, paths: &Paths) -> anyhow::Result<()> {
+		let mut registry = RunningInstanceRegistry::open(paths)
+			.context("Failed to open registry of running instances")?;
+		let entry = RunningInstanceEntry {
+			instance_id: self.instance_id.to_string(),
+			pid: self.get_pid(),
+			parent_pid: std::process::id(),
+			is_java: matches!(&self.inner, InstanceHandleInner::Standard { .. }),
+			stdin_file: self
+				.stdin()
+				.map(|x| x.file_name().unwrap().to_string_lossy().to_string()),
+			stdout_file: Some(
+				self.stdout()
+					.file_name()
+					.unwrap()
+					.to_string_lossy()
+					.to_string(),
+			),
+			account: self.account.clone(),
+		};
+		registry.add_instance(entry);
+		registry.write()
+	}
+
 	/// Waits for the process to complete
 	pub async fn wait(
 		mut self,
@@ -523,18 +507,22 @@ impl InstanceHandle {
 		o: &mut impl NitroOutput,
 	) -> anyhow::Result<()> {
 		// Remove the instance from the registry
-		let running_instance_registry = RunningInstanceRegistry::open(paths);
-		if let Ok(mut running_instance_registry) = running_instance_registry {
-			running_instance_registry.remove_instance(pid, instance_id, account);
-			let _ = running_instance_registry.write();
+		let registry = RunningInstanceRegistry::open(paths);
+		if let Ok(mut registry) = registry {
+			registry.remove_instance(pid, instance_id, account);
+			let _ = registry.write();
 		}
 
 		// Call on stop hooks
-		let results = plugins
+		let mut results = plugins
 			.call_hook(OnInstanceStop, arg, paths, o)
 			.await
 			.context("Failed to call on stop hook")?;
-		results.all_results(o).await?;
+		while let Some(result) = results.next() {
+			if let Err(e) = result.result(o).await {
+				o.display(MessageContents::Error(e.to_string()));
+			}
+		}
 
 		Ok(())
 	}

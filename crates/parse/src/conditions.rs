@@ -7,8 +7,8 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::unexpected_token;
-use nitro_shared::loaders::LoaderMatch;
 use nitro_shared::Side;
+use nitro_shared::loaders::LoaderMatch;
 
 use super::instruction::parse_arg;
 use super::lex::{TextPos, Token};

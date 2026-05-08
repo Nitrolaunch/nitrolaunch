@@ -1,8 +1,8 @@
 use std::{fmt::Display, path::PathBuf};
 
-use anyhow::{anyhow, bail, Context};
-use nitro_core::{net::download, NitroCore};
-use nitro_shared::{output::NitroOutput, versions::VersionInfo, Side};
+use anyhow::{Context, anyhow, bail};
+use nitro_core::{NitroCore, net::download};
+use nitro_shared::{Side, output::NitroOutput, versions::VersionInfo};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 
@@ -230,7 +230,10 @@ pub async fn download_server_jar(
 	client: &Client,
 ) -> anyhow::Result<()> {
 	let num_str = build_num.to_string();
-	let url = format!("https://api.papermc.io/v2/projects/{}/versions/{version}/builds/{num_str}/downloads/{file_name}", mode.to_str());
+	let url = format!(
+		"https://api.papermc.io/v2/projects/{}/versions/{version}/builds/{num_str}/downloads/{file_name}",
+		mode.to_str()
+	);
 
 	let file_path = get_local_jar_path(mode, version, paths);
 	download::file(&url, &file_path, client)

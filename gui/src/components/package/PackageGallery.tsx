@@ -2,59 +2,60 @@ import { createSignal, For, Show } from "solid-js";
 import Icon from "../Icon";
 import { ArrowLeft, ArrowRight } from "../../icons";
 import ModalBase from "../dialog/ModalBase";
+import "./PackageGallery.css";
 
 export default function PackageGallery(props: PackageGalleryProps) {
 	// The URL and index of the previewed gallery entry. Undefined if not shown.
-	let [preview, setPreview] = createSignal<
-		[string, number] | undefined
-	>();
+	let [preview, setPreview] = createSignal<[string, number] | undefined>();
 
-	return <div id="package-gallery">
-		<For each={props.gallery}>
-			{(entry, i) => (
+	return (
+		<div class="package-gallery">
+			<For each={props.gallery}>
+				{(entry, i) => (
+					<img
+						class="package-gallery-entry shadow bubble-hover"
+						src={entry}
+						onclick={() => setPreview([entry, i()])}
+					/>
+				)}
+			</For>
+			<ModalBase
+				width="55rem"
+				visible={preview() != undefined}
+				onClose={() => setPreview(undefined)}
+			>
 				<img
-					class="package-gallery-entry shadow bubble-hover"
-					src={entry}
-					onclick={() => setPreview([entry, i()])}
+					class="package-gallery-preview"
+					src={preview()![0]}
+					onclick={() => setPreview(undefined)}
 				/>
-			)}
-		</For>
-		<ModalBase
-			width="55rem"
-			visible={preview() != undefined}
-			onClose={() => setPreview(undefined)}
-		>
-			<img
-				id="package-gallery-preview"
-				src={preview()![0]}
-				onclick={() => setPreview(undefined)}
-			/>
-			<Show when={preview()![1] > 0}>
-				<div
-					class="cont bubble-hover pop-in-fast package-gallery-arrow"
-					style="left:1rem"
-					onclick={() => {
-						let i = preview()![1];
-						setPreview([props.gallery[i - 1], i - 1]);
-					}}
-				>
-					<Icon icon={ArrowLeft} size="1.5rem" />
-				</div>
-			</Show>
-			<Show when={preview()![1] < props.gallery.length - 1}>
-				<div
-					class="cont bubble-hover pop-in-fast package-gallery-arrow"
-					style="right:1rem"
-					onclick={() => {
-						let i = preview()![1];
-						setPreview([props.gallery[i + 1], i + 1]);
-					}}
-				>
-					<Icon icon={ArrowRight} size="1.5rem" />
-				</div>
-			</Show>
-		</ModalBase>
-	</div>;
+				<Show when={preview()![1] > 0}>
+					<div
+						class="cont bubble-hover pop-in-fast package-gallery-arrow"
+						style="left:1rem"
+						onclick={() => {
+							let i = preview()![1];
+							setPreview([props.gallery[i - 1], i - 1]);
+						}}
+					>
+						<Icon icon={ArrowLeft} size="1.5rem" />
+					</div>
+				</Show>
+				<Show when={preview()![1] < props.gallery.length - 1}>
+					<div
+						class="cont bubble-hover pop-in-fast package-gallery-arrow"
+						style="right:1rem"
+						onclick={() => {
+							let i = preview()![1];
+							setPreview([props.gallery[i + 1], i + 1]);
+						}}
+					>
+						<Icon icon={ArrowRight} size="1.5rem" />
+					</div>
+				</Show>
+			</ModalBase>
+		</div>
+	);
 }
 
 export interface PackageGalleryProps {

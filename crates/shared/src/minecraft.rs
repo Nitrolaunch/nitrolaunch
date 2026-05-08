@@ -1,3 +1,7 @@
+use std::fmt::Display;
+
+#[cfg(feature = "schema")]
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::util::DefaultExt;
@@ -36,7 +40,7 @@ pub struct VersionEntry {
 }
 
 /// Type of a version in the version manifest
-#[derive(Deserialize, Serialize, Debug, Clone, Default)]
+#[derive(Deserialize, Serialize, Debug, Clone, Default, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 pub enum VersionType {
 	/// A release version
@@ -60,6 +64,80 @@ pub struct LatestVersions {
 	pub release: VersionName,
 	/// The latest snapshot version
 	pub snapshot: VersionName,
+}
+
+/// Different kinds of addons
+#[derive(Debug, Clone, Copy, Deserialize, Serialize, PartialEq, Eq)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
+#[serde(rename_all = "snake_case")]
+pub enum AddonKind {
+	/// A Minecraft resource pack
+	ResourcePack,
+	/// A game modification that needs to be loaded by a custom loader
+	Mod,
+	/// A server plugin that modifies game behavior
+	Plugin,
+	/// A graphics shader that needs to be loaded by a shader modification
+	Shader,
+	/// A Minecraft datapack
+	Datapack,
+	/// A modpack. Not actually installed on the instance directly.
+	Modpack,
+}
+
+impl AddonKind {
+	/// Parse an AddonKind from a string
+	pub fn parse_from_str(string: &str) -> Option<Self> {
+		match string {
+			"resource_pack" => Some(Self::ResourcePack),
+			"mod" => Some(Self::Mod),
+			"plugin" => Some(Self::Plugin),
+			"shader" => Some(Self::Shader),
+			"datapack" => Some(Self::Datapack),
+			"modpack" => Some(Self::Modpack),
+			_ => None,
+		}
+	}
+
+	/// Plural version of to_string
+	pub fn to_plural_string(&self) -> String {
+		match self {
+			Self::ResourcePack => "resource_packs".into(),
+			Self::Mod => "mods".into(),
+			Self::Plugin => "plugins".into(),
+			Self::Shader => "shaders".into(),
+			Self::Datapack => "datapacks".into(),
+			Self::Modpack => "modpacks".into(),
+		}
+	}
+
+	/// Gets the file extension for this addon kind
+	pub fn get_extension(&self) -> &str {
+		match self {
+			AddonKind::Mod | AddonKind::Plugin => ".jar",
+			AddonKind::ResourcePack
+			| AddonKind::Shader
+			| AddonKind::Datapack
+			| AddonKind::Modpack => ".zip",
+		}
+	}
+}
+
+impl Display for AddonKind {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		write!(
+			f,
+			"{}",
+			match self {
+				Self::ResourcePack => "resource_pack",
+				Self::Mod => "mod",
+				Self::Plugin => "plugin",
+				Self::Shader => "shader",
+				Self::Datapack => "datapack",
+				Self::Modpack => "modpack",
+			}
+		)
+	}
 }
 
 /// Struct for a Minecraft Profile from the Minecraft Services API
@@ -87,10 +165,11 @@ pub struct Skin {
 }
 
 /// Variant for a skin
-#[derive(Deserialize, Serialize, Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Deserialize, Serialize, Debug, Copy, Clone, PartialEq, Eq, Default)]
 #[serde(rename_all = "UPPERCASE")]
 pub enum SkinVariant {
 	/// The classic wide-arm player model
+	#[default]
 	Classic,
 	/// The newer slim player model
 	Slim,
@@ -112,7 +191,11 @@ pub struct Cosmetic {
 	/// The ID of this cosmetic
 	pub id: String,
 	/// The URL to the cosmetic image file
-	pub url: String,
+	#[serde(default)]
+	pub url: Option<String>,
+	/// The path to the cosmetic image file, if it is stored locally
+	#[serde(default)]
+	pub path: Option<String>,
 	/// The state of the cosmetic
 	pub state: CosmeticState,
 }

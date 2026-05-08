@@ -1,21 +1,25 @@
 use std::collections::{HashMap, HashSet};
 
-use nitro_config::instance::InstanceConfig;
+use nitro_config::ConfigKind;
+use nitro_config::instance::{InstanceConfig, WrapperCommand};
 use nitro_config::template::TemplateConfig;
+use nitro_instance::addon::Addon;
 use nitro_pkg::repo::{PackageFlag, RepoMetadata};
 use nitro_pkg::script_eval::AddonInstructionData;
 use nitro_pkg::{PackageContentType, PackageSearchResults, RecommendedPackage, RequiredPackage};
-use nitro_shared::addon::AddonKind;
+use nitro_shared::UpdateDepth;
 use nitro_shared::id::{InstanceID, TemplateID};
 use nitro_shared::lang::translate::LanguageMap;
 use nitro_shared::loaders::Loader;
-use nitro_shared::minecraft::MinecraftUserProfile;
 use nitro_shared::minecraft::VersionEntry;
+use nitro_shared::minecraft::{AddonKind, SkinVariant};
+use nitro_shared::minecraft::{Cape, MinecraftUserProfile, Skin};
 use nitro_shared::pkg::{PackageID, PackageQueryDepth, PackageSearchParameters};
 use nitro_shared::versions::VersionPattern;
-use nitro_shared::UpdateDepth;
-use nitro_shared::{versions::VersionInfo, Side};
+use nitro_shared::{Side, versions::VersionInfo};
 use serde::{Deserialize, Serialize};
+
+use crate::control::Control;
 
 use super::Hook;
 
@@ -77,7 +81,7 @@ def_hook!(
 	"Hook for when a command's subcommands are run",
 	SubcommandArg,
 	(),
-	2,
+	3,
 	fn get_takes_over() -> bool {
 		true
 	}
@@ -89,34 +93,10 @@ def_hook!(
 pub struct SubcommandArg {
 	/// Arguments for the subcommand, with the first element being the subcommand itself
 	pub args: Vec<String>,
+	/// Supercommand for the subcommand
+	pub supercommand: Option<String>,
 	/// Finalized instance configs
 	pub instances: HashMap<InstanceID, InstanceConfig>,
-}
-
-def_hook!(
-	ModifyInstanceConfig,
-	"modify_instance_config",
-	"Hook for modifying an instance's configuration",
-	ModifyInstanceConfigArgument,
-	ModifyInstanceConfigResult,
-	2,
-	true,
-);
-
-/// Argument to the ModifyInstanceConfig hook
-#[derive(Serialize, Deserialize, Default)]
-#[serde(default)]
-pub struct ModifyInstanceConfigArgument {
-	/// The instance's configuration
-	pub config: InstanceConfig,
-}
-
-/// Result from the ModifyInstanceConfig hook
-#[derive(Serialize, Deserialize, Default)]
-#[serde(default)]
-pub struct ModifyInstanceConfigResult {
-	/// Configuration to apply
-	pub config: InstanceConfig,
 }
 
 def_hook!(
@@ -138,6 +118,15 @@ def_hook!(
 	5,
 );
 
+def_hook!(
+	AfterInstanceSetup,
+	"after_instance_setup",
+	"Hook for doing instance setup work after the core instance has been created",
+	OnInstanceSetupArg,
+	OnInstanceSetupResult,
+	1,
+);
+
 /// Argument for the OnInstanceSetup hook
 #[derive(Serialize, Deserialize, Default)]
 #[serde(default)]
@@ -146,8 +135,8 @@ pub struct OnInstanceSetupArg {
 	pub id: String,
 	/// The side of the instance
 	pub side: Option<Side>,
-	/// Path to the instance's game dir
-	pub game_dir: Option<String>,
+	/// Path to the instance's directory
+	pub inst_dir: Option<String>,
 	/// Version info for the instance
 	pub version_info: VersionInfo,
 	/// The current version of the instance before being updated to the one in version_info. Can be used to detect version changes.
@@ -157,7 +146,7 @@ pub struct OnInstanceSetupArg {
 	/// The current version of the loader, as stored in the lockfile. Can be used to detect version changes.
 	pub current_loader_version: Option<String>,
 	/// The desired version of the loader
-	pub desired_loader_version: Option<VersionPattern>,
+	pub desired_loader_version: VersionPattern,
 	/// Instance configuration
 	pub config: InstanceConfig,
 	/// Path to the Nitrolaunch internal dir
@@ -168,6 +157,8 @@ pub struct OnInstanceSetupArg {
 	pub jvm_path: String,
 	/// Path to the vanilla game JAR
 	pub game_jar_path: String,
+	/// Classpath for the launched instance. May be slightly incomplete, and only available for AfterInstanceSetup
+	pub classpath: Option<String>,
 }
 
 /// Result from the OnInstanceSetup hook
@@ -186,6 +177,8 @@ pub struct OnInstanceSetupResult {
 	pub jvm_args: Vec<String>,
 	/// Optional additional game args
 	pub game_args: Vec<String>,
+	/// Additional wrapper commands
+	pub wrappers: Vec<WrapperCommand>,
 	/// Whether to skip adding the game JAR to the final classpath
 	pub exclude_game_jar: bool,
 }
@@ -216,8 +209,8 @@ pub struct AfterPackagesInstalledArg {
 	pub id: String,
 	/// The side of the instance
 	pub side: Option<Side>,
-	/// Path to the instance's game dir
-	pub game_dir: Option<String>,
+	/// Path to the instance's directory
+	pub inst_dir: Option<String>,
 	/// Version info for the instance
 	pub version_info: VersionInfo,
 	/// The loader of the instance
@@ -294,16 +287,16 @@ pub struct InstanceLaunchArg {
 	pub id: String,
 	/// The side of the instance
 	pub side: Option<Side>,
-	/// Path to the instance's dir
-	pub dir: String,
-	/// Path to the instance's game dir
-	pub game_dir: Option<String>,
+	/// Path to the instance's directory
+	pub inst_dir: Option<String>,
 	/// Version info for the instance
 	pub version_info: VersionInfo,
 	/// The instance's configuration
 	pub config: InstanceConfig,
 	/// The PID of the instance process
 	pub pid: Option<u32>,
+	/// The classpath used in the launch command. Will not be available in the on_instance_launch hook.
+	pub classpath: Option<String>,
 	/// The path to the file containing the instance stdout and stderr. Will not be available in the on_instance_launch hook.
 	pub stdout_path: Option<String>,
 	/// The path to the file containing the instance stdin. Will not be available in the on_instance_launch hook.
@@ -420,6 +413,8 @@ pub struct InstanceTransferFormat {
 	pub export: Option<InstanceTransferFormatDirection>,
 	/// Info for the migration side of this format
 	pub migrate: Option<InstanceTransferFormatDirection>,
+	/// Whether a side must be specified when importing this format
+	pub needs_import_side: bool,
 }
 
 /// Information about a side of an instance transfer format
@@ -471,7 +466,7 @@ pub struct ExportInstanceArg {
 	/// The actual loader version of the instance
 	pub loader_version: Option<String>,
 	/// The directory where the instance game files are located
-	pub game_dir: String,
+	pub inst_dir: String,
 	/// The desired path for the resulting instance, as a file path
 	pub result_path: String,
 }
@@ -497,6 +492,8 @@ pub struct ImportInstanceArg {
 	pub source_path: String,
 	/// The desired directory for the resulting instance
 	pub result_path: String,
+	/// The desired side for the instance if it cannot be inferred from the format itself
+	pub side: Option<Side>,
 }
 
 /// Result from the ImportInstance hook giving information about the new instance
@@ -555,17 +552,6 @@ pub struct MigrateInstancesResult {
 	pub format: String,
 	/// The configuration of the new instances
 	pub instances: HashMap<String, InstanceConfig>,
-	/// Map of instances to packages installed on the migrated instance
-	pub packages: HashMap<String, Vec<MigratedPackage>>,
-}
-
-/// A package installed on a migrated instance
-#[derive(Serialize, Deserialize)]
-pub struct MigratedPackage {
-	/// The ID of this package
-	pub id: String,
-	/// The addons currently installed with this package
-	pub addons: Vec<MigratedAddon>,
 }
 
 /// An addon installed on a migrated instance
@@ -794,10 +780,23 @@ pub struct Theme {
 	pub name: String,
 	/// A description for the theme
 	pub description: Option<String>,
+	/// The type of this theme
+	pub r#type: ThemeType,
 	/// The CSS data for the theme
 	pub css: String,
 	/// A css color that identifies this theme
 	pub color: String,
+}
+
+/// Types of GUI themes
+#[derive(Serialize, Deserialize, Default, Clone, Copy)]
+#[serde(rename_all = "snake_case")]
+pub enum ThemeType {
+	/// A base theme that restyles most of the launcher
+	#[default]
+	Base,
+	/// A light change that can be stacked with other overlay themes
+	Overlay,
 }
 
 def_hook!(
@@ -1098,4 +1097,220 @@ pub struct GetInstanceLogArg {
 	pub log_id: String,
 	/// The configuration of the instance
 	pub config: InstanceConfig,
+}
+
+def_hook!(
+	GetAccountCosmetics,
+	"get_account_cosmetics",
+	"Gets the available cosmetics for a custom account",
+	GetAccountCosmeticsArg,
+	GetAccountCosmeticsResult,
+	1,
+	true,
+);
+
+/// Argument for the GetAccountCosmetics hook
+#[derive(Serialize, Deserialize, Default)]
+#[serde(default)]
+pub struct GetAccountCosmeticsArg {
+	/// The ID of the account
+	pub id: String,
+	/// The account kind of the account
+	pub kind: String,
+}
+
+/// Result from the GetAccountCosmetics hook
+#[derive(Serialize, Deserialize, Default)]
+#[serde(default)]
+pub struct GetAccountCosmeticsResult {
+	/// The list of available skins
+	pub skins: Vec<Skin>,
+	/// The list of available capes
+	pub capes: Vec<Cape>,
+}
+
+def_hook!(
+	UploadSkin,
+	"upload_skin",
+	"Uploads and activates a skin for a custom account",
+	UploadSkinArg,
+	(),
+	1,
+	true,
+);
+
+/// Argument for the UploadSkin hook
+#[derive(Serialize, Deserialize, Default)]
+#[serde(default)]
+pub struct UploadSkinArg {
+	/// The ID of the account
+	pub id: String,
+	/// The account kind of the account
+	pub kind: String,
+	/// The skin data in png
+	pub data: Vec<u8>,
+	/// The variant of the skin
+	pub variant: SkinVariant,
+}
+
+def_hook!(
+	ActivateCape,
+	"activate_cape",
+	"Activates a cape for a custom account",
+	ActivateCapeArg,
+	(),
+	1,
+	true,
+);
+
+/// Argument for the ActivateCape hook
+#[derive(Serialize, Deserialize, Default)]
+#[serde(default)]
+pub struct ActivateCapeArg {
+	/// The ID of the account
+	pub id: String,
+	/// The account kind of the account
+	pub kind: String,
+	/// The ID of the cape to activate. If not present, deactivate the cape instead
+	pub cape: Option<String>,
+}
+
+def_hook!(
+	AddSkinRepositories,
+	"add_skin_repositories",
+	"Adds repositories for searching custom skins",
+	(),
+	Vec<SkinRepository>,
+	1,
+	true,
+);
+
+/// Result from the AddSkinRepositories hook
+#[derive(Serialize, Deserialize, Default)]
+#[serde(default)]
+pub struct SkinRepository {
+	/// The ID of the repository
+	pub id: String,
+	/// The display name of the repository
+	pub name: String,
+}
+
+def_hook!(
+	SearchSkinRepository,
+	"search_skin_repository",
+	"Searches a skin repository for skins",
+	SearchSkinRepositoryArg,
+	Vec<Skin>,
+	1,
+	true,
+);
+
+/// Argument for the SearchSkinRepository hook
+#[derive(Serialize, Deserialize, Default)]
+#[serde(default)]
+pub struct SearchSkinRepositoryArg {
+	/// The ID of the repository
+	pub repository: String,
+	/// The search string
+	pub search: Option<String>,
+}
+
+def_hook!(
+	AddInstanceConfigControls,
+	"add_instance_config_controls",
+	"Define additional config schema for instance or template config",
+	AddInstanceConfigControlsArg,
+	AddInstanceConfigControlsResult,
+	1,
+	true,
+);
+
+/// Argument for the AddInstanceConfigControls hook
+#[derive(Serialize, Deserialize, Default)]
+#[serde(default)]
+pub struct AddInstanceConfigControlsArg {
+	/// ID of the object. None if this is a new config or the base template.
+	pub id: Option<String>,
+	/// Kind of object we are getting schema for
+	pub kind: ConfigKind,
+	/// Plugin this config is from
+	pub plugin: Option<String>,
+}
+
+/// Result from the AddInstanceConfigControls hook
+#[derive(Serialize, Deserialize, Default)]
+#[serde(default)]
+pub struct AddInstanceConfigControlsResult {
+	/// The list of new controls
+	pub controls: Vec<Control>,
+}
+
+def_hook!(
+	AddPluginConfigControls,
+	"add_plugin_config_controls",
+	"Define config schema for this plugin",
+	(),
+	Vec<Control>,
+	1,
+	true,
+);
+
+def_hook!(
+	AddModpackFormats,
+	"add_modpack_formats",
+	"Add new formats for modpacks",
+	(),
+	Vec<ModpackFormat>,
+	1,
+	true,
+);
+
+/// Format for a modpack
+#[derive(Serialize, Deserialize, Default)]
+#[serde(default)]
+pub struct ModpackFormat {
+	/// ID for the format
+	pub id: String,
+	/// Display name of the format
+	pub name: String,
+	/// Corresponding instance transfer format for this modpack
+	pub transfer_format: Option<String>,
+}
+
+def_hook!(
+	InstallModpack,
+	"install_modpack",
+	"Installs a modpack",
+	InstallModpackArg,
+	InstallModpackResult,
+	1,
+	true,
+);
+
+/// Argument for the InstallModpack hook
+#[derive(Serialize, Deserialize, Default)]
+#[serde(default)]
+pub struct InstallModpackArg {
+	/// Format of the modpack
+	pub format: String,
+	/// Path to the modpack
+	pub path: String,
+	/// Path to the old version of the modpack
+	pub old_path: Option<String>,
+	/// Instance directory to install or update the modpack in
+	pub target_path: String,
+	/// Side of the instance
+	pub side: Side,
+}
+
+/// Result from the InstallModpack hook
+#[derive(Serialize, Deserialize, Default)]
+#[serde(default)]
+pub struct InstallModpackResult {
+	/// The name of the modpack
+	pub name: String,
+	/// The list of packages installed by this modpack
+	pub packages: Vec<String>,
+	/// The addons installed by this modpack
+	pub addons: Vec<Addon>,
 }

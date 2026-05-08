@@ -2,16 +2,18 @@ mod backup;
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
+use std::time::{Duration, SystemTime};
 
 use anyhow::Context;
-use backup::{get_backup_directory, BackupAutoHook, Config, Index, DEFAULT_GROUP};
+use backup::{BackupAutoHook, Config, DEFAULT_GROUP, Index, get_backup_directory};
 use clap::Parser;
+use nitro_plugin::api::wasm::WASMPlugin;
+use nitro_plugin::api::wasm::nitro::get_instance_dir;
 use nitro_plugin::api::wasm::output::WASMPluginOutput;
 use nitro_plugin::api::wasm::sys::get_data_dir;
 use nitro_plugin::api::wasm::util::get_custom_config;
-use nitro_plugin::api::wasm::WASMPlugin;
 use nitro_plugin::nitro_wasm_plugin;
-use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
+use nitro_shared::output::{MessageContents, NitroOutput};
 
 use crate::backup::BackupSource;
 
@@ -60,73 +62,72 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 	})?;
 
 	plugin.on_instance_launch(|arg| {
-		let inst_dir = PathBuf::from(&arg.dir);
-		check_auto_hook(
-			BackupAutoHook::Launch,
-			&arg.id,
-			&inst_dir,
-			&mut WASMPluginOutput::new(),
-		)?;
+		if let Some(inst_dir) = &arg.inst_dir {
+			check_auto_hook(
+				BackupAutoHook::Launch,
+				&arg.id,
+				Path::new(inst_dir),
+				&mut WASMPluginOutput::new(),
+			)?;
+		}
 
 		Ok(())
 	})?;
 
 	plugin.on_instance_stop(|arg| {
-		let inst_dir = PathBuf::from(&arg.dir);
-		check_auto_hook(
-			BackupAutoHook::Stop,
-			&arg.id,
-			&inst_dir,
-			&mut WASMPluginOutput::new(),
-		)?;
+		if let Some(inst_dir) = &arg.inst_dir {
+			check_auto_hook(
+				BackupAutoHook::Stop,
+				&arg.id,
+				Path::new(inst_dir),
+				&mut WASMPluginOutput::new(),
+			)?;
+		}
 
 		Ok(())
 	})?;
 
-	plugin.while_instance_launch(|_| {
-		// let inst_dir = PathBuf::from(&arg.dir);
-		// let mut index = get_index(&arg.id)?;
+	plugin.while_instance_launch(|arg| {
+		let Some(inst_dir) = arg.inst_dir else {
+			return Ok(());
+		};
+		let inst_dir = PathBuf::from(&inst_dir);
+		let mut index = get_index(&arg.id)?;
 
-		// let mut last_update_times = HashMap::new();
+		let mut last_update_times = HashMap::new();
 
-		// let groups = index.config.groups.clone();
+		let groups = index.config.groups.clone();
 
-		// // Don't do this process if there are no interval hooks
-		// if !groups
-		// 	.values()
-		// 	.any(|x| x.on == Some(BackupAutoHook::Interval))
-		// {
-		// 	return Ok(());
-		// }
+		// Don't do this process if there are no interval hooks
+		if !groups
+			.values()
+			.any(|x| x.on == Some(BackupAutoHook::Interval))
+		{
+			return Ok(());
+		}
 
-		// loop {
-		// 	if let Some(InputAction::Terminate) = ctx.poll()? {
-		// 		break;
-		// 	}
+		loop {
+			for (group_id, group) in &groups {
+				if group.on != Some(BackupAutoHook::Interval) {
+					continue;
+				}
+				let Some(interval) = &group.interval else {
+					continue;
+				};
+				let Some(interval) = parse_duration(interval) else {
+					continue;
+				};
 
-		// 	for (group_id, group) in &groups {
-		// 		if group.on != Some(BackupAutoHook::Interval) {
-		// 			continue;
-		// 		}
-		// 		let Some(interval) = &group.interval else {
-		// 			continue;
-		// 		};
-		// 		let Some(interval) = parse_duration(interval) else {
-		// 			continue;
-		// 		};
+				let now = SystemTime::now();
+				let last_update_time = last_update_times.entry(group_id).or_insert(now);
 
-		// 		let now = SystemTime::now();
-		// 		let last_update_time = last_update_times.entry(group_id).or_insert(now);
+				if now.duration_since(*last_update_time).unwrap_or_default() >= interval {
+					index.create_backup(BackupSource::Auto, Some(group_id), &inst_dir)?;
+				}
+			}
 
-		// 		if now.duration_since(*last_update_time).unwrap_or_default() >= interval {
-		// 			index.create_backup(BackupSource::Auto, Some(group_id), &inst_dir)?;
-		// 		}
-		// 	}
-
-		// 	std::thread::sleep(Duration::from_secs(1));
-		// }
-
-		Ok(())
+			std::thread::sleep(Duration::from_secs(1));
+		}
 	})?;
 
 	Ok(())
@@ -211,10 +212,9 @@ fn list(
 		if raw {
 			println!("{}", backup.id);
 		} else {
-			o.display(
-				MessageContents::ListItem(Box::new(MessageContents::Simple(backup.id.clone()))),
-				MessageLevel::Important,
-			);
+			o.display(MessageContents::ListItem(Box::new(
+				MessageContents::Simple(backup.id.clone()),
+			)));
 		}
 	}
 
@@ -227,16 +227,13 @@ fn create(instance: &str, group: Option<&str>, o: &mut impl NitroOutput) -> anyh
 
 	let mut index = get_index(instance)?;
 
-	let inst_dir = get_data_dir().join("instances").join(instance);
+	let inst_dir = get_instance_dir(instance)?.context("Instance directory does not exist")?;
 
 	index.create_backup(BackupSource::User, Some(group), &inst_dir)?;
 
 	index.finish()?;
 
-	o.display(
-		MessageContents::Success("Backup created".into()),
-		MessageLevel::Important,
-	);
+	o.display(MessageContents::Success("Backup created".into()));
 
 	Ok(())
 }
@@ -254,10 +251,7 @@ fn remove(
 	index.remove_backup(group, backup)?;
 	index.finish()?;
 
-	o.display(
-		MessageContents::Success("Backup removed".into()),
-		MessageLevel::Important,
-	);
+	o.display(MessageContents::Success("Backup removed".into()));
 
 	Ok(())
 }
@@ -271,17 +265,12 @@ fn restore(
 	let group = group.unwrap_or(DEFAULT_GROUP);
 
 	let index = get_index(instance)?;
-
-	// FIXME: Use instance API
-	let inst_dir = get_data_dir().join("instances").join(instance);
+	let inst_dir = get_instance_dir(instance)?.context("Instance directory does not exist")?;
 
 	index.restore_backup(group, backup, &inst_dir)?;
 	index.finish()?;
 
-	o.display(
-		MessageContents::Success("Backup restored".into()),
-		MessageLevel::Important,
-	);
+	o.display(MessageContents::Success("Backup restored".into()));
 
 	Ok(())
 }
@@ -333,25 +322,19 @@ fn check_auto_hook(
 
 	if creating_backups {
 		o.start_process();
-		o.display(
-			MessageContents::StartProcess("Creating backups".into()),
-			MessageLevel::Important,
-		);
+		o.display(MessageContents::StartProcess("Creating backups".into()));
 	}
 
 	for (group_id, group) in groups {
-		if let Some(on) = &group.on {
-			if on == &hook {
-				index.create_backup(BackupSource::Auto, Some(&group_id), inst_dir)?;
-			}
+		if let Some(on) = &group.on
+			&& on == &hook
+		{
+			index.create_backup(BackupSource::Auto, Some(&group_id), inst_dir)?;
 		}
 	}
 
 	if creating_backups {
-		o.display(
-			MessageContents::Success("Backups created".into()),
-			MessageLevel::Important,
-		);
+		o.display(MessageContents::Success("Backups created".into()));
 		o.end_process();
 	}
 
@@ -360,19 +343,19 @@ fn check_auto_hook(
 	Ok(())
 }
 
-// /// Parses a duration ending in 's', 'm', 'h', or 'd'
-// fn parse_duration(string: &str) -> Option<Duration> {
-// 	if string.is_empty() {
-// 		return None;
-// 	}
-// 	let num: u64 = string[0..string.len() - 1].parse().ok()?;
-// 	if string.ends_with("s") {
-// 		Some(Duration::from_secs(num))
-// 	} else if string.ends_with("m") {
-// 		Some(Duration::from_secs(num * 60))
-// 	} else if string.ends_with("h") {
-// 		Some(Duration::from_secs(num * 3600))
-// 	} else {
-// 		Some(Duration::from_secs(num * 3600 * 24))
-// 	}
-// }
+/// Parses a duration ending in 's', 'm', 'h', or 'd'
+fn parse_duration(string: &str) -> Option<Duration> {
+	if string.is_empty() {
+		return None;
+	}
+	let num: u64 = string[0..string.len() - 1].parse().ok()?;
+	if string.ends_with("s") {
+		Some(Duration::from_secs(num))
+	} else if string.ends_with("m") {
+		Some(Duration::from_secs(num * 60))
+	} else if string.ends_with("h") {
+		Some(Duration::from_secs(num * 3600))
+	} else {
+		Some(Duration::from_secs(num * 3600 * 24))
+	}
+}

@@ -1,23 +1,39 @@
 {
+	"id": "stats",
 	"name": "Stats",
 	"description": "Track and view playtime stats",
+	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/stats",
 	"version": "v6",
 	"protocol_version": 3,
 	"hooks": {
 		"subcommand": {
-			"executable": "${PLUGIN_DIR}/nitro_plugin_stats${EXE_EXTENSION}"
+			"wasm": true
 		},
 		"on_instance_launch": {
-			"executable": "${PLUGIN_DIR}/nitro_plugin_stats${EXE_EXTENSION}"
+			"wasm": true
 		},
 		"on_instance_stop": {
-			"executable": "${PLUGIN_DIR}/nitro_plugin_stats${EXE_EXTENSION}"
+			"wasm": true
 		},
 		"while_instance_launch": {
-			"executable": "${PLUGIN_DIR}/nitro_plugin_stats${EXE_EXTENSION}"
+			"wasm": true
 		},
 		"add_instance_tiles": {
-			"executable": "${PLUGIN_DIR}/nitro_plugin_stats${EXE_EXTENSION}"
+			"wasm": true
+		},
+		"add_plugin_config_controls": {
+			"constant": [
+				{
+					"id": "live_tracking",
+					"name": "Live Tracking",
+					"description": "Whether to track playtime while the instance is running. Improves reliability.",
+					"section": "Stats",
+					"default": true,
+					"schema": {
+						"type": "boolean"
+					}
+				}
+			]
 		}
 	},
 	"subcommands": {

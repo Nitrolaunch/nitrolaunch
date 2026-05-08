@@ -186,10 +186,10 @@ pub async fn count_packs(
 
 	let mut filters = create_search_filters(params.minecraft_versions, params.categories);
 
-	if search.is_empty() {
-		if let Some(stripped) = filters.strip_prefix("&") {
-			filters = stripped.to_string();
-		}
+	if search.is_empty()
+		&& let Some(stripped) = filters.strip_prefix("&")
+	{
+		filters = stripped.to_string();
 	}
 
 	let url = format!("{API_URL}/packs/count?{search}{filters}");
@@ -235,4 +235,11 @@ fn convert_category(category: PackageCategory) -> Option<&'static str> {
 		PackageCategory::Library => Some("Library"),
 		_ => None,
 	}
+}
+
+/// Get the list of versions that Smithed supports
+pub async fn get_supported_versions(client: &Client) -> anyhow::Result<Vec<String>> {
+	let url = format!("{API_URL}/supported-versions");
+
+	download::json(url, client).await
 }

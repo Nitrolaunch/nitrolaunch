@@ -38,7 +38,7 @@ define_translations! {
 	StartAcquiringAddons, "When starting to acquire addons", "Acquiring addons";
 	FinishAcquiringAddons, "When finishing acquiring addons", "Addons acquired";
 	StartInstallingPackages, "When starting to install packages", "Installing packages";
-	FinishInstallingPackage, "When finishing installing a single package", "Package installed";
+	FinishInstallingPackages, "When finishing installing packages", "Installed %count packages";
 	PackageOutOfDate, "When a package is out of date", "Package %pkg has been flagged as out of date";
 	PackageDeprecated, "When a package is deprecated", "Package %pkg has been flagged as deprecated";
 	PackageInsecure, "When a package is insecure", "Package %pkg has been flagged as insecure";
@@ -84,8 +84,6 @@ define_translations! {
 	DownloadingGraalVM, "When starting to download GraalVM", "Downloading GraalVM";
 	DownloadingZulu, "When starting to download Zulu", "Downloading Azul Zulu JRE version %version";
 	DownloadingAdoptium, "When starting to download Adoptium", "Downloading Adoptium Temurin JRE version %version";
-	StartUpdatingClient, "When starting to update a client", "Updating client data";
-	StartUpdatingServer, "When starting to update a server", "Updating server data";
 	PasskeyAccepted, "When finishing decrypting with a passkey", "Passkey accepted";
 	TransferFeatureUnsupportedByFormat, "When an instance transfer feature is unsupported by the format", "Transferring %feat is not supported by the format";
 	TransferFeatureUnsupportedByPlugin, "When an instance transfer feature is unsupported by the plugin", "Transferring %feat is not supported by the plugin yet";

@@ -1,6 +1,8 @@
 {
+	"id": "modrinth",
 	"name": "Modrinth",
-	"description": "Install Modrinth packs on templates and instances",
+	"description": "Install Modrinth packages and modpacks",
+	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/modrinth",
 	"version": "v6",
 	"protocol_version": 3,
 	"raw_transfer": true,
@@ -27,13 +29,14 @@
 						"description": "Package repository for packs from the Modrinth website",
 						"color": "#1bd96a",
 						"text_color": "black",
+						"icon": "$file:icon.svg",
 						"package_types": [
 							"mod",
 							"resource_pack",
 							"datapack",
 							"plugin",
 							"shader",
-							"bundle"
+							"modpack"
 						],
 						"package_categories": [
 							"blocks",
@@ -79,6 +82,25 @@
 				}
 			]
 		},
+		"add_modpack_formats": {
+			"constant": [
+				{
+					"id": "mrpack",
+					"name": "Modrinth",
+					"transfer_format": "mrpack"
+				}
+			]
+		},
+		"add_instance_transfer_formats": {
+			"constant": [
+				{
+					"id": "mrpack",
+					"name": "Modrinth Pack",
+					"import": {},
+					"needs_import_side": true
+				}
+			]
+		},
 		"query_custom_package_repository": {
 			"executable": "${PLUGIN_DIR}/nitro_plugin_modrinth${EXE_EXTENSION}"
 		},
@@ -89,6 +111,12 @@
 			"executable": "${PLUGIN_DIR}/nitro_plugin_modrinth${EXE_EXTENSION}"
 		},
 		"sync_custom_package_repository": {
+			"executable": "${PLUGIN_DIR}/nitro_plugin_modrinth${EXE_EXTENSION}"
+		},
+		"install_modpack": {
+			"executable": "${PLUGIN_DIR}/nitro_plugin_modrinth${EXE_EXTENSION}"
+		},
+		"import_instance": {
 			"executable": "${PLUGIN_DIR}/nitro_plugin_modrinth${EXE_EXTENSION}"
 		}
 	}

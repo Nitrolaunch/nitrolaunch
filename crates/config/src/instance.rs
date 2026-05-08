@@ -1,15 +1,11 @@
 use std::collections::HashMap;
-use std::path::{Path, PathBuf};
 
-use anyhow::Context;
-use nitro_pkg::overrides::PackageOverrides;
-use nitro_shared::addon::AddonKind;
+use nitro_shared::Side;
 use nitro_shared::java_args::MemoryNum;
 use nitro_shared::loaders::Loader;
-use nitro_shared::pkg::PackageStability;
-use nitro_shared::util::{merge_options, DefaultExt, DeserListOrSingle};
-use nitro_shared::versions::{MinecraftVersionDeser, VersionInfo, VersionPattern};
-use nitro_shared::Side;
+use nitro_shared::pkg::{PackageOverrides, PackageStability};
+use nitro_shared::util::{DefaultExt, DeserListOrSingle, merge_options};
+use nitro_shared::versions::MinecraftVersionDeser;
 #[cfg(feature = "schema")]
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -50,6 +46,9 @@ pub struct InstanceConfig {
 	pub window: ClientWindowConfig,
 
 	// Package config
+	/// Modpack package for this instance
+	#[serde(skip_serializing_if = "Option::is_none")]
+	pub modpack: Option<String>,
 	/// Packages for this instance
 	#[serde(skip_serializing_if = "Vec::is_empty")]
 	pub packages: Vec<PackageConfigDeser>,
@@ -66,7 +65,8 @@ pub struct InstanceConfig {
 	// Plugin-only config (Should not be edited by user)
 	/// Override for the game file directory for this instance
 	#[serde(skip_serializing_if = "Option::is_none")]
-	pub game_dir: Option<String>,
+	#[serde(alias = "game_dir")]
+	pub dir: Option<String>,
 	/// The plugin this config was created by
 	#[serde(skip_serializing_if = "DefaultExt::is_default")]
 	pub source_plugin: Option<String>,
@@ -105,14 +105,14 @@ impl InstanceConfig {
 		self.launch.merge(other.launch);
 		self.datapack_folder = other.datapack_folder.or(self.datapack_folder.clone());
 		self.packages.extend(other.packages);
-		self.overrides.suppress.extend(other.overrides.suppress);
+		self.overrides.merge(other.overrides);
 		nitro_shared::util::merge_json_objects(&mut self.plugin_config, other.plugin_config);
 		self.icon = other.icon.or(self.icon.clone());
 		self.side = other.side.or(self.side);
 		self.window.merge(other.window);
 
 		// These properties are not derived and instead just overrided
-		self.game_dir = other.game_dir;
+		self.dir = other.dir;
 		self.source_plugin = other.source_plugin;
 		self.is_editable = other.is_editable;
 		self.is_deletable = other.is_deletable;
@@ -406,64 +406,35 @@ pub fn can_install_loader(loader: &Loader) -> bool {
 	matches!(loader, Loader::Vanilla)
 }
 
-/// Get the paths on an instance to put addons in
-pub fn get_addon_paths(
-	instance: &InstanceConfig,
-	game_dir: &Path,
-	addon: AddonKind,
-	selected_worlds: &[String],
-	version_info: &VersionInfo,
-) -> anyhow::Result<Vec<PathBuf>> {
-	let side = instance.side.context("Instance side missing")?;
-	Ok(match addon {
-		AddonKind::ResourcePack => {
-			if side == Side::Client {
-				// Resource packs are texture packs on older versions
-				if VersionPattern::After("13w24a".into()).matches_info(version_info) {
-					vec![game_dir.join("resourcepacks")]
-				} else {
-					vec![game_dir.join("texturepacks")]
-				}
-			} else {
-				vec![game_dir.join("resourcepacks")]
-			}
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	fn test_quickplay_deser() {
+		#[derive(Deserialize)]
+		struct Test {
+			quick_play: QuickPlay,
 		}
-		AddonKind::Mod => vec![game_dir.join("mods")],
-		AddonKind::Plugin => {
-			if side == Side::Server {
-				vec![game_dir.join("plugins")]
-			} else {
-				vec![]
+
+		let test = serde_json::from_str::<Test>(
+			r#"{
+			"quick_play": {
+				"type": "server",
+				"server": "localhost",
+				"port": 25565,
+				"world": "test",
+				"realm": "my_realm"
+			}	
+		}"#,
+		)
+		.unwrap();
+		assert_eq!(
+			test.quick_play,
+			QuickPlay::Server {
+				server: "localhost".into(),
+				port: Some(25565)
 			}
-		}
-		AddonKind::Shader => {
-			if side == Side::Client {
-				vec![game_dir.join("shaderpacks")]
-			} else {
-				vec![]
-			}
-		}
-		AddonKind::Datapack => {
-			if let Some(datapack_folder) = &instance.datapack_folder {
-				vec![game_dir.join(datapack_folder)]
-			} else {
-				match side {
-					Side::Client => {
-						if selected_worlds.is_empty() {
-							vec![game_dir.join("world_files/datapacks")]
-						} else {
-							selected_worlds
-								.iter()
-								.map(|x| game_dir.join("saves").join(x).join("datapacks"))
-								.collect()
-						}
-					}
-					Side::Server => {
-						// TODO: Support custom world names
-						vec![game_dir.join("world").join("datapacks")]
-					}
-				}
-			}
-		}
-	})
+		);
+	}
 }

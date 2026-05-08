@@ -139,7 +139,9 @@ async fn cleanup_addons(data_dir: &Path) -> anyhow::Result<()> {
 			};
 
 			if entry.file_type()?.is_dir() {
-				walk_function(&entry.path(), removed_count, removed_size)?;
+				if entry.file_name().to_string_lossy() != "sha256" {
+					walk_function(&entry.path(), removed_count, removed_size)?;
+				}
 			} else {
 				let Ok(meta) = std::fs::metadata(entry.path()) else {
 					continue;
@@ -159,7 +161,7 @@ async fn cleanup_addons(data_dir: &Path) -> anyhow::Result<()> {
 					should_remove = true;
 				}
 				if should_remove {
-					let _ = tokio::spawn(tokio::fs::remove_file(entry.path()));
+					tokio::spawn(tokio::fs::remove_file(entry.path()));
 					*removed_count += 1;
 					*removed_size += meta.len() as usize;
 				}

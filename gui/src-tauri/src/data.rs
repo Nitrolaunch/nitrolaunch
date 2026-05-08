@@ -25,14 +25,15 @@ pub struct LauncherData {
 	pub last_repository: Option<String>,
 	/// The last package resolution error associated with instances
 	pub last_resolution_errors: HashMap<String, SerializableResolutionError>,
-	/// The launch event associated with instances
-	pub last_launches: HashMap<String, InstanceLaunch>,
 	/// The instance or template where a package was last added to
 	pub last_added_package: Option<(String, InstanceOrTemplate)>,
 	/// The instance or template that was last opened
 	pub last_opened_instance: Option<(String, InstanceOrTemplate)>,
-	/// The currently selected theme
-	pub theme: Option<String>,
+	/// The currently selected base theme
+	#[serde(alias = "theme")]
+	pub base_theme: Option<String>,
+	/// The currently selected overlay themes
+	pub overlay_themes: Vec<String>,
 }
 
 impl LauncherData {
@@ -64,14 +65,4 @@ impl LauncherData {
 pub enum InstanceIcon {
 	/// A custom user icon at a path
 	File(PathBuf),
-}
-
-/// Data for a single launch of an instance
-#[derive(Serialize, Deserialize)]
-pub struct InstanceLaunch {
-	/// The stdout file of the instance
-	pub stdout: String,
-	/// The stdin file of the instance
-	#[serde(default)]
-	pub stdin: Option<String>,
 }

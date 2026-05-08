@@ -166,7 +166,6 @@ export default function LoaderConfig(props: LoaderConfigProps) {
 							})}
 						columns={4}
 						allowEmpty={false}
-						connected={false}
 					/>
 				</Tip>
 			</Show>
@@ -238,7 +237,6 @@ export default function LoaderConfig(props: LoaderConfigProps) {
 							})}
 						columns={4}
 						allowEmpty={false}
-						connected={false}
 					/>
 				</Tip>
 			</Show>

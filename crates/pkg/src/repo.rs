@@ -35,6 +35,8 @@ pub struct RepoMetadata {
 	pub color: Option<String>,
 	/// A CSS color for text that should contrast well with the main color
 	pub text_color: Option<String>,
+	/// SVG icon for the repository
+	pub icon: Option<String>,
 	/// The package types that this repository supports
 	pub package_types: Vec<PackageKind>,
 	/// The package categories that this repository supports

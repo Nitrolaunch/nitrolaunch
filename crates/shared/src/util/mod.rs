@@ -149,11 +149,7 @@ pub fn cap_first_letter(string: &str) -> String {
 /// assert_eq!(merge_options(x, y), Some(5));
 /// ```
 pub fn merge_options<T>(left: Option<T>, right: Option<T>) -> Option<T> {
-	if right.is_some() {
-		right
-	} else {
-		left
-	}
+	if right.is_some() { right } else { left }
 }
 
 /// Gets the current UTC timestamp in seconds
@@ -253,11 +249,11 @@ pub fn merge_json_objects(
 
 /// Utility function to merge serde_json values
 pub fn merge(a: &mut Value, b: Value) {
-	if let Value::Object(a) = a {
-		if let Value::Object(b) = b {
-			merge_json_objects(a, b);
-			return;
-		}
+	if let Value::Object(a) = a
+		&& let Value::Object(b) = b
+	{
+		merge_json_objects(a, b);
+		return;
 	}
 
 	*a = b;
@@ -324,6 +320,14 @@ impl<T> DeserListOrSingle<T> {
 		val.is_none() || matches!(val, Some(val) if val.is_empty())
 	}
 
+	/// Gets the length of the contents
+	pub fn len(&self) -> usize {
+		match self {
+			Self::Single(..) => 1,
+			Self::List(list) => list.len(),
+		}
+	}
+
 	/// Iterates over this DeserListOrSingle
 	pub fn iter(&self) -> DeserListOrSingleIter<'_, T> {
 		match &self {
@@ -356,6 +360,13 @@ impl<T: PartialEq> DeserListOrSingle<T> {
 }
 
 impl<T: Clone> DeserListOrSingle<T> {
+	/// Creates from an iterator
+	pub fn from_iter(it: impl IntoIterator<Item = T>) -> Self {
+		let mut out = Self::List(Vec::new());
+		out.extend(it);
+		out
+	}
+
 	/// Get the contained value as a Vec
 	pub fn get_vec(&self) -> Vec<T> {
 		match &self {
@@ -443,11 +454,7 @@ macro_rules! try_3 {
 		if let Ok(out) = $op {
 			Ok(out)
 		} else {
-			if let Ok(out) = $op {
-				Ok(out)
-			} else {
-				$op
-			}
+			if let Ok(out) = $op { Ok(out) } else { $op }
 		}
 	};
 }

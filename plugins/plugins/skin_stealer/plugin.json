@@ -1,0 +1,21 @@
+{
+	"id": "skin_stealer",
+	"name": "Skin Stealer",
+	"description": "Get the skin of other players",
+	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/skin_stealer",
+	"version": "v6",
+	"protocol_version": 3,
+	"hooks": {
+		"add_skin_repositories": {
+			"constant": [
+				{
+					"id": "steal",
+					"name": "Steal"
+				}
+			]
+		},
+		"search_skin_repository": {
+			"wasm": true
+		}
+	}
+}

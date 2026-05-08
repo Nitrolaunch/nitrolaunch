@@ -1,5 +1,5 @@
 use crate::download::{self, user_agent};
-use anyhow::{anyhow, Context};
+use anyhow::{Context, anyhow};
 use nitro_shared::{
 	loaders::Loader,
 	pkg::{PackageCategory, PackageKind, PackageSearchParameters},
@@ -311,6 +311,15 @@ pub struct Download {
 	pub filename: String,
 	/// Whether or not this is the primary file for this version
 	pub primary: bool,
+	/// Hashes for this file
+	pub hashes: Hashes,
+}
+
+/// Hashes for a Modrinth file
+#[derive(Deserialize, Serialize, Clone)]
+pub struct Hashes {
+	/// SHA-512 hash
+	pub sha512: String,
 }
 
 /// A version dependency
@@ -478,7 +487,7 @@ pub async fn search_projects(
 			PackageKind::Datapack => "datapack",
 			PackageKind::Plugin => "plugin",
 			PackageKind::Shader => "shader",
-			PackageKind::Bundle => "modpack",
+			PackageKind::Bundle | PackageKind::Modpack => "modpack",
 		})
 		.map(|x| format!("\"project_types={x}\""))
 		.collect::<Vec<_>>()

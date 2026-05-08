@@ -11,7 +11,7 @@ import {
 	Show,
 } from "solid-js";
 import BrowsePackages from "./pages/package/BrowsePackages";
-import ViewPackage from "./pages/package/ViewPackage";
+import { ViewPackagePage } from "./pages/package/ViewPackage";
 import Sidebar from "./components/navigation/Sidebar";
 import Plugins from "./pages/plugin/Plugins";
 import Docs from "./pages/Docs";
@@ -34,6 +34,7 @@ import { open } from "@tauri-apps/plugin-shell";
 import PackageDiffsPrompt, {
 	PackageDiff,
 } from "./components/package/PackageDiffsPrompt";
+import Tips from "./components/dialog/Tips";
 
 export default function App() {
 	const [footerData, setFooterData] = createSignal<FooterData>({
@@ -74,11 +75,11 @@ export default function App() {
 				/>
 				<Route
 					path="/packages/package/:id"
-					component={() => <ViewPackage setFooterData={setFooterData} />}
+					component={() => <ViewPackagePage setFooterData={setFooterData} />}
 				/>
 				<Route path="/accounts/:accountId" component={() => <AccountPage />} />
 				<Route path="/plugins" component={() => <Plugins />} />
-				<Route path="/docs" component={() => <Docs />} />
+				<Route path="/docs/*subpath" component={() => <Docs />} />
 				<Route path="/custom/:page" component={() => <CustomPluginPage />} />
 			</Router>
 		</Show>
@@ -122,11 +123,12 @@ function Layout(props: LayoutProps) {
 
 	// Fix for Webkitgtk scrolling
 	onMount(async () => {
-		if (await invoke("custom_scrollbar_needed")) {
+		if (await invoke("linux_fixes_needed")) {
 			let elem = document.getElementById("root")!;
 			elem.style.overflowY = "auto";
 			elem.style.overflowX = "hidden";
 			elem.style.height = "100vh";
+			elem.style.setProperty("--shadow-blur", "0px");
 		}
 	});
 
@@ -158,6 +160,7 @@ function Layout(props: LayoutProps) {
 	return (
 		<>
 			<Global />
+			<Tips />
 			<NavBar
 				onSidebarToggle={() => setShowSidebar(!showSidebar())}
 				onSidebarClose={() => setShowSidebar(false)}

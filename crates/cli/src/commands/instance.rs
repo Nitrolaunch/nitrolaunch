@@ -2,34 +2,36 @@ use std::ops::DerefMut;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use anyhow::{bail, Context};
+use anyhow::{Context, bail};
 use clap::Subcommand;
 use color_print::{cprint, cprintln};
-use inquire::{Confirm, MultiSelect, Select};
+use inquire::Confirm;
 use itertools::Itertools;
-use nitrolaunch::config::modifications::{apply_modifications_and_write, ConfigModification};
-use nitrolaunch::config::Config;
+use nitrolaunch::config::modifications::{ConfigModification, apply_modifications_and_write};
 use nitrolaunch::config_crate::instance::InstanceConfig;
-use nitrolaunch::instance::transfer::load_formats;
-use nitrolaunch::instance::update::InstanceUpdateContext;
+use nitrolaunch::core::QuickPlayType;
 use nitrolaunch::instance::Instance;
+use nitrolaunch::instance::transfer::load_formats;
+use nitrolaunch::instance::update::manager::UpdateSettings;
+use nitrolaunch::instance::update::{InstanceUpdateContext, UpdateFacets};
 use nitrolaunch::io::lock::Lockfile;
-use nitrolaunch::plugin_crate::hook::hooks::{DeleteInstance, SaveInstanceConfigArg};
 use nitrolaunch::shared::id::InstanceID;
-use nitrolaunch::shared::output::{MessageContents, MessageLevel};
+use nitrolaunch::shared::java_args::MemoryNum;
+use nitrolaunch::shared::output::{MessageContents, NoOp};
 use nitrolaunch::shared::util::to_string_json;
-use nitrolaunch::shared::versions::{MinecraftLatestVersion, MinecraftVersionDeser};
 
 use nitrolaunch::instance::launch::LaunchSettings;
 use nitrolaunch::shared::lang::translate::TranslationKey;
-use nitrolaunch::shared::loaders::Loader;
-use nitrolaunch::shared::{output::NitroOutput, Side, UpdateDepth};
+use nitrolaunch::shared::{Side, UpdateDepth, output::NitroOutput};
 use reqwest::Client;
 
 use super::CmdData;
 use crate::commands::call_plugin_subcommand;
 use crate::commands::config::edit_temp_file;
-use crate::output::{icons_enabled, HYPHEN_POINT, INSTANCE, LOADER, PACKAGE, VERSION};
+use crate::output::{HYPHEN_POINT, INSTANCE, LOADER, PACKAGE, VERSION, icons_enabled};
+use crate::prompt::{
+	pick_instance, pick_instance_id, pick_instances, pick_loader, pick_minecraft_version, pick_side,
+};
 use crate::secrets::get_ms_client_id;
 
 #[derive(Debug, Subcommand)]
@@ -55,9 +57,9 @@ pub enum InstanceSubcommand {
 		/// if you have authenticated at least once
 		#[arg(short, long)]
 		offline: bool,
-		/// Whether to skip updating on the first launch. Can cause problems!
-		#[arg(long)]
-		skip_update: bool,
+		/// Launch into a world or server. Can be either world:<world>, server:<ip> or realm:<realm>
+		#[arg(short, long)]
+		quick_play: Option<QuickPlayType>,
 		/// The instance to launch
 		instance: Option<String>,
 	},
@@ -69,9 +71,12 @@ pub enum InstanceSubcommand {
 		/// Whether to update all instances
 		#[arg(short, long)]
 		all: bool,
-		/// Whether to skip updating packages
-		#[arg(short = 'P', long)]
-		skip_packages: bool,
+		/// Whether to only update packages
+		#[arg(short, long)]
+		packages: bool,
+		/// Whether to only update the modpack
+		#[arg(short, long)]
+		modpack: bool,
 		/// Additional instance groups to update
 		#[arg(short, long)]
 		groups: Vec<String>,
@@ -79,7 +84,11 @@ pub enum InstanceSubcommand {
 		instances: Vec<String>,
 	},
 	#[command(about = "Easily create a new instance")]
-	Add,
+	Add {
+		/// A plugin to create this instance with. Not all plugins support instances.
+		#[arg(short, long)]
+		plugin: Option<String>,
+	},
 	#[command(about = "Delete an instance and its files forever")]
 	Delete {
 		/// The instance to delete
@@ -95,10 +104,13 @@ pub enum InstanceSubcommand {
 		/// The path to the instance
 		path: String,
 		/// The ID of the new instance
-		instance: String,
+		instance: Option<String>,
 		/// Which format to use
 		#[arg(short, long)]
 		format: Option<String>,
+		/// The side of the instance. If not specified, auto-detects
+		#[arg(short, long)]
+		side: Option<Side>,
 	},
 	#[command(about = "Export an instance for use in another launcher")]
 	Export {
@@ -110,6 +122,34 @@ pub enum InstanceSubcommand {
 		/// Where to export the instance to. Defaults to ./<instance-id>.zip
 		#[arg(short, long)]
 		output: Option<String>,
+	},
+	#[command(about = "View logs for an instance")]
+	Logs {
+		/// The instance to view the logs of
+		instance: Option<String>,
+	},
+	#[command(about = "Duplicates an instance into a new one")]
+	Duplicate {
+		/// The instance to duplicate
+		instance: Option<String>,
+		/// The ID of the new instance
+		new_id: Option<String>,
+	},
+	#[command(
+		about = "Unlink an instance from its parent templates and combine into a single config"
+	)]
+	Consolidate {
+		/// The instance to consolidate
+		instance: Option<String>,
+	},
+	#[command(
+		about = "Extract a template from an instance to let you share it with other instances"
+	)]
+	Extract {
+		/// The instance to extract the template from
+		instance: Option<String>,
+		/// The ID of the new template
+		new_id: Option<String>,
 	},
 	#[command(about = "Print the directory of an instance")]
 	Dir {
@@ -126,24 +166,26 @@ pub async fn run(command: InstanceSubcommand, mut data: CmdData<'_>) -> anyhow::
 		InstanceSubcommand::Launch {
 			account,
 			offline,
-			skip_update,
+			quick_play,
 			instance,
-		} => launch(instance, account, offline, skip_update, data).await,
+		} => launch(instance, account, offline, quick_play, data).await,
 		InstanceSubcommand::Info { instance } => info(&mut data, instance).await,
 		InstanceSubcommand::Update {
 			force,
 			all,
-			skip_packages,
+			packages,
+			modpack,
 			groups,
 			instances,
-		} => update(&mut data, instances, groups, all, force, skip_packages).await,
+		} => update(&mut data, instances, groups, all, force, packages, modpack).await,
 		InstanceSubcommand::Dir { instance } => dir(&mut data, instance).await,
-		InstanceSubcommand::Add => add(&mut data).await,
+		InstanceSubcommand::Add { plugin } => add(&mut data, plugin).await,
 		InstanceSubcommand::Import {
 			instance,
 			path,
 			format,
-		} => import(&mut data, instance, path, format).await,
+			side,
+		} => import(&mut data, instance, path, format, side).await,
 		InstanceSubcommand::Export {
 			instance,
 			format,
@@ -151,6 +193,14 @@ pub async fn run(command: InstanceSubcommand, mut data: CmdData<'_>) -> anyhow::
 		} => export(&mut data, instance, format, output).await,
 		InstanceSubcommand::Delete { instance } => delete(&mut data, instance).await,
 		InstanceSubcommand::Edit { instance } => edit(&mut data, instance).await,
+		InstanceSubcommand::Duplicate { instance, new_id } => {
+			duplicate(&mut data, instance, new_id).await
+		}
+		InstanceSubcommand::Consolidate { instance } => consolidate(&mut data, instance).await,
+		InstanceSubcommand::Extract { instance, new_id } => {
+			extract(&mut data, instance, new_id).await
+		}
+		InstanceSubcommand::Logs { instance } => logs(&mut data, instance).await,
 		InstanceSubcommand::External(args) => {
 			call_plugin_subcommand(args, Some("instance"), &mut data).await
 		}
@@ -162,16 +212,16 @@ async fn list(data: &mut CmdData<'_>, raw: bool, side: Option<Side>) -> anyhow::
 	let config = data.config.get_mut();
 
 	for (id, instance) in config.instances.iter().sorted_by_key(|x| x.0) {
-		if let Some(side) = side {
-			if instance.get_side() != side {
-				continue;
-			}
+		if let Some(side) = side
+			&& instance.side() != side
+		{
+			continue;
 		}
 
 		if raw {
 			println!("{id}");
 		} else {
-			match instance.get_side() {
+			match instance.side() {
 				Side::Client => cprintln!("{}<g>{}", HYPHEN_POINT, id),
 				Side::Server => cprintln!("{}<b>{}", HYPHEN_POINT, id),
 			}
@@ -200,15 +250,26 @@ async fn info(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()> 
 		print!("{} ", INSTANCE);
 	}
 	cprintln!("<s><g>Instance <b>{}", id);
+
+	cprintln!("<s>Basic Info:");
+	if !instance.original_config().from.is_empty() {
+		print_indent();
+		cprint!("<s>Derives from:</> ");
+		for template in instance.original_config().from.iter() {
+			cprint!("<b>{template}");
+		}
+		cprintln!();
+	}
+
 	print_indent();
 	if icons_enabled() {
 		print!("{} ", VERSION);
 	}
-	cprintln!("<s>Version:</s> <g>{}", instance.get_config().version);
+	cprintln!("<s>Version:</s> <g>{}", instance.version());
 
 	print_indent();
-	cprint!("{}Type: ", HYPHEN_POINT);
-	match instance.get_side() {
+	cprint!("<s>Type: ");
+	match instance.side() {
 		Side::Client => cprint!("<y!>Client"),
 		Side::Server => cprint!("<c!>Server"),
 	}
@@ -218,18 +279,35 @@ async fn info(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()> 
 	if icons_enabled() {
 		print!("{} ", LOADER);
 	}
-	cprintln!("<s>Loader:</s> <g>{}", instance.get_config().loader);
+	cprintln!("<s>Loader:</s> <g>{}", instance.loader());
 
 	print_indent();
 	if icons_enabled() {
 		print!("{} ", PACKAGE);
 	}
 	cprintln!("<s>Packages:");
-	for pkg in instance.get_configured_packages() {
+	for pkg in instance
+		.packages()
+		.iter()
+		.sorted_by_key(|x| x.get_request())
+	{
 		print_indent();
 		cprint!("{}", HYPHEN_POINT);
 		cprint!("<b!>{}<g!>", pkg.id);
 		cprintln!();
+	}
+
+	cprintln!("<s>Misc Info:");
+
+	print_indent();
+	let size = instance.get_size().await;
+	match size {
+		Ok(size) => {
+			cprintln!("<s>Size on Disk: <g>{}", MemoryNum::from_bytes(size))
+		}
+		Err(e) => {
+			cprintln!("<s,r>Failed to get disk size: {e}");
+		}
 	}
 
 	Ok(())
@@ -239,7 +317,7 @@ pub async fn launch(
 	instance: Option<String>,
 	account: Option<String>,
 	offline: bool,
-	skip_update: bool,
+	quick_play: Option<QuickPlayType>,
 	mut data: CmdData<'_>,
 ) -> anyhow::Result<()> {
 	data.ensure_config(true).await?;
@@ -247,35 +325,25 @@ pub async fn launch(
 
 	let instance_id = pick_instance(instance, config).context("Failed to pick instance")?;
 
+	let client = Client::new();
+	let core = config
+		.get_core(
+			Some(&get_ms_client_id()),
+			&UpdateSettings {
+				depth: UpdateDepth::Shallow,
+				offline_auth: offline,
+			},
+			&client,
+			&config.plugins,
+			&data.paths,
+			data.output,
+		)
+		.await?;
+
 	let instance = config
 		.instances
 		.get_mut(&instance_id)
 		.context("Instance does not exist")?;
-
-	// Perform first update if needed
-	if !skip_update {
-		let mut lock = Lockfile::open(&data.paths).context("Failed to open lockfile")?;
-		if !lock.has_instance_done_first_update(&instance_id) {
-			cprintln!("<s>Performing first update of instance...");
-
-			let client = Client::new();
-			let mut ctx = InstanceUpdateContext {
-				packages: &mut config.packages,
-				accounts: &config.accounts,
-				plugins: &config.plugins,
-				prefs: &config.prefs,
-				paths: &data.paths,
-				lock: &mut lock,
-				client: &client,
-				output: data.output,
-			};
-
-			instance
-				.update(true, UpdateDepth::Full, &mut ctx)
-				.await
-				.context("Failed to perform first update for instance")?;
-		}
-	}
 
 	if let Some(account) = account {
 		config
@@ -285,25 +353,36 @@ pub async fn launch(
 	}
 
 	let launch_settings = LaunchSettings {
-		ms_client_id: get_ms_client_id(),
 		offline_auth: offline,
 		pipe_stdin: true,
+		quick_play,
 	};
+
+	let mut lock = Lockfile::open(&data.paths)?;
+
+	let mut ctx = InstanceUpdateContext {
+		packages: &mut config.packages,
+		accounts: &mut config.accounts,
+		plugins: &config.plugins,
+		prefs: &config.prefs,
+		paths: &data.paths,
+		lock: &mut lock,
+		client: &client,
+		output: data.output,
+		core: &core,
+	};
+
 	let instance_handle = instance
-		.launch(
-			&data.paths,
-			&mut config.accounts,
-			&config.plugins,
-			launch_settings,
-			data.output,
-		)
+		.launch(launch_settings, &mut ctx)
 		.await
 		.context("Instance failed to launch")?;
 
-	// Drop the config early so that it isn't wasting memory while the instance is running
+	// Drop items early so that they aren't wasting memory while the instance is running
 	let plugins = config.plugins.clone();
 	std::mem::drop(data.config);
-	// Unload plugins that we don't need anymore
+	lock.finish(&data.paths)?;
+	std::mem::drop(lock);
+	std::mem::drop(client);
 
 	instance_handle
 		.wait(&plugins, &data.paths, data.output)
@@ -315,20 +394,19 @@ pub async fn launch(
 
 async fn dir(data: &mut CmdData<'_>, instance: Option<String>) -> anyhow::Result<()> {
 	data.ensure_config(true).await?;
+	let config = data.config.get();
 
-	let instance = pick_instance(instance, data.config.get()).context("Failed to pick instance")?;
-	let instance = data
-		.config
-		.get_mut()
+	let instance = pick_instance(instance, config).context("Failed to pick instance")?;
+	let instance = config
 		.instances
-		.get_mut(&instance)
+		.get(&instance)
 		.context("Instance does not exist")?;
-	instance.ensure_dirs(&data.paths)?;
+	instance.ensure_dir()?;
 
-	if let Some(game_dir) = &instance.get_dirs().get().game_dir {
-		println!("{game_dir:?}");
+	if let Some(dir) = instance.dir() {
+		println!("{}", dir.to_string_lossy());
 	} else {
-		bail!("Instance has no game dir");
+		bail!("Instance has no directory");
 	}
 
 	Ok(())
@@ -340,7 +418,8 @@ async fn update(
 	groups: Vec<String>,
 	all: bool,
 	force: bool,
-	skip_packages: bool,
+	packages: bool,
+	modpack: bool,
 ) -> anyhow::Result<()> {
 	data.ensure_config(true).await?;
 	let config = data.config.get_mut();
@@ -366,6 +445,20 @@ async fn update(
 
 	let client = Client::new();
 	let mut lock = Lockfile::open(&data.paths).context("Failed to open lockfile")?;
+	let core = config
+		.get_core(
+			Some(&get_ms_client_id()),
+			&UpdateSettings {
+				depth: UpdateDepth::Full,
+				offline_auth: false,
+			},
+			&client,
+			&config.plugins,
+			&data.paths,
+			&mut NoOp,
+		)
+		.await?;
+
 	for id in ids {
 		let instance = config
 			.instances
@@ -373,14 +466,15 @@ async fn update(
 			.with_context(|| format!("Unknown instance '{id}'"))?;
 
 		let mut ctx = InstanceUpdateContext {
-			packages: &mut config.packages,
-			accounts: &config.accounts,
+			packages: &config.packages,
+			accounts: &mut config.accounts,
 			plugins: &config.plugins,
 			prefs: &config.prefs,
 			paths: &data.paths,
 			lock: &mut lock,
 			client: &client,
 			output: data.output,
+			core: &core,
 		};
 
 		let depth = if force {
@@ -389,8 +483,10 @@ async fn update(
 			UpdateDepth::Full
 		};
 
+		let facets = UpdateFacets::from_flags(packages, modpack);
+
 		instance
-			.update(!skip_packages, depth, &mut ctx)
+			.update(depth, facets, &mut ctx)
 			.await
 			.context("Failed to update instance")?;
 
@@ -398,7 +494,7 @@ async fn update(
 		config.packages.clear();
 
 		// Mark the instance as having completed its first update
-		lock.update_instance_has_done_first_update(instance.get_id());
+		lock.update_instance_has_done_first_update(instance.id());
 		lock.finish(&data.paths)
 			.context("Failed to finish using lockfile")?;
 	}
@@ -406,50 +502,48 @@ async fn update(
 	Ok(())
 }
 
-async fn add(data: &mut CmdData<'_>) -> anyhow::Result<()> {
+async fn add(data: &mut CmdData<'_>, plugin: Option<String>) -> anyhow::Result<()> {
 	data.ensure_config(true).await?;
-	let mut config = data.get_raw_config()?;
+	let config = data.config.get();
+	let mut raw_config = data.get_raw_config()?;
 
 	// Build the instance
-	let id = inquire::Text::new("What is the ID for the instance?").prompt()?;
-	let id = InstanceID::from(id);
-	let version = inquire::Text::new("What Minecraft version should the instance be?").prompt()?;
-	let version = match version.as_str() {
-		"latest" => MinecraftVersionDeser::Latest(MinecraftLatestVersion::Release),
-		"latest_snapshot" => MinecraftVersionDeser::Latest(MinecraftLatestVersion::Snapshot),
-		other => MinecraftVersionDeser::Version(other.into()),
-	};
-	let side_options = vec![Side::Client, Side::Server];
-	let side =
-		inquire::Select::new("What side should the instance be on?", side_options).prompt()?;
+	let id = pick_instance_id()?;
 
-	let loader_options = match side {
-		Side::Client => {
-			vec![Loader::Vanilla, Loader::Fabric, Loader::Quilt]
-		}
-		Side::Server => {
-			vec![
-				Loader::Vanilla,
-				Loader::Fabric,
-				Loader::Quilt,
-				Loader::Paper,
-				Loader::Sponge,
-				Loader::Folia,
-			]
-		}
-	};
-	let loader =
-		inquire::Select::new("What loader should the instance use?", loader_options).prompt()?;
+	let side = pick_side(None)?;
+
+	let client = Client::new();
+	let core = config
+		.get_core(
+			Some(&get_ms_client_id()),
+			&UpdateSettings {
+				depth: UpdateDepth::Full,
+				offline_auth: false,
+			},
+			&client,
+			&config.plugins,
+			&data.paths,
+			&mut NoOp,
+		)
+		.await?;
+	let manifest = core
+		.get_version_manifest(None, UpdateDepth::Shallow, &mut NoOp)
+		.await?;
+
+	let version = pick_minecraft_version(&manifest.list).await?;
+
+	let loader = pick_loader(None, Some(side), &config.plugins, &data.paths).await?;
 
 	let instance_config = InstanceConfig {
 		side: Some(side),
-		version: Some(version),
+		version: Some(version.to_serialized()),
 		loader: Some(to_string_json(&loader)),
+		source_plugin: plugin,
 		..Default::default()
 	};
 
 	apply_modifications_and_write(
-		&mut config,
+		&mut raw_config,
 		vec![ConfigModification::AddInstance(id, instance_config)],
 		&data.paths,
 		&data.config.get().plugins,
@@ -458,24 +552,27 @@ async fn add(data: &mut CmdData<'_>) -> anyhow::Result<()> {
 	.await
 	.context("Failed to write modified config")?;
 
-	data.output.display(
-		MessageContents::Success("Instance added".into()),
-		MessageLevel::Important,
-	);
+	data.output
+		.display(MessageContents::Success("Instance added".into()));
 
 	Ok(())
 }
 
 async fn import(
 	data: &mut CmdData<'_>,
-	instance: String,
+	instance: Option<String>,
 	path: String,
 	format: Option<String>,
+	side: Option<Side>,
 ) -> anyhow::Result<()> {
 	data.ensure_config(true).await?;
 	let config = data.config.get();
 
-	let instance = InstanceID::from(instance);
+	let instance = if let Some(instance) = instance {
+		InstanceID::from(instance)
+	} else {
+		pick_instance_id()?
+	};
 
 	if config.instances.contains_key(&instance) {
 		bail!("An instance with that ID already exists");
@@ -502,6 +599,7 @@ async fn import(
 		&instance,
 		format,
 		&PathBuf::from(path),
+		side,
 		&formats,
 		&config.plugins,
 		&data.paths,
@@ -587,7 +685,6 @@ async fn export(
 
 async fn delete(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()> {
 	data.ensure_config(true).await?;
-	let mut raw_config = data.get_raw_config()?;
 	let config = data.config.get_mut();
 
 	let id = pick_instance(id, config)?;
@@ -606,56 +703,14 @@ async fn delete(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()
 	}
 
 	let mut process = data.output.get_process();
-	process.display(
-		MessageContents::StartProcess("Deleting instance".into()),
-		MessageLevel::Important,
-	);
+	process.display(MessageContents::StartProcess("Deleting instance".into()));
 
 	instance
-		.delete_files(&data.paths)
+		.delete(&data.paths, &config.plugins, process.deref_mut())
 		.await
 		.context("Failed to delete instance")?;
 
-	if let Some(source_plugin) = &instance.get_config().original_config.source_plugin {
-		if !instance.get_config().original_config.is_deletable {
-			bail!("Plugin instance does not support deletion");
-		}
-
-		let arg = SaveInstanceConfigArg {
-			id: id.to_string(),
-			config: instance.get_config().original_config.clone(),
-		};
-
-		let result = config
-			.plugins
-			.call_hook_on_plugin(
-				DeleteInstance,
-				source_plugin,
-				&arg,
-				&data.paths,
-				process.deref_mut(),
-			)
-			.await?;
-		if let Some(result) = result {
-			result.result(process.deref_mut()).await?;
-		}
-	} else {
-		let modifications = vec![ConfigModification::RemoveInstance(id.into())];
-		apply_modifications_and_write(
-			&mut raw_config,
-			modifications,
-			&data.paths,
-			&config.plugins,
-			process.deref_mut(),
-		)
-		.await
-		.context("Failed to modify and write config")?;
-	}
-
-	process.display(
-		MessageContents::Success("Instance deleted".into()),
-		MessageLevel::Important,
-	);
+	process.display(MessageContents::Success("Instance deleted".into()));
 
 	Ok(())
 }
@@ -672,7 +727,7 @@ async fn edit(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()> 
 		.get_mut(&id)
 		.with_context(|| format!("Unknown instance '{id}'"))?;
 
-	let mut inst_config = instance.get_config().original_config.clone();
+	let mut inst_config = instance.original_config().clone();
 	if inst_config.source_plugin.is_some() && !inst_config.is_editable {
 		bail!("This plugin instance does not support editing");
 	}
@@ -684,7 +739,7 @@ async fn edit(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()> 
 		.context("Failed to serialize. Make sure your config is valid JSON")?;
 	new_config.restore_plugin_only_fields(&inst_config);
 
-	let modifications = vec![ConfigModification::AddInstance(id.into(), new_config)];
+	let modifications = vec![ConfigModification::UpdateInstance(id, new_config)];
 	apply_modifications_and_write(
 		&mut raw_config,
 		modifications,
@@ -695,34 +750,131 @@ async fn edit(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()> 
 	.await
 	.context("Failed to modify and write config")?;
 
-	data.output.display(
-		MessageContents::Success("Changes saved".into()),
-		MessageLevel::Important,
-	);
+	data.output
+		.display(MessageContents::Success("Changes saved".into()));
 
 	Ok(())
 }
 
-/// Pick which instance to use
-pub fn pick_instance(instance: Option<String>, config: &Config) -> anyhow::Result<InstanceID> {
-	if let Some(instance) = instance {
-		Ok(instance.into())
-	} else {
-		let options = config.instances.keys().sorted().collect();
-		let selection = Select::new("Choose an instance", options)
-			.prompt()
-			.context("Prompt failed")?;
+async fn logs(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()> {
+	data.ensure_config(true).await?;
+	let config = data.config.get_mut();
 
-		Ok(selection.to_owned())
+	let id = pick_instance(id, config)?;
+
+	let instance = config
+		.instances
+		.get_mut(&id)
+		.with_context(|| format!("Unknown instance '{id}'"))?;
+
+	let logs = instance
+		.get_logs(&config.plugins, &data.paths, data.output)
+		.await
+		.context("Failed to get instance logs")?;
+
+	if logs.is_empty() {
+		cprintln!("No logs available");
+		return Ok(());
 	}
+
+	loop {
+		let select = inquire::Select::new("Browsing logs. Press Escape to exit.", logs.clone());
+		let log = select.prompt_skippable()?;
+		if let Some(log) = log {
+			if let Ok(log_text) = instance
+				.get_log(&log, &config.plugins, &data.paths, data.output)
+				.await
+			{
+				cprintln!("<s>Log <g>{log}");
+				println!("{log_text}");
+			} else {
+				cprintln!("<s,r>Failed to read log {log}");
+			}
+			inquire::Confirm::new("Press Escape to return to browse page").prompt_skippable()?;
+		} else {
+			break;
+		}
+	}
+
+	Ok(())
 }
 
-/// Pick which instances to use
-pub fn pick_instances(config: &Config) -> anyhow::Result<Vec<InstanceID>> {
-	let options = config.instances.keys().sorted().cloned().collect();
-	let selection = MultiSelect::new("Choose instances", options)
-		.prompt()
-		.context("Prompt failed")?;
+async fn duplicate(
+	data: &mut CmdData<'_>,
+	instance: Option<String>,
+	new_id: Option<String>,
+) -> anyhow::Result<()> {
+	data.ensure_config(true).await?;
+	let config = data.config.get();
 
-	Ok(selection)
+	let instance = pick_instance(instance, config)?;
+	let instance = config
+		.instances
+		.get(&instance)
+		.context("Instance does not exist")?;
+
+	let new_id = if let Some(new_id) = new_id {
+		new_id.into()
+	} else {
+		pick_instance_id()?
+	};
+
+	instance
+		.duplicate(&new_id, &data.paths, &config.plugins, data.output)
+		.await?;
+
+	data.output
+		.display(MessageContents::Success("Changes saved".into()));
+
+	Ok(())
+}
+
+async fn consolidate(data: &mut CmdData<'_>, instance: Option<String>) -> anyhow::Result<()> {
+	data.ensure_config(true).await?;
+	let config = data.config.get();
+
+	let instance = pick_instance(instance, config)?;
+	let instance = config
+		.instances
+		.get(&instance)
+		.context("Instance does not exist")?;
+
+	instance
+		.consolidate(&data.paths, &config.plugins, data.output)
+		.await?;
+
+	data.output
+		.display(MessageContents::Success("Changes saved".into()));
+
+	Ok(())
+}
+
+async fn extract(
+	data: &mut CmdData<'_>,
+	instance: Option<String>,
+	new_id: Option<String>,
+) -> anyhow::Result<()> {
+	data.ensure_config(true).await?;
+	let config = data.config.get();
+
+	let instance = pick_instance(instance, config)?;
+	let instance = config
+		.instances
+		.get(&instance)
+		.context("Instance does not exist")?;
+
+	let new_id = if let Some(new_id) = new_id {
+		new_id.into()
+	} else {
+		pick_instance_id()?
+	};
+
+	instance
+		.extract(&new_id, &data.paths, &config.plugins, data.output)
+		.await?;
+
+	data.output
+		.display(MessageContents::Success("Changes saved".into()));
+
+	Ok(())
 }

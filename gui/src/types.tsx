@@ -13,6 +13,7 @@ export interface InstanceInfo {
 	pinned: boolean;
 	from_plugin: boolean;
 	version: string;
+	loader: string;
 	is_editable: boolean;
 	is_deletable: boolean;
 }
@@ -77,6 +78,8 @@ export interface PackageProperties {
 	features?: string[] | string;
 }
 
+export type PackageMetaAndProps = [PackageMeta, PackageProperties];
+
 export interface PkgRequest {
 	id: string;
 	repository?: string;
@@ -94,6 +97,7 @@ export interface Theme {
 	id: string;
 	name: string;
 	description?: string;
+	type: "base" | "overlay";
 	css: string;
 	color: string;
 }

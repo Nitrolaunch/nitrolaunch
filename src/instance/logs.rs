@@ -14,19 +14,10 @@ impl Instance {
 		paths: &Paths,
 		o: &mut impl NitroOutput,
 	) -> anyhow::Result<Vec<String>> {
-		self.ensure_dirs(paths)?;
-
-		if let Some(plugin) = &self
-			.config
-			.original_config_with_templates_and_plugins
-			.custom_logging_plugin
-		{
+		if let Some(plugin) = &self.config.custom_logging_plugin {
 			let arg = GetInstanceLogsArg {
 				id: self.id.to_string(),
-				config: self
-					.config
-					.original_config_with_templates_and_plugins
-					.clone(),
+				config: self.config.clone(),
 			};
 
 			let result = plugins
@@ -37,13 +28,11 @@ impl Instance {
 			};
 
 			result.result(o).await
+		} else if let Some(inst_dir) = &self.dir {
+			let logs_dir = inst_dir.join("logs");
+			list_logs(&logs_dir)
 		} else {
-			if let Some(game_dir) = &self.dirs.get().game_dir {
-				let logs_dir = game_dir.join("logs");
-				list_logs(&logs_dir)
-			} else {
-				Ok(Vec::new())
-			}
+			Ok(Vec::new())
 		}
 	}
 
@@ -55,20 +44,11 @@ impl Instance {
 		paths: &Paths,
 		o: &mut impl NitroOutput,
 	) -> anyhow::Result<String> {
-		self.ensure_dirs(paths)?;
-
-		if let Some(plugin) = &self
-			.config
-			.original_config_with_templates_and_plugins
-			.custom_logging_plugin
-		{
+		if let Some(plugin) = &self.config.custom_logging_plugin {
 			let arg = GetInstanceLogArg {
 				instance_id: self.id.to_string(),
 				log_id: log_id.to_string(),
-				config: self
-					.config
-					.original_config_with_templates_and_plugins
-					.clone(),
+				config: self.config.clone(),
 			};
 
 			let result = plugins
@@ -79,13 +59,11 @@ impl Instance {
 			};
 
 			result.result(o).await
+		} else if let Some(inst_dir) = &self.dir {
+			let logs_dir = inst_dir.join("logs");
+			read_log(&logs_dir.join(log_id))
 		} else {
-			if let Some(game_dir) = &self.dirs.get().game_dir {
-				let logs_dir = game_dir.join("logs");
-				read_log(&logs_dir.join(log_id))
-			} else {
-				Ok(String::new())
-			}
+			Ok(String::new())
 		}
 	}
 }

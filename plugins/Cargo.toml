@@ -23,6 +23,10 @@ name = "nitro_plugin_curseforge_api"
 path = "plugins/curseforge_api/main.rs"
 
 [[bin]]
+name = "nitro_plugin_discord_status"
+path = "plugins/discord_status/main.rs"
+
+[[bin]]
 name = "nitro_plugin_docs"
 path = "plugins/docs/main.rs"
 
@@ -63,10 +67,6 @@ name = "nitro_plugin_paper"
 path = "plugins/paper/main.rs"
 
 [[bin]]
-name = "nitro_plugin_template_share"
-path = "plugins/template_share/main.rs"
-
-[[bin]]
 name = "nitro_plugin_smithed"
 path = "plugins/smithed/main.rs"
 
@@ -83,10 +83,6 @@ name = "nitro_plugin_sponge"
 path = "plugins/sponge/main.rs"
 
 [[bin]]
-name = "nitro_plugin_stats"
-path = "plugins/stats/main.rs"
-
-[[bin]]
 name = "nitro_plugin_xmcl_transfer"
 path = "plugins/xmcl_transfer/main.rs"
 
@@ -96,11 +92,13 @@ base64 = { workspace = true }
 chrono = { workspace = true }
 clap = { workspace = true }
 color-print = { workspace = true }
+discord-rich-presence = { workspace = true }
 glob = { workspace = true }
 iso8601-timestamp = { workspace = true }
 itertools = { workspace = true }
 nitrolaunch = { workspace = true }
 nitro_core = { workspace = true }
+nitro_instance = { workspace = true, features = ["net"] }
 nitro_mods = { workspace = true }
 nitro_net = { workspace = true }
 nitro_options = { workspace = true }

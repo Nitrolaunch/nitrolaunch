@@ -2,19 +2,19 @@ use std::collections::HashMap;
 
 use anyhow::Context;
 use nitro_parse::conditions::{ArchCondition, OSCondition};
+use nitro_shared::Side;
 use nitro_shared::lang::Language;
 use nitro_shared::loaders::LoaderMatch;
-use nitro_shared::pkg::{PackageAddonOptionalHashes, PackageKind, PackageStability};
+use nitro_shared::pkg::{AddonOptionalHashes, PackageKind, PackageStability};
 use nitro_shared::util::DeserListOrSingle;
 use nitro_shared::versions::VersionPattern;
-use nitro_shared::Side;
 #[cfg(feature = "schema")]
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
+use crate::RecommendedPackage;
 use crate::metadata::PackageMetadata;
 use crate::properties::PackageProperties;
-use crate::RecommendedPackage;
 
 /// Structure for a declarative / JSON package
 #[derive(Deserialize, Serialize, Debug, Default, Clone)]
@@ -64,6 +64,9 @@ pub struct DeclarativePackageRelations {
 	/// Package recommendations
 	#[serde(skip_serializing_if = "DeserListOrSingle::is_empty")]
 	pub recommendations: DeserListOrSingle<RecommendedPackage>,
+	/// Included packages
+	#[serde(skip_serializing_if = "DeserListOrSingle::is_empty")]
+	pub inclusions: DeserListOrSingle<String>,
 }
 
 impl DeclarativePackageRelations {
@@ -77,6 +80,7 @@ impl DeclarativePackageRelations {
 		self.bundled.merge(other.bundled);
 		self.compats.merge(other.compats);
 		self.recommendations.merge(other.recommendations);
+		self.inclusions.merge(other.inclusions);
 	}
 
 	/// Checks if the relations are empty
@@ -88,6 +92,7 @@ impl DeclarativePackageRelations {
 			&& self.bundled.is_empty()
 			&& self.compats.is_empty()
 			&& self.recommendations.is_empty()
+			&& self.inclusions.is_empty()
 	}
 }
 
@@ -157,6 +162,10 @@ pub struct DeclarativeConditionalRuleProperties {
 pub struct DeclarativeAddon {
 	/// What kind of addon this is
 	pub kind: PackageKind,
+	/// Modpack format if this addon is a modpack
+	#[serde(default)]
+	#[serde(skip_serializing_if = "Option::is_none")]
+	pub modpack_format: Option<String>,
 	/// The available versions of this addon
 	#[serde(default)]
 	#[serde(skip_serializing_if = "Vec::is_empty")]
@@ -203,17 +212,17 @@ pub struct DeclarativeAddonVersion {
 	#[serde(skip_serializing_if = "Option::is_none")]
 	pub version: Option<String>,
 	/// Hashes for this version file
-	#[serde(skip_serializing_if = "PackageAddonOptionalHashes::is_empty")]
-	pub hashes: PackageAddonOptionalHashes,
+	#[serde(skip_serializing_if = "AddonOptionalHashes::is_empty")]
+	pub hashes: AddonOptionalHashes,
 }
 
 impl DeclarativeAddonVersion {
 	/// Gets whether one of the given content versions matches this version's content versions or version ID
 	pub fn content_versions_match(&self, content_versions: &[String]) -> bool {
-		if let Some(id) = &self.version {
-			if content_versions.contains(id) {
-				return true;
-			}
+		if let Some(id) = &self.version
+			&& content_versions.contains(id)
+		{
+			return true;
 		}
 
 		if let Some(own_content_versions) = &self.conditional_properties.content_versions {
@@ -263,15 +272,15 @@ impl DeclarativePackage {
 	/// Gets the real name of a content version given either an actual content version,
 	/// or a version ID
 	pub fn get_content_version_name<'a>(&'a self, version: &'a String) -> &'a String {
-		if let Some(content_versions) = &self.properties.content_versions {
-			if content_versions.contains(version) {
-				return version;
-			}
+		if let Some(content_versions) = &self.properties.content_versions
+			&& content_versions.contains(version)
+		{
+			return version;
 		}
 
 		for addon in self.addons.values() {
 			for addon_version in &addon.versions {
-				if !addon_version.version.as_ref().is_some_and(|x| x == version) {
+				if addon_version.version.as_ref().is_none_or(|x| x != version) {
 					continue;
 				}
 
@@ -286,20 +295,19 @@ impl DeclarativePackage {
 			}
 		}
 
-		return version;
+		version
 	}
 
 	/// Improve a generated package by inferring certain fields
 	pub fn improve_generation(&mut self) {
 		// Infer issues link from a GitHub source link
-		if self.meta.issues.is_none() {
-			if let Some(source) = &self.meta.source {
-				if source.contains("://github.com/") {
-					let issues = source.clone();
-					let issues = issues.trim_end_matches('/');
-					self.meta.issues = Some(issues.to_string() + "issues");
-				}
-			}
+		if self.meta.issues.is_none()
+			&& let Some(source) = &self.meta.source
+			&& source.contains("://github.com/")
+		{
+			let issues = source.clone();
+			let issues = issues.trim_end_matches('/');
+			self.meta.issues = Some(issues.to_string() + "issues");
 		}
 	}
 
@@ -380,6 +388,7 @@ mod tests {
 			"foo".into(),
 			DeclarativeAddon {
 				kind: PackageKind::Mod,
+				modpack_format: None,
 				versions: vec![DeclarativeAddonVersion {
 					version: Some("a".into()),
 					conditional_properties: DeclarativeConditionSet {

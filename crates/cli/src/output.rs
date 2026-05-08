@@ -1,16 +1,17 @@
+use std::borrow::Cow;
 use std::time::Duration;
 
 use anyhow::Context;
 use color_print::{cformat, cstr};
 use inquire::{Confirm, Password};
 use itertools::Itertools;
-use nitrolaunch::core::io::config::IO_CONFIG;
 use nitrolaunch::io::logging::Logger;
 use nitrolaunch::io::paths::Paths;
 use nitrolaunch::pkg_crate::{PkgRequest, PkgRequestSource};
+use nitrolaunch::shared::io::config::IO_CONFIG;
 use nitrolaunch::shared::lang::translate::{TranslationKey, TranslationMap};
 use nitrolaunch::shared::output::{
-	default_special_ms_auth, Message, MessageContents, MessageLevel, NitroOutput,
+	Message, MessageContents, MessageLevel, NitroOutput, default_special_ms_auth,
 };
 use nitrolaunch::shared::util::print::ReplPrinter;
 use tokio::sync::mpsc::{Receiver, Sender};
@@ -40,49 +41,65 @@ pub struct TerminalOutput {
 	logger: Logger,
 	translation_map: Option<TranslationMap>,
 	process_spinner_task: Option<Sender<()>>,
+	wrapping_enabled: bool,
 }
 
 #[async_trait::async_trait]
 impl NitroOutput for TerminalOutput {
 	fn display_text(&mut self, text: String, level: MessageLevel) {
 		let _ = self.log_message(MessageContents::Simple(text.clone()), level);
-		self.display_text_impl(text, level);
+		if level >= self.level {
+			self.display_text_impl(text);
+		}
 	}
 
 	fn display_message(&mut self, message: Message) {
 		let _ = self.log_message(message.contents.clone(), message.level);
-		let is_error = matches!(&message.contents, MessageContents::Error(..));
 
-		// Loading spinner handling
-		let message_contents =
-			if let MessageContents::StartProcess(inner_message) = &message.contents {
-				if let Some(existing_task) = self.process_spinner_task.take() {
-					tokio::spawn(async move { existing_task.send(()).await });
+		if message.level >= self.level {
+			let is_error = matches!(&message.contents, MessageContents::Error(..));
+
+			// Loading spinner handling
+			let message_contents = match message.contents {
+				MessageContents::StartProcess(inner_message) => {
+					if let Some(existing_task) = self.process_spinner_task.take() {
+						tokio::spawn(async move { existing_task.send(()).await });
+					}
+
+					let inner_message = format!("{inner_message}...");
+					let start_message = format!("{} {inner_message}", format_loading_spinner(3));
+
+					let printer = self.printer.clone();
+					let (tx, rx) = tokio::sync::mpsc::channel(2);
+
+					tokio::spawn(
+						async move { loading_spinner_task(inner_message, printer, rx).await },
+					);
+					self.process_spinner_task = Some(tx);
+
+					start_message
 				}
-
-				let inner_message = format!("{inner_message}...");
-				let start_message = format!("{} {inner_message}", format_loading_spinner(3));
-
-				let printer = self.printer.clone();
-				let (tx, rx) = tokio::sync::mpsc::channel(2);
-
-				tokio::spawn(async move { loading_spinner_task(inner_message, printer, rx).await });
-				self.process_spinner_task = Some(tx);
-
-				start_message
-			} else {
-				self.format_message(message.contents)
+				message => {
+					// Wrapping
+					let message = self.format_message(message);
+					if !self.in_process && self.wrapping_enabled {
+						wrap_message(&message).to_string()
+					} else {
+						message
+					}
+				}
 			};
 
-		/*
-			If the message is an error it will span multiple lines and break the ReplPrinter,
-			plus the process is aborted anyway
-		*/
-		if is_error {
-			self.end_process();
-		}
+			/*
+				If the message is an error it will span multiple lines and break the ReplPrinter,
+				plus the process is aborted anyway
+			*/
+			if is_error {
+				self.end_process();
+			}
 
-		self.display_text_impl(message_contents, message.level);
+			self.display_text_impl(message_contents);
+		}
 	}
 
 	fn start_process(&mut self) {
@@ -115,7 +132,11 @@ impl NitroOutput for TerminalOutput {
 		}
 	}
 
-	async fn prompt_yes_no(&mut self, default: bool, message: MessageContents) -> anyhow::Result<bool> {
+	async fn prompt_yes_no(
+		&mut self,
+		default: bool,
+		message: MessageContents,
+	) -> anyhow::Result<bool> {
 		let ans = Confirm::new(&self.format_message(message))
 			.with_default(default)
 			.prompt()
@@ -168,6 +189,7 @@ impl NitroOutput for TerminalOutput {
 			logger: Logger::dummy(),
 			translation_map: None,
 			process_spinner_task: None,
+			wrapping_enabled: self.wrapping_enabled,
 		})
 	}
 }
@@ -188,15 +210,12 @@ impl TerminalOutput {
 			logger,
 			translation_map: None,
 			process_spinner_task: None,
+			wrapping_enabled: IO_CONFIG.get_bool("cli_wrap").unwrap_or(false),
 		})
 	}
 
 	/// Display text
-	fn display_text_impl(&mut self, text: String, level: MessageLevel) {
-		if !level.at_least(&self.level) {
-			return;
-		}
-
+	fn display_text_impl(&mut self, text: String) {
 		if self.in_process {
 			self.printer.print(&text);
 		} else {
@@ -297,11 +316,11 @@ impl TerminalOutput {
 /// Format a PkgRequest with colors
 fn disp_pkg_request_with_colors(req: PkgRequest) -> String {
 	match req.source {
-		PkgRequestSource::UserRequire => cformat!("<y>{}", req.id),
-		PkgRequestSource::Bundled(..) => cformat!("<b>{}", req.id),
-		PkgRequestSource::Refused(..) => cformat!("<r>{}", req.id),
+		PkgRequestSource::UserRequire => cformat!("<y>{req}"),
+		PkgRequestSource::Bundled(..) => cformat!("<b>{req}"),
+		PkgRequestSource::Refused(..) => cformat!("<r>{req}"),
 		PkgRequestSource::Dependency(..) | PkgRequestSource::Repository => {
-			cformat!("<c>{}", req.id)
+			cformat!("<c>{req}")
 		}
 	}
 }
@@ -399,7 +418,128 @@ fn format_loading_spinner(stage: u8) -> String {
 	cformat!("<s>[</><y>{icon}</><s>]</>")
 }
 
+/// Wraps a message based on the terminal width
+fn wrap_message(message: &'_ str) -> Cow<'_, str> {
+	let Ok((width, ..)) = crossterm::terminal::size() else {
+		return Cow::Borrowed(message);
+	};
+
+	wrap_message_width(message, width as usize)
+}
+
+/// Wraps a message to a max size
+fn wrap_message_width(message: &'_ str, width: usize) -> Cow<'_, str> {
+	if width == 0 {
+		return Cow::Borrowed(message);
+	}
+
+	let char_len = message.char_indices().count();
+	let wrap_count = char_len / width;
+
+	let mut out = String::with_capacity(message.len() + wrap_count);
+	// +1 is to ensure we get the extra text at the end that is not wrapped
+	for i in 0..(wrap_count + 1) {
+		let start_char = i * width;
+		// Bound the end to the end of the message
+		let char_count = if start_char + width > char_len {
+			char_len - start_char
+		} else {
+			width
+		};
+		if char_count == 0 {
+			continue;
+		}
+
+		let mut chars = message.char_indices();
+		let start = chars.nth(start_char).expect("Should be in bounds").0;
+		let (end_start, end_char) = chars.nth(char_count - 2).expect("Should be in bounds");
+		let end = end_start + end_char.len_utf8();
+
+		out.push_str(&message[start..end]);
+		// Prevent trailing newlines
+		if end != message.len() {
+			out.push('\n');
+		}
+	}
+
+	Cow::Owned(out)
+}
+
+/// Cuts or pads a message to exactly `width` characters
+pub fn fit_message_width(message: &str, width: usize) -> Cow<'_, str> {
+	if width == 0 {
+		return Cow::Borrowed("");
+	}
+
+	let mut char_count = 0;
+	let mut end_byte = message.len();
+
+	// Find where to cut (if needed) and count chars
+	for (i, _) in message.char_indices() {
+		if char_count == width {
+			end_byte = i;
+			break;
+		}
+		char_count += 1;
+	}
+
+	// Truncate if string is longer
+	if char_count == width && end_byte < message.len() {
+		return Cow::Owned(message[..end_byte].to_string());
+	}
+
+	// Return if correct width
+	if char_count == width {
+		return Cow::Borrowed(message);
+	}
+
+	// Pad if string is shorter
+	let mut out = String::with_capacity(message.len() + (width - char_count));
+	out.push_str(message);
+
+	for _ in 0..(width - char_count) {
+		out.push(' ');
+	}
+
+	Cow::Owned(out)
+}
+
 /// Get whether icons are enabled
 pub fn icons_enabled() -> bool {
-	IO_CONFIG.get("cli_icons") == Some("1".into())
+	IO_CONFIG.get_bool("cli_icons").unwrap_or_default()
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	fn test_wrap_empty() {
+		assert_eq!(wrap_message_width("", 5), "");
+	}
+
+	#[test]
+	fn test_wrap_zero_width() {
+		assert_eq!(wrap_message_width("foo", 0), "foo");
+	}
+
+	#[test]
+	fn test_wrap_equal_width() {
+		assert_eq!(wrap_message_width("foo", 3), "foo");
+	}
+
+	#[test]
+	fn test_wrap_multiple_of_width() {
+		assert_eq!(wrap_message_width("foobar", 3), "foo\nbar");
+	}
+
+	#[test]
+	fn test_wrap_standard_value() {
+		assert_eq!(wrap_message_width("foobarba", 3), "foo\nbar\nba");
+	}
+
+	#[test]
+	fn test_wrap_inside_codepoint() {
+		assert_eq!(wrap_message_width("fo⬢bar", 3), "fo⬢\nbar");
+	}
 }

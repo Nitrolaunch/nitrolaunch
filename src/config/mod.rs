@@ -1,5 +1,9 @@
-/// Configuring instances
-pub mod instance;
+/// Reading account configuration
+mod account;
+/// Validation of config and other checks
+mod checks;
+/// Setting up the NitroCore
+mod core_setup;
 /// Configuring instance modifications
 pub mod modifications;
 /// Configuring packages
@@ -9,25 +13,27 @@ pub mod plugin;
 /// Configuring global preferences
 pub mod preferences;
 
-use self::instance::read_instance_config;
+use crate::config::account::{AuthFunction, read_account_config};
+use crate::config::checks::{check_configured_packages, check_nitro_version};
+use crate::config::core_setup::setup_core;
+use crate::instance::update::manager::UpdateSettings;
 use crate::plugin::PluginManager;
+use crate::plugin::context::NitroPluginContext;
 use anyhow::Context;
-use nitro_config::account::{AccountConfig, AccountVariant};
-use nitro_config::instance::InstanceConfig;
-use nitro_config::template::consolidate_template_configs;
-use nitro_config::template::TemplateConfig;
 use nitro_config::ConfigDeser;
-use nitro_core::account::{Account, AccountKind, AccountManager};
+use nitro_config::template::TemplateConfig;
+use nitro_config::template::consolidate_template_configs;
+use nitro_core::NitroCore;
+use nitro_core::account::AccountManager;
 use nitro_core::auth_crate::mc::ClientId;
 use nitro_core::io::{json_from_file, json_to_file_pretty};
-use nitro_pkg::PkgRequest;
 use nitro_plugin::hook::hooks::{AddInstances, AddInstancesArg, AddSupportedLoaders, AddTemplates};
 use nitro_shared::id::{InstanceID, TemplateID};
-use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
+use nitro_shared::output::{MessageContents, NitroOutput};
 use nitro_shared::util::is_valid_identifier;
 use nitro_shared::{skip_fail, translate};
 use preferences::ConfigPreferences;
-use version_compare::Version;
+use reqwest::Client;
 
 use super::instance::Instance;
 use crate::io::paths::Paths;
@@ -36,9 +42,10 @@ use crate::pkg::reg::PkgRegistry;
 use serde_json::json;
 
 use std::collections::HashMap;
-use std::fs::File;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
+
+pub use checks::is_first_run;
 
 /// The data resulting from reading configuration.
 /// Represents all of the configured data that Nitrolaunch will use
@@ -56,7 +63,7 @@ pub struct Config {
 	/// Named groups of instances
 	pub instance_groups: HashMap<Arc<str>, Vec<InstanceID>>,
 	/// The registry of packages. Will include packages that are configured when created this way
-	pub packages: PkgRegistry,
+	pub packages: Arc<PkgRegistry>,
 	/// Configured plugins
 	pub plugins: PluginManager,
 	/// Global user preferences
@@ -103,6 +110,10 @@ impl Config {
 		}
 
 		let mut accounts = AccountManager::new(client_id);
+		accounts.set_custom_hooks(Arc::new(AuthFunction {
+			plugins: plugins.clone(),
+			paths: paths.clone(),
+		}));
 		let mut instances = HashMap::with_capacity(config.instances.len());
 		// Preferences
 		let (prefs, repositories) =
@@ -117,10 +128,9 @@ impl Config {
 		// Accounts
 		for (account_id, account_config) in config.accounts.iter() {
 			if !is_valid_identifier(account_id) {
-				o.display(
-					MessageContents::Error(format!("Invalid account ID '{account_id}'")),
-					MessageLevel::Important,
-				);
+				o.display(MessageContents::Error(format!(
+					"Invalid account ID '{account_id}'"
+				)));
 				continue;
 			}
 			let account = read_account_config(account_config, account_id);
@@ -134,23 +144,14 @@ impl Config {
 					.choose_account(default_account_id)
 					.expect("Default account should exist");
 			} else {
-				o.display(
-					MessageContents::Error(format!(
-						"Provided default account '{default_account_id}' does not exist"
-					)),
-					MessageLevel::Important,
-				);
+				o.display(MessageContents::Error(format!(
+					"Provided default account '{default_account_id}' does not exist"
+				)));
 			}
 		} else if config.accounts.is_empty() && show_warnings {
-			o.display(
-				MessageContents::Warning(translate!(o, NoDefaultAccount)),
-				MessageLevel::Important,
-			);
+			o.display(MessageContents::Warning(translate!(o, NoDefaultAccount)));
 		} else if show_warnings {
-			o.display(
-				MessageContents::Warning(translate!(o, NoAccounts)),
-				MessageLevel::Important,
-			);
+			o.display(MessageContents::Warning(translate!(o, NoAccounts)));
 		}
 
 		// Add instances from plugins
@@ -164,12 +165,9 @@ impl Config {
 					let result = match result.result(o).await {
 						Ok(result) => result,
 						Err(e) => {
-							o.display(
-								MessageContents::Error(format!(
-									"Failed to add instances from plugin: {e:?}"
-								)),
-								MessageLevel::Important,
-							);
+							o.display(MessageContents::Error(format!(
+								"Failed to add instances from plugin: {e:?}"
+							)));
 							continue;
 						}
 					};
@@ -184,10 +182,9 @@ impl Config {
 				}
 			}
 			Err(e) => {
-				o.display(
-					MessageContents::Error(format!("Failed to add instances from plugins: {e:?}")),
-					MessageLevel::Important,
-				);
+				o.display(MessageContents::Error(format!(
+					"Failed to add instances from plugins: {e:?}"
+				)));
 			}
 		}
 		// Add templates from plugins
@@ -199,12 +196,9 @@ impl Config {
 					let result = match result.result(o).await {
 						Ok(result) => result,
 						Err(e) => {
-							o.display(
-								MessageContents::Error(format!(
-									"Failed to add templates from plugin: {e:?}"
-								)),
-								MessageLevel::Important,
-							);
+							o.display(MessageContents::Error(format!(
+								"Failed to add templates from plugin: {e:?}"
+							)));
 							continue;
 						}
 					};
@@ -219,10 +213,9 @@ impl Config {
 				}
 			}
 			Err(e) => {
-				o.display(
-					MessageContents::Error(format!("Failed to add templates from plugins: {e:?}")),
-					MessageLevel::Important,
-				);
+				o.display(MessageContents::Error(format!(
+					"Failed to add templates from plugins: {e:?}"
+				)));
 			}
 		}
 
@@ -245,55 +238,43 @@ impl Config {
 				}
 			}
 			Err(e) => {
-				o.display(
-					MessageContents::Error(format!(
-						"Failed to get supported loaders from plugins: {e:?}"
-					)),
-					MessageLevel::Important,
-				);
+				o.display(MessageContents::Error(format!(
+					"Failed to get supported loaders from plugins: {e:?}"
+				)));
 			}
 		}
 
 		// Instances
 		for (instance_id, instance_config) in config.instances {
-			let result = read_instance_config(
+			let result = Instance::from_config(
 				instance_id.clone(),
 				instance_config,
 				&consolidated_templates,
-				&plugins,
 				paths,
-				o,
-			)
-			.await;
+			);
 
 			let instance = match result {
 				Ok(instance) => instance,
 				Err(e) => {
-					o.display(
-						MessageContents::Error(translate!(
-							o,
-							InvalidInstanceConfig,
-							"instance" = &instance_id,
-							"error" = &format!("{e:?}")
-						)),
-						MessageLevel::Important,
-					);
+					o.display(MessageContents::Error(translate!(
+						o,
+						InvalidInstanceConfig,
+						"instance" = &instance_id,
+						"error" = &format!("{e:?}")
+					)));
 					continue;
 				}
 			};
 
 			if show_warnings
-				&& !nitro_config::instance::can_install_loader(&instance.config.loader)
-				&& !supported_loaders.contains(&instance.config.loader)
+				&& !nitro_config::instance::can_install_loader(instance.loader())
+				&& !supported_loaders.contains(instance.loader())
 			{
-				o.display(
-					MessageContents::Warning(translate!(
-						o,
-						ModificationNotSupported,
-						"mod" = &format!("{}", instance.config.loader)
-					)),
-					MessageLevel::Important,
-				);
+				o.display(MessageContents::Warning(translate!(
+					o,
+					ModificationNotSupported,
+					"mod" = &format!("{}", instance.loader())
+				)));
 			}
 
 			instances.insert(instance_id, instance);
@@ -301,12 +282,31 @@ impl Config {
 
 		for group in config.instance_groups.keys() {
 			if !is_valid_identifier(group) {
-				o.display(
-					MessageContents::Error(format!("Invalid ID for instance group '{group}'")),
-					MessageLevel::Important,
-				);
+				o.display(MessageContents::Error(format!(
+					"Invalid ID for instance group '{group}'"
+				)));
 			}
 		}
+
+		// Add instances and templates to plugin manager
+		let plugin_manager_instances = instances
+			.iter()
+			.map(|(k, v)| (k.to_string(), v.config().clone()))
+			.collect();
+		let plugin_manager_templates = config
+			.templates
+			.iter()
+			.map(|(k, v)| (k.to_string(), v.clone()))
+			.collect();
+
+		let context = NitroPluginContext {
+			instances: Arc::new(plugin_manager_instances),
+			templates: Arc::new(plugin_manager_templates),
+			paths: paths.clone(),
+			plugins: plugins.clone(),
+		};
+
+		plugins.set_context(Arc::new(context)).await;
 
 		Self {
 			accounts,
@@ -315,7 +315,7 @@ impl Config {
 			consolidated_templates,
 			base_template: config.base_template.unwrap_or_default(),
 			instance_groups: config.instance_groups,
-			packages,
+			packages: Arc::new(packages),
 			plugins,
 			prefs,
 		}
@@ -333,6 +333,19 @@ impl Config {
 		let obj = Self::open(path)?;
 		Ok(Self::load_from_deser(obj, plugins, show_warnings, paths, client_id, o).await)
 	}
+
+	/// Gets the core from the config
+	pub async fn get_core(
+		&self,
+		client_id: Option<&ClientId>,
+		settings: &UpdateSettings,
+		client: &Client,
+		plugins: &PluginManager,
+		paths: &Paths,
+		o: &mut impl NitroOutput,
+	) -> anyhow::Result<NitroCore> {
+		setup_core(client_id, settings, client, plugins, paths, o).await
+	}
 }
 
 /// Default program configuration
@@ -340,122 +353,27 @@ fn default_config() -> serde_json::Value {
 	json!(
 		{
 			"accounts": {
-				"example": {
-					"type": "microsoft"
-				}
+				"example": "microsoft"
 			},
 			"default_account": "example",
 			"templates": {
-				"1.20": {
-					"version": "1.19.3",
-					"loader": "vanilla",
-					"server_type": "none"
+				"1.21": {
+					"version": "1.21.11",
+					"loader": "vanilla"
 				}
 			},
 			"instances": {
 				"example-client": {
-					"from": "1.20",
+					"from": "1.21",
 					"type": "client"
 				},
 				"example-server": {
-					"from": "1.20",
+					"from": "1.21",
 					"type": "server"
 				}
 			}
 		}
 	)
-}
-
-/// Checks and updates the currently installed Nitro version and warns the user
-pub fn check_nitro_version(paths: &Paths, o: &mut impl NitroOutput) -> anyhow::Result<()> {
-	let path = paths.internal.join("nitro_version");
-
-	if path.exists() {
-		let contents = std::fs::read_to_string(&path)?;
-		let contents = contents.trim_end();
-
-		let current_version = Version::from(contents).context("Current version failed to parse")?;
-		let new_version = Version::from(crate::VERSION).context("New version failed to parse")?;
-
-		if current_version.compare_to(new_version, version_compare::Cmp::Gt) {
-			o.display(
-				MessageContents::Warning(translate!(
-					o,
-					WrongNitroVersion,
-					"current" = &contents,
-					"new" = crate::VERSION
-				)),
-				MessageLevel::Important,
-			);
-		} else {
-			std::fs::write(path, crate::VERSION)?;
-		}
-	} else {
-		std::fs::write(path, crate::VERSION)?;
-	}
-
-	Ok(())
-}
-
-/// Checks packages configured on instances and templates
-fn check_configured_packages(
-	instances: &HashMap<InstanceID, InstanceConfig>,
-	templates: &HashMap<TemplateID, TemplateConfig>,
-	o: &mut impl NitroOutput,
-) {
-	for inst in instances.values() {
-		if inst.packages.iter().any(|x| {
-			PkgRequest::parse(x.get_pkg_id(), nitro_pkg::PkgRequestSource::UserRequire)
-				.repository
-				.is_none()
-		}) {
-			o.display(
-				MessageContents::Warning("An instance uses deprecated generic packages".into()),
-				MessageLevel::Important,
-			);
-			return;
-		}
-	}
-
-	for temp in templates.values() {
-		if temp.instance.packages.iter().any(|x| {
-			PkgRequest::parse(x.get_pkg_id(), nitro_pkg::PkgRequestSource::UserRequire)
-				.repository
-				.is_none()
-		}) {
-			o.display(
-				MessageContents::Warning("A template uses deprecated generic packages".into()),
-				MessageLevel::Important,
-			);
-			return;
-		}
-	}
-}
-
-/// Checks whether this is the first time the launcher has been run.
-/// If it is, saves that info so that it will return false the next time
-pub fn is_first_run(paths: &Paths) -> bool {
-	let path = paths.internal.join("is_first_run");
-	let out = !path.exists();
-	if out {
-		let _ = File::create(path);
-	}
-
-	out
-}
-
-/// Creates an account from an account config
-pub fn read_account_config(config: &AccountConfig, id: &str) -> Account {
-	match config {
-		AccountConfig::Simple(variant) | AccountConfig::Advanced { variant } => {
-			let kind = match variant {
-				AccountVariant::Microsoft => AccountKind::Microsoft { xbox_uid: None },
-				AccountVariant::Demo => AccountKind::Demo,
-				AccountVariant::Unknown(id) => AccountKind::Unknown(id.clone()),
-			};
-			Account::new(kind, id.into())
-		}
-	}
 }
 
 #[cfg(test)]

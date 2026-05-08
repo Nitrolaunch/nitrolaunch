@@ -25,6 +25,11 @@ pub fn get_current_dir() -> PathBuf {
 	PathBuf::from(super::interface::get_current_dir())
 }
 
+/// Gets the user's home directory
+pub fn get_home_dir() -> PathBuf {
+	PathBuf::from(super::interface::get_home_dir())
+}
+
 /// Gets the operating system as a lowercase string
 pub fn get_os_string() -> String {
 	super::interface::get_os_string()
@@ -43,6 +48,15 @@ pub fn get_pointer_width() -> u32 {
 /// Updates a hardlink between two files
 pub fn update_hardlink(src: impl AsRef<Path>, tgt: impl AsRef<Path>) -> anyhow::Result<()> {
 	super::interface::update_hardlink(
+		&src.as_ref().to_string_lossy(),
+		&tgt.as_ref().to_string_lossy(),
+	)
+	.map_err(|e| anyhow!("{e:?}"))
+}
+
+/// Updates a link between two files
+pub fn update_link(src: impl AsRef<Path>, tgt: impl AsRef<Path>) -> anyhow::Result<()> {
+	super::interface::update_link(
 		&src.as_ref().to_string_lossy(),
 		&tgt.as_ref().to_string_lossy(),
 	)

@@ -1,7 +1,7 @@
 use std::fs::File;
 use std::path::PathBuf;
 
-use zip::{write::FileOptions, CompressionMethod, ZipWriter};
+use zip::{CompressionMethod, ZipWriter, write::FileOptions};
 
 macro_rules! add_file {
 	($zip:expr, $path:literal) => {
@@ -50,8 +50,6 @@ fn main() {
 	add_file!(zip, "plugins/development/hooks.md");
 	add_file!(zip, "plugins/plugins/index.md");
 
-	add_file!(zip, "plugins/plugins/addon_share.md");
-	add_file!(zip, "plugins/plugins/args.md");
 	add_file!(zip, "plugins/plugins/auto_mcs.md");
 	add_file!(zip, "plugins/plugins/automate.md");
 	add_file!(zip, "plugins/plugins/backup.md");
@@ -69,9 +67,13 @@ fn main() {
 	add_file!(zip, "plugins/plugins/modrinth_api.md");
 	add_file!(zip, "plugins/plugins/mojang_transfer.md");
 	add_file!(zip, "plugins/plugins/multimc_transfer.md");
+	add_file!(zip, "plugins/plugins/nitro_transfer.md");
+	add_file!(zip, "plugins/plugins/octane.md");
 	add_file!(zip, "plugins/plugins/options.md");
-	add_file!(zip, "plugins/plugins/template_share.md");
 	add_file!(zip, "plugins/plugins/server_restart.md");
+	add_file!(zip, "plugins/plugins/share.md");
+	add_file!(zip, "plugins/plugins/shortcut.md");
+	add_file!(zip, "plugins/plugins/skin_stealer.md");
 	add_file!(zip, "plugins/plugins/smithed.md");
 	add_file!(zip, "plugins/plugins/smithed_api.md");
 	add_file!(zip, "plugins/plugins/stats.md");

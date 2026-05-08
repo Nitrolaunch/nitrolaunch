@@ -1,6 +1,6 @@
 #[cfg(feature = "host")]
 use nitro_shared::output::NitroOutput;
-use serde::{de::DeserializeOwned, Serialize};
+use serde::{Serialize, de::DeserializeOwned};
 
 #[cfg(feature = "host")]
 use crate::hook::call::{HookCallArg, HookHandle};
@@ -20,9 +20,9 @@ pub mod wasm;
 /// Trait for a hook that can be called
 pub trait Hook {
 	/// The type for the argument that goes into the hook
-	type Arg: Serialize + DeserializeOwned;
+	type Arg: Serialize + DeserializeOwned + Send + 'static;
 	/// The type for the result from the hook
-	type Result: DeserializeOwned + Serialize + Default;
+	type Result: DeserializeOwned + Serialize + Default + Send + 'static;
 
 	/// Get the name of the hook
 	fn get_name(&self) -> &'static str {
@@ -80,6 +80,10 @@ pub static NITRO_PLUGIN_ENV: &str = "NITRO_PLUGIN";
 pub static HOOK_VERSION_ENV: &str = "NITRO_HOOK_VERSION";
 /// The environment variable with the list of plugins
 pub static PLUGIN_LIST_ENV: &str = "NITRO_PLUGIN_LIST";
+/// The environment variable with the map of IDs to instance configs
+pub static INSTANCE_LIST_ENV: &str = "NITRO_INSTANCES";
+/// The environment variable with the map of IDs to template configs
+pub static TEMPLATE_LIST_ENV: &str = "NITRO_TEMPLATES";
 
 /// Filename for a plugin's WASM code
 pub static WASM_FILE_NAME: &str = "plugin.wasm";

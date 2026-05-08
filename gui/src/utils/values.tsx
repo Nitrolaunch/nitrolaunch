@@ -12,7 +12,9 @@ export function canonicalizeListOrSingle<T>(value: T | T[] | undefined) {
 	return [value];
 }
 
-// Returns an empty string when a value is undefined
+/**
+ * Returns an empty string when a value is undefined
+ */
 export function emptyUndefined(value: string | undefined) {
 	if (value == undefined) {
 		return "";
@@ -21,7 +23,9 @@ export function emptyUndefined(value: string | undefined) {
 	}
 }
 
-// Returns undefined when a value is an empty string
+/**
+ * Returns undefined when a value is an empty string
+ */
 export function undefinedEmpty(value: string | undefined) {
 	if (value == "") {
 		return undefined;

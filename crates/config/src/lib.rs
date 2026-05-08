@@ -26,7 +26,7 @@ pub mod preferences;
 pub mod template;
 
 /// Deserialization struct for user configuration
-#[derive(Deserialize, Serialize, Default)]
+#[derive(Deserialize, Serialize, Default, Clone)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[serde(default)]
 pub struct ConfigDeser {
@@ -48,4 +48,17 @@ pub struct ConfigDeser {
 	pub base_template: Option<TemplateConfig>,
 	/// The global preferences
 	pub preferences: PrefDeser,
+}
+
+/// Variants of instance-like config
+#[derive(Serialize, Deserialize, Clone, Copy, PartialEq, Eq, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum ConfigKind {
+	/// Instance config
+	#[default]
+	Instance,
+	/// Template config
+	Template,
+	/// Base template config
+	BaseTemplate,
 }

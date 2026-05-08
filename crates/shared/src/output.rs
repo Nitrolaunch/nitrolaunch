@@ -19,9 +19,28 @@ pub trait NitroOutput: Send {
 		self.display_text(message.contents.default_format(), message.level);
 	}
 
-	/// Convenience function to remove the need to construct a message
-	fn display(&mut self, contents: MessageContents, level: MessageLevel) {
-		self.display_message(Message { contents, level })
+	/// Display a message at the important level
+	fn display(&mut self, contents: MessageContents) {
+		self.display_message(Message {
+			contents,
+			level: MessageLevel::Important,
+		})
+	}
+
+	/// Display a message at the debug level
+	fn debug(&mut self, contents: MessageContents) {
+		self.display_message(Message {
+			contents,
+			level: MessageLevel::Debug,
+		})
+	}
+
+	/// Display a message at the trace level
+	fn trace(&mut self, contents: MessageContents) {
+		self.display_message(Message {
+			contents,
+			level: MessageLevel::Trace,
+		})
 	}
 
 	/// Start a process of multiple messages. Implementations can use this to replace a line
@@ -90,12 +109,9 @@ pub trait NitroOutput: Send {
 
 	/// Specialized implementation for displaying a package resolution error to the user
 	fn display_special_resolution_error(&mut self, error: ResolutionError, instance_id: &str) {
-		self.display(
-			MessageContents::Error(format!(
-				"Failed to resolve packages for instance {instance_id}: {error}"
-			)),
-			MessageLevel::Important,
-		)
+		self.display(MessageContents::Error(format!(
+			"Failed to resolve packages for instance {instance_id}: {error}"
+		)))
 	}
 
 	/// Specialized implementation for prompting an account passkey
@@ -114,28 +130,35 @@ pub trait NitroOutput: Send {
 		&mut self,
 		diffs: Vec<PackageDiff>,
 	) -> anyhow::Result<bool> {
-		self.display(
-			MessageContents::Header("Package changes:".into()),
-			MessageLevel::Important,
-		);
+		self.display(MessageContents::Header("Package changes:".into()));
 
 		for diff in diffs {
-			let (PackageDiff::Added(pkg)
-			| PackageDiff::Removed(pkg)
-			| PackageDiff::VersionChanged(pkg, ..)) = &diff;
-			let pkg = PkgRequest::clone(pkg);
+			match &diff {
+				PackageDiff::Added(pkg)
+				| PackageDiff::Removed(pkg)
+				| PackageDiff::VersionChanged(pkg, ..) => {
+					let pkg = PkgRequest::clone(pkg);
 
-			let message = match &diff {
-				PackageDiff::Added(..) => "Added".to_string(),
-				PackageDiff::Removed(..) => "Removed".to_string(),
-				PackageDiff::VersionChanged(_, old_version, new_version) => {
-					format!("{old_version} -> {new_version}")
+					let message = match &diff {
+						PackageDiff::Added(..) => "Added".to_string(),
+						PackageDiff::Removed(..) => "Removed".to_string(),
+						PackageDiff::VersionChanged(_, old_version, new_version) => {
+							format!("{old_version} -> {new_version}")
+						}
+						_ => unreachable!(),
+					};
+					self.display(MessageContents::Package(
+						pkg,
+						Box::new(MessageContents::Simple(message)),
+					));
 				}
-			};
-			self.display(
-				MessageContents::Package(pkg, Box::new(MessageContents::Simple(message))),
-				MessageLevel::Important,
-			);
+				PackageDiff::ManyAdded(count) => {
+					self.display(MessageContents::Simple(format!("Added {count} packages")))
+				}
+				PackageDiff::ManyRemoved(count) => {
+					self.display(MessageContents::Simple(format!("Removed {count} packages")))
+				}
+			}
 		}
 
 		self.prompt_yes_no(
@@ -160,22 +183,97 @@ pub trait NitroOutput: Send {
 	}
 }
 
+#[async_trait::async_trait]
+impl<T: NitroOutput + Sync + ?Sized> NitroOutput for Box<T> {
+	fn display_text(&mut self, text: String, level: MessageLevel) {
+		self.deref_mut().display_text(text, level)
+	}
+
+	fn display_message(&mut self, message: Message) {
+		self.deref_mut().display_message(message)
+	}
+
+	fn start_process(&mut self) {
+		self.deref_mut().start_process()
+	}
+
+	fn end_process(&mut self) {
+		self.deref_mut().end_process()
+	}
+
+	fn start_section(&mut self) {
+		self.deref_mut().start_section()
+	}
+
+	fn end_section(&mut self) {
+		self.deref_mut().end_section()
+	}
+
+	async fn prompt_yes_no(
+		&mut self,
+		default: bool,
+		message: MessageContents,
+	) -> anyhow::Result<bool> {
+		self.deref_mut().prompt_yes_no(default, message).await
+	}
+
+	async fn prompt_password(&mut self, message: MessageContents) -> anyhow::Result<String> {
+		self.deref_mut().prompt_password(message).await
+	}
+
+	async fn prompt_new_password(&mut self, message: MessageContents) -> anyhow::Result<String> {
+		self.deref_mut().prompt_new_password(message).await
+	}
+
+	fn translate(&self, key: TranslationKey) -> &str {
+		self.deref().translate(key)
+	}
+
+	fn display_special_ms_auth(&mut self, url: &str, code: &str) {
+		self.deref_mut().display_special_ms_auth(url, code)
+	}
+
+	fn display_special_resolution_error(&mut self, error: ResolutionError, instance_id: &str) {
+		self.deref_mut()
+			.display_special_resolution_error(error, instance_id)
+	}
+
+	async fn prompt_special_account_passkey(
+		&mut self,
+		message: MessageContents,
+		account_id: &str,
+	) -> anyhow::Result<String> {
+		self.deref_mut()
+			.prompt_special_account_passkey(message, account_id)
+			.await
+	}
+
+	async fn prompt_special_package_diffs(
+		&mut self,
+		diffs: Vec<PackageDiff>,
+	) -> anyhow::Result<bool> {
+		self.deref_mut().prompt_special_package_diffs(diffs).await
+	}
+
+	fn get_greater_copy(&self) -> Box<dyn NitroOutput + Sync> {
+		self.deref().get_lesser_copy()
+	}
+
+	fn get_lesser_copy(&self) -> Box<dyn NitroOutput + Sync> {
+		self.deref().get_lesser_copy()
+	}
+}
+
 /// Displays the default Microsoft authentication messages
 pub fn default_special_ms_auth(o: &mut (impl NitroOutput + ?Sized), url: &str, code: &str) {
-	o.display(
-		MessageContents::Property(
-			"Open this link in your web browser if it has not opened already".into(),
-			Box::new(MessageContents::Hyperlink(url.into())),
-		),
-		MessageLevel::Important,
-	);
-	o.display(
-		MessageContents::Property(
-			"and enter the code".into(),
-			Box::new(MessageContents::Copyable(code.into())),
-		),
-		MessageLevel::Important,
-	);
+	o.display(MessageContents::Property(
+		"Open this link in your web browser if it has not opened already".into(),
+		Box::new(MessageContents::Hyperlink(url.into())),
+	));
+	o.display(MessageContents::Property(
+		"and enter the code".into(),
+		Box::new(MessageContents::Copyable(code.into())),
+	));
 }
 
 /// A message supplied to the output
@@ -255,33 +353,16 @@ impl MessageContents {
 }
 
 /// The level of logging that a message has
-#[derive(Copy, Clone, Debug, Deserialize, Serialize)]
+#[derive(Copy, Clone, Debug, Deserialize, Serialize, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(rename_all = "snake_case")]
 pub enum MessageLevel {
-	/// Messages that should always be displayed
-	Important,
-	/// Messages that can be displayed but are not required
-	Extra,
+	/// Very Debug-level messages. Should only be used for logging
+	Trace,
 	/// Debug-level messages. Good for logging but should not be displayed to
 	/// the user unless they ask
 	Debug,
-	/// Very Debug-level messages. Should only be used for logging
-	Trace,
-}
-
-impl MessageLevel {
-	/// Checks if this level is at least another level
-	pub fn at_least(&self, other: &Self) -> bool {
-		match &self {
-			Self::Important => matches!(
-				other,
-				Self::Important | Self::Extra | Self::Debug | Self::Trace
-			),
-			Self::Extra => matches!(other, Self::Extra | Self::Debug | Self::Trace),
-			Self::Debug => matches!(other, Self::Debug | Self::Trace),
-			Self::Trace => matches!(other, Self::Trace),
-		}
-	}
+	/// Messages that should always be displayed
+	Important,
 }
 
 /// Dummy NitroOutput that doesn't print anything
@@ -298,7 +379,7 @@ pub struct Simple(pub MessageLevel);
 
 impl NitroOutput for Simple {
 	fn display_text(&mut self, text: String, level: MessageLevel) {
-		if !level.at_least(&self.0) {
+		if level < self.0 {
 			return;
 		}
 
@@ -307,6 +388,18 @@ impl NitroOutput for Simple {
 
 	fn get_lesser_copy(&self) -> Box<dyn NitroOutput + Sync> {
 		Box::new(Self(self.0))
+	}
+}
+
+/// Dummy NitroOutput that records messages for testing
+#[derive(Clone)]
+pub struct TestOutput(pub Vec<Message>);
+
+impl NitroOutput for TestOutput {
+	fn display_text(&mut self, _text: String, _level: MessageLevel) {}
+
+	fn display_message(&mut self, message: Message) {
+		self.0.push(message);
 	}
 }
 
@@ -322,6 +415,9 @@ where
 		o.start_process();
 		Self(o)
 	}
+
+	/// Finish the proces early
+	pub fn finish(self) {}
 }
 
 impl<O> Drop for OutputProcess<'_, O>
@@ -365,6 +461,9 @@ where
 		o.start_section();
 		Self(o)
 	}
+
+	/// Finish the section early
+	pub fn finish(self) {}
 }
 
 impl<O> Drop for OutputSection<'_, O>
@@ -393,17 +492,5 @@ where
 {
 	fn deref_mut(&mut self) -> &mut Self::Target {
 		self.0
-	}
-}
-
-#[cfg(test)]
-mod tests {
-	use super::*;
-
-	#[test]
-	fn test_level_is_at_least() {
-		assert!(MessageLevel::Extra.at_least(&MessageLevel::Debug));
-		assert!(MessageLevel::Debug.at_least(&MessageLevel::Debug));
-		assert!(!MessageLevel::Debug.at_least(&MessageLevel::Extra));
 	}
 }

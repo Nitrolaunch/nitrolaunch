@@ -1,12 +1,12 @@
-use anyhow::{bail, Context};
-use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
+use anyhow::{Context, bail};
+use nitro_instance::lock::InstanceLockfile;
+use nitro_shared::output::{MessageContents, NitroOutput};
 use nitro_shared::pkg::ArcPkgReq;
 use nitro_shared::translate;
 use nitro_shared::versions::VersionInfo;
 use reqwest::Client;
 
-use crate::addon::AddonExt;
-use crate::io::lock::{Lockfile, LockfileAddon};
+use crate::addon::{AddonExt, ResolvedPackageAddon};
 use crate::io::paths::Paths;
 use crate::pkg::eval::EvalData;
 
@@ -23,14 +23,15 @@ impl Instance {
 		&mut self,
 		pkg: &ArcPkgReq,
 		eval: &EvalData,
+		mc_version: &str,
 		paths: &Paths,
-		lock: &mut Lockfile,
+		inst_lock: &mut InstanceLockfile,
 		force: bool,
 		client: &Client,
 		o: &mut impl NitroOutput,
 	) -> anyhow::Result<()> {
 		let version_info = VersionInfo {
-			version: eval.input.constants.version.clone(),
+			version: mc_version.to_string(),
 			versions: eval.input.constants.version_list.clone(),
 		};
 
@@ -43,7 +44,7 @@ impl Instance {
 			task.await.context("Failed to install addon")?;
 		}
 
-		self.install_eval_data(pkg, &eval, &version_info, paths, lock, o)
+		self.install_eval_data(pkg, eval, &version_info, paths, inst_lock, o)
 			.await
 			.context("Failed to install evaluation data on instance")?;
 
@@ -81,7 +82,7 @@ impl Instance {
 		eval: &EvalData,
 		version_info: &VersionInfo,
 		paths: &Paths,
-		lock: &mut Lockfile,
+		inst_lock: &mut InstanceLockfile,
 		o: &mut impl NitroOutput,
 	) -> anyhow::Result<()> {
 		// Get the configuration for the package or the default if it is not configured by the user
@@ -91,62 +92,58 @@ impl Instance {
 			.unwrap_or_else(|| PackageConfig::from_id(pkg.id.clone()));
 
 		if eval.uses_custom_instructions {
-			o.display(
-				MessageContents::Warning(translate!(o, CustomInstructionsWarning)),
-				MessageLevel::Important,
-			);
+			o.display(MessageContents::Warning(translate!(
+				o,
+				CustomInstructionsWarning
+			)));
 		}
 
 		// Run commands
 		run_package_commands(&eval.commands, o).context("Failed to run package commands")?;
 
-		let lockfile_addons = eval
+		// Install addons
+
+		let addons: Vec<_> = eval
 			.addon_reqs
 			.iter()
 			.map(|x| {
-				Ok(LockfileAddon::from_addon(
-					&x.addon,
-					self.get_linked_addon_paths(&x.addon, &pkg_config.worlds, paths, version_info)?
-						.iter()
-						.map(|y| y.join(x.addon.file_name.clone()))
-						.collect(),
-				))
+				let mut addon = x.addon.addon(x.addon.get_path(paths, &self.id));
+				self.get_addon_targets(&mut addon, &pkg_config.worlds, version_info);
+
+				ResolvedPackageAddon {
+					pkg_addon: x.addon.clone(),
+					addon,
+				}
 			})
-			.collect::<anyhow::Result<Vec<LockfileAddon>>>()
-			.context("Failed to convert addons to the lockfile format")?;
+			.collect();
 
-		let files_to_remove = lock
-			.update_package(
-				pkg,
-				&self.id,
-				&lockfile_addons,
-				eval.selected_content_version.clone(),
-				o,
-			)
-			.await
-			.context("Failed to update package in lockfile")?;
+		let lockfile_addons: Vec<_> = addons.iter().map(|x| x.to_lockfile_addon()).collect();
 
-		for addon in eval.addon_reqs.iter() {
-			self.create_addon(&addon.addon, &pkg_config.worlds, paths, version_info)
-				.with_context(|| format!("Failed to install addon '{}'", addon.addon.id))?;
+		let files_to_remove =
+			inst_lock.update_package(pkg, &lockfile_addons, eval.selected_content_version.clone());
+
+		for addon in addons {
+			self.create_addon(&addon.addon, &pkg_config.worlds, version_info)
+				.with_context(|| format!("Failed to install addon '{}'", addon.pkg_addon.id))?;
 		}
 
 		for path in files_to_remove {
-			self.remove_addon_file(&path, paths)
-				.context("Failed to remove addon file from instance")?;
+			if path.exists() {
+				let _ = std::fs::remove_file(path);
+			}
 		}
 
 		Ok(())
 	}
 
 	/// Gets all of the configured packages for this instance
-	pub fn get_configured_packages(&self) -> &Vec<PackageConfig> {
-		&self.config.packages
+	pub fn packages(&self) -> &Vec<PackageConfig> {
+		&self.packages
 	}
 
 	/// Gets the configuration for a specific package on this instance
 	pub fn get_package_config(&self, package: &ArcPkgReq) -> Option<&PackageConfig> {
-		let configured_packages = self.get_configured_packages();
+		let configured_packages = self.packages();
 
 		configured_packages
 			.iter()
@@ -157,10 +154,10 @@ impl Instance {
 /// Runs package commands
 fn run_package_commands(commands: &[Vec<String>], o: &mut impl NitroOutput) -> anyhow::Result<()> {
 	if !commands.is_empty() {
-		o.display(
-			MessageContents::StartProcess(translate!(o, StartRunningCommands)),
-			MessageLevel::Important,
-		);
+		o.display(MessageContents::StartProcess(translate!(
+			o,
+			StartRunningCommands
+		)));
 
 		for command_and_args in commands {
 			let program = command_and_args
@@ -177,10 +174,10 @@ fn run_package_commands(commands: &[Vec<String>], o: &mut impl NitroOutput) -> a
 			}
 		}
 
-		o.display(
-			MessageContents::Success(translate!(o, FinishRunningCommands)),
-			MessageLevel::Important,
-		);
+		o.display(MessageContents::Success(translate!(
+			o,
+			FinishRunningCommands
+		)));
 	}
 
 	Ok(())

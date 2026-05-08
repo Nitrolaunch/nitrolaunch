@@ -3,7 +3,7 @@ use std::io::{BufReader, Read};
 use std::path::Path;
 
 use anyhow::Context;
-use nitro_shared::pkg::PackageAddonOptionalHashes;
+use nitro_shared::pkg::AddonOptionalHashes;
 use sha2::{Digest, Sha256, Sha512};
 
 /// Length in bytes of a SHA-256 hash
@@ -29,7 +29,7 @@ pub enum AddonHashType {
 pub struct BestHashResult(String, AddonHashType);
 
 /// Get the best hash from a set of addon hashes
-pub fn get_best_hash(hashes: &PackageAddonOptionalHashes) -> Option<BestHashResult> {
+pub fn get_best_hash(hashes: &AddonOptionalHashes) -> Option<BestHashResult> {
 	let mut best = None;
 
 	if let Some(hash) = &hashes.sha256 {

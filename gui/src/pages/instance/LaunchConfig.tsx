@@ -77,7 +77,6 @@ export default function LaunchConfig(props: LaunchConfigProps) {
 					})}
 				columns={4}
 				allowEmpty={false}
-				connected={false}
 			/>
 			<Show
 				when={

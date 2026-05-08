@@ -1,6 +1,17 @@
 .package-resolution-error {
+	justify-content: flex-start;
+	gap: 0;
+
+	width: 100%;
+	/* padding: 0.5rem; */
+	box-sizing: border-box;
+}
+
+.resolution-error-context {
 	width: 100%;
 	padding: 0.5rem;
+	box-sizing: border-box;
+	border-bottom: var(--border) solid var(--error);
 }
 
 .resolution-error-header {

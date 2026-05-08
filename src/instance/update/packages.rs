@@ -4,64 +4,86 @@ use std::path::Path;
 use std::sync::Arc;
 
 use itertools::Itertools;
-use nitro_config::instance::get_addon_paths;
 use nitro_core::net::get_transfer_limit;
-use nitro_pkg::repo::PackageFlag;
+use nitro_instance::addon::get_addon_dirs;
 use nitro_pkg::PkgRequest;
-use nitro_shared::addon::AddonKind;
-use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
-use nitro_shared::pkg::ArcPkgReq;
+use nitro_pkg::repo::PackageFlag;
+use nitro_shared::minecraft::AddonKind;
+use nitro_shared::output::{MessageContents, NitroOutput};
+use nitro_shared::pkg::{ArcPkgReq, PackageDiff, merge_package_lists};
 use nitro_shared::translate;
 use nitro_shared::versions::VersionInfo;
 use tokio::sync::Semaphore;
 use tokio::task::JoinSet;
 
 use crate::instance::Instance;
-use crate::pkg::eval::{resolve, EvalConstants, EvalParameters, ResolutionAndEvalResult};
+use crate::pkg::eval::{EvalConstants, EvalParameters, ResolutionAndEvalResult, resolve};
 use crate::util::select_random_n_items_from_list;
 
 use super::InstanceUpdateContext;
 
-use anyhow::{bail, Context};
+use anyhow::{Context, bail};
 
 /// Install packages on an instance. Returns a set of all unique packages
 pub async fn update_instance_packages<O: NitroOutput>(
 	instance: &mut Instance,
 	constants: &Arc<EvalConstants>,
+	mc_version: String,
 	ctx: &mut InstanceUpdateContext<'_, O>,
 	force: bool,
 ) -> anyhow::Result<HashSet<ArcPkgReq>> {
 	// Resolve dependencies
 	ctx.output.start_process();
-	ctx.output.display(
-		MessageContents::StartProcess(translate!(ctx.output, StartResolvingDependencies)),
-		MessageLevel::Important,
-	);
+	ctx.output.display(MessageContents::StartProcess(translate!(
+		ctx.output,
+		StartResolvingDependencies
+	)));
 	let resolution = resolve_instance(instance, constants, ctx)
 		.await
 		.context("Failed to resolve dependencies for instance")?;
-	ctx.output.display(
-		MessageContents::Success(translate!(ctx.output, FinishResolvingDependencies)),
-		MessageLevel::Important,
-	);
+	ctx.output.display(MessageContents::Success(translate!(
+		ctx.output,
+		FinishResolvingDependencies
+	)));
 	ctx.output.end_process();
 
-	if let Some(current_packages) = ctx.lock.get_instance_packages(&instance.id) {
-		let diffs = resolution.get_diffs(current_packages);
-		if !diffs.is_empty() {
-			if !ctx.output.prompt_special_package_diffs(diffs).await? {
-				bail!("Package update aborted");
+	let mut inst_lock = instance.get_lockfile(ctx.paths)?;
+
+	// Prompt to update the packages
+	let current_packages = inst_lock.get_packages();
+	let mut diffs = resolution.get_diffs(current_packages);
+
+	// Make requests displayable
+	for diff in &mut diffs {
+		match diff {
+			PackageDiff::Added(req)
+			| PackageDiff::Removed(req)
+			| PackageDiff::VersionChanged(req, ..) => {
+				*req = ctx
+					.packages
+					.make_req_displayable(req, ctx.paths, ctx.client, ctx.output)
+					.await
 			}
+			PackageDiff::ManyAdded(..) | PackageDiff::ManyRemoved(..) => {}
 		}
 	}
 
-	remove_existing_addons(instance, constants, ctx)?;
+	if !diffs.is_empty() && !ctx.output.prompt_special_package_diffs(diffs).await? {
+		bail!("Package update aborted");
+	}
+
+	let version_info = VersionInfo {
+		version: mc_version.clone(),
+		versions: constants.version_list.clone(),
+	};
+
+	remove_existing_addons(instance, &version_info)?;
 
 	// Evaluate first to install all of the addons
-	ctx.output.display(
-		MessageContents::Header(translate!(ctx.output, StartAcquiringAddons)),
-		MessageLevel::Important,
-	);
+	ctx.output.display(MessageContents::Header(translate!(
+		ctx.output,
+		StartAcquiringAddons
+	)));
 	let mut tasks = HashMap::new();
 	for package in resolution.packages.iter().sorted_by_key(|x| x.req.clone()) {
 		// Check the package to display warnings
@@ -83,13 +105,10 @@ pub async fn update_instance_packages<O: NitroOutput>(
 
 		// Display any notices from the installation
 		for notice in &package.eval.notices {
-			ctx.output.display(
-				format_package_update_message(
-					&package.req,
-					MessageContents::Notice(notice.clone()),
-				),
-				MessageLevel::Important,
-			);
+			ctx.output.display(format_package_update_message(
+				&package.req,
+				MessageContents::Notice(notice.clone()),
+			));
 		}
 	}
 
@@ -98,64 +117,53 @@ pub async fn update_instance_packages<O: NitroOutput>(
 		.await
 		.context("Failed to acquire addons")?;
 
-	ctx.output.display(
-		MessageContents::Success(translate!(ctx.output, FinishAcquiringAddons)),
-		MessageLevel::Important,
-	);
+	ctx.output.display(MessageContents::Success(translate!(
+		ctx.output,
+		FinishAcquiringAddons
+	)));
 
 	// Install each package one after another onto all of its instances
-	ctx.output.display(
-		MessageContents::Header(translate!(ctx.output, StartInstallingPackages)),
-		MessageLevel::Important,
-	);
+	ctx.output.start_process();
+	ctx.output.display(MessageContents::Header(translate!(
+		ctx.output,
+		StartInstallingPackages
+	)));
 
 	for package in &resolution.packages {
-		ctx.output.start_process();
-
-		let version_info = VersionInfo {
-			version: constants.version.clone(),
-			versions: constants.version_list.clone(),
-		};
-
 		instance
 			.install_eval_data(
 				&package.req,
 				&package.eval,
 				&version_info,
 				ctx.paths,
-				ctx.lock,
+				&mut inst_lock,
 				ctx.output,
 			)
 			.await
 			.context("Failed to install package on instance")?;
-
-		ctx.output.display(
-			format_package_update_message(
-				&package.req,
-				MessageContents::Success(translate!(ctx.output, FinishInstallingPackage)),
-			),
-			MessageLevel::Important,
-		);
-		ctx.output.end_process();
 	}
 
 	// Remove unused packages and addons
-	let files_to_remove = ctx
-		.lock
-		.remove_unused_packages(
-			&instance.id,
-			&resolution
-				.packages
-				.iter()
-				.map(|x| x.req.clone())
-				.collect::<Vec<_>>(),
-		)
+	let used_package_reqs = resolution
+		.packages
+		.iter()
+		.map(|x| x.req.clone())
+		.collect::<Vec<_>>();
+	let addons_to_remove = inst_lock
+		.remove_unused_packages(&used_package_reqs)
 		.context("Failed to remove unused packages")?;
-	for file in files_to_remove {
-		instance
-			.remove_addon_file(&file, ctx.paths)
-			.with_context(|| format!("Failed to remove addon file {}", file.display()))?;
+	for addon in addons_to_remove {
+		let _ = addon.remove_from_instance();
 	}
+
+	inst_lock.write()?;
+
+	ctx.output.display(MessageContents::Success(translate!(
+		ctx.output,
+		FinishInstallingPackages,
+		"count" = &resolution.packages.len().to_string()
+	)));
+	ctx.output.end_process();
 
 	// Get the set of unique packages
 	let out = HashSet::from_iter(resolution.packages.into_iter().map(|x| x.req));
@@ -195,7 +203,7 @@ async fn run_addon_tasks(
 				total: total_count as u32,
 			};
 
-			process.display(progress, MessageLevel::Important);
+			process.display(progress);
 		}
 	}
 
@@ -209,15 +217,17 @@ async fn resolve_instance<O: NitroOutput>(
 	ctx: &mut InstanceUpdateContext<'_, O>,
 ) -> anyhow::Result<ResolutionAndEvalResult> {
 	let mut params = EvalParameters::new(instance.kind.to_side());
-	params.stability = instance.config.package_stability;
+	params.stability = instance.config.package_stability.unwrap_or_default();
 
-	let instance_pkgs = instance.get_configured_packages();
+	let mut overrides = instance.config.overrides.clone();
+	overrides.suppress = merge_package_lists(overrides.suppress.into_iter(), &constants.suppress);
+
 	let resolution = resolve(
-		instance_pkgs,
+		&instance.packages,
 		&instance.id,
 		constants.clone(),
 		params,
-		instance.config.package_overrides.clone(),
+		overrides,
 		ctx.paths,
 		ctx.packages,
 		ctx.client,
@@ -235,10 +245,9 @@ async fn resolve_instance<O: NitroOutput>(
 }
 
 /// Removes existing addons on an instance just in case there are lockfile issues
-fn remove_existing_addons<O: NitroOutput>(
+fn remove_existing_addons(
 	instance: &mut Instance,
-	constants: &EvalConstants,
-	ctx: &mut InstanceUpdateContext<'_, O>,
+	version_info: &VersionInfo,
 ) -> anyhow::Result<()> {
 	let addon_kinds = [
 		AddonKind::Datapack,
@@ -248,30 +257,21 @@ fn remove_existing_addons<O: NitroOutput>(
 		AddonKind::Shader,
 	];
 
-	for adddon_kind in addon_kinds {
-		instance.ensure_dirs(ctx.paths)?;
-		if instance.get_dirs().get().game_dir.is_none() {
-			continue;
-		}
+	instance.ensure_dir()?;
 
-		let Ok(dirs) = get_addon_paths(
-			&instance.config.original_config_with_templates_and_plugins,
-			instance
-				.get_dirs()
-				.get()
-				.game_dir
-				.as_ref()
-				.expect("Game dir should exist"),
-			adddon_kind,
-			&[],
-			&VersionInfo {
-				version: constants.version.clone(),
-				versions: constants.version_list.clone(),
-			},
-		) else {
+	for adddon_kind in addon_kinds {
+		let Some(inst_dir) = &instance.dir else {
 			continue;
 		};
 
+		let dirs = get_addon_dirs(
+			adddon_kind,
+			instance.side(),
+			inst_dir,
+			&[],
+			instance.config.datapack_folder.as_ref().map(Path::new),
+			version_info,
+		);
 		for dir in dirs {
 			remove_nitro_addons(&dir);
 		}
@@ -285,37 +285,41 @@ async fn check_package<O: NitroOutput>(
 	ctx: &mut InstanceUpdateContext<'_, O>,
 	pkg: &ArcPkgReq,
 ) -> anyhow::Result<()> {
-	let flags = ctx
+	let package = ctx
 		.packages
-		.flags(pkg, ctx.paths, ctx.client, ctx.output)
-		.await
-		.context("Failed to get flags for package")?;
-	if flags.contains(&PackageFlag::OutOfDate) {
-		ctx.output.display(
-			MessageContents::Warning(translate!(ctx.output, PackageOutOfDate, "pkg" = &pkg.id)),
-			MessageLevel::Important,
-		);
+		.get(pkg, ctx.paths, ctx.client, ctx.output)
+		.await?;
+
+	if package.flags.contains(&PackageFlag::OutOfDate) {
+		ctx.output.display(MessageContents::Warning(translate!(
+			ctx.output,
+			PackageOutOfDate,
+			"pkg" = &pkg.id
+		)));
 	}
 
-	if flags.contains(&PackageFlag::Deprecated) {
-		ctx.output.display(
-			MessageContents::Warning(translate!(ctx.output, PackageDeprecated, "pkg" = &pkg.id)),
-			MessageLevel::Important,
-		);
+	if package.flags.contains(&PackageFlag::Deprecated) {
+		ctx.output.display(MessageContents::Warning(translate!(
+			ctx.output,
+			PackageDeprecated,
+			"pkg" = &pkg.id
+		)));
 	}
 
-	if flags.contains(&PackageFlag::Insecure) {
-		ctx.output.display(
-			MessageContents::Error(translate!(ctx.output, PackageInsecure, "pkg" = &pkg.id)),
-			MessageLevel::Important,
-		);
+	if package.flags.contains(&PackageFlag::Insecure) {
+		ctx.output.display(MessageContents::Error(translate!(
+			ctx.output,
+			PackageInsecure,
+			"pkg" = &pkg.id
+		)));
 	}
 
-	if flags.contains(&PackageFlag::Malicious) {
-		ctx.output.display(
-			MessageContents::Error(translate!(ctx.output, PackageMalicious, "pkg" = &pkg.id)),
-			MessageLevel::Important,
-		);
+	if package.flags.contains(&PackageFlag::Malicious) {
+		ctx.output.display(MessageContents::Error(translate!(
+			ctx.output,
+			PackageMalicious,
+			"pkg" = &pkg.id
+		)));
 	}
 
 	Ok(())
@@ -329,25 +333,28 @@ pub async fn print_package_support_messages<O: NitroOutput>(
 	let package_count = 5;
 	let packages = select_random_n_items_from_list(packages, package_count);
 	let mut links = Vec::new();
-	for package in packages {
-		if let Some(link) = ctx
+	for req in packages {
+		let package = ctx
 			.packages
-			.get_metadata(package, ctx.paths, ctx.client, ctx.output)
+			.get(req, ctx.paths, ctx.client, ctx.output)
+			.await?;
+		if let Some(link) = package
+			.get_metadata(ctx.paths, ctx.client)
 			.await?
 			.support_link
 			.clone()
 		{
-			links.push((package, link))
+			links.push((req, link))
 		}
 	}
 	if !links.is_empty() {
-		ctx.output.display(
-			MessageContents::Header(translate!(ctx.output, PackageSupportHeader)),
-			MessageLevel::Important,
-		);
+		ctx.output.display(MessageContents::Header(translate!(
+			ctx.output,
+			PackageSupportHeader
+		)));
 		for (req, link) in links {
 			let msg = format_package_update_message(req, MessageContents::Hyperlink(link));
-			ctx.output.display(msg, MessageLevel::Important);
+			ctx.output.display(msg);
 		}
 	}
 

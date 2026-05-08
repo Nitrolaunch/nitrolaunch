@@ -50,8 +50,7 @@ impl NitroOutput for WASMPluginOutput {
 fn message_level_to_ordinal(level: MessageLevel) -> u8 {
 	match level {
 		MessageLevel::Important => 0,
-		MessageLevel::Extra => 1,
-		MessageLevel::Debug => 2,
-		MessageLevel::Trace => 3,
+		MessageLevel::Debug => 1,
+		MessageLevel::Trace => 2,
 	}
 }

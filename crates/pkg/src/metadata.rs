@@ -77,6 +77,7 @@ impl PackageMetadata {
 	/// Check if all metadata fields are empty
 	pub fn is_empty(&self) -> bool {
 		self.name.is_none()
+			&& self.slug.is_none()
 			&& self.description.is_none()
 			&& self.long_description.is_none()
 			&& self.authors.is_none()
@@ -106,6 +107,7 @@ pub fn eval_metadata(parsed: &Parsed) -> anyhow::Result<PackageMetadata> {
 			for instr in &block.contents {
 				match &instr.kind {
 					InstrKind::Name(val) => out.name = Some(val.get_clone()),
+					InstrKind::Slug(val) => out.slug = Some(val.get_clone()),
 					InstrKind::Description(val) => out.description = Some(val.get_clone()),
 					InstrKind::LongDescription(val) => out.long_description = Some(val.get_clone()),
 					InstrKind::Authors(val) => out.authors = Some(val.clone()),

@@ -3,8 +3,8 @@
 }
 
 #packages-config-resolution-error {
-	width: 100%;
-	height: 10rem;
+	width: 50%;
+	height: 12rem;
 	overflow-y: auto;
 	overscroll-behavior: none;
 
@@ -43,7 +43,7 @@
 
 	display: grid;
 	grid-template-columns: minmax(0, 4rem) minmax(0, 2fr) minmax(0, 2fr) minmax(0,
-			0.5fr);
+			1fr);
 
 	background-color: var(--bg0);
 	border: var(--border) solid var(--bg3);
@@ -90,4 +90,9 @@
 .configured-package-controls {
 	justify-content: flex-end;
 	margin-right: 0.75rem;
+}
+
+.configured-package.modpack {
+	height: 6.5rem;
+	background-color: var(--bg2);
 }

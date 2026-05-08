@@ -32,7 +32,6 @@
 #instance-icon-image {
 	width: 4.3rem;
 	height: 4.3rem;
-	border: var(--border) solid var(--bg3);
 	border-radius: var(--round2);
 }
 
@@ -86,7 +85,7 @@
 	filter: saturate(150%);
 }
 
-#instance-banner>img {
+#instance-banner > img {
 	width: 50%;
 	aspect-ratio: 1;
 }

@@ -1,0 +1,25 @@
+<svg fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+	<g id="logo" clip-path="url(#clip0_547_224)">
+		<g id="layer1">
+			<g id="g1">
+				<path id="path27"
+					d="M1.07129 1.74166L5.93451 0.178848C6.47724 0.00443754 7.06098 0.00441976 7.60373 0.178797L14.9289 2.53227L9.22629 4.36586L1.07129 1.74166Z"
+					fill="color-mix(in srgb, currentColor, white 55%)"></path>
+				<path id="path20"
+					d="M0 2.77395V5.44372C-7.30611e-08 5.72546 0.0894076 5.99993 0.25535 6.22762C0.421292 6.4553 0.655207 6.62445 0.923416 6.71072L9.22665 9.38125L15.0764 7.50302C15.3447 7.41691 15.5786 7.24786 15.7446 7.02024C15.9106 6.79263 16 6.51819 16 6.23649V3.56672L9.23201 5.71201L0 2.77395Z"
+					fill="currentColor"></path>
+				<path id="path22" opacity="0.5"
+					d="M4.7168 9.30522L9.22994 10.7293L11.4877 10.0314L11.4877 12.1097L9.22994 12.8333L4.7168 11.3835V9.30522Z"
+					fill="currentColor"></path>
+				<path id="path63"
+					d="M2.25488 12.0736V13.7115L9.22997 15.952L13.7455 14.5021L13.7455 12.8591L9.22997 14.2806L2.25488 12.0736Z"
+					fill="currentColor"></path>
+			</g>
+		</g>
+	</g>
+	<defs>
+		<clipPath id="clip0_547_224">
+			<rect width="16" height="16" fill="currentColor"></rect>
+		</clipPath>
+	</defs>
+</svg>

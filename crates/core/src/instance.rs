@@ -1,36 +1,35 @@
-use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use anyhow::{bail, Context};
-use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
+use anyhow::{Context, bail};
+use nitro_shared::io::update_link;
+use nitro_shared::output::{MessageContents, NitroOutput};
 use nitro_shared::versions::VersionName;
-use nitro_shared::{translate, Side};
+use nitro_shared::{Side, translate};
+use tokio::sync::Mutex;
 
+use crate::account::AccountManager;
 use crate::config::BrandingProperties;
 use crate::io::files::paths::Paths;
-use crate::io::files::update_link;
 use crate::io::java::classpath::Classpath;
 use crate::io::java::install::{
-	CustomJavaFunction, JavaInstallParameters, JavaInstallation, JavaInstallationKind,
+	CustomJavaFunction, JavaInstallParameters, JavaInstallation, JavaInstallationRegistry,
 };
-use crate::io::java::JavaMajorVersion;
 use crate::io::persistent::PersistentData;
 use crate::io::update::UpdateManager;
 use crate::launch::{LaunchConfiguration, LaunchParameters};
 use crate::net::game_files::client_meta::ClientMeta;
 use crate::net::game_files::version_manifest::VersionManifestAndList;
 use crate::net::game_files::{game_jar, libraries};
-use crate::account::AccountManager;
 use crate::version::{ClientAssetsAndLibraries, ClientAssetsAndLibsParameters};
-use crate::InstanceHandle;
+use crate::{InstanceHandle, QuickPlayType};
 
 /// The default main class for the server
 pub const DEFAULT_SERVER_MAIN_CLASS: &str = "net.minecraft.server.Main";
 
 /// An instance of a version which can be launched
-pub struct Instance<'params> {
-	params: InstanceParameters<'params>,
+pub struct Instance {
+	params: InstanceParameters,
 	config: InstanceConfiguration,
 	java: JavaInstallation,
 	jar_path: PathBuf,
@@ -39,12 +38,12 @@ pub struct Instance<'params> {
 	pipe_stdin: bool,
 }
 
-impl<'params> Instance<'params> {
+impl Instance {
 	pub(crate) async fn load(
 		config: InstanceConfiguration,
-		params: InstanceParameters<'params>,
+		params: InstanceParameters,
 		o: &mut impl NitroOutput,
-	) -> anyhow::Result<Instance<'params>> {
+	) -> anyhow::Result<Self> {
 		// Start setting up the instance
 		tokio::fs::create_dir_all(&config.path)
 			.await
@@ -60,41 +59,53 @@ impl<'params> Instance<'params> {
 			.as_ref()
 			.context("Client meta Java info missing")?
 			.major_version;
-		let java_params = JavaInstallParameters {
-			paths: params.paths,
-			update_manager: params.update_manager,
-			persistent: params.persistent,
-			req_client: params.req_client,
-			custom_install_func: params.custom_java_fn,
-		};
 
 		let java_key = (config.launch.java.clone(), *java_vers);
 
-		let java = if let Some(java) = params.java_installations.get(&java_key) {
+		let java = if let Some(java) = params
+			.java_installations
+			.installations
+			.lock()
+			.await
+			.get(&java_key)
+		{
 			java.clone()
 		} else {
+			let java_params = JavaInstallParameters {
+				paths: &params.paths,
+				update_manager: &params.update_manager,
+				persistent: params.persistent.clone(),
+				req_client: &params.req_client,
+				custom_install_func: params.custom_java_fn.clone(),
+			};
+
 			let java =
 				JavaInstallation::install(config.launch.java.clone(), *java_vers, java_params, o)
 					.await
 					.context("Failed to install or update Java")?;
 
-			params.java_installations.insert(java_key, java.clone());
+			params
+				.java_installations
+				.installations
+				.lock()
+				.await
+				.insert(java_key, java.clone());
 
 			java
 		};
 
 		java.verify().context("Java installation is invalid")?;
 
-		params.persistent.dump(params.paths).await?;
+		params.persistent.lock().await.dump(&params.paths).await?;
 
 		// Get the game jar
 		game_jar::get(
 			config.side.get_side(),
-			params.client_meta,
-			params.version,
-			params.paths,
-			params.update_manager,
-			params.req_client,
+			&params.client_meta,
+			&params.version,
+			&params.paths,
+			&params.update_manager,
+			&params.req_client,
 			o,
 		)
 		.await
@@ -105,7 +116,7 @@ impl<'params> Instance<'params> {
 		} else {
 			crate::io::minecraft::game_jar::get_path(
 				config.side.get_side(),
-				params.version,
+				&params.version,
 				None,
 				&params.paths.jars,
 			)
@@ -133,9 +144,8 @@ impl<'params> Instance<'params> {
 							.context("Failed to copy server.jar")?;
 					} else {
 						update_link(&jar_path, &new_jar_path)
-							.context("Failed to hardlink server.jar")?;
+							.context("Failed to link server.jar")?;
 					}
-					params.update_manager.add_file(new_jar_path.clone());
 				}
 			}
 			jar_path = new_jar_path;
@@ -148,12 +158,12 @@ impl<'params> Instance<'params> {
 		// Load assets and libs for client
 		if let Side::Client = config.side.get_side() {
 			let sub_params = ClientAssetsAndLibsParameters {
-				client_meta: params.client_meta,
-				version: params.version,
-				paths: params.paths,
-				req_client: params.req_client,
-				version_manifest: params.version_manifest,
-				update_manager: params.update_manager,
+				client_meta: &params.client_meta,
+				version: &params.version,
+				paths: &params.paths,
+				req_client: &params.req_client,
+				version_manifest: &params.version_manifest,
+				update_manager: &params.update_manager,
 			};
 			params
 				.client_assets_and_libs
@@ -177,6 +187,10 @@ impl<'params> Instance<'params> {
 			classpath.add_path(&jar_path)?;
 		}
 
+		// Deduplicate the classpath for common libraries
+		classpath.deduplicate_java_lib("asm");
+		classpath.deduplicate_java_libs();
+
 		// Main class
 		let main_class = if let Some(main_class) = &config.main_class {
 			main_class.clone()
@@ -188,19 +202,16 @@ impl<'params> Instance<'params> {
 		};
 
 		// Server EULA
-		if let InstanceKind::Server { create_eula, .. } = &config.side {
-			if *create_eula {
-				let eula_path = config.path.join("eula.txt");
-				if !eula_path.exists() {
-					tokio::fs::write(eula_path, "eula = true\n")
-						.await
-						.context("Failed to create eula.txt")?;
+		if let InstanceKind::Server { create_eula, .. } = &config.side
+			&& *create_eula
+		{
+			let eula_path = config.path.join("eula.txt");
+			if !eula_path.exists() {
+				tokio::fs::write(eula_path, "eula = true\n")
+					.await
+					.context("Failed to create eula.txt")?;
 
-					o.display(
-						MessageContents::Notice(translate!(o, AgreeToEula)),
-						MessageLevel::Important,
-					);
-				}
+				o.display(MessageContents::Notice(translate!(o, AgreeToEula)));
 			}
 		}
 
@@ -216,8 +227,16 @@ impl<'params> Instance<'params> {
 	}
 
 	/// Launch the instance and block until the process is finished
-	pub async fn launch(&mut self, o: &mut impl NitroOutput) -> anyhow::Result<()> {
-		let mut handle = self.launch_with_handle(o).await?;
+	pub async fn launch(
+		&mut self,
+		accounts: &mut AccountManager,
+		offline_auth: bool,
+		quick_play: Option<QuickPlayType>,
+		o: &mut impl NitroOutput,
+	) -> anyhow::Result<()> {
+		let mut handle = self
+			.launch_with_handle(accounts, offline_auth, quick_play, o)
+			.await?;
 		handle
 			.wait()
 			.context("Failed to wait for instance process")?;
@@ -227,23 +246,32 @@ impl<'params> Instance<'params> {
 	/// Launch the instance and get the handle
 	pub async fn launch_with_handle(
 		&mut self,
+		accounts: &mut AccountManager,
+		offline_auth: bool,
+		quick_play: Option<QuickPlayType>,
 		o: &mut impl NitroOutput,
 	) -> anyhow::Result<InstanceHandle> {
+		let mut launch_config = self.config.launch.clone();
+		if let Some(quick_play) = quick_play {
+			launch_config.quick_play = quick_play;
+		}
 		let params = LaunchParameters {
-			version: self.params.version,
-			version_manifest: self.params.version_manifest,
+			version: &self.params.version,
+			version_manifest: &self.params.version_manifest,
 			side: &self.config.side,
 			launch_dir: &self.config.path,
 			java: &self.java,
-			classpath: &mut self.classpath,
+			classpath: &self.classpath,
+			jar_path: &self.jar_path,
 			main_class: &self.main_class,
-			launch_config: &self.config.launch,
-			paths: self.params.paths,
-			req_client: self.params.req_client,
-			client_meta: self.params.client_meta,
-			accounts: self.params.accounts,
+			launch_config: &launch_config,
+			paths: &self.params.paths,
+			req_client: &self.params.req_client,
+			client_meta: &self.params.client_meta,
+			accounts,
+			offline_auth,
 			censor_secrets: self.params.censor_secrets,
-			branding: self.params.branding,
+			branding: &self.params.branding,
 			pipe_stdin: self.pipe_stdin,
 		};
 		let handle = crate::launch::launch(params, o)
@@ -265,6 +293,11 @@ impl<'params> Instance<'params> {
 	/// Get the Java installation of the instance
 	pub fn get_java(&self) -> &JavaInstallation {
 		&self.java
+	}
+
+	/// Get the classpath of the instance
+	pub fn get_classpath(&self) -> &Classpath {
+		&self.classpath
 	}
 }
 
@@ -408,20 +441,18 @@ impl WindowResolution {
 }
 
 /// Container struct for parameters for an instance
-pub(crate) struct InstanceParameters<'a> {
-	pub version: &'a VersionName,
-	pub version_manifest: &'a VersionManifestAndList,
-	pub paths: &'a Paths,
-	pub req_client: &'a reqwest::Client,
-	pub persistent: &'a mut PersistentData,
-	pub update_manager: &'a mut UpdateManager,
-	pub client_meta: &'a ClientMeta,
-	pub accounts: &'a mut AccountManager,
-	pub java_installations:
-		&'a mut HashMap<(JavaInstallationKind, JavaMajorVersion), JavaInstallation>,
-	pub custom_java_fn: Option<&'a Arc<dyn CustomJavaFunction>>,
-	pub client_assets_and_libs: &'a mut ClientAssetsAndLibraries,
+pub(crate) struct InstanceParameters {
+	pub version: VersionName,
+	pub version_manifest: Arc<VersionManifestAndList>,
+	pub paths: Arc<Paths>,
+	pub req_client: reqwest::Client,
+	pub persistent: Arc<Mutex<PersistentData>>,
+	pub update_manager: UpdateManager,
+	pub client_meta: Arc<ClientMeta>,
+	pub java_installations: JavaInstallationRegistry,
+	pub custom_java_fn: Option<Arc<dyn CustomJavaFunction>>,
+	pub client_assets_and_libs: ClientAssetsAndLibraries,
 	pub censor_secrets: bool,
 	pub disable_hardlinks: bool,
-	pub branding: &'a BrandingProperties,
+	pub branding: BrandingProperties,
 }

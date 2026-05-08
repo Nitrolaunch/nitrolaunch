@@ -1,19 +1,24 @@
-import { invoke } from "@tauri-apps/api/core";
-import { Event, listen, UnlistenFn } from "@tauri-apps/api/event";
-import { createMemo, createResource, createSignal, onCleanup } from "solid-js";
+import { convertFileSrc, invoke } from "@tauri-apps/api/core";
+import { listen, UnlistenFn } from "@tauri-apps/api/event";
+import {
+	createMemo,
+	createResource,
+	createSignal,
+	For,
+	onCleanup,
+} from "solid-js";
 import { Theme } from "./types";
 import { LauncherSettings } from "./pages/Settings";
 import { errorToast } from "./components/dialog/Toasts";
-import { Dynamic } from "solid-js/web";
 
 // Global / startup functions like loading plugins, startup messages, and themes
 export default function Global(props: GlobalProps) {
-	let [selectedTheme, setSelectedTheme] = createSignal<string>("dark");
+	let [baseTheme, setBaseTheme] = createSignal<string>("dark");
+	let [overlayThemes, setOverlayThemes] = createSignal<string[]>([]);
 
 	let [unlisten, setUnlisten] = createSignal<UnlistenFn>(() => {});
 	let [availableThemes, availableThemesMethods] = createResource(async () => {
-		let unlisten = await listen("update_theme", (e: Event<string>) => {
-			setSelectedTheme(e.payload);
+		let unlisten = await listen("update_theme", () => {
 			availableThemesMethods.refetch();
 		});
 
@@ -25,13 +30,14 @@ export default function Global(props: GlobalProps) {
 				invoke("get_settings"),
 			])) as [Theme[], LauncherSettings];
 
-			if (settings.selected_theme != undefined) {
-				setSelectedTheme(settings.selected_theme);
+			if (settings.base_theme != undefined) {
+				setBaseTheme(settings.base_theme);
 			}
+			setOverlayThemes(settings.overlay_themes);
 
 			return availableThemes;
 		} catch (e) {
-			errorToast("Failed to load theme");
+			errorToast("Failed to load theme: " + e);
 		}
 	});
 
@@ -39,27 +45,61 @@ export default function Global(props: GlobalProps) {
 		unlisten();
 	});
 
-	let styleElement = createMemo(() => {
-		if (selectedTheme() == "dark" || selectedTheme() == "light") {
-			return `<link rel="stylesheet" href="/themes/${selectedTheme()}.css" />`;
+	function getThemeElement(theme: string) {
+		if (theme == "dark" || theme == "light") {
+			return `<link rel="stylesheet" href="/themes/${theme}.css" />`;
 		} else {
 			if (
 				availableThemes() != undefined &&
-				availableThemes()!.some((x) => x.id == selectedTheme())
+				availableThemes()!.some((x) => x.id == theme)
 			) {
-				let css = availableThemes()!.find((x) => x.id == selectedTheme())!.css;
-				return `<style>${css}</style>`;
+				let css = availableThemes()!.find((x) => x.id == theme)!.css;
+				let fixedCss = fixTheme(css);
+				return `<style>${fixedCss}</style>`;
 			} else {
-				return `<link rel="stylesheet" href="/themes/${selectedTheme()}.css" />`;
+				return `<link rel="stylesheet" href="/themes/${theme}.css" />`;
 			}
 		}
-	});
+	}
+
+	let baseElement = createMemo(() => getThemeElement(baseTheme()));
+	let overlayElements = createMemo(() => overlayThemes().map(getThemeElement));
 
 	return (
-		<div style="position:absolute" innerHTML={styleElement()}>
-			<Dynamic component={styleElement} />
+		<div style="position:absolute">
+			<div innerHTML={baseElement()}></div>
+			<For each={overlayElements()}>
+				{(elem) => <div innerHTML={elem}></div>}
+			</For>
 		</div>
 	);
 }
 
 export interface GlobalProps {}
+
+// Fixes the CSS of a theme by replacing local asset URLs with Tauri asset URLs
+function fixTheme(css: string): string {
+	let regex = /url\(\//g;
+
+	let out = "";
+	let lastMatchPos = 0;
+	for (let result of css.matchAll(regex)) {
+		let start = result.index + 4;
+		let end = css.indexOf(")", start);
+		if (end != -1) {
+			let path = css.substring(start, end);
+			let newPath = convertFileSrc(path);
+			out += css.substring(lastMatchPos, start);
+			out += newPath;
+			lastMatchPos = end;
+		}
+	}
+
+	if (lastMatchPos > 0) {
+		out += css.substring(lastMatchPos);
+	} else {
+		out = css;
+	}
+
+	return out;
+}

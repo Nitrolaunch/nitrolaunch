@@ -44,6 +44,8 @@ pub enum Loader {
 	Purpur,
 	/// Folia
 	Folia,
+	/// Special loader that matches any loader match
+	Any,
 	/// An unknown loader
 	#[cfg_attr(not(feature = "schema"), serde(untagged))]
 	Unknown(String),
@@ -69,7 +71,48 @@ impl Loader {
 			"pufferfish" => Self::Pufferfish,
 			"purpur" => Self::Purpur,
 			"folia" => Self::Folia,
+			"any" => Self::Any,
 			other => Self::Unknown(other.to_string()),
+		}
+	}
+
+	/// Gets whether this loader is supported on the client
+	pub fn is_client(&self) -> bool {
+		match self {
+			Self::Vanilla
+			| Self::Forge
+			| Self::NeoForged
+			| Self::Fabric
+			| Self::Quilt
+			| Self::LiteLoader
+			| Self::Risugamis
+			| Self::Rift
+			| Self::Any
+			| Self::Unknown(..) => true,
+			_ => false,
+		}
+	}
+
+	/// Gets whether this loader is supported on the server
+	pub fn is_server(&self) -> bool {
+		match self {
+			Self::Vanilla
+			| Self::Forge
+			| Self::NeoForged
+			| Self::Fabric
+			| Self::Quilt
+			| Self::Paper
+			| Self::Sponge
+			| Self::SpongeForge
+			| Self::CraftBukkit
+			| Self::Spigot
+			| Self::Glowstone
+			| Self::Pufferfish
+			| Self::Purpur
+			| Self::Folia
+			| Self::Any
+			| Self::Unknown(..) => true,
+			_ => false,
 		}
 	}
 }
@@ -94,6 +137,7 @@ impl Display for Loader {
 			Self::Pufferfish => write!(f, "Pufferfish"),
 			Self::Purpur => write!(f, "Purpur"),
 			Self::Folia => write!(f, "Folia"),
+			Self::Any => write!(f, "Any"),
 			Self::Unknown(other) => write!(f, "{other}"),
 		}
 	}
@@ -128,6 +172,10 @@ impl LoaderMatch {
 
 	/// Checks if a loader matches
 	pub fn matches(&self, other: &Loader) -> bool {
+		if other == &Loader::Any {
+			return true;
+		}
+
 		match self {
 			Self::FabricLike => matches!(other, Loader::Fabric | Loader::Quilt),
 			Self::ForgeLike => matches!(other, Loader::Forge | Loader::SpongeForge),
@@ -141,6 +189,17 @@ impl LoaderMatch {
 					| Loader::Purpur
 			),
 			Self::Loader(loader) => loader == other,
+		}
+	}
+}
+
+impl Display for LoaderMatch {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		match self {
+			Self::FabricLike => write!(f, "Fabric-like"),
+			Self::ForgeLike => write!(f, "Forge-like"),
+			Self::Bukkit => write!(f, "Bukkit"),
+			Self::Loader(loader) => loader.fmt(f),
 		}
 	}
 }

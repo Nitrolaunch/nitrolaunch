@@ -9,39 +9,45 @@ pub mod repo;
 
 use crate::io::paths::Paths;
 use nitro_core::net::download;
-use nitro_pkg::declarative::{deserialize_declarative_package, DeclarativePackage};
-use nitro_pkg::repo::PackageFlag;
 use nitro_pkg::PackageContentType;
-use nitro_shared::later::Later;
+use nitro_pkg::declarative::{
+	DeclarativeAddonVersion, DeclarativeConditionSet, DeclarativePackage,
+	deserialize_declarative_package,
+};
+use nitro_pkg::repo::PackageFlag;
 use nitro_shared::try_3;
+use nitro_shared::util::DeserListOrSingle;
 
-use std::collections::HashSet;
+use std::borrow::Cow;
+use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::future::Future;
 use std::path::PathBuf;
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 
 use self::core::get_core_package;
-use anyhow::{anyhow, bail, Context};
-use nitro_parse::parse::{lex_and_parse, Parsed};
-use nitro_pkg::metadata::{eval_metadata, PackageMetadata};
-use nitro_pkg::properties::{eval_properties, PackageProperties};
-use nitro_shared::pkg::PackageID;
+use anyhow::{Context, anyhow, bail};
+use nitro_parse::parse::{Parsed, lex_and_parse};
+use nitro_pkg::metadata::{PackageMetadata, eval_metadata};
+use nitro_pkg::properties::{PackageProperties, eval_properties};
+use nitro_shared::pkg::ArcPkgReq;
 use reqwest::Client;
 
 /// An installable package that loads content into your game
 #[derive(Debug)]
 pub struct Package {
-	/// The package ID
-	pub id: PackageID,
+	/// The package request
+	pub req: ArcPkgReq,
 	/// Where the package is being retrieved from
 	pub location: PkgLocation,
 	/// Type of the content in the package
 	pub content_type: PackageContentType,
 	/// Flags for the package from the repository
 	pub flags: HashSet<PackageFlag>,
-	/// The data of the package
-	pub data: Later<PkgData>,
+	text: OnceLock<Arc<str>>,
+	contents: OnceLock<PkgContents>,
+	metadata: OnceLock<Arc<PackageMetadata>>,
+	properties: OnceLock<Arc<PackageProperties>>,
 }
 
 /// Location of a package
@@ -60,32 +66,6 @@ pub enum PkgLocation {
 	Inline(Arc<str>),
 	/// Included in the binary
 	Core,
-}
-
-/// Data pertaining to the contents of a package
-#[derive(Debug)]
-pub struct PkgData {
-	text: Arc<str>,
-	contents: Later<PkgContents>,
-	metadata: Later<PackageMetadata>,
-	properties: Later<PackageProperties>,
-}
-
-impl PkgData {
-	/// Create a new PkgData
-	pub fn new(text: &Arc<str>) -> Self {
-		Self {
-			text: text.clone(),
-			contents: Later::new(),
-			metadata: Later::new(),
-			properties: Later::new(),
-		}
-	}
-
-	/// Get the text content of the PkgData
-	pub fn get_text(&self) -> Arc<str> {
-		self.text.clone()
-	}
 }
 
 /// Type of data inside a package
@@ -138,17 +118,20 @@ impl PkgContents {
 impl Package {
 	/// Create a new Package
 	pub fn new(
-		id: PackageID,
+		req: ArcPkgReq,
 		location: PkgLocation,
 		content_type: PackageContentType,
 		flags: HashSet<PackageFlag>,
 	) -> Self {
 		Self {
-			id,
+			req,
 			location,
-			data: Later::new(),
 			content_type,
 			flags,
+			text: OnceLock::new(),
+			contents: OnceLock::new(),
+			metadata: OnceLock::new(),
+			properties: OnceLock::new(),
 		}
 	}
 
@@ -158,7 +141,7 @@ impl Package {
 			PackageContentType::Declarative => ".json",
 			PackageContentType::Script => ".pkg.txt",
 		};
-		format!("{}{extension}", self.id)
+		format!("{}{extension}", self.req.id)
 	}
 
 	/// Get the cached path of the package
@@ -177,44 +160,47 @@ impl Package {
 
 	/// Ensure the raw contents of the package
 	pub async fn ensure_loaded(
-		&mut self,
+		&self,
 		paths: &Paths,
 		force: bool,
 		client: &Client,
 	) -> anyhow::Result<()> {
-		if self.data.is_empty() {
-			match &self.location {
-				PkgLocation::Local(path) => {
-					if !path.exists() {
-						bail!("Local package path does not exist");
-					}
-					self.data.fill(PkgData::new(&Arc::from(
-						tokio::fs::read_to_string(path).await?,
-					)));
-				}
-				PkgLocation::Remote { url, .. } => {
-					let path = self.cached_path(paths);
-					if !force && path.exists() {
-						self.data.fill(PkgData::new(&Arc::from(
-							tokio::fs::read_to_string(path).await?,
-						)));
-					} else {
-						let url = url.as_ref().expect("URL for remote package missing");
-						let text = try_3!({ download::text(url, client).await })?;
-						tokio::fs::write(&path, &text).await?;
-						self.data.fill(PkgData::new(&Arc::from(text)));
-					}
-				}
-				PkgLocation::Core => {
-					let contents = get_core_package(&self.id)
-						.ok_or(anyhow!("Package is not a core package"))?;
-					self.data.fill(PkgData::new(&Arc::from(contents)));
-				}
-				PkgLocation::Inline(contents) => {
-					self.data.fill(PkgData::new(contents));
-				}
-			};
+		if self.text.get().is_some() {
+			return Ok(());
 		}
+
+		match &self.location {
+			PkgLocation::Local(path) => {
+				if !path.exists() {
+					bail!("Local package path does not exist");
+				}
+				let _ = self
+					.text
+					.set(Arc::from(tokio::fs::read_to_string(path).await?));
+			}
+			PkgLocation::Remote { url, .. } => {
+				let path = self.cached_path(paths);
+				if !force && path.exists() {
+					let _ = self
+						.text
+						.set(Arc::from(tokio::fs::read_to_string(path).await?));
+				} else {
+					let url = url.as_ref().expect("URL for remote package missing");
+					let text = try_3!({ download::text(url, client).await })?;
+					tokio::fs::write(&path, &text).await?;
+					let _ = self.text.set(Arc::from(text));
+				}
+			}
+			PkgLocation::Core => {
+				let contents = get_core_package(&self.req.id)
+					.ok_or(anyhow!("Package is not a core package"))?;
+				let _ = self.text.set(Arc::from(contents));
+			}
+			PkgLocation::Inline(contents) => {
+				let _ = self.text.set(contents.clone());
+			}
+		};
+
 		Ok(())
 	}
 
@@ -242,102 +228,204 @@ impl Package {
 	}
 
 	/// Parse the contents of the package
-	pub async fn parse(&mut self, paths: &Paths, client: &Client) -> anyhow::Result<()> {
+	pub async fn parse<'this>(
+		&'this self,
+		paths: &Paths,
+		client: &Client,
+	) -> anyhow::Result<&'this PkgContents> {
 		self.ensure_loaded(paths, false, client).await?;
-		let data = self.data.get_mut();
-		if data.contents.is_full() {
-			return Ok(());
+		if let Some(contents) = self.contents.get() {
+			return Ok(contents);
 		}
+
+		let text = self.text.get().unwrap();
 
 		match self.content_type {
 			PackageContentType::Script => {
-				let parsed = lex_and_parse(&data.get_text())?;
-				data.contents.fill(PkgContents::Script(parsed));
+				let parsed = lex_and_parse(text)?;
+				let _ = self.contents.set(PkgContents::Script(parsed));
 			}
 			PackageContentType::Declarative => {
-				let contents = deserialize_declarative_package(&data.get_text())
+				let contents = deserialize_declarative_package(text)
 					.context("Failed to deserialize declarative package")?;
-				data.contents
-					.fill(PkgContents::Declarative(Box::new(contents)));
+				let _ = self
+					.contents
+					.set(PkgContents::Declarative(Box::new(contents)));
 			}
 		}
 
-		Ok(())
+		Ok(self.contents.get().unwrap())
 	}
 
 	/// Get the metadata of the package
 	pub async fn get_metadata<'a>(
-		&'a mut self,
+		&'a self,
 		paths: &Paths,
 		client: &Client,
-	) -> anyhow::Result<&'a PackageMetadata> {
+	) -> anyhow::Result<Arc<PackageMetadata>> {
 		self.parse(paths, client).await.context("Failed to parse")?;
-		let data = self.data.get_mut();
+
+		if let Some(metadata) = self.metadata.get() {
+			return Ok(metadata.clone());
+		}
+
 		match self.content_type {
 			PackageContentType::Script => {
-				let parsed = data.contents.get().get_script_contents();
-				if data.metadata.is_empty() {
-					let metadata = eval_metadata(parsed).context("Failed to evaluate metadata")?;
-					data.metadata.fill(metadata);
-				}
-				Ok(data.metadata.get())
+				let contents = self.contents.get().unwrap();
+				let PkgContents::Script(parsed) = contents else {
+					bail!("Content type does not match");
+				};
+				let metadata = eval_metadata(parsed).context("Failed to evaluate metadata")?;
+				let _ = self.metadata.set(Arc::new(metadata));
 			}
 			PackageContentType::Declarative => {
-				let contents = data.contents.get().get_declarative_contents();
-				Ok(&contents.meta)
+				let contents = self.contents.get().unwrap();
+				let PkgContents::Declarative(declarative) = contents else {
+					bail!("Content type does not match");
+				};
+
+				let _ = self.metadata.set(Arc::new(declarative.meta.clone()));
 			}
 		}
+
+		Ok(self.metadata.get().unwrap().clone())
 	}
 
 	/// Get the properties of the package
 	pub async fn get_properties<'a>(
-		&'a mut self,
+		&'a self,
 		paths: &Paths,
 		client: &Client,
-	) -> anyhow::Result<&'a PackageProperties> {
+	) -> anyhow::Result<Arc<PackageProperties>> {
 		self.parse(paths, client).await.context("Failed to parse")?;
-		let data = self.data.get_mut();
+
+		if let Some(properties) = self.properties.get() {
+			return Ok(properties.clone());
+		}
+
 		match self.content_type {
 			PackageContentType::Script => {
-				let parsed = data.contents.get().get_script_contents();
-				if data.properties.is_empty() {
+				let contents = self.contents.get().unwrap();
+				let PkgContents::Script(parsed) = contents else {
+					bail!("Content type does not match");
+				};
+				if self.properties.get().is_none() {
 					let properties =
 						eval_properties(parsed).context("Failed to evaluate properties")?;
-					data.properties.fill(properties);
+					let _ = self.properties.set(Arc::new(properties));
 				}
-				Ok(data.properties.get())
 			}
 			PackageContentType::Declarative => {
-				let contents = data.contents.get().get_declarative_contents();
-				Ok(&contents.properties)
+				let contents = self.contents.get().unwrap();
+				let PkgContents::Declarative(declarative) = contents else {
+					bail!("Content type does not match");
+				};
+
+				let _ = self
+					.properties
+					.set(Arc::new(declarative.properties.clone()));
 			}
 		}
+
+		Ok(self.properties.get().unwrap().clone())
 	}
 
 	/// Get the declarative contents of the package
 	pub async fn get_declarative_contents<'a>(
-		&'a mut self,
+		&'a self,
 		paths: &Paths,
 		client: &Client,
 	) -> anyhow::Result<Option<&'a DeclarativePackage>> {
 		self.parse(paths, client).await.context("Failed to parse")?;
-		Ok(self
-			.data
-			.get()
-			.contents
-			.get()
-			.get_declarative_contents_optional())
+
+		let contents = self.contents.get().unwrap();
+		if let PkgContents::Declarative(contents) = contents {
+			Ok(Some(contents))
+		} else {
+			Ok(None)
+		}
+	}
+
+	/// Gets the content versions of this addon
+	pub async fn get_content_versions(
+		&self,
+		paths: &Paths,
+		client: &Client,
+	) -> anyhow::Result<Vec<Cow<'_, DeclarativeAddonVersion>>> {
+		let contents = self.get_declarative_contents(paths, client).await?;
+		let Some(contents) = contents else {
+			let properties = self.get_properties(paths, client).await?;
+
+			return Ok(properties
+				.content_versions
+				.iter()
+				.flatten()
+				.map(|x| {
+					Cow::Owned(DeclarativeAddonVersion {
+						conditional_properties: DeclarativeConditionSet {
+							content_versions: Some(DeserListOrSingle::Single(x.clone())),
+							..Default::default()
+						},
+						..Default::default()
+					})
+				})
+				.collect());
+		};
+
+		// Combine the same content version across multiple addons into a single version if possible
+		let mut versions_with_ids = HashMap::new();
+		let mut versions_without_ids = Vec::new();
+
+		for addon in contents.addons.values() {
+			for version in &addon.versions {
+				let content_version =
+					if let Some(versions) = &version.conditional_properties.content_versions {
+						versions.first()
+					} else {
+						None
+					};
+
+				if let Some(content_version) = content_version {
+					if !versions_with_ids.contains_key(content_version) {
+						versions_with_ids.insert(content_version.clone(), version);
+					}
+				} else {
+					versions_without_ids.push(version);
+				}
+			}
+		}
+
+		Ok(versions_without_ids
+			.into_iter()
+			.chain(versions_with_ids.into_values())
+			.map(Cow::Borrowed)
+			.collect())
+	}
+
+	/// Get the text contents of the package
+	pub async fn get_text<'a>(
+		&'a self,
+		paths: &Paths,
+		client: &Client,
+	) -> anyhow::Result<Arc<str>> {
+		self.ensure_loaded(paths, false, client)
+			.await
+			.context("Failed to parse")?;
+
+		Ok(self.text.get().unwrap().clone())
 	}
 }
 
 #[cfg(test)]
 mod tests {
+	use nitro_pkg::PkgRequest;
+
 	use super::*;
 
 	#[test]
 	fn test_package_id() {
 		let package = Package::new(
-			PackageID::from("sodium"),
+			PkgRequest::parse("sodium", nitro_pkg::PkgRequestSource::UserRequire).arc(),
 			PkgLocation::Remote {
 				url: None,
 				repo_id: String::new(),
@@ -348,7 +436,7 @@ mod tests {
 		assert_eq!(package.filename(), "sodium.pkg.txt".to_string());
 
 		let package = Package::new(
-			PackageID::from("fabriclike-api"),
+			PkgRequest::parse("fabriclike-api", nitro_pkg::PkgRequestSource::UserRequire).arc(),
 			PkgLocation::Remote {
 				url: None,
 				repo_id: String::new(),

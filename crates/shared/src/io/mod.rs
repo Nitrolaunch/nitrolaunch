@@ -1,0 +1,103 @@
+use std::path::{Path, PathBuf};
+
+use crate::io::config::IO_CONFIG;
+
+/// IO configuration
+pub mod config;
+
+/// Tries to get the user's home dir
+pub fn home_dir() -> anyhow::Result<PathBuf> {
+	#[cfg(target_os = "linux")]
+	let path = std::env::var("HOME")?;
+	#[cfg(target_os = "windows")]
+	let path = format!("{}/..", std::env::var("%APPDATA%")?);
+	#[cfg(target_os = "macos")]
+	let path = std::env::var("HOME")?;
+	#[cfg(not(any(target_os = "linux", target_os = "windows", target_os = "macos")))]
+	let path = "/";
+
+	Ok(PathBuf::from(path))
+}
+
+/// Gets the configured IO link method
+pub fn get_link_method() -> LinkMethod {
+	let method = IO_CONFIG.get_string("link_method");
+	let Some(method) = method else {
+		// Hard links require admin privileges on Windows
+		#[cfg(target_os = "windows")]
+		return LinkMethod::Soft;
+		#[cfg(not(target_os = "windows"))]
+		return LinkMethod::Hard;
+	};
+
+	match method.as_str() {
+		"hard" => LinkMethod::Hard,
+		"soft" => LinkMethod::Soft,
+		"copy" => LinkMethod::Copy,
+		_ => LinkMethod::Hard,
+	}
+}
+
+/// Different methods for files to be linked with
+pub enum LinkMethod {
+	/// Hardlink
+	Hard,
+	/// Symlink
+	Soft,
+	/// File is copied
+	Copy,
+}
+
+/// Creates a new link if it does not exist
+pub fn update_link(path: &Path, link: &Path) -> std::io::Result<()> {
+	let method = get_link_method();
+
+	match method {
+		LinkMethod::Hard => {
+			if !link.exists() {
+				std::fs::hard_link(path, link)?;
+			}
+		}
+		LinkMethod::Soft => {
+			if !link.exists() {
+				#[allow(deprecated)]
+				std::fs::soft_link(path, link)?;
+			}
+		}
+		LinkMethod::Copy => {
+			if !link.exists() {
+				std::fs::copy(path, link)?;
+			}
+		}
+	}
+
+	Ok(())
+}
+
+/// Gets the size of a directory recursively
+pub fn dir_size(path: &Path) -> anyhow::Result<usize> {
+	if !path.exists() {
+		return Ok(0);
+	}
+
+	if path.is_file() {
+		let meta = path.metadata()?;
+		Ok(meta.len() as usize)
+	} else {
+		let mut sum = 0;
+		let read = path.read_dir()?;
+		for entry in read {
+			let Ok(entry) = entry else {
+				continue;
+			};
+
+			let Ok(size) = dir_size(&entry.path()) else {
+				continue;
+			};
+
+			sum += size;
+		}
+
+		Ok(sum)
+	}
+}

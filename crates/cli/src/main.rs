@@ -1,5 +1,12 @@
+/// CLI commands
 mod commands;
+/// HTTP caching for images
+mod image_cache;
+/// NitroOutput implementation
 mod output;
+/// Utilities for prompting the user
+mod prompt;
+/// :O
 mod secrets;
 
 use std::process::ExitCode;

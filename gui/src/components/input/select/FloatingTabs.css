@@ -13,16 +13,16 @@
 
 	outline-offset: 0.1rem;
 
-	transition: outline-offset 0.1s, background-color 0.25s;
+	transition: outline-offset 0.1s;
 
 	cursor: pointer;
 }
 
 .floating-tab:hover {
 	outline-offset: 0.2rem;
+	color: var(--color);
 }
 
-.floating-tab:hover,
 .floating-tab.selected {
 	outline: var(--border) solid transparent;
 }

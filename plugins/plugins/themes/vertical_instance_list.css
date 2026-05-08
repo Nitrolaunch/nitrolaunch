@@ -1,0 +1,11 @@
+.instance-list-section {
+	grid-template-columns: minmax(0, 1fr);
+}
+
+.instance-list-item {
+	margin: 0.25rem;
+}
+
+.instance-list-item-upper-details {
+	max-width: 100%;
+}

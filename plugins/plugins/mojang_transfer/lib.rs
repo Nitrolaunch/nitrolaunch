@@ -1,17 +1,17 @@
 use std::{collections::HashMap, path::PathBuf};
 
-use anyhow::{bail, Context};
+use anyhow::{Context, bail};
 use nitro_config::instance::{
-	make_valid_instance_id, Args, InstanceConfig, LaunchArgs, LaunchConfig,
+	Args, InstanceConfig, LaunchArgs, LaunchConfig, make_valid_instance_id,
 };
 use nitro_plugin::{
-	api::wasm::{sys::get_os_string, WASMPlugin},
+	api::wasm::{WASMPlugin, sys::get_os_string},
 	hook::hooks::{CheckMigrationResult, MigrateInstancesResult},
 	nitro_wasm_plugin,
 };
 use nitro_shared::{
-	versions::{MinecraftLatestVersion, MinecraftVersionDeser},
 	Side,
+	versions::{MinecraftLatestVersion, MinecraftVersionDeser},
 };
 use serde::{Deserialize, Serialize};
 
@@ -56,10 +56,10 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 		let mut instances = HashMap::new();
 
 		for profile in profiles.profiles.into_values() {
-			if let Some(requested_instances) = &arg.instances {
-				if !requested_instances.contains(&profile.name) {
-					continue;
-				}
+			if let Some(requested_instances) = &arg.instances
+				&& !requested_instances.contains(&profile.name)
+			{
+				continue;
 			}
 
 			let id = make_valid_instance_id(&profile.name);
@@ -78,7 +78,6 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 		Ok(MigrateInstancesResult {
 			format: arg.format,
 			instances,
-			packages: HashMap::new(),
 		})
 	})?;
 
@@ -115,7 +114,7 @@ fn create_config(profile: Profile) -> anyhow::Result<InstanceConfig> {
 			args,
 			..Default::default()
 		},
-		game_dir: Some(profile.game_dir),
+		dir: Some(profile.game_dir),
 		..Default::default()
 	})
 }

@@ -1,26 +1,25 @@
 use std::{fmt::Display, ops::DerefMut, path::Path, process::Command};
 
-use anyhow::{bail, Context};
+use anyhow::{Context, bail};
 use nitro_core::{
 	io::{
 		files::create_leading_dirs,
-		java::classpath::{Classpath, CLASSPATH_SEP},
+		java::classpath::{CLASSPATH_SEP, Classpath},
 		json_from_file,
 	},
 	net::game_files::{
 		client_meta::{
-			args::{ArgumentItem, Arguments},
 			ClientMeta,
+			args::{ArgumentItem, Arguments},
 		},
 		libraries::get_classpath,
 	},
 };
 use nitro_net::neoforge;
 use nitro_shared::{
-	no_window,
-	output::{MessageContents, MessageLevel, NitroOutput},
+	Side, UpdateDepth, no_window,
+	output::{MessageContents, NitroOutput},
 	versions::VersionInfo,
-	Side, UpdateDepth,
 };
 use reqwest::Client;
 
@@ -74,20 +73,18 @@ pub async fn install(
 
 	if !installer_path.exists() || update_depth == UpdateDepth::Force {
 		let mut process = o.get_process();
-		process.display(
-			MessageContents::StartProcess(format!("Downloading {mode} installer")),
-			MessageLevel::Important,
-		);
+		process.display(MessageContents::StartProcess(format!(
+			"Downloading {mode} installer"
+		)));
 
 		match mode {
 			Mode::NeoForge => neoforge::download_installer(forge_version, &installer_path, client)
 				.await
 				.context("Failed to download installer")?,
 		}
-		process.display(
-			MessageContents::Success(format!("{mode} installer downloaded")),
-			MessageLevel::Important,
-		);
+		process.display(MessageContents::Success(format!(
+			"{mode} installer downloaded"
+		)));
 	}
 
 	if side == Side::Client {
@@ -113,17 +110,15 @@ pub async fn install(
 	let already_installed = already_installed || update_depth == UpdateDepth::Force;
 
 	let mut process = o.get_process();
-	process.display(
-		MessageContents::StartProcess(format!("Checking {mode} version info")),
-		MessageLevel::Important,
-	);
+	process.display(MessageContents::StartProcess(format!(
+		"Checking {mode} version info"
+	)));
 
 	// Run the installer if not not installed
 	if !already_installed {
-		process.display(
-			MessageContents::StartProcess(format!("Running {mode} installer")),
-			MessageLevel::Important,
-		);
+		process.display(MessageContents::StartProcess(format!(
+			"Running {mode} installer"
+		)));
 
 		let result = run_installer(
 			&installer_path,
@@ -136,18 +131,14 @@ pub async fn install(
 		if let Err(e) = result {
 			let log_file_name = installer_file_name + ".log";
 			if let Ok(log_text) = std::fs::read_to_string(forge_dir.join(log_file_name)) {
-				process.display(
-					MessageContents::Error(format!("Installer log:\n{log_text}")),
-					MessageLevel::Important,
-				);
+				process.display(MessageContents::Error(format!(
+					"Installer log:\n{log_text}"
+				)));
 			}
 			bail!("Failed to run installer: {e}");
 		}
 
-		process.display(
-			MessageContents::Success(format!("{mode} installer ran")),
-			MessageLevel::Important,
-		);
+		process.display(MessageContents::Success(format!("{mode} installer ran")));
 	}
 
 	// Get data based on the side
@@ -190,10 +181,7 @@ pub async fn install(
 			let classpath = get_classpath(&client_meta.libraries, internal_dir)
 				.context("Failed to get classpath")?;
 
-			process.display(
-				MessageContents::Success(format!("{mode} installed")),
-				MessageLevel::Important,
-			);
+			process.display(MessageContents::Success(format!("{mode} installed")));
 
 			Ok(ForgeInstallResult {
 				classpath,
@@ -250,10 +238,9 @@ fn run_installer(
 
 	no_window!(command);
 
-	o.display(
-		MessageContents::Simple(format!("{command:?}")),
-		MessageLevel::Debug,
-	);
+	o.debug(MessageContents::Simple(format!(
+		"Forge Installer Command:\n{command:?}"
+	)));
 
 	let exit = command.spawn()?.wait()?;
 	if !exit.success() {
@@ -273,8 +260,7 @@ fn create_mojang_launcher_jsons(dir: &Path) -> anyhow::Result<()> {
 /// Processes an argument from the version JSON to replace tokens
 fn process_arg(arg: &str, libraries_dir: &Path, version_name: &str) -> String {
 	let arg = arg.replace("${classpath_separator}", &format!("{CLASSPATH_SEP}"));
-	let arg = arg.replace("${library_directory}", &*libraries_dir.to_string_lossy());
-	let arg = arg.replace("${version_name}", version_name);
+	let arg = arg.replace("${library_directory}", &libraries_dir.to_string_lossy());
 
-	arg
+	arg.replace("${version_name}", version_name)
 }

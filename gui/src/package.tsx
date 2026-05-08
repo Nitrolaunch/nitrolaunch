@@ -54,6 +54,7 @@ export interface RepoMetadata {
 	nitro_version?: string;
 	color?: string;
 	text_color?: string;
+	icon?: string;
 	package_types?: PackageType[];
 	package_categories?: PackageCategory[];
 }
@@ -111,8 +112,8 @@ export interface DeclarativePackageRelations {
 	bundled?: string[] | string;
 	compats?: [string, string][] | [string, string];
 	recommendations?:
-	| { value: string; invert?: boolean }[]
-	| { value: string; invert?: boolean };
+		| { value: string; invert?: boolean }[]
+		| { value: string; invert?: boolean };
 }
 
 export type AddonKind =
@@ -122,7 +123,7 @@ export type AddonKind =
 	| "shader"
 	| "plugin";
 
-export type PackageType = AddonKind | "bundle";
+export type PackageType = AddonKind | "bundle" | "modpack";
 
 export enum PackageCategory {
 	Adventure = "adventure",
@@ -512,6 +513,8 @@ export function getPackageTypeIcon(type: PackageType) {
 		return Sun;
 	} else if (type == "bundle") {
 		return Folder;
+	} else if (type == "modpack") {
+		return Honeycomb;
 	} else {
 		return Box;
 	}

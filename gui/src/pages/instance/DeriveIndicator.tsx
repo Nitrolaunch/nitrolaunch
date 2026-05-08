@@ -19,7 +19,7 @@ export default function DeriveIndicator(props: DeriveIndicatorProps) {
 
 	return (
 		<Show when={visible()}>
-			<div class="cont derive-indicator">
+			<div class="cont derive-indicator" data-tip="Inherited from a template">
 				<Switch>
 					<Match when={displayValue}>
 						<div class="derive-indicator-asterisk">*</div>INHERITED VALUE:{" "}

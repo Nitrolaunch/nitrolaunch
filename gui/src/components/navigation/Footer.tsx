@@ -1,7 +1,6 @@
 import {
 	For,
 	Show,
-	createResource,
 	createSignal,
 	onCleanup,
 	onMount,
@@ -110,34 +109,6 @@ export default function Footer(props: FooterProps) {
 			errorToast("Failed to launch instance: " + e);
 		}
 	}
-
-	// Gets whether the currently selected instance is launchable (it has been updated before)
-	let [isInstanceLaunchable, methods] = createResource(
-		() => props.selectedItem,
-		async () => {
-			if (props.mode != FooterMode.Instance) {
-				return undefined;
-			}
-
-			let unlisten = await listen(
-				"nitro_output_finish_task",
-				(e: Event<string>) => {
-					if (e.payload == "update_instance") {
-						methods.refetch();
-					}
-				},
-			);
-
-			setUnlistens((unlistens) => {
-				unlistens.push(unlisten);
-				return unlistens;
-			});
-
-			return await invoke("get_instance_has_updated", {
-				instance: props.selectedItem,
-			});
-		},
-	);
 
 	let gallery!: HTMLDivElement;
 
@@ -282,30 +253,13 @@ export default function Footer(props: FooterProps) {
 						props.selectedItem != undefined &&
 						!(
 							props.itemEditable == false && props.mode == FooterMode.Template
-						) &&
-						!(
-							props.mode == FooterMode.Instance &&
-							isInstanceLaunchable() == undefined
 						)
 					}
 					mode={props.mode}
-					isInstanceLaunchable={isInstanceLaunchable() == true}
 					onClick={async () => {
 						if (props.mode == FooterMode.Instance) {
 							if (props.selectedItem != undefined) {
-								if (isInstanceLaunchable() == undefined) {
-								} else if (isInstanceLaunchable()) {
-									launch(props.selectedItem, false);
-								} else {
-									try {
-										await invoke("update_instance", {
-											instanceId: props.selectedItem,
-											depth: "full",
-										});
-									} catch (e) {
-										errorToast("Failed to update instance: " + e);
-									}
-								}
+								launch(props.selectedItem, false);
 							}
 						} else if (
 							props.mode == FooterMode.Template &&
@@ -326,9 +280,8 @@ export default function Footer(props: FooterProps) {
 				<div class="cont">
 					<Show when={props.itemFromPlugin == true}>
 						<Tip
-							tip={`This ${props.mode} is from a plugin ${
-								props.itemEditable == true ? "" : "and cannot be edited"
-							}`}
+							tip={`This ${props.mode} is from a plugin ${props.itemEditable == true ? "" : "and cannot be edited"
+								}`}
 							side="top"
 						>
 							<div class="cont footer-plugin-indicator">
@@ -420,11 +373,7 @@ function ActionButton(props: ActionButtonProps) {
 	};
 	let message = () => {
 		if (props.mode == FooterMode.Instance) {
-			if (props.isInstanceLaunchable || !props.selected) {
-				return "Launch";
-			} else {
-				return "Update";
-			}
+			return "Launch";
 		} else if (props.mode == FooterMode.Template) {
 			return "Edit";
 		} else if (props.mode == FooterMode.SaveInstanceConfig) {
@@ -437,11 +386,7 @@ function ActionButton(props: ActionButtonProps) {
 	};
 	let ButtonIcon = () => {
 		if (props.mode == FooterMode.Instance) {
-			if (props.isInstanceLaunchable || !props.selected) {
-				return <Icon icon={Play} size="1.25rem" />;
-			} else {
-				return <Upload />;
-			}
+			return <Icon icon={Play} size="1.25rem" />;
 		} else if (props.mode == FooterMode.Template) {
 			return <Gear />;
 		} else if (props.mode == FooterMode.SaveInstanceConfig) {
@@ -471,7 +416,6 @@ function ActionButton(props: ActionButtonProps) {
 interface ActionButtonProps {
 	selected: boolean;
 	mode: FooterMode;
-	isInstanceLaunchable: boolean;
 	onClick: () => void;
 }
 

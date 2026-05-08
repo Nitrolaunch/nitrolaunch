@@ -52,13 +52,13 @@ macro_rules! hook_interface {
 hook_interface!(on_load, "on_load", OnLoad, |_| Ok(()));
 hook_interface!(start_worker, "start_worker", StartWorker, |_| Ok(()));
 hook_interface!(subcommand, "subcommand", Subcommand);
-hook_interface!(
-	modify_instance_config,
-	"modify_instance_config",
-	ModifyInstanceConfig
-);
 hook_interface!(add_versions, "add_versions", AddVersions);
 hook_interface!(on_instance_setup, "on_instance_setup", OnInstanceSetup);
+hook_interface!(
+	after_instance_setup,
+	"after_instance_setup",
+	AfterInstanceSetup
+);
 hook_interface!(on_instance_launch, "on_instance_launch", OnInstanceLaunch);
 hook_interface!(
 	while_instance_launch,
@@ -164,3 +164,36 @@ hook_interface!(delete_instance, "delete_instance", DeleteInstance);
 hook_interface!(delete_template, "delete_template", DeleteTemplate);
 hook_interface!(get_instance_logs, "get_instance_logs", GetInstanceLogs);
 hook_interface!(get_instance_log, "get_instance_log", GetInstanceLog);
+hook_interface!(
+	get_account_cosmetics,
+	"get_account_cosmetics",
+	GetAccountCosmetics
+);
+hook_interface!(upload_skin, "upload_skin", UploadSkin);
+hook_interface!(activate_cape, "activate_cape", ActivateCape);
+hook_interface!(
+	add_skin_repositories,
+	"add_skin_repositories",
+	AddSkinRepositories
+);
+hook_interface!(
+	search_skin_repository,
+	"search_skin_repository",
+	SearchSkinRepository
+);
+hook_interface!(
+	add_instance_config_controls,
+	"add_instance_config_controls",
+	AddInstanceConfigControls
+);
+hook_interface!(
+	add_plugin_config_controls,
+	"add_plugin_config_controls",
+	AddPluginConfigControls
+);
+hook_interface!(
+	add_modpack_formats,
+	"add_modpack_formats",
+	AddModpackFormats
+);
+hook_interface!(install_modpack, "install_modpack", InstallModpack);

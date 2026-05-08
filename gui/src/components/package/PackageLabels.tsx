@@ -1,4 +1,4 @@
-import { createMemo, createSignal, For, Show } from "solid-js";
+import { createMemo, createSignal, For, Match, Show, Switch } from "solid-js";
 import {
 	getAllLoaders,
 	getLoaderColor,
@@ -16,17 +16,18 @@ import {
 import Icon from "../Icon";
 import "./PackageLabels.css";
 import { parseVersionedString } from "../../utils";
+import Tip from "../dialog/Tip";
 
 export default function PackageLabels(props: PackageLabelsProps) {
 	let small = props.small == undefined ? false : props.small;
-	let tiny = () => props.tiny == undefined ? false : props.tiny;
+	let tiny = () => (props.tiny == undefined ? false : props.tiny);
 
 	let allLoaders = createMemo(() => getAllLoaders(props.loaders));
 
 	let isLimited = () =>
 		props.limit != undefined &&
 		allLoaders().length + props.packageTypes.length + props.categories.length >
-		props.limit;
+			props.limit;
 
 	return (
 		<div class={`cont package-labels ${small ? "small" : ""}`}>
@@ -36,7 +37,9 @@ export default function PackageLabels(props: PackageLabelsProps) {
 						return undefined;
 					} else {
 						let color = getPackageTypeColor(type);
-						let style = props.tags ? `color:${color};border-color:${color}` : "";
+						let style = props.tags
+							? `color:${color};border-color:${color}`
+							: "";
 						return (
 							<div
 								class={`cont package-type ${props.tags ? "tag" : ""} ${small ? "small" : ""}`}
@@ -62,7 +65,9 @@ export default function PackageLabels(props: PackageLabelsProps) {
 						return undefined;
 					} else {
 						let [isHovered, setIsHovered] = createSignal(false);
-						let style = props.tags ? "color:var(--package);border-color:var(--package);background-color:var(--packagebg)" : "";
+						let style = props.tags
+							? "color:var(--package);border-color:var(--package);background-color:var(--packagebg)"
+							: "";
 
 						return (
 							<div
@@ -84,40 +89,52 @@ export default function PackageLabels(props: PackageLabelsProps) {
 					}
 				}}
 			</For>
-			<For each={allLoaders()}>
-				{(loader, i) => {
-					let [loader2, _] = parseVersionedString(loader) as [Loader, string];
-					if (
-						props.limit != undefined &&
-						i() + props.packageTypes.length + props.categories.length >=
-						props.limit
-					) {
-						return undefined;
-					} else {
-						let [isHovered, setIsHovered] = createSignal(false);
-						let color = getLoaderColor(loader);
-						let style = props.tags ? `color:${color};border-color:${color}` : "";
+			<Show when={allLoaders().length > 0}>
+				<div class="cont tag package-loaders">
+					<For each={allLoaders()}>
+						{(loader, i) => {
+							let [loader2, _] = parseVersionedString(loader) as [
+								Loader,
+								string,
+							];
+							if (
+								props.limit != undefined &&
+								i() + props.packageTypes.length + props.categories.length >=
+									props.limit
+							) {
+								return undefined;
+							} else {
+								let color = getLoaderColor(loader);
+								let style = props.tags
+									? `color:${color};border-color:${color}`
+									: "";
 
-						return (
-							<div
-								class={`cont package-loader ${props.tags ? "tag" : ""} ${small ? "small" : ""}`}
-								style={style}
-								onmouseenter={() => setIsHovered(true)}
-								onmouseleave={() => setIsHovered(false)}
-							>
-								<div class="cont package-loader-icon">
-									<img src={getLoaderImage(loader2)} />
-								</div>
-								<Show when={(!small && !tiny()) || (tiny() && isHovered())}>
-									<div class="cont package-category-label">
-										{getLoaderDisplayName(loader2)}
+								let elem = (
+									<div
+										class={`cont package-loader ${small ? "small" : ""}`}
+										style={style}
+									>
+										<div class="cont package-loader-icon">
+											<img src={getLoaderImage(loader2)} />
+										</div>
 									</div>
-								</Show>
-							</div>
-						);
-					}
-				}}
-			</For>
+								);
+
+								return (
+									<Switch>
+										<Match when={props.tiny == true}>
+											<Tip tip={getLoaderDisplayName(loader)} side="bottom">
+												{elem}
+											</Tip>
+										</Match>
+										<Match when={true}>{elem}</Match>
+									</Switch>
+								);
+							}
+						}}
+					</For>
+				</div>
+			</Show>
 			<Show when={isLimited()}>...</Show>
 		</div>
 	);

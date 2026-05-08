@@ -32,6 +32,7 @@ import {
 	Refresh,
 	Text,
 	Trash,
+	Upload,
 } from "../../icons";
 import { emit } from "@tauri-apps/api/event";
 import { errorToast, successToast } from "../../components/dialog/Toasts";
@@ -42,20 +43,22 @@ import { loadPagePlugins } from "../../plugins";
 import SlideSwitch from "../../components/input/SlideSwitch";
 import FloatingTabs from "../../components/input/select/FloatingTabs";
 import PackageVersion from "../../components/input/text/PackageVersion";
+import { useNavigate } from "@solidjs/router";
+import { open } from "@tauri-apps/plugin-shell";
 
 export default function Plugins() {
 	onMount(() => loadPagePlugins("plugins"));
 
 	let [localPlugins, localMethods] = createResource(
-		async () => (await invoke("get_local_plugins")) as PluginInfo[]
+		async () => (await invoke("get_local_plugins")) as PluginInfo[],
 	);
 	let [remotePlugins, remoteMethods] = createResource(
 		async () =>
-			(await invoke("get_remote_plugins", { offline: false })) as PluginInfo[]
+			(await invoke("get_remote_plugins", { offline: false })) as PluginInfo[],
 	);
 	let [noDownloadRemotePlugins, _] = createResource(
 		async () =>
-			(await invoke("get_remote_plugins", { offline: true })) as PluginInfo[]
+			(await invoke("get_remote_plugins", { offline: true })) as PluginInfo[],
 	);
 	let [isRemote, setIsRemote] = createSignal(false);
 	let [restartNeeded, setRestartNeeded] = createSignal(false);
@@ -155,7 +158,7 @@ export default function Plugins() {
 						let isUpdateAvailable = () =>
 							remotePlugins() != undefined &&
 							remotePlugins()!.some(
-								(x) => x.id == info.id && x.version != info.version
+								(x) => x.id == info.id && x.version != info.version,
 							);
 
 						return (
@@ -207,6 +210,20 @@ export default function Plugins() {
 					</For>
 				</Show>
 			</div>
+			{/* <button
+				onclick={async () => {
+					emit("nitro_output_create_task", "task");
+					setTimeout(() => emit("nitro_output_start_process", "task"), 1000);
+					setTimeout(() => emit("nitro_output_message", {task: "task", type: "start_process", message: "Doing stuff"}), 1500);
+					setTimeout(() => emit("nitro_output_finish_process", "task"), 2000);
+					setTimeout(() => emit("nitro_output_start_process", "task"), 2500);
+					setTimeout(() => emit("nitro_output_message", {task: "task", type: "start_process", message: "Doing stuff 2"}), 3000);
+					setTimeout(() => emit("nitro_output_finish_process", "task"), 3500);
+					setTimeout(() => emit("nitro_output_finish_task", "task"), 5000);
+				}}
+			>
+				Fooood
+			</button> */}
 			<br />
 			<br />
 			<br />
@@ -216,6 +233,8 @@ export default function Plugins() {
 }
 
 function Plugin(props: PluginProps) {
+	let navigate = useNavigate();
+
 	let [isEnabled, setIsEnabled] = createSignal(props.info.enabled);
 	let isDisabled = () => !isEnabled() && props.info.installed;
 
@@ -230,9 +249,9 @@ function Plugin(props: PluginProps) {
 					<div class="plugin-id">{props.info.id}</div>
 					<div class="cont plugin-official">
 						<Show when={props.isOfficial}>
-							<Tip tip="Official Nitrolaunch plugin" side="top" cont>
+							<div class="cont" data-tip="Official Nitrolaunch plugin">
 								<Icon icon={Check} size="1rem" />
-							</Tip>
+							</div>
 						</Show>
 					</div>
 				</div>
@@ -258,7 +277,7 @@ function Plugin(props: PluginProps) {
 									(e) => {
 										setInProgress(false);
 										errorToast(`Failed to update plugin: ${e}`);
-									}
+									},
 								);
 							}}
 							onStartEdit={props.onChangeVersion}
@@ -276,7 +295,7 @@ function Plugin(props: PluginProps) {
 										enabled: !isEnabled(),
 									}).then(() => {
 										successToast(
-											`Plugin ${isEnabled() ? "disabled" : "enabled"}`
+											`Plugin ${isEnabled() ? "disabled" : "enabled"}`,
 										);
 										setIsEnabled(!isEnabled());
 										props.setDirty();
@@ -287,9 +306,28 @@ function Plugin(props: PluginProps) {
 								enabledBg="var(--pluginbg)"
 							/>
 						</Tip>
+						<Show when={props.info.documentation != undefined}>
+							<Tip tip="Open Documentation" side="top">
+								<IconButton
+									icon={Book}
+									size="1.5rem"
+									color="var(--bg2)"
+									border="var(--bg3)"
+									hoverBorder="var(--bg4)"
+									hoverBackground="var(--bg3)"
+									onClick={() => {
+										if (props.isOfficial) {
+											navigate(`/docs/plugins/plugins/${props.info.id}`);
+										} else {
+											open(props.info.documentation!);
+										}
+									}}
+								/>
+							</Tip>
+						</Show>
 						<Tip tip="Update" side="top">
 							<IconButton
-								icon={Refresh}
+								icon={Upload}
 								size="1.5rem"
 								color="var(--bg2)"
 								border="var(--bg3)"
@@ -309,24 +347,15 @@ function Plugin(props: PluginProps) {
 										(e) => {
 											setInProgress(false);
 											errorToast(`Failed to update plugin: ${e}`);
-										}
+										},
 									);
 								}}
 							/>
 						</Tip>
 					</Show>
-					<Tip
-						tip={
-							props.info.installed
-								? "Uninstall"
-								: inProgress()
-								? "Installing..."
-								: "Install"
-						}
-						side="top"
-					>
-						<Switch>
-							<Match when={props.info.installed}>
+					<Switch>
+						<Match when={props.info.installed}>
+							<Tip tip="Uninstall" side="top">
 								<IconButton
 									icon={Trash}
 									size="1.5rem"
@@ -346,40 +375,39 @@ function Plugin(props: PluginProps) {
 											(e) => {
 												setInProgress(false);
 												errorToast(`Failed to uninstall plugin: ${e}`);
-											}
-										);
-									}}
-								/>
-							</Match>
-							<Match when={!props.info.installed}>
-								<IconButton
-									icon={Download}
-									size="1.5rem"
-									color="var(--bg2)"
-									border="var(--bg3)"
-									hoverBorder="var(--bg4)"
-									hoverBackground="var(--bg3)"
-									onClick={() => {
-										setInProgress(true);
-										invoke("install_plugin", {
-											plugin: props.info.id,
-											version: undefined,
-										}).then(
-											() => {
-												setInProgress(false);
-												successToast(`Plugin installed`);
-												props.updatePluginList();
 											},
-											(e) => {
-												setInProgress(false);
-												errorToast(`Failed to install plugin: ${e}`);
-											}
 										);
 									}}
 								/>
-							</Match>
-						</Switch>
-					</Tip>
+							</Tip>
+						</Match>
+						<Match when={!props.info.installed}>
+							<IconTextButton
+								icon={Download}
+								text={inProgress() ? "Installing..." : "Install"}
+								color="var(--plugin)"
+								bgColor="var(--pluginbg)"
+								size="1.5rem"
+								onClick={() => {
+									setInProgress(true);
+									invoke("install_plugin", {
+										plugin: props.info.id,
+										version: undefined,
+									}).then(
+										() => {
+											setInProgress(false);
+											successToast(`Plugin installed`);
+											props.updatePluginList();
+										},
+										(e) => {
+											setInProgress(false);
+											errorToast(`Failed to install plugin: ${e}`);
+										},
+									);
+								}}
+							/>
+						</Match>
+					</Switch>
 				</div>
 			</div>
 			<div class="cont" style="justify-content:flex-start;width:100%">
@@ -404,6 +432,7 @@ interface PluginInfo {
 	version?: string;
 	name?: string;
 	description?: string;
+	documentation?: string;
 	enabled: boolean;
 	installed: boolean;
 	is_official: boolean;

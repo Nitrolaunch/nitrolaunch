@@ -66,13 +66,10 @@ export default function Dropdown(props: DropdownProps) {
 		}
 	};
 
-	let allowEmpty = props.allowEmpty == undefined ? false : props.allowEmpty;
-
+	let allowEmpty = props.allowEmpty == true;
 	let zIndex = props.zIndex == undefined ? "" : `z-index:${props.zIndex}`;
-
 	let isSearchable =
 		props.isSearchable == undefined ? true : props.isSearchable;
-
 	let showArrow = props.showArrow == undefined ? true : props.showArrow;
 
 	let headerContents = () => {
@@ -89,7 +86,11 @@ export default function Dropdown(props: DropdownProps) {
 	// The height of the opened dropdown options
 	let openedHeight = () => {
 		if (props.options.length < 10.5) {
-			return `calc(${props.options.length} * var(--option-height) + 2 * var(--border))`;
+			let optionCount = props.options.length;
+			if (props.allowEmpty == true) {
+				optionCount++;
+			}
+			return `calc(${optionCount} * var(--option-height) + 2 * var(--border))`;
 		} else {
 			return "calc(10.5 * var(--option-height) + 2 * var(--border))";
 		}
@@ -117,9 +118,8 @@ export default function Dropdown(props: DropdownProps) {
 				onmouseleave={() => setIsGapHovered(false)}
 			></div>
 			<div
-				class={`cont shadow ${isOpen() ? "" : "bubble-hover"} dropdown-header ${
-					isOpen() ? "open" : ""
-				}`}
+				class={`cont shadow ${isOpen() ? "" : "bubble-hover"} dropdown-header ${isOpen() ? "open" : ""
+					}`}
 				onclick={() => {
 					if (props.onHeaderClick != undefined && !isOpen()) {
 						props.onHeaderClick();
@@ -131,9 +131,8 @@ export default function Dropdown(props: DropdownProps) {
 						}
 					}
 				}}
-				style={`${
-					isOpen() && isSearchable ? "justify-content:flex-start" : ""
-				}`}
+				style={`${isOpen() && isSearchable ? "justify-content:flex-start" : ""
+					}`}
 				onmouseenter={() => setIsHeaderHovered(true)}
 				onmouseleave={() => setIsHeaderHovered(false)}
 			>
@@ -199,18 +198,15 @@ export default function Dropdown(props: DropdownProps) {
 			</div>
 			<div
 				class="dropdown-options"
-				style={`${
-					!isOpen()
+				style={`${!isOpen()
 						? "max-height:0px;border-top-width:0px;border-bottom-width:0px;outline-width:0;transition: max-height 0.25s, border-width 0.25s step-end"
 						: `max-height:${openedHeight()}`
-				};${zIndex};${
-					props.optionsWidth != undefined ? `width:${props.optionsWidth};` : ""
-				}
-				${
-					props.optionsOffset != undefined
+					};${zIndex};${props.optionsWidth != undefined ? `width:${props.optionsWidth};` : ""
+					}
+				${props.optionsOffset != undefined
 						? `transform:translateX(${props.optionsOffset})`
 						: ""
-				}`}
+					}`}
 				onmouseenter={() => setAreOptionsHovered(true)}
 				onmouseleave={() => setAreOptionsHovered(false)}
 			>
@@ -246,7 +242,7 @@ export default function Dropdown(props: DropdownProps) {
 									isSelected={createMemo(() =>
 										props.selected != undefined && Array.isArray(props.selected)
 											? props.selected.includes(option.value!)
-											: props.selected == option.value
+											: props.selected == option.value,
 									)()}
 									isFirst={!allowEmpty && index() == 0}
 									isLast={index() == lastIndex()}
@@ -312,20 +308,16 @@ function DropdownOption(props: OptionProps) {
 
 	let contents = (
 		<div
-			class={`cont bubble-hover dropdown-option ${
-				props.class == undefined ? "" : props.class
-			} ${props.isSelected ? "selected" : ""} ${
-				props.isLast ? "last" : "not-last"
-			}`}
-			style={`color:${textColor()};background-color:${backgroundColor()};${
-				props.isFirst
+			class={`cont dropdown-option ${props.class == undefined ? "" : props.class
+				} ${props.isSelected ? "selected" : ""} ${props.isLast ? "last" : "not-last"
+				}`}
+			style={`color:${textColor()};background-color:${backgroundColor()};${props.isFirst
 					? "border-top-left-radius:var(--round2);border-top-right-radius:var(--round2)"
 					: ""
-			}${
-				props.isLast
+				}${props.isLast
 					? "border-bottom-left-radius:var(--round2);border-bottom-right-radius:var(--round2)"
 					: ""
-			}`}
+				}`}
 			onclick={() => {
 				if (props.option.isSelectable != false) {
 					props.onSelect(props.option.value);
@@ -342,10 +334,7 @@ function DropdownOption(props: OptionProps) {
 		return contents;
 	} else {
 		return (
-			<Tip
-				tip={<div style="color:var(--fg)">{props.option.tip}</div>}
-				side="right"
-			>
+			<Tip tip={props.option.tip} side="right">
 				{contents}
 			</Tip>
 		);
@@ -366,7 +355,7 @@ export interface Option {
 	contents: JSX.Element;
 	color?: string;
 	selectedTextColor?: string;
-	tip?: JSX.Element;
+	tip?: string;
 	isSelectable?: boolean;
 	backgroundColor?: string;
 }

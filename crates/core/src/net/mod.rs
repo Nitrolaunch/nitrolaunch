@@ -7,8 +7,7 @@ pub mod minecraft;
 
 // Re-export
 pub use nitro_net::download;
-
-use crate::io::config::IO_CONFIG;
+use nitro_shared::io::config::IO_CONFIG;
 
 /// Sensible open file descriptor limit for asynchronous transfers
 #[cfg(target_os = "windows")]
@@ -19,8 +18,8 @@ const FD_SENSIBLE_LIMIT: usize = 128;
 
 /// Get the sensible limit for asynchronous transfers
 pub fn get_transfer_limit() -> usize {
-	if let Some(env) = IO_CONFIG.get("transfer_limit") {
-		env.parse().unwrap_or_default()
+	if let Some(env) = IO_CONFIG.get_int("transfer_limit") {
+		env as usize
 	} else {
 		FD_SENSIBLE_LIMIT
 	}

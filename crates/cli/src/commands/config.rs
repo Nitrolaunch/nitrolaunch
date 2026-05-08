@@ -6,6 +6,7 @@ use anyhow::Context;
 use clap::Subcommand;
 use nitrolaunch::core::io::files::create_leading_dirs;
 use nitrolaunch::plugin::PluginManager;
+use nitrolaunch::shared::output::{MessageContents, NitroOutput};
 use nitrolaunch::{config::Config, io::paths::Paths};
 
 use std::{path::PathBuf, process::Command};
@@ -40,6 +41,9 @@ async fn edit(data: &mut CmdData<'_>) -> anyhow::Result<()> {
 
 	edit_text(path).context("Failed to edit config")?;
 
+	data.output
+		.display(MessageContents::Success("Changes saved".into()));
+
 	Ok(())
 }
 
@@ -49,6 +53,9 @@ pub async fn edit_plugins(data: &mut CmdData<'_>) -> anyhow::Result<()> {
 	PluginManager::create_default(&data.paths).context("Failed to create default config")?;
 
 	edit_text(path).context("Failed to edit config")?;
+
+	data.output
+		.display(MessageContents::Success("Changes saved".into()));
 
 	Ok(())
 }
@@ -67,6 +74,9 @@ async fn backup(data: &mut CmdData<'_>) -> anyhow::Result<()> {
 	std::fs::copy(config_path, backup_config_path).context("Failed to backup config file")?;
 	std::fs::copy(plugins_path, backup_plugins_path)
 		.context("Failed to backup plugin config file")?;
+
+	data.output
+		.display(MessageContents::Success("Backup created".into()));
 
 	Ok(())
 }

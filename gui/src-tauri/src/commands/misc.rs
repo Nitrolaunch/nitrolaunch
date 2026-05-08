@@ -1,15 +1,15 @@
 use std::{path::PathBuf, time::Duration};
 
-use crate::{data::InstanceIcon, output::LauncherOutput, State};
-use anyhow::{bail, Context};
+use crate::{State, data::InstanceIcon, output::LauncherOutput};
+use anyhow::{Context, bail};
 use nitrolaunch::{
 	core::{io::json_from_file, net::game_files::assets::AssetIndex},
-	instance::{setup::setup_core, update::manager::UpdateSettings},
+	instance::update::manager::UpdateSettings,
 	plugin_crate::hook::hooks::{
 		AddInstanceIcons, AddJavaTypes, AddSupportedLoaders, GetLoaderVersions,
 		GetLoaderVersionsArg, JavaTypeInfo,
 	},
-	shared::{id::InstanceID, loaders::Loader, minecraft::VersionType, output::NoOp, UpdateDepth},
+	shared::{UpdateDepth, id::InstanceID, loaders::Loader, minecraft::VersionType, output::NoOp},
 };
 
 use super::{fmt_err, load_config};
@@ -75,23 +75,26 @@ pub async fn get_minecraft_versions(
 			.context("Failed to load config"),
 	)?;
 
-	let mut core = fmt_err(
-		setup_core(
-			None,
-			&UpdateSettings {
-				depth: UpdateDepth::Shallow,
-				offline_auth: false,
-			},
-			&state.client,
-			&config.accounts,
-			&config.plugins,
-			&state.paths,
-			&mut NoOp,
-		)
-		.await,
+	let core = fmt_err(
+		config
+			.get_core(
+				None,
+				&UpdateSettings {
+					depth: UpdateDepth::Shallow,
+					offline_auth: false,
+				},
+				&state.client,
+				&config.plugins,
+				&state.paths,
+				&mut NoOp,
+			)
+			.await,
 	)?;
 
-	let version_manifest = fmt_err(core.get_version_manifest(None, &mut NoOp).await)?;
+	let version_manifest = fmt_err(
+		core.get_version_manifest(None, UpdateDepth::Shallow, &mut NoOp)
+			.await,
+	)?;
 
 	if releases_only {
 		Ok(version_manifest
@@ -127,23 +130,26 @@ pub async fn update_version_manifest(
 	let mut output = LauncherOutput::new(state.get_output(app_handle));
 	output.set_task("update_versions");
 
-	let mut core = fmt_err(
-		setup_core(
-			None,
-			&UpdateSettings {
-				depth: UpdateDepth::Full,
-				offline_auth: false,
-			},
-			&state.client,
-			&config.accounts,
-			&config.plugins,
-			&state.paths,
-			&mut output,
-		)
-		.await,
+	let core = fmt_err(
+		config
+			.get_core(
+				None,
+				&UpdateSettings {
+					depth: UpdateDepth::Full,
+					offline_auth: false,
+				},
+				&state.client,
+				&config.plugins,
+				&state.paths,
+				&mut output,
+			)
+			.await,
 	)?;
 
-	fmt_err(core.get_version_manifest(None, &mut output).await)?;
+	fmt_err(
+		core.get_version_manifest(None, UpdateDepth::Full, &mut output)
+			.await,
+	)?;
 
 	Ok(())
 }
@@ -252,9 +258,9 @@ pub async fn open_instance_dir(
 		return Err(format!("Instance {instance} does not exist"));
 	};
 
-	let _ = instance.ensure_dirs(&state.paths);
+	let _ = instance.ensure_dir();
 
-	let path = instance.get_dirs().get().game_dir.clone();
+	let path = instance.dir().map(|x| x.to_owned());
 	let Some(path) = path else {
 		return Err("Instance has no game dir".into());
 	};
@@ -348,9 +354,9 @@ pub async fn answer_yes_no_prompt(
 	Ok(())
 }
 
-/// Gets whether a custom scrollbar is needed for the frontend
+/// Gets whether Linux fixes are needed for the frontend
 #[tauri::command]
-pub async fn custom_scrollbar_needed() -> Result<bool, String> {
+pub async fn linux_fixes_needed() -> Result<bool, String> {
 	#[cfg(target_os = "linux")]
 	{
 		Ok(true)

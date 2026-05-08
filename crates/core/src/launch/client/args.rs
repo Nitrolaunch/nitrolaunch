@@ -1,4 +1,4 @@
-use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput};
+use nitro_shared::output::{MessageContents, NitroOutput};
 use nitro_shared::util::{ARCH_STRING, OS_STRING};
 use nitro_shared::versions::VersionPattern;
 
@@ -27,70 +27,59 @@ pub(crate) fn process_arg(arg: &ArgumentItem, params: &LaunchParameters) -> Vec<
 			for rule in &arg.rules {
 				let allowed = rule.action.is_allowed();
 
-				if let Some(os_name) = &rule.os.name {
-					if allowed != (OS_STRING == os_name.to_string()) {
-						return vec![];
-					}
+				if let Some(os_name) = &rule.os.name
+					&& allowed != (OS_STRING == os_name.to_string())
+				{
+					return vec![];
 				}
-				if let Some(os_arch) = &rule.os.arch {
-					if allowed != (ARCH_STRING == os_arch.to_string()) {
-						return vec![];
-					}
+				if let Some(os_arch) = &rule.os.arch
+					&& allowed != (ARCH_STRING == os_arch.to_string())
+				{
+					return vec![];
 				}
 
-				if let Some(has_custom_resolution) = &rule.features.has_custom_resolution {
-					if *has_custom_resolution && window.resolution.is_none() {
+				if let Some(has_custom_resolution) = &rule.features.has_custom_resolution
+					&& *has_custom_resolution
+					&& window.resolution.is_none()
+				{
+					return vec![];
+				}
+				if let Some(is_demo_user) = &rule.features.is_demo_user
+					&& *is_demo_user
+				{
+					let use_demo = match params.accounts.get_chosen_account() {
+						Some(account) => matches!(account.kind, AccountKind::Demo),
+						None => false,
+					};
+					if !use_demo {
 						return vec![];
 					}
 				}
-				if let Some(is_demo_user) = &rule.features.is_demo_user {
-					if *is_demo_user {
-						let use_demo = match params.accounts.get_chosen_account() {
-							Some(account) => matches!(account.kind, AccountKind::Demo),
-							None => false,
-						};
-						if !use_demo {
-							return vec![];
-						}
-					}
+				if let Some(quick_play_support) = &rule.features.has_quick_play_support
+					&& *quick_play_support
+					&& matches!(params.launch_config.quick_play, QuickPlayType::None)
+				{
+					return vec![];
 				}
-				if let Some(quick_play_support) = &rule.features.has_quick_play_support {
-					if *quick_play_support {
-						let uses_quick_play =
-							!matches!(params.launch_config.quick_play, QuickPlayType::None);
-						if !uses_quick_play {
-							return vec![];
-						}
-					}
+				if let Some(quick_play_singleplayer) = &rule.features.is_quick_play_singleplayer
+					&& *quick_play_singleplayer
+					&& !matches!(params.launch_config.quick_play, QuickPlayType::World { .. })
+				{
+					return vec![];
 				}
-				if let Some(quick_play_singleplayer) = &rule.features.is_quick_play_singleplayer {
-					if *quick_play_singleplayer {
-						let uses_quick_play =
-							matches!(params.launch_config.quick_play, QuickPlayType::World { .. });
-						if !uses_quick_play {
-							return vec![];
-						}
-					}
+				if let Some(quick_play_multiplayer) = &rule.features.is_quick_play_multiplayer
+					&& *quick_play_multiplayer
+					&& !matches!(
+						params.launch_config.quick_play,
+						QuickPlayType::Server { .. }
+					) {
+					return vec![];
 				}
-				if let Some(quick_play_multiplayer) = &rule.features.is_quick_play_multiplayer {
-					if *quick_play_multiplayer {
-						let uses_quick_play = matches!(
-							params.launch_config.quick_play,
-							QuickPlayType::Server { .. }
-						);
-						if !uses_quick_play {
-							return vec![];
-						}
-					}
-				}
-				if let Some(quick_play_realms) = &rule.features.is_quick_play_realms {
-					if *quick_play_realms {
-						let uses_quick_play =
-							matches!(params.launch_config.quick_play, QuickPlayType::Realm { .. });
-						if !uses_quick_play {
-							return vec![];
-						}
-					}
+				if let Some(quick_play_realms) = &rule.features.is_quick_play_realms
+					&& *quick_play_realms
+					&& !matches!(params.launch_config.quick_play, QuickPlayType::Realm { .. })
+				{
+					return vec![];
 				}
 			}
 
@@ -271,22 +260,16 @@ pub fn create_quick_play_args(
 				QuickPlayType::None => {}
 				QuickPlayType::World { .. } => {
 					if before_23w14a {
-						o.display(
-							MessageContents::Warning(
-								"World Quick Play has no effect before 23w14a (1.20)".into(),
-							),
-							MessageLevel::Important,
-						);
+						o.debug(MessageContents::Warning(
+							"World Quick Play has no effect before 23w14a (1.20)".into(),
+						));
 					}
 				}
 				QuickPlayType::Realm { .. } => {
 					if before_23w14a {
-						o.display(
-							MessageContents::Warning(
-								"Realm Quick Play has no effect before 23w14a (1.20)".into(),
-							),
-							MessageLevel::Important,
-						);
+						o.debug(MessageContents::Warning(
+							"Realm Quick Play has no effect before 23w14a (1.20)".into(),
+						));
 					}
 				}
 				QuickPlayType::Server { server, port } => {
