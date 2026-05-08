@@ -56,6 +56,8 @@ def weld_dir(dir: Path, ignore: list, mode: str):
 	}
 
 	packs = [str(unwelded_path.joinpath(x)) for x in os.listdir(unwelded_path)]
+	if len(packs) == 0:
+		return
 	
 	target_pack_path = dir.joinpath("Welded Packs.zip")
 	with run_weld(packs=packs,config=beet_config,directory=dir) as ctx:
@@ -92,12 +94,13 @@ def run():
 		set_result(hook)
 		return
 	
+	output_level = "debug" if hook == "update_world_files" else "important"
 	output("start_process")
 	output("message", {
 		"contents": {
 			"StartProcess": "Welding packs"
 		},
-		"level": "important"
+		"level": output_level
 	})
 
 	# Figure out the paths to load packs into
@@ -139,7 +142,7 @@ def run():
 		"contents": {
 			"Success": "Packs welded",
 		},
-		"level": "important"
+		"level": output_level
 	})
 	output("end_process")
 
