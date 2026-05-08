@@ -94,8 +94,11 @@ def run():
 		set_result(hook)
 		return
 	
-	output_level = "debug" if hook == "update_world_files" else "important"
-	output("start_process")
+	is_debug = hook == "update_world_files"
+	output_level = "debug" if is_debug else "important"
+
+	if not is_debug:
+		output("start_process")
 	output("message", {
 		"contents": {
 			"StartProcess": "Welding packs"
@@ -144,7 +147,8 @@ def run():
 		},
 		"level": output_level
 	})
-	output("end_process")
+	if not is_debug:
+		output("end_process")
 
 	set_result(hook)
 
