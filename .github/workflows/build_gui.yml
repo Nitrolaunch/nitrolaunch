@@ -29,6 +29,7 @@ jobs:
           path: |
             target
             ~/.cargo/git
+            ~/.cargo/registry
             ~/.cargo/bin
             ~/.cache/tauri
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
