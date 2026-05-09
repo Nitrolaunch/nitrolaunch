@@ -208,7 +208,7 @@ def main():
 	try:
 		run()
 	except Exception as e:
-		output("set_error", "Failed to weld packs:\n" + traceback.format_exception(e))
+		output("set_error", "Failed to weld packs:\n" + ''.join(traceback.format_exception(e)))
 
 if __name__ == "__main__":
 	main()
