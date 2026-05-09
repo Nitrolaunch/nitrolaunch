@@ -184,13 +184,15 @@ pub async fn generate(
 		if let Some(url) = version.downloads.datapack
 			&& !url.is_empty()
 		{
+			pkg_version.filename = Some(url.split('/').last().unwrap().into());
 			pkg_version.url = Some(url);
 			datapack.versions.push(pkg_version.clone());
 		}
-
+		
 		if let Some(url) = version.downloads.resourcepack
-			&& !url.is_empty()
+		&& !url.is_empty()
 		{
+			pkg_version.filename = Some(url.split('/').last().unwrap().into());
 			pkg_version.url = Some(url);
 			resourcepack.versions.push(pkg_version.clone());
 		}
