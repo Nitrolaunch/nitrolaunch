@@ -35,7 +35,7 @@ rustPlatform.buildRustPackage (finalAttrs: {
     name = "${finalAttrs.pname}-${finalAttrs.version}-npm-deps";
     src = "${finalAttrs.src}/${finalAttrs.npmRoot}";
     lockFile = "package-lock.json";
-    hash = "sha256-vszIlNiarQUKL+NX9NaekSSumbVyrWXPpBYZdFgf2XU=";
+    hash = "sha256-F84OSLQbqT4Vv0Dbo0zvN+0NWmQ6EiZgG0GNgcxkYCQ=";
   };
 
   npmRoot = "gui";
