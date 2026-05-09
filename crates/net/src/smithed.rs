@@ -4,6 +4,9 @@ use nitro_shared::pkg::{PackageCategory, PackageSearchParameters};
 use reqwest::{Client, StatusCode};
 use serde::{Deserialize, Serialize};
 
+/// API URL
+const API_URL: &str = "https://api.smithed.dev/v2";
+
 /// Get a Smithed pack from the API
 pub async fn get_pack(id: &str, client: &Client) -> anyhow::Result<Pack> {
 	let url = format!("{API_URL}/packs/{id}");
@@ -33,9 +36,6 @@ pub async fn get_pack_optional(id: &str, client: &Client) -> anyhow::Result<Opti
 		.map(Some)
 		.context("Failed to deserialize JSON")
 }
-
-/// API URL
-const API_URL: &str = "https://api.smithed.dev/v2";
 
 /// A Smithed pack
 #[derive(Serialize, Deserialize, Clone, Debug)]
