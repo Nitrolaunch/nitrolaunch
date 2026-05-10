@@ -11,6 +11,7 @@ use nitrolaunch::config::modifications::{ConfigModification, apply_modifications
 use nitrolaunch::config_crate::instance::InstanceConfig;
 use nitrolaunch::core::QuickPlayType;
 use nitrolaunch::instance::Instance;
+use nitrolaunch::instance::tracking::RunningInstanceRegistry;
 use nitrolaunch::instance::transfer::load_formats;
 use nitrolaunch::instance::update::manager::UpdateSettings;
 use nitrolaunch::instance::update::{InstanceUpdateContext, UpdateFacets};
@@ -123,6 +124,8 @@ pub enum InstanceSubcommand {
 		#[arg(short, long)]
 		output: Option<String>,
 	},
+	#[command(about = "See which instances are running")]
+	Status {},
 	#[command(about = "View logs for an instance")]
 	Logs {
 		/// The instance to view the logs of
@@ -201,6 +204,7 @@ pub async fn run(command: InstanceSubcommand, mut data: CmdData<'_>) -> anyhow::
 			extract(&mut data, instance, new_id).await
 		}
 		InstanceSubcommand::Logs { instance } => logs(&mut data, instance).await,
+		InstanceSubcommand::Status {} => status(&mut data).await,
 		InstanceSubcommand::External(args) => {
 			call_plugin_subcommand(args, Some("instance"), &mut data).await
 		}
@@ -875,6 +879,27 @@ async fn extract(
 
 	data.output
 		.display(MessageContents::Success("Changes saved".into()));
+
+	Ok(())
+}
+
+async fn status(data: &mut CmdData<'_>) -> anyhow::Result<()> {
+	let registry =
+		RunningInstanceRegistry::open(&data.paths).context("Failed to open registry")?;
+	let count = registry.iter_entries().count();
+	if count == 0 {
+		println!("No instances running");
+	} else {
+		cprintln!("<s><b>{count}</> instances running:");
+
+		for entry in registry.iter_entries() {
+			cprint!("{HYPHEN_POINT}<s,g>{}", entry.instance_id);
+			if let Some(account) = &entry.account {
+				cprint!(" as <b>{account}");
+			}
+			cprintln!(" [<m>{}</>]", entry.pid);
+		}
+	}
 
 	Ok(())
 }
