@@ -126,6 +126,14 @@ pub enum InstanceSubcommand {
 	},
 	#[command(about = "See which instances are running")]
 	Status {},
+	#[command(about = "Kill a running instance")]
+	Kill {
+		/// The ID of the instance to kill
+		instance: Option<String>,
+		/// The ID of the account that launched this instance
+		#[arg(short, long)]
+		account: Option<String>,
+	},
 	#[command(about = "View logs for an instance")]
 	Logs {
 		/// The instance to view the logs of
@@ -205,6 +213,7 @@ pub async fn run(command: InstanceSubcommand, mut data: CmdData<'_>) -> anyhow::
 		}
 		InstanceSubcommand::Logs { instance } => logs(&mut data, instance).await,
 		InstanceSubcommand::Status {} => status(&mut data).await,
+		InstanceSubcommand::Kill { instance, account } => kill(&mut data, instance, account).await,
 		InstanceSubcommand::External(args) => {
 			call_plugin_subcommand(args, Some("instance"), &mut data).await
 		}
@@ -884,8 +893,7 @@ async fn extract(
 }
 
 async fn status(data: &mut CmdData<'_>) -> anyhow::Result<()> {
-	let registry =
-		RunningInstanceRegistry::open(&data.paths).context("Failed to open registry")?;
+	let registry = RunningInstanceRegistry::open(&data.paths).context("Failed to open registry")?;
 	let count = registry.iter_entries().count();
 	if count == 0 {
 		println!("No instances running");
@@ -900,6 +908,29 @@ async fn status(data: &mut CmdData<'_>) -> anyhow::Result<()> {
 			cprintln!(" [<m>{}</>]", entry.pid);
 		}
 	}
+
+	Ok(())
+}
+
+async fn kill(
+	data: &mut CmdData<'_>,
+	instance: Option<String>,
+	account: Option<String>,
+) -> anyhow::Result<()> {
+	data.ensure_config(true).await?;
+	let config = data.config.get();
+
+	let instance = pick_instance(instance, &config)?;
+
+	let mut registry =
+		RunningInstanceRegistry::open(&data.paths).context("Failed to open registry")?;
+
+	registry.kill_instance(&instance, account.as_deref());
+
+	registry.write()?;
+
+	data.output
+		.display(MessageContents::Success("Instance killed".into()));
 
 	Ok(())
 }
