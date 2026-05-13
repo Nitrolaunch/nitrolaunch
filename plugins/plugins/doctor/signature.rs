@@ -1,4 +1,5 @@
 use nitro_shared::{
+	Side,
 	output::{MessageContents, NitroOutput},
 	util::DeserListOrSingle,
 };
@@ -22,10 +23,24 @@ pub struct Signature {
 	///
 	/// Each matcher also matches any characters in between. Think of them like a regex with a `*` between each entry.
 	pub matchers: Vec<DeserListOrSingle<String>>,
+	/// Game side this signature occurs on
+	#[serde(default)]
+	pub side: Option<Side>,
+	/// Operating systems this signature occurs on
+	#[serde(default)]
+	pub os: DeserListOrSingle<String>,
 }
 
 impl Signature {
-	pub fn matches(&self, log_file: &str) -> bool {
+	pub fn matches(&self, log_file: &str, side: Side, os: &str) -> bool {
+		if self.side.is_some_and(|x| x != side) {
+			return false;
+		}
+
+		if !self.os.is_empty() && !self.os.iter().any(|x| x == os) {
+			return false;
+		}
+
 		self.matchers
 			.iter()
 			.any(|x| matcher_matches(x.iter(), log_file))
@@ -53,6 +68,8 @@ fn matcher_matches<'a>(matcher: impl Iterator<Item = &'a String>, log_file: &str
 pub struct Diagnosis {
 	pub id: String,
 	pub ty: DiagnosisType,
+	/// Other diagnoses that this diagnosis extends or is more specific than
+	pub parents: DeserListOrSingle<String>,
 	#[serde(flatten)]
 	pub signature: Signature,
 	pub reasons: DeserListOrSingle<String>,
