@@ -71,6 +71,7 @@ members = [
 	"plugins/plugins/completions",
 	"plugins/plugins/config_split",
 	"plugins/plugins/custom_files",
+	"plugins/plugins/doctor",
 	"plugins/plugins/glfw_fix",
 	"plugins/plugins/graalvm",
 	"plugins/plugins/mojang_transfer",

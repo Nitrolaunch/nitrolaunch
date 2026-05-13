@@ -1,4 +1,4 @@
-use nitro_core::io::logs::{list_logs, read_log};
+use nitro_instance::logs::{list_logs, read_log};
 use nitro_plugin::hook::hooks::{
 	GetInstanceLog, GetInstanceLogArg, GetInstanceLogs, GetInstanceLogsArg,
 };

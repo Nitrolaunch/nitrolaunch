@@ -58,6 +58,7 @@ fn main() {
 	add_file!(zip, "plugins/plugins/config_split.md");
 	add_file!(zip, "plugins/plugins/custom_files.md");
 	add_file!(zip, "plugins/plugins/docs.md");
+	add_file!(zip, "plugins/plugins/doctor.md");
 	add_file!(zip, "plugins/plugins/extra_versions.md");
 	add_file!(zip, "plugins/plugins/gen_pkg.md");
 	add_file!(zip, "plugins/plugins/glfw_fix.md");

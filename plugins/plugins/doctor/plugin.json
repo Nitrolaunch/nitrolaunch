@@ -1,0 +1,13 @@
+{
+	"id": "doctor",
+	"name": "Doctor",
+	"description": "Detect, diagnose, and fix crashes and issues",
+	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/doctor",
+	"version": "v7",
+	"protocol_version": 3,
+	"hooks": {
+		"on_instance_stop": {
+			"wasm": true
+		}
+	}
+}

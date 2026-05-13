@@ -12,6 +12,7 @@ package.cross_platform: build.cross_platform
 	@rm -f release/completions-universal.zip
 	@rm -f release/config_split-universal.zip
 	@rm -f release/custom_files-universal.zip
+	@rm -f release/doctor-universal.zip
 	@rm -f release/extra_versions-universal.zip
 	@rm -f release/gamepad-universal.zip
 	@rm -f release/glfw_fix-universal.zip
@@ -47,6 +48,8 @@ package.cross_platform: build.cross_platform
 	
 	@zip -j release/custom_files-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_custom_files.wasm plugins/custom_files/plugin.json
 	@printf "@ nitro_plugin_custom_files.wasm\\n@=plugin.wasm\\n" | zipnote -w release/custom_files-universal.zip
+	@zip -j release/doctor-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_doctor.wasm plugins/doctor/plugin.json
+	@printf "@ nitro_plugin_doctor.wasm\\n@=plugin.wasm\\n" | zipnote -w release/doctor-universal.zip
 	@zip -j release/glfw_fix-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_glfw_fix.wasm plugins/glfw_fix/plugin.json
 	@printf "@ nitro_plugin_glfw_fix.wasm\\n@=plugin.wasm\\n" | zipnote -w release/glfw_fix-universal.zip
 	@zip -j release/graalvm-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_graalvm.wasm plugins/graalvm/plugin.json
@@ -194,6 +197,11 @@ install.docs:
 	@cargo install --path . --bin nitro_plugin_docs --locked --profile fast_release
 	@mkdir -p ~/.local/share/nitro/plugins/docs
 	@cat plugins/docs/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/docs/plugin.json
+
+install.doctor:
+	@cargo build -p nitro_plugin_doctor --release --target wasm32-wasip2
+	@cp -r plugins/doctor ~/.local/share/nitro/plugins
+	@cp -r ../target/wasm32-wasip2/release/nitro_plugin_doctor.wasm ~/.local/share/nitro/plugins/doctor/plugin.wasm
 	
 install.extra_versions:
 	@cp -r plugins/extra_versions ~/.local/share/nitro/plugins

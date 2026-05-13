@@ -14,6 +14,8 @@ use nitro_shared::Side;
 pub mod addon;
 /// Storing versions and content in an instance
 pub mod lock;
+/// Game logs
+pub mod logs;
 
 /// Gets the directory for game files on an instance from it's base directory (instances/foo)
 pub fn get_instance_dir(base_dir: &Path, side: Side) -> PathBuf {
