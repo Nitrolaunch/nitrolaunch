@@ -4,6 +4,7 @@ use nitro_core::{NitroCore, QuickPlayType};
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{Read, Write};
+use std::ops::DerefMut;
 use std::path::{Path, PathBuf};
 use std::process::ExitStatus;
 use std::time::Duration;
@@ -75,14 +76,15 @@ impl Instance {
 			ctx.output,
 			PreparingLaunch
 		)));
+		let mut section = ctx.output.get_section();
 
 		// Run pre-launch hooks
 		let results = ctx
 			.plugins
-			.call_hook(OnInstanceLaunch, &hook_arg, ctx.paths, ctx.output)
+			.call_hook(OnInstanceLaunch, &hook_arg, ctx.paths, section.deref_mut())
 			.await
 			.context("Failed to call on launch hook")?;
-		results.all_results(ctx.output).await?;
+		results.all_results(section.deref_mut()).await?;
 
 		if self.dir.is_some() && !self.config.custom_launch {
 			self.launch_standard(
@@ -92,7 +94,7 @@ impl Instance {
 				ctx.plugins,
 				settings,
 				ctx.accounts,
-				ctx.output,
+				section.deref_mut(),
 			)
 			.await
 		} else {
@@ -100,8 +102,14 @@ impl Instance {
 				.accounts
 				.get_chosen_account()
 				.map(|x| x.get_id().clone());
-			self.launch_custom(hook_arg, account, ctx.paths, ctx.plugins, ctx.output)
-				.await
+			self.launch_custom(
+				hook_arg,
+				account,
+				ctx.paths,
+				ctx.plugins,
+				section.deref_mut(),
+			)
+			.await
 		}
 	}
 
@@ -519,6 +527,10 @@ impl InstanceHandle {
 		paths: &Paths,
 		o: &mut impl NitroOutput,
 	) -> anyhow::Result<()> {
+		let mut process = o.get_process();
+		let msg = translate!(process, Stop);
+		process.display(MessageContents::StartProcess(msg));
+
 		// Remove the instance from the registry
 		let registry = RunningInstanceRegistry::open(paths);
 		if let Ok(mut registry) = registry {
@@ -528,14 +540,17 @@ impl InstanceHandle {
 
 		// Call on stop hooks
 		let mut results = plugins
-			.call_hook(OnInstanceStop, arg, paths, o)
+			.call_hook(OnInstanceStop, arg, paths, process.deref_mut())
 			.await
 			.context("Failed to call on stop hook")?;
 		while let Some(result) = results.next() {
-			if let Err(e) = result.result(o).await {
-				o.display(MessageContents::Error(e.to_string()));
+			if let Err(e) = result.result(process.deref_mut()).await {
+				process.display(MessageContents::Error(e.to_string()));
 			}
 		}
+
+		let msg = translate!(process, Stopped);
+		process.display(MessageContents::Success(msg));
 
 		Ok(())
 	}
