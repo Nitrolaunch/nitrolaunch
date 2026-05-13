@@ -2,7 +2,7 @@
 use std::os::unix::fs::PermissionsExt;
 use std::{
 	collections::HashSet,
-	fs::{File, Permissions},
+	fs::File,
 	path::{Path, PathBuf},
 	process::Command,
 };
@@ -44,13 +44,13 @@ impl NitroExecutableRegistry {
 
 	/// Writes the simple shell script for other applications to use
 	fn write_shell_script(&self) -> anyhow::Result<()> {
-		let Some(best_executable) = self.get_best_executable() else {
-			return Ok(());
-		};
-		let script = best_executable.to_shell_script();
-
 		#[cfg(any(target_os = "windows", target_family = "unix"))]
 		{
+			let Some(best_executable) = self.get_best_executable() else {
+				return Ok(());
+			};
+			let script = best_executable.to_shell_script();
+
 			#[cfg(target_os = "windows")]
 			let filename = "launch_instance.bat";
 			#[cfg(target_family = "unix")]
@@ -63,7 +63,7 @@ impl NitroExecutableRegistry {
 			let path = parent.join(filename);
 			std::fs::write(&path, script).context("Failed to write script")?;
 			#[cfg(target_family = "unix")]
-			std::fs::set_permissions(path, Permissions::from_mode(0o775))?;
+			std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o775))?;
 		}
 
 		Ok(())
@@ -150,6 +150,7 @@ impl NitroExecutable {
 		command
 	}
 
+	#[allow(dead_code)]
 	fn to_shell_script(&self) -> String {
 		match &self.client_id {
 			NitroClientId::Cli => {
