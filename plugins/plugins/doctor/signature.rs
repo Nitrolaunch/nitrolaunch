@@ -69,6 +69,7 @@ pub struct Diagnosis {
 	pub id: String,
 	pub ty: DiagnosisType,
 	/// Other diagnoses that this diagnosis extends or is more specific than
+	#[serde(default)]
 	pub parents: DeserListOrSingle<String>,
 	#[serde(flatten)]
 	pub signature: Signature,
