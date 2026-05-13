@@ -1,5 +1,161 @@
 [
 	{
+		"id": "wrong_java",
+		"ty": "crashable",
+		"matchers": [
+			[
+				"has been compiled by a more recent version",
+				"Java Runtime"
+			]
+		],
+		"reasons": "The incorrect version of Java is being used",
+		"fixes": "Report this issue to Nitrolaunch developers"
+	},
+	{
+		"id": "jvm_crash",
+		"ty": "crashable",
+		"matchers": [
+			"Could not create the Java Virtual Machine"
+		],
+		"reasons": [
+			"Invalid JVM arguments",
+			"Not enough memory allocated"
+		],
+		"fixes": [
+			"Verify custom JVM arguments are correct",
+			"Allocate more RAM for the game",
+			"Report this issue to Nitrolaunch developers"
+		]
+	},
+	{
+		"id": "oom",
+		"ty": "crashable",
+		"parents": "jvm_crash",
+		"matchers": [
+			"java.lang.OutOfMemoryError"
+		],
+		"reasons": "Not enough RAM was allocated",
+		"fixes": [
+			"Increase the min and max RAM allocations",
+			"Remove the set RAM allocations, and use the default ones instead",
+			"Use the `modded` preset from the Octane plugin"
+		]
+	},
+	{
+		"id": "flite",
+		"ty": "issue",
+		"matchers": [
+			"Failed to load library",
+			"libflite.so: cannot open shared object file"
+		],
+		"os": [
+			"linux",
+			"macos"
+		],
+		"side": "client",
+		"reasons": "The flite library is not installed on your system",
+		"fixes": "Install libflite using your system package manager"
+	},
+	{
+		"id": "windows_pixel_format",
+		"ty": "crashable",
+		"matchers": [
+			[
+				"org.lwjgl.LWJGLException",
+				"Pixel format not accelerated"
+			]
+		],
+		"side": "client",
+		"os": "windows",
+		"reasons": "Display Adapter or Remote Desktop error",
+		"fixes": "Install or update graphics drivers for your GPU"
+	},
+	{
+		"id": "amd_opengl",
+		"ty": "crashable",
+		"matchers": [
+			[
+				"EXCEPTION_ACCESS_VIOLATION (0xc0000005)",
+				"atio6axx.dll"
+			],
+			[
+				"atio6axx.dll",
+				"EXCEPTION_ACCESS_VIOLATION (0xc0000005)"
+			]
+		],
+		"os": "windows",
+		"side": "client",
+		"reasons": "AMD OpenGL driver crash",
+		"fixes": "Update or reinstall AMD graphics drivers"
+	},
+	{
+		"id": "nvidia_opengl",
+		"ty": "crashable",
+		"matchers": [
+			[
+				"EXCEPTION_ACCESS_VIOLATION (0xc0000005)",
+				"nvoglv64.dll"
+			],
+			[
+				"nvoglv64.dll",
+				"EXCEPTION_ACCESS_VIOLATION (0xc0000005)"
+			]
+		],
+		"os": "windows",
+		"side": "client",
+		"reasons": "Nvidia OpenGL driver crash",
+		"fixes": "Update or reinstall Nvidia graphics drivers"
+	},
+	{
+		"id": "x11_cursor_shape",
+		"ty": "issue",
+		"matchers": [
+			"X11: Standard cursor shape unavailable"
+		],
+		"side": "client",
+		"os": "linux",
+		"reasons": "WSL emulation",
+		"fixes": "Don't use WSL"
+	},
+	{
+		"id": "network_connection",
+		"ty": "issue",
+		"matchers": [
+			"Connection reset",
+			"Unknown host",
+			"Temporary failure in name resolution"
+		],
+		"reasons": "Network connection is unstable or incorrect",
+		"fixes": [
+			"Ensure you are connected to the internet",
+			"Make sure the server address is correct",
+			"Make sure the server is running",
+			"Check your firewall or router"
+		]
+	},
+	{
+		"id": "network_closed",
+		"ty": "issue",
+		"matchers": [
+			"java.io.IOException: An existing connection was forcibly closed"
+		],
+		"reasons": "Connection blocked by firewall",
+		"fixes": "Ensure your firewall allows connections from Minecraft, including on port 25565"
+	},
+	{
+		"id": "server_port",
+		"ty": "crashable",
+		"matchers": [
+			"Failed to bind to port",
+			"Address already in use: bind"
+		],
+		"reasons": "Another server is already running on the same port",
+		"fixes": [
+			"Stop or kill other Minecraft servers on your computer or network",
+			"If using a proxy, ensure that each server is using a different port, and not the same port as the proxy"
+		]
+	},
+	{
 		"id": "mixin_error",
 		"ty": "crashable",
 		"matchers": [
@@ -16,27 +172,93 @@
 		"fixes": [
 			"Check documentation for the mods you are using",
 			"Update your loader",
-			"Update your mods"
+			"Update your mods",
+			"Send your log to the Nitrolaunch Discord to help us give a more specific fix in the future"
 		]
 	},
 	{
-		"id": "flite",
-		"ty": "issue",
+		"id": "mc_method_missing",
+		"ty": "crashable",
 		"matchers": [
-			"Failed to load library",
-			"libflite.so: cannot open shared object file"
+			"java.lang.NoSuchMethodError: net.minecraft.class"
 		],
-		"reasons": "The flite library is not installed on your system",
-		"fixes": "Install libflite using your system package manager"
+		"reasons": "Mod is installed for the wrong Minecraft version",
+		"fixes": [
+			"Update Minecraft to a later version",
+			"Downgrade the version of the mod"
+		]
 	},
 	{
-		"id": "x11_cursor_shape",
+		"id": "duplicate_mods",
 		"ty": "issue",
 		"matchers": [
-			"X11: Standard cursor shape unavailable"
+			"DuplicateModsFoundException"
 		],
-		"reasons": "WSL emulation",
-		"fixes": "Don't use WSL"
+		"reasons": "The same mod is installed twice",
+		"fixes": [
+			"Remove the extra mod from the mods folder",
+			"Remove the mod package from your config and update",
+			"If the mod is in a dependency and bundled somewhere else, try using a suppress override to remove it, then update"
+		]
+	},
+	{
+		"id": "outdated_fabric",
+		"ty": "crashable",
+		"matchers": [
+			"requires fabricloader >="
+		],
+		"reasons": "Fabric Loader is too old for one of your mods",
+		"fixes": [
+			"Update the instance",
+			"Switch to a later version of Fabric Loader"
+		]
+	},
+	{
+		"id": "datapack_load_error",
+		"ty": "issue",
+		"matchers": [
+			"Errors in currently selected datapacks"
+		],
+		"reasons": "One of your datapacks is broken and preventing the world from loading",
+		"fixes": [
+			"Remove the datapack",
+			"Report the issue to the datapack developer"
+		]
+	},
+	{
+		"id": "packet_overflow",
+		"ty": "issue",
+		"matchers": [
+			"Packet too large"
+		],
+		"reasons": "Installed mods are adding too much data to the network for it to handle",
+		"fixes": [
+			"Install a mod that increases packet size",
+			"Remove any large mods with a lot of content"
+		]
+	},
+	{
+		"id": "client_mod_on_server",
+		"ty": "crashable",
+		"matchers": [
+			[
+				"Attempted to load class",
+				"invalid dist DEDICATED_SERVER"
+			],
+			"Mod resolution failed because the environment is disabled: CLIENT"
+		],
+		"side": "server",
+		"reasons": "A mod is installed that only works on clients",
+		"fixes": "Remove the mod"
+	},
+	{
+		"id": "client_server_mod_mismatch",
+		"ty": "issue",
+		"matchers": [
+			"io.netty.handler.codec.DecoderException"
+		],
+		"reasons": "Mods do not match between client and server",
+		"fixes": "Check that mods and versions are all the same"
 	},
 	{
 		"id": "owo_lib_cardinal_components",
@@ -54,6 +276,7 @@
 	{
 		"id": "farmers_delight_natures_delight",
 		"ty": "crashable",
+		"parents": "mixin_error",
 		"matchers": [
 			"Mixin transformation of vectorwing.farmersdelight.common.block.RichSoilBlock failed"
 		],

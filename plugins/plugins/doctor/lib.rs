@@ -1,8 +1,9 @@
 use std::path::PathBuf;
 
-use nitro_plugin::api::wasm::WASMPlugin;
 use nitro_plugin::api::wasm::output::WASMPluginOutput;
+use nitro_plugin::api::wasm::{WASMPlugin, sys::get_os_string};
 use nitro_plugin::nitro_wasm_plugin;
+use nitro_shared::Side;
 use nitro_shared::output::{MessageContents, NitroOutput};
 
 use crate::signature::Diagnosis;
@@ -27,7 +28,7 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 			return Ok(());
 		};
 
-		let diagnoses = diagnose(&log_file);
+		let diagnoses = diagnose(&log_file, arg.side.unwrap_or_default());
 
 		if !diagnoses.is_empty() {
 			let mut o = WASMPluginOutput::new();
@@ -43,13 +44,15 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 	Ok(())
 }
 
-fn diagnose(log_file: &str) -> Vec<Diagnosis> {
+fn diagnose(log_file: &str, side: Side) -> Vec<Diagnosis> {
 	let diagnoses: Vec<Diagnosis> =
 		serde_json::from_slice(include_bytes!("signatures.json")).unwrap();
 
+	let os = get_os_string();
+
 	let mut out = Vec::new();
 	for diagnosis in diagnoses {
-		if diagnosis.signature.matches(log_file) {
+		if diagnosis.signature.matches(log_file, side, &os) {
 			out.push(diagnosis);
 		}
 	}
