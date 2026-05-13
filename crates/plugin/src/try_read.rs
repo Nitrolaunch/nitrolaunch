@@ -61,10 +61,10 @@ where
 /// and EoF will not be returned.
 pub struct TryLineReader<R> {
 	reader: R,
-	/// Buffer for the current line
-	current_line: String,
 	/// Buffer for reading
 	read_buf: Vec<u8>,
+	/// Decoder for lines
+	decoder: LineDecoder,
 }
 
 impl<R: TryReadExt + Unpin> TryLineReader<R> {
@@ -72,8 +72,8 @@ impl<R: TryReadExt + Unpin> TryLineReader<R> {
 	pub fn new(reader: R) -> Self {
 		Self {
 			reader,
-			current_line: String::new(),
 			read_buf: vec![0; BUF_SIZE],
+			decoder: LineDecoder::new(),
 		}
 	}
 
@@ -84,8 +84,32 @@ impl<R: TryReadExt + Unpin> TryLineReader<R> {
 			return Ok(Some(Vec::new()));
 		};
 
+		self.decoder.decode(&self.read_buf, result_len)
+	}
+}
+
+/// Decodes lines from bytes chunks written into it. Handles incomplete lines across writes.
+pub struct LineDecoder {
+	/// Buffer for the current line
+	current_line: String,
+}
+
+impl LineDecoder {
+	/// Creates a new LineDecoder
+	pub fn new() -> Self {
+		Self {
+			current_line: String::new(),
+		}
+	}
+
+	/// Decode lines from a buffer and number of bytes read into the buffer
+	pub fn decode<'this>(
+		&'this mut self,
+		buffer: &'this [u8],
+		bytes_read: usize,
+	) -> anyhow::Result<Option<Vec<Cow<'this, str>>>> {
 		// EoF
-		if result_len == 0 {
+		if bytes_read == 0 {
 			// Handle the last line
 			if !self.current_line.is_empty() {
 				let last_line = self.current_line.clone();
@@ -96,7 +120,7 @@ impl<R: TryReadExt + Unpin> TryLineReader<R> {
 		}
 
 		// Split the read bytes into lines, combining the first line with the contents of the line buf and putting the last partial line into the line buf
-		let read_string = std::str::from_utf8(&self.read_buf[0..result_len])?;
+		let read_string = std::str::from_utf8(&buffer[0..bytes_read])?;
 
 		// No newlines yet, just add to the current line
 		if !read_string.contains("\n") {

@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::io::Write;
 use std::time::Duration;
 
 use anyhow::Context;
@@ -416,6 +417,38 @@ fn format_loading_spinner(stage: u8) -> String {
 	};
 
 	cformat!("<s>[</><y>{icon}</><s>]</>")
+}
+
+/// Function for outputting an instance stdout line formatted
+pub fn instance_stdout_line(line: &str) {
+	let line = format_instance_stdout_line(line);
+
+	let _ = writeln!(std::io::stdout(), "{line}");
+}
+
+/// Formats an output line from an instance
+pub fn format_instance_stdout_line(line: &str) -> Cow<'_, str> {
+	if line.starts_with('\u{001b}') {
+		Cow::Borrowed(line)
+	} else {
+		// Category colors
+		let line = line.replacen("/INFO", &cformat!("/<k!,s>INFO"), 1);
+		let line = line.replacen("/WARN", &cformat!("/<y,s>WARN"), 1);
+		let line = line.replacen("/ERROR", &cformat!("/<r,s>ERROR"), 1);
+
+		// Timestamp
+		let line = if line.starts_with('[') {
+			if let Some(end) = line.find(']') {
+				cformat!("<k!>{}</>{}", &line[0..end + 1], &line[end + 1..])
+			} else {
+				line
+			}
+		} else {
+			line
+		};
+
+		Cow::Owned(line)
+	}
 }
 
 /// Wraps a message based on the terminal width

@@ -162,6 +162,7 @@ impl Instance {
 			hook_arg,
 			stdout: tokio::io::stdout(),
 			is_silent: false,
+			output_fn: None,
 			account: selected_account.clone(),
 			inner: InstanceHandleInner::Standard {
 				inner: handle,
@@ -221,6 +222,7 @@ impl Instance {
 			hook_arg,
 			stdout: tokio::io::stdout(),
 			is_silent: false,
+			output_fn: None,
 			account: selected_account.clone(),
 			inner: InstanceHandleInner::Plugin {
 				pid: result.pid,
@@ -282,6 +284,8 @@ pub struct InstanceHandle {
 	stdout: Stdout,
 	/// Whether to redirect stdin and stdout to the process stdin and stdout
 	is_silent: bool,
+	/// Custom function when outputting to stdout
+	output_fn: Option<Box<dyn FnMut(&[u8]) + 'static>>,
 	/// The account that launched this instance
 	account: Option<String>,
 	/// Inner implementation
@@ -361,7 +365,11 @@ impl InstanceHandle {
 
 				// This is non-blocking as the stdout file will have an EoF
 				if let Ok(bytes_read) = inst_stdout.read(&mut stdio_buf) {
-					let _ = self.stdout.write(&stdio_buf[0..bytes_read]).await;
+					if let Some(output_fn) = &mut self.output_fn {
+						output_fn(&stdio_buf[0..bytes_read]);
+					} else {
+						let _ = self.stdout.write_all(&stdio_buf[0..bytes_read]).await;
+					}
 				}
 			}
 
@@ -466,6 +474,11 @@ impl InstanceHandle {
 	/// Set whether the stdio of the instance should be redirected to this process
 	pub fn silence_output(&mut self, is_silent: bool) {
 		self.is_silent = is_silent;
+	}
+
+	/// Sets the output function for this handle to handle stdout in a custom way
+	pub fn set_output_fn(&mut self, f: Box<dyn FnMut(&[u8]) + 'static>) {
+		self.output_fn = Some(f);
 	}
 
 	/// Get the stdout file path for this instance
