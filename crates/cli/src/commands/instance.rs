@@ -16,7 +16,9 @@ use nitrolaunch::instance::transfer::load_formats;
 use nitrolaunch::instance::update::manager::UpdateSettings;
 use nitrolaunch::instance::update::{InstanceUpdateContext, UpdateFacets};
 use nitrolaunch::io::lock::Lockfile;
+use nitrolaunch::plugin_crate::try_read::LineDecoder;
 use nitrolaunch::shared::id::InstanceID;
+use nitrolaunch::shared::io::config::IO_CONFIG;
 use nitrolaunch::shared::java_args::MemoryNum;
 use nitrolaunch::shared::output::{MessageContents, NoOp};
 use nitrolaunch::shared::util::to_string_json;
@@ -29,7 +31,10 @@ use reqwest::Client;
 use super::CmdData;
 use crate::commands::call_plugin_subcommand;
 use crate::commands::config::edit_temp_file;
-use crate::output::{HYPHEN_POINT, INSTANCE, LOADER, PACKAGE, VERSION, icons_enabled};
+use crate::output::{
+	HYPHEN_POINT, INSTANCE, LOADER, PACKAGE, VERSION, format_instance_stdout_line, icons_enabled,
+	instance_stdout_line,
+};
 use crate::prompt::{
 	pick_instance, pick_instance_id, pick_instances, pick_loader, pick_minecraft_version, pick_side,
 };
@@ -385,7 +390,7 @@ pub async fn launch(
 		core: &core,
 	};
 
-	let instance_handle = instance
+	let mut instance_handle = instance
 		.launch(launch_settings, &mut ctx)
 		.await
 		.context("Instance failed to launch")?;
@@ -396,6 +401,28 @@ pub async fn launch(
 	lock.finish(&data.paths)?;
 	std::mem::drop(lock);
 	std::mem::drop(client);
+
+	let format_output = IO_CONFIG.get_bool("format_instance_output").unwrap_or(true);
+
+	if format_output {
+		let mut decoder = LineDecoder::new();
+		let output_fn = move |chunk: &[u8]| {
+			if chunk.is_empty() {
+				return;
+			}
+
+			let lines = decoder.decode(chunk, chunk.len());
+			let Ok(Some(lines)) = lines else {
+				return;
+			};
+
+			for line in lines {
+				instance_stdout_line(&*line);
+			}
+		};
+
+		instance_handle.set_output_fn(Box::new(output_fn));
+	}
 
 	instance_handle
 		.wait(&plugins, &data.paths, data.output)
@@ -798,6 +825,7 @@ async fn logs(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()> 
 				.get_log(&log, &config.plugins, &data.paths, data.output)
 				.await
 			{
+				let log_text = log_text.lines().map(format_instance_stdout_line).join("\n");
 				cprintln!("<s>Log <g>{log}");
 				println!("{log_text}");
 			} else {

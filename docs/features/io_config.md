@@ -43,5 +43,8 @@ Enables or disables icons for the CLI. Defaults to false.
 ### `cli_wrap` - `boolean`
 Enables or disables text wrapping for the CLI. Defaults to true.
 
+### `format_instance_output`
+Enables ANSI color formatting for the output of an instance in the CLI, making reading logs easier. Defaults to true.
+
 ### `disable_dmabuf` - `boolean`
 Can fix Linux GUI rendering issues like white screens, but decreases performance a lot. Defaults to false.
