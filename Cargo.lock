@@ -5143,6 +5143,7 @@ dependencies = [
  "anyhow",
  "async-trait",
  "itertools 0.11.0",
+ "libflate",
  "nitro_net",
  "nitro_shared",
  "schemars 0.8.22",
@@ -5338,6 +5339,20 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "nitro_config",
+ "nitro_plugin",
+ "nitro_shared",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "nitro_plugin_doctor"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "itertools 0.11.0",
+ "nitro_config",
+ "nitro_instance",
  "nitro_plugin",
  "nitro_shared",
  "serde",

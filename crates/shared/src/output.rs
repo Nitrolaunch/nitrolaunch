@@ -325,6 +325,16 @@ pub enum MessageContents {
 }
 
 impl MessageContents {
+	/// Constructs a property message
+	pub fn property(property: impl ToString, value: MessageContents) -> Self {
+		Self::Property(property.to_string(), Box::new(value))
+	}
+
+	/// Constructs an associated message
+	pub fn associated(property: MessageContents, value: MessageContents) -> Self {
+		Self::Associated(Box::new(property), Box::new(value))
+	}
+
 	/// Message formatting for the default implementation
 	pub fn default_format(self) -> String {
 		match self {

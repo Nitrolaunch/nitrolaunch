@@ -329,5 +329,13 @@
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Get the skin of other players"
+	},
+	"doctor": {
+		"id": "doctor",
+		"name": "Doctor",
+		"version": "v7",
+		"github_owner": "Nitrolaunch",
+		"github_repo": "plugins",
+		"description": "Detect, diagnose, and fix crashes and issues"
 	}
 }

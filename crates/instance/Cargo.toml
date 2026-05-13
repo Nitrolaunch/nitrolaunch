@@ -21,6 +21,7 @@ net = ["dep:tokio", "dep:nitro_net"]
 anyhow = { workspace = true }
 async-trait = { workspace = true }
 itertools = { workspace = true }
+libflate = { workspace = true }
 schemars = { workspace = true, optional = true }
 serde = { workspace = true }
 serde_json = { workspace = true }

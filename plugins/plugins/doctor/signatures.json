@@ -1,0 +1,63 @@
+[
+	{
+		"id": "mixin_error",
+		"ty": "crashable",
+		"matchers": [
+			[
+				"Mixin transformation",
+				"failed"
+			]
+		],
+		"reasons": [
+			"Incompatible mods are installed",
+			"Incompatible mod versions are installed",
+			"You are using the wrong version of the Fabric or Quilt loader"
+		],
+		"fixes": [
+			"Check documentation for the mods you are using",
+			"Update your loader",
+			"Update your mods"
+		]
+	},
+	{
+		"id": "flite",
+		"ty": "issue",
+		"matchers": [
+			"Failed to load library",
+			"libflite.so: cannot open shared object file"
+		],
+		"reasons": "The flite library is not installed on your system",
+		"fixes": "Install libflite using your system package manager"
+	},
+	{
+		"id": "x11_cursor_shape",
+		"ty": "issue",
+		"matchers": [
+			"X11: Standard cursor shape unavailable"
+		],
+		"reasons": "WSL emulation",
+		"fixes": "Don't use WSL"
+	},
+	{
+		"id": "owo_lib_cardinal_components",
+		"ty": "crashable",
+		"matchers": [
+			[
+				"java.lang.RuntimeException",
+				"Could not execute entrypoint stage",
+				"cardinal-components-entity"
+			]
+		],
+		"reasons": "owo-lib on alpha version",
+		"fixes": "Downgrade owo-lib to version 0.12.15.4"
+	},
+	{
+		"id": "farmers_delight_natures_delight",
+		"ty": "crashable",
+		"matchers": [
+			"Mixin transformation of vectorwing.farmersdelight.common.block.RichSoilBlock failed"
+		],
+		"reasons": "Conflict between Farmer's Delight Refabricated 3.3.2 - 1.21.1 and Nature's Delight 1.12-1.21.1",
+		"fixes": "Downgrade Farmer's Delight to version 3.2.0"
+	}
+]
