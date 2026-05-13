@@ -82,9 +82,7 @@ impl Addon {
 			if let Some(parent) = target.parent() {
 				let _ = std::fs::create_dir_all(parent);
 			}
-			if target.exists() {
-				let _ = std::fs::remove_file(target);
-			}
+			let _ = std::fs::remove_file(target);
 			let single_result = update_link(source, target);
 			if result.is_ok() {
 				result = single_result;
