@@ -50,28 +50,31 @@ pub enum LinkMethod {
 
 /// Creates a new link if it does not exist
 pub fn update_link(path: &Path, link: &Path) -> std::io::Result<()> {
-	let method = get_link_method();
+	update_link_with_method(path, link, get_link_method())
+}
 
-	match method {
-		LinkMethod::Hard => {
-			if !link.exists() {
-				std::fs::hard_link(path, link)?;
-			}
-		}
-		LinkMethod::Soft => {
-			if !link.exists() {
-				#[allow(deprecated)]
-				std::fs::soft_link(path, link)?;
-			}
-		}
-		LinkMethod::Copy => {
-			if !link.exists() {
-				std::fs::copy(path, link)?;
-			}
-		}
+/// Creates a new link if it does not exist with the given method
+pub fn update_link_with_method(
+	path: &Path,
+	link: &Path,
+	method: LinkMethod,
+) -> std::io::Result<()> {
+	if link.exists() {
+		return Ok(());
 	}
 
-	Ok(())
+	match method {
+		LinkMethod::Hard => std::fs::hard_link(path, link),
+		LinkMethod::Soft =>
+		{
+			#[allow(deprecated)]
+			std::fs::soft_link(path, link)
+		}
+		LinkMethod::Copy => {
+			std::fs::copy(path, link)?;
+			Ok(())
+		}
+	}
 }
 
 /// Gets the size of a directory recursively
