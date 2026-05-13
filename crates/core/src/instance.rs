@@ -138,6 +138,7 @@ impl Instance {
 							.await
 							.context("Failed to remove existing server.jar")?;
 					}
+
 					if params.disable_hardlinks {
 						tokio::fs::copy(&jar_path, &new_jar_path)
 							.await
