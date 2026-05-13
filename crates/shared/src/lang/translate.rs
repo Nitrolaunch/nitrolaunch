@@ -53,6 +53,8 @@ define_translations! {
 	StartUpdatingInstance, "When starting to update an instance", "Updating instance %inst";
 	PreparingLaunch, "When preparing to launch the game", "Preparing to launch";
 	Launch, "When launching the game", "Launching!";
+	Stop, "When stopping the game", "Stopping instance";
+	Stopped, "When finishing stopping the game", "Stopped";
 	CoreRepoName, "Name of the core repo", "Core";
 	CoreRepoDescription, "Description of the core repo", "The built-in set of packages";
 	RepoVersionWarning, "Warning when a remote repo version is too high", "Minimum Nitrolaunch version for repository %repo is higher than current installation";
@@ -126,7 +128,7 @@ pub fn replace_placeholders(string: &str, placeholder_name: &str, value: &str) -
 #[macro_export]
 macro_rules! translate {
 	($o:expr, $key:ident) => {
-		$o.translate($crate::lang::translate::TranslationKey::$key).into()
+		$o.translate($crate::lang::translate::TranslationKey::$key).to_string()
 	};
 
 	($o:expr, $key:ident, $($placeholder:literal = $value:expr),+) => {
