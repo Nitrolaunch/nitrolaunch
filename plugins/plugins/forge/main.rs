@@ -1,10 +1,12 @@
-use std::{ops::DerefMut, path::PathBuf};
+use std::path::PathBuf;
 
 use anyhow::{Context, bail};
+use nitro_core::io::{json_from_file, json_to_file};
 use nitro_mods::forge::{self, Mode};
 use nitro_net::neoforge;
 use nitro_plugin::{api::executable::ExecutablePlugin, hook::hooks::OnInstanceSetupResult};
 use nitro_shared::{
+	UpdateDepth,
 	loaders::Loader,
 	output::{MessageContents, NitroOutput},
 };
@@ -25,22 +27,29 @@ fn main() -> anyhow::Result<()> {
 		}
 
 		let mode = Mode::NeoForge;
-
 		let internal_dir = PathBuf::from(arg.internal_dir);
-
 		let client = nitro_net::download::Client::new();
-
 		let runtime = tokio::runtime::Runtime::new()?;
-
-		let mut process = ctx.get_output().get_process();
-
-		process.display(MessageContents::StartProcess(format!("Updating {mode}")));
-
 		let loader_version;
 
 		let result = match mode {
 			Mode::NeoForge => {
-				let versions = runtime.block_on(neoforge::get_versions(&client))?;
+				let versions_path = internal_dir.join("forge/neoforge_versions.json");
+				let versions = if arg.update_depth < UpdateDepth::Full && versions_path.exists() {
+					json_from_file(&versions_path)?
+				} else {
+					let mut process = ctx.get_output().get_process();
+					process.display(MessageContents::StartProcess(format!(
+						"Fetching {mode} versions"
+					)));
+
+					let versions = runtime.block_on(neoforge::get_versions(&client))?;
+					json_to_file(versions_path, &versions)?;
+
+					process.display(MessageContents::Success(format!("{mode} versions fetched")));
+
+					versions
+				};
 
 				let version =
 					neoforge::get_latest_neoforge_version(&versions, &arg.version_info.version)
@@ -58,13 +67,11 @@ fn main() -> anyhow::Result<()> {
 						mode,
 						version,
 						&PathBuf::from(arg.jvm_path),
-						process.deref_mut(),
+						ctx.get_output(),
 					))
 					.context("Failed to install NeoForge")?
 			}
 		};
-
-		process.display(MessageContents::Success(format!("{mode} updated")));
 
 		Ok(OnInstanceSetupResult {
 			classpath_extension: result.classpath.get_entries().to_vec(),
