@@ -1,5 +1,3 @@
-#[cfg(target_family = "unix")]
-use std::os::unix::fs::MetadataExt;
 use std::{
 	collections::{HashMap, HashSet},
 	path::Path,
@@ -9,6 +7,7 @@ use anyhow::Context;
 use clap::Parser;
 use color_print::cprintln;
 use nitro_core::{io::json_from_file, net::game_files::assets::AssetIndex};
+use nitro_instance::{addon::storage::get_sha256_addon_path, lock::InstanceLockfile};
 use nitro_plugin::api::executable::ExecutablePlugin;
 use nitro_shared::{io::dir_size, java_args::MemoryNum};
 
@@ -128,60 +127,60 @@ async fn cleanup_version(data_dir: &Path, version: &str) -> anyhow::Result<()> {
 }
 
 async fn cleanup_addons(data_dir: &Path) -> anyhow::Result<()> {
-	let mut removed_count = 0;
-	let mut removed_size = 0;
+	// First collect all hashed sources from lockfiles
+	let mut lockfile_paths = Vec::new();
 
-	fn walk_function(
-		dir: &Path,
-		removed_count: &mut usize,
-		removed_size: &mut usize,
-	) -> anyhow::Result<()> {
-		let read = dir.read_dir()?;
-		for entry in read {
-			let Ok(entry) = entry else {
-				continue;
-			};
+	let backup_lock_dir = data_dir.join("internal/lock/instances");
+	if backup_lock_dir.exists() {
+		for entry in backup_lock_dir.read_dir()? {
+			let entry = entry?;
+			lockfile_paths.push(entry.path());
+		}
+	}
 
-			if entry.file_type()?.is_dir() {
-				if entry.file_name().to_string_lossy() != "sha256" {
-					walk_function(&entry.path(), removed_count, removed_size)?;
-				}
-			} else {
-				let Ok(meta) = std::fs::metadata(entry.path()) else {
-					continue;
-				};
+	for entry in data_dir.join("instances").read_dir()? {
+		let entry = entry?;
 
-				let mut should_remove = false;
-
-				#[cfg(target_family = "unix")]
-				{
-					// If the file only has one link then it is unused
-					if meta.nlink() == 1 {
-						should_remove = true;
-					}
-				}
-				#[cfg(not(target_family = "unix"))]
-				{
-					should_remove = true;
-				}
-				if should_remove {
-					tokio::spawn(tokio::fs::remove_file(entry.path()));
-					*removed_count += 1;
-					*removed_size += meta.len() as usize;
-				}
+		for possible_dir in [".minecraft", "."] {
+			let lockfile = entry.path().join(possible_dir).join("nitro_lock.json");
+			if lockfile.exists() {
+				lockfile_paths.push(lockfile);
 			}
 		}
+	}
 
-		Ok(())
+	let mut used_addons = HashSet::new();
+	let addons_dir = data_dir.join("internal/addons");
+	for path in lockfile_paths {
+		let lockfile = InstanceLockfile::open(&path)?;
+		for addon in lockfile.get_addons() {
+			if let Some(hash) = &addon.hashes.sha256 {
+				used_addons.insert(get_sha256_addon_path(&addons_dir, hash));
+			}
+		}
 	}
 
 	cprintln!("<s>Removing addons...");
 
-	walk_function(
-		&data_dir.join("internal/addons"),
-		&mut removed_count,
-		&mut removed_size,
-	)?;
+	let mut removed_count = 0;
+	let mut removed_size = 0;
+
+	for addon_dir in ["sha256"] {
+		let addon_dir = data_dir.join("internal/addons").join(addon_dir);
+
+		for entry in addon_dir.read_dir()? {
+			let entry = entry?;
+			let path = entry.path();
+			if !used_addons.contains(&path) {
+				if let Ok(meta) = entry.metadata() {
+					removed_size += meta.len() as usize;
+				}
+				removed_count += 1;
+
+				let _ = tokio::fs::remove_file(path).await;
+			}
+		}
+	}
 
 	cprintln!("<s><g>Done.");
 	cprintln!(

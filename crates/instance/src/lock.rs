@@ -182,6 +182,11 @@ impl InstanceLockfile {
 		self.contents.loader_version = version;
 	}
 
+	/// Get the locked addons
+	pub fn get_addons(&self) -> impl Iterator<Item = &LockfileAddon> {
+		self.contents.addons.iter()
+	}
+
 	/// Get the locked packages
 	pub fn get_packages(&self) -> &HashMap<String, LockfilePackage> {
 		&self.contents.packages
