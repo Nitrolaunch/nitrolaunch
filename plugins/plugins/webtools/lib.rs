@@ -228,4 +228,5 @@ define_webtools! {
 	Chunkbase, "Chunkbase", "chunkbase", "https://chunkbase.com", "Tool for mapping out Minecraft worlds", "https://chunkbase.com/favicon.ico", false;
 	Wiki, "Minecraft Wiki", "wiki", "https://minecraft.wiki", "The official source for Minecraft information", "https://minecraft.wiki/images/wiki.png", false;
 	McStacker, "MCStacker", "mcstacker", "https://mcstacker.net/", "Minecraft command generator", "https://mcstacker.net/favicon.ico", true;
+	Misode, "Misode", "misode", "https://misode.github.io/", "Tools and generators for datapacks", "https://misode.github.io/favicon.ico", true;
 }
