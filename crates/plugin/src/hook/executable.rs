@@ -24,6 +24,8 @@ use crate::{
 	try_read::TryLineReader,
 };
 
+const READ_BUF_SIZE: usize = 32768;
+
 /// Calls an executable hook handler
 pub(crate) async fn call_executable<H: Hook + Sized>(
 	hook: &H,
@@ -171,7 +173,7 @@ impl<H: Hook> ExecutableHookHandle<H> {
 				let mut child = command.spawn().context("Failed to spawn command")?;
 
 				let stdout = child.stdout.take().unwrap();
-				let stdout = TryLineReader::new(stdout);
+				let stdout = TryLineReader::new(stdout, READ_BUF_SIZE);
 
 				let stdin = child.stdin.take().unwrap();
 
