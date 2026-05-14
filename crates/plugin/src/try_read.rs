@@ -69,10 +69,10 @@ pub struct TryLineReader<R> {
 
 impl<R: TryReadExt + Unpin> TryLineReader<R> {
 	/// Create a new TryLineReader
-	pub fn new(reader: R) -> Self {
+	pub fn new(reader: R, buf_size: usize) -> Self {
 		Self {
 			reader,
-			read_buf: vec![0; BUF_SIZE],
+			read_buf: vec![0; buf_size],
 			decoder: LineDecoder::new(),
 		}
 	}
@@ -168,8 +168,6 @@ impl LineDecoder {
 		Ok(Some(out))
 	}
 }
-
-const BUF_SIZE: usize = 32768;
 
 #[cfg(test)]
 mod test {
