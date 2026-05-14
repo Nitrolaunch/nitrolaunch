@@ -10,6 +10,7 @@ use clap::Parser;
 use color_print::cprintln;
 use nitro_core::{io::json_from_file, net::game_files::assets::AssetIndex};
 use nitro_plugin::api::executable::ExecutablePlugin;
+use nitro_shared::{io::dir_size, java_args::MemoryNum};
 
 fn main() -> anyhow::Result<()> {
 	let mut plugin = ExecutablePlugin::from_manifest_file("cleanup", include_str!("plugin.json"))?;
@@ -31,6 +32,7 @@ fn main() -> anyhow::Result<()> {
 			match cli.subcommand {
 				Subcommand::Version { version } => cleanup_version(&data_dir, &version).await,
 				Subcommand::Addons => cleanup_addons(&data_dir).await,
+				Subcommand::FabricCache => cleanup_fabric_cache(&data_dir).await,
 			}
 		})?;
 
@@ -55,6 +57,8 @@ enum Subcommand {
 	},
 	#[command(about = "Remove unused versions of addons for packages")]
 	Addons,
+	#[command(about = "Remove Fabric mod caches")]
+	FabricCache,
 }
 
 async fn cleanup_version(data_dir: &Path, version: &str) -> anyhow::Result<()> {
@@ -181,8 +185,41 @@ async fn cleanup_addons(data_dir: &Path) -> anyhow::Result<()> {
 
 	cprintln!("<s><g>Done.");
 	cprintln!(
-		"<s>Removed {removed_count} files totalling {}MB",
-		removed_size / 1024 / 1024
+		"<s>Removed {removed_count} files totalling {}",
+		MemoryNum::from_bytes(removed_size)
 	);
+	Ok(())
+}
+
+async fn cleanup_fabric_cache(data_dir: &Path) -> anyhow::Result<()> {
+	cprintln!("<s>Removing cache...");
+	let mut removed_size = 0;
+
+	for entry in data_dir.join("instances").read_dir()? {
+		let Ok(entry) = entry else {
+			continue;
+		};
+
+		for possible_dir in [".minecraft", "."] {
+			let possible_dir = entry.path().join(possible_dir);
+			for cache_dir in ["processedMods", "remappedJars"] {
+				let dir = possible_dir.join(".fabric").join(cache_dir);
+
+				if dir.exists() {
+					if let Ok(size) = dir_size(&dir) {
+						removed_size += size;
+					}
+					let _ = tokio::fs::remove_dir_all(dir).await;
+				}
+			}
+		}
+	}
+
+	cprintln!("<s><g>Done.");
+	cprintln!(
+		"<s>Removed files totalling {}",
+		MemoryNum::from_bytes(removed_size)
+	);
+
 	Ok(())
 }
