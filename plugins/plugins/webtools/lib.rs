@@ -37,11 +37,7 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 		}
 
 		// Extract a specific tool
-		if let Some(pos) = page.chars().position(|x| x == '-') {
-			if pos == page.len() - 1 {
-				return Ok(None);
-			}
-			let tool = &page[pos + 1..];
+		if let Some((_, tool)) = page.split_once('-') {
 			let Ok(tool) = <WebTool as FromStr>::from_str(tool) else {
 				return Ok(None);
 			};
