@@ -228,9 +228,12 @@ mod test {
 	}
 
 	async fn test(outputs: &[&'static str], expected_lines: &[&'static str]) {
-		let mut reader = TryLineReader::new(TestReader {
-			outputs: outputs.iter().copied().collect(),
-		});
+		let mut reader = TryLineReader::new(
+			TestReader {
+				outputs: outputs.iter().copied().collect(),
+			},
+			128,
+		);
 
 		let mut lines = Vec::new();
 		while let Some(new_lines) = reader.lines().await.unwrap() {
