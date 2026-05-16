@@ -8,6 +8,7 @@ use crate::{
 		instance::InstanceItemInfo,
 		launch::{LaunchInstance, LaunchInstanceParams},
 	},
+	pages::instance::config::ConfiguredItem,
 	prelude::*,
 };
 
@@ -60,6 +61,7 @@ struct FooterButton {
 impl Component for FooterButton {
 	fn render(&self) -> impl IntoElement {
 		let theme = use_theme();
+		let front_state = use_front_state();
 		let back_state = use_consume::<BackState>();
 		let launch_instance = use_mutation(LaunchInstance::new(back_state));
 
@@ -82,7 +84,14 @@ impl Component for FooterButton {
 						offline: false,
 					});
 				}
-				ConfigKind::Template | ConfigKind::BaseTemplate => {}
+				ConfigKind::Template | ConfigKind::BaseTemplate => {
+					front_state
+						.write()
+						.set_configured_item(Some(ConfiguredItem {
+							id: Some(info.id.clone()),
+							ty: info.ty,
+						}));
+				}
 			},
 		};
 

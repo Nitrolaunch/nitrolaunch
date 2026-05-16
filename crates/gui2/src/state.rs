@@ -22,6 +22,7 @@ use crate::{
 	instance_manager::RunningInstanceManager,
 	ops::task::TaskManager,
 	output::{LauncherOutput, OutputInner},
+	pages::instance::config::ConfiguredItem,
 	routing::{Navigator, Page},
 	secrets::get_ms_client_id,
 	theme::Theme,
@@ -35,6 +36,7 @@ pub struct FrontState {
 	navigator: Navigator,
 	radio: RadioStation<(), FrontChannel>,
 	footer: FooterItem,
+	configured_item: Option<ConfiguredItem>,
 	event_rx: Rc<broadcast::Receiver<BackEvent>>,
 }
 
@@ -45,6 +47,8 @@ pub enum FrontChannel {
 	Route,
 	/// Changes to the footer item
 	FooterItem,
+	/// Changes to the configured item
+	ConfiguredItem,
 	/// Changes to the theme
 	Theme,
 }
@@ -61,6 +65,7 @@ impl FrontState {
 			navigator: Navigator::new(),
 			radio,
 			footer: FooterItem::None,
+			configured_item: None,
 			event_rx: Rc::new(event_rx),
 		}
 	}
@@ -129,6 +134,15 @@ impl FrontState {
 
 	pub fn footer(&self) -> &FooterItem {
 		&self.footer
+	}
+
+	pub fn set_configured_item(&mut self, item: Option<ConfiguredItem>) {
+		self.configured_item = item;
+		self.invalidate(FrontChannel::ConfiguredItem);
+	}
+
+	pub fn configured_item(&self) -> Option<&ConfiguredItem> {
+		self.configured_item.as_ref()
 	}
 }
 

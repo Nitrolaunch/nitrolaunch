@@ -1,14 +1,19 @@
 use std::time::Duration;
 
+use anyhow::Context;
 use itertools::Itertools;
 use nitrolaunch::{
-	config_crate::ConfigKind,
+	config_crate::{ConfigKind, instance::InstanceConfig, template::TemplateConfig},
 	core::util::versions::MinecraftVersion,
 	instance::parse_loader_config,
-	shared::{Side, loaders::Loader},
+	shared::{
+		Side,
+		id::{InstanceID, TemplateID},
+		loaders::Loader,
+	},
 };
 
-use crate::prelude::*;
+use crate::{pages::instance::config::ConfiguredItem, prelude::*};
 
 #[derive(Clone, PartialEq, Eq, Hash)]
 pub struct FetchItems {
@@ -104,4 +109,120 @@ pub struct InstanceItemInfo {
 pub struct InstancesAndTemplates {
 	pub instances: Vec<InstanceItemInfo>,
 	pub templates: Vec<InstanceItemInfo>,
+}
+
+#[derive(Clone, PartialEq, Eq, Hash)]
+pub struct FetchInstanceConfig {
+	back_state: Captured<BackState>,
+}
+
+impl FetchInstanceConfig {
+	pub fn new(id: String, back_state: BackState) -> Query<Self> {
+		Query::new(
+			id,
+			Self {
+				back_state: Captured(back_state),
+			},
+		)
+	}
+}
+
+impl QueryCapability for FetchInstanceConfig {
+	type Ok = Option<InstanceConfigs>;
+	type Err = anyhow::Error;
+	type Keys = String;
+
+	fn run(&self, id: &Self::Keys) -> impl Future<Output = Result<Self::Ok, Self::Err>> {
+		let back_state = self.back_state.clone();
+		let id = id.clone();
+
+		query_spawn(async move {
+			let config = back_state.config().await?;
+
+			let Some(instance) = config.instances.get(&InstanceID::from(id)) else {
+				return Ok(None);
+			};
+
+			Ok(Some(InstanceConfigs {
+				main: instance.config().clone(),
+				editable: instance.original_config().clone(),
+			}))
+		})
+	}
+}
+
+pub struct InstanceConfigs {
+	pub main: InstanceConfig,
+	pub editable: InstanceConfig,
+}
+
+#[derive(Clone, PartialEq, Eq, Hash)]
+pub struct FetchInstanceOrTemplateConfig {
+	back_state: Captured<BackState>,
+}
+
+impl FetchInstanceOrTemplateConfig {
+	pub fn new(item: ConfiguredItem, back_state: BackState) -> Query<Self> {
+		Query::new(
+			item,
+			Self {
+				back_state: Captured(back_state),
+			},
+		)
+	}
+}
+
+impl QueryCapability for FetchInstanceOrTemplateConfig {
+	type Ok = Option<InstanceOrTemplateConfigs>;
+	type Err = anyhow::Error;
+	type Keys = ConfiguredItem;
+
+	fn run(&self, item: &Self::Keys) -> impl Future<Output = Result<Self::Ok, Self::Err>> {
+		let back_state = self.back_state.clone();
+		let item = item.clone();
+
+		query_spawn(async move {
+			let config = back_state.config().await?;
+
+			match item.ty {
+				ConfigKind::Instance => {
+					let Some(instance) = config
+						.instances
+						.get(&InstanceID::from(item.id.context("ID mising")?))
+					else {
+						return Ok(None);
+					};
+
+					Ok(Some(InstanceOrTemplateConfigs {
+						main: TemplateConfig::from_instance(instance.config().clone()),
+						editable: TemplateConfig::from_instance(instance.original_config().clone()),
+					}))
+				}
+				ConfigKind::Template => {
+					let id = TemplateID::from(item.id.context("ID mising")?);
+					let Some(template) = config.templates.get(&id) else {
+						return Ok(None);
+					};
+					let Some(consolidated_template) = config.consolidated_templates.get(&id) else {
+						return Ok(None);
+					};
+
+					Ok(Some(InstanceOrTemplateConfigs {
+						main: consolidated_template.clone(),
+						editable: template.clone(),
+					}))
+				}
+				ConfigKind::BaseTemplate => Ok(Some(InstanceOrTemplateConfigs {
+					main: config.base_template.clone(),
+					editable: config.base_template.clone(),
+				})),
+			}
+		})
+	}
+}
+
+#[derive(Default, Clone)]
+pub struct InstanceOrTemplateConfigs {
+	pub main: TemplateConfig,
+	pub editable: TemplateConfig,
 }
