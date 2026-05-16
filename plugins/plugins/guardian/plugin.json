@@ -6,6 +6,9 @@
 	"version": "v7",
 	"protocol_version": 3,
 	"hooks": {
+		"on_instance_setup": {
+			"wasm": true
+		},
 		"after_packages_installed": {
 			"wasm": true
 		},

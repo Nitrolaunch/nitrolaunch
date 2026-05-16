@@ -1,4 +1,7 @@
-use std::ops::{Deref, DerefMut};
+use std::{
+	io::Write,
+	ops::{Deref, DerefMut},
+};
 
 use anyhow::bail;
 use serde::{Deserialize, Serialize};
@@ -410,6 +413,16 @@ impl NitroOutput for TestOutput {
 
 	fn display_message(&mut self, message: Message) {
 		self.0.push(message);
+	}
+}
+
+/// NitroOutput that outputs to a writer
+#[derive(Clone)]
+pub struct WriterOutput<T: Write + Send>(pub T);
+
+impl<T: Write + Send> NitroOutput for WriterOutput<T> {
+	fn display_text(&mut self, text: String, _level: MessageLevel) {
+		let _ = write!(self.0, "{}", text);
 	}
 }
 

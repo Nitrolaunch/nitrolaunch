@@ -328,6 +328,14 @@ impl<T> DeserListOrSingle<T> {
 		}
 	}
 
+	/// Gets the list as a slice
+	pub fn as_slice(&self) -> &[T] {
+		match self {
+			Self::Single(val) => std::slice::from_ref(val),
+			Self::List(list) => list.as_slice(),
+		}
+	}
+
 	/// Iterates over this DeserListOrSingle
 	pub fn iter(&self) -> DeserListOrSingleIter<'_, T> {
 		match &self {
