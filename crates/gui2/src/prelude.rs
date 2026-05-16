@@ -7,7 +7,7 @@ pub use freya::radio::use_radio;
 
 pub use crate::components::input::select::{InlineSelect, SelectOption};
 pub use crate::components::{
-	CustomEvents, CustomStyles, border_bottom, border_right, button, grid, icon_button,
+	CustomEvents, CustomStyles, border_bottom, border_right, border_top, button, grid, icon_button,
 };
 pub use crate::icons::icon;
 pub use crate::state::{BackState, FrontChannel, use_front_state};

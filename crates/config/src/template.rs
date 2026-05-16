@@ -28,6 +28,14 @@ pub struct TemplateConfig {
 }
 
 impl TemplateConfig {
+	/// Create a template config from an instance config
+	pub fn from_instance(instance: InstanceConfig) -> Self {
+		Self {
+			instance,
+			..Default::default()
+		}
+	}
+
 	/// Merge this template with another one
 	pub fn merge(&mut self, other: Self) {
 		self.instance.merge(other.instance);

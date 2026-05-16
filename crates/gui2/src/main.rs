@@ -2,6 +2,7 @@ use freya::radio::use_init_radio_station;
 use tokio::sync::broadcast;
 
 use crate::components::footer::Footer;
+use crate::pages::instance::config::ConfigPage;
 use crate::prelude::*;
 
 use crate::components::nav::{NavBar, router::Router};
@@ -88,5 +89,6 @@ impl Component for App {
 			.child(NavBar { show_sidebar })
 			.child(view)
 			.child(Footer)
+			.child(ConfigPage)
 	}
 }

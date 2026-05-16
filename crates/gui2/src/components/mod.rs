@@ -11,6 +11,7 @@ use freya::{
 
 use crate::theme::{HexColor, Theme};
 
+pub mod dialog;
 pub mod footer;
 pub mod input;
 pub mod instance;
@@ -175,6 +176,17 @@ pub fn border_bottom(width: f32, color: impl Into<Color>) -> Border {
 		fill: color.into(),
 		width: BorderWidth {
 			bottom: width,
+			..Default::default()
+		},
+		alignment: BorderAlignment::Inner,
+	}
+}
+
+pub fn border_top(width: f32, color: impl Into<Color>) -> Border {
+	Border {
+		fill: color.into(),
+		width: BorderWidth {
+			top: width,
 			..Default::default()
 		},
 		alignment: BorderAlignment::Inner,
