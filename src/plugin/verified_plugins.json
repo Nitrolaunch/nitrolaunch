@@ -337,5 +337,13 @@
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Detect, diagnose, and fix crashes and issues"
+	},
+	"guardian": {
+		"id": "guardian",
+		"name": "Guardian",
+		"version": "v7",
+		"github_owner": "Nitrolaunch",
+		"github_repo": "plugins",
+		"description": "Protect yourself against malware in mods"
 	}
 }

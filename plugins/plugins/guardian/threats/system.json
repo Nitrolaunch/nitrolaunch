@@ -1,0 +1,47 @@
+[
+    {
+        "id": "exec",
+        "ty": "smell",
+        "matchers": [
+            "exec"
+        ],
+        "score": 5
+    },
+    {
+        "id": "powershell",
+        "ty": "malware_pattern",
+        "matchers": [
+            "ps.exe"
+        ],
+        "os": "windows",
+        "score": 60
+    },
+    {
+        "id": "cmd",
+        "ty": "malware_pattern",
+        "matchers": [
+            "cmd.exe"
+        ],
+        "os": "windows",
+        "score": 60
+    },
+    {
+        "id": "appdata",
+        "ty": "smell",
+        "matchers": [
+            "AppData",
+            "APPDATA"
+        ],
+        "score": 15
+    },
+    {
+        "id": "startup",
+        "ty": "smell",
+        "matchers": [
+            "startup",
+            "Startup",
+            "STARTUP"
+        ],
+        "score": 5
+    }
+]

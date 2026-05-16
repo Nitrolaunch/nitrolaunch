@@ -1,0 +1,68 @@
+[
+    {
+        "id": "wget",
+        "ty": "suspicious",
+        "matchers": [
+            "wget"
+        ],
+        "score": 30
+    },
+    {
+        "id": "curl",
+        "ty": "suspicious",
+        "matchers": [
+            "curl.exe"
+        ],
+        "os": "windows",
+        "score": 30
+    },
+    {
+        "id": "discord_webhook",
+        "ty": "malware_pattern",
+        "matchers": [
+            "discord.com/api/webhooks"
+        ],
+        "score": 85
+    },
+    {
+        "id": "telegram",
+        "ty": "smell",
+        "matchers": [
+            "telegram"
+        ],
+        "score": 10
+    },
+    {
+        "id": "onion_url",
+        "ty": "suspicious",
+        "matchers": [
+            ".onion"
+        ],
+        "score": 30
+    },
+    {
+        "id": "post_request",
+        "ty": "smell",
+        "matchers": [
+            "POST"
+        ],
+        "score": 5
+    },
+    {
+        "id": "http_connection",
+        "ty": "smell",
+        "matchers": [
+            "HttpURLConnection"
+        ],
+        "score": 5
+    },
+    {
+        "id": "local_ip",
+        "ty": "suspicious",
+        "matchers": [
+            "127.0.0.1",
+            "192.168"
+        ],
+        "score": 25
+    }
+]

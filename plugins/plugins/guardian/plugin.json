@@ -1,0 +1,19 @@
+{
+	"id": "guardian",
+	"name": "Guardian",
+	"description": "Protect yourself against malware in mods",
+	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/guardian",
+	"version": "v7",
+	"protocol_version": 3,
+	"hooks": {
+		"after_packages_installed": {
+			"wasm": true
+		},
+		"subcommand": {
+			"wasm": true
+		}
+	},
+	"subcommands": {
+		"guardian": "Scan for mod malware"
+	}
+}

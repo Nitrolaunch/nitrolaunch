@@ -1,0 +1,26 @@
+[
+    {
+        "id": "minecraft_dir",
+        "ty": "smell",
+        "matchers": [
+            ".minecraft"
+        ],
+        "score": 2
+    },
+    {
+        "id": "define_class",
+        "ty": "smell",
+        "matchers": [
+            "defineClass"
+        ],
+        "score": 10
+    },
+    {
+        "id": "reflect_method_invoke",
+        "ty": "smell",
+        "matchers": [
+            "Method.invoke"
+        ],
+        "score": 10
+    }
+]
