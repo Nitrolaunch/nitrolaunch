@@ -102,6 +102,7 @@ schema = [
 anyhow = "1.0.86"
 async-trait = "0.1.73"
 base64 = "0.22.0"
+blake3 = "1.8.5"
 bytes = "1.4.0"
 cfg-match = "0.2.1"
 chrono = { version = "0.4.42", default-features = false, features = ["std"] }

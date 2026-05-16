@@ -153,6 +153,8 @@ pub struct OnInstanceSetupArg {
 	pub internal_dir: String,
 	/// The depth to update at
 	pub update_depth: UpdateDepth,
+	/// Whether packages will be updated afterward
+	pub will_update_packages: bool,
 	/// Path to the JVM
 	pub jvm_path: String,
 	/// Path to the vanilla game JAR

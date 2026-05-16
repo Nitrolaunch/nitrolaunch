@@ -72,6 +72,7 @@ impl Instance {
 		} else {
 			depth
 		};
+		let will_update_packages = facets.packages && depth >= UpdateDepth::Full;
 
 		let mut manager = UpdateManager::new(depth);
 
@@ -100,6 +101,7 @@ impl Instance {
 				&version_info,
 				ctx.plugins,
 				ctx.paths,
+				will_update_packages,
 				ctx.output,
 			)
 			.await
@@ -124,7 +126,7 @@ impl Instance {
 		};
 
 		// Packages
-		if facets.packages && depth >= UpdateDepth::Full {
+		if will_update_packages {
 			#[cfg(not(feature = "disable_instance_update_packages"))]
 			{
 				use std::sync::Arc;

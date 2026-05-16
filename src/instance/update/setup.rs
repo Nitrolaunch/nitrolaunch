@@ -40,6 +40,7 @@ impl Instance {
 		version_info: &VersionInfo,
 		plugins: &PluginManager,
 		paths: &Paths,
+		will_update_packages: bool,
 		o: &mut impl NitroOutput,
 	) -> anyhow::Result<()> {
 		self.ensure_dir()?;
@@ -81,6 +82,7 @@ impl Instance {
 			config: self.config.clone(),
 			internal_dir: paths.internal.to_string_lossy().to_string(),
 			update_depth,
+			will_update_packages,
 			jvm_path: jvm_path.to_string_lossy().to_string(),
 			game_jar_path: game_jar_path.to_string_lossy().to_string(),
 			classpath: None,

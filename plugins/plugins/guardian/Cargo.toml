@@ -10,6 +10,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 anyhow = { workspace = true }
+blake3 = { workspace = true }
 clap = { workspace = true }
 itertools = { workspace = true }
 memchr = { workspace = true }

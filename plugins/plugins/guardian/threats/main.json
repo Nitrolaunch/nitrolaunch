@@ -2,7 +2,7 @@
     {
         "id": "minecraft_dir",
         "ty": "smell",
-        "matchers": [
+        "constant_matchers": [
             ".minecraft"
         ],
         "score": 2
@@ -10,7 +10,7 @@
     {
         "id": "define_class",
         "ty": "smell",
-        "matchers": [
+        "constant_matchers": [
             "defineClass"
         ],
         "score": 10
@@ -18,8 +18,17 @@
     {
         "id": "reflect_method_invoke",
         "ty": "smell",
-        "matchers": [
+        "constant_matchers": [
             "Method.invoke"
+        ],
+        "score": 10
+    },
+    {
+        "id": "telemetry",
+        "ty": "smell",
+        "constant_matchers": [
+            "telemetry",
+            "Telemetry"
         ],
         "score": 10
     }

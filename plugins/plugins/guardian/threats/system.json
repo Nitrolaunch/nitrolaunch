@@ -2,15 +2,15 @@
     {
         "id": "exec",
         "ty": "smell",
-        "matchers": [
-            "exec"
+        "constant_matchers": [
+            "System.exec"
         ],
-        "score": 5
+        "score": 3
     },
     {
         "id": "powershell",
         "ty": "malware_pattern",
-        "matchers": [
+        "constant_matchers": [
             "ps.exe"
         ],
         "os": "windows",
@@ -19,7 +19,7 @@
     {
         "id": "cmd",
         "ty": "malware_pattern",
-        "matchers": [
+        "constant_matchers": [
             "cmd.exe"
         ],
         "os": "windows",
@@ -32,15 +32,24 @@
             "AppData",
             "APPDATA"
         ],
-        "score": 15
+        "os": "windows",
+        "score": 10
     },
     {
         "id": "startup",
         "ty": "smell",
-        "matchers": [
+        "constant_matchers": [
             "startup",
             "Startup",
             "STARTUP"
+        ],
+        "score": 3
+    },
+    {
+        "id": "process_builder",
+        "ty": "smell",
+        "constant_matchers": [
+            "ProcessBuilder"
         ],
         "score": 5
     }
