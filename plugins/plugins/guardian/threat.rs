@@ -33,9 +33,9 @@ pub struct Signature {
 	/// Means (foo AND bar) OR (baz)
 	///
 	/// Each matcher also matches any characters in between. Think of them like a regex with a `*` between each entry.
-	pub matchers: Vec<DeserListOrSingle<String>>,
+	pub matchers: Vec<String>,
 	/// Matchers that only operate on the constant pool of class files
-	pub constant_matchers: Vec<DeserListOrSingle<String>>,
+	pub constant_matchers: Vec<String>,
 	/// Matchers that match a whole UTF8 entry of a class file constant pool
 	pub whole_constant_matchers: Vec<DeserListOrSingle<String>>,
 	/// Operating systems this signature occurs on
@@ -50,32 +50,18 @@ impl Signature {
 			if self
 				.constant_matchers
 				.iter()
-				.any(|x| matcher_matches(x.iter(), &file[0..end]))
+				.any(|x| matcher_matches(x, &file[0..end]))
 			{
 				return true;
 			}
 		}
 
-		self.matchers
-			.iter()
-			.any(|x| matcher_matches(x.iter(), file))
+		self.matchers.iter().any(|x| matcher_matches(x, file))
 	}
 }
 
-fn matcher_matches<'a>(matcher: impl Iterator<Item = &'a String>, file: &[u8]) -> bool {
-	let mut remaining = file;
-
-	for segment in matcher {
-		let segment = segment.as_bytes();
-		if let Some(pos) = memchr::memmem::find(file, segment) {
-			let next_start = pos + segment.len();
-			remaining = &remaining[next_start..];
-		} else {
-			return false;
-		}
-	}
-
-	true
+fn matcher_matches<'a>(matcher: &str, file: &[u8]) -> bool {
+	memchr::memmem::find(file, matcher.as_bytes()).is_some()
 }
 
 /// Detected potential threat from a signature
