@@ -26,6 +26,22 @@
         "score": 85
     },
     {
+        "id": "pastebin",
+        "ty": "suspicious",
+        "constant_matchers": [
+            "pastebin.com"
+        ],
+        "score": 15
+    },
+    {
+        "id": "random_file_upload",
+        "ty": "suspicious",
+        "constant_matchers": [
+            "anonfiles"
+        ],
+        "score": 45
+    },
+    {
         "id": "telegram",
         "ty": "smell",
         "constant_matchers": [
