@@ -5415,24 +5415,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "nitro_plugin_guardian"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "blake3",
- "clap",
- "itertools 0.11.0",
- "memchr",
- "nitro_config",
- "nitro_instance",
- "nitro_plugin",
- "nitro_shared",
- "serde",
- "serde_json",
- "zip 3.0.0",
-]
-
-[[package]]
 name = "nitro_plugin_mojang_transfer"
 version = "0.1.0"
 dependencies = [
@@ -5574,6 +5556,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
+ "blake3",
  "chrono",
  "clap",
  "color-print",
@@ -5581,6 +5564,7 @@ dependencies = [
  "glob",
  "iso8601-timestamp",
  "itertools 0.11.0",
+ "memchr",
  "nitro_core",
  "nitro_instance",
  "nitro_mods",

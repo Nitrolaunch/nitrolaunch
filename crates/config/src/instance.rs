@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::path::{Path, PathBuf};
 
 use nitro_shared::Side;
 use nitro_shared::java_args::MemoryNum;
@@ -135,6 +136,24 @@ impl InstanceConfig {
 		self.is_editable = original_config.is_editable;
 		self.is_deletable = original_config.is_deletable;
 		self.custom_launch = original_config.custom_launch;
+	}
+
+	/// Gets the directory for this instance
+	pub fn get_dir(&self, id: &str, instances_dir: &Path) -> Option<PathBuf> {
+		if let Some(dir) = &self.dir {
+			if dir == "none" {
+				None
+			} else {
+				Some(PathBuf::from(dir))
+			}
+		} else {
+			let base = instances_dir.join(id);
+			match self.side {
+				None => None,
+				Some(Side::Client) => Some(base.join(".minecraft")),
+				Some(Side::Server) => Some(base),
+			}
+		}
 	}
 }
 

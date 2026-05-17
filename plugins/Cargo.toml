@@ -43,6 +43,10 @@ name = "nitro_plugin_gen_pkg"
 path = "plugins/gen_pkg/main.rs"
 
 [[bin]]
+name = "nitro_plugin_guardian"
+path = "plugins/guardian/main.rs"
+
+[[bin]]
 name = "nitro_plugin_modrinth"
 path = "plugins/modrinth/main.rs"
 
@@ -89,6 +93,7 @@ path = "plugins/xmcl_transfer/main.rs"
 [dependencies]
 anyhow = { workspace = true }
 base64 = { workspace = true }
+blake3 = { workspace = true }
 chrono = { workspace = true }
 clap = { workspace = true }
 color-print = { workspace = true }
@@ -96,6 +101,7 @@ discord-rich-presence = { workspace = true }
 glob = { workspace = true }
 iso8601-timestamp = { workspace = true }
 itertools = { workspace = true }
+memchr = { workspace = true }
 nitrolaunch = { workspace = true }
 nitro_core = { workspace = true }
 nitro_instance = { workspace = true, features = ["net"] }

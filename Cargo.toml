@@ -74,7 +74,6 @@ members = [
 	"plugins/plugins/doctor",
 	"plugins/plugins/glfw_fix",
 	"plugins/plugins/graalvm",
-	"plugins/plugins/guardian",
 	"plugins/plugins/mojang_transfer",
 	"plugins/plugins/multiply",
 	"plugins/plugins/nitro_transfer",
