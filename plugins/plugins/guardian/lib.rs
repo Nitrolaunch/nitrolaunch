@@ -240,7 +240,6 @@ fn scan_file(file: &[u8], file_name: &str, possible_threats: &Threats, out: &mut
 		None
 	};
 
-	let mut our_threats = Vec::new();
 	for threat in &possible_threats.threats {
 		if !threat.signature.repeat && out.iter().any(|x| x.id == threat.id) {
 			continue;
@@ -248,7 +247,6 @@ fn scan_file(file: &[u8], file_name: &str, possible_threats: &Threats, out: &mut
 
 		if threat.signature.matches(file, constant_pool_end) {
 			out.push(threat.clone());
-			our_threats.push(threat.clone());
 		}
 	}
 }
