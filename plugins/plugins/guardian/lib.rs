@@ -18,7 +18,7 @@ use nitro_shared::output::{MessageContents, NitroOutput, WriterOutput};
 use serde::{Deserialize, Serialize};
 use zip::ZipArchive;
 
-use crate::threat::{Mitigation, Threat, constant_pool_end};
+use crate::threat::{Mitigation, Threat, check_known_malware, constant_pool_end};
 
 mod threat;
 
@@ -182,8 +182,16 @@ fn scan_dir(
 }
 
 fn scan_jar(data: &[u8], possible_threats: &Threats) -> anyhow::Result<Report> {
+	let data_hash = blake3::hash(data);
+	// Check for known malware
+	if let Some(threat) = check_known_malware(&data_hash.to_string()) {
+		return Ok(Report {
+			threats: vec![threat],
+		});
+	}
+
 	// Check for cached scan
-	let cache_file = get_scan_cache_path(data, &possible_threats.hash);
+	let cache_file = get_scan_cache_path(&data_hash.to_string(), &possible_threats.hash);
 	if let Ok(data) = std::fs::read(&cache_file) {
 		if let Ok(report) = serde_json::from_slice(&data) {
 			return Ok(report);
@@ -337,8 +345,7 @@ enum Subcommand {
 }
 
 /// Gets the path for a cached JAR scan
-fn get_scan_cache_path(data: &[u8], threats_hash: &str) -> PathBuf {
+fn get_scan_cache_path(data_hash: &str, threats_hash: &str) -> PathBuf {
 	let cache_dir = get_data_dir().join("internal/guardian/scan_cache");
-	let hash = blake3::hash(data);
-	cache_dir.join(format!("{hash}-{threats_hash}.json"))
+	cache_dir.join(format!("{data_hash}-{threats_hash}.json"))
 }

@@ -4,8 +4,20 @@ use nitro_shared::{
 };
 use serde::{Deserialize, Serialize};
 
+pub static KNOWN_MALWARE: &[(&str, &str)] = &[
+	(
+		"a04a5949eebb67ffe993317769dd9453accb071abfd67d4df94d8482801660ae",
+		"Oringo Client",
+	),
+	(
+		"42adbf087c2e2017944711808201bc2369280929a8c88e64efaf2722233bdf41",
+		"Visomod",
+	),
+];
+
 /// Signature for a possible threat
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Default)]
+#[serde(default)]
 pub struct Signature {
 	/// A list of matchers, with each matcher being a list of segments to match from a file.
 	///
@@ -21,19 +33,14 @@ pub struct Signature {
 	/// Means (foo AND bar) OR (baz)
 	///
 	/// Each matcher also matches any characters in between. Think of them like a regex with a `*` between each entry.
-	#[serde(default)]
 	pub matchers: Vec<DeserListOrSingle<String>>,
 	/// Matchers that only operate on the constant pool of class files
-	#[serde(default)]
 	pub constant_matchers: Vec<DeserListOrSingle<String>>,
 	/// Matchers that match a whole UTF8 entry of a class file constant pool
-	#[serde(default)]
 	pub whole_constant_matchers: Vec<DeserListOrSingle<String>>,
 	/// Operating systems this signature occurs on
-	#[serde(default)]
 	pub os: DeserListOrSingle<String>,
 	/// Whether each occurrence of this signature should be compounded, or only one should count
-	#[serde(default)]
 	pub repeat: bool,
 }
 
@@ -195,4 +202,16 @@ pub fn constant_pool_end(data: &[u8]) -> Option<usize> {
 	}
 
 	Some(offset)
+}
+
+/// Checks for known malware
+pub fn check_known_malware(hash: &str) -> Option<Threat> {
+	let name = KNOWN_MALWARE.iter().find(|x| x.0 == hash).map(|x| x.1)?;
+
+	Some(Threat {
+		id: format!("Known Malware: {name}"),
+		ty: ThreatType::Malware,
+		signature: Signature::default(),
+		score: 150,
+	})
 }
