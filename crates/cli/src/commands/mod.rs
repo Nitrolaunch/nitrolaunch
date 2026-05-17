@@ -176,6 +176,8 @@ pub async fn run_cli() -> anyhow::Result<()> {
 		let _ = exec_registry.add_this(NitroClientId::Cli);
 	}
 
+	let _ = write_extra_commands_file(&paths);
+
 	// First launch message
 	if is_first_run(&paths) {
 		output.display(MessageContents::Header("Welcome to Nitrolaunch!".into()));
@@ -467,4 +469,19 @@ async fn call_plugin_subcommand(
 	}
 
 	Ok(())
+}
+
+/// Writes a file that can be sourced to provide extra shell commands
+fn write_extra_commands_file(paths: &Paths) -> anyhow::Result<()> {
+	let commands = r#"
+nitro-instance-cd () {
+	cd $(nitro inst dir $1)
+}
+nitro-inst-cd () {
+	cd $(nitro inst dir $1)
+}
+	"#;
+
+	let file = paths.internal.join("commands.sh");
+	std::fs::write(file, commands).context("Failed to write")
 }
