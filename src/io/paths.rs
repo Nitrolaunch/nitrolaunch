@@ -21,14 +21,6 @@ pub struct Paths {
 	pub pkg_index_cache: PathBuf,
 	/// Holds log files
 	pub logs: PathBuf,
-	/// Holds launch log files
-	pub launch_logs: PathBuf,
-	/// Used for runtime info like PIDs
-	pub run: PathBuf,
-	/// Storing instance snapshots
-	pub snapshots: PathBuf,
-	/// Storing proxy data
-	pub proxy: PathBuf,
 	/// Holding user plugins
 	pub plugins: PathBuf,
 }
@@ -45,17 +37,10 @@ impl Paths {
 	/// Create the directories on an existing set of paths
 	pub async fn create_dirs(&self) -> anyhow::Result<()> {
 		let _ = tokio::join!(
-			tokio::fs::create_dir_all(&self.data),
-			tokio::fs::create_dir_all(&self.config),
-			tokio::fs::create_dir_all(&self.internal),
 			tokio::fs::create_dir_all(&self.addons),
 			tokio::fs::create_dir_all(&self.pkg_cache),
 			tokio::fs::create_dir_all(&self.pkg_index_cache),
 			tokio::fs::create_dir_all(&self.logs),
-			tokio::fs::create_dir_all(&self.launch_logs),
-			tokio::fs::create_dir_all(&self.run),
-			tokio::fs::create_dir_all(&self.snapshots),
-			tokio::fs::create_dir_all(&self.proxy),
 			tokio::fs::create_dir_all(&self.plugins),
 		);
 
@@ -74,24 +59,17 @@ impl Paths {
 		let pkg_cache = internal.join("pkg");
 		let pkg_index_cache = pkg_cache.join("index");
 		let logs = data.join("logs");
-		let launch_logs = logs.join("launch");
-		let snapshots = internal.join("snapshots");
-		let proxy = data.join("proxy");
 		let plugins = data.join("plugins");
 
 		Ok(Paths {
 			config: core_paths.config.clone(),
 			data,
-			run: core_paths.run.clone(),
 			core: core_paths,
 			internal,
 			addons,
 			pkg_cache,
 			pkg_index_cache,
 			logs,
-			launch_logs,
-			snapshots,
-			proxy,
 			plugins,
 		})
 	}

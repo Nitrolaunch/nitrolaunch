@@ -25,10 +25,6 @@ pub struct Paths {
 	pub auth: PathBuf,
 	/// Holds log files
 	pub logs: PathBuf,
-	/// Holds launch log files
-	pub launch_logs: PathBuf,
-	/// Used for runtime info like PIDs
-	pub run: PathBuf,
 	/// Used for temporary stdio files for instances
 	pub stdio: PathBuf,
 }
@@ -53,8 +49,6 @@ impl Paths {
 		let _ = std::fs::create_dir_all(&self.jars);
 		let _ = std::fs::create_dir_all(&self.auth);
 		let _ = std::fs::create_dir_all(&self.logs);
-		let _ = std::fs::create_dir_all(&self.launch_logs);
-		let _ = std::fs::create_dir_all(&self.run);
 		let _ = std::fs::create_dir_all(&self.stdio);
 
 		Ok(())
@@ -83,11 +77,6 @@ impl Paths {
 		let jars = internal.join("jars");
 		let auth = internal.join("auth");
 		let logs = data.join("logs");
-		let launch_logs = logs.join("launch");
-		let run = project
-			.runtime_dir()
-			.map(|x| x.to_path_buf())
-			.unwrap_or(internal.join("run"));
 		let stdio = internal.join("stdio");
 
 		Ok(Paths {
@@ -100,8 +89,6 @@ impl Paths {
 			jars,
 			auth,
 			logs,
-			launch_logs,
-			run,
 			stdio,
 		})
 	}
