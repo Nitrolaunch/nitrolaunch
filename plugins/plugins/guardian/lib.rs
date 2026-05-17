@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::env::current_dir;
 use std::ffi::OsString;
 use std::fs::File;
 use std::io::{Cursor, Read};
@@ -9,7 +8,7 @@ use anyhow::{Context, bail};
 use clap::Parser;
 use itertools::Itertools;
 use nitro_plugin::api::wasm::output::WASMPluginOutput;
-use nitro_plugin::api::wasm::sys::get_data_dir;
+use nitro_plugin::api::wasm::sys::{fix_relative_path, get_data_dir};
 use nitro_plugin::api::wasm::{WASMPlugin, sys::get_os_string};
 use nitro_plugin::hook::hooks::OnInstanceSetupResult;
 use nitro_plugin::nitro_wasm_plugin;
@@ -71,12 +70,7 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 		match cli.command {
 			Subcommand::Scan { file } => {
 				let path = PathBuf::from(file);
-				let path = if path.is_relative() {
-					let working_dir = current_dir()?;
-					working_dir.join(path)
-				} else {
-					path
-				};
+				let path = fix_relative_path(path);
 
 				if !path.exists() {
 					bail!("Path does not exist");

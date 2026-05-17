@@ -25,6 +25,15 @@ pub fn get_current_dir() -> PathBuf {
 	PathBuf::from(super::interface::get_current_dir())
 }
 
+/// Fixes a relative path to be an absolute one that works in WASM
+pub fn fix_relative_path(path: PathBuf) -> PathBuf {
+	if path.is_absolute() {
+		path
+	} else {
+		get_current_dir().join(path)
+	}
+}
+
 /// Gets the user's home directory
 pub fn get_home_dir() -> PathBuf {
 	PathBuf::from(super::interface::get_home_dir())
