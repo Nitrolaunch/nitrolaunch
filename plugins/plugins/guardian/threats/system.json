@@ -46,11 +46,61 @@
         "score": 3
     },
     {
+        "id": "windows_startup_registry",
+        "ty": "malware_pattern",
+        "constant_matchers": [
+            "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Run"
+        ],
+        "os": "windows",
+        "score": 90
+    },
+    {
+        "id": "windows_registry",
+        "ty": "suspicious",
+        "constant_matchers": [
+            "reg.exe"
+        ],
+        "os": "windows",
+        "score": 35
+    },
+    {
+        "id": "linux_startup",
+        "ty": "malware_pattern",
+        "constant_matchers": [
+            "systemctl",
+            "/etc/systemd"
+        ],
+        "os": "linux",
+        "score": 70
+    },
+    {
         "id": "process_builder",
         "ty": "smell",
         "constant_matchers": [
             "ProcessBuilder"
         ],
         "score": 5
+    },
+    {
+        "id": "wireshark",
+        "ty": "malware_pattern",
+        "constant_matchers": [
+            "wireshark",
+            "WireShark",
+            "Wireshark"
+        ],
+        "score": 80
+    },
+    {
+        "id": "virtualization",
+        "ty": "malware_pattern",
+        "constant_matchers": [
+            "virtualbox",
+            "VirtualBox",
+            "vmware",
+            "VMWare",
+            "sandboxie"
+        ],
+        "score": 80
     }
 ]

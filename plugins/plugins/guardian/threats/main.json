@@ -31,5 +31,14 @@
             "Telemetry"
         ],
         "score": 10
+    },
+    {
+        "id": "fracturizer",
+        "ty": "malware",
+        "constant_matchers": [
+            "neko.run",
+            "files-8ie.pages.dev"
+        ],
+        "score": 100
     }
 ]
