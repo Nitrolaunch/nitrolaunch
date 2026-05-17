@@ -9,6 +9,7 @@ use serde::{Deserialize, Serialize};
 use crate::{
 	lang::translate::TranslationKey,
 	pkg::{PackageDiff, PkgRequest, ResolutionError},
+	util::print::ReplPrinter,
 };
 
 /// Trait for a type that can output information about Nitrolaunch processes
@@ -351,7 +352,7 @@ impl MessageContents {
 			MessageContents::Property(key, value) => {
 				format!("{key}: {}", value.default_format())
 			}
-			MessageContents::Header(text) => text.to_uppercase(),
+			MessageContents::Header(text) => format!("# {text}"),
 			MessageContents::StartProcess(text) => format!("{text}..."),
 			MessageContents::Associated(item, message) => {
 				format!("[{}] {}", item.default_format(), message.default_format())
@@ -401,6 +402,68 @@ impl NitroOutput for Simple {
 
 	fn get_lesser_copy(&self) -> Box<dyn NitroOutput + Sync> {
 		Box::new(Self(self.0))
+	}
+}
+
+/// NitroOutput with advanced terminal printing, with process and section support
+#[derive(Clone)]
+pub struct Advanced {
+	printer: ReplPrinter,
+	in_process: bool,
+	indent: usize,
+}
+
+impl Advanced {
+	/// Creates a new advanced output
+	pub fn new() -> Self {
+		Self {
+			printer: ReplPrinter::new(true),
+			in_process: false,
+			indent: 0
+		}
+	}
+}
+
+impl NitroOutput for Advanced {
+	fn display_text(&mut self, text: String, level: MessageLevel) {
+		if level < MessageLevel::Important {
+			return;
+		}
+
+		if self.in_process {
+			self.printer.print(&text);
+		} else {
+			self.printer.println(&text);
+		}
+	}
+
+	fn start_process(&mut self) {
+		self.in_process = true;
+	}
+	
+	fn end_process(&mut self) {
+		self.in_process = false;
+		self.printer.newline();
+	}
+
+	fn start_section(&mut self) {
+		self.indent += 1;
+		self.printer.indent(self.indent);
+	}
+
+	fn end_section(&mut self) {
+		if self.indent > 0 {
+			self.indent -= 1;
+		}
+		self.printer.indent(self.indent);
+	}
+
+	fn get_lesser_copy(&self) -> Box<dyn NitroOutput + Sync> {
+		Box::new(Self {
+			printer: self.printer.clone(),
+			in_process: self.in_process,
+			indent: self.indent,
+		})
 	}
 }
 

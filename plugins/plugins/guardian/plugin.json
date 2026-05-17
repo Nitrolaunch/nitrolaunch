@@ -7,13 +7,13 @@
 	"protocol_version": 3,
 	"hooks": {
 		"on_instance_setup": {
-			"wasm": true
+			"executable": "${PLUGIN_DIR}/nitro_plugin_guardian${EXE_EXTENSION}"
 		},
 		"after_packages_installed": {
-			"wasm": true
+			"executable": "${PLUGIN_DIR}/nitro_plugin_guardian${EXE_EXTENSION}"
 		},
 		"subcommand": {
-			"wasm": true
+			"executable": "${PLUGIN_DIR}/nitro_plugin_guardian${EXE_EXTENSION}"
 		}
 	},
 	"subcommands": {

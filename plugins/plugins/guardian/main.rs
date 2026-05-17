@@ -7,15 +7,15 @@ use std::path::{Path, PathBuf};
 use anyhow::{Context, bail};
 use clap::Parser;
 use itertools::Itertools;
-use nitro_plugin::api::wasm::nitro::get_instance_dir;
-use nitro_plugin::api::wasm::output::WASMPluginOutput;
-use nitro_plugin::api::wasm::sys::{fix_relative_path, get_data_dir};
-use nitro_plugin::api::wasm::{WASMPlugin, sys::get_os_string};
+use nitro_plugin::api::executable::ExecutablePlugin;
 use nitro_plugin::hook::hooks::OnInstanceSetupResult;
-use nitro_plugin::nitro_wasm_plugin;
 use nitro_shared::UpdateDepth;
-use nitro_shared::output::{MessageContents, NitroOutput, WriterOutput};
+use nitro_shared::id::InstanceID;
+use nitro_shared::output::{Advanced, MessageContents, NitroOutput, WriterOutput};
+use nitro_shared::util::OS_STRING;
 use serde::{Deserialize, Serialize};
+use tokio::runtime::Runtime;
+use tokio::task::JoinSet;
 use zip::ZipArchive;
 
 use crate::threat::{Mitigation, Threat, check_known_malware, constant_pool_end};
@@ -28,10 +28,10 @@ static IGNORED_FILES: &[&str] = &[
 	"/META-INF/MANIFEST.MF",
 ];
 
-nitro_wasm_plugin!(main, "guardian");
+fn main() -> anyhow::Result<()> {
+	let mut plugin = ExecutablePlugin::from_manifest_file("guardian", include_str!("plugin.json"))?;
 
-fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
-	plugin.on_instance_setup(|arg| {
+	plugin.on_instance_setup(|mut ctx, arg| {
 		if arg.will_update_packages {
 			return Ok(OnInstanceSetupResult::default());
 		}
@@ -40,11 +40,11 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 		};
 
 		let dir = PathBuf::from(dir);
-		default_scan(&dir)?;
+		default_scan(&dir, &ctx.get_data_dir()?, ctx.get_output())?;
 
 		Ok(OnInstanceSetupResult::default())
 	})?;
-	plugin.after_packages_installed(|arg| {
+	plugin.after_packages_installed(|mut ctx, arg| {
 		if arg.update_depth < UpdateDepth::Full {
 			return Ok(());
 		}
@@ -53,9 +53,9 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 		};
 
 		let dir = PathBuf::from(dir);
-		default_scan(&dir)
+		default_scan(&dir, &ctx.get_data_dir()?, ctx.get_output())
 	})?;
-	plugin.subcommand(|arg| {
+	plugin.subcommand(|ctx, arg| {
 		let Some(subcommand) = arg.args.first() else {
 			return Ok(());
 		};
@@ -66,17 +66,22 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 		let it = std::iter::once(format!("nitro {subcommand}")).chain(arg.args.into_iter().skip(1));
 		let cli = Cli::try_parse_from(it)?;
 
-		let mut o = WASMPluginOutput::new();
+		let mut o = Advanced::new();
+		let data_dir = ctx.get_data_dir()?;
 
 		match cli.command {
 			Subcommand::Scan { file, instance } => {
 				let path = if instance {
-					let dir = get_instance_dir(&file)
-						.context("Failed to get instance directory")?
+					let instance = arg
+						.instances
+						.get(&InstanceID::from(file.clone()))
 						.context("Instance does not exist")?;
-					dir.join("mods")
+					instance
+						.get_dir(&file, &data_dir.join("instances"))
+						.context("Instance has no directory")?
+						.join("mods")
 				} else {
-					fix_relative_path(PathBuf::from(file))
+					PathBuf::from(file)
 				};
 
 				if !path.exists() {
@@ -90,8 +95,8 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 					o.display(MessageContents::StartProcess("Scanning".into()));
 
 					let file = std::fs::read(path)?;
-					let report =
-						scan_jar(&file, &possible_threats).context("Failed to scan for threats")?;
+					let report = scan_jar(&file, &possible_threats, &data_dir)
+						.context("Failed to scan for threats")?;
 
 					o.display(MessageContents::Success("Scanned".into()));
 					o.end_process();
@@ -99,7 +104,12 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 					report.report(&mut o, false);
 				} else {
 					o.start_process();
-					let result = scan_dir(&path, &possible_threats, &mut o)?;
+					let result = Runtime::new()?.block_on(scan_dir(
+						&path,
+						&possible_threats,
+						&data_dir,
+						&mut o,
+					))?;
 
 					o.display(MessageContents::Success("Scanned".into()));
 					o.end_process();
@@ -127,12 +137,16 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 	Ok(())
 }
 
-fn default_scan(inst_dir: &Path) -> anyhow::Result<()> {
-	let mut o = WASMPluginOutput::new();
+fn default_scan(inst_dir: &Path, data_dir: &Path, o: &mut impl NitroOutput) -> anyhow::Result<()> {
 	let possible_threats = Threats::load();
 
 	o.start_process();
-	let result = scan_dir(&inst_dir.join("mods"), &possible_threats, &mut o)?;
+	let result = Runtime::new()?.block_on(scan_dir(
+		&inst_dir.join("mods"),
+		&possible_threats,
+		data_dir,
+		o,
+	))?;
 
 	o.display(MessageContents::Success("Scanned".into()));
 	o.end_process();
@@ -140,7 +154,7 @@ fn default_scan(inst_dir: &Path) -> anyhow::Result<()> {
 	for (filename, report) in result.into_iter().sorted_by_cached_key(|x| x.1.score()) {
 		let mitigation = report.mitigation();
 		if let Mitigation::Detection = mitigation {
-			report.dump();
+			report.dump(data_dir);
 			bail!("Threat detected in {}", filename.to_string_lossy());
 		}
 	}
@@ -148,15 +162,14 @@ fn default_scan(inst_dir: &Path) -> anyhow::Result<()> {
 	Ok(())
 }
 
-fn scan_dir(
+async fn scan_dir(
 	dir: &Path,
 	possible_threats: &Threats,
+	data_dir: &Path,
 	o: &mut impl NitroOutput,
 ) -> anyhow::Result<HashMap<OsString, Report>> {
-	let mut results = HashMap::new();
-
 	let count = dir.read_dir()?.count();
-	let mut i = 0;
+	let mut tasks = JoinSet::new();
 	for entry in dir.read_dir().context("Failed to read dir")? {
 		let entry = entry?;
 
@@ -164,10 +177,28 @@ fn scan_dir(
 			continue;
 		}
 
-		let file = std::fs::read(entry.path()).context("Failed to open entry")?;
+		let possible_threats = possible_threats.clone();
+		let data_dir = data_dir.to_owned();
+		let task = async move {
+			let file = tokio::fs::read(entry.path())
+				.await
+				.context("Failed to open entry")?;
 
-		let report = scan_jar(&file, &possible_threats)?;
-		results.insert(entry.file_name(), report);
+			let report =
+				tokio::task::spawn_blocking(move || scan_jar(&file, &possible_threats, &data_dir))
+					.await??;
+
+			Ok::<_, anyhow::Error>((entry.file_name(), report))
+		};
+		tasks.spawn(task);
+	}
+
+	let mut i = 0;
+	let mut results = HashMap::new();
+	while let Some(result) = tasks.join_next().await {
+		let (file_name, report) = result??;
+		results.insert(file_name, report);
+
 		o.display(MessageContents::associated(
 			MessageContents::Progress {
 				current: i,
@@ -181,7 +212,7 @@ fn scan_dir(
 	Ok(results)
 }
 
-fn scan_jar(data: &[u8], possible_threats: &Threats) -> anyhow::Result<Report> {
+fn scan_jar(data: &[u8], possible_threats: &Threats, data_dir: &Path) -> anyhow::Result<Report> {
 	let data_hash = blake3::hash(data);
 	// Check for known malware
 	if let Some(threat) = check_known_malware(&data_hash.to_string()) {
@@ -191,7 +222,7 @@ fn scan_jar(data: &[u8], possible_threats: &Threats) -> anyhow::Result<Report> {
 	}
 
 	// Check for cached scan
-	let cache_file = get_scan_cache_path(&data_hash.to_string(), &possible_threats.hash);
+	let cache_file = get_scan_cache_path(&data_hash.to_string(), &possible_threats.hash, data_dir);
 	if let Ok(data) = std::fs::read(&cache_file) {
 		if let Ok(report) = serde_json::from_slice(&data) {
 			return Ok(report);
@@ -251,6 +282,7 @@ fn scan_file(file: &[u8], file_name: &str, possible_threats: &Threats, out: &mut
 	}
 }
 
+#[derive(Clone)]
 struct Threats {
 	threats: Vec<Threat>,
 	hash: String,
@@ -267,7 +299,7 @@ impl Threats {
 		let system: Vec<Threat> =
 			serde_json::from_slice(include_bytes!("threats/system.json")).unwrap();
 
-		let os = get_os_string();
+		let os = OS_STRING.to_string();
 
 		let out: Vec<_> = main
 			.into_iter()
@@ -306,8 +338,8 @@ impl Report {
 	}
 
 	/// Dumps the report to a file
-	fn dump(&self) {
-		let path = get_data_dir().join("guardian/report.txt");
+	fn dump(&self, data_dir: &Path) {
+		let path = data_dir.join("internal/guardian/report.txt");
 		if let Ok(file) = File::create(path) {
 			let mut o = WriterOutput(file);
 			self.report(&mut o, false);
@@ -343,7 +375,7 @@ enum Subcommand {
 }
 
 /// Gets the path for a cached JAR scan
-fn get_scan_cache_path(data_hash: &str, threats_hash: &str) -> PathBuf {
-	let cache_dir = get_data_dir().join("internal/guardian/scan_cache");
+fn get_scan_cache_path(data_hash: &str, threats_hash: &str, data_dir: &Path) -> PathBuf {
+	let cache_dir = data_dir.join("internal/guardian/scan_cache");
 	cache_dir.join(format!("{data_hash}-{threats_hash}.json"))
 }
