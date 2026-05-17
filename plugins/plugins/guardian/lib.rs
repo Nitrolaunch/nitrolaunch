@@ -7,6 +7,7 @@ use std::path::{Path, PathBuf};
 use anyhow::{Context, bail};
 use clap::Parser;
 use itertools::Itertools;
+use nitro_plugin::api::wasm::nitro::get_instance_dir;
 use nitro_plugin::api::wasm::output::WASMPluginOutput;
 use nitro_plugin::api::wasm::sys::{fix_relative_path, get_data_dir};
 use nitro_plugin::api::wasm::{WASMPlugin, sys::get_os_string};
@@ -68,9 +69,15 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 		let mut o = WASMPluginOutput::new();
 
 		match cli.command {
-			Subcommand::Scan { file } => {
-				let path = PathBuf::from(file);
-				let path = fix_relative_path(path);
+			Subcommand::Scan { file, instance } => {
+				let path = if instance {
+					let dir = get_instance_dir(&file)
+						.context("Failed to get instance directory")?
+						.context("Instance does not exist")?;
+					dir.join("mods")
+				} else {
+					fix_relative_path(PathBuf::from(file))
+				};
 
 				if !path.exists() {
 					bail!("Path does not exist");
@@ -323,6 +330,9 @@ enum Subcommand {
 	Scan {
 		/// The JAR file to scan
 		file: String,
+		/// Whether this is the ID of an instance to scan instead
+		#[arg(short, long)]
+		instance: bool,
 	},
 }
 
