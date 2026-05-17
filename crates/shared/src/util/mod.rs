@@ -2,6 +2,8 @@
 pub mod io;
 /// Printing and output utilities
 pub mod print;
+/// Profiling
+pub mod profile;
 
 use std::process::{Command, Stdio};
 use std::time::{SystemTime, UNIX_EPOCH};

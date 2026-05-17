@@ -153,9 +153,8 @@ pub fn format_log_message_contents(contents: MessageContents) -> String {
 
 /// Clears out old log files
 pub fn clear_old_logs(paths: &Paths, client_id: &str) -> anyhow::Result<()> {
-	let read = paths
-		.logs
-		.join(client_id)
+	let logs_dir = paths.logs.join(client_id);
+	let read = logs_dir
 		.read_dir()
 		.context("Failed to read logs directory")?;
 
@@ -180,7 +179,7 @@ pub fn clear_old_logs(paths: &Paths, client_id: &str) -> anyhow::Result<()> {
 	let sorted = mapped.sorted_by_cached_key(|x| x.1).rev();
 	if count > 15 {
 		for (name, _) in sorted.skip(15) {
-			let _ = std::fs::remove_file(paths.logs.join(name));
+			let _ = std::fs::remove_file(logs_dir.join(name));
 		}
 	}
 

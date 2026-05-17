@@ -185,8 +185,8 @@ pub async fn run_cli() -> anyhow::Result<()> {
 				true,
 				MessageContents::Simple(
 					"You probably want to install the default set of plugins, \
-which includes features like Modrinth, Fabric, and stats tracking. \
-Would you like to do that now?"
+				which includes features like Modrinth, Fabric, and stats tracking. \
+				Would you like to do that now?"
 						.into(),
 				),
 			)
