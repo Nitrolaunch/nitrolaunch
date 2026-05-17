@@ -232,7 +232,7 @@ mod test {
 			TestReader {
 				outputs: outputs.iter().copied().collect(),
 			},
-			128,
+			2048,
 		);
 
 		let mut lines = Vec::new();
