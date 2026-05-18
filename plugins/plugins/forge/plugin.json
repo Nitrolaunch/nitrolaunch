@@ -2,6 +2,7 @@
 	"id": "forge",
 	"name": "Forge",
 	"description": "Install NeoForge instances",
+	"uninstall_dirs": ["forge"],
 	"version": "v7",
 	"protocol_version": 3,
 	"hooks": {

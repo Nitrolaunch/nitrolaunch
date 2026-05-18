@@ -29,6 +29,7 @@ The manifest file describes information about your plugin in a JSON format. All 
 	},
 	"dependencies": [string],
 	"install_message": string,
+	"uninstall_dirs": [string],
 	"protocol_version": number,
 	"raw_transfer": bool
 }
@@ -41,6 +42,7 @@ The manifest file describes information about your plugin in a JSON format. All 
 - `subcommands`: A map of custom subcommands to a short description of what they do. Can also be mapped to an object containing a supercommand for the subcommand, allowing you to do things like `nitro instance <subcommand>`.
 - `dependencies`: A list of plugin IDs that this plugin depends on to work
 - `install_message`: A warning message to display when this plugin is installed. Often this is for mentioning dependencies like Python or NodeJS that the user needs to install.
+- `uninstall_dirs`: A list of directories in the data/internal directory that should be removed when this plugin is uninstalled. Good for removing cache data that the user may no longer want. To protect against errors or malicious use, only directory paths that start with the ID of the plugin can be removed.
 - `protocol_version`: The version of the hook protocol that this plugin uses
 - `raw_transfer`: Whether to call the hooks without any base64 encoding. This makes creating plugin programs easier, but can open up your plugin to vulnerabilities or bugs if unescaped data is sent to the hook.
 

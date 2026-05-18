@@ -204,6 +204,15 @@ impl PluginManager {
 		Ok(())
 	}
 
+	/// Load a plugin's manifest
+	pub fn load_plugin_manifest(plugin: &str, paths: &Paths) -> anyhow::Result<PluginManifest> {
+		let dir = paths.plugins.join(plugin);
+		let path = dir.join("plugin.json");
+		let manifest = json_from_file(path).context("Failed to read plugin manifest from file")?;
+
+		Ok(manifest)
+	}
+
 	/// Gets all the available plugins from the plugin directory.
 	/// Returns a list of tuples of the plugin ID and file path
 	pub fn get_available_plugins(paths: &Paths) -> anyhow::Result<Vec<(String, PathBuf)>> {
@@ -310,6 +319,20 @@ impl PluginManager {
 
 	/// Uninstalls a plugin by removing its files and disabling it
 	pub fn uninstall_plugin(plugin: &str, paths: &Paths) -> anyhow::Result<()> {
+		if let Ok(manifest) = Self::load_plugin_manifest(plugin, paths) {
+			for dir in manifest.uninstall_dirs {
+				if !dir.starts_with(plugin) {
+					eprintln!("Not removing plugin dir {dir} as it is invalid");
+					continue;
+				}
+
+				let dir = paths.internal.join(dir);
+				if dir.exists() {
+					let _ = std::fs::remove_dir_all(dir);
+				}
+			}
+		}
+
 		Self::remove_plugin(plugin, paths).context("Failed to remove plugin")?;
 
 		Self::disable_plugin(plugin, paths)

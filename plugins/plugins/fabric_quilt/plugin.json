@@ -2,6 +2,7 @@
 	"id": "fabric_quilt",
 	"name": "Fabric Quilt",
 	"description": "Install Fabric and Quilt instances",
+	"uninstall_dirs": ["fabric_quilt"],
 	"version": "v7",
 	"protocol_version": 3,
 	"hooks": {
