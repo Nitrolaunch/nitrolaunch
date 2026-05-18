@@ -3,6 +3,7 @@
 	"name": "Smithed",
 	"description": "Install Smithed packs on templates and instances",
 	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/smithed",
+	"uninstall_dirs": ["smithed"],
 	"version": "v7",
 	"protocol_version": 3,
 	"hooks": {

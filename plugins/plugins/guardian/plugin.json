@@ -3,6 +3,7 @@
 	"name": "Guardian",
 	"description": "Protect yourself against malware in mods",
 	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/guardian",
+	"uninstall_dirs": ["guardian/scan_cache"],
 	"version": "v7",
 	"protocol_version": 3,
 	"hooks": {

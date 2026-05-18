@@ -321,6 +321,8 @@ pub struct PluginManifest {
 	pub dependencies: Vec<String>,
 	/// Message to display when the plugin is installed
 	pub install_message: Option<String>,
+	/// Folders in the internal folder to remove when the plugin is uninstalled
+	pub uninstall_dirs: Vec<String>,
 	/// The protocol version of the plugin
 	pub protocol_version: Option<u16>,
 	/// Whether to disable base64 encoding in the protocol
