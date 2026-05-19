@@ -40,6 +40,18 @@ fn main() -> anyhow::Result<()> {
 		};
 
 		let dir = PathBuf::from(dir);
+		let config: Config = arg
+			.config
+			.plugin_config
+			.get("guardian")
+			.cloned()
+			.and_then(|x| serde_json::from_value(x).ok())
+			.unwrap_or_default();
+
+		if !config.scan.unwrap_or(false) {
+			return Ok(OnInstanceSetupResult::default());
+		}
+
 		default_scan(&dir, &ctx.get_data_dir()?, ctx.get_output())?;
 
 		Ok(OnInstanceSetupResult::default())
@@ -51,6 +63,18 @@ fn main() -> anyhow::Result<()> {
 		let Some(dir) = arg.inst_dir else {
 			return Ok(());
 		};
+
+		let config: Config = arg
+			.config
+			.plugin_config
+			.get("guardian")
+			.cloned()
+			.and_then(|x| serde_json::from_value(x).ok())
+			.unwrap_or_default();
+
+		if !config.scan.unwrap_or(false) {
+			return Ok(());
+		}
 
 		let dir = PathBuf::from(dir);
 		default_scan(&dir, &ctx.get_data_dir()?, ctx.get_output())
@@ -372,6 +396,12 @@ enum Subcommand {
 		#[arg(short, long)]
 		instance: bool,
 	},
+}
+
+#[derive(Deserialize, Default)]
+struct Config {
+	#[serde(default)]
+	scan: Option<bool>,
 }
 
 /// Gets the path for a cached JAR scan

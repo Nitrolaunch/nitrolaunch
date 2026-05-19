@@ -3,7 +3,9 @@
 	"name": "Guardian",
 	"description": "Protect yourself against malware in mods",
 	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/guardian",
-	"uninstall_dirs": ["guardian/scan_cache"],
+	"uninstall_dirs": [
+		"guardian/scan_cache"
+	],
 	"version": "v7",
 	"protocol_version": 3,
 	"hooks": {
@@ -15,6 +17,21 @@
 		},
 		"subcommand": {
 			"executable": "${PLUGIN_DIR}/nitro_plugin_guardian${EXE_EXTENSION}"
+		},
+		"add_instance_config_controls": {
+			"constant": {
+				"controls": [
+					{
+						"id": "guardian.scan",
+						"name": "Scan",
+						"description": "Whether to enable automatic mod threat scanning on this instance",
+						"section": "Guardian",
+						"schema": {
+							"type": "boolean"
+						}
+					}
+				]
+			}
 		}
 	},
 	"subcommands": {
