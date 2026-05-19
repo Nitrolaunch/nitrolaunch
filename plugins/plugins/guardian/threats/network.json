@@ -5,7 +5,7 @@
         "constant_matchers": [
             "wget"
         ],
-        "score": 20
+        "score": 10
     },
     {
         "id": "curl",
@@ -63,15 +63,7 @@
         "constant_matchers": [
             "POST"
         ],
-        "score": 3
-    },
-    {
-        "id": "http_connection",
-        "ty": "smell",
-        "constant_matchers": [
-            "HttpURLConnection"
-        ],
-        "score": 3
+        "score": 5
     },
     {
         "id": "local_ip",

@@ -13,7 +13,7 @@
         "constant_matchers": [
             "defineClass"
         ],
-        "score": 10
+        "score": 8
     },
     {
         "id": "reflect_method_invoke",
@@ -21,7 +21,7 @@
         "constant_matchers": [
             "Method.invoke"
         ],
-        "score": 10
+        "score": 8
     },
     {
         "id": "telemetry",

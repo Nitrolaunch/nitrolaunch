@@ -260,7 +260,7 @@ fn scan_jar(data: &[u8], possible_threats: &Threats, data_dir: &Path) -> anyhow:
 
 	for i in 0..zip.len() {
 		let mut file = zip.by_index(i).context("Failed to get internal file")?;
-		if file.name().starts_with("/assets/") {
+		if IGNORED_FILES.contains(&file.name()) || file.name().starts_with("/assets/") {
 			continue;
 		}
 
@@ -285,10 +285,6 @@ fn scan_jar(data: &[u8], possible_threats: &Threats, data_dir: &Path) -> anyhow:
 }
 
 fn scan_file(file: &[u8], file_name: &str, possible_threats: &Threats, out: &mut Vec<Threat>) {
-	if IGNORED_FILES.contains(&file_name) {
-		return;
-	}
-
 	let constant_pool_end = if file_name.ends_with(".class") {
 		constant_pool_end(file)
 	} else {
