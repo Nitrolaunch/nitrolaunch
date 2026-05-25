@@ -6,7 +6,7 @@ use std::{
 use anyhow::Context;
 use nitro_core::io::{json_from_file, json_to_file_pretty};
 use serde::{Deserialize, Serialize};
-use sysinfo::{Pid, System};
+use sysinfo::{Pid, RefreshKind, System};
 
 use crate::io::paths::Paths;
 
@@ -34,7 +34,7 @@ impl RunningInstanceRegistry {
 			RunningInstanceRegistryDeser::default()
 		};
 
-		let system = System::new_all();
+		let system = System::new_with_specifics(RefreshKind::nothing());
 
 		let mut out = Self {
 			data,
@@ -85,8 +85,14 @@ impl RunningInstanceRegistry {
 
 	/// Removes instances that aren't alive from the registry
 	pub fn remove_dead_instances(&mut self) {
+		let procs_to_update: Vec<_> = self
+			.data
+			.instances
+			.iter()
+			.map(|x| Pid::from_u32(x.pid))
+			.collect();
 		self.system
-			.refresh_processes(sysinfo::ProcessesToUpdate::All, true);
+			.refresh_processes(sysinfo::ProcessesToUpdate::Some(&procs_to_update), true);
 
 		let original_lenth = self.data.instances.len();
 		self.data.instances.retain(|x| {
