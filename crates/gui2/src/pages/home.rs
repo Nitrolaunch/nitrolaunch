@@ -1,7 +1,7 @@
 use std::rc::Rc;
 
 use crate::{
-	components::{footer::FooterItem, instance::InstanceListItem},
+	components::{footer::FooterItem, input::select::Selected, instance::InstanceListItem},
 	ops::instance::{FetchItems, InstanceItemInfo, InstancesAndTemplates},
 	prelude::*,
 };
@@ -64,8 +64,8 @@ impl Component for HomePage {
 
 		let items_elem = rect().child(items_elem).width(Size::fill());
 
-		let on_select_tab = Rc::new(move |new_tab| tab.clone().set(new_tab));
-		let tabs = InlineSelect::new(Some(tab.read().clone()), on_select_tab)
+		let on_select_tab = Rc::new(move |new_tab: Selected| tab.clone().set(new_tab.single()));
+		let tabs = InlineSelect::new(Selected::Single(tab.read().clone()), on_select_tab)
 			.child(SelectOption {
 				id: "instances".into(),
 				title: "Instances".into(),
@@ -86,8 +86,9 @@ impl Component for HomePage {
 
 		let bar_center = rect().width(Size::flex(1.0));
 
-		let on_select_filter = Rc::new(move |new_filter| filter.clone().set(new_filter));
-		let filters = InlineSelect::new(Some(filter.read().clone()), on_select_filter)
+		let on_select_filter =
+			Rc::new(move |new_filter: Selected| filter.clone().set(new_filter.single()));
+		let filters = InlineSelect::new(Selected::Single(filter.read().clone()), on_select_filter)
 			.align_end()
 			.child(SelectOption {
 				id: "all".into(),

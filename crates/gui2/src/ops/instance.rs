@@ -105,6 +105,18 @@ pub struct InstanceItemInfo {
 	pub loader: Option<Loader>,
 }
 
+impl InstanceItemInfo {
+	pub fn get_config_item(&self) -> ConfiguredItem {
+		let id = if self.ty == ConfigKind::BaseTemplate {
+			None
+		} else {
+			Some(self.id.clone())
+		};
+
+		ConfiguredItem { id, ty: self.ty }
+	}
+}
+
 #[derive(Clone, Default)]
 pub struct InstancesAndTemplates {
 	pub instances: Vec<InstanceItemInfo>,

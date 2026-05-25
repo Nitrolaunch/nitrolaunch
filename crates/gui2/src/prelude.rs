@@ -13,3 +13,15 @@ pub use crate::icons::icon;
 pub use crate::state::{BackState, FrontChannel, use_front_state};
 pub use crate::theme::use_theme;
 pub use crate::util::query_spawn;
+
+pub trait StateExt<T>: Clone {
+	/// Returns an event handler that sets this state to a value
+	fn setter(&self) -> EventHandler<T>;
+}
+
+impl<T: 'static> StateExt<T> for State<T> {
+	fn setter(&self) -> EventHandler<T> {
+		let mut this = self.clone();
+		EventHandler::from(move |value| this.set(value))
+	}
+}

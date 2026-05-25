@@ -1,5 +1,7 @@
 use crate::{
-	components::dialog::modal::Modal, ops::instance::FetchInstanceOrTemplateConfig, prelude::*,
+	components::{dialog::modal::Modal, input::switch::Switch},
+	ops::instance::FetchInstanceOrTemplateConfig,
+	prelude::*,
 };
 use nitrolaunch::config_crate::ConfigKind;
 
@@ -59,7 +61,12 @@ impl Component for ConfigModal {
 
 		let config_str = serde_json::to_string(&config.main).unwrap();
 
-		rect().center().child(config_str)
+		let mut enabled = use_state(|| false);
+
+		rect().center().child(config_str).child(Switch {
+			enabled: *enabled.read(),
+			on_toggle: EventHandler::new(move |_| enabled.toggle()),
+		})
 	}
 }
 

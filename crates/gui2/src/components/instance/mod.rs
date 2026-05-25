@@ -1,6 +1,7 @@
 use crate::ops::instance::InstanceItemInfo;
 use crate::prelude::*;
 use crate::util::assets::get_instance_icon;
+use nitrolaunch::config_crate::ConfigKind;
 use nitrolaunch::shared::Side;
 
 pub mod running_instances;
@@ -20,6 +21,7 @@ impl InstanceListItem {
 impl Component for InstanceListItem {
 	fn render(&self) -> impl IntoElement {
 		let theme = use_theme();
+		let front_state = use_front_state();
 
 		let is_hovered = use_state(|| false);
 
@@ -147,7 +149,21 @@ impl Component for InstanceListItem {
 			.flex()
 			.corner_radius(theme.round2)
 			.item_colorway(&theme, *is_hovered.read(), is_selected)
-			.on_press(move |_| selected.set(Some(info.clone())))
+			.on_press(move |_| {
+				// Double click
+				if is_selected {
+					match info.ty {
+						ConfigKind::Instance => {}
+						ConfigKind::Template | ConfigKind::BaseTemplate => {
+							front_state
+								.write()
+								.set_configured_item(Some(info.get_config_item()));
+						}
+					}
+				} else {
+					selected.set(Some(info.clone()))
+				}
+			})
 			.clickable()
 			.hover(is_hovered)
 			.child(top)

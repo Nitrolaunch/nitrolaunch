@@ -2,7 +2,7 @@ use nitro_shared::Side;
 use serde::{Deserialize, Serialize};
 
 /// A serializable value with a schema
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, PartialEq)]
 pub struct Control {
 	/// Serialized field ID of this control. Can have dots to specify nested structure.
 	pub id: String,
@@ -31,7 +31,7 @@ pub struct Control {
 }
 
 /// Schema of possible values and the interface for a controllable value, like a config field
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, PartialEq)]
 #[serde(rename_all = "snake_case")]
 #[serde(tag = "type")]
 pub enum ControlSchema {
@@ -87,7 +87,7 @@ pub enum ControlSchema {
 }
 
 /// Variant of a choice control
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, PartialEq)]
 
 pub struct Variant {
 	/// ID of the variant. Can be null to specify a null variant.
