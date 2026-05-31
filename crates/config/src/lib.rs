@@ -62,3 +62,13 @@ pub enum ConfigKind {
 	/// Base template config
 	BaseTemplate,
 }
+
+impl ConfigKind {
+	/// Gets whether this config is a template or base template
+	pub fn is_template(&self) -> bool {
+		match self {
+			Self::Template | Self::BaseTemplate => true,
+			Self::Instance => false,
+		}
+	}
+}

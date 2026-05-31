@@ -22,5 +22,7 @@ pub fn icon(icon: &str, size: f32) -> Svg {
 }
 
 fn icon_impl(icon: &str) -> Cow<'static, [u8]> {
-	Icons::get(&format!("icons/{icon}.svg")).unwrap().data
+	Icons::get(&format!("icons/{icon}.svg"))
+		.expect("Icon does not exist")
+		.data
 }

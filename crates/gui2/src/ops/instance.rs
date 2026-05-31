@@ -113,7 +113,11 @@ impl InstanceItemInfo {
 			Some(self.id.clone())
 		};
 
-		ConfiguredItem { id, ty: self.ty }
+		ConfiguredItem {
+			id,
+			ty: self.ty,
+			is_new: false,
+		}
 	}
 }
 

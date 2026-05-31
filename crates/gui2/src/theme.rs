@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use freya::prelude::Color;
+use freya::prelude::{Border, BorderAlignment, Color};
 use serde::Deserialize;
 
 use crate::state::use_front_state;
@@ -32,6 +32,8 @@ pub struct Theme {
 	pub item_select_border: HexColor,
 	/// Border color for items
 	pub item_border: HexColor,
+	/// Highlight background
+	pub highlight: HexColor,
 	/// Disabled foreground
 	pub disabled: HexColor,
 
@@ -50,6 +52,8 @@ pub struct Theme {
 	// Other
 	/// Border width
 	pub border: f32,
+	/// Larger border width
+	pub border2: f32,
 	/// Smaller border radius
 	pub round: f32,
 	/// Larger border radius
@@ -64,16 +68,17 @@ impl Theme {
 			fg: HexColor(0xfff0f0f0),
 			fg2: HexColor(0xffb5b5b5),
 			fg3: HexColor(0xff757575),
-			bg: HexColor(0xff0c0c0d),
+			bg: HexColor(0xff0e0e0f),
 			primary: HexColor(0xff7ee91b),
 			primary_bg: HexColor(0xff021b1e),
-			panel: HexColor(0xff131315),
+			panel: HexColor(0xff111113),
 			panel_border: HexColor(0xff2b2b2c),
-			item: HexColor(0xff1a1a1b),
-			item_border: HexColor(0xff2b2b2c),
-			item_hover: HexColor(0xff1d1d1e),
-			item_select: HexColor(0xff202021),
-			item_select_border: HexColor(0xff282829),
+			item: HexColor(0xff151517),
+			item_border: HexColor(0xff222223),
+			item_hover: HexColor(0xff1a1a1b),
+			item_select: HexColor(0xff021b1e),
+			item_select_border: HexColor(0xff7ee91b),
+			highlight: HexColor(0xff1c1c1d),
 			disabled: HexColor(0xff656565),
 			navbar: HexColor(0xff0c0c0d),
 			navbar_height: 42.0,
@@ -81,24 +86,27 @@ impl Theme {
 			footer_height: 48.0,
 			sidebar: HexColor(0xff111112),
 			sidebar_width: 42.0,
-			border: 2.0,
-			round: 6.0,
+			border: 1.0,
+			border2: 2.0,
+			round: 8.0,
 			round2: 12.0,
 			input_height: 32.0,
 		}
 	}
 
-	pub fn dark_minimal() -> Self {
-		let dark = Self::dark();
+	pub fn border(&self, color: impl Into<Color>) -> Border {
+		Border {
+			width: self.border.into(),
+			fill: color.into(),
+			alignment: BorderAlignment::Outer,
+		}
+	}
 
-		Self {
-			item: dark.panel,
-			item_border: HexColor(0xff212122),
-			item_hover: dark.item,
-			item_select: dark.primary_bg,
-			item_select_border: dark.primary,
-			border: 1.0,
-			..dark
+	pub fn border2(&self, color: impl Into<Color>) -> Border {
+		Border {
+			width: self.border2.into(),
+			fill: color.into(),
+			alignment: BorderAlignment::Outer,
 		}
 	}
 }

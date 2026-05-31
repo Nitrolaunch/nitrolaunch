@@ -1,0 +1,216 @@
+use crate::ops::instance::InstanceItemInfo;
+use crate::pages::instance::config::ConfiguredItem;
+use crate::prelude::*;
+use crate::util::assets::get_instance_icon;
+use nitrolaunch::config_crate::ConfigKind;
+use nitrolaunch::shared::Side;
+
+#[derive(PartialEq)]
+pub struct InstanceListItem {
+	info: InstanceItemInfo,
+	selected: State<Option<InstanceItemInfo>>,
+	is_add_placeholder: bool,
+}
+
+impl InstanceListItem {
+	pub fn new(info: InstanceItemInfo, selected: State<Option<InstanceItemInfo>>) -> Self {
+		Self {
+			info,
+			selected,
+			is_add_placeholder: false,
+		}
+	}
+
+	pub fn add_placeholder(ty: ConfigKind, selected: State<Option<InstanceItemInfo>>) -> Self {
+		Self {
+			info: InstanceItemInfo {
+				id: "Create new".into(),
+				ty,
+				name: None,
+				icon: Some("builtin:/icons/plus.svg".into()),
+				side: None,
+				version: None,
+				loader: None,
+			},
+			selected,
+			is_add_placeholder: true,
+		}
+	}
+}
+
+impl Component for InstanceListItem {
+	fn render(&self) -> impl IntoElement {
+		let theme = use_theme();
+		let front_state = use_front_state();
+
+		let is_hovered = use_state(|| false);
+
+		let is_selected = self
+			.selected
+			.read()
+			.as_ref()
+			.is_some_and(|x| x == &self.info);
+
+		let mut selected = self.selected.clone();
+
+		let name = if let Some(name) = &self.info.name {
+			name
+		} else {
+			&self.info.id
+		};
+
+		let inst_icon = if self.is_add_placeholder {
+			icon("plus", 26.0).into_element()
+		} else if self.info.icon.is_none() {
+			icon("box", 32.0).into_element()
+		} else {
+			let inst_icon = get_instance_icon(self.info.icon.as_deref());
+			ImageViewer::new(inst_icon)
+				.width(Size::percent(60.0))
+				.height(Size::percent(60.0))
+				.into_element()
+		};
+
+		let top = rect()
+			.cont()
+			.width(Size::fill())
+			.height(Size::px(72.0))
+			.child(
+				rect()
+					.width(Size::px(72.0))
+					.height(Size::fill())
+					.center()
+					.child(inst_icon),
+			)
+			.child(
+				rect()
+					.width(Size::flex(1.0))
+					.height(Size::fill())
+					.horizontal()
+					.cross_align(Alignment::Center)
+					.font_weight(FontWeight::BOLD)
+					.child(name.as_str()),
+			);
+
+		let side = if let Some(side) = &self.info.side {
+			let ico = match side {
+				Side::Client => "controller",
+				Side::Server => "server",
+			};
+			rect()
+				.cont()
+				.child(icon(ico, 16.0))
+				.child(side.to_string_pretty())
+		} else {
+			rect()
+		};
+
+		let loader = if let Some(loader) = &self.info.loader {
+			rect()
+				.cont()
+				.child(icon("box", 16.0))
+				.child(loader.to_string())
+		} else {
+			rect()
+		};
+
+		let version = if let Some(version) = &self.info.version {
+			rect()
+				.cont()
+				.child(icon("tag", 16.0))
+				.child(version.to_string())
+		} else {
+			rect()
+		};
+
+		let bottom_color = if is_selected {
+			theme.primary
+		} else {
+			theme.fg3
+		};
+
+		let bottom = rect()
+			.width(Size::fill())
+			.height(Size::flex(1.0))
+			.horizontal()
+			.flex()
+			.color(bottom_color)
+			.font_weight(FontWeight::BOLD)
+			.child(
+				rect()
+					.width(Size::flex(1.0))
+					.height(Size::fill())
+					.cont()
+					.center()
+					.text_overflow(TextOverflow::Clip)
+					.overflow(Overflow::Clip)
+					.child(side),
+			)
+			.child(
+				rect()
+					.width(Size::flex(1.0))
+					.height(Size::fill())
+					.cont()
+					.center()
+					.text_overflow(TextOverflow::Clip)
+					.overflow(Overflow::Clip)
+					.child(loader),
+			)
+			.child(
+				rect()
+					.width(Size::flex(1.0))
+					.height(Size::fill())
+					.cont()
+					.center()
+					.text_overflow(TextOverflow::Clip)
+					.overflow(Overflow::Clip)
+					.child(version),
+			);
+
+		let info = self.info.clone();
+		let is_add_placeholder = self.is_add_placeholder;
+
+		rect()
+			.width(Size::fill())
+			.height(Size::px(110.0))
+			.flex()
+			.corner_radius(theme.round2)
+			.item_colorway(&theme, *is_hovered.read(), is_selected)
+			.on_press(move |_| {
+				// Add placeholder
+				if is_add_placeholder {
+					front_state
+						.write()
+						.set_configured_item(Some(ConfiguredItem {
+							id: None,
+							ty: info.ty,
+							is_new: true,
+						}));
+
+					return;
+				}
+
+				// Double click
+				if is_selected {
+					match info.ty {
+						ConfigKind::Instance => {
+							front_state
+								.write()
+								.set_configured_item(Some(info.get_config_item()));
+						}
+						ConfigKind::Template | ConfigKind::BaseTemplate => {
+							front_state
+								.write()
+								.set_configured_item(Some(info.get_config_item()));
+						}
+					}
+				} else {
+					selected.set(Some(info.clone()))
+				}
+			})
+			.clickable()
+			.hover(is_hovered)
+			.child(top)
+			.child(bottom)
+	}
+}

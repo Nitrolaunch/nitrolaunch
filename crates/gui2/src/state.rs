@@ -61,7 +61,7 @@ impl FrontState {
 		event_rx: broadcast::Receiver<BackEvent>,
 	) -> Self {
 		Self {
-			theme: Arc::new(Theme::dark_minimal()),
+			theme: Arc::new(Theme::dark()),
 			navigator: Navigator::new(),
 			radio,
 			footer: FooterItem::None,

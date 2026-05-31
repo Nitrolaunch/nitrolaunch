@@ -1,10 +1,9 @@
 use nitrolaunch::config_crate::ConfigKind;
 
 use crate::{
-	components::instance::InstanceItemInfo,
 	dependency::BackDependency,
 	ops::{
-		instance::FetchItems,
+		instance::{FetchItems, InstanceItemInfo},
 		launch::{FetchRunningInstances, KillInstance},
 	},
 	prelude::*,

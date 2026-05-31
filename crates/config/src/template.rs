@@ -42,6 +42,22 @@ impl TemplateConfig {
 		self.loader.merge(&other.loader);
 		self.packages.merge(other.packages);
 	}
+
+	/// Gets the client loader of this config
+	pub fn client_loader(&self) -> Option<&str> {
+		self.loader
+			.client()
+			.map(|x| x.as_str())
+			.or(self.instance.loader.as_deref())
+	}
+
+	/// Gets the server loader of this config
+	pub fn server_loader(&self) -> Option<&str> {
+		self.loader
+			.server()
+			.map(|x| x.as_str())
+			.or(self.instance.loader.as_deref())
+	}
 }
 
 /// Different representations of loader configuration on a template

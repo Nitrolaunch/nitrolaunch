@@ -130,12 +130,22 @@ impl Component for Modal {
 					theme.panel
 				};
 
+				let close_button = rect()
+					.width(Size::px(32.0))
+					.height(Size::px(32.0))
+					.center()
+					.hover(close_button_hovered)
+					.background(close_button_bg)
+					.corner_radius(theme.round2)
+					.on_press(move |_| on_close.call(()))
+					.child(icon("delete", 16.0));
+
 				let titlebar = rect()
 					.width(Size::fill())
-					.height(Size::px(32.0))
+					.height(Size::px(40.0))
 					.cont()
 					.border(border_bottom(theme.border, theme.panel_border))
-					.child(rect().width(Size::px(32.0)))
+					.child(rect().width(Size::px(40.0)))
 					.child(
 						rect()
 							.width(Size::flex(1.0))
@@ -148,14 +158,10 @@ impl Component for Modal {
 					)
 					.child(
 						rect()
-							.width(Size::px(32.0))
+							.width(Size::px(40.0))
 							.height(Size::fill())
 							.center()
-							.hover(close_button_hovered)
-							.background(close_button_bg)
-							.corner_radius(theme.round2)
-							.on_press(move |_| on_close.call(()))
-							.child(icon("delete", 16.0)),
+							.child(close_button),
 					);
 
 				let bottom_bar = rect()
@@ -180,5 +186,6 @@ impl Component for Modal {
 }
 
 pub struct ModalButton {
-	on_click: Rc<dyn FnMut()>,
+	pub title: String,
+	pub on_click: EventHandler<()>,
 }

@@ -87,10 +87,7 @@ impl Component for FooterButton {
 				ConfigKind::Template | ConfigKind::BaseTemplate => {
 					front_state
 						.write()
-						.set_configured_item(Some(ConfiguredItem {
-							id: Some(info.id.clone()),
-							ty: info.ty,
-						}));
+						.set_configured_item(Some(info.get_config_item()));
 				}
 			},
 		};

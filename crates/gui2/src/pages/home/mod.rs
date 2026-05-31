@@ -1,11 +1,14 @@
 use std::rc::Rc;
 
 use crate::{
-	components::{footer::FooterItem, input::select::Selected, instance::InstanceListItem},
+	components::{footer::FooterItem, input::select::Selected},
 	ops::instance::{FetchItems, InstanceItemInfo, InstancesAndTemplates},
+	pages::home::item::InstanceListItem,
 	prelude::*,
 };
-use nitrolaunch::shared::Side;
+use nitrolaunch::{config_crate::ConfigKind, shared::Side};
+
+pub mod item;
 
 #[derive(PartialEq)]
 pub struct HomePage;
@@ -29,7 +32,7 @@ impl Component for HomePage {
 		});
 
 		let items_gap = 20.0;
-		let items_side_padding = 24.0;
+		let items_side_padding = 0.0;
 		let items = items_query.read();
 		let items = match &*items.state() {
 			QueryStateData::Pending
@@ -47,6 +50,14 @@ impl Component for HomePage {
 			_ => unreachable!(),
 		};
 
+		let add_placeholder_ty = match tab.read().as_str() {
+			"instances" => ConfigKind::Instance,
+			"templates" => ConfigKind::Template,
+			_ => unreachable!(),
+		};
+		let add_placeholder =
+			InstanceListItem::add_placeholder(add_placeholder_ty, selected.clone());
+
 		let items = items
 			.into_iter()
 			.filter(|x| {
@@ -58,7 +69,8 @@ impl Component for HomePage {
 					true
 				}
 			})
-			.map(|x| InstanceListItem::new(x.clone(), selected.clone()));
+			.map(|x| InstanceListItem::new(x.clone(), selected.clone()))
+			.chain(std::iter::once(add_placeholder));
 
 		let items_elem = grid(3, items).gap(items_gap);
 
@@ -66,16 +78,8 @@ impl Component for HomePage {
 
 		let on_select_tab = Rc::new(move |new_tab: Selected| tab.clone().set(new_tab.single()));
 		let tabs = InlineSelect::new(Selected::Single(tab.read().clone()), on_select_tab)
-			.child(SelectOption {
-				id: "instances".into(),
-				title: "Instances".into(),
-				icon: Some("box".into()),
-			})
-			.child(SelectOption {
-				id: "templates".into(),
-				title: "Templates".into(),
-				icon: Some("diagram".into()),
-			});
+			.child(SelectOption::new("instances", "Instances", Some("box")))
+			.child(SelectOption::new("templates", "Templates", Some("diagram")));
 
 		let bar_left = rect()
 			.width(Size::flex(1.0))
@@ -90,21 +94,9 @@ impl Component for HomePage {
 			Rc::new(move |new_filter: Selected| filter.clone().set(new_filter.single()));
 		let filters = InlineSelect::new(Selected::Single(filter.read().clone()), on_select_filter)
 			.align_end()
-			.child(SelectOption {
-				id: "all".into(),
-				title: "All".into(),
-				icon: Some("box".into()),
-			})
-			.child(SelectOption {
-				id: "client".into(),
-				title: "Client".into(),
-				icon: Some("controller".into()),
-			})
-			.child(SelectOption {
-				id: "server".into(),
-				title: "Server".into(),
-				icon: Some("server".into()),
-			});
+			.child(SelectOption::new("all", "All", Some("box")))
+			.child(SelectOption::new("client", "Client", Some("controller")))
+			.child(SelectOption::new("server", "Server", Some("server")));
 
 		let bar_right = rect()
 			.width(Size::flex(1.0))
