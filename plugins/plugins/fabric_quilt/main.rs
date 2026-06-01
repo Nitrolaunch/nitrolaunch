@@ -1,6 +1,7 @@
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, bail};
+use nitro_core::io::java::maven::MavenLibraryParts;
 use nitro_mods::fabric_quilt;
 use nitro_plugin::{api::executable::ExecutablePlugin, hook::hooks::OnInstanceSetupResult};
 use nitro_shared::{UpdateDepth, loaders::Loader, versions::VersionPattern};
@@ -127,10 +128,9 @@ fn main() -> anyhow::Result<()> {
 			.context("Failed to get metadata")?;
 
 		let out = meta.into_iter().map(|version| {
-			version
-				.loader
-				.maven
-				.replace("net.fabricmc:fabric-loader:", "")
+			MavenLibraryParts::parse_from_str(&version.loader.maven)
+				.map(|x| x.version)
+				.unwrap_or(version.loader.maven)
 		});
 
 		Ok(out.collect())
