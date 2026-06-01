@@ -180,7 +180,7 @@ impl Instance {
 
 	/// Get the original, editable config before templates are applied
 	pub fn original_config(&self) -> &InstanceConfig {
-		&self.config
+		&self.original_config
 	}
 
 	/// Opens the lockfile for this instance and returns it
