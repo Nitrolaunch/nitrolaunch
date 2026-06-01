@@ -11,7 +11,6 @@ pub static NEOFORGE: &[u8] = include_bytes!("../assets/images/neoforge.png");
 pub static PAPER: &[u8] = include_bytes!("../assets/images/paper.png");
 pub static QUILT: &[u8] = include_bytes!("../assets/images/quilt.png");
 pub static SPONGE: &[u8] = include_bytes!("../assets/images/sponge.png");
-pub static PLUS: &[u8] = include_bytes!("../assets/icons/plus.svg");
 
 pub fn get_instance_icon(icon: Option<&str>) -> ImageSource {
 	let default = ("default-instance", DEFAULT_INSTANCE);
@@ -27,7 +26,6 @@ pub fn get_instance_icon(icon: Option<&str>) -> ImageSource {
 				"/icons/paper.png" => ("paper", PAPER).into(),
 				"/icons/quilt.png" => ("quilt", QUILT).into(),
 				"/icons/sponge.png" => ("sponge", SPONGE).into(),
-				"/icons/plus.svg" => ("plus", PLUS).into(),
 				_ => default.into(),
 			}
 		} else if icon.starts_with("http") {

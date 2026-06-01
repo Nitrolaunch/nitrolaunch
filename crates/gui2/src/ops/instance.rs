@@ -211,7 +211,9 @@ impl QueryCapability for FetchInstanceOrTemplateConfig {
 
 					Ok(Some(InstanceOrTemplateConfigs {
 						main: TemplateConfig::from_instance(instance.config().clone()),
-						editable: TemplateConfig::from_instance(instance.original_config().clone()),
+						no_templates: TemplateConfig::from_instance(
+							instance.original_config().clone(),
+						),
 					}))
 				}
 				ConfigKind::Template => {
@@ -225,12 +227,12 @@ impl QueryCapability for FetchInstanceOrTemplateConfig {
 
 					Ok(Some(InstanceOrTemplateConfigs {
 						main: consolidated_template.clone(),
-						editable: template.clone(),
+						no_templates: template.clone(),
 					}))
 				}
 				ConfigKind::BaseTemplate => Ok(Some(InstanceOrTemplateConfigs {
 					main: config.base_template.clone(),
-					editable: config.base_template.clone(),
+					no_templates: config.base_template.clone(),
 				})),
 			}
 		})
@@ -240,5 +242,5 @@ impl QueryCapability for FetchInstanceOrTemplateConfig {
 #[derive(Default, Clone)]
 pub struct InstanceOrTemplateConfigs {
 	pub main: TemplateConfig,
-	pub editable: TemplateConfig,
+	pub no_templates: TemplateConfig,
 }

@@ -51,6 +51,9 @@ pub trait CustomStyles {
 
 	/// Sets full item colorway based off hover / select state
 	fn item_colorway(self, theme: &Theme, hovered: bool, selected: bool) -> Self;
+
+	/// Sets full panel colorway based off hover / select state
+	fn panel_colorway(self, theme: &Theme, hovered: bool, selected: bool) -> Self;
 }
 
 impl<T: ContainerSizeExt + StyleExt + ContainerWithContentExt + TextStyleExt> CustomStyles for T {
@@ -77,6 +80,18 @@ impl<T: ContainerSizeExt + StyleExt + ContainerWithContentExt + TextStyleExt> Cu
 			}))
 			.background(bg)
 	}
+
+	fn panel_colorway(self, theme: &Theme, hovered: bool, selected: bool) -> Self {
+		let (fg, border, bg) = panel_colorway(theme, hovered, selected);
+
+		self.color(fg)
+			.border(Some(Border {
+				fill: border.into(),
+				width: theme.border.into(),
+				alignment: BorderAlignment::Inner,
+			}))
+			.background(bg)
+	}
 }
 
 /// Picks foreground, border and background colors from hover and select state for an item
@@ -91,6 +106,21 @@ pub fn item_colorway(
 		(theme.fg, theme.item_border, theme.item_hover)
 	} else {
 		(theme.fg, theme.item_border, theme.item)
+	}
+}
+
+/// Picks foreground, border and background colors from hover and select state for a panel
+pub fn panel_colorway(
+	theme: &Theme,
+	hovered: bool,
+	selected: bool,
+) -> (HexColor, HexColor, HexColor) {
+	if selected {
+		(theme.primary, theme.item_select_border, theme.item_select)
+	} else if hovered {
+		(theme.fg, theme.panel_border, theme.panel_hover)
+	} else {
+		(theme.fg, theme.panel_border, theme.panel)
 	}
 }
 

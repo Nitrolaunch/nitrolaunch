@@ -73,7 +73,7 @@ impl Component for InlineSelect {
 		}));
 
 		let options = self.options.iter().map(|x| {
-			SelectOptionComponent {
+			InlineSelectOption {
 				option: x.clone(),
 				on_select: on_select.clone(),
 				on_deselect: on_deselect.clone(),
@@ -96,7 +96,7 @@ impl Component for InlineSelect {
 }
 
 #[derive(PartialEq)]
-struct SelectOptionComponent {
+struct InlineSelectOption {
 	option: SelectOption,
 	on_select: NotEq<Rc<dyn Fn(String)>>,
 	on_deselect: NotEq<Rc<dyn Fn(String)>>,
@@ -104,7 +104,7 @@ struct SelectOptionComponent {
 	fit: bool,
 }
 
-impl Component for SelectOptionComponent {
+impl Component for InlineSelectOption {
 	fn render(&self) -> impl IntoElement {
 		let theme = use_theme();
 		let is_hovered = use_state(|| false);
@@ -196,7 +196,7 @@ impl Component for Dropdown {
 		let header = rect()
 			.width(Size::fill())
 			.height(Size::px(theme.input_height))
-			.corner_radius(theme.round2)
+			.corner_radius(theme.round)
 			.item_colorway(&theme, *is_hovered.read(), false)
 			.hover(is_hovered)
 			.on_press(move |_| is_open.toggle())
@@ -222,12 +222,21 @@ impl Component for Dropdown {
 			let selected = selected.clone();
 			let id = option.id.clone();
 
+			let (fg, bg, border) = if is_selected {
+				(theme2.primary, theme2.primary_bg, theme2.primary)
+			} else {
+				(theme2.fg, theme2.panel, theme2.panel)
+			};
+
 			rect()
 				.key(i)
 				.width(Size::fill())
 				.height(Size::px(theme2.input_height))
-				.item_colorway(&theme2, false, is_selected)
-				.corner_radius(theme2.round2)
+				.color(fg)
+				.background(bg)
+				.border(theme2.border(border))
+				.corner_radius(theme2.round)
+				.margin(Gaps::new(0.0, gap, gap, gap))
 				.center()
 				.clickable()
 				.on_press(move |_| {
@@ -249,9 +258,12 @@ impl Component for Dropdown {
 			.width(Size::fill())
 			.position(Position::new_absolute().top(theme.input_height + 8.0))
 			.layer(Layer::Overlay)
-			.item_colorway(&theme, false, false)
-			.corner_radius(theme.round2)
+			.panel_colorway(&theme, false, false)
+			.corner_radius(theme.round)
 			.padding(gap)
+			.on_pointer_leave(move |_| {
+				is_open.set(false);
+			})
 			.child(options);
 
 		header.maybe(*is_open.read(), |this| this.child(options))
@@ -266,6 +278,10 @@ pub struct SelectOption {
 }
 
 impl SelectOption {
+	pub fn simple(id: &str) -> Self {
+		Self::new(id, id, None)
+	}
+
 	pub fn new(id: &str, title: &str, icon: Option<&str>) -> Self {
 		Self {
 			id: id.into(),
@@ -287,6 +303,15 @@ pub enum Selected {
 }
 
 impl Selected {
+	pub fn new_single(value: Option<String>) -> Self {
+		let value = match value {
+			Some(value) => value,
+			None => "none".into(),
+		};
+
+		Self::Single(value)
+	}
+
 	/// Gets a single result out, panicking if it is none
 	pub fn single(self) -> String {
 		match self {
@@ -333,7 +358,7 @@ impl Selected {
 	fn deselect(self, value: &str) -> Self {
 		match self {
 			Self::Single(..) => self,
-			Self::Multi(mut list) => {
+			Self::Multi(list) => {
 				let list = list.into_iter().filter(|x| x != value).collect();
 				Self::Multi(list)
 			}

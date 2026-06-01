@@ -5,12 +5,16 @@ use nitrolaunch::{
 	shared::{
 		Side,
 		util::{from_string_json, to_string_json},
+		versions::VersionPattern,
 	},
 };
 
 use crate::{
 	components::input::{icon::IconSelector, select::Selected, switch::Switch, text::TextInput},
-	ops::{plugin_results::FetchSupportedLoaders, versions::FetchMinecraftVersions},
+	ops::{
+		plugin_results::{FetchLoaderVersions, FetchSupportedLoaders},
+		versions::FetchMinecraftVersions,
+	},
 	pages::instance::config::ConfigState,
 	prelude::*,
 };
@@ -115,6 +119,7 @@ impl Component for GeneralTab {
 			.unwrap_or_default();
 		let minecraft_versions = minecraft_versions
 			.into_iter()
+			.rev()
 			.map(|x| SelectOption::new(&x, &x, None));
 		let version = self.config_state.version.clone();
 		let version_selector = Dropdown::new(
@@ -176,13 +181,32 @@ impl Component for LoadersConfig {
 	fn render(&self) -> impl IntoElement {
 		let theme = use_theme();
 		let back_state = use_consume::<BackState>();
-		let supported_loaders = use_query(FetchSupportedLoaders::new(back_state));
+		let supported_loaders = use_query(FetchSupportedLoaders::new(back_state.clone()));
 		let supported_loaders = supported_loaders
 			.read()
 			.state()
 			.ok()
 			.cloned()
 			.unwrap_or_default();
+		let minecraft_version = self.config_state.version.read().cloned();
+		let client_loader_versions = use_query(FetchLoaderVersions::new(
+			back_state.clone(),
+			self.config_state
+				.client_loader
+				.read()
+				.cloned()
+				.unwrap_or_default(),
+			minecraft_version.clone(),
+		));
+		let server_loader_versions = use_query(FetchLoaderVersions::new(
+			back_state,
+			self.config_state
+				.server_loader
+				.read()
+				.cloned()
+				.unwrap_or_default(),
+			minecraft_version.clone(),
+		));
 
 		let client_options = supported_loaders
 			.iter()
@@ -247,9 +271,85 @@ impl Component for LoadersConfig {
 		let show_server_fields = self.config_state.ty.is_template()
 			|| *self.config_state.side.read() == Some(Side::Server);
 
+		let client_loader_versions = client_loader_versions
+			.read()
+			.state()
+			.ok()
+			.cloned()
+			.unwrap_or_default();
+		let options = client_loader_versions
+			.into_iter()
+			.map(|x| SelectOption::simple(&x));
+		let client_version = self.config_state.client_loader_version.clone();
+		let client_version_field = Dropdown::new(
+			Selected::new_single(
+				self.config_state
+					.client_loader_version
+					.read()
+					.optional()
+					.map(|x| x.to_string()),
+			),
+			Rc::new(move |selected| {
+				client_version.clone().set(
+					selected
+						.single_optional()
+						.map(|x| VersionPattern::from(&x))
+						.unwrap_or_default(),
+				);
+			}),
+		)
+		.allow_none()
+		.children(options);
+		let field_name = if self.config_state.ty == ConfigKind::Instance {
+			"Loader version"
+		} else {
+			"Client loader version"
+		};
+		let client_version_field = field(field_name, &theme, client_version_field);
+
+		let server_loader_versions = server_loader_versions
+			.read()
+			.state()
+			.ok()
+			.cloned()
+			.unwrap_or_default();
+		let options = server_loader_versions
+			.into_iter()
+			.map(|x| SelectOption::simple(&x));
+		let server_version = self.config_state.server_loader_version.clone();
+		let server_version_field = Dropdown::new(
+			Selected::new_single(
+				self.config_state
+					.server_loader_version
+					.read()
+					.optional()
+					.map(|x| x.to_string()),
+			),
+			Rc::new(move |selected| {
+				server_version.clone().set(
+					selected
+						.single_optional()
+						.map(|x| VersionPattern::from(&x))
+						.unwrap_or_default(),
+				);
+			}),
+		)
+		.allow_none()
+		.children(options);
+		let field_name = if self.config_state.ty == ConfigKind::Instance {
+			"Loader version"
+		} else {
+			"Server loader version"
+		};
+		let server_version_field = field(field_name, &theme, server_version_field);
+
 		rect()
 			.width(Size::fill())
-			.maybe(show_client_fields, |this| this.child(client_field))
-			.maybe(show_server_fields, |this| this.child(server_field))
+			.maybe(show_client_fields, |this| {
+				this.child(client_field).child(client_version_field)
+			})
+			.maybe(show_server_fields, |this| {
+				this.child(server_field).child(server_version_field)
+			})
 	}
 }

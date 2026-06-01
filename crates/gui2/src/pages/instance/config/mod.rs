@@ -73,7 +73,7 @@ impl Component for ConfigModal {
 				.flatten()
 				.unwrap_or_default();
 
-			config_state2.update(id.clone(), config.editable);
+			config_state2.update(id.clone(), config.main);
 		});
 
 		let tab = use_state(|| Some("general".to_string()));

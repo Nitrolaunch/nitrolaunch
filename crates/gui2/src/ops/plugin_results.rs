@@ -49,7 +49,11 @@ pub struct FetchLoaderVersions {
 }
 
 impl FetchLoaderVersions {
-	pub fn new(back_state: BackState, loader: Loader, minecraft_version: String) -> Query<Self> {
+	pub fn new(
+		back_state: BackState,
+		loader: Loader,
+		minecraft_version: Option<String>,
+	) -> Query<Self> {
 		Query::new(
 			FetchLoaderVersionsKey {
 				loader,
@@ -66,7 +70,7 @@ impl FetchLoaderVersions {
 #[derive(Clone, PartialEq, Eq, Hash)]
 pub struct FetchLoaderVersionsKey {
 	loader: Loader,
-	minecraft_version: String,
+	minecraft_version: Option<String>,
 }
 
 impl QueryCapability for FetchLoaderVersions {
@@ -79,9 +83,13 @@ impl QueryCapability for FetchLoaderVersions {
 		let keys = keys.clone();
 
 		query_spawn(async move {
+			let Some(minecraft_version) = keys.minecraft_version else {
+				return Ok(Vec::new());
+			};
+
 			let arg = GetLoaderVersionsArg {
 				loader: keys.loader,
-				minecraft_version: keys.minecraft_version,
+				minecraft_version,
 			};
 			let results = back_state
 				.plugins

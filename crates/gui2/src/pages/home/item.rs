@@ -170,44 +170,46 @@ impl Component for InstanceListItem {
 		let info = self.info.clone();
 		let is_add_placeholder = self.is_add_placeholder;
 
+		let on_click = move |_| {
+			// Add placeholder
+			if is_add_placeholder {
+				front_state
+					.write()
+					.set_configured_item(Some(ConfiguredItem {
+						id: None,
+						ty: info.ty,
+						is_new: true,
+					}));
+
+				return;
+			}
+
+			// Double click
+			if is_selected {
+				match info.ty {
+					ConfigKind::Instance => {
+						front_state
+							.write()
+							.set_configured_item(Some(info.get_config_item()));
+					}
+					ConfigKind::Template | ConfigKind::BaseTemplate => {
+						front_state
+							.write()
+							.set_configured_item(Some(info.get_config_item()));
+					}
+				}
+			} else {
+				selected.set(Some(info.clone()))
+			}
+		};
+
 		rect()
 			.width(Size::fill())
 			.height(Size::px(110.0))
 			.flex()
 			.corner_radius(theme.round2)
-			.item_colorway(&theme, *is_hovered.read(), is_selected)
-			.on_press(move |_| {
-				// Add placeholder
-				if is_add_placeholder {
-					front_state
-						.write()
-						.set_configured_item(Some(ConfiguredItem {
-							id: None,
-							ty: info.ty,
-							is_new: true,
-						}));
-
-					return;
-				}
-
-				// Double click
-				if is_selected {
-					match info.ty {
-						ConfigKind::Instance => {
-							front_state
-								.write()
-								.set_configured_item(Some(info.get_config_item()));
-						}
-						ConfigKind::Template | ConfigKind::BaseTemplate => {
-							front_state
-								.write()
-								.set_configured_item(Some(info.get_config_item()));
-						}
-					}
-				} else {
-					selected.set(Some(info.clone()))
-				}
-			})
+			.panel_colorway(&theme, *is_hovered.read(), is_selected)
+			.on_press(on_click)
 			.clickable()
 			.hover(is_hovered)
 			.child(top)

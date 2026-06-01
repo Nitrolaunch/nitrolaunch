@@ -25,6 +25,7 @@ pub struct Theme {
 	pub panel: HexColor,
 	/// Border color for panels
 	pub panel_border: HexColor,
+	pub panel_hover: HexColor,
 	/// Background color for items, smaller UI objects inside panels
 	pub item: HexColor,
 	pub item_hover: HexColor,
@@ -71,10 +72,11 @@ impl Theme {
 			bg: HexColor(0xff0e0e0f),
 			primary: HexColor(0xff7ee91b),
 			primary_bg: HexColor(0xff021b1e),
-			panel: HexColor(0xff111113),
-			panel_border: HexColor(0xff2b2b2c),
-			item: HexColor(0xff151517),
-			item_border: HexColor(0xff222223),
+			panel: HexColor(0xff131314),
+			panel_border: HexColor(0xff232325),
+			panel_hover: HexColor(0xff191919),
+			item: HexColor(0xff19191b),
+			item_border: HexColor(0xff282829),
 			item_hover: HexColor(0xff1a1a1b),
 			item_select: HexColor(0xff021b1e),
 			item_select_border: HexColor(0xff7ee91b),
@@ -98,7 +100,7 @@ impl Theme {
 		Border {
 			width: self.border.into(),
 			fill: color.into(),
-			alignment: BorderAlignment::Outer,
+			alignment: BorderAlignment::Inner,
 		}
 	}
 
