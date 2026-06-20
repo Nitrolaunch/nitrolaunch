@@ -1,6 +1,9 @@
 use freya::{
 	components::{Button, ButtonColorsThemePartialExt, ButtonLayoutThemePartialExt},
-	elements::extensions::{EventHandlersExt, StyleExt, TextStyleExt},
+	elements::{
+		extensions::{EventHandlersExt, StyleExt, TextStyleExt},
+		rect::Rect,
+	},
 	prelude::{
 		Border, BorderAlignment, BorderWidth, ChildrenExt, Color, Component, ContainerExt,
 		ContainerSizeExt, ContainerWithContentExt, Content, Cursor, Element, IntoElement, Size,
@@ -17,6 +20,10 @@ pub mod input;
 pub mod instance;
 pub mod nav;
 pub mod output_indicator;
+
+pub fn segment(child: impl IntoElement, width: f32) -> Rect {
+	rect().width(Size::flex(width)).child(child)
+}
 
 pub fn button(theme: &Theme) -> Button {
 	Button::new()
@@ -101,7 +108,7 @@ pub fn item_colorway(
 	selected: bool,
 ) -> (HexColor, HexColor, HexColor) {
 	if selected {
-		(theme.primary, theme.item_select_border, theme.item_select)
+		(theme.item_select_border, theme.item_select_border, theme.item_select)
 	} else if hovered {
 		(theme.fg, theme.item_border, theme.item_hover)
 	} else {
@@ -116,7 +123,7 @@ pub fn panel_colorway(
 	selected: bool,
 ) -> (HexColor, HexColor, HexColor) {
 	if selected {
-		(theme.primary, theme.item_select_border, theme.item_select)
+		(theme.item_select_border, theme.item_select_border, theme.item_select)
 	} else if hovered {
 		(theme.fg, theme.panel_border, theme.panel_hover)
 	} else {

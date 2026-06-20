@@ -1,10 +1,11 @@
-use crate::prelude::*;
+use crate::{components::input::Derivable, prelude::*};
 
 #[derive(PartialEq)]
 pub struct TextInput {
 	value: Writable<String>,
 	on_change: Option<EventHandler<String>>,
 	on_submit: Option<EventHandler<String>>,
+	derived_value: Option<String>,
 }
 
 impl TextInput {
@@ -13,6 +14,7 @@ impl TextInput {
 			value: value.into(),
 			on_change: None,
 			on_submit: None,
+			derived_value: None,
 		}
 	}
 
@@ -27,14 +29,17 @@ impl TextInput {
 	}
 }
 
+impl Derivable<String> for TextInput {
+	fn derived(mut self, value: Option<String>) -> Self {
+		self.derived_value = value;
+		self
+	}
+}
+
 impl Component for TextInput {
 	fn render(&self) -> impl IntoElement {
 		let theme = use_theme();
 
-		// rect()
-		// 	.background(theme.bg)
-		// 	.border(theme.border2(theme.item_border))
-		// 	.corner_radius(theme.round2)
 		let on_change = self.on_change.clone();
 		let input_theme = InputColorsThemePartial {
 			background: Some(Preference::Specific(theme.bg.into())),
@@ -49,6 +54,10 @@ impl Component for TextInput {
 			.width(Size::fill())
 			.theme_colors(input_theme)
 			.corner_radius(theme.round2)
+			.maybe(self.derived_value.is_some(), |this| {
+				this.placeholder(self.derived_value.clone().unwrap())
+					.placeholder_color(theme.template)
+			})
 			.maybe(self.on_submit.is_some(), |this| {
 				this.on_submit(self.on_submit.clone().unwrap())
 			})
@@ -58,4 +67,17 @@ impl Component for TextInput {
 				})
 			})
 	}
+}
+
+pub fn search_bar(input: TextInput, theme: &Theme) -> Rect {
+	rect()
+		.width(Size::fill())
+		.child(
+			rect()
+				.position(Position::new_absolute().left(12.0))
+				.height(Size::px(theme.input_height))
+				.center()
+				.child(icon("search", 16.0)),
+		)
+		.child(input)
 }

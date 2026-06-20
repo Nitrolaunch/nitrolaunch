@@ -1,11 +1,9 @@
-use std::rc::Rc;
-
 use crate::prelude::*;
 
 pub const MODAL_DEFAULT_WIDTH: f32 = 600.0;
 pub const MODAL_DEFAULT_HEIGHT: f32 = 400.0;
-pub const MODAL_LARGE_WIDTH: f32 = 900.0;
-pub const MODAL_LARGE_HEIGHT: f32 = 650.0;
+pub const MODAL_LARGE_WIDTH: f32 = 1000.0;
+pub const MODAL_LARGE_HEIGHT: f32 = 750.0;
 
 /// Base modal with no title or buttons
 #[derive(PartialEq)]
@@ -73,6 +71,7 @@ pub struct Modal {
 	on_close: EventHandler<()>,
 	title: String,
 	title_icon: String,
+	buttons: Vec<ModalButton>,
 }
 
 impl Modal {
@@ -83,6 +82,7 @@ impl Modal {
 			on_close: (|_| {}).into(),
 			title,
 			title_icon,
+			buttons: Vec::new(),
 		}
 	}
 
@@ -105,6 +105,20 @@ impl Modal {
 	pub fn on_close(mut self, handler: impl Into<EventHandler<()>>) -> Self {
 		self.on_close = handler.into();
 		self
+	}
+
+	pub fn button(mut self, button: ModalButton) -> Self {
+		self.buttons.push(button);
+		self
+	}
+
+	pub fn cancel_button(self) -> Self {
+		let on_close = self.on_close.clone();
+		self.button(ModalButton {
+			title: "Cancel".into(),
+			on_click: on_close,
+			active: false,
+		})
 	}
 }
 
@@ -164,10 +178,35 @@ impl Component for Modal {
 							.child(close_button),
 					);
 
+				let buttons = self.buttons.iter().map(|x| {
+					let on_click = x.on_click.clone();
+
+					let (fg, bg, border) = if x.active {
+						(theme.primary, theme.primary_bg.into(), theme.primary.into())
+					} else {
+						(theme.fg, Color::TRANSPARENT, Color::TRANSPARENT)
+					};
+
+					rect()
+						.width(Size::flex(1.0))
+						.height(Size::fill())
+						.color(fg)
+						.background(bg)
+						.border(theme.border(border))
+						.corner_radius(theme.round2)
+						.on_press(move |_| on_click.call(()))
+						.clickable()
+						.center()
+						.child(x.title.as_str())
+						.into_element()
+				});
 				let bottom_bar = rect()
 					.width(Size::fill())
 					.height(Size::px(32.0))
-					.border(border_top(theme.border, theme.panel_border));
+					.horizontal()
+					.flex()
+					.border(border_top(theme.border, theme.panel_border))
+					.children(buttons);
 
 				rect()
 					.fill()
@@ -185,7 +224,9 @@ impl Component for Modal {
 	}
 }
 
+#[derive(PartialEq)]
 pub struct ModalButton {
 	pub title: String,
 	pub on_click: EventHandler<()>,
+	pub active: bool,
 }

@@ -1,8 +1,9 @@
-use std::time::Duration;
+use std::{sync::Arc, time::Duration};
 
 use anyhow::Context;
 use itertools::Itertools;
 use nitrolaunch::{
+	config::modifications::{ConfigModification, apply_modifications_and_write},
 	config_crate::{ConfigKind, instance::InstanceConfig, template::TemplateConfig},
 	core::util::versions::MinecraftVersion,
 	instance::parse_loader_config,
@@ -10,10 +11,11 @@ use nitrolaunch::{
 		Side,
 		id::{InstanceID, TemplateID},
 		loaders::Loader,
+		output::NoOp,
 	},
 };
 
-use crate::{pages::instance::config::ConfiguredItem, prelude::*};
+use crate::{pages::config::ConfiguredItem, prelude::*};
 
 #[derive(Clone, PartialEq, Eq, Hash)]
 pub struct FetchItems {
@@ -204,7 +206,7 @@ impl QueryCapability for FetchInstanceOrTemplateConfig {
 				ConfigKind::Instance => {
 					let Some(instance) = config
 						.instances
-						.get(&InstanceID::from(item.id.context("ID mising")?))
+						.get(&InstanceID::from(item.id.context("ID missing")?))
 					else {
 						return Ok(None);
 					};
@@ -217,7 +219,7 @@ impl QueryCapability for FetchInstanceOrTemplateConfig {
 					}))
 				}
 				ConfigKind::Template => {
-					let id = TemplateID::from(item.id.context("ID mising")?);
+					let id = TemplateID::from(item.id.context("ID missing")?);
 					let Some(template) = config.templates.get(&id) else {
 						return Ok(None);
 					};
@@ -243,4 +245,112 @@ impl QueryCapability for FetchInstanceOrTemplateConfig {
 pub struct InstanceOrTemplateConfigs {
 	pub main: TemplateConfig,
 	pub no_templates: TemplateConfig,
+}
+
+#[derive(Clone, PartialEq, Eq, Hash)]
+pub struct FetchParentConfigs {
+	back_state: Captured<BackState>,
+}
+
+impl FetchParentConfigs {
+	pub fn new(from: Vec<String>, back_state: BackState) -> Query<Self> {
+		Query::new(
+			from,
+			Self {
+				back_state: Captured(back_state),
+			},
+		)
+	}
+}
+
+impl QueryCapability for FetchParentConfigs {
+	type Ok = Arc<[TemplateConfig]>;
+	type Err = anyhow::Error;
+	type Keys = Vec<String>;
+
+	fn run(&self, keys: &Self::Keys) -> impl Future<Output = Result<Self::Ok, Self::Err>> {
+		let back_state = self.back_state.clone();
+		let from = keys.clone();
+
+		query_spawn(async move {
+			let config = back_state.config().await?;
+
+			let out = from
+				.iter()
+				.filter_map(|x| {
+					config
+						.consolidated_templates
+						.get(&TemplateID::from(x.clone()))
+						.cloned()
+				})
+				.collect();
+
+			Ok(out)
+		})
+	}
+}
+
+#[derive(Clone, PartialEq, Eq, Hash)]
+pub struct SaveConfig {
+	back_state: Captured<BackState>,
+}
+
+#[derive(Clone, PartialEq, Hash)]
+pub struct SaveConfigParams {
+	pub item: ConfiguredItem,
+	pub config: NotEq<TemplateConfig>,
+}
+
+impl SaveConfig {
+	pub fn new(back_state: BackState) -> Mutation<Self> {
+		Mutation::new(Self {
+			back_state: Captured(back_state),
+		})
+	}
+}
+
+impl MutationCapability for SaveConfig {
+	type Ok = ();
+	type Err = anyhow::Error;
+	type Keys = SaveConfigParams;
+
+	fn run(&self, keys: &Self::Keys) -> impl Future<Output = Result<Self::Ok, Self::Err>> {
+		let keys = keys.clone();
+		let back_state = self.back_state.clone();
+
+		query_spawn(async move {
+			let mut raw_config = back_state.raw_config().await?;
+			let modification = match keys.item.ty {
+				ConfigKind::Instance if keys.item.is_new => ConfigModification::AddInstance(
+					keys.item.id.unwrap().into(),
+					keys.config.0.instance,
+				),
+				ConfigKind::Instance => ConfigModification::UpdateInstance(
+					keys.item.id.unwrap().into(),
+					keys.config.0.instance,
+				),
+				ConfigKind::Template if keys.item.is_new => {
+					ConfigModification::AddTemplate(keys.item.id.unwrap().into(), keys.config.0)
+				}
+				ConfigKind::Template => {
+					ConfigModification::UpdateTemplate(keys.item.id.unwrap().into(), keys.config.0)
+				}
+				ConfigKind::BaseTemplate => {
+					raw_config.base_template = Some(keys.config.0);
+					return Ok(());
+				}
+			};
+
+			apply_modifications_and_write(
+				&mut raw_config,
+				vec![modification],
+				&back_state.paths,
+				&back_state.plugins,
+				&mut NoOp,
+			)
+			.await?;
+
+			Ok(())
+		})
+	}
 }

@@ -21,6 +21,8 @@ pub struct Theme {
 	pub primary: HexColor,
 	/// Primary hero background color
 	pub primary_bg: HexColor,
+	pub secondary: HexColor,
+	pub secondary_bg: HexColor,
 	/// Background color for panels, large segmented sections of UI
 	pub panel: HexColor,
 	/// Border color for panels
@@ -37,6 +39,14 @@ pub struct Theme {
 	pub highlight: HexColor,
 	/// Disabled foreground
 	pub disabled: HexColor,
+	/// Template color
+	pub template: HexColor,
+	/// Template background color
+	pub template_bg: HexColor,
+	/// Warning color
+	pub warning: HexColor,
+	/// Error color
+	pub error: HexColor,
 
 	// Navbar
 	pub navbar: HexColor,
@@ -51,6 +61,8 @@ pub struct Theme {
 	pub sidebar_width: f32,
 
 	// Other
+	/// Smallest gap between elements
+	pub gap: f32,
 	/// Border width
 	pub border: f32,
 	/// Larger border width
@@ -65,6 +77,8 @@ pub struct Theme {
 
 impl Theme {
 	pub fn dark() -> Self {
+		let secondary = HexColor(0xffd0d0d0);
+		let secondary_bg = HexColor(0xff282828);
 		Self {
 			fg: HexColor(0xfff0f0f0),
 			fg2: HexColor(0xffb5b5b5),
@@ -72,22 +86,29 @@ impl Theme {
 			bg: HexColor(0xff0e0e0f),
 			primary: HexColor(0xff7ee91b),
 			primary_bg: HexColor(0xff021b1e),
-			panel: HexColor(0xff131314),
+			secondary,
+			secondary_bg,
+			panel: HexColor(0xff111112),
 			panel_border: HexColor(0xff232325),
 			panel_hover: HexColor(0xff191919),
 			item: HexColor(0xff19191b),
 			item_border: HexColor(0xff282829),
-			item_hover: HexColor(0xff1a1a1b),
-			item_select: HexColor(0xff021b1e),
-			item_select_border: HexColor(0xff7ee91b),
+			item_hover: HexColor(0xff1b1b1e),
+			item_select: secondary_bg,
+			item_select_border: secondary,
 			highlight: HexColor(0xff1c1c1d),
 			disabled: HexColor(0xff656565),
+			template: HexColor(0xff1be9ce),
+			template_bg: HexColor(0xff0d1624),
+			warning: HexColor(0xffe9ca1b),
+			error: HexColor(0xffd40e3d),
 			navbar: HexColor(0xff0c0c0d),
 			navbar_height: 42.0,
 			footer: HexColor(0xff111112),
 			footer_height: 48.0,
 			sidebar: HexColor(0xff111112),
 			sidebar_width: 42.0,
+			gap: 6.0,
 			border: 1.0,
 			border2: 2.0,
 			round: 8.0,

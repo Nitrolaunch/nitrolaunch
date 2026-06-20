@@ -50,7 +50,7 @@ impl Component for SideTabs {
                 .cross_align(Alignment::Center)
 				.clickable()
 				.on_press(move |_| selected.set(Some(id.clone())))
-				.maybe_child(tab.icon.as_ref().map(|x| icon(x, 16.0)))
+				.maybe_child(tab.icon.clone())
 				.child(tab.title.as_str())
 				.into_element()
 		});

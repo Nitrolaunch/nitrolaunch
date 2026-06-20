@@ -7,6 +7,7 @@ use freya::{
 };
 use nitrolaunch::{
 	config::Config,
+	config_crate::ConfigDeser,
 	io::{logging::Logger, paths::Paths},
 	plugin::PluginManager,
 	shared::{
@@ -22,7 +23,7 @@ use crate::{
 	instance_manager::RunningInstanceManager,
 	ops::task::TaskManager,
 	output::{LauncherOutput, OutputInner},
-	pages::instance::config::ConfiguredItem,
+	pages::config::ConfiguredItem,
 	routing::{Navigator, Page},
 	secrets::get_ms_client_id,
 	theme::Theme,
@@ -217,6 +218,12 @@ impl BackState {
 			.await
 		})
 		.await?
+	}
+
+	pub async fn raw_config(&self) -> anyhow::Result<ConfigDeser> {
+		let paths = self.paths.clone();
+
+		tokio::spawn(async move { Config::open(&Config::get_path(&paths)) }).await?
 	}
 
 	pub fn output(&self) -> LauncherOutput {

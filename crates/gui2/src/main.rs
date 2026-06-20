@@ -2,7 +2,7 @@ use freya::radio::use_init_radio_station;
 use tokio::sync::broadcast;
 
 use crate::components::footer::Footer;
-use crate::pages::instance::config::ConfigPage;
+use crate::pages::config::ConfigPage;
 use crate::prelude::*;
 
 use crate::components::nav::{NavBar, router::Router};

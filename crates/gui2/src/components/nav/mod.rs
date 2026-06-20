@@ -95,7 +95,7 @@ impl Component for PageButton {
 		};
 
 		let (fg, bg) = if front_state.read().route().get_category() == self.category {
-			(theme.primary, theme.primary_bg)
+			(theme.item_select_border, theme.item_select)
 		} else {
 			(theme.disabled, theme.navbar)
 		};

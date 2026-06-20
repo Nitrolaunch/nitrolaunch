@@ -1,6 +1,8 @@
 use std::{
 	cell::{Ref, RefCell, RefMut},
+	hash::Hash,
 	rc::Rc,
+	sync::Arc,
 	time::SystemTime,
 };
 
@@ -83,6 +85,24 @@ pub struct NotEq<T>(pub T);
 impl<T> PartialEq for NotEq<T> {
 	fn eq(&self, _: &Self) -> bool {
 		false
+	}
+}
+
+impl<T> Hash for NotEq<T> {
+	fn hash<H: std::hash::Hasher>(&self, _: &mut H) {}
+}
+
+pub struct PtrEq<T: ?Sized>(pub Arc<T>);
+
+impl<T: ?Sized> Clone for PtrEq<T> {
+	fn clone(&self) -> Self {
+		PtrEq(self.0.clone())
+	}
+}
+
+impl<T: ?Sized> PartialEq for PtrEq<T> {
+	fn eq(&self, other: &Self) -> bool {
+		Arc::ptr_eq(&self.0, &other.0)
 	}
 }
 

@@ -1,12 +1,13 @@
 use std::rc::Rc;
 
-use crate::prelude::*;
+use crate::{components::input::Derivable, prelude::*};
 
 #[derive(PartialEq)]
 pub struct InlineSelect {
 	options: Vec<SelectOption>,
 	selected: Selected,
 	on_select: NotEq<Rc<dyn Fn(Selected)>>,
+	derived_option: Option<String>,
 	align_end: bool,
 	fit: bool,
 }
@@ -17,6 +18,7 @@ impl InlineSelect {
 			options: Vec::new(),
 			selected,
 			on_select: NotEq(on_select),
+			derived_option: None,
 			align_end: false,
 			fit: false,
 		}
@@ -58,6 +60,13 @@ impl InlineSelect {
 	}
 }
 
+impl Derivable<String> for InlineSelect {
+	fn derived(mut self, value: Option<String>) -> Self {
+		self.derived_option = value;
+		self
+	}
+}
+
 impl Component for InlineSelect {
 	fn render(&self) -> impl IntoElement {
 		let selected = self.selected.clone();
@@ -73,11 +82,16 @@ impl Component for InlineSelect {
 		}));
 
 		let options = self.options.iter().map(|x| {
+			let is_selected = self.selected.is_selected(&x.id);
+			let is_derived =
+				!is_selected && self.derived_option.as_ref().is_some_and(|y| y == &x.id);
+
 			InlineSelectOption {
 				option: x.clone(),
 				on_select: on_select.clone(),
 				on_deselect: on_deselect.clone(),
-				is_selected: self.selected.is_selected(&x.id),
+				is_selected,
+				is_derived,
 				fit: self.fit,
 			}
 			.into_element()
@@ -101,6 +115,7 @@ struct InlineSelectOption {
 	on_select: NotEq<Rc<dyn Fn(String)>>,
 	on_deselect: NotEq<Rc<dyn Fn(String)>>,
 	is_selected: bool,
+	is_derived: bool,
 	fit: bool,
 }
 
@@ -120,7 +135,15 @@ impl Component for InlineSelectOption {
 			.corner_radius(theme.round)
 			.height(Size::px(theme.input_height))
 			.padding((6.0, 12.0))
-			.item_colorway(&theme, *is_hovered.read(), self.is_selected)
+			.maybe(!self.is_derived, |this| {
+				this.item_colorway(&theme, *is_hovered.read(), self.is_selected)
+			})
+			.maybe(self.is_derived, |this| {
+				this.border(theme.border(theme.template))
+					.color(theme.template)
+					.background(theme.template_bg)
+			})
+			.maybe(self.is_selected, |this| this.font_weight(FontWeight::BOLD))
 			.maybe(!self.fit, |this| this.width(Size::flex(1.0)))
 			.on_press(move |_| {
 				if is_selected {
@@ -130,7 +153,7 @@ impl Component for InlineSelectOption {
 				}
 			})
 			.clickable()
-			.maybe_child(self.option.icon.as_ref().map(|x| icon(x, 16.0)))
+			.maybe_child(self.option.icon.clone())
 			.child(self.option.title.as_str())
 	}
 }
@@ -140,6 +163,7 @@ pub struct Dropdown {
 	selected: Selected,
 	on_select: NotEq<Rc<dyn Fn(Selected)>>,
 	options: Vec<SelectOption>,
+	derived_option: Option<String>,
 }
 
 impl Dropdown {
@@ -148,6 +172,7 @@ impl Dropdown {
 			selected,
 			on_select: NotEq(on_select),
 			options: Vec::new(),
+			derived_option: None,
 		}
 	}
 
@@ -176,11 +201,30 @@ impl Dropdown {
 	}
 }
 
+impl Derivable<String> for Dropdown {
+	fn derived(mut self, value: Option<String>) -> Self {
+		self.derived_option = value;
+		self
+	}
+}
+
 impl Component for Dropdown {
 	fn render(&self) -> impl IntoElement {
 		let theme = use_theme();
 		let is_hovered = use_state(|| false);
 		let mut is_open = use_state(|| false);
+
+		let selected = self.selected.clone();
+		let upper_on_select = self.on_select.clone();
+		let on_select: NotEq<Rc<dyn Fn(String)>> = NotEq(Rc::new(move |option| {
+			(upper_on_select.0)(selected.clone().select(&option));
+		}));
+
+		let selected = self.selected.clone();
+		let upper_on_select = self.on_select.clone();
+		let on_deselect: NotEq<Rc<dyn Fn(String)>> = NotEq(Rc::new(move |option| {
+			(upper_on_select.0)(selected.clone().deselect(&option));
+		}));
 
 		let preview = match &self.selected {
 			Selected::Single(selected) => {
@@ -203,64 +247,50 @@ impl Component for Dropdown {
 			.center()
 			.child(preview);
 
-		let gap = 5.0;
 		let option_count = if self.options.len() > 5 {
 			5.5
 		} else {
 			self.options.len() as f32
 		};
-		let options_height = (theme.input_height + gap) * option_count;
+		let options_height = (theme.input_height + theme.gap) * option_count;
 
-		let theme2 = theme.clone();
-		let options = self.options.clone();
 		let selected = self.selected.clone();
-		let on_select = self.on_select.clone();
+		let derived_option = self.derived_option.clone();
+		let options = self.options.clone();
+		let len = self.options.len();
 		let options = VirtualScrollView::new(move |i, _| {
+			// Extra element to fix cutoff of the last element in the scroll
+			if i == len {
+				return rect().into_element();
+			}
 			let option = options.get(i).unwrap();
+
 			let is_selected = selected.is_selected(&option.id);
-			let on_select = on_select.clone();
-			let selected = selected.clone();
-			let id = option.id.clone();
+			let is_derived =
+				!is_selected && derived_option.as_ref().is_some_and(|y| y == &option.id);
 
-			let (fg, bg, border) = if is_selected {
-				(theme2.primary, theme2.primary_bg, theme2.primary)
-			} else {
-				(theme2.fg, theme2.panel, theme2.panel)
-			};
-
-			rect()
-				.key(i)
-				.width(Size::fill())
-				.height(Size::px(theme2.input_height))
-				.color(fg)
-				.background(bg)
-				.border(theme2.border(border))
-				.corner_radius(theme2.round)
-				.margin(Gaps::new(0.0, gap, gap, gap))
-				.center()
-				.clickable()
-				.on_press(move |_| {
-					if is_selected {
-						(on_select.0)(selected.clone().deselect(&id));
-					} else {
-						(on_select.0)(selected.clone().select(&id));
-					}
-				})
-				.child(option.title.as_str())
-				.into_element()
+			DropdownOption {
+				option: option.clone(),
+				on_select: on_select.clone(),
+				on_deselect: on_deselect.clone(),
+				is_selected,
+				is_derived,
+			}
+			.into_element()
 		})
-		.length(self.options.len())
+		.length(self.options.len() + 1)
 		.item_size(theme.input_height)
 		.width(Size::fill())
-		.height(Size::px(options_height));
+		.height(Size::fill());
 
 		let options = rect()
 			.width(Size::fill())
+			.height(Size::px(options_height))
 			.position(Position::new_absolute().top(theme.input_height + 8.0))
 			.layer(Layer::Overlay)
 			.panel_colorway(&theme, false, false)
 			.corner_radius(theme.round)
-			.padding(gap)
+			.padding(theme.gap)
 			.on_pointer_leave(move |_| {
 				is_open.set(false);
 			})
@@ -270,11 +300,66 @@ impl Component for Dropdown {
 	}
 }
 
+#[derive(PartialEq)]
+struct DropdownOption {
+	option: SelectOption,
+	on_select: NotEq<Rc<dyn Fn(String)>>,
+	on_deselect: NotEq<Rc<dyn Fn(String)>>,
+	is_selected: bool,
+	is_derived: bool,
+}
+
+impl Component for DropdownOption {
+	fn render(&self) -> impl IntoElement {
+		let theme = use_theme();
+		let is_hovered = use_state(|| false);
+
+		let on_select = self.on_select.clone();
+		let on_deselect = self.on_deselect.clone();
+		let id = self.option.id.clone();
+		let is_selected = self.is_selected;
+
+		let (fg, bg, border) = if self.is_derived {
+			(theme.template, theme.template_bg, theme.template)
+		} else if self.is_selected {
+			(theme.item_select_border, theme.item_select, theme.item_select_border)
+		} else if *is_hovered.read() {
+			(theme.fg, theme.highlight, theme.panel)
+		} else {
+			(theme.fg, theme.panel, theme.panel)
+		};
+
+		rect()
+			.width(Size::fill())
+			.height(Size::px(theme.input_height))
+			.color(fg)
+			.background(bg)
+			.border(theme.border(border))
+			.corner_radius(theme.round)
+			.margin(Gaps::new(0.0, 0.0, theme.gap, 0.0))
+			.maybe(self.is_selected, |this| this.font_weight(FontWeight::BOLD))
+			.cont()
+			.center()
+			.clickable()
+			.hover(is_hovered)
+			.on_press(move |_| {
+				if is_selected {
+					(on_deselect.0)(id.clone());
+				} else {
+					(on_select.0)(id.clone());
+				}
+			})
+			.maybe_child(self.option.icon.clone())
+			.child(self.option.title.as_str())
+			.into_element()
+	}
+}
+
 #[derive(PartialEq, Clone)]
 pub struct SelectOption {
 	pub id: String,
 	pub title: String,
-	pub icon: Option<String>,
+	pub icon: Option<Element>,
 }
 
 impl SelectOption {
@@ -282,11 +367,19 @@ impl SelectOption {
 		Self::new(id, id, None)
 	}
 
-	pub fn new(id: &str, title: &str, icon: Option<&str>) -> Self {
+	pub fn new(id: &str, title: &str, ico: Option<&str>) -> Self {
 		Self {
 			id: id.into(),
 			title: title.into(),
-			icon: icon.map(ToString::to_string),
+			icon: ico.map(|x| icon(x, 16.0).into_element()),
+		}
+	}
+
+	pub fn new_custom_icon(id: &str, title: &str, ico: Element) -> Self {
+		Self {
+			id: id.into(),
+			title: title.into(),
+			icon: Some(ico),
 		}
 	}
 

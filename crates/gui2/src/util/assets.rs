@@ -1,6 +1,11 @@
 use std::path::PathBuf;
 
-use freya::components::{ImageSource, Uri};
+use freya::{
+	components::{ImageSource, ImageViewer, Uri},
+	elements::extensions::ContainerSizeExt,
+	prelude::Size,
+};
+use nitrolaunch::shared::{loaders::Loader, util::to_string_json};
 
 pub static DEFAULT_INSTANCE: &[u8] = include_bytes!("../assets/images/default_instance.png");
 pub static FABRIC: &[u8] = include_bytes!("../assets/images/fabric.png");
@@ -22,7 +27,7 @@ pub fn get_instance_icon(icon: Option<&str>) -> ImageSource {
 				"/icons/folia.png" => ("folia", FOLIA).into(),
 				"/icons/forge.png" => ("forge", FORGE).into(),
 				"/icons/minecraft.png" => ("minecraft", MINECRAFT).into(),
-				"/icons/neoforge.png" => ("neoforge", NEOFORGE).into(),
+				"/icons/neoforge.png" | "icons/neoforged.png" => ("neoforge", NEOFORGE).into(),
 				"/icons/paper.png" => ("paper", PAPER).into(),
 				"/icons/quilt.png" => ("quilt", QUILT).into(),
 				"/icons/sponge.png" => ("sponge", SPONGE).into(),
@@ -38,4 +43,13 @@ pub fn get_instance_icon(icon: Option<&str>) -> ImageSource {
 	} else {
 		default.into()
 	}
+}
+
+pub fn get_loader_icon(loader: &Loader) -> ImageViewer {
+	ImageViewer::new(get_instance_icon(Some(&format!(
+		"builtin:/icons/{}.png",
+		to_string_json(&loader)
+	))))
+	.width(Size::px(16.0))
+	.height(Size::px(16.0))
 }

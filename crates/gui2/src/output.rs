@@ -69,6 +69,7 @@ impl NitroOutput for LauncherOutput {
 		});
 
 		if message.level < MessageLevel::Important {
+			println!("{}", message.contents.default_format());
 			return;
 		}
 

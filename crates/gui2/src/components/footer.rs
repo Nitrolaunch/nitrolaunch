@@ -8,7 +8,6 @@ use crate::{
 		instance::InstanceItemInfo,
 		launch::{LaunchInstance, LaunchInstanceParams},
 	},
-	pages::instance::config::ConfiguredItem,
 	prelude::*,
 };
 

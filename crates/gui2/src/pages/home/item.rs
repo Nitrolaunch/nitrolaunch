@@ -1,5 +1,5 @@
 use crate::ops::instance::InstanceItemInfo;
-use crate::pages::instance::config::ConfiguredItem;
+use crate::pages::config::ConfiguredItem;
 use crate::prelude::*;
 use crate::util::assets::get_instance_icon;
 use nitrolaunch::config_crate::ConfigKind;
@@ -124,7 +124,7 @@ impl Component for InstanceListItem {
 		};
 
 		let bottom_color = if is_selected {
-			theme.primary
+			theme.item_select_border
 		} else {
 			theme.fg3
 		};

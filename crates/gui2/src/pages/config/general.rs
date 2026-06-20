@@ -1,7 +1,8 @@
 use std::rc::Rc;
 
 use nitrolaunch::{
-	config_crate::{ConfigKind, instance::make_valid_instance_id},
+	config_crate::{ConfigKind, instance::make_valid_instance_id, template::TemplateConfig},
+	instance::parse_loader_config,
 	shared::{
 		Side,
 		util::{from_string_json, to_string_json},
@@ -10,18 +11,23 @@ use nitrolaunch::{
 };
 
 use crate::{
-	components::input::{icon::IconSelector, select::Selected, switch::Switch, text::TextInput},
+	components::input::{
+		Derivable, icon::IconSelector, select::Selected, switch::Switch, text::TextInput,
+	},
 	ops::{
+		instance::FetchItems,
 		plugin_results::{FetchLoaderVersions, FetchSupportedLoaders},
 		versions::FetchMinecraftVersions,
 	},
-	pages::instance::config::ConfigState,
+	pages::config::ConfigState,
 	prelude::*,
+	util::{PtrEq, assets::get_loader_icon},
 };
 
 #[derive(PartialEq)]
 pub struct GeneralTab {
 	pub config_state: ConfigState,
+	pub parent_configs: PtrEq<[TemplateConfig]>,
 }
 
 impl Component for GeneralTab {
@@ -30,9 +36,10 @@ impl Component for GeneralTab {
 		let back_state = use_consume::<BackState>();
 		let mut include_snapshots = use_state(|| false);
 		let minecraft_versions = use_query(FetchMinecraftVersions::new(
-			back_state,
+			back_state.clone(),
 			*include_snapshots.read(),
 		));
+		let items = use_query(FetchItems::new(back_state));
 
 		let show_id_field =
 			self.config_state.is_new && self.config_state.ty != ConfigKind::BaseTemplate;
@@ -50,7 +57,15 @@ impl Component for GeneralTab {
 
 		let top_right = rect()
 			.maybe(show_name_field, |this| {
-				this.child(field("Name", &theme, TextInput::new(name)))
+				this.child(field(
+					"Name",
+					&theme,
+					TextInput::new(name).derived_value(
+						self.config_state.name.read().as_ref(),
+						&self.parent_configs.0,
+						|x| x.instance.name.as_ref(),
+					),
+				))
 			})
 			.maybe(show_id_field, |this| {
 				this.child(field(
@@ -64,12 +79,12 @@ impl Component for GeneralTab {
 
 		let top = rect()
 			.width(Size::fill())
-			.height(Size::px(148.0))
+			.height(Size::px(158.0))
 			.horizontal()
 			.flex()
 			.child(
 				rect()
-					.width(Size::px(148.0))
+					.width(Size::px(158.0))
 					.height(Size::fill())
 					.center()
 					.child(IconSelector {
@@ -80,9 +95,34 @@ impl Component for GeneralTab {
 				rect()
 					.width(Size::flex(1.0))
 					.height(Size::fill())
-					.padding(Gaps::new(10.0, 10.0, 10.0, 0.0))
+					.padding(Gaps::new(15.0, 15.0, 15.0, 0.0))
 					.child(top_right),
 			);
+
+		let items = items.read();
+		let items = items.state();
+		let templates = items.ok().map(|x| {
+			x.templates
+				.iter()
+				.map(|x| SelectOption::new(&x.id, &x.name.as_deref().unwrap_or(&x.id), None))
+		});
+		let from = self.config_state.from.clone();
+		let from_field = Dropdown::new(
+			Selected::Multi(from.read().clone()),
+			Rc::new(move |selected| {
+				from.clone().set(selected.multi());
+			}),
+		)
+		.maybe(templates.is_some(), |this| {
+			this.children(templates.unwrap())
+		});
+		let from_field = field("Parent Templates", &theme, from_field);
+
+		let config_settings = rect()
+			.width(Size::fill())
+			.cont()
+			.child(segment(from_field, 1.0))
+			.child(segment(rect(), 1.0));
 
 		let show_side_field = self.config_state.ty.is_template()
 			|| (self.config_state.ty == ConfigKind::Instance && self.config_state.is_new);
@@ -104,6 +144,15 @@ impl Component for GeneralTab {
 				};
 				side.clone().set(value);
 			}),
+		)
+		.derived_value_owned(
+			self.config_state
+				.side
+				.read()
+				.as_ref()
+				.map(|x| x.to_string()),
+			&self.parent_configs.0,
+			|x| x.instance.side.as_ref().map(|x| x.to_string()),
 		)
 		.maybe_child(show_none_option, || SelectOption::none())
 		.child(SelectOption::new("client", "Client", Some("controller")))
@@ -159,11 +208,15 @@ impl Component for GeneralTab {
 
 		let loaders_config = LoadersConfig {
 			config_state: self.config_state.clone(),
+			parent_configs: self.parent_configs.clone(),
 		};
 
 		let main = rect()
 			.width(Size::fill())
-			.padding(10.0)
+			.padding(15.0)
+			.maybe(self.config_state.ty != ConfigKind::BaseTemplate, |this| {
+				this.child(config_settings)
+			})
 			.maybe(show_side_field, |this| this.child(side_field))
 			.child(version_field)
 			.child(loaders_config);
@@ -175,6 +228,7 @@ impl Component for GeneralTab {
 #[derive(PartialEq)]
 struct LoadersConfig {
 	config_state: ConfigState,
+	parent_configs: PtrEq<[TemplateConfig]>,
 }
 
 impl Component for LoadersConfig {
@@ -208,14 +262,20 @@ impl Component for LoadersConfig {
 			minecraft_version.clone(),
 		));
 
-		let client_options = supported_loaders
-			.iter()
-			.filter(|x| x.is_client())
-			.map(|x| SelectOption::new(&to_string_json(x), &x.to_string(), None));
-		let server_options = supported_loaders
-			.iter()
-			.filter(|x| x.is_server())
-			.map(|x| SelectOption::new(&to_string_json(x), &x.to_string(), None));
+		let client_options = supported_loaders.iter().filter(|x| x.is_client()).map(|x| {
+			SelectOption::new_custom_icon(
+				&to_string_json(x),
+				&x.to_string(),
+				get_loader_icon(x).into_element(),
+			)
+		});
+		let server_options = supported_loaders.iter().filter(|x| x.is_server()).map(|x| {
+			SelectOption::new_custom_icon(
+				&to_string_json(x),
+				&x.to_string(),
+				get_loader_icon(x).into_element(),
+			)
+		});
 
 		let loader_str = self
 			.config_state
@@ -225,15 +285,28 @@ impl Component for LoadersConfig {
 			.map(|x| to_string_json(x))
 			.unwrap_or("none".into());
 		let client_loader = self.config_state.client_loader.clone();
-		let client_field = InlineSelect::new(
+		let client_field = Dropdown::new(
 			Selected::Single(loader_str),
 			Rc::new(move |selected| {
-				let selected = selected.single();
-				let selected = from_string_json(&selected).ok();
+				let selected = selected
+					.single_optional()
+					.and_then(|x| from_string_json(&x).ok());
 				client_loader.clone().set(selected);
 			}),
 		)
 		.allow_none()
+		.derived_value_owned(
+			self.config_state
+				.client_loader
+				.read()
+				.as_ref()
+				.map(|x| to_string_json(x)),
+			&self.parent_configs.0,
+			|x| {
+				x.client_loader()
+					.map(|x| to_string_json(&parse_loader_config(x).0))
+			},
+		)
 		.children(client_options);
 		let field_name = if self.config_state.ty == ConfigKind::Instance {
 			"Loader"
@@ -252,15 +325,28 @@ impl Component for LoadersConfig {
 			.map(|x| to_string_json(x))
 			.unwrap_or("none".into());
 		let server_loader = self.config_state.server_loader.clone();
-		let server_field = InlineSelect::new(
+		let server_field = Dropdown::new(
 			Selected::Single(loader_str),
 			Rc::new(move |selected| {
-				let selected = selected.single();
-				let selected = from_string_json(&selected).ok();
+				let selected = selected
+					.single_optional()
+					.and_then(|x| from_string_json(&x).ok());
 				server_loader.clone().set(selected);
 			}),
 		)
 		.allow_none()
+		.derived_value_owned(
+			self.config_state
+				.server_loader
+				.read()
+				.as_ref()
+				.map(|x| to_string_json(x)),
+			&self.parent_configs.0,
+			|x| {
+				x.server_loader()
+					.map(|x| to_string_json(&parse_loader_config(x).0))
+			},
+		)
 		.children(server_options);
 		let field_name = if self.config_state.ty == ConfigKind::Instance {
 			"Loader"

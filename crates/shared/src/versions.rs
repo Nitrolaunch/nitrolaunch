@@ -297,6 +297,15 @@ pub fn parse_single_versioned_string(string: &str) -> (&str, Option<&str>) {
 	}
 }
 
+/// Formats a versioned string of the format object@version. If version is `any`, the @ and version will be omitted
+pub fn format_versioned_string(object: &str, version: &VersionPattern) -> String {
+	if let VersionPattern::Any = version {
+		object.to_string()
+	} else {
+		format!("{object}@{version}")
+	}
+}
+
 /// Used for deserializing a Minecraft version
 #[derive(Deserialize, Serialize, Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]

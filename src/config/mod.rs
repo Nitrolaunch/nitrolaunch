@@ -293,8 +293,7 @@ impl Config {
 			.iter()
 			.map(|(k, v)| (k.to_string(), v.config().clone()))
 			.collect();
-		let plugin_manager_templates = config
-			.templates
+		let plugin_manager_templates = consolidated_templates
 			.iter()
 			.map(|(k, v)| (k.to_string(), v.clone()))
 			.collect();
