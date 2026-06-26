@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::{
 	components::{
 		dialog::modal::{Modal, ModalButton},
@@ -38,7 +40,7 @@ impl Component for ConfigPage {
 		let front_state = use_front_state();
 		front_state.read().subscribe(FrontChannel::ConfiguredItem);
 		let item = front_state.read().configured_item().cloned();
-		let on_submit = use_state(|| EventHandler::new(|_: ()| {}));
+		let on_submit = use_state::<PtrEq<dyn Fn() -> bool>>(|| PtrEq(Arc::new(|| true)));
 		let is_dirty = use_state(|| false);
 
 		let title = match &item {
@@ -56,6 +58,7 @@ impl Component for ConfigPage {
 			None => "".into(),
 		};
 
+		let front_state2 = front_state.clone();
 		Modal::new(title, "box".into())
 			.maybe_child(item.is_some(), || ConfigModal {
 				item: item.unwrap(),
@@ -68,7 +71,10 @@ impl Component for ConfigPage {
 			.button(ModalButton {
 				title: "Save".into(),
 				on_click: EventHandler::from(move |_| {
-					on_submit.read().call(());
+					let successful = (on_submit.read().0)();
+					if successful {
+						front_state2.write().set_configured_item(None);
+					}
 				}),
 				active: *is_dirty.read(),
 			})
@@ -78,7 +84,7 @@ impl Component for ConfigPage {
 #[derive(PartialEq)]
 struct ConfigModal {
 	item: ConfiguredItem,
-	on_submit: State<EventHandler<()>>,
+	on_submit: State<PtrEq<dyn Fn() -> bool>>,
 	is_dirty: State<bool>,
 }
 
@@ -90,7 +96,11 @@ impl Component for ConfigModal {
 			self.item.clone(),
 			back_state.clone(),
 		));
-		let save_config = use_mutation(SaveConfig::new(back_state.clone()));
+		let save_config = use_mutation(Mutation::new(SaveConfig::new(back_state.clone()).toast(
+			&back_state,
+			Some("Saved"),
+			"Failed to save config",
+		)));
 
 		let config_state = ConfigState::new(self.item.ty, self.item.is_new, self.is_dirty.clone());
 
@@ -124,17 +134,19 @@ impl Component for ConfigModal {
 			// Set up on submit callback
 			let config_state3 = config_state2.clone();
 			let item = item.clone();
-			let on_submit = move |()| {
+			let on_submit = move || {
 				let Ok(config) = config_state3.apply(original_config.clone()) else {
-					return;
+					return false;
 				};
 
 				save_config.mutate(SaveConfigParams {
 					item: item.clone(),
 					config: NotEq(config),
 				});
+
+				true
 			};
-			on_submit_state.set(on_submit.into());
+			on_submit_state.set(PtrEq(Arc::new(on_submit)));
 		});
 
 		let tab = use_state(|| Some("general".to_string()));

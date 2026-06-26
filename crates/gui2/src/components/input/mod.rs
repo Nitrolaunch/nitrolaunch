@@ -24,7 +24,7 @@ pub fn field_label(text: &str, theme: &Theme) -> impl IntoElement {
 }
 
 /// Configuration field with a label
-pub fn field(label: &str, theme: &Theme, field: impl IntoElement) -> impl IntoElement {
+pub fn field(label: &str, theme: &Theme, field: impl IntoElement) -> Rect {
 	rect()
 		.width(Size::fill())
 		.margin(Gaps::new(0.0, 0.0, 12.0, 0.0))

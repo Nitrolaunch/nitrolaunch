@@ -21,6 +21,7 @@ anyhow = { workspace = true }
 async-trait = { workspace = true }
 itertools = { workspace = true }
 freya = { workspace = true }
+freya-core = { workspace = true }
 nitrolaunch = { workspace = true }
 reqwest = { workspace = true }
 rust-embed = { workspace = true }

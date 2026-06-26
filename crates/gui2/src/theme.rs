@@ -47,6 +47,10 @@ pub struct Theme {
 	pub warning: HexColor,
 	/// Error color
 	pub error: HexColor,
+	pub error_bg: HexColor,
+	/// Success color
+	pub success: HexColor,
+	pub success_bg: HexColor,
 
 	// Navbar
 	pub navbar: HexColor,
@@ -63,6 +67,8 @@ pub struct Theme {
 	// Other
 	/// Smallest gap between elements
 	pub gap: f32,
+	/// Larger gap between elements
+	pub gap2: f32,
 	/// Border width
 	pub border: f32,
 	/// Larger border width
@@ -77,6 +83,8 @@ pub struct Theme {
 
 impl Theme {
 	pub fn dark() -> Self {
+		let primary = HexColor(0xff7ee91b);
+		let primary_bg = HexColor(0xff021b1e);
 		let secondary = HexColor(0xffd0d0d0);
 		let secondary_bg = HexColor(0xff282828);
 		Self {
@@ -84,8 +92,8 @@ impl Theme {
 			fg2: HexColor(0xffb5b5b5),
 			fg3: HexColor(0xff757575),
 			bg: HexColor(0xff0e0e0f),
-			primary: HexColor(0xff7ee91b),
-			primary_bg: HexColor(0xff021b1e),
+			primary,
+			primary_bg,
 			secondary,
 			secondary_bg,
 			panel: HexColor(0xff111112),
@@ -102,6 +110,9 @@ impl Theme {
 			template_bg: HexColor(0xff0d1624),
 			warning: HexColor(0xffe9ca1b),
 			error: HexColor(0xffd40e3d),
+			error_bg: HexColor(0xff2b0e14),
+			success: primary,
+			success_bg: primary_bg,
 			navbar: HexColor(0xff0c0c0d),
 			navbar_height: 42.0,
 			footer: HexColor(0xff111112),
@@ -109,6 +120,7 @@ impl Theme {
 			sidebar: HexColor(0xff111112),
 			sidebar_width: 42.0,
 			gap: 6.0,
+			gap2: 9.0,
 			border: 1.0,
 			border2: 2.0,
 			round: 8.0,

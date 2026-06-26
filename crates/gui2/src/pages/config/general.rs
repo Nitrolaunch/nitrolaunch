@@ -33,6 +33,7 @@ pub struct GeneralTab {
 impl Component for GeneralTab {
 	fn render(&self) -> impl IntoElement {
 		let theme = use_theme();
+		let front_state = use_front_state();
 		let back_state = use_consume::<BackState>();
 		let mut include_snapshots = use_state(|| false);
 		let minecraft_versions = use_query(FetchMinecraftVersions::new(
@@ -68,13 +69,16 @@ impl Component for GeneralTab {
 				))
 			})
 			.maybe(show_id_field, |this| {
-				this.child(field(
-					"ID",
-					&theme,
-					TextInput::new(self.config_state.id).on_change(move |_| {
-						is_id_dirty.set(true);
-					}),
-				))
+				this.child(
+					field(
+						"ID",
+						&theme,
+						TextInput::new(self.config_state.id).on_change(move |_| {
+							is_id_dirty.set(true);
+						}),
+					)
+					.tip(&front_state, "A unique ID for this instance"),
+				)
 			});
 
 		let top = rect()
@@ -116,7 +120,10 @@ impl Component for GeneralTab {
 		.maybe(templates.is_some(), |this| {
 			this.children(templates.unwrap())
 		});
-		let from_field = field("Parent Templates", &theme, from_field);
+		let from_field = field("Parent Templates", &theme, from_field).tip(
+			&front_state,
+			"Templates to derive default configuration from",
+		);
 
 		let config_settings = rect()
 			.width(Size::fill())
@@ -155,8 +162,14 @@ impl Component for GeneralTab {
 			|x| x.instance.side.as_ref().map(|x| x.to_string()),
 		)
 		.maybe_child(show_none_option, || SelectOption::none())
-		.child(SelectOption::new("client", "Client", Some("controller")))
-		.child(SelectOption::new("server", "Server", Some("server")));
+		.child(
+			SelectOption::new("client", "Client", Some("controller"))
+				.tip("Standard Minecraft game"),
+		)
+		.child(
+			SelectOption::new("server", "Server", Some("server"))
+				.tip("Dedicated multiplayer server"),
+		);
 
 		let side_field = field("Side", &theme, side_field);
 
@@ -188,7 +201,12 @@ impl Component for GeneralTab {
 
 		let version_field = rect()
 			.cont()
-			.child(rect().width(Size::flex(1.0)).child(version_selector))
+			.child(
+				rect()
+					.width(Size::flex(1.0))
+					.child(version_selector)
+					.tip(&front_state, "The version of Minecraft to use"),
+			)
 			.child(
 				rect()
 					.width(Size::flex(1.0))
@@ -202,7 +220,11 @@ impl Component for GeneralTab {
 						on_toggle: EventHandler::from(move |_| {
 							include_snapshots.toggle();
 						}),
-					}),
+					})
+					.tip(
+						&front_state,
+						"Whether to include pre-release versions in the dropdown",
+					),
 			);
 		let version_field = field("Minecraft version", &theme, version_field);
 
@@ -234,6 +256,7 @@ struct LoadersConfig {
 impl Component for LoadersConfig {
 	fn render(&self) -> impl IntoElement {
 		let theme = use_theme();
+		let front_state = use_front_state();
 		let back_state = use_consume::<BackState>();
 		let supported_loaders = use_query(FetchSupportedLoaders::new(back_state.clone()));
 		let supported_loaders = supported_loaders
@@ -313,7 +336,14 @@ impl Component for LoadersConfig {
 		} else {
 			"Client loader"
 		};
-		let client_field = field(field_name, &theme, client_field);
+		let client_field = field(field_name, &theme, client_field).tip(
+			&front_state,
+			if self.config_state.ty == ConfigKind::Instance {
+				"What to install for loading mods"
+			} else {
+				"Loader for client instances under this template"
+			},
+		);
 		let show_client_fields = self.config_state.ty.is_template()
 			|| *self.config_state.side.read() == Some(Side::Client);
 
@@ -353,7 +383,14 @@ impl Component for LoadersConfig {
 		} else {
 			"Server loader"
 		};
-		let server_field = field(field_name, &theme, server_field);
+		let server_field = field(field_name, &theme, server_field).tip(
+			&front_state,
+			if self.config_state.ty == ConfigKind::Instance {
+				"What to install for loading mods or plugins"
+			} else {
+				"Loader for server instances under this template"
+			},
+		);
 		let show_server_fields = self.config_state.ty.is_template()
 			|| *self.config_state.side.read() == Some(Side::Server);
 

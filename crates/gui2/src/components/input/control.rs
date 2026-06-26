@@ -69,11 +69,18 @@ impl Component for ControlInput {
 					id: x.id.clone().unwrap_or_else(|| null_value.clone()),
 					title: x.name.clone(),
 					icon: None,
+					tip: x.description.clone(),
 				});
 
-				InlineSelect::new(selected, on_select)
-					.children(children)
-					.into_element()
+				if *dropdown {
+					Dropdown::new(selected, on_select)
+						.children(children)
+						.into_element()
+				} else {
+					InlineSelect::new(selected, on_select)
+						.children(children)
+						.into_element()
+				}
 			}
 			_ => rect().into_element(),
 		};

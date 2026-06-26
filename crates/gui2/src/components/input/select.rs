@@ -123,6 +123,7 @@ impl Component for InlineSelectOption {
 	fn render(&self) -> impl IntoElement {
 		let theme = use_theme();
 		let is_hovered = use_state(|| false);
+		let front_state = use_front_state();
 
 		let id = self.option.id.clone();
 		let on_select = self.on_select.clone();
@@ -154,6 +155,9 @@ impl Component for InlineSelectOption {
 			})
 			.clickable()
 			.maybe_child(self.option.icon.clone())
+			.maybe(self.option.tip.is_some(), |this| {
+				this.tip(&front_state, self.option.tip.as_deref().unwrap())
+			})
 			.child(self.option.title.as_str())
 	}
 }
@@ -313,6 +317,7 @@ impl Component for DropdownOption {
 	fn render(&self) -> impl IntoElement {
 		let theme = use_theme();
 		let is_hovered = use_state(|| false);
+		let front_state = use_front_state();
 
 		let on_select = self.on_select.clone();
 		let on_deselect = self.on_deselect.clone();
@@ -322,7 +327,11 @@ impl Component for DropdownOption {
 		let (fg, bg, border) = if self.is_derived {
 			(theme.template, theme.template_bg, theme.template)
 		} else if self.is_selected {
-			(theme.item_select_border, theme.item_select, theme.item_select_border)
+			(
+				theme.item_select_border,
+				theme.item_select,
+				theme.item_select_border,
+			)
 		} else if *is_hovered.read() {
 			(theme.fg, theme.highlight, theme.panel)
 		} else {
@@ -350,6 +359,9 @@ impl Component for DropdownOption {
 				}
 			})
 			.maybe_child(self.option.icon.clone())
+			.maybe(self.option.tip.is_some(), |this| {
+				this.tip(&front_state, self.option.tip.as_deref().unwrap())
+			})
 			.child(self.option.title.as_str())
 			.into_element()
 	}
@@ -360,6 +372,7 @@ pub struct SelectOption {
 	pub id: String,
 	pub title: String,
 	pub icon: Option<Element>,
+	pub tip: Option<String>,
 }
 
 impl SelectOption {
@@ -372,6 +385,7 @@ impl SelectOption {
 			id: id.into(),
 			title: title.into(),
 			icon: ico.map(|x| icon(x, 16.0).into_element()),
+			tip: None,
 		}
 	}
 
@@ -380,11 +394,17 @@ impl SelectOption {
 			id: id.into(),
 			title: title.into(),
 			icon: Some(ico),
+			tip: None,
 		}
 	}
 
 	pub fn none() -> Self {
 		Self::new("none", "None", None)
+	}
+
+	pub fn tip(mut self, tip: &str) -> Self {
+		self.tip = Some(tip.into());
+		self
 	}
 }
 

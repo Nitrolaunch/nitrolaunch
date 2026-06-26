@@ -19,7 +19,7 @@ use reqwest::Client;
 use tokio::sync::{Mutex, broadcast, mpsc};
 
 use crate::{
-	components::footer::FooterItem,
+	components::{dialog::{tip::Tip, toast::Toast}, footer::FooterItem},
 	instance_manager::RunningInstanceManager,
 	ops::task::TaskManager,
 	output::{LauncherOutput, OutputInner},
@@ -38,6 +38,9 @@ pub struct FrontState {
 	radio: RadioStation<(), FrontChannel>,
 	footer: FooterItem,
 	configured_item: Option<ConfiguredItem>,
+	toasts: Rc<[Toast]>,
+	toast_id_counter: u32,
+	tip: Option<Tip>,
 	event_rx: Rc<broadcast::Receiver<BackEvent>>,
 }
 
@@ -50,6 +53,10 @@ pub enum FrontChannel {
 	FooterItem,
 	/// Changes to the configured item
 	ConfiguredItem,
+	/// Changes to toasts
+	Toast,
+	/// Changes to the tip
+	Tip,
 	/// Changes to the theme
 	Theme,
 }
@@ -67,6 +74,9 @@ impl FrontState {
 			radio,
 			footer: FooterItem::None,
 			configured_item: None,
+			toasts: Rc::default(),
+			toast_id_counter: 0,
+			tip: None,
 			event_rx: Rc::new(event_rx),
 		}
 	}
@@ -144,6 +154,42 @@ impl FrontState {
 
 	pub fn configured_item(&self) -> Option<&ConfiguredItem> {
 		self.configured_item.as_ref()
+	}
+
+	pub fn toast(&mut self, mut toast: Toast) {
+		toast.set_id(self.toast_id_counter);
+		self.toast_id_counter += 1;
+
+		self.toasts = self
+			.toasts
+			.iter()
+			.map(|x| x.clone())
+			.chain(std::iter::once(toast))
+			.collect();
+		self.invalidate(FrontChannel::Toast);
+	}
+
+	pub fn toasts(&self) -> &[Toast] {
+		&self.toasts
+	}
+
+	pub fn remove_toast(&mut self, id: u32) {
+		self.toasts = self
+			.toasts
+			.iter()
+			.filter(|x| x.id() != id)
+			.cloned()
+			.collect();
+		self.invalidate(FrontChannel::Toast);
+	}
+
+	pub fn tip(&self) -> Option<&Tip> {
+		self.tip.as_ref()
+	}
+
+	pub fn set_tip(&mut self, tip: Option<Tip>) {
+		self.tip = tip;
+		self.invalidate(FrontChannel::Tip);
 	}
 }
 
@@ -240,6 +286,8 @@ impl BackState {
 /// Events sent from the backend
 #[derive(Clone)]
 pub enum BackEvent {
+	SuccessToast(String),
+	ErrorToast(String, Option<String>),
 	OutputMessage {
 		message: MessageContents,
 		task: Option<String>,

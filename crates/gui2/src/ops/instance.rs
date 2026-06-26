@@ -302,10 +302,10 @@ pub struct SaveConfigParams {
 }
 
 impl SaveConfig {
-	pub fn new(back_state: BackState) -> Mutation<Self> {
-		Mutation::new(Self {
+	pub fn new(back_state: BackState) -> Self {
+		Self {
 			back_state: Captured(back_state),
-		})
+		}
 	}
 }
 

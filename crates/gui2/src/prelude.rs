@@ -3,8 +3,8 @@ pub use freya::query::{
 	Captured, Mutation, MutationCapability, Query, QueryCapability, QueryStateData, use_mutation,
 	use_query,
 };
-pub use freya::radio::use_radio;
 
+pub use crate::components::dialog::tip::TipExt;
 pub use crate::components::input::field;
 pub use crate::components::input::select::{Dropdown, InlineSelect, SelectOption};
 pub use crate::components::{
@@ -12,6 +12,7 @@ pub use crate::components::{
 	segment,
 };
 pub use crate::icons::icon;
+pub use crate::ops::ToastedMutationExt;
 pub use crate::state::{BackState, FrontChannel, use_front_state};
 pub use crate::theme::{Theme, use_theme};
 pub use crate::util::{NotEq, query_spawn};

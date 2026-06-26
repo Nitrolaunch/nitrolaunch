@@ -1,4 +1,4 @@
-use crate::{prelude::*, routing::PageCategory};
+use crate::{components::dialog::toast::Toasts, prelude::*, routing::PageCategory};
 
 pub mod router;
 
@@ -58,7 +58,14 @@ impl Component for NavBar {
 				category: PageCategory::Plugins,
 			});
 
-		let right = rect().height(Size::fill()).width(Size::flex(1.0));
+		let right = rect()
+			.height(Size::fill())
+			.width(Size::flex(1.0))
+			.padding(Gaps::new(3.0, 6.0, 3.0, 3.0))
+			.cont()
+			.center()
+			.main_align(Alignment::End)
+			.child(Toasts);
 
 		rect()
 			.width(Size::fill())

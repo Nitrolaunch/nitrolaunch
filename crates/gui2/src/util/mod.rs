@@ -58,6 +58,16 @@ impl<T> AnyhowResult<T> for anyhow::Result<T> {
 	}
 }
 
+pub trait AnyhowError {
+	fn as_err(&self) -> &anyhow::Error;
+}
+
+impl AnyhowError for anyhow::Error {
+	fn as_err(&self) -> &anyhow::Error {
+		self
+	}
+}
+
 #[derive(Clone)]
 pub struct Shared<T> {
 	inner: Rc<RefCell<T>>,

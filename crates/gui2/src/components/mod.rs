@@ -21,6 +21,8 @@ pub mod instance;
 pub mod nav;
 pub mod output_indicator;
 
+pub const TOAST_TIP_LAYER: u8 = 3;
+
 pub fn segment(child: impl IntoElement, width: f32) -> Rect {
 	rect().width(Size::flex(width)).child(child)
 }
@@ -108,7 +110,11 @@ pub fn item_colorway(
 	selected: bool,
 ) -> (HexColor, HexColor, HexColor) {
 	if selected {
-		(theme.item_select_border, theme.item_select_border, theme.item_select)
+		(
+			theme.item_select_border,
+			theme.item_select_border,
+			theme.item_select,
+		)
 	} else if hovered {
 		(theme.fg, theme.item_border, theme.item_hover)
 	} else {
@@ -123,7 +129,11 @@ pub fn panel_colorway(
 	selected: bool,
 ) -> (HexColor, HexColor, HexColor) {
 	if selected {
-		(theme.item_select_border, theme.item_select_border, theme.item_select)
+		(
+			theme.item_select_border,
+			theme.item_select_border,
+			theme.item_select,
+		)
 	} else if hovered {
 		(theme.fg, theme.panel_border, theme.panel_hover)
 	} else {
@@ -137,6 +147,9 @@ pub trait CustomEvents {
 
 	/// Updates a state with hover status
 	fn hover(self, state: State<bool>) -> Self;
+
+	// /// Extends an event handler
+	// fn extend_event<T>(self, event: EventName, handler: EventHandler<T>) -> Self;
 }
 
 impl<T: EventHandlersExt> CustomEvents for T {
@@ -159,6 +172,28 @@ impl<T: EventHandlersExt> CustomEvents for T {
 			state.set(false);
 		})
 	}
+
+	// fn extend_event(mut self, event: EventName, handler: EventHandlerType) -> Self {
+	// 	fn extend_handler<T: Clone + 'static>(handler: EventHandler<T>, event: &mut EventHandler<T>) {
+	// 		let old = event.clone();
+	// 		*event = (move |arg: T| {
+	// 			handler.call(arg.clone());
+	// 			old.call(arg);
+	// 		})
+	// 		.into();
+	// 	}
+
+	// 	if let Some(event) = self.get_event_handlers().get_mut(&event) {
+	// 		match (handler, event) {
+	// 			(EventHandlerType::File(handler), EventHandlerType::File(event)) => {
+	// 				extend_handler(handler, event)
+	// 			}
+	// 		}
+	// 	} else {
+	// 	}
+
+	// 	self
+	// }
 }
 
 pub fn grid<T: IntoElement + 'static>(cols: u8, items: impl IntoIterator<Item = T>) -> Grid {
