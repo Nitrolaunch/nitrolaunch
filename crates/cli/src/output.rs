@@ -10,9 +10,7 @@ use nitrolaunch::io::paths::Paths;
 use nitrolaunch::pkg_crate::{PkgRequest, PkgRequestSource};
 use nitrolaunch::shared::io::config::IO_CONFIG;
 use nitrolaunch::shared::lang::translate::{TranslationKey, TranslationMap};
-use nitrolaunch::shared::output::{
-	Message, MessageContents, MessageLevel, NitroOutput, default_special_ms_auth,
-};
+use nitrolaunch::shared::output::{Message, MessageContents, MessageLevel, NitroOutput};
 use nitrolaunch::shared::util::print::ReplPrinter;
 use tokio::sync::mpsc::{Receiver, Sender};
 
@@ -107,7 +105,15 @@ impl NitroOutput for TerminalOutput {
 
 	fn display_special_ms_auth(&mut self, url: &str, code: &str) {
 		let _ = nitrolaunch::shared::util::open_link(url);
-		default_special_ms_auth(self, url, code);
+		self.end_process();
+		self.display(MessageContents::Property(
+			"Open this link in your web browser if it has not opened already".into(),
+			Box::new(MessageContents::Hyperlink(url.into())),
+		));
+		self.display(MessageContents::Property(
+			"and enter the code".into(),
+			Box::new(MessageContents::Copyable(code.into())),
+		));
 	}
 
 	fn get_greater_copy(&self) -> Box<dyn NitroOutput + Sync> {
