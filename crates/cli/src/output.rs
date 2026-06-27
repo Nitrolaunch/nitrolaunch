@@ -34,102 +34,35 @@ pub const CHECK: &str = "\u{2713}";
 
 /// Terminal NitroOutput
 pub struct TerminalOutput {
-	printer: ReplPrinter,
+	tx: Sender<Event>,
 	level: MessageLevel,
-	in_process: bool,
-	indent_level: u8,
-	logger: Logger,
 	translation_map: Option<TranslationMap>,
-	process_spinner_task: Option<Sender<()>>,
-	wrapping_enabled: bool,
 }
 
 #[async_trait::async_trait]
 impl NitroOutput for TerminalOutput {
 	fn display_text(&mut self, text: String, level: MessageLevel) {
-		let _ = self.log_message(MessageContents::Simple(text.clone()), level);
-		if level >= self.level {
-			self.display_text_impl(text);
-		}
+		let _ = self.tx.try_send(Event::Print(text, level));
 	}
 
 	fn display_message(&mut self, message: Message) {
-		let _ = self.log_message(message.contents.clone(), message.level);
-
-		if message.level >= self.level {
-			let is_error = matches!(&message.contents, MessageContents::Error(..));
-
-			// Loading spinner handling
-			let message_contents = match message.contents {
-				MessageContents::StartProcess(inner_message) => {
-					if let Some(existing_task) = self.process_spinner_task.take() {
-						tokio::spawn(async move { existing_task.send(()).await });
-					}
-
-					let inner_message = format!("{inner_message}...");
-					let start_message = format!("{} {inner_message}", format_loading_spinner(3));
-
-					let printer = self.printer.clone();
-					let (tx, rx) = tokio::sync::mpsc::channel(2);
-
-					tokio::spawn(
-						async move { loading_spinner_task(inner_message, printer, rx).await },
-					);
-					self.process_spinner_task = Some(tx);
-
-					start_message
-				}
-				message => {
-					// Wrapping
-					let message = self.format_message(message);
-					if !self.in_process && self.wrapping_enabled {
-						wrap_message(&message).to_string()
-					} else {
-						message
-					}
-				}
-			};
-
-			/*
-				If the message is an error it will span multiple lines and break the ReplPrinter,
-				plus the process is aborted anyway
-			*/
-			if is_error {
-				self.end_process();
-			}
-
-			self.display_text_impl(message_contents);
-		}
+		let _ = self.tx.try_send(Event::Message(message));
 	}
 
 	fn start_process(&mut self) {
-		self.end_process();
-		self.in_process = true;
+		let _ = self.tx.try_send(Event::StartProcess);
 	}
 
 	fn end_process(&mut self) {
-		if let Some(spinner) = self.process_spinner_task.take() {
-			tokio::spawn(async move {
-				let _ = spinner.send(()).await;
-			});
-		}
-
-		if self.in_process {
-			self.printer.newline();
-		}
-		self.in_process = false;
+		let _ = self.tx.try_send(Event::EndProcess);
 	}
 
 	fn start_section(&mut self) {
-		self.indent_level += 1;
-		self.printer.indent(self.indent_level.into());
+		let _ = self.tx.try_send(Event::StartSection);
 	}
 
 	fn end_section(&mut self) {
-		if self.indent_level != 0 {
-			self.indent_level -= 1;
-			self.printer.indent(self.indent_level.into());
-		}
+		let _ = self.tx.try_send(Event::EndSection);
 	}
 
 	async fn prompt_yes_no(
@@ -137,7 +70,7 @@ impl NitroOutput for TerminalOutput {
 		default: bool,
 		message: MessageContents,
 	) -> anyhow::Result<bool> {
-		let ans = Confirm::new(&self.format_message(message))
+		let ans = Confirm::new(&format_message(message))
 			.with_default(default)
 			.prompt()
 			.context("Inquire prompt failed")?;
@@ -146,7 +79,7 @@ impl NitroOutput for TerminalOutput {
 	}
 
 	async fn prompt_password(&mut self, message: MessageContents) -> anyhow::Result<String> {
-		let ans = Password::new(&self.format_message(message))
+		let ans = Password::new(&format_message(message))
 			.without_confirmation()
 			.prompt()
 			.context("Inquire prompt failed")?;
@@ -155,7 +88,7 @@ impl NitroOutput for TerminalOutput {
 	}
 
 	async fn prompt_new_password(&mut self, message: MessageContents) -> anyhow::Result<String> {
-		let ans = Password::new(&self.format_message(message))
+		let ans = Password::new(&format_message(message))
 			.prompt()
 			.context("Inquire prompt failed")?;
 
@@ -178,133 +111,32 @@ impl NitroOutput for TerminalOutput {
 	}
 
 	fn get_greater_copy(&self) -> Box<dyn NitroOutput + Sync> {
-		let mut printer = self.printer.clone();
-		printer.force_finished();
-
 		Box::new(Self {
-			printer,
+			tx: self.tx.clone(),
 			level: MessageLevel::Important,
-			in_process: false,
-			indent_level: 0,
-			logger: Logger::dummy(),
 			translation_map: None,
-			process_spinner_task: None,
-			wrapping_enabled: self.wrapping_enabled,
 		})
 	}
 }
 
 impl TerminalOutput {
 	pub fn new(paths: &Paths) -> anyhow::Result<Self> {
-		let mut logger = Logger::new(paths, "cli").context("Failed to create logger")?;
+		let (tx, rx) = tokio::sync::mpsc::channel(20);
+		let output_task = OutputTask::new(rx, paths)?;
 
-		// Log the command
-		let args = std::env::args().join(" ");
-		let _ = logger.log_message(MessageContents::Simple(args), MessageLevel::Important);
+		tokio::spawn(output_task.run());
 
 		Ok(Self {
-			printer: ReplPrinter::new(true),
+			tx,
 			level: MessageLevel::Important,
-			in_process: false,
-			indent_level: 0,
-			logger,
 			translation_map: None,
-			process_spinner_task: None,
-			wrapping_enabled: IO_CONFIG.get_bool("cli_wrap").unwrap_or(false),
 		})
-	}
-
-	/// Display text
-	fn display_text_impl(&mut self, text: String) {
-		if self.in_process {
-			self.printer.print(&text);
-		} else {
-			self.printer.print(&text);
-			self.printer.newline();
-		}
-	}
-
-	/// Formatting for messages
-	fn format_message(&self, contents: MessageContents) -> String {
-		match contents {
-			MessageContents::Simple(text) => text,
-			MessageContents::Notice(text) => {
-				cformat!("<y>{}: {}", self.translate(TranslationKey::Notice), text)
-			}
-			MessageContents::Warning(text) => cformat!(
-				"<y><s>{}:</> {}",
-				self.translate(TranslationKey::Warning),
-				text
-			),
-			MessageContents::Error(text) => cformat!(
-				"<r><s,u>{}:</> {}",
-				self.translate(TranslationKey::Error),
-				text
-			),
-			MessageContents::Success(text) => {
-				cformat!("{} <g>{}", format_loading_spinner(4), add_period(text))
-			}
-			MessageContents::Property(key, value) => {
-				cformat!("<s>{}:</> {}", key, self.format_message(*value))
-			}
-			MessageContents::Header(text) => cformat!("<s>{}", text),
-			MessageContents::StartProcess(text) => cformat!("{text}..."),
-			MessageContents::Associated(item, message) => {
-				// Don't parenthesize progress bars
-				if let MessageContents::Progress { .. } | MessageContents::Package(..) =
-					item.as_ref()
-				{
-					cformat!(
-						"{} {}",
-						self.format_message(*item),
-						self.format_message(*message)
-					)
-				} else {
-					cformat!(
-						"[{}] {}",
-						self.format_message(*item),
-						self.format_message(*message)
-					)
-				}
-			}
-			MessageContents::Package(pkg, message) => {
-				let pkg_disp = disp_pkg_request_with_colors(pkg);
-				cformat!("[{}] {}", pkg_disp, self.format_message(*message))
-			}
-			MessageContents::Hyperlink(url) => cformat!("<m,u>{}", url),
-			MessageContents::ListItem(item) => {
-				HYPHEN_POINT.to_string() + &self.format_message(*item)
-			}
-			MessageContents::Copyable(text) => cformat!("<u>{}", text),
-			MessageContents::Progress { current, total } => {
-				let (full, empty) = progress_bar_parts(
-					current,
-					total,
-					ProgressBarSettings {
-						len: 25,
-						full: "■",
-						empty: "□",
-						end: "⬢",
-					},
-				);
-				cformat!("<s>[</><g>{}</g><k!>{}</><s>]</>", full, empty)
-			}
-			contents => contents.default_format(),
-		}
-	}
-
-	/// Log a message to the log file
-	pub fn log_message(
-		&mut self,
-		message: MessageContents,
-		level: MessageLevel,
-	) -> anyhow::Result<()> {
-		self.logger.log_message(message, level)
 	}
 
 	/// Set the log level of the output
 	pub fn set_log_level(&mut self, level: MessageLevel) {
 		self.level = level;
+		let _ = self.tx.try_send(Event::SetLevel(level));
 	}
 
 	/// Set the translation map of the output
@@ -362,45 +194,227 @@ fn add_period(string: String) -> String {
 	}
 }
 
-/// Gets the async task for updating one of the loading spinners
-async fn loading_spinner_task(
-	message: String,
-	mut printer: ReplPrinter,
-	mut finished_rx: Receiver<()>,
-) {
-	printer.force_finished();
-	let mut stage = 0;
+struct OutputTask {
+	rx: Receiver<Event>,
+	printer: ReplPrinter,
+	level: MessageLevel,
+	in_process: bool,
+	loading_spinner_message: Option<MessageContents>,
+	loading_spinner_stage: u8,
+	indent_level: u8,
+	logger: Logger,
+	wrapping_enabled: bool,
+}
 
-	let loop_interval_ms = 1;
-	let spinner_interval_ms = 150;
+impl OutputTask {
+	fn new(rx: Receiver<Event>, paths: &Paths) -> anyhow::Result<Self> {
+		let mut logger = Logger::new(paths, "cli").context("Failed to create logger")?;
 
-	let mut loop_counter = 0;
+		// Log the command
+		let args = std::env::args().join(" ");
+		let _ = logger.log_message(MessageContents::Simple(args), MessageLevel::Important);
 
-	loop {
-		// Decide if we need to exit
-		if finished_rx.try_recv().is_ok() {
-			break;
+		Ok(Self {
+			rx,
+			printer: ReplPrinter::new(true),
+			level: MessageLevel::Important,
+			in_process: false,
+			loading_spinner_message: None,
+			loading_spinner_stage: 0,
+			indent_level: 0,
+			logger,
+			wrapping_enabled: IO_CONFIG.get_bool("cli_wrap").unwrap_or(false),
+		})
+	}
+
+	async fn run(mut self) {
+		let spinner_interval_ms = 300;
+		let mut spinner_timer = tokio::time::interval(Duration::from_millis(spinner_interval_ms));
+
+		loop {
+			tokio::select! {
+				ev = self.rx.recv() => {
+					let Some(ev) = ev else {
+						break;
+					};
+
+					match ev {
+						Event::Print(text, level) => {
+							if level >= self.level {
+								self.display_text_impl(&text);
+							}
+							let _ = self.logger.log_message(MessageContents::Simple(text), level);
+						}
+						Event::Message(message) => {
+							self.display(message);
+						}
+						Event::StartProcess => self.start_process(),
+						Event::EndProcess => self.end_process(),
+						Event::StartSection => self.start_section(),
+						Event::EndSection => self.end_section(),
+						Event::SetLevel(level) => self.level = level,
+					}
+				}
+				_ = spinner_timer.tick() => {
+					self.update_spinner();
+				}
+			};
 		}
+	}
 
-		// Decide if we need to print
-		if loop_counter * loop_interval_ms >= spinner_interval_ms {
-			loop_counter = 0;
+	fn start_process(&mut self) {
+		self.end_process();
+		self.in_process = true;
+	}
 
-			stage += 1;
-			if stage > 3 {
-				stage = 0;
+	fn end_process(&mut self) {
+		if self.in_process {
+			self.printer.newline();
+		}
+		self.in_process = false;
+		self.loading_spinner_message = None;
+	}
+
+	fn start_section(&mut self) {
+		self.indent_level += 1;
+		self.printer.indent(self.indent_level.into());
+	}
+
+	fn end_section(&mut self) {
+		if self.indent_level != 0 {
+			self.indent_level -= 1;
+			self.printer.indent(self.indent_level.into());
+		}
+	}
+
+	fn display(&mut self, message: Message) {
+		let _ = self
+			.logger
+			.log_message(message.contents.clone(), message.level);
+
+		if message.level >= self.level {
+			let is_error = matches!(&message.contents, MessageContents::Error(..));
+
+			/*
+				If the message is an error it will span multiple lines and break the ReplPrinter,
+				plus the process is aborted anyway
+			*/
+			if is_error {
+				self.end_process();
 			}
 
-			let spinner = format_loading_spinner(stage);
+			let is_success = matches!(message.contents, MessageContents::Success(..));
+			if self.in_process {
+				self.loading_spinner_message = Some(message.contents);
+				if is_success {
+					self.update_spinner();
+				}
+			} else {
+				let message_contents = if is_success {
+					format!(
+						"{} {}",
+						format_loading_spinner(4),
+						format_message(message.contents)
+					)
+				} else {
+					format_message(message.contents)
+				};
+				let message_contents = if !self.in_process && self.wrapping_enabled {
+					wrap_message(&message_contents).to_string()
+				} else {
+					message_contents
+				};
+				self.display_text_impl(&message_contents);
+			}
+		}
+	}
 
-			let message = format!("{spinner} {message}");
-
-			printer.print(&message);
+	fn display_text_impl(&mut self, text: &str) {
+		if self.in_process {
+			self.printer.print(&text);
 		} else {
-			loop_counter += 1;
+			self.printer.print(&text);
+			self.printer.newline();
+		}
+	}
+
+	fn update_spinner(&mut self) {
+		let Some(message) = &self.loading_spinner_message else {
+			return;
+		};
+
+		self.loading_spinner_stage += 1;
+		if self.loading_spinner_stage > 3 {
+			self.loading_spinner_stage = 0;
 		}
 
-		tokio::time::sleep(Duration::from_millis(loop_interval_ms)).await;
+		let spinner = if let MessageContents::Success(..) = &message {
+			format_loading_spinner(4)
+		} else {
+			format_loading_spinner(self.loading_spinner_stage)
+		};
+
+		let message = format!("{spinner} {}", format_message(message.clone()));
+		self.display_text_impl(&message);
+	}
+}
+
+enum Event {
+	Print(String, MessageLevel),
+	Message(Message),
+	StartProcess,
+	EndProcess,
+	StartSection,
+	EndSection,
+	SetLevel(MessageLevel),
+}
+
+/// Formatting for messages
+fn format_message(contents: MessageContents) -> String {
+	match contents {
+		MessageContents::Simple(text) => text,
+		MessageContents::Notice(text) => {
+			cformat!("<y>Notice: {}", text)
+		}
+		MessageContents::Warning(text) => cformat!("<y><s>Warning:</> {}", text),
+		MessageContents::Error(text) => cformat!("<r><s,u>Error:</> {}", text),
+		MessageContents::Success(text) => {
+			cformat!("<g>{}", add_period(text))
+		}
+		MessageContents::Property(key, value) => {
+			cformat!("<s>{}:</> {}", key, format_message(*value))
+		}
+		MessageContents::Header(text) => cformat!("<s>{}", text),
+		MessageContents::StartProcess(text) => cformat!("{text}..."),
+		MessageContents::Associated(item, message) => {
+			// Don't parenthesize progress bars
+			if let MessageContents::Progress { .. } | MessageContents::Package(..) = item.as_ref() {
+				cformat!("{} {}", format_message(*item), format_message(*message))
+			} else {
+				cformat!("[{}] {}", format_message(*item), format_message(*message))
+			}
+		}
+		MessageContents::Package(pkg, message) => {
+			let pkg_disp = disp_pkg_request_with_colors(pkg);
+			cformat!("[{}] {}", pkg_disp, format_message(*message))
+		}
+		MessageContents::Hyperlink(url) => cformat!("<m,u>{}", url),
+		MessageContents::ListItem(item) => HYPHEN_POINT.to_string() + &format_message(*item),
+		MessageContents::Copyable(text) => cformat!("<u>{}", text),
+		MessageContents::Progress { current, total } => {
+			let (full, empty) = progress_bar_parts(
+				current,
+				total,
+				ProgressBarSettings {
+					len: 25,
+					full: "■",
+					empty: "□",
+					end: "⬢",
+				},
+			);
+			cformat!("<s>[</><g>{}</g><k!>{}</><s>]</>", full, empty)
+		}
+		contents => contents.default_format(),
 	}
 }
 
