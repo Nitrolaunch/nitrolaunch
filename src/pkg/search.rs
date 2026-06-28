@@ -11,7 +11,6 @@ use nitro_pkg::{
 use nitro_shared::{
 	output::NitroOutput,
 	pkg::{ArcPkgReq, PackageSearchParameters},
-	util::profile::Profiler,
 };
 use reqwest::Client;
 use tokio::task::JoinSet;
@@ -94,11 +93,9 @@ impl PackageSearchSession {
 			let mut output = o.get_lesser_copy();
 
 			tasks.spawn(async move {
-				let mut profiler = Profiler::new();
 				let results = reg
 					.search(search, Some(&repo), &paths, &client, &mut output)
 					.await?;
-				profiler.time(&format!("Repo {repo}"));
 
 				Ok::<_, anyhow::Error>((repo, results))
 			});

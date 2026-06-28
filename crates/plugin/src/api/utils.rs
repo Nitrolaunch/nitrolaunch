@@ -1,6 +1,7 @@
 use std::{
 	collections::HashMap,
 	fs::File,
+	io::BufReader,
 	path::{Path, PathBuf},
 };
 
@@ -19,7 +20,7 @@ impl PackageSearchCache {
 	/// Opens the cache at the given JSON file given the max age for an entry in seconds
 	pub fn open(path: impl AsRef<Path>, max_age: u64) -> anyhow::Result<Self> {
 		let contents = if path.as_ref().exists() {
-			serde_json::from_reader(File::open(path.as_ref())?).unwrap_or_default()
+			serde_json::from_reader(BufReader::new(File::open(path.as_ref())?)).unwrap_or_default()
 		} else {
 			let default = CacheContents::default();
 			let _ = serde_json::to_writer(File::create(path.as_ref())?, &default);
