@@ -1,6 +1,7 @@
 use std::{
 	collections::HashMap,
 	fs::File,
+	io::BufReader,
 	path::{Path, PathBuf},
 	sync::Arc,
 };
@@ -26,7 +27,7 @@ impl InstanceLockfile {
 	/// Open the lockfile at the specified path
 	pub fn open(path: &Path) -> anyhow::Result<Self> {
 		let contents: InstanceLockfileContents = if path.exists() {
-			serde_json::from_reader(File::open(path)?)
+			serde_json::from_reader(BufReader::new(File::open(path)?))
 				.context("Failed to read instance lockfile")?
 		} else {
 			InstanceLockfileContents::default()
