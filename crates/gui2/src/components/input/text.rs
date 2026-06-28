@@ -43,7 +43,7 @@ impl Component for TextInput {
 		let on_change = self.on_change.clone();
 		let input_theme = InputColorsThemePartial {
 			background: Some(Preference::Specific(theme.bg.into())),
-			hover_background: Some(Preference::Specific(theme.panel.into())),
+			focus_background: Some(Preference::Specific(theme.panel.into())),
 			border_fill: Some(Preference::Specific(theme.item_border.into())),
 			focus_border_fill: Some(Preference::Specific(theme.item_select_border.into())),
 			color: Some(Preference::Specific(theme.fg.into())),
@@ -74,7 +74,7 @@ pub fn search_bar(input: TextInput, theme: &Theme) -> Rect {
 		.width(Size::fill())
 		.child(
 			rect()
-				.position(Position::new_absolute().left(12.0))
+				.position(Position::new_absolute().right(12.0))
 				.height(Size::px(theme.input_height))
 				.center()
 				.child(icon("search", 16.0)),

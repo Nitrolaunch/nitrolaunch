@@ -315,7 +315,7 @@ impl AddonOptionalHashes {
 pub type AddonOptionalHashes = AddonHashes<Option<String>>;
 
 /// Different types of packages, mostly AddonKinds
-#[derive(Serialize, Deserialize, Clone, Copy, PartialEq, Eq, Hash, Debug)]
+#[derive(Serialize, Deserialize, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Debug)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[serde(rename_all = "snake_case")]
 pub enum PackageKind {
@@ -346,6 +346,31 @@ impl PackageKind {
 			Self::Shader => Some(AddonKind::Shader),
 			Self::Modpack => Some(AddonKind::Modpack),
 			Self::Bundle => None,
+		}
+	}
+
+	/// Converts from an addon kind
+	pub fn from_addon_kind(kind: AddonKind) -> Self {
+		match kind {
+			AddonKind::Mod => Self::Mod,
+			AddonKind::ResourcePack => Self::ResourcePack,
+			AddonKind::Datapack => Self::Datapack,
+			AddonKind::Plugin => Self::Plugin,
+			AddonKind::Shader => Self::Shader,
+			AddonKind::Modpack => Self::Modpack,
+		}
+	}
+
+	/// Converts to a capitalized string
+	pub fn to_string_pretty(&self) -> &'static str {
+		match self {
+			Self::Mod => "Mod",
+			Self::ResourcePack => "Resource pack",
+			Self::Datapack => "Datapack",
+			Self::Plugin => "Plugin",
+			Self::Shader => "Shader",
+			Self::Modpack => "Modpack",
+			Self::Bundle => "Bundle",
 		}
 	}
 }

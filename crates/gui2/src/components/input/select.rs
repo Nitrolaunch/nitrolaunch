@@ -12,6 +12,7 @@ pub struct InlineSelect {
 	fit: bool,
 }
 
+#[allow(dead_code)]
 impl InlineSelect {
 	pub fn new(selected: Selected, on_select: Rc<dyn Fn(Selected)>) -> Self {
 		Self {
@@ -170,6 +171,7 @@ pub struct Dropdown {
 	derived_option: Option<String>,
 }
 
+#[allow(dead_code)]
 impl Dropdown {
 	pub fn new(selected: Selected, on_select: Rc<dyn Fn(Selected)>) -> Self {
 		Self {

@@ -5,7 +5,9 @@ use freya::{
 	elements::extensions::ContainerSizeExt,
 	prelude::Size,
 };
-use nitrolaunch::shared::{loaders::Loader, util::to_string_json};
+use nitrolaunch::shared::{
+	loaders::Loader, minecraft::AddonKind, pkg::PackageKind, util::to_string_json,
+};
 
 pub static DEFAULT_INSTANCE: &[u8] = include_bytes!("../assets/images/default_instance.png");
 pub static FABRIC: &[u8] = include_bytes!("../assets/images/fabric.png");
@@ -52,4 +54,27 @@ pub fn get_loader_icon(loader: &Loader) -> ImageViewer {
 	))))
 	.width(Size::px(16.0))
 	.height(Size::px(16.0))
+}
+
+pub fn get_addon_icon(kind: AddonKind) -> &'static str {
+	match kind {
+		AddonKind::Mod => "box",
+		AddonKind::ResourcePack => "palette",
+		AddonKind::Datapack => "curly_braces",
+		AddonKind::Plugin => "jigsaw",
+		AddonKind::Shader => "sun",
+		AddonKind::Modpack => "honeycomb",
+	}
+}
+
+pub fn get_package_kind_icon(kind: PackageKind) -> &'static str {
+	match kind {
+		PackageKind::Mod => "box",
+		PackageKind::ResourcePack => "palette",
+		PackageKind::Datapack => "curly_braces",
+		PackageKind::Plugin => "jigsaw",
+		PackageKind::Shader => "sun",
+		PackageKind::Modpack => "honeycomb",
+		PackageKind::Bundle => "folder",
+	}
 }

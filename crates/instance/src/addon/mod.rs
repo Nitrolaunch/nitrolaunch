@@ -49,6 +49,27 @@ impl Addon {
 		})
 	}
 
+	/// Checks if this addon exists on the filesystem
+	pub fn exists(&self) -> bool {
+		if !self.target_paths.is_empty() {
+			self.target_paths.iter().all(|x| x.exists())
+		} else {
+			self.original_path.as_ref().is_some_and(|x| x.exists())
+		}
+	}
+
+	/// Checks if this addon is the source for the given target addon.
+	/// 
+	/// For example, if this addon targeted a destination file, and you called Addon::from_file() on that path,
+	/// Addon::is_source(self, other) would return true
+	pub fn is_source(&self, other: &Self) -> bool {
+		if let Some(original) = &other.original_path {
+			self.target_paths.iter().any(|x| x == original)
+		} else {
+			false
+		}
+	}
+
 	/// Gets the target paths for this addon on an instance
 	pub fn get_targets(
 		&mut self,

@@ -50,7 +50,7 @@ impl Component for ModalBase {
 			.width(Size::px(self.size.0))
 			.color(theme.fg)
 			.background(theme.panel)
-			.show(self.child.is_some())
+			.padding(0.0)
 			.maybe(self.child.is_some(), |this| {
 				this.child(
 					rect()

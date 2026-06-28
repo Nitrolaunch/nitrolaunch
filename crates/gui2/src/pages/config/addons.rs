@@ -1,5 +1,6 @@
 use std::{
 	collections::{HashMap, HashSet},
+	hash::{DefaultHasher, Hash, Hasher},
 	rc::Rc,
 	sync::Arc,
 };
@@ -10,9 +11,12 @@ use nitrolaunch::{
 		ConfigKind,
 		template::{TemplateConfig, TemplatePackageConfiguration},
 	},
-	instance_crate::lock::InstanceLockfile,
+	instance_crate::{addon::Addon, lock::InstanceLockfile},
 	pkg_crate::{PkgRequest, PkgRequestSource},
-	shared::{Side, pkg::ArcPkgReq},
+	shared::{
+		Side,
+		pkg::{ArcPkgReq, PackageKind},
+	},
 };
 
 use crate::{
@@ -22,11 +26,13 @@ use crate::{
 	},
 	ops::{
 		ConditionalQuery,
-		packages::{FetchInstanceLockfile, FetchPackages, PkgInfo, PreloadPackages},
+		packages::{
+			FetchInstanceAddons, FetchInstanceLockfile, FetchPackages, PkgInfo, PreloadPackages,
+		},
 	},
 	pages::config::ConfigState,
 	prelude::*,
-	util::PtrEq,
+	util::{PtrEq, assets::get_package_kind_icon},
 };
 
 #[derive(PartialEq)]
@@ -44,6 +50,11 @@ impl Component for AddonsConfig {
 			self.config_state.ty == ConfigKind::Instance,
 			|| self.config_state.id.read().cloned(),
 		));
+		let addons = use_query(ConditionalQuery::new(
+			FetchInstanceAddons::new(back_state.clone()),
+			self.config_state.ty == ConfigKind::Instance,
+			|| self.config_state.id.read().cloned(),
+		));
 		let filter = use_state(|| "all".to_string());
 		let search = use_state(|| String::new());
 		let side = use_state(|| "any".to_string());
@@ -55,6 +66,7 @@ impl Component for AddonsConfig {
 				lockfile.read().state().ok(),
 				modpack.read().as_ref(),
 				&*packages.read(),
+				addons.read().state().ok().map(|x| x.as_slice()),
 			)
 		});
 
@@ -96,21 +108,22 @@ impl Component for AddonsConfig {
 			)
 		});
 
-		let items =
-			VirtualScrollView::new_with_data(packages.read().cloned(), move |i, packages| {
-				let reading = processed_items.peek();
-				let item = reading.get(i).unwrap();
+		let items = VirtualScrollView::new_with_data(
+			(packages.read().cloned(), processed_items.read().cloned()),
+			move |i, (packages, processed_items)| {
+				let item = processed_items.get(i).unwrap();
 
 				ContentItemElem {
 					item: item.clone(),
 					packages: packages.0.clone(),
 				}
 				.into_element()
-			})
-			.expanded()
-			// Conservative
-			.item_size(64.0 + theme.gap)
-			.length(processed_items.read().len());
+			},
+		)
+		.expanded()
+		// Conservative
+		.item_size(64.0 + theme.gap)
+		.length(processed_items.read().len());
 
 		let on_select_filter =
 			Rc::new(move |new_filter: Selected| filter.clone().set(new_filter.single()));
@@ -178,35 +191,19 @@ impl PartialEq for ContentItemElem {
 impl Component for ContentItemElem {
 	fn render(&self) -> impl IntoElement {
 		let theme = use_theme();
+		let front_state = use_front_state();
 		let is_hovered = use_state(|| false);
 
-		let req = match &self.item {
-			ContentItem::Package { req, .. } | ContentItem::Modpack { req, .. } => Some(req),
-		};
-		let info = req.and_then(|req| self.packages.get(req).and_then(|x| x.as_ref().ok()));
+		let info = self
+			.item
+			.req()
+			.and_then(|req| self.packages.get(req).and_then(|x| x.as_ref().ok()));
 
 		let default_icon = icon("box", 32.0).into_element();
 
-		let (ico, name, id, badges) = match &self.item {
-			ContentItem::Package {
-				req,
-				is_configured,
-				is_locked,
-			}
-			| ContentItem::Modpack {
-				req,
-				is_configured,
-				is_locked,
-			} => {
-				let mut badges = Vec::new();
-				if *is_configured && !*is_locked {
-					badges.push(badge("warning", theme.warning, &theme).into_element());
-				}
-				if !*is_configured && *is_locked {
-					badges.push(badge("diagram", theme.fg3, &theme).into_element());
-				}
+		let (ico, name, id) = match &self.item.ty {
+			ContentItemType::Modpack { req } | ContentItemType::Package { req } => {
 				if let Some(info) = info {
-					let name = info.meta.name.clone().unwrap_or(req.to_string());
 					let ico = info
 						.meta
 						.icon
@@ -220,28 +217,66 @@ impl Component for ContentItemElem {
 						})
 						.unwrap_or(default_icon);
 
-					(ico, name.clone(), req.to_string(), badges)
+					(
+						ico,
+						self.item.get_name(&self.packages).to_string(),
+						Some(self.item.id.to_string()),
+					)
 				} else {
 					if let Some(Err(err)) = self.packages.get(req) {
 						(
 							icon("error", 24.0).color(theme.error).into_element(),
 							err.root_cause().to_string(),
-							req.to_string(),
-							badges,
+							Some(self.item.id.to_string()),
 						)
 					} else {
 						(
 							CircularLoader::new().into_element(),
 							"Loading".into(),
-							req.to_string(),
-							badges,
+							Some(self.item.id.to_string()),
 						)
 					}
 				}
 			}
+			ContentItemType::Addon => {
+				let ico = self
+					.item
+					.addon_ty
+					.map(get_package_kind_icon)
+					.map(|x| icon(x, 24.0).into_element())
+					.unwrap_or(default_icon);
+
+				(ico, self.item.id.to_string(), None)
+			}
 		};
 
-		let height = if let ContentItem::Modpack { .. } = &self.item {
+		let mut badges = Vec::new();
+		if self.item.is_configured && !(self.item.is_locked && self.item.files_exist) {
+			badges.push(
+				badge("warning", theme.warning, &theme)
+					.tip(
+						&front_state,
+						"Item is not yet installed. You may need to update your instance.",
+					)
+					.into_element(),
+			);
+		}
+		if !self.item.is_configured && self.item.is_locked {
+			badges.push(
+				badge("diagram", theme.fg3, &theme)
+					.tip(&front_state, "Dependency of another package")
+					.into_element(),
+			);
+		}
+		if let Some(kind) = self.item.get_addon_ty(&self.packages) {
+			badges.push(
+				badge(get_package_kind_icon(kind), theme.fg3, &theme)
+					.tip(&front_state, &kind.to_string_pretty())
+					.into_element(),
+			);
+		}
+
+		let height = if self.item.is_modpack() {
 			Size::px(76.0)
 		} else {
 			Size::px(64.0)
@@ -271,7 +306,9 @@ impl Component for ContentItemElem {
 					.main_align(Alignment::Center)
 					.cross_align(Alignment::Start)
 					.child(name)
-					.child(label().text(id).color(theme.fg3)),
+					.maybe(id.is_some(), |this| {
+						this.child(label().text(id.unwrap()).color(theme.fg3))
+					}),
 			)
 			.child(
 				rect()
@@ -284,26 +321,81 @@ impl Component for ContentItemElem {
 					.children(badges),
 			)
 	}
+
+	fn render_key(&self) -> DiffKey {
+		let mut key = DefaultHasher::new();
+		self.item.id.hash(&mut key);
+		DiffKey::U64(key.finish())
+	}
 }
 
-#[derive(PartialEq, Clone, PartialOrd, Eq, Ord, Hash, Debug)]
-enum ContentItem {
-	Modpack {
-		req: ArcPkgReq,
-		is_configured: bool,
-		is_locked: bool,
-	},
-	Package {
-		req: ArcPkgReq,
-		is_configured: bool,
-		is_locked: bool,
-	},
+#[derive(PartialEq, Clone, PartialOrd, Eq, Ord, Debug)]
+struct ContentItem {
+	ty: ContentItemType,
+	id: Arc<str>,
+	is_configured: bool,
+	is_locked: bool,
+	files_exist: bool,
+	locked_addons: PtrEq<[Addon]>,
+	addon_ty: Option<PackageKind>,
+}
+
+impl ContentItem {
+	fn is_package(&self) -> bool {
+		matches!(&self.ty, ContentItemType::Package { .. })
+	}
+
+	fn is_modpack(&self) -> bool {
+		matches!(&self.ty, ContentItemType::Modpack { .. })
+	}
+
+	fn req(&self) -> Option<&ArcPkgReq> {
+		match &self.ty {
+			ContentItemType::Package { req } | ContentItemType::Modpack { req } => Some(req),
+			ContentItemType::Addon => None,
+		}
+	}
+
+	fn get_name<'a>(&'a self, info: &'a HashMap<ArcPkgReq, anyhow::Result<PkgInfo>>) -> &'a str {
+		if let Some(req) = self.req() {
+			if let Some(Ok(info)) = info.get(req) {
+				info.meta.name.as_deref().unwrap_or(&self.id)
+			} else {
+				&self.id
+			}
+		} else {
+			&self.id
+		}
+	}
+
+	fn get_addon_ty(
+		&self,
+		info: &HashMap<ArcPkgReq, anyhow::Result<PkgInfo>>,
+	) -> Option<PackageKind> {
+		if let Some(req) = self.req() {
+			if let Some(Ok(info)) = info.get(req) {
+				info.props.kinds.first().copied()
+			} else {
+				self.addon_ty
+			}
+		} else {
+			self.addon_ty
+		}
+	}
+}
+
+#[derive(PartialEq, Clone, PartialOrd, Eq, Ord, Debug)]
+enum ContentItemType {
+	Modpack { req: ArcPkgReq },
+	Package { req: ArcPkgReq },
+	Addon,
 }
 
 fn build_items(
 	lockfile: Option<&InstanceLockfile>,
 	modpack: Option<&String>,
 	configured_packages: &TemplatePackageConfiguration,
+	addons: Option<&[Addon]>,
 ) -> (Vec<ContentItem>, Vec<ArcPkgReq>) {
 	let mut items = Vec::new();
 	let mut packages = HashSet::new();
@@ -311,21 +403,63 @@ fn build_items(
 	if let Some(modpack) = modpack {
 		let lock_modpack = lockfile.and_then(|x| x.get_modpack());
 		let req = PkgRequest::parse(modpack, PkgRequestSource::UserRequire).arc();
-		items.push(ContentItem::Modpack {
-			req: req.clone(),
+		let addons = if let Some(lockfile) = lockfile {
+			PtrEq(
+				lockfile
+					.get_addons()
+					.filter(|x| x.from_modpack)
+					.map(|x| x.to_addon())
+					.collect(),
+			)
+		} else {
+			PtrEq(Arc::default())
+		};
+
+		items.push(ContentItem {
+			ty: ContentItemType::Modpack { req: req.clone() },
+			id: Arc::from(modpack.clone()),
 			is_configured: true,
 			is_locked: lock_modpack.is_some(),
+			files_exist: true,
+			locked_addons: addons,
+			addon_ty: None,
 		});
+
 		packages.insert(req);
+		if let Some(lock_modpack) = lock_modpack {
+			packages.extend(
+				lock_modpack
+					.packages
+					.iter()
+					.map(|x| PkgRequest::parse(x, PkgRequestSource::UserRequire).arc()),
+			);
+		}
 	}
 
 	if let Some(lockfile) = &lockfile {
 		for (pkg, _) in lockfile.get_packages() {
 			let req = PkgRequest::parse(pkg, PkgRequestSource::UserRequire).arc();
-			items.push(ContentItem::Package {
-				req: req.clone(),
+
+			let mut files_exist = true;
+			let addons = lockfile
+				.get_addons()
+				.filter(|x| x.is_from_package(pkg))
+				.map(|x| x.to_addon())
+				.map(|x| {
+					if !x.exists() {
+						files_exist = false;
+					}
+					x
+				});
+
+			items.push(ContentItem {
+				ty: ContentItemType::Package { req: req.clone() },
+				id: Arc::from(pkg.clone()),
 				is_locked: true,
 				is_configured: false,
+				locked_addons: PtrEq(addons.collect()),
+				files_exist,
+				addon_ty: None,
 			});
 			packages.insert(req);
 		}
@@ -345,22 +479,46 @@ fn build_items(
 		let req = PkgRequest::parse(package.get_pkg_id(), PkgRequestSource::UserRequire).arc();
 		let item = if let Some(pos) = items
 			.iter()
-			.position(|x| matches!(x, ContentItem::Package { req: req2, .. } if req2 == &req))
+			.position(|x| matches!(&x.ty, ContentItemType::Package {req: req2} if *req2 == req))
 		{
 			&mut items[pos]
 		} else {
-			items.push(ContentItem::Package {
-				req: req.clone(),
+			items.push(ContentItem {
+				ty: ContentItemType::Package { req: req.clone() },
+				id: package.get_pkg_id(),
 				is_configured: true,
 				is_locked: false,
+				files_exist: false,
+				locked_addons: PtrEq(Arc::default()),
+				addon_ty: None,
 			});
 			items.last_mut().unwrap()
 		};
-		if let ContentItem::Package { is_configured, .. } = item {
-			*is_configured = true;
-		}
+		item.is_configured = true;
 
 		packages.insert(req);
+	}
+
+	if let Some(addons) = addons {
+		for addon in addons {
+			// Only include "free" addons that aren't part of any package
+			if items
+				.iter()
+				.any(|item| item.locked_addons.0.iter().any(|x| x.is_source(addon)))
+			{
+				continue;
+			}
+
+			items.push(ContentItem {
+				ty: ContentItemType::Addon,
+				id: addon.file_name.clone().into(),
+				is_configured: false,
+				is_locked: false,
+				files_exist: true,
+				locked_addons: PtrEq(Arc::default()),
+				addon_ty: Some(PackageKind::from_addon_kind(addon.kind)),
+			});
+		}
 	}
 
 	items.sort();
@@ -377,49 +535,50 @@ fn filter_sort_items(
 	let search = search.to_lowercase();
 
 	items.retain(|x| {
-		let (ContentItem::Modpack {
-			is_configured,
-			is_locked,
-			req,
-		}
-		| ContentItem::Package {
-			is_configured,
-			is_locked,
-			req,
-		}) = x;
-		if filter == "dependencies" && !*is_configured && *is_locked {
+		if filter == "dependencies" && !x.is_configured && x.is_locked {
 			return false;
 		}
 
 		if !search.is_empty() {
-			if let Some(Ok(info)) = info.get(req) {
-				if !info
-					.meta
-					.name
-					.as_ref()
-					.is_some_and(|x| x.to_lowercase().contains(&search))
-				{
-					return false;
-				}
+			let to_search = x.get_name(info);
+			if !to_search.to_lowercase().contains(&search) {
+				return false;
 			}
 		}
 
 		true
 	});
 
+	#[derive(PartialEq, Eq, PartialOrd, Ord)]
+	enum SortableType {
+		Modpack,
+		Package,
+		Addon,
+	}
+
+	#[derive(PartialEq, Eq, PartialOrd, Ord)]
+	struct Sort {
+		ty: SortableType,
+		name: String,
+	}
+
 	items.sort_by_key(|x| {
-		let (ContentItem::Modpack { req, .. } | ContentItem::Package { req, .. }) = x;
-		if let Some(Ok(info)) = info.get(req) {
-			info.meta.name.clone().unwrap_or_else(|| req.to_string())
-		} else {
-			req.to_string()
+		let ty = match &x.ty {
+			ContentItemType::Modpack { .. } => SortableType::Modpack,
+			ContentItemType::Package { .. } => SortableType::Package,
+			ContentItemType::Addon => SortableType::Addon,
+		};
+
+		Sort {
+			ty,
+			name: x.get_name(info).to_string(),
 		}
 	});
 
 	items
 }
 
-fn badge(ico: &str, color: impl Into<Color>, theme: &Theme) -> impl IntoElement {
+fn badge(ico: &str, color: impl Into<Color>, theme: &Theme) -> Rect {
 	let color = color.into();
 	rect()
 		.corner_radius(theme.round)

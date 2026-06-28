@@ -284,6 +284,7 @@ impl BackState {
 }
 
 /// Events sent from the backend
+#[allow(dead_code)]
 #[derive(Clone)]
 pub enum BackEvent {
 	SuccessToast(String),

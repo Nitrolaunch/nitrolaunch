@@ -102,6 +102,7 @@ impl<T> Hash for NotEq<T> {
 	fn hash<H: std::hash::Hasher>(&self, _: &mut H) {}
 }
 
+#[derive(Debug)]
 pub struct PtrEq<T: ?Sized>(pub Arc<T>);
 
 impl<T: ?Sized> Clone for PtrEq<T> {
@@ -113,6 +114,20 @@ impl<T: ?Sized> Clone for PtrEq<T> {
 impl<T: ?Sized> PartialEq for PtrEq<T> {
 	fn eq(&self, other: &Self) -> bool {
 		Arc::ptr_eq(&self.0, &other.0)
+	}
+}
+
+impl<T: ?Sized> Eq for PtrEq<T> {}
+
+impl<T: ?Sized> PartialOrd for PtrEq<T> {
+	fn partial_cmp(&self, _: &Self) -> Option<std::cmp::Ordering> {
+		Some(std::cmp::Ordering::Equal)
+	}
+}
+
+impl<T: ?Sized> Ord for PtrEq<T> {
+	fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+		self.partial_cmp(other).unwrap()
 	}
 }
 

@@ -1,8 +1,8 @@
-use std::{collections::HashMap, sync::Arc, time::Duration};
+use std::{collections::HashMap, sync::Arc};
 
 use anyhow::Context;
 use nitrolaunch::{
-	instance_crate::lock::InstanceLockfile,
+	instance_crate::{addon::Addon, lock::InstanceLockfile},
 	pkg_crate::{metadata::PackageMetadata, properties::PackageProperties},
 	shared::{
 		id::InstanceID,
@@ -177,4 +177,38 @@ impl QueryCapability for FetchPackages {
 pub struct PkgInfo {
 	pub meta: Arc<PackageMetadata>,
 	pub props: Arc<PackageProperties>,
+}
+
+#[derive(Clone, PartialEq, Eq, Hash)]
+pub struct FetchInstanceAddons {
+	back_state: Captured<BackState>,
+}
+
+impl FetchInstanceAddons {
+	pub fn new(back_state: BackState) -> Self {
+		Self {
+			back_state: Captured(back_state),
+		}
+	}
+}
+
+impl QueryCapability for FetchInstanceAddons {
+	type Ok = Vec<Addon>;
+	type Err = anyhow::Error;
+	type Keys = String;
+
+	fn run(&self, keys: &Self::Keys) -> impl Future<Output = Result<Self::Ok, Self::Err>> {
+		let back_state = self.back_state.clone();
+		let instance_id = keys.clone();
+
+		query_spawn(async move {
+			let config = back_state.config().await?;
+			let instance = config
+				.instances
+				.get(&InstanceID::from(instance_id))
+				.context("Instance does not exist")?;
+
+			instance.get_addons()
+		})
+	}
 }
