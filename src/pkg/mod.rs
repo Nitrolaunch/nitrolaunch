@@ -6,6 +6,8 @@ pub mod eval;
 pub mod reg;
 /// Interacting with package repositories
 pub mod repo;
+/// Searching package repositories
+pub mod search;
 
 use crate::io::paths::Paths;
 use nitro_core::net::download;

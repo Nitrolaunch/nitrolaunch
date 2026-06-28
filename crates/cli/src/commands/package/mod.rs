@@ -7,6 +7,7 @@ use itertools::Itertools;
 use nitrolaunch::config::modifications::{ConfigModification, apply_modifications_and_write};
 use nitrolaunch::config_crate::package::PackageConfigDeser;
 use nitrolaunch::parse::lex::Token;
+use nitrolaunch::pkg::search::PackageSearchSession;
 use nitrolaunch::pkg_crate::metadata::PackageMetadata;
 use nitrolaunch::pkg_crate::properties::PackageProperties;
 use nitrolaunch::pkg_crate::{PackageContentType, PkgRequest, PkgRequestSource};
@@ -722,14 +723,46 @@ async fn search(
 	let config = data.config.get_mut();
 
 	let client = Client::new();
-	let results = config
-		.packages
-		.search(params, repo.as_deref(), &data.paths, &client, data.output)
-		.await
-		.context("Failed to search packages")?;
+	let results = if let Some(repo) = repo {
+		let results = config
+			.packages
+			.search(params, Some(&repo), &data.paths, &client, data.output)
+			.await
+			.context("Failed to search packages")?;
+		results
+			.results
+			.into_iter()
+			.map(|x| {
+				(
+					PkgRequest::parse(x, PkgRequestSource::Repository).arc(),
+					repo.clone(),
+				)
+			})
+			.collect()
+	} else {
+		let repos: Vec<_> = config
+			.packages
+			.repos
+			.iter()
+			.map(|x| x.get_id().to_string())
+			.collect();
+		let mut session = PackageSearchSession::new(&repos, params.count);
 
-	for package in results.results.into_iter().sorted() {
-		cprintln!("{HYPHEN_POINT}{package}");
+		session
+			.search(
+				params,
+				config.packages.clone(),
+				&data.paths,
+				&client,
+				data.output,
+			)
+			.await
+			.context("Failed to search packages")?
+			.results
+	};
+
+	for (package, repo) in results {
+		cprintln!("{HYPHEN_POINT}<s>{package}</> [<g>{repo}</>]");
 	}
 
 	Ok(())
