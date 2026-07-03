@@ -74,17 +74,25 @@ impl Component for BrowsePackagesPage {
 			.height(Size::percent(50.0))
 			.cont()
 			.child(rect().width(Size::flex(1.0)))
-			.child(rect().width(Size::flex(1.0)).center().child(page_buttons))
 			.child(
 				rect()
 					.width(Size::flex(1.0))
+					.height(Size::fill())
+					.center()
+					.child(page_buttons),
+			)
+			.child(
+				rect()
+					.width(Size::flex(1.0))
+					.height(Size::fill())
 					.padding(theme.gap)
+					.center()
 					.child(search_bar(search, &theme)),
 			);
 
 		let top_bar = rect()
 			.width(Size::fill())
-			.height(Size::px(82.0))
+			.height(Size::px(100.0))
 			.border(border_bottom(theme.border, theme.panel_border))
 			.child(top_upper_bar)
 			.child(top_lower_bar);

@@ -72,7 +72,7 @@ impl Component for HomePage {
 			.map(|x| InstanceListItem::new(x.clone(), selected.clone()))
 			.chain(std::iter::once(add_placeholder));
 
-		let items_elem = grid(3, items).gap(items_gap);
+		let items_elem = grid(4, items).gap(items_gap);
 
 		let items_elem = rect().child(items_elem).width(Size::fill());
 
