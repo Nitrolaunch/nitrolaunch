@@ -9,6 +9,7 @@ use std::{
 
 use anyhow::{Context, bail};
 use crossterm::event::{self, KeyCode, KeyEvent};
+use dashmap::DashMap;
 use image::DynamicImage;
 use itertools::Itertools;
 use nitrolaunch::{
@@ -20,10 +21,8 @@ use nitrolaunch::{
 	core::{NitroCore, util::versions::MinecraftVersion},
 	instance::update::manager::UpdateSettings,
 	io::paths::Paths,
-	pkg_crate::{
-		PackageMetaAndProps, PackageSearchResults, PkgRequest, PkgRequestSource,
-		declarative::DeclarativeAddonVersion,
-	},
+	pkg::search::{PackageMultiSearchResults, PackageSearchSession},
+	pkg_crate::{PackageMetaAndProps, declarative::DeclarativeAddonVersion},
 	plugin_crate::hook::hooks::{
 		AddCustomPackageRepositories, AddCustomPackageRepositoriesResult, AddSupportedLoaders,
 	},
@@ -60,6 +59,8 @@ use crate::{
 	image_cache::{ImageCache, crop_image_to_ratio},
 	output::fit_message_width,
 };
+
+const PAGE_SIZE: u8 = 35;
 
 pub async fn run(
 	mut data: CmdData<'_>,
@@ -136,7 +137,7 @@ async fn create_filters(
 	core: &NitroCore,
 ) -> anyhow::Result<PackageSearchParameters> {
 	let mut params = PackageSearchParameters {
-		count: 35,
+		count: PAGE_SIZE,
 		skip: 0,
 		..Default::default()
 	};
@@ -184,9 +185,11 @@ struct State<'a> {
 	/// Sender for worker thread tasks
 	task_tx: Sender<Task>,
 	/// Receiver for search results
-	results_rx: Receiver<PackageSearchResults>,
+	results_rx: Receiver<PackageMultiSearchResults>,
+	/// Package previews map
+	previews: Arc<DashMap<ArcPkgReq, Arc<PackageMetaAndProps>>>,
 	/// Finalized search results
-	results: PackageSearchResults,
+	results: PackageMultiSearchResults,
 	/// Receiver for package info
 	package_info_rx: Receiver<PackageInfo>,
 	/// Finalized package info
@@ -244,6 +247,7 @@ impl<'a> State<'a> {
 		// Get info
 
 		// Setup worker
+		let session = PackageSearchSession::new(PAGE_SIZE);
 		let (state_tx, state_rx) = tokio::sync::mpsc::channel(4);
 		let (task_tx, task_rx) = tokio::sync::mpsc::channel(5);
 		let (results_tx, results_rx) = tokio::sync::mpsc::channel(2);
@@ -251,6 +255,7 @@ impl<'a> State<'a> {
 		let handle = tokio::spawn(worker_thread(
 			config,
 			paths,
+			session.clone(),
 			state_tx,
 			task_rx,
 			results_tx,
@@ -281,7 +286,8 @@ impl<'a> State<'a> {
 			package_info: None,
 			image_cache: ImageCache::new(Client::new()),
 			image_available: Arc::new(AtomicBool::new(false)),
-			results: PackageSearchResults::default(),
+			results: PackageMultiSearchResults::default(),
+			previews: session.previews().clone(),
 			search_params: SearchParams {
 				inner: filters,
 				repo: None,
@@ -314,7 +320,7 @@ impl<'a> State<'a> {
 		let pos = self.package_list_state.selected()?;
 		let pkg = self.results.results.get(pos)?;
 
-		Some(PkgRequest::parse(pkg, PkgRequestSource::UserRequire).arc())
+		Some(pkg.clone())
 	}
 
 	/// Gets info for the currently selected repository
@@ -423,7 +429,7 @@ impl<'a> State<'a> {
 			return;
 		};
 
-		if let Some(preview) = self.results.previews.get(&req.to_string()) {
+		if let Some(preview) = self.previews.get(&req) {
 			self.package_info = Some(PackageInfo {
 				req,
 				preview: preview.clone(),
@@ -699,14 +705,14 @@ fn render(frame: &mut Frame, state: &mut State) {
 
 	// Package list
 	let package_items = state.results.results.iter().map(|x| {
-		if let Some(preview) = state.results.previews.get(x) {
+		if let Some(preview) = state.previews.get(x) {
 			if let Some(name) = &preview.meta.name {
 				name.clone()
 			} else {
-				x.clone()
+				x.to_string()
 			}
 		} else {
-			x.clone()
+			x.to_string()
 		}
 	});
 	state.package_list = state.package_list.clone().items(package_items);
@@ -1608,9 +1614,10 @@ impl<'a> InstallPromptState<'a> {
 async fn worker_thread(
 	config: Config,
 	paths: Paths,
+	mut session: PackageSearchSession,
 	state_tx: Sender<WorkerState>,
 	mut task_rx: Receiver<Task>,
-	results_tx: Sender<PackageSearchResults>,
+	results_tx: Sender<PackageMultiSearchResults>,
 	package_info_tx: Sender<PackageInfo>,
 ) {
 	let client = Client::new();
@@ -1623,11 +1630,11 @@ async fn worker_thread(
 		let _ = state_tx.try_send(WorkerState::Running);
 		match task {
 			Task::FetchPackages(params) => {
-				let results = config
-					.packages
+				let results = session
 					.search(
 						params.inner,
 						params.repo.as_deref(),
+						config.packages.clone(),
 						&paths,
 						&client,
 						&mut NoOp,

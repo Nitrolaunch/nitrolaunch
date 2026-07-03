@@ -723,34 +723,20 @@ async fn search(
 	let config = data.config.get_mut();
 
 	let client = Client::new();
-	let results = if let Some(repo) = repo {
-		let results = config
-			.packages
-			.search(params, Some(&repo), &data.paths, &client, data.output)
-			.await
-			.context("Failed to search packages")?;
-		results
-			.results
-			.into_iter()
-			.map(|x| PkgRequest::parse(x, PkgRequestSource::Repository).arc())
-			.collect()
-	} else {
-		let mut session = PackageSearchSession::new(params.count);
+	let mut session = PackageSearchSession::new(params.count);
+	let results = session
+		.search(
+			params,
+			repo.as_deref(),
+			config.packages.clone(),
+			&data.paths,
+			&client,
+			data.output,
+		)
+		.await
+		.context("Failed to search packages")?;
 
-		session
-			.search_all(
-				params,
-				config.packages.clone(),
-				&data.paths,
-				&client,
-				data.output,
-			)
-			.await
-			.context("Failed to search packages")?
-			.results
-	};
-
-	for package in results {
+	for package in results.results {
 		let repo = if let Some(repo) = &package.repository {
 			cformat!(" [<g>{repo}</>]")
 		} else {

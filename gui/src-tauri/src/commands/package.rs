@@ -53,7 +53,7 @@ pub async fn get_packages(
 	let results = fmt_err(
 		config
 			.packages
-			.search(params, Some(repo), &state.paths, &state.client, &mut output)
+			.search(params, repo, &state.paths, &state.client, &mut output)
 			.await
 			.context("Failed to get list of available packages"),
 	)?;

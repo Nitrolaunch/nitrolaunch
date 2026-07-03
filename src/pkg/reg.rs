@@ -3,6 +3,7 @@ use dashmap::DashMap;
 use itertools::Itertools;
 use nitro_core::net::get_transfer_limit;
 use nitro_pkg::PackageContentType;
+use nitro_pkg::PackageMetaAndProps;
 use nitro_pkg::PackageSearchResults;
 use nitro_pkg::PkgRequest;
 use nitro_pkg::PkgRequestSource;
@@ -294,8 +295,8 @@ impl PkgRegistry {
 	/// Searches the registry and repositories for packages
 	pub async fn search(
 		&self,
-		mut params: PackageSearchParameters,
-		repo: Option<&str>,
+		params: PackageSearchParameters,
+		repo: &str,
 		paths: &Paths,
 		client: &Client,
 		o: &mut impl NitroOutput,
@@ -307,13 +308,10 @@ impl PkgRegistry {
 
 		let mut total_results = 0;
 
-		// TODO: Get all the package contents at the beginning
-
 		let mut out = Vec::with_capacity(params.count as usize);
-		let mut previews = HashMap::new();
+		let mut previews = HashMap::with_capacity(params.count as usize);
 
-		// Search through all of the basic packages
-		if repo.is_none() || repo.is_some_and(|x| x == "core" || x == "std") {
+		if repo == "core" || repo == "std" {
 			let all_basic_packages = self
 				.get_all_available_packages(paths, client, o)
 				.await
@@ -366,43 +364,41 @@ impl PkgRegistry {
 
 				if out.len() < original_count as usize {
 					out.push(req.to_string());
+					if let Ok(pkg) = self.get(&req, paths, client, o).await {
+						let meta = pkg.get_metadata(paths, client).await.unwrap_or_default();
+						let props = pkg.get_properties(paths, client).await.unwrap_or_default();
+						previews.insert(
+							req.to_string(),
+							Arc::new(PackageMetaAndProps {
+								meta: (*meta).clone(),
+								props: (*props).clone(),
+							}),
+						);
+					}
 				}
 			}
-		}
+		} else {
+			let Some(repo) = self.repos.iter().find(|x| x.get_id() == repo) else {
+				return Ok(PackageSearchResults::default());
+			};
+			let PackageRepository::Custom(repo) = repo else {
+				return Ok(PackageSearchResults::default());
+			};
+			let result = repo
+				.search(params.clone(), &self.plugins, paths, o)
+				.await
+				.with_context(|| {
+					format!(
+						"Failed to search custom package repository {}",
+						repo.get_id()
+					)
+				})?;
+			let results = result.results.into_iter();
 
-		// Narrow the search limit
-		params.count -= out.len() as u8;
-
-		// Now search plugin repositories
-		let searched_repo = repo;
-		for repo in &self.repos {
-			if let PackageRepository::Custom(repo) = repo {
-				if searched_repo.is_some_and(|x| x != repo.get_id()) {
-					continue;
-				}
-
-				let result = repo
-					.search(params.clone(), &self.plugins, paths, o)
-					.await
-					.with_context(|| {
-						format!(
-							"Failed to search custom package repository {}",
-							repo.get_id()
-						)
-					})?;
-				// Narrow the search limit
-				if result.results.len() <= params.count as usize {
-					params.count -= result.results.len() as u8;
-				}
-				let results = result.results.into_iter();
-
-				total_results += result.total_results;
-				if out.len() < original_count as usize {
-					out.extend(results);
-					out.truncate(original_count as usize);
-					previews.extend(result.previews);
-				}
-			}
+			total_results += result.total_results;
+			out.extend(results);
+			out.truncate(original_count as usize);
+			previews.extend(result.previews);
 		}
 
 		Ok(PackageSearchResults {

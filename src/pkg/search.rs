@@ -26,7 +26,7 @@ struct RepoState {
 pub struct PackageSearchSession {
 	repos: HashMap<String, RepoState>,
 	page_size: u8,
-	previews: DashMap<ArcPkgReq, Arc<PackageMetaAndProps>>,
+	previews: Arc<DashMap<ArcPkgReq, Arc<PackageMetaAndProps>>>,
 	results: BTreeMap<usize, ArcPkgReq>,
 	/// Used to check for search changes
 	last_search: Option<PackageSearchParameters>,
@@ -39,7 +39,7 @@ impl PackageSearchSession {
 		Self {
 			repos: HashMap::new(),
 			page_size,
-			previews: DashMap::new(),
+			previews: Arc::new(DashMap::new()),
 			results: BTreeMap::new(),
 			last_repo: None,
 			last_search: None,
@@ -83,13 +83,13 @@ impl PackageSearchSession {
 		}
 
 		let skip = params.skip;
-		let results = reg.search(params, Some(repo), paths, client, o).await?;
-		self.previews.extend(results.previews.iter().map(|x| {
-			(
-				PkgRequest::parse(x.0, PkgRequestSource::Repository).arc(),
-				x.1.clone(),
-			)
-		}));
+		let results = reg.search(params, repo, paths, client, o).await?;
+		for preview in results.previews {
+			self.previews.insert(
+				PkgRequest::parse(preview.0, PkgRequestSource::Repository).arc(),
+				preview.1.clone(),
+			);
+		}
 
 		let reqs: Vec<_> = results
 			.results
@@ -125,13 +125,17 @@ impl PackageSearchSession {
 			});
 		}
 
-		let repo_count = reg.repos.len().max(1);
+		let mut repos: Vec<_> = reg
+			.repos
+			.iter()
+			.filter(|x| x.get_id() != "core")
+			.map(|x| x.get_id().to_string())
+			.collect();
+		repos.sort();
+		let repo_count = repos.len().max(1);
 
 		let base_share = self.page_size as usize / repo_count;
 		let extra = self.page_size as usize % repo_count;
-
-		let mut repos: Vec<_> = reg.repos.iter().map(|x| x.get_id().to_string()).collect();
-		repos.sort();
 
 		let page = params.skip / self.page_size as usize;
 
@@ -165,7 +169,7 @@ impl PackageSearchSession {
 
 			tasks.spawn(async move {
 				let results = reg
-					.search(search, Some(&repo), &paths, &client, &mut output)
+					.search(search, &repo, &paths, &client, &mut output)
 					.await?;
 
 				Ok::<_, anyhow::Error>((repo, results))
@@ -189,12 +193,12 @@ impl PackageSearchSession {
 
 			total_results += results.total_results;
 
-			self.previews.extend(results.previews.into_iter().map(|x| {
-				(
-					PkgRequest::parse(x.0, PkgRequestSource::Repository).arc(),
-					x.1,
-				)
-			}));
+			for preview in results.previews {
+				self.previews.insert(
+					PkgRequest::parse(preview.0, PkgRequestSource::Repository).arc(),
+					preview.1.clone(),
+				);
+			}
 
 			for id in results.results {
 				let mut hasher = std::collections::hash_map::DefaultHasher::new();
@@ -280,7 +284,7 @@ impl PackageSearchSession {
 	}
 
 	/// Gets the previews map
-	pub fn previews(&self) -> &DashMap<ArcPkgReq, Arc<PackageMetaAndProps>> {
+	pub fn previews(&self) -> &Arc<DashMap<ArcPkgReq, Arc<PackageMetaAndProps>>> {
 		&self.previews
 	}
 
