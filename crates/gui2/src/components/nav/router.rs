@@ -1,4 +1,8 @@
-use crate::{pages::home::HomePage, prelude::*, routing::Page};
+use crate::{
+	pages::{home::HomePage, package::browse::BrowsePackagesPage},
+	prelude::*,
+	routing::Page,
+};
 
 #[derive(PartialEq)]
 pub struct Router {}
@@ -16,7 +20,7 @@ impl Component for Router {
 
 		let child = match front_state.read().route() {
 			Page::Home => HomePage.into_element(),
-			Page::Packages => rect().into_element(),
+			Page::Packages => BrowsePackagesPage.into_element(),
 			Page::Plugins => rect().into_element(),
 		};
 

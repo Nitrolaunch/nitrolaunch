@@ -21,8 +21,8 @@ use nitrolaunch::{
 	instance::update::manager::UpdateSettings,
 	io::paths::Paths,
 	pkg_crate::{
-		PackageSearchResults, PkgRequest, PkgRequestSource, declarative::DeclarativeAddonVersion,
-		metadata::PackageMetadata, properties::PackageProperties,
+		PackageMetaAndProps, PackageSearchResults, PkgRequest, PkgRequestSource,
+		declarative::DeclarativeAddonVersion,
 	},
 	plugin_crate::hook::hooks::{
 		AddCustomPackageRepositories, AddCustomPackageRepositoriesResult, AddSupportedLoaders,
@@ -343,7 +343,7 @@ impl<'a> State<'a> {
 			None
 		};
 
-		let req = req.with_slug(info.meta.slug.clone());
+		let req = req.with_slug(info.preview.meta.slug.clone());
 		let req = if let Some(content_version) = content_version {
 			req.with_content_version(VersionPattern::Single(content_version.clone()))
 		} else {
@@ -426,8 +426,7 @@ impl<'a> State<'a> {
 		if let Some(preview) = self.results.previews.get(&req.to_string()) {
 			self.package_info = Some(PackageInfo {
 				req,
-				meta: Arc::new(preview.0.clone()),
-				props: Arc::new(preview.1.clone()),
+				preview: preview.clone(),
 				versions: Vec::new(),
 			});
 			self.preview_scroll = 0;
@@ -701,7 +700,7 @@ fn render(frame: &mut Frame, state: &mut State) {
 	// Package list
 	let package_items = state.results.results.iter().map(|x| {
 		if let Some(preview) = state.results.previews.get(x) {
-			if let Some(name) = &preview.0.name {
+			if let Some(name) = &preview.meta.name {
 				name.clone()
 			} else {
 				x.clone()
@@ -1095,14 +1094,13 @@ struct SearchParams {
 /// Info about a package
 struct PackageInfo {
 	req: ArcPkgReq,
-	meta: Arc<PackageMetadata>,
-	props: Arc<PackageProperties>,
+	preview: Arc<PackageMetaAndProps>,
 	versions: Vec<DeclarativeAddonVersion>,
 }
 
 impl PackageInfo {
 	fn is_modpack(&self) -> bool {
-		self.props.kinds.contains(&PackageKind::Modpack)
+		self.preview.props.kinds.contains(&PackageKind::Modpack)
 	}
 }
 
@@ -1172,7 +1170,7 @@ impl<'a> Widget for PackageInfoWidget<'a> {
 		let details_pane = layout[1].inner(Margin::new(1, 1));
 
 		// Icon
-		if let Some(icon) = &info.meta.icon {
+		if let Some(icon) = &info.preview.meta.icon {
 			if let Some(image) = self.state.image_cache.get_from_cache(icon) {
 				let picker = Picker::from_query_stdio().unwrap_or(Picker::halfblocks());
 				let image = (*image).clone();
@@ -1194,9 +1192,9 @@ impl<'a> Widget for PackageInfoWidget<'a> {
 		let [title_pane, req_pane, not_loaded_pane] = details_pane.layout::<3>(&layout);
 
 		// Title
-		let title_name = if let Some(name) = &info.meta.name {
+		let title_name = if let Some(name) = &info.preview.meta.name {
 			name.as_str()
-		} else if let Some(slug) = &info.meta.slug {
+		} else if let Some(slug) = &info.preview.meta.slug {
 			slug.as_str()
 		} else {
 			&self.req.id
@@ -1214,7 +1212,7 @@ impl<'a> Widget for PackageInfoWidget<'a> {
 		// Request
 		let req = Paragraph::new(
 			self.req
-				.with_slug(info.meta.slug.clone())
+				.with_slug(info.preview.meta.slug.clone())
 				.to_string_no_version(),
 		)
 		.style(Style::new().gray());
@@ -1224,7 +1222,7 @@ impl<'a> Widget for PackageInfoWidget<'a> {
 		let mut subtitle_area = details_pane;
 		subtitle_area.y += 1;
 
-		if let Some(short_description) = &info.meta.description {
+		if let Some(short_description) = &info.preview.meta.description {
 			let short_description = Paragraph::new(short_description.as_str());
 			short_description
 				.style(Style::new().gray())
@@ -1273,7 +1271,7 @@ impl<'a> Widget for PackageInfoWidget<'a> {
 			PreviewTab::Description => {
 				if !is_loaded {
 					not_loaded_indicator.render(not_loaded_area, buf);
-				} else if let Some(body) = &info.meta.long_description {
+				} else if let Some(body) = &info.preview.meta.long_description {
 					let text = tui_markdown::from_str(body);
 
 					let visible_lines = body_pane.height;
@@ -1296,7 +1294,7 @@ impl<'a> Widget for PackageInfoWidget<'a> {
 			}
 			PreviewTab::Gallery => {
 				Clear.render(body_pane, buf);
-				if let Some(gallery) = &info.meta.gallery {
+				if let Some(gallery) = &info.preview.meta.gallery {
 					*self.scroll_height = render_gallery(gallery, self.state, body_pane, buf);
 				}
 			}
@@ -1489,9 +1487,9 @@ impl<'a> InstallPromptState<'a> {
 			return;
 		};
 
-		let title = if let Some(name) = &info.meta.name {
+		let title = if let Some(name) = &info.preview.meta.name {
 			name.as_str()
-		} else if let Some(slug) = &info.meta.slug {
+		} else if let Some(slug) = &info.preview.meta.slug {
 			slug.as_str()
 		} else {
 			&req.id
@@ -1677,8 +1675,10 @@ async fn worker_thread(
 				let _ = package_info_tx
 					.send(PackageInfo {
 						req,
-						meta,
-						props,
+						preview: Arc::new(PackageMetaAndProps {
+							meta: (*meta).clone(),
+							props: (*props).clone(),
+						}),
 						versions,
 					})
 					.await;

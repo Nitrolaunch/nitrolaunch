@@ -732,24 +732,13 @@ async fn search(
 		results
 			.results
 			.into_iter()
-			.map(|x| {
-				(
-					PkgRequest::parse(x, PkgRequestSource::Repository).arc(),
-					repo.clone(),
-				)
-			})
+			.map(|x| PkgRequest::parse(x, PkgRequestSource::Repository).arc())
 			.collect()
 	} else {
-		let repos: Vec<_> = config
-			.packages
-			.repos
-			.iter()
-			.map(|x| x.get_id().to_string())
-			.collect();
-		let mut session = PackageSearchSession::new(&repos, params.count);
+		let mut session = PackageSearchSession::new(params.count);
 
 		session
-			.search(
+			.search_all(
 				params,
 				config.packages.clone(),
 				&data.paths,
@@ -761,8 +750,13 @@ async fn search(
 			.results
 	};
 
-	for (package, repo) in results {
-		cprintln!("{HYPHEN_POINT}<s>{package}</> [<g>{repo}</>]");
+	for package in results {
+		let repo = if let Some(repo) = &package.repository {
+			cformat!(" [<g>{repo}</>]")
+		} else {
+			String::new()
+		};
+		cprintln!("{HYPHEN_POINT}<s>{package}</>{repo}");
 	}
 
 	Ok(())

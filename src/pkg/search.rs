@@ -1,13 +1,11 @@
 use std::{
-	collections::HashMap,
+	collections::{BTreeMap, HashMap},
 	hash::{Hash, Hasher},
 	sync::Arc,
 };
 
-use nitro_pkg::{
-	PkgRequest, PkgRequestSource::Repository, metadata::PackageMetadata,
-	properties::PackageProperties,
-};
+use dashmap::DashMap;
+use nitro_pkg::{PackageMetaAndProps, PkgRequest, PkgRequestSource};
 use nitro_shared::{
 	output::NitroOutput,
 	pkg::{ArcPkgReq, PackageSearchParameters},
@@ -17,33 +15,100 @@ use tokio::task::JoinSet;
 
 use crate::{io::paths::Paths, pkg::reg::PkgRegistry};
 
-#[derive(Default, Clone)]
+#[derive(Clone, Default)]
 struct RepoState {
 	/// None until we've searched this repository once.
 	total_results: Option<usize>,
 }
 
-/// Session for searching multiple package repositories
+/// Session for searching multiple package repositories that handles caching
+#[derive(Clone)]
 pub struct PackageSearchSession {
 	repos: HashMap<String, RepoState>,
 	page_size: u8,
+	previews: DashMap<ArcPkgReq, Arc<PackageMetaAndProps>>,
+	results: BTreeMap<usize, ArcPkgReq>,
+	/// Used to check for search changes
+	last_search: Option<PackageSearchParameters>,
+	last_repo: Option<String>,
 }
 
 impl PackageSearchSession {
 	/// Starts a new session
-	pub fn new(repos: &[String], page_size: u8) -> Self {
+	pub fn new(page_size: u8) -> Self {
 		Self {
-			repos: repos
-				.iter()
-				.cloned()
-				.map(|repo| (repo, RepoState::default()))
-				.collect(),
+			repos: HashMap::new(),
 			page_size,
+			previews: DashMap::new(),
+			results: BTreeMap::new(),
+			last_repo: None,
+			last_search: None,
 		}
 	}
 
-	/// Searches with the given parameters
+	/// Searches repositories
 	pub async fn search(
+		&mut self,
+		params: PackageSearchParameters,
+		repo: Option<&str>,
+		reg: Arc<PkgRegistry>,
+		paths: &Paths,
+		client: &Client,
+		o: &mut impl NitroOutput,
+	) -> anyhow::Result<PackageMultiSearchResults> {
+		if let Some(repo) = repo {
+			self.search_repo(params, repo, reg, paths, client, o).await
+		} else {
+			self.search_all(params, reg, paths, client, o).await
+		}
+	}
+
+	/// Searches a single repo with the given parameters
+	pub async fn search_repo(
+		&mut self,
+		params: PackageSearchParameters,
+		repo: &str,
+		reg: Arc<PkgRegistry>,
+		paths: &Paths,
+		client: &Client,
+		o: &mut impl NitroOutput,
+	) -> anyhow::Result<PackageMultiSearchResults> {
+		self.check_invalidate(&params, None);
+		if let Some(results) = self.get_results(params.skip) {
+			let total_results = self.get_total_results(Some(repo)).unwrap_or_default();
+			return Ok(PackageMultiSearchResults {
+				results: results.into_iter().map(|x| x.clone()).collect(),
+				total_results,
+			});
+		}
+
+		let skip = params.skip;
+		let results = reg.search(params, Some(repo), paths, client, o).await?;
+		self.previews.extend(results.previews.iter().map(|x| {
+			(
+				PkgRequest::parse(x.0, PkgRequestSource::Repository).arc(),
+				x.1.clone(),
+			)
+		}));
+
+		let reqs: Vec<_> = results
+			.results
+			.into_iter()
+			.map(|x| PkgRequest::parse(x, PkgRequestSource::Repository).arc())
+			.collect();
+
+		for (i, req) in reqs.iter().enumerate() {
+			self.results.insert(skip + i, req.clone());
+		}
+
+		Ok(PackageMultiSearchResults {
+			results: reqs,
+			total_results: results.total_results,
+		})
+	}
+
+	/// Searches all repos with the given parameters
+	pub async fn search_all(
 		&mut self,
 		params: PackageSearchParameters,
 		reg: Arc<PkgRegistry>,
@@ -51,12 +116,21 @@ impl PackageSearchSession {
 		client: &Client,
 		o: &mut impl NitroOutput,
 	) -> anyhow::Result<PackageMultiSearchResults> {
-		let repo_count = self.repos.len().max(1);
+		self.check_invalidate(&params, None);
+		if let Some(results) = self.get_results(params.skip) {
+			let total_results = self.get_total_results(None).unwrap_or_default();
+			return Ok(PackageMultiSearchResults {
+				results: results.into_iter().map(|x| x.clone()).collect(),
+				total_results,
+			});
+		}
+
+		let repo_count = reg.repos.len().max(1);
 
 		let base_share = self.page_size as usize / repo_count;
 		let extra = self.page_size as usize % repo_count;
 
-		let mut repos: Vec<_> = self.repos.keys().cloned().collect();
+		let mut repos: Vec<_> = reg.repos.iter().map(|x| x.get_id().to_string()).collect();
 		repos.sort();
 
 		let page = params.skip / self.page_size as usize;
@@ -64,15 +138,12 @@ impl PackageSearchSession {
 		let mut tasks = JoinSet::new();
 
 		for (i, repo) in repos.iter().enumerate() {
-			let state = &self.repos[repo];
+			let state = self.repos.entry(repo.clone()).or_default();
 
 			let mut share = base_share;
 			if (page + i) % repo_count < extra {
 				share += 1;
 			}
-
-			// Slight overfetch for better blending.
-			let fetch_count = share + 4;
 
 			let repo_skip = page * share;
 
@@ -84,7 +155,7 @@ impl PackageSearchSession {
 
 			let mut search = params.clone();
 			search.skip = repo_skip;
-			search.count = fetch_count as u8;
+			search.count = share as u8;
 
 			let reg = reg.clone();
 			let paths = paths.clone();
@@ -109,7 +180,6 @@ impl PackageSearchSession {
 
 		let mut candidates = Vec::new();
 
-		let mut previews = HashMap::new();
 		let mut total_results = 0usize;
 
 		while let Some(result) = tasks.join_next().await {
@@ -119,7 +189,12 @@ impl PackageSearchSession {
 
 			total_results += results.total_results;
 
-			previews.extend(results.previews);
+			self.previews.extend(results.previews.into_iter().map(|x| {
+				(
+					PkgRequest::parse(x.0, PkgRequestSource::Repository).arc(),
+					x.1,
+				)
+			}));
 
 			for id in results.results {
 				let mut hasher = std::collections::hash_map::DefaultHasher::new();
@@ -140,32 +215,95 @@ impl PackageSearchSession {
 
 		candidates.sort_by_key(|x| x.score);
 
-		let mut output = PackageMultiSearchResults {
+		let mut out = PackageMultiSearchResults {
 			total_results,
-			previews,
 			..Default::default()
 		};
 
-		output.results.reserve(self.page_size as usize);
+		out.results.reserve(self.page_size as usize);
 
-		for candidate in candidates.into_iter().take(self.page_size as usize) {
-			output.results.push((
-				PkgRequest::parse(candidate.id, Repository).arc(),
-				candidate.repo,
-			));
+		for (i, candidate) in candidates
+			.into_iter()
+			.take(self.page_size as usize)
+			.enumerate()
+		{
+			let mut req = PkgRequest::parse(candidate.id, PkgRequestSource::Repository);
+			req.repository = Some(candidate.repo);
+			let req = req.arc();
+			out.results.push(req.clone());
+			self.results.insert(params.skip + i, req.clone());
 		}
 
-		Ok(output)
+		Ok(out)
+	}
+
+	/// Resets the results cache, while leaving previews
+	pub fn reset(&mut self) {
+		self.results.clear();
+		self.repos.clear();
+		self.last_search = None;
+		self.last_repo = None;
+	}
+
+	/// Checks if search parameters have changed to determine whether to reset the cache, and does so.
+	fn check_invalidate(&mut self, params: &PackageSearchParameters, repo: Option<&str>) {
+		let has_changed = if let Some(current_params) = &mut self.last_search {
+			repo != self.last_repo.as_deref()
+				|| params.search != current_params.search
+				|| params.types != current_params.types
+				|| params.minecraft_versions != current_params.minecraft_versions
+				|| params.loaders != current_params.loaders
+				|| params.categories != current_params.categories
+		} else {
+			true
+		};
+
+		if has_changed {
+			self.reset();
+		}
+
+		self.last_search = Some(params.clone());
+		self.last_repo = repo.map(|x| x.to_string());
+	}
+
+	/// Gets a cached slice of results
+	pub fn get_results(&self, start: usize) -> Option<Vec<&ArcPkgReq>> {
+		let mut out = Vec::with_capacity(self.page_size as usize);
+		for i in start..(start + self.page_size as usize) {
+			let Some(pkg) = self.results.get(&i) else {
+				return None;
+			};
+			out.push(pkg);
+		}
+
+		Some(out)
+	}
+
+	/// Gets the previews map
+	pub fn previews(&self) -> &DashMap<ArcPkgReq, Arc<PackageMetaAndProps>> {
+		&self.previews
+	}
+
+	/// Gets the total number of search results provided a search containing the given repo or all repos has already been run
+	fn get_total_results(&self, repo: Option<&str>) -> Option<usize> {
+		if let Some(repo) = repo {
+			self.repos.get(repo).and_then(|x| x.total_results)
+		} else {
+			Some(
+				self.repos
+					.values()
+					.map(|x| x.total_results.unwrap_or_default())
+					.sum(),
+			)
+		}
 	}
 }
 
 /// Results for a package multi search
 #[derive(Default, Clone)]
 pub struct PackageMultiSearchResults {
-	/// The package requests and repositories from the results
-	pub results: Vec<(ArcPkgReq, String)>,
+	/// The package results
+	pub results: Vec<ArcPkgReq>,
 	/// The total number of results returned by the search, that weren't limited out
 	pub total_results: usize,
-	/// Limited versions of package metadata to be used for previews
-	pub previews: HashMap<String, (PackageMetadata, PackageProperties)>,
 }

@@ -32,7 +32,7 @@ async fn main() {
 	let back_state = BackState::new(event_tx).await.unwrap();
 
 	let window = WindowConfig::new(move || app(back_state.clone(), event_rx.resubscribe()))
-		.with_size(1200.0, 900.0)
+		.with_size(1400.0, 900.0)
 		.with_title("Nitrolaunch")
 		.with_decorations(false)
 		.with_app_id("Nitrolaunch");

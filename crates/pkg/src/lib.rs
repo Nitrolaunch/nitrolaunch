@@ -200,6 +200,15 @@ pub fn is_open_source(meta: &PackageMetadata, properties: &PackageProperties) ->
 	true
 }
 
+/// Metadata and properties for a package
+#[derive(Clone, Serialize, Deserialize, Default)]
+pub struct PackageMetaAndProps {
+	/// Metadata
+	pub meta: PackageMetadata,
+	/// Properties
+	pub props: PackageProperties,
+}
+
 /// Results for a package search
 #[derive(Serialize, Deserialize, Default, Clone)]
 pub struct PackageSearchResults {
@@ -208,5 +217,5 @@ pub struct PackageSearchResults {
 	/// The total number of results returned by the search, that weren't limited out
 	pub total_results: usize,
 	/// Limited versions of package metadata to be used for previews
-	pub previews: HashMap<String, (PackageMetadata, PackageProperties)>,
+	pub previews: HashMap<String, Arc<PackageMetaAndProps>>,
 }

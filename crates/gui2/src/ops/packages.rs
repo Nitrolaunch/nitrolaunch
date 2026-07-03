@@ -3,11 +3,12 @@ use std::{collections::HashMap, sync::Arc};
 use anyhow::Context;
 use nitrolaunch::{
 	instance_crate::{addon::Addon, lock::InstanceLockfile},
+	pkg::search::{PackageMultiSearchResults, PackageSearchSession},
 	pkg_crate::{metadata::PackageMetadata, properties::PackageProperties},
 	shared::{
 		id::InstanceID,
 		output::{MessageContents, NitroOutput},
-		pkg::ArcPkgReq,
+		pkg::{ArcPkgReq, PackageSearchParameters},
 	},
 };
 use tokio::task::JoinSet;
@@ -211,4 +212,53 @@ impl QueryCapability for FetchInstanceAddons {
 			instance.get_addons()
 		})
 	}
+}
+
+#[derive(Clone, PartialEq, Eq, Hash)]
+pub struct SearchPackages {
+	back_state: Captured<BackState>,
+}
+
+impl SearchPackages {
+	pub fn new(back_state: BackState) -> Self {
+		Self {
+			back_state: Captured(back_state),
+		}
+	}
+}
+
+impl QueryCapability for SearchPackages {
+	type Ok = (PackageMultiSearchResults, PackageSearchSession);
+	type Err = anyhow::Error;
+	type Keys = SearchPackagesParams;
+
+	fn run(&self, keys: &Self::Keys) -> impl Future<Output = Result<Self::Ok, Self::Err>> {
+		let back_state = self.back_state.clone();
+		let mut params = keys.clone();
+
+		query_spawn(async move {
+			let config = back_state.config().await?;
+			let mut o = back_state.output();
+
+			let results = params
+				.session
+				.search(
+					params.search,
+					params.repo.as_deref(),
+					config.packages,
+					&back_state.paths,
+					&back_state.client,
+					&mut o,
+				)
+				.await?;
+			Ok((results, params.session.0))
+		})
+	}
+}
+
+#[derive(Clone, PartialEq, Eq, Hash)]
+pub struct SearchPackagesParams {
+	pub search: PackageSearchParameters,
+	pub session: Captured<PackageSearchSession>,
+	pub repo: Option<String>,
 }

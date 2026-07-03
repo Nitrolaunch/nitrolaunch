@@ -17,7 +17,7 @@ use nitro_net::{
 	download::Client,
 	modrinth::{self, Member, Project, SearchResults, Version},
 };
-use nitro_pkg::{PackageSearchResults, PkgRequest, PkgRequestSource};
+use nitro_pkg::{PackageMetaAndProps, PackageSearchResults, PkgRequest, PkgRequestSource};
 use nitro_pkg_gen::{modrinth::get_preview, relation_substitution::RelationSubNone};
 use nitro_plugin::{
 	api::{executable::ExecutablePlugin, utils::PackageSearchCache},
@@ -142,7 +142,13 @@ fn main() -> anyhow::Result<()> {
 				)
 				.await;
 				if let Ok(package) = package {
-					previews.insert(req_str, (package.meta, package.properties));
+					previews.insert(
+						req_str,
+						Arc::new(PackageMetaAndProps {
+							meta: package.meta,
+							props: package.properties,
+						}),
+					);
 				}
 			}
 

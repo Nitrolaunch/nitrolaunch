@@ -1,0 +1,229 @@
+use nitrolaunch::{
+	pkg::search::{PackageMultiSearchResults, PackageSearchSession},
+	pkg_crate::PackageMetaAndProps,
+	shared::{
+		loaders::Loader,
+		pkg::{ArcPkgReq, PackageCategory, PackageKind, PackageSearchParameters},
+	},
+};
+
+use crate::{
+	components::{
+		input::text::{TextInput, search_bar},
+		nav::page_buttons::PageButtons,
+	},
+	ops::packages::{SearchPackages, SearchPackagesParams},
+	prelude::*,
+	util::PtrEq,
+};
+
+const PAGE_SIZE: u8 = 16;
+
+#[derive(PartialEq)]
+pub struct BrowsePackagesPage;
+
+impl Component for BrowsePackagesPage {
+	fn render(&self) -> impl IntoElement {
+		let theme = use_theme();
+		let back_state = use_consume::<BackState>();
+		let mut repo = use_state::<Option<String>>(|| None);
+		let search_session = use_state(|| PackageSearchSession::new(PAGE_SIZE));
+
+		let search_state = PackageSearchState::new();
+		let search_state2 = search_state.clone();
+		let search = use_memo(move || search_state2.to_search_params());
+
+		let search_state2 = search_state.clone();
+		let results_query = use_query(Query::new(
+			SearchPackagesParams {
+				search: search.read().cloned(),
+				session: Captured(search_session.peek().cloned()),
+				repo: search_state2.repo.read().cloned(),
+			},
+			SearchPackages::new(back_state.clone()),
+		));
+		let results = use_state(|| PackageMultiSearchResults {
+			results: Vec::new(),
+			total_results: 0,
+		});
+
+		let results_query2 = results_query.clone();
+		let mut search_session2 = search_session.clone();
+		let mut results2 = results.clone();
+		use_side_effect(move || {
+			unsafe {
+				(*((&results_query as *const _) as *const State<Query<SearchPackages>>)).read()
+			};
+
+			if let Some(result) = results_query2.read().state().ok() {
+				results2.set(result.0.clone());
+				search_session2.set(result.1.clone());
+			}
+		});
+
+		let mut page2 = search_state.page.clone();
+		let page_buttons = PageButtons {
+			page: (*search_state.page.read()).into(),
+			total_pages: results.read().total_results,
+			on_set: (move |new_page| page2.set(new_page as u16)).into(),
+		};
+		let search = TextInput::new(search_state.search.clone());
+		let top_upper_bar = rect().width(Size::fill()).height(Size::percent(50.0));
+		let top_lower_bar = rect()
+			.width(Size::fill())
+			.height(Size::percent(50.0))
+			.cont()
+			.child(rect().width(Size::flex(1.0)))
+			.child(rect().width(Size::flex(1.0)).center().child(page_buttons))
+			.child(
+				rect()
+					.width(Size::flex(1.0))
+					.padding(theme.gap)
+					.child(search_bar(search, &theme)),
+			);
+
+		let top_bar = rect()
+			.width(Size::fill())
+			.height(Size::px(82.0))
+			.border(border_bottom(theme.border, theme.panel_border))
+			.child(top_upper_bar)
+			.child(top_lower_bar);
+
+		let packages = results.read();
+		let packages = packages.results.iter().map(|req| {
+			let preview = search_session
+				.peek()
+				.previews()
+				.get(req)
+				.map(|x| PtrEq(x.clone()));
+
+			BrowseItem {
+				req: req.clone(),
+				preview,
+			}
+			.into_element()
+		});
+		let packages = ScrollView::new()
+			.expanded()
+			.spacing(theme.gap)
+			.children(packages);
+		let left_bar = rect()
+			.width(Size::flex(1.0))
+			.height(Size::fill())
+			.vertical()
+			.padding(theme.gap)
+			.border(border_right(theme.border, theme.panel_border))
+			.child(packages);
+
+		let preview = rect().width(Size::flex(3.0)).height(Size::fill());
+
+		rect().expanded().child(top_bar).child(
+			rect()
+				.width(Size::fill())
+				.height(Size::flex(1.0))
+				.horizontal()
+				.flex()
+				.child(left_bar)
+				.child(preview),
+		)
+	}
+}
+
+#[derive(Clone)]
+struct PackageSearchState {
+	repo: State<Option<String>>,
+	page: State<u16>,
+	search: State<String>,
+	ty: State<PackageKind>,
+	categories: State<Vec<PackageCategory>>,
+	mc_versions: State<Vec<String>>,
+	loaders: State<Vec<Loader>>,
+}
+
+impl PackageSearchState {
+	fn new() -> Self {
+		Self {
+			repo: use_state(|| None),
+			page: use_state(|| 0),
+			search: use_state(|| String::new()),
+			ty: use_state(|| PackageKind::Mod),
+			categories: use_state(|| Vec::new()),
+			mc_versions: use_state(|| Vec::new()),
+			loaders: use_state(|| Vec::new()),
+		}
+	}
+
+	fn to_search_params(&self) -> PackageSearchParameters {
+		PackageSearchParameters {
+			count: PAGE_SIZE,
+			skip: *self.page.read() as usize * PAGE_SIZE as usize,
+			search: Some(self.search.read().clone()).filter(|x| !x.is_empty()),
+			types: vec![*self.ty.read()],
+			minecraft_versions: self.mc_versions.read().cloned(),
+			loaders: self.loaders.read().cloned(),
+			categories: self.categories.read().cloned(),
+		}
+	}
+}
+
+#[derive(PartialEq)]
+struct BrowseItem {
+	req: ArcPkgReq,
+	preview: Option<PtrEq<PackageMetaAndProps>>,
+}
+
+impl Component for BrowseItem {
+	fn render(&self) -> impl IntoElement {
+		let theme = use_theme();
+		let is_hovered = use_state(|| false);
+
+		let bg = if *is_hovered.read() {
+			theme.panel_hover
+		} else {
+			theme.bg
+		};
+
+		let meta = self.preview.as_ref().map(|x| &x.0.meta);
+		let props = self.preview.as_ref().map(|x| &x.0.props);
+
+		let name = meta.and_then(|x| x.name.as_deref()).unwrap_or(&self.req.id);
+
+		let default_icon = icon("box", 32.0).into_element();
+		let ico = meta
+			.and_then(|x| x.icon.as_ref())
+			.map(|x| {
+				let default_icon = default_icon.clone();
+				ImageViewer::new(x.parse::<Uri>().unwrap_or_default())
+					.error_renderer(move |_| default_icon.clone())
+					.width(Size::px(40.0))
+					.height(Size::px(40.0))
+					.corner_radius(theme.round)
+					.into_element()
+			})
+			.unwrap_or(default_icon);
+
+		rect()
+			.width(Size::fill())
+			.height(Size::px(64.0))
+			.hover(is_hovered)
+			.corner_radius(theme.round)
+			.background(bg)
+			.cont()
+			.child(
+				rect()
+					.width(Size::px(64.0))
+					.height(Size::fill())
+					.center()
+					.child(ico),
+			)
+			.child(
+				rect()
+					.width(Size::flex(1.0))
+					.height(Size::fill())
+					.center()
+					.horizontal()
+					.main_align(Alignment::Start)
+					.child(name.to_string()),
+			)
+	}
+}

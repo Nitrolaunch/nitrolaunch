@@ -1,5 +1,6 @@
 use crate::{components::dialog::toast::Toasts, prelude::*, routing::PageCategory};
 
+pub mod page_buttons;
 pub mod router;
 
 #[derive(PartialEq)]
@@ -113,6 +114,7 @@ impl Component for PageButton {
 			.height(Size::fill())
 			.width(Size::flex(1.0))
 			.margin(3.0)
+			.clickable()
 			.child(
 				Button::new()
 					.child(rect().cont().child(icon(ico, 16.0)).child(title))

@@ -1,6 +1,7 @@
 use std::{
 	collections::{HashMap, HashSet},
 	path::{Path, PathBuf},
+	sync::Arc,
 	time::SystemTime,
 };
 
@@ -10,7 +11,7 @@ use nitro_net::{
 	download::{self, Client},
 	smithed::{self, Pack, PackMeta, PackSearchResult},
 };
-use nitro_pkg::{PackageSearchResults, PkgRequest, PkgRequestSource};
+use nitro_pkg::{PackageMetaAndProps, PackageSearchResults, PkgRequest, PkgRequestSource};
 use nitro_pkg_gen::relation_substitution::{
 	PackageAndVersion, RelationSubFunction, RelationSubNone,
 };
@@ -144,7 +145,13 @@ fn main() -> anyhow::Result<()> {
 				)
 				.await;
 				if let Ok(package) = package {
-					previews.insert(req_str, (package.meta, package.properties));
+					previews.insert(
+						req_str,
+						Arc::new(PackageMetaAndProps {
+							meta: package.meta,
+							props: package.properties,
+						}),
+					);
 				}
 			}
 
