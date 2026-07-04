@@ -6,7 +6,6 @@ use nitrolaunch::{
 	shared::{
 		loaders::Loader,
 		pkg::{ArcPkgReq, PackageCategory, PackageKind, PackageSearchParameters},
-		util::from_string_json,
 	},
 };
 
@@ -83,10 +82,9 @@ impl Component for BrowsePackagesPage {
 
 		let pkg_ty = search_state.ty.clone();
 		let ty_selector = Dropdown::new(
-			Selected::Single(search_state.ty.read().to_string()),
+			Selected::Single(search_state.ty.read().clone()),
 			Rc::new(move |selected| {
-				let selected = selected.single();
-				pkg_ty.clone().set(from_string_json(&selected).unwrap());
+				pkg_ty.clone().set(selected.single());
 			}),
 		)
 		.children(
@@ -99,13 +97,7 @@ impl Component for BrowsePackagesPage {
 				PackageKind::Modpack,
 			]
 			.into_iter()
-			.map(|x| {
-				SelectOption::new(
-					&x.to_string(),
-					x.to_string_pretty(),
-					Some(get_package_kind_icon(x)),
-				)
-			}),
+			.map(|x| SelectOption::new(x, x.to_string_pretty(), Some(get_package_kind_icon(x)))),
 		);
 
 		let top_lower_bar = rect()

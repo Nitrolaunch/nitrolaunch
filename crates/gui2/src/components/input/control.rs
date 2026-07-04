@@ -55,7 +55,7 @@ impl Component for ControlInput {
 				};
 
 				let multiple = *multiple;
-				let on_select = Rc::new(move |selected: Selected| {
+				let on_select = Rc::new(move |selected: Selected<String>| {
 					if multiple {
 						on_set.call(Value::Array(
 							selected.multi().into_iter().map(Value::String).collect(),

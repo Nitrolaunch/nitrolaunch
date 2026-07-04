@@ -3,18 +3,18 @@ use std::rc::Rc;
 use crate::{components::input::Derivable, prelude::*};
 
 #[derive(PartialEq)]
-pub struct InlineSelect {
-	options: Vec<SelectOption>,
-	selected: Selected,
-	on_select: NotEq<Rc<dyn Fn(Selected)>>,
-	derived_option: Option<String>,
+pub struct InlineSelect<T: PartialEq + Clone> {
+	options: Vec<SelectOption<T>>,
+	selected: Selected<T>,
+	on_select: NotEq<Rc<dyn Fn(Selected<T>)>>,
+	derived_option: Option<T>,
 	align_end: bool,
 	fit: bool,
 }
 
 #[allow(dead_code)]
-impl InlineSelect {
-	pub fn new(selected: Selected, on_select: Rc<dyn Fn(Selected)>) -> Self {
+impl<T: PartialEq + Clone> InlineSelect<T> {
+	pub fn new(selected: Selected<T>, on_select: Rc<dyn Fn(Selected<T>)>) -> Self {
 		Self {
 			options: Vec::new(),
 			selected,
@@ -25,27 +25,22 @@ impl InlineSelect {
 		}
 	}
 
-	pub fn child(mut self, child: SelectOption) -> Self {
+	pub fn child(mut self, child: SelectOption<T>) -> Self {
 		self.options.push(child);
 		self
 	}
 
-	pub fn maybe_child(mut self, show: bool, child: impl FnOnce() -> SelectOption) -> Self {
+	pub fn maybe_child(mut self, show: bool, child: impl FnOnce() -> SelectOption<T>) -> Self {
 		if show {
 			self.options.push(child());
 		}
 		self
 	}
 
-	pub fn children(mut self, children: impl IntoIterator<Item = SelectOption>) -> Self {
+	pub fn children(mut self, children: impl IntoIterator<Item = SelectOption<T>>) -> Self {
 		for child in children {
 			self = self.child(child);
 		}
-		self
-	}
-
-	pub fn allow_none(mut self) -> Self {
-		self.options.push(SelectOption::none());
 		self
 	}
 
@@ -61,24 +56,31 @@ impl InlineSelect {
 	}
 }
 
-impl Derivable<String> for InlineSelect {
-	fn derived(mut self, value: Option<String>) -> Self {
+impl<T: PartialEq + Clone> InlineSelect<Option<T>> {
+	pub fn allow_none(mut self) -> Self {
+		self.options.push(SelectOption::none());
+		self
+	}
+}
+
+impl<T: PartialEq + Clone> Derivable<T> for InlineSelect<T> {
+	fn derived(mut self, value: Option<T>) -> Self {
 		self.derived_option = value;
 		self
 	}
 }
 
-impl Component for InlineSelect {
+impl<T: PartialEq + Clone + 'static> Component for InlineSelect<T> {
 	fn render(&self) -> impl IntoElement {
 		let selected = self.selected.clone();
 		let upper_on_select = self.on_select.clone();
-		let on_select: NotEq<Rc<dyn Fn(String)>> = NotEq(Rc::new(move |option| {
+		let on_select: NotEq<Rc<dyn Fn(T)>> = NotEq(Rc::new(move |option| {
 			(upper_on_select.0)(selected.clone().select(&option));
 		}));
 
 		let selected = self.selected.clone();
 		let upper_on_select = self.on_select.clone();
-		let on_deselect: NotEq<Rc<dyn Fn(String)>> = NotEq(Rc::new(move |option| {
+		let on_deselect: NotEq<Rc<dyn Fn(T)>> = NotEq(Rc::new(move |option| {
 			(upper_on_select.0)(selected.clone().deselect(&option));
 		}));
 
@@ -111,16 +113,16 @@ impl Component for InlineSelect {
 }
 
 #[derive(PartialEq)]
-struct InlineSelectOption {
-	option: SelectOption,
-	on_select: NotEq<Rc<dyn Fn(String)>>,
-	on_deselect: NotEq<Rc<dyn Fn(String)>>,
+struct InlineSelectOption<T: PartialEq + Clone> {
+	option: SelectOption<T>,
+	on_select: NotEq<Rc<dyn Fn(T)>>,
+	on_deselect: NotEq<Rc<dyn Fn(T)>>,
 	is_selected: bool,
 	is_derived: bool,
 	fit: bool,
 }
 
-impl Component for InlineSelectOption {
+impl<T: PartialEq + Clone + 'static> Component for InlineSelectOption<T> {
 	fn render(&self) -> impl IntoElement {
 		let theme = use_theme();
 		let is_hovered = use_state(|| false);
@@ -164,16 +166,16 @@ impl Component for InlineSelectOption {
 }
 
 #[derive(PartialEq)]
-pub struct Dropdown {
-	selected: Selected,
-	on_select: NotEq<Rc<dyn Fn(Selected)>>,
-	options: Vec<SelectOption>,
-	derived_option: Option<String>,
+pub struct Dropdown<T: PartialEq + Clone> {
+	selected: Selected<T>,
+	on_select: NotEq<Rc<dyn Fn(Selected<T>)>>,
+	options: Vec<SelectOption<T>>,
+	derived_option: Option<T>,
 }
 
 #[allow(dead_code)]
-impl Dropdown {
-	pub fn new(selected: Selected, on_select: Rc<dyn Fn(Selected)>) -> Self {
+impl<T: PartialEq + Clone> Dropdown<T> {
+	pub fn new(selected: Selected<T>, on_select: Rc<dyn Fn(Selected<T>)>) -> Self {
 		Self {
 			selected,
 			on_select: NotEq(on_select),
@@ -182,39 +184,41 @@ impl Dropdown {
 		}
 	}
 
-	pub fn child(mut self, child: SelectOption) -> Self {
+	pub fn child(mut self, child: SelectOption<T>) -> Self {
 		self.options.push(child);
 		self
 	}
 
-	pub fn maybe_child(mut self, show: bool, child: impl FnOnce() -> SelectOption) -> Self {
+	pub fn maybe_child(mut self, show: bool, child: impl FnOnce() -> SelectOption<T>) -> Self {
 		if show {
 			self.options.push(child());
 		}
 		self
 	}
 
-	pub fn children(mut self, children: impl IntoIterator<Item = SelectOption>) -> Self {
+	pub fn children(mut self, children: impl IntoIterator<Item = SelectOption<T>>) -> Self {
 		for child in children {
 			self = self.child(child);
 		}
 		self
 	}
+}
 
+impl<T: PartialEq + Clone> Dropdown<Option<T>> {
 	pub fn allow_none(mut self) -> Self {
 		self.options.push(SelectOption::none());
 		self
 	}
 }
 
-impl Derivable<String> for Dropdown {
-	fn derived(mut self, value: Option<String>) -> Self {
+impl<T: PartialEq + Clone> Derivable<T> for Dropdown<T> {
+	fn derived(mut self, value: Option<T>) -> Self {
 		self.derived_option = value;
 		self
 	}
 }
 
-impl Component for Dropdown {
+impl<T: PartialEq + Clone + 'static> Component for Dropdown<T> {
 	fn render(&self) -> impl IntoElement {
 		let theme = use_theme();
 		let is_hovered = use_state(|| false);
@@ -222,13 +226,13 @@ impl Component for Dropdown {
 
 		let selected = self.selected.clone();
 		let upper_on_select = self.on_select.clone();
-		let on_select: NotEq<Rc<dyn Fn(String)>> = NotEq(Rc::new(move |option| {
+		let on_select: NotEq<Rc<dyn Fn(T)>> = NotEq(Rc::new(move |option| {
 			(upper_on_select.0)(selected.clone().select(&option));
 		}));
 
 		let selected = self.selected.clone();
 		let upper_on_select = self.on_select.clone();
-		let on_deselect: NotEq<Rc<dyn Fn(String)>> = NotEq(Rc::new(move |option| {
+		let on_deselect: NotEq<Rc<dyn Fn(T)>> = NotEq(Rc::new(move |option| {
 			(upper_on_select.0)(selected.clone().deselect(&option));
 		}));
 
@@ -237,7 +241,7 @@ impl Component for Dropdown {
 				if let Some(option) = self.options.iter().find(|x| x.id == *selected) {
 					option.title.clone()
 				} else {
-					selected.clone()
+					"Unknown option".to_string()
 				}
 			}
 			Selected::Multi(selected) => format!("{} selected", selected.len()),
@@ -307,15 +311,15 @@ impl Component for Dropdown {
 }
 
 #[derive(PartialEq)]
-struct DropdownOption {
-	option: SelectOption,
-	on_select: NotEq<Rc<dyn Fn(String)>>,
-	on_deselect: NotEq<Rc<dyn Fn(String)>>,
+struct DropdownOption<T: PartialEq + Clone> {
+	option: SelectOption<T>,
+	on_select: NotEq<Rc<dyn Fn(T)>>,
+	on_deselect: NotEq<Rc<dyn Fn(T)>>,
 	is_selected: bool,
 	is_derived: bool,
 }
 
-impl Component for DropdownOption {
+impl<T: PartialEq + Clone + 'static> Component for DropdownOption<T> {
 	fn render(&self) -> impl IntoElement {
 		let theme = use_theme();
 		let is_hovered = use_state(|| false);
@@ -370,19 +374,24 @@ impl Component for DropdownOption {
 }
 
 #[derive(PartialEq, Clone)]
-pub struct SelectOption {
-	pub id: String,
+pub struct SelectOption<T: PartialEq + Clone> {
+	pub id: T,
 	pub title: String,
 	pub icon: Option<Element>,
 	pub tip: Option<String>,
 }
 
-impl SelectOption {
-	pub fn simple(id: &str) -> Self {
-		Self::new(id, id, None)
+impl<T: PartialEq + Clone> SelectOption<T> {
+	pub fn simple(id: impl Into<T>) -> Self
+	where
+		T: ToString,
+	{
+		let id = id.into();
+		let title = id.to_string();
+		Self::new(id, &title, None)
 	}
 
-	pub fn new(id: &str, title: &str, ico: Option<&str>) -> Self {
+	pub fn new(id: impl Into<T>, title: &str, ico: Option<&str>) -> Self {
 		Self {
 			id: id.into(),
 			title: title.into(),
@@ -391,7 +400,7 @@ impl SelectOption {
 		}
 	}
 
-	pub fn new_custom_icon(id: &str, title: &str, ico: Element) -> Self {
+	pub fn new_custom_icon(id: impl Into<T>, title: &str, ico: Element) -> Self {
 		Self {
 			id: id.into(),
 			title: title.into(),
@@ -400,35 +409,40 @@ impl SelectOption {
 		}
 	}
 
-	pub fn none() -> Self {
-		Self::new("none", "None", None)
-	}
-
 	pub fn tip(mut self, tip: &str) -> Self {
 		self.tip = Some(tip.into());
 		self
 	}
 }
 
-/// What's actually selected for a select component, supporting both single and multi select
-#[derive(PartialEq, Clone)]
-pub enum Selected {
-	Single(String),
-	Multi(Vec<String>),
-}
-
-impl Selected {
-	pub fn new_single(value: Option<String>) -> Self {
-		let value = match value {
-			Some(value) => value,
-			None => "none".into(),
-		};
-
-		Self::Single(value)
+impl<T: Clone + PartialEq> SelectOption<Option<T>> {
+	pub fn simple_or_none(id: Option<T>) -> Self
+	where
+		T: ToString,
+	{
+		if let Some(id) = id {
+			let title = id.to_string();
+			Self::new(id, &title, None)
+		} else {
+			Self::none()
+		}
 	}
 
+	pub fn none() -> Self {
+		Self::new(None, "None", None)
+	}
+}
+
+/// What's actually selected for a select component, supporting both single and multi select
+#[derive(PartialEq, Clone)]
+pub enum Selected<T: PartialEq + Clone> {
+	Single(T),
+	Multi(Vec<T>),
+}
+
+impl<T: PartialEq + Clone> Selected<T> {
 	/// Gets a single result out, panicking if it is none
-	pub fn single(self) -> String {
+	pub fn single(self) -> T {
 		match self {
 			Self::Single(value) => value,
 			_ => unreachable!(),
@@ -436,16 +450,15 @@ impl Selected {
 	}
 
 	/// Gets a single result out
-	pub fn single_optional(self) -> Option<String> {
+	pub fn single_optional(self) -> Option<T> {
 		match self {
-			Self::Single(value) if value == "none" => None,
 			Self::Single(value) => Some(value),
 			Self::Multi(values) => values.first().cloned(),
 		}
 	}
 
 	/// Gets multiple results out
-	pub fn multi(self) -> Vec<String> {
+	pub fn multi(self) -> Vec<T> {
 		match self {
 			Self::Single(value) => vec![value],
 			Self::Multi(values) => values,
@@ -453,24 +466,24 @@ impl Selected {
 	}
 
 	/// Checks whether this option is selected
-	fn is_selected(&self, option: &str) -> bool {
+	fn is_selected(&self, option: &T) -> bool {
 		match self {
 			Self::Single(value) => value == option,
 			Self::Multi(values) => values.iter().any(|x| x == option),
 		}
 	}
 
-	fn select(self, new: &str) -> Self {
+	fn select(self, new: &T) -> Self {
 		match self {
-			Self::Single(..) => Self::Single(new.into()),
+			Self::Single(..) => Self::Single(new.clone()),
 			Self::Multi(mut list) => {
-				list.push(new.into());
+				list.push(new.clone());
 				Self::Multi(list)
 			}
 		}
 	}
 
-	fn deselect(self, value: &str) -> Self {
+	fn deselect(self, value: &T) -> Self {
 		match self {
 			Self::Single(..) => self,
 			Self::Multi(list) => {

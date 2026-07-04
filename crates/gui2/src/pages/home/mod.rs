@@ -19,8 +19,8 @@ impl Component for HomePage {
 		let front_state = use_front_state();
 		let items_query = use_query(FetchItems::new(back_state.clone()));
 
-		let tab = use_state(|| "instances".to_string());
-		let filter = use_state(|| "all".to_string());
+		let tab = use_state(|| Tab::Instances);
+		let filter = use_state::<Option<Side>>(|| None);
 		let selected = use_state::<Option<InstanceItemInfo>>(|| None);
 
 		use_side_effect(move || {
@@ -44,16 +44,14 @@ impl Component for HomePage {
 			QueryStateData::Settled { res: Ok(res), .. } => res.clone(),
 		};
 
-		let items = match tab.read().as_str() {
-			"instances" => &items.instances,
-			"templates" => &items.templates,
-			_ => unreachable!(),
+		let items = match &*tab.read() {
+			Tab::Instances => &items.instances,
+			Tab::Templates => &items.templates,
 		};
 
-		let add_placeholder_ty = match tab.read().as_str() {
-			"instances" => ConfigKind::Instance,
-			"templates" => ConfigKind::Template,
-			_ => unreachable!(),
+		let add_placeholder_ty = match &*tab.read() {
+			Tab::Instances => ConfigKind::Instance,
+			Tab::Templates => ConfigKind::Template,
 		};
 		let add_placeholder =
 			InstanceListItem::add_placeholder(add_placeholder_ty, selected.clone());
@@ -61,10 +59,8 @@ impl Component for HomePage {
 		let items = items
 			.into_iter()
 			.filter(|x| {
-				if &*filter.read() == "client" && x.side != Some(Side::Client) {
-					false
-				} else if &*filter.read() == "server" && x.side != Some(Side::Server) {
-					false
+				if let Some(filter) = &*filter.read() {
+					x.side == Some(*filter)
 				} else {
 					true
 				}
@@ -76,10 +72,15 @@ impl Component for HomePage {
 
 		let items_elem = rect().child(items_elem).width(Size::fill());
 
-		let on_select_tab = Rc::new(move |new_tab: Selected| tab.clone().set(new_tab.single()));
+		let on_select_tab =
+			Rc::new(move |new_tab: Selected<Tab>| tab.clone().set(new_tab.single()));
 		let tabs = InlineSelect::new(Selected::Single(tab.read().clone()), on_select_tab)
-			.child(SelectOption::new("instances", "Instances", Some("box")))
-			.child(SelectOption::new("templates", "Templates", Some("diagram")));
+			.child(SelectOption::new(Tab::Instances, "Instances", Some("box")))
+			.child(SelectOption::new(
+				Tab::Templates,
+				"Templates",
+				Some("diagram"),
+			));
 
 		let bar_left = rect()
 			.width(Size::flex(1.0))
@@ -90,13 +91,22 @@ impl Component for HomePage {
 
 		let bar_center = rect().width(Size::flex(1.0));
 
-		let on_select_filter =
-			Rc::new(move |new_filter: Selected| filter.clone().set(new_filter.single()));
+		let on_select_filter = Rc::new(move |new_filter: Selected<Option<Side>>| {
+			filter.clone().set(new_filter.single())
+		});
 		let filters = InlineSelect::new(Selected::Single(filter.read().clone()), on_select_filter)
 			.align_end()
-			.child(SelectOption::new("all", "All", Some("box")))
-			.child(SelectOption::new("client", "Client", Some("controller")))
-			.child(SelectOption::new("server", "Server", Some("server")));
+			.child(SelectOption::new(None, "All", Some("box")))
+			.child(SelectOption::new(
+				Some(Side::Client),
+				"Client",
+				Some("controller"),
+			))
+			.child(SelectOption::new(
+				Some(Side::Server),
+				"Server",
+				Some("server"),
+			));
 
 		let bar_right = rect()
 			.width(Size::flex(1.0))
@@ -124,4 +134,10 @@ impl Component for HomePage {
 
 		rect().fill().child(view).padding((0.0, items_side_padding))
 	}
+}
+
+#[derive(PartialEq, Clone)]
+enum Tab {
+	Instances,
+	Templates,
 }

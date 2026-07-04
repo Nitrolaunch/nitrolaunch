@@ -55,9 +55,9 @@ impl Component for AddonsConfig {
 			self.config_state.ty == ConfigKind::Instance,
 			|| self.config_state.id.read().cloned(),
 		));
-		let filter = use_state(|| "all".to_string());
+		let filter = use_state(|| Filter::All);
 		let search = use_state(|| String::new());
-		let side = use_state(|| "any".to_string());
+		let side = use_state::<Option<Side>>(|| None);
 
 		let modpack = self.config_state.modpack.clone();
 		let packages = self.config_state.packages.clone();
@@ -126,22 +126,31 @@ impl Component for AddonsConfig {
 		.length(processed_items.read().len());
 
 		let on_select_filter =
-			Rc::new(move |new_filter: Selected| filter.clone().set(new_filter.single()));
+			Rc::new(move |new_filter: Selected<Filter>| filter.clone().set(new_filter.single()));
 		let filters = Dropdown::new(Selected::Single(filter.read().clone()), on_select_filter)
-			.child(SelectOption::new("all", "All", Some("box")))
+			.child(SelectOption::new(Filter::All, "All", Some("box")))
 			.child(SelectOption::new(
-				"dependencies",
+				Filter::Dependencies,
 				"Dependencies",
 				Some("diagram"),
 			));
 
 		let search_input = search_bar(TextInput::new(search), &theme);
 
-		let on_select_side = Rc::new(move |new_side: Selected| side.clone().set(new_side.single()));
+		let on_select_side =
+			Rc::new(move |new_side: Selected<Option<Side>>| side.clone().set(new_side.single()));
 		let sides = Dropdown::new(Selected::Single(side.read().clone()), on_select_side)
-			.child(SelectOption::new("any", "Any Side", Some("box")))
-			.child(SelectOption::new("client", "Client", Some("controller")))
-			.child(SelectOption::new("server", "Server", Some("server")));
+			.child(SelectOption::new(None, "Any Side", Some("box")))
+			.child(SelectOption::new(
+				Some(Side::Client),
+				"Client",
+				Some("controller"),
+			))
+			.child(SelectOption::new(
+				Some(Side::Server),
+				"Server",
+				Some("server"),
+			));
 
 		let controls = rect().width(Size::fill()).cont();
 		let filters = rect()
@@ -175,6 +184,12 @@ impl Component for AddonsConfig {
 			.child(header)
 			.child(items)
 	}
+}
+
+#[derive(PartialEq, Clone)]
+enum Filter {
+	All,
+	Dependencies,
 }
 
 struct ContentItemElem {
@@ -529,13 +544,13 @@ fn build_items(
 fn filter_sort_items(
 	mut items: Vec<ContentItem>,
 	info: &HashMap<ArcPkgReq, anyhow::Result<PkgInfo>>,
-	filter: &str,
+	filter: &Filter,
 	search: &str,
 ) -> Vec<ContentItem> {
 	let search = search.to_lowercase();
 
 	items.retain(|x| {
-		if filter == "dependencies" && !x.is_configured && x.is_locked {
+		if *filter == Filter::Dependencies && !x.is_configured && x.is_locked {
 			return false;
 		}
 

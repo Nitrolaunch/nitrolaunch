@@ -149,33 +149,39 @@ impl Component for ConfigModal {
 			on_submit_state.set(PtrEq(Arc::new(on_submit)));
 		});
 
-		let tab = use_state(|| Some("general".to_string()));
+		let tab = use_state(|| Tab::General);
 		let left_panel = rect()
 			.width(Size::flex(1.0))
 			.border(border_right(theme.border, theme.panel_border))
 			.child(
 				SideTabs::new(tab)
-					.child(SelectOption::new("general", "General", Some("gear")))
-					.child(SelectOption::new("content", "Content", Some("honeycomb")))
-					.child(SelectOption::new("launch", "Launch Settings", Some("play")))
-					.child(SelectOption::new("plugins", "Plugins", Some("jigsaw"))),
+					.child(SelectOption::new(Tab::General, "General", Some("gear")))
+					.child(SelectOption::new(
+						Tab::Content,
+						"Content",
+						Some("honeycomb"),
+					))
+					.child(SelectOption::new(
+						Tab::Launch,
+						"Launch Settings",
+						Some("play"),
+					))
+					.child(SelectOption::new(Tab::Plugins, "Plugins", Some("jigsaw"))),
 			);
 
-		let tab_contents = match tab.read().as_deref() {
-			None => rect().into_element(),
-			Some("general") => GeneralTab {
+		let tab_contents = match &*tab.read() {
+			Tab::General => GeneralTab {
 				config_state,
 				parent_configs: PtrEq(parent_configs.clone()),
 			}
 			.into_element(),
-			Some("content") => AddonsConfig {
+			Tab::Content => AddonsConfig {
 				config_state,
 				parent_configs: PtrEq(parent_configs.clone()),
 			}
 			.into_element(),
-			Some("launch") => rect().into_element(),
-			Some("plugins") => rect().into_element(),
-			_ => rect().into_element(),
+			Tab::Launch => rect().into_element(),
+			Tab::Plugins => rect().into_element(),
 		};
 
 		let right_panel = rect().width(Size::flex(4.0)).child(tab_contents);
@@ -186,6 +192,14 @@ impl Component for ConfigModal {
 			.child(left_panel)
 			.child(right_panel)
 	}
+}
+
+#[derive(PartialEq, Clone)]
+enum Tab {
+	General,
+	Content,
+	Launch,
+	Plugins,
 }
 
 /// State objects for the config

@@ -3,11 +3,7 @@ use std::rc::Rc;
 use nitrolaunch::{
 	config_crate::{ConfigKind, instance::make_valid_instance_id, template::TemplateConfig},
 	instance::parse_loader_config,
-	shared::{
-		Side,
-		util::{from_string_json, to_string_json},
-		versions::VersionPattern,
-	},
+	shared::{Side, versions::VersionPattern},
 };
 
 use crate::{
@@ -134,40 +130,25 @@ impl Component for GeneralTab {
 		let show_side_field = self.config_state.ty.is_template()
 			|| (self.config_state.ty == ConfigKind::Instance && self.config_state.is_new);
 		let show_none_option = self.config_state.ty.is_template();
-		let side_str = match &*self.config_state.side.read() {
-			None => "none",
-			Some(Side::Client) => "client",
-			Some(Side::Server) => "server",
-		};
 		let side = self.config_state.side.clone();
 		let side_field = InlineSelect::new(
-			Selected::Single(side_str.into()),
+			Selected::Single(side.read().clone()),
 			Rc::new(move |value| {
-				let value = match value.single().as_str() {
-					"none" => None,
-					"client" => Some(Side::Client),
-					"server" => Some(Side::Server),
-					_ => unreachable!(),
-				};
-				side.clone().set(value);
+				side.clone().set(value.single_optional().flatten());
 			}),
 		)
 		.derived_value_owned(
-			self.config_state
-				.side
-				.read()
-				.as_ref()
-				.map(|x| x.to_string()),
+			self.config_state.side.read().clone().map(Some),
 			&self.parent_configs.0,
-			|x| x.instance.side.as_ref().map(|x| x.to_string()),
+			|x| x.instance.side.map(Some),
 		)
 		.maybe_child(show_none_option, || SelectOption::none())
 		.child(
-			SelectOption::new("client", "Client", Some("controller"))
+			SelectOption::new(Some(Side::Client), "Client", Some("controller"))
 				.tip("Standard Minecraft game"),
 		)
 		.child(
-			SelectOption::new("server", "Server", Some("server"))
+			SelectOption::new(Some(Side::Server), "Server", Some("server"))
 				.tip("Dedicated multiplayer server"),
 		);
 
@@ -182,18 +163,12 @@ impl Component for GeneralTab {
 		let minecraft_versions = minecraft_versions
 			.into_iter()
 			.rev()
-			.map(|x| SelectOption::new(&x, &x, None));
+			.map(|x| SelectOption::simple_or_none(Some(x)));
 		let version = self.config_state.version.clone();
 		let version_selector = Dropdown::new(
-			Selected::Single(
-				self.config_state
-					.version
-					.read()
-					.cloned()
-					.unwrap_or("none".into()),
-			),
+			Selected::Single(self.config_state.version.read().cloned()),
 			Rc::new(move |selected| {
-				version.clone().set(selected.single_optional());
+				version.clone().set(selected.single_optional().flatten());
 			}),
 		)
 		.allow_none()
@@ -287,34 +262,26 @@ impl Component for LoadersConfig {
 
 		let client_options = supported_loaders.iter().filter(|x| x.is_client()).map(|x| {
 			SelectOption::new_custom_icon(
-				&to_string_json(x),
+				Some(x.clone()),
 				&x.to_string(),
 				get_loader_icon(x).into_element(),
 			)
 		});
 		let server_options = supported_loaders.iter().filter(|x| x.is_server()).map(|x| {
 			SelectOption::new_custom_icon(
-				&to_string_json(x),
+				Some(x.clone()),
 				&x.to_string(),
 				get_loader_icon(x).into_element(),
 			)
 		});
 
-		let loader_str = self
-			.config_state
-			.client_loader
-			.read()
-			.as_ref()
-			.map(|x| to_string_json(x))
-			.unwrap_or("none".into());
 		let client_loader = self.config_state.client_loader.clone();
 		let client_field = Dropdown::new(
-			Selected::Single(loader_str),
+			Selected::Single(self.config_state.client_loader.read().clone()),
 			Rc::new(move |selected| {
-				let selected = selected
-					.single_optional()
-					.and_then(|x| from_string_json(&x).ok());
-				client_loader.clone().set(selected);
+				client_loader
+					.clone()
+					.set(selected.single_optional().flatten());
 			}),
 		)
 		.allow_none()
@@ -322,13 +289,10 @@ impl Component for LoadersConfig {
 			self.config_state
 				.client_loader
 				.read()
-				.as_ref()
-				.map(|x| to_string_json(x)),
+				.clone()
+				.map(|x| Some(x)),
 			&self.parent_configs.0,
-			|x| {
-				x.client_loader()
-					.map(|x| to_string_json(&parse_loader_config(x).0))
-			},
+			|x| x.client_loader().map(|x| Some(parse_loader_config(x).0)),
 		)
 		.children(client_options);
 		let field_name = if self.config_state.ty == ConfigKind::Instance {
@@ -347,21 +311,13 @@ impl Component for LoadersConfig {
 		let show_client_fields = self.config_state.ty.is_template()
 			|| *self.config_state.side.read() == Some(Side::Client);
 
-		let loader_str = self
-			.config_state
-			.server_loader
-			.read()
-			.as_ref()
-			.map(|x| to_string_json(x))
-			.unwrap_or("none".into());
 		let server_loader = self.config_state.server_loader.clone();
 		let server_field = Dropdown::new(
-			Selected::Single(loader_str),
+			Selected::Single(server_loader.read().clone()),
 			Rc::new(move |selected| {
-				let selected = selected
-					.single_optional()
-					.and_then(|x| from_string_json(&x).ok());
-				server_loader.clone().set(selected);
+				server_loader
+					.clone()
+					.set(selected.single_optional().flatten());
 			}),
 		)
 		.allow_none()
@@ -369,13 +325,10 @@ impl Component for LoadersConfig {
 			self.config_state
 				.server_loader
 				.read()
-				.as_ref()
-				.map(|x| to_string_json(x)),
+				.clone()
+				.map(|x| Some(x)),
 			&self.parent_configs.0,
-			|x| {
-				x.server_loader()
-					.map(|x| to_string_json(&parse_loader_config(x).0))
-			},
+			|x| x.server_loader().map(|x| Some(parse_loader_config(x).0)),
 		)
 		.children(server_options);
 		let field_name = if self.config_state.ty == ConfigKind::Instance {
@@ -402,10 +355,10 @@ impl Component for LoadersConfig {
 			.unwrap_or_default();
 		let options = client_loader_versions
 			.into_iter()
-			.map(|x| SelectOption::simple(&x));
+			.map(|x| SelectOption::simple_or_none(Some(x)));
 		let client_version = self.config_state.client_loader_version.clone();
 		let client_version_field = Dropdown::new(
-			Selected::new_single(
+			Selected::Single(
 				self.config_state
 					.client_loader_version
 					.read()
@@ -416,6 +369,7 @@ impl Component for LoadersConfig {
 				client_version.clone().set(
 					selected
 						.single_optional()
+						.flatten()
 						.map(|x| VersionPattern::from(&x))
 						.unwrap_or_default(),
 				);
@@ -438,10 +392,10 @@ impl Component for LoadersConfig {
 			.unwrap_or_default();
 		let options = server_loader_versions
 			.into_iter()
-			.map(|x| SelectOption::simple(&x));
+			.map(|x| SelectOption::simple_or_none(Some(x)));
 		let server_version = self.config_state.server_loader_version.clone();
 		let server_version_field = Dropdown::new(
-			Selected::new_single(
+			Selected::Single(
 				self.config_state
 					.server_loader_version
 					.read()
@@ -452,6 +406,7 @@ impl Component for LoadersConfig {
 				server_version.clone().set(
 					selected
 						.single_optional()
+						.flatten()
 						.map(|x| VersionPattern::from(&x))
 						.unwrap_or_default(),
 				);
