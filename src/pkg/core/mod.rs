@@ -1,6 +1,7 @@
 use std::collections::HashSet;
 
-use nitro_pkg::{PackageContentType, repo::RepoPkgEntry};
+use nitro_pkg::{PackageContentType, PkgRequest, PkgRequestSource, repo::RepoPkgEntry};
+use nitro_shared::{pkg::ArcPkgReq, versions::VersionPattern};
 
 macro_rules! define_core_packages {
 	($($pkg:literal,$ext:literal,$id:ident,$content:ident);*$(;)?) => {
@@ -66,12 +67,19 @@ pub fn is_core_package(package: &str) -> bool {
 	get_core_package(package).is_some()
 }
 
-pub fn get_all_core_packages() -> Vec<(String, RepoPkgEntry)> {
+pub fn get_all_core_packages() -> Vec<(ArcPkgReq, RepoPkgEntry)> {
 	let mut out = Vec::new();
 	for pkg in ALL_CORE_PACKAGE_IDS {
 		let content_type = get_core_package_content_type(pkg).expect("Content type should exist");
+		let req = PkgRequest::new(
+			*pkg,
+			PkgRequestSource::Repository,
+			VersionPattern::Any,
+			Some("core".into()),
+		)
+		.arc();
 		out.push((
-			pkg.to_string(),
+			req,
 			RepoPkgEntry {
 				url: None,
 				path: None,

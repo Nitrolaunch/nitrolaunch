@@ -147,10 +147,10 @@ fn main() -> anyhow::Result<()> {
 				if let Ok(package) = package {
 					previews.insert(
 						req_str,
-						Arc::new(PackageMetaAndProps {
-							meta: package.meta,
-							props: package.properties,
-						}),
+						PackageMetaAndProps {
+							meta: Arc::new(package.meta),
+							props: Arc::new(package.properties),
+						},
 					);
 				}
 			}

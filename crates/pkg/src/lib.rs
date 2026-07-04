@@ -200,13 +200,19 @@ pub fn is_open_source(meta: &PackageMetadata, properties: &PackageProperties) ->
 	true
 }
 
-/// Metadata and properties for a package
+/// Metadata and properties for a package. Note that PartialEq is implemented with pointers.
 #[derive(Clone, Serialize, Deserialize, Default)]
 pub struct PackageMetaAndProps {
 	/// Metadata
-	pub meta: PackageMetadata,
+	pub meta: Arc<PackageMetadata>,
 	/// Properties
-	pub props: PackageProperties,
+	pub props: Arc<PackageProperties>,
+}
+
+impl PartialEq for PackageMetaAndProps {
+	fn eq(&self, other: &Self) -> bool {
+		Arc::ptr_eq(&self.meta, &other.meta) && Arc::ptr_eq(&self.props, &other.props)
+	}
 }
 
 /// Results for a package search
@@ -217,5 +223,5 @@ pub struct PackageSearchResults {
 	/// The total number of results returned by the search, that weren't limited out
 	pub total_results: usize,
 	/// Limited versions of package metadata to be used for previews
-	pub previews: HashMap<String, Arc<PackageMetaAndProps>>,
+	pub previews: HashMap<String, PackageMetaAndProps>,
 }

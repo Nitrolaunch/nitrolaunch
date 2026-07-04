@@ -9,9 +9,11 @@ use nitrolaunch::{
 	config::Config,
 	config_crate::ConfigDeser,
 	io::{logging::Logger, paths::Paths},
+	pkg_crate::repo::RepoMetadata,
 	plugin::PluginManager,
+	plugin_crate::hook::hooks::AddCustomPackageRepositories,
 	shared::{
-		output::{Message, MessageContents, NoOp},
+		output::{Message, MessageContents, NitroOutput, NoOp},
 		pkg::{PackageDiff, ResolutionError},
 	},
 };
@@ -19,7 +21,10 @@ use reqwest::Client;
 use tokio::sync::{Mutex, broadcast, mpsc};
 
 use crate::{
-	components::{dialog::{tip::Tip, toast::Toast}, footer::FooterItem},
+	components::{
+		dialog::{tip::Tip, toast::Toast},
+		footer::FooterItem,
+	},
 	instance_manager::RunningInstanceManager,
 	ops::task::TaskManager,
 	output::{LauncherOutput, OutputInner},
@@ -208,6 +213,7 @@ pub struct BackState {
 	pub running_instances: RunningInstanceManager,
 	output_inner: OutputInner,
 	task_manager: Arc<Mutex<TaskManager>>,
+	cached_info: Arc<CachedInfo>,
 }
 
 impl BackState {
@@ -231,20 +237,26 @@ impl BackState {
 		let task_manager = Arc::new(Mutex::new(TaskManager::new(event_tx.clone())));
 		tokio::spawn(TaskManager::get_run_task(task_manager.clone()));
 
+		let output_inner = OutputInner {
+			event_tx: event_tx.clone(),
+			password_prompt: Arc::new(Mutex::new(None)),
+			yes_no_prompt: Arc::new(Mutex::new(None)),
+			passkeys: Arc::new(Mutex::new(HashMap::new())),
+			logger: logger_tx,
+		};
+
+		let mut o = LauncherOutput::new(&output_inner);
+		let cached_info = CachedInfo::new(&paths, &plugins, &mut o).await;
+
 		Ok(Self {
-			output_inner: OutputInner {
-				event_tx: event_tx.clone(),
-				password_prompt: Arc::new(Mutex::new(None)),
-				yes_no_prompt: Arc::new(Mutex::new(None)),
-				passkeys: Arc::new(Mutex::new(HashMap::new())),
-				logger: logger_tx,
-			},
+			output_inner,
 			task_manager,
 			event_tx,
 			paths,
 			plugins,
 			client: Client::new(),
 			running_instances,
+			cached_info: Arc::new(cached_info),
 		})
 	}
 
@@ -281,6 +293,10 @@ impl BackState {
 		let task_id = task_id.to_string();
 		tokio::spawn(async move { manager.lock().await.register_task(task_id, task) });
 	}
+
+	pub fn repos(&self) -> &HashMap<String, RepoMetadata> {
+		&self.cached_info.repos
+	}
 }
 
 /// Events sent from the backend
@@ -314,4 +330,29 @@ pub enum BackEvent {
 	ShowPackageDiffsPrompt {
 		diffs: Vec<PackageDiff>,
 	},
+}
+
+/// Information from plugins and such that is fetched on startup or reload once and then used
+struct CachedInfo {
+	repos: HashMap<String, RepoMetadata>,
+}
+
+impl CachedInfo {
+	async fn new(paths: &Paths, plugins: &PluginManager, o: &mut impl NitroOutput) -> Self {
+		let repos = if let Ok(repos) = plugins
+			.call_hook(AddCustomPackageRepositories, &(), &paths, o)
+			.await
+		{
+			if let Ok(repos) = repos.flatten_all_results(o).await {
+				repos
+			} else {
+				Vec::new()
+			}
+		} else {
+			Vec::new()
+		};
+		let repos = repos.into_iter().map(|x| (x.id, x.metadata)).collect();
+
+		Self { repos }
+	}
 }

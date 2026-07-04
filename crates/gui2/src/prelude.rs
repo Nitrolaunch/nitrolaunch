@@ -9,10 +9,10 @@ pub use crate::components::input::field;
 pub use crate::components::input::select::{Dropdown, InlineSelect, SelectOption};
 pub use crate::components::{
 	CustomEvents, CustomStyles, border_bottom, border_right, border_top, button, grid, icon_button,
-	segment,
+	segment, skeleton,
 };
 pub use crate::icons::icon;
-pub use crate::ops::ToastedMutationExt;
+pub use crate::ops::{ToastedMutationExt, ToastedQueryExt};
 pub use crate::state::{BackState, FrontChannel, use_front_state};
 pub use crate::theme::{Theme, use_theme};
 pub use crate::util::{NotEq, query_spawn};

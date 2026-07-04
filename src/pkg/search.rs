@@ -26,7 +26,7 @@ struct RepoState {
 pub struct PackageSearchSession {
 	repos: HashMap<String, RepoState>,
 	page_size: u8,
-	previews: Arc<DashMap<ArcPkgReq, Arc<PackageMetaAndProps>>>,
+	previews: Arc<DashMap<ArcPkgReq, PackageMetaAndProps>>,
 	results: BTreeMap<usize, ArcPkgReq>,
 	/// Used to check for search changes
 	last_search: Option<PackageSearchParameters>,
@@ -232,7 +232,9 @@ impl PackageSearchSession {
 			.enumerate()
 		{
 			let mut req = PkgRequest::parse(candidate.id, PkgRequestSource::Repository);
-			req.repository = Some(candidate.repo);
+			if req.repository.is_none() {
+				req.repository = Some(candidate.repo);
+			}
 			let req = req.arc();
 			out.results.push(req.clone());
 			self.results.insert(params.skip + i, req.clone());
@@ -284,7 +286,7 @@ impl PackageSearchSession {
 	}
 
 	/// Gets the previews map
-	pub fn previews(&self) -> &Arc<DashMap<ArcPkgReq, Arc<PackageMetaAndProps>>> {
+	pub fn previews(&self) -> &Arc<DashMap<ArcPkgReq, PackageMetaAndProps>> {
 		&self.previews
 	}
 

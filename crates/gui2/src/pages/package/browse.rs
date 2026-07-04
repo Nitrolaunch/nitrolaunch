@@ -1,20 +1,28 @@
+use std::rc::Rc;
+
 use nitrolaunch::{
 	pkg::search::{PackageMultiSearchResults, PackageSearchSession},
 	pkg_crate::PackageMetaAndProps,
 	shared::{
 		loaders::Loader,
 		pkg::{ArcPkgReq, PackageCategory, PackageKind, PackageSearchParameters},
+		util::from_string_json,
 	},
 };
 
 use crate::{
 	components::{
-		input::text::{TextInput, search_bar},
+		input::{
+			select::Selected,
+			text::{TextInput, search_bar},
+		},
 		nav::page_buttons::PageButtons,
+		tag::repo_tag,
 	},
 	ops::packages::{SearchPackages, SearchPackagesParams},
+	pages::package::view::PackageView,
 	prelude::*,
-	util::PtrEq,
+	util::assets::get_package_kind_icon,
 };
 
 const PAGE_SIZE: u8 = 16;
@@ -61,6 +69,10 @@ impl Component for BrowsePackagesPage {
 			}
 		});
 
+		let selected_pkg = use_state::<Option<ArcPkgReq>>(|| None);
+
+		let top_upper_bar = rect().width(Size::fill()).height(Size::percent(50.0));
+
 		let mut page2 = search_state.page.clone();
 		let page_buttons = PageButtons {
 			page: (*search_state.page.read()).into(),
@@ -68,12 +80,46 @@ impl Component for BrowsePackagesPage {
 			on_set: (move |new_page| page2.set(new_page as u16)).into(),
 		};
 		let search = TextInput::new(search_state.search.clone());
-		let top_upper_bar = rect().width(Size::fill()).height(Size::percent(50.0));
+
+		let pkg_ty = search_state.ty.clone();
+		let ty_selector = Dropdown::new(
+			Selected::Single(search_state.ty.read().to_string()),
+			Rc::new(move |selected| {
+				let selected = selected.single();
+				pkg_ty.clone().set(from_string_json(&selected).unwrap());
+			}),
+		)
+		.children(
+			[
+				PackageKind::Mod,
+				PackageKind::ResourcePack,
+				PackageKind::Datapack,
+				PackageKind::Plugin,
+				PackageKind::Shader,
+				PackageKind::Modpack,
+			]
+			.into_iter()
+			.map(|x| {
+				SelectOption::new(
+					&x.to_string(),
+					x.to_string_pretty(),
+					Some(get_package_kind_icon(x)),
+				)
+			}),
+		);
+
 		let top_lower_bar = rect()
 			.width(Size::fill())
 			.height(Size::percent(50.0))
 			.cont()
-			.child(rect().width(Size::flex(1.0)))
+			.child(
+				rect()
+					.width(Size::flex(1.0))
+					.height(Size::fill())
+					.padding(theme.gap)
+					.center()
+					.child(ty_selector),
+			)
 			.child(
 				rect()
 					.width(Size::flex(1.0))
@@ -97,24 +143,26 @@ impl Component for BrowsePackagesPage {
 			.child(top_upper_bar)
 			.child(top_lower_bar);
 
+		let is_loading = !results_query.read().state().is_ok();
 		let packages = results.read();
-		let packages = packages.results.iter().map(|req| {
-			let preview = search_session
-				.peek()
-				.previews()
-				.get(req)
-				.map(|x| PtrEq(x.clone()));
+		let packages_view = ScrollView::new().expanded().spacing(theme.gap);
+		let packages = if is_loading {
+			packages_view.children(
+				(0..PAGE_SIZE)
+					.map(|_| skeleton(Size::fill(), Size::px(64.0), &theme).into_element()),
+			)
+		} else {
+			packages_view.children(packages.results.iter().map(|req| {
+				let preview = search_session.peek().previews().get(req).map(|x| x.clone());
 
-			BrowseItem {
-				req: req.clone(),
-				preview,
-			}
-			.into_element()
-		});
-		let packages = ScrollView::new()
-			.expanded()
-			.spacing(theme.gap)
-			.children(packages);
+				BrowseItem {
+					req: req.clone(),
+					preview,
+					selected_package: selected_pkg.clone(),
+				}
+				.into_element()
+			}))
+		};
 		let left_bar = rect()
 			.width(Size::flex(1.0))
 			.height(Size::fill())
@@ -123,7 +171,14 @@ impl Component for BrowsePackagesPage {
 			.border(border_right(theme.border, theme.panel_border))
 			.child(packages);
 
-		let preview = rect().width(Size::flex(3.0)).height(Size::fill());
+		let preview = rect().width(Size::flex(3.0)).height(Size::fill()).maybe(
+			selected_pkg.read().is_some(),
+			|this| {
+				this.child(PackageView {
+					req: selected_pkg.peek().cloned().unwrap(),
+				})
+			},
+		);
 
 		rect().expanded().child(top_bar).child(
 			rect()
@@ -177,22 +232,31 @@ impl PackageSearchState {
 #[derive(PartialEq)]
 struct BrowseItem {
 	req: ArcPkgReq,
-	preview: Option<PtrEq<PackageMetaAndProps>>,
+	preview: Option<PackageMetaAndProps>,
+	selected_package: State<Option<ArcPkgReq>>,
 }
 
 impl Component for BrowseItem {
 	fn render(&self) -> impl IntoElement {
 		let theme = use_theme();
+		let back_state = use_consume::<BackState>();
 		let is_hovered = use_state(|| false);
 
-		let bg = if *is_hovered.read() {
+		let is_selected = self
+			.selected_package
+			.read()
+			.as_ref()
+			.is_some_and(|x| x == &self.req);
+		let bg = if is_selected {
+			theme.item_select
+		} else if *is_hovered.read() {
 			theme.panel_hover
 		} else {
 			theme.bg
 		};
 
-		let meta = self.preview.as_ref().map(|x| &x.0.meta);
-		let props = self.preview.as_ref().map(|x| &x.0.props);
+		let meta = self.preview.as_ref().map(|x| &x.meta);
+		let props = self.preview.as_ref().map(|x| &x.props);
 
 		let name = meta.and_then(|x| x.name.as_deref()).unwrap_or(&self.req.id);
 
@@ -210,6 +274,28 @@ impl Component for BrowseItem {
 			})
 			.unwrap_or(default_icon);
 
+		let req = self.req.clone();
+		let mut selected_package = self.selected_package.clone();
+
+		let repo = self
+			.req
+			.repository
+			.as_deref()
+			.map(|x| repo_tag(x, true, &back_state, &theme));
+		let details = rect()
+			.width(Size::flex(1.0))
+			.height(Size::fill())
+			.center()
+			.spacing(theme.gap)
+			.cross_align(Alignment::Start)
+			.child(
+				rect()
+					.horizontal()
+					.main_align(Alignment::Start)
+					.child(name.to_string()),
+			)
+			.maybe_child(repo);
+
 		rect()
 			.width(Size::fill())
 			.height(Size::px(64.0))
@@ -217,6 +303,10 @@ impl Component for BrowseItem {
 			.corner_radius(theme.round)
 			.background(bg)
 			.cont()
+			.spacing(0.0)
+			.on_press(move |_| {
+				selected_package.set_if_modified(Some(req.clone()));
+			})
 			.child(
 				rect()
 					.width(Size::px(64.0))
@@ -224,14 +314,6 @@ impl Component for BrowseItem {
 					.center()
 					.child(ico),
 			)
-			.child(
-				rect()
-					.width(Size::flex(1.0))
-					.height(Size::fill())
-					.center()
-					.horizontal()
-					.main_align(Alignment::Start)
-					.child(name.to_string()),
-			)
+			.child(details)
 	}
 }

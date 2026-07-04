@@ -56,6 +56,78 @@ pub enum ConditionalKeys<Q, K> {
 }
 
 #[derive(Clone, PartialEq, Eq, Hash)]
+pub struct ToastedQuery<Q: QueryCapability> {
+	query: Q,
+	back_state: Captured<BackState>,
+	success_message: Option<String>,
+	error_message: String,
+	_p: PhantomData<Q>,
+}
+
+impl<Q: QueryCapability> QueryCapability for ToastedQuery<Q>
+where
+	Q::Err: AnyhowError,
+{
+	type Ok = Q::Ok;
+	type Err = Q::Err;
+	type Keys = Q::Keys;
+
+	fn run(&self, keys: &Self::Keys) -> impl Future<Output = Result<Self::Ok, Self::Err>> {
+		async move {
+			let result = self.query.run(keys).await;
+
+			match &result {
+				Ok(..) => {
+					if let Some(success_message) = &self.success_message {
+						let _ = self
+							.back_state
+							.event_tx
+							.send(BackEvent::SuccessToast(success_message.clone()));
+					}
+				}
+				Err(e) => {
+					let _ = self.back_state.event_tx.send(BackEvent::ErrorToast(
+						self.error_message.clone(),
+						Some(e.as_err().to_string()),
+					));
+				}
+			}
+
+			result
+		}
+	}
+}
+
+pub trait ToastedQueryExt: QueryCapability {
+	fn toast(
+		self,
+		back_state: &BackState,
+		success_message: Option<&str>,
+		error_message: &str,
+	) -> ToastedQuery<Self>;
+}
+
+impl<Q: QueryCapability> ToastedQueryExt for Q
+where
+	Q::Err: AnyhowError,
+{
+	fn toast(
+		self,
+		back_state: &BackState,
+		success_message: Option<&str>,
+		error_message: &str,
+	) -> ToastedQuery<Self> {
+		ToastedQuery {
+			query: self,
+			back_state: Captured(back_state.clone()),
+			success_message: success_message.map(|x| x.to_string()),
+			error_message: error_message.to_string(),
+			_p: PhantomData,
+		}
+	}
+}
+
+#[derive(Clone, PartialEq, Eq, Hash)]
 pub struct ToastedMutation<M: MutationCapability> {
 	mutation: M,
 	back_state: Captured<BackState>,

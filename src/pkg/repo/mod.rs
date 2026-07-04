@@ -142,7 +142,7 @@ impl PackageRepository {
 		paths: &Paths,
 		client: &Client,
 		o: &mut impl NitroOutput,
-	) -> anyhow::Result<Vec<(String, RepoPkgEntry)>> {
+	) -> anyhow::Result<Vec<(ArcPkgReq, RepoPkgEntry)>> {
 		match self {
 			Self::Basic(repo) => repo.get_all_packages(paths, client, o).await,
 			Self::Core => Ok(get_all_core_packages()),
@@ -230,7 +230,7 @@ pub async fn get_all_packages(
 	paths: &Paths,
 	client: &Client,
 	o: &mut impl NitroOutput,
-) -> anyhow::Result<HashMap<String, RepoPkgEntry>> {
+) -> anyhow::Result<HashMap<ArcPkgReq, RepoPkgEntry>> {
 	let mut out = HashMap::new();
 	// Iterate in reverse to make sure that repos at the beginning take precendence
 	for repo in repos.iter().rev() {

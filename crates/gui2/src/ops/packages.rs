@@ -4,7 +4,7 @@ use anyhow::Context;
 use nitrolaunch::{
 	instance_crate::{addon::Addon, lock::InstanceLockfile},
 	pkg::search::{PackageMultiSearchResults, PackageSearchSession},
-	pkg_crate::{metadata::PackageMetadata, properties::PackageProperties},
+	pkg_crate::{PackageMetaAndProps, metadata::PackageMetadata, properties::PackageProperties},
 	shared::{
 		id::InstanceID,
 		output::{MessageContents, NitroOutput},
@@ -261,4 +261,46 @@ pub struct SearchPackagesParams {
 	pub search: PackageSearchParameters,
 	pub session: Captured<PackageSearchSession>,
 	pub repo: Option<String>,
+}
+
+#[derive(Clone, PartialEq, Eq, Hash)]
+pub struct FetchPackageDetails {
+	back_state: Captured<BackState>,
+}
+
+impl FetchPackageDetails {
+	pub fn new(back_state: BackState) -> Self {
+		Self {
+			back_state: Captured(back_state),
+		}
+	}
+}
+
+impl QueryCapability for FetchPackageDetails {
+	type Ok = PackageMetaAndProps;
+	type Err = anyhow::Error;
+	type Keys = ArcPkgReq;
+
+	fn run(&self, keys: &Self::Keys) -> impl Future<Output = Result<Self::Ok, Self::Err>> {
+		let back_state = self.back_state.clone();
+		let req = keys.clone();
+
+		query_spawn(async move {
+			let config = back_state.config().await?;
+
+			let mut o = back_state.output();
+			let package = config
+				.packages
+				.get(&req, &back_state.paths, &back_state.client, &mut o)
+				.await?;
+			let meta = package
+				.get_metadata(&back_state.paths, &back_state.client)
+				.await?;
+			let props = package
+				.get_properties(&back_state.paths, &back_state.client)
+				.await?;
+
+			Ok(PackageMetaAndProps { meta, props })
+		})
+	}
 }

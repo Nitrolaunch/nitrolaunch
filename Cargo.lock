@@ -2787,6 +2787,7 @@ dependencies = [
  "freya-engine",
  "freya-sdk",
  "paste",
+ "pulldown-cmark",
  "thiserror 2.0.18",
  "torin",
  "tracing",

@@ -6,7 +6,6 @@ use nitro_pkg::PackageContentType;
 use nitro_pkg::PackageMetaAndProps;
 use nitro_pkg::PackageSearchResults;
 use nitro_pkg::PkgRequest;
-use nitro_pkg::PkgRequestSource;
 use nitro_shared::output::MessageContents;
 use nitro_shared::output::NitroOutput;
 use nitro_shared::pkg::ArcPkgReq;
@@ -226,8 +225,8 @@ impl PkgRegistry {
 		let out = super::repo::get_all_packages(&self.repos, paths, client, o)
 			.await
 			.context("Failed to retrieve all packages from repos")?
-			.iter()
-			.map(|(id, ..)| Arc::new(PkgRequest::any(id.as_ref(), PkgRequestSource::Repository)))
+			.into_iter()
+			.map(|x| x.0)
 			.collect();
 
 		Ok(out)
@@ -367,13 +366,7 @@ impl PkgRegistry {
 					if let Ok(pkg) = self.get(&req, paths, client, o).await {
 						let meta = pkg.get_metadata(paths, client).await.unwrap_or_default();
 						let props = pkg.get_properties(paths, client).await.unwrap_or_default();
-						previews.insert(
-							req.to_string(),
-							Arc::new(PackageMetaAndProps {
-								meta: (*meta).clone(),
-								props: (*props).clone(),
-							}),
-						);
+						previews.insert(req.to_string(), PackageMetaAndProps { meta, props });
 					}
 				}
 			}

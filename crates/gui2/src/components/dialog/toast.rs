@@ -31,8 +31,8 @@ impl Component for Toasts {
 			}
 		});
 
-		let toasts_width = 200.0;
-		let toasts_height = 300.0;
+		let toasts_width = 300.0;
+		let toasts_height = 350.0;
 
 		let toasts = toasts
 			.into_iter()

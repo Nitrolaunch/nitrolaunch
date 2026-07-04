@@ -1,5 +1,8 @@
 use freya::{
-	components::{Button, ButtonColorsThemePartialExt, ButtonLayoutThemePartialExt},
+	components::{
+		Button, ButtonColorsThemePartialExt, ButtonLayoutThemePartialExt, Skeleton,
+		SkeletonThemePartialExt,
+	},
 	elements::{
 		extensions::{EventHandlersExt, StyleExt, TextStyleExt},
 		rect::Rect,
@@ -20,6 +23,7 @@ pub mod input;
 pub mod instance;
 pub mod nav;
 pub mod output_indicator;
+pub mod tag;
 
 pub const TOAST_TIP_LAYER: u8 = 3;
 
@@ -46,6 +50,14 @@ pub fn icon_button(icon: &str, theme: &Theme) -> Button {
 		.width(Size::px(size))
 		.height(Size::px(size))
 		.corner_radius(size / 2.0)
+}
+
+pub fn skeleton(width: Size, height: Size, theme: &Theme) -> Skeleton {
+	Skeleton::new(true)
+		.width(width)
+		.height(height)
+		.background(theme.item_hover)
+		.corner_radius(theme.round)
 }
 
 pub trait CustomStyles {

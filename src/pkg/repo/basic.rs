@@ -3,10 +3,15 @@ use std::{fmt::Display, path::PathBuf, sync::OnceLock};
 use anyhow::{Context, bail};
 use nitro_core::io::json_from_file;
 use nitro_net::download;
-use nitro_pkg::repo::{RepoIndex, RepoMetadata, RepoPkgEntry, get_api_url, get_index_url};
+use nitro_pkg::{
+	PkgRequest, PkgRequestSource,
+	repo::{RepoIndex, RepoMetadata, RepoPkgEntry, get_api_url, get_index_url},
+};
 use nitro_shared::{
 	output::{MessageContents, NitroOutput},
+	pkg::ArcPkgReq,
 	translate,
+	versions::VersionPattern,
 };
 use reqwest::Client;
 
@@ -166,14 +171,25 @@ impl BasicPackageRepository {
 		paths: &Paths,
 		client: &Client,
 		o: &mut impl NitroOutput,
-	) -> anyhow::Result<Vec<(String, RepoPkgEntry)>> {
+	) -> anyhow::Result<Vec<(ArcPkgReq, RepoPkgEntry)>> {
 		self.ensure_index(paths, client, o).await?;
 
 		let index = self.index.get().unwrap();
 		Ok(index
 			.packages
 			.iter()
-			.map(|(id, entry)| (id.clone(), entry.clone()))
+			.map(|(id, entry)| {
+				(
+					PkgRequest::new(
+						id.clone(),
+						PkgRequestSource::Repository,
+						VersionPattern::Any,
+						Some(self.id.clone()),
+					)
+					.arc(),
+					entry.clone(),
+				)
+			})
 			.collect())
 	}
 

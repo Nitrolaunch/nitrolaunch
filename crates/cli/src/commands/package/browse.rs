@@ -187,7 +187,7 @@ struct State<'a> {
 	/// Receiver for search results
 	results_rx: Receiver<PackageMultiSearchResults>,
 	/// Package previews map
-	previews: Arc<DashMap<ArcPkgReq, Arc<PackageMetaAndProps>>>,
+	previews: Arc<DashMap<ArcPkgReq, PackageMetaAndProps>>,
 	/// Finalized search results
 	results: PackageMultiSearchResults,
 	/// Receiver for package info
@@ -1100,7 +1100,7 @@ struct SearchParams {
 /// Info about a package
 struct PackageInfo {
 	req: ArcPkgReq,
-	preview: Arc<PackageMetaAndProps>,
+	preview: PackageMetaAndProps,
 	versions: Vec<DeclarativeAddonVersion>,
 }
 
@@ -1682,10 +1682,7 @@ async fn worker_thread(
 				let _ = package_info_tx
 					.send(PackageInfo {
 						req,
-						preview: Arc::new(PackageMetaAndProps {
-							meta: (*meta).clone(),
-							props: (*props).clone(),
-						}),
+						preview: PackageMetaAndProps { meta, props },
 						versions,
 					})
 					.await;
