@@ -8,8 +8,9 @@ pub use crate::components::dialog::tip::TipExt;
 pub use crate::components::input::field;
 pub use crate::components::input::select::{Dropdown, InlineSelect, SelectOption};
 pub use crate::components::{
-	CustomEvents, CustomStyles, border_bottom, border_right, border_top, button, grid, icon_button,
-	segment, skeleton,
+	CustomEvents, CustomStyles, FancyBorderExt, FancyBorderExtImage, border_bottom, border_left,
+	border_right, border_top, button, clip_text, grid, icon_button, img, placeholder, segment,
+	skeleton,
 };
 pub use crate::icons::icon;
 pub use crate::ops::{ToastedMutationExt, ToastedQueryExt};

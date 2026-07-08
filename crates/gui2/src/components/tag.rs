@@ -11,16 +11,11 @@ pub fn repo_tag(repo: &str, compact: bool, back_state: &BackState, theme: &Theme
 		.as_deref()
 		.map(|x| {
 			svg(x.as_bytes().to_vec())
-				.width(Size::px(12.0))
-				.height(Size::px(12.0))
+				.width(Size::px(14.0))
+				.height(Size::px(14.0))
 				.into_element()
 		})
 		.unwrap_or(icon("box", 12.0).into_element());
-	let ico = rect()
-		.width(Size::px(12.0))
-		.height(Size::px(12.0))
-		.center()
-		.child(ico);
 	let fg = meta
 		.text_color
 		.as_deref()
@@ -52,7 +47,7 @@ pub fn tag(
 		.center()
 		.horizontal()
 		.spacing(theme.gap)
-		.padding(theme.gap)
+		.padding(Gaps::new(0.0, theme.gap, 0.0, theme.gap))
 		.color(fg)
 		.border(theme.border(border))
 		.background(bg)

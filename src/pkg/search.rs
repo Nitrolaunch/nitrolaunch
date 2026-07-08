@@ -128,7 +128,7 @@ impl PackageSearchSession {
 		let mut repos: Vec<_> = reg
 			.repos
 			.iter()
-			.filter(|x| x.get_id() != "core")
+			.filter(|x| x.get_id() != "core" && x.get_id() != "std")
 			.map(|x| x.get_id().to_string())
 			.collect();
 		repos.sort();

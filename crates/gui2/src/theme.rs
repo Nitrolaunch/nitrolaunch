@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use freya::prelude::{Border, BorderAlignment, Color};
+use freya::prelude::{Border, BorderAlignment, Color, Fill};
 use serde::Deserialize;
 
 use crate::state::use_front_state;
@@ -141,7 +141,7 @@ impl Theme {
 		Border {
 			width: self.border2.into(),
 			fill: color.into(),
-			alignment: BorderAlignment::Outer,
+			alignment: BorderAlignment::Inner,
 		}
 	}
 }
@@ -156,8 +156,20 @@ pub fn use_theme() -> Arc<Theme> {
 #[derive(Clone, Copy, Deserialize)]
 pub struct HexColor(u32);
 
+impl HexColor {
+	pub fn to_color(self) -> Color {
+		self.into()
+	}
+}
+
 impl From<HexColor> for Color {
 	fn from(value: HexColor) -> Self {
 		Color::new(value.0)
+	}
+}
+
+impl From<HexColor> for Fill {
+	fn from(value: HexColor) -> Self {
+		value.to_color().into()
 	}
 }

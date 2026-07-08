@@ -49,7 +49,7 @@ impl Component for Toasts {
 			)
 			.width(Size::px(toasts_width))
 			.height(Size::px(toasts_height))
-			.layer(Layer::RelativeOverlay(TOAST_TIP_LAYER))
+			.layer(Layer::OverlayLevel(TOAST_TIP_LAYER))
 			.child(toasts);
 
 		rect()
@@ -89,7 +89,7 @@ impl Component for ToastElem {
 
 		let (fg, bg) = match self.toast.ty {
 			ToastType::Info => (theme.fg, theme.panel),
-			ToastType::Success => (theme.success, theme.primary_bg),
+			ToastType::Success => (theme.success, theme.success_bg),
 			ToastType::Warning => (theme.warning, theme.error_bg),
 			ToastType::Error => (theme.error, theme.error_bg),
 		};

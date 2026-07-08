@@ -1,18 +1,12 @@
 use freya::{
 	components::{
-		Button, ButtonColorsThemePartialExt, ButtonLayoutThemePartialExt, Skeleton,
-		SkeletonThemePartialExt,
-	},
-	elements::{
-		extensions::{EventHandlersExt, StyleExt, TextStyleExt},
-		rect::Rect,
-	},
-	prelude::{
-		Border, BorderAlignment, BorderWidth, ChildrenExt, Color, Component, ContainerExt,
-		ContainerSizeExt, ContainerWithContentExt, Content, Cursor, Element, IntoElement, Size,
-		State, WritableUtils, rect,
-	},
-	winit::window::CursorIcon,
+		Button, ButtonColorsThemePartialExt, ButtonLayoutThemePartialExt, ImageViewer, Skeleton,
+		SkeletonThemePartialExt, Uri,
+	}, elements::{
+		extensions::{ContainerPositionExt, EventHandlersExt, LayerExt, StyleExt, TextStyleExt}, label::{Label, label}, rect::Rect,
+	}, prelude::{
+		Border, BorderAlignment, BorderWidth, ChildrenExt, Color, Component, ContainerExt, ContainerSizeExt, ContainerWithContentExt, Content, Cursor, Element, IntoElement, Layer, Position, Size, State, TextOverflow, WritableUtils, rect,
+	}, winit::window::CursorIcon,
 };
 
 use crate::theme::{HexColor, Theme};
@@ -29,6 +23,10 @@ pub const TOAST_TIP_LAYER: u8 = 3;
 
 pub fn segment(child: impl IntoElement, width: f32) -> Rect {
 	rect().width(Size::flex(width)).child(child)
+}
+
+pub fn img(url: &str) -> ImageViewer {
+	ImageViewer::new(url.parse::<Uri>().unwrap_or_default())
 }
 
 pub fn button(theme: &Theme) -> Button {
@@ -58,6 +56,18 @@ pub fn skeleton(width: Size, height: Size, theme: &Theme) -> Skeleton {
 		.height(height)
 		.background(theme.item_hover)
 		.corner_radius(theme.round)
+}
+
+pub fn placeholder(text: &str, theme: &Theme) -> Rect {
+	rect().expanded().center().child(text).color(theme.fg3)
+}
+
+pub fn clip_text(text: &str) -> Label {
+	label()
+		.text(text.to_string())
+		.width(Size::fill())
+		.max_lines(1)
+		.text_overflow(TextOverflow::Ellipsis)
 }
 
 pub trait CustomStyles {
@@ -112,6 +122,43 @@ impl<T: ContainerSizeExt + StyleExt + ContainerWithContentExt + TextStyleExt> Cu
 				alignment: BorderAlignment::Inner,
 			}))
 			.background(bg)
+	}
+}
+
+pub trait FancyBorderExt {
+	/// Adds a shiny transparent border
+	fn shiny_border(self, theme: &Theme) -> Self;
+}
+
+impl FancyBorderExt for Rect {
+	fn shiny_border(mut self, theme: &Theme) -> Self {
+		let radius = self.get_style().corner_radius;
+		self.child(
+			rect()
+				.expanded()
+				.position(Position::new_absolute())
+				.border(theme.border(0x33cccccc))
+				.layer(Layer::Relative(2))
+				.corner_radius(radius),
+		)
+	}
+}
+
+pub trait FancyBorderExtImage {
+	/// Adds a shiny transparent border
+	fn shiny_border(self, corner_radius: f32, theme: &Theme) -> Self;
+}
+
+impl FancyBorderExtImage for ImageViewer {
+	fn shiny_border(self, corner_radius: f32, theme: &Theme) -> Self {
+		self.child(
+			rect()
+				.expanded()
+				.position(Position::new_absolute())
+				.border(theme.border(0x33cccccc))
+				.layer(Layer::Relative(2))
+				.corner_radius(corner_radius),
+		)
 	}
 }
 
@@ -282,6 +329,17 @@ pub fn border_right(width: f32, color: impl Into<Color>) -> Border {
 		fill: color.into(),
 		width: BorderWidth {
 			right: width,
+			..Default::default()
+		},
+		alignment: BorderAlignment::Inner,
+	}
+}
+
+pub fn border_left(width: f32, color: impl Into<Color>) -> Border {
+	Border {
+		fill: color.into(),
+		width: BorderWidth {
+			left: width,
 			..Default::default()
 		},
 		alignment: BorderAlignment::Inner,

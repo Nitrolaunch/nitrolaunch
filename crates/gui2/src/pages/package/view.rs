@@ -1,6 +1,11 @@
-use nitrolaunch::shared::pkg::ArcPkgReq;
+use itertools::Itertools;
+use nitrolaunch::{pkg_crate::metadata::PackageMetadata, shared::pkg::ArcPkgReq};
 
-use crate::{components::tag::repo_tag, ops::packages::FetchPackageDetails, prelude::*};
+use crate::{
+	components::{input::tabs::TopTabs, tag::repo_tag},
+	ops::packages::FetchPackageDetails,
+	prelude::*,
+};
 
 #[derive(PartialEq)]
 pub struct PackageView {
@@ -19,7 +24,7 @@ impl Component for PackageView {
 				"Failed to fetch package",
 			),
 		));
-		let mut tab = use_state(|| Tab::Description);
+		let tab = use_state(|| Tab::Description);
 
 		let details = details_query.read();
 		let details = details.state();
@@ -32,7 +37,7 @@ impl Component for PackageView {
 		let ico = if is_loading {
 			CircularLoader::new().size(48.0).into_element()
 		} else if let Some(ico) = &meta.icon {
-			ImageViewer::new(ico.parse::<Uri>().unwrap_or_default())
+			img(ico)
 				.error_renderer(move |_| default_icon.clone())
 				.width(Size::px(56.0))
 				.height(Size::px(56.0))
@@ -88,24 +93,29 @@ impl Component for PackageView {
 			.child(details);
 
 		let banner = meta.banner.as_ref().map(|x| {
-			let image = ImageViewer::new(x.parse::<Uri>().unwrap_or_default())
+			// let gradient = rect()
+			// 	.width(Size::percent(100.0))
+			// 	.height(Size::percent(101.0))
+			// 	.position(Position::new_absolute())
+			// 	.layer(1)
+			// 	.background(Fill::LinearGradient(Box::new(
+			// 		LinearGradient::new()
+			// 			.stop((Color::TRANSPARENT, 0.0))
+			// 			.stop((theme.bg, 100.0)),
+			// 	)));
+
+			let image = img(x)
 				.expanded()
 				.aspect_ratio(AspectRatio::Max)
 				.opacity(0.25)
-				.error_renderer(|_| rect().into_element());
-			let gradient = rect()
-				.expanded()
-				.position(Position::new_absolute())
-				.background_linear_gradient(
-					LinearGradient::new()
-						.stop((Color::TRANSPARENT, 0.0))
-						.stop((theme.bg, 100.0)),
-				);
+				.error_renderer(|_| rect().into_element())
+				.loading_placeholder(rect());
+
 			rect()
-				.expanded()
+				.width(Size::fill())
+				.height(Size::percent(100.0))
 				.position(Position::new_absolute())
 				.child(image)
-				.child(gradient)
 		});
 
 		let top_container = rect()
@@ -115,15 +125,145 @@ impl Component for PackageView {
 			.maybe_child(banner)
 			.child(top);
 
-		let main = rect().width(Size::fill()).height(Size::flex(1.0));
+		let loading_spinner = rect()
+			.expanded()
+			.center()
+			.child(CircularLoader::new())
+			.into_element();
+		let contents = match &*tab.read() {
+			Tab::Description => {
+				if let Some(long_description) = &meta.long_description {
+					println!("{long_description}");
+					let markdown = MarkdownViewer::new(long_description.clone())
+						.width(Size::fill())
+						.paragraph_size(14.0)
+						.padding(32.0)
+						.color(theme.fg)
+						.code_font_size(14.0)
+						.color_code(theme.fg)
+						.background_code(theme.item);
+					let markdown = ScrollView::new()
+						.expanded()
+						.direction(Direction::Vertical)
+						.child(markdown);
 
-		rect().expanded().child(top_container).child(main)
+					rect().expanded().child(markdown).into_element()
+				} else if is_loading {
+					loading_spinner
+				} else {
+					placeholder("No description provided", &theme).into_element()
+				}
+			}
+			Tab::Versions => rect().into_element(),
+			Tab::Gallery => {
+				if let Some(gallery) = meta.gallery.as_ref().filter(|x| !x.is_empty()) {
+					let items = gallery.iter().map(|x| {
+						rect()
+							.width(Size::fill())
+							.height(Size::px(180.0))
+							.corner_radius(theme.round2)
+							.shiny_border(&theme)
+							.child(
+								img(x)
+									.expanded()
+									.aspect_ratio(AspectRatio::Max)
+									.corner_radius(theme.round2),
+							)
+					});
+					let grid = grid(3, items).gap(theme.gap2);
+					ScrollView::new().expanded().child(grid).into_element()
+				} else if is_loading {
+					loading_spinner
+				} else {
+					placeholder("Gallery empty", &theme).into_element()
+				}
+			}
+		};
+		let main = rect()
+			.width(Size::fill())
+			.height(Size::flex(1.0))
+			.child(contents);
+
+		let tabs = TopTabs::new(tab)
+			.child(SelectOption::new(
+				Tab::Description,
+				"Description",
+				Some("text"),
+			))
+			.child(SelectOption::new(Tab::Versions, "Versions", Some("tag")))
+			.child(SelectOption::new(Tab::Gallery, "Gallery", Some("picture")));
+
+		let main = rect()
+			.width(Size::flex(4.0))
+			.height(Size::fill())
+			.flex()
+			.child(tabs)
+			.child(main);
+
+		let right = rect()
+			.width(Size::flex(1.5))
+			.height(Size::fill())
+			.border(border_left(theme.border, theme.panel_border))
+			.child(properties(&self.req, &meta, &theme));
+
+		let bottom = rect()
+			.width(Size::fill())
+			.height(Size::flex(1.0))
+			.flex()
+			.horizontal()
+			.child(main)
+			.child(right);
+
+		rect().expanded().flex().child(top_container).child(bottom)
 	}
 }
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Clone)]
 enum Tab {
 	Description,
 	Versions,
 	Gallery,
+}
+
+fn properties(req: &ArcPkgReq, meta: &PackageMetadata, theme: &Theme) -> Rect {
+	rect()
+		.expanded()
+		.padding(theme.gap)
+		.spacing(theme.gap)
+		.child(property("hashtag", "ID", req, theme))
+		.maybe(meta.authors.is_some(), |this| {
+			this.child(property(
+				"user",
+				"Authors",
+				meta.authors.as_ref().unwrap().iter().join("  "),
+				theme,
+			))
+		})
+}
+
+fn property(ico: &'static str, title: &str, value: impl ToString, theme: &Theme) -> Rect {
+	rect()
+		.width(Size::fill())
+		.height(Size::px(32.0))
+		.corner_radius(theme.round)
+		.cont()
+		.cross_align(Alignment::Center)
+		.padding(Gaps::new(0.0, (32.0 - 16.0) / 2.0, 0.0, 0.0))
+		.child(
+			rect()
+				.width(Size::px(32.0))
+				.height(Size::fill())
+				.center()
+				.child(icon(ico, 16.0)),
+		)
+		.child(
+			rect()
+				.margin(Gaps::new(0.0, theme.gap, 0.0, 0.0))
+				.child(title),
+		)
+		.child(
+			segment(clip_text(&value.to_string()).color(theme.fg2), 1.0)
+				.cross_align(Alignment::End)
+				.overflow(Overflow::Clip),
+		)
 }

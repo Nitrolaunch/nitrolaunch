@@ -224,7 +224,7 @@ impl Component for ContentItemElem {
 						.icon
 						.as_deref()
 						.map(|x| {
-							ImageViewer::new(x.parse::<Uri>().unwrap_or_default())
+							img(x)
 								.width(Size::px(40.0))
 								.height(Size::px(40.0))
 								.corner_radius(theme.round)

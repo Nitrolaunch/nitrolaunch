@@ -163,14 +163,17 @@ impl Component for BrowsePackagesPage {
 			.border(border_right(theme.border, theme.panel_border))
 			.child(packages);
 
-		let preview = rect().width(Size::flex(3.0)).height(Size::fill()).maybe(
-			selected_pkg.read().is_some(),
-			|this| {
+		let preview = rect()
+			.width(Size::flex(3.5))
+			.height(Size::fill())
+			.maybe(selected_pkg.read().is_some(), |this| {
 				this.child(PackageView {
 					req: selected_pkg.peek().cloned().unwrap(),
 				})
-			},
-		);
+			})
+			.maybe(selected_pkg.read().is_none(), |this| {
+				this.child(placeholder("Select a package", &theme))
+			});
 
 		rect().expanded().child(top_bar).child(
 			rect()
@@ -266,27 +269,41 @@ impl Component for BrowseItem {
 			})
 			.unwrap_or(default_icon);
 
+		let description = meta.and_then(|x| x.description.as_deref()).map(|x| {
+			rect()
+				.width(Size::flex(1.0))
+				.child(clip_text(x).color(theme.fg3).font_size(12.0))
+		});
+
 		let req = self.req.clone();
 		let mut selected_package = self.selected_package.clone();
 
-		let repo = self
-			.req
-			.repository
-			.as_deref()
-			.map(|x| repo_tag(x, true, &back_state, &theme));
+		let repo = self.req.repository.as_deref().map(|x| {
+			rect()
+				.cross_align(Alignment::End)
+				.margin(Gaps::new(0.0, theme.gap2, 0.0, 0.0))
+				.child(repo_tag(x, true, &back_state, &theme))
+		});
+		let upper_details = rect()
+			.width(Size::fill())
+			.cont()
+			.cross_align(Alignment::Center)
+			.child(segment(name, 1.0))
+			.maybe_child(repo);
+		let lower_details = rect()
+			.width(Size::fill())
+			.cont()
+			.spacing(theme.gap2)
+			.cross_align(Alignment::Center)
+			.maybe_child(description);
 		let details = rect()
 			.width(Size::flex(1.0))
 			.height(Size::fill())
 			.center()
 			.spacing(theme.gap)
 			.cross_align(Alignment::Start)
-			.child(
-				rect()
-					.horizontal()
-					.main_align(Alignment::Start)
-					.child(name.to_string()),
-			)
-			.maybe_child(repo);
+			.child(upper_details)
+			.child(lower_details);
 
 		rect()
 			.width(Size::fill())
