@@ -73,7 +73,7 @@ impl PackageSearchSession {
 		client: &Client,
 		o: &mut impl NitroOutput,
 	) -> anyhow::Result<PackageMultiSearchResults> {
-		self.check_invalidate(&params, None);
+		self.check_invalidate(&params, Some(repo));
 		if let Some(results) = self.get_results(params.skip) {
 			let total_results = self.get_total_results(Some(repo)).unwrap_or_default();
 			return Ok(PackageMultiSearchResults {
@@ -125,29 +125,14 @@ impl PackageSearchSession {
 			});
 		}
 
-		let mut repos: Vec<_> = reg
-			.repos
-			.iter()
-			.filter(|x| x.get_id() != "core" && x.get_id() != "std")
-			.map(|x| x.get_id().to_string())
-			.collect();
-		repos.sort();
-		let repo_count = repos.len().max(1);
-
-		let base_share = self.page_size as usize / repo_count;
-		let extra = self.page_size as usize % repo_count;
+		self.update_repos(&reg);
 
 		let page = params.skip / self.page_size as usize;
 
+		// Initial search, assuming each repo gives equal share of results.
 		let mut tasks = JoinSet::new();
-
-		for (i, repo) in repos.iter().enumerate() {
-			let state = self.repos.entry(repo.clone()).or_default();
-
-			let mut share = base_share;
-			if (page + i) % repo_count < extra {
-				share += 1;
-			}
+		for (repo, state) in self.repos.iter() {
+			let share = self.get_share(self.repos.len());
 
 			let repo_skip = page * share;
 
@@ -159,7 +144,7 @@ impl PackageSearchSession {
 
 			let mut search = params.clone();
 			search.skip = repo_skip;
-			search.count = share as u8;
+			search.count = self.page_size;
 
 			let reg = reg.clone();
 			let paths = paths.clone();
@@ -186,8 +171,20 @@ impl PackageSearchSession {
 
 		let mut total_results = 0usize;
 
+		// Recalulate the share for each repo based on the number of repos that actually returned results.
+		let mut results = Vec::new();
+		let mut final_repo_count = 0;
 		while let Some(result) = tasks.join_next().await {
-			let (repo, results) = result??;
+			let result = result??;
+			if result.1.total_results > 0 {
+				final_repo_count += 1;
+			}
+			results.push(result);
+		}
+
+		for result in results {
+			let (repo, results) = result;
+			let share = self.get_share(final_repo_count);
 
 			self.repos.get_mut(&repo).unwrap().total_results = Some(results.total_results);
 
@@ -200,7 +197,7 @@ impl PackageSearchSession {
 				);
 			}
 
-			for id in results.results {
+			for id in results.results.into_iter().take(share) {
 				let mut hasher = std::collections::hash_map::DefaultHasher::new();
 
 				params.search.hash(&mut hasher);
@@ -270,6 +267,20 @@ impl PackageSearchSession {
 
 		self.last_search = Some(params.clone());
 		self.last_repo = repo.map(|x| x.to_string());
+	}
+
+	fn update_repos(&mut self, reg: &PkgRegistry) {
+		self.repos = reg
+			.repos
+			.iter()
+			.filter(|x| x.get_id() != "core" && x.get_id() != "std")
+			.map(|x| (x.get_id().to_string(), RepoState::default()))
+			.collect()
+	}
+
+	fn get_share(&self, repo_count: usize) -> usize {
+		let repo_count = repo_count.max(1);
+		self.page_size as usize / repo_count
 	}
 
 	/// Gets a cached slice of results

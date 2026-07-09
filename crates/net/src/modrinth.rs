@@ -550,10 +550,12 @@ pub async fn search_projects(
 				)
 			})
 			.collect::<Vec<_>>();
-		if !categories.is_empty() {
-			let categories = categories.join(",");
-			facets.push(format!("[{categories}]"));
+		if categories.is_empty() {
+			return Ok(SearchResults::default());
 		}
+
+		let categories = categories.join(",");
+		facets.push(format!("[{categories}]"));
 	};
 
 	let facets_inside = facets.join(",");
@@ -570,7 +572,7 @@ pub async fn search_projects(
 	download::json(url, client).await
 }
 
-#[derive(Deserialize, Serialize, Clone)]
+#[derive(Deserialize, Serialize, Clone, Default)]
 pub struct SearchResults {
 	/// The results
 	pub hits: Vec<SearchedProject>,

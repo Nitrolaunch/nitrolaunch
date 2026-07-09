@@ -1,6 +1,6 @@
 use crate::download::{self, user_agent};
 use anyhow::Context;
-use nitro_shared::pkg::{PackageCategory, PackageSearchParameters};
+use nitro_shared::pkg::{PackageCategory, PackageKind, PackageSearchParameters};
 use reqwest::{Client, StatusCode};
 use serde::{Deserialize, Serialize};
 
@@ -130,9 +130,9 @@ pub async fn search_packs(
 	params: PackageSearchParameters,
 	client: &Client,
 ) -> anyhow::Result<Vec<PackSearchResult>> {
-	if params.count == 0 {
+	let Some(filters) = create_search_filters(&params) else {
 		return Ok(Vec::new());
-	}
+	};
 
 	let limit = if params.count > 100 {
 		100
@@ -145,8 +145,6 @@ pub async fn search_packs(
 		String::new()
 	};
 	let page = params.skip / params.count as usize + 1;
-
-	let filters = create_search_filters(params.minecraft_versions, params.categories);
 
 	let url = format!(
 		"{API_URL}/packs?limit={limit}{search}&page={page}{filters}&scope=data&scope=meta.rawId"
@@ -178,13 +176,15 @@ pub async fn count_packs(
 	params: PackageSearchParameters,
 	client: &Client,
 ) -> anyhow::Result<usize> {
+	let Some(mut filters) = create_search_filters(&params) else {
+		return Ok(0);
+	};
+
 	let search = if let Some(search) = params.search {
 		format!("search={search}")
 	} else {
 		String::new()
 	};
-
-	let mut filters = create_search_filters(params.minecraft_versions, params.categories);
 
 	if search.is_empty()
 		&& let Some(stripped) = filters.strip_prefix("&")
@@ -197,24 +197,40 @@ pub async fn count_packs(
 	download::json(url, client).await
 }
 
-fn create_search_filters(
-	minecraft_versions: Vec<String>,
-	categories: Vec<PackageCategory>,
-) -> String {
-	let versions = minecraft_versions
-		.into_iter()
+/// Creates filters for the search. If the returned value is None, then the parameters will lead to a search that contains no results.
+fn create_search_filters(params: &PackageSearchParameters) -> Option<String> {
+	if params.count == 0 {
+		return None;
+	}
+
+	if !params.types.is_empty()
+		&& !params
+			.types
+			.iter()
+			.all(|x| *x == PackageKind::Datapack || *x == PackageKind::ResourcePack)
+	{
+		return None;
+	}
+
+	let versions = params
+		.minecraft_versions
+		.iter()
 		.map(|x| format!("&version={x}"))
 		.collect::<Vec<_>>()
 		.join("");
 
-	let categories = categories
-		.into_iter()
-		.filter_map(|x| convert_category(x))
+	let categories = params
+		.categories
+		.iter()
+		.filter_map(|x| convert_category(*x))
 		.map(|x| format!("&category={x}"))
-		.collect::<Vec<_>>()
-		.join("");
+		.collect::<Vec<_>>();
+	if categories.is_empty() && !params.categories.is_empty() {
+		return None;
+	}
+	let categories = categories.join("");
 
-	format!("{versions}{categories}")
+	Some(format!("{versions}{categories}"))
 }
 
 /// Get the URL to a Smithed pack gallery entry
