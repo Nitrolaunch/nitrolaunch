@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use crate::{components::input::Derivable, prelude::*};
+use crate::{components::input::Derivable, prelude::*, theme::Colorway};
 
 #[derive(PartialEq)]
 pub struct InlineSelect<T: PartialEq + Clone> {
@@ -147,6 +147,13 @@ impl<T: PartialEq + Clone + 'static> Component for InlineSelectOption<T> {
 					.color(theme.template)
 					.background(theme.template_bg)
 			})
+			.maybe(
+				self.is_selected && self.option.selected_colorway.is_some(),
+				|mut this| {
+					this.get_style().borders.clear();
+					this.colorway(self.option.selected_colorway.unwrap(), &theme)
+				},
+			)
 			.maybe(self.is_selected, |this| this.font_weight(FontWeight::BOLD))
 			.maybe(!self.fit, |this| this.width(Size::flex(1.0)))
 			.on_press(move |_| {
@@ -161,7 +168,7 @@ impl<T: PartialEq + Clone + 'static> Component for InlineSelectOption<T> {
 			.maybe(self.option.tip.is_some(), |this| {
 				this.tip(&front_state, self.option.tip.as_deref().unwrap())
 			})
-			.child(self.option.title.as_str())
+			.maybe_child(Some(self.option.title.as_str()).filter(|x| !x.is_empty()))
 	}
 }
 
@@ -257,8 +264,8 @@ impl<T: PartialEq + Clone + 'static> Component for Dropdown<T> {
 			.center()
 			.child(preview);
 
-		let option_count = if self.options.len() > 5 {
-			5.5
+		let option_count = if self.options.len() > 7 {
+			7.5
 		} else {
 			self.options.len() as f32
 		};
@@ -379,6 +386,7 @@ pub struct SelectOption<T: PartialEq + Clone> {
 	pub title: String,
 	pub icon: Option<Element>,
 	pub tip: Option<String>,
+	pub selected_colorway: Option<Colorway>,
 }
 
 impl<T: PartialEq + Clone> SelectOption<T> {
@@ -397,6 +405,7 @@ impl<T: PartialEq + Clone> SelectOption<T> {
 			title: title.into(),
 			icon: ico.map(|x| icon(x, 16.0).into_element()),
 			tip: None,
+			selected_colorway: None,
 		}
 	}
 
@@ -406,11 +415,17 @@ impl<T: PartialEq + Clone> SelectOption<T> {
 			title: title.into(),
 			icon: Some(ico),
 			tip: None,
+			selected_colorway: None,
 		}
 	}
 
 	pub fn tip(mut self, tip: &str) -> Self {
 		self.tip = Some(tip.into());
+		self
+	}
+
+	pub fn selected_colorway(mut self, colorway: Colorway) -> Self {
+		self.selected_colorway = Some(colorway);
 		self
 	}
 }

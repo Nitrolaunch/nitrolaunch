@@ -2,14 +2,21 @@ use freya::{
 	components::{
 		Button, ButtonColorsThemePartialExt, ButtonLayoutThemePartialExt, ImageViewer, Skeleton,
 		SkeletonThemePartialExt, Uri,
-	}, elements::{
-		extensions::{ContainerPositionExt, EventHandlersExt, LayerExt, StyleExt, TextStyleExt}, label::{Label, label}, rect::Rect,
-	}, prelude::{
-		Border, BorderAlignment, BorderWidth, ChildrenExt, Color, Component, ContainerExt, ContainerSizeExt, ContainerWithContentExt, Content, Cursor, Element, IntoElement, Layer, Position, Size, State, TextOverflow, WritableUtils, rect,
-	}, winit::window::CursorIcon,
+	},
+	elements::{
+		extensions::{ContainerPositionExt, EventHandlersExt, LayerExt, StyleExt, TextStyleExt},
+		label::{Label, label},
+		rect::Rect,
+	},
+	prelude::{
+		Border, BorderAlignment, BorderWidth, ChildrenExt, Color, Component, ContainerExt,
+		ContainerSizeExt, ContainerWithContentExt, Content, Cursor, Element, IntoElement, Layer,
+		Position, Size, State, TextOverflow, WritableUtils, rect,
+	},
+	winit::window::CursorIcon,
 };
 
-use crate::theme::{HexColor, Theme};
+use crate::theme::{Colorway, HexColor, Theme};
 
 pub mod dialog;
 pub mod footer;
@@ -17,6 +24,7 @@ pub mod input;
 pub mod instance;
 pub mod nav;
 pub mod output_indicator;
+pub mod pkg;
 pub mod tag;
 
 pub const TOAST_TIP_LAYER: u8 = 3;
@@ -80,6 +88,9 @@ pub trait CustomStyles {
 	/// Sets flex content
 	fn flex(self) -> Self;
 
+	/// Sets a colorway on this element
+	fn colorway(self, colorway: Colorway, theme: &Theme) -> Self;
+
 	/// Sets full item colorway based off hover / select state
 	fn item_colorway(self, theme: &Theme, hovered: bool, selected: bool) -> Self;
 
@@ -98,6 +109,12 @@ impl<T: ContainerSizeExt + StyleExt + ContainerWithContentExt + TextStyleExt> Cu
 
 	fn flex(self) -> Self {
 		self.content(Content::Flex)
+	}
+
+	fn colorway(self, colorway: Colorway, theme: &Theme) -> Self {
+		self.color(colorway.fg)
+			.border(theme.border(colorway.border))
+			.background(colorway.bg)
 	}
 
 	fn item_colorway(self, theme: &Theme, hovered: bool, selected: bool) -> Self {

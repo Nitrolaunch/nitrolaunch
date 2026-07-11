@@ -173,3 +173,20 @@ impl From<HexColor> for Fill {
 		value.to_color().into()
 	}
 }
+
+#[derive(Clone, Copy, PartialEq)]
+pub struct Colorway {
+	pub fg: Color,
+	pub bg: Color,
+	pub border: Color,
+}
+
+impl Colorway {
+	pub fn new(fg: impl Into<Color>, bg: impl Into<Color>, border: impl Into<Color>) -> Self {
+		Self {
+			fg: fg.into(),
+			bg: bg.into(),
+			border: border.into(),
+		}
+	}
+}

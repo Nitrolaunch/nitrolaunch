@@ -16,6 +16,7 @@ use crate::{
 			text::{TextInput, search_bar},
 		},
 		nav::page_buttons::PageButtons,
+		pkg::RepoSelector,
 		tag::repo_tag,
 	},
 	ops::packages::{SearchPackages, SearchPackagesParams},
@@ -33,10 +34,9 @@ impl Component for BrowsePackagesPage {
 	fn render(&self) -> impl IntoElement {
 		let theme = use_theme();
 		let back_state = use_consume::<BackState>();
-		let mut repo = use_state::<Option<String>>(|| None);
 		let search_session = use_state(|| PackageSearchSession::new(PAGE_SIZE));
 
-		let search_state = PackageSearchState::new();
+		let search_state = PackageSearchState::new(&back_state);
 		let search_state2 = search_state.clone();
 		let search = use_memo(move || search_state2.to_search_params());
 
@@ -70,7 +70,22 @@ impl Component for BrowsePackagesPage {
 
 		let selected_pkg = use_state::<Option<ArcPkgReq>>(|| None);
 
-		let top_upper_bar = rect().width(Size::fill()).height(Size::percent(50.0));
+		let top_upper_bar = rect()
+			.width(Size::fill())
+			.height(Size::percent(50.0))
+			.cont()
+			.child(
+				rect()
+					.width(Size::flex(1.0))
+					.height(Size::fill())
+					.padding(theme.gap)
+					.center()
+					.child(RepoSelector {
+						repo: search_state.repo.clone(),
+					}),
+			)
+			.child(rect().width(Size::flex(1.0)).height(Size::fill()))
+			.child(rect().width(Size::flex(1.0)).height(Size::fill()));
 
 		let mut page2 = search_state.page.clone();
 		let page_buttons = PageButtons {
@@ -199,8 +214,8 @@ struct PackageSearchState {
 }
 
 impl PackageSearchState {
-	fn new() -> Self {
-		Self {
+	fn new(back_state: &BackState) -> Self {
+		let out = Self {
 			repo: use_state(|| None),
 			page: use_state(|| 0),
 			search: use_state(|| String::new()),
@@ -208,7 +223,43 @@ impl PackageSearchState {
 			categories: use_state(|| Vec::new()),
 			mc_versions: use_state(|| Vec::new()),
 			loaders: use_state(|| Vec::new()),
-		}
+		};
+
+		let mut state2 = out.clone();
+		let back_state = back_state.clone();
+		use_side_effect(move || {
+			state2.repo.read();
+			state2.search.read();
+			state2.ty.read();
+			state2.categories.read();
+			state2.mc_versions.read();
+			state2.loaders.read();
+
+			state2.page.set_if_modified(0);
+
+			// Handle what package types and categories are available based on the selected repository
+			if let Some(repo) = &*state2.repo.peek() {
+				if let Some(repo) = back_state.repos().get(repo) {
+					if !repo.package_types.is_empty()
+						&& !repo.package_types.contains(&*state2.ty.peek())
+					{
+						state2.ty.set(repo.package_types[0]);
+					}
+
+					if !repo.package_categories.is_empty()
+						&& !state2
+							.categories
+							.peek()
+							.iter()
+							.all(|x| repo.package_categories.contains(x))
+					{
+						state2.categories.set(Vec::new());
+					}
+				}
+			}
+		});
+
+		out
 	}
 
 	fn to_search_params(&self) -> PackageSearchParameters {
@@ -281,7 +332,7 @@ impl Component for BrowseItem {
 		let repo = self.req.repository.as_deref().map(|x| {
 			rect()
 				.cross_align(Alignment::End)
-				.margin(Gaps::new(0.0, theme.gap2, 0.0, 0.0))
+				.margin(Gaps::new(0.0, theme.gap2 * 2.0, 0.0, 0.0))
 				.child(repo_tag(x, true, &back_state, &theme))
 		});
 		let upper_details = rect()

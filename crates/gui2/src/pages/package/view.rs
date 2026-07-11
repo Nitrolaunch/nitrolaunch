@@ -93,17 +93,6 @@ impl Component for PackageView {
 			.child(details);
 
 		let banner = meta.banner.as_ref().map(|x| {
-			// let gradient = rect()
-			// 	.width(Size::percent(100.0))
-			// 	.height(Size::percent(101.0))
-			// 	.position(Position::new_absolute())
-			// 	.layer(1)
-			// 	.background(Fill::LinearGradient(Box::new(
-			// 		LinearGradient::new()
-			// 			.stop((Color::TRANSPARENT, 0.0))
-			// 			.stop((theme.bg, 100.0)),
-			// 	)));
-
 			let image = img(x)
 				.expanded()
 				.aspect_ratio(AspectRatio::Max)
@@ -167,6 +156,7 @@ impl Component for PackageView {
 								img(x)
 									.expanded()
 									.aspect_ratio(AspectRatio::Max)
+									.image_cover(ImageCover::Center)
 									.corner_radius(theme.round2),
 							)
 					});

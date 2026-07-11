@@ -70,6 +70,7 @@ impl Component for ControlInput {
 					title: x.name.clone(),
 					icon: None,
 					tip: x.description.clone(),
+					selected_colorway: None,
 				});
 
 				if *dropdown {

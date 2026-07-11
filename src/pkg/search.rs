@@ -125,14 +125,23 @@ impl PackageSearchSession {
 			});
 		}
 
+		let is_first_search = self.repos.is_empty();
 		self.update_repos(&reg);
 
 		let page = params.skip / self.page_size as usize;
+		let repo_count = if is_first_search {
+			self.repos.len()
+		} else {
+			self.repos
+				.iter()
+				.filter(|x| x.1.total_results.unwrap_or_default() > 0)
+				.count()
+		};
 
 		// Initial search, assuming each repo gives equal share of results.
 		let mut tasks = JoinSet::new();
 		for (repo, state) in self.repos.iter() {
-			let share = self.get_share(self.repos.len());
+			let share = self.get_share(repo_count);
 
 			let repo_skip = page * share;
 
