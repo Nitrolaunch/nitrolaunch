@@ -4,6 +4,7 @@ use anyhow::Context;
 use nitrolaunch::{
 	config::modifications::{ConfigModification, apply_modifications_and_write},
 	config_crate::package::PackageConfigDeser,
+	instance::{Instance, update::manager::UpdateSettings},
 	instance_crate::{addon::Addon, lock::InstanceLockfile},
 	pkg::search::{PackageMultiSearchResults, PackageSearchSession},
 	pkg_crate::{
@@ -11,9 +12,9 @@ use nitrolaunch::{
 		properties::PackageProperties,
 	},
 	shared::{
-		Side,
+		Side, UpdateDepth,
 		id::{InstanceID, TemplateID},
-		output::{MessageContents, NitroOutput},
+		output::{MessageContents, NitroOutput, NoOp},
 		pkg::{ArcPkgReq, PackageSearchParameters},
 	},
 };
@@ -439,6 +440,53 @@ impl MutationCapability for InstallPackage {
 
 					ConfigModification::UpdateInstance(instance_id.clone(), inst_config)
 				}
+				PackageInstallLocation::TemplateModpack(template_id) => {
+					let template = config
+						.templates
+						.get(&template_id)
+						.context("Template does not exist")?;
+					let mut template = template.clone();
+					template.instance.modpack = Some(keys.0.to_string().into());
+
+					ConfigModification::UpdateTemplate(template_id.clone(), template)
+				}
+				PackageInstallLocation::NewInstanceModpack(instance_id) => {
+					o.set_task("install_modpack");
+
+					let core = config
+						.get_core(
+							None,
+							&UpdateSettings {
+								depth: UpdateDepth::Shallow,
+								offline_auth: true,
+							},
+							&back_state.client,
+							&config.plugins,
+							&back_state.paths,
+							&mut NoOp,
+						)
+						.await?;
+
+					let version_manifest = core
+						.get_version_manifest(None, UpdateDepth::Full, &mut NoOp)
+						.await?;
+
+					let config = Instance::create_from_modpack_package(
+						&instance_id,
+						&keys.0,
+						Side::Client,
+						version_manifest.list.clone(),
+						&config.packages,
+						&config.plugins,
+						&back_state.client,
+						&back_state.paths,
+						&mut o,
+					)
+					.await
+					.context("Failed to import the new instance")?;
+
+					ConfigModification::AddInstance(instance_id, config)
+				}
 			};
 
 			apply_modifications_and_write(
@@ -461,4 +509,6 @@ pub enum PackageInstallLocation {
 	Template(TemplateID, Option<Side>),
 	BaseTemplate(Option<Side>),
 	InstanceModpack(InstanceID),
+	TemplateModpack(TemplateID),
+	NewInstanceModpack(InstanceID),
 }

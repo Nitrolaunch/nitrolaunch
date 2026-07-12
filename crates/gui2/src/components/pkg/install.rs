@@ -9,7 +9,7 @@ use nitrolaunch::{
 use crate::{
 	components::{
 		dialog::modal::{MODAL_MEDIUM_HEIGHT, MODAL_MEDIUM_WIDTH, Modal, ModalButton},
-		input::tabs::TopTabs,
+		input::{tabs::TopTabs, text::TextInput},
 	},
 	ops::{
 		instance::{FetchItems, InstanceItemInfo, InstancesAndTemplates},
@@ -41,6 +41,7 @@ impl Component for PackageInstallModal {
 		let items_query = use_query(FetchItems::new(back_state.clone()));
 		let tab = use_state(|| Tab::Instance);
 		let selected_item = use_state::<Option<String>>(|| None);
+		let new_instance_id = use_state(|| String::new());
 
 		let tab2 = tab.clone();
 		let mut selected_item2 = selected_item.clone();
@@ -68,10 +69,10 @@ impl Component for PackageInstallModal {
 			.height(Size::px(48.0))
 			.padding(theme.gap2 * 2.0)
 			.horizontal()
-            .spacing(theme.gap)
-            .cross_align(Alignment::Center)
-            .color(theme.fg2)
-            .border(border_bottom(theme.border, theme.panel_border))
+			.spacing(theme.gap2)
+			.cross_align(Alignment::Center)
+			.color(theme.fg2)
+			.border(border_bottom(theme.border, theme.panel_border))
 			.child(icon("tag", 12.0))
 			.child(version_indicator);
 
@@ -81,7 +82,7 @@ impl Component for PackageInstallModal {
 		let items = items.ok().unwrap_or(&default_items);
 
 		let tab_contents = match &*tab.read() {
-			Tab::Instance | Tab::ModpackInstance => {
+			Tab::Instance => {
 				let out = grid(
 					3,
 					items.instances.iter().map(|x| Item {
@@ -108,6 +109,15 @@ impl Component for PackageInstallModal {
 			Tab::BaseTemplate => rect()
 				.center()
 				.child(placeholder("Package will be installed globally", &theme))
+				.into_element(),
+			Tab::ModpackInstance => rect()
+				.width(Size::fill())
+                .padding(theme.gap2)
+				.child(field(
+					"ID for new instance",
+					&theme,
+					TextInput::new(new_instance_id),
+				))
 				.into_element(),
 		};
 
@@ -141,20 +151,28 @@ impl Component for PackageInstallModal {
 							let Some(selected) = selected_item.read().clone() else {
 								return;
 							};
-							PackageInstallLocation::Instance(selected.into())
+							if is_modpack {
+								PackageInstallLocation::InstanceModpack(selected.into())
+							} else {
+								PackageInstallLocation::Instance(selected.into())
+							}
 						}
 						Tab::Template => {
 							let Some(selected) = selected_item.read().clone() else {
 								return;
 							};
-							PackageInstallLocation::Template(selected.into(), None)
+							if is_modpack {
+								PackageInstallLocation::TemplateModpack(selected.into())
+							} else {
+								PackageInstallLocation::Template(selected.into(), None)
+							}
 						}
 						Tab::BaseTemplate => PackageInstallLocation::BaseTemplate(None),
 						Tab::ModpackInstance => {
 							let Some(selected) = selected_item.read().clone() else {
 								return;
 							};
-							PackageInstallLocation::InstanceModpack(selected.into())
+							PackageInstallLocation::NewInstanceModpack(selected.into())
 						}
 					};
 

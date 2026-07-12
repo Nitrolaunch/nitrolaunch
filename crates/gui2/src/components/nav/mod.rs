@@ -2,7 +2,6 @@ use crate::{components::dialog::toast::Toasts, prelude::*, routing::PageCategory
 
 pub mod page_buttons;
 pub mod router;
-pub mod tabbed_body;
 
 #[derive(PartialEq)]
 pub struct NavBar {

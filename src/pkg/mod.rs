@@ -21,7 +21,7 @@ use nitro_shared::try_3;
 use nitro_shared::util::DeserListOrSingle;
 
 use std::borrow::Cow;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::fs;
 use std::future::Future;
 use std::path::PathBuf;
