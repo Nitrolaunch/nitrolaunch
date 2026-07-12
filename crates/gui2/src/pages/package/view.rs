@@ -2,9 +2,10 @@ use itertools::Itertools;
 use nitrolaunch::{pkg_crate::metadata::PackageMetadata, shared::pkg::ArcPkgReq};
 
 use crate::{
-	components::{input::tabs::TopTabs, tag::repo_tag},
+	components::{input::tabs::TopTabs, pkg::versions::PackageVersions, tag::repo_tag},
 	ops::packages::FetchPackageDetails,
 	prelude::*,
+	util::PtrEq,
 };
 
 #[derive(PartialEq)]
@@ -143,7 +144,12 @@ impl Component for PackageView {
 					placeholder("No description provided", &theme).into_element()
 				}
 			}
-			Tab::Versions => rect().into_element(),
+			Tab::Versions => PackageVersions {
+				req: self.req.clone(),
+				meta: PtrEq(meta.clone()),
+				props: PtrEq(props.clone()),
+			}
+			.into_element(),
 			Tab::Gallery => {
 				if let Some(gallery) = meta.gallery.as_ref().filter(|x| !x.is_empty()) {
 					let items = gallery.iter().map(|x| {

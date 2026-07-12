@@ -121,6 +121,10 @@ impl InstanceItemInfo {
 			is_new: false,
 		}
 	}
+
+	pub fn name(&self) -> &str {
+		self.name.as_deref().unwrap_or(self.id.as_str())
+	}
 }
 
 #[derive(Clone, Default)]
@@ -337,6 +341,14 @@ impl MutationCapability for SaveConfig {
 				}
 				ConfigKind::BaseTemplate => {
 					raw_config.base_template = Some(keys.config.0);
+					apply_modifications_and_write(
+						&mut raw_config,
+						Vec::new(),
+						&back_state.paths,
+						&back_state.plugins,
+						&mut NoOp,
+					)
+					.await?;
 					return Ok(());
 				}
 			};

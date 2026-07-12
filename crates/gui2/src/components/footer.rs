@@ -1,14 +1,17 @@
-use nitrolaunch::config_crate::ConfigKind;
+use nitrolaunch::{config_crate::ConfigKind, shared::pkg::ArcPkgReq};
 
 use crate::{
 	components::{
 		instance::running_instances::RunningInstances, output_indicator::OutputIndicator,
+		pkg::install::PackageInstallModal,
 	},
 	ops::{
 		instance::InstanceItemInfo,
 		launch::{LaunchInstance, LaunchInstanceParams},
+		packages::FetchPackageDetails,
 	},
 	prelude::*,
+	util::PtrEq,
 };
 
 #[derive(PartialEq)]
@@ -63,6 +66,7 @@ impl Component for FooterButton {
 		let front_state = use_front_state();
 		let back_state = use_consume::<BackState>();
 		let launch_instance = use_mutation(LaunchInstance::new(back_state));
+		let mut show_install_modal = use_state(|| false);
 
 		let left = rect().height(Size::fill()).width(Size::flex(1.0));
 
@@ -73,6 +77,7 @@ impl Component for FooterButton {
 		};
 
 		let item = self.item.clone();
+		let mut show_install_modal2 = show_install_modal.clone();
 		let on_press = move |_| match &item {
 			FooterItem::None => {}
 			FooterItem::InstanceOrTemplate(info) => match info.ty {
@@ -89,6 +94,9 @@ impl Component for FooterButton {
 						.set_configured_item(Some(info.get_config_item()));
 				}
 			},
+			FooterItem::InstallPackage(..) => {
+				show_install_modal2.set(true);
+			}
 		};
 
 		let center = rect()
@@ -123,6 +131,56 @@ impl Component for FooterButton {
 			.child(left)
 			.child(center)
 			.child(right)
+			.maybe(*show_install_modal.read(), |this| {
+				this.child(InstallModalHandler {
+					req: match &self.item {
+						FooterItem::InstallPackage(req) => req.clone(),
+						_ => unreachable!(),
+					},
+					on_close: EventHandler::new(move |_| show_install_modal.set(false)),
+				})
+			})
+	}
+}
+
+#[derive(PartialEq)]
+struct InstallModalHandler {
+	req: ArcPkgReq,
+	on_close: EventHandler<()>,
+}
+
+impl Component for InstallModalHandler {
+	fn render(&self) -> impl IntoElement {
+		let back_state = use_consume::<BackState>();
+		let details_query = use_query(Query::new(
+			self.req.clone(),
+			FetchPackageDetails::new(back_state.clone()).toast(
+				&back_state,
+				None,
+				"Failed to fetch package",
+			),
+		));
+
+		PackageInstallModal {
+			req: self.req.clone(),
+			meta: PtrEq(
+				details_query
+					.read()
+					.state()
+					.ok()
+					.map(|x| x.meta.clone())
+					.unwrap_or_default(),
+			),
+			props: PtrEq(
+				details_query
+					.read()
+					.state()
+					.ok()
+					.map(|x| x.props.clone())
+					.unwrap_or_default(),
+			),
+			on_close: self.on_close.clone(),
+		}
 	}
 }
 
@@ -131,6 +189,7 @@ impl Component for FooterButton {
 pub enum FooterItem {
 	None,
 	InstanceOrTemplate(InstanceItemInfo),
+	InstallPackage(ArcPkgReq),
 }
 
 impl FooterItem {
@@ -145,6 +204,7 @@ impl FooterItem {
 				ty: ConfigKind::Template | ConfigKind::BaseTemplate,
 				..
 			}) => "properties",
+			Self::InstallPackage(..) => "download",
 		}
 	}
 
@@ -159,6 +219,7 @@ impl FooterItem {
 				ty: ConfigKind::Template | ConfigKind::BaseTemplate,
 				..
 			}) => "Edit",
+			Self::InstallPackage(..) => "Install",
 		}
 	}
 }

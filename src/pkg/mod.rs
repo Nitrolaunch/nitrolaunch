@@ -375,7 +375,7 @@ impl Package {
 		};
 
 		// Combine the same content version across multiple addons into a single version if possible
-		let mut versions_with_ids = HashMap::new();
+		let mut versions_with_ids = Vec::new();
 		let mut versions_without_ids = Vec::new();
 
 		for addon in contents.addons.values() {
@@ -388,8 +388,8 @@ impl Package {
 					};
 
 				if let Some(content_version) = content_version {
-					if !versions_with_ids.contains_key(content_version) {
-						versions_with_ids.insert(content_version.clone(), version);
+					if !versions_with_ids.iter().any(|(c, _)| c == content_version) {
+						versions_with_ids.push((content_version.clone(), version));
 					}
 				} else {
 					versions_without_ids.push(version);
@@ -399,7 +399,7 @@ impl Package {
 
 		Ok(versions_without_ids
 			.into_iter()
-			.chain(versions_with_ids.into_values())
+			.chain(versions_with_ids.into_iter().map(|(_, v)| v))
 			.map(Cow::Borrowed)
 			.collect())
 	}

@@ -137,7 +137,7 @@ impl FrontState {
 	}
 
 	fn check_route_change(&mut self, prev_route: Page) {
-		if prev_route == Page::Home && self.navigator.route() != &Page::Home {
+		if self.navigator.route() != &prev_route {
 			self.footer = FooterItem::None;
 			self.invalidate(FrontChannel::FooterItem);
 		}

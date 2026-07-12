@@ -70,6 +70,7 @@ impl Component for ConfigPage {
 			.cancel_button()
 			.button(ModalButton {
 				title: "Save".into(),
+				icon: "check".into(),
 				on_click: EventHandler::from(move |_| {
 					let successful = (on_submit.read().0)();
 					if successful {

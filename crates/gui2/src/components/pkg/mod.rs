@@ -4,6 +4,9 @@ use itertools::Itertools;
 
 use crate::{components::input::select::Selected, prelude::*, theme::Colorway};
 
+pub mod install;
+pub mod versions;
+
 #[derive(PartialEq)]
 pub struct RepoSelector {
 	pub repo: State<Option<String>>,

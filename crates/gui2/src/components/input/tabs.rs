@@ -66,6 +66,11 @@ impl<T: PartialEq + Clone + 'static> TopTabs<T> {
 		self.tabs.push(child);
 		self
 	}
+
+	pub fn children(mut self, children: impl Iterator<Item = SelectOption<T>>) -> Self {
+		self.tabs.extend(children);
+		self
+	}
 }
 
 impl<T: PartialEq + Clone + 'static> Component for TopTabs<T> {

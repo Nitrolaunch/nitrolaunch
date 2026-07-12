@@ -2,11 +2,17 @@ use std::{collections::HashMap, sync::Arc};
 
 use anyhow::Context;
 use nitrolaunch::{
+	config::modifications::{ConfigModification, apply_modifications_and_write},
+	config_crate::package::PackageConfigDeser,
 	instance_crate::{addon::Addon, lock::InstanceLockfile},
 	pkg::search::{PackageMultiSearchResults, PackageSearchSession},
-	pkg_crate::{PackageMetaAndProps, metadata::PackageMetadata, properties::PackageProperties},
+	pkg_crate::{
+		PackageMetaAndProps, declarative::DeclarativeAddonVersion, metadata::PackageMetadata,
+		properties::PackageProperties,
+	},
 	shared::{
-		id::InstanceID,
+		Side,
+		id::{InstanceID, TemplateID},
 		output::{MessageContents, NitroOutput},
 		pkg::{ArcPkgReq, PackageSearchParameters},
 	},
@@ -303,4 +309,156 @@ impl QueryCapability for FetchPackageDetails {
 			Ok(PackageMetaAndProps { meta, props })
 		})
 	}
+}
+
+#[derive(Clone, PartialEq, Eq, Hash)]
+pub struct FetchPackageContentVersions {
+	back_state: Captured<BackState>,
+}
+
+impl FetchPackageContentVersions {
+	pub fn new(back_state: BackState) -> Self {
+		Self {
+			back_state: Captured(back_state),
+		}
+	}
+}
+
+impl QueryCapability for FetchPackageContentVersions {
+	type Ok = Vec<DeclarativeAddonVersion>;
+	type Err = anyhow::Error;
+	type Keys = ArcPkgReq;
+
+	fn run(&self, keys: &Self::Keys) -> impl Future<Output = Result<Self::Ok, Self::Err>> {
+		let back_state = self.back_state.clone();
+		let req = keys.clone();
+
+		query_spawn(async move {
+			let config = back_state.config().await?;
+
+			let mut o = back_state.output();
+			let package = config
+				.packages
+				.get(&req, &back_state.paths, &back_state.client, &mut o)
+				.await?;
+			let versions = package
+				.get_content_versions(&back_state.paths, &back_state.client)
+				.await?;
+
+			Ok(versions.into_iter().map(|x| x.into_owned()).collect())
+		})
+	}
+}
+
+#[derive(Clone, PartialEq, Eq, Hash)]
+pub struct InstallPackage {
+	back_state: Captured<BackState>,
+}
+
+impl InstallPackage {
+	pub fn new(back_state: BackState) -> Self {
+		Self {
+			back_state: Captured(back_state),
+		}
+	}
+}
+
+impl MutationCapability for InstallPackage {
+	type Ok = ();
+	type Err = anyhow::Error;
+	type Keys = (ArcPkgReq, PackageInstallLocation);
+
+	fn run(&self, keys: &Self::Keys) -> impl Future<Output = Result<Self::Ok, Self::Err>> {
+		let back_state = self.back_state.clone();
+		let keys = keys.clone();
+
+		query_spawn(async move {
+			let config = back_state.config().await?;
+			let mut raw_config = back_state.raw_config().await?;
+			let mut o = back_state.output();
+
+			let modification = match keys.1 {
+				PackageInstallLocation::Instance(instance_id) => {
+					let instance = config
+						.instances
+						.get(&instance_id)
+						.context("Instance does not exist")?;
+
+					let mut inst_config = instance.original_config().clone();
+					inst_config
+						.packages
+						.push(PackageConfigDeser::Basic(keys.0.to_string().into()));
+
+					ConfigModification::UpdateInstance(instance_id.clone(), inst_config)
+				}
+				PackageInstallLocation::Template(template_id, side) => {
+					let template = config
+						.templates
+						.get(&template_id)
+						.context("Template does not exist")?;
+					let mut template = template.clone();
+
+					let pkg = PackageConfigDeser::Basic(keys.0.to_string().into());
+					match side {
+						Some(Side::Client) => template.packages.add_client_package(pkg),
+						Some(Side::Server) => template.packages.add_server_package(pkg),
+						None => template.packages.add_global_package(pkg),
+					}
+
+					ConfigModification::UpdateTemplate(template_id.clone(), template)
+				}
+				PackageInstallLocation::BaseTemplate(side) => {
+					let mut template = raw_config.base_template.clone().unwrap_or_default();
+
+					let pkg = PackageConfigDeser::Basic(keys.0.to_string().into());
+					match side {
+						Some(Side::Client) => template.packages.add_client_package(pkg),
+						Some(Side::Server) => template.packages.add_server_package(pkg),
+						None => template.packages.add_global_package(pkg),
+					}
+
+					raw_config.base_template = Some(template);
+					apply_modifications_and_write(
+						&mut raw_config,
+						Vec::new(),
+						&back_state.paths,
+						&back_state.plugins,
+						&mut o,
+					)
+					.await?;
+					return Ok(());
+				}
+				PackageInstallLocation::InstanceModpack(instance_id) => {
+					let instance = config
+						.instances
+						.get(&instance_id)
+						.context("Instance does not exist")?;
+
+					let mut inst_config = instance.original_config().clone();
+					inst_config.modpack = Some(keys.0.to_string().into());
+
+					ConfigModification::UpdateInstance(instance_id.clone(), inst_config)
+				}
+			};
+
+			apply_modifications_and_write(
+				&mut raw_config,
+				vec![modification],
+				&back_state.paths,
+				&back_state.plugins,
+				&mut o,
+			)
+			.await?;
+
+			Ok(())
+		})
+	}
+}
+
+#[derive(Clone, PartialEq, Eq, Hash)]
+pub enum PackageInstallLocation {
+	Instance(InstanceID),
+	Template(TemplateID, Option<Side>),
+	BaseTemplate(Option<Side>),
+	InstanceModpack(InstanceID),
 }

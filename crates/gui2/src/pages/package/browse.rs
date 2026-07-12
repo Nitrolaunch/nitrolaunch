@@ -11,6 +11,7 @@ use nitrolaunch::{
 
 use crate::{
 	components::{
+		footer::FooterItem,
 		input::{
 			select::Selected,
 			text::{TextInput, search_bar},
@@ -33,6 +34,7 @@ pub struct BrowsePackagesPage;
 impl Component for BrowsePackagesPage {
 	fn render(&self) -> impl IntoElement {
 		let theme = use_theme();
+		let front_state = use_front_state();
 		let back_state = use_consume::<BackState>();
 		let search_session = use_state(|| PackageSearchSession::new(PAGE_SIZE));
 
@@ -69,6 +71,15 @@ impl Component for BrowsePackagesPage {
 		});
 
 		let selected_pkg = use_state::<Option<ArcPkgReq>>(|| None);
+		use_side_effect(move || {
+			if let Some(req) = &*selected_pkg.read() {
+				front_state
+					.write()
+					.set_footer(FooterItem::InstallPackage(req.clone()));
+			} else {
+				front_state.write().set_footer(FooterItem::None);
+			}
+		});
 
 		let top_upper_bar = rect()
 			.width(Size::fill())

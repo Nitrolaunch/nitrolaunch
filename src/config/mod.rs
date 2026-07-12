@@ -54,7 +54,7 @@ pub struct Config {
 	pub accounts: AccountManager,
 	/// Instances
 	pub instances: HashMap<InstanceID, Instance>,
-	/// templates
+	/// Unconsolidated templates
 	pub templates: HashMap<TemplateID, TemplateConfig>,
 	/// Consolidated templates
 	pub consolidated_templates: HashMap<TemplateID, TemplateConfig>,

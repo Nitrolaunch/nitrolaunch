@@ -2,6 +2,8 @@ use crate::prelude::*;
 
 pub const MODAL_DEFAULT_WIDTH: f32 = 600.0;
 pub const MODAL_DEFAULT_HEIGHT: f32 = 400.0;
+pub const MODAL_MEDIUM_WIDTH: f32 = 800.0;
+pub const MODAL_MEDIUM_HEIGHT: f32 = 600.0;
 pub const MODAL_LARGE_WIDTH: f32 = 1000.0;
 pub const MODAL_LARGE_HEIGHT: f32 = 750.0;
 
@@ -56,6 +58,8 @@ impl Component for ModalBase {
 					rect()
 						.width(Size::fill())
 						.height(Size::px(self.size.1))
+						.border(theme.border(theme.panel_border))
+						.corner_radius(theme.round2)
 						.child(self.child.clone().unwrap()),
 				)
 			})
@@ -116,6 +120,7 @@ impl Modal {
 		let on_close = self.on_close.clone();
 		self.button(ModalButton {
 			title: "Cancel".into(),
+			icon: "delete".into(),
 			on_click: on_close,
 			active: false,
 		})
@@ -197,12 +202,15 @@ impl Component for Modal {
 						.on_press(move |_| on_click.call(()))
 						.clickable()
 						.center()
+						.horizontal()
+						.spacing(theme.gap)
+						.child(icon(&x.icon, 16.0))
 						.child(x.title.as_str())
 						.into_element()
 				});
 				let bottom_bar = rect()
 					.width(Size::fill())
-					.height(Size::px(32.0))
+					.height(Size::px(36.0))
 					.horizontal()
 					.flex()
 					.border(border_top(theme.border, theme.panel_border))
@@ -227,6 +235,7 @@ impl Component for Modal {
 #[derive(PartialEq)]
 pub struct ModalButton {
 	pub title: String,
+	pub icon: String,
 	pub on_click: EventHandler<()>,
 	pub active: bool,
 }

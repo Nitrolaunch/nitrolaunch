@@ -34,7 +34,7 @@ impl Component for Tips {
 					.maybe(front_state.read().tip().is_none(), |this| this.opacity(0.0))
 					// Prevent quickly hovering the tip from freezing it in place
 					.interactive(false)
-					.child(icon("info", 16.0))
+					.child(icon("info", 12.0))
 					.child(tip.tip.as_ref()),
 			)
 	}
