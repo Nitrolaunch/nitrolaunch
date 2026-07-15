@@ -112,7 +112,7 @@ dashmap = "7.0.0-rc2"
 directories = "5.0.0"
 discord-rich-presence = "1.1.0"
 freya = { version = "0.4.0-rc.23", features = ["query", "radio", "remote-asset", "markdown"], git = "https://github.com/marc2332/freya.git" }
-freya-core = "0.4.0-rc.23"
+freya-core = { version = "0.4.0-rc.23", git = "https://github.com/marc2332/freya.git" }
 glob = "0.3.1"
 hex = "0.4.3"
 home = "=0.5.11"

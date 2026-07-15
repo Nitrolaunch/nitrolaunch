@@ -1,6 +1,7 @@
 use crate::ops::instance::InstanceItemInfo;
 use crate::pages::config::ConfiguredItem;
 use crate::prelude::*;
+use crate::routing::Page;
 use crate::util::assets::get_instance_icon;
 use nitrolaunch::config_crate::ConfigKind;
 use nitrolaunch::shared::Side;
@@ -190,7 +191,10 @@ impl Component for InstanceListItem {
 					ConfigKind::Instance => {
 						front_state
 							.write()
-							.set_configured_item(Some(info.get_config_item()));
+							.navigate(Page::Instance(info.id.clone()));
+						// front_state
+						// 	.write()
+						// 	.set_configured_item(Some(info.get_config_item()));
 					}
 					ConfigKind::Template | ConfigKind::BaseTemplate => {
 						front_state

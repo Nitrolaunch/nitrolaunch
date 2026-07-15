@@ -38,17 +38,18 @@ impl Component for Toasts {
 			.into_iter()
 			.map(|x| ToastElem { toast: x.clone() }.into_element());
 		let toasts = ScrollView::new()
-			.expanded()
+			.width(Size::fill())
+			.height(Size::auto())
+			.max_height(Size::px(toasts_height))
 			.spacing(theme.gap)
 			.children(toasts);
 		let toasts = rect()
 			.position(
 				Position::new_absolute()
 					.left(16.0 + theme.gap - toasts_width)
-					.bottom(-toasts_height - theme.gap),
+					.top(theme.input_height + theme.gap),
 			)
 			.width(Size::px(toasts_width))
-			.height(Size::px(toasts_height))
 			.layer(Layer::OverlayLevel(TOAST_TIP_LAYER))
 			.child(toasts);
 

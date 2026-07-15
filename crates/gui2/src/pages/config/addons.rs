@@ -59,6 +59,8 @@ impl Component for AddonsConfig {
 		let search = use_state(|| String::new());
 		let side = use_state::<Option<Side>>(|| None);
 
+		let open_states = use_state::<HashSet<String>>(|| HashSet::new());
+
 		let modpack = self.config_state.modpack.clone();
 		let packages = self.config_state.packages.clone();
 		let results = use_memo(move || {
@@ -87,12 +89,6 @@ impl Component for AddonsConfig {
 		let default_packages = Arc::new(HashMap::new());
 
 		let packages = use_memo(move || {
-			unsafe {
-				(*((&packages as *const _) as *const State<Query<ConditionalQuery<FetchPackages>>>))
-					.read()
-			};
-			// packages.query.read();
-			// println!("Packages {:?}", packages.peek().state());
 			let packages = packages.read();
 			let packages = packages.state();
 			PtrEq(packages.ok().unwrap_or(&default_packages).clone())
@@ -109,13 +105,18 @@ impl Component for AddonsConfig {
 		});
 
 		let items = VirtualScrollView::new_with_data(
-			(packages.read().cloned(), processed_items.read().cloned()),
-			move |i, (packages, processed_items)| {
+			(
+				packages.read().cloned(),
+				processed_items.read().cloned(),
+				open_states.read().cloned(),
+			),
+			move |i, (packages, processed_items, open_states)| {
 				let item = processed_items.get(i).unwrap();
 
 				ContentItemElem {
 					item: item.clone(),
 					packages: packages.0.clone(),
+					is_open: open_states.contains(&item.id.to_string()),
 				}
 				.into_element()
 			},
@@ -195,6 +196,23 @@ enum Filter {
 struct ContentItemElem {
 	item: ContentItem,
 	packages: Arc<HashMap<ArcPkgReq, anyhow::Result<PkgInfo>>>,
+	is_open: bool,
+}
+
+impl ContentItemElem {
+	fn base_height(&self) -> f32 {
+		if self.item.is_modpack() { 76.0 } else { 64.0 }
+	}
+
+	fn height(&self, theme: &Theme) -> f32 {
+		let mut height = self.base_height();
+		if self.is_open {
+			height += self.item.locked_addons.0.len() as f32 * 64.0;
+			height += theme.gap;
+		}
+
+		height
+	}
 }
 
 impl PartialEq for ContentItemElem {
@@ -291,15 +309,9 @@ impl Component for ContentItemElem {
 			);
 		}
 
-		let height = if self.item.is_modpack() {
-			Size::px(76.0)
-		} else {
-			Size::px(64.0)
-		};
-
 		rect()
 			.width(Size::fill())
-			.height(height)
+			.height(Size::px(self.base_height()))
 			.cont()
 			.panel_colorway(&theme, *is_hovered.read(), false)
 			.corner_radius(theme.round2)

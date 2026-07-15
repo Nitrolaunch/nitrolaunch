@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use freya::{
-	components::{ImageSource, ImageViewer, Uri},
+	components::{ImageSource, ImageViewer, Url},
 	elements::extensions::ContainerSizeExt,
 	prelude::Size,
 };
@@ -36,8 +36,8 @@ pub fn get_instance_icon(icon: Option<&str>) -> ImageSource {
 				_ => default.into(),
 			}
 		} else if icon.starts_with("http") {
-			Uri::from_maybe_shared(icon.as_bytes().to_vec())
-				.unwrap()
+			Url::parse(icon)
+				.unwrap_or(Url::parse("https://example.com").unwrap())
 				.into()
 		} else {
 			PathBuf::from(icon).into()

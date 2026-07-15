@@ -1,4 +1,10 @@
+#![cfg_attr(
+	all(not(debug_assertions), target_os = "windows"),
+	windows_subsystem = "windows"
+)]
+
 use freya::radio::use_init_radio_station;
+use tokio::runtime::Builder;
 use tokio::sync::broadcast;
 
 use crate::components::dialog::tip::Tips;
@@ -26,10 +32,12 @@ mod state;
 mod theme;
 mod util;
 
-#[tokio::main]
-async fn main() {
+fn main() {
+	let rt = Builder::new_multi_thread().enable_all().build().unwrap();
+	let _rt = rt.enter();
+
 	let (event_tx, event_rx) = broadcast::channel(100);
-	let back_state = BackState::new(event_tx).await.unwrap();
+	let back_state = rt.block_on(BackState::new(event_tx)).unwrap();
 
 	let window = WindowConfig::new(move || app(back_state.clone(), event_rx.resubscribe()))
 		.with_size(1400.0, 900.0)
@@ -137,7 +145,7 @@ impl Component for App {
 			.flex()
 			.background(theme.bg)
 			.color(theme.fg)
-			.font_size(14.0)
+			.font_size(theme.font)
 			.child(NavBar { show_sidebar })
 			.child(Tips)
 			.child(view)

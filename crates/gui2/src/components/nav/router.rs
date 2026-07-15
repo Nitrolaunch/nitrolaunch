@@ -1,5 +1,5 @@
 use crate::{
-	pages::{home::HomePage, package::browse::BrowsePackagesPage},
+	pages::{home::HomePage, instance::InstancePage, package::browse::BrowsePackagesPage},
 	prelude::*,
 	routing::Page,
 };
@@ -22,6 +22,7 @@ impl Component for Router {
 			Page::Home => HomePage.into_element(),
 			Page::Packages => BrowsePackagesPage.into_element(),
 			Page::Plugins => rect().into_element(),
+			Page::Instance(id) => InstancePage { id: id.clone() }.into_element(),
 		};
 
 		rect().width(Size::fill()).height(Size::fill()).child(child)

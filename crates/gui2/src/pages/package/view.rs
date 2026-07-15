@@ -60,7 +60,7 @@ impl Component for PackageView {
 			.width(Size::fill())
 			.horizontal()
 			.cross_align(Alignment::Center)
-			.child(label().text(name).font_size(18));
+			.child(label().text(name).font_size(theme.font2));
 
 		let repo = self
 			.req

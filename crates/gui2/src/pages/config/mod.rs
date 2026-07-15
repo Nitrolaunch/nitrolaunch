@@ -29,7 +29,7 @@ use nitrolaunch::{
 	},
 };
 
-mod addons;
+pub mod addons;
 mod general;
 
 #[derive(PartialEq)]
@@ -205,30 +205,30 @@ enum Tab {
 
 /// State objects for the config
 #[derive(Clone, PartialEq)]
-struct ConfigState {
-	ty: ConfigKind,
-	is_new: bool,
+pub struct ConfigState {
+	pub ty: ConfigKind,
+	pub is_new: bool,
 	/// Whether any of the config fields have been edited
-	is_dirty: State<bool>,
+	pub is_dirty: State<bool>,
 	/// Whether we can propagate the name to the ID
-	is_id_dirty: State<bool>,
-	id: State<String>,
-	from: State<Vec<String>>,
-	name: State<Option<String>>,
-	icon: State<Option<String>>,
-	side: State<Option<Side>>,
-	version: State<Option<String>>,
-	client_loader: State<Option<Loader>>,
-	server_loader: State<Option<Loader>>,
-	client_loader_version: State<VersionPattern>,
-	server_loader_version: State<VersionPattern>,
-	packages: State<TemplatePackageConfiguration>,
-	modpack: State<Option<String>>,
+	pub is_id_dirty: State<bool>,
+	pub id: State<String>,
+	pub from: State<Vec<String>>,
+	pub name: State<Option<String>>,
+	pub icon: State<Option<String>>,
+	pub side: State<Option<Side>>,
+	pub version: State<Option<String>>,
+	pub client_loader: State<Option<Loader>>,
+	pub server_loader: State<Option<Loader>>,
+	pub client_loader_version: State<VersionPattern>,
+	pub server_loader_version: State<VersionPattern>,
+	pub packages: State<TemplatePackageConfiguration>,
+	pub modpack: State<Option<String>>,
 }
 
 impl ConfigState {
 	/// Must be called from component render scope
-	fn new(ty: ConfigKind, is_new: bool, is_dirty: State<bool>) -> Self {
+	pub fn new(ty: ConfigKind, is_new: bool, is_dirty: State<bool>) -> Self {
 		let out = Self {
 			ty,
 			is_new,
@@ -268,7 +268,7 @@ impl ConfigState {
 		out
 	}
 
-	fn update(&mut self, id: Option<String>, config: TemplateConfig) {
+	pub fn update(&mut self, id: Option<String>, config: TemplateConfig) {
 		if let Some(id) = id {
 			self.id.set_if_modified(id);
 		}
@@ -314,7 +314,7 @@ impl ConfigState {
 		self.is_id_dirty.set_if_modified(!self.is_new);
 	}
 
-	fn apply(&self, mut config: TemplateConfig) -> Result<TemplateConfig, ConfigError> {
+	pub fn apply(&self, mut config: TemplateConfig) -> Result<TemplateConfig, ConfigError> {
 		if self.id.peek().is_empty() {
 			return Err(ConfigError::IdMissing);
 		}
@@ -402,7 +402,7 @@ fn format_loader(loader: Option<&Loader>, version: &VersionPattern) -> Option<St
 	}
 }
 
-enum ConfigError {
+pub enum ConfigError {
 	IdMissing,
 	SideMissing,
 }

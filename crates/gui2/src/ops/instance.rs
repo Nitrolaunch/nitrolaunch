@@ -167,15 +167,16 @@ impl QueryCapability for FetchInstanceConfig {
 
 			Ok(Some(InstanceConfigs {
 				main: instance.config().clone(),
-				editable: instance.original_config().clone(),
+				no_templates: instance.original_config().clone(),
 			}))
 		})
 	}
 }
 
+#[derive(Clone, Default)]
 pub struct InstanceConfigs {
 	pub main: InstanceConfig,
-	pub editable: InstanceConfig,
+	pub no_templates: InstanceConfig,
 }
 
 #[derive(Clone, PartialEq, Eq, Hash)]
@@ -363,6 +364,53 @@ impl MutationCapability for SaveConfig {
 			.await?;
 
 			Ok(())
+		})
+	}
+}
+
+#[derive(Clone, PartialEq, Eq, Hash)]
+pub struct FetchInstanceOutput {
+	back_state: Captured<BackState>,
+}
+
+impl FetchInstanceOutput {
+	pub fn new(id: String, back_state: BackState) -> Query<Self> {
+		Query::new(
+			id,
+			Self {
+				back_state: Captured(back_state),
+			},
+		)
+	}
+}
+
+impl QueryCapability for FetchInstanceOutput {
+	type Ok = Option<Arc<str>>;
+	type Err = anyhow::Error;
+	type Keys = String;
+
+	fn run(&self, keys: &Self::Keys) -> impl Future<Output = Result<Self::Ok, Self::Err>> {
+		let back_state = self.back_state.clone();
+		let id = keys.clone();
+
+		query_spawn(async move {
+			let path = {
+				let Some(entry) = back_state.running_instances.get_entry(&id, None).await else {
+					return Ok(None);
+				};
+
+				let Some(path) = &entry.stdout_file else {
+					return Ok(None);
+				};
+
+				back_state.paths.internal.join("stdio").join(path)
+			};
+
+			let contents = tokio::fs::read_to_string(path)
+				.await
+				.context("Failed to read output file")?;
+
+			Ok(Some(contents.into()))
 		})
 	}
 }

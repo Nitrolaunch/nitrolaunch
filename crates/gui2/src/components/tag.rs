@@ -10,7 +10,7 @@ pub fn repo_tag(repo: &str, compact: bool, back_state: &BackState, theme: &Theme
 		.icon
 		.as_deref()
 		.map(|x| {
-			svg(x.as_bytes().to_vec())
+			SvgViewer::new(Bytes::from(x.as_bytes().to_vec()))
 				.width(Size::px(14.0))
 				.height(Size::px(14.0))
 				.into_element()

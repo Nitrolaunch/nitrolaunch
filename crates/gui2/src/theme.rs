@@ -65,6 +65,10 @@ pub struct Theme {
 	pub sidebar_width: f32,
 
 	// Other
+	/// Font size
+	pub font: f32,
+	/// Larger font size
+	pub font2: f32,
 	/// Smallest gap between elements
 	pub gap: f32,
 	/// Larger gap between elements
@@ -119,6 +123,8 @@ impl Theme {
 			footer_height: 48.0,
 			sidebar: HexColor(0xff111112),
 			sidebar_width: 42.0,
+			font: 14.0,
+			font2: 18.0,
 			gap: 6.0,
 			gap2: 9.0,
 			border: 1.0,

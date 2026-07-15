@@ -322,7 +322,7 @@ impl Component for BrowseItem {
 			.and_then(|x| x.icon.as_ref())
 			.map(|x| {
 				let default_icon = default_icon.clone();
-				ImageViewer::new(x.parse::<Uri>().unwrap_or_default())
+				img(x)
 					.error_renderer(move |_| default_icon.clone())
 					.width(Size::px(40.0))
 					.height(Size::px(40.0))

@@ -1,7 +1,7 @@
 use freya::{
 	components::{
 		Button, ButtonColorsThemePartialExt, ButtonLayoutThemePartialExt, ImageViewer, Skeleton,
-		SkeletonThemePartialExt, Uri,
+		SkeletonThemePartialExt,
 	},
 	elements::{
 		extensions::{ContainerPositionExt, EventHandlersExt, LayerExt, StyleExt, TextStyleExt},
@@ -15,9 +15,11 @@ use freya::{
 	},
 	winit::window::CursorIcon,
 };
+use reqwest::Url;
 
 use crate::theme::{Colorway, HexColor, Theme};
 
+pub mod console;
 pub mod dialog;
 pub mod footer;
 pub mod input;
@@ -34,7 +36,7 @@ pub fn segment(child: impl IntoElement, width: f32) -> Rect {
 }
 
 pub fn img(url: &str) -> ImageViewer {
-	ImageViewer::new(url.parse::<Uri>().unwrap_or_default())
+	ImageViewer::new(Url::parse(url).unwrap_or(Url::parse("https://example.com").unwrap()))
 }
 
 pub fn button(theme: &Theme) -> Button {

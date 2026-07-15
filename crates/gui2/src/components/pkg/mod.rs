@@ -44,7 +44,7 @@ impl Component for RepoSelector {
 						.icon
 						.as_deref()
 						.map(|x| {
-							svg(x.as_bytes().to_vec())
+							SvgViewer::new(Bytes::from(x.as_bytes().to_vec()))
 								.width(Size::px(16.0))
 								.height(Size::px(16.0))
 								.into_element()

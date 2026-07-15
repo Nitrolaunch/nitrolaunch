@@ -274,12 +274,7 @@ impl<T: PartialEq + Clone + 'static> Component for Dropdown<T> {
 		let selected = self.selected.clone();
 		let derived_option = self.derived_option.clone();
 		let options = self.options.clone();
-		let len = self.options.len();
 		let options = VirtualScrollView::new(move |i, _| {
-			// Extra element to fix cutoff of the last element in the scroll
-			if i == len {
-				return rect().into_element();
-			}
 			let option = options.get(i).unwrap();
 
 			let is_selected = selected.is_selected(&option.id);
@@ -295,8 +290,8 @@ impl<T: PartialEq + Clone + 'static> Component for Dropdown<T> {
 			}
 			.into_element()
 		})
-		.length(self.options.len() + 1)
-		.item_size(theme.input_height)
+		.length(self.options.len())
+		.item_size(theme.input_height + theme.gap)
 		.width(Size::fill())
 		.height(Size::fill());
 

@@ -60,12 +60,13 @@ pub enum Page {
 	Home,
 	Packages,
 	Plugins,
+	Instance(String),
 }
 
 impl Page {
 	pub fn get_category(&self) -> PageCategory {
 		match self {
-			Self::Home => PageCategory::Home,
+			Self::Home | Self::Instance(..) => PageCategory::Home,
 			Self::Packages => PageCategory::Packages,
 			Self::Plugins => PageCategory::Plugins,
 		}

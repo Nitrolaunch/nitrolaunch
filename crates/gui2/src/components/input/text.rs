@@ -81,3 +81,18 @@ pub fn search_bar(input: TextInput, theme: &Theme) -> Rect {
 		)
 		.child(input)
 }
+
+pub fn transparent_text_input(input: State<String>, theme: &Theme) -> Input {
+	let input_theme = InputColorsThemePartial {
+		background: Some(Preference::Specific(Color::TRANSPARENT)),
+		focus_background: Some(Preference::Specific(Color::TRANSPARENT)),
+		border_fill: Some(Preference::Specific(Color::TRANSPARENT)),
+		focus_border_fill: Some(Preference::Specific(Color::TRANSPARENT)),
+		color: Some(Preference::Specific(theme.fg.into())),
+		placeholder_color: Some(Preference::Specific(theme.fg3.into())),
+	};
+
+	Input::new(input)
+		.width(Size::fill())
+		.theme_colors(input_theme)
+}
