@@ -60,7 +60,12 @@ impl Component for PackageView {
 			.width(Size::fill())
 			.horizontal()
 			.cross_align(Alignment::Center)
-			.child(label().text(name).font_size(theme.font2));
+			.child(
+				label()
+					.text(name)
+					.font_size(theme.font2)
+					.font_weight(FontWeight::BOLD),
+			);
 
 		let repo = self
 			.req
@@ -81,6 +86,19 @@ impl Component for PackageView {
 			.child(upper_details)
 			.child(lower_details);
 
+		let description = rect()
+			.width(Size::flex(2.0))
+			.height(Size::fill())
+			.main_align(Alignment::Center)
+			.cross_align(Alignment::End)
+			.padding(Gaps::new(0.0, theme.gap2 * 2.0, 0.0, 0.0))
+			.child(
+				clip_text(meta.description.as_deref().unwrap_or("..."))
+					.color(theme.fg2)
+					.text_align(TextAlign::End)
+					.max_lines(2),
+			);
+
 		let top = rect()
 			.expanded()
 			.cont()
@@ -91,7 +109,8 @@ impl Component for PackageView {
 					.center()
 					.child(ico),
 			)
-			.child(details);
+			.child(details)
+			.child(description);
 
 		let banner = meta.banner.as_ref().map(|x| {
 			let image = img(x)

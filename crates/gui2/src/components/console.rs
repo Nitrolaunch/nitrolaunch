@@ -1,6 +1,10 @@
-use std::sync::Arc;
+use std::{rc::Rc, sync::Arc};
 
-use crate::{components::input::text::transparent_text_input, prelude::*, util::PtrEq};
+use crate::{
+	components::input::{select::Selected, text::transparent_text_input},
+	prelude::*,
+	util::PtrEq,
+};
 
 #[derive(PartialEq)]
 pub struct Console<C: ConsoleImpl> {
@@ -16,17 +20,31 @@ impl<C: ConsoleImpl> Component for Console<C> {
 		let mut line_indexes = use_state::<Vec<usize>>(|| Vec::new());
 		let mut line_count = use_state::<usize>(|| 0);
 
+		let ty = use_state::<Option<MessageType>>(|| None);
 		let input = use_state(|| String::new());
 
 		use_side_effect({
 			move || {
+				let ty = ty.read().clone();
+
 				if let Some(contents) = &*contents.read() {
-					let mut indexes = Vec::new();
-					indexes.push(0);
+					let mut all_indexes = Vec::new();
+					all_indexes.push(0);
 
 					for (i, ch) in contents.char_indices() {
 						if ch == '\n' {
-							indexes.push(i + 1);
+							all_indexes.push(i + 1);
+						}
+					}
+
+					let mut indexes = Vec::new();
+					let mut uppercase_buf = String::new();
+					for (i, start) in all_indexes.iter().copied().enumerate() {
+						let end = all_indexes.get(i + 1).copied().unwrap_or(contents.len());
+						let line = contents.get(start..end).unwrap_or_default().trim_end();
+
+						if line_matches_ty(line, ty.as_ref(), &mut uppercase_buf) {
+							indexes.push(start);
 						}
 					}
 
@@ -40,6 +58,7 @@ impl<C: ConsoleImpl> Component for Console<C> {
 			}
 		});
 
+		let theme2 = theme.clone();
 		let contents = match self.console.contents() {
 			Some(contents) => {
 				let indexes = line_indexes.clone();
@@ -58,10 +77,7 @@ impl<C: ConsoleImpl> Component for Console<C> {
 						""
 					};
 
-					label()
-						.text(line.to_string())
-						.height(Size::px(24.0))
-						.into_element()
+					format_line(line, &theme2)
 				})
 				.width(Size::fill())
 				.height(Size::flex(1.0))
@@ -104,9 +120,36 @@ impl<C: ConsoleImpl> Component for Console<C> {
 				)
 			});
 
+		let ty_selector = Dropdown::new(
+			Selected::Single(ty.read().clone()),
+			Rc::new(move |new| {
+				ty.clone().set(new.single());
+			}),
+		)
+		.child(SelectOption::new(None, "All Messages", None))
+		.child(SelectOption::new(
+			Some(MessageType::Error),
+			"Errors",
+			Some("error"),
+		))
+		.child(SelectOption::new(
+			Some(MessageType::Warning),
+			"Warnings",
+			Some("warning"),
+		))
+		.child(SelectOption::new(
+			Some(MessageType::Info),
+			"Info",
+			Some("info"),
+		));
+
 		let header = rect()
 			.width(Size::fill())
-			.height(Size::px(theme.input_height));
+			.height(Size::px(theme.input_height))
+			.cont()
+			.child(segment(ty_selector, 1.0))
+			.child(segment(rect(), 1.0))
+			.child(segment(rect(), 1.0));
 
 		rect()
 			.expanded()
@@ -118,10 +161,70 @@ impl<C: ConsoleImpl> Component for Console<C> {
 	}
 }
 
+fn format_line(line: &str, theme: &Theme) -> Element {
+	let (left, ty, right, ty_color) = if let Some((left, right)) = line.split_once("ERROR") {
+		(left, "ERROR", right, theme.error)
+	} else if let Some((left, right)) = line.split_once("WARN") {
+		(left, "WARN", right, theme.warning)
+	} else if let Some((left, right)) = line.split_once("INFO") {
+		(left, "INFO", right, theme.fg)
+	} else {
+		return clip_text(line).height(Size::px(24.0)).into_element();
+	};
+
+	rect()
+		.width(Size::fill())
+		.height(Size::px(24.0))
+		.horizontal()
+		.child(label().text(left.to_string()).max_lines(1))
+		.child(label().text(ty).color(ty_color))
+		.child(
+			label()
+				.text(right.to_string())
+				.max_lines(1)
+				.color(theme.fg3),
+		)
+		.into_element()
+}
+
 pub trait ConsoleImpl: PartialEq + 'static {
 	fn contents(&self) -> Option<Arc<str>>;
 
 	fn input_fn(&self) -> Option<impl Fn(String) + 'static> {
 		None::<Box<dyn Fn(String)>>
+	}
+}
+
+#[derive(PartialEq, Clone)]
+enum MessageType {
+	Info,
+	Warning,
+	Error,
+}
+
+fn line_matches_ty(line: &str, ty: Option<&MessageType>, uppercase_buf: &mut String) -> bool {
+	match ty {
+		None => true,
+		Some(ty) => line_type(line, uppercase_buf).as_ref() == Some(ty),
+	}
+}
+
+fn line_type(line: &str, uppercase_buf: &mut String) -> Option<MessageType> {
+	uppercase_buf.clear();
+	if line.len() > 32 {
+		uppercase_buf.push_str(&line[..32]);
+	} else {
+		uppercase_buf.push_str(line);
+	}
+	uppercase_buf.make_ascii_uppercase();
+
+	if uppercase_buf.contains("ERROR") || uppercase_buf.contains("[ERR]") {
+		Some(MessageType::Error)
+	} else if uppercase_buf.contains("WARN") {
+		Some(MessageType::Warning)
+	} else if uppercase_buf.contains("INFO") {
+		Some(MessageType::Info)
+	} else {
+		None
 	}
 }
