@@ -56,6 +56,7 @@ impl Component for GeneralTab {
 			.maybe(show_name_field, |this| {
 				this.child(field(
 					"Name",
+					"font",
 					&theme,
 					TextInput::new(name).derived_value(
 						self.config_state.name.read().as_ref(),
@@ -68,6 +69,7 @@ impl Component for GeneralTab {
 				this.child(
 					field(
 						"ID",
+						"hashtag",
 						&theme,
 						TextInput::new(self.config_state.id).on_change(move |_| {
 							is_id_dirty.set(true);
@@ -116,7 +118,7 @@ impl Component for GeneralTab {
 		.maybe(templates.is_some(), |this| {
 			this.children(templates.unwrap())
 		});
-		let from_field = field("Parent Templates", &theme, from_field).tip(
+		let from_field = field("Parent Templates", "diagram", &theme, from_field).tip(
 			&front_state,
 			"Templates to derive default configuration from",
 		);
@@ -152,7 +154,7 @@ impl Component for GeneralTab {
 				.tip("Dedicated multiplayer server"),
 		);
 
-		let side_field = field("Side", &theme, side_field);
+		let side_field = field("Side", "controller", &theme, side_field);
 
 		let minecraft_versions = minecraft_versions
 			.read()
@@ -201,7 +203,7 @@ impl Component for GeneralTab {
 						"Whether to include pre-release versions in the dropdown",
 					),
 			);
-		let version_field = field("Minecraft version", &theme, version_field);
+		let version_field = field("Minecraft version", "tag", &theme, version_field);
 
 		let loaders_config = LoadersConfig {
 			config_state: self.config_state.clone(),
@@ -300,7 +302,7 @@ impl Component for LoadersConfig {
 		} else {
 			"Client loader"
 		};
-		let client_field = field(field_name, &theme, client_field).tip(
+		let client_field = field(field_name, "controller", &theme, client_field).tip(
 			&front_state,
 			if self.config_state.ty == ConfigKind::Instance {
 				"What to install for loading mods"
@@ -336,7 +338,7 @@ impl Component for LoadersConfig {
 		} else {
 			"Server loader"
 		};
-		let server_field = field(field_name, &theme, server_field).tip(
+		let server_field = field(field_name, "server", &theme, server_field).tip(
 			&front_state,
 			if self.config_state.ty == ConfigKind::Instance {
 				"What to install for loading mods or plugins"
@@ -382,7 +384,7 @@ impl Component for LoadersConfig {
 		} else {
 			"Client loader version"
 		};
-		let client_version_field = field(field_name, &theme, client_version_field);
+		let client_version_field = field(field_name, "tag", &theme, client_version_field);
 
 		let server_loader_versions = server_loader_versions
 			.read()
@@ -419,7 +421,7 @@ impl Component for LoadersConfig {
 		} else {
 			"Server loader version"
 		};
-		let server_version_field = field(field_name, &theme, server_version_field);
+		let server_version_field = field(field_name, "tag", &theme, server_version_field);
 
 		rect()
 			.width(Size::fill())

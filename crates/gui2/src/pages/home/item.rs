@@ -2,6 +2,7 @@ use crate::ops::instance::InstanceItemInfo;
 use crate::pages::config::ConfiguredItem;
 use crate::prelude::*;
 use crate::routing::Page;
+use crate::state::ModalType;
 use crate::util::assets::get_instance_icon;
 use nitrolaunch::config_crate::ConfigKind;
 use nitrolaunch::shared::Side;
@@ -176,11 +177,11 @@ impl Component for InstanceListItem {
 			if is_add_placeholder {
 				front_state
 					.write()
-					.set_configured_item(Some(ConfiguredItem {
+					.set_modal(Some(ModalType::Configuration(ConfiguredItem {
 						id: None,
 						ty: info.ty,
 						is_new: true,
-					}));
+					})));
 
 				return;
 			}
@@ -199,7 +200,7 @@ impl Component for InstanceListItem {
 					ConfigKind::Template | ConfigKind::BaseTemplate => {
 						front_state
 							.write()
-							.set_configured_item(Some(info.get_config_item()));
+							.set_modal(Some(ModalType::Configuration(info.get_config_item())));
 					}
 				}
 			} else {

@@ -15,6 +15,7 @@ pub struct HomePage;
 
 impl Component for HomePage {
 	fn render(&self) -> impl IntoElement {
+		let theme = use_theme();
 		let back_state = use_consume::<BackState>();
 		let front_state = use_front_state();
 		let items_query = use_query(FetchItems::new(back_state.clone()));
@@ -132,7 +133,12 @@ impl Component for HomePage {
 			.width(Size::fill())
 			.height(Size::fill());
 
-		rect().fill().child(view).padding((0.0, items_side_padding))
+		rect().fill().child(view).padding(Gaps::new(
+			theme.gap2,
+			items_side_padding,
+			0.0,
+			items_side_padding,
+		))
 	}
 }
 

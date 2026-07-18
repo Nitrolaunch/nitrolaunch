@@ -68,7 +68,6 @@ impl AnyhowError for anyhow::Error {
 	}
 }
 
-#[derive(Clone)]
 pub struct Shared<T> {
 	inner: Rc<RefCell<T>>,
 }
@@ -86,6 +85,14 @@ impl<T> Shared<T> {
 
 	pub fn write(&self) -> RefMut<'_, T> {
 		self.inner.borrow_mut()
+	}
+}
+
+impl<T> Clone for Shared<T> {
+	fn clone(&self) -> Self {
+		Self {
+			inner: self.inner.clone(),
+		}
 	}
 }
 

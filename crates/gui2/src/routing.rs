@@ -59,7 +59,6 @@ impl Navigator {
 pub enum Page {
 	Home,
 	Packages,
-	Plugins,
 	Instance(String),
 }
 
@@ -68,7 +67,6 @@ impl Page {
 		match self {
 			Self::Home | Self::Instance(..) => PageCategory::Home,
 			Self::Packages => PageCategory::Packages,
-			Self::Plugins => PageCategory::Plugins,
 		}
 	}
 }
@@ -78,7 +76,6 @@ impl Page {
 pub enum PageCategory {
 	Home,
 	Packages,
-	Plugins,
 }
 
 impl PageCategory {
@@ -87,7 +84,6 @@ impl PageCategory {
 		match self {
 			Self::Home => Page::Home,
 			Self::Packages => Page::Packages,
-			Self::Plugins => Page::Plugins,
 		}
 	}
 }

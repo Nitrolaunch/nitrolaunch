@@ -1,4 +1,9 @@
-use crate::{components::dialog::toast::Toasts, prelude::*, routing::PageCategory};
+use crate::{
+	components::{dialog::toast::Toasts, input::tabs::TopTabs},
+	prelude::*,
+	routing::PageCategory,
+	state::ModalType,
+};
 
 pub mod page_buttons;
 pub mod router;
@@ -13,6 +18,14 @@ impl Component for NavBar {
 		let front_state = use_front_state();
 		front_state.read().subscribe(FrontChannel::Route);
 		let theme = use_theme();
+		let selected_category = use_reactive(&front_state.read().route().get_category());
+		let selected_category2 = selected_category.clone();
+		let front_state2 = front_state.clone();
+		use_side_effect(move || {
+			front_state2
+				.write()
+				.navigate(selected_category2.read().get_page());
+		});
 
 		let mut show_sidebar = self.show_sidebar.clone();
 		let menu_button = icon_button("menu", &theme).on_press(move |_| show_sidebar.toggle());
@@ -29,10 +42,13 @@ impl Component for NavBar {
 		let mut forward_button = icon_button("arrow_right", &theme)
 			.on_press(move |_| front_state2.write().forward())
 			.enabled(front_state.read().can_go_forward());
-
 		if !front_state.read().can_go_forward() {
 			forward_button = forward_button.color(theme.disabled);
 		}
+
+		let front_state2 = front_state.clone();
+		let settings_button = icon_button("gear", &theme)
+			.on_press(move |_| front_state2.write().set_modal(Some(ModalType::Settings)));
 
 		let left = rect()
 			.height(Size::fill())
@@ -42,22 +58,22 @@ impl Component for NavBar {
 			.padding(3.0)
 			.child(rect().margin(3.0).child(menu_button))
 			.child(rect().margin(3.0).child(back_button))
-			.child(rect().margin(3.0).child(forward_button));
+			.child(rect().margin(3.0).child(forward_button))
+			.child(rect().margin(3.0).child(settings_button));
 
+		let buttons = TopTabs::new(selected_category)
+			.child(SelectOption::new(PageCategory::Home, "Home", Some("home")))
+			.child(SelectOption::new(
+				PageCategory::Packages,
+				"Packages",
+				Some("honeycomb"),
+			));
 		let center = rect()
 			.height(Size::fill())
 			.width(Size::flex(1.0))
 			.horizontal()
 			.flex()
-			.child(PageButton {
-				category: PageCategory::Home,
-			})
-			.child(PageButton {
-				category: PageCategory::Packages,
-			})
-			.child(PageButton {
-				category: PageCategory::Plugins,
-			});
+			.child(buttons);
 
 		let right = rect()
 			.height(Size::fill())
@@ -77,53 +93,5 @@ impl Component for NavBar {
 			.child(left)
 			.child(center)
 			.child(right)
-	}
-}
-
-#[derive(PartialEq)]
-struct PageButton {
-	category: PageCategory,
-}
-
-impl Component for PageButton {
-	fn render(&self) -> impl IntoElement {
-		let front_state = use_front_state();
-		front_state.read().subscribe(FrontChannel::Route);
-		let theme = use_theme();
-
-		let title = match self.category {
-			PageCategory::Home => "Home",
-			PageCategory::Packages => "Packages",
-			PageCategory::Plugins => "Plugins",
-		};
-		let ico = match self.category {
-			PageCategory::Home => "home",
-			PageCategory::Packages => "honeycomb",
-			PageCategory::Plugins => "jigsaw",
-		};
-
-		let (fg, bg) = if front_state.read().route().get_category() == self.category {
-			(theme.item_select_border, theme.item_select)
-		} else {
-			(theme.disabled, theme.navbar)
-		};
-
-		let page = self.category.get_page();
-
-		rect()
-			.height(Size::fill())
-			.width(Size::flex(1.0))
-			.margin(3.0)
-			.clickable()
-			.child(
-				Button::new()
-					.child(rect().cont().child(icon(ico, 16.0)).child(title))
-					.width(Size::fill())
-					.background(bg)
-					.hover_background(bg)
-					.color(fg)
-					.border_fill(fg)
-					.on_press(move |_| front_state.write().navigate(page.clone())),
-			)
 	}
 }

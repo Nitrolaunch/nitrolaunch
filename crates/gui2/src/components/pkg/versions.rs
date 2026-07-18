@@ -153,7 +153,6 @@ impl Component for Version {
 			.height(Size::px(48.0))
 			.border(theme.border(theme.panel_border))
 			.corner_radius(theme.round)
-			// .border(border_bottom(theme.border, theme.panel_border))
 			.margin(Gaps::new(0.0, 0.0, theme.gap, 0.0))
 			.cont()
 			.child(ico)

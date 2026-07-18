@@ -11,8 +11,74 @@ pub mod instance;
 pub mod launch;
 pub mod packages;
 pub mod plugin_results;
+pub mod plugins;
+pub mod settings;
 pub mod task;
 pub mod versions;
+
+#[macro_export]
+macro_rules! simple_query {
+	(
+		name = $name:ident,
+		ok = $ok:ty,
+		err = $err:ty,
+		keys = $keys:ty,
+		$($run:tt)*
+	) => {
+		#[derive(Clone, PartialEq, Eq, Hash)]
+		pub struct $name {
+			back_state: freya::query::Captured<crate::state::BackState>,
+		}
+
+		impl $name {
+			pub fn new(back_state: crate::state::BackState) -> Self {
+				Self {
+					back_state: freya::query::Captured(back_state),
+				}
+			}
+		}
+
+		impl freya::query::QueryCapability for $name {
+			type Ok = $ok;
+			type Err = $err;
+			type Keys = $keys;
+
+			$($run)*
+		}
+	};
+}
+
+#[macro_export]
+macro_rules! simple_mutation {
+	(
+		name = $name:ident,
+		ok = $ok:ty,
+		err = $err:ty,
+		keys = $keys:ty,
+		$($run:tt)*
+	) => {
+		#[derive(Clone, PartialEq, Eq, Hash)]
+		pub struct $name {
+			back_state: freya::query::Captured<crate::state::BackState>,
+		}
+
+		impl $name {
+			pub fn new(back_state: crate::state::BackState) -> Self {
+				Self {
+					back_state: freya::query::Captured(back_state),
+				}
+			}
+		}
+
+		impl freya::query::MutationCapability for $name {
+			type Ok = $ok;
+			type Err = $err;
+			type Keys = $keys;
+
+			$($run)*
+		}
+	};
+}
 
 #[derive(Clone, PartialEq, Eq, Hash)]
 pub struct ConditionalQuery<Q: QueryCapability> {
@@ -150,7 +216,7 @@ where
 
 	fn on_settled(
 		&self,
-		_keys: &Self::Keys,
+		keys: &Self::Keys,
 		result: &Result<Self::Ok, Self::Err>,
 	) -> impl Future<Output = ()> {
 		match result {
@@ -170,7 +236,7 @@ where
 			}
 		}
 
-		std::future::ready(())
+		self.mutation.on_settled(keys, result)
 	}
 }
 

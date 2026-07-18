@@ -10,25 +10,27 @@ pub mod tabs;
 pub mod text;
 
 /// A label above a configuration field
-pub fn field_label(text: &str, theme: &Theme) -> impl IntoElement {
+pub fn field_label(text: &str, ico: &str, theme: &Theme) -> impl IntoElement {
 	rect()
 		.width(Size::fill())
 		.horizontal()
+		.spacing(theme.gap)
 		.main_align(Alignment::Start)
 		.cross_align(Alignment::End)
 		.font_size(13)
 		.font_weight(FontWeight::BOLD)
 		.color(theme.fg3)
-		.padding(Gaps::new(0.0, 0.0, 5.0, 3.0))
+		.padding(Gaps::new(0.0, 0.0, theme.gap, theme.gap))
+		.child(icon(ico, 12.0))
 		.child(text)
 }
 
 /// Configuration field with a label
-pub fn field(label: &str, theme: &Theme, field: impl IntoElement) -> Rect {
+pub fn field(label: &str, icon: &str, theme: &Theme, field: impl IntoElement) -> Rect {
 	rect()
 		.width(Size::fill())
-		.margin(Gaps::new(0.0, 0.0, 12.0, 0.0))
-		.child(field_label(label, theme))
+		.margin(Gaps::new(0.0, 0.0, 18.0, 0.0))
+		.child(field_label(label, icon, theme))
 		.child(field)
 }
 
@@ -54,7 +56,11 @@ pub trait Derivable<T>: Sized {
 		parent_configs: &[TemplateConfig],
 		property: impl Fn(&TemplateConfig) -> Option<T>,
 	) -> Self {
-		self.derived(derived_value_owned(editable_value, parent_configs, property))
+		self.derived(derived_value_owned(
+			editable_value,
+			parent_configs,
+			property,
+		))
 	}
 }
 

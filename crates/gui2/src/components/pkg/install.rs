@@ -115,6 +115,7 @@ impl Component for PackageInstallModal {
                 .padding(theme.gap2)
 				.child(field(
 					"ID for new instance",
+					"hashtag",
 					&theme,
 					TextInput::new(new_instance_id),
 				))
@@ -219,7 +220,7 @@ impl Component for Item {
 		rect()
 			.width(Size::fill())
 			.height(Size::px(48.0))
-			.item_colorway(&theme, *is_hovered.read(), is_selected)
+			.panel_colorway(&theme, *is_hovered.read(), is_selected)
 			.hover(is_hovered)
 			.corner_radius(theme.round)
 			.on_press(move |_| {

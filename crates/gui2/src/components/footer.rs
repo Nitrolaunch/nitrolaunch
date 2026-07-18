@@ -11,6 +11,7 @@ use crate::{
 		packages::FetchPackageDetails,
 	},
 	prelude::*,
+	state::ModalType,
 	util::PtrEq,
 };
 
@@ -91,7 +92,7 @@ impl Component for FooterButton {
 				ConfigKind::Template | ConfigKind::BaseTemplate => {
 					front_state
 						.write()
-						.set_configured_item(Some(info.get_config_item()));
+						.set_modal(Some(ModalType::Configuration(info.get_config_item())));
 				}
 			},
 			FooterItem::InstallPackage(..) => {

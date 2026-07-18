@@ -181,7 +181,7 @@ impl Component for AddonsConfig {
 		rect()
 			.expanded()
 			.spacing(theme.gap)
-			.padding(theme.gap)
+			.padding(theme.gap2)
 			.child(header)
 			.child(items)
 	}

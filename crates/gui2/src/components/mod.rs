@@ -42,10 +42,11 @@ pub fn img(url: &str) -> ImageViewer {
 pub fn button(theme: &Theme) -> Button {
 	Button::new()
 		.color(theme.fg)
-		.background(theme.bg)
-		.hover_background(theme.item)
-		.border_fill(theme.item_border)
-		.corner_radius(theme.round2)
+		.background(Color::TRANSPARENT)
+		.hover_background(theme.item_hover)
+		.border_fill(Color::TRANSPARENT)
+		.corner_radius(theme.round)
+		.padding(theme.gap)
 }
 
 pub fn icon_button(icon: &str, theme: &Theme) -> Button {

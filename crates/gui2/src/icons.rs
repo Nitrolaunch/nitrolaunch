@@ -5,7 +5,6 @@ use freya::{
 	elements::extensions::ContainerSizeExt,
 	prelude::{Bytes, Size},
 };
-use freya_core::{integration::MaybeExt, style::color::Color};
 
 #[derive(rust_embed::RustEmbed)]
 #[folder = "./src/assets"]
@@ -20,12 +19,15 @@ pub fn icon(icon: &str, size: f32) -> SvgViewer {
 	icon.width(Size::px(size))
 		.height(Size::px(size))
 		.parallel(true)
-		// Fix pop-in
-		.maybe(cfg!(debug_assertions), |this| this.color(Color::WHITE))
+	// Fix pop-in
+	// .maybe(cfg!(debug_assertions), |this| this.color(Color::WHITE))
 }
 
 fn icon_impl(icon: &str) -> Cow<'static, [u8]> {
 	Icons::get(&format!("icons/{icon}.svg"))
-		.expect("Icon does not exist")
-		.data
+		.map(|x| x.data)
+		.unwrap_or_else(|| {
+			println!("Unknown icon: {icon}");
+			Cow::Owned(Vec::new())
+		})
 }

@@ -178,6 +178,8 @@ pub struct Dropdown<T: PartialEq + Clone> {
 	on_select: NotEq<Rc<dyn Fn(Selected<T>)>>,
 	options: Vec<SelectOption<T>>,
 	derived_option: Option<T>,
+	on_open_change: Option<EventHandler<bool>>,
+	is_loading: bool,
 }
 
 #[allow(dead_code)]
@@ -188,6 +190,8 @@ impl<T: PartialEq + Clone> Dropdown<T> {
 			on_select: NotEq(on_select),
 			options: Vec::new(),
 			derived_option: None,
+			on_open_change: None,
+			is_loading: false,
 		}
 	}
 
@@ -207,6 +211,16 @@ impl<T: PartialEq + Clone> Dropdown<T> {
 		for child in children {
 			self = self.child(child);
 		}
+		self
+	}
+
+	pub fn on_open_change(mut self, handler: impl Into<EventHandler<bool>>) -> Self {
+		self.on_open_change = Some(handler.into());
+		self
+	}
+
+	pub fn loading(mut self, is_loading: bool) -> Self {
+		self.is_loading = is_loading;
 		self
 	}
 }
@@ -231,6 +245,14 @@ impl<T: PartialEq + Clone + 'static> Component for Dropdown<T> {
 		let is_hovered = use_state(|| false);
 		let mut is_open = use_state(|| false);
 
+		let is_open2 = is_open.clone();
+		let on_open_change = self.on_open_change.clone();
+		use_side_effect(move || {
+			if let Some(handler) = &on_open_change {
+				handler.call(*is_open2.read());
+			}
+		});
+
 		let selected = self.selected.clone();
 		let upper_on_select = self.on_select.clone();
 		let on_select: NotEq<Rc<dyn Fn(T)>> = NotEq(Rc::new(move |option| {
@@ -246,12 +268,12 @@ impl<T: PartialEq + Clone + 'static> Component for Dropdown<T> {
 		let preview = match &self.selected {
 			Selected::Single(selected) => {
 				if let Some(option) = self.options.iter().find(|x| x.id == *selected) {
-					option.title.clone()
+					dropdown_option_contents(option, &theme).into_element()
 				} else {
-					"Unknown option".to_string()
+					"Unknown option".into_element()
 				}
 			}
-			Selected::Multi(selected) => format!("{} selected", selected.len()),
+			Selected::Multi(selected) => format!("{} selected", selected.len()).into_element(),
 		};
 
 		let header = rect()
@@ -269,31 +291,45 @@ impl<T: PartialEq + Clone + 'static> Component for Dropdown<T> {
 		} else {
 			self.options.len() as f32
 		};
-		let options_height = (theme.input_height + theme.gap) * option_count;
+		let options_height = if self.is_loading {
+			theme.input_height
+		} else {
+			(theme.input_height + theme.gap) * option_count
+		};
 
-		let selected = self.selected.clone();
-		let derived_option = self.derived_option.clone();
-		let options = self.options.clone();
-		let options = VirtualScrollView::new(move |i, _| {
-			let option = options.get(i).unwrap();
+		let options = if self.is_loading {
+			rect()
+				.expanded()
+				.center()
+				.child(CircularLoader::new().size(16.0))
+				.into_element()
+		} else {
+			let selected = self.selected.clone();
+			let derived_option = self.derived_option.clone();
+			let options = self.options.clone();
 
-			let is_selected = selected.is_selected(&option.id);
-			let is_derived =
-				!is_selected && derived_option.as_ref().is_some_and(|y| y == &option.id);
+			VirtualScrollView::new(move |i, _| {
+				let option = options.get(i).unwrap();
 
-			DropdownOption {
-				option: option.clone(),
-				on_select: on_select.clone(),
-				on_deselect: on_deselect.clone(),
-				is_selected,
-				is_derived,
-			}
+				let is_selected = selected.is_selected(&option.id);
+				let is_derived =
+					!is_selected && derived_option.as_ref().is_some_and(|y| y == &option.id);
+
+				DropdownOption {
+					option: option.clone(),
+					on_select: on_select.clone(),
+					on_deselect: on_deselect.clone(),
+					is_selected,
+					is_derived,
+				}
+				.into_element()
+			})
+			.length(self.options.len())
+			.item_size(theme.input_height + theme.gap)
+			.width(Size::fill())
+			.height(Size::fill())
 			.into_element()
-		})
-		.length(self.options.len())
-		.item_size(theme.input_height + theme.gap)
-		.width(Size::fill())
-		.height(Size::fill());
+		};
 
 		let options = rect()
 			.width(Size::fill())
@@ -356,7 +392,6 @@ impl<T: PartialEq + Clone + 'static> Component for DropdownOption<T> {
 			.margin(Gaps::new(0.0, 0.0, theme.gap, 0.0))
 			.maybe(self.is_selected, |this| this.font_weight(FontWeight::BOLD))
 			.cont()
-			.center()
 			.clickable()
 			.hover(is_hovered)
 			.on_press(move |_| {
@@ -366,13 +401,35 @@ impl<T: PartialEq + Clone + 'static> Component for DropdownOption<T> {
 					(on_select.0)(id.clone());
 				}
 			})
-			.maybe_child(self.option.icon.clone())
 			.maybe(self.option.tip.is_some(), |this| {
 				this.tip(&front_state, self.option.tip.as_deref().unwrap())
 			})
-			.child(self.option.title.as_str())
+			.child(dropdown_option_contents(&self.option, &theme))
 			.into_element()
 	}
+}
+
+fn dropdown_option_contents<T: PartialEq + Clone>(option: &SelectOption<T>, theme: &Theme) -> Rect {
+	rect()
+		.cont()
+		.maybe_child(option.icon.clone().map(|x| {
+			rect()
+				.width(Size::px(theme.input_height))
+				.height(Size::px(theme.input_height))
+				.center()
+				.child(x)
+		}))
+		.child(
+			rect()
+				.width(Size::flex(1.0))
+				.height(Size::fill())
+				.main_align(Alignment::Center)
+				.cross_align(Alignment::Center)
+				.maybe(option.icon.is_some(), |this| {
+					this.cross_align(Alignment::Start)
+				})
+				.child(option.title.as_str()),
+		)
 }
 
 #[derive(PartialEq, Clone)]

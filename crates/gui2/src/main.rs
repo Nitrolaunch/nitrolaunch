@@ -11,6 +11,7 @@ use crate::components::dialog::tip::Tips;
 use crate::components::dialog::toast::Toast;
 use crate::components::footer::Footer;
 use crate::pages::config::ConfigPage;
+use crate::pages::settings::SettingsPage;
 use crate::prelude::*;
 
 use crate::components::nav::{NavBar, router::Router};
@@ -18,6 +19,7 @@ use crate::state::{BackEvent, BackState, FrontChannel, FrontState};
 use crate::util::Shared;
 
 mod components;
+mod data;
 mod dependency;
 mod icons;
 mod instance_manager;
@@ -151,5 +153,6 @@ impl Component for App {
 			.child(view)
 			.child(Footer)
 			.child(ConfigPage)
+			.child(SettingsPage)
 	}
 }

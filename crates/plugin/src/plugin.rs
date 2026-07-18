@@ -343,7 +343,7 @@ impl PluginManifest {
 }
 
 /// Optional metadata for a plugin
-#[derive(Serialize, Deserialize, Default, Debug)]
+#[derive(Serialize, Deserialize, Default, Debug, Clone)]
 #[serde(default)]
 pub struct PluginMetadata {
 	/// The display name of the plugin

@@ -25,6 +25,7 @@ use crate::{
 		dialog::{tip::Tip, toast::Toast},
 		footer::FooterItem,
 	},
+	data::LauncherData,
 	instance_manager::RunningInstanceManager,
 	ops::task::TaskManager,
 	output::{LauncherOutput, OutputInner},
@@ -42,7 +43,7 @@ pub struct FrontState {
 	navigator: Navigator,
 	radio: RadioStation<(), FrontChannel>,
 	footer: FooterItem,
-	configured_item: Option<ConfiguredItem>,
+	modal: Option<ModalType>,
 	toasts: Rc<[Toast]>,
 	toast_id_counter: u32,
 	tip: Option<Tip>,
@@ -56,12 +57,12 @@ pub enum FrontChannel {
 	Route,
 	/// Changes to the footer item
 	FooterItem,
-	/// Changes to the configured item
-	ConfiguredItem,
 	/// Changes to toasts
 	Toast,
 	/// Changes to the tip
 	Tip,
+	/// Changes to the visible modal
+	Modal,
 	/// Changes to the theme
 	Theme,
 }
@@ -78,7 +79,7 @@ impl FrontState {
 			navigator: Navigator::new(),
 			radio,
 			footer: FooterItem::None,
-			configured_item: None,
+			modal: None,
 			toasts: Rc::default(),
 			toast_id_counter: 0,
 			tip: None,
@@ -152,13 +153,13 @@ impl FrontState {
 		&self.footer
 	}
 
-	pub fn set_configured_item(&mut self, item: Option<ConfiguredItem>) {
-		self.configured_item = item;
-		self.invalidate(FrontChannel::ConfiguredItem);
+	pub fn set_modal(&mut self, modal: Option<ModalType>) {
+		self.modal = modal;
+		self.invalidate(FrontChannel::Modal);
 	}
 
-	pub fn configured_item(&self) -> Option<&ConfiguredItem> {
-		self.configured_item.as_ref()
+	pub fn modal(&self) -> Option<&ModalType> {
+		self.modal.as_ref()
 	}
 
 	pub fn toast(&mut self, mut toast: Toast) {
@@ -201,6 +202,12 @@ impl FrontState {
 /// Gives access to front state
 pub fn use_front_state() -> Shared<FrontState> {
 	use_consume()
+}
+
+#[derive(Clone, PartialEq)]
+pub enum ModalType {
+	Configuration(ConfiguredItem),
+	Settings,
 }
 
 /// Global state for Nitrolaunch-related things. Thread-safe, can be passed to tokio tasks.
@@ -282,6 +289,15 @@ impl BackState {
 		let paths = self.paths.clone();
 
 		tokio::spawn(async move { Config::open(&Config::get_path(&paths)) }).await?
+	}
+
+	pub fn data(&self) -> LauncherData {
+		LauncherData::open(&self.paths).unwrap_or_else(|e| {
+			self.output().display(MessageContents::Error(format!(
+				"Failed to open launcher data: {e}"
+			)));
+			LauncherData::default()
+		})
 	}
 
 	pub fn output(&self) -> LauncherOutput {

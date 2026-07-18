@@ -4,8 +4,9 @@ use nitrolaunch::shared::{
 	id::InstanceID,
 	lang::translate::TranslationKey,
 	output::{Message, MessageContents, MessageLevel, NitroOutput},
-	pkg::{PackageDiff, ResolutionError},
+	pkg::{ArcPkgReq, PackageDiff, ResolutionError},
 };
+use serde::{Deserialize, Serialize};
 use tokio::sync::{Mutex, broadcast, mpsc};
 
 use crate::state::BackEvent;
@@ -227,4 +228,58 @@ pub struct OutputInner {
 	pub yes_no_prompt: YesNoPromptResponse,
 	pub passkeys: Arc<Mutex<HashMap<String, String>>>,
 	pub logger: mpsc::Sender<Message>,
+}
+
+/// A serializable ResolutionError
+#[derive(Clone, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+#[serde(tag = "type", content = "data")]
+pub enum SerializableResolutionError {
+	PackageContext(ArcPkgReq, Box<SerializableResolutionError>),
+	FailedToPreload(String),
+	FailedToGetProperties(ArcPkgReq, String),
+	NoValidVersionsFound(ArcPkgReq, Vec<String>),
+	ExtensionNotFulfilled(Option<ArcPkgReq>, ArcPkgReq),
+	ExplicitRequireNotFulfilled(ArcPkgReq, ArcPkgReq),
+	IncompatiblePackage(ArcPkgReq, Vec<Arc<str>>),
+	FailedToEvaluate(ArcPkgReq, String),
+	Misc(String),
+}
+
+impl SerializableResolutionError {
+	pub fn from_err(err: ResolutionError) -> Self {
+		match err {
+			ResolutionError::PackageContext(req, resolution_error) => {
+				SerializableResolutionError::PackageContext(
+					req,
+					Box::new(SerializableResolutionError::from_err(*resolution_error)),
+				)
+			}
+			ResolutionError::FailedToPreload(error) => {
+				SerializableResolutionError::FailedToPreload(error.to_string())
+			}
+			ResolutionError::FailedToGetProperties(req, error) => {
+				SerializableResolutionError::FailedToGetProperties(req, format!("{error:?}"))
+			}
+			ResolutionError::NoValidVersionsFound(req, constraints) => {
+				SerializableResolutionError::NoValidVersionsFound(
+					req,
+					constraints.into_iter().map(|x| x.to_string()).collect(),
+				)
+			}
+			ResolutionError::ExtensionNotFulfilled(req1, req2) => {
+				SerializableResolutionError::ExtensionNotFulfilled(req1, req2)
+			}
+			ResolutionError::ExplicitRequireNotFulfilled(req1, req2) => {
+				SerializableResolutionError::ExplicitRequireNotFulfilled(req1, req2)
+			}
+			ResolutionError::IncompatiblePackage(req, items) => {
+				SerializableResolutionError::IncompatiblePackage(req, items)
+			}
+			ResolutionError::FailedToEvaluate(req, error) => {
+				SerializableResolutionError::FailedToEvaluate(req, format!("{error:?}"))
+			}
+			ResolutionError::Misc(error) => SerializableResolutionError::Misc(format!("{error:?}")),
+		}
+	}
 }

@@ -10,6 +10,7 @@ use crate::{
 	},
 	pages::config::{addons::AddonsConfig, general::GeneralTab},
 	prelude::*,
+	state::ModalType,
 	util::PtrEq,
 };
 use nitrolaunch::{
@@ -38,8 +39,14 @@ pub struct ConfigPage;
 impl Component for ConfigPage {
 	fn render(&self) -> impl IntoElement {
 		let front_state = use_front_state();
-		front_state.read().subscribe(FrontChannel::ConfiguredItem);
-		let item = front_state.read().configured_item().cloned();
+		front_state.read().subscribe(FrontChannel::Modal);
+		let item = front_state.read().modal().and_then(|x| {
+			if let ModalType::Configuration(item) = x {
+				Some(item.clone())
+			} else {
+				None
+			}
+		});
 		let on_submit = use_state::<PtrEq<dyn Fn() -> bool>>(|| PtrEq(Arc::new(|| true)));
 		let is_dirty = use_state(|| false);
 
@@ -66,7 +73,7 @@ impl Component for ConfigPage {
 				is_dirty: is_dirty.clone(),
 			})
 			.size_large()
-			.on_close(move |_| front_state.write().set_configured_item(None))
+			.on_close(move |_| front_state.write().set_modal(None))
 			.cancel_button()
 			.button(ModalButton {
 				title: "Save".into(),
@@ -74,7 +81,7 @@ impl Component for ConfigPage {
 				on_click: EventHandler::from(move |_| {
 					let successful = (on_submit.read().0)();
 					if successful {
-						front_state2.write().set_configured_item(None);
+						front_state2.write().set_modal(None);
 					}
 				}),
 				active: *is_dirty.read(),
@@ -140,8 +147,13 @@ impl Component for ConfigModal {
 					return false;
 				};
 
+				let mut item = item.clone();
+				if item.is_new {
+					item.id = Some(config_state3.id.peek().clone());
+				}
+
 				save_config.mutate(SaveConfigParams {
-					item: item.clone(),
+					item,
 					config: NotEq(config),
 				});
 
