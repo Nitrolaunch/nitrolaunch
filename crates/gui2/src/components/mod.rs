@@ -17,7 +17,7 @@ use freya::{
 };
 use reqwest::Url;
 
-use crate::theme::{Colorway, HexColor, Theme};
+use crate::theme::{Colorway, Theme};
 
 pub mod console;
 pub mod dialog;
@@ -183,11 +183,7 @@ impl FancyBorderExtImage for ImageViewer {
 }
 
 /// Picks foreground, border and background colors from hover and select state for an item
-pub fn item_colorway(
-	theme: &Theme,
-	hovered: bool,
-	selected: bool,
-) -> (HexColor, HexColor, HexColor) {
+pub fn item_colorway(theme: &Theme, hovered: bool, selected: bool) -> (Color, Color, Color) {
 	if selected {
 		(
 			theme.item_select_border,
@@ -202,11 +198,7 @@ pub fn item_colorway(
 }
 
 /// Picks foreground, border and background colors from hover and select state for a panel
-pub fn panel_colorway(
-	theme: &Theme,
-	hovered: bool,
-	selected: bool,
-) -> (HexColor, HexColor, HexColor) {
+pub fn panel_colorway(theme: &Theme, hovered: bool, selected: bool) -> (Color, Color, Color) {
 	if selected {
 		(
 			theme.item_select_border,

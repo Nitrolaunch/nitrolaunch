@@ -2196,7 +2196,7 @@ version = "0.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ab8ecd87370524b461f8557c119c405552c396ed91fc0a8eec68679eab26f94a"
 dependencies = [
- "libloading 0.8.9",
+ "libloading 0.7.4",
 ]
 
 [[package]]
@@ -2745,8 +2745,8 @@ dependencies = [
 
 [[package]]
 name = "freya"
-version = "0.4.0-rc.24"
-source = "git+https://github.com/marc2332/freya.git#5810dc4a2304ee1a653eb63b5cbb40d41bbff4d6"
+version = "0.4.0"
+source = "git+https://github.com/marc2332/freya.git#c414126216849d2ddd48809bffac9fb4254ca57b"
 dependencies = [
  "cfg-if",
  "freya-android",
@@ -2766,8 +2766,8 @@ dependencies = [
 
 [[package]]
 name = "freya-android"
-version = "0.4.0-rc.24"
-source = "git+https://github.com/marc2332/freya.git#5810dc4a2304ee1a653eb63b5cbb40d41bbff4d6"
+version = "0.4.0"
+source = "git+https://github.com/marc2332/freya.git#c414126216849d2ddd48809bffac9fb4254ca57b"
 dependencies = [
  "freya-components",
  "freya-core",
@@ -2779,8 +2779,8 @@ dependencies = [
 
 [[package]]
 name = "freya-animation"
-version = "0.4.0-rc.24"
-source = "git+https://github.com/marc2332/freya.git#5810dc4a2304ee1a653eb63b5cbb40d41bbff4d6"
+version = "0.4.0"
+source = "git+https://github.com/marc2332/freya.git#c414126216849d2ddd48809bffac9fb4254ca57b"
 dependencies = [
  "async-io",
  "easer",
@@ -2789,8 +2789,8 @@ dependencies = [
 
 [[package]]
 name = "freya-clipboard"
-version = "0.4.0-rc.24"
-source = "git+https://github.com/marc2332/freya.git#5810dc4a2304ee1a653eb63b5cbb40d41bbff4d6"
+version = "0.4.1"
+source = "git+https://github.com/marc2332/freya.git#c414126216849d2ddd48809bffac9fb4254ca57b"
 dependencies = [
  "copypasta",
  "freya-core",
@@ -2798,8 +2798,8 @@ dependencies = [
 
 [[package]]
 name = "freya-components"
-version = "0.4.0-rc.24"
-source = "git+https://github.com/marc2332/freya.git#5810dc4a2304ee1a653eb63b5cbb40d41bbff4d6"
+version = "0.4.0"
+source = "git+https://github.com/marc2332/freya.git#c414126216849d2ddd48809bffac9fb4254ca57b"
 dependencies = [
  "accesskit",
  "anyhow",
@@ -2824,8 +2824,8 @@ dependencies = [
 
 [[package]]
 name = "freya-core"
-version = "0.4.0-rc.24"
-source = "git+https://github.com/marc2332/freya.git#5810dc4a2304ee1a653eb63b5cbb40d41bbff4d6"
+version = "0.4.0"
+source = "git+https://github.com/marc2332/freya.git#c414126216849d2ddd48809bffac9fb4254ca57b"
 dependencies = [
  "accesskit",
  "async-watch",
@@ -2852,8 +2852,8 @@ dependencies = [
 
 [[package]]
 name = "freya-edit"
-version = "0.4.0-rc.24"
-source = "git+https://github.com/marc2332/freya.git#5810dc4a2304ee1a653eb63b5cbb40d41bbff4d6"
+version = "0.4.0"
+source = "git+https://github.com/marc2332/freya.git#c414126216849d2ddd48809bffac9fb4254ca57b"
 dependencies = [
  "bitflags 2.11.1",
  "freya-clipboard",
@@ -2866,16 +2866,16 @@ dependencies = [
 
 [[package]]
 name = "freya-engine"
-version = "0.4.0-rc.24"
-source = "git+https://github.com/marc2332/freya.git#5810dc4a2304ee1a653eb63b5cbb40d41bbff4d6"
+version = "0.4.0"
+source = "git+https://github.com/marc2332/freya.git#c414126216849d2ddd48809bffac9fb4254ca57b"
 dependencies = [
  "freya-skia-safe",
 ]
 
 [[package]]
 name = "freya-markdown"
-version = "0.4.0-rc.24"
-source = "git+https://github.com/marc2332/freya.git#5810dc4a2304ee1a653eb63b5cbb40d41bbff4d6"
+version = "0.4.0"
+source = "git+https://github.com/marc2332/freya.git#c414126216849d2ddd48809bffac9fb4254ca57b"
 dependencies = [
  "freya-components",
  "freya-core",
@@ -2885,8 +2885,8 @@ dependencies = [
 
 [[package]]
 name = "freya-performance-plugin"
-version = "0.4.0-rc.24"
-source = "git+https://github.com/marc2332/freya.git#5810dc4a2304ee1a653eb63b5cbb40d41bbff4d6"
+version = "0.4.0"
+source = "git+https://github.com/marc2332/freya.git#c414126216849d2ddd48809bffac9fb4254ca57b"
 dependencies = [
  "freya-core",
  "freya-engine",
@@ -2895,8 +2895,8 @@ dependencies = [
 
 [[package]]
 name = "freya-query"
-version = "0.4.0-rc.24"
-source = "git+https://github.com/marc2332/freya.git#5810dc4a2304ee1a653eb63b5cbb40d41bbff4d6"
+version = "0.4.0"
+source = "git+https://github.com/marc2332/freya.git#c414126216849d2ddd48809bffac9fb4254ca57b"
 dependencies = [
  "async-io",
  "freya-core",
@@ -2905,16 +2905,16 @@ dependencies = [
 
 [[package]]
 name = "freya-radio"
-version = "0.4.0-rc.24"
-source = "git+https://github.com/marc2332/freya.git#5810dc4a2304ee1a653eb63b5cbb40d41bbff4d6"
+version = "0.4.0"
+source = "git+https://github.com/marc2332/freya.git#c414126216849d2ddd48809bffac9fb4254ca57b"
 dependencies = [
  "freya-core",
 ]
 
 [[package]]
 name = "freya-sdk"
-version = "0.4.0-rc.24"
-source = "git+https://github.com/marc2332/freya.git#5810dc4a2304ee1a653eb63b5cbb40d41bbff4d6"
+version = "0.4.0"
+source = "git+https://github.com/marc2332/freya.git#c414126216849d2ddd48809bffac9fb4254ca57b"
 dependencies = [
  "async-io",
  "freya-core",
@@ -2964,8 +2964,8 @@ dependencies = [
 
 [[package]]
 name = "freya-winit"
-version = "0.4.0-rc.24"
-source = "git+https://github.com/marc2332/freya.git#5810dc4a2304ee1a653eb63b5cbb40d41bbff4d6"
+version = "0.4.0"
+source = "git+https://github.com/marc2332/freya.git#c414126216849d2ddd48809bffac9fb4254ca57b"
 dependencies = [
  "accesskit",
  "accesskit_winit",
@@ -3961,7 +3961,7 @@ dependencies = [
  "libc",
  "percent-encoding",
  "pin-project-lite",
- "socket2 0.5.10",
+ "socket2 0.6.3",
  "tokio",
  "tower-service",
  "tracing",
@@ -5962,7 +5962,7 @@ version = "0.7.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "680998035259dcfcafe653688bf2aa6d3e2dc05e98be6ab46afb089dc84f1df8"
 dependencies = [
- "proc-macro-crate 2.0.0",
+ "proc-macro-crate 1.3.1",
  "proc-macro2",
  "quote",
  "syn 2.0.117",
@@ -6683,8 +6683,8 @@ checksum = "df94ce210e5bc13cb6651479fa48d14f601d9858cfe0467f43ae157023b938d3"
 
 [[package]]
 name = "pathgraph"
-version = "0.4.0-rc.24"
-source = "git+https://github.com/marc2332/freya.git#5810dc4a2304ee1a653eb63b5cbb40d41bbff4d6"
+version = "0.4.0"
+source = "git+https://github.com/marc2332/freya.git#c414126216849d2ddd48809bffac9fb4254ca57b"
 
 [[package]]
 name = "percent-encoding"
@@ -7359,7 +7359,7 @@ dependencies = [
  "quinn-udp",
  "rustc-hash",
  "rustls 0.23.38",
- "socket2 0.5.10",
+ "socket2 0.6.3",
  "thiserror 2.0.18",
  "tokio",
  "tracing",
@@ -7396,7 +7396,7 @@ dependencies = [
  "cfg_aliases",
  "libc",
  "once_cell",
- "socket2 0.5.10",
+ "socket2 0.6.3",
  "tracing",
  "windows-sys 0.60.2",
 ]
@@ -7430,8 +7430,8 @@ checksum = "dc33ff2d4973d518d823d61aa239014831e521c75da58e3df4840d3f47749d09"
 
 [[package]]
 name = "ragnarok"
-version = "0.4.0-rc.24"
-source = "git+https://github.com/marc2332/freya.git#5810dc4a2304ee1a653eb63b5cbb40d41bbff4d6"
+version = "0.4.0"
+source = "git+https://github.com/marc2332/freya.git#c414126216849d2ddd48809bffac9fb4254ca57b"
 dependencies = [
  "euclid",
  "hotpath",
@@ -10251,8 +10251,8 @@ checksum = "756daf9b1013ebe47a8776667b466417e2d4c5679d441c26230efd9ef78692db"
 
 [[package]]
 name = "torin"
-version = "0.4.0-rc.24"
-source = "git+https://github.com/marc2332/freya.git#5810dc4a2304ee1a653eb63b5cbb40d41bbff4d6"
+version = "0.4.0"
+source = "git+https://github.com/marc2332/freya.git#c414126216849d2ddd48809bffac9fb4254ca57b"
 dependencies = [
  "euclid",
  "itertools 0.14.0",
@@ -11592,7 +11592,7 @@ version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22"
 dependencies = [
- "windows-sys 0.61.2",
+ "windows-sys 0.48.0",
 ]
 
 [[package]]

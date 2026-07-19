@@ -3,7 +3,8 @@
 	windows_subsystem = "windows"
 )]
 
-use freya::radio::use_init_radio_station;
+use freya::radio::{use_init_radio_station, use_radio};
+use nitrolaunch::shared::output::NitroOutput;
 use tokio::runtime::Builder;
 use tokio::sync::broadcast;
 
@@ -16,6 +17,7 @@ use crate::prelude::*;
 
 use crate::components::nav::{NavBar, router::Router};
 use crate::state::{BackEvent, BackState, FrontChannel, FrontState};
+use crate::theme::ThemeDeser;
 use crate::util::Shared;
 
 mod components;
@@ -66,7 +68,31 @@ impl Component for App {
 	fn render(&self) -> impl IntoElement {
 		let theme = use_theme();
 		let front_state = use_front_state();
-		front_state.read().subscribe(FrontChannel::Theme);
+		let back_state = use_consume::<BackState>();
+
+		let front_state2 = front_state.clone();
+		let back_state2 = back_state.clone();
+		let radio = use_radio(FrontChannel::ThemeConfig);
+		use_side_effect(move || {
+			radio.read();
+			let data = back_state2.data();
+			let available_themes = back_state2.themes();
+			back_state.output().debug("Applying theme".into());
+
+			let mut theme = ThemeDeser::dark();
+			for new_theme in data.base_theme.into_iter().chain(data.overlay_themes) {
+				if new_theme == "light" {
+					theme = theme.merge(ThemeDeser::light());
+				} else if let Some(data) = available_themes.iter().find(|x| x.id == new_theme) {
+					dbg!(&data.settings);
+					if let Ok(new_theme) = serde_json::from_str::<ThemeDeser>(&data.settings) {
+						theme = theme.merge(new_theme);
+					}
+				}
+			}
+			front_state2.write().set_theme(theme.into());
+			back_state.output().debug("Theme applied".into());
+		});
 
 		let show_sidebar = use_state(|| false);
 

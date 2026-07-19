@@ -34,8 +34,8 @@ impl Component for PluginsPage {
 				is_remote.clone().set(selected.single());
 			}),
 		)
-		.child(SelectOption::new(false, "Local", Some("folder")))
-		.child(SelectOption::new(true, "Remote", Some("globe")));
+		.child(SelectOption::new(false, "Installed", Some("folder")))
+		.child(SelectOption::new(true, "Available", Some("globe")));
 
 		let header = rect()
 			.width(Size::fill())

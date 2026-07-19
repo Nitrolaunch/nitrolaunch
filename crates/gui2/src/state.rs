@@ -11,7 +11,7 @@ use nitrolaunch::{
 	io::{logging::Logger, paths::Paths},
 	pkg_crate::repo::RepoMetadata,
 	plugin::PluginManager,
-	plugin_crate::hook::hooks::AddCustomPackageRepositories,
+	plugin_crate::hook::hooks::{AddCustomPackageRepositories, AddThemes},
 	shared::{
 		output::{Message, MessageContents, NitroOutput, NoOp},
 		pkg::{PackageDiff, ResolutionError},
@@ -65,6 +65,8 @@ pub enum FrontChannel {
 	Modal,
 	/// Changes to the theme
 	Theme,
+	/// Changes to the configured theme, which then updates the theme
+	ThemeConfig,
 }
 
 impl RadioChannel<()> for FrontChannel {}
@@ -96,12 +98,17 @@ impl FrontState {
 		self.event_rx.resubscribe()
 	}
 
-	fn invalidate(&self, channel: FrontChannel) {
+	pub fn invalidate(&self, channel: FrontChannel) {
 		self.radio.clone().write_channel(channel);
 	}
 
 	pub fn theme(&self) -> Arc<Theme> {
 		self.theme.clone()
+	}
+
+	pub fn set_theme(&mut self, theme: Theme) {
+		self.theme = Arc::new(theme);
+		self.invalidate(FrontChannel::Theme);
 	}
 
 	pub fn route(&self) -> &Page {
@@ -313,6 +320,10 @@ impl BackState {
 	pub fn repos(&self) -> &HashMap<String, RepoMetadata> {
 		&self.cached_info.repos
 	}
+
+	pub fn themes(&self) -> &[nitrolaunch::plugin_crate::hook::hooks::Theme] {
+		&self.cached_info.themes
+	}
 }
 
 /// Events sent from the backend
@@ -351,6 +362,7 @@ pub enum BackEvent {
 /// Information from plugins and such that is fetched on startup or reload once and then used
 struct CachedInfo {
 	repos: HashMap<String, RepoMetadata>,
+	themes: Vec<nitrolaunch::plugin_crate::hook::hooks::Theme>,
 }
 
 impl CachedInfo {
@@ -369,6 +381,16 @@ impl CachedInfo {
 		};
 		let repos = repos.into_iter().map(|x| (x.id, x.metadata)).collect();
 
-		Self { repos }
+		let themes = if let Ok(themes) = plugins.call_hook(AddThemes, &(), paths, o).await {
+			if let Ok(themes) = themes.flatten_all_results(o).await {
+				themes
+			} else {
+				Vec::new()
+			}
+		} else {
+			Vec::new()
+		};
+
+		Self { repos, themes }
 	}
 }

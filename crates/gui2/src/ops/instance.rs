@@ -1,6 +1,7 @@
 use std::{sync::Arc, time::Duration};
 
 use anyhow::Context;
+use freya::query::QueriesStorage;
 use itertools::Itertools;
 use nitrolaunch::{
 	config::modifications::{ConfigModification, apply_modifications_and_write},
@@ -365,6 +366,21 @@ impl MutationCapability for SaveConfig {
 
 			Ok(())
 		})
+	}
+
+	fn on_settled(
+		&self,
+		keys: &Self::Keys,
+		_result: &Result<Self::Ok, Self::Err>,
+	) -> impl Future<Output = ()> {
+		async {
+			QueriesStorage::<FetchItems>::invalidate_all().await;
+			if let Some(id) = &keys.item.id {
+				QueriesStorage::<FetchInstanceConfig>::invalidate_matching(id.clone()).await;
+			}
+			QueriesStorage::<FetchInstanceOrTemplateConfig>::invalidate_matching(keys.item.clone())
+				.await;
+		}
 	}
 }
 

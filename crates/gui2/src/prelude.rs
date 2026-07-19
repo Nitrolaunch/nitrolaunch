@@ -5,6 +5,7 @@ pub use freya::query::{
 };
 
 pub use crate::components::dialog::tip::TipExt;
+pub use crate::components::dialog::toast::Toast;
 pub use crate::components::input::field;
 pub use crate::components::input::select::{Dropdown, InlineSelect, SelectOption};
 pub use crate::components::{
@@ -29,6 +30,36 @@ impl<T: 'static> StateExt<T> for State<T> {
 	fn setter(&self) -> EventHandler<T> {
 		let mut this = self.clone();
 		EventHandler::from(move |value| this.set(value))
+	}
+}
+
+pub trait VecStateExt<T>: Clone {
+	type Item: PartialEq + Clone + 'static;
+
+	/// Returns an event handler that adds or removes a value from this state's set
+	fn select_setter(&self) -> EventHandler<Self::Item>;
+}
+
+impl<T: PartialEq + Clone + 'static> VecStateExt<T> for State<Vec<T>> {
+	type Item = T;
+
+	fn select_setter(&self) -> EventHandler<Self::Item> {
+		let mut this = self.clone();
+		EventHandler::from(move |value| {
+			if this.read().contains(&value) {
+				let values = this
+					.read()
+					.iter()
+					.filter(|x| *x != &value)
+					.cloned()
+					.collect();
+				this.set(values);
+			} else {
+				let mut new_vec = this.read().clone();
+				new_vec.push(value);
+				this.set(new_vec);
+			}
+		})
 	}
 }
 

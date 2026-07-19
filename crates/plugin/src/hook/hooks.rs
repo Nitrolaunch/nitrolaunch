@@ -773,7 +773,7 @@ def_hook!(
 );
 
 /// Data for a GUI theme
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Clone, Default)]
 #[serde(default)]
 pub struct Theme {
 	/// A unique ID for the theme
@@ -786,6 +786,8 @@ pub struct Theme {
 	pub r#type: ThemeType,
 	/// The CSS data for the theme
 	pub css: String,
+	/// JSON settings for the theme
+	pub settings: String,
 	/// A css color that identifies this theme
 	pub color: String,
 }

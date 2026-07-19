@@ -9,12 +9,13 @@ use crate::{
 	},
 	data::LauncherData,
 	ops::settings::{FetchPreferences, SavePreferences},
-	pages::settings::plugins::PluginsPage,
+	pages::settings::{general::GeneralSettings, plugins::PluginsPage},
 	prelude::*,
 	state::ModalType,
 	util::PtrEq,
 };
 
+mod general;
 pub mod plugins;
 
 #[derive(PartialEq)]
@@ -60,6 +61,7 @@ struct SettingsModal {
 impl Component for SettingsModal {
 	fn render(&self) -> impl IntoElement {
 		let theme = use_theme();
+		let front_state = use_front_state();
 		let back_state = use_consume::<BackState>();
 		let prefs_query = use_query(Query::new((), FetchPreferences::new(back_state.clone())));
 		let data = use_hook(|| Arc::new(back_state.data()));
@@ -73,6 +75,7 @@ impl Component for SettingsModal {
 
 		let settings_state = SettingsState::new(self.is_dirty.clone());
 
+		let back_state2 = back_state.clone();
 		let mut settings_state2 = settings_state.clone();
 		let mut on_submit_state = self.on_submit.clone();
 		use_side_effect(move || {
@@ -84,14 +87,28 @@ impl Component for SettingsModal {
 
 			// Set up on submit callback
 			let settings_state3 = settings_state2.clone();
+			let back_state2 = back_state2.clone();
+			let front_state = front_state.clone();
 			let on_submit = move || {
 				let mut prefs = original_prefs.clone();
 				let mut data = (*original_data).clone();
+				let og_theme = data.base_theme.clone();
+				let og_overlays = data.overlay_themes.clone();
 				if settings_state3.apply(&mut prefs, &mut data).is_err() {
 					return false;
 				};
 
+				if let Err(e) = data.write(&back_state2.paths) {
+					front_state
+						.write()
+						.toast(Toast::from_error("Failed to write launcher data", e));
+					return false;
+				}
 				save_prefs.mutate(NotEq(prefs));
+
+				if og_theme != data.base_theme || og_overlays != data.overlay_themes {
+					front_state.write().invalidate(FrontChannel::ThemeConfig);
+				}
 
 				true
 			};
@@ -109,7 +126,10 @@ impl Component for SettingsModal {
 			);
 
 		let tab_contents = match &*tab.read() {
-			Tab::General => rect().into_element(),
+			Tab::General => GeneralSettings {
+				state: settings_state.clone(),
+			}
+			.into_element(),
 			Tab::Plugins => PluginsPage.into_element(),
 		};
 
@@ -134,6 +154,8 @@ enum Tab {
 struct SettingsState {
 	is_dirty: State<bool>,
 	language: State<Language>,
+	base_theme: State<String>,
+	overlay_themes: State<Vec<String>>,
 }
 
 impl SettingsState {
@@ -142,10 +164,14 @@ impl SettingsState {
 		let out = Self {
 			is_dirty,
 			language: use_state(|| Language::default()),
+			base_theme: use_state(|| String::new()),
+			overlay_themes: use_state(|| Vec::new()),
 		};
 
 		use_side_effect(move || {
 			out.language.read();
+			out.base_theme.read();
+			out.overlay_themes.read();
 
 			out.is_dirty.clone().set(true);
 		});
@@ -155,6 +181,9 @@ impl SettingsState {
 
 	pub fn update(&mut self, prefs: ConfigPreferences, data: LauncherData) {
 		self.language.set_if_modified(prefs.language);
+		self.base_theme
+			.set_if_modified(data.base_theme.unwrap_or("dark".into()));
+		self.overlay_themes.set_if_modified(data.overlay_themes);
 
 		self.is_dirty.set_if_modified(false);
 	}
@@ -165,6 +194,9 @@ impl SettingsState {
 		data: &mut LauncherData,
 	) -> Result<(), ConfigError> {
 		prefs.language = *self.language.read();
+
+		data.base_theme = Some(self.base_theme.read().clone());
+		data.overlay_themes = self.overlay_themes.read().clone();
 
 		Ok(())
 	}

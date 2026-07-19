@@ -366,6 +366,18 @@ impl MessageContents {
 	}
 }
 
+impl From<&str> for MessageContents {
+	fn from(value: &str) -> Self {
+		Self::Simple(value.to_string())
+	}
+}
+
+impl From<String> for MessageContents {
+	fn from(value: String) -> Self {
+		Self::Simple(value)
+	}
+}
+
 /// The level of logging that a message has
 #[derive(Copy, Clone, Debug, Deserialize, Serialize, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(rename_all = "snake_case")]
@@ -419,7 +431,7 @@ impl Advanced {
 		Self {
 			printer: ReplPrinter::new(true),
 			in_process: false,
-			indent: 0
+			indent: 0,
 		}
 	}
 }
@@ -440,7 +452,7 @@ impl NitroOutput for Advanced {
 	fn start_process(&mut self) {
 		self.in_process = true;
 	}
-	
+
 	fn end_process(&mut self) {
 		self.in_process = false;
 		self.printer.newline();

@@ -194,6 +194,10 @@ impl Toast {
 		Self::new(title, contents, ToastType::Error)
 	}
 
+	pub fn from_error(title: &str, err: anyhow::Error) -> Self {
+		Self::error(title, Some(err.to_string().into_element()))
+	}
+
 	pub fn new(title: &str, contents: Option<Element>, ty: ToastType) -> Self {
 		Self {
 			title: title.into(),
