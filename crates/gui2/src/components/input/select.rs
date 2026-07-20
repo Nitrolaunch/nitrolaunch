@@ -10,6 +10,7 @@ pub struct InlineSelect<T: PartialEq + Clone> {
 	derived_option: Option<T>,
 	align_end: bool,
 	fit: bool,
+	grid_cols: u8,
 }
 
 #[allow(dead_code)]
@@ -22,6 +23,7 @@ impl<T: PartialEq + Clone> InlineSelect<T> {
 			derived_option: None,
 			align_end: false,
 			fit: false,
+			grid_cols: 0,
 		}
 	}
 
@@ -54,6 +56,12 @@ impl<T: PartialEq + Clone> InlineSelect<T> {
 		self.fit = true;
 		self
 	}
+
+	/// Make the options display in a grid with the given number of columns
+	pub fn grid(mut self, cols: u8) -> Self {
+		self.grid_cols = cols;
+		self
+	}
 }
 
 impl<T: PartialEq + Clone> InlineSelect<Option<T>> {
@@ -72,6 +80,8 @@ impl<T: PartialEq + Clone> Derivable<T> for InlineSelect<T> {
 
 impl<T: PartialEq + Clone + 'static> Component for InlineSelect<T> {
 	fn render(&self) -> impl IntoElement {
+		let theme = use_theme();
+
 		let selected = self.selected.clone();
 		let upper_on_select = self.on_select.clone();
 		let on_select: NotEq<Rc<dyn Fn(T)>> = NotEq(Rc::new(move |option| {
@@ -100,15 +110,20 @@ impl<T: PartialEq + Clone + 'static> Component for InlineSelect<T> {
 			.into_element()
 		});
 
-		rect()
+		let out = rect()
 			.width(Size::fill())
 			.cont()
 			.main_align(if self.align_end {
 				Alignment::End
 			} else {
 				Alignment::Start
-			})
-			.children(options)
+			});
+
+		if self.grid_cols > 0 {
+			out.child(grid(self.grid_cols, options).gap(theme.gap))
+		} else {
+			out.children(options)
+		}
 	}
 }
 
@@ -180,6 +195,11 @@ pub struct Dropdown<T: PartialEq + Clone> {
 	derived_option: Option<T>,
 	on_open_change: Option<EventHandler<bool>>,
 	is_loading: bool,
+	custom_header: Option<SelectOption<T>>,
+	options_width: Option<f32>,
+	align_options_right: bool,
+	header_width: Size,
+	panel_colorway: bool,
 }
 
 #[allow(dead_code)]
@@ -192,6 +212,11 @@ impl<T: PartialEq + Clone> Dropdown<T> {
 			derived_option: None,
 			on_open_change: None,
 			is_loading: false,
+			custom_header: None,
+			options_width: None,
+			align_options_right: false,
+			header_width: Size::fill(),
+			panel_colorway: false,
 		}
 	}
 
@@ -221,6 +246,31 @@ impl<T: PartialEq + Clone> Dropdown<T> {
 
 	pub fn loading(mut self, is_loading: bool) -> Self {
 		self.is_loading = is_loading;
+		self
+	}
+
+	pub fn custom_header(mut self, header: SelectOption<T>) -> Self {
+		self.custom_header = Some(header);
+		self
+	}
+
+	pub fn options_width(mut self, width: f32) -> Self {
+		self.options_width = Some(width);
+		self
+	}
+
+	pub fn align_options_right(mut self) -> Self {
+		self.align_options_right = true;
+		self
+	}
+
+	pub fn header_width(mut self, width: Size) -> Self {
+		self.header_width = width;
+		self
+	}
+
+	pub fn panel_colorway(mut self) -> Self {
+		self.panel_colorway = true;
 		self
 	}
 }
@@ -265,37 +315,56 @@ impl<T: PartialEq + Clone + 'static> Component for Dropdown<T> {
 			(upper_on_select.0)(selected.clone().deselect(&option));
 		}));
 
-		let preview = match &self.selected {
-			Selected::Single(selected) => {
-				if let Some(option) = self.options.iter().find(|x| x.id == *selected) {
-					dropdown_option_contents(option, &theme).into_element()
-				} else {
-					"Unknown option".into_element()
+		let fit_header = self.header_width == Size::Inner;
+
+		let preview = if let Some(custom_header) = &self.custom_header {
+			dropdown_option_contents(custom_header, fit_header, &theme)
+		} else {
+			match &self.selected {
+				Selected::Single(selected) => {
+					if let Some(option) = self.options.iter().find(|x| x.id == *selected) {
+						dropdown_option_contents(option, fit_header, &theme)
+					} else {
+						dropdown_option_contents(
+							&SelectOption::simple("Unknown option"),
+							fit_header,
+							&theme,
+						)
+					}
 				}
+				Selected::Multi(selected) => dropdown_option_contents(
+					&SelectOption::simple(format!("{} selected", selected.len())),
+					fit_header,
+					&theme,
+				),
 			}
-			Selected::Multi(selected) => format!("{} selected", selected.len()).into_element(),
 		};
 
+		let arrow = if *is_open.read() {
+			"angle_down"
+		} else {
+			"angle_right"
+		};
+		let arrow = icon(arrow, 16.0);
+		let arrow = rect()
+			.width(Size::px(theme.input_height))
+			.height(Size::px(theme.input_height))
+			.center()
+			.child(arrow);
+		let preview = preview.child(arrow);
+
 		let header = rect()
-			.width(Size::fill())
+			.width(self.header_width.clone())
 			.height(Size::px(theme.input_height))
 			.corner_radius(theme.round)
-			.item_colorway(&theme, *is_hovered.read(), false)
+			.simple_colorway(&theme, *is_hovered.read(), false)
+			.maybe(self.panel_colorway, |this| {
+				this.panel_colorway(&theme, *is_hovered.read(), false)
+			})
 			.hover(is_hovered)
 			.on_press(move |_| is_open.toggle())
 			.center()
 			.child(preview);
-
-		let option_count = if self.options.len() > 7 {
-			7.5
-		} else {
-			self.options.len() as f32
-		};
-		let options_height = if self.is_loading {
-			theme.input_height
-		} else {
-			(theme.input_height + theme.gap) * option_count
-		};
 
 		let options = if self.is_loading {
 			rect()
@@ -327,14 +396,30 @@ impl<T: PartialEq + Clone + 'static> Component for Dropdown<T> {
 			.length(self.options.len())
 			.item_size(theme.input_height + theme.gap)
 			.width(Size::fill())
-			.height(Size::fill())
+			.height(Size::auto())
+			.max_height(Size::px((theme.input_height + theme.gap) * 7.5))
 			.into_element()
 		};
 
+		let options_width = self
+			.options_width
+			.map(Size::px)
+			.unwrap_or_else(|| Size::fill());
+		let options_position = if self.align_options_right {
+			Position::new_absolute()
+				.right(0.0)
+				.top(theme.input_height + 8.0)
+		} else {
+			Position::new_absolute()
+				.left(0.0)
+				.top(theme.input_height + 8.0)
+		};
 		let options = rect()
-			.width(Size::fill())
-			.height(Size::px(options_height))
-			.position(Position::new_absolute().top(theme.input_height + 8.0))
+			.width(options_width)
+			.maybe(fit_header && self.options_width.is_none(), |this| {
+				this.min_width(Size::px(150.0))
+			})
+			.position(options_position)
 			.layer(Layer::Overlay)
 			.panel_colorway(&theme, false, false)
 			.corner_radius(theme.round)
@@ -404,14 +489,19 @@ impl<T: PartialEq + Clone + 'static> Component for DropdownOption<T> {
 			.maybe(self.option.tip.is_some(), |this| {
 				this.tip(&front_state, self.option.tip.as_deref().unwrap())
 			})
-			.child(dropdown_option_contents(&self.option, &theme))
+			.child(dropdown_option_contents(&self.option, false, &theme))
 			.into_element()
 	}
 }
 
-fn dropdown_option_contents<T: PartialEq + Clone>(option: &SelectOption<T>, theme: &Theme) -> Rect {
+fn dropdown_option_contents<T: PartialEq + Clone>(
+	option: &SelectOption<T>,
+	fit: bool,
+	theme: &Theme,
+) -> Rect {
 	rect()
-		.cont()
+		.horizontal()
+		.flex()
 		.maybe_child(option.icon.clone().map(|x| {
 			rect()
 				.width(Size::px(theme.input_height))
@@ -421,7 +511,7 @@ fn dropdown_option_contents<T: PartialEq + Clone>(option: &SelectOption<T>, them
 		}))
 		.child(
 			rect()
-				.width(Size::flex(1.0))
+				.maybe(!fit, |this| this.width(Size::flex(1.0)))
 				.height(Size::fill())
 				.main_align(Alignment::Center)
 				.cross_align(Alignment::Center)
@@ -442,11 +532,10 @@ pub struct SelectOption<T: PartialEq + Clone> {
 }
 
 impl<T: PartialEq + Clone> SelectOption<T> {
-	pub fn simple(id: impl Into<T>) -> Self
+	pub fn simple(id: T) -> Self
 	where
 		T: ToString,
 	{
-		let id = id.into();
 		let title = id.to_string();
 		Self::new(id, &title, None)
 	}

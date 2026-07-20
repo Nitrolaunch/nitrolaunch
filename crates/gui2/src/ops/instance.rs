@@ -16,7 +16,7 @@ use nitrolaunch::{
 	},
 };
 
-use crate::{pages::config::ConfiguredItem, prelude::*};
+use crate::{ops::task::Task, pages::config::ConfiguredItem, prelude::*, simple_mutation};
 
 #[derive(Clone, PartialEq, Eq, Hash)]
 pub struct FetchItems {
@@ -430,3 +430,36 @@ impl QueryCapability for FetchInstanceOutput {
 		})
 	}
 }
+
+#[rustfmt::skip]
+simple_mutation!(
+	name = DeleteInstance,
+	ok = (),
+	err = anyhow::Error,
+	keys = String,
+	fn run(&self, keys: &Self::Keys) -> impl Future<Output = Result<Self::Ok, Self::Err>> {
+		let back_state = self.back_state.clone();
+		let id = keys.clone();
+
+		query_spawn(async move {
+			let config = back_state.config().await?;
+			let mut o = back_state.output();
+			o.set_task(Task::DeleteInstance);
+			let instance = config
+				.instances
+				.get(&InstanceID::from(id.clone()))
+				.context("Instance not found")?;
+			instance
+				.delete(&back_state.paths, &back_state.plugins, &mut o)
+				.await
+				.context("Failed to delete instance")
+		})
+	}
+	fn on_settled(
+		&self,
+		_keys: &Self::Keys,
+		_result: &Result<Self::Ok, Self::Err>,
+	) -> impl Future<Output = ()> {
+		QueriesStorage::<FetchItems>::invalidate_all()
+	}
+);

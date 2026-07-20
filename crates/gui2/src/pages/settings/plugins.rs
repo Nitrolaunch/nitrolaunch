@@ -254,11 +254,7 @@ impl Component for PluginItem {
 				)
 			})
 			.maybe(!self.is_remote, |this| {
-				this.child(
-					button(&theme)
-						.on_press(uninstall)
-						.child(icon("trash", 16.0)),
-				)
+				this.child(icon_button("trash", &theme).on_press(uninstall))
 			})
 			.child(rect().width(Size::px(84.0)).child(version_selector));
 

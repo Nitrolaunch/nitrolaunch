@@ -89,14 +89,12 @@ impl Component for RunningInstance {
 		let theme = use_theme();
 		let is_hovered = use_state(|| false);
 		let back_state = use_consume::<BackState>();
-		let on_kill = use_mutation(KillInstance::new(
-			self.instance_id.clone(),
-			self.account.clone(),
-			back_state,
-		));
+		let on_kill = use_mutation(KillInstance::new(back_state));
 
 		let icon = get_instance_icon(self.item.icon.as_deref());
 
+		let id = self.instance_id.clone();
+		let account = self.account.clone();
 		let out = rect()
 			.center()
 			.width(Size::px(ITEM_SIZE))
@@ -104,7 +102,7 @@ impl Component for RunningInstance {
 			.item_colorway(&theme, *is_hovered.read(), false)
 			.corner_radius(ITEM_SIZE / 2.0)
 			.hover(is_hovered)
-			.on_press(move |_| on_kill.mutate(()))
+			.on_press(move |_| on_kill.mutate((id.clone(), account.clone())))
 			.child(
 				ImageViewer::new(icon)
 					.width(Size::px(24.0))

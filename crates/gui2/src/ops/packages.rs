@@ -20,7 +20,7 @@ use nitrolaunch::{
 };
 use tokio::task::JoinSet;
 
-use crate::prelude::*;
+use crate::{ops::task::Task, prelude::*};
 
 #[derive(Clone, PartialEq, Eq, Hash)]
 pub struct FetchInstanceLockfile {
@@ -246,6 +246,7 @@ impl QueryCapability for SearchPackages {
 		query_spawn(async move {
 			let config = back_state.config().await?;
 			let mut o = back_state.output();
+			o.set_task(Task::SearchPackages);
 
 			let results = params
 				.session
@@ -451,7 +452,7 @@ impl MutationCapability for InstallPackage {
 					ConfigModification::UpdateTemplate(template_id.clone(), template)
 				}
 				PackageInstallLocation::NewInstanceModpack(instance_id) => {
-					o.set_task("install_modpack");
+					o.set_task(Task::InstallModpack);
 
 					let core = config
 						.get_core(

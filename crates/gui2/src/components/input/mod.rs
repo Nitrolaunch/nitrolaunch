@@ -16,7 +16,7 @@ pub fn field_label(text: &str, ico: &str, theme: &Theme) -> impl IntoElement {
 		.horizontal()
 		.spacing(theme.gap)
 		.main_align(Alignment::Start)
-		.cross_align(Alignment::End)
+		.cross_align(Alignment::Center)
 		.font_size(13)
 		.font_weight(FontWeight::BOLD)
 		.color(theme.fg3)

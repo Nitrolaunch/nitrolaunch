@@ -53,7 +53,7 @@ impl Component for TextInput {
 		Input::new(self.value.clone())
 			.width(Size::fill())
 			.theme_colors(input_theme)
-			.corner_radius(theme.round2)
+			.corner_radius(theme.round)
 			.maybe(self.derived_value.is_some(), |this| {
 				this.placeholder(self.derived_value.clone().unwrap())
 					.placeholder_color(theme.template)

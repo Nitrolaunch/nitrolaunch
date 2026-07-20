@@ -1,7 +1,6 @@
 use std::{collections::HashMap, sync::Arc, time::Duration};
 
 use nitrolaunch::shared::{
-	id::InstanceID,
 	lang::translate::TranslationKey,
 	output::{Message, MessageContents, MessageLevel, NitroOutput},
 	pkg::{ArcPkgReq, PackageDiff, ResolutionError},
@@ -9,7 +8,7 @@ use nitrolaunch::shared::{
 use serde::{Deserialize, Serialize};
 use tokio::sync::{Mutex, broadcast, mpsc};
 
-use crate::state::BackEvent;
+use crate::{ops::task::Task, state::BackEvent};
 
 /// Response to a prompt in the frontend, shared with a mutex
 pub type PromptResponse = Arc<Mutex<Option<String>>>;
@@ -19,9 +18,7 @@ pub type YesNoPromptResponse = Arc<Mutex<Option<bool>>>;
 pub struct LauncherOutput {
 	inner: OutputInner,
 	/// The task that this output is running
-	task: Option<String>,
-	/// The instance launch associated with this specific output
-	instance: Option<InstanceID>,
+	task: Option<Task>,
 }
 
 impl LauncherOutput {
@@ -29,29 +26,28 @@ impl LauncherOutput {
 		Self {
 			inner: inner.clone(),
 			task: None,
-			instance: None,
 		}
 	}
 
-	pub fn set_task(&mut self, task: &str) {
+	pub fn set_task(&mut self, task: Task) {
 		let _ = self
 			.inner
 			.event_tx
-			.send(BackEvent::OutputStartTask(task.into()));
-		self.task = Some(task.to_string());
-	}
-
-	pub fn set_instance(&mut self, instance: InstanceID) {
-		self.instance = Some(instance);
+			.send(BackEvent::OutputStartTask(task.clone()));
+		let _ = self.inner.logger.try_send(Message {
+			contents: format!("Starting task {task:?}").into(),
+			level: MessageLevel::Debug,
+		});
+		self.task = Some(task);
 	}
 
 	pub fn finish_task(&mut self) {
-		if let Some(task) = &self.task {
-			let _ = self
-				.inner
-				.event_tx
-				.send(BackEvent::OutputEndTask(task.clone()));
-			self.task = None;
+		if let Some(task) = self.task.take() {
+			let _ = self.inner.logger.try_send(Message {
+				contents: format!("Finished task {task:?}").into(),
+				level: MessageLevel::Debug,
+			});
+			let _ = self.inner.event_tx.send(BackEvent::OutputEndTask(task));
 		}
 	}
 }
@@ -63,16 +59,7 @@ impl NitroOutput for LauncherOutput {
 	}
 
 	fn display_message(&mut self, message: Message) {
-		let logger = self.inner.logger.clone();
-		let message2 = message.clone();
-		tokio::task::spawn(async move {
-			let _ = logger.send(message2).await;
-		});
-
-		if message.level < MessageLevel::Important {
-			println!("{}", message.contents.default_format());
-			return;
-		}
+		let _ = self.inner.logger.try_send(message.clone());
 
 		let _ = self.inner.event_tx.send(BackEvent::OutputMessage {
 			message: message.contents,

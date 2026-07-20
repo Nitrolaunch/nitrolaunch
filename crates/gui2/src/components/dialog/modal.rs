@@ -1,4 +1,4 @@
-use crate::prelude::*;
+use crate::{components::input::icon, prelude::*};
 
 pub const MODAL_DEFAULT_WIDTH: f32 = 600.0;
 pub const MODAL_DEFAULT_HEIGHT: f32 = 400.0;
@@ -124,6 +124,26 @@ impl Modal {
 			on_click: on_close,
 			active: false,
 		})
+	}
+
+	pub fn simple_confirm(
+		title: &str,
+		icon: &str,
+		body: impl IntoElement,
+		is_open: bool,
+		on_close: impl Into<EventHandler<()>>,
+		on_confirm: impl Into<EventHandler<()>>,
+	) -> Self {
+		Self::new(title.into(), icon.into())
+			.on_close(on_close)
+			.cancel_button()
+			.button(ModalButton {
+				title: "Confirm".into(),
+				icon: "check".into(),
+				on_click: on_confirm.into(),
+				active: true,
+			})
+			.maybe_child(is_open, || body.into_element())
 	}
 }
 

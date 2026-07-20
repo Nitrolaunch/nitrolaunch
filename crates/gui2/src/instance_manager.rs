@@ -30,7 +30,7 @@ impl RunningInstanceManager {
 	}
 
 	/// Gets the async task to update instances
-	pub async fn get_run_task(self) -> ! {
+	pub async fn get_run_task(self) -> () {
 		loop {
 			self.update_instances().await;
 			tokio::time::sleep(Duration::from_millis(75)).await;

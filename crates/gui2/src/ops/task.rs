@@ -1,6 +1,5 @@
-use std::{sync::Arc, time::Duration};
+use std::{fmt::Display, sync::Arc, time::Duration};
 
-use nitrolaunch::shared::output::MessageContents;
 use tokio::{
 	sync::{Mutex, broadcast},
 	task::JoinHandle,
@@ -35,7 +34,7 @@ impl TaskManager {
 	}
 
 	/// Registers a task with the task manager
-	pub fn register_task(&mut self, task_id: String, join_handle: JoinHandle<anyhow::Result<()>>) {
+	pub fn register_task(&mut self, task_id: Task, join_handle: JoinHandle<anyhow::Result<()>>) {
 		self.tasks.push(RunningTask {
 			id: task_id,
 			join_handle: Some(join_handle),
@@ -50,10 +49,10 @@ impl TaskManager {
 					let result = join_handle.await;
 					if let Ok(Err(error)) = result {
 						eprintln!("Task error: {error:?}");
-						let _ = self.event_tx.send(BackEvent::OutputMessage {
-							message: MessageContents::Error(format!("{error:?}")),
-							task: Some(task.id.clone()),
-						});
+						let _ = self.event_tx.send(BackEvent::ErrorToast(
+							format!("Failed {}", task.id),
+							Some(format!("{error:?}")),
+						));
 					}
 				} else {
 					task.join_handle = Some(join_handle);
@@ -61,13 +60,24 @@ impl TaskManager {
 			}
 		}
 
-		self.tasks.retain(|x| x.join_handle.is_some());
+		self.tasks.retain(|x| {
+			if x.join_handle.is_none() {
+				let _ = self.event_tx.send(BackEvent::OutputEndTask(x.id.clone()));
+				false
+			} else {
+				true
+			}
+		});
+	}
+
+	pub fn is_task_running(&self, task_id: &Task) -> bool {
+		self.tasks.iter().any(|task| task.id == *task_id)
 	}
 
 	/// Kills a task
-	pub fn kill(&mut self, task_id: &str) {
+	pub fn kill(&mut self, task_id: &Task) {
 		self.tasks.retain(|task| {
-			if task.id == task_id {
+			if task.id == *task_id {
 				if let Some(join_handle) = &task.join_handle {
 					join_handle.abort();
 				}
@@ -88,6 +98,36 @@ impl TaskManager {
 /// A single running task
 #[derive(Debug)]
 struct RunningTask {
-	id: String,
+	id: Task,
 	join_handle: Option<JoinHandle<anyhow::Result<()>>>,
+}
+
+/// Different types of long-running tasks across the app
+#[derive(PartialEq, Clone, Debug, Hash, Eq)]
+pub enum Task {
+	LaunchInstance(String),
+	UpdateInstance(String),
+	UpdateInstanceContent(String),
+	DeleteInstance,
+	InstallModpack,
+	SearchPackages,
+	FetchRemotePlugins,
+	InstallPlugin,
+	FetchPluginVersions,
+}
+
+impl Display for Task {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		match self {
+			Self::LaunchInstance(id) => write!(f, "Launching instance {id}"),
+			Self::UpdateInstance(id) => write!(f, "Updating instance {id}"),
+			Self::UpdateInstanceContent(id) => write!(f, "Updating content for {id}"),
+			Self::DeleteInstance => write!(f, "Deleting instance"),
+			Self::InstallModpack => write!(f, "Installing modpack"),
+			Self::SearchPackages => write!(f, "Searching packages"),
+			Self::FetchRemotePlugins => write!(f, "Fetching plugins"),
+			Self::InstallPlugin => write!(f, "Installing plugin"),
+			Self::FetchPluginVersions => write!(f, "Fetching plugin versions"),
+		}
+	}
 }

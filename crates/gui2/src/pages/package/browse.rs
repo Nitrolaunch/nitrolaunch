@@ -23,7 +23,10 @@ use crate::{
 	ops::packages::{SearchPackages, SearchPackagesParams},
 	pages::package::view::PackageView,
 	prelude::*,
-	util::assets::get_package_kind_icon,
+	util::{
+		assets::get_package_kind_icon,
+		pkg::{PACKAGE_CATEGORIES, package_category_display_name, package_category_icon},
+	},
 };
 
 const PAGE_SIZE: u8 = 16;
@@ -107,12 +110,21 @@ impl Component for BrowsePackagesPage {
 		let search = TextInput::new(search_state.search.clone());
 
 		let pkg_ty = search_state.ty.clone();
+		let available_types = search_state
+			.repo
+			.read()
+			.as_ref()
+			.and_then(|repo| back_state.repos().get(repo))
+			.map(|r| r.package_types.clone())
+			.unwrap_or_else(|| Vec::new());
 		let ty_selector = Dropdown::new(
 			Selected::Single(search_state.ty.read().clone()),
 			Rc::new(move |selected| {
 				pkg_ty.clone().set(selected.single());
 			}),
 		)
+		.header_width(Size::px(180.0))
+		.panel_colorway()
 		.children(
 			[
 				PackageKind::Mod,
@@ -123,7 +135,37 @@ impl Component for BrowsePackagesPage {
 				PackageKind::Modpack,
 			]
 			.into_iter()
+			.filter(|x| available_types.is_empty() || available_types.contains(x))
 			.map(|x| SelectOption::new(x, x.to_string_pretty(), Some(get_package_kind_icon(x)))),
+		);
+
+		let categories = search_state.categories.clone();
+		let available_categories = search_state
+			.repo
+			.read()
+			.as_ref()
+			.and_then(|repo| back_state.repos().get(repo))
+			.map(|r| r.package_categories.clone())
+			.unwrap_or_else(|| Vec::new());
+		let category_selector = Dropdown::new(
+			Selected::Multi(categories.read().clone()),
+			Rc::new(move |selected| {
+				categories.clone().set(selected.multi());
+			}),
+		)
+		.header_width(Size::px(180.0))
+		.panel_colorway()
+		.children(
+			PACKAGE_CATEGORIES
+				.into_iter()
+				.filter(|x| available_categories.is_empty() || available_categories.contains(x))
+				.map(|x| {
+					SelectOption::new(
+						x.clone(),
+						package_category_display_name(*x),
+						Some(package_category_icon(*x)),
+					)
+				}),
 		);
 
 		let top_lower_bar = rect()
@@ -134,9 +176,10 @@ impl Component for BrowsePackagesPage {
 				rect()
 					.width(Size::flex(1.0))
 					.height(Size::fill())
+					.cont()
 					.padding(theme.gap)
-					.center()
-					.child(ty_selector),
+					.child(ty_selector)
+					.child(category_selector),
 			)
 			.child(
 				rect()
@@ -304,13 +347,6 @@ impl Component for BrowseItem {
 			.read()
 			.as_ref()
 			.is_some_and(|x| x == &self.req);
-		let bg = if is_selected {
-			theme.item_select
-		} else if *is_hovered.read() {
-			theme.panel_hover
-		} else {
-			theme.bg
-		};
 
 		let meta = self.preview.as_ref().map(|x| &x.meta);
 		let props = self.preview.as_ref().map(|x| &x.props);
@@ -372,7 +408,7 @@ impl Component for BrowseItem {
 			.height(Size::px(64.0))
 			.hover(is_hovered)
 			.corner_radius(theme.round)
-			.background(bg)
+			.simple_colorway(&theme, *is_hovered.read(), is_selected)
 			.cont()
 			.spacing(0.0)
 			.on_press(move |_| {

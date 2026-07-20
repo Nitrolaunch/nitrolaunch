@@ -27,7 +27,7 @@ use crate::{
 	},
 	data::LauncherData,
 	instance_manager::RunningInstanceManager,
-	ops::task::TaskManager,
+	ops::task::{Task, TaskManager},
 	output::{LauncherOutput, OutputInner},
 	pages::config::ConfiguredItem,
 	routing::{Navigator, Page},
@@ -215,6 +215,7 @@ pub fn use_front_state() -> Shared<FrontState> {
 pub enum ModalType {
 	Configuration(ConfiguredItem),
 	Settings,
+	DeleteInstance(String),
 }
 
 /// Global state for Nitrolaunch-related things. Thread-safe, can be passed to tokio tasks.
@@ -243,7 +244,8 @@ impl BackState {
 		let (logger_tx, mut logger_rx) = mpsc::channel::<Message>(25);
 		let mut logger = Logger::new(&paths, "gui").context("Failed to set up logger")?;
 		tokio::spawn(async move {
-			if let Some(message) = logger_rx.recv().await {
+			while let Some(message) = logger_rx.recv().await {
+				println!("{}", message.contents.clone().default_format());
 				let _ = logger.log_message(message.contents, message.level);
 			}
 		});
@@ -311,10 +313,17 @@ impl BackState {
 		LauncherOutput::new(&self.output_inner)
 	}
 
-	pub fn register_task(&self, task_id: &str, task: tokio::task::JoinHandle<anyhow::Result<()>>) {
+	pub fn register_task(
+		&self,
+		task: Task,
+		task_handle: tokio::task::JoinHandle<anyhow::Result<()>>,
+	) {
 		let manager = self.task_manager.clone();
-		let task_id = task_id.to_string();
-		tokio::spawn(async move { manager.lock().await.register_task(task_id, task) });
+		tokio::spawn(async move { manager.lock().await.register_task(task, task_handle) });
+	}
+
+	pub async fn is_task_running(&self, task: &Task) -> bool {
+		self.task_manager.lock().await.is_task_running(task)
 	}
 
 	pub fn repos(&self) -> &HashMap<String, RepoMetadata> {
@@ -334,12 +343,12 @@ pub enum BackEvent {
 	ErrorToast(String, Option<String>),
 	OutputMessage {
 		message: MessageContents,
-		task: Option<String>,
+		task: Option<Task>,
 	},
-	OutputStartTask(String),
-	OutputEndTask(String),
-	OutputEndProcess(Option<String>),
-	OutputEndSection(Option<String>),
+	OutputStartTask(Task),
+	OutputEndTask(Task),
+	OutputEndProcess(Option<Task>),
+	OutputEndSection(Option<Task>),
 	OutputResolutionError {
 		error: Arc<ResolutionError>,
 		instance_id: String,

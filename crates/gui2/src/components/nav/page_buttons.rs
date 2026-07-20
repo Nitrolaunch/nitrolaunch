@@ -20,21 +20,14 @@ impl Component for PageButtons {
 				let i = self.page as i32 + offset;
 				let is_selected = offset == 0;
 				let on_set = self.on_set.clone();
-				let bg = if is_selected {
-					theme.item_select
-				} else {
-					theme.bg
-				};
 
-				let button = rect()
+				let button = button(&theme)
 					.width(Size::px(32.0))
 					.height(Size::px(32.0))
-					.center()
 					.padding(theme.gap)
 					.corner_radius(theme.round)
-					.background(bg)
+					.maybe(is_selected, |this| this.background(theme.highlight))
 					.on_press(move |_| on_set.call(i as usize))
-					.clickable()
 					.child(format!("{}", i + 1));
 
 				cont.child(button).into_element()

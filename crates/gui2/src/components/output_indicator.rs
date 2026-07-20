@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use nitrolaunch::shared::output::MessageContents;
 
-use crate::{prelude::*, state::BackEvent};
+use crate::{ops::task::Task, prelude::*, state::BackEvent};
 
 #[derive(PartialEq)]
 pub struct OutputIndicator;
@@ -12,7 +12,7 @@ impl Component for OutputIndicator {
 		let theme = use_theme();
 		let front_state = use_front_state();
 
-		let mut tasks = use_state::<HashMap<String, Task>>(|| HashMap::new());
+		let mut tasks = use_state::<HashMap<Task, TaskData>>(|| HashMap::new());
 		let mut is_open = use_state(|| false);
 
 		use_side_effect(move || {
@@ -33,7 +33,7 @@ impl Component for OutputIndicator {
 					match ev {
 						BackEvent::OutputStartTask(task) => {
 							if !tasks.read().contains_key(&task) {
-								tasks.write().insert(task, Task::new());
+								tasks.write().insert(task, TaskData::new());
 							}
 						}
 						BackEvent::OutputEndTask(task) => {
@@ -70,7 +70,7 @@ impl Component for OutputIndicator {
 
 		let indicator_text = match tasks.read().len() {
 			0 => "No tasks running".into(),
-			1 => tasks.read().iter().next().unwrap().0.clone(),
+			1 => tasks.read().iter().next().unwrap().0.to_string(),
 			other => format!("{other} tasks running"),
 		};
 
@@ -101,13 +101,13 @@ impl Component for OutputIndicator {
 	}
 }
 
-struct Task {
+struct TaskData {
 	messages: Vec<MessageContents>,
 	process: Option<String>,
 	section: Option<String>,
 }
 
-impl Task {
+impl TaskData {
 	fn new() -> Self {
 		Self {
 			messages: Vec::new(),

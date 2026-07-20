@@ -56,6 +56,7 @@ impl Component for AddonsConfig {
 			|| self.config_state.id.read().cloned(),
 		));
 		let filter = use_state(|| Filter::All);
+		let pkg_ty = use_state::<Option<PackageKind>>(|| None);
 		let search = use_state(|| String::new());
 		let side = use_state::<Option<Side>>(|| None);
 
@@ -101,6 +102,7 @@ impl Component for AddonsConfig {
 				&packages2.read().0,
 				&*filter.read(),
 				&*search.read(),
+				pkg_ty.read().as_ref(),
 			)
 		});
 
@@ -129,6 +131,8 @@ impl Component for AddonsConfig {
 		let on_select_filter =
 			Rc::new(move |new_filter: Selected<Filter>| filter.clone().set(new_filter.single()));
 		let filters = Dropdown::new(Selected::Single(filter.read().clone()), on_select_filter)
+			.header_width(Size::flex(1.0))
+			.options_width(180.0)
 			.child(SelectOption::new(Filter::All, "All", Some("box")))
 			.child(SelectOption::new(
 				Filter::Dependencies,
@@ -136,11 +140,36 @@ impl Component for AddonsConfig {
 				Some("diagram"),
 			));
 
+		let pkg_ty2 = pkg_ty.clone();
+		let ty_selector = Dropdown::new(
+			Selected::Single(pkg_ty.read().clone()),
+			Rc::new(move |selected| {
+				pkg_ty2.clone().set(selected.single());
+			}),
+		)
+		.header_width(Size::flex(1.0))
+		.options_width(180.0)
+		.child(SelectOption::new(None, "Any Type", Some("box")))
+		.children(
+			[
+				PackageKind::Mod,
+				PackageKind::ResourcePack,
+				PackageKind::Datapack,
+				PackageKind::Plugin,
+				PackageKind::Shader,
+				PackageKind::Modpack,
+			]
+			.into_iter()
+			.map(|x| SelectOption::new(x, x.to_string_pretty(), Some(get_package_kind_icon(x)))),
+		);
+
 		let search_input = search_bar(TextInput::new(search), &theme);
 
 		let on_select_side =
 			Rc::new(move |new_side: Selected<Option<Side>>| side.clone().set(new_side.single()));
 		let sides = Dropdown::new(Selected::Single(side.read().clone()), on_select_side)
+			.header_width(Size::flex(1.0))
+			.options_width(180.0)
 			.child(SelectOption::new(None, "Any Side", Some("box")))
 			.child(SelectOption::new(
 				Some(Side::Client),
@@ -160,18 +189,12 @@ impl Component for AddonsConfig {
 			.child(
 				rect()
 					.width(Size::flex(1.0))
-					.center()
-					.main_align(Alignment::Start)
-					.child(filters),
-			)
-			.child(rect().width(Size::flex(2.0)).child(search_input))
-			.child(
-				rect()
-					.width(Size::flex(1.0))
-					.center()
-					.main_align(Alignment::End)
+					.cont()
+					.child(filters)
+					.child(ty_selector)
 					.child(sides),
-			);
+			)
+			.child(rect().width(Size::flex(0.5)).child(search_input));
 		let header = rect()
 			.width(Size::fill())
 			.spacing(theme.gap)
@@ -558,12 +581,23 @@ fn filter_sort_items(
 	info: &HashMap<ArcPkgReq, anyhow::Result<PkgInfo>>,
 	filter: &Filter,
 	search: &str,
+	pkg_ty: Option<&PackageKind>,
 ) -> Vec<ContentItem> {
 	let search = search.to_lowercase();
 
 	items.retain(|x| {
 		if *filter == Filter::Dependencies && !x.is_configured && x.is_locked {
 			return false;
+		}
+
+		if let Some(pkg_ty) = pkg_ty {
+			if let Some(ty) = x.get_addon_ty(info) {
+				if ty != *pkg_ty {
+					return false;
+				}
+			} else {
+				return false;
+			}
 		}
 
 		if !search.is_empty() {

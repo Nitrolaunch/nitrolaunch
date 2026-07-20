@@ -115,6 +115,7 @@ impl Component for GeneralTab {
 				from.clone().set(selected.multi());
 			}),
 		)
+		.panel_colorway()
 		.maybe(templates.is_some(), |this| {
 			this.children(templates.unwrap())
 		});
@@ -173,6 +174,7 @@ impl Component for GeneralTab {
 				version.clone().set(selected.single_optional().flatten());
 			}),
 		)
+		.panel_colorway()
 		.allow_none()
 		.children(minecraft_versions);
 
@@ -191,6 +193,7 @@ impl Component for GeneralTab {
 					.cont()
 					.main_align(Alignment::End)
 					.cross_align(Alignment::Center)
+					.color(theme.fg3)
 					.child("Include snapshots")
 					.child(Switch {
 						enabled: *include_snapshots.read(),
@@ -278,7 +281,7 @@ impl Component for LoadersConfig {
 		});
 
 		let client_loader = self.config_state.client_loader.clone();
-		let client_field = Dropdown::new(
+		let client_field = InlineSelect::new(
 			Selected::Single(self.config_state.client_loader.read().clone()),
 			Rc::new(move |selected| {
 				client_loader
@@ -286,6 +289,7 @@ impl Component for LoadersConfig {
 					.set(selected.single_optional().flatten());
 			}),
 		)
+		.grid(4)
 		.allow_none()
 		.derived_value_owned(
 			self.config_state
@@ -314,7 +318,7 @@ impl Component for LoadersConfig {
 			|| *self.config_state.side.read() == Some(Side::Client);
 
 		let server_loader = self.config_state.server_loader.clone();
-		let server_field = Dropdown::new(
+		let server_field = InlineSelect::new(
 			Selected::Single(server_loader.read().clone()),
 			Rc::new(move |selected| {
 				server_loader
@@ -322,6 +326,7 @@ impl Component for LoadersConfig {
 					.set(selected.single_optional().flatten());
 			}),
 		)
+		.grid(4)
 		.allow_none()
 		.derived_value_owned(
 			self.config_state
@@ -377,6 +382,7 @@ impl Component for LoadersConfig {
 				);
 			}),
 		)
+		.panel_colorway()
 		.allow_none()
 		.children(options);
 		let field_name = if self.config_state.ty == ConfigKind::Instance {
@@ -414,6 +420,7 @@ impl Component for LoadersConfig {
 				);
 			}),
 		)
+		.panel_colorway()
 		.allow_none()
 		.children(options);
 		let field_name = if self.config_state.ty == ConfigKind::Instance {

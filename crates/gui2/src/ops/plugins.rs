@@ -6,7 +6,7 @@ use nitrolaunch::{
 	plugin_crate::plugin::PluginMetadata,
 };
 
-use crate::{prelude::*, simple_mutation, simple_query};
+use crate::{ops::task::Task, prelude::*, simple_mutation, simple_query};
 
 #[rustfmt::skip]
 simple_query! {
@@ -53,7 +53,7 @@ simple_query! {
 
 		query_spawn(async move {
 			let mut o = back_state.output();
-			o.set_task("get_plugins");
+			o.set_task(Task::FetchRemotePlugins);
 
 			let verified_plugins = get_verified_plugins(&back_state.client, false)
 				.await
@@ -95,7 +95,7 @@ simple_query!(
 
 		query_spawn(async move {
 			let mut o = back_state.output();
-			o.set_task("get_plugin_versions");
+			o.set_task(Task::FetchPluginVersions);
 
 			let verified_plugins = get_verified_plugins(&back_state.client, false)
 				.await
@@ -124,7 +124,7 @@ simple_mutation!(
 
 		query_spawn(async move {
 			let mut o = back_state.output();
-			o.set_task("install_plugin");
+			o.set_task(Task::InstallPlugin);
 
 			let verified_plugins = get_verified_plugins(&back_state.client, false)
 				.await

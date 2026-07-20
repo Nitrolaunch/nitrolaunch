@@ -106,8 +106,12 @@ struct Tab<T: PartialEq + Clone> {
 impl<T: PartialEq + Clone + 'static> Component for Tab<T> {
 	fn render(&self) -> impl IntoElement {
 		let theme = use_theme();
+		let is_hovered = use_state(|| false);
+
 		let (bg, fg) = if self.is_selected {
-			(theme.highlight.into(), theme.fg)
+			(theme.highlight, theme.fg)
+		} else if *is_hovered.read() {
+			(theme.panel_hover, theme.fg3)
 		} else {
 			(Color::TRANSPARENT, theme.disabled)
 		};
@@ -126,7 +130,7 @@ impl<T: PartialEq + Clone + 'static> Component for Tab<T> {
 			.padding(12.0)
 			.cross_align(Alignment::Center)
 			.maybe(self.horizontal, |this| this.main_align(Alignment::Center))
-			.clickable()
+			.hover(is_hovered)
 			.on_press(move |_| on_select.call(id.clone()))
 			.maybe_child(self.option.icon.clone())
 			.child(self.option.title.as_str())

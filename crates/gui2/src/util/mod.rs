@@ -10,6 +10,7 @@ use anyhow::anyhow;
 use freya::prelude::Color;
 
 pub mod assets;
+pub mod pkg;
 
 #[macro_export]
 macro_rules! clone_into {

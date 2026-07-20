@@ -1,3 +1,4 @@
+use freya::query::QueriesStorage;
 use nitrolaunch::{config_crate::ConfigKind, shared::pkg::ArcPkgReq};
 
 use crate::{
@@ -7,11 +8,14 @@ use crate::{
 	},
 	ops::{
 		instance::InstanceItemInfo,
-		launch::{LaunchInstance, LaunchInstanceParams},
+		launch::{
+			FetchInstanceRunState, InstanceRunState, KillInstance, LaunchInstance,
+			LaunchInstanceParams,
+		},
 		packages::FetchPackageDetails,
 	},
 	prelude::*,
-	state::ModalType,
+	state::{BackEvent, ModalType},
 	util::PtrEq,
 };
 
@@ -66,8 +70,37 @@ impl Component for FooterButton {
 		let theme = use_theme();
 		let front_state = use_front_state();
 		let back_state = use_consume::<BackState>();
-		let launch_instance = use_mutation(LaunchInstance::new(back_state));
+		let launch_instance = use_mutation(LaunchInstance::new(back_state.clone()));
+		let kill_instance = use_mutation(KillInstance::new(back_state.clone()));
+		let id = if let FooterItem::InstanceOrTemplate(info) = &self.item {
+			Some(info.id.clone())
+		} else {
+			None
+		};
+		let instance_run_state = use_query(Query::new(
+			id.unwrap_or_default(),
+			FetchInstanceRunState::new(back_state.clone()),
+		));
 		let mut show_install_modal = use_state(|| false);
+
+		let front_state2 = front_state.clone();
+		use_future(move || {
+			let mut event_rx = front_state2.read().subscribe_events();
+			async move {
+				while let Ok(ev) = event_rx.recv().await {
+					if let BackEvent::UpdateRunningInstances = ev {
+						QueriesStorage::<FetchInstanceRunState>::invalidate_all().await;
+					}
+				}
+			}
+		});
+
+		let instance_run_state = instance_run_state
+			.read()
+			.state()
+			.ok()
+			.cloned()
+			.unwrap_or_default();
 
 		let left = rect().height(Size::fill()).width(Size::flex(1.0));
 
@@ -82,13 +115,18 @@ impl Component for FooterButton {
 		let on_press = move |_| match &item {
 			FooterItem::None => {}
 			FooterItem::InstanceOrTemplate(info) => match info.ty {
-				ConfigKind::Instance => {
-					launch_instance.mutate(LaunchInstanceParams {
-						id: info.id.clone(),
-						account: None,
-						offline: false,
-					});
-				}
+				ConfigKind::Instance => match instance_run_state {
+					InstanceRunState::Stopped => {
+						launch_instance.mutate(LaunchInstanceParams {
+							id: info.id.clone(),
+							account: None,
+							offline: false,
+						});
+					}
+					InstanceRunState::Running => {
+						kill_instance.mutate((info.id.clone(), None));
+					}
+				},
 				ConfigKind::Template | ConfigKind::BaseTemplate => {
 					front_state
 						.write()
@@ -116,8 +154,8 @@ impl Component for FooterButton {
 					.child(
 						rect()
 							.cont()
-							.child(icon(self.item.icon(), 16.0))
-							.child(self.item.title()),
+							.child(icon(self.item.icon(instance_run_state), 16.0))
+							.child(self.item.title(instance_run_state)),
 					),
 			);
 
@@ -194,13 +232,16 @@ pub enum FooterItem {
 }
 
 impl FooterItem {
-	fn icon(&self) -> &'static str {
+	fn icon(&self, run_state: InstanceRunState) -> &'static str {
 		match self {
 			Self::None => "box",
 			Self::InstanceOrTemplate(InstanceItemInfo {
 				ty: ConfigKind::Instance,
 				..
-			}) => "play",
+			}) => match run_state {
+				InstanceRunState::Stopped => "play",
+				InstanceRunState::Running => "stop",
+			},
 			Self::InstanceOrTemplate(InstanceItemInfo {
 				ty: ConfigKind::Template | ConfigKind::BaseTemplate,
 				..
@@ -209,13 +250,16 @@ impl FooterItem {
 		}
 	}
 
-	fn title(&self) -> &'static str {
+	fn title(&self, run_state: InstanceRunState) -> &'static str {
 		match self {
 			Self::None => "Select...",
 			Self::InstanceOrTemplate(InstanceItemInfo {
 				ty: ConfigKind::Instance,
 				..
-			}) => "Launch",
+			}) => match run_state {
+				InstanceRunState::Stopped => "Launch",
+				InstanceRunState::Running => "Kill",
+			},
 			Self::InstanceOrTemplate(InstanceItemInfo {
 				ty: ConfigKind::Template | ConfigKind::BaseTemplate,
 				..

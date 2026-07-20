@@ -1,0 +1,90 @@
+use freya::radio::use_radio;
+use nitrolaunch::shared::output::NitroOutput;
+
+use crate::{
+	components::dialog::modal::Modal,
+	ops::instance::DeleteInstance,
+	pages::{config::ConfigPage, settings::SettingsPage},
+	prelude::*,
+	routing::Page,
+	state::ModalType,
+	theme::ThemeDeser,
+};
+
+/// Global event listeners and modals
+#[derive(PartialEq)]
+pub struct Global;
+
+impl Component for Global {
+	fn render(&self) -> impl IntoElement {
+		let front_state = use_front_state();
+		let back_state = use_consume::<BackState>();
+
+		front_state.read().subscribe(FrontChannel::Modal);
+
+		let delete_instance_mutation = use_mutation(Mutation::new(
+			DeleteInstance::new(back_state.clone()).toast(
+				&back_state,
+				Some("Instance deleted"),
+				"Failed to delete instance",
+			),
+		));
+
+		let front_state2 = front_state.clone();
+		let back_state2 = back_state.clone();
+		let radio = use_radio(FrontChannel::ThemeConfig);
+		use_side_effect(move || {
+			radio.read();
+			let data = back_state2.data();
+			let available_themes = back_state2.themes();
+			back_state.output().debug("Applying theme".into());
+
+			let mut theme = ThemeDeser::dark();
+			for new_theme in data.base_theme.into_iter().chain(data.overlay_themes) {
+				if new_theme == "light" {
+					theme = theme.merge(ThemeDeser::light());
+				} else if let Some(data) = available_themes.iter().find(|x| x.id == new_theme) {
+					if let Ok(new_theme) = serde_json::from_str::<ThemeDeser>(&data.settings) {
+						theme = theme.merge(new_theme);
+					}
+				}
+			}
+			front_state2.write().set_theme(theme.into());
+			back_state.output().debug("Theme applied".into());
+		});
+
+		let front_state2 = front_state.clone();
+		let front_state3 = front_state.clone();
+		let simple_modal = match front_state.read().modal() {
+			Some(modal) => match modal {
+				ModalType::DeleteInstance(id) => {
+					let id = id.clone();
+					Some(
+						Modal::simple_confirm(
+							"Delete instance forever",
+							"trash",
+							rect().expanded().center().child(
+								"Are you sure you want to delete this instance? This action cannot be undone.",
+							),
+							true,
+							move |_| front_state3.write().set_modal(None),
+							move |_| {
+								delete_instance_mutation.mutate(id.clone());
+								front_state2.write().set_modal(None);
+								front_state2.write().navigate(Page::Home);
+							},
+						)
+						.into_element(),
+					)
+				}
+				_ => None,
+			},
+			None => None,
+		};
+
+		rect()
+			.child(ConfigPage)
+			.child(SettingsPage)
+			.maybe_child(simple_modal)
+	}
+}

@@ -110,7 +110,13 @@ impl<C: ConsoleImpl> Component for Console<C> {
 						.width(Size::fill())
 						.height(Size::px(theme.input_height))
 						.border(border_top(theme.border, theme.panel_border))
-						.corner_radius(theme.round2)
+						.corner_radius(CornerRadius {
+							top_left: 0.0,
+							top_right: 0.0,
+							bottom_left: theme.round2,
+							bottom_right: theme.round2,
+							smoothing: 0.0,
+						})
 						.padding(theme.gap)
 						.cont()
 						.child(
@@ -126,7 +132,8 @@ impl<C: ConsoleImpl> Component for Console<C> {
 				ty.clone().set(new.single());
 			}),
 		)
-		.child(SelectOption::new(None, "All Messages", None))
+		.header_width(Size::auto())
+		.child(SelectOption::new(None, "All Messages", Some("text")))
 		.child(SelectOption::new(
 			Some(MessageType::Error),
 			"Errors",

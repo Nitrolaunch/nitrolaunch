@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use freya::{
 	components::{
 		Button, ButtonColorsThemePartialExt, ButtonLayoutThemePartialExt, ImageViewer, Skeleton,
@@ -22,6 +24,7 @@ use crate::theme::{Colorway, Theme};
 pub mod console;
 pub mod dialog;
 pub mod footer;
+pub mod global;
 pub mod input;
 pub mod instance;
 pub mod nav;
@@ -37,6 +40,7 @@ pub fn segment(child: impl IntoElement, width: f32) -> Rect {
 
 pub fn img(url: &str) -> ImageViewer {
 	ImageViewer::new(Url::parse(url).unwrap_or(Url::parse("https://example.com").unwrap()))
+		.asset_age(Duration::from_mins(3))
 }
 
 pub fn button(theme: &Theme) -> Button {
@@ -47,18 +51,21 @@ pub fn button(theme: &Theme) -> Button {
 		.border_fill(Color::TRANSPARENT)
 		.corner_radius(theme.round)
 		.padding(theme.gap)
+		.cursor_icon(CursorIcon::Pointer)
 }
 
 pub fn icon_button(icon: &str, theme: &Theme) -> Button {
-	let size = 24.0;
+	button(theme).child(crate::icons::icon(icon, 16.0))
+}
 
-	button(theme)
-		.background(Color::TRANSPARENT)
-		.border_fill(Color::TRANSPARENT)
-		.child(crate::icons::icon(icon, 16.0))
-		.width(Size::px(size))
-		.height(Size::px(size))
-		.corner_radius(size / 2.0)
+pub fn icon_text_button(icon: &str, text: &str, theme: &Theme) -> Button {
+	button(theme).child(
+		rect()
+			.cont()
+			.center()
+			.child(crate::icons::icon(icon, 16.0))
+			.child(text),
+	)
 }
 
 pub fn skeleton(width: Size, height: Size, theme: &Theme) -> Skeleton {
@@ -99,6 +106,9 @@ pub trait CustomStyles {
 
 	/// Sets full panel colorway based off hover / select state
 	fn panel_colorway(self, theme: &Theme, hovered: bool, selected: bool) -> Self;
+
+	/// Sets full panel colorway based off hover / select state
+	fn simple_colorway(self, theme: &Theme, hovered: bool, selected: bool) -> Self;
 }
 
 impl<T: ContainerSizeExt + StyleExt + ContainerWithContentExt + TextStyleExt> CustomStyles for T {
@@ -143,6 +153,12 @@ impl<T: ContainerSizeExt + StyleExt + ContainerWithContentExt + TextStyleExt> Cu
 			}))
 			.background(bg)
 	}
+
+	fn simple_colorway(self, theme: &Theme, hovered: bool, selected: bool) -> Self {
+		let bg = simple_colorway(theme, hovered, selected);
+
+		self.background(bg)
+	}
 }
 
 pub trait FancyBorderExt {
@@ -179,6 +195,17 @@ impl FancyBorderExtImage for ImageViewer {
 				.layer(Layer::Relative(2))
 				.corner_radius(corner_radius),
 		)
+	}
+}
+
+/// Picks background color from hover and select state for an item
+pub fn simple_colorway(theme: &Theme, hovered: bool, selected: bool) -> Color {
+	if selected {
+		theme.item_select
+	} else if hovered {
+		theme.panel_hover
+	} else {
+		Color::TRANSPARENT
 	}
 }
 

@@ -197,7 +197,7 @@ impl Component for ConfigModal {
 			Tab::Plugins => rect().into_element(),
 		};
 
-		let right_panel = rect().width(Size::flex(4.0)).child(tab_contents);
+		let right_panel = rect().width(Size::flex(4.25)).child(tab_contents);
 
 		rect()
 			.horizontal()

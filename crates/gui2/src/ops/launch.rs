@@ -9,7 +9,12 @@ use nitrolaunch::{
 	shared::{UpdateDepth, id::InstanceID},
 };
 
-use crate::{ops::MakeSend, prelude::*, secrets::get_ms_client_id};
+use crate::{
+	ops::{MakeSend, task::Task},
+	prelude::*,
+	secrets::get_ms_client_id,
+	simple_query,
+};
 
 #[derive(Clone, PartialEq, Eq, Hash)]
 pub struct LaunchInstance {
@@ -45,8 +50,7 @@ impl MutationCapability for LaunchInstance {
 		let task = async move {
 			let mut config = back_state.config().await?;
 			let mut output = back_state.output();
-			output.set_task(&format!("launch_instance_{id}"));
-			output.set_instance(id.clone().into());
+			output.set_task(Task::LaunchInstance(id.clone()));
 
 			if let Some(account) = account {
 				let _ = config.accounts.choose_account(&account);
@@ -107,7 +111,7 @@ impl MutationCapability for LaunchInstance {
 
 		let task = unsafe { MakeSend::new(task) };
 		self.back_state
-			.register_task(&format!("launch_instance_{}", keys.id), tokio::spawn(task));
+			.register_task(Task::LaunchInstance(keys.id.clone()), tokio::spawn(task));
 
 		async { Ok(()) }
 	}
@@ -144,16 +148,12 @@ impl QueryCapability for FetchRunningInstances {
 
 #[derive(Clone, PartialEq, Eq, Hash)]
 pub struct KillInstance {
-	id: String,
-	account: Option<String>,
 	back_state: Captured<BackState>,
 }
 
 impl KillInstance {
-	pub fn new(id: String, account: Option<String>, back_state: BackState) -> Mutation<Self> {
+	pub fn new(back_state: BackState) -> Mutation<Self> {
 		Mutation::new(Self {
-			id,
-			account,
 			back_state: Captured(back_state),
 		})
 	}
@@ -162,11 +162,11 @@ impl KillInstance {
 impl MutationCapability for KillInstance {
 	type Ok = ();
 	type Err = anyhow::Error;
-	type Keys = ();
+	type Keys = (String, Option<String>);
 
-	fn run(&self, _: &Self::Keys) -> impl Future<Output = Result<Self::Ok, Self::Err>> {
-		let id = self.id.clone();
-		let account = self.account.clone();
+	fn run(&self, keys: &Self::Keys) -> impl Future<Output = Result<Self::Ok, Self::Err>> {
+		let id = keys.0.clone();
+		let account = keys.1.clone();
 		let back_state = self.back_state.clone();
 
 		query_spawn(async move {
@@ -176,4 +176,35 @@ impl MutationCapability for KillInstance {
 				.await)
 		})
 	}
+}
+
+simple_query!(
+	name = FetchInstanceRunState,
+	ok = InstanceRunState,
+	err = anyhow::Error,
+	keys = String,
+	fn run(&self, keys: &Self::Keys) -> impl Future<Output = Result<Self::Ok, Self::Err>> {
+		let back_state = self.back_state.clone();
+		let keys = keys.clone();
+
+		async move {
+			if back_state
+				.running_instances
+				.get_entry(&keys, None)
+				.await
+				.is_some()
+			{
+				Ok(InstanceRunState::Running)
+			} else {
+				Ok(InstanceRunState::Stopped)
+			}
+		}
+	}
+);
+
+#[derive(Clone, Copy, PartialEq, Default)]
+pub enum InstanceRunState {
+	#[default]
+	Stopped,
+	Running,
 }
