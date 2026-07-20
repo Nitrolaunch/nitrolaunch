@@ -1,7 +1,13 @@
 use std::rc::Rc;
 
 use crate::{
-	components::{footer::FooterItem, input::select::Selected},
+	components::{
+		footer::FooterItem,
+		input::{
+			select::Selected,
+			text::{TextInput, search_bar},
+		},
+	},
 	ops::instance::{FetchItems, InstanceItemInfo, InstancesAndTemplates},
 	pages::home::item::InstanceListItem,
 	prelude::*,
@@ -22,6 +28,7 @@ impl Component for HomePage {
 
 		let tab = use_state(|| Tab::Instances);
 		let filter = use_state::<Option<Side>>(|| None);
+		let search = use_state(|| String::new());
 		let selected = use_state::<Option<InstanceItemInfo>>(|| None);
 
 		use_side_effect(move || {
@@ -60,11 +67,22 @@ impl Component for HomePage {
 		let items = items
 			.into_iter()
 			.filter(|x| {
-				if let Some(filter) = &*filter.read() {
-					x.side == Some(*filter)
-				} else {
-					true
+				if let Some(filter) = &*filter.read()
+					&& x.side == Some(*filter)
+				{
+					return false;
 				}
+
+				if !search.read().is_empty() {
+					let search = search.read().to_lowercase();
+					let name = x.name.as_deref().unwrap_or_default().to_lowercase();
+					let id = x.id.to_lowercase();
+					if !name.contains(&search) && !id.contains(&search) {
+						return false;
+					}
+				}
+
+				true
 			})
 			.map(|x| InstanceListItem::new(x.clone(), selected.clone()))
 			.chain(std::iter::once(add_placeholder));
@@ -90,7 +108,9 @@ impl Component for HomePage {
 			.cross_align(Alignment::Center)
 			.child(rect().width(Size::px(350.0)).child(tabs));
 
-		let bar_center = rect().width(Size::flex(1.0));
+		let search_bar = search_bar(TextInput::new(search), &theme);
+
+		let bar_center = rect().width(Size::flex(1.0)).center().child(search_bar);
 
 		let on_select_filter = Rc::new(move |new_filter: Selected<Option<Side>>| {
 			filter.clone().set(new_filter.single())
