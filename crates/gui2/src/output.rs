@@ -218,7 +218,7 @@ pub struct OutputInner {
 }
 
 /// A serializable ResolutionError
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "snake_case")]
 #[serde(tag = "type", content = "data")]
 pub enum SerializableResolutionError {

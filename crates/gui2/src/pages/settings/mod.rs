@@ -110,6 +110,8 @@ impl Component for SettingsModal {
 					front_state.write().invalidate(FrontChannel::ThemeConfig);
 				}
 
+				front_state.write().invalidate(FrontChannel::Data);
+
 				true
 			};
 			on_submit_state.set(PtrEq(Arc::new(on_submit)));

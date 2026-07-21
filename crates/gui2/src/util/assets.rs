@@ -10,6 +10,7 @@ use nitrolaunch::shared::{
 };
 
 pub static DEFAULT_INSTANCE: &[u8] = include_bytes!("../assets/images/default_instance.png");
+pub static DEFAULT_SKIN: &[u8] = include_bytes!("../assets/images/default_skin.png");
 pub static FABRIC: &[u8] = include_bytes!("../assets/images/fabric.png");
 pub static FOLIA: &[u8] = include_bytes!("../assets/images/folia.png");
 pub static FORGE: &[u8] = include_bytes!("../assets/images/forge.png");

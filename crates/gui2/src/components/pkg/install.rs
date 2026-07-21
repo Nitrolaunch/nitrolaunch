@@ -112,7 +112,7 @@ impl Component for PackageInstallModal {
 				.into_element(),
 			Tab::ModpackInstance => rect()
 				.width(Size::fill())
-                .padding(theme.gap2)
+				.padding(theme.gap2)
 				.child(field(
 					"ID for new instance",
 					"hashtag",

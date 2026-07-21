@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 use crate::output::SerializableResolutionError;
 
 /// Stored launcher data
-#[derive(Serialize, Deserialize, Default, Clone)]
+#[derive(Serialize, Deserialize, Default, Clone, PartialEq)]
 #[serde(default)]
 pub struct LauncherData {
 	/// Whether the launcher has been opened before
@@ -17,7 +17,7 @@ pub struct LauncherData {
 	/// Saved icons for instances
 	pub saved_instance_icons: Vec<InstanceIcon>,
 	/// Set of pinned instances
-    #[serde(alias = "pinned")]
+	#[serde(alias = "pinned")]
 	pub pinned_instances: HashSet<String>,
 	/// The currently selected account
 	#[serde(alias = "current_user")]
@@ -60,7 +60,7 @@ impl LauncherData {
 }
 
 /// Different icons for instances
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "snake_case")]
 #[serde(untagged)]
 pub enum InstanceIcon {

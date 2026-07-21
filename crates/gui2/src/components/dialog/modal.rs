@@ -1,4 +1,4 @@
-use crate::{components::input::icon, prelude::*};
+use crate::prelude::*;
 
 pub const MODAL_DEFAULT_WIDTH: f32 = 600.0;
 pub const MODAL_DEFAULT_HEIGHT: f32 = 400.0;

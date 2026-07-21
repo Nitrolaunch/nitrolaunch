@@ -21,6 +21,7 @@ use reqwest::Url;
 
 use crate::theme::{Colorway, Theme};
 
+pub mod account;
 pub mod console;
 pub mod dialog;
 pub mod footer;

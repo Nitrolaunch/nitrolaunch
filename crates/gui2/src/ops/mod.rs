@@ -7,6 +7,7 @@ use crate::{
 	util::AnyhowError,
 };
 
+pub mod account;
 pub mod instance;
 pub mod launch;
 pub mod packages;

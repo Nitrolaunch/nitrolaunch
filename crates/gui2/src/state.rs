@@ -3,7 +3,11 @@ use std::{collections::HashMap, rc::Rc, sync::Arc};
 use anyhow::Context;
 use freya::{
 	prelude::use_consume,
-	radio::{RadioChannel, RadioStation, use_radio},
+	radio::{Radio, RadioChannel, RadioStation, use_radio},
+};
+use freya_core::{
+	integration::{State, WritableUtils},
+	lifecycle::{effect::use_side_effect, state::use_state},
 };
 use nitrolaunch::{
 	config::Config,
@@ -26,6 +30,7 @@ use crate::{
 		footer::FooterItem,
 	},
 	data::LauncherData,
+	dependency::BackDependency,
 	instance_manager::RunningInstanceManager,
 	ops::task::{Task, TaskManager},
 	output::{LauncherOutput, OutputInner},
@@ -63,6 +68,8 @@ pub enum FrontChannel {
 	Tip,
 	/// Changes to the visible modal
 	Modal,
+	/// Changes to launcher data
+	Data,
 	/// Changes to the theme
 	Theme,
 	/// Changes to the configured theme, which then updates the theme
@@ -216,13 +223,14 @@ pub enum ModalType {
 	Configuration(ConfiguredItem),
 	Settings,
 	DeleteInstance(String),
+	MicrosoftAuth { url: String, device_code: String },
 }
 
 /// Global state for Nitrolaunch-related things. Thread-safe, can be passed to tokio tasks.
 #[derive(Clone)]
 pub struct BackState {
 	pub event_tx: broadcast::Sender<BackEvent>,
-	pub paths: Paths,
+	pub paths: Arc<Paths>,
 	pub client: Client,
 	pub plugins: PluginManager,
 	pub running_instances: RunningInstanceManager,
@@ -233,7 +241,7 @@ pub struct BackState {
 
 impl BackState {
 	pub async fn new(event_tx: broadcast::Sender<BackEvent>) -> anyhow::Result<Self> {
-		let paths = Paths::new_no_create()?;
+		let paths = Arc::new(Paths::new().await?);
 		let plugins = PluginManager::load(&paths, &mut NoOp).await?;
 
 		let running_instances = RunningInstanceManager::new(&paths, event_tx.clone())
@@ -326,6 +334,16 @@ impl BackState {
 		self.task_manager.lock().await.is_task_running(task)
 	}
 
+	pub async fn kill_task(&self, task: &Task) {
+		let mut manager = self.task_manager.lock().await;
+		manager.kill(task);
+	}
+
+	/// Invalidates a dependency from a tokio task which can't access freya context
+	pub fn invalidate(&self, dependency: BackDependency) {
+		let _ = self.event_tx.send(BackEvent::Invalidate(dependency));
+	}
+
 	pub fn repos(&self) -> &HashMap<String, RepoMetadata> {
 		&self.cached_info.repos
 	}
@@ -339,6 +357,7 @@ impl BackState {
 #[allow(dead_code)]
 #[derive(Clone)]
 pub enum BackEvent {
+	Invalidate(BackDependency),
 	SuccessToast(String),
 	ErrorToast(String, Option<String>),
 	OutputMessage {
@@ -401,5 +420,47 @@ impl CachedInfo {
 		};
 
 		Self { repos, themes }
+	}
+}
+
+pub fn use_launcher_data() -> LauncherDataHook {
+	let radio = use_radio(FrontChannel::Data);
+	let back_state = use_consume::<BackState>();
+
+	let state = use_state(|| back_state.data());
+
+	let back_state2 = back_state.clone();
+	let mut state2 = state.clone();
+	let radio2 = radio.clone();
+	use_side_effect(move || {
+		radio2.read();
+		state2.set_if_modified(back_state2.data());
+	});
+
+	LauncherDataHook {
+		data: state,
+		radio,
+		back_state,
+	}
+}
+
+#[derive(Clone)]
+pub struct LauncherDataHook {
+	pub data: State<LauncherData>,
+	radio: Radio<(), FrontChannel>,
+	back_state: BackState,
+}
+
+impl LauncherDataHook {
+	pub fn save(&self) {
+		if let Err(e) = self.data.read().write(&self.back_state.paths) {
+			self.back_state
+				.output()
+				.display(MessageContents::Error(format!(
+					"Failed to write launcher data: {e}"
+				)));
+		} else {
+			self.radio.clone().write();
+		}
 	}
 }

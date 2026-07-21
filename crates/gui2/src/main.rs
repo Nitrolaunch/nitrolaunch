@@ -47,9 +47,8 @@ fn main() {
 		.with_app_id("Nitrolaunch");
 	let config = LaunchConfig::new().with_window(window);
 	#[cfg(feature = "profiler")]
-	let config = config.with_plugin(
-		freya::performance::PerformanceOverlayPlugin::default().with_visible(true),
-	);
+	let config = config
+		.with_plugin(freya::performance::PerformanceOverlayPlugin::default().with_visible(true));
 
 	launch(config);
 }

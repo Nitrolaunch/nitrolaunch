@@ -70,8 +70,8 @@ impl Account {
 	}
 
 	/// Get the name of this account
-	pub fn get_name(&self) -> Option<&String> {
-		self.name.as_ref()
+	pub fn get_name(&self) -> Option<&str> {
+		self.name.as_deref()
 	}
 
 	/// Checks if this account is a Microsoft account
@@ -95,8 +95,8 @@ impl Account {
 	}
 
 	/// Get the UUID of this account, if it exists
-	pub fn get_uuid(&self) -> Option<&String> {
-		self.uuid.as_ref()
+	pub fn get_uuid(&self) -> Option<&str> {
+		self.uuid.as_deref()
 	}
 
 	/// Get the access token of this account, if it exists

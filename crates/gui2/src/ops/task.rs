@@ -5,7 +5,7 @@ use tokio::{
 	task::JoinHandle,
 };
 
-use crate::state::BackEvent;
+use crate::{simple_mutation, state::BackEvent};
 
 /// Manager for long-running tasks
 pub struct TaskManager {
@@ -85,7 +85,7 @@ impl TaskManager {
 					.event_tx
 					.send(BackEvent::OutputEndTask(task.id.clone()));
 
-				println!("Task {task_id} cancelled");
+				println!("Task {task_id:?} cancelled");
 
 				false
 			} else {
@@ -94,6 +94,22 @@ impl TaskManager {
 		});
 	}
 }
+
+simple_mutation!(
+	name = KillTask,
+	ok = (),
+	err = anyhow::Error,
+	keys = Task,
+	fn run(&self, keys: &Self::Keys) -> impl Future<Output = Result<Self::Ok, Self::Err>> {
+		let back_state = self.back_state.clone();
+		let task = keys.clone();
+
+		async move {
+			back_state.kill_task(&task).await;
+			Ok(())
+		}
+	}
+);
 
 /// A single running task
 #[derive(Debug)]
@@ -114,6 +130,7 @@ pub enum Task {
 	FetchRemotePlugins,
 	InstallPlugin,
 	FetchPluginVersions,
+	LoginAccount,
 }
 
 impl Display for Task {
@@ -128,6 +145,7 @@ impl Display for Task {
 			Self::FetchRemotePlugins => write!(f, "Fetching plugins"),
 			Self::InstallPlugin => write!(f, "Installing plugin"),
 			Self::FetchPluginVersions => write!(f, "Fetching plugin versions"),
+			Self::LoginAccount => write!(f, "Logging in"),
 		}
 	}
 }

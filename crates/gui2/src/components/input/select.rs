@@ -318,16 +318,17 @@ impl<T: PartialEq + Clone + 'static> Component for Dropdown<T> {
 		let fit_header = self.header_width == Size::Inner;
 
 		let preview = if let Some(custom_header) = &self.custom_header {
-			dropdown_option_contents(custom_header, fit_header, &theme)
+			dropdown_option_contents(custom_header, fit_header, true, &theme)
 		} else {
 			match &self.selected {
 				Selected::Single(selected) => {
 					if let Some(option) = self.options.iter().find(|x| x.id == *selected) {
-						dropdown_option_contents(option, fit_header, &theme)
+						dropdown_option_contents(option, fit_header, true, &theme)
 					} else {
 						dropdown_option_contents(
 							&SelectOption::simple("Unknown option"),
 							fit_header,
+							true,
 							&theme,
 						)
 					}
@@ -335,6 +336,7 @@ impl<T: PartialEq + Clone + 'static> Component for Dropdown<T> {
 				Selected::Multi(selected) => dropdown_option_contents(
 					&SelectOption::simple(format!("{} selected", selected.len())),
 					fit_header,
+					true,
 					&theme,
 				),
 			}
@@ -489,7 +491,7 @@ impl<T: PartialEq + Clone + 'static> Component for DropdownOption<T> {
 			.maybe(self.option.tip.is_some(), |this| {
 				this.tip(&front_state, self.option.tip.as_deref().unwrap())
 			})
-			.child(dropdown_option_contents(&self.option, false, &theme))
+			.child(dropdown_option_contents(&self.option, false, false, &theme))
 			.into_element()
 	}
 }
@@ -497,6 +499,7 @@ impl<T: PartialEq + Clone + 'static> Component for DropdownOption<T> {
 fn dropdown_option_contents<T: PartialEq + Clone>(
 	option: &SelectOption<T>,
 	fit: bool,
+	is_header: bool,
 	theme: &Theme,
 ) -> Rect {
 	rect()
@@ -520,6 +523,15 @@ fn dropdown_option_contents<T: PartialEq + Clone>(
 				})
 				.child(option.title.as_str()),
 		)
+		.maybe(!is_header && option.action_button.is_some(), |this| {
+			this.child(
+				rect()
+					.width(Size::px(theme.input_height))
+					.height(Size::px(theme.input_height))
+					.center()
+					.child(option.action_button.clone().unwrap()),
+			)
+		})
 }
 
 #[derive(PartialEq, Clone)]
@@ -529,6 +541,7 @@ pub struct SelectOption<T: PartialEq + Clone> {
 	pub icon: Option<Element>,
 	pub tip: Option<String>,
 	pub selected_colorway: Option<Colorway>,
+	pub action_button: Option<Element>,
 }
 
 impl<T: PartialEq + Clone> SelectOption<T> {
@@ -547,6 +560,7 @@ impl<T: PartialEq + Clone> SelectOption<T> {
 			icon: ico.map(|x| icon(x, 16.0).into_element()),
 			tip: None,
 			selected_colorway: None,
+			action_button: None,
 		}
 	}
 
@@ -557,6 +571,7 @@ impl<T: PartialEq + Clone> SelectOption<T> {
 			icon: Some(ico),
 			tip: None,
 			selected_colorway: None,
+			action_button: None,
 		}
 	}
 
@@ -567,6 +582,11 @@ impl<T: PartialEq + Clone> SelectOption<T> {
 
 	pub fn selected_colorway(mut self, colorway: Colorway) -> Self {
 		self.selected_colorway = Some(colorway);
+		self
+	}
+
+	pub fn action_button(mut self, button: Element) -> Self {
+		self.action_button = Some(button);
 		self
 	}
 }

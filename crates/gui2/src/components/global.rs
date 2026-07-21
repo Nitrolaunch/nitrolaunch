@@ -2,12 +2,12 @@ use freya::radio::use_radio;
 use nitrolaunch::shared::output::NitroOutput;
 
 use crate::{
-	components::dialog::modal::Modal,
+	components::{account::auth::MicrosoftAuthPrompt, dialog::modal::Modal},
 	ops::instance::DeleteInstance,
 	pages::{config::ConfigPage, settings::SettingsPage},
 	prelude::*,
 	routing::Page,
-	state::ModalType,
+	state::{BackEvent, ModalType},
 	theme::ThemeDeser,
 };
 
@@ -37,7 +37,7 @@ impl Component for Global {
 			radio.read();
 			let data = back_state2.data();
 			let available_themes = back_state2.themes();
-			back_state.output().debug("Applying theme".into());
+			back_state2.output().debug("Applying theme".into());
 
 			let mut theme = ThemeDeser::dark();
 			for new_theme in data.base_theme.into_iter().chain(data.overlay_themes) {
@@ -50,11 +50,57 @@ impl Component for Global {
 				}
 			}
 			front_state2.write().set_theme(theme.into());
-			back_state.output().debug("Theme applied".into());
+			back_state2.output().debug("Theme applied".into());
+		});
+
+		let front_state2 = front_state.clone();
+		use_future(move || {
+			let front_state2 = front_state2.clone();
+			async move {
+				let mut event_rx = front_state2.read().subscribe_events();
+				while let Ok(event) = event_rx.recv().await {
+					match event {
+						BackEvent::ShowAuthPrompt { url, device_code } => front_state2
+							.write()
+							.set_modal(Some(ModalType::MicrosoftAuth { url, device_code })),
+						BackEvent::CloseAuthPrompt => {
+							// Prevent double borrow
+							let should_close = matches!(
+								front_state2.read().modal(),
+								Some(ModalType::MicrosoftAuth { .. })
+							);
+							if should_close {
+								front_state2.write().set_modal(None);
+								front_state2
+									.write()
+									.toast(Toast::success("Account logged in"));
+							}
+						}
+						_ => {}
+					}
+				}
+			}
+		});
+
+		let front_state2 = front_state.clone();
+		use_future(move || {
+			let front_state2 = front_state2.clone();
+			async move {
+				let mut event_rx = front_state2.read().subscribe_events();
+				while let Ok(event) = event_rx.recv().await {
+					match event {
+						BackEvent::Invalidate(dependency) => {
+							dependency.invalidate();
+						}
+						_ => {}
+					}
+				}
+			}
 		});
 
 		let front_state2 = front_state.clone();
 		let front_state3 = front_state.clone();
+		let front_state4 = front_state.clone();
 		let simple_modal = match front_state.read().modal() {
 			Some(modal) => match modal {
 				ModalType::DeleteInstance(id) => {
@@ -77,6 +123,12 @@ impl Component for Global {
 						.into_element(),
 					)
 				}
+				ModalType::MicrosoftAuth { url, device_code } => Some(
+					MicrosoftAuthPrompt::new(url.clone(), device_code.clone(), move |_| {
+						front_state4.write().set_modal(None);
+					})
+					.into_element(),
+				),
 				_ => None,
 			},
 			None => None,

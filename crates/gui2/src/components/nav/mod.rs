@@ -1,5 +1,5 @@
 use crate::{
-	components::{dialog::toast::Toasts, input::tabs::TopTabs},
+	components::{account::AccountSelector, dialog::toast::Toasts, input::tabs::TopTabs},
 	prelude::*,
 	routing::PageCategory,
 	state::ModalType,
@@ -82,6 +82,7 @@ impl Component for NavBar {
 			.cont()
 			.center()
 			.main_align(Alignment::End)
+			.child(AccountSelector)
 			.child(Toasts);
 
 		rect()

@@ -1,11 +1,13 @@
 use freya::{prelude::spawn, query::QueriesStorage};
 
-use crate::ops::{instance::FetchItems, launch::FetchRunningInstances};
+use crate::ops::{account::FetchAccounts, instance::FetchItems, launch::FetchRunningInstances};
 
 /// Backend dependency that can be invalidated
+#[derive(Clone)]
 pub enum BackDependency {
 	Config,
 	RunningInstances,
+	Accounts,
 }
 
 impl BackDependency {
@@ -17,6 +19,9 @@ impl BackDependency {
 			}
 			Self::RunningInstances => {
 				spawn(QueriesStorage::<FetchRunningInstances>::invalidate_all());
+			}
+			Self::Accounts => {
+				spawn(QueriesStorage::<FetchAccounts>::invalidate_all());
 			}
 		}
 	}
