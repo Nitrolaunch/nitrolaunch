@@ -5367,6 +5367,7 @@ dependencies = [
  "rust-embed",
  "serde",
  "serde_json",
+ "showfile",
  "static_vcruntime",
  "tokio",
  "which",

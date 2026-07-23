@@ -9,7 +9,7 @@ use crate::{instance::Instance, io::paths::Paths, plugin::PluginManager};
 impl Instance {
 	/// Get the list of log IDs for this instance
 	pub async fn get_logs(
-		&mut self,
+		&self,
 		plugins: &PluginManager,
 		paths: &Paths,
 		o: &mut impl NitroOutput,
@@ -38,7 +38,7 @@ impl Instance {
 
 	/// Get the contents of a specific log file
 	pub async fn get_log(
-		&mut self,
+		&self,
 		log_id: &str,
 		plugins: &PluginManager,
 		paths: &Paths,

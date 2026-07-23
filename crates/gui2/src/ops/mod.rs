@@ -10,6 +10,7 @@ use crate::{
 pub mod account;
 pub mod instance;
 pub mod launch;
+pub mod misc;
 pub mod packages;
 pub mod plugin_results;
 pub mod plugins;

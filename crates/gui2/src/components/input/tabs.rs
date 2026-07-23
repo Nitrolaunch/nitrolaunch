@@ -96,11 +96,11 @@ impl<T: PartialEq + Clone + 'static> Component for TopTabs<T> {
 }
 
 #[derive(PartialEq)]
-struct Tab<T: PartialEq + Clone> {
-	option: SelectOption<T>,
-	is_selected: bool,
-	on_select: EventHandler<T>,
-	horizontal: bool,
+pub struct Tab<T: PartialEq + Clone> {
+	pub option: SelectOption<T>,
+	pub is_selected: bool,
+	pub on_select: EventHandler<T>,
+	pub horizontal: bool,
 }
 
 impl<T: PartialEq + Clone + 'static> Component for Tab<T> {

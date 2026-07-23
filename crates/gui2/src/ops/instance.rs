@@ -16,7 +16,9 @@ use nitrolaunch::{
 	},
 };
 
-use crate::{ops::task::Task, pages::config::ConfiguredItem, prelude::*, simple_mutation};
+use crate::{
+	ops::task::Task, pages::config::ConfiguredItem, prelude::*, simple_mutation, simple_query,
+};
 
 #[derive(Clone, PartialEq, Eq, Hash)]
 pub struct FetchItems {
@@ -390,9 +392,9 @@ pub struct FetchInstanceOutput {
 }
 
 impl FetchInstanceOutput {
-	pub fn new(id: String, back_state: BackState) -> Query<Self> {
+	pub fn new(id: String, log_file: Option<String>, back_state: BackState) -> Query<Self> {
 		Query::new(
-			id,
+			(id, log_file),
 			Self {
 				back_state: Captured(back_state),
 			},
@@ -403,13 +405,34 @@ impl FetchInstanceOutput {
 impl QueryCapability for FetchInstanceOutput {
 	type Ok = Option<Arc<str>>;
 	type Err = anyhow::Error;
-	type Keys = String;
+	type Keys = (String, Option<String>);
 
 	fn run(&self, keys: &Self::Keys) -> impl Future<Output = Result<Self::Ok, Self::Err>> {
 		let back_state = self.back_state.clone();
-		let id = keys.clone();
+		let (id, log_file) = keys.clone();
 
 		query_spawn(async move {
+			if let Some(log_file) = log_file {
+				let config = back_state.config().await?;
+				let mut output = back_state.output();
+				let instance = config
+					.instances
+					.get(&InstanceID::from(id.clone()))
+					.context("Instance not found")?;
+
+				return Ok(Some(
+					instance
+						.get_log(
+							&log_file,
+							&back_state.plugins,
+							&back_state.paths,
+							&mut output,
+						)
+						.await?
+						.into(),
+				));
+			}
+
 			let path = {
 				let Some(entry) = back_state.running_instances.get_entry(&id, None).await else {
 					return Ok(None);
@@ -430,6 +453,30 @@ impl QueryCapability for FetchInstanceOutput {
 		})
 	}
 }
+
+simple_query!(
+	name = FetchInstanceLogs,
+	ok = Arc<[String]>,
+	err = anyhow::Error,
+	keys = String,
+	fn run(&self, keys: &Self::Keys) -> impl Future<Output = Result<Self::Ok, Self::Err>> {
+		let back_state = self.back_state.clone();
+		let id = keys.clone();
+
+		query_spawn(async move {
+			let config = back_state.config().await?;
+			let mut o = back_state.output();
+			let instance = config
+				.instances
+				.get(&InstanceID::from(id.clone()))
+				.context("Instance not found")?;
+
+			let logs = instance.get_logs(&back_state.plugins, &back_state.paths, &mut o).await?;
+
+			Ok(logs.into_iter().collect())
+		})
+	}
+);
 
 #[rustfmt::skip]
 simple_mutation!(

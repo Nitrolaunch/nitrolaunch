@@ -4,11 +4,15 @@ use nitrolaunch::{config::preferences::ConfigPreferences, shared::lang::Language
 
 use crate::{
 	components::{
+		console::{Console, ConsoleImpl},
 		dialog::modal::{Modal, ModalButton},
 		input::tabs::SideTabs,
 	},
 	data::LauncherData,
-	ops::settings::{FetchPreferences, SavePreferences},
+	ops::{
+		misc::{FetchGlobalLog, FetchGlobalLogs, ShowDirectory, ShowDirectoryOption},
+		settings::{FetchPreferences, SavePreferences},
+	},
 	pages::settings::{accounts::AccountSettings, general::GeneralSettings, plugins::PluginsPage},
 	prelude::*,
 	state::ModalType,
@@ -73,6 +77,7 @@ impl Component for SettingsModal {
 				"Failed to save config",
 			),
 		));
+		let show_directory = use_mutation(Mutation::new(ShowDirectory::new(back_state.clone())));
 
 		let settings_state = SettingsState::new(self.is_dirty.clone());
 
@@ -119,18 +124,48 @@ impl Component for SettingsModal {
 		});
 
 		let tab = use_state(|| Tab::General);
+		let show_directory2 = show_directory.clone();
+		let show_directory3 = show_directory.clone();
 		let left_panel = rect()
 			.width(Size::flex(1.0))
 			.border(border_right(theme.border, theme.panel_border))
+			.cont()
+			.vertical()
 			.child(
-				SideTabs::new(tab)
-					.child(SelectOption::new(Tab::General, "General", Some("gear")))
-					.child(SelectOption::new(
-						Tab::Accounts,
-						"Accounts",
-						Some("multiple_users"),
-					))
-					.child(SelectOption::new(Tab::Plugins, "Plugins", Some("jigsaw"))),
+				rect().width(Size::fill()).height(Size::flex(1.0)).child(
+					SideTabs::new(tab)
+						.child(SelectOption::new(Tab::General, "General", Some("gear")))
+						.child(SelectOption::new(
+							Tab::Accounts,
+							"Accounts",
+							Some("multiple_users"),
+						))
+						.child(SelectOption::new(Tab::Plugins, "Plugins", Some("jigsaw")))
+						.child(SelectOption::new(Tab::Logs, "Logs", Some("text"))),
+				),
+			)
+			.child(
+				rect()
+					.width(Size::fill())
+					.cont()
+					.vertical()
+					.padding(theme.gap2)
+					.child(crate::components::input::tabs::Tab {
+						option: SelectOption::new("", "Open Data Folder", Some("folder")),
+						is_selected: false,
+						on_select: EventHandler::from(move |_: &str| {
+							show_directory2.mutate(ShowDirectoryOption::Data);
+						}),
+						horizontal: false,
+					})
+					.child(crate::components::input::tabs::Tab {
+						option: SelectOption::new("", "Open Config Folder", Some("gear")),
+						is_selected: false,
+						on_select: EventHandler::from(move |_: &str| {
+							show_directory3.mutate(ShowDirectoryOption::Config);
+						}),
+						horizontal: false,
+					}),
 			);
 
 		let tab_contents = match &*tab.read() {
@@ -140,6 +175,7 @@ impl Component for SettingsModal {
 			.into_element(),
 			Tab::Accounts => AccountSettings.into_element(),
 			Tab::Plugins => PluginsPage.into_element(),
+			Tab::Logs => SettingsConsole.into_element(),
 		};
 
 		let right_panel = rect().width(Size::flex(4.0)).child(tab_contents);
@@ -157,6 +193,7 @@ enum Tab {
 	General,
 	Accounts,
 	Plugins,
+	Logs,
 }
 
 /// State objects for the config
@@ -213,3 +250,61 @@ impl SettingsState {
 }
 
 enum ConfigError {}
+
+#[derive(PartialEq)]
+struct SettingsConsole;
+
+impl Component for SettingsConsole {
+	fn render(&self) -> impl IntoElement {
+		let back_state = use_consume::<BackState>();
+		let selected_log = use_state::<Option<String>>(|| None);
+		let contents_query = use_query(Query::new(
+			selected_log.read().clone().unwrap_or_default(),
+			FetchGlobalLog::new(back_state.clone()),
+		));
+		let logs = use_query(Query::new((), FetchGlobalLogs::new(back_state.clone())));
+
+		let contents = contents_query.read().state().ok().cloned().map(PtrEq);
+
+		let logs = logs.read().state().ok().cloned().unwrap_or_default();
+
+		let console = Impl {
+			contents,
+			log_files: PtrEq(logs),
+			selected_log,
+			is_loading: !contents_query.read().state().is_ok(),
+		};
+
+		Console { console }
+	}
+}
+
+#[derive(PartialEq, Clone)]
+struct Impl {
+	contents: Option<PtrEq<str>>,
+	log_files: PtrEq<[String]>,
+	selected_log: State<Option<String>>,
+	is_loading: bool,
+}
+
+impl ConsoleImpl for Impl {
+	fn contents(&self) -> Option<Arc<str>> {
+		self.contents.as_ref().map(|x| x.0.clone())
+	}
+
+	fn is_loading(&self) -> bool {
+		self.is_loading
+	}
+
+	fn get_log_files(&self) -> impl Iterator<Item = &String> {
+		self.log_files.0.iter()
+	}
+
+	fn get_log_file(&self) -> Option<String> {
+		self.selected_log.read().clone()
+	}
+
+	fn set_log_file(&self, file: Option<String>) {
+		self.selected_log.clone().set(file);
+	}
+}

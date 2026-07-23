@@ -148,10 +148,7 @@ impl Component for HomePage {
 
 		let view = rect().flex().child(bar_elem).child(items_elem);
 
-		let view = ScrollView::new()
-			.child(view)
-			.width(Size::fill())
-			.height(Size::fill());
+		let view = ScrollView::new().expanded().child(view);
 
 		rect().fill().child(view).padding(Gaps::new(
 			theme.gap2,

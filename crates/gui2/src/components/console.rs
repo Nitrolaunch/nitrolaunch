@@ -85,14 +85,19 @@ impl<C: ConsoleImpl> Component for Console<C> {
 				.length(*line_count.read())
 				.into_element()
 			}
-			None => rect()
-				.width(Size::fill())
-				.height(Size::flex(1.0))
-				.child(placeholder(
-					"No output available. Is the instance running?",
-					&theme,
-				))
-				.into_element(),
+			None => {
+				let pholder = if self.console.is_loading() {
+					"Loading..."
+				} else {
+					"No output available"
+				};
+
+				rect()
+					.width(Size::fill())
+					.height(Size::flex(1.0))
+					.child(placeholder(pholder, &theme))
+					.into_element()
+			}
 		};
 
 		let contents = rect()
@@ -100,7 +105,7 @@ impl<C: ConsoleImpl> Component for Console<C> {
 			.height(Size::flex(1.0))
 			.background(theme.bg)
 			.border(theme.border(theme.panel_border))
-			.padding(theme.gap)
+			.padding(theme.gap2)
 			.corner_radius(theme.round2)
 			.flex()
 			.child(contents)
@@ -150,13 +155,33 @@ impl<C: ConsoleImpl> Component for Console<C> {
 			Some("info"),
 		));
 
+		let console2 = self.console.clone();
+		let file_selector = Dropdown::new(
+			Selected::Single(self.console.get_log_file()),
+			Rc::new(move |new| {
+				console2.set_log_file(new.single());
+			}),
+		)
+		.header_width(Size::auto())
+		.options_width(180.0)
+		.child(SelectOption::new(None, "Current Output", Some("text")))
+		.children(
+			self.console
+				.get_log_files()
+				.map(|x| SelectOption::new(Some(x.clone()), x, Some("text"))),
+		);
+
 		let header = rect()
 			.width(Size::fill())
 			.height(Size::px(theme.input_height))
 			.cont()
 			.child(segment(ty_selector, 1.0))
 			.child(segment(rect(), 1.0))
-			.child(segment(rect(), 1.0));
+			.child(
+				segment(file_selector, 1.0)
+					.horizontal()
+					.main_align(Alignment::End),
+			);
 
 		rect()
 			.expanded()
@@ -194,8 +219,18 @@ fn format_line(line: &str, theme: &Theme) -> Element {
 		.into_element()
 }
 
-pub trait ConsoleImpl: PartialEq + 'static {
+pub trait ConsoleImpl: PartialEq + Clone + 'static {
 	fn contents(&self) -> Option<Arc<str>>;
+
+	fn is_loading(&self) -> bool {
+		false
+	}
+
+	fn get_log_files(&self) -> impl Iterator<Item = &String>;
+
+	fn get_log_file(&self) -> Option<String>;
+
+	fn set_log_file(&self, file: Option<String>);
 
 	fn input_fn(&self) -> Option<impl Fn(String) + 'static> {
 		None::<Box<dyn Fn(String)>>

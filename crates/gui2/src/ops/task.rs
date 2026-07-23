@@ -131,6 +131,7 @@ pub enum Task {
 	InstallPlugin,
 	FetchPluginVersions,
 	LoginAccount,
+	Opening,
 }
 
 impl Display for Task {
@@ -146,6 +147,7 @@ impl Display for Task {
 			Self::InstallPlugin => write!(f, "Installing plugin"),
 			Self::FetchPluginVersions => write!(f, "Fetching plugin versions"),
 			Self::LoginAccount => write!(f, "Logging in"),
+			Self::Opening => write!(f, "Opening"),
 		}
 	}
 }

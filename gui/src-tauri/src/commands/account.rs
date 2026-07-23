@@ -67,8 +67,8 @@ pub async fn get_accounts(
 		let info = AccountInfo {
 			id: id.to_string(),
 			r#type: ty,
-			username: account.get_name().cloned(),
-			uuid: account.get_uuid().cloned(),
+			username: account.get_name().map(|x| x.to_string()),
+			uuid: account.get_uuid().map(|x| x.to_string()),
 		};
 
 		accounts.insert(id.to_string(), info);

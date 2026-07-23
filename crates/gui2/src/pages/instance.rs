@@ -10,6 +10,7 @@ use crate::{
 	ops::{
 		instance::{FetchInstanceConfig, FetchParentConfigs, SaveConfig},
 		launch::FetchInstanceRunState,
+		misc::{ShowDirectory, ShowDirectoryOption},
 	},
 	pages::config::{ConfigState, ConfiguredItem, addons::AddonsConfig},
 	prelude::*,
@@ -40,6 +41,7 @@ impl Component for InstancePage {
 			self.id.clone(),
 			FetchInstanceRunState::new(back_state.clone()),
 		));
+		let show_directory = use_mutation(Mutation::new(ShowDirectory::new(back_state.clone())));
 
 		let tab = use_state(|| Tab::Info);
 		let is_dirty = use_state(|| false);
@@ -121,11 +123,19 @@ impl Component for InstancePage {
 						.write()
 						.set_modal(Some(ModalType::DeleteInstance(id.clone())));
 				}
+				MoreOption::OpenFolder => {
+					show_directory.mutate(ShowDirectoryOption::Instance(id.clone()));
+				}
 			}),
 		)
 		.options_width(160.0)
 		.align_options_right()
 		.custom_header(SelectOption::new(MoreOption::More, "More", None))
+		.child(SelectOption::new(
+			MoreOption::OpenFolder,
+			"Open Folder",
+			Some("popout"),
+		))
 		.child(SelectOption::new(
 			MoreOption::Delete,
 			"Delete",
@@ -211,4 +221,5 @@ enum Tab {
 enum MoreOption {
 	More,
 	Delete,
+	OpenFolder,
 }
