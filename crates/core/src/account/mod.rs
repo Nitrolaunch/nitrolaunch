@@ -38,7 +38,7 @@ pub struct Account {
 }
 
 /// Type of an account
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum AccountKind {
 	/// A new Microsoft account, the standard account
 	Microsoft {

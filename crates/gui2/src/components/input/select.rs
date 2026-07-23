@@ -200,6 +200,7 @@ pub struct Dropdown<T: PartialEq + Clone> {
 	align_options_right: bool,
 	header_width: Size,
 	panel_colorway: bool,
+	hide_arrow: bool,
 }
 
 #[allow(dead_code)]
@@ -217,6 +218,7 @@ impl<T: PartialEq + Clone> Dropdown<T> {
 			align_options_right: false,
 			header_width: Size::fill(),
 			panel_colorway: false,
+			hide_arrow: false,
 		}
 	}
 
@@ -271,6 +273,11 @@ impl<T: PartialEq + Clone> Dropdown<T> {
 
 	pub fn panel_colorway(mut self) -> Self {
 		self.panel_colorway = true;
+		self
+	}
+
+	pub fn hide_arrow(mut self) -> Self {
+		self.hide_arrow = true;
 		self
 	}
 }
@@ -353,7 +360,7 @@ impl<T: PartialEq + Clone + 'static> Component for Dropdown<T> {
 			.height(Size::px(theme.input_height))
 			.center()
 			.child(arrow);
-		let preview = preview.child(arrow);
+		let preview = preview.maybe(!self.hide_arrow, |this| this.child(arrow));
 
 		let header = rect()
 			.width(self.header_width.clone())
@@ -512,17 +519,19 @@ fn dropdown_option_contents<T: PartialEq + Clone>(
 				.center()
 				.child(x)
 		}))
-		.child(
-			rect()
-				.maybe(!fit, |this| this.width(Size::flex(1.0)))
-				.height(Size::fill())
-				.main_align(Alignment::Center)
-				.cross_align(Alignment::Center)
-				.maybe(option.icon.is_some(), |this| {
-					this.cross_align(Alignment::Start)
-				})
-				.child(option.title.as_str()),
-		)
+		.maybe(!option.title.is_empty(), |this| {
+			this.child(
+				rect()
+					.maybe(!fit, |this| this.width(Size::flex(1.0)))
+					.height(Size::fill())
+					.main_align(Alignment::Center)
+					.cross_align(Alignment::Center)
+					.maybe(option.icon.is_some(), |this| {
+						this.cross_align(Alignment::Start)
+					})
+					.child(option.title.as_str()),
+			)
+		})
 		.maybe(!is_header && option.action_button.is_some(), |this| {
 			this.child(
 				rect()
@@ -551,6 +560,10 @@ impl<T: PartialEq + Clone> SelectOption<T> {
 	{
 		let title = id.to_string();
 		Self::new(id, &title, None)
+	}
+
+	pub fn simple_icon(id: T, ico: &str) -> Self {
+		Self::new(id, "", Some(ico))
 	}
 
 	pub fn new(id: impl Into<T>, title: &str, ico: Option<&str>) -> Self {

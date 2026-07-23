@@ -10,7 +10,7 @@ pub use crate::components::input::field;
 pub use crate::components::input::select::{Dropdown, InlineSelect, SelectOption};
 pub use crate::components::{
 	CustomEvents, CustomStyles, FancyBorderExt, FancyBorderExtImage, border_bottom, border_left,
-	border_right, border_top, button, clip_text, grid, icon_button, img, placeholder, segment,
+	border_right, border_top, button, clip_text, grid, icon_button, icon_text_button, img, placeholder, segment,
 	skeleton,
 };
 pub use crate::icons::icon;

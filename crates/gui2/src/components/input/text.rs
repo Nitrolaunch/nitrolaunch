@@ -6,6 +6,7 @@ pub struct TextInput {
 	on_change: Option<EventHandler<String>>,
 	on_submit: Option<EventHandler<String>>,
 	derived_value: Option<String>,
+	placeholder: Option<String>,
 }
 
 impl TextInput {
@@ -15,6 +16,7 @@ impl TextInput {
 			on_change: None,
 			on_submit: None,
 			derived_value: None,
+			placeholder: None,
 		}
 	}
 
@@ -25,6 +27,11 @@ impl TextInput {
 
 	pub fn on_submit(mut self, on_submit: impl Into<EventHandler<String>>) -> Self {
 		self.on_submit = Some(on_submit.into());
+		self
+	}
+
+	pub fn placeholder(mut self, placeholder: impl Into<String>) -> Self {
+		self.placeholder = Some(placeholder.into());
 		self
 	}
 }
@@ -65,6 +72,9 @@ impl Component for TextInput {
 				this.on_validate(move |validator: InputValidator| {
 					on_change.as_ref().unwrap().call(validator.text().clone());
 				})
+			})
+			.maybe(self.placeholder.is_some(), |this| {
+				this.placeholder(self.placeholder.clone().unwrap())
 			})
 	}
 }

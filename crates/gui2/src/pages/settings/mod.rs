@@ -9,12 +9,13 @@ use crate::{
 	},
 	data::LauncherData,
 	ops::settings::{FetchPreferences, SavePreferences},
-	pages::settings::{general::GeneralSettings, plugins::PluginsPage},
+	pages::settings::{accounts::AccountSettings, general::GeneralSettings, plugins::PluginsPage},
 	prelude::*,
 	state::ModalType,
 	util::PtrEq,
 };
 
+pub mod accounts;
 mod general;
 pub mod plugins;
 
@@ -124,6 +125,11 @@ impl Component for SettingsModal {
 			.child(
 				SideTabs::new(tab)
 					.child(SelectOption::new(Tab::General, "General", Some("gear")))
+					.child(SelectOption::new(
+						Tab::Accounts,
+						"Accounts",
+						Some("multiple_users"),
+					))
 					.child(SelectOption::new(Tab::Plugins, "Plugins", Some("jigsaw"))),
 			);
 
@@ -132,6 +138,7 @@ impl Component for SettingsModal {
 				state: settings_state.clone(),
 			}
 			.into_element(),
+			Tab::Accounts => AccountSettings.into_element(),
 			Tab::Plugins => PluginsPage.into_element(),
 		};
 
@@ -148,6 +155,7 @@ impl Component for SettingsModal {
 #[derive(PartialEq, Clone)]
 enum Tab {
 	General,
+	Accounts,
 	Plugins,
 }
 

@@ -1,11 +1,14 @@
 use std::time::Duration;
 
 use nitrolaunch::{
-	plugin_crate::hook::hooks::{AddSupportedLoaders, GetLoaderVersions, GetLoaderVersionsArg},
+	plugin_crate::hook::hooks::{
+		AccountTypeInfo, AddAccountTypes, AddSupportedLoaders, GetLoaderVersions,
+		GetLoaderVersionsArg,
+	},
 	shared::{loaders::Loader, output::NoOp},
 };
 
-use crate::prelude::*;
+use crate::{prelude::*, simple_query};
 
 #[derive(Clone, PartialEq, Eq, Hash)]
 pub struct FetchSupportedLoaders {
@@ -100,3 +103,23 @@ impl QueryCapability for FetchLoaderVersions {
 		})
 	}
 }
+
+simple_query!(
+	name = FetchAccountTypes,
+	ok = Vec<AccountTypeInfo>,
+	err = anyhow::Error,
+	keys = (),
+	fn run(&self, _keys: &Self::Keys) -> impl Future<Output = Result<Self::Ok, Self::Err>> {
+		let back_state = self.back_state.clone();
+
+		query_spawn(async move {
+			let mut o = back_state.output();
+			back_state
+				.plugins
+				.call_hook(AddAccountTypes, &(), &back_state.paths, &mut o)
+				.await?
+				.flatten_all_results(&mut o)
+				.await
+		})
+	}
+);

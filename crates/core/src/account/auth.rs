@@ -89,7 +89,8 @@ impl Account {
 					return false;
 				};
 
-				db.get_valid_account(&self.id).is_some()
+				db.get_valid_account(&self.id)
+					.is_some_and(|x| x.is_logged_in())
 			}
 			AccountKind::Demo => true,
 			AccountKind::Unknown(..) => true,

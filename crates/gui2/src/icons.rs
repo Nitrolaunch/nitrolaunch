@@ -6,6 +6,8 @@ use freya::{
 	prelude::{Bytes, Size},
 };
 
+use crate::prelude::*;
+
 #[derive(rust_embed::RustEmbed)]
 #[folder = "./src/assets"]
 pub struct Icons;
@@ -30,4 +32,38 @@ fn icon_impl(icon: &str) -> Cow<'static, [u8]> {
 			println!("Unknown icon: {icon}");
 			Cow::Owned(Vec::new())
 		})
+}
+
+pub fn microsoft_icon(theme: &Theme) -> Rect {
+	rect()
+		.width(Size::px(16.0))
+		.height(Size::px(16.0))
+		.flex()
+		.spacing(1.0)
+		.child(
+			rect()
+				.width(Size::fill())
+				.height(Size::flex(1.0))
+				.cont()
+				.spacing(1.0)
+				.child(boxy(theme))
+				.child(boxy(theme)),
+		)
+		.child(
+			rect()
+				.width(Size::fill())
+				.height(Size::flex(1.0))
+				.cont()
+				.spacing(1.0)
+				.child(boxy(theme))
+				.child(boxy(theme)),
+		)
+}
+
+fn boxy(theme: &Theme) -> Rect {
+	rect()
+		.width(Size::flex(1.0))
+		.height(Size::flex(1.0))
+		.corner_radius(2.0)
+		.background(theme.fg)
 }
