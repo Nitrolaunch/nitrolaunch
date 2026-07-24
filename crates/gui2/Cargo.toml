@@ -26,6 +26,7 @@ freya = { workspace = true }
 freya-core = { workspace = true }
 nitrolaunch = { workspace = true }
 reqwest = { workspace = true }
+rfd = { workspace = true }
 rust-embed = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }

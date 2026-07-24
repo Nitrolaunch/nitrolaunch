@@ -2,7 +2,11 @@ use freya::radio::use_radio;
 use nitrolaunch::shared::output::NitroOutput;
 
 use crate::{
-	components::{account::auth::MicrosoftAuthPrompt, dialog::modal::Modal},
+	components::{
+		account::auth::MicrosoftAuthPrompt,
+		dialog::modal::Modal,
+		instance::transfer::{InstanceTransferModal, InstanceTransferMode, MigrateModal},
+	},
 	ops::instance::DeleteInstance,
 	pages::{config::ConfigPage, settings::SettingsPage},
 	prelude::*,
@@ -129,6 +133,14 @@ impl Component for Global {
 					})
 					.into_element(),
 				),
+				ModalType::Transfer(mode, exporting_id) => Some(match mode {
+					InstanceTransferMode::Import => InstanceTransferModal::import().into_element(),
+					InstanceTransferMode::Export => {
+						InstanceTransferModal::export(exporting_id.clone().unwrap_or_default())
+							.into_element()
+					}
+				}),
+				ModalType::Migrate => Some(MigrateModal.into_element()),
 				_ => None,
 			},
 			None => None,

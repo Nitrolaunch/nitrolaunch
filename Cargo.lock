@@ -5364,6 +5364,7 @@ dependencies = [
  "itertools 0.11.0",
  "nitrolaunch",
  "reqwest 0.12.28",
+ "rfd 0.17.2",
  "rust-embed",
  "serde",
  "serde_json",

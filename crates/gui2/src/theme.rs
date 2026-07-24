@@ -76,8 +76,6 @@ pub struct Theme {
 	pub gap3: f32,
 	/// Border width
 	pub border: f32,
-	/// Larger border width
-	pub border2: f32,
 	/// Smaller border radius
 	pub round: f32,
 	/// Larger border radius
@@ -94,14 +92,6 @@ impl Theme {
 	pub fn border(&self, color: impl Into<Color>) -> Border {
 		Border {
 			width: self.border.into(),
-			fill: color.into(),
-			alignment: BorderAlignment::Inner,
-		}
-	}
-
-	pub fn border2(&self, color: impl Into<Color>) -> Border {
-		Border {
-			width: self.border2.into(),
 			fill: color.into(),
 			alignment: BorderAlignment::Inner,
 		}
@@ -156,7 +146,6 @@ pub struct ThemeDeser {
 	pub gap2: Option<f32>,
 	pub gap3: Option<f32>,
 	pub border: Option<f32>,
-	pub border2: Option<f32>,
 	pub round: Option<f32>,
 	pub round2: Option<f32>,
 	pub input_height: Option<f32>,
@@ -206,7 +195,6 @@ impl ThemeDeser {
 			gap2: Some(9.0),
 			gap3: Some(14.0),
 			border: Some(1.0),
-			border2: Some(2.0),
 			round: Some(8.0),
 			round2: Some(12.0),
 			input_height: Some(32.0),
@@ -256,7 +244,6 @@ impl ThemeDeser {
 			gap2: Some(9.0),
 			gap3: Some(14.0),
 			border: Some(1.0),
-			border2: Some(2.0),
 			round: Some(8.0),
 			round2: Some(12.0),
 			input_height: Some(32.0),
@@ -313,7 +300,6 @@ impl From<ThemeDeser> for Theme {
 			gap2: value.gap2.unwrap_or(9.0),
 			gap3: value.gap3.unwrap_or(14.0),
 			border: value.border.unwrap_or(1.0),
-			border2: value.border2.unwrap_or(2.0),
 			round: value.round.unwrap_or(8.0),
 			round2: value.round2.unwrap_or(12.0),
 			input_height: value.input_height.unwrap_or(32.0),

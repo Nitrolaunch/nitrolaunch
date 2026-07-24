@@ -138,7 +138,7 @@ impl<C: ConsoleImpl> Component for Console<C> {
 			}),
 		)
 		.header_width(Size::auto())
-		.child(SelectOption::new(None, "All Messages", Some("text")))
+		.child(SelectOption::new(None, "All Messages", Some("asterisk")))
 		.child(SelectOption::new(
 			Some(MessageType::Error),
 			"Errors",

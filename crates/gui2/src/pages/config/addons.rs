@@ -133,7 +133,7 @@ impl Component for AddonsConfig {
 		let filters = Dropdown::new(Selected::Single(filter.read().clone()), on_select_filter)
 			.header_width(Size::flex(1.0))
 			.options_width(180.0)
-			.child(SelectOption::new(Filter::All, "All", Some("box")))
+			.child(SelectOption::new(Filter::All, "All", Some("asterisk")))
 			.child(SelectOption::new(
 				Filter::Dependencies,
 				"Dependencies",
@@ -149,7 +149,7 @@ impl Component for AddonsConfig {
 		)
 		.header_width(Size::flex(1.0))
 		.options_width(180.0)
-		.child(SelectOption::new(None, "Any Type", Some("box")))
+		.child(SelectOption::new(None, "Any Type", Some("asterisk")))
 		.children(
 			[
 				PackageKind::Mod,
@@ -170,7 +170,7 @@ impl Component for AddonsConfig {
 		let sides = Dropdown::new(Selected::Single(side.read().clone()), on_select_side)
 			.header_width(Size::flex(1.0))
 			.options_width(180.0)
-			.child(SelectOption::new(None, "Any Side", Some("box")))
+			.child(SelectOption::new(None, "Any Side", Some("asterisk")))
 			.child(SelectOption::new(
 				Some(Side::Client),
 				"Client",

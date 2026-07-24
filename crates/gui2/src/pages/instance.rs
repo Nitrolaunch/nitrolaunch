@@ -5,7 +5,7 @@ use nitrolaunch::config_crate::{ConfigKind, template::TemplateConfig};
 use crate::{
 	components::{
 		input::{select::Selected, tabs::SideTabs},
-		instance::console::InstanceConsole,
+		instance::{console::InstanceConsole, transfer::InstanceTransferMode},
 	},
 	ops::{
 		instance::{FetchInstanceConfig, FetchParentConfigs, SaveConfig},
@@ -118,13 +118,19 @@ impl Component for InstancePage {
 			Selected::Single(MoreOption::More),
 			Rc::new(move |selected| match selected.single() {
 				MoreOption::More => {}
+				MoreOption::Export => {
+					front_state2.write().set_modal(Some(ModalType::Transfer(
+						InstanceTransferMode::Export,
+						Some(id.clone()),
+					)));
+				}
+				MoreOption::OpenFolder => {
+					show_directory.mutate(ShowDirectoryOption::Instance(id.clone()));
+				}
 				MoreOption::Delete => {
 					front_state2
 						.write()
 						.set_modal(Some(ModalType::DeleteInstance(id.clone())));
-				}
-				MoreOption::OpenFolder => {
-					show_directory.mutate(ShowDirectoryOption::Instance(id.clone()));
 				}
 			}),
 		)
@@ -132,9 +138,14 @@ impl Component for InstancePage {
 		.align_options_right()
 		.custom_header(SelectOption::new(MoreOption::More, "More", None))
 		.child(SelectOption::new(
+			MoreOption::Export,
+			"Export",
+			Some("popout"),
+		))
+		.child(SelectOption::new(
 			MoreOption::OpenFolder,
 			"Open Folder",
-			Some("popout"),
+			Some("folder"),
 		))
 		.child(SelectOption::new(
 			MoreOption::Delete,
@@ -220,6 +231,7 @@ enum Tab {
 #[derive(PartialEq, Clone)]
 enum MoreOption {
 	More,
-	Delete,
+	Export,
 	OpenFolder,
+	Delete,
 }

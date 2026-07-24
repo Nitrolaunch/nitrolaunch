@@ -7,10 +7,12 @@ use crate::{
 			select::Selected,
 			text::{TextInput, search_bar},
 		},
+		instance::transfer::InstanceTransferMode,
 	},
 	ops::instance::{FetchItems, InstanceItemInfo, InstancesAndTemplates},
-	pages::home::item::InstanceListItem,
+	pages::{config::ConfiguredItem, home::item::InstanceListItem},
 	prelude::*,
+	state::ModalType,
 };
 use nitrolaunch::{config_crate::ConfigKind, shared::Side};
 
@@ -31,9 +33,10 @@ impl Component for HomePage {
 		let search = use_state(|| String::new());
 		let selected = use_state::<Option<InstanceItemInfo>>(|| None);
 
+		let front_state2 = front_state.clone();
 		use_side_effect(move || {
 			if let Some(selected) = selected.read().clone() {
-				front_state
+				front_state2
 					.write()
 					.set_footer(FooterItem::InstanceOrTemplate(selected));
 			}
@@ -91,6 +94,63 @@ impl Component for HomePage {
 
 		let items_elem = rect().child(items_elem).width(Size::fill());
 
+		let front_state2 = front_state.clone();
+		let add_dropdown = Dropdown::new(
+			Selected::Single(AddOption::Add),
+			Rc::new(move |selected| match selected.single() {
+				AddOption::Add => {}
+				AddOption::Instance => {
+					front_state2
+						.write()
+						.set_modal(Some(ModalType::Configuration(ConfiguredItem {
+							id: None,
+							ty: ConfigKind::Instance,
+							is_new: true,
+						})))
+				}
+				AddOption::Template => {
+					front_state2
+						.write()
+						.set_modal(Some(ModalType::Configuration(ConfiguredItem {
+							id: None,
+							ty: ConfigKind::Template,
+							is_new: true,
+						})))
+				}
+				AddOption::ImportInstance => front_state2.write().set_modal(Some(
+					ModalType::Transfer(InstanceTransferMode::Import, None),
+				)),
+				AddOption::MigrateInstances => {
+					front_state2.write().set_modal(Some(ModalType::Migrate))
+				}
+			}),
+		)
+		.custom_header(SelectOption::new(AddOption::Add, "Add", Some("plus")))
+		.header_width(Size::auto())
+		.options_width(180.0)
+		.hide_arrow()
+		.panel_colorway()
+		.child(SelectOption::new(
+			AddOption::Instance,
+			"New Instance",
+			Some("box"),
+		))
+		.child(SelectOption::new(
+			AddOption::Template,
+			"New Template",
+			Some("diagram"),
+		))
+		.child(SelectOption::new(
+			AddOption::ImportInstance,
+			"Import Instance",
+			Some("download"),
+		))
+		.child(SelectOption::new(
+			AddOption::MigrateInstances,
+			"Migrate Instances",
+			Some("cycle"),
+		));
+
 		let on_select_tab =
 			Rc::new(move |new_tab: Selected<Tab>| tab.clone().set(new_tab.single()));
 		let tabs = InlineSelect::new(Selected::Single(tab.read().clone()), on_select_tab)
@@ -104,9 +164,11 @@ impl Component for HomePage {
 		let bar_left = rect()
 			.width(Size::flex(1.0))
 			.height(Size::fill())
-			.cont()
+			.spacing(theme.gap)
+			.horizontal()
 			.cross_align(Alignment::Center)
-			.child(rect().width(Size::px(350.0)).child(tabs));
+			.child(add_dropdown)
+			.child(rect().width(Size::px(300.0)).child(tabs));
 
 		let search_bar = search_bar(TextInput::new(search), &theme);
 
@@ -163,4 +225,13 @@ impl Component for HomePage {
 enum Tab {
 	Instances,
 	Templates,
+}
+
+#[derive(PartialEq, Clone)]
+enum AddOption {
+	Add,
+	Instance,
+	Template,
+	ImportInstance,
+	MigrateInstances,
 }

@@ -26,19 +26,8 @@ use tokio::sync::{Mutex, broadcast, mpsc};
 
 use crate::{
 	components::{
-		dialog::{tip::Tip, toast::Toast},
-		footer::FooterItem,
-	},
-	data::LauncherData,
-	dependency::BackDependency,
-	instance_manager::RunningInstanceManager,
-	ops::task::{Task, TaskManager},
-	output::{LauncherOutput, OutputInner},
-	pages::config::ConfiguredItem,
-	routing::{Navigator, Page},
-	secrets::get_ms_client_id,
-	theme::Theme,
-	util::Shared,
+		dialog::{tip::Tip, toast::Toast}, footer::FooterItem, instance::transfer::InstanceTransferMode,
+	}, data::LauncherData, dependency::BackDependency, instance_manager::RunningInstanceManager, ops::task::{Task, TaskManager}, output::{LauncherOutput, OutputInner}, pages::config::ConfiguredItem, routing::{Navigator, Page}, secrets::get_ms_client_id, theme::Theme, util::Shared,
 };
 
 /// Global state for frontend / UI related things. Only usable on the freya thread.
@@ -224,6 +213,8 @@ pub enum ModalType {
 	Settings,
 	DeleteInstance(String),
 	MicrosoftAuth { url: String, device_code: String },
+	Transfer(InstanceTransferMode, Option<String>),
+	Migrate,
 }
 
 /// Global state for Nitrolaunch-related things. Thread-safe, can be passed to tokio tasks.

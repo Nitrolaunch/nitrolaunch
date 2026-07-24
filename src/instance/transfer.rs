@@ -19,7 +19,7 @@ use super::Instance;
 impl Instance {
 	/// Export this instance using the given format
 	pub async fn export(
-		&mut self,
+		&self,
 		format: &str,
 		result_path: &Path,
 		formats: &Formats,

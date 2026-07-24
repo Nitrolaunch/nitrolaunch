@@ -360,7 +360,23 @@ impl<T: PartialEq + Clone + 'static> Component for Dropdown<T> {
 			.height(Size::px(theme.input_height))
 			.center()
 			.child(arrow);
-		let preview = preview.maybe(!self.hide_arrow, |this| this.child(arrow));
+		let preview = preview
+			.maybe(!self.hide_arrow, |this| this.child(arrow))
+			.maybe(
+				self.hide_arrow
+					&& self
+						.custom_header
+						.as_ref()
+						.is_some_and(|x| !x.title.is_empty()),
+				|this| {
+					this.padding(Gaps::new(
+						0.0,
+						(theme.input_height - 16.0) * 2.0 / 3.0,
+						0.0,
+						0.0,
+					))
+				},
+			);
 
 		let header = rect()
 			.width(self.header_width.clone())

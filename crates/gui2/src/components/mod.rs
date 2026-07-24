@@ -60,7 +60,7 @@ pub fn icon_button(icon: &str, theme: &Theme) -> Button {
 }
 
 pub fn icon_text_button(icon: &str, text: &str, theme: &Theme) -> Button {
-	button(theme).child(
+	button(theme).height(Size::px(theme.input_height)).child(
 		rect()
 			.cont()
 			.center()

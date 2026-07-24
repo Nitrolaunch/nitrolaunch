@@ -42,7 +42,14 @@ impl Component for PluginsPage {
 			.cont()
 			.child(segment(location_selector, 1.0))
 			.child(segment(rect(), 1.0))
-			.child(segment(rect(), 1.0));
+			.child(segment(
+				label()
+					.width(Size::fill())
+					.text_align(TextAlign::End)
+					.color(theme.fg3)
+					.text("You may need to restart the application for changes to take effect."),
+				1.0,
+			));
 
 		let plugins = if *is_remote.read() {
 			remote_plugins

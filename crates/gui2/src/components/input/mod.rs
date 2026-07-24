@@ -3,6 +3,7 @@ use nitrolaunch::config_crate::template::TemplateConfig;
 use crate::prelude::*;
 
 pub mod control;
+pub mod file;
 pub mod icon;
 pub mod select;
 pub mod switch;

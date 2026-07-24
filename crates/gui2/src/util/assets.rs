@@ -57,17 +57,6 @@ pub fn get_loader_icon(loader: &Loader) -> ImageViewer {
 	.height(Size::px(16.0))
 }
 
-pub fn get_addon_icon(kind: AddonKind) -> &'static str {
-	match kind {
-		AddonKind::Mod => "box",
-		AddonKind::ResourcePack => "palette",
-		AddonKind::Datapack => "curly_braces",
-		AddonKind::Plugin => "jigsaw",
-		AddonKind::Shader => "sun",
-		AddonKind::Modpack => "honeycomb",
-	}
-}
-
 pub fn get_package_kind_icon(kind: PackageKind) -> &'static str {
 	match kind {
 		PackageKind::Mod => "box",

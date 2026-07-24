@@ -16,6 +16,7 @@ pub mod plugin_results;
 pub mod plugins;
 pub mod settings;
 pub mod task;
+pub mod transfer;
 pub mod versions;
 
 #[macro_export]
