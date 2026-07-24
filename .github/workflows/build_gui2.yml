@@ -59,7 +59,8 @@ jobs:
             libfontconfig1-dev \
             libegl1-mesa-dev \
             libgl1-mesa-dev \
-            libwayland-egl1-mesa \
+            libwayland-dev \
+            libwayland-egl1 \
             libgles2-mesa-dev
 
       - if: ${{ matrix.os == 'windows-2022' }}
