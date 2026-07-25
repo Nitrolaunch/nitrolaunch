@@ -223,6 +223,15 @@ impl UpdateFacets {
 		}
 	}
 
+	/// Only update content
+	pub fn content() -> Self {
+		Self {
+			instance: false,
+			packages: true,
+			modpack: true,
+		}
+	}
+
 	/// Creates facets from flags, i.e. if any of the flags are true, turns off instance updating. If all of the flags are false, sets all of them to true
 	pub fn from_flags(packages: bool, modpack: bool) -> Self {
 		let all_false = !packages && !modpack;

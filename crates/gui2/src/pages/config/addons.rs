@@ -26,6 +26,7 @@ use crate::{
 	},
 	ops::{
 		ConditionalQuery,
+		instance::{UpdateInstance, UpdateInstanceKeys},
 		packages::{
 			FetchInstanceAddons, FetchInstanceLockfile, FetchPackages, PkgInfo, PreloadPackages,
 		},
@@ -55,6 +56,8 @@ impl Component for AddonsConfig {
 			self.config_state.ty == ConfigKind::Instance,
 			|| self.config_state.id.read().cloned(),
 		));
+		let update = use_mutation(Mutation::new(UpdateInstance::new(back_state.clone())));
+
 		let filter = use_state(|| Filter::All);
 		let pkg_ty = use_state::<Option<PackageKind>>(|| None);
 		let search = use_state(|| String::new());
@@ -106,27 +109,38 @@ impl Component for AddonsConfig {
 			)
 		});
 
-		let items = VirtualScrollView::new_with_data(
-			(
-				packages.read().cloned(),
-				processed_items.read().cloned(),
-				open_states.read().cloned(),
-			),
-			move |i, (packages, processed_items, open_states)| {
-				let item = processed_items.get(i).unwrap();
-
-				ContentItemElem {
-					item: item.clone(),
-					packages: packages.0.clone(),
-					is_open: open_states.contains(&item.id.to_string()),
-				}
+		let items = if processed_items.read().is_empty() {
+			rect()
+				.expanded()
+				.child(placeholder(
+					"No content installed. Try adding some packages or a modpack.",
+					&theme,
+				))
 				.into_element()
-			},
-		)
-		.expanded()
-		// Conservative
-		.item_size(64.0 + theme.gap)
-		.length(processed_items.read().len());
+		} else {
+			VirtualScrollView::new_with_data(
+				(
+					packages.read().cloned(),
+					processed_items.read().cloned(),
+					open_states.read().cloned(),
+				),
+				move |i, (packages, processed_items, open_states)| {
+					let item = processed_items.get(i).unwrap();
+
+					ContentItemElem {
+						item: item.clone(),
+						packages: packages.0.clone(),
+						is_open: open_states.contains(&item.id.to_string()),
+					}
+					.into_element()
+				},
+			)
+			.expanded()
+			// Conservative
+			.item_size(64.0 + theme.gap)
+			.length(processed_items.read().len())
+			.into_element()
+		};
 
 		let on_select_filter =
 			Rc::new(move |new_filter: Selected<Filter>| filter.clone().set(new_filter.single()));
@@ -182,7 +196,26 @@ impl Component for AddonsConfig {
 				Some("server"),
 			));
 
-		let controls = rect().width(Size::fill()).cont();
+		let id = self.config_state.id.clone();
+		let update_button = icon_text_button("upload", "Update Content", &theme)
+			.border_fill(theme.primary)
+			.color(theme.primary)
+			.background(theme.primary_bg)
+			.hover_background(theme.primary_bg)
+			.on_press(move |_| {
+				update.mutate(UpdateInstanceKeys {
+					id: id.read().clone(),
+					force: false,
+					content_only: true,
+				});
+			});
+
+		let controls = rect()
+			.width(Size::fill())
+			.cont()
+			.child(segment(rect(), 1.0))
+			.child(segment(rect(), 1.0))
+			.child(segment(update_button, 1.0).cross_align(Alignment::End));
 		let filters = rect()
 			.width(Size::fill())
 			.cont()

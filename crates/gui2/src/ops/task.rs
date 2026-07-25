@@ -70,10 +70,6 @@ impl TaskManager {
 		});
 	}
 
-	pub fn is_task_running(&self, task_id: &Task) -> bool {
-		self.tasks.iter().any(|task| task.id == *task_id)
-	}
-
 	/// Kills a task
 	pub fn kill(&mut self, task_id: &Task) {
 		self.tasks.retain(|task| {
@@ -135,6 +131,27 @@ pub enum Task {
 	FetchPluginVersions,
 	LoginAccount,
 	Opening,
+}
+
+impl Task {
+	pub fn can_cancel(&self) -> bool {
+		match self {
+			Self::LaunchInstance(_) => true,
+			Self::UpdateInstance(_) => true,
+			Self::UpdateInstanceContent(_) => true,
+			Self::DeleteInstance => false,
+			Self::InstallModpack => false,
+			Self::ImportInstance => false,
+			Self::ExportInstance => false,
+			Self::MigrateInstances => false,
+			Self::SearchPackages => false,
+			Self::FetchRemotePlugins => false,
+			Self::InstallPlugin => false,
+			Self::FetchPluginVersions => false,
+			Self::LoginAccount => true,
+			Self::Opening => false,
+		}
+	}
 }
 
 impl Display for Task {

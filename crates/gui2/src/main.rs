@@ -8,7 +8,6 @@ use tokio::runtime::Builder;
 use tokio::sync::broadcast;
 
 use crate::components::dialog::tip::Tips;
-use crate::components::dialog::toast::Toast;
 use crate::components::footer::Footer;
 use crate::components::global::Global;
 use crate::prelude::*;
@@ -67,7 +66,6 @@ struct App;
 impl Component for App {
 	fn render(&self) -> impl IntoElement {
 		let theme = use_theme();
-		let front_state = use_front_state();
 		let show_sidebar = use_state(|| false);
 
 		let router = rect()
@@ -75,60 +73,11 @@ impl Component for App {
 			.height(Size::fill())
 			.child(Router::new());
 
-		let front_state2 = front_state.clone();
-		let front_state3 = front_state.clone();
-		let front_state4 = front_state.clone();
-
 		let sidebar = if *show_sidebar.read() {
 			rect()
 				.width(Size::px(theme.sidebar_width))
 				.height(Size::fill())
 				.background(theme.sidebar)
-				.child(
-					rect()
-						.width(Size::px(16.0))
-						.height(Size::px(16.0))
-						.background(Color::WHITE)
-						.on_press(move |_| {
-							front_state.write().toast(Toast::info(
-								"Info",
-								Some("Lorem ipsum dolor sit amet adipiscing sdofijsdfoisjdfoisjdoflij".into_element()),
-							));
-						}),
-				)
-				.child(
-					rect()
-						.width(Size::px(16.0))
-						.height(Size::px(16.0))
-						.background(Color::GREEN)
-						.on_press(move |_| {
-							front_state2.write().toast(Toast::success("Success"));
-						}),
-				)
-				.child(
-					rect()
-						.width(Size::px(16.0))
-						.height(Size::px(16.0))
-						.background(Color::YELLOW)
-						.on_press(move |_| {
-							front_state3.write().toast(Toast::warning(
-								"Warning",
-								Some("Lorem ipsum dolor sit amet adipiscing sdofijsdfoisjdfoisjdoflij".into_element()),
-							));
-						}),
-				)
-				.child(
-					rect()
-						.width(Size::px(16.0))
-						.height(Size::px(16.0))
-						.background(Color::RED)
-						.on_press(move |_| {
-							front_state4.write().toast(Toast::error(
-								"Error",
-								Some("Lorem ipsum dolor sit amet adipiscing sdofijsdfoisjdfoisjdoflij".into_element()),
-							));
-						}),
-				)
 		} else {
 			rect()
 		};

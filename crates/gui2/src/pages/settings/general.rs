@@ -99,11 +99,17 @@ impl Component for SelectableTheme {
 			)
 		});
 
+		let fg = if calculated.fg == Color::TRANSPARENT {
+			theme.fg
+		} else {
+			calculated.fg
+		};
+
 		let preview = rect()
 			.width(Size::fill())
 			.height(Size::px(128.0))
 			.background(calculated.bg)
-			.color(calculated.fg)
+			.color(fg)
 			.corner_radius(theme.round)
 			.main_align(Alignment::SpaceEvenly)
 			.cross_align(Alignment::Center)

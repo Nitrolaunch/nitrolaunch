@@ -126,23 +126,30 @@ impl Component for SettingsModal {
 		let tab = use_state(|| Tab::General);
 		let show_directory2 = show_directory.clone();
 		let show_directory3 = show_directory.clone();
+
+		let tabs = SideTabs::new(tab)
+			.child(SelectOption::new(Tab::General, "General", Some("gear")))
+			.child(SelectOption::new(
+				Tab::Accounts,
+				"Accounts",
+				Some("multiple_users"),
+			))
+			.child(SelectOption::new(Tab::Plugins, "Plugins", Some("jigsaw")))
+			.child(SelectOption::new(Tab::Logs, "Logs", Some("text")));
+
+		#[cfg(debug_assertions)]
+		let tabs = tabs.child(SelectOption::new(Tab::Debug, "Debug", Some("box")));
+
 		let left_panel = rect()
 			.width(Size::flex(1.0))
 			.border(border_right(theme.border, theme.panel_border))
 			.cont()
 			.vertical()
 			.child(
-				rect().width(Size::fill()).height(Size::flex(1.0)).child(
-					SideTabs::new(tab)
-						.child(SelectOption::new(Tab::General, "General", Some("gear")))
-						.child(SelectOption::new(
-							Tab::Accounts,
-							"Accounts",
-							Some("multiple_users"),
-						))
-						.child(SelectOption::new(Tab::Plugins, "Plugins", Some("jigsaw")))
-						.child(SelectOption::new(Tab::Logs, "Logs", Some("text"))),
-				),
+				rect()
+					.width(Size::fill())
+					.height(Size::flex(1.0))
+					.child(tabs),
 			)
 			.child(
 				rect()
@@ -176,6 +183,8 @@ impl Component for SettingsModal {
 			Tab::Accounts => AccountSettings.into_element(),
 			Tab::Plugins => PluginsPage.into_element(),
 			Tab::Logs => SettingsConsole.into_element(),
+			#[cfg(debug_assertions)]
+			Tab::Debug => debug::DebugSettings.into_element(),
 		};
 
 		let right_panel = rect().width(Size::flex(4.0)).child(tab_contents);
@@ -194,6 +203,8 @@ enum Tab {
 	Accounts,
 	Plugins,
 	Logs,
+	#[cfg(debug_assertions)]
+	Debug,
 }
 
 /// State objects for the config
@@ -306,5 +317,71 @@ impl ConsoleImpl for Impl {
 
 	fn set_log_file(&self, file: Option<String>) {
 		self.selected_log.clone().set(file);
+	}
+}
+
+#[cfg(debug_assertions)]
+mod debug {
+	use super::*;
+
+	#[derive(PartialEq)]
+	pub struct DebugSettings;
+
+	impl Component for DebugSettings {
+		fn render(&self) -> impl IntoElement {
+			let front_state = use_front_state();
+
+			let front_state2 = front_state.clone();
+			let front_state3 = front_state.clone();
+			let front_state4 = front_state.clone();
+
+			rect()
+				.expanded()
+				.child(
+					rect()
+						.width(Size::px(16.0))
+						.height(Size::px(16.0))
+						.background(Color::WHITE)
+						.on_press(move |_| {
+							front_state.write().toast(Toast::info(
+								"Info",
+								Some("Lorem ipsum dolor sit amet adipiscing sdofijsdfoisjdfoisjdoflij".into_element()),
+							));
+						}),
+				)
+				.child(
+					rect()
+						.width(Size::px(16.0))
+						.height(Size::px(16.0))
+						.background(Color::GREEN)
+						.on_press(move |_| {
+							front_state2.write().toast(Toast::success("Success"));
+						}),
+				)
+				.child(
+					rect()
+						.width(Size::px(16.0))
+						.height(Size::px(16.0))
+						.background(Color::YELLOW)
+						.on_press(move |_| {
+							front_state3.write().toast(Toast::warning(
+								"Warning",
+								Some("Lorem ipsum dolor sit amet adipiscing sdofijsdfoisjdfoisjdoflij".into_element()),
+							));
+						}),
+				)
+				.child(
+					rect()
+						.width(Size::px(16.0))
+						.height(Size::px(16.0))
+						.background(Color::RED)
+						.on_press(move |_| {
+							front_state4.write().toast(Toast::error(
+								"Error",
+								Some("Lorem ipsum dolor sit amet adipiscing sdofijsdfoisjdfoisjdoflij".into_element()),
+							));
+						}),
+				)
+		}
 	}
 }

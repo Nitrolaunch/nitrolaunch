@@ -19,8 +19,6 @@ pub use crate::state::{BackState, FrontChannel, use_front_state};
 pub use crate::theme::{Theme, use_theme};
 pub use crate::util::{NotEq, query_spawn};
 
-pub use crate::clone_into;
-
 pub trait StateExt<T>: Clone {
 	/// Returns an event handler that sets this state to a value
 	fn setter(&self) -> EventHandler<T>;

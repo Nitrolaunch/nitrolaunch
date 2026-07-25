@@ -1,5 +1,6 @@
 use anyhow::Context;
 use freya::query::QueriesStorage;
+use itertools::Itertools;
 use nitrolaunch::{
 	config::modifications::{ConfigModification, apply_modifications_and_write},
 	config_crate::account::{AccountConfig, AccountVariant},
@@ -31,7 +32,7 @@ simple_query!(
 					.await;
 			}
 
-			Ok(config.accounts.iter_accounts().map(|x| x.1.clone()).collect())
+			Ok(config.accounts.iter_accounts().sorted_by_cached_key(|x| x.0.clone()).map(|x| x.1.clone()).collect())
 		})
 	}
 );

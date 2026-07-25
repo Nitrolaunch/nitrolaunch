@@ -126,7 +126,7 @@ impl Component for HomePage {
 			}),
 		)
 		.custom_header(SelectOption::new(AddOption::Add, "Add", Some("plus")))
-		.header_width(Size::auto())
+		.header_width(Size::px(80.0))
 		.options_width(180.0)
 		.hide_arrow()
 		.panel_colorway()

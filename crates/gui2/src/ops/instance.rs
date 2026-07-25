@@ -1,15 +1,19 @@
 use std::{sync::Arc, time::Duration};
 
-use anyhow::Context;
+use anyhow::{Context, bail};
 use freya::query::QueriesStorage;
 use itertools::Itertools;
 use nitrolaunch::{
 	config::modifications::{ConfigModification, apply_modifications_and_write},
 	config_crate::{ConfigKind, instance::InstanceConfig, template::TemplateConfig},
 	core::util::versions::MinecraftVersion,
-	instance::parse_loader_config,
+	instance::{
+		parse_loader_config,
+		update::{InstanceUpdateContext, UpdateFacets, manager::UpdateSettings},
+	},
+	io::lock::Lockfile,
 	shared::{
-		Side,
+		Side, UpdateDepth,
 		id::{InstanceID, TemplateID},
 		loaders::Loader,
 		output::NoOp,
@@ -17,7 +21,11 @@ use nitrolaunch::{
 };
 
 use crate::{
-	ops::task::Task, pages::config::ConfiguredItem, prelude::*, simple_mutation, simple_query,
+	ops::{MakeSend, task::Task},
+	pages::config::ConfiguredItem,
+	prelude::*,
+	secrets::get_ms_client_id,
+	simple_mutation, simple_query,
 };
 
 #[derive(Clone, PartialEq, Eq, Hash)]
@@ -477,6 +485,130 @@ simple_query!(
 		})
 	}
 );
+
+#[rustfmt::skip]
+simple_mutation!(
+	name = UpdateInstance,
+	ok = (),
+	err = anyhow::Error,
+	keys = UpdateInstanceKeys,
+	fn run(&self, keys: &Self::Keys) -> impl Future<Output = Result<Self::Ok, Self::Err>> {
+		let task_id = if keys.content_only {
+			Task::UpdateInstanceContent(keys.id.clone())
+		} else {
+			Task::UpdateInstance(keys.id.clone())
+		};
+
+		let facets = if keys.content_only {
+			UpdateFacets::content()
+		} else {
+			UpdateFacets::all()
+		};
+
+		let depth = if keys.force {
+			UpdateDepth::Force
+		} else {
+			UpdateDepth::Full
+		};
+
+		update_instance_impl(
+			self.back_state.0.clone(),
+			keys.id.clone(),
+			depth,
+			facets,
+			task_id,
+		)
+	}
+	fn on_settled(
+		&self,
+		_keys: &Self::Keys,
+		_result: &Result<Self::Ok, Self::Err>,
+	) -> impl Future<Output = ()> {
+		async move {
+			QueriesStorage::<FetchInstanceConfig>::invalidate_matching(_keys.id.clone()).await;
+			QueriesStorage::<FetchItems>::invalidate_all().await;
+		}
+	}
+);
+
+pub async fn update_instance_impl(
+	back_state: BackState,
+	instance_id: String,
+	depth: UpdateDepth,
+	facets: UpdateFacets,
+	task_id: Task,
+) -> anyhow::Result<()> {
+	let mut o = back_state.output();
+	o.set_task(task_id.clone());
+
+	let back_state2 = back_state.clone();
+	let task = {
+		let mut config = back_state2.config().await?;
+		let mut lock = Lockfile::open(&back_state2.paths).context("Failed to open lockfile")?;
+
+		let core = config
+			.get_core(
+				Some(&get_ms_client_id()),
+				&UpdateSettings {
+					depth: UpdateDepth::Full,
+					offline_auth: false,
+				},
+				&back_state2.client,
+				&back_state2.plugins,
+				&back_state2.paths,
+				&mut o,
+			)
+			.await?;
+
+		let instance_id = instance_id.clone();
+		let paths = back_state2.paths.clone();
+		async move {
+			let instance_id2 = instance_id.clone();
+			let Some(instance) = config.instances.get_mut(&InstanceID::from(instance_id)) else {
+				bail!("Instance does not exist");
+			};
+
+			let mut ctx = InstanceUpdateContext {
+				packages: &mut config.packages,
+				accounts: &mut config.accounts,
+				plugins: &config.plugins,
+				prefs: &config.prefs,
+				paths: &paths,
+				lock: &mut lock,
+				client: &back_state2.client,
+				output: &mut o,
+				core: &core,
+			};
+
+			let updates_packages = facets.packages;
+
+			instance
+				.update(depth, facets, &mut ctx)
+				.await
+				.context("Failed to update instance")?;
+
+			if updates_packages {
+				let mut data = back_state2.data();
+				data.last_resolution_errors.remove(&instance_id2);
+				let _ = data.write(&paths);
+			}
+
+			Ok(())
+		}
+	};
+
+	let task = tokio::spawn(unsafe { MakeSend::new(task) });
+	back_state.register_task(task_id, task);
+
+	Ok(())
+}
+
+#[derive(Clone, PartialEq, Eq, Hash)]
+pub struct UpdateInstanceKeys {
+	pub id: String,
+	pub force: bool,
+	pub content_only: bool,
+}
 
 #[rustfmt::skip]
 simple_mutation!(

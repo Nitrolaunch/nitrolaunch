@@ -2,7 +2,11 @@ use std::collections::HashMap;
 
 use nitrolaunch::shared::output::MessageContents;
 
-use crate::{ops::task::Task, prelude::*, state::BackEvent};
+use crate::{
+	ops::task::{KillTask, Task},
+	prelude::*,
+	state::BackEvent,
+};
 
 #[derive(PartialEq)]
 pub struct OutputIndicator;
@@ -11,6 +15,8 @@ impl Component for OutputIndicator {
 	fn render(&self) -> impl IntoElement {
 		let theme = use_theme();
 		let front_state = use_front_state();
+		let back_state = use_consume::<BackState>();
+		let kill_task = use_mutation(Mutation::new(KillTask::new(back_state.clone())));
 
 		let mut tasks = use_state::<HashMap<Task, TaskData>>(|| HashMap::new());
 		let mut is_open = use_state(|| false);
@@ -68,20 +74,27 @@ impl Component for OutputIndicator {
 			}
 		});
 
+		let temp = tasks.read();
+		let current_task = temp.iter().next().map(|x| x.0.clone());
+
 		let indicator_text = match tasks.read().len() {
 			0 => "No tasks running".into(),
-			1 => tasks.read().iter().next().unwrap().0.to_string(),
+			1 => current_task.as_ref().unwrap().to_string(),
 			other => format!("{other} tasks running"),
 		};
 
+		let current_task2 = current_task.clone();
 		let indicator = rect()
 			.width(Size::fill())
 			.height(Size::px(36.0))
-			.item_colorway(&theme, false, false)
+			.panel_colorway(&theme, false, !tasks.read().is_empty())
 			.background(theme.bg)
 			.corner_radius(theme.round2)
 			.center()
-			.on_press(move |_| is_open.toggle())
+			.maybe(current_task.is_some_and(|x| x.can_cancel()), |this| {
+				this.tip(&front_state, "Click to cancel")
+			})
+			.on_press(move |_| kill_task.mutate(current_task2.clone().unwrap()))
 			.child(indicator_text);
 
 		let popout = if *is_open.read() {
@@ -89,7 +102,7 @@ impl Component for OutputIndicator {
 				rect()
 					.width(Size::fill())
 					.height(Size::px(128.0))
-					.item_colorway(&theme, false, false)
+					.panel_colorway(&theme, false, false)
 					.corner_radius(theme.round2)
 					.margin((0.0, 0.0, 8.0, 0.0)),
 			)

@@ -12,29 +12,6 @@ use freya::prelude::Color;
 pub mod assets;
 pub mod pkg;
 
-#[macro_export]
-macro_rules! clone_into {
-	([ $($orig:tt as $var:ident),* $(,)? ], $f:expr) => {
-		{
-			$(
-				let $var = $orig.clone();
-			)*
-
-			$f
-		}
-	};
-
-	([ $($var:expr),* $(,)? ], $f:expr) => {
-		{
-			$(
-				let $var = $var.clone();
-			)*
-
-			$f
-		}
-	};
-}
-
 /// Utility function to spawn for queries with a flattened error type
 pub async fn query_spawn<F, T>(f: F) -> anyhow::Result<T>
 where

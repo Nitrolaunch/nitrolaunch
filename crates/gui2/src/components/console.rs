@@ -100,6 +100,8 @@ impl<C: ConsoleImpl> Component for Console<C> {
 			}
 		};
 
+		let input_fn = self.console.input_fn();
+		let mut input2 = input.clone();
 		let contents = rect()
 			.width(Size::fill())
 			.height(Size::flex(1.0))
@@ -109,27 +111,32 @@ impl<C: ConsoleImpl> Component for Console<C> {
 			.corner_radius(theme.round2)
 			.flex()
 			.child(contents)
-			.maybe(self.console.input_fn().is_some(), |this| {
-				this.child(
-					rect()
-						.width(Size::fill())
-						.height(Size::px(theme.input_height))
-						.border(border_top(theme.border, theme.panel_border))
-						.corner_radius(CornerRadius {
-							top_left: 0.0,
-							top_right: 0.0,
-							bottom_left: theme.round2,
-							bottom_right: theme.round2,
-							smoothing: 0.0,
-						})
-						.padding(theme.gap)
-						.cont()
-						.child(
-							transparent_text_input(input, &theme)
-								.on_submit(self.console.input_fn().unwrap()),
-						),
-				)
-			});
+			.maybe(
+				input_fn.is_some() && self.console.get_log_file().is_none(),
+				|this| {
+					this.child(
+						rect()
+							.width(Size::fill())
+							.height(Size::px(theme.input_height))
+							.border(border_top(theme.border, theme.panel_border))
+							.corner_radius(CornerRadius {
+								top_left: 0.0,
+								top_right: 0.0,
+								bottom_left: theme.round2,
+								bottom_right: theme.round2,
+								smoothing: 0.0,
+							})
+							.padding(theme.gap)
+							.cont()
+							.child(transparent_text_input(input, &theme).on_submit(move |s| {
+								let result = input_fn.as_ref().unwrap()(s);
+								if result {
+									input2.set(String::new());
+								}
+							})),
+					)
+				},
+			);
 
 		let ty_selector = Dropdown::new(
 			Selected::Single(ty.read().clone()),
@@ -138,7 +145,11 @@ impl<C: ConsoleImpl> Component for Console<C> {
 			}),
 		)
 		.header_width(Size::auto())
-		.child(SelectOption::new(None, "All Messages", Some("asterisk")))
+		.child(SelectOption::new(
+			None,
+			"All Messages",
+			Some("speech_bubble"),
+		))
 		.child(SelectOption::new(
 			Some(MessageType::Error),
 			"Errors",
@@ -232,8 +243,8 @@ pub trait ConsoleImpl: PartialEq + Clone + 'static {
 
 	fn set_log_file(&self, file: Option<String>);
 
-	fn input_fn(&self) -> Option<impl Fn(String) + 'static> {
-		None::<Box<dyn Fn(String)>>
+	fn input_fn(&self) -> Option<impl Fn(String) -> bool + 'static> {
+		None::<Box<dyn Fn(String) -> bool>>
 	}
 }
 

@@ -8,8 +8,13 @@ use crate::{
 		instance::{console::InstanceConsole, transfer::InstanceTransferMode},
 	},
 	ops::{
-		instance::{FetchInstanceConfig, FetchParentConfigs, SaveConfig},
-		launch::FetchInstanceRunState,
+		instance::{
+			FetchInstanceConfig, FetchParentConfigs, SaveConfig, UpdateInstance, UpdateInstanceKeys,
+		},
+		launch::{
+			FetchInstanceRunState, InstanceRunState, KillInstance, LaunchInstance,
+			LaunchInstanceParams,
+		},
 		misc::{ShowDirectory, ShowDirectoryOption},
 	},
 	pages::config::{ConfigState, ConfiguredItem, addons::AddonsConfig},
@@ -37,10 +42,14 @@ impl Component for InstancePage {
 			Some("Saved"),
 			"Failed to save config",
 		)));
+		let update = use_mutation(Mutation::new(UpdateInstance::new(back_state.clone())));
+		let launch = use_mutation(LaunchInstance::new(back_state.clone()));
+		let kill = use_mutation(KillInstance::new(back_state.clone()));
 		let run_state = use_query(Query::new(
 			self.id.clone(),
 			FetchInstanceRunState::new(back_state.clone()),
 		));
+		let run_state = run_state.read().state().ok().cloned().unwrap_or_default();
 		let show_directory = use_mutation(Mutation::new(ShowDirectory::new(back_state.clone())));
 
 		let tab = use_state(|| Tab::Info);
@@ -79,16 +88,16 @@ impl Component for InstancePage {
 
 		let ico = if config_state.icon.read().is_some() {
 			ImageViewer::new(get_instance_icon(config_state.icon.read().as_deref()))
-				.width(Size::px(64.0))
-				.height(Size::px(64.0))
+				.width(Size::px(48.0))
+				.height(Size::px(48.0))
 				.corner_radius(theme.round2)
 				.into_element()
 		} else {
-			icon("box", 48.0).into_element()
+			icon("box", 36.0).into_element()
 		};
 		let ico = rect()
-			.width(Size::px(96.0))
-			.height(Size::px(96.0))
+			.width(Size::px(80.0))
+			.height(Size::px(80.0))
 			.center()
 			.child(ico);
 		let name = config_state
@@ -97,20 +106,74 @@ impl Component for InstancePage {
 			.cloned()
 			.unwrap_or_else(|| self.id.clone());
 
+		let selected = match run_state {
+			InstanceRunState::Stopped => LaunchOption::Launch,
+			InstanceRunState::Running => LaunchOption::Kill,
+		};
+		let id = self.id.clone();
+		let launch_dropdown = Dropdown::new(
+			Selected::Single(selected),
+			Rc::new(move |selected| match selected.single() {
+				LaunchOption::Launch => {
+					launch.mutate(LaunchInstanceParams {
+						id: id.clone(),
+						account: None,
+						offline: false,
+					});
+				}
+				LaunchOption::LaunchOffline => {
+					launch.mutate(LaunchInstanceParams {
+						id: id.clone(),
+						account: None,
+						offline: true,
+					});
+				}
+				LaunchOption::Kill => {
+					kill.mutate((id.clone(), None));
+				}
+			}),
+		)
+		.options_width(160.0)
+		.header_width(Size::auto())
+		.panel_colorway()
+		.child(SelectOption::new(
+			LaunchOption::Launch,
+			"Launch",
+			Some("play"),
+		))
+		.child(SelectOption::new(
+			LaunchOption::LaunchOffline,
+			"Launch Offline",
+			Some("play"),
+		))
+		.maybe_child(run_state == InstanceRunState::Running, || {
+			SelectOption::new(LaunchOption::Kill, "Kill", Some("stop"))
+		});
+
+		let id = self.id.clone();
+		let update_button = icon_text_button("upload", "Update", &theme)
+			.border_fill(theme.panel_border)
+			.on_press(move |_| {
+				update.mutate(UpdateInstanceKeys {
+					id: id.clone(),
+					force: false,
+					content_only: false,
+				});
+			});
+
 		let id = self.id.clone();
 		let front_state2 = front_state.clone();
-		let settings_button =
-			rect()
-				.tip(&front_state, "Configure")
-				.child(icon_button("gear", &theme).on_press(move |_| {
-					front_state2
-						.write()
-						.set_modal(Some(ModalType::Configuration(ConfiguredItem {
-							ty: ConfigKind::Instance,
-							id: Some(id.clone()),
-							is_new: false,
-						})));
-				}));
+		let settings_button = icon_text_button("gear", "Configure", &theme)
+			.border_fill(theme.panel_border)
+			.on_press(move |_| {
+				front_state2
+					.write()
+					.set_modal(Some(ModalType::Configuration(ConfiguredItem {
+						ty: ConfigKind::Instance,
+						id: Some(id.clone()),
+						is_new: false,
+					})));
+			});
 
 		let id = self.id.clone();
 		let front_state2 = front_state.clone();
@@ -136,7 +199,10 @@ impl Component for InstancePage {
 		)
 		.options_width(160.0)
 		.align_options_right()
-		.custom_header(SelectOption::new(MoreOption::More, "More", None))
+		.custom_header(SelectOption::new(MoreOption::More, "More", Some("elipsis")))
+		.header_width(Size::auto())
+		.hide_arrow()
+		.panel_colorway()
 		.child(SelectOption::new(
 			MoreOption::Export,
 			"Export",
@@ -152,7 +218,6 @@ impl Component for InstancePage {
 			"Delete",
 			Some("trash"),
 		));
-		let more_dropdown = rect().width(Size::px(84.0)).child(more_dropdown);
 
 		let controls = rect()
 			.height(Size::fill())
@@ -160,12 +225,14 @@ impl Component for InstancePage {
 			.main_align(Alignment::End)
 			.cross_align(Alignment::Center)
 			.padding(Gaps::new(0.0, theme.gap3, 0.0, 0.0))
+			.child(launch_dropdown)
+			.child(update_button)
 			.child(settings_button)
 			.child(more_dropdown);
 
 		let head = rect()
 			.width(Size::fill())
-			.height(Size::px(96.0))
+			.height(Size::px(80.0))
 			.cont()
 			.border(border_bottom(theme.border, theme.panel_border))
 			.child(ico)
@@ -226,6 +293,13 @@ enum Tab {
 	Info,
 	Content,
 	Console,
+}
+
+#[derive(PartialEq, Clone)]
+enum LaunchOption {
+	Launch,
+	LaunchOffline,
+	Kill,
 }
 
 #[derive(PartialEq, Clone)]

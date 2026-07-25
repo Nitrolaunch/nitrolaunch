@@ -1,5 +1,8 @@
+use std::io::Write;
+
 use anyhow::Context;
 use nitrolaunch::{
+	core::io::open_named_pipe,
 	instance::{
 		launch::LaunchSettings,
 		tracking::RunningInstanceEntry,
@@ -13,7 +16,7 @@ use crate::{
 	ops::{MakeSend, task::Task},
 	prelude::*,
 	secrets::get_ms_client_id,
-	simple_query,
+	simple_mutation, simple_query,
 };
 
 #[derive(Clone, PartialEq, Eq, Hash)]
@@ -198,6 +201,34 @@ simple_query!(
 			} else {
 				Ok(InstanceRunState::Stopped)
 			}
+		}
+	}
+);
+
+simple_mutation!(
+	name = WriteInstanceInput,
+	ok = (),
+	err = anyhow::Error,
+	keys = (String, String),
+	fn run(&self, keys: &Self::Keys) -> impl Future<Output = Result<Self::Ok, Self::Err>> {
+		let back_state = self.back_state.clone();
+		let (id, input) = keys.clone();
+
+		async move {
+			let Some(entry) = back_state.running_instances.get_entry(&id, None).await else {
+				return Ok(());
+			};
+
+			let Some(path) = &entry.stdin_file else {
+				return Ok(());
+			};
+			let path = back_state.paths.internal.join("stdio").join(path);
+
+			let mut file = open_named_pipe(path).context("Failed to open input pipe")?;
+			file.write_all(input.as_bytes())
+				.context("Failed to write to instance input")?;
+
+			Ok(())
 		}
 	}
 );

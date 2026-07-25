@@ -5,9 +5,7 @@ use freya::{
 	elements::extensions::ContainerSizeExt,
 	prelude::Size,
 };
-use nitrolaunch::shared::{
-	loaders::Loader, minecraft::AddonKind, pkg::PackageKind, util::to_string_json,
-};
+use nitrolaunch::shared::{loaders::Loader, pkg::PackageKind, util::to_string_json};
 
 pub static DEFAULT_INSTANCE: &[u8] = include_bytes!("../assets/images/default_instance.png");
 pub static DEFAULT_SKIN: &[u8] = include_bytes!("../assets/images/default_skin.png");

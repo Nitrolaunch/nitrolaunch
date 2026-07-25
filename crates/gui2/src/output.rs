@@ -72,6 +72,7 @@ impl NitroOutput for LauncherOutput {
 		default: bool,
 		message: MessageContents,
 	) -> anyhow::Result<bool> {
+		println!("Starting yes no prompt");
 		let _ = default;
 		self.inner.yes_no_prompt.lock().await.take();
 		let _ = self.inner.event_tx.send(BackEvent::ShowYesNoPrompt {
@@ -108,7 +109,10 @@ impl NitroOutput for LauncherOutput {
 	}
 
 	async fn prompt_password(&mut self, _: MessageContents) -> anyhow::Result<String> {
-		println!("Starting password prompt");
+		let _ = self.inner.logger.try_send(Message {
+			contents: "Prompting for password".into(),
+			level: MessageLevel::Debug,
+		});
 		let _ = self.inner.event_tx.send(BackEvent::ShowPasskeyPrompt);
 
 		// Block this thread, checking every interval if the prompt has been filled
@@ -130,6 +134,10 @@ impl NitroOutput for LauncherOutput {
 		&mut self,
 		diffs: Vec<PackageDiff>,
 	) -> anyhow::Result<bool> {
+		let _ = self.inner.logger.try_send(Message {
+			contents: "Prompting for package diffs".into(),
+			level: MessageLevel::Debug,
+		});
 		self.inner.yes_no_prompt.lock().await.take();
 
 		let _ = self
@@ -149,7 +157,10 @@ impl NitroOutput for LauncherOutput {
 	}
 
 	fn display_special_ms_auth(&mut self, url: &str, code: &str) {
-		self.display_text("Showing auth info".into(), MessageLevel::Important);
+		let _ = self.inner.logger.try_send(Message {
+			contents: "Prompting for Microsoft auth".into(),
+			level: MessageLevel::Debug,
+		});
 		let _ = self.inner.event_tx.send(BackEvent::ShowAuthPrompt {
 			url: url.into(),
 			device_code: code.into(),
@@ -157,7 +168,10 @@ impl NitroOutput for LauncherOutput {
 	}
 
 	fn display_special_resolution_error(&mut self, error: ResolutionError, instance_id: &str) {
-		eprintln!("Package resolution error: {error}");
+		let _ = self.inner.logger.try_send(Message {
+			contents: format!("Package resolution error: {error}").into(),
+			level: MessageLevel::Important,
+		});
 		let _ = self.inner.event_tx.send(BackEvent::OutputResolutionError {
 			error: Arc::new(error),
 			instance_id: instance_id.to_string(),

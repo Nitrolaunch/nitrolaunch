@@ -26,8 +26,20 @@ use tokio::sync::{Mutex, broadcast, mpsc};
 
 use crate::{
 	components::{
-		dialog::{tip::Tip, toast::Toast}, footer::FooterItem, instance::transfer::InstanceTransferMode,
-	}, data::LauncherData, dependency::BackDependency, instance_manager::RunningInstanceManager, ops::task::{Task, TaskManager}, output::{LauncherOutput, OutputInner}, pages::config::ConfiguredItem, routing::{Navigator, Page}, secrets::get_ms_client_id, theme::Theme, util::Shared,
+		dialog::{tip::Tip, toast::Toast},
+		footer::FooterItem,
+		instance::transfer::InstanceTransferMode,
+	},
+	data::LauncherData,
+	dependency::BackDependency,
+	instance_manager::RunningInstanceManager,
+	ops::task::{Task, TaskManager},
+	output::{LauncherOutput, OutputInner},
+	pages::config::ConfiguredItem,
+	routing::{Navigator, Page},
+	secrets::get_ms_client_id,
+	theme::Theme,
+	util::Shared,
 };
 
 /// Global state for frontend / UI related things. Only usable on the freya thread.
@@ -319,10 +331,6 @@ impl BackState {
 	) {
 		let manager = self.task_manager.clone();
 		tokio::spawn(async move { manager.lock().await.register_task(task, task_handle) });
-	}
-
-	pub async fn is_task_running(&self, task: &Task) -> bool {
-		self.task_manager.lock().await.is_task_running(task)
 	}
 
 	pub async fn kill_task(&self, task: &Task) {
