@@ -47,11 +47,12 @@ impl ComponentOwned for IconSelector {
 		let option_gap = 8.0;
 		let option_size = selector_width / cols as f32 - option_gap;
 
-		let options = OPTIONS.into_iter().map(|x| {
-			let is_selected = Some(*x) == self.icon.read().as_deref();
-			let is_derived = Some(*x) == derived.as_deref();
+		let options = std::iter::once(None).chain(OPTIONS.into_iter().map(Some));
+		let options = options.map(|x| x.map(|x| *x)).map(|x| {
+			let is_selected = x == self.icon.read().as_deref();
+			let is_derived = x == derived.as_deref() && x.is_some();
 
-			let image = ImageViewer::new(get_instance_icon(Some(x)))
+			let image = ImageViewer::new(get_instance_icon(x))
 				.width(Size::percent(75.0))
 				.height(Size::percent(75.0));
 
@@ -66,7 +67,7 @@ impl ComponentOwned for IconSelector {
 				.center()
 				.clickable()
 				.on_press(move |_| {
-					selected.set(Some(x.to_string()));
+					selected.set(x.map(|x| x.to_string()));
 				})
 				.child(image)
 		});
