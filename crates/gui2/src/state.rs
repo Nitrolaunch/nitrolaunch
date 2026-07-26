@@ -289,6 +289,15 @@ impl BackState {
 	}
 
 	pub async fn config(&self) -> anyhow::Result<Config> {
+		self.config_impl(NoOp).await
+	}
+
+	pub async fn config_with_warnings(&self) -> anyhow::Result<Config> {
+		let output = self.output();
+		self.config_impl(output).await
+	}
+
+	async fn config_impl(&self, mut o: impl NitroOutput + 'static) -> anyhow::Result<Config> {
 		let paths = self.paths.clone();
 		let plugins = self.plugins.clone();
 
@@ -299,7 +308,7 @@ impl BackState {
 				false,
 				&paths,
 				get_ms_client_id(),
-				&mut NoOp,
+				&mut o,
 			)
 			.await
 		})

@@ -92,7 +92,7 @@ simple_mutation!(
 		_keys: &Self::Keys,
 		_result: &Result<Self::Ok, Self::Err>,
 	) -> impl Future<Output = ()> {
-		QueriesStorage::<FetchItems>::invalidate_all()
+		QueriesStorage::<FetchItems>::try_invalidate_all()
 	}
 );
 
@@ -148,7 +148,7 @@ simple_mutation!(
 		_result: &Result<Self::Ok, Self::Err>,
 	) -> impl Future<Output = ()>
 	{
-		QueriesStorage::<FetchItems>::invalidate_all()
+		QueriesStorage::<FetchItems>::try_invalidate_all()
 	}
 );
 

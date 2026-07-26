@@ -71,7 +71,7 @@ impl Component for HomePage {
 			.into_iter()
 			.filter(|x| {
 				if let Some(filter) = &*filter.read()
-					&& x.side == Some(*filter)
+					&& x.side != Some(*filter)
 				{
 					return false;
 				}

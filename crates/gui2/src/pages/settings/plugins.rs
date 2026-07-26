@@ -47,7 +47,7 @@ impl Component for PluginsPage {
 					.width(Size::fill())
 					.text_align(TextAlign::End)
 					.color(theme.fg3)
-					.text("You may need to restart the application for changes to take effect."),
+					.text("You may need to restart the app for changes to take effect."),
 				1.0,
 			));
 

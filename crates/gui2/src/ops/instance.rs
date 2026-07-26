@@ -54,7 +54,7 @@ impl QueryCapability for FetchItems {
 		let back_state = self.back_state.clone();
 
 		query_spawn(async move {
-			let config = back_state.config().await?;
+			let config = back_state.config_with_warnings().await?;
 
 			let instances = config
 				.instances
@@ -384,12 +384,14 @@ impl MutationCapability for SaveConfig {
 		_result: &Result<Self::Ok, Self::Err>,
 	) -> impl Future<Output = ()> {
 		async {
-			QueriesStorage::<FetchItems>::invalidate_all().await;
+			QueriesStorage::<FetchItems>::try_invalidate_all().await;
 			if let Some(id) = &keys.item.id {
-				QueriesStorage::<FetchInstanceConfig>::invalidate_matching(id.clone()).await;
+				QueriesStorage::<FetchInstanceConfig>::try_invalidate_matching(id.clone()).await;
 			}
-			QueriesStorage::<FetchInstanceOrTemplateConfig>::invalidate_matching(keys.item.clone())
-				.await;
+			QueriesStorage::<FetchInstanceOrTemplateConfig>::try_invalidate_matching(
+				keys.item.clone(),
+			)
+			.await;
 		}
 	}
 }
@@ -525,8 +527,8 @@ simple_mutation!(
 		_result: &Result<Self::Ok, Self::Err>,
 	) -> impl Future<Output = ()> {
 		async move {
-			QueriesStorage::<FetchInstanceConfig>::invalidate_matching(_keys.id.clone()).await;
-			QueriesStorage::<FetchItems>::invalidate_all().await;
+			QueriesStorage::<FetchInstanceConfig>::try_invalidate_matching(_keys.id.clone()).await;
+			QueriesStorage::<FetchItems>::try_invalidate_all().await;
 		}
 	}
 );
@@ -639,7 +641,7 @@ simple_mutation!(
 		_keys: &Self::Keys,
 		_result: &Result<Self::Ok, Self::Err>,
 	) -> impl Future<Output = ()> {
-		QueriesStorage::<FetchItems>::invalidate_all()
+		QueriesStorage::<FetchItems>::try_invalidate_all()
 	}
 );
 
@@ -671,6 +673,6 @@ simple_mutation!(
 		_keys: &Self::Keys,
 		_result: &Result<Self::Ok, Self::Err>,
 	) -> impl Future<Output = ()> {
-		QueriesStorage::<FetchItems>::invalidate_all()
+		QueriesStorage::<FetchItems>::try_invalidate_all()
 	}
 );

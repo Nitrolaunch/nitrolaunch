@@ -14,10 +14,10 @@ impl BackDependency {
 	pub fn invalidate(&self) {
 		match self {
 			Self::RunningInstances => {
-				spawn(QueriesStorage::<FetchRunningInstances>::invalidate_all());
+				spawn(QueriesStorage::<FetchRunningInstances>::try_invalidate_all());
 			}
 			Self::Accounts => {
-				spawn(QueriesStorage::<FetchAccounts>::invalidate_all());
+				spawn(QueriesStorage::<FetchAccounts>::try_invalidate_all());
 			}
 		}
 	}

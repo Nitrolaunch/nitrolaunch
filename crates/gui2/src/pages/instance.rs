@@ -53,11 +53,10 @@ impl Component for InstancePage {
 		let show_directory = use_mutation(Mutation::new(ShowDirectory::new(back_state.clone())));
 
 		let tab = use_state(|| Tab::Console);
-		let is_dirty = use_state(|| false);
 		let config = use_state(|| InstanceConfig::default());
 
 		let id = self.id.clone();
-		let config_state = ConfigState::new(ConfigKind::Instance, false, is_dirty);
+		let config_state = ConfigState::new(ConfigKind::Instance, false);
 		let mut config_state2 = config_state.clone();
 		let mut config2 = config.clone();
 		use_side_effect(move || {
@@ -261,7 +260,7 @@ impl Component for InstancePage {
 			.border(border_right(theme.border, theme.panel_border))
 			.child(tabs);
 
-		let save_fn = config_state.save_fn(save_config);
+		let save_fn = config_state.save_fn(front_state.clone(), save_config);
 		let contents = match &*tab.read() {
 			// Tab::Info => rect().into_element(),
 			Tab::Content => AddonsConfig {

@@ -13,8 +13,8 @@ use crate::{
 	},
 	pages::config::{addons::AddonsConfig, general::GeneralTab},
 	prelude::*,
-	state::ModalType,
-	util::PtrEq,
+	state::{FrontState, ModalType},
+	util::{PtrEq, Shared},
 };
 use freya::query::UseMutation;
 use nitrolaunch::{
@@ -44,6 +44,7 @@ impl Component for ConfigPage {
 	fn render(&self) -> impl IntoElement {
 		let front_state = use_front_state();
 		front_state.read().subscribe(FrontChannel::Modal);
+		let back_state = use_consume::<BackState>();
 		let item = front_state.read().modal().and_then(|x| {
 			if let ModalType::Configuration(item) = x {
 				Some(item.clone())
@@ -51,8 +52,25 @@ impl Component for ConfigPage {
 				None
 			}
 		});
-		let on_submit = use_state::<PtrEq<dyn Fn() -> bool>>(|| PtrEq(Arc::new(|| true)));
-		let is_dirty = use_state(|| false);
+		let save_config = use_mutation(Mutation::new(SaveConfig::new(back_state.clone()).toast(
+			&back_state,
+			Some("Saved"),
+			"Failed to save config",
+		)));
+		let config_state = ConfigState::new(
+			item.as_ref().map(|x| x.ty).unwrap_or_default(),
+			item.as_ref().map(|x| x.is_new).unwrap_or(false),
+		);
+
+		let save_fn = config_state.save_fn(front_state.clone(), save_config);
+		let front_state2 = front_state.clone();
+		let on_submit = move |_: ()| {
+			let successful = save_fn();
+
+			if successful {
+				front_state2.write().set_modal(None);
+			}
+		};
 
 		let title = match &item {
 			Some(item) => match item.ty {
@@ -69,12 +87,10 @@ impl Component for ConfigPage {
 			None => "".into(),
 		};
 
-		let front_state2 = front_state.clone();
 		Modal::new(title, "box".into())
 			.maybe_child(item.is_some(), || ConfigModal {
-				item: item.unwrap(),
-				on_submit: on_submit.clone(),
-				is_dirty: is_dirty.clone(),
+				item: item.clone().unwrap(),
+				config_state: config_state.clone(),
 			})
 			.size_large()
 			.on_close(move |_| front_state.write().set_modal(None))
@@ -82,13 +98,8 @@ impl Component for ConfigPage {
 			.button(ModalButton {
 				title: "Save".into(),
 				icon: "check".into(),
-				on_click: EventHandler::from(move |_| {
-					let successful = (on_submit.read().0)();
-					if successful {
-						front_state2.write().set_modal(None);
-					}
-				}),
-				active: *is_dirty.read(),
+				on_click: on_submit.into(),
+				active: *config_state.is_dirty.read(),
 			})
 	}
 }
@@ -96,8 +107,7 @@ impl Component for ConfigPage {
 #[derive(PartialEq)]
 struct ConfigModal {
 	item: ConfiguredItem,
-	on_submit: State<PtrEq<dyn Fn() -> bool>>,
-	is_dirty: State<bool>,
+	config_state: ConfigState,
 }
 
 impl Component for ConfigModal {
@@ -108,16 +118,9 @@ impl Component for ConfigModal {
 			self.item.clone(),
 			back_state.clone(),
 		));
-		let save_config = use_mutation(Mutation::new(SaveConfig::new(back_state.clone()).toast(
-			&back_state,
-			Some("Saved"),
-			"Failed to save config",
-		)));
-
-		let config_state = ConfigState::new(self.item.ty, self.item.is_new, self.is_dirty.clone());
 
 		let parent_configs = use_query(FetchParentConfigs::new(
-			config_state.from.read().cloned(),
+			self.config_state.from.read().cloned(),
 			back_state.clone(),
 		));
 		let parent_configs = parent_configs
@@ -128,9 +131,7 @@ impl Component for ConfigModal {
 			.unwrap_or_default();
 
 		let id = self.item.id.clone();
-		let item = self.item.clone();
-		let mut config_state2 = config_state.clone();
-		let mut on_submit_state = self.on_submit.clone();
+		let mut config_state = self.config_state.clone();
 		use_side_effect(move || {
 			let config = config_query
 				.read()
@@ -140,29 +141,7 @@ impl Component for ConfigModal {
 				.flatten()
 				.unwrap_or_default();
 
-			config_state2.update(id.clone(), config.no_templates);
-
-			// Set up on submit callback
-			let config_state3 = config_state2.clone();
-			let item = item.clone();
-			let on_submit = move || {
-				let Ok(config) = config_state3.apply() else {
-					return false;
-				};
-
-				let mut item = item.clone();
-				if item.is_new {
-					item.id = Some(config_state3.id.peek().clone());
-				}
-
-				save_config.mutate(SaveConfigParams {
-					item,
-					config: NotEq(config),
-				});
-
-				true
-			};
-			on_submit_state.set(PtrEq(Arc::new(on_submit)));
+			config_state.update(id.clone(), config.no_templates);
 		});
 
 		let tab = use_state(|| Tab::General);
@@ -187,12 +166,12 @@ impl Component for ConfigModal {
 
 		let tab_contents = match &*tab.read() {
 			Tab::General => GeneralTab {
-				config_state,
+				config_state: self.config_state.clone(),
 				parent_configs: PtrEq(parent_configs.clone()),
 			}
 			.into_element(),
 			Tab::Content => AddonsConfig {
-				config_state,
+				config_state: self.config_state.clone(),
 				parent_configs: PtrEq(parent_configs.clone()),
 				on_edit: None,
 			}
@@ -230,6 +209,7 @@ pub struct ConfigState {
 	pub is_id_dirty: State<bool>,
 	pub original_config: PtrEq<TemplateConfig>,
 	pub id: State<String>,
+	pub original_id: State<String>,
 	pub from: State<Vec<String>>,
 	pub name: State<Option<String>>,
 	pub icon: State<Option<String>>,
@@ -245,14 +225,15 @@ pub struct ConfigState {
 
 impl ConfigState {
 	/// Must be called from component render scope
-	pub fn new(ty: ConfigKind, is_new: bool, is_dirty: State<bool>) -> Self {
+	pub fn new(ty: ConfigKind, is_new: bool) -> Self {
 		let out = Self {
 			ty,
 			is_new,
-			is_dirty,
+			is_dirty: use_state(|| false),
 			is_id_dirty: use_state(|| false),
 			original_config: PtrEq(Arc::new(TemplateConfig::default())),
 			id: use_state(|| String::new()),
+			original_id: use_state(|| String::new()),
 			from: use_state(|| Vec::new()),
 			name: use_state(|| None),
 			icon: use_state(|| None),
@@ -290,7 +271,8 @@ impl ConfigState {
 		self.original_config = PtrEq(Arc::new(config.clone()));
 
 		if let Some(id) = id {
-			self.id.set_if_modified(id);
+			self.id.set_if_modified(id.clone());
+			self.original_id.set(id);
 		}
 
 		self.from.set_if_modified(config.instance.from.get_vec());
@@ -334,10 +316,16 @@ impl ConfigState {
 		self.is_id_dirty.set_if_modified(!self.is_new);
 	}
 
-	pub fn apply(&self) -> Result<TemplateConfig, ConfigError> {
+	pub fn apply(&mut self) -> Result<TemplateConfig, ConfigError> {
 		let mut config = (*self.original_config.0).clone();
-		if self.id.peek().is_empty() {
+		if self.id.peek().is_empty() && self.ty != ConfigKind::BaseTemplate {
 			return Err(ConfigError::IdMissing);
+		}
+		if self.version.peek().is_none()
+			&& self.ty != ConfigKind::Template
+			&& self.ty != ConfigKind::BaseTemplate
+		{
+			return Err(ConfigError::VersionMissing);
 		}
 
 		config.instance.from = DeserListOrSingle::from_iter(self.from.peek().clone());
@@ -399,21 +387,39 @@ impl ConfigState {
 			}
 		}
 
+		self.is_dirty.set_if_modified(false);
+		self.is_id_dirty.set_if_modified(false);
+
 		Ok(config)
 	}
 
 	pub fn save_fn(
 		&self,
+		front_state: Shared<FrontState>,
 		save_config: UseMutation<ToastedMutation<SaveConfig>>,
 	) -> impl Fn() -> bool + 'static {
 		let config_state = self.clone();
 		move || {
-			let Ok(config) = config_state.apply() else {
-				return false;
+			let config = match config_state.clone().apply() {
+				Ok(config) => config,
+				Err(e) => {
+					let msg = match e {
+						ConfigError::IdMissing => "ID is missing",
+						ConfigError::SideMissing => "Side is missing",
+						ConfigError::VersionMissing => "Version is missing",
+					};
+					front_state.write().toast(Toast::error(msg, None));
+					return false;
+				}
 			};
 
+			let id = if config_state.is_new {
+				config_state.id.peek().clone()
+			} else {
+				config_state.original_id.peek().clone()
+			};
 			let item = ConfiguredItem {
-				id: Some(config_state.id.peek().clone()),
+				id: Some(id),
 				ty: config_state.ty,
 				is_new: config_state.is_new,
 			};
@@ -428,7 +434,7 @@ impl ConfigState {
 }
 
 /// Thing that is being configured
-#[derive(Clone, PartialEq, Eq, Hash)]
+#[derive(Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ConfiguredItem {
 	/// The ID of what is being configured.
 	///
@@ -450,4 +456,5 @@ fn format_loader(loader: Option<&Loader>, version: &VersionPattern) -> Option<St
 pub enum ConfigError {
 	IdMissing,
 	SideMissing,
+	VersionMissing,
 }

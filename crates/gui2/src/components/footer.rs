@@ -91,7 +91,7 @@ impl Component for FooterButton {
 			async move {
 				while let Ok(ev) = event_rx.recv().await {
 					if let BackEvent::UpdateRunningInstances = ev {
-						QueriesStorage::<FetchInstanceRunState>::invalidate_all().await;
+						QueriesStorage::<FetchInstanceRunState>::try_invalidate_all().await;
 					}
 				}
 			}

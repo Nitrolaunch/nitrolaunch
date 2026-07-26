@@ -51,7 +51,7 @@ pub struct ConfigDeser {
 }
 
 /// Variants of instance-like config
-#[derive(Serialize, Deserialize, Clone, Copy, PartialEq, Eq, Hash, Default)]
+#[derive(Serialize, Deserialize, Clone, Copy, PartialEq, Eq, Hash, Default, Debug)]
 #[serde(rename_all = "snake_case")]
 pub enum ConfigKind {
 	/// Instance config

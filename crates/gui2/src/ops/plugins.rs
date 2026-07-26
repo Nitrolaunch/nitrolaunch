@@ -144,7 +144,7 @@ simple_mutation!(
 		_result: &Result<Self::Ok, Self::Err>,
 	) -> impl Future<Output = ()>
 	{
-		QueriesStorage::<FetchLocalPlugins>::invalidate_all()
+		QueriesStorage::<FetchLocalPlugins>::try_invalidate_all()
 	}
 );
 
@@ -165,7 +165,7 @@ simple_mutation!(
 		_keys: &Self::Keys,
 		_result: &Result<Self::Ok, Self::Err>,
 	) -> impl Future<Output = ()> {
-		QueriesStorage::<FetchLocalPlugins>::invalidate_all()
+		QueriesStorage::<FetchLocalPlugins>::try_invalidate_all()
 	}
 );
 
@@ -186,7 +186,7 @@ simple_mutation!(
 		_keys: &Self::Keys,
 		_result: &Result<Self::Ok, Self::Err>,
 	) -> impl Future<Output = ()> {
-		QueriesStorage::<FetchLocalPlugins>::invalidate_all()
+		QueriesStorage::<FetchLocalPlugins>::try_invalidate_all()
 	}
 );
 
@@ -207,6 +207,6 @@ simple_mutation!(
 		_keys: &Self::Keys,
 		_result: &Result<Self::Ok, Self::Err>,
 	) -> impl Future<Output = ()> {
-		QueriesStorage::<FetchLocalPlugins>::invalidate_all()
+		QueriesStorage::<FetchLocalPlugins>::try_invalidate_all()
 	}
 );
