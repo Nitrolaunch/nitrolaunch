@@ -391,6 +391,12 @@ impl<T: PartialEq + Clone + 'static> Component for Dropdown<T> {
 			.center()
 			.child(preview);
 
+		let options_height = if self.options.len() > 10 {
+			Size::px((theme.input_height + theme.gap) * 10.5)
+		} else {
+			Size::auto()
+		};
+
 		let options = if self.is_loading {
 			rect()
 				.expanded()
@@ -421,8 +427,7 @@ impl<T: PartialEq + Clone + 'static> Component for Dropdown<T> {
 			.length(self.options.len())
 			.item_size(theme.input_height + theme.gap)
 			.width(Size::fill())
-			.height(Size::auto())
-			.max_height(Size::px((theme.input_height + theme.gap) * 7.5))
+			.height(options_height)
 			.into_element()
 		};
 
