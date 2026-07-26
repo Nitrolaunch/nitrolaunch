@@ -91,6 +91,7 @@ impl Component for GeneralTab {
 					.center()
 					.child(IconSelector {
 						icon: self.config_state.icon,
+						parent_configs: self.parent_configs.clone(),
 					}),
 			)
 			.child(

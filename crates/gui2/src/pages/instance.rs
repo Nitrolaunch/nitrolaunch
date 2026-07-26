@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use nitrolaunch::config_crate::{ConfigKind, template::TemplateConfig};
+use nitrolaunch::config_crate::{ConfigKind, instance::InstanceConfig, template::TemplateConfig};
 
 use crate::{
 	components::{
@@ -54,10 +54,12 @@ impl Component for InstancePage {
 
 		let tab = use_state(|| Tab::Console);
 		let is_dirty = use_state(|| false);
+		let config = use_state(|| InstanceConfig::default());
 
 		let id = self.id.clone();
 		let config_state = ConfigState::new(ConfigKind::Instance, false, is_dirty);
 		let mut config_state2 = config_state.clone();
+		let mut config2 = config.clone();
 		use_side_effect(move || {
 			let config = config_query
 				.read()
@@ -73,6 +75,7 @@ impl Component for InstancePage {
 			};
 
 			config_state2.update(Some(id.clone()), template_config);
+			config2.set(config.main);
 		});
 
 		let parent_configs = use_query(FetchParentConfigs::new(
@@ -86,8 +89,8 @@ impl Component for InstancePage {
 			.cloned()
 			.unwrap_or_default();
 
-		let ico = if config_state.icon.read().is_some() {
-			ImageViewer::new(get_instance_icon(config_state.icon.read().as_deref()))
+		let ico = if config.read().icon.is_some() {
+			ImageViewer::new(get_instance_icon(config.read().icon.as_deref()))
 				.width(Size::px(48.0))
 				.height(Size::px(48.0))
 				.corner_radius(theme.round2)
@@ -100,10 +103,10 @@ impl Component for InstancePage {
 			.height(Size::px(80.0))
 			.center()
 			.child(ico);
-		let name = config_state
-			.name
+		let name = config
 			.read()
-			.cloned()
+			.name
+			.clone()
 			.unwrap_or_else(|| self.id.clone());
 
 		let selected = match run_state {

@@ -224,6 +224,7 @@ pub enum ModalType {
 	Configuration(ConfiguredItem),
 	Settings,
 	DeleteInstance(String),
+	DeleteTemplate(String),
 	MicrosoftAuth { url: String, device_code: String },
 	Transfer(InstanceTransferMode, Option<String>),
 	Migrate,

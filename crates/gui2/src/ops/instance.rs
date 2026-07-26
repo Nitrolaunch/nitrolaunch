@@ -642,3 +642,35 @@ simple_mutation!(
 		QueriesStorage::<FetchItems>::invalidate_all()
 	}
 );
+
+#[rustfmt::skip]
+simple_mutation!(
+	name = DeleteTemplate,
+	ok = (),
+	err = anyhow::Error,
+	keys = String,
+	fn run(&self, keys: &Self::Keys) -> impl Future<Output = Result<Self::Ok, Self::Err>> {
+		let back_state = self.back_state.clone();
+		let id = keys.clone();
+
+		query_spawn(async move {
+			let mut raw_config = back_state.raw_config().await?;
+			let mut o = back_state.output();
+
+			apply_modifications_and_write(
+				&mut raw_config,
+				vec![ConfigModification::RemoveTemplate(id.into())],
+				&back_state.paths,
+				&back_state.plugins,
+				&mut o,
+			).await
+		})
+	}
+	fn on_settled(
+		&self,
+		_keys: &Self::Keys,
+		_result: &Result<Self::Ok, Self::Err>,
+	) -> impl Future<Output = ()> {
+		QueriesStorage::<FetchItems>::invalidate_all()
+	}
+);

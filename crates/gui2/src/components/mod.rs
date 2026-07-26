@@ -113,6 +113,9 @@ pub trait CustomStyles {
 
 	/// Sets full panel colorway based off hover / select state
 	fn simple_colorway(self, theme: &Theme, hovered: bool, selected: bool) -> Self;
+
+	/// Sets a derived colorway
+	fn derived_colorway(self, theme: &Theme) -> Self;
 }
 
 impl<T: ContainerSizeExt + StyleExt + ContainerWithContentExt + TextStyleExt> CustomStyles for T {
@@ -162,6 +165,12 @@ impl<T: ContainerSizeExt + StyleExt + ContainerWithContentExt + TextStyleExt> Cu
 		let bg = simple_colorway(theme, hovered, selected);
 
 		self.background(bg)
+	}
+
+	fn derived_colorway(self, theme: &Theme) -> Self {
+		self.color(theme.template)
+			.border(theme.border(theme.template))
+			.background(theme.template_bg)
 	}
 }
 

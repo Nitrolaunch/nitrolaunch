@@ -1,4 +1,10 @@
-use crate::{prelude::*, util::assets::get_instance_icon};
+use nitrolaunch::config_crate::template::TemplateConfig;
+
+use crate::{
+	components::input::derived_value,
+	prelude::*,
+	util::{PtrEq, assets::get_instance_icon},
+};
 
 static OPTIONS: &[&str] = &[
 	"builtin:/icons/fabric.png",
@@ -14,6 +20,7 @@ static OPTIONS: &[&str] = &[
 #[derive(PartialEq, Clone)]
 pub struct IconSelector {
 	pub icon: State<Option<String>>,
+	pub parent_configs: PtrEq<[TemplateConfig]>,
 }
 
 impl ComponentOwned for IconSelector {
@@ -23,9 +30,15 @@ impl ComponentOwned for IconSelector {
 		let mut is_open = use_state(|| false);
 		let is_hovered = use_state(|| false);
 
+		let derived = derived_value(self.icon.read().as_ref(), &self.parent_configs.0, |x| {
+			x.instance.icon.as_ref()
+		})
+		.cloned();
+
 		let size = 128.0;
 
-		let preview = ImageViewer::new(get_instance_icon(self.icon.read().as_deref()))
+		let final_icon = self.icon.read().as_ref().or(derived.as_ref()).cloned();
+		let preview = ImageViewer::new(get_instance_icon(final_icon.as_deref()))
 			.width(Size::percent(85.0))
 			.height(Size::percent(85.0));
 
@@ -36,6 +49,7 @@ impl ComponentOwned for IconSelector {
 
 		let options = OPTIONS.into_iter().map(|x| {
 			let is_selected = Some(*x) == self.icon.read().as_deref();
+			let is_derived = Some(*x) == derived.as_deref();
 
 			let image = ImageViewer::new(get_instance_icon(Some(x)))
 				.width(Size::percent(75.0))
@@ -47,6 +61,7 @@ impl ComponentOwned for IconSelector {
 				.width(Size::px(option_size))
 				.height(Size::px(option_size))
 				.item_colorway(&theme, false, is_selected)
+				.maybe(is_derived, |this| this.derived_colorway(&theme))
 				.corner_radius(theme.round2)
 				.center()
 				.clickable()
@@ -73,6 +88,7 @@ impl ComponentOwned for IconSelector {
 			.width(Size::px(size))
 			.height(Size::px(size))
 			.item_colorway(&theme, *is_hovered.read(), false)
+			.maybe(derived.is_some(), |this| this.derived_colorway(&theme))
 			.hover(is_hovered)
 			.corner_radius(theme.round2)
 			.center()

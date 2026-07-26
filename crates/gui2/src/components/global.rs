@@ -7,7 +7,7 @@ use crate::{
 		dialog::modal::Modal,
 		instance::transfer::{InstanceTransferModal, InstanceTransferMode, MigrateModal},
 	},
-	ops::instance::DeleteInstance,
+	ops::instance::{DeleteInstance, DeleteTemplate},
 	pages::{config::ConfigPage, settings::SettingsPage},
 	prelude::*,
 	routing::Page,
@@ -31,6 +31,13 @@ impl Component for Global {
 				&back_state,
 				Some("Instance deleted"),
 				"Failed to delete instance",
+			),
+		));
+		let delete_template_mutation = use_mutation(Mutation::new(
+			DeleteTemplate::new(back_state.clone()).toast(
+				&back_state,
+				Some("Template deleted"),
+				"Failed to delete template",
 			),
 		));
 
@@ -114,7 +121,7 @@ impl Component for Global {
 							"Delete instance forever",
 							"trash",
 							rect().expanded().center().child(
-								"Are you sure you want to delete this instance? This action cannot be undone.",
+								"Are you sure you want to delete this instance and all its files? This action cannot be undone.",
 							),
 							true,
 							move |_| front_state3.write().set_modal(None),
@@ -122,6 +129,25 @@ impl Component for Global {
 								delete_instance_mutation.mutate(id.clone());
 								front_state2.write().set_modal(None);
 								front_state2.write().navigate(Page::Home);
+							},
+						)
+						.into_element(),
+					)
+				}
+				ModalType::DeleteTemplate(id) => {
+					let id = id.clone();
+					Some(
+						Modal::simple_confirm(
+							"Delete template forever",
+							"trash",
+							rect().expanded().center().child(
+								"Are you sure you want to delete this template? This action cannot be undone. Make sure that no instances are using this template before deleting it.",
+							),
+							true,
+							move |_| front_state3.write().set_modal(None),
+							move |_| {
+								delete_template_mutation.mutate(id.clone());
+								front_state2.write().set_modal(None);
 							},
 						)
 						.into_element(),

@@ -72,6 +72,7 @@ impl Component for FooterButton {
 		let back_state = use_consume::<BackState>();
 		let launch_instance = use_mutation(LaunchInstance::new(back_state.clone()));
 		let kill_instance = use_mutation(KillInstance::new(back_state.clone()));
+
 		let id = if let FooterItem::InstanceOrTemplate(info) = &self.item {
 			Some(info.id.clone())
 		} else {
@@ -81,6 +82,7 @@ impl Component for FooterButton {
 			id.unwrap_or_default(),
 			FetchInstanceRunState::new(back_state.clone()),
 		));
+
 		let mut show_install_modal = use_state(|| false);
 
 		let front_state2 = front_state.clone();
@@ -102,7 +104,34 @@ impl Component for FooterButton {
 			.cloned()
 			.unwrap_or_default();
 
-		let left = rect().height(Size::fill()).width(Size::flex(1.0));
+		let front_state2 = front_state.clone();
+		let delete_template = if let FooterItem::InstanceOrTemplate(info) = &self.item
+			&& info.ty == ConfigKind::Template
+		{
+			let id = info.id.clone();
+			Some(
+				icon_button("trash", &theme)
+					.background(theme.error_bg)
+					.border_fill(theme.error)
+					.hover_background(theme.error_bg)
+					.color(theme.error)
+					.on_press(move |_| {
+						front_state2
+							.write()
+							.set_modal(Some(ModalType::DeleteTemplate(id.clone())));
+					}),
+			)
+		} else {
+			None
+		};
+
+		let left = rect()
+			.height(Size::fill())
+			.width(Size::flex(1.0))
+			.cont()
+			.main_align(Alignment::End)
+			.cross_align(Alignment::Center)
+			.maybe_child(delete_template);
 
 		let (fg, border, bg) = if self.item == FooterItem::None {
 			(theme.disabled, theme.disabled, theme.bg)
@@ -164,9 +193,8 @@ impl Component for FooterButton {
 		rect()
 			.width(Size::fill())
 			.height(Size::px(theme.footer_height))
-			.horizontal()
+			.cont()
 			.background(theme.footer)
-			.flex()
 			.child(left)
 			.child(center)
 			.child(right)
