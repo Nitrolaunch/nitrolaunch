@@ -15,6 +15,7 @@ use crate::{
 		packages::FetchPackageDetails,
 	},
 	prelude::*,
+	routing::Page,
 	state::{BackEvent, ModalType},
 	util::PtrEq,
 };
@@ -105,22 +106,31 @@ impl Component for FooterButton {
 			.unwrap_or_default();
 
 		let front_state2 = front_state.clone();
-		let delete_template = if let FooterItem::InstanceOrTemplate(info) = &self.item
-			&& info.ty == ConfigKind::Template
-		{
-			let id = info.id.clone();
-			Some(
-				icon_button("trash", &theme)
-					.background(theme.error_bg)
-					.border_fill(theme.error)
-					.hover_background(theme.error_bg)
-					.color(theme.error)
-					.on_press(move |_| {
-						front_state2
-							.write()
-							.set_modal(Some(ModalType::DeleteTemplate(id.clone())));
-					}),
-			)
+		let delete_template = if let FooterItem::InstanceOrTemplate(info) = &self.item {
+			match info.ty {
+				ConfigKind::Instance => {
+					let id = info.id.clone();
+					Some(icon_button("properties", &theme).on_press(move |_| {
+						front_state2.write().navigate(Page::Instance(id.clone()));
+					}))
+				}
+				ConfigKind::Template => {
+					let id = info.id.clone();
+					Some(
+						icon_button("trash", &theme)
+							.background(theme.error_bg)
+							.border_fill(theme.error)
+							.hover_background(theme.error_bg)
+							.color(theme.error)
+							.on_press(move |_| {
+								front_state2
+									.write()
+									.set_modal(Some(ModalType::DeleteTemplate(id.clone())));
+							}),
+					)
+				}
+				ConfigKind::BaseTemplate => None,
+			}
 		} else {
 			None
 		};
