@@ -1,9 +1,14 @@
 use std::rc::Rc;
 
 use itertools::Itertools;
+use nitrolaunch::shared::pkg::ArcPkgReq;
 
-use crate::{components::input::select::Selected, prelude::*, theme::Colorway};
+use crate::{
+	components::input::select::Selected, ops::packages::FetchPackageDetails, prelude::*,
+	theme::Colorway,
+};
 
+pub mod error;
 pub mod install;
 pub mod versions;
 
@@ -55,5 +60,69 @@ impl Component for RepoSelector {
 						.tip(name)
 				}),
 		)
+	}
+}
+
+#[derive(PartialEq)]
+pub struct PackageChip {
+	pub req: ArcPkgReq,
+	pub error: bool,
+}
+
+impl Component for PackageChip {
+	fn render(&self) -> impl IntoElement {
+		let theme = use_theme();
+		let back_state = use_consume::<BackState>();
+		let details_query = use_query(Query::new(
+			self.req.clone(),
+			FetchPackageDetails::new(back_state.clone()),
+		));
+
+		let ico = details_query
+			.read()
+			.state()
+			.ok()
+			.and_then(|x| x.meta.icon.clone());
+		let default_icon = icon("box", 32.0).into_element();
+		let ico = ico
+			.map(|x| {
+				let default_icon = default_icon.clone();
+				img(&x)
+					.error_renderer(move |_| default_icon.clone())
+					.width(Size::px(20.0))
+					.height(Size::px(20.0))
+					.corner_radius(theme.round)
+					.into_element()
+			})
+			.unwrap_or(default_icon);
+		// let ico = rect().center().child(ico);
+
+		let name = details_query
+			.read()
+			.state()
+			.ok()
+			.and_then(|x| x.meta.name.clone())
+			.unwrap_or_else(|| self.req.to_string_no_version());
+
+		let border = if self.error {
+			theme.error
+		} else {
+			theme.panel_border
+		};
+
+		rect()
+			.height(Size::px(theme.input_height))
+			.border(theme.border(border))
+			.padding(theme.gap)
+			.corner_radius(theme.round)
+			.cont()
+			.cross_align(Alignment::Center)
+			.child(ico)
+			.child(
+				rect()
+					.height(Size::fill())
+					.main_align(Alignment::Center)
+					.child(name),
+			)
 	}
 }

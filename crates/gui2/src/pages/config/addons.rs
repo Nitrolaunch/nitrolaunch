@@ -20,9 +20,12 @@ use nitrolaunch::{
 };
 
 use crate::{
-	components::input::{
-		select::Selected,
-		text::{TextInput, search_bar},
+	components::{
+		input::{
+			select::Selected,
+			text::{TextInput, search_bar},
+		},
+		pkg::error::ResolutionErrorView,
 	},
 	ops::{
 		ConditionalQuery,
@@ -33,6 +36,7 @@ use crate::{
 	},
 	pages::config::ConfigState,
 	prelude::*,
+	state::use_launcher_data,
 	util::{PtrEq, assets::get_package_kind_icon},
 };
 
@@ -40,6 +44,7 @@ use crate::{
 pub struct AddonsConfig {
 	pub config_state: ConfigState,
 	pub parent_configs: PtrEq<[TemplateConfig]>,
+	pub on_edit: Option<EventHandler<()>>,
 }
 
 impl Component for AddonsConfig {
@@ -57,6 +62,7 @@ impl Component for AddonsConfig {
 			|| self.config_state.id.read().cloned(),
 		));
 		let update = use_mutation(Mutation::new(UpdateInstance::new(back_state.clone())));
+		let data = use_launcher_data();
 
 		let filter = use_state(|| Filter::All);
 		let pkg_ty = use_state::<Option<PackageKind>>(|| None);
@@ -234,11 +240,21 @@ impl Component for AddonsConfig {
 			.child(controls)
 			.child(filters);
 
+		let resolution_error = data
+			.data
+			.read()
+			.last_resolution_errors
+			.get(&*self.config_state.id.read())
+			.map(|x| ResolutionErrorView {
+				error: PtrEq(Arc::new(x.clone())),
+			});
+
 		rect()
 			.expanded()
 			.spacing(theme.gap)
 			.padding(theme.gap2)
 			.child(header)
+			.maybe_child(resolution_error)
 			.child(items)
 	}
 }

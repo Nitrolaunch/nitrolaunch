@@ -5,14 +5,18 @@ use crate::{
 		dialog::modal::{Modal, ModalButton},
 		input::tabs::SideTabs,
 	},
-	ops::instance::{
-		FetchInstanceOrTemplateConfig, FetchParentConfigs, SaveConfig, SaveConfigParams,
+	ops::{
+		ToastedMutation,
+		instance::{
+			FetchInstanceOrTemplateConfig, FetchParentConfigs, SaveConfig, SaveConfigParams,
+		},
 	},
 	pages::config::{addons::AddonsConfig, general::GeneralTab},
 	prelude::*,
 	state::ModalType,
 	util::PtrEq,
 };
+use freya::query::UseMutation;
 use nitrolaunch::{
 	config_crate::{
 		ConfigKind,
@@ -136,14 +140,13 @@ impl Component for ConfigModal {
 				.flatten()
 				.unwrap_or_default();
 
-			let original_config = config.no_templates.clone();
 			config_state2.update(id.clone(), config.no_templates);
 
 			// Set up on submit callback
 			let config_state3 = config_state2.clone();
 			let item = item.clone();
 			let on_submit = move || {
-				let Ok(config) = config_state3.apply(original_config.clone()) else {
+				let Ok(config) = config_state3.apply() else {
 					return false;
 				};
 
@@ -191,6 +194,7 @@ impl Component for ConfigModal {
 			Tab::Content => AddonsConfig {
 				config_state,
 				parent_configs: PtrEq(parent_configs.clone()),
+				on_edit: None,
 			}
 			.into_element(),
 			Tab::Launch => rect().into_element(),
@@ -224,6 +228,7 @@ pub struct ConfigState {
 	pub is_dirty: State<bool>,
 	/// Whether we can propagate the name to the ID
 	pub is_id_dirty: State<bool>,
+	pub original_config: PtrEq<TemplateConfig>,
 	pub id: State<String>,
 	pub from: State<Vec<String>>,
 	pub name: State<Option<String>>,
@@ -246,6 +251,7 @@ impl ConfigState {
 			is_new,
 			is_dirty,
 			is_id_dirty: use_state(|| false),
+			original_config: PtrEq(Arc::new(TemplateConfig::default())),
 			id: use_state(|| String::new()),
 			from: use_state(|| Vec::new()),
 			name: use_state(|| None),
@@ -281,6 +287,8 @@ impl ConfigState {
 	}
 
 	pub fn update(&mut self, id: Option<String>, config: TemplateConfig) {
+		self.original_config = PtrEq(Arc::new(config.clone()));
+
 		if let Some(id) = id {
 			self.id.set_if_modified(id);
 		}
@@ -326,7 +334,8 @@ impl ConfigState {
 		self.is_id_dirty.set_if_modified(!self.is_new);
 	}
 
-	pub fn apply(&self, mut config: TemplateConfig) -> Result<TemplateConfig, ConfigError> {
+	pub fn apply(&self) -> Result<TemplateConfig, ConfigError> {
+		let mut config = (*self.original_config.0).clone();
 		if self.id.peek().is_empty() {
 			return Err(ConfigError::IdMissing);
 		}
@@ -391,6 +400,30 @@ impl ConfigState {
 		}
 
 		Ok(config)
+	}
+
+	pub fn save_fn(
+		&self,
+		save_config: UseMutation<ToastedMutation<SaveConfig>>,
+	) -> impl Fn() -> bool + 'static {
+		let config_state = self.clone();
+		move || {
+			let Ok(config) = config_state.apply() else {
+				return false;
+			};
+
+			let item = ConfiguredItem {
+				id: Some(config_state.id.peek().clone()),
+				ty: config_state.ty,
+				is_new: config_state.is_new,
+			};
+			save_config.mutate(SaveConfigParams {
+				item: item.clone(),
+				config: NotEq(config),
+			});
+
+			true
+		}
 	}
 }
 

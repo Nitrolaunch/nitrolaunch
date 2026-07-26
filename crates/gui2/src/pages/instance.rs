@@ -52,7 +52,7 @@ impl Component for InstancePage {
 		let run_state = run_state.read().state().ok().cloned().unwrap_or_default();
 		let show_directory = use_mutation(Mutation::new(ShowDirectory::new(back_state.clone())));
 
-		let tab = use_state(|| Tab::Info);
+		let tab = use_state(|| Tab::Console);
 		let is_dirty = use_state(|| false);
 
 		let id = self.id.clone();
@@ -246,24 +246,30 @@ impl Component for InstancePage {
 			.child(controls);
 
 		let tabs = SideTabs::new(tab)
-			.child(SelectOption::new(Tab::Info, "Info", Some("info")))
+			.child(SelectOption::new(Tab::Console, "Console", Some("text")))
 			.child(SelectOption::new(
 				Tab::Content,
 				"Content",
 				Some("honeycomb"),
-			))
-			.child(SelectOption::new(Tab::Console, "Console", Some("text")));
+			));
 		let tabs = rect()
 			.width(Size::flex(1.0))
 			.height(Size::fill())
 			.border(border_right(theme.border, theme.panel_border))
 			.child(tabs);
 
+		let save_fn = config_state.save_fn(save_config);
 		let contents = match &*tab.read() {
-			Tab::Info => rect().into_element(),
+			// Tab::Info => rect().into_element(),
 			Tab::Content => AddonsConfig {
 				config_state: config_state.clone(),
 				parent_configs: PtrEq(parent_configs.clone()),
+				on_edit: Some(
+					(move |_| {
+						save_fn();
+					})
+					.into(),
+				),
 			}
 			.into_element(),
 			Tab::Console => InstanceConsole {
@@ -290,7 +296,7 @@ impl Component for InstancePage {
 
 #[derive(PartialEq, Clone)]
 enum Tab {
-	Info,
+	// Info,
 	Content,
 	Console,
 }
