@@ -6,6 +6,7 @@ use crate::{prelude::*, state::FrontState, util::Shared};
 pub struct Tips;
 
 const OFFSET: f32 = 14.0;
+const FLIP_MARGIN: f32 = 180.0;
 
 impl Component for Tips {
 	fn render(&self) -> impl IntoElement {
@@ -13,14 +14,42 @@ impl Component for Tips {
 		let front_state = use_front_state();
 		front_state.read().subscribe(FrontChannel::Tip);
 		let tip = front_state.read().tip().cloned().unwrap_or_default();
+		let platform = Platform::get();
+		let mut window = platform.root_size.peek().clone();
+		let scale_factor = platform.scale_factor.peek().clone();
+		window.width /= scale_factor as f32;
+		window.height /= scale_factor as f32;
+		let place_right = window.width - tip.x < FLIP_MARGIN;
+		let place_bottom = window.height - tip.y < FLIP_MARGIN;
+
+		let available_width = if place_right {
+			(tip.x - OFFSET).max(0.0)
+		} else {
+			(window.width - tip.x - OFFSET).max(0.0)
+		};
+		let available_height = if place_bottom {
+			(tip.y - OFFSET).max(0.0)
+		} else {
+			(window.height - tip.y - OFFSET).max(0.0)
+		};
+
+		let mut position = Position::new_global();
+		position = if place_bottom {
+			position.bottom((window.height - tip.y) + OFFSET)
+		} else {
+			position.top(tip.y + OFFSET)
+		};
+		position = if place_right {
+			position.right((window.width - tip.x) + OFFSET)
+		} else {
+			position.left(tip.x + OFFSET)
+		};
 
 		// Nested layers instead of RelativeOverlay because it doesn't work
 		rect()
-			.position(
-				Position::new_global()
-					.top(tip.y + OFFSET)
-					.left(tip.x + OFFSET),
-			)
+			.position(position)
+			.max_width(Size::px(available_width))
+			.max_height(Size::px(available_height))
 			.layer(Layer::Overlay)
 			.child(
 				rect()
