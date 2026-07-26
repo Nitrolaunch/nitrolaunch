@@ -180,19 +180,16 @@ impl Component for GeneralTab {
 		.children(minecraft_versions);
 
 		let version_field = rect()
-			.cont()
+			.spacing(theme.gap3)
 			.child(
 				rect()
-					.width(Size::flex(1.0))
 					.child(version_selector)
 					.tip(&front_state, "The version of Minecraft to use"),
 			)
 			.child(
 				rect()
-					.width(Size::flex(1.0))
-					.height(Size::px(theme.input_height))
 					.cont()
-					.main_align(Alignment::End)
+					.main_align(Alignment::Start)
 					.cross_align(Alignment::Center)
 					.color(theme.fg3)
 					.child("Include snapshots")
