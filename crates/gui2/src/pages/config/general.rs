@@ -13,9 +13,10 @@ use crate::{
 	ops::{
 		instance::FetchItems,
 		plugin_results::{FetchLoaderVersions, FetchSupportedLoaders},
+		plugins::FetchConfigCreationPlugins,
 		versions::FetchMinecraftVersions,
 	},
-	pages::config::ConfigState,
+	pages::{config::ConfigState, settings::plugins::get_plugin_icon},
 	prelude::*,
 	util::{PtrEq, assets::get_loader_icon},
 };
@@ -35,6 +36,10 @@ impl Component for GeneralTab {
 		let minecraft_versions = use_query(FetchMinecraftVersions::new(
 			back_state.clone(),
 			*include_snapshots.read(),
+		));
+		let plugins_supporting_creation = use_query(Query::new(
+			self.config_state.ty,
+			FetchConfigCreationPlugins::new(back_state.clone()),
 		));
 		let items = use_query(FetchItems::new(back_state));
 
@@ -125,11 +130,44 @@ impl Component for GeneralTab {
 			"Templates to derive default configuration from",
 		);
 
+		let plugins_supporting_creation = plugins_supporting_creation.read();
+		let plugins_supporting_creation = plugins_supporting_creation.state();
+		let plugins_supporting_creation = plugins_supporting_creation.ok().map(|x| {
+			x.iter().map(|x| {
+				SelectOption::new_custom_icon(
+					x.id.clone(),
+					x.meta.name.as_deref().unwrap_or(&x.id),
+					get_plugin_icon(&x.id).into_element(),
+				)
+			})
+		});
+		let config_plugin = self.config_state.plugin.clone();
+		let config_plugin_field = Dropdown::new(
+			Selected::Single(config_plugin.read().clone()),
+			Rc::new(move |selected| {
+				config_plugin
+					.clone()
+					.set(selected.single_optional().flatten());
+			}),
+		)
+		.panel_colorway()
+		.allow_none()
+		.maybe(plugins_supporting_creation.is_some(), |this| {
+			this.children(plugins_supporting_creation.unwrap())
+		});
+		let config_plugin_field = field("Config plugin", "jigsaw", &theme, config_plugin_field)
+			.tip(
+				&front_state,
+				"Plugin to create this instance with. Check the plugin's documentation for more information.",
+			);
+
 		let config_settings = rect()
 			.width(Size::fill())
 			.cont()
 			.child(segment(from_field, 1.0))
-			.child(segment(rect(), 1.0));
+			.maybe(self.config_state.is_new, |this| {
+				this.child(segment(config_plugin_field, 1.0))
+			});
 
 		let show_side_field = self.config_state.ty.is_template()
 			|| (self.config_state.ty == ConfigKind::Instance && self.config_state.is_new);

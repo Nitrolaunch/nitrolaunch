@@ -2,6 +2,7 @@ use anyhow::Context;
 use freya::query::QueriesStorage;
 use itertools::Itertools;
 use nitrolaunch::{
+	config_crate::ConfigKind,
 	plugin::{PluginManager, install::get_verified_plugins},
 	plugin_crate::plugin::PluginMetadata,
 };
@@ -208,5 +209,35 @@ simple_mutation!(
 		_result: &Result<Self::Ok, Self::Err>,
 	) -> impl Future<Output = ()> {
 		QueriesStorage::<FetchLocalPlugins>::try_invalidate_all()
+	}
+);
+
+simple_query!(
+	name = FetchConfigCreationPlugins,
+	ok = Vec<PluginInfo>,
+	err = anyhow::Error,
+	keys = ConfigKind,
+	fn run(&self, keys: &Self::Keys) -> impl Future<Output = Result<Self::Ok, Self::Err>> {
+		let back_state = self.back_state.clone();
+		let ty = keys.clone();
+
+		query_spawn(async move {
+			let out = back_state
+				.plugins
+				.get_lock()
+				.await
+				.manager
+				.iter_plugins()
+				.filter(|x| if ty == ConfigKind::Instance { x.manifest.supports_instance_creation } else { x.manifest.supports_template_creation })
+				.map(|x| PluginInfo {
+					id: x.get_id().clone(),
+					version: x.manifest.version.clone(),
+					meta: x.manifest.meta.clone(),
+					enabled: false,
+					is_official: false,
+				}).collect();
+
+			Ok(out)
+		})
 	}
 );

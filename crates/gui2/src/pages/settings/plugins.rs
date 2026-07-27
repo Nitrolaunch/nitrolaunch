@@ -294,7 +294,7 @@ impl Component for PluginItem {
 	}
 }
 
-fn get_plugin_icon(plugin: &str) -> impl IntoElement {
+pub fn get_plugin_icon(plugin: &str) -> impl IntoElement {
 	let image_icon = match plugin {
 		"fabric_quilt" => Some(get_loader_icon(&Loader::Fabric)),
 		"paper" => Some(get_loader_icon(&Loader::Paper)),

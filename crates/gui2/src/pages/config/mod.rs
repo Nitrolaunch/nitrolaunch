@@ -280,6 +280,7 @@ pub struct ConfigState {
 	pub server_loader_version: State<VersionPattern>,
 	pub packages: State<TemplatePackageConfiguration>,
 	pub modpack: State<Option<String>>,
+	pub plugin: State<Option<String>>,
 	pub plugin_config: State<ControlledConfig>,
 }
 
@@ -305,6 +306,7 @@ impl ConfigState {
 			server_loader_version: use_state(|| VersionPattern::Any),
 			packages: use_state(|| TemplatePackageConfiguration::default()),
 			modpack: use_state(|| None),
+			plugin: use_state(|| None),
 			plugin_config: use_state(|| ControlledConfig::default()),
 		};
 
@@ -321,6 +323,7 @@ impl ConfigState {
 			out.server_loader_version.read();
 			out.packages.read();
 			out.modpack.read();
+			out.plugin.read();
 			out.plugin_config.read();
 
 			out.is_dirty.clone().set(true);
@@ -374,6 +377,7 @@ impl ConfigState {
 		});
 		self.modpack.set_if_modified(config.instance.modpack);
 
+		self.plugin.set_if_modified(config.instance.source_plugin.clone());
 		self.plugin_config
 			.write()
 			.update(config.instance.plugin_config.clone());
@@ -453,6 +457,7 @@ impl ConfigState {
 			}
 		}
 
+		config.instance.source_plugin = self.plugin.peek().clone();
 		self.plugin_config.write().optimize();
 		config.instance.plugin_config = self.plugin_config.peek().data().clone();
 
