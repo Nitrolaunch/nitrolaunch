@@ -13,6 +13,7 @@ use nitrolaunch::{
 };
 
 use crate::{
+	data::LauncherData,
 	ops::{MakeSend, task::Task},
 	prelude::*,
 	secrets::get_ms_client_id,
@@ -27,7 +28,6 @@ pub struct LaunchInstance {
 #[derive(Clone, PartialEq, Hash)]
 pub struct LaunchInstanceParams {
 	pub id: String,
-	pub account: Option<String>,
 	pub offline: bool,
 }
 
@@ -46,7 +46,6 @@ impl MutationCapability for LaunchInstance {
 
 	fn run(&self, keys: &Self::Keys) -> impl Future<Output = Result<Self::Ok, Self::Err>> {
 		let id = keys.id.clone();
-		let account = keys.account.clone();
 		let offline = keys.offline;
 		let back_state = self.back_state.clone();
 
@@ -55,7 +54,8 @@ impl MutationCapability for LaunchInstance {
 			let mut output = back_state.output();
 			output.set_task(Task::LaunchInstance(id.clone()));
 
-			if let Some(account) = account {
+			let data = LauncherData::open(&back_state.paths)?;
+			if let Some(account) = data.current_account {
 				let _ = config.accounts.choose_account(&account);
 			}
 

@@ -158,7 +158,6 @@ impl Component for FooterButton {
 					InstanceRunState::Stopped => {
 						launch_instance.mutate(LaunchInstanceParams {
 							id: info.id.clone(),
-							account: None,
 							offline: false,
 						});
 					}

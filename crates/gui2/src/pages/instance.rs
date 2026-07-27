@@ -119,14 +119,12 @@ impl Component for InstancePage {
 				LaunchOption::Launch => {
 					launch.mutate(LaunchInstanceParams {
 						id: id.clone(),
-						account: None,
 						offline: false,
 					});
 				}
 				LaunchOption::LaunchOffline => {
 					launch.mutate(LaunchInstanceParams {
 						id: id.clone(),
-						account: None,
 						offline: true,
 					});
 				}
