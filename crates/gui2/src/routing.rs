@@ -1,5 +1,7 @@
 use std::collections::VecDeque;
 
+use crate::pages::package::browse::BrowseFilters;
+
 /// Manages route and history
 #[derive(Clone)]
 pub struct Navigator {
@@ -58,7 +60,7 @@ impl Navigator {
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub enum Page {
 	Home,
-	Packages,
+	Packages(Option<BrowseFilters>),
 	Instance(String),
 }
 
@@ -66,7 +68,7 @@ impl Page {
 	pub fn get_category(&self) -> PageCategory {
 		match self {
 			Self::Home | Self::Instance(..) => PageCategory::Home,
-			Self::Packages => PageCategory::Packages,
+			Self::Packages(..) => PageCategory::Packages,
 		}
 	}
 }
@@ -83,7 +85,7 @@ impl PageCategory {
 	pub fn get_page(&self) -> Page {
 		match self {
 			Self::Home => Page::Home,
-			Self::Packages => Page::Packages,
+			Self::Packages => Page::Packages(None),
 		}
 	}
 }
@@ -95,17 +97,17 @@ mod tests {
 	#[test]
 	fn test_navigate_route() {
 		let mut nav = Navigator::new();
-		nav.navigate(Page::Packages);
-		assert_eq!(nav.route(), &Page::Packages);
+		nav.navigate(Page::Packages(None));
+		assert_eq!(nav.route(), &Page::Packages(None));
 	}
 
 	#[test]
 	fn test_navigate_forward_backward() {
 		let mut nav = Navigator::new();
-		nav.navigate(Page::Packages);
+		nav.navigate(Page::Packages(None));
 		nav.back();
 		assert_eq!(nav.route(), &Page::Home);
 		nav.forward();
-		assert_eq!(nav.route(), &Page::Packages);
+		assert_eq!(nav.route(), &Page::Packages(None));
 	}
 }

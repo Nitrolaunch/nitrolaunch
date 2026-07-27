@@ -1,5 +1,3 @@
-use std::rc::Rc;
-
 use nitrolaunch::{
 	pkg::search::{PackageMultiSearchResults, PackageSearchSession},
 	pkg_crate::PackageMetaAndProps,
@@ -12,27 +10,25 @@ use nitrolaunch::{
 use crate::{
 	components::{
 		footer::FooterItem,
-		input::{
-			select::Selected,
-			text::{TextInput, search_bar},
-		},
+		input::text::{TextInput, search_bar},
 		nav::page_buttons::PageButtons,
-		pkg::RepoSelector,
+		pkg::{
+			RepoSelector,
+			filters::{PackageFilters, PackageTypeFilter},
+		},
 		tag::repo_tag,
 	},
 	ops::packages::{SearchPackages, SearchPackagesParams},
 	pages::package::view::PackageView,
 	prelude::*,
-	util::{
-		assets::get_package_kind_icon,
-		pkg::{PACKAGE_CATEGORIES, package_category_display_name, package_category_icon},
-	},
 };
 
 const PAGE_SIZE: u8 = 16;
 
 #[derive(PartialEq)]
-pub struct BrowsePackagesPage;
+pub struct BrowsePackagesPage {
+	pub filters: Option<BrowseFilters>,
+}
 
 impl Component for BrowsePackagesPage {
 	fn render(&self) -> impl IntoElement {
@@ -41,7 +37,7 @@ impl Component for BrowsePackagesPage {
 		let back_state = use_consume::<BackState>();
 		let search_session = use_state(|| PackageSearchSession::new(PAGE_SIZE));
 
-		let search_state = PackageSearchState::new(&back_state);
+		let search_state = PackageSearchState::new(&back_state, self.filters.clone());
 		let search_state2 = search_state.clone();
 		let search = use_memo(move || search_state2.to_search_params());
 
@@ -52,7 +48,11 @@ impl Component for BrowsePackagesPage {
 				session: Captured(search_session.peek().cloned()),
 				repo: search_state2.repo.read().cloned(),
 			},
-			SearchPackages::new(back_state.clone()),
+			SearchPackages::new(back_state.clone()).toast(
+				&back_state,
+				None,
+				"Failed to fetch packages",
+			),
 		));
 		let results = use_state(|| PackageMultiSearchResults {
 			results: Vec::new(),
@@ -63,10 +63,6 @@ impl Component for BrowsePackagesPage {
 		let mut search_session2 = search_session.clone();
 		let mut results2 = results.clone();
 		use_side_effect(move || {
-			unsafe {
-				(*((&results_query as *const _) as *const State<Query<SearchPackages>>)).read()
-			};
-
 			if let Some(result) = results_query2.read().state().ok() {
 				results2.set(result.0.clone());
 				search_session2.set(result.1.clone());
@@ -84,103 +80,51 @@ impl Component for BrowsePackagesPage {
 			}
 		});
 
-		let top_upper_bar = rect()
-			.width(Size::fill())
-			.height(Size::percent(50.0))
-			.cont()
-			.child(
-				rect()
-					.width(Size::flex(1.0))
-					.height(Size::fill())
-					.padding(theme.gap)
-					.center()
-					.child(RepoSelector {
-						repo: search_state.repo.clone(),
-					}),
-			)
-			.child(rect().width(Size::flex(1.0)).height(Size::fill()))
-			.child(rect().width(Size::flex(1.0)).height(Size::fill()));
-
 		let mut page2 = search_state.page.clone();
 		let page_buttons = PageButtons {
 			page: (*search_state.page.read()).into(),
 			total_pages: results.read().total_results,
 			on_set: (move |new_page| page2.set(new_page as u16)).into(),
 		};
+
+		let ty_selector = PackageTypeFilter {
+			ty: search_state.ty.clone(),
+			repo: search_state.repo.read().clone(),
+		};
+
 		let search = TextInput::new(search_state.search.clone());
 
-		let pkg_ty = search_state.ty.clone();
-		let available_types = search_state
-			.repo
-			.read()
-			.as_ref()
-			.and_then(|repo| back_state.repos().get(repo))
-			.map(|r| r.package_types.clone())
-			.unwrap_or_else(|| Vec::new());
-		let ty_selector = Dropdown::new(
-			Selected::Single(search_state.ty.read().clone()),
-			Rc::new(move |selected| {
-				pkg_ty.clone().set(selected.single());
-			}),
-		)
-		.header_width(Size::px(180.0))
-		.panel_colorway()
-		.children(
-			[
-				PackageKind::Mod,
-				PackageKind::ResourcePack,
-				PackageKind::Datapack,
-				PackageKind::Plugin,
-				PackageKind::Shader,
-				PackageKind::Modpack,
-			]
-			.into_iter()
-			.filter(|x| available_types.is_empty() || available_types.contains(x))
-			.map(|x| SelectOption::new(x, x.to_string_pretty(), Some(get_package_kind_icon(x)))),
-		);
-
-		let categories = search_state.categories.clone();
-		let available_categories = search_state
-			.repo
-			.read()
-			.as_ref()
-			.and_then(|repo| back_state.repos().get(repo))
-			.map(|r| r.package_categories.clone())
-			.unwrap_or_else(|| Vec::new());
-		let category_selector = Dropdown::new(
-			Selected::Multi(categories.read().clone()),
-			Rc::new(move |selected| {
-				categories.clone().set(selected.multi());
-			}),
-		)
-		.header_width(Size::px(180.0))
-		.panel_colorway()
-		.children(
-			PACKAGE_CATEGORIES
-				.into_iter()
-				.filter(|x| available_categories.is_empty() || available_categories.contains(x))
-				.map(|x| {
-					SelectOption::new(
-						x.clone(),
-						package_category_display_name(*x),
-						Some(package_category_icon(*x)),
-					)
-				}),
-		);
-
-		let top_lower_bar = rect()
-			.width(Size::fill())
-			.height(Size::percent(50.0))
+		let search_state2 = search_state.clone();
+		let top_bar_right = rect()
+			.width(Size::flex(3.5))
+			.height(Size::fill())
 			.cont()
+			.child(rect().height(Size::fill()).center().child(RepoSelector {
+				repo: search_state.repo.clone(),
+			}))
+			.child(rect().height(Size::fill()).center().child(ty_selector))
 			.child(
 				rect()
 					.width(Size::flex(1.0))
 					.height(Size::fill())
-					.cont()
-					.padding(theme.gap)
-					.child(ty_selector)
-					.child(category_selector),
+					.center()
+					.child(search_bar(search, &theme)),
 			)
+			.child(rect().height(Size::fill()).center().child(PackageFilters {
+				loaders: search_state.loaders.clone(),
+				mc_versions: search_state.mc_versions.clone(),
+				categories: search_state.categories.clone(),
+				on_reset: EventHandler::new(move |_| {
+					search_state2.clone().reset();
+				}),
+			}));
+
+		let top_bar = rect()
+			.width(Size::fill())
+			.height(Size::px(theme.input_height + theme.gap2 * 2.0))
+			.padding(Gaps::new(theme.gap2, theme.gap2, theme.gap2, 0.0)) // Keep the page buttons centered
+			.cont()
+			.border(border_bottom(theme.border, theme.panel_border))
 			.child(
 				rect()
 					.width(Size::flex(1.0))
@@ -188,23 +132,10 @@ impl Component for BrowsePackagesPage {
 					.center()
 					.child(page_buttons),
 			)
-			.child(
-				rect()
-					.width(Size::flex(1.0))
-					.height(Size::fill())
-					.padding(theme.gap)
-					.center()
-					.child(search_bar(search, &theme)),
-			);
+			.child(top_bar_right);
 
-		let top_bar = rect()
-			.width(Size::fill())
-			.height(Size::px(100.0))
-			.border(border_bottom(theme.border, theme.panel_border))
-			.child(top_upper_bar)
-			.child(top_lower_bar);
-
-		let is_loading = !results_query.read().state().is_ok();
+		let is_loading =
+			results_query.read().state().is_loading() || results_query.read().state().is_pending();
 		let packages = results.read();
 		let packages_view = ScrollView::new().expanded().spacing(theme.gap);
 		let packages = if is_loading {
@@ -212,6 +143,8 @@ impl Component for BrowsePackagesPage {
 				(0..PAGE_SIZE)
 					.map(|_| skeleton(Size::fill(), Size::px(64.0), &theme).into_element()),
 			)
+		} else if packages.results.is_empty() {
+			packages_view.child(placeholder("No results found", &theme))
 		} else {
 			packages_view.children(packages.results.iter().map(|req| {
 				let preview = search_session.peek().previews().get(req).map(|x| x.clone());
@@ -268,15 +201,25 @@ struct PackageSearchState {
 }
 
 impl PackageSearchState {
-	fn new(back_state: &BackState) -> Self {
+	fn new(back_state: &BackState, browse_filters: Option<BrowseFilters>) -> Self {
 		let out = Self {
 			repo: use_state(|| None),
 			page: use_state(|| 0),
 			search: use_state(|| String::new()),
 			ty: use_state(|| PackageKind::Mod),
 			categories: use_state(|| Vec::new()),
-			mc_versions: use_state(|| Vec::new()),
-			loaders: use_state(|| Vec::new()),
+			mc_versions: use_state(|| {
+				browse_filters
+					.as_ref()
+					.map(|x| x.mc_versions.clone())
+					.unwrap_or_default()
+			}),
+			loaders: use_state(|| {
+				browse_filters
+					.as_ref()
+					.map(|x| vec![x.loader.clone()])
+					.unwrap_or_default()
+			}),
 		};
 
 		let mut state2 = out.clone();
@@ -327,6 +270,21 @@ impl PackageSearchState {
 			categories: self.categories.read().cloned(),
 		}
 	}
+
+	fn reset(&mut self) {
+		self.page.set(0);
+		self.search.set(String::new());
+		self.categories.set(Vec::new());
+		self.mc_versions.set(Vec::new());
+		self.loaders.set(Vec::new());
+	}
+}
+
+/// Initial filters from navigation, used for pre-fill from the content config
+#[derive(PartialEq, Clone, Eq, Debug)]
+pub struct BrowseFilters {
+	pub mc_versions: Vec<String>,
+	pub loader: Loader,
 }
 
 #[derive(PartialEq)]
@@ -349,7 +307,6 @@ impl Component for BrowseItem {
 			.is_some_and(|x| x == &self.req);
 
 		let meta = self.preview.as_ref().map(|x| &x.meta);
-		let props = self.preview.as_ref().map(|x| &x.props);
 
 		let name = meta.and_then(|x| x.name.as_deref()).unwrap_or(&self.req.id);
 

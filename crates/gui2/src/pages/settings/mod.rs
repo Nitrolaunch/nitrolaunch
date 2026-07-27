@@ -30,13 +30,18 @@ impl Component for SettingsPage {
 	fn render(&self) -> impl IntoElement {
 		let front_state = use_front_state();
 		front_state.read().subscribe(FrontChannel::Modal);
-		let is_open = front_state.read().modal() == Some(&ModalType::Settings);
+		let tab = if let Some(ModalType::Settings(tab)) = front_state.read().modal() {
+			Some(tab.clone())
+		} else {
+			None
+		};
 		let on_submit = use_state::<PtrEq<dyn Fn() -> bool>>(|| PtrEq(Arc::new(|| true)));
 		let is_dirty = use_state(|| false);
 
 		let front_state2 = front_state.clone();
 		Modal::new("Settings".into(), "gear".into())
-			.maybe_child(is_open, || SettingsModal {
+			.maybe_child(tab.is_some(), || SettingsModal {
+				tab: tab.unwrap_or(Tab::General),
 				on_submit: on_submit.clone(),
 				is_dirty: is_dirty.clone(),
 			})
@@ -59,6 +64,7 @@ impl Component for SettingsPage {
 
 #[derive(PartialEq)]
 struct SettingsModal {
+	tab: Tab,
 	on_submit: State<PtrEq<dyn Fn() -> bool>>,
 	is_dirty: State<bool>,
 }
@@ -123,7 +129,7 @@ impl Component for SettingsModal {
 			on_submit_state.set(PtrEq(Arc::new(on_submit)));
 		});
 
-		let tab = use_state(|| Tab::General);
+		let tab = use_state(|| self.tab.clone());
 		let show_directory2 = show_directory.clone();
 		let show_directory3 = show_directory.clone();
 
@@ -198,7 +204,7 @@ impl Component for SettingsModal {
 }
 
 #[derive(PartialEq, Clone)]
-enum Tab {
+pub enum Tab {
 	General,
 	Accounts,
 	Plugins,

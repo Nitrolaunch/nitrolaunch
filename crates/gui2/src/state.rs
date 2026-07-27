@@ -1,4 +1,8 @@
-use std::{collections::HashMap, rc::Rc, sync::Arc};
+use std::{
+	collections::HashMap,
+	rc::Rc,
+	sync::{Arc, OnceLock},
+};
 
 use anyhow::Context;
 use freya::{
@@ -11,14 +15,18 @@ use freya_core::{
 };
 use nitrolaunch::{
 	config::Config,
-	config_crate::ConfigDeser,
+	config_crate::{ConfigDeser, ConfigKind},
+	core::net::game_files::version_manifest::VersionManifestAndList,
+	instance::update::manager::UpdateSettings,
 	io::{logging::Logger, paths::Paths},
 	pkg_crate::repo::RepoMetadata,
 	plugin::PluginManager,
 	plugin_crate::hook::hooks::{AddCustomPackageRepositories, AddThemes},
 	shared::{
-		output::{Message, MessageContents, NitroOutput, NoOp},
+		UpdateDepth,
+		output::{Message, MessageContents, MessageLevel, NitroOutput, NoOp},
 		pkg::{PackageDiff, ResolutionError},
+		versions::{MinecraftLatestVersion, MinecraftVersionDeser},
 	},
 };
 use reqwest::Client;
@@ -29,17 +37,7 @@ use crate::{
 		dialog::{tip::Tip, toast::Toast},
 		footer::FooterItem,
 		instance::transfer::InstanceTransferMode,
-	},
-	data::LauncherData,
-	dependency::BackDependency,
-	instance_manager::RunningInstanceManager,
-	ops::task::{Task, TaskManager},
-	output::{LauncherOutput, OutputInner},
-	pages::config::ConfiguredItem,
-	routing::{Navigator, Page},
-	secrets::get_ms_client_id,
-	theme::Theme,
-	util::Shared,
+	}, data::LauncherData, dependency::BackDependency, instance_manager::RunningInstanceManager, ops::task::{Task, TaskManager}, output::{LauncherOutput, OutputInner}, pages::{config::ConfiguredItem, settings}, routing::{Navigator, Page}, secrets::get_ms_client_id, theme::Theme, util::Shared,
 };
 
 /// Global state for frontend / UI related things. Only usable on the freya thread.
@@ -222,7 +220,7 @@ pub fn use_front_state() -> Shared<FrontState> {
 #[derive(Clone, PartialEq)]
 pub enum ModalType {
 	Configuration(ConfiguredItem),
-	Settings,
+	Settings(settings::Tab),
 	DeleteInstance(String),
 	DeleteTemplate(String),
 	MicrosoftAuth { url: String, device_code: String },
@@ -274,6 +272,7 @@ impl BackState {
 		};
 
 		let mut o = LauncherOutput::new(&output_inner);
+		let client = Client::new();
 		let cached_info = CachedInfo::new(&paths, &plugins, &mut o).await;
 
 		Ok(Self {
@@ -282,7 +281,7 @@ impl BackState {
 			event_tx,
 			paths,
 			plugins,
-			client: Client::new(),
+			client,
 			running_instances,
 			cached_info: Arc::new(cached_info),
 		})
@@ -360,6 +359,71 @@ impl BackState {
 	pub fn themes(&self) -> &[nitrolaunch::plugin_crate::hook::hooks::Theme] {
 		&self.cached_info.themes
 	}
+
+	pub async fn versions(&self) -> anyhow::Result<&Arc<VersionManifestAndList>> {
+		self.cached_info
+			.versions(
+				&self.config().await?,
+				&self.client,
+				&self.plugins,
+				&self.paths,
+				&mut self.output(),
+			)
+			.await
+	}
+
+	/// Converts Latest and LatestSnapshot versions to their actual final version strings
+	pub async fn canonicalize_version(
+		&self,
+		id: Option<&str>,
+		ty: ConfigKind,
+		version: &MinecraftVersionDeser,
+	) -> Option<String> {
+		if let MinecraftVersionDeser::Version(version) = &version {
+			return Some(version.to_string());
+		}
+
+		let mut config = self.config().await.ok()?;
+
+		if let Some(id) = id
+			&& ty == ConfigKind::Instance
+		{
+			let Some(instance) = config.instances.get_mut(id) else {
+				let _ = self.output_inner.logger.try_send(Message {
+					contents: "Canonicalize: Instance does not exist".into(),
+					level: MessageLevel::Debug,
+				});
+				return None;
+			};
+
+			let inst_lock = instance.get_lockfile(&self.paths).ok()?;
+
+			if let Some(version) = inst_lock.get_minecraft_version() {
+				return Some(version.clone());
+			}
+		}
+
+		let versions = self.versions().await.ok()?;
+		let Some(latest) = &versions.manifest.latest else {
+			let _ = self.output_inner.logger.try_send(Message {
+				contents: "Canonicalize: No latest versions available".into(),
+				level: MessageLevel::Debug,
+			});
+			return None;
+		};
+
+		let version = match version {
+			MinecraftVersionDeser::Latest(MinecraftLatestVersion::Release) => {
+				latest.release.to_string()
+			}
+			MinecraftVersionDeser::Latest(MinecraftLatestVersion::Snapshot) => {
+				latest.snapshot.to_string()
+			}
+			MinecraftVersionDeser::Version(..) => unreachable!(),
+		};
+
+		Some(version)
+	}
 }
 
 /// Events sent from the backend
@@ -400,6 +464,7 @@ pub enum BackEvent {
 struct CachedInfo {
 	repos: HashMap<String, RepoMetadata>,
 	themes: Vec<nitrolaunch::plugin_crate::hook::hooks::Theme>,
+	versions: OnceLock<Arc<VersionManifestAndList>>,
 }
 
 impl CachedInfo {
@@ -428,7 +493,45 @@ impl CachedInfo {
 			Vec::new()
 		};
 
-		Self { repos, themes }
+		Self {
+			repos,
+			themes,
+			versions: OnceLock::new(),
+		}
+	}
+
+	async fn versions(
+		&self,
+		config: &Config,
+		client: &Client,
+		plugins: &PluginManager,
+		paths: &Paths,
+		o: &mut impl NitroOutput,
+	) -> anyhow::Result<&Arc<VersionManifestAndList>> {
+		if self.versions.get().is_none() {
+			let core = config
+				.get_core(
+					None,
+					&UpdateSettings {
+						depth: UpdateDepth::Shallow,
+						offline_auth: false,
+					},
+					client,
+					&plugins,
+					paths,
+					o,
+				)
+				.await?;
+			let versions = core
+				.get_version_manifest(None, UpdateDepth::Shallow, o)
+				.await
+				.cloned()?;
+
+			let _ = self.versions.set(versions);
+		}
+		self.versions
+			.get()
+			.ok_or_else(|| anyhow::anyhow!("Versions not initialized"))
 	}
 }
 

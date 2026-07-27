@@ -138,6 +138,7 @@ pub fn make_version_list(version_manifest: &VersionManifest) -> Vec<String> {
 }
 
 /// Combination of the version manifest and version list
+#[derive(Default)]
 pub struct VersionManifestAndList {
 	/// The version manifest
 	pub manifest: VersionManifest,

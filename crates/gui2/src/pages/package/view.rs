@@ -1,11 +1,19 @@
 use itertools::Itertools;
-use nitrolaunch::{pkg_crate::metadata::PackageMetadata, shared::pkg::ArcPkgReq};
+use nitrolaunch::{
+	pkg_crate::metadata::PackageMetadata,
+	shared::{pkg::ArcPkgReq, util::open_link},
+};
 
 use crate::{
-	components::{input::tabs::TopTabs, pkg::versions::PackageVersions, tag::repo_tag},
+	components::{
+		input::tabs::TopTabs,
+		pkg::versions::PackageVersions,
+		tag::{loader_tag, repo_tag},
+	},
 	ops::packages::FetchPackageDetails,
 	prelude::*,
-	util::PtrEq,
+	state::FrontState,
+	util::{PtrEq, Shared},
 };
 
 #[derive(PartialEq)]
@@ -16,6 +24,7 @@ pub struct PackageView {
 impl Component for PackageView {
 	fn render(&self) -> impl IntoElement {
 		let theme = use_theme();
+		let front_state = use_front_state();
 		let back_state = use_consume::<BackState>();
 		let details_query = use_query(Query::new(
 			self.req.clone(),
@@ -72,11 +81,21 @@ impl Component for PackageView {
 			.repository
 			.as_deref()
 			.map(|x| repo_tag(x, false, &back_state, &theme));
+		let loaders = props
+			.supported_loaders
+			.iter()
+			.flatten()
+			.map(|x| x.get_matches())
+			.flatten()
+			.unique()
+			.map(|x| loader_tag(&x, false, &theme).into_element());
 		let lower_details = rect()
 			.width(Size::fill())
 			.horizontal()
+			.spacing(theme.gap)
 			.cross_align(Alignment::Center)
-			.maybe_child(repo);
+			.maybe_child(repo)
+			.children(loaders);
 
 		let details = rect()
 			.width(Size::flex(1.0))
@@ -147,9 +166,9 @@ impl Component for PackageView {
 						.width(Size::fill())
 						.paragraph_size(14.0)
 						.padding(32.0)
-						.color(theme.fg)
+						.color(theme.fg2)
 						.code_font_size(14.0)
-						.color_code(theme.fg)
+						.color_code(theme.fg2)
 						.background_code(theme.item);
 					let markdown = ScrollView::new()
 						.expanded()
@@ -219,7 +238,7 @@ impl Component for PackageView {
 			.width(Size::flex(1.5))
 			.height(Size::fill())
 			.border(border_left(theme.border, theme.panel_border))
-			.child(properties(&self.req, &meta, &theme));
+			.child(properties(&self.req, &meta, &front_state, &theme));
 
 		let bottom = rect()
 			.width(Size::fill())
@@ -240,23 +259,135 @@ enum Tab {
 	Gallery,
 }
 
-fn properties(req: &ArcPkgReq, meta: &PackageMetadata, theme: &Theme) -> Rect {
+fn properties(
+	req: &ArcPkgReq,
+	meta: &PackageMetadata,
+	front_state: &Shared<FrontState>,
+	theme: &Theme,
+) -> Rect {
 	rect()
 		.expanded()
 		.padding(theme.gap)
 		.spacing(theme.gap)
-		.child(property("hashtag", "ID", req, theme))
+		.child(property("hashtag", "ID", req, front_state, theme))
 		.maybe(meta.authors.is_some(), |this| {
+			let authors = meta.authors.as_ref().unwrap();
+			let title = if authors.len() == 1 {
+				"Author"
+			} else {
+				"Authors"
+			};
+			let ico = if authors.len() == 1 {
+				"user"
+			} else {
+				"multiple_users"
+			};
 			this.child(property(
-				"user",
-				"Authors",
+				ico,
+				title,
 				meta.authors.as_ref().unwrap().iter().join("  "),
+				front_state,
+				theme,
+			))
+		})
+		.maybe(meta.support_link.is_some(), |this| {
+			this.child(property_link(
+				"heart",
+				"Support",
+				meta.support_link.as_ref().unwrap(),
+				theme,
+			))
+		})
+		.maybe(meta.downloads.is_some(), |this| {
+			this.child(property(
+				"download",
+				"Downloads",
+				format_downloads(*meta.downloads.as_ref().unwrap()),
+				front_state,
+				theme,
+			))
+		})
+		.maybe(meta.website.is_some(), |this| {
+			this.child(property_link(
+				"globe",
+				"Website",
+				meta.website.as_ref().unwrap(),
+				theme,
+			))
+		})
+		.maybe(meta.community.is_some(), |this| {
+			this.child(property_link(
+				"multiple_users",
+				"Community",
+				meta.community.as_ref().unwrap(),
+				theme,
+			))
+		})
+		.maybe(meta.documentation.is_some(), |this| {
+			this.child(property_link(
+				"book",
+				"Documentation",
+				meta.documentation.as_ref().unwrap(),
+				theme,
+			))
+		})
+		.maybe(meta.source.is_some(), |this| {
+			this.child(property_link(
+				"curly_braces",
+				"Source Code",
+				meta.source.as_ref().unwrap(),
+				theme,
+			))
+		})
+		.maybe(meta.issues.is_some(), |this| {
+			this.child(property_link(
+				"warning",
+				"Issues",
+				meta.issues.as_ref().unwrap(),
+				theme,
+			))
+		})
+		.maybe(meta.license.is_some(), |this| {
+			this.child(property(
+				"key",
+				"License",
+				meta.license.as_ref().unwrap(),
+				front_state,
 				theme,
 			))
 		})
 }
 
-fn property(ico: &'static str, title: &str, value: impl ToString, theme: &Theme) -> Rect {
+fn property(
+	ico: &'static str,
+	title: &str,
+	value: impl ToString,
+	front_state: &Shared<FrontState>,
+	theme: &Theme,
+) -> Rect {
+	property_impl(
+		ico,
+		title,
+		clip_text(&value.to_string())
+			.color(theme.fg2)
+			.tip(front_state, &value.to_string()),
+		theme,
+	)
+}
+
+fn property_link(ico: &'static str, title: &str, value: impl ToString, theme: &Theme) -> Rect {
+	let value = value.to_string();
+	property_impl(
+		ico,
+		title,
+		icon_button("popout", theme).on_press(move |_| {
+			let _ = open_link(&value);
+		}),
+		theme,
+	)
+}
+
+fn property_impl(ico: &'static str, title: &str, value: impl IntoElement, theme: &Theme) -> Rect {
 	rect()
 		.width(Size::fill())
 		.height(Size::px(32.0))
@@ -269,6 +400,7 @@ fn property(ico: &'static str, title: &str, value: impl ToString, theme: &Theme)
 				.width(Size::px(32.0))
 				.height(Size::fill())
 				.center()
+				.maybe(ico == "heart", |this| this.color(theme.error))
 				.child(icon(ico, 16.0)),
 		)
 		.child(
@@ -277,8 +409,18 @@ fn property(ico: &'static str, title: &str, value: impl ToString, theme: &Theme)
 				.child(title),
 		)
 		.child(
-			segment(clip_text(&value.to_string()).color(theme.fg2), 1.0)
+			segment(value, 1.0)
 				.cross_align(Alignment::End)
 				.overflow(Overflow::Clip),
 		)
+}
+
+fn format_downloads(download: u32) -> String {
+	if download >= 1_000_000 {
+		format!("{:.1}M", download as f64 / 1_000_000.0)
+	} else if download >= 1_000 {
+		format!("{:.1}K", download as f64 / 1_000.0)
+	} else {
+		format!("{}", download)
+	}
 }

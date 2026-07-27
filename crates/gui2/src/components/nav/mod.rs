@@ -1,5 +1,6 @@
 use crate::{
 	components::{account::AccountSelector, dialog::toast::Toasts, input::tabs::TopTabs},
+	pages::settings,
 	prelude::*,
 	routing::PageCategory,
 	state::ModalType,
@@ -27,8 +28,15 @@ impl Component for NavBar {
 				.navigate(selected_category2.read().get_page());
 		});
 
-		let mut show_sidebar = self.show_sidebar.clone();
-		let menu_button = icon_button("menu", &theme).on_press(move |_| show_sidebar.toggle());
+		// let mut show_sidebar = self.show_sidebar.clone();
+		// let menu_button = icon_button("menu", &theme).on_press(move |_| show_sidebar.toggle());
+
+		let front_state2 = front_state.clone();
+		let settings_button = icon_button("gear", &theme).on_press(move |_| {
+			front_state2
+				.write()
+				.set_modal(Some(ModalType::Settings(settings::Tab::General)))
+		});
 
 		let front_state2 = front_state.clone();
 		let mut back_button = icon_button("arrow_left", &theme)
@@ -46,20 +54,15 @@ impl Component for NavBar {
 			forward_button = forward_button.color(theme.disabled);
 		}
 
-		let front_state2 = front_state.clone();
-		let settings_button = icon_button("gear", &theme)
-			.on_press(move |_| front_state2.write().set_modal(Some(ModalType::Settings)));
-
 		let left = rect()
 			.height(Size::fill())
 			.width(Size::flex(1.0))
 			.cont()
 			.cross_align(Alignment::Center)
 			.padding(3.0)
-			.child(rect().margin(3.0).child(menu_button))
+			.child(rect().margin(3.0).child(settings_button))
 			.child(rect().margin(3.0).child(back_button))
-			.child(rect().margin(3.0).child(forward_button))
-			.child(rect().margin(3.0).child(settings_button));
+			.child(rect().margin(3.0).child(forward_button));
 
 		let buttons = TopTabs::new(selected_category)
 			.child(SelectOption::new(PageCategory::Home, "Home", Some("home")))

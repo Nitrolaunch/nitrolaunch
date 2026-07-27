@@ -1,3 +1,4 @@
+use itertools::Itertools;
 use nitrolaunch::{
 	pkg_crate::{
 		declarative::DeclarativeAddonVersion, metadata::PackageMetadata,
@@ -10,8 +11,10 @@ use nitrolaunch::{
 };
 
 use crate::{
-	components::pkg::install::PackageInstallModal, ops::packages::FetchPackageContentVersions,
-	prelude::*, util::PtrEq,
+	components::{pkg::install::PackageInstallModal, tag::loader_tag},
+	ops::packages::FetchPackageContentVersions,
+	prelude::*,
+	util::PtrEq,
 };
 
 #[derive(PartialEq)]
@@ -148,6 +151,19 @@ impl Component for Version {
 					.child(icon("download", 12.0).color(theme.primary)),
 			);
 
+		let loaders = self
+			.version
+			.0
+			.conditional_properties
+			.loaders
+			.iter()
+			.map(|x| x.iter())
+			.flatten()
+			.map(|x| x.get_matches())
+			.flatten()
+			.unique()
+			.map(|x| loader_tag(&x, true, &theme).into_element());
+
 		rect()
 			.width(Size::fill())
 			.height(Size::px(48.0))
@@ -160,6 +176,14 @@ impl Component for Version {
 				segment(name, 1.0)
 					.height(Size::fill())
 					.main_align(Alignment::Center),
+			)
+			.child(
+				rect()
+					.height(Size::fill())
+					.cont()
+					.main_align(Alignment::End)
+					.cross_align(Alignment::Center)
+					.children(loaders),
 			)
 			.child(install)
 	}

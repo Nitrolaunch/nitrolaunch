@@ -15,7 +15,21 @@ impl Component for PageButtons {
 			let cont = rect().width(Size::px(32.0)).height(Size::fill()).center();
 			if self.page as i32 + offset < 0 || self.page as i32 + offset > self.total_pages as i32
 			{
-				cont.into_element()
+				let button = button(&theme)
+					.width(Size::px(32.0))
+					.height(Size::px(32.0))
+					.padding(theme.gap)
+					.corner_radius(theme.round)
+					.enabled(false)
+					.child(
+						rect()
+							.width(Size::px(4.0))
+							.height(Size::px(4.0))
+							.corner_radius(2.0)
+							.background(theme.disabled),
+					);
+
+				cont.child(button).into_element()
 			} else {
 				let i = self.page as i32 + offset;
 				let is_selected = offset == 0;
@@ -27,6 +41,7 @@ impl Component for PageButtons {
 					.padding(theme.gap)
 					.corner_radius(theme.round)
 					.maybe(is_selected, |this| this.background(theme.highlight))
+					.maybe(!is_selected, |this| this.color(theme.disabled))
 					.on_press(move |_| on_set.call(i as usize))
 					.child(format!("{}", i + 1));
 

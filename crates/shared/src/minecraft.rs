@@ -8,7 +8,7 @@ use crate::util::DefaultExt;
 use crate::versions::VersionName;
 
 /// JSON format for the version manifest that contains all available Minecraft versions
-#[derive(Deserialize, Serialize, Debug, Clone)]
+#[derive(Deserialize, Serialize, Debug, Clone, Default)]
 pub struct VersionManifest {
 	/// The latest available versions
 	#[serde(default)]

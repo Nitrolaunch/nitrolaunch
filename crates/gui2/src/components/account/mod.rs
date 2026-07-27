@@ -2,9 +2,10 @@ use std::{rc::Rc, time::Duration};
 
 use crate::{
 	components::input::select::Selected,
-	ops::account::{FetchAccounts, LoginAccount},
+	ops::account::FetchAccounts,
+	pages::settings,
 	prelude::*,
-	state::use_launcher_data,
+	state::{ModalType, use_launcher_data},
 	util::assets::DEFAULT_SKIN,
 };
 
@@ -16,11 +17,10 @@ pub struct AccountSelector;
 impl Component for AccountSelector {
 	fn render(&self) -> impl IntoElement {
 		let theme = use_theme();
+		let front_state = use_front_state();
 		let back_state = use_consume::<BackState>();
 		let accounts_query = use_query(Query::new((), FetchAccounts::new(back_state.clone())));
 		let data = use_launcher_data();
-		let login_account_mutation =
-			use_mutation(Mutation::new(LoginAccount::new(back_state.clone())));
 
 		let default = Vec::new();
 		let accounts = accounts_query.read();
@@ -47,12 +47,13 @@ impl Component for AccountSelector {
 				.corner_radius(3.0)
 				.sampling_mode(SamplingMode::Nearest);
 
-			let id = account.get_id().clone();
-			let login_account_mutation = login_account_mutation.clone();
+			let front_state = front_state.clone();
 			let action_button =
 				icon_button("gear", &theme).on_press(move |e: Event<PressEventData>| {
 					e.stop_propagation();
-					login_account_mutation.mutate(id.to_string());
+					front_state
+						.write()
+						.set_modal(Some(ModalType::Settings(settings::Tab::Accounts)));
 				});
 
 			SelectOption::new_custom_icon(

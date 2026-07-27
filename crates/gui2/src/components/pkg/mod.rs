@@ -9,6 +9,7 @@ use crate::{
 };
 
 pub mod error;
+pub mod filters;
 pub mod install;
 pub mod versions;
 

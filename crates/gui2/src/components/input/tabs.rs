@@ -133,7 +133,7 @@ impl<T: PartialEq + Clone + 'static> Component for Tab<T> {
 			.hover(is_hovered)
 			.on_press(move |_| on_select.call(id.clone()))
 			.maybe_child(self.option.icon.clone())
-			.child(self.option.title.as_str())
+			.child(label().text(self.option.title.to_string()).max_lines(1))
 			.into_element()
 	}
 }

@@ -58,8 +58,6 @@ impl Component for Toasts {
 
 		rect()
 			.padding(theme.gap)
-			.corner_radius(theme.round)
-			.border(theme.border(theme.item_border))
 			.child(icon("notification", 16.0))
 			.child(toasts)
 	}
@@ -195,7 +193,7 @@ impl Toast {
 	}
 
 	pub fn from_error(title: &str, err: anyhow::Error) -> Self {
-		Self::error(title, Some(err.to_string().into_element()))
+		Self::error(title, Some(format!("{err:?}").into_element()))
 	}
 
 	pub fn new(title: &str, contents: Option<Element>, ty: ToastType) -> Self {

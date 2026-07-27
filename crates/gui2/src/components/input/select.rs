@@ -112,6 +112,7 @@ impl<T: PartialEq + Clone + 'static> Component for InlineSelect<T> {
 
 		let out = rect()
 			.width(Size::fill())
+			.maybe(self.fit, |this| this.width(Size::auto()))
 			.cont()
 			.main_align(if self.align_end {
 				Alignment::End
@@ -183,7 +184,11 @@ impl<T: PartialEq + Clone + 'static> Component for InlineSelectOption<T> {
 			.maybe(self.option.tip.is_some(), |this| {
 				this.tip(&front_state, self.option.tip.as_deref().unwrap())
 			})
-			.maybe_child(Some(self.option.title.as_str()).filter(|x| !x.is_empty()))
+			.maybe_child(
+				Some(self.option.title.as_str())
+					.filter(|x| !x.is_empty())
+					.map(|x| label().text(x.to_string()).max_lines(1)),
+			)
 	}
 }
 
@@ -220,6 +225,20 @@ impl<T: PartialEq + Clone> Dropdown<T> {
 			panel_colorway: false,
 			hide_arrow: false,
 		}
+	}
+
+	pub fn from_state(state: State<T>) -> Self
+	where
+		T: 'static,
+	{
+		Self::new(
+			Selected::Single(state.read().clone()),
+			Rc::new(move |selected| {
+				if let Selected::Single(value) = selected {
+					state.clone().set(value);
+				}
+			}),
+		)
 	}
 
 	pub fn child(mut self, child: SelectOption<T>) -> Self {

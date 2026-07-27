@@ -16,12 +16,14 @@ use nitrolaunch::{
 	shared::{
 		Side,
 		pkg::{ArcPkgReq, PackageKind},
+		util::{from_string_json, to_string_json},
 	},
 };
 
 use crate::{
 	components::{
 		input::{
+			final_value_owned,
 			select::Selected,
 			text::{TextInput, search_bar},
 		},
@@ -34,8 +36,9 @@ use crate::{
 			FetchInstanceAddons, FetchInstanceLockfile, FetchPackages, PkgInfo, PreloadPackages,
 		},
 	},
-	pages::config::ConfigState,
+	pages::{config::ConfigState, package::browse::BrowseFilters},
 	prelude::*,
+	routing::Page,
 	state::use_launcher_data,
 	util::{PtrEq, assets::get_package_kind_icon},
 };
@@ -50,6 +53,7 @@ pub struct AddonsConfig {
 impl Component for AddonsConfig {
 	fn render(&self) -> impl IntoElement {
 		let theme = use_theme();
+		let front_state = use_front_state();
 		let back_state = use_consume::<BackState>();
 		let lockfile = use_query(ConditionalQuery::new(
 			FetchInstanceLockfile::new(back_state.clone()),
@@ -92,7 +96,7 @@ impl Component for AddonsConfig {
 		});
 
 		let packages = use_query(ConditionalQuery::new(
-			FetchPackages::new(back_state),
+			FetchPackages::new(back_state.clone()),
 			preload.read().state().is_ok(),
 			move || results.read().1.clone(),
 		));
@@ -202,6 +206,59 @@ impl Component for AddonsConfig {
 				Some("server"),
 			));
 
+		let front_state2 = front_state.clone();
+		let back_state2 = back_state.clone();
+		let parent_configs = self.parent_configs.clone();
+		let id = self.config_state.id.clone();
+		let version = self.config_state.version.clone();
+		let loader = match self.config_state.side.read().as_ref() {
+			Some(Side::Client) | None => self.config_state.client_loader.clone(),
+			Some(Side::Server) => self.config_state.server_loader.clone(),
+		};
+		let ty = self.config_state.ty;
+		let browse_button = icon_text_button("search", "Browse for Packages", &theme)
+			.border_fill(theme.primary)
+			.color(theme.primary)
+			.background(theme.primary_bg)
+			.hover_background(theme.primary_bg)
+			.on_press(move |_| {
+				let front_state2 = front_state2.clone();
+				let back_state2 = back_state2.clone();
+				let parent_configs = parent_configs.clone();
+				let id = id.clone();
+				let version = version.clone();
+				let loader = loader.clone();
+				spawn(async move {
+					let id = id.read().clone();
+					let version =
+						final_value_owned(version.read().clone(), &parent_configs.0, |x| {
+							x.instance.version.as_ref().map(|x| to_string_json(x))
+						});
+					let Some(version) = version else {
+						return;
+					};
+					let canonical_version = tokio::spawn(async move {
+						let version = from_string_json(&version).ok()?;
+						back_state2
+							.canonicalize_version(Some(&id), ty, &version)
+							.await
+					})
+					.await;
+					let Ok(Some(canonical_version)) = canonical_version else {
+						front_state2
+							.write()
+							.toast(Toast::error("Failed to get canonical version", None));
+						return;
+					};
+					front_state2
+						.write()
+						.navigate(Page::Packages(Some(BrowseFilters {
+							mc_versions: vec![canonical_version.to_string()],
+							loader: loader.read().clone().unwrap_or_default(),
+						})));
+				});
+			});
+
 		let id = self.config_state.id.clone();
 		let update_button = icon_text_button("upload", "Update Content", &theme)
 			.border_fill(theme.primary)
@@ -219,7 +276,7 @@ impl Component for AddonsConfig {
 		let controls = rect()
 			.width(Size::fill())
 			.cont()
-			.child(segment(rect(), 1.0))
+			.child(segment(browse_button, 1.0))
 			.child(segment(rect(), 1.0))
 			.child(segment(update_button, 1.0).cross_align(Alignment::End));
 		let filters = rect()

@@ -88,3 +88,15 @@ pub fn derived_value_owned<T>(
 		parent_configs.into_iter().find_map(|x| property(x))
 	}
 }
+
+pub fn final_value_owned<T>(
+	editable_value: Option<T>,
+	parent_configs: &[TemplateConfig],
+	property: impl Fn(&TemplateConfig) -> Option<T>,
+) -> Option<T> {
+	if let Some(value) = editable_value {
+		Some(value)
+	} else {
+		parent_configs.into_iter().find_map(|x| property(x))
+	}
+}

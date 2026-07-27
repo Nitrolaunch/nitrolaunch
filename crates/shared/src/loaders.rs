@@ -173,22 +173,26 @@ impl LoaderMatch {
 	/// Checks if a loader matches
 	pub fn matches(&self, other: &Loader) -> bool {
 		if other == &Loader::Any {
-			return true;
+			true
+		} else {
+			self.get_matches().contains(other)
 		}
+	}
 
+	/// Gets the loaders that this matches
+	pub fn get_matches(&self) -> Vec<Loader> {
 		match self {
-			Self::FabricLike => matches!(other, Loader::Fabric | Loader::Quilt),
-			Self::ForgeLike => matches!(other, Loader::Forge | Loader::SpongeForge),
-			Self::Bukkit => matches!(
-				other,
-				Loader::Paper
-					| Loader::CraftBukkit
-					| Loader::Spigot
-					| Loader::Glowstone
-					| Loader::Pufferfish
-					| Loader::Purpur
-			),
-			Self::Loader(loader) => loader == other,
+			Self::FabricLike => vec![Loader::Fabric, Loader::Quilt],
+			Self::ForgeLike => vec![Loader::Forge, Loader::SpongeForge],
+			Self::Bukkit => vec![
+				Loader::Paper,
+				Loader::CraftBukkit,
+				Loader::Spigot,
+				Loader::Glowstone,
+				Loader::Pufferfish,
+				Loader::Purpur,
+			],
+			Self::Loader(loader) => vec![loader.clone()],
 		}
 	}
 }

@@ -157,7 +157,7 @@ where
 				Err(e) => {
 					let _ = self.back_state.event_tx.send(BackEvent::ErrorToast(
 						self.error_message.clone(),
-						Some(e.as_err().to_string()),
+						Some(format!("{:?}", e.as_err())),
 					));
 				}
 			}
@@ -234,7 +234,7 @@ where
 			Err(e) => {
 				let _ = self.back_state.event_tx.send(BackEvent::ErrorToast(
 					self.error_message.clone(),
-					Some(e.as_err().to_string()),
+					Some(format!("{:?}", e.as_err())),
 				));
 			}
 		}

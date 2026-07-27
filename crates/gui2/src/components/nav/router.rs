@@ -20,7 +20,10 @@ impl Component for Router {
 
 		let child = match front_state.read().route() {
 			Page::Home => HomePage.into_element(),
-			Page::Packages => BrowsePackagesPage.into_element(),
+			Page::Packages(browse_filters) => BrowsePackagesPage {
+				filters: browse_filters.clone(),
+			}
+			.into_element(),
 			Page::Instance(id) => InstancePage { id: id.clone() }.into_element(),
 		};
 
