@@ -4,6 +4,7 @@
 	"description": "Full integration with auto-mcs",
 	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/auto_mcs",
 	"version": "v7",
+	"nitro_version": "0.30.0",
 	"protocol_version": 3,
 	"hooks": {
 		"add_instance_transfer_formats": {

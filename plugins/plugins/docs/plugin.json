@@ -4,6 +4,7 @@
 	"description": "View Nitrolaunch's documentation straight from the program",
 	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/docs",
 	"version": "v7",
+	"nitro_version": "0.30.0",
 	"protocol_version": 3,
 	"hooks": {
 		"subcommand": {

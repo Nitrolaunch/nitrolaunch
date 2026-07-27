@@ -4,6 +4,7 @@
 	"description": "Run commands at different parts of the instance lifecycle with no coding knowledge",
 	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/automate",
 	"version": "v7",
+	"nitro_version": "0.30.0",
 	"protocol_version": 3,
 	"hooks": {
 		"on_instance_launch": {

@@ -4,9 +4,10 @@
 	"description": "Install Modrinth packages and modpacks",
 	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/modrinth",
 	"version": "v7",
-	"uninstall_dirs": ["modrinth"],
+	"nitro_version": "0.30.0",
 	"protocol_version": 3,
 	"raw_transfer": true,
+	"uninstall_dirs": ["modrinth"],
 	"hooks": {
 		"get_page": {
 			"cases": {

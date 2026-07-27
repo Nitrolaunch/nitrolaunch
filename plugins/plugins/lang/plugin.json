@@ -4,6 +4,7 @@
 	"description": "Add translation support for more languages",
 	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/lang",
 	"version": "v7",
+	"nitro_version": "0.30.0",
 	"hooks": {
 		"add_translations": {
 			"constant": {}

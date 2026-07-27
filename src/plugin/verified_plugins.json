@@ -256,14 +256,6 @@
 		"github_repo": "plugins",
 		"description": "Tools for Beet developers"
 	},
-	"gamepad": {
-		"id": "gamepad",
-		"name": "Gamepad",
-		"version": "v7",
-		"github_owner": "Nitrolaunch",
-		"github_repo": "plugins",
-		"description": "Adds better gamepad and arrow key support for the GUI"
-	},
 	"zulu": {
 		"id": "zulu",
 		"name": "Zulu",

@@ -4,6 +4,7 @@
 	"description": "Fixes crashes from a bad GLFW version",
 	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/glfw_fix",
 	"version": "v7",
+	"nitro_version": "0.30.0",
 	"protocol_version": 3,
 	"hooks": {
 		"on_instance_setup": {

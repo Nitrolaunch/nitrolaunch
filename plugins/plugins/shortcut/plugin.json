@@ -4,6 +4,7 @@
 	"description": "Create desktop shortcuts to launch instances",
 	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/shortcut",
 	"version": "v7",
+	"nitro_version": "0.30.0",
 	"protocol_version": 3,
 	"hooks": {
 		"subcommand": {
