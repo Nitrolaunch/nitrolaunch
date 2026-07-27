@@ -221,7 +221,12 @@ impl Component for GeneralTab {
 			.child(version_field)
 			.child(loaders_config);
 
-		rect().expanded().child(top).child(main)
+		let main = ScrollView::new()
+			.width(Size::fill())
+			.height(Size::flex(1.0))
+			.child(main);
+
+		rect().expanded().flex().child(top).child(main)
 	}
 }
 
