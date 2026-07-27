@@ -19,6 +19,9 @@ pub struct Control {
 	/// CSS color for the control. May not be used.
 	#[serde(default)]
 	pub color: Option<String>,
+	/// Icon for the control. May not be used.
+	#[serde(default)]
+	pub icon: Option<String>,
 	/// Name of the section this control is in
 	#[serde(default)]
 	pub section: Option<String>,
@@ -37,6 +40,8 @@ pub struct Control {
 pub enum ControlSchema {
 	/// True / False
 	Boolean,
+	/// Define metadata for a section
+	Section,
 	/// Enumeration / Multiple choice
 	Choice {
 		/// The available variants
@@ -55,7 +60,11 @@ pub enum ControlSchema {
 		lowercase: bool,
 	},
 	/// Absolute filesystem path
-	Path,
+	Path {
+		/// Whether to allow selection of directories
+		#[serde(default)]
+		directory: bool,
+	},
 	/// Number
 	Number {
 		/// Minimum value

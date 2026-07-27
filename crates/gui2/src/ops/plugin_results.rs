@@ -1,14 +1,19 @@
 use std::time::Duration;
 
 use nitrolaunch::{
-	plugin_crate::hook::hooks::{
-		AccountTypeInfo, AddAccountTypes, AddSupportedLoaders, GetLoaderVersions,
-		GetLoaderVersionsArg,
+	config_crate::ConfigKind,
+	plugin_crate::{
+		control::Control,
+		hook::hooks::{
+			AccountTypeInfo, AddAccountTypes, AddInstanceConfigControls,
+			AddInstanceConfigControlsArg, AddSupportedLoaders, GetLoaderVersions,
+			GetLoaderVersionsArg,
+		},
 	},
 	shared::{loaders::Loader, output::NoOp},
 };
 
-use crate::{prelude::*, simple_query};
+use crate::{prelude::*, simple_query, util::PtrEq};
 
 #[derive(Clone, PartialEq, Eq, Hash)]
 pub struct FetchSupportedLoaders {
@@ -123,3 +128,39 @@ simple_query!(
 		})
 	}
 );
+
+simple_query!(
+	name = FetchInstanceControls,
+	ok = PtrEq<[Control]>,
+	err = anyhow::Error,
+	keys = FetchInstanceControlsKeys,
+	fn run(&self, keys: &Self::Keys) -> impl Future<Output = Result<Self::Ok, Self::Err>> {
+		let back_state = self.back_state.clone();
+		let keys = keys.clone();
+
+		query_spawn(async move {
+			let mut o = back_state.output();
+			let arg = AddInstanceConfigControlsArg {
+				id: keys.id,
+				kind: keys.ty,
+				plugin: keys.config_plugin,
+			};
+			let mut out = Vec::new();
+			let mut results = back_state
+				.plugins
+				.call_hook(AddInstanceConfigControls, &arg, &back_state.paths, &mut o)
+				.await?;
+			while let Ok(Some(result)) = results.next_result(&mut o).await {
+				out.extend(result.controls);
+			}
+			Ok(PtrEq(out.into_iter().collect()))
+		})
+	}
+);
+
+#[derive(Clone, PartialEq, Eq, Hash)]
+pub struct FetchInstanceControlsKeys {
+	pub id: Option<String>,
+	pub ty: ConfigKind,
+	pub config_plugin: Option<String>,
+}

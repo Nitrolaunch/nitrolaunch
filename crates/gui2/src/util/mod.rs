@@ -87,7 +87,7 @@ impl<T> Hash for NotEq<T> {
 	fn hash<H: std::hash::Hasher>(&self, _: &mut H) {}
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct PtrEq<T: ?Sized>(pub Arc<T>);
 
 impl<T: ?Sized> Clone for PtrEq<T> {

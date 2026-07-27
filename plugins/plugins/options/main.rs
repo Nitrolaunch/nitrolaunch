@@ -14,7 +14,7 @@ use nitro_plugin::{
 };
 use nitro_shared::Side;
 
-use crate::controls::{all_client_options, all_server_options};
+use crate::controls::{all_client_options, all_server_options, universal_options};
 
 mod controls;
 
@@ -106,6 +106,8 @@ fn main() -> anyhow::Result<()> {
 
 	plugin.add_instance_config_controls(|_, _| {
 		let mut out = Vec::new();
+
+		out.extend(universal_options());
 
 		let client = all_client_options().into_iter().map(|mut x| {
 			x.id = format!("options.client.{}", x.id);

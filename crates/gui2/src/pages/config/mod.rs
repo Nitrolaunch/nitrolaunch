@@ -3,13 +3,18 @@ use std::sync::Arc;
 use crate::{
 	components::{
 		dialog::modal::{Modal, ModalButton},
-		input::tabs::SideTabs,
+		input::{
+			control::{ControlSection, ControlledConfig, Controls, filter_control},
+			final_value_owned,
+			tabs::SideTabs,
+		},
 	},
 	ops::{
 		ToastedMutation,
 		instance::{
 			FetchInstanceOrTemplateConfig, FetchParentConfigs, SaveConfig, SaveConfigParams,
 		},
+		plugin_results::{FetchInstanceControls, FetchInstanceControlsKeys},
 	},
 	pages::config::{addons::AddonsConfig, general::GeneralTab},
 	prelude::*,
@@ -17,6 +22,7 @@ use crate::{
 	util::{PtrEq, Shared},
 };
 use freya::query::UseMutation;
+use itertools::Itertools;
 use nitrolaunch::{
 	config_crate::{
 		ConfigKind,
@@ -130,6 +136,22 @@ impl Component for ConfigModal {
 			.cloned()
 			.unwrap_or_default();
 
+		let controls = use_query(Query::new(
+			FetchInstanceControlsKeys {
+				id: self.item.id.clone(),
+				ty: self.item.ty,
+				config_plugin: None,
+			},
+			FetchInstanceControls::new(back_state.clone()),
+		));
+
+		let controls = use_memo(move || {
+			let controls = controls.read();
+			let controls = controls.state();
+			let controls = controls.ok().cloned().unwrap_or(PtrEq(Arc::default()));
+			NotEq(ControlSection::sectionize(&controls.0, "plugins"))
+		});
+
 		let id = self.item.id.clone();
 		let mut config_state = self.config_state.clone();
 		use_side_effect(move || {
@@ -145,6 +167,11 @@ impl Component for ConfigModal {
 		});
 
 		let tab = use_state(|| Tab::General);
+		let final_side = final_value_owned(
+			self.config_state.side.read().cloned(),
+			&parent_configs,
+			|x| x.instance.side.clone(),
+		);
 		let left_panel = rect()
 			.width(Size::flex(1.0))
 			.border(border_right(theme.border, theme.panel_border))
@@ -161,6 +188,26 @@ impl Component for ConfigModal {
 						"Launch Settings",
 						Some("play"),
 					))
+					.children(
+						controls
+							.read()
+							.0
+							.values()
+							.filter(|x| {
+								x.controls
+									.iter()
+									.filter(|x| filter_control(x, final_side))
+									.count() > 0
+							})
+							.sorted_by_cached_key(|x| x.name.clone())
+							.map(|section| {
+								SelectOption::new(
+									Tab::Custom(section.id.clone()),
+									&section.name,
+									Some(&section.icon),
+								)
+							}),
+					)
 					.child(SelectOption::new(Tab::Plugins, "Plugins", Some("jigsaw"))),
 			);
 
@@ -178,6 +225,17 @@ impl Component for ConfigModal {
 			.into_element(),
 			Tab::Launch => rect().into_element(),
 			Tab::Plugins => rect().into_element(),
+			Tab::Custom(id) => {
+				let controls = controls.read();
+				let default = Arc::default();
+				let children = controls.0.get(id).map(|x| &x.controls).unwrap_or(&default);
+				Controls {
+					controls: PtrEq(children.clone()),
+					values: self.config_state.plugin_config.clone(),
+					side: final_side,
+				}
+				.into_element()
+			}
 		};
 
 		let right_panel = rect().width(Size::flex(4.25)).child(tab_contents);
@@ -196,6 +254,7 @@ enum Tab {
 	Content,
 	Launch,
 	Plugins,
+	Custom(String),
 }
 
 /// State objects for the config
@@ -221,6 +280,7 @@ pub struct ConfigState {
 	pub server_loader_version: State<VersionPattern>,
 	pub packages: State<TemplatePackageConfiguration>,
 	pub modpack: State<Option<String>>,
+	pub plugin_config: State<ControlledConfig>,
 }
 
 impl ConfigState {
@@ -245,6 +305,7 @@ impl ConfigState {
 			server_loader_version: use_state(|| VersionPattern::Any),
 			packages: use_state(|| TemplatePackageConfiguration::default()),
 			modpack: use_state(|| None),
+			plugin_config: use_state(|| ControlledConfig::default()),
 		};
 
 		use_side_effect(move || {
@@ -260,6 +321,7 @@ impl ConfigState {
 			out.server_loader_version.read();
 			out.packages.read();
 			out.modpack.read();
+			out.plugin_config.read();
 
 			out.is_dirty.clone().set(true);
 		});
@@ -310,7 +372,11 @@ impl ConfigState {
 			}
 			ConfigKind::Template | ConfigKind::BaseTemplate => config.packages.clone(),
 		});
-		self.modpack.set(config.instance.modpack);
+		self.modpack.set_if_modified(config.instance.modpack);
+
+		self.plugin_config
+			.write()
+			.update(config.instance.plugin_config.clone());
 
 		self.is_dirty.set_if_modified(self.is_new);
 		self.is_id_dirty.set_if_modified(!self.is_new);
@@ -386,6 +452,9 @@ impl ConfigState {
 				config.packages = self.packages.peek().cloned();
 			}
 		}
+
+		self.plugin_config.write().optimize();
+		config.instance.plugin_config = self.plugin_config.peek().data().clone();
 
 		self.is_dirty.set_if_modified(false);
 		self.is_id_dirty.set_if_modified(false);
