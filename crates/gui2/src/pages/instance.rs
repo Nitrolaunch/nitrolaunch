@@ -88,6 +88,9 @@ impl Component for InstancePage {
 			.cloned()
 			.unwrap_or_default();
 
+		let is_editable = config.read().is_editable || config_state.plugin.peek().is_none();
+		let is_deletable = config.read().is_deletable || config_state.plugin.peek().is_none();
+
 		let ico = if config.read().icon.is_some() {
 			ImageViewer::new(get_instance_icon(config.read().icon.as_deref()))
 				.width(Size::px(48.0))
@@ -213,11 +216,9 @@ impl Component for InstancePage {
 			"Open Folder",
 			Some("folder"),
 		))
-		.child(SelectOption::new(
-			MoreOption::Delete,
-			"Delete",
-			Some("trash"),
-		));
+		.maybe_child(is_deletable, || {
+			SelectOption::new(MoreOption::Delete, "Delete", Some("trash"))
+		});
 
 		let controls = rect()
 			.height(Size::fill())
@@ -227,7 +228,7 @@ impl Component for InstancePage {
 			.padding(Gaps::new(0.0, theme.gap3, 0.0, 0.0))
 			.child(launch_dropdown)
 			.child(update_button)
-			.child(settings_button)
+			.maybe(is_editable, |this| this.child(settings_button))
 			.child(more_dropdown);
 
 		let head = rect()

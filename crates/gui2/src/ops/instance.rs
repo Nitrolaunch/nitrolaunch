@@ -68,6 +68,9 @@ impl QueryCapability for FetchItems {
 					side: Some(x.side()),
 					version: Some(x.version().clone()),
 					loader: Some(x.loader().clone()),
+					source_plugin: x.config().source_plugin.clone(),
+					is_editable: x.config().is_editable || x.config().source_plugin.is_none(),
+					is_deletable: x.config().is_deletable || x.config().source_plugin.is_none(),
 				});
 
 			let templates = config
@@ -86,6 +89,9 @@ impl QueryCapability for FetchItems {
 						.as_ref()
 						.map(|x| MinecraftVersion::from_deser(&x)),
 					loader: x.instance.loader.as_ref().map(|x| parse_loader_config(x).0),
+					source_plugin: x.instance.source_plugin.clone(),
+					is_editable: x.instance.is_editable || x.instance.source_plugin.is_none(),
+					is_deletable: x.instance.is_deletable || x.instance.source_plugin.is_none(),
 				});
 
 			let base_template = InstanceItemInfo {
@@ -96,6 +102,9 @@ impl QueryCapability for FetchItems {
 				side: None,
 				version: None,
 				loader: None,
+				source_plugin: None,
+				is_editable: true,
+				is_deletable: false,
 			};
 
 			Ok(InstancesAndTemplates {
@@ -116,6 +125,9 @@ pub struct InstanceItemInfo {
 	pub side: Option<Side>,
 	pub version: Option<MinecraftVersion>,
 	pub loader: Option<Loader>,
+	pub source_plugin: Option<String>,
+	pub is_editable: bool,
+	pub is_deletable: bool,
 }
 
 impl InstanceItemInfo {

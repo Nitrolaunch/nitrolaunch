@@ -106,7 +106,7 @@ impl Component for FooterButton {
 			.unwrap_or_default();
 
 		let front_state2 = front_state.clone();
-		let delete_template = if let FooterItem::InstanceOrTemplate(info) = &self.item {
+		let left_button = if let FooterItem::InstanceOrTemplate(info) = &self.item {
 			match info.ty {
 				ConfigKind::Instance => {
 					let id = info.id.clone();
@@ -115,19 +115,23 @@ impl Component for FooterButton {
 					}))
 				}
 				ConfigKind::Template => {
-					let id = info.id.clone();
-					Some(
-						icon_button("trash", &theme)
-							.background(theme.error_bg)
-							.border_fill(theme.error)
-							.hover_background(theme.error_bg)
-							.color(theme.error)
-							.on_press(move |_| {
-								front_state2
-									.write()
-									.set_modal(Some(ModalType::DeleteTemplate(id.clone())));
-							}),
-					)
+					if info.is_deletable {
+						let id = info.id.clone();
+						Some(
+							icon_button("trash", &theme)
+								.background(theme.error_bg)
+								.border_fill(theme.error)
+								.hover_background(theme.error_bg)
+								.color(theme.error)
+								.on_press(move |_| {
+									front_state2
+										.write()
+										.set_modal(Some(ModalType::DeleteTemplate(id.clone())));
+								}),
+						)
+					} else {
+						None
+					}
 				}
 				ConfigKind::BaseTemplate => None,
 			}
@@ -141,9 +145,18 @@ impl Component for FooterButton {
 			.cont()
 			.main_align(Alignment::End)
 			.cross_align(Alignment::Center)
-			.maybe_child(delete_template);
+			.maybe_child(left_button);
 
-		let (fg, border, bg) = if self.item == FooterItem::None {
+		let is_non_editable_template = matches!(
+			&self.item,
+			FooterItem::InstanceOrTemplate(InstanceItemInfo {
+				ty: ConfigKind::Template,
+				is_editable: false,
+				..
+			})
+		);
+
+		let (fg, border, bg) = if self.item == FooterItem::None || is_non_editable_template {
 			(theme.disabled, theme.disabled, theme.bg)
 		} else {
 			(theme.primary, theme.primary, theme.primary_bg)
@@ -151,6 +164,7 @@ impl Component for FooterButton {
 
 		let item = self.item.clone();
 		let mut show_install_modal2 = show_install_modal.clone();
+		let front_state2 = front_state.clone();
 		let on_press = move |_| match &item {
 			FooterItem::None => {}
 			FooterItem::InstanceOrTemplate(info) => match info.ty {
@@ -166,7 +180,10 @@ impl Component for FooterButton {
 					}
 				},
 				ConfigKind::Template | ConfigKind::BaseTemplate => {
-					front_state
+					if is_non_editable_template {
+						return;
+					}
+					front_state2
 						.write()
 						.set_modal(Some(ModalType::Configuration(info.get_config_item())));
 				}
@@ -180,6 +197,12 @@ impl Component for FooterButton {
 			.height(Size::fill())
 			.width(Size::px(128.0))
 			.center()
+			.maybe(is_non_editable_template, |this| {
+				this.tip(
+					&front_state,
+					"This template is from a plugin and cannot be edited",
+				)
+			})
 			.child(
 				button(&theme)
 					.width(Size::fill())

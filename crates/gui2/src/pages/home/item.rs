@@ -33,6 +33,9 @@ impl InstanceListItem {
 				side: None,
 				version: None,
 				loader: None,
+				source_plugin: None,
+				is_editable: true,
+				is_deletable: false,
 			},
 			selected,
 			is_add_placeholder: true,
@@ -172,10 +175,11 @@ impl Component for InstanceListItem {
 		let info = self.info.clone();
 		let is_add_placeholder = self.is_add_placeholder;
 
+		let front_state2 = front_state.clone();
 		let on_click = move |_| {
 			// Add placeholder
 			if is_add_placeholder {
-				front_state
+				front_state2
 					.write()
 					.set_modal(Some(ModalType::Configuration(ConfiguredItem {
 						id: None,
@@ -190,15 +194,12 @@ impl Component for InstanceListItem {
 			if is_selected {
 				match info.ty {
 					ConfigKind::Instance => {
-						front_state
+						front_state2
 							.write()
 							.navigate(Page::Instance(info.id.clone()));
-						// front_state
-						// 	.write()
-						// 	.set_configured_item(Some(info.get_config_item()));
 					}
 					ConfigKind::Template | ConfigKind::BaseTemplate => {
-						front_state
+						front_state2
 							.write()
 							.set_modal(Some(ModalType::Configuration(info.get_config_item())));
 					}
@@ -207,6 +208,21 @@ impl Component for InstanceListItem {
 				selected.set(Some(info.clone()))
 			}
 		};
+
+		let plugin_indicator = self.info.source_plugin.as_ref().map(|x| {
+			let size = 28.0;
+			rect()
+				.width(Size::px(size))
+				.height(Size::px(size))
+				.position(Position::new_absolute().top(-size / 2.0).right(-size / 2.0))
+				.center()
+				.color(theme.secondary)
+				.border(theme.border(theme.secondary))
+				.background(theme.secondary_bg)
+				.corner_radius(theme.round)
+				.tip(&front_state, &format!("From the {x} plugin"))
+				.child(icon("jigsaw", 16.0))
+		});
 
 		rect()
 			.width(Size::fill())
@@ -219,5 +235,6 @@ impl Component for InstanceListItem {
 			.hover(is_hovered)
 			.child(top)
 			.child(bottom)
+			.maybe_child(plugin_indicator)
 	}
 }

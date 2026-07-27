@@ -53,6 +53,9 @@ impl Component for RunningInstances {
 							side: None,
 							version: None,
 							loader: None,
+							source_plugin: None,
+							is_editable: true,
+							is_deletable: false,
 						});
 
 					RunningInstance {
