@@ -276,7 +276,7 @@ impl Component for SettingsConsole {
 		let back_state = use_consume::<BackState>();
 		let selected_log = use_state::<Option<String>>(|| None);
 		let contents_query = use_query(Query::new(
-			selected_log.read().clone().unwrap_or_default(),
+			selected_log.read().clone(),
 			FetchGlobalLog::new(back_state.clone()),
 		));
 		let logs = use_query(Query::new((), FetchGlobalLogs::new(back_state.clone())));

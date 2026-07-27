@@ -27,13 +27,17 @@ simple_query!(
 	name = FetchGlobalLog,
 	ok = Arc<str>,
 	err = anyhow::Error,
-	keys = String,
+	keys = Option<String>,
 	fn run(&self, keys: &Self::Keys) -> impl Future<Output = Result<Self::Ok, Self::Err>> {
 		let back_state = self.back_state.clone();
 		let log = keys.clone();
 
 		query_spawn(async move {
-			let path = get_log_file_path(&back_state.paths, "gui", &log);
+			let path = if let Some(log) = log {
+				get_log_file_path(&back_state.paths, "gui", &log)
+			} else {
+				get_log_files(&back_state.paths, "gui")?.first().context("No log available")?.to_owned()
+			};
 			let contents = std::fs::read_to_string(path)?;
 			Ok(contents.into())
 		})
