@@ -49,10 +49,16 @@ impl TaskManager {
 					let result = join_handle.await;
 					if let Ok(Err(error)) = result {
 						eprintln!("Task error: {error:?}");
-						let _ = self.event_tx.send(BackEvent::ErrorToast(
-							format!("Failed {}", task.id),
-							Some(format!("{error:?}")),
-						));
+						if task.id.is_long_running() {
+							let _ = self.event_tx.send(BackEvent::ErrorToast(
+								task.id.failure_message(),
+								Some(format!("{error:?}")),
+							));
+						}
+					} else if task.id.is_long_running() {
+						let _ = self
+							.event_tx
+							.send(BackEvent::SuccessToast(task.id.success_message()));
 					}
 				} else {
 					task.join_handle = Some(join_handle);
@@ -129,6 +135,7 @@ pub enum Task {
 	FetchRemotePlugins,
 	InstallPlugin,
 	FetchPluginVersions,
+	InstallDefaultPlugins,
 	LoginAccount,
 	Opening,
 }
@@ -148,8 +155,69 @@ impl Task {
 			Self::FetchRemotePlugins => false,
 			Self::InstallPlugin => false,
 			Self::FetchPluginVersions => false,
+			Self::InstallDefaultPlugins => true,
 			Self::LoginAccount => true,
 			Self::Opening => false,
+		}
+	}
+
+	pub fn is_long_running(&self) -> bool {
+		match self {
+			Self::LaunchInstance(_) => true,
+			Self::UpdateInstance(_) => true,
+			Self::UpdateInstanceContent(_) => true,
+			Self::DeleteInstance => false,
+			Self::InstallModpack => true,
+			Self::ImportInstance => true,
+			Self::ExportInstance => true,
+			Self::MigrateInstances => true,
+			Self::SearchPackages => false,
+			Self::FetchRemotePlugins => false,
+			Self::InstallPlugin => false,
+			Self::FetchPluginVersions => false,
+			Self::InstallDefaultPlugins => true,
+			Self::LoginAccount => true,
+			Self::Opening => false,
+		}
+	}
+
+	pub fn success_message(&self) -> String {
+		match self {
+			Self::LaunchInstance(..) => format!("Launched!"),
+			Self::UpdateInstance(..) => format!("Instance updated"),
+			Self::UpdateInstanceContent(..) => format!("Content updated"),
+			Self::DeleteInstance => "Instance deleted".into(),
+			Self::InstallModpack => "Modpack installed".into(),
+			Self::ImportInstance => "Instance imported".into(),
+			Self::ExportInstance => "Instance exported".into(),
+			Self::MigrateInstances => "Instances migrated".into(),
+			Self::SearchPackages => "Packages searched".into(),
+			Self::FetchRemotePlugins => "Plugins fetched".into(),
+			Self::InstallPlugin => "Plugin installed".into(),
+			Self::FetchPluginVersions => "Plugin versions fetched".into(),
+			Self::InstallDefaultPlugins => "Plugins installed".into(),
+			Self::LoginAccount => "Logged in".into(),
+			Self::Opening => "Opened".into(),
+		}
+	}
+
+	pub fn failure_message(&self) -> String {
+		match self {
+			Self::LaunchInstance(id) => format!("Failed to launch instance {id}"),
+			Self::UpdateInstance(id) => format!("Failed to update instance {id}"),
+			Self::UpdateInstanceContent(id) => format!("Failed to update content for {id}"),
+			Self::DeleteInstance => "Failed to delete instance".into(),
+			Self::InstallModpack => "Failed to install modpack".into(),
+			Self::ImportInstance => "Failed to import instance".into(),
+			Self::ExportInstance => "Failed to export instance".into(),
+			Self::MigrateInstances => "Failed to migrate instances".into(),
+			Self::SearchPackages => "Failed to search packages".into(),
+			Self::FetchRemotePlugins => "Failed to fetch plugins".into(),
+			Self::InstallPlugin => "Failed to install plugin".into(),
+			Self::FetchPluginVersions => "Failed to fetch plugin versions".into(),
+			Self::InstallDefaultPlugins => "Failed to install plugins".into(),
+			Self::LoginAccount => "Failed to log in".into(),
+			Self::Opening => "Failed to open".into(),
 		}
 	}
 }
@@ -169,6 +237,7 @@ impl Display for Task {
 			Self::FetchRemotePlugins => write!(f, "Fetching plugins"),
 			Self::InstallPlugin => write!(f, "Installing plugin"),
 			Self::FetchPluginVersions => write!(f, "Fetching plugin versions"),
+			Self::InstallDefaultPlugins => write!(f, "Installing plugins"),
 			Self::LoginAccount => write!(f, "Logging in"),
 			Self::Opening => write!(f, "Opening"),
 		}

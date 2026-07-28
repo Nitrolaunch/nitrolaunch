@@ -52,3 +52,18 @@ pub fn socials(theme: &Theme) -> impl IntoElement {
 			.center(),
 		)
 }
+
+pub fn progress_bar(theme: &Theme, progress: f32) -> Rect {
+	rect()
+		.width(Size::fill())
+		.height(Size::px(8.0))
+		.corner_radius(4.0)
+		.panel_colorway(theme, false, false)
+		.child(
+			rect()
+				.width(Size::percent(progress * 100.0))
+				.height(Size::fill())
+				.corner_radius(4.0)
+				.background(theme.primary),
+		)
+}

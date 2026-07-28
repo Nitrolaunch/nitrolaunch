@@ -95,10 +95,9 @@ impl Loader {
 
 	/// Gets whether this loader is supported on the server
 	pub fn is_server(&self) -> bool {
+		// TODO: Update when we add Forge server support
 		match self {
 			Self::Vanilla
-			| Self::Forge
-			| Self::NeoForged
 			| Self::Fabric
 			| Self::Quilt
 			| Self::Paper

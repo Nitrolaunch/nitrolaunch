@@ -7,6 +7,7 @@ pub struct Tips;
 
 const OFFSET: f32 = 14.0;
 const FLIP_MARGIN: f32 = 180.0;
+const MAX_WIDTH: f32 = 250.0;
 
 impl Component for Tips {
 	fn render(&self) -> impl IntoElement {
@@ -23,9 +24,9 @@ impl Component for Tips {
 		let place_bottom = window.height - tip.y < FLIP_MARGIN;
 
 		let available_width = if place_right {
-			(tip.x - OFFSET).max(0.0)
+			(tip.x - OFFSET).clamp(0.0, MAX_WIDTH)
 		} else {
-			(window.width - tip.x - OFFSET).max(0.0)
+			(window.width - tip.x - OFFSET).clamp(0.0, MAX_WIDTH)
 		};
 		let available_height = if place_bottom {
 			(tip.y - OFFSET).max(0.0)

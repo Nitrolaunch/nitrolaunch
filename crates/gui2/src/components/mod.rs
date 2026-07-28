@@ -316,6 +316,20 @@ impl<T: EventHandlersExt> CustomEvents for T {
 	// }
 }
 
+pub trait ButtonExt {
+	fn active(self, theme: &Theme) -> Self;
+}
+
+impl ButtonExt for Button {
+	fn active(self, theme: &Theme) -> Self {
+		self.color(theme.primary)
+			.border_fill(theme.primary)
+			.focus_border_fill(theme.primary)
+			.background(theme.primary_bg)
+			.hover_background(theme.primary_bg)
+	}
+}
+
 pub fn grid<T: IntoElement + 'static>(cols: u8, items: impl IntoIterator<Item = T>) -> Grid {
 	Grid {
 		cols,

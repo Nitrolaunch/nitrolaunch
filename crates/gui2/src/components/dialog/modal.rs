@@ -213,7 +213,9 @@ impl Component for Modal {
 							.cont()
 							.center()
 							.font_weight(FontWeight::BOLD)
-							.child(icon(&self.title_icon, 16.0))
+							.maybe(!self.title_icon.is_empty(), |this| {
+								this.child(icon(&self.title_icon, 16.0))
+							})
 							.child(self.title.as_str()),
 					)
 					.child(

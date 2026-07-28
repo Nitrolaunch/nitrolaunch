@@ -27,11 +27,11 @@ impl Component for OutputIndicator {
 			}
 		});
 
-		let event_rx = front_state.read().subscribe_events();
+		let front_state2 = front_state.clone();
 		use_future(move || {
-			let mut event_rx = event_rx.resubscribe();
-
+			let front_state2 = front_state2.clone();
 			async move {
+				let mut event_rx = front_state2.read().subscribe_events();
 				loop {
 					let Ok(ev) = event_rx.recv().await else {
 						continue;

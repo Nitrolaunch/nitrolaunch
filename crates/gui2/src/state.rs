@@ -37,7 +37,17 @@ use crate::{
 		dialog::{tip::Tip, toast::Toast},
 		footer::FooterItem,
 		instance::transfer::InstanceTransferMode,
-	}, data::LauncherData, dependency::BackDependency, instance_manager::RunningInstanceManager, ops::task::{Task, TaskManager}, output::{LauncherOutput, OutputInner}, pages::{config::ConfiguredItem, settings}, routing::{Navigator, Page}, secrets::get_ms_client_id, theme::Theme, util::Shared,
+	},
+	data::LauncherData,
+	dependency::BackDependency,
+	instance_manager::RunningInstanceManager,
+	ops::task::{Task, TaskManager},
+	output::{LauncherOutput, OutputInner},
+	pages::{config::ConfiguredItem, settings},
+	routing::{Navigator, Page},
+	secrets::get_ms_client_id,
+	theme::Theme,
+	util::Shared,
 };
 
 /// Global state for frontend / UI related things. Only usable on the freya thread.

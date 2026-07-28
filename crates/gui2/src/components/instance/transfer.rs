@@ -294,6 +294,23 @@ impl Component for MigrateContents {
 			.enable(self.format.read().is_some()),
 		);
 
+		let formats2 = formats.clone();
+		let mut format2 = self.format.clone();
+		use_side_effect(move || {
+			let formats = formats2.read();
+			let formats = formats.state();
+			let formats = formats.ok();
+			if let Some(formats) = formats {
+				format2.set(
+					formats
+						.iter()
+						.filter(|x| x.migrate.is_some())
+						.next()
+						.map(|x| x.id.clone()),
+				);
+			}
+		});
+
 		let default = Vec::new();
 		let formats = formats.read();
 		let formats = formats.state();
@@ -305,7 +322,7 @@ impl Component for MigrateContents {
 			rect()
 				.expanded()
 				.child(placeholder(
-					"No formats available. Please install some from plugins.",
+					"No launcher formats available. Please install some from plugins.",
 					&theme,
 				))
 				.into_element()
@@ -318,18 +335,20 @@ impl Component for MigrateContents {
 				}),
 			)
 			.panel_colorway()
-			.child(SelectOption::none())
+			.maybe_child(formats.is_empty() || self.format.read().is_none(), || {
+				SelectOption::none()
+			})
 			.children(
 				formats
 					.into_iter()
 					.map(|x| SelectOption::new(Some(x.id.clone()), &x.name, Some("box"))),
 			);
-			let format_selector = field("Format", "curly_braces", &theme, format_selector);
+			let format_selector = field("Launcher", "star", &theme, format_selector);
 
 			let more_options = match &*check_migration.read().state() {
 				QueryStateData::Pending => rect()
 					.width(Size::fill())
-					.child(placeholder("Please select a format", &theme)),
+					.child(placeholder("Please select a launcher", &theme)),
 				QueryStateData::Loading { .. } => rect()
 					.width(Size::fill())
 					.child(placeholder("Checking for launcher...", &theme)),

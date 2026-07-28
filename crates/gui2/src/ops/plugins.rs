@@ -1,10 +1,11 @@
-use anyhow::Context;
+use anyhow::{Context, bail};
 use freya::query::QueriesStorage;
 use itertools::Itertools;
 use nitrolaunch::{
 	config_crate::ConfigKind,
 	plugin::{PluginManager, install::get_verified_plugins},
 	plugin_crate::plugin::PluginMetadata,
+	shared::output::{MessageContents, NitroOutput},
 };
 
 use crate::{ops::task::Task, prelude::*, simple_mutation, simple_query};
@@ -239,5 +240,57 @@ simple_query!(
 
 			Ok(out)
 		})
+	}
+);
+
+simple_mutation!(
+	name = InstallDefaultPlugins,
+	ok = (),
+	err = anyhow::Error,
+	keys = (),
+	fn run(&self, _keys: &Self::Keys) -> impl Future<Output = Result<Self::Ok, Self::Err>> {
+		let back_state = self.back_state.clone();
+
+		let default_plugins = [
+			"fabric_quilt",
+			"forge",
+			"modrinth",
+			"smithed",
+			"multimc_transfer",
+			"xmcl_transfer",
+			"themes",
+		];
+
+		let task = async move {
+			let mut o = back_state.output();
+			o.set_task(Task::InstallDefaultPlugins);
+
+			let verified_list = get_verified_plugins(&back_state.client, false)
+				.await
+				.context("Failed to get verified plugin list")?;
+
+			for (i, plugin) in default_plugins.into_iter().enumerate() {
+				let Some(plugin) = verified_list.get(plugin) else {
+					bail!("Unknown plugin '{plugin}'");
+				};
+
+				plugin
+					.install(None, &back_state.paths, &back_state.client, &mut o)
+					.await
+					.with_context(|| format!("Failed to install plugin {}", plugin.id))?;
+
+				o.display(MessageContents::Progress {
+					current: i as u32,
+					total: default_plugins.len() as u32,
+				});
+			}
+
+			Ok::<_, anyhow::Error>(())
+		};
+
+		self.back_state
+			.register_task(Task::InstallDefaultPlugins, tokio::spawn(task));
+
+		async { Ok(()) }
 	}
 );
