@@ -67,3 +67,12 @@ pub fn progress_bar(theme: &Theme, progress: f32) -> Rect {
 				.background(theme.primary),
 		)
 }
+
+pub fn status_panel(text: &str, color: Color, theme: &Theme) -> Rect {
+	rect()
+		.padding(theme.gap3)
+		.color(color)
+		.border(theme.border(color))
+		.corner_radius(theme.round)
+		.child(label().text(text.to_string()).font_size(16.0))
+}

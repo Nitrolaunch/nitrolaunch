@@ -4,7 +4,7 @@ use itertools::Itertools;
 use nitrolaunch::{
 	config::modifications::{ConfigModification, apply_modifications_and_write},
 	config_crate::account::{AccountConfig, AccountVariant},
-	core::account::{Account, AccountKind},
+	core::account::{Account, AccountID, AccountKind},
 };
 
 use crate::{
@@ -181,5 +181,57 @@ simple_mutation!(
 		_result: &Result<Self::Ok, Self::Err>,
 	) -> impl Future<Output = ()> {
 		QueriesStorage::<FetchAccounts>::try_invalidate_all()
+	}
+);
+
+// Creates a new account and logs in with it, then sets it as the current account.
+simple_mutation!(
+	name = OnboardAccount,
+	ok = (),
+	err = anyhow::Error,
+	keys = (),
+	fn run(&self, _keys: &Self::Keys) -> impl Future<Output = Result<Self::Ok, Self::Err>> {
+		let back_state = self.back_state.clone();
+
+		let task = async move {
+			let mut config = back_state.config().await?;
+			let mut o = back_state.output();
+			o.set_task(Task::LoginFirstAccount);
+
+			let id = AccountID::from("my-account");
+			let account = Account::new(AccountKind::Microsoft { xbox_uid: None }, id.clone());
+			config.accounts.add_account(account);
+
+			config
+				.accounts
+				.authenticate_account(&id, &back_state.paths.core, &back_state.client, &mut o)
+				.await?;
+
+			let mut data = back_state.data();
+			data.current_account = Some(id.to_string());
+			let _ = data.write(&back_state.paths);
+
+			let mut raw_config = back_state.raw_config().await?;
+			apply_modifications_and_write(
+				&mut raw_config,
+				vec![ConfigModification::AddAccount(
+					id.to_string(),
+					AccountConfig::Simple(AccountVariant::Microsoft),
+				)],
+				&back_state.paths,
+				&back_state.plugins,
+				&mut o,
+			)
+			.await?;
+
+			back_state.invalidate(BackDependency::Accounts);
+
+			Ok(())
+		};
+
+		self.back_state
+			.register_task(Task::LoginFirstAccount, tokio::spawn(task));
+
+		async { Ok(()) }
 	}
 );

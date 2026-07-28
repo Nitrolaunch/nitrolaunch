@@ -137,7 +137,7 @@ impl Component for AccountItem {
 			.child(SelectOption::new_custom_icon(
 				AccountKind::Microsoft { xbox_uid: None },
 				"Microsoft",
-				microsoft_icon(&theme).into_element(),
+				microsoft_icon(theme.fg).into_element(),
 			))
 			.child(SelectOption::new(AccountKind::Demo, "Demo", Some("user")))
 			.children(account_types.iter().map(|x| {

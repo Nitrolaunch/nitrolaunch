@@ -42,7 +42,7 @@ impl Component for OutputIndicator {
 								tasks.write().insert(task, TaskData::new());
 							}
 						}
-						BackEvent::OutputEndTask(task) => {
+						BackEvent::OutputEndTask { task, .. } => {
 							tasks.write().remove(&task);
 						}
 						BackEvent::OutputMessage {

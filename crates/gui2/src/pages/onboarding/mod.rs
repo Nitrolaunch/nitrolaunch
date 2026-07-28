@@ -4,17 +4,20 @@ use crate::{
 	components::{
 		dialog::modal::{Modal, ModalButton},
 		instance::transfer::{MigrateContents, on_migrate},
-		misc::{progress_bar, socials},
+		misc::{progress_bar, socials, status_panel},
 	},
 	ops::{
 		plugins::InstallDefaultPlugins,
 		task::{KillTask, Task},
 		transfer::MigrateInstances,
 	},
+	pages::onboarding::login::LoginTab,
 	prelude::*,
 	state::{BackEvent, use_launcher_data},
 	util::assets::{LOGO_LARGE, SPLASH, SPLASH2, SPLASH3},
 };
+
+mod login;
 
 #[derive(PartialEq)]
 pub struct OnboardingModal;
@@ -31,7 +34,7 @@ impl Component for OnboardingModal {
 			Tab::Welcome => welcome_tab(&theme).into_element(),
 			Tab::Plugins => PluginsTab.into_element(),
 			Tab::Migrate => MigrateTab.into_element(),
-			Tab::Accounts => rect().into_element(),
+			Tab::Accounts => LoginTab.into_element(),
 			Tab::Finished => rect().into_element(),
 		};
 
@@ -118,19 +121,12 @@ fn welcome_tab(theme: &Theme) -> impl IntoElement {
 				.main_align(Alignment::End)
 				.spacing(theme.gap3)
 				.child(
-					rect()
-						.width(Size::fill())
-						.padding(theme.gap3)
-						.panel_colorway(theme, false, false)
-						.corner_radius(theme.round)
-						.child(
-							label()
-								.color(theme.fg3)
-								.text(
-									"Keep in mind the launcher is still in beta. There's lots of features on the horizon!",
-								)
-								.font_size(16.0),
-						),
+					status_panel(
+						"Keep in mind the launcher is still in beta. There's lots of features on the horizon!",
+						theme.panel,
+						&theme,
+					)
+					.width(Size::fill()),
 				)
 				.child(socials(&theme)),
 		);
@@ -172,7 +168,10 @@ impl Component for PluginsTab {
 						} => {
 							progress2.set((current, total));
 						}
-						BackEvent::OutputEndTask(Task::InstallDefaultPlugins) => {
+						BackEvent::OutputEndTask {
+							task: Task::InstallDefaultPlugins,
+							..
+						} => {
 							progress2.set((0, 0));
 						}
 						_ => {}

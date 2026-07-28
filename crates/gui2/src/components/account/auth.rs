@@ -32,50 +32,9 @@ impl Component for MicrosoftAuthPrompt {
 		let back_state = use_consume::<BackState>();
 		let kill_task_mutation = use_mutation(Mutation::new(KillTask::new(back_state.clone())));
 
+		let body = ms_auth_info(self.url.clone(), self.device_code.clone(), &theme);
+
 		let on_close = self.on_close.clone();
-		let url = self.url.clone();
-		let url2 = url.clone();
-
-		let code_copy = field(
-			"Copy this code",
-			"copy",
-			&theme,
-			rect()
-				.padding(theme.gap)
-				.border(theme.border(theme.panel_border))
-				.corner_radius(theme.round)
-				.child(SelectableText::new().span(self.device_code.clone())),
-		);
-
-		let button = icon_text_button("globe", "Open login page", &theme)
-			.color(theme.primary)
-			.border_fill(theme.primary)
-			.background(theme.primary_bg)
-			.hover_background(theme.primary_bg)
-			.on_press(move |_| {
-				let _ = open_link(&url2);
-			});
-		let open_login_page = field(
-			"Then paste the code into the login page",
-			"globe",
-			&theme,
-			button,
-		);
-
-		let fallback = field(
-			"If the page doesn't open automatically, you can use the browser link below.",
-			"link",
-			&theme,
-			label().text(url).color(theme.fg3),
-		);
-
-		let body = rect()
-			.expanded()
-			.padding(theme.gap2)
-			.child(code_copy)
-			.child(open_login_page)
-			.child(fallback);
-
 		Modal::new("Microsoft Authentication".into(), "lock".into())
 			.on_close(move |_| {
 				on_close.call(());
@@ -84,4 +43,43 @@ impl Component for MicrosoftAuthPrompt {
 			.maybe_child(true, move || body)
 			.cancel_button()
 	}
+}
+
+pub fn ms_auth_info(url: String, device_code: String, theme: &Theme) -> Rect {
+	let code_copy = button(&theme)
+		.child(device_code.clone())
+		.on_press(move |_| {
+			let _ = Clipboard::set(device_code.clone());
+		});
+	let code_copy = field("Copy this code", "copy", &theme, code_copy);
+
+	let url2 = url.clone();
+	let button = icon_text_button("globe", "Open login page", &theme)
+		.color(theme.primary)
+		.border_fill(theme.primary)
+		.background(theme.primary_bg)
+		.hover_background(theme.primary_bg)
+		.on_press(move |_| {
+			let _ = open_link(&url2);
+		});
+	let open_login_page = field(
+		"Then paste the code into the login page",
+		"globe",
+		&theme,
+		button,
+	);
+
+	let fallback = field(
+		"If the page doesn't open automatically, you can use the browser link below.",
+		"link",
+		&theme,
+		label().text(url).color(theme.fg3),
+	);
+
+	rect()
+		.expanded()
+		.padding(theme.gap2)
+		.child(code_copy)
+		.child(open_login_page)
+		.child(fallback)
 }

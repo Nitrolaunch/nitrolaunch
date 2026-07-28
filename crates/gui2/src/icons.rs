@@ -34,36 +34,36 @@ fn icon_impl(icon: &str) -> Cow<'static, [u8]> {
 		})
 }
 
-pub fn microsoft_icon(theme: &Theme) -> Rect {
+pub fn microsoft_icon(color: Color) -> Rect {
 	rect()
 		.width(Size::px(16.0))
 		.height(Size::px(16.0))
 		.flex()
-		.spacing(1.0)
+		.spacing(2.0)
 		.child(
 			rect()
 				.width(Size::fill())
 				.height(Size::flex(1.0))
 				.cont()
-				.spacing(1.0)
-				.child(boxy(theme))
-				.child(boxy(theme)),
+				.spacing(2.0)
+				.child(boxy(color))
+				.child(boxy(color)),
 		)
 		.child(
 			rect()
 				.width(Size::fill())
 				.height(Size::flex(1.0))
 				.cont()
-				.spacing(1.0)
-				.child(boxy(theme))
-				.child(boxy(theme)),
+				.spacing(2.0)
+				.child(boxy(color))
+				.child(boxy(color)),
 		)
 }
 
-fn boxy(theme: &Theme) -> Rect {
+fn boxy(color: Color) -> Rect {
 	rect()
 		.width(Size::flex(1.0))
 		.height(Size::flex(1.0))
-		.corner_radius(2.0)
-		.background(theme.fg)
+		.corner_radius(1.0)
+		.background(color)
 }

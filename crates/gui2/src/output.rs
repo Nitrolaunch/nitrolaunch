@@ -47,7 +47,10 @@ impl LauncherOutput {
 				contents: format!("Finished task {task:?}").into(),
 				level: MessageLevel::Debug,
 			});
-			let _ = self.inner.event_tx.send(BackEvent::OutputEndTask(task));
+			let _ = self.inner.event_tx.send(BackEvent::OutputEndTask {
+				task,
+				success: true,
+			});
 		}
 	}
 }

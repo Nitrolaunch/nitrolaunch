@@ -65,6 +65,9 @@ impl Component for Global {
 			back_state2.output().debug("Theme applied".into());
 		});
 
+		let is_onboarding = matches!(front_state.read().modal(), Some(ModalType::Onboarding))
+			|| !data.data.read().launcher_opened_before;
+
 		let front_state2 = front_state.clone();
 		use_future(move || {
 			let front_state2 = front_state2.clone();
@@ -72,9 +75,13 @@ impl Component for Global {
 				let mut event_rx = front_state2.read().subscribe_events();
 				while let Ok(event) = event_rx.recv().await {
 					match event {
-						BackEvent::ShowAuthPrompt { url, device_code } => front_state2
-							.write()
-							.set_modal(Some(ModalType::MicrosoftAuth { url, device_code })),
+						BackEvent::ShowAuthPrompt { url, device_code } => {
+							if !is_onboarding {
+								front_state2
+									.write()
+									.set_modal(Some(ModalType::MicrosoftAuth { url, device_code }))
+							}
+						}
 						BackEvent::CloseAuthPrompt => {
 							// Prevent double borrow
 							let should_close = matches!(
@@ -173,9 +180,7 @@ impl Component for Global {
 			None => None,
 		};
 
-		let simple_modal2 = if !data.data.read().launcher_opened_before
-			|| matches!(front_state.read().modal(), Some(ModalType::Onboarding))
-		{
+		let simple_modal2 = if is_onboarding {
 			Some(OnboardingModal.into_element())
 		} else {
 			None

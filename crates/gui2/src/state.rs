@@ -449,7 +449,10 @@ pub enum BackEvent {
 		task: Option<Task>,
 	},
 	OutputStartTask(Task),
-	OutputEndTask(Task),
+	OutputEndTask {
+		task: Task,
+		success: bool,
+	},
 	OutputEndProcess(Option<Task>),
 	OutputEndSection(Option<Task>),
 	OutputResolutionError {

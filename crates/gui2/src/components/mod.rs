@@ -69,16 +69,14 @@ pub fn icon_button(icon: &str, theme: &Theme) -> Button {
 }
 
 pub fn icon_text_button(icon: &str, text: &str, theme: &Theme) -> Button {
+	elem_text_button(crate::icons::icon(icon, 16.0), text, theme)
+}
+
+pub fn elem_text_button(elem: impl IntoElement, text: &str, theme: &Theme) -> Button {
 	button(theme)
 		.height(Size::px(theme.input_height))
 		.padding(theme.gap2)
-		.child(
-			rect()
-				.cont()
-				.center()
-				.child(crate::icons::icon(icon, 16.0))
-				.child(text),
-		)
+		.child(rect().cont().center().child(elem).child(text))
 }
 
 pub fn skeleton(width: Size, height: Size, theme: &Theme) -> Skeleton {

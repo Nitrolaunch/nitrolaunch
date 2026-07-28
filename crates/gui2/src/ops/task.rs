@@ -55,10 +55,18 @@ impl TaskManager {
 								Some(format!("{error:?}")),
 							));
 						}
+						let _ = self.event_tx.send(BackEvent::OutputEndTask {
+							task: task.id.clone(),
+							success: false,
+						});
 					} else if task.id.is_long_running() {
 						let _ = self
 							.event_tx
 							.send(BackEvent::SuccessToast(task.id.success_message()));
+						let _ = self.event_tx.send(BackEvent::OutputEndTask {
+							task: task.id.clone(),
+							success: true,
+						});
 					}
 				} else {
 					task.join_handle = Some(join_handle);
@@ -66,14 +74,7 @@ impl TaskManager {
 			}
 		}
 
-		self.tasks.retain(|x| {
-			if x.join_handle.is_none() {
-				let _ = self.event_tx.send(BackEvent::OutputEndTask(x.id.clone()));
-				false
-			} else {
-				true
-			}
-		});
+		self.tasks.retain(|x| x.join_handle.is_some());
 	}
 
 	/// Kills a task
@@ -83,9 +84,10 @@ impl TaskManager {
 				if let Some(join_handle) = &task.join_handle {
 					join_handle.abort();
 				}
-				let _ = self
-					.event_tx
-					.send(BackEvent::OutputEndTask(task.id.clone()));
+				let _ = self.event_tx.send(BackEvent::OutputEndTask {
+					task: task.id.clone(),
+					success: false,
+				});
 
 				println!("Task {task_id:?} cancelled");
 
@@ -137,6 +139,7 @@ pub enum Task {
 	FetchPluginVersions,
 	InstallDefaultPlugins,
 	LoginAccount,
+	LoginFirstAccount,
 	Opening,
 }
 
@@ -157,6 +160,7 @@ impl Task {
 			Self::FetchPluginVersions => false,
 			Self::InstallDefaultPlugins => true,
 			Self::LoginAccount => true,
+			Self::LoginFirstAccount => true,
 			Self::Opening => false,
 		}
 	}
@@ -177,6 +181,7 @@ impl Task {
 			Self::FetchPluginVersions => false,
 			Self::InstallDefaultPlugins => true,
 			Self::LoginAccount => true,
+			Self::LoginFirstAccount => true,
 			Self::Opening => false,
 		}
 	}
@@ -197,6 +202,7 @@ impl Task {
 			Self::FetchPluginVersions => "Plugin versions fetched".into(),
 			Self::InstallDefaultPlugins => "Plugins installed".into(),
 			Self::LoginAccount => "Logged in".into(),
+			Self::LoginFirstAccount => "Logged in".into(),
 			Self::Opening => "Opened".into(),
 		}
 	}
@@ -217,6 +223,7 @@ impl Task {
 			Self::FetchPluginVersions => "Failed to fetch plugin versions".into(),
 			Self::InstallDefaultPlugins => "Failed to install plugins".into(),
 			Self::LoginAccount => "Failed to log in".into(),
+			Self::LoginFirstAccount => "Failed to log in".into(),
 			Self::Opening => "Failed to open".into(),
 		}
 	}
@@ -239,6 +246,7 @@ impl Display for Task {
 			Self::FetchPluginVersions => write!(f, "Fetching plugin versions"),
 			Self::InstallDefaultPlugins => write!(f, "Installing plugins"),
 			Self::LoginAccount => write!(f, "Logging in"),
+			Self::LoginFirstAccount => write!(f, "Logging in"),
 			Self::Opening => write!(f, "Opening"),
 		}
 	}
