@@ -85,7 +85,19 @@ fn welcome_tab(theme: &Theme) -> impl IntoElement {
 			.corner_radius(radius)
 			.shiny_border(radius, &theme)
 			.image_cover(ImageCover::Center)
-			.aspect_ratio(AspectRatio::Max),
+			.aspect_ratio(AspectRatio::Max)
+			.child(
+				label()
+					.text("BubbleFish")
+					.position(
+						Position::new_absolute()
+							.bottom(theme.gap2)
+							.left(theme.gap2),
+					)
+					.color(theme.fg2)
+					.font_size(16.0)
+					.font_slant(FontSlant::Italic),
+			),
 	);
 
 	let padding = theme.gap3 * 2.5;

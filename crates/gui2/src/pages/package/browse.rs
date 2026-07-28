@@ -59,6 +59,10 @@ impl Component for BrowsePackagesPage {
 			total_results: 0,
 		});
 
+		if back_state.repos().is_empty() {
+			return placeholder("No package repositories available from plugins. Please install a plugin that provides package repositories.", &theme).font_size(18.0);
+		}
+
 		let results_query2 = results_query.clone();
 		let mut search_session2 = search_session.clone();
 		let mut results2 = results.clone();
