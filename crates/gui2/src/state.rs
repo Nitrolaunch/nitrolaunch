@@ -226,6 +226,7 @@ pub enum ModalType {
 	MicrosoftAuth { url: String, device_code: String },
 	Transfer(InstanceTransferMode, Option<String>),
 	Migrate,
+	Onboarding,
 }
 
 /// Global state for Nitrolaunch-related things. Thread-safe, can be passed to tokio tasks.

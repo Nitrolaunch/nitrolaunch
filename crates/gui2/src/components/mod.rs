@@ -17,9 +17,13 @@ use freya::{
 	},
 	winit::window::CursorIcon,
 };
+use freya_core::style::corner_radius::CornerRadius;
 use reqwest::Url;
 
-use crate::theme::{Colorway, Theme};
+use crate::{
+	icons::icon,
+	theme::{Colorway, Theme},
+};
 
 pub mod account;
 pub mod console;
@@ -28,6 +32,7 @@ pub mod footer;
 pub mod global;
 pub mod input;
 pub mod instance;
+pub mod misc;
 pub mod nav;
 pub mod output_indicator;
 pub mod pkg;
@@ -41,6 +46,10 @@ pub fn segment(child: impl IntoElement, width: f32) -> Rect {
 
 pub fn img(url: &str) -> ImageViewer {
 	ImageViewer::new(Url::parse(url).unwrap_or(Url::parse("https://example.com").unwrap()))
+		.error_renderer(|e| {
+			eprintln!("Image load error: {e}");
+			icon("error", 16.0).into_element()
+		})
 		.asset_age(Duration::from_mins(3))
 }
 
@@ -195,11 +204,11 @@ impl FancyBorderExt for Rect {
 
 pub trait FancyBorderExtImage {
 	/// Adds a shiny transparent border
-	fn shiny_border(self, corner_radius: f32, theme: &Theme) -> Self;
+	fn shiny_border(self, corner_radius: impl Into<CornerRadius>, theme: &Theme) -> Self;
 }
 
 impl FancyBorderExtImage for ImageViewer {
-	fn shiny_border(self, corner_radius: f32, theme: &Theme) -> Self {
+	fn shiny_border(self, corner_radius: impl Into<CornerRadius>, theme: &Theme) -> Self {
 		self.child(
 			rect()
 				.expanded()

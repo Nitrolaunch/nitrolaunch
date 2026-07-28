@@ -87,6 +87,7 @@ impl Component for SettingsModal {
 
 		let settings_state = SettingsState::new(self.is_dirty.clone());
 
+		let front_state2 = front_state.clone();
 		let back_state2 = back_state.clone();
 		let mut settings_state2 = settings_state.clone();
 		let mut on_submit_state = self.on_submit.clone();
@@ -100,7 +101,7 @@ impl Component for SettingsModal {
 			// Set up on submit callback
 			let settings_state3 = settings_state2.clone();
 			let back_state2 = back_state2.clone();
-			let front_state = front_state.clone();
+			let front_state = front_state2.clone();
 			let on_submit = move || {
 				let mut prefs = original_prefs.clone();
 				let mut data = (*original_data).clone();
@@ -146,6 +147,7 @@ impl Component for SettingsModal {
 		#[cfg(debug_assertions)]
 		let tabs = tabs.child(SelectOption::new(Tab::Debug, "Debug", Some("box")));
 
+		let front_state2 = front_state.clone();
 		let left_panel = rect()
 			.width(Size::flex(1.0))
 			.border(border_right(theme.border, theme.panel_border))
@@ -176,6 +178,14 @@ impl Component for SettingsModal {
 						is_selected: false,
 						on_select: EventHandler::from(move |_: &str| {
 							show_directory3.mutate(ShowDirectoryOption::Config);
+						}),
+						horizontal: false,
+					})
+					.child(crate::components::input::tabs::Tab {
+						option: SelectOption::new("", "Restart Onboarding", Some("refresh")),
+						is_selected: false,
+						on_select: EventHandler::from(move |_: &str| {
+							front_state2.write().set_modal(Some(ModalType::Onboarding));
 						}),
 						horizontal: false,
 					}),

@@ -5,6 +5,7 @@ use crate::{
 		footer::FooterItem,
 		input::{
 			select::Selected,
+			tabs::TopTabs,
 			text::{TextInput, search_bar},
 		},
 		instance::transfer::InstanceTransferMode,
@@ -151,9 +152,7 @@ impl Component for HomePage {
 			Some("cycle"),
 		));
 
-		let on_select_tab =
-			Rc::new(move |new_tab: Selected<Tab>| tab.clone().set(new_tab.single()));
-		let tabs = InlineSelect::new(Selected::Single(tab.read().clone()), on_select_tab)
+		let tabs = TopTabs::new(tab.clone())
 			.child(SelectOption::new(Tab::Instances, "Instances", Some("box")))
 			.child(SelectOption::new(
 				Tab::Templates,
@@ -164,21 +163,20 @@ impl Component for HomePage {
 		let bar_left = rect()
 			.width(Size::flex(1.0))
 			.height(Size::fill())
-			.spacing(theme.gap)
-			.horizontal()
+			.cont()
 			.cross_align(Alignment::Center)
 			.child(add_dropdown)
-			.child(rect().width(Size::px(300.0)).child(tabs));
+			.child(segment(tabs, 1.0));
 
 		let search_bar = search_bar(TextInput::new(search), &theme);
 
-		let bar_center = rect().width(Size::flex(1.0)).center().child(search_bar);
+		let bar_center = rect()
+			.width(Size::flex(1.0))
+			.height(Size::fill())
+			.center()
+			.child(search_bar);
 
-		let on_select_filter = Rc::new(move |new_filter: Selected<Option<Side>>| {
-			filter.clone().set(new_filter.single())
-		});
-		let filters = InlineSelect::new(Selected::Single(filter.read().clone()), on_select_filter)
-			.align_end()
+		let filters = TopTabs::new(filter.clone())
 			.child(SelectOption::new(None, "All", Some("box")))
 			.child(SelectOption::new(
 				Some(Side::Client),
@@ -194,10 +192,8 @@ impl Component for HomePage {
 		let bar_right = rect()
 			.width(Size::flex(1.0))
 			.height(Size::fill())
-			.cont()
-			.cross_align(Alignment::Center)
-			.main_align(Alignment::End)
-			.child(rect().width(Size::px(350.0)).child(filters));
+			.center()
+			.child(filters);
 
 		let bar_elem = rect()
 			.width(Size::fill())

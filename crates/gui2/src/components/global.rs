@@ -8,10 +8,10 @@ use crate::{
 		instance::transfer::{InstanceTransferModal, InstanceTransferMode, MigrateModal},
 	},
 	ops::instance::{DeleteInstance, DeleteTemplate},
-	pages::{config::ConfigPage, settings::SettingsPage},
+	pages::{config::ConfigPage, onboarding::OnboardingModal, settings::SettingsPage},
 	prelude::*,
 	routing::Page,
-	state::{BackEvent, ModalType},
+	state::{BackEvent, ModalType, use_launcher_data},
 	theme::ThemeDeser,
 };
 
@@ -23,6 +23,7 @@ impl Component for Global {
 	fn render(&self) -> impl IntoElement {
 		let front_state = use_front_state();
 		let back_state = use_consume::<BackState>();
+		let data = use_launcher_data();
 
 		front_state.read().subscribe(FrontChannel::Modal);
 
@@ -172,9 +173,18 @@ impl Component for Global {
 			None => None,
 		};
 
+		let simple_modal2 = if !data.data.read().launcher_opened_before
+			|| matches!(front_state.read().modal(), Some(ModalType::Onboarding))
+		{
+			Some(OnboardingModal.into_element())
+		} else {
+			None
+		};
+
 		rect()
 			.child(ConfigPage)
 			.child(SettingsPage)
 			.maybe_child(simple_modal)
+			.maybe_child(simple_modal2)
 	}
 }

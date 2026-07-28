@@ -6,6 +6,8 @@ pub const MODAL_MEDIUM_WIDTH: f32 = 800.0;
 pub const MODAL_MEDIUM_HEIGHT: f32 = 600.0;
 pub const MODAL_LARGE_WIDTH: f32 = 1000.0;
 pub const MODAL_LARGE_HEIGHT: f32 = 750.0;
+pub const MODAL_XLARGE_WIDTH: f32 = 1200.0;
+pub const MODAL_XLARGE_HEIGHT: f32 = 750.0;
 
 /// Base modal with no title or buttons
 #[derive(PartialEq)]
@@ -75,6 +77,7 @@ pub struct Modal {
 	on_close: EventHandler<()>,
 	title: String,
 	title_icon: String,
+	hide_titlebar: bool,
 	buttons: Vec<ModalButton>,
 }
 
@@ -86,8 +89,15 @@ impl Modal {
 			on_close: (|_| {}).into(),
 			title,
 			title_icon,
+			hide_titlebar: false,
 			buttons: Vec::new(),
 		}
+	}
+
+	pub fn new_no_title() -> Self {
+		let mut out = Self::new(String::new(), String::new());
+		out.hide_titlebar = true;
+		out
 	}
 
 	pub fn maybe_child<E: IntoElement>(mut self, show: bool, f: impl FnOnce() -> E) -> Self {
@@ -106,6 +116,10 @@ impl Modal {
 		self.size(MODAL_LARGE_WIDTH, MODAL_LARGE_HEIGHT)
 	}
 
+	pub fn size_xlarge(self) -> Self {
+		self.size(MODAL_XLARGE_WIDTH, MODAL_XLARGE_HEIGHT)
+	}
+
 	pub fn on_close(mut self, handler: impl Into<EventHandler<()>>) -> Self {
 		self.on_close = handler.into();
 		self
@@ -113,6 +127,13 @@ impl Modal {
 
 	pub fn button(mut self, button: ModalButton) -> Self {
 		self.buttons.push(button);
+		self
+	}
+
+	pub fn maybe_button(mut self, show: bool, button: ModalButton) -> Self {
+		if show {
+			self.buttons.push(button);
+		}
 		self
 	}
 
@@ -206,33 +227,25 @@ impl Component for Modal {
 				let buttons = self.buttons.iter().map(|x| {
 					let on_click = x.on_click.clone();
 
-					let (fg, bg, border) = if x.active {
-						(theme.primary, theme.primary_bg.into(), theme.primary.into())
-					} else {
-						(theme.fg, Color::TRANSPARENT, Color::TRANSPARENT)
-					};
+					let (fg, bg, border) = (theme.primary, theme.primary_bg, theme.primary);
 
-					rect()
-						.width(Size::flex(1.0))
-						.height(Size::fill())
-						.color(fg)
-						.background(bg)
-						.border(theme.border(border))
-						.corner_radius(theme.round2)
+					icon_text_button(&x.icon, &x.title, &theme)
+						.width(Size::px(180.0))
+						.maybe(x.active, |this| {
+							this.color(fg)
+								.background(bg)
+								.hover_background(bg)
+								.border_fill(border)
+						})
 						.on_press(move |_| on_click.call(()))
-						.clickable()
-						.center()
-						.horizontal()
-						.spacing(theme.gap)
-						.child(icon(&x.icon, 16.0))
-						.child(x.title.as_str())
 						.into_element()
 				});
 				let bottom_bar = rect()
 					.width(Size::fill())
-					.height(Size::px(36.0))
+					.padding(theme.gap)
 					.horizontal()
-					.flex()
+					.main_align(Alignment::SpaceAround)
+					.cross_align(Alignment::Center)
 					.border(border_top(theme.border, theme.panel_border))
 					.children(buttons);
 
@@ -240,7 +253,7 @@ impl Component for Modal {
 					.fill()
 					.flex()
 					.vertical()
-					.child(titlebar)
+					.maybe(!self.hide_titlebar, |this| this.child(titlebar))
 					.child(
 						rect()
 							.width(Size::fill())
