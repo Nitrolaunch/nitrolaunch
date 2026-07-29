@@ -8,22 +8,6 @@
 		"add_themes": {
 			"constant": [
 				{
-					"id": "sleek",
-					"name": "Sleek",
-					"description": "A sleek, modern dark theme",
-					"type": "base",
-					"css": "$file:sleek.css",
-					"color": "var(--bg4)"
-				},
-				{
-					"id": "minecraft",
-					"name": "Minecraft",
-					"description": "Blocky theme with the Minecraft font",
-					"type": "base",
-					"css": "$file:minecraft.css",
-					"color": "#3c8527"
-				},
-				{
 					"id": "ghost",
 					"name": "Ghost",
 					"description": "White accent colors",
@@ -32,12 +16,44 @@
 					"color": "#ffffff"
 				},
 				{
-					"id": "vertical_instance_list",
-					"name": "Vertical Instance List",
-					"description": "Tweak to the instance list",
-					"type": "overlay",
-					"css": "$file:vertical_instance_list.css",
-					"color": "#dddddd"
+					"id": "catppuccin",
+					"name": "Catppuccin (Mocha)",
+					"description": "Soft mocha color scheme",
+					"type": "base",
+					"settings": "$file:catppuccin.json",
+					"color": "#f5c2e7"
+				},
+				{
+					"id": "sunset",
+					"name": "Sunset (Dark Red)",
+					"description": "Warm sunset-inspired dark reds and oranges",
+					"type": "base",
+					"settings": "$file:sunset.json",
+					"color": "#ff6b6b"
+				},
+				{
+					"id": "matcha",
+					"name": "Matcha",
+					"description": "Soft dark green theme",
+					"type": "base",
+					"settings": "$file:matcha.json",
+					"color": "#8fbc8f"
+				},
+				{
+					"id": "nord",
+					"name": "Nord",
+					"description": "Arctic-inspired blue-gray palette",
+					"type": "base",
+					"settings": "$file:nord.json",
+					"color": "#88c0d0"
+				},
+				{
+					"id": "high_contrast",
+					"name": "High Contrast",
+					"description": "Pure black and white accessibility-focused theme",
+					"type": "base",
+					"settings": "$file:high_contrast.json",
+					"color": "#ffffff"
 				}
 			]
 		}
