@@ -14,7 +14,7 @@ use crate::{
 	pages::onboarding::login::LoginTab,
 	prelude::*,
 	state::{BackEvent, use_launcher_data},
-	util::assets::{LOGO_LARGE, SPLASH, SPLASH2, SPLASH3},
+	util::assets::{LOGO_LARGE, SPLASH, SPLASH2, SPLASH3, SPLASH5},
 };
 
 mod login;
@@ -35,7 +35,7 @@ impl Component for OnboardingModal {
 			Tab::Plugins => PluginsTab.into_element(),
 			Tab::Migrate => MigrateTab.into_element(),
 			Tab::Accounts => LoginTab.into_element(),
-			Tab::Finished => rect().into_element(),
+			Tab::Finished => done_tab(&theme).into_element(),
 		};
 
 		let next_text = if *tab.read() == Tab::Finished {
@@ -296,6 +296,38 @@ impl Component for MigrateTab {
 			.child(banner_image(SPLASH3, "splash3", true, &theme))
 			.child(right)
 	}
+}
+
+fn done_tab(theme: &Theme) -> impl IntoElement {
+	let left = banner_image(SPLASH5, "splash5", true, theme);
+
+	let padding = theme.gap3 * 2.5;
+
+	let right = rect()
+		.width(Size::flex(1.0))
+		.height(Size::fill())
+		.spacing(theme.gap3)
+		.padding(padding)
+		.cross_align(Alignment::Center)
+		.font_size(20.0)
+		.child(
+			label()
+				.font_size(24.0)
+				.font_weight(FontWeight::BOLD)
+				.text("Welcome to Nitrolaunch!"),
+		)
+		.child(
+			label()
+				.color(theme.fg2)
+				.text("Now go create your first instance and start playing!"),
+		);
+
+	rect()
+		.expanded()
+		.flex()
+		.horizontal()
+		.child(left)
+		.child(right)
 }
 
 fn banner_image(

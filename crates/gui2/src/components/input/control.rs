@@ -109,7 +109,10 @@ impl Component for ControlInput {
 						.into_element()
 				}
 			}
-			_ => rect().into_element(),
+			_ => label()
+				.text("Not supported yet")
+				.color(theme.disabled)
+				.into_element(),
 		};
 
 		let icon = self.control.icon.as_deref().unwrap_or_else(|| "properties");

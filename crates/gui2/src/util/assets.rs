@@ -13,6 +13,7 @@ pub static SPLASH: &[u8] = include_bytes!("../assets/images/splash.png");
 pub static SPLASH2: &[u8] = include_bytes!("../assets/images/splash2.png");
 pub static SPLASH3: &[u8] = include_bytes!("../assets/images/splash3.png");
 pub static SPLASH4: &[u8] = include_bytes!("../assets/images/splash4.png");
+pub static SPLASH5: &[u8] = include_bytes!("../assets/images/splash5.png");
 pub static LOGO_LARGE: &[u8] = include_bytes!("../assets/images/logo_large.png");
 pub static FABRIC: &[u8] = include_bytes!("../assets/images/fabric.png");
 pub static FOLIA: &[u8] = include_bytes!("../assets/images/folia.png");
