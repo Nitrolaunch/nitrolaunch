@@ -3,7 +3,7 @@ use std::rc::Rc;
 use nitrolaunch::{
 	config_crate::{ConfigKind, instance::make_valid_instance_id, template::TemplateConfig},
 	instance::parse_loader_config,
-	shared::{Side, versions::VersionPattern},
+	shared::{Side, util::to_string_json, versions::VersionPattern},
 };
 
 use crate::{
@@ -214,6 +214,16 @@ impl Component for GeneralTab {
 			}),
 		)
 		.panel_colorway()
+		.derived_value_owned(
+			self.config_state.version.peek().cloned().map(Some),
+			&self.parent_configs.0,
+			|x| {
+				x.instance
+					.version
+					.as_ref()
+					.map(|x| Some(to_string_json(&x)))
+			},
+		)
 		.allow_none()
 		.children(minecraft_versions);
 

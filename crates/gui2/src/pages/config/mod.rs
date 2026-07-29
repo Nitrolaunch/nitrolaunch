@@ -135,6 +135,10 @@ impl Component for ConfigModal {
 			.ok()
 			.cloned()
 			.unwrap_or_default();
+		self.config_state
+			.parent_configs
+			.clone()
+			.set_if_modified(PtrEq(parent_configs.clone()));
 
 		let controls = use_query(Query::new(
 			FetchInstanceControlsKeys {
@@ -267,6 +271,7 @@ pub struct ConfigState {
 	/// Whether we can propagate the name to the ID
 	pub is_id_dirty: State<bool>,
 	pub original_config: PtrEq<TemplateConfig>,
+	pub parent_configs: State<PtrEq<[TemplateConfig]>>,
 	pub id: State<String>,
 	pub original_id: State<String>,
 	pub from: State<Vec<String>>,
@@ -293,6 +298,7 @@ impl ConfigState {
 			is_dirty: use_state(|| false),
 			is_id_dirty: use_state(|| false),
 			original_config: PtrEq(Arc::new(TemplateConfig::default())),
+			parent_configs: use_state(|| PtrEq(Arc::default())),
 			id: use_state(|| String::new()),
 			original_id: use_state(|| String::new()),
 			from: use_state(|| Vec::new()),
@@ -377,7 +383,8 @@ impl ConfigState {
 		});
 		self.modpack.set_if_modified(config.instance.modpack);
 
-		self.plugin.set_if_modified(config.instance.source_plugin.clone());
+		self.plugin
+			.set_if_modified(config.instance.source_plugin.clone());
 		self.plugin_config
 			.write()
 			.update(config.instance.plugin_config.clone());
@@ -391,7 +398,12 @@ impl ConfigState {
 		if self.id.peek().is_empty() && self.ty != ConfigKind::BaseTemplate {
 			return Err(ConfigError::IdMissing);
 		}
-		if self.version.peek().is_none()
+		let final_version = final_value_owned(
+			self.version.peek().cloned(),
+			&self.parent_configs.peek().0,
+			|x| x.instance.version.as_ref().map(|x| to_string_json(&x)),
+		);
+		if final_version.is_none()
 			&& self.ty != ConfigKind::Template
 			&& self.ty != ConfigKind::BaseTemplate
 		{
@@ -416,7 +428,12 @@ impl ConfigState {
 
 		match self.ty {
 			ConfigKind::Instance => {
-				let Some(side) = self.side.peek().cloned() else {
+				let side = final_value_owned(
+					self.side.peek().cloned(),
+					&self.parent_configs.peek().0,
+					|x| x.instance.side,
+				);
+				let Some(side) = side else {
 					return Err(ConfigError::SideMissing);
 				};
 				config.instance.loader = match side {

@@ -310,7 +310,11 @@ impl<T: PartialEq + Clone> Dropdown<Option<T>> {
 
 impl<T: PartialEq + Clone> Derivable<T> for Dropdown<T> {
 	fn derived(mut self, value: Option<T>) -> Self {
-		self.derived_option = value;
+		if let Selected::Single(selected) = &self.selected
+			&& Some(selected) != value.as_ref()
+		{
+			self.derived_option = value;
+		}
 		self
 	}
 }
@@ -348,8 +352,13 @@ impl<T: PartialEq + Clone + 'static> Component for Dropdown<T> {
 		} else {
 			match &self.selected {
 				Selected::Single(selected) => {
-					if let Some(option) = self.options.iter().find(|x| x.id == *selected) {
-						dropdown_option_contents(option, fit_header, true, &theme)
+					let (actual, color) = if let Some(derived_option) = &self.derived_option {
+						(derived_option, theme.template)
+					} else {
+						(selected, theme.fg)
+					};
+					if let Some(option) = self.options.iter().find(|x| x.id == *actual) {
+						dropdown_option_contents(option, fit_header, true, &theme).color(color)
 					} else {
 						dropdown_option_contents(
 							&SelectOption::simple("Unknown option"),
@@ -431,8 +440,7 @@ impl<T: PartialEq + Clone + 'static> Component for Dropdown<T> {
 				let option = options.get(i).unwrap();
 
 				let is_selected = selected.is_selected(&option.id);
-				let is_derived =
-					!is_selected && derived_option.as_ref().is_some_and(|y| y == &option.id);
+				let is_derived = derived_option.as_ref().is_some_and(|y| y == &option.id);
 
 				DropdownOption {
 					option: option.clone(),

@@ -87,6 +87,10 @@ impl Component for InstancePage {
 			.ok()
 			.cloned()
 			.unwrap_or_default();
+		config_state
+			.parent_configs
+			.clone()
+			.set_if_modified(PtrEq(parent_configs.clone()));
 
 		let is_editable = config.read().is_editable || config_state.plugin.peek().is_none();
 		let is_deletable = config.read().is_deletable || config_state.plugin.peek().is_none();
