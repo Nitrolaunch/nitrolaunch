@@ -5,7 +5,7 @@ use std::{
 	time::SystemTime,
 };
 
-use anyhow::{Context, bail};
+use anyhow::Context;
 use nitro_core::io::{files::create_leading_dirs, json_from_file, json_to_file};
 use nitro_net::{
 	download::{self, Client},
@@ -70,7 +70,7 @@ fn main() -> anyhow::Result<()> {
 		Ok(())
 	})?;
 
-	plugin.search_custom_package_repository(|ctx, arg| {
+	plugin.search_custom_package_repository(|ctx, mut arg| {
 		if arg.repository != "smithed" {
 			return Ok(PackageSearchResults::default());
 		}
@@ -97,11 +97,12 @@ fn main() -> anyhow::Result<()> {
 				// Check if the versions are supported
 				let supported_versions =
 					get_cached_supported_versions(&smithed_dir, &client).await?;
-				for version in &arg.parameters.minecraft_versions {
-					if !supported_versions.contains(version) {
-						bail!("Version {version} is not supported by Smithed yet");
-					}
-				}
+				arg.parameters.minecraft_versions = arg
+					.parameters
+					.minecraft_versions
+					.into_iter()
+					.filter(|x| supported_versions.contains(x))
+					.collect();
 
 				let search_task = {
 					let client = client.clone();
