@@ -101,6 +101,7 @@ impl Component for ControlInput {
 
 				if *dropdown {
 					Dropdown::new(selected, on_select)
+						.panel_colorway()
 						.children(children)
 						.into_element()
 				} else {
@@ -125,6 +126,7 @@ impl Component for ControlInput {
 	}
 }
 
+#[derive(Clone)]
 pub struct ControlSection {
 	pub id: String,
 	pub name: String,
@@ -146,7 +148,7 @@ impl Default for ControlSection {
 impl ControlSection {
 	pub fn sectionize(
 		controls: &[Control],
-		default_section: &str,
+		default_section: ControlSection,
 	) -> HashMap<String, ControlSection> {
 		let mut sections: HashMap<String, ControlSection> = HashMap::new();
 
@@ -162,19 +164,19 @@ impl ControlSection {
 				section.name = section_name;
 				section.icon = section_icon;
 			} else {
-				let section_id = control
-					.section
-					.clone()
-					.unwrap_or_else(|| default_section.into());
-				let section_name = section_id.clone();
-				let section =
+				let section = if let Some(section_id) = &control.section {
 					sections
 						.entry(section_id.clone())
 						.or_insert_with(|| ControlSection {
 							id: section_id.clone(),
-							name: section_name.clone(),
+							name: section_id.clone(),
 							..Default::default()
-						});
+						})
+				} else {
+					sections
+						.entry(default_section.id.clone())
+						.or_insert_with(|| default_section.clone())
+				};
 				section.controls = section
 					.controls
 					.iter()
@@ -301,9 +303,9 @@ impl ControlledConfig {
 }
 
 pub fn filter_control(control: &Control, side: Option<Side>) -> bool {
-	if let (Some(side1), Some(side2)) = (side, control.side) {
-		side1 == side2
+	if let Some(checked_side) = &control.side {
+		side == Some(*checked_side)
 	} else {
-		false
+		true
 	}
 }

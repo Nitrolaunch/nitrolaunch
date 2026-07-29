@@ -32,7 +32,7 @@ pub fn universal_options() -> Vec<Control> {
 		{ "id": "server_options", "name": "Server Options", "icon": "server", "schema": { "type": "section" } },
 		{ "id": "control_options", "name": "Control Options", "icon": "controller", "schema": { "type": "section" } },
 		{ "id": "keybinds", "name": "Keybinds", "icon": "font", "schema": { "type": "section" } },
-		{ "id": "chat_options", "name": "Chat Options", "icon": "message", "schema": { "type": "section" } },
+		{ "id": "chat_options", "name": "Chat Options", "icon": "speech_bubble", "schema": { "type": "section" } },
 		{ "id": "video_options", "name": "Video Options", "icon": "picture", "schema": { "type": "section" } },
 		{ "id": "sound_options", "name": "Sound Options", "icon": "audio", "schema": { "type": "section" } },
 		{ "id": "rcon_options", "name": "RCON Options", "icon": "play", "schema": { "type": "section" } },
@@ -40,7 +40,7 @@ pub fn universal_options() -> Vec<Control> {
 		{ "id": "whitelist_options", "name": "Whitelist Options", "icon": "filter", "schema": { "type": "section" } },
 		{ "id": "server_world_options", "name": "World Options", "icon": "sun", "schema": { "type": "section" } },
 		{ "id": "server_datapack_options", "name": "Datapacks Options", "icon": "curly_braces", "schema": { "type": "section" } },
-		{ "id": "server_resource_pack_options", "name": "Server Resource Pack Options", "icon": "palette", "schema": { "type": "section" } },
+		{ "id": "server_resource_pack_options", "name": "Server Resource Options", "icon": "palette", "schema": { "type": "section" } },
 		{ "id": "server_management_options", "name": "Server Management Options", "icon": "sword", "schema": { "type": "section" } }
 	]))
 	.unwrap()

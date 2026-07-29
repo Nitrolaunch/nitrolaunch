@@ -20,10 +20,19 @@
 			"constant": {
 				"controls": [
 					{
+						"id": "octane",
+						"name": "Octane",
+						"icon": "lightning",
+						"schema": {
+							"type": "section"
+						}
+					},
+					{
 						"id": "octane_preset",
 						"name": "Preset",
 						"description": "Performance preset for the game",
-						"section": "Octane",
+						"icon": "lightning",
+						"section": "octane",
 						"schema": {
 							"type": "choice",
 							"variants": [
@@ -88,7 +97,8 @@
 						"id": "octane_priority",
 						"name": "CPU Priority",
 						"description": "Sets CPU priority of the game process. Often has little to no effect.",
-						"section": "Octane",
+						"icon": "server",
+						"section": "octane",
 						"schema": {
 							"type": "choice",
 							"variants": [
@@ -111,7 +121,7 @@
 									"description": "Lower priority, good if you run the game in the background"
 								}
 							],
-							"dropdown": true
+							"dropdown": false
 						}
 					}
 				]

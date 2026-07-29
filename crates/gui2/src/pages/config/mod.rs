@@ -153,7 +153,15 @@ impl Component for ConfigModal {
 			let controls = controls.read();
 			let controls = controls.state();
 			let controls = controls.ok().cloned().unwrap_or(PtrEq(Arc::default()));
-			NotEq(ControlSection::sectionize(&controls.0, "plugins"))
+			NotEq(ControlSection::sectionize(
+				&controls.0,
+				ControlSection {
+					id: "plugins".into(),
+					name: "Plugins".into(),
+					icon: "jigsaw".into(),
+					..Default::default()
+				},
+			))
 		});
 
 		let id = self.item.id.clone();
@@ -211,8 +219,7 @@ impl Component for ConfigModal {
 									Some(&section.icon),
 								)
 							}),
-					)
-					.child(SelectOption::new(Tab::Plugins, "Plugins", Some("jigsaw"))),
+					),
 			);
 
 		let tab_contents = match &*tab.read() {
@@ -228,7 +235,6 @@ impl Component for ConfigModal {
 			}
 			.into_element(),
 			Tab::Launch => rect().into_element(),
-			Tab::Plugins => rect().into_element(),
 			Tab::Custom(id) => {
 				let controls = controls.read();
 				let default = Arc::default();
@@ -257,7 +263,6 @@ enum Tab {
 	General,
 	Content,
 	Launch,
-	Plugins,
 	Custom(String),
 }
 
