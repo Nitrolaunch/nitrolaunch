@@ -184,7 +184,9 @@ impl Component for GeneralTab {
 			&self.parent_configs.0,
 			|x| x.instance.side.map(Some),
 		)
-		.maybe_child(show_none_option, || SelectOption::none())
+		.maybe_child(show_none_option, || {
+			SelectOption::new(None, "Inherit", Some("diagram"))
+		})
 		.child(
 			SelectOption::new(Some(Side::Client), "Client", Some("controller"))
 				.tip("Standard Minecraft game"),
@@ -224,7 +226,7 @@ impl Component for GeneralTab {
 					.map(|x| Some(to_string_json(&x)))
 			},
 		)
-		.allow_none()
+		.allow_inherit()
 		.children(minecraft_versions);
 
 		let version_field = rect()
@@ -341,7 +343,7 @@ impl Component for LoadersConfig {
 			}),
 		)
 		.grid(4)
-		.allow_none()
+		.allow_inherit()
 		.derived_value_owned(
 			self.config_state
 				.client_loader
@@ -378,7 +380,7 @@ impl Component for LoadersConfig {
 			}),
 		)
 		.grid(4)
-		.allow_none()
+		.allow_inherit()
 		.derived_value_owned(
 			self.config_state
 				.server_loader
@@ -434,7 +436,7 @@ impl Component for LoadersConfig {
 			}),
 		)
 		.panel_colorway()
-		.allow_none()
+		.allow_inherit()
 		.children(options);
 		let field_name = if self.config_state.ty == ConfigKind::Instance {
 			"Loader version"
@@ -472,7 +474,7 @@ impl Component for LoadersConfig {
 			}),
 		)
 		.panel_colorway()
-		.allow_none()
+		.allow_inherit()
 		.children(options);
 		let field_name = if self.config_state.ty == ConfigKind::Instance {
 			"Loader version"

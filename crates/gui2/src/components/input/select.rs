@@ -78,8 +78,15 @@ impl<T: PartialEq + Clone> InlineSelect<T> {
 }
 
 impl<T: PartialEq + Clone> InlineSelect<Option<T>> {
+	#[allow(dead_code)]
 	pub fn allow_none(mut self) -> Self {
 		self.options.push(SelectOption::none());
+		self
+	}
+
+	pub fn allow_inherit(mut self) -> Self {
+		self.options
+			.push(SelectOption::new(None, "Inherit", Some("diagram")));
 		self
 	}
 }
@@ -335,6 +342,12 @@ impl<T: PartialEq + Clone> Dropdown<T> {
 impl<T: PartialEq + Clone> Dropdown<Option<T>> {
 	pub fn allow_none(mut self) -> Self {
 		self.options.push(SelectOption::none());
+		self
+	}
+
+	pub fn allow_inherit(mut self) -> Self {
+		self.options
+			.push(SelectOption::new(None, "Inherit", Some("diagram")));
 		self
 	}
 }

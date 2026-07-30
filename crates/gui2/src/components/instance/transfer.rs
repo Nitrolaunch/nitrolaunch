@@ -87,7 +87,7 @@ impl Component for InstanceTransferModal {
 				}),
 			)
 			.panel_colorway()
-			.child(SelectOption::none())
+			.allow_none()
 			.children(
 				formats
 					.into_iter()
