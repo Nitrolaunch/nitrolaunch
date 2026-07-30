@@ -164,28 +164,29 @@ impl NitroOutput for LauncherOutput {
 
 	async fn prompt_special_package_diffs(
 		&mut self,
-		diffs: Vec<PackageDiff>,
+		_diffs: Vec<PackageDiff>,
 	) -> anyhow::Result<bool> {
-		let _ = self.inner.logger.try_send(Message {
-			contents: "Prompting for package diffs".into(),
-			level: MessageLevel::Debug,
-		});
-		self.inner.yes_no_prompt.lock().await.take();
+		return Ok(true);
+		// let _ = self.inner.logger.try_send(Message {
+		// 	contents: "Prompting for package diffs".into(),
+		// 	level: MessageLevel::Debug,
+		// });
+		// self.inner.yes_no_prompt.lock().await.take();
 
-		let _ = self
-			.inner
-			.event_tx
-			.send(BackEvent::ShowPackageDiffsPrompt { diffs });
+		// let _ = self
+		// 	.inner
+		// 	.event_tx
+		// 	.send(BackEvent::ShowPackageDiffsPrompt { diffs });
 
-		// Block this thread, checking every interval if the prompt has been filled
-		let result = loop {
-			if let Some(answer) = self.inner.yes_no_prompt.lock().await.take() {
-				break answer;
-			}
-			tokio::time::sleep(Duration::from_millis(50)).await;
-		};
+		// // Block this thread, checking every interval if the prompt has been filled
+		// let result = loop {
+		// 	if let Some(answer) = self.inner.yes_no_prompt.lock().await.take() {
+		// 		break answer;
+		// 	}
+		// 	tokio::time::sleep(Duration::from_millis(50)).await;
+		// };
 
-		Ok(result)
+		// Ok(result)
 	}
 
 	fn display_special_ms_auth(&mut self, url: &str, code: &str) {
