@@ -89,10 +89,36 @@ async fn download(bin_id: &str, filename: &str, client: &Client) -> anyhow::Resu
 		.header("User-Agent", "curl/7.68.0")
 		.body("")?;
 	let mut response = client.send(request).await?;
+
+	if response.status() == 302 {
+		let Some(location) = response.headers().get("Location") else {
+			bail!("Redirected but no location header");
+		};
+
+		let request = Request::get(
+			location
+				.to_str()
+				.context("Failed to convert location header to string")?,
+		)
+		.header("Cookie", "verified=2025-05-24")
+		.header("User-Agent", "curl/7.68.0")
+		.body("")?;
+		let mut response = client.send(request).await?;
+		let body = response.body_mut();
+		return body
+			.str_contents()
+			.await
+			.map(|x| x.to_string())
+			.context("Failed to deserialize");
+	}
+
 	if !response.status().is_success() {
 		bail!("Error returned: {}", response.status());
 	}
 
 	let body = response.body_mut();
-	body.json().await.context("Failed to deserialize")
+	body.str_contents()
+		.await
+		.map(|x| x.to_string())
+		.context("Failed to deserialize")
 }
