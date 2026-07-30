@@ -258,6 +258,7 @@ simple_mutation!(
 			"smithed",
 			"multimc_transfer",
 			"xmcl_transfer",
+			"mojang_transfer",
 			"themes",
 		];
 
