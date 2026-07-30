@@ -42,15 +42,11 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 			return Ok(serde_json::Value::Null);
 		}
 
-		let settings: Settings =
-			serde_json::from_value(arg.payload).context("Failed to deserialize argument")?;
+		let Some(id) = arg.related_id else {
+			bail!("Missing instance ID");
+		};
 
-		create_shortcut(
-			settings.instance,
-			settings.name,
-			settings.account,
-			settings.quick_play,
-		)?;
+		create_shortcut(id, None, None, None)?;
 
 		WASMPluginOutput::new().display(MessageContents::Success("Shortcut created".into()));
 
