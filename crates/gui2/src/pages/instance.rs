@@ -1,10 +1,16 @@
 use std::rc::Rc;
 
-use nitrolaunch::config_crate::{ConfigKind, instance::InstanceConfig, template::TemplateConfig};
+use nitrolaunch::{
+	config_crate::{ConfigKind, instance::InstanceConfig, template::TemplateConfig},
+	plugin_crate::hook::hooks::DropdownButtonLocation,
+};
 
 use crate::{
 	components::{
-		input::{select::Selected, tabs::SideTabs},
+		input::{
+			select::{Selected, run_dropdown_button},
+			tabs::SideTabs,
+		},
 		instance::{console::InstanceConsole, transfer::InstanceTransferMode},
 	},
 	ops::{
@@ -16,6 +22,7 @@ use crate::{
 			LaunchInstanceParams,
 		},
 		misc::{ShowDirectory, ShowDirectoryOption},
+		plugin_results::{FetchDropdownButtons, OpenCustomPopup, RunCustomAction},
 	},
 	pages::config::{ConfigState, ConfiguredItem, addons::AddonsConfig},
 	prelude::*,
@@ -51,6 +58,21 @@ impl Component for InstancePage {
 		));
 		let run_state = run_state.read().state().ok().cloned().unwrap_or_default();
 		let show_directory = use_mutation(Mutation::new(ShowDirectory::new(back_state.clone())));
+		let more_buttons = use_query(Query::new(
+			DropdownButtonLocation::InstanceMoreOptions,
+			FetchDropdownButtons::new(back_state.clone()),
+		));
+		let custom_action_mutation = use_mutation(Mutation::new(
+			RunCustomAction::new(back_state.clone()).toast(
+				&back_state,
+				None,
+				"Failed to run action",
+			),
+		));
+		let open_popup_mutation = use_mutation(Mutation::new(OpenCustomPopup::new(
+			back_state.clone(),
+			front_state.clone(),
+		)));
 
 		let tab = use_state(|| Tab::Console);
 		let config = use_state(|| InstanceConfig::default());
@@ -184,6 +206,10 @@ impl Component for InstancePage {
 
 		let id = self.id.clone();
 		let front_state2 = front_state.clone();
+		let more_buttons = more_buttons.read();
+		let more_buttons = more_buttons.state();
+		let more_buttons = more_buttons.ok().cloned().unwrap_or_default();
+		let more_buttons2 = more_buttons.clone();
 		let more_dropdown = Dropdown::new(
 			Selected::Single(MoreOption::More),
 			Rc::new(move |selected| match selected.single() {
@@ -201,6 +227,16 @@ impl Component for InstancePage {
 					front_state2
 						.write()
 						.set_modal(Some(ModalType::DeleteInstance(id.clone())));
+				}
+				MoreOption::Custom(idx) => {
+					if let Some(button) = more_buttons2.get(idx) {
+						run_dropdown_button(
+							button,
+							Some(id.clone()),
+							&custom_action_mutation,
+							&open_popup_mutation,
+						);
+					}
 				}
 			}),
 		)
@@ -222,7 +258,8 @@ impl Component for InstancePage {
 		))
 		.maybe_child(is_deletable, || {
 			SelectOption::new(MoreOption::Delete, "Delete", Some("trash"))
-		});
+		})
+		.custom_buttons(more_buttons, MoreOption::Custom);
 
 		let controls = rect()
 			.height(Size::fill())
@@ -319,4 +356,5 @@ enum MoreOption {
 	Export,
 	OpenFolder,
 	Delete,
+	Custom(usize),
 }
