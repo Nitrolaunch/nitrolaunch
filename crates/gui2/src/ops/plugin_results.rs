@@ -58,7 +58,9 @@ impl QueryCapability for FetchSupportedLoaders {
 				.call_hook(AddSupportedLoaders, &(), &back_state.paths, &mut NoOp)
 				.await?;
 
-			results.flatten_all_results(&mut NoOp).await
+			let mut out = results.flatten_all_results(&mut NoOp).await?;
+			out.insert(0, Loader::Vanilla);
+			Ok(out)
 		})
 	}
 }

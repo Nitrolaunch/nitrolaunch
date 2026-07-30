@@ -55,6 +55,7 @@ pub fn get_instance_icon(icon: Option<&str>) -> ImageSource {
 pub fn get_loader_icon(loader: &Loader) -> ImageViewer {
 	let default = ("default-instance", DEFAULT_INSTANCE);
 	let source: ImageSource = match loader {
+		Loader::Vanilla => ("minecraft", MINECRAFT).into(),
 		Loader::Fabric => ("fabric", FABRIC).into(),
 		Loader::Folia => ("folia", FOLIA).into(),
 		Loader::Forge => ("forge", FORGE).into(),
