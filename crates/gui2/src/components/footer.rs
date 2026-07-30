@@ -1,9 +1,16 @@
+use std::rc::Rc;
+
 use freya::query::QueriesStorage;
-use nitrolaunch::{config_crate::ConfigKind, shared::pkg::ArcPkgReq};
+use nitrolaunch::{
+	config_crate::ConfigKind, plugin_crate::hook::hooks::DropdownButtonLocation,
+	shared::pkg::ArcPkgReq,
+};
 
 use crate::{
 	components::{
-		instance::running_instances::RunningInstances, output_indicator::OutputIndicator,
+		input::select::{Selected, run_dropdown_button},
+		instance::running_instances::RunningInstances,
+		output_indicator::OutputIndicator,
 		pkg::install::PackageInstallModal,
 	},
 	ops::{
@@ -13,6 +20,7 @@ use crate::{
 			LaunchInstanceParams,
 		},
 		packages::FetchPackageDetails,
+		plugin_results::{FetchDropdownButtons, OpenCustomPopup, RunCustomAction},
 	},
 	prelude::*,
 	routing::Page,
@@ -73,6 +81,21 @@ impl Component for FooterButton {
 		let back_state = use_consume::<BackState>();
 		let launch_instance = use_mutation(LaunchInstance::new(back_state.clone()));
 		let kill_instance = use_mutation(KillInstance::new(back_state.clone()));
+		let more_buttons = use_query(Query::new(
+			DropdownButtonLocation::TemplateMoreOptions,
+			FetchDropdownButtons::new(back_state.clone()),
+		));
+		let custom_action_mutation = use_mutation(Mutation::new(
+			RunCustomAction::new(back_state.clone()).toast(
+				&back_state,
+				None,
+				"Failed to run action",
+			),
+		));
+		let open_popup_mutation = use_mutation(Mutation::new(OpenCustomPopup::new(
+			back_state.clone(),
+			front_state.clone(),
+		)));
 
 		let id = if let FooterItem::InstanceOrTemplate(info) = &self.item {
 			Some(info.id.clone())
@@ -110,28 +133,59 @@ impl Component for FooterButton {
 			match info.ty {
 				ConfigKind::Instance => {
 					let id = info.id.clone();
-					Some(icon_button("properties", &theme).on_press(move |_| {
-						front_state2.write().navigate(Page::Instance(id.clone()));
-					}))
+					Some(
+						icon_button("properties", &theme)
+							.on_press(move |_| {
+								front_state2.write().navigate(Page::Instance(id.clone()));
+							})
+							.into_element(),
+					)
 				}
 				ConfigKind::Template => {
-					if info.is_deletable {
-						let id = info.id.clone();
-						Some(
-							icon_button("trash", &theme)
-								.background(theme.error_bg)
-								.border_fill(theme.error)
-								.hover_background(theme.error_bg)
-								.color(theme.error)
-								.on_press(move |_| {
+					let id = info.id.clone();
+					let more_buttons = more_buttons.read();
+					let more_buttons = more_buttons.state();
+					let more_buttons = more_buttons.ok().cloned().unwrap_or_default();
+					let more_buttons2 = more_buttons.clone();
+
+					Some(
+						Dropdown::new(
+							Selected::Single(TemplateMoreOption::More),
+							Rc::new(move |selected| match selected.single() {
+								TemplateMoreOption::More => {}
+								TemplateMoreOption::Delete => {
 									front_state2
 										.write()
 										.set_modal(Some(ModalType::DeleteTemplate(id.clone())));
-								}),
+								}
+								TemplateMoreOption::Custom(idx) => {
+									if let Some(button) = more_buttons2.get(idx) {
+										run_dropdown_button(
+											button,
+											Some(id.clone()),
+											&custom_action_mutation,
+											&open_popup_mutation,
+										);
+									}
+								}
+							}),
 						)
-					} else {
-						None
-					}
+						.custom_header(SelectOption::new(
+							TemplateMoreOption::More,
+							"",
+							Some("elipsis"),
+						))
+						.header_width(Size::auto())
+						.hide_arrow()
+						.options_width(180.0)
+						.align_options_top()
+						.custom_buttons(more_buttons, TemplateMoreOption::Custom)
+						.maybe_child(info.is_deletable, || {
+							SelectOption::new(TemplateMoreOption::Delete, "Delete", Some("trash"))
+								.tip("Delete this template")
+						})
+						.into_element(),
+					)
 				}
 				ConfigKind::BaseTemplate => None,
 			}
@@ -240,6 +294,13 @@ impl Component for FooterButton {
 				})
 			})
 	}
+}
+
+#[derive(PartialEq, Clone)]
+enum TemplateMoreOption {
+	More,
+	Delete,
+	Custom(usize),
 }
 
 #[derive(PartialEq)]

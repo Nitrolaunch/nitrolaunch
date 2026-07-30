@@ -21,7 +21,7 @@ use nitrolaunch::{
 	io::{logging::Logger, paths::Paths},
 	pkg_crate::repo::RepoMetadata,
 	plugin::PluginManager,
-	plugin_crate::hook::hooks::{AddCustomPackageRepositories, AddThemes},
+	plugin_crate::hook::hooks::{self, AddCustomPackageRepositories, AddThemes},
 	shared::{
 		UpdateDepth,
 		output::{Message, MessageContents, MessageLevel, NitroOutput, NoOp},
@@ -47,7 +47,7 @@ use crate::{
 	routing::{Navigator, Page},
 	secrets::get_ms_client_id,
 	theme::Theme,
-	util::Shared,
+	util::{PtrEq, Shared},
 };
 
 /// Global state for frontend / UI related things. Only usable on the freya thread.
@@ -237,6 +237,7 @@ pub enum ModalType {
 	Transfer(InstanceTransferMode, Option<String>),
 	Migrate,
 	Onboarding,
+	CustomPopup(PtrEq<hooks::Popup>),
 }
 
 /// Global state for Nitrolaunch-related things. Thread-safe, can be passed to tokio tasks.

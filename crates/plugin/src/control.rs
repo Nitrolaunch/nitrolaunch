@@ -2,7 +2,7 @@ use nitro_shared::Side;
 use serde::{Deserialize, Serialize};
 
 /// A serializable value with a schema
-#[derive(Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, PartialEq, Default)]
 pub struct Control {
 	/// Serialized field ID of this control. Can have dots to specify nested structure.
 	pub id: String,
@@ -34,11 +34,12 @@ pub struct Control {
 }
 
 /// Schema of possible values and the interface for a controllable value, like a config field
-#[derive(Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, PartialEq, Default)]
 #[serde(rename_all = "snake_case")]
 #[serde(tag = "type")]
 pub enum ControlSchema {
 	/// True / False
+	#[default]
 	Boolean,
 	/// Define metadata for a section
 	Section,
@@ -93,6 +94,11 @@ pub enum ControlSchema {
 	Json,
 	/// A keyboard keybind, following the schema of the nitro_options crate
 	Keybind,
+	/// A button that copies text
+	CopyButton {
+		/// Text to copy
+		text: String,
+	},
 }
 
 /// Variant of a choice control

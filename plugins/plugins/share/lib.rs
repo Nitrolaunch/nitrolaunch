@@ -3,6 +3,7 @@ use std::{
 	io::BufReader,
 	path::{Path, PathBuf},
 	str::FromStr,
+	vec,
 };
 
 use anyhow::{Context, bail};
@@ -11,11 +12,20 @@ use nitro_instance::addon::{get_addon_dirs, get_resource_pack_dir};
 use nitro_plugin::{
 	api::wasm::{
 		WASMPlugin,
+		output::WASMPluginOutput,
 		sys::{get_current_dir, get_data_dir},
 	},
+	control::{Control, ControlSchema},
+	hook::hooks::{Popup, PopupButton},
 	nitro_wasm_plugin,
 };
-use nitro_shared::{Side, id::InstanceID, minecraft::AddonKind, versions::VersionInfo};
+use nitro_shared::{
+	Side,
+	id::InstanceID,
+	minecraft::AddonKind,
+	output::{MessageContents, NitroOutput},
+	versions::VersionInfo,
+};
 use wstd::{http::Client, runtime::block_on};
 use zip::{ZipWriter, write::SimpleFileOptions};
 
@@ -162,31 +172,100 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 		Ok(())
 	})?;
 
-	plugin.custom_action(|arg| {
-		if arg.id == "export_template" {
-			let serde_json::Value::String(id) = arg.payload else {
-				bail!("Incorrect argument type");
+	plugin.get_popup(|arg| {
+		if arg.id == "import_template" {
+			Ok(Popup {
+				plugin: "share".into(),
+				title: "Import Template".into(),
+				title_icon: "download".into(),
+				controls: vec![
+					Control {
+						id: "code".into(),
+						name: "Template Code".into(),
+						icon: Some("font".into()),
+						description: Some("Paste the template code here".into()),
+						schema: ControlSchema::String { lowercase: true },
+						..Default::default()
+					},
+					Control {
+						id: "id".into(),
+						name: "Template ID".into(),
+						icon: Some("hashtag".into()),
+						description: Some("Enter the unique ID for the new template".into()),
+						schema: ControlSchema::String { lowercase: true },
+						..Default::default()
+					},
+				],
+				buttons: vec![
+					PopupButton {
+						title: "Cancel".into(),
+						icon: "delete".into(),
+						closes: true,
+						..Default::default()
+					},
+					PopupButton {
+						title: "Import".into(),
+						icon: "download".into(),
+						action: Some("import_template".into()),
+						closes: true,
+						active: true,
+						..Default::default()
+					},
+				],
+				..Default::default()
+			})
+		} else if arg.id == "export_template" {
+			let Some(id) = arg.payload.related_id else {
+				bail!("Code missing");
 			};
 
 			let client = Client::new();
 			let code = block_on(export_template(&id, &client))?;
 
-			Ok(serde_json::Value::String(code))
-		} else if arg.id == "import_template" {
-			let serde_json::Value::Object(map) = arg.payload else {
-				bail!("Incorrect argument type");
+			Ok(Popup {
+				plugin: "share".into(),
+				title: "Export Template".into(),
+				title_icon: "upload".into(),
+				controls: vec![Control {
+					id: "code".into(),
+					name: "Template code".into(),
+					icon: Some("font".into()),
+					description: Some(
+						"Template has already been exported. Share this code with your friends!"
+							.into(),
+					),
+					schema: ControlSchema::CopyButton { text: code },
+					..Default::default()
+				}],
+				buttons: vec![PopupButton {
+					title: "Finish".into(),
+					icon: "check".into(),
+					closes: true,
+					active: true,
+					..Default::default()
+				}],
+				..Default::default()
+			})
+		} else {
+			bail!("Unknown popup id");
+		}
+	})?;
+
+	plugin.custom_action(|arg| {
+		let mut o = WASMPluginOutput::new();
+		if arg.id == "import_template" {
+			let Some(serde_json::Value::String(code)) = arg.control_state.get("code") else {
+				bail!("Code missing");
 			};
 
-			let Some(serde_json::Value::String(id)) = map.get("id") else {
-				bail!("Incorrect argument type");
-			};
-
-			let Some(serde_json::Value::String(code)) = map.get("code") else {
-				bail!("Incorrect argument type");
+			let Some(serde_json::Value::String(id)) = arg.control_state.get("id") else {
+				bail!("ID missing");
 			};
 
 			let client = Client::new();
 			block_on(import_template(id, code, &client))?;
+
+			o.display(MessageContents::Success("Template imported".into()));
 
 			Ok(serde_json::Value::Null)
 		} else {

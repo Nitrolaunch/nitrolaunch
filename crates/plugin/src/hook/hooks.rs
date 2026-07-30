@@ -820,6 +820,10 @@ pub struct CustomActionArg {
 	pub id: String,
 	/// The payload/argument for the action
 	pub payload: serde_json::Value,
+	/// Optional ID, for example an instance or template ID, from whatever triggered the action
+	pub related_id: Option<String>,
+	/// Optional state for custom controls related to the action
+	pub control_state: serde_json::Map<String, serde_json::Value>,
 }
 
 def_hook!(
@@ -832,7 +836,7 @@ def_hook!(
 );
 
 /// Button for GUI dropdowns
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct DropdownButton {
 	/// The plugin which this button is from
 	pub plugin: String,
@@ -846,14 +850,16 @@ pub struct DropdownButton {
 	pub color: Option<String>,
 	/// An optional tooltip for this button
 	pub tip: Option<String>,
-	/// The custom action to do when this button is clicked
+	/// A custom action to do when this button is clicked
 	pub action: Option<String>,
 	/// Javascript to run when this button is clicked
 	pub on_click: Option<String>,
+	/// A popup to open when this button is clicked
+	pub popup: Option<String>,
 }
 
 /// Location for a DropdownButton in the UI
-#[derive(Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
+#[derive(Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Hash)]
 #[serde(rename_all = "snake_case")]
 pub enum DropdownButtonLocation {
 	/// Button on the instances page for adding an instance or template
@@ -864,6 +870,8 @@ pub enum DropdownButtonLocation {
 	InstanceUpdate,
 	/// Button on an instance page for more options
 	InstanceMoreOptions,
+	/// Button on the action bar for more options for a selected template
+	TemplateMoreOptions,
 }
 
 def_hook!(
@@ -1317,4 +1325,55 @@ pub struct InstallModpackResult {
 	pub packages: Vec<String>,
 	/// The addons installed by this modpack
 	pub addons: Vec<Addon>,
+}
+
+def_hook!(
+	GetPopup,
+	"get_popup",
+	"Gets a popup",
+	GetPopupArg,
+	Popup,
+	1,
+	true,
+);
+
+/// Argument for the GetPopup hook
+#[derive(Serialize, Deserialize, Default)]
+pub struct GetPopupArg {
+	/// The ID of the popup
+	pub id: String,
+	/// More information from whatever triggered the popup
+	pub payload: CustomActionArg,
+}
+
+/// Result from the GetPopup hook
+#[derive(Serialize, Deserialize, Default)]
+#[serde(default)]
+pub struct Popup {
+	/// The plugin that this popup is from
+	pub plugin: String,
+	/// The title of the popup
+	pub title: String,
+	/// Icon for the title of the popup
+	pub title_icon: String,
+	/// Controls inside of the popup
+	pub controls: Vec<Control>,
+	/// Buttons at the bottom of the popup
+	pub buttons: Vec<PopupButton>,
+}
+
+/// Result from the GetPopup hook
+#[derive(Serialize, Deserialize, Default, Clone)]
+#[serde(default)]
+pub struct PopupButton {
+	/// The title of the button
+	pub title: String,
+	/// Icon for the button
+	pub icon: String,
+	/// Whether the button closes the popup when clicked
+	pub closes: bool,
+	/// Action to run when this button is clicked.
+	pub action: Option<String>,
+	/// Whether this button is active or not
+	pub active: bool,
 }

@@ -19,6 +19,7 @@ pub struct LauncherOutput {
 	inner: OutputInner,
 	/// The task that this output is running
 	task: Option<Task>,
+	show_toasts: bool,
 }
 
 impl LauncherOutput {
@@ -26,7 +27,12 @@ impl LauncherOutput {
 		Self {
 			inner: inner.clone(),
 			task: None,
+			show_toasts: false,
 		}
+	}
+
+	pub fn show_toasts(&mut self) {
+		self.show_toasts = true;
 	}
 
 	pub fn set_task(&mut self, task: Task) {
@@ -63,6 +69,29 @@ impl NitroOutput for LauncherOutput {
 
 	fn display_message(&mut self, message: Message) {
 		let _ = self.inner.logger.try_send(message.clone());
+
+		if self.show_toasts {
+			match &message.contents {
+				MessageContents::Error(e) => {
+					let message = self
+						.task
+						.as_ref()
+						.map(|x| x.failure_message())
+						.unwrap_or_else(|| "Task failed".into());
+					let _ = self
+						.inner
+						.event_tx
+						.send(BackEvent::ErrorToast(message, Some(format!("{e:?}"))));
+				}
+				MessageContents::Success(msg) => {
+					let _ = self
+						.inner
+						.event_tx
+						.send(BackEvent::SuccessToast(msg.clone()));
+				}
+				_ => {}
+			}
+		}
 
 		let _ = self.inner.event_tx.send(BackEvent::OutputMessage {
 			message: message.contents,

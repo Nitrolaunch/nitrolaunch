@@ -4,18 +4,23 @@ use crate::{
 	components::{
 		footer::FooterItem,
 		input::{
-			select::Selected,
+			select::{Selected, run_dropdown_button},
 			tabs::TopTabs,
 			text::{TextInput, search_bar},
 		},
 		instance::transfer::InstanceTransferMode,
 	},
-	ops::instance::{FetchItems, InstanceItemInfo, InstancesAndTemplates},
+	ops::{
+		instance::{FetchItems, InstanceItemInfo, InstancesAndTemplates},
+		plugin_results::{FetchDropdownButtons, OpenCustomPopup, RunCustomAction},
+	},
 	pages::{config::ConfiguredItem, home::item::InstanceListItem},
 	prelude::*,
 	state::ModalType,
 };
-use nitrolaunch::{config_crate::ConfigKind, shared::Side};
+use nitrolaunch::{
+	config_crate::ConfigKind, plugin_crate::hook::hooks::DropdownButtonLocation, shared::Side,
+};
 
 pub mod item;
 
@@ -28,6 +33,21 @@ impl Component for HomePage {
 		let back_state = use_consume::<BackState>();
 		let front_state = use_front_state();
 		let items_query = use_query(FetchItems::new(back_state.clone()));
+		let add_buttons = use_query(Query::new(
+			DropdownButtonLocation::AddTemplateOrInstance,
+			FetchDropdownButtons::new(back_state.clone()),
+		));
+		let custom_action_mutation = use_mutation(Mutation::new(
+			RunCustomAction::new(back_state.clone()).toast(
+				&back_state,
+				None,
+				"Failed to run action",
+			),
+		));
+		let open_popup_mutation = use_mutation(Mutation::new(OpenCustomPopup::new(
+			back_state.clone(),
+			front_state.clone(),
+		)));
 
 		let tab = use_state(|| Tab::Instances);
 		let filter = use_state::<Option<Side>>(|| None);
@@ -95,6 +115,10 @@ impl Component for HomePage {
 
 		let items_elem = rect().child(items_elem).width(Size::fill());
 
+		let add_buttons = add_buttons.read();
+		let add_buttons = add_buttons.state();
+		let add_buttons = add_buttons.ok().cloned().unwrap_or_default();
+		let add_buttons2 = add_buttons.clone();
 		let front_state2 = front_state.clone();
 		let add_dropdown = Dropdown::new(
 			Selected::Single(AddOption::Add),
@@ -124,6 +148,16 @@ impl Component for HomePage {
 				AddOption::MigrateInstances => {
 					front_state2.write().set_modal(Some(ModalType::Migrate))
 				}
+				AddOption::Custom(id) => {
+					if let Some(button) = add_buttons2.get(id) {
+						run_dropdown_button(
+							button,
+							None,
+							&custom_action_mutation,
+							&open_popup_mutation,
+						);
+					}
+				}
 			}),
 		)
 		.custom_header(SelectOption::new(AddOption::Add, "Add", Some("plus")))
@@ -150,7 +184,8 @@ impl Component for HomePage {
 			AddOption::MigrateInstances,
 			"Migrate Instances",
 			Some("cycle"),
-		));
+		))
+		.custom_buttons(add_buttons, AddOption::Custom);
 
 		let tabs = TopTabs::new(tab.clone())
 			.child(SelectOption::new(Tab::Instances, "Instances", Some("box")))
@@ -230,4 +265,5 @@ enum AddOption {
 	Template,
 	ImportInstance,
 	MigrateInstances,
+	Custom(usize),
 }

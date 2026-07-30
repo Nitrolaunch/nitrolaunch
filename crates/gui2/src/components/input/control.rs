@@ -110,6 +110,16 @@ impl Component for ControlInput {
 						.into_element()
 				}
 			}
+			ControlSchema::CopyButton { text } => icon_text_button("copy", "Click to copy", &theme)
+				.border_fill(theme.panel_border)
+				.focus_border_fill(theme.panel_border)
+				.on_press({
+					let text = text.clone();
+					move |_| {
+						let _ = Clipboard::set(text.clone());
+					}
+				})
+				.into_element(),
 			_ => label()
 				.text("Not supported yet")
 				.color(theme.disabled)

@@ -269,6 +269,7 @@ impl QueryCapability for FetchInstanceOrTemplateConfig {
 	}
 }
 
+#[allow(dead_code)]
 #[derive(Default, Clone)]
 pub struct InstanceOrTemplateConfigs {
 	pub main: TemplateConfig,

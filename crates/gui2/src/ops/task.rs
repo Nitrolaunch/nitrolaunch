@@ -141,6 +141,7 @@ pub enum Task {
 	LoginAccount,
 	LoginFirstAccount,
 	Opening,
+	CustomAction,
 }
 
 impl Task {
@@ -162,6 +163,7 @@ impl Task {
 			Self::LoginAccount => true,
 			Self::LoginFirstAccount => true,
 			Self::Opening => false,
+			Self::CustomAction => false,
 		}
 	}
 
@@ -183,6 +185,7 @@ impl Task {
 			Self::LoginAccount => true,
 			Self::LoginFirstAccount => true,
 			Self::Opening => false,
+			Self::CustomAction => false,
 		}
 	}
 
@@ -204,6 +207,7 @@ impl Task {
 			Self::LoginAccount => "Logged in".into(),
 			Self::LoginFirstAccount => "Logged in".into(),
 			Self::Opening => "Opened".into(),
+			Self::CustomAction => "Action completed".into(),
 		}
 	}
 
@@ -225,6 +229,7 @@ impl Task {
 			Self::LoginAccount => "Failed to log in".into(),
 			Self::LoginFirstAccount => "Failed to log in".into(),
 			Self::Opening => "Failed to open".into(),
+			Self::CustomAction => "Failed to run action".into(),
 		}
 	}
 }
@@ -248,6 +253,7 @@ impl Display for Task {
 			Self::LoginAccount => write!(f, "Logging in"),
 			Self::LoginFirstAccount => write!(f, "Logging in"),
 			Self::Opening => write!(f, "Opening"),
+			Self::CustomAction => write!(f, "Running"),
 		}
 	}
 }

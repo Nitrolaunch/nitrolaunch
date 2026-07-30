@@ -130,6 +130,11 @@ impl Modal {
 		self
 	}
 
+	pub fn buttons(mut self, buttons: impl IntoIterator<Item = ModalButton>) -> Self {
+		self.buttons.extend(buttons);
+		self
+	}
+
 	pub fn maybe_button(mut self, show: bool, button: ModalButton) -> Self {
 		if show {
 			self.buttons.push(button);

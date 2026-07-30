@@ -1,6 +1,19 @@
 use std::rc::Rc;
 
-use crate::{components::input::Derivable, prelude::*, theme::Colorway};
+use freya::query::UseMutation;
+use nitrolaunch::plugin_crate::hook::hooks::DropdownButton;
+
+use crate::{
+	components::input::Derivable,
+	ops::{
+		ToastedMutation,
+		plugin_results::{
+			OpenCustomPopup, OpenCustomPopupKeys, RunCustomAction, RunCustomActionKeys,
+		},
+	},
+	prelude::*,
+	theme::Colorway,
+};
 
 #[derive(PartialEq)]
 pub struct InlineSelect<T: PartialEq + Clone> {
@@ -203,6 +216,7 @@ pub struct Dropdown<T: PartialEq + Clone> {
 	custom_header: Option<SelectOption<T>>,
 	options_width: Option<f32>,
 	align_options_right: bool,
+	align_options_top: bool,
 	header_width: Size,
 	panel_colorway: bool,
 	hide_arrow: bool,
@@ -221,6 +235,7 @@ impl<T: PartialEq + Clone> Dropdown<T> {
 			custom_header: None,
 			options_width: None,
 			align_options_right: false,
+			align_options_top: false,
 			header_width: Size::fill(),
 			panel_colorway: false,
 			hide_arrow: false,
@@ -260,6 +275,17 @@ impl<T: PartialEq + Clone> Dropdown<T> {
 		self
 	}
 
+	pub fn custom_buttons(
+		mut self,
+		buttons: impl IntoIterator<Item = DropdownButton>,
+		to_id: impl Fn(usize) -> T,
+	) -> Self {
+		for (i, button) in buttons.into_iter().enumerate() {
+			self = self.child(SelectOption::from_dropdown_button(to_id(i), button));
+		}
+		self
+	}
+
 	pub fn on_open_change(mut self, handler: impl Into<EventHandler<bool>>) -> Self {
 		self.on_open_change = Some(handler.into());
 		self
@@ -282,6 +308,11 @@ impl<T: PartialEq + Clone> Dropdown<T> {
 
 	pub fn align_options_right(mut self) -> Self {
 		self.align_options_right = true;
+		self
+	}
+
+	pub fn align_options_top(mut self) -> Self {
+		self.align_options_top = true;
 		self
 	}
 
@@ -463,14 +494,17 @@ impl<T: PartialEq + Clone + 'static> Component for Dropdown<T> {
 			.map(Size::px)
 			.unwrap_or_else(|| Size::fill());
 		let options_position = if self.align_options_right {
-			Position::new_absolute()
-				.right(0.0)
-				.top(theme.input_height + 8.0)
+			Position::new_absolute().right(0.0)
 		} else {
-			Position::new_absolute()
-				.left(0.0)
-				.top(theme.input_height + 8.0)
+			Position::new_absolute().left(0.0)
 		};
+		let offset = theme.input_height + 8.0;
+		let options_position = if self.align_options_top {
+			options_position.bottom(offset)
+		} else {
+			options_position.top(offset)
+		};
+
 		let options = rect()
 			.width(options_width)
 			.maybe(fit_header && self.options_width.is_none(), |this| {
@@ -636,6 +670,17 @@ impl<T: PartialEq + Clone> SelectOption<T> {
 		}
 	}
 
+	pub fn from_dropdown_button(id: T, button: DropdownButton) -> Self {
+		Self {
+			id,
+			title: button.text,
+			icon: Some(icon(&button.icon, 16.0).into_element()),
+			tip: button.tip,
+			selected_colorway: None,
+			action_button: None,
+		}
+	}
+
 	pub fn tip(mut self, tip: &str) -> Self {
 		self.tip = Some(tip.into());
 		self
@@ -728,5 +773,29 @@ impl<T: PartialEq + Clone> Selected<T> {
 				Self::Multi(list)
 			}
 		}
+	}
+}
+
+pub fn run_dropdown_button(
+	button: &DropdownButton,
+	related_id: Option<String>,
+	custom_action: &UseMutation<ToastedMutation<RunCustomAction>>,
+	open_popup: &UseMutation<OpenCustomPopup>,
+) {
+	if let Some(action) = &button.action {
+		custom_action.mutate(RunCustomActionKeys {
+			plugin: button.plugin.clone(),
+			action: action.clone(),
+			params: serde_json::Value::Null,
+			related_id: related_id.clone(),
+			control_state: serde_json::Map::new(),
+		});
+	}
+	if let Some(popup) = &button.popup {
+		open_popup.mutate(OpenCustomPopupKeys {
+			plugin: button.plugin.clone(),
+			popup_id: popup.clone(),
+			related_id,
+		});
 	}
 }

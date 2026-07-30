@@ -4,7 +4,7 @@ use nitrolaunch::shared::output::NitroOutput;
 use crate::{
 	components::{
 		account::auth::MicrosoftAuthPrompt,
-		dialog::modal::Modal,
+		dialog::{custom_popup::CustomPopupModal, modal::Modal},
 		instance::transfer::{InstanceTransferModal, InstanceTransferMode, MigrateModal},
 	},
 	ops::instance::{DeleteInstance, DeleteTemplate},
@@ -175,6 +175,12 @@ impl Component for Global {
 					}
 				}),
 				ModalType::Migrate => Some(MigrateModal.into_element()),
+				ModalType::CustomPopup(popup) => Some(
+					CustomPopupModal {
+						popup: popup.clone(),
+					}
+					.into_element(),
+				),
 				_ => None,
 			},
 			None => None,
