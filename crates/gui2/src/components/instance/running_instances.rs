@@ -4,9 +4,10 @@ use crate::{
 	dependency::BackDependency,
 	ops::{
 		instance::{FetchItems, InstanceItemInfo},
-		launch::{FetchRunningInstances, KillInstance},
+		launch::FetchRunningInstances,
 	},
 	prelude::*,
+	routing::Page,
 	state::BackEvent,
 	util::assets::get_instance_icon,
 };
@@ -20,12 +21,12 @@ impl Component for RunningInstances {
 	fn render(&self) -> impl IntoElement {
 		let back_state = use_consume::<BackState>();
 		let front_state = use_front_state();
-		let event_tx = front_state.read().subscribe_events();
 		let items_query = use_query(FetchItems::new(back_state.clone()));
 		let running_instances = use_query(FetchRunningInstances::new(back_state));
 
+		let front_state2 = front_state.clone();
 		use_future(move || {
-			let mut event_tx = event_tx.resubscribe();
+			let mut event_tx = front_state2.read().subscribe_events();
 			async move {
 				loop {
 					if let Ok(BackEvent::UpdateRunningInstances) = event_tx.recv().await {
@@ -90,39 +91,22 @@ struct RunningInstance {
 impl Component for RunningInstance {
 	fn render(&self) -> impl IntoElement {
 		let theme = use_theme();
-		let is_hovered = use_state(|| false);
-		let back_state = use_consume::<BackState>();
-		let on_kill = use_mutation(KillInstance::new(back_state));
+		let front_state = use_front_state();
 
 		let icon = get_instance_icon(self.item.icon.as_deref());
 
 		let id = self.instance_id.clone();
-		let account = self.account.clone();
-		let out = rect()
+		rect()
 			.center()
 			.width(Size::px(ITEM_SIZE))
 			.height(Size::px(ITEM_SIZE))
-			.item_colorway(&theme, *is_hovered.read(), false)
-			.corner_radius(ITEM_SIZE / 2.0)
-			.hover(is_hovered)
-			.on_press(move |_| on_kill.mutate((id.clone(), account.clone())))
+			.corner_radius(theme.round)
+			.tip(&front_state, &id)
+			.on_press(move |_| front_state.write().navigate(Page::Instance(id.clone())))
 			.child(
 				ImageViewer::new(icon)
 					.width(Size::px(24.0))
 					.height(Size::px(24.0)),
-			);
-
-		let indicator = if *is_hovered.read() {
-			Some(
-				rect()
-					.padding(6.0)
-					.margin((0.0, 0.0, 8.0, 0.0))
-					.child(self.instance_id.as_str()),
 			)
-		} else {
-			None
-		};
-
-		Attached::new(out).top().maybe_child(indicator)
 	}
 }
