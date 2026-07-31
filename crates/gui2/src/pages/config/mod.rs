@@ -275,7 +275,7 @@ pub struct ConfigState {
 	pub is_dirty: State<bool>,
 	/// Whether we can propagate the name to the ID
 	pub is_id_dirty: State<bool>,
-	pub original_config: PtrEq<TemplateConfig>,
+	pub original_config: State<PtrEq<TemplateConfig>>,
 	pub parent_configs: State<PtrEq<[TemplateConfig]>>,
 	pub id: State<String>,
 	pub original_id: State<String>,
@@ -302,7 +302,7 @@ impl ConfigState {
 			is_new,
 			is_dirty: use_state(|| false),
 			is_id_dirty: use_state(|| false),
-			original_config: PtrEq(Arc::new(TemplateConfig::default())),
+			original_config: use_state(|| PtrEq(Arc::new(TemplateConfig::default()))),
 			parent_configs: use_state(|| PtrEq(Arc::default())),
 			id: use_state(|| String::new()),
 			original_id: use_state(|| String::new()),
@@ -321,30 +321,32 @@ impl ConfigState {
 			plugin_config: use_state(|| ControlledConfig::default()),
 		};
 
+		let out2 = out.clone();
 		use_side_effect(move || {
-			out.id.read();
-			out.from.read();
-			out.name.read();
-			out.icon.read();
-			out.side.read();
-			out.version.read();
-			out.client_loader.read();
-			out.server_loader.read();
-			out.client_loader_version.read();
-			out.server_loader_version.read();
-			out.packages.read();
-			out.modpack.read();
-			out.plugin.read();
-			out.plugin_config.read();
+			out2.id.read();
+			out2.from.read();
+			out2.name.read();
+			out2.icon.read();
+			out2.side.read();
+			out2.version.read();
+			out2.client_loader.read();
+			out2.server_loader.read();
+			out2.client_loader_version.read();
+			out2.server_loader_version.read();
+			out2.packages.read();
+			out2.modpack.read();
+			out2.plugin.read();
+			out2.plugin_config.read();
 
-			out.is_dirty.clone().set(true);
+			out2.is_dirty.clone().set(out2.has_changed());
 		});
 
 		out
 	}
 
 	pub fn update(&mut self, id: Option<String>, config: TemplateConfig) {
-		self.original_config = PtrEq(Arc::new(config.clone()));
+		self.original_config
+			.set_if_modified(PtrEq(Arc::new(config.clone())));
 
 		if let Some(id) = id {
 			self.id.set_if_modified(id.clone());
@@ -399,7 +401,7 @@ impl ConfigState {
 	}
 
 	pub fn apply(&mut self) -> Result<TemplateConfig, ConfigError> {
-		let mut config = (*self.original_config.0).clone();
+		let mut config = (*self.original_config.peek().0).clone();
 		if self.id.peek().is_empty() && self.ty != ConfigKind::BaseTemplate {
 			return Err(ConfigError::IdMissing);
 		}
@@ -480,8 +482,9 @@ impl ConfigState {
 		}
 
 		config.instance.source_plugin = self.plugin.peek().clone();
-		self.plugin_config.write().optimize();
-		config.instance.plugin_config = self.plugin_config.peek().data().clone();
+		let mut plugin_config = self.plugin_config.peek().cloned();
+		plugin_config.optimize();
+		config.instance.plugin_config = plugin_config.into_data();
 
 		self.is_dirty.set_if_modified(false);
 		self.is_id_dirty.set_if_modified(false);
@@ -526,6 +529,18 @@ impl ConfigState {
 
 			true
 		}
+	}
+
+	fn has_changed(&self) -> bool {
+		if self.is_new {
+			return true;
+		}
+
+		let Ok(new_config) = self.clone().apply() else {
+			return false;
+		};
+
+		new_config != *self.original_config.peek().0 || *self.original_id.peek() != *self.id.peek()
 	}
 }
 

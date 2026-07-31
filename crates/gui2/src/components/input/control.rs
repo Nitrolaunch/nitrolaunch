@@ -239,7 +239,7 @@ impl Component for Controls {
 	}
 }
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct ControlledConfig {
 	data: serde_json::Map<String, Value>,
 }
@@ -251,6 +251,10 @@ impl ControlledConfig {
 
 	pub fn data(&self) -> &serde_json::Map<String, Value> {
 		&self.data
+	}
+
+	pub fn into_data(self) -> serde_json::Map<String, Value> {
+		self.data
 	}
 
 	pub fn get(&self, key: &str) -> Option<&Value> {

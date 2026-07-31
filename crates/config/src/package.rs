@@ -9,7 +9,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 /// Different representations for the configuration of a package in deserialization
-#[derive(Deserialize, Serialize, Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[serde(untagged)]
 pub enum PackageConfigDeser {
@@ -20,7 +20,7 @@ pub enum PackageConfigDeser {
 }
 
 /// Full configuration for a package
-#[derive(Deserialize, Serialize, Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 pub struct FullPackageConfig {
 	/// The ID of the pcakage

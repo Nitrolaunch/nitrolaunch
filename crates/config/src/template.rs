@@ -13,7 +13,7 @@ use super::instance::InstanceConfig;
 use super::package::PackageConfigDeser;
 
 /// Configuration for a template
-#[derive(Deserialize, Serialize, Clone, Default)]
+#[derive(Deserialize, Serialize, Clone, Default, PartialEq, Debug)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 pub struct TemplateConfig {
 	/// The configuration for the instance
@@ -61,7 +61,7 @@ impl TemplateConfig {
 }
 
 /// Different representations of loader configuration on a template
-#[derive(Deserialize, Serialize, Debug, Clone)]
+#[derive(Deserialize, Serialize, Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[serde(untagged)]
 pub enum TemplateLoaderConfiguration {
@@ -114,7 +114,7 @@ impl TemplateLoaderConfiguration {
 }
 
 /// Different representations of package configuration on a template
-#[derive(Deserialize, Serialize, Debug, Clone)]
+#[derive(Deserialize, Serialize, Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[serde(untagged)]
 pub enum TemplatePackageConfiguration {

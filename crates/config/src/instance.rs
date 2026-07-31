@@ -14,7 +14,7 @@ use serde::{Deserialize, Serialize};
 use super::package::PackageConfigDeser;
 
 /// Configuration for an instance
-#[derive(Deserialize, Serialize, Clone, Debug, Default)]
+#[derive(Deserialize, Serialize, Clone, Debug, Default, PartialEq)]
 #[serde(default)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 pub struct InstanceConfig {
