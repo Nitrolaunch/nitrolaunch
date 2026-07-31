@@ -72,6 +72,14 @@ impl InstanceLockfile {
 		let mut files_to_remove = Vec::new();
 		let req = req.to_string_no_version();
 
+		let existing_package_addons: Vec<LockfileAddon> = self
+			.contents
+			.addons
+			.iter()
+			.filter(|addon| addon.is_from_package(&req))
+			.cloned()
+			.collect();
+
 		// Update the package
 		if let Some(pkg) = self.contents.packages.get_mut(&req) {
 			pkg.content_version = content_version;
@@ -100,9 +108,7 @@ impl InstanceLockfile {
 				continue;
 			};
 
-			if let Some(current) = self
-				.contents
-				.addons
+			if let Some(current) = existing_package_addons
 				.iter()
 				.find(|x| x.is_package_addon(&req, addon_id))
 			{
@@ -312,4 +318,478 @@ pub struct LockfileModpack {
 	pub path: String,
 	/// Suppressed packages of the modpack
 	pub packages: Vec<String>,
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+	use std::path::PathBuf;
+
+	fn create_test_lockfile() -> InstanceLockfile {
+		InstanceLockfile {
+			contents: InstanceLockfileContents {
+				minecraft_version: Some("1.20.1".to_string()),
+				loader: Loader::Fabric,
+				loader_version: Some("0.14.0".to_string()),
+				packages: HashMap::new(),
+				addons: Vec::new(),
+				modpack: None,
+			},
+			path: PathBuf::from("/tmp/test_lock.json"),
+		}
+	}
+
+	#[test]
+	fn test_update_package_new_package() {
+		let mut lockfile = create_test_lockfile();
+		let req = PkgRequest::parse("test-pkg", PkgRequestSource::UserRequire);
+
+		let addon = LockfileAddon {
+			id: Some("addon1".to_string()),
+			package: Some("test-pkg".to_string()),
+			from_modpack: false,
+			file_name: "addon1.jar".to_string(),
+			files: vec!["mods/addon1.jar".to_string()],
+			kind: AddonKind::Mod,
+			hashes: AddonOptionalHashes::default(),
+		};
+
+		let files_to_remove =
+			lockfile.update_package(&req, &[addon.clone()], Some("1.0.0".to_string()));
+
+		assert_eq!(files_to_remove.len(), 0);
+		assert_eq!(lockfile.contents.packages.len(), 1);
+		assert_eq!(lockfile.contents.addons.len(), 1);
+		assert_eq!(
+			lockfile.contents.packages["test-pkg"].content_version,
+			Some("1.0.0".to_string())
+		);
+	}
+
+	#[test]
+	fn test_update_package_version_change() {
+		let mut lockfile = create_test_lockfile();
+		let req = PkgRequest::parse("test-pkg", PkgRequestSource::UserRequire);
+
+		// Initial version
+		lockfile.update_package(&req, &[], Some("1.0.0".to_string()));
+
+		// Update to new version
+		let addon = LockfileAddon {
+			id: Some("addon1".to_string()),
+			package: Some("test-pkg".to_string()),
+			from_modpack: false,
+			file_name: "addon1.jar".to_string(),
+			files: vec!["mods/addon1.jar".to_string()],
+			kind: AddonKind::Mod,
+			hashes: AddonOptionalHashes::default(),
+		};
+
+		lockfile.update_package(&req, &[addon], Some("2.0.0".to_string()));
+
+		assert_eq!(
+			lockfile.contents.packages["test-pkg"].content_version,
+			Some("2.0.0".to_string())
+		);
+	}
+
+	#[test]
+	fn test_update_package_addon_file_changed() {
+		let mut lockfile = create_test_lockfile();
+		let req = PkgRequest::parse("test-pkg", PkgRequestSource::UserRequire);
+
+		// Initial addon with old file
+		let old_addon = LockfileAddon {
+			id: Some("addon1".to_string()),
+			package: Some("test-pkg".to_string()),
+			from_modpack: false,
+			file_name: "addon1_old.jar".to_string(),
+			files: vec!["mods/addon1_old.jar".to_string()],
+			kind: AddonKind::Mod,
+			hashes: AddonOptionalHashes::default(),
+		};
+
+		lockfile.update_package(&req, &[old_addon], None);
+
+		// Update with new file
+		let new_addon = LockfileAddon {
+			id: Some("addon1".to_string()),
+			package: Some("test-pkg".to_string()),
+			from_modpack: false,
+			file_name: "addon1_new.jar".to_string(),
+			files: vec!["mods/addon1_new.jar".to_string()],
+			kind: AddonKind::Mod,
+			hashes: AddonOptionalHashes::default(),
+		};
+
+		let files_to_remove = lockfile.update_package(&req, &[new_addon], None);
+
+		assert_eq!(files_to_remove.len(), 1);
+		assert_eq!(files_to_remove[0], PathBuf::from("mods/addon1_old.jar"));
+		assert_eq!(lockfile.contents.addons.len(), 1);
+		assert_eq!(lockfile.contents.addons[0].file_name, "addon1_new.jar");
+	}
+
+	#[test]
+	fn test_update_package_addon_removed() {
+		let mut lockfile = create_test_lockfile();
+		let req = PkgRequest::parse("test-pkg", PkgRequestSource::UserRequire);
+
+		// Initial addons
+		let addon1 = LockfileAddon {
+			id: Some("addon1".to_string()),
+			package: Some("test-pkg".to_string()),
+			from_modpack: false,
+			file_name: "addon1.jar".to_string(),
+			files: vec!["mods/addon1.jar".to_string()],
+			kind: AddonKind::Mod,
+			hashes: AddonOptionalHashes::default(),
+		};
+
+		let addon2 = LockfileAddon {
+			id: Some("addon2".to_string()),
+			package: Some("test-pkg".to_string()),
+			from_modpack: false,
+			file_name: "addon2.jar".to_string(),
+			files: vec!["mods/addon2.jar".to_string()],
+			kind: AddonKind::Mod,
+			hashes: AddonOptionalHashes::default(),
+		};
+
+		lockfile.update_package(&req, &[addon1.clone(), addon2], None);
+
+		// Update to only keep addon1
+		let files_to_remove = lockfile.update_package(&req, &[addon1], None);
+
+		assert_eq!(files_to_remove.len(), 1);
+		assert_eq!(files_to_remove[0], PathBuf::from("mods/addon2.jar"));
+		assert_eq!(lockfile.contents.addons.len(), 1);
+	}
+
+	#[test]
+	fn test_update_package_multiple_files_per_addon() {
+		let mut lockfile = create_test_lockfile();
+		let req = PkgRequest::parse("test-pkg", PkgRequestSource::UserRequire);
+
+		// Addon with multiple files
+		let addon_old = LockfileAddon {
+			id: Some("addon1".to_string()),
+			package: Some("test-pkg".to_string()),
+			from_modpack: false,
+			file_name: "addon1.jar".to_string(),
+			files: vec![
+				"mods/addon1.jar".to_string(),
+				"config/addon1.toml".to_string(),
+			],
+			kind: AddonKind::Mod,
+			hashes: AddonOptionalHashes::default(),
+		};
+
+		lockfile.update_package(&req, &[addon_old], None);
+
+		// Update: remove config file
+		let addon_new = LockfileAddon {
+			id: Some("addon1".to_string()),
+			package: Some("test-pkg".to_string()),
+			from_modpack: false,
+			file_name: "addon1.jar".to_string(),
+			files: vec!["mods/addon1.jar".to_string()],
+			kind: AddonKind::Mod,
+			hashes: AddonOptionalHashes::default(),
+		};
+
+		let files_to_remove = lockfile.update_package(&req, &[addon_new], None);
+
+		assert_eq!(files_to_remove.len(), 1);
+		assert!(
+			files_to_remove
+				.iter()
+				.any(|x| x == &PathBuf::from("config/addon1.toml"))
+		);
+	}
+
+	#[test]
+	fn test_remove_unused_packages() {
+		let mut lockfile = create_test_lockfile();
+		let req1 = PkgRequest::parse("pkg1", PkgRequestSource::UserRequire);
+		let req2 = PkgRequest::parse("pkg2", PkgRequestSource::UserRequire);
+
+		// Add two packages with addons
+		let addon1 = LockfileAddon {
+			id: Some("addon1".to_string()),
+			package: Some("pkg1".to_string()),
+			from_modpack: false,
+			file_name: "addon1.jar".to_string(),
+			files: vec!["mods/addon1.jar".to_string()],
+			kind: AddonKind::Mod,
+			hashes: AddonOptionalHashes::default(),
+		};
+
+		let addon2 = LockfileAddon {
+			id: Some("addon2".to_string()),
+			package: Some("pkg2".to_string()),
+			from_modpack: false,
+			file_name: "addon2.jar".to_string(),
+			files: vec!["mods/addon2.jar".to_string()],
+			kind: AddonKind::Mod,
+			hashes: AddonOptionalHashes::default(),
+		};
+
+		lockfile.update_package(&req1, &[addon1], None);
+		lockfile.update_package(&req2, &[addon2], None);
+
+		// Only keep pkg1
+		let used = vec![Arc::new(req1)];
+		let removed_addons = lockfile.remove_unused_packages(&used).unwrap();
+
+		assert_eq!(lockfile.contents.packages.len(), 1);
+		assert!(lockfile.contents.packages.contains_key("pkg1"));
+		assert_eq!(removed_addons.len(), 1);
+		assert_eq!(removed_addons[0].file_name, "addon2.jar");
+	}
+
+	#[test]
+	fn test_update_modpack_new() {
+		let mut lockfile = create_test_lockfile();
+
+		let modpack = LockfileModpack {
+			name: "Test Modpack".to_string(),
+			path: "/path/to/modpack".to_string(),
+			packages: vec!["pkg1".to_string()],
+		};
+
+		let addon = LockfileAddon {
+			id: None,
+			package: None,
+			from_modpack: true,
+			file_name: "mod1.jar".to_string(),
+			files: vec!["mods/mod1.jar".to_string()],
+			kind: AddonKind::Mod,
+			hashes: AddonOptionalHashes::default(),
+		};
+
+		let files_to_remove = lockfile.update_modpack(modpack.clone(), &[addon.clone()]);
+
+		assert_eq!(files_to_remove.len(), 0);
+		assert_eq!(
+			lockfile.contents.modpack.as_ref().unwrap().name,
+			"Test Modpack"
+		);
+		assert_eq!(lockfile.contents.addons.len(), 1);
+		assert!(lockfile.contents.addons[0].from_modpack);
+	}
+
+	#[test]
+	fn test_update_modpack_addon_removed() {
+		let mut lockfile = create_test_lockfile();
+
+		let modpack1 = LockfileModpack {
+			name: "Modpack v1".to_string(),
+			path: "/path/to/modpack".to_string(),
+			packages: vec![],
+		};
+
+		let addon1 = LockfileAddon {
+			id: None,
+			package: None,
+			from_modpack: true,
+			file_name: "mod1.jar".to_string(),
+			files: vec!["mods/mod1.jar".to_string()],
+			kind: AddonKind::Mod,
+			hashes: AddonOptionalHashes::default(),
+		};
+
+		let addon2 = LockfileAddon {
+			id: None,
+			package: None,
+			from_modpack: true,
+			file_name: "mod2.jar".to_string(),
+			files: vec!["mods/mod2.jar".to_string()],
+			kind: AddonKind::Mod,
+			hashes: AddonOptionalHashes::default(),
+		};
+
+		lockfile.update_modpack(modpack1, &[addon1.clone(), addon2]);
+
+		// Update: keep only addon1
+		let modpack2 = LockfileModpack {
+			name: "Modpack v2".to_string(),
+			path: "/path/to/modpack".to_string(),
+			packages: vec![],
+		};
+
+		let files_to_remove = lockfile.update_modpack(modpack2, &[addon1]);
+
+		assert_eq!(files_to_remove.len(), 1);
+		assert_eq!(files_to_remove[0], "mods/mod2.jar");
+		assert_eq!(lockfile.contents.addons.len(), 1);
+	}
+
+	#[test]
+	fn test_minecraft_version_updates() {
+		let mut lockfile = create_test_lockfile();
+
+		assert_eq!(
+			lockfile.get_minecraft_version(),
+			Some(&"1.20.1".to_string())
+		);
+
+		lockfile.update_minecraft_version("1.21");
+		assert_eq!(lockfile.get_minecraft_version(), Some(&"1.21".to_string()));
+	}
+
+	#[test]
+	fn test_loader_updates() {
+		let mut lockfile = create_test_lockfile();
+
+		assert_eq!(lockfile.get_loader(), &Loader::Fabric);
+
+		lockfile.update_loader(Loader::Forge);
+		assert_eq!(lockfile.get_loader(), &Loader::Forge);
+	}
+
+	#[test]
+	fn test_loader_version_updates() {
+		let mut lockfile = create_test_lockfile();
+
+		assert_eq!(lockfile.get_loader_version(), Some(&"0.14.0".to_string()));
+
+		lockfile.update_loader_version(Some("0.15.0".to_string()));
+		assert_eq!(lockfile.get_loader_version(), Some(&"0.15.0".to_string()));
+
+		lockfile.update_loader_version(None);
+		assert_eq!(lockfile.get_loader_version(), None);
+	}
+
+	#[test]
+	fn test_mixed_addons_from_packages_and_modpack() {
+		let mut lockfile = create_test_lockfile();
+		let req = PkgRequest::parse("test-pkg", PkgRequestSource::UserRequire);
+
+		// Add addon from package
+		let pkg_addon = LockfileAddon {
+			id: Some("addon1".to_string()),
+			package: Some("test-pkg".to_string()),
+			from_modpack: false,
+			file_name: "addon1.jar".to_string(),
+			files: vec!["mods/addon1.jar".to_string()],
+			kind: AddonKind::Mod,
+			hashes: AddonOptionalHashes::default(),
+		};
+
+		lockfile.update_package(&req, &[pkg_addon], None);
+
+		// Add addon from modpack
+		let modpack = LockfileModpack {
+			name: "Test".to_string(),
+			path: "/test".to_string(),
+			packages: vec![],
+		};
+
+		let modpack_addon = LockfileAddon {
+			id: None,
+			package: None,
+			from_modpack: true,
+			file_name: "modpack_addon.jar".to_string(),
+			files: vec!["mods/modpack_addon.jar".to_string()],
+			kind: AddonKind::Mod,
+			hashes: AddonOptionalHashes::default(),
+		};
+
+		lockfile.update_modpack(modpack, &[modpack_addon]);
+
+		assert_eq!(lockfile.contents.addons.len(), 2);
+		assert_eq!(
+			lockfile
+				.contents
+				.addons
+				.iter()
+				.filter(|a| a.from_modpack)
+				.count(),
+			1
+		);
+		assert_eq!(
+			lockfile
+				.contents
+				.addons
+				.iter()
+				.filter(|a| !a.from_modpack)
+				.count(),
+			1
+		);
+	}
+
+	#[test]
+	fn test_update_package_preserves_non_package_addons() {
+		let mut lockfile = create_test_lockfile();
+		let req = PkgRequest::parse("test-pkg", PkgRequestSource::UserRequire);
+
+		// Add addon from package
+		let pkg_addon = LockfileAddon {
+			id: Some("addon1".to_string()),
+			package: Some("test-pkg".to_string()),
+			from_modpack: false,
+			file_name: "addon1.jar".to_string(),
+			files: vec!["mods/addon1.jar".to_string()],
+			kind: AddonKind::Mod,
+			hashes: AddonOptionalHashes::default(),
+		};
+
+		// Add standalone addon (not from package)
+		let standalone_addon = LockfileAddon {
+			id: Some("standalone".to_string()),
+			package: None,
+			from_modpack: false,
+			file_name: "standalone.jar".to_string(),
+			files: vec!["mods/standalone.jar".to_string()],
+			kind: AddonKind::Mod,
+			hashes: AddonOptionalHashes::default(),
+		};
+
+		lockfile.contents.addons.push(standalone_addon);
+		lockfile.update_package(&req, &[pkg_addon], None);
+
+		// Update package (which should not affect standalone addon)
+		let updated_addon = LockfileAddon {
+			id: Some("addon1".to_string()),
+			package: Some("test-pkg".to_string()),
+			from_modpack: false,
+			file_name: "addon1_v2.jar".to_string(),
+			files: vec!["mods/addon1_v2.jar".to_string()],
+			kind: AddonKind::Mod,
+			hashes: AddonOptionalHashes::default(),
+		};
+
+		lockfile.update_package(&req, &[updated_addon], None);
+
+		assert_eq!(lockfile.contents.addons.len(), 2);
+		assert!(
+			lockfile
+				.contents
+				.addons
+				.iter()
+				.any(|a| a.id == Some("standalone".to_string()))
+		);
+	}
+
+	#[test]
+	fn test_addon_without_id() {
+		let mut lockfile = create_test_lockfile();
+		let req = PkgRequest::parse("test-pkg", PkgRequestSource::UserRequire);
+
+		// Addon without ID (skipped in update_package loop)
+		let addon_no_id = LockfileAddon {
+			id: None,
+			package: Some("test-pkg".to_string()),
+			from_modpack: false,
+			file_name: "addon_no_id.jar".to_string(),
+			files: vec!["mods/addon_no_id.jar".to_string()],
+			kind: AddonKind::Mod,
+			hashes: AddonOptionalHashes::default(),
+		};
+
+		lockfile.update_package(&req, &[addon_no_id], None);
+
+		assert_eq!(lockfile.contents.addons.len(), 1);
+	}
 }
