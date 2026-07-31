@@ -224,6 +224,7 @@ pub struct Dropdown<T: PartialEq + Clone> {
 	options_width: Option<f32>,
 	align_options_right: bool,
 	align_options_top: bool,
+	options_position: Option<Position>,
 	header_width: Size,
 	panel_colorway: bool,
 	hide_arrow: bool,
@@ -243,6 +244,7 @@ impl<T: PartialEq + Clone> Dropdown<T> {
 			options_width: None,
 			align_options_right: false,
 			align_options_top: false,
+			options_position: None,
 			header_width: Size::fill(),
 			panel_colorway: false,
 			hide_arrow: false,
@@ -320,6 +322,11 @@ impl<T: PartialEq + Clone> Dropdown<T> {
 
 	pub fn align_options_top(mut self) -> Self {
 		self.align_options_top = true;
+		self
+	}
+
+	pub fn options_position(mut self, position: Position) -> Self {
+		self.options_position = Some(position);
 		self
 	}
 
@@ -506,16 +513,21 @@ impl<T: PartialEq + Clone + 'static> Component for Dropdown<T> {
 			.options_width
 			.map(Size::px)
 			.unwrap_or_else(|| Size::fill());
-		let options_position = if self.align_options_right {
-			Position::new_absolute().right(0.0)
+
+		let options_position = if let Some(position) = &self.options_position {
+			position.clone()
 		} else {
-			Position::new_absolute().left(0.0)
-		};
-		let offset = theme.input_height + 8.0;
-		let options_position = if self.align_options_top {
-			options_position.bottom(offset)
-		} else {
-			options_position.top(offset)
+			let options_position = if self.align_options_right {
+				Position::new_absolute().right(0.0)
+			} else {
+				Position::new_absolute().left(0.0)
+			};
+			let offset = theme.input_height + 8.0;
+			if self.align_options_top {
+				options_position.bottom(offset)
+			} else {
+				options_position.top(offset)
+			}
 		};
 
 		let options = rect()

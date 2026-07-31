@@ -68,7 +68,7 @@ impl Component for AddonsConfig {
 		let update = use_mutation(Mutation::new(UpdateInstance::new(back_state.clone())));
 		let data = use_launcher_data();
 
-		let filter = use_state(|| Filter::All);
+		let filter = use_state(|| Filter::Configured);
 		let pkg_ty = use_state::<Option<PackageKind>>(|| None);
 		let search = use_state(|| String::new());
 		let side = use_state::<Option<Side>>(|| None);
@@ -128,6 +128,7 @@ impl Component for AddonsConfig {
 				))
 				.into_element()
 		} else {
+			let config_state = self.config_state.clone();
 			VirtualScrollView::new_with_data(
 				(
 					packages.read().cloned(),
@@ -140,6 +141,7 @@ impl Component for AddonsConfig {
 					ContentItemElem {
 						item: item.clone(),
 						packages: packages.0.clone(),
+						config_state: config_state.clone(),
 						is_open: open_states.contains(&item.id.to_string()),
 					}
 					.into_element()
@@ -152,17 +154,20 @@ impl Component for AddonsConfig {
 			.into_element()
 		};
 
-		let on_select_filter =
-			Rc::new(move |new_filter: Selected<Filter>| filter.clone().set(new_filter.single()));
-		let filters = Dropdown::new(Selected::Single(filter.read().clone()), on_select_filter)
+		let filters = Dropdown::from_state(filter.clone())
 			.header_width(Size::flex(1.0))
 			.options_width(180.0)
-			.child(SelectOption::new(Filter::All, "All", Some("asterisk")))
+			.child(SelectOption::new(
+				Filter::Configured,
+				"Configured",
+				Some("gear"),
+			))
 			.child(SelectOption::new(
 				Filter::Dependencies,
 				"Dependencies",
 				Some("diagram"),
-			));
+			))
+			.child(SelectOption::new(Filter::All, "All", Some("asterisk")));
 
 		let pkg_ty2 = pkg_ty.clone();
 		let ty_selector = Dropdown::new(
@@ -318,13 +323,15 @@ impl Component for AddonsConfig {
 
 #[derive(PartialEq, Clone)]
 enum Filter {
-	All,
+	Configured,
 	Dependencies,
+	All,
 }
 
 struct ContentItemElem {
 	item: ContentItem,
 	packages: Arc<HashMap<ArcPkgReq, anyhow::Result<PkgInfo>>>,
+	config_state: ConfigState,
 	is_open: bool,
 }
 
@@ -412,6 +419,36 @@ impl Component for ContentItemElem {
 			}
 		};
 
+		let header_size = 16.0 + theme.gap * 2.0;
+		let config_state2 = self.config_state.clone();
+		let item2 = self.item.clone();
+		let more_dropdown = Dropdown::new(
+			Selected::Single(ItemMoreDropdown::More),
+			Rc::new(move |selected| match selected.single() {
+				ItemMoreDropdown::More => {}
+				ItemMoreDropdown::Remove => match &item2.ty {
+					ContentItemType::Modpack { .. } | ContentItemType::Addon => {}
+					ContentItemType::Package { req } => {
+						config_state2.packages.clone().write().remove_package(req);
+					}
+				},
+			}),
+		)
+		.custom_header(SelectOption::new(
+			ItemMoreDropdown::More,
+			"",
+			Some("elipsis"),
+		))
+		.header_width(Size::px(header_size))
+		.hide_arrow()
+		.options_width(180.0)
+		.options_position(Position::new_absolute().right(header_size + theme.gap))
+		.child(SelectOption::new(
+			ItemMoreDropdown::Remove,
+			"Remove",
+			Some("trash"),
+		));
+
 		let mut badges = Vec::new();
 		if self.item.is_configured && !(self.item.is_locked && self.item.files_exist) {
 			badges.push(
@@ -436,6 +473,10 @@ impl Component for ContentItemElem {
 					.tip(&front_state, &kind.to_string_pretty())
 					.into_element(),
 			);
+		}
+
+		if self.item.is_package() && self.item.is_configured {
+			badges.push(more_dropdown.into_element());
 		}
 
 		rect()
@@ -483,6 +524,12 @@ impl Component for ContentItemElem {
 		self.item.id.hash(&mut key);
 		DiffKey::U64(key.finish())
 	}
+}
+
+#[derive(PartialEq, Clone)]
+enum ItemMoreDropdown {
+	More,
+	Remove,
 }
 
 #[derive(PartialEq, Clone, PartialOrd, Eq, Ord, Debug)]
@@ -693,6 +740,8 @@ fn filter_sort_items(
 
 	items.retain(|x| {
 		if *filter == Filter::Dependencies && !x.is_configured && x.is_locked {
+			return false;
+		} else if *filter == Filter::Configured && !x.is_configured {
 			return false;
 		}
 

@@ -2,7 +2,9 @@ use std::borrow::Cow;
 use std::fmt::Display;
 
 use anyhow::bail;
-use nitro_shared::pkg::{PackageID, PackageStability, is_valid_package_id};
+use nitro_shared::pkg::{
+	PackageID, PackageStability, PkgRequest, PkgRequestSource, is_valid_package_id,
+};
 use nitro_shared::util::{DefaultExt, is_valid_identifier};
 #[cfg(feature = "schema")]
 use schemars::JsonSchema;
@@ -89,6 +91,11 @@ impl PackageConfigDeser {
 			Self::Basic(id) => id.clone(),
 			Self::Full(cfg) => cfg.id.clone(),
 		}
+	}
+
+	/// Get the package request of the config
+	pub fn get_req(&self) -> PkgRequest {
+		PkgRequest::parse(&self.get_pkg_id(), PkgRequestSource::UserRequire)
 	}
 
 	/// Get the features of the config

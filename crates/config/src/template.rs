@@ -238,39 +238,75 @@ impl TemplatePackageConfiguration {
 		}
 	}
 
-	/// Adds a package to the global list
-	pub fn add_global_package(&mut self, pkg: PackageConfigDeser) {
-		match self {
-			Self::Simple(global) => global.push(pkg),
-			Self::Full { global, .. } => global.push(pkg),
+	/// Adds a package to the configuration
+	pub fn add_package(&mut self, pkg: PackageConfigDeser, side: Option<Side>) {
+		match side {
+			Some(Side::Client) => match self {
+				Self::Simple(global) => {
+					*self = Self::Full {
+						global: global.clone(),
+						client: vec![pkg],
+						server: Vec::new(),
+					}
+				}
+				Self::Full { client, .. } => client.push(pkg),
+			},
+			Some(Side::Server) => match self {
+				Self::Simple(global) => {
+					*self = Self::Full {
+						global: global.clone(),
+						client: Vec::new(),
+						server: vec![pkg],
+					}
+				}
+				Self::Full { server, .. } => server.push(pkg),
+			},
+			None => match self {
+				Self::Simple(global) => global.push(pkg),
+				Self::Full { global, .. } => global.push(pkg),
+			},
 		}
 	}
 
-	/// Adds a package to the client list
-	pub fn add_client_package(&mut self, pkg: PackageConfigDeser) {
+	/// Removes a package from the configuration
+	pub fn remove_package(&mut self, req: &PkgRequest) {
 		match self {
 			Self::Simple(global) => {
-				*self = Self::Full {
-					global: global.clone(),
-					client: vec![pkg],
-					server: Vec::new(),
-				}
+				global.retain(|pkg| pkg.get_req() != *req);
 			}
-			Self::Full { client, .. } => client.push(pkg),
+			Self::Full {
+				global,
+				client,
+				server,
+			} => {
+				client.retain(|pkg| pkg.get_req() != *req);
+				server.retain(|pkg| pkg.get_req() != *req);
+				global.retain(|pkg| pkg.get_req() != *req);
+			}
 		}
 	}
 
-	/// Adds a package to the server list
-	pub fn add_server_package(&mut self, pkg: PackageConfigDeser) {
+	/// Removes a package from the configuration, only on the specified side
+	pub fn remove_package_from_side(&mut self, req: &PkgRequest, side: Option<Side>) {
 		match self {
 			Self::Simple(global) => {
-				*self = Self::Full {
-					global: global.clone(),
-					client: Vec::new(),
-					server: vec![pkg],
-				}
+				global.retain(|pkg| pkg.get_req() != *req);
 			}
-			Self::Full { server, .. } => server.push(pkg),
+			Self::Full {
+				global,
+				client,
+				server,
+			} => match side {
+				Some(Side::Client) => {
+					client.retain(|pkg| pkg.get_req() != *req);
+				}
+				Some(Side::Server) => {
+					server.retain(|pkg| pkg.get_req() != *req);
+				}
+				None => {
+					global.retain(|pkg| pkg.get_req() != *req);
+				}
+			},
 		}
 	}
 }

@@ -401,11 +401,7 @@ impl MutationCapability for InstallPackage {
 					let mut template = template.clone();
 
 					let pkg = PackageConfigDeser::Basic(keys.0.to_string().into());
-					match side {
-						Some(Side::Client) => template.packages.add_client_package(pkg),
-						Some(Side::Server) => template.packages.add_server_package(pkg),
-						None => template.packages.add_global_package(pkg),
-					}
+					template.packages.add_package(pkg, side);
 
 					ConfigModification::UpdateTemplate(template_id.clone(), template)
 				}
@@ -413,11 +409,7 @@ impl MutationCapability for InstallPackage {
 					let mut template = raw_config.base_template.clone().unwrap_or_default();
 
 					let pkg = PackageConfigDeser::Basic(keys.0.to_string().into());
-					match side {
-						Some(Side::Client) => template.packages.add_client_package(pkg),
-						Some(Side::Server) => template.packages.add_server_package(pkg),
-						None => template.packages.add_global_package(pkg),
-					}
+					template.packages.add_package(pkg, side);
 
 					raw_config.base_template = Some(template);
 					apply_modifications_and_write(
