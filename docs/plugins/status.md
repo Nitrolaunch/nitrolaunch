@@ -3,52 +3,53 @@
 Status for progress developing each plugin
 
 ✅ = Implemented
-❌ = Not implemented / subpar
-🔅 = Not planned / not applicable
+🔅 = Partially implemented
+❌ = Not implemented / unfinished
+⚪ = Not planned / applicable
 
 | Plugin           | CLI Status | GUI Status |
 | ---------------- | ---------- | ---------- |
-| addon_share      | ✅         | ❌         |
-| args             | ✅         | ✅         |
 | auto_mcs         | ✅         | ✅         |
 | automate         | ✅         | ❌         |
 | backup           | ✅         | ❌         |
-| beet             | ✅         | 🔅         |
+| beet             | ✅         | ⚪         |
 | better_jsons     | ✅         | ✅         |
 | cleanup          | ✅         | ❌         |
-| completions      | ✅         | 🔅         |
+| completions      | ✅         | ⚪         |
 | config_split     | ✅         | ✅         |
-| curseforge_api   | ✅         | 🔅         |
+| curseforge_api   | ✅         | ⚪         |
 | custom_files     | ✅         | ❌         |
 | discord_status   | ❌         | ❌         |
-| docs             | ✅         | 🔅         |
+| docs             | ✅         | ⚪         |
+| doctor           | ✅         | ❌         |
 | extra_versions   | ✅         | ✅         |
 | fabric_quilt     | ✅         | ✅         |
-| forge            | ✅         | ✅         |
+| forge            | 🔅         | 🔅         |
 | gamepad          | 🔅         | ✅         |
-| gen_pkg          | ✅         | 🔅         |
+| gen_pkg          | ✅         | ⚪         |
 | glfw_fix         | ✅         | ✅         |
+| guardian         | ✅         | 🔅         |
 | graalvm          | ✅         | ✅         |
 | lang             | ❌         | ❌         |
-| modpacks         | ❌         | ❌         |
 | modrinth         | ✅         | ✅         |
-| modrinth_api     | ✅         | 🔅         |
+| modrinth_api     | ✅         | ⚪         |
 | mojang_transfer  | ✅         | ✅         |
 | multimc_transfer | ✅         | ✅         |
-| multiply         | ✅         | 🔅         |
+| multiply         | ✅         | ⚪         |
 | nitro_transfer   | ✅         | ✅         |
-| options          | ✅         | ❌         |
+| octane           | ✅         | ✅         |
+| options          | ✅         | 🔅         |
 | packhost         | ✅         | ❌         |
 | paper            | ✅         | ✅         |
 | server_restart   | ✅         | ❌         |
-| shortcut         | ✅         | ❌         |
+| shortcut         | ✅         | ✅         |
 | smithed          | ✅         | ✅         |
-| smithed_api      | ✅         | 🔅         |
+| smithed_api      | ✅         | ⚪         |
+| share            | ✅         | 🔅         |
 | sponge           | ✅         | ✅         |
-| stats            | ✅         | ✅         |
-| template_share   | ✅         | ✅         |
-| themes           | 🔅         | ✅         |
-| webtools         | ✅         | ✅         |
-| weld             | ✅         | ✅         |
+| stats            | ✅         | 🔅         |
+| themes           | ⚪         | ✅         |
+| webtools         | ✅         | ❌         |
+| weld             | ✅         | 🔅         |
 | xmcl_transfer    | ✅         | ✅         |
 | zulu             | ✅         | ✅         |
