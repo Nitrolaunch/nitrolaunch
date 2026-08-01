@@ -1,3 +1,5 @@
+use nitrolaunch::shared::util::open_link;
+
 use crate::{
 	components::{account::AccountSelector, dialog::toast::Toasts, input::tabs::TopTabs},
 	pages::settings,
@@ -60,7 +62,12 @@ impl Component for NavBar {
 			.cont()
 			.cross_align(Alignment::Center)
 			.padding(3.0)
-			.child(rect().margin(3.0).child(settings_button))
+			.child(
+				rect()
+					.margin(3.0)
+					.tip(&front_state, "Settings")
+					.child(settings_button),
+			)
 			.child(rect().margin(3.0).child(back_button))
 			.child(rect().margin(3.0).child(forward_button));
 
@@ -78,6 +85,10 @@ impl Component for NavBar {
 			.flex()
 			.child(buttons);
 
+		let help_button = icon_button("question_mark", &theme).on_press(|_| {
+			let _ = open_link("https://nitrolaunch.github.io/nitrolaunch");
+		});
+
 		let right = rect()
 			.height(Size::fill())
 			.width(Size::flex(1.0))
@@ -86,7 +97,13 @@ impl Component for NavBar {
 			.center()
 			.main_align(Alignment::End)
 			.child(AccountSelector)
-			.child(Toasts);
+			.child(Toasts)
+			.child(
+				rect()
+					.margin(3.0)
+					.tip(&front_state, "Help")
+					.child(help_button),
+			);
 
 		rect()
 			.width(Size::fill())
