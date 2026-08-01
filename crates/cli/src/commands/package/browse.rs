@@ -1712,7 +1712,7 @@ async fn worker_thread(
 
 						config
 							.packages
-							.add_global_package(PackageConfigDeser::Basic(req.to_string().into()));
+							.add_package(PackageConfigDeser::Basic(req.to_string().into()), None);
 
 						ConfigModification::UpdateTemplate(id, config)
 					}

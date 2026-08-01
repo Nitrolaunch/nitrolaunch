@@ -1,4 +1,5 @@
 use nitrolaunch::{
+	config_crate::ConfigKind,
 	pkg_crate::{metadata::PackageMetadata, properties::PackageProperties},
 	shared::{
 		pkg::{ArcPkgReq, PackageKind},
@@ -13,8 +14,12 @@ use crate::{
 	},
 	ops::{
 		instance::{FetchItems, InstanceItemInfo, InstancesAndTemplates},
-		packages::{InstallPackage, PackageInstallLocation},
+		packages::{
+			CheckPackageCompatability, CheckPackageCompatabilityKeys, InstallPackage,
+			PackageCompatabilityError, PackageInstallLocation,
+		},
 	},
+	pages::config::ConfiguredItem,
 	prelude::*,
 	util::{PtrEq, assets::get_instance_icon},
 };
@@ -39,9 +44,52 @@ impl Component for PackageInstallModal {
 			),
 		));
 		let items_query = use_query(FetchItems::new(back_state.clone()));
+
 		let tab = use_state(|| Tab::Instance);
 		let selected_item = use_state::<Option<String>>(|| None);
 		let new_instance_id = use_state(|| String::new());
+
+		let selected_config_item = match &*tab.read() {
+			Tab::Instance => {
+				if let Some(selected) = selected_item.read().clone() {
+					Some(ConfiguredItem {
+						ty: ConfigKind::Instance,
+						id: Some(selected),
+						is_new: false,
+					})
+				} else {
+					None
+				}
+			}
+			Tab::Template => {
+				if let Some(selected) = selected_item.read().clone() {
+					Some(ConfiguredItem {
+						ty: ConfigKind::Template,
+						id: Some(selected),
+						is_new: false,
+					})
+				} else {
+					None
+				}
+			}
+			Tab::BaseTemplate | Tab::ModpackInstance => None,
+		};
+		let enable = selected_config_item.is_some() || matches!(&*tab.read(), Tab::BaseTemplate);
+		let compatability_check = use_query(
+			Query::new(
+				CheckPackageCompatabilityKeys {
+					item: selected_config_item.unwrap_or(ConfiguredItem {
+						ty: ConfigKind::BaseTemplate,
+						id: None,
+						is_new: false,
+					}),
+					package: self.req.clone(),
+				},
+				CheckPackageCompatability::new(back_state.clone()),
+			)
+			.enable(enable),
+		);
+		let compatability_err = compatability_check.read().state().ok().cloned().flatten();
 
 		let tab2 = tab.clone();
 		let mut selected_item2 = selected_item.clone();
@@ -122,17 +170,60 @@ impl Component for PackageInstallModal {
 				.into_element(),
 		};
 
-		let contents = rect().flex().child(tabs).child(version_indicator).child(
-			rect()
-				.width(Size::fill())
-				.height(Size::flex(1.0))
-				.child(tab_contents),
-		);
+		let base_error = rect()
+			.width(Size::fill())
+			.position(Position::new_absolute().bottom(theme.gap))
+			.margin((0.0, theme.gap2))
+			.layer(Layer::Relative(12))
+			.padding(theme.gap2)
+			.cont()
+			.main_align(Alignment::Start)
+			.cross_align(Alignment::Center)
+			.corner_radius(theme.round);
+		let error = if let Some(error) = &compatability_err {
+			let message = match error {
+				PackageCompatabilityError::WrongMinecraftVersion => {
+					"Package does not support this Minecraft version"
+				}
+				PackageCompatabilityError::WrongLoader => "Package does not support this loader",
+			};
+			Some(
+				base_error
+					.color(theme.warning)
+					.background(theme.error_bg)
+					.border(theme.border(theme.warning))
+					.child(icon("warning", 16.0))
+					.child(message),
+			)
+		} else if compatability_check.read().state().is_loading() {
+			Some(
+				base_error
+					.background(theme.panel)
+					.border(theme.border(theme.panel_border))
+					.child(CircularLoader::new().size(16.0))
+					.child("Checking package compatibility..."),
+			)
+		} else {
+			None
+		};
+
+		let contents = rect()
+			.flex()
+			.child(tabs)
+			.child(version_indicator)
+			.child(
+				rect()
+					.width(Size::fill())
+					.height(Size::flex(1.0))
+					.child(tab_contents),
+			)
+			.maybe_child(error);
 
 		let is_save_ready = match &*tab.read() {
 			Tab::BaseTemplate => true,
 			_ => selected_item.read().is_some(),
 		};
+		let is_save_ready = is_save_ready && compatability_err.is_none();
 
 		let req = self.req.clone();
 		let tab = tab.clone();

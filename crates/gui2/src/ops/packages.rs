@@ -3,8 +3,8 @@ use std::{collections::HashMap, sync::Arc};
 use anyhow::Context;
 use nitrolaunch::{
 	config::modifications::{ConfigModification, apply_modifications_and_write},
-	config_crate::package::PackageConfigDeser,
-	instance::{Instance, update::manager::UpdateSettings},
+	config_crate::{ConfigKind, package::PackageConfigDeser},
+	instance::{Instance, parse_loader_config, update::manager::UpdateSettings},
 	instance_crate::{addon::Addon, lock::InstanceLockfile},
 	pkg::search::{PackageMultiSearchResults, PackageSearchSession},
 	pkg_crate::{
@@ -20,7 +20,7 @@ use nitrolaunch::{
 };
 use tokio::task::JoinSet;
 
-use crate::{ops::task::Task, prelude::*};
+use crate::{ops::task::Task, pages::config::ConfiguredItem, prelude::*, simple_query};
 
 #[derive(Clone, PartialEq, Eq, Hash)]
 pub struct FetchInstanceLockfile {
@@ -504,4 +504,117 @@ pub enum PackageInstallLocation {
 	InstanceModpack(InstanceID),
 	TemplateModpack(TemplateID),
 	NewInstanceModpack(InstanceID),
+}
+
+simple_query!(
+	name = CheckPackageCompatability,
+	ok = Option<PackageCompatabilityError>,
+	err = anyhow::Error,
+	keys = CheckPackageCompatabilityKeys,
+	fn run(&self, keys: &Self::Keys) -> impl Future<Output = Result<Self::Ok, Self::Err>> {
+		let back_state = self.back_state.clone();
+		let keys = keys.clone();
+
+		query_spawn(async move {
+			let mut o = back_state.output();
+			let config = back_state.config().await?;
+
+			let package = config
+				.packages
+				.get(&keys.package, &back_state.paths, &back_state.client, &mut o)
+				.await?;
+			let props = package
+				.get_properties(&back_state.paths, &back_state.client)
+				.await?;
+
+			let default_mc_versions = Vec::new();
+			let mc_versions = props
+				.supported_versions
+				.as_ref()
+				.unwrap_or(&default_mc_versions);
+
+			let default_loaders = Vec::new();
+			let loaders = props
+				.supported_loaders
+				.as_ref()
+				.unwrap_or(&default_loaders);
+
+			let manifest = back_state.versions().await?;
+
+			match keys.item.ty {
+				ConfigKind::Instance => {
+					let instance = config
+						.instances
+						.get(&InstanceID::from(keys.item.id.unwrap()))
+						.context("Instance does not exist")?;
+
+					let mc_version = back_state
+						.canonicalize_version(
+							Some(instance.id()),
+							ConfigKind::Instance,
+							&instance.version().clone().to_serialized(),
+						)
+						.await
+						.context("Failed to get instance version")?;
+
+					if !mc_versions.is_empty()
+						&& !mc_versions
+							.iter()
+							.any(|x| x.matches_single(&mc_version, &manifest.list))
+					{
+						return Ok(Some(PackageCompatabilityError::WrongMinecraftVersion));
+					}
+
+					if !loaders.is_empty() && !loaders.iter().any(|x| x.matches(instance.loader())) {
+						return Ok(Some(PackageCompatabilityError::WrongLoader));
+					}
+				}
+				ConfigKind::Template | ConfigKind::BaseTemplate => {
+					let id = keys.item.id;
+					let template = match keys.item.ty {
+						ConfigKind::Template => config
+							.consolidated_templates
+							.get(&TemplateID::from(id.clone().unwrap()))
+							.context("Template does not exist")?,
+						ConfigKind::BaseTemplate => &config.base_template,
+						_ => unreachable!(),
+					};
+
+					if let Some(mc_version) = &template.instance.version {
+						let mc_version = back_state
+							.canonicalize_version(id.as_deref(), ConfigKind::Template, mc_version)
+							.await
+							.context("Failed to get template version")?;
+						if !mc_versions.is_empty()
+							&& !mc_versions
+								.iter()
+								.any(|x| x.matches_single(&mc_version, &manifest.list))
+						{
+							return Ok(Some(PackageCompatabilityError::WrongMinecraftVersion));
+						}
+					}
+
+					let client_loader = template.client_loader().map(|x| parse_loader_config(x).0).unwrap_or_default();
+					let server_loader = template.server_loader().map(|x| parse_loader_config(x).0).unwrap_or_default();
+					if !loaders.is_empty() && !loaders.iter().any(|x| x.matches(&client_loader) || x.matches(&server_loader)) {
+						return Ok(Some(PackageCompatabilityError::WrongLoader));
+					}
+				}
+			}
+
+			Ok(None)
+		})
+	}
+);
+
+#[derive(Clone, PartialEq, Eq, Hash)]
+pub struct CheckPackageCompatabilityKeys {
+	pub item: ConfiguredItem,
+	pub package: ArcPkgReq,
+}
+
+#[derive(Clone)]
+pub enum PackageCompatabilityError {
+	WrongMinecraftVersion,
+	WrongLoader,
 }
