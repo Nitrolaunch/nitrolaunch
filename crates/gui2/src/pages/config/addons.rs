@@ -123,7 +123,7 @@ impl Component for AddonsConfig {
 			rect()
 				.expanded()
 				.child(placeholder(
-					"No content installed. Try adding some packages or a modpack.",
+					"Nothing to see here. Try changing your filters or adding some packages.",
 					&theme,
 				))
 				.into_element()
@@ -888,6 +888,9 @@ fn filter_sort_items(
 	let search = search.to_lowercase();
 
 	items.retain(|x| {
+		if *filter != Filter::All && x.ty == ContentItemType::Addon {
+			return false;
+		}
 		if *filter == Filter::Dependencies && x.is_configured {
 			return false;
 		} else if *filter == Filter::Configured && !x.is_configured {
