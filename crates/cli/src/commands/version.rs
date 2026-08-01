@@ -13,7 +13,7 @@ use crate::{
 
 #[derive(Debug, Subcommand)]
 pub enum VersionSubcommand {
-	#[command(about = "Try a new Minecraft version")]
+	#[command(about = "List available Minecraft versions")]
 	List {
 		/// Whether to include all versions. Otherwise, only the most recent few will be shown
 		#[arg(short, long)]

@@ -14,7 +14,7 @@ use std::collections::HashMap;
 
 use anyhow::{Context, bail};
 use clap::{Parser, Subcommand};
-use color_print::{cformat, cprintln};
+use color_print::cformat;
 
 use nitrolaunch::config::modifications::{ConfigModification, apply_modifications_and_write};
 use nitrolaunch::config::{Config, is_first_run};
@@ -127,7 +127,8 @@ pub enum Command {
 		#[command(subcommand)]
 		command: FilesSubcommand,
 	},
-	#[command(about = "Print the Nitrolaunch version")]
+	#[command(about = "Get information about Minecraft versions")]
+	#[command(long_about = "Use --version to get the Nitrolaunch version")]
 	Version {
 		#[command(subcommand)]
 		command: VersionSubcommand,
@@ -137,6 +138,7 @@ pub enum Command {
 }
 
 #[derive(Debug, Parser)]
+#[command(version)]
 pub struct Cli {
 	#[command(subcommand)]
 	command: Command,
@@ -144,8 +146,6 @@ pub struct Cli {
 	debug: bool,
 	#[arg(short = 'D', long)]
 	trace: bool,
-	#[arg(long)]
-	version: bool,
 }
 
 /// Run the command line interface
@@ -165,6 +165,8 @@ pub async fn run_cli() -> anyhow::Result<()> {
 		}
 	}
 	let cli = cli?;
+
+	let log_level = get_log_level(&cli);
 
 	// Prepare the command data
 	let paths = Paths::new()
@@ -196,7 +198,6 @@ pub async fn run_cli() -> anyhow::Result<()> {
 
 		if install_default {
 			let mut data = CmdData::new(paths.clone(), &mut output)?;
-			let log_level = get_log_level(&cli);
 			data.output.set_log_level(log_level);
 
 			if let Err(e) = plugin::install(
@@ -232,13 +233,7 @@ pub async fn run_cli() -> anyhow::Result<()> {
 
 	let res = {
 		let mut data = CmdData::new(paths, &mut output)?;
-		let log_level = get_log_level(&cli);
 		data.output.set_log_level(log_level);
-
-		if cli.version {
-			print_version();
-			return Ok(());
-		}
 
 		match cli.command {
 			Command::Account { command } => account::run(command, &mut data).await,
@@ -351,11 +346,6 @@ impl<'a> CmdData<'a> {
 
 		Ok(config)
 	}
-}
-
-/// Print the Nitrolaunch version
-fn print_version() {
-	cprintln!("Nitrolaunch version: <g>{}</g>", nitrolaunch::VERSION);
 }
 
 /// Runs instance migration
