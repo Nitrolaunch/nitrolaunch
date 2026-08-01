@@ -272,7 +272,10 @@ impl BackState {
 			}
 		});
 
-		let task_manager = Arc::new(Mutex::new(TaskManager::new(event_tx.clone())));
+		let task_manager = Arc::new(Mutex::new(TaskManager::new(
+			event_tx.clone(),
+			logger_tx.clone(),
+		)));
 		tokio::spawn(TaskManager::get_run_task(task_manager.clone()));
 
 		let output_inner = OutputInner {

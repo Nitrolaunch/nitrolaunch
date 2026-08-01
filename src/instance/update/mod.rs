@@ -195,6 +195,7 @@ impl Instance {
 }
 
 /// Parts of an instance to update
+#[derive(Clone, PartialEq, Eq, Hash)]
 pub struct UpdateFacets {
 	/// Whether to update instance files
 	pub instance: bool,
@@ -228,6 +229,15 @@ impl UpdateFacets {
 		Self {
 			instance: false,
 			packages: true,
+			modpack: true,
+		}
+	}
+
+	/// Only update the modpack
+	pub fn modpack() -> Self {
+		Self {
+			instance: false,
+			packages: false,
 			modpack: true,
 		}
 	}

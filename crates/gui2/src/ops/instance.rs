@@ -21,6 +21,7 @@ use nitrolaunch::{
 };
 
 use crate::{
+	dependency::BackDependency,
 	ops::{MakeSend, task::Task},
 	pages::config::ConfiguredItem,
 	prelude::*,
@@ -501,25 +502,23 @@ simple_query!(
 	}
 );
 
-#[rustfmt::skip]
 simple_mutation!(
 	name = UpdateInstance,
 	ok = (),
 	err = anyhow::Error,
 	keys = UpdateInstanceKeys,
 	fn run(&self, keys: &Self::Keys) -> impl Future<Output = Result<Self::Ok, Self::Err>> {
-		let task_id = if keys.content_only {
-			Task::UpdateInstanceContent(keys.id.clone())
-		} else {
-			Task::UpdateInstance(keys.id.clone())
+		let task_id = match keys.mode {
+			UpdateInstanceMode::Full => Task::UpdateInstance(keys.id.clone()),
+			UpdateInstanceMode::Packages => Task::UpdateInstancePackages(keys.id.clone()),
+			UpdateInstanceMode::Modpack => Task::UpdateInstanceModpack(keys.id.clone()),
 		};
 
-		let facets = if keys.content_only {
-			UpdateFacets::content()
-		} else {
-			UpdateFacets::all()
+		let facets = match keys.mode {
+			UpdateInstanceMode::Full => UpdateFacets::all(),
+			UpdateInstanceMode::Packages => UpdateFacets::packages(),
+			UpdateInstanceMode::Modpack => UpdateFacets::modpack(),
 		};
-
 		let depth = if keys.force {
 			UpdateDepth::Force
 		} else {
@@ -534,17 +533,21 @@ simple_mutation!(
 			task_id,
 		)
 	}
-	fn on_settled(
-		&self,
-		_keys: &Self::Keys,
-		_result: &Result<Self::Ok, Self::Err>,
-	) -> impl Future<Output = ()> {
-		async move {
-			QueriesStorage::<FetchInstanceConfig>::try_invalidate_matching(_keys.id.clone()).await;
-			QueriesStorage::<FetchItems>::try_invalidate_all().await;
-		}
-	}
 );
+
+#[derive(Clone, PartialEq, Eq, Hash)]
+pub struct UpdateInstanceKeys {
+	pub id: String,
+	pub mode: UpdateInstanceMode,
+	pub force: bool,
+}
+
+#[derive(Clone, PartialEq, Eq, Hash)]
+pub enum UpdateInstanceMode {
+	Full,
+	Packages,
+	Modpack,
+}
 
 pub async fn update_instance_impl(
 	back_state: BackState,
@@ -602,11 +605,14 @@ pub async fn update_instance_impl(
 				.await
 				.context("Failed to update instance")?;
 
+			// Clear any resolution errors for this instance if we updated successfully
 			if updates_packages {
 				let mut data = back_state2.data();
 				data.last_resolution_errors.remove(&instance_id2);
 				let _ = data.write(&paths);
 			}
+
+			back_state2.invalidate(BackDependency::InstanceContent(instance_id2));
 
 			Ok(())
 		}
@@ -616,13 +622,6 @@ pub async fn update_instance_impl(
 	back_state.register_task(task_id, task);
 
 	Ok(())
-}
-
-#[derive(Clone, PartialEq, Eq, Hash)]
-pub struct UpdateInstanceKeys {
-	pub id: String,
-	pub force: bool,
-	pub content_only: bool,
 }
 
 #[rustfmt::skip]

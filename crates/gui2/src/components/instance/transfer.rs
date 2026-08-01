@@ -254,7 +254,7 @@ impl Component for MigrateModal {
 		);
 
 		let front_state2 = front_state.clone();
-		Modal::new("Migrate Instances".into(), "cycle".into())
+		Modal::new("Migrate Instances".into(), "shuffle".into())
 			.size_large()
 			.maybe_child(true, || contents)
 			.on_close(move |_| {

@@ -31,7 +31,7 @@ use crate::{
 	},
 	ops::{
 		ConditionalQuery,
-		instance::{UpdateInstance, UpdateInstanceKeys},
+		instance::{UpdateInstance, UpdateInstanceKeys, UpdateInstanceMode},
 		packages::{
 			FetchInstanceAddons, FetchInstanceLockfile, FetchPackages, PkgInfo, PreloadPackages,
 		},
@@ -289,16 +289,13 @@ impl Component for AddonsConfig {
 			});
 
 		let id = self.config_state.id.clone();
-		let update_button = icon_text_button("upload", "Update Content", &theme)
-			.border_fill(theme.primary)
-			.color(theme.primary)
-			.background(theme.primary_bg)
-			.hover_background(theme.primary_bg)
+		let update_button = icon_text_button("cycle", "Update Packages", &theme)
+			.active(&theme)
 			.on_press(move |_| {
 				update.mutate(UpdateInstanceKeys {
 					id: id.read().clone(),
+					mode: UpdateInstanceMode::Packages,
 					force: false,
-					content_only: true,
 				});
 			});
 
@@ -392,6 +389,9 @@ impl Component for ContentItemElem {
 	fn render(&self) -> impl IntoElement {
 		let theme = use_theme();
 		let front_state = use_front_state();
+		let back_state = use_consume::<BackState>();
+		let update = use_mutation(Mutation::new(UpdateInstance::new(back_state.clone())));
+
 		let is_hovered = use_state(|| false);
 
 		let info = self
@@ -508,6 +508,26 @@ impl Component for ContentItemElem {
 
 		if self.item.is_package() && self.item.is_configured {
 			badges.push(more_dropdown.into_element());
+		}
+
+		if self.item.is_modpack()
+			&& self.config_state.ty == ConfigKind::Instance
+			&& !self.config_state.is_new
+		{
+			let id = self.config_state.id.read().clone();
+			let update_button = icon_button("cycle", &theme)
+				.active(&theme)
+				.on_press(move |_| {
+					update.mutate(UpdateInstanceKeys {
+						id: id.clone(),
+						mode: UpdateInstanceMode::Modpack,
+						force: false,
+					});
+				});
+			let update_button = rect()
+				.tip(&front_state, "Update the modpack and all packages")
+				.child(update_button);
+			badges.push(update_button.into_element());
 		}
 
 		let header_height = Self::base_height(self.item.is_modpack());
@@ -951,7 +971,6 @@ fn badge(ico: &str, color: impl Into<Color>, theme: &Theme) -> Rect {
 	rect()
 		.corner_radius(theme.round)
 		.color(color)
-		.border(theme.border(color))
 		.padding(5.0)
 		.child(icon(ico, 16.0))
 }

@@ -1,7 +1,8 @@
 use std::{fmt::Display, sync::Arc, time::Duration};
 
+use nitrolaunch::shared::output::{Message, MessageContents, MessageLevel};
 use tokio::{
-	sync::{Mutex, broadcast},
+	sync::{Mutex, broadcast, mpsc},
 	task::JoinHandle,
 };
 
@@ -11,13 +12,15 @@ use crate::{simple_mutation, state::BackEvent};
 pub struct TaskManager {
 	tasks: Vec<RunningTask>,
 	event_tx: broadcast::Sender<BackEvent>,
+	logger_tx: mpsc::Sender<Message>,
 }
 
 impl TaskManager {
-	pub fn new(event_tx: broadcast::Sender<BackEvent>) -> Self {
+	pub fn new(event_tx: broadcast::Sender<BackEvent>, logger_tx: mpsc::Sender<Message>) -> Self {
 		Self {
 			tasks: Vec::new(),
 			event_tx,
+			logger_tx,
 		}
 	}
 
@@ -48,7 +51,10 @@ impl TaskManager {
 				if join_handle.is_finished() {
 					let result = join_handle.await;
 					if let Ok(Err(error)) = result {
-						eprintln!("Task error: {error:?}");
+						let _ = self.logger_tx.try_send(Message {
+							contents: MessageContents::Error(format!("{error:?}")),
+							level: MessageLevel::Important,
+						});
 						if task.id.is_long_running() {
 							let _ = self.event_tx.send(BackEvent::ErrorToast(
 								task.id.failure_message(),
@@ -127,7 +133,8 @@ struct RunningTask {
 pub enum Task {
 	LaunchInstance(String),
 	UpdateInstance(String),
-	UpdateInstanceContent(String),
+	UpdateInstancePackages(String),
+	UpdateInstanceModpack(String),
 	DeleteInstance,
 	InstallModpack,
 	ImportInstance,
@@ -149,7 +156,8 @@ impl Task {
 		match self {
 			Self::LaunchInstance(_) => true,
 			Self::UpdateInstance(_) => true,
-			Self::UpdateInstanceContent(_) => true,
+			Self::UpdateInstancePackages(_) => true,
+			Self::UpdateInstanceModpack(_) => true,
 			Self::DeleteInstance => false,
 			Self::InstallModpack => false,
 			Self::ImportInstance => false,
@@ -171,7 +179,8 @@ impl Task {
 		match self {
 			Self::LaunchInstance(_) => true,
 			Self::UpdateInstance(_) => true,
-			Self::UpdateInstanceContent(_) => true,
+			Self::UpdateInstancePackages(_) => true,
+			Self::UpdateInstanceModpack(_) => true,
 			Self::DeleteInstance => false,
 			Self::InstallModpack => true,
 			Self::ImportInstance => true,
@@ -193,7 +202,8 @@ impl Task {
 		match self {
 			Self::LaunchInstance(..) => format!("Launched!"),
 			Self::UpdateInstance(..) => format!("Instance updated"),
-			Self::UpdateInstanceContent(..) => format!("Content updated"),
+			Self::UpdateInstancePackages(..) => format!("Packages updated"),
+			Self::UpdateInstanceModpack(..) => format!("Modpack updated"),
 			Self::DeleteInstance => "Instance deleted".into(),
 			Self::InstallModpack => "Modpack installed".into(),
 			Self::ImportInstance => "Instance imported".into(),
@@ -215,7 +225,8 @@ impl Task {
 		match self {
 			Self::LaunchInstance(id) => format!("Failed to launch instance {id}"),
 			Self::UpdateInstance(id) => format!("Failed to update instance {id}"),
-			Self::UpdateInstanceContent(id) => format!("Failed to update content for {id}"),
+			Self::UpdateInstancePackages(id) => format!("Failed to update packages for {id}"),
+			Self::UpdateInstanceModpack(id) => format!("Failed to update modpack for {id}"),
 			Self::DeleteInstance => "Failed to delete instance".into(),
 			Self::InstallModpack => "Failed to install modpack".into(),
 			Self::ImportInstance => "Failed to import instance".into(),
@@ -239,7 +250,8 @@ impl Display for Task {
 		match self {
 			Self::LaunchInstance(id) => write!(f, "Launching instance {id}"),
 			Self::UpdateInstance(id) => write!(f, "Updating instance {id}"),
-			Self::UpdateInstanceContent(id) => write!(f, "Updating content for {id}"),
+			Self::UpdateInstancePackages(id) => write!(f, "Updating packages for {id}"),
+			Self::UpdateInstanceModpack(id) => write!(f, "Updating modpack for {id}"),
 			Self::DeleteInstance => write!(f, "Deleting instance"),
 			Self::InstallModpack => write!(f, "Installing modpack"),
 			Self::ImportInstance => write!(f, "Importing instance"),

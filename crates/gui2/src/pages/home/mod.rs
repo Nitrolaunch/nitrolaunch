@@ -183,7 +183,7 @@ impl Component for HomePage {
 		.child(SelectOption::new(
 			AddOption::MigrateInstances,
 			"Migrate Instances",
-			Some("cycle"),
+			Some("shuffle"),
 		))
 		.custom_buttons(add_buttons, AddOption::Custom);
 

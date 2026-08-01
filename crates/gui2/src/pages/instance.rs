@@ -15,7 +15,8 @@ use crate::{
 	},
 	ops::{
 		instance::{
-			FetchInstanceConfig, FetchParentConfigs, SaveConfig, UpdateInstance, UpdateInstanceKeys,
+			FetchInstanceConfig, FetchParentConfigs, SaveConfig, UpdateInstance,
+			UpdateInstanceKeys, UpdateInstanceMode,
 		},
 		launch::{
 			FetchInstanceRunState, InstanceRunState, KillInstance, LaunchInstance,
@@ -180,13 +181,13 @@ impl Component for InstancePage {
 		});
 
 		let id = self.id.clone();
-		let update_button = icon_text_button("upload", "Update", &theme)
+		let update_button = icon_text_button("cycle", "Update", &theme)
 			.border_fill(theme.panel_border)
 			.on_press(move |_| {
 				update.mutate(UpdateInstanceKeys {
 					id: id.clone(),
+					mode: UpdateInstanceMode::Full,
 					force: false,
-					content_only: false,
 				});
 			});
 
