@@ -276,7 +276,7 @@ impl<'a> State<'a> {
 		let mut package_list_state = ListState::default();
 		package_list_state.select_first();
 
-		Ok(Self {
+		let mut out = Self {
 			worker: handle,
 			worker_state: WorkerState::Idle,
 			worker_state_rx: state_rx,
@@ -312,7 +312,11 @@ impl<'a> State<'a> {
 				new_id_state: TextArea::default(),
 				new_id_focused: false,
 			},
-		})
+		};
+
+		out.search();
+
+		Ok(out)
 	}
 
 	/// Gets the currently selected package
@@ -757,7 +761,7 @@ fn render(frame: &mut Frame, state: &mut State) {
 
 	let repo = format!(
 		"[r] Repository: {}",
-		state.search_params.repo.as_deref().unwrap_or("Any")
+		state.search_params.repo.as_deref().unwrap_or("All")
 	);
 	let repo = Paragraph::new(repo).style(Style::new().bold().light_blue());
 	frame.render_widget(repo, repo_pane);
@@ -919,7 +923,12 @@ impl Popup {
 	fn select(&self, state: &mut State, pos: usize) {
 		match self {
 			Self::Repository => {
-				let Some(repo) = state.repositories.get(pos) else {
+				if pos == 0 {
+					state.search_params.repo = None;
+					return;
+				}
+
+				let Some(repo) = state.repositories.get(pos - 1) else {
 					return;
 				};
 
@@ -999,9 +1008,10 @@ impl Popup {
 					.repositories
 					.iter()
 					.position(|y| y.id == *repo)
+					.map(|x| x + 1)
 					.into_iter()
 					.collect(),
-				None => Vec::new(),
+				None => vec![0],
 			},
 			Self::PackageType => {
 				let Some(ty) = state.search_params.inner.types.first() else {
@@ -1051,7 +1061,11 @@ impl Popup {
 
 	fn get_items(&self, state: &State) -> Vec<String> {
 		match self {
-			Self::Repository => state.repositories.iter().map(|x| x.id.clone()).collect(),
+			Self::Repository => {
+				let mut items = vec!["All".to_string()];
+				items.extend(state.repositories.iter().map(|x| x.id.clone()));
+				items
+			}
 			Self::PackageType => {
 				let Some(repo) = state.get_selected_repo_info() else {
 					return Vec::new();
