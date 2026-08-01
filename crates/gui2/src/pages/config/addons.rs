@@ -129,6 +129,10 @@ impl Component for AddonsConfig {
 				.into_element()
 		} else {
 			let config_state = self.config_state.clone();
+			let processed_items2 = processed_items.clone();
+			let open_states2 = open_states.clone();
+			let open_states3 = open_states.clone();
+			let theme2 = theme.clone();
 			VirtualScrollView::new_with_data(
 				(
 					packages.read().cloned(),
@@ -137,19 +141,39 @@ impl Component for AddonsConfig {
 				),
 				move |item, (packages, processed_items, open_states)| {
 					let item = processed_items.get(item.index).unwrap();
+					let open_states2 = open_states2.clone();
+					let id = item.id.to_string();
+					let open_toggle = EventHandler::new(move |_: ()| {
+						let contains = open_states2.read().contains(&id);
+						if contains {
+							open_states2.clone().write().remove(&id);
+						} else {
+							open_states2.clone().write().insert(id.clone());
+						}
+					});
 
 					ContentItemElem {
 						item: item.clone(),
 						packages: packages.0.clone(),
 						config_state: config_state.clone(),
 						is_open: open_states.contains(&item.id.to_string()),
+						open_toggle,
 					}
 					.into_element()
 				},
 			)
 			.expanded()
-			// Conservative
-			.item_size(64.0 + theme.gap)
+			.item_size(move |i| {
+				let height = processed_items2
+					.read()
+					.get(i)
+					.map(|x| {
+						ContentItemElem::height(x, open_states3.read().contains(&x.id.to_string()))
+					})
+					.unwrap_or(ContentItemElem::base_height(false));
+
+				height + theme2.gap
+			})
 			.length(processed_items.read().len())
 			.into_element()
 		};
@@ -333,18 +357,18 @@ struct ContentItemElem {
 	packages: Arc<HashMap<ArcPkgReq, anyhow::Result<PkgInfo>>>,
 	config_state: ConfigState,
 	is_open: bool,
+	open_toggle: EventHandler<()>,
 }
 
 impl ContentItemElem {
-	fn base_height(&self) -> f32 {
-		if self.item.is_modpack() { 76.0 } else { 64.0 }
+	fn base_height(is_modpack: bool) -> f32 {
+		if is_modpack { 88.0 } else { 64.0 }
 	}
 
-	fn height(&self, theme: &Theme) -> f32 {
-		let mut height = self.base_height();
-		if self.is_open {
-			height += self.item.locked_addons.0.len() as f32 * 64.0;
-			height += theme.gap;
+	fn height(item: &ContentItem, is_open: bool) -> f32 {
+		let mut height = Self::base_height(item.is_modpack());
+		if is_open {
+			height += item.locked_addons.0.len() as f32 * SubItem::height();
 		}
 
 		height
@@ -353,7 +377,9 @@ impl ContentItemElem {
 
 impl PartialEq for ContentItemElem {
 	fn eq(&self, other: &Self) -> bool {
-		self.item == other.item && Arc::ptr_eq(&self.packages, &other.packages)
+		self.item == other.item
+			&& self.is_open == other.is_open
+			&& Arc::ptr_eq(&self.packages, &other.packages)
 	}
 }
 
@@ -479,14 +505,17 @@ impl Component for ContentItemElem {
 			badges.push(more_dropdown.into_element());
 		}
 
-		rect()
+		let open_toggle = self.open_toggle.clone();
+		let header = rect()
 			.width(Size::fill())
-			.height(Size::px(self.base_height()))
+			.height(Size::px(ContentItemElem::base_height(
+				self.item.is_modpack(),
+			)))
 			.cont()
-			.panel_colorway(&theme, *is_hovered.read(), false)
 			.corner_radius(theme.round2)
+			.panel_colorway(&theme, *is_hovered.read(), false)
 			.hover(is_hovered)
-			.margin(Gaps::new(0.0, 0.0, theme.gap, 0.0))
+			.on_press(move |_| open_toggle.call(()))
 			.child(
 				rect()
 					.width(Size::px(64.0))
@@ -516,7 +545,23 @@ impl Component for ContentItemElem {
 					.cross_align(Alignment::Center)
 					.padding(Gaps::new(0.0, 20.0, 0.0, 0.0))
 					.children(badges),
-			)
+			);
+
+		let subitems = rect().width(Size::fill()).children(
+			self.item
+				.locked_addons
+				.0
+				.iter()
+				.map(|x| SubItem::from_addon(x).render()),
+		);
+
+		rect()
+			.width(Size::fill())
+			.margin(Gaps::new(0.0, 0.0, theme.gap, 0.0))
+			.panel_colorway(&theme, false, false)
+			.corner_radius(theme.round2)
+			.child(header)
+			.maybe(self.is_open, |this| this.child(subitems))
 	}
 
 	fn render_key(&self) -> DiffKey {
@@ -592,6 +637,49 @@ enum ContentItemType {
 	Modpack { req: ArcPkgReq },
 	Package { req: ArcPkgReq },
 	Addon,
+}
+
+struct SubItem {
+	image: Element,
+	name: String,
+}
+
+impl SubItem {
+	fn height() -> f32 {
+		48.0
+	}
+
+	fn from_addon(addon: &Addon) -> Self {
+		let ico = get_package_kind_icon(PackageKind::from_addon_kind(addon.kind));
+		let ico = icon(ico, 16.0);
+		Self {
+			image: ico.into_element(),
+			name: addon.file_name.clone(),
+		}
+	}
+
+	fn render(self) -> impl IntoElement {
+		let height = Self::height();
+
+		let ico = rect()
+			.width(Size::px(height))
+			.height(Size::px(height))
+			.center()
+			.child(self.image);
+
+		let name = rect()
+			.width(Size::flex(1.0))
+			.height(Size::fill())
+			.main_align(Alignment::Center)
+			.child(self.name);
+
+		rect()
+			.width(Size::fill())
+			.height(Size::px(height))
+			.cont()
+			.child(ico)
+			.child(name)
+	}
 }
 
 fn build_items(
