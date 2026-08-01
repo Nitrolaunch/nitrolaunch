@@ -368,7 +368,12 @@ impl ContentItemElem {
 	fn height(item: &ContentItem, is_open: bool) -> f32 {
 		let mut height = Self::base_height(item.is_modpack());
 		if is_open {
-			height += item.locked_addons.0.len() as f32 * SubItem::height();
+			let len = if item.is_modpack() {
+				item.locked_packages.0.len()
+			} else {
+				item.locked_addons.0.len()
+			};
+			height += len as f32 * SubItem::height();
 		}
 
 		height
@@ -505,12 +510,11 @@ impl Component for ContentItemElem {
 			badges.push(more_dropdown.into_element());
 		}
 
+		let header_height = Self::base_height(self.item.is_modpack());
 		let open_toggle = self.open_toggle.clone();
 		let header = rect()
 			.width(Size::fill())
-			.height(Size::px(ContentItemElem::base_height(
-				self.item.is_modpack(),
-			)))
+			.height(Size::px(header_height))
 			.cont()
 			.corner_radius(theme.round2)
 			.panel_colorway(&theme, *is_hovered.read(), false)
@@ -518,7 +522,7 @@ impl Component for ContentItemElem {
 			.on_press(move |_| open_toggle.call(()))
 			.child(
 				rect()
-					.width(Size::px(64.0))
+					.width(Size::px(header_height))
 					.height(Size::fill())
 					.center()
 					.child(ico),
@@ -547,13 +551,26 @@ impl Component for ContentItemElem {
 					.children(badges),
 			);
 
-		let subitems = rect().width(Size::fill()).children(
-			self.item
-				.locked_addons
-				.0
-				.iter()
-				.map(|x| SubItem::from_addon(x).render()),
-		);
+		let subitems = rect()
+			.width(Size::fill())
+			.maybe(self.item.is_package(), |this| {
+				this.children(
+					self.item
+						.locked_addons
+						.0
+						.iter()
+						.map(|x| SubItem::from_addon(x).render(&theme)),
+				)
+			})
+			.maybe(self.item.is_modpack(), |this| {
+				this.children(
+					self.item
+						.locked_packages
+						.0
+						.iter()
+						.map(|x| SubItem::from_pkg(x, &self.packages, &theme).render(&theme)),
+				)
+			});
 
 		rect()
 			.width(Size::fill())
@@ -585,6 +602,7 @@ struct ContentItem {
 	is_locked: bool,
 	files_exist: bool,
 	locked_addons: PtrEq<[Addon]>,
+	locked_packages: PtrEq<[ArcPkgReq]>,
 	addon_ty: Option<PackageKind>,
 }
 
@@ -646,7 +664,7 @@ struct SubItem {
 
 impl SubItem {
 	fn height() -> f32 {
-		48.0
+		40.0
 	}
 
 	fn from_addon(addon: &Addon) -> Self {
@@ -658,7 +676,34 @@ impl SubItem {
 		}
 	}
 
-	fn render(self) -> impl IntoElement {
+	fn from_pkg(
+		req: &ArcPkgReq,
+		info: &HashMap<ArcPkgReq, anyhow::Result<PkgInfo>>,
+		theme: &Theme,
+	) -> Self {
+		let ico = info
+			.get(req)
+			.and_then(|x| x.as_ref().ok())
+			.and_then(|x| x.meta.icon.as_deref())
+			.map(|x| {
+				img(x)
+					.width(Size::px(24.0))
+					.height(Size::px(24.0))
+					.corner_radius(theme.round)
+					.into_element()
+			})
+			.unwrap_or_else(|| icon("box", 16.0).into_element());
+
+		let name = info
+			.get(req)
+			.and_then(|x| x.as_ref().ok())
+			.and_then(|x| x.meta.name.clone())
+			.unwrap_or_else(|| req.to_string_no_version());
+
+		Self { image: ico, name }
+	}
+
+	fn render(self, theme: &Theme) -> impl IntoElement {
 		let height = Self::height();
 
 		let ico = rect()
@@ -677,6 +722,7 @@ impl SubItem {
 			.width(Size::fill())
 			.height(Size::px(height))
 			.cont()
+			.margin(Gaps::new(0.0, 0.0, 0.0, theme.gap2))
 			.child(ico)
 			.child(name)
 	}
@@ -706,6 +752,17 @@ fn build_items(
 			PtrEq(Arc::default())
 		};
 
+		let locked_packages = lock_modpack
+			.map(|x| {
+				PtrEq(
+					x.packages
+						.iter()
+						.map(|x| PkgRequest::parse(x, PkgRequestSource::UserRequire).arc())
+						.collect(),
+				)
+			})
+			.unwrap_or_else(|| PtrEq(Arc::default()));
+
 		items.push(ContentItem {
 			ty: ContentItemType::Modpack { req: req.clone() },
 			id: Arc::from(modpack.clone()),
@@ -713,6 +770,7 @@ fn build_items(
 			is_locked: lock_modpack.is_some(),
 			files_exist: true,
 			locked_addons: addons,
+			locked_packages,
 			addon_ty: None,
 		});
 
@@ -749,6 +807,7 @@ fn build_items(
 				is_locked: true,
 				is_configured: false,
 				locked_addons: PtrEq(addons.collect()),
+				locked_packages: PtrEq(Arc::default()),
 				files_exist,
 				addon_ty: None,
 			});
@@ -781,6 +840,7 @@ fn build_items(
 				is_locked: false,
 				files_exist: false,
 				locked_addons: PtrEq(Arc::default()),
+				locked_packages: PtrEq(Arc::default()),
 				addon_ty: None,
 			});
 			items.last_mut().unwrap()
@@ -807,6 +867,7 @@ fn build_items(
 				is_locked: false,
 				files_exist: true,
 				locked_addons: PtrEq(Arc::default()),
+				locked_packages: PtrEq(Arc::default()),
 				addon_ty: Some(PackageKind::from_addon_kind(addon.kind)),
 			});
 		}
