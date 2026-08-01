@@ -11,7 +11,10 @@ use nitrolaunch::{
 };
 
 use crate::{
-	components::{pkg::install::PackageInstallModal, tag::loader_tag},
+	components::{
+		pkg::install::PackageInstallModal,
+		tag::{loader_tag, text_tag},
+	},
 	ops::packages::FetchPackageContentVersions,
 	prelude::*,
 	util::PtrEq,
@@ -151,6 +154,23 @@ impl Component for Version {
 					.child(icon("download", 12.0).color(theme.primary)),
 			);
 
+		let versions =
+			if let Some(versions) = &self.version.0.conditional_properties.minecraft_versions {
+				let out = versions
+					.iter()
+					.map(|x| x.to_string())
+					.map(|x| text_tag(&x, &theme))
+					.take(3);
+				let ellipsis = if versions.len() > 3 {
+					Some(text_tag("...", &theme))
+				} else {
+					None
+				};
+
+				out.chain(ellipsis).collect_vec()
+			} else {
+				Vec::new()
+			};
 		let loaders = self
 			.version
 			.0
@@ -183,6 +203,7 @@ impl Component for Version {
 					.cont()
 					.main_align(Alignment::End)
 					.cross_align(Alignment::Center)
+					.children(versions)
 					.children(loaders),
 			)
 			.child(install)

@@ -2,6 +2,18 @@ use nitrolaunch::shared::loaders::Loader;
 
 use crate::{prelude::*, util::assets::get_loader_icon};
 
+/// Simple string tag
+pub fn text_tag(text: &str, theme: &Theme) -> Rect {
+	tag(
+		None::<Rect>,
+		Some(text),
+		theme.fg,
+		theme.item,
+		theme.item,
+		theme,
+	)
+}
+
 /// Tag for a repository
 pub fn repo_tag(repo: &str, compact: bool, back_state: &BackState, theme: &Theme) -> Rect {
 	let meta = back_state.repos().get(repo).cloned().unwrap_or_default();
@@ -29,7 +41,7 @@ pub fn repo_tag(repo: &str, compact: bool, back_state: &BackState, theme: &Theme
 		.and_then(Color::from_hex)
 		.unwrap_or(theme.fg2.into());
 
-	tag(ico, name, fg, bg, bg, theme)
+	tag(Some(ico), name, fg, bg, bg, theme)
 }
 
 /// Tag for a loader
@@ -49,7 +61,7 @@ pub fn loader_tag(loader: &Loader, compact: bool, theme: &Theme) -> Rect {
 		get_loader_color(loader, theme)
 	};
 
-	tag(ico, name.as_deref(), fg, bg, bg, theme)
+	tag(Some(ico), name.as_deref(), fg, bg, bg, theme)
 }
 
 fn get_loader_color(loader: &Loader, theme: &Theme) -> Color {
@@ -68,7 +80,7 @@ fn get_loader_color(loader: &Loader, theme: &Theme) -> Color {
 
 /// Tag element
 pub fn tag(
-	icon: impl IntoElement,
+	icon: Option<impl IntoElement>,
 	text: Option<&str>,
 	fg: impl Into<Color>,
 	border: impl Into<Color>,
@@ -89,7 +101,7 @@ pub fn tag(
 		.background(bg)
 		.corner_radius(theme.round)
 		.font_size(12.0)
-		.child(icon)
+		.maybe_child(icon)
 		.maybe_child(text.map(|x| {
 			label()
 				.text(x.to_string())
