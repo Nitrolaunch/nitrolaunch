@@ -135,8 +135,8 @@ impl Component for AddonsConfig {
 					processed_items.read().cloned(),
 					open_states.read().cloned(),
 				),
-				move |i, (packages, processed_items, open_states)| {
-					let item = processed_items.get(i).unwrap();
+				move |item, (packages, processed_items, open_states)| {
+					let item = processed_items.get(item.index).unwrap();
 
 					ContentItemElem {
 						item: item.clone(),

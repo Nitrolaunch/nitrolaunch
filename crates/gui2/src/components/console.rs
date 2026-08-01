@@ -62,12 +62,12 @@ impl<C: ConsoleImpl> Component for Console<C> {
 		let contents = match self.console.contents() {
 			Some(contents) => {
 				let indexes = line_indexes.clone();
-				VirtualScrollView::new_with_data(PtrEq(contents.clone()), move |i, contents| {
+				VirtualScrollView::new_with_data(PtrEq(contents.clone()), move |item, contents| {
 					let indexes_read = indexes.read();
-					let line = if i < indexes_read.len() {
-						let start = indexes_read[i];
-						let end = if i + 1 < indexes_read.len() {
-							indexes_read[i + 1]
+					let line = if item.index < indexes_read.len() {
+						let start = indexes_read[item.index];
+						let end = if item.index + 1 < indexes_read.len() {
+							indexes_read[item.index + 1]
 						} else {
 							contents.0.len()
 						};
@@ -119,13 +119,7 @@ impl<C: ConsoleImpl> Component for Console<C> {
 							.width(Size::fill())
 							.height(Size::px(theme.input_height))
 							.border(border_top(theme.border, theme.panel_border))
-							.corner_radius(CornerRadius {
-								top_left: 0.0,
-								top_right: 0.0,
-								bottom_left: theme.round2,
-								bottom_right: theme.round2,
-								smoothing: 0.0,
-							})
+							.corner_radius(CornerRadius::new(0.0, 0.0, theme.round2, theme.round2))
 							.padding(theme.gap)
 							.cont()
 							.child(transparent_text_input(input, &theme).on_submit(move |s| {

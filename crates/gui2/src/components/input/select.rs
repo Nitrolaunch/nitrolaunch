@@ -487,8 +487,8 @@ impl<T: PartialEq + Clone + 'static> Component for Dropdown<T> {
 			let derived_option = self.derived_option.clone();
 			let options = self.options.clone();
 
-			VirtualScrollView::new(move |i, _| {
-				let option = options.get(i).unwrap();
+			VirtualScrollView::new(move |item, _| {
+				let option = options.get(item.index).unwrap();
 
 				let is_selected = selected.is_selected(&option.id);
 				let is_derived = derived_option.as_ref().is_some_and(|y| y == &option.id);

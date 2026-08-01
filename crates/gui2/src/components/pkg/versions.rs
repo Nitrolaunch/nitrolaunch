@@ -40,8 +40,8 @@ impl Component for PackageVersions {
 		let versions = versions.ok().cloned().unwrap_or(default_versions);
 		let len = versions.len();
 
-		let versions = VirtualScrollView::new(move |i, _| {
-			let version = &versions[i];
+		let versions = VirtualScrollView::new(move |item, _| {
+			let version = &versions[item.index];
 
 			Version {
 				version: NotEq(version.clone()),

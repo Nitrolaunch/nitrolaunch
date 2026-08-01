@@ -336,12 +336,11 @@ fn banner_image(
 	is_left: bool,
 	theme: &Theme,
 ) -> Rect {
-	let mut radius = CornerRadius::new_all(0.0);
-	if is_left {
-		radius.top_left = theme.round2;
+	let radius = if is_left {
+		CornerRadius::new(theme.round2, 0.0, 0.0, 0.0)
 	} else {
-		radius.top_right = theme.round2;
-	}
+		CornerRadius::new(0.0, theme.round2, 0.0, 0.0)
+	};
 	rect().width(Size::flex(1.5)).height(Size::fill()).child(
 		ImageViewer::new((asset_key, image))
 			.expanded()
