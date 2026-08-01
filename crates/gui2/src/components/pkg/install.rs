@@ -46,39 +46,14 @@ impl Component for PackageInstallModal {
 		let items_query = use_query(FetchItems::new(back_state.clone()));
 
 		let tab = use_state(|| Tab::Instance);
-		let selected_item = use_state::<Option<String>>(|| None);
+		let selected_item = use_state::<Option<ConfiguredItem>>(|| None);
 		let new_instance_id = use_state(|| String::new());
 
-		let selected_config_item = match &*tab.read() {
-			Tab::Instance => {
-				if let Some(selected) = selected_item.read().clone() {
-					Some(ConfiguredItem {
-						ty: ConfigKind::Instance,
-						id: Some(selected),
-						is_new: false,
-					})
-				} else {
-					None
-				}
-			}
-			Tab::Template => {
-				if let Some(selected) = selected_item.read().clone() {
-					Some(ConfiguredItem {
-						ty: ConfigKind::Template,
-						id: Some(selected),
-						is_new: false,
-					})
-				} else {
-					None
-				}
-			}
-			Tab::BaseTemplate | Tab::ModpackInstance => None,
-		};
-		let enable = selected_config_item.is_some() || matches!(&*tab.read(), Tab::BaseTemplate);
+		let enable = selected_item.read().is_some();
 		let compatability_check = use_query(
 			Query::new(
 				CheckPackageCompatabilityKeys {
-					item: selected_config_item.unwrap_or(ConfiguredItem {
+					item: selected_item.read().cloned().unwrap_or(ConfiguredItem {
 						ty: ConfigKind::BaseTemplate,
 						id: None,
 						is_new: false,
@@ -154,10 +129,6 @@ impl Component for PackageInstallModal {
 
 				ScrollView::new().expanded().child(out).into_element()
 			}
-			Tab::BaseTemplate => rect()
-				.center()
-				.child(placeholder("Package will be installed globally", &theme))
-				.into_element(),
 			Tab::ModpackInstance => rect()
 				.width(Size::fill())
 				.padding(theme.gap2)
@@ -220,10 +191,9 @@ impl Component for PackageInstallModal {
 			.maybe_child(error);
 
 		let is_save_ready = match &*tab.read() {
-			Tab::BaseTemplate => true,
-			_ => selected_item.read().is_some(),
+			Tab::ModpackInstance => !new_instance_id.read().is_empty(),
+			_ => selected_item.read().is_some() && compatability_err.is_none(),
 		};
-		let is_save_ready = is_save_ready && compatability_err.is_none();
 
 		let req = self.req.clone();
 		let tab = tab.clone();
@@ -244,27 +214,28 @@ impl Component for PackageInstallModal {
 								return;
 							};
 							if is_modpack {
-								PackageInstallLocation::InstanceModpack(selected.into())
+								PackageInstallLocation::InstanceModpack(selected.id.unwrap().into())
 							} else {
-								PackageInstallLocation::Instance(selected.into())
+								PackageInstallLocation::Instance(selected.id.unwrap().into())
 							}
 						}
 						Tab::Template => {
 							let Some(selected) = selected_item.read().clone() else {
 								return;
 							};
-							if is_modpack {
-								PackageInstallLocation::TemplateModpack(selected.into())
+							if selected.ty == ConfigKind::BaseTemplate {
+								PackageInstallLocation::BaseTemplate(None)
+							} else if is_modpack {
+								PackageInstallLocation::TemplateModpack(selected.id.unwrap().into())
 							} else {
-								PackageInstallLocation::Template(selected.into(), None)
+								PackageInstallLocation::Template(selected.id.unwrap().into(), None)
 							}
 						}
-						Tab::BaseTemplate => PackageInstallLocation::BaseTemplate(None),
 						Tab::ModpackInstance => {
 							let Some(selected) = selected_item.read().clone() else {
 								return;
 							};
-							PackageInstallLocation::NewInstanceModpack(selected.into())
+							PackageInstallLocation::NewInstanceModpack(selected.id.unwrap().into())
 						}
 					};
 
@@ -280,7 +251,7 @@ impl Component for PackageInstallModal {
 #[derive(PartialEq)]
 struct Item {
 	item: InstanceItemInfo,
-	selected: State<Option<String>>,
+	selected: State<Option<ConfiguredItem>>,
 }
 
 impl Component for Item {
@@ -288,10 +259,9 @@ impl Component for Item {
 		let theme = use_theme();
 		let is_hovered = use_state(|| false);
 
-		let is_selected = self.selected.read().as_ref() == Some(&self.item.id);
+		let is_selected = self.selected.read().as_ref() == Some(&self.item.get_config_item());
 
 		let mut selected = self.selected.clone();
-		let id = self.item.id.clone();
 
 		let inst_icon = if self.item.icon.is_none() {
 			icon("box", 28.0).into_element()
@@ -308,6 +278,7 @@ impl Component for Item {
 			.center()
 			.child(inst_icon);
 
+		let item = self.item.get_config_item();
 		rect()
 			.width(Size::fill())
 			.height(Size::px(48.0))
@@ -315,7 +286,7 @@ impl Component for Item {
 			.hover(is_hovered)
 			.corner_radius(theme.round)
 			.on_press(move |_| {
-				selected.set(Some(id.clone()));
+				selected.set(Some(item.clone()));
 			})
 			.clickable()
 			.cont()
@@ -332,7 +303,6 @@ impl Component for Item {
 enum Tab {
 	Instance,
 	Template,
-	BaseTemplate,
 	ModpackInstance,
 }
 
@@ -341,7 +311,7 @@ impl Tab {
 		if is_modpack {
 			&[Self::Instance, Self::Template, Self::ModpackInstance]
 		} else {
-			&[Self::Instance, Self::Template, Self::BaseTemplate]
+			&[Self::Instance, Self::Template]
 		}
 	}
 
@@ -351,7 +321,6 @@ impl Tab {
 			Self::Instance => "Instance",
 			Self::Template if is_modpack => "Existing Template",
 			Self::Template => "Template",
-			Self::BaseTemplate => "Base Template",
 			Self::ModpackInstance => "New Instance",
 		}
 	}
@@ -360,7 +329,6 @@ impl Tab {
 		match self {
 			Self::Instance => "box",
 			Self::Template => "diagram",
-			Self::BaseTemplate => "diagram",
 			Self::ModpackInstance => "minecraft",
 		}
 	}
