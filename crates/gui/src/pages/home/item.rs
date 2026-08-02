@@ -123,7 +123,7 @@ impl Component for InstanceListItem {
 			rect()
 				.cont()
 				.child(icon("tag", 16.0))
-				.child(version.to_string())
+				.child(clip_text(&version.to_string()))
 		} else {
 			rect()
 		};
@@ -167,8 +167,6 @@ impl Component for InstanceListItem {
 					.height(Size::fill())
 					.cont()
 					.center()
-					.text_overflow(TextOverflow::Clip)
-					.overflow(Overflow::Clip)
 					.child(version),
 			);
 
