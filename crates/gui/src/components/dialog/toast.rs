@@ -97,6 +97,7 @@ impl Component for ToastElem {
 		};
 
 		let front_state2 = front_state.clone();
+		let str_contents = self.toast.str_contents.clone();
 		let header = rect()
 			.width(Size::fill())
 			.height(Size::px(32.0))
@@ -114,6 +115,22 @@ impl Component for ToastElem {
 					.height(Size::fill())
 					.center()
 					.child(self.toast.title.clone()),
+			)
+			.maybe(
+				self.toast.ty == ToastType::Error && str_contents.is_some(),
+				|this| {
+					this.child(
+						rect()
+							.width(Size::px(32.0))
+							.height(Size::fill())
+							.center()
+							.on_press(move |e: Event<PressEventData>| {
+								e.stop_propagation();
+								let _ = Clipboard::set(str_contents.clone().unwrap_or_default());
+							})
+							.child(icon_button("copy", &theme).color(theme.error)),
+					)
+				},
 			)
 			.child(
 				rect()
@@ -173,6 +190,7 @@ pub struct Toast {
 	contents: Option<Element>,
 	ty: ToastType,
 	id: u32,
+	str_contents: Option<String>,
 }
 
 impl Toast {
@@ -193,7 +211,10 @@ impl Toast {
 	}
 
 	pub fn from_error(title: &str, err: anyhow::Error) -> Self {
-		Self::error(title, Some(format!("{err:?}").into_element()))
+		let contents = format!("{err:?}");
+		let mut out = Self::error(title, Some(contents.clone().into_element()));
+		out.str_contents = Some(contents);
+		out
 	}
 
 	pub fn new(title: &str, contents: Option<Element>, ty: ToastType) -> Self {
@@ -202,7 +223,13 @@ impl Toast {
 			contents,
 			ty,
 			id: 0,
+			str_contents: None,
 		}
+	}
+
+	pub fn with_str_contents(mut self, contents: String) -> Self {
+		self.str_contents = Some(contents);
+		self
 	}
 
 	pub fn id(&self) -> u32 {

@@ -397,10 +397,12 @@ mod debug {
 						.height(Size::px(16.0))
 						.background(Color::RED)
 						.on_press(move |_| {
-							front_state4.write().toast(Toast::error(
-								"Error",
-								Some("Lorem ipsum dolor sit amet adipiscing sdofijsdfoisjdfoisjdoflij".into_element()),
-							));
+							let contents =
+								"Lorem ipsum dolor sit amet adipiscing sdofijsdfoisjdfoisjdoflij";
+							front_state4.write().toast(
+								Toast::error("Error", Some(contents.into_element()))
+									.with_str_contents(contents.into()),
+							);
 						}),
 				)
 				.child(
