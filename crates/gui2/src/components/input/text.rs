@@ -9,6 +9,7 @@ pub struct TextInput {
 	placeholder: Option<String>,
 }
 
+#[allow(dead_code)]
 impl TextInput {
 	pub fn new(value: impl Into<Writable<String>>) -> Self {
 		Self {

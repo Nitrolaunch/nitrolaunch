@@ -214,7 +214,10 @@ impl Component for AddonsConfig {
 			.map(|x| SelectOption::new(x, x.to_string_pretty(), Some(get_package_kind_icon(x)))),
 		);
 
-		let search_input = search_bar(TextInput::new(search), &theme);
+		let search_input = search_bar(
+			TextInput::new(search).placeholder("Search configured and installed content..."),
+			&theme,
+		);
 
 		// let on_select_side =
 		// 	Rc::new(move |new_side: Selected<Option<Side>>| side.clone().set(new_side.single()));
