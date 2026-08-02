@@ -470,11 +470,10 @@ impl<T: PartialEq + Clone + 'static> Component for Dropdown<T> {
 			.center()
 			.child(preview);
 
-		let options_height = if self.options.len() > 10 {
-			Size::px((theme.input_height + theme.gap) * 10.5)
-		} else {
-			Size::auto()
-		};
+		let option_count = (self.options.len() as f32).min(10.5);
+		// Don't include the gap after the last option
+		let options_height =
+			Size::px(theme.input_height * option_count + theme.gap * (option_count - 1.0));
 
 		let options = if self.is_loading {
 			rect()
@@ -486,6 +485,8 @@ impl<T: PartialEq + Clone + 'static> Component for Dropdown<T> {
 			let selected = self.selected.clone();
 			let derived_option = self.derived_option.clone();
 			let options = self.options.clone();
+			let len = self.options.len();
+			let theme2 = theme.clone();
 
 			VirtualScrollView::new(move |item, _| {
 				let option = options.get(item.index).unwrap();
@@ -503,7 +504,13 @@ impl<T: PartialEq + Clone + 'static> Component for Dropdown<T> {
 				.into_element()
 			})
 			.length(self.options.len())
-			.item_size(theme.input_height + theme.gap)
+			.item_size(move |i| {
+				if i == len - 1 {
+					theme2.input_height
+				} else {
+					theme2.input_height + theme2.gap
+				}
+			})
 			.width(Size::fill())
 			.height(options_height)
 			.into_element()
