@@ -97,6 +97,7 @@ impl Component for ToastElem {
 		};
 
 		let front_state2 = front_state.clone();
+		let title = self.toast.title.clone();
 		let str_contents = self.toast.str_contents.clone();
 		let header = rect()
 			.width(Size::fill())
@@ -126,7 +127,11 @@ impl Component for ToastElem {
 							.center()
 							.on_press(move |e: Event<PressEventData>| {
 								e.stop_propagation();
-								let _ = Clipboard::set(str_contents.clone().unwrap_or_default());
+								let message = format!(
+									"{title}\n\n{}",
+									str_contents.as_deref().unwrap_or_default()
+								);
+								let _ = Clipboard::set(message);
 							})
 							.child(icon_button("copy", &theme).color(theme.error)),
 					)

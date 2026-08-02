@@ -14,10 +14,10 @@ pub use crate::components::{
 	icon_text_button, img, placeholder, segment, skeleton,
 };
 pub use crate::icons::icon;
-pub use crate::ops::{ToastedMutationExt, ToastedQueryExt};
+pub use crate::ops::{ToastedMutationExt, ToastedQueryExt, query_spawn};
 pub use crate::state::{BackState, FrontChannel, use_front_state};
 pub use crate::theme::{Theme, use_theme};
-pub use crate::util::{NotEq, query_spawn};
+pub use crate::util::NotEq;
 
 pub trait StateExt<T>: Clone {
 	/// Returns an event handler that sets this state to a value

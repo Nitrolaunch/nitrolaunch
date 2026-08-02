@@ -52,7 +52,7 @@ impl QueryCapability for FetchSupportedLoaders {
 	fn run(&self, _: &Self::Keys) -> impl Future<Output = Result<Self::Ok, Self::Err>> {
 		let back_state = self.back_state.clone();
 
-		query_spawn(async move {
+		query_spawn(back_state.0.clone(), async move {
 			let results = back_state
 				.plugins
 				.call_hook(AddSupportedLoaders, &(), &back_state.paths, &mut NoOp)
@@ -103,7 +103,7 @@ impl QueryCapability for FetchLoaderVersions {
 		let back_state = self.back_state.clone();
 		let keys = keys.clone();
 
-		query_spawn(async move {
+		query_spawn(back_state.0.clone(), async move {
 			let mut o = back_state.output();
 			o.set_task(Task::FetchLoaderVersions);
 			let Some(minecraft_version) = keys.minecraft_version else {
@@ -132,7 +132,7 @@ simple_query!(
 	fn run(&self, _keys: &Self::Keys) -> impl Future<Output = Result<Self::Ok, Self::Err>> {
 		let back_state = self.back_state.clone();
 
-		query_spawn(async move {
+		query_spawn(back_state.0.clone(), async move {
 			let mut o = back_state.output();
 			back_state
 				.plugins
@@ -153,7 +153,7 @@ simple_query!(
 		let back_state = self.back_state.clone();
 		let keys = keys.clone();
 
-		query_spawn(async move {
+		query_spawn(back_state.0.clone(), async move {
 			let mut o = back_state.output();
 			let arg = AddInstanceConfigControlsArg {
 				id: keys.id,
@@ -189,7 +189,7 @@ simple_query!(
 		let back_state = self.back_state.clone();
 		let location = keys.clone();
 
-		query_spawn(async move {
+		query_spawn(back_state.0.clone(), async move {
 			let mut o = back_state.output();
 			let results = back_state
 				.plugins
@@ -286,7 +286,7 @@ simple_mutation!(
 		let back_state = self.back_state.clone();
 		let keys = keys.clone();
 
-		query_spawn(async move {
+		query_spawn(back_state.0.clone(), async move {
 			let mut o = back_state.output();
 			o.set_task(Task::CustomAction);
 			o.show_toasts();

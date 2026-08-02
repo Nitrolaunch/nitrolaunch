@@ -145,7 +145,9 @@ impl QueryCapability for FetchRunningInstances {
 	fn run(&self, _: &Self::Keys) -> impl Future<Output = Result<Self::Ok, Self::Err>> {
 		let back_state = self.back_state.clone();
 
-		query_spawn(async move { Ok(back_state.running_instances.get_running_instances().await) })
+		query_spawn(back_state.0.clone(), async move {
+			Ok(back_state.running_instances.get_running_instances().await)
+		})
 	}
 }
 
@@ -172,7 +174,7 @@ impl MutationCapability for KillInstance {
 		let account = keys.1.clone();
 		let back_state = self.back_state.clone();
 
-		query_spawn(async move {
+		query_spawn(back_state.0.clone(), async move {
 			Ok(back_state
 				.running_instances
 				.kill(&id, account.as_deref())

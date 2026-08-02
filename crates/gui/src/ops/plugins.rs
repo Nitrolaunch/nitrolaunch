@@ -19,7 +19,7 @@ simple_query! {
 	fn run(&self, _: &Self::Keys) -> impl Future<Output = Result<Self::Ok, Self::Err>> {
 		let back_state = self.back_state.clone();
 
-		query_spawn(async move {
+		query_spawn(back_state.0.clone(), async move {
 			let config = PluginManager::open_config(&back_state.paths)
 				.context("Failed to open plugin config")?;
 			let plugins = PluginManager::get_available_plugins(&back_state.paths)
@@ -53,7 +53,7 @@ simple_query! {
 	fn run(&self, _: &Self::Keys) -> impl Future<Output = Result<Self::Ok, Self::Err>> {
 		let back_state = self.back_state.clone();
 
-		query_spawn(async move {
+		query_spawn(back_state.0.clone(), async move {
 			let mut o = back_state.output();
 			o.set_task(Task::FetchRemotePlugins);
 
@@ -95,7 +95,7 @@ simple_query!(
 		let back_state = self.back_state.clone();
 		let id = keys.clone();
 
-		query_spawn(async move {
+		query_spawn(back_state.0.clone(), async move {
 			let mut o = back_state.output();
 			o.set_task(Task::FetchPluginVersions);
 
@@ -124,7 +124,7 @@ simple_mutation!(
 		let back_state = self.back_state.clone();
 		let (id, version) = keys.clone();
 
-		query_spawn(async move {
+		query_spawn(back_state.0.clone(), async move {
 			let mut o = back_state.output();
 			o.set_task(Task::InstallPlugin);
 
@@ -160,7 +160,7 @@ simple_mutation!(
 		let back_state = self.back_state.clone();
 		let id = keys.clone();
 
-		query_spawn(async move { PluginManager::uninstall_plugin(&id, &back_state.paths) })
+		query_spawn(back_state.0.clone(), async move { PluginManager::uninstall_plugin(&id, &back_state.paths) })
 	}
 	fn on_settled(
 		&self,
@@ -181,7 +181,7 @@ simple_mutation!(
 		let back_state = self.back_state.clone();
 		let id = keys.clone();
 
-		query_spawn(async move { PluginManager::enable_plugin(&id, &back_state.paths) })
+		query_spawn(back_state.0.clone(), async move { PluginManager::enable_plugin(&id, &back_state.paths) })
 	}
 	fn on_settled(
 		&self,
@@ -202,7 +202,7 @@ simple_mutation!(
 		let back_state = self.back_state.clone();
 		let id = keys.clone();
 
-		query_spawn(async move { PluginManager::disable_plugin(&id, &back_state.paths) })
+		query_spawn(back_state.0.clone(), async move { PluginManager::disable_plugin(&id, &back_state.paths) })
 	}
 	fn on_settled(
 		&self,
@@ -222,7 +222,7 @@ simple_query!(
 		let back_state = self.back_state.clone();
 		let ty = keys.clone();
 
-		query_spawn(async move {
+		query_spawn(back_state.0.clone(), async move {
 			let out = back_state
 				.plugins
 				.get_lock()

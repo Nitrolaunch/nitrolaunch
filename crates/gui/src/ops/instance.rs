@@ -51,7 +51,7 @@ impl QueryCapability for FetchItems {
 	fn run(&self, _: &Self::Keys) -> impl Future<Output = Result<Self::Ok, Self::Err>> {
 		let back_state = self.back_state.clone();
 
-		query_spawn(async move {
+		query_spawn(back_state.0.clone(), async move {
 			let config = back_state.config_with_warnings().await?;
 
 			let instances = config
@@ -179,7 +179,7 @@ impl QueryCapability for FetchInstanceConfig {
 		let back_state = self.back_state.clone();
 		let id = id.clone();
 
-		query_spawn(async move {
+		query_spawn(back_state.0.clone(), async move {
 			let config = back_state.config().await?;
 
 			let Some(instance) = config.instances.get(&InstanceID::from(id)) else {
@@ -225,7 +225,7 @@ impl QueryCapability for FetchInstanceOrTemplateConfig {
 		let back_state = self.back_state.clone();
 		let item = item.clone();
 
-		query_spawn(async move {
+		query_spawn(back_state.0.clone(), async move {
 			let config = back_state.config().await?;
 
 			match item.ty {
@@ -299,7 +299,7 @@ impl QueryCapability for FetchParentConfigs {
 		let back_state = self.back_state.clone();
 		let from = keys.clone();
 
-		query_spawn(async move {
+		query_spawn(back_state.0.clone(), async move {
 			let config = back_state.config().await?;
 
 			let out = from
@@ -345,7 +345,7 @@ impl MutationCapability for SaveConfig {
 		let keys = keys.clone();
 		let back_state = self.back_state.clone();
 
-		query_spawn(async move {
+		query_spawn(back_state.0.clone(), async move {
 			let mut raw_config = back_state.raw_config().await?;
 			let modification = match keys.item.ty {
 				ConfigKind::Instance if keys.item.is_new => ConfigModification::AddInstance(
@@ -432,7 +432,7 @@ impl QueryCapability for FetchInstanceOutput {
 		let back_state = self.back_state.clone();
 		let (id, log_file) = keys.clone();
 
-		query_spawn(async move {
+		query_spawn(back_state.0.clone(), async move {
 			if let Some(log_file) = log_file {
 				let config = back_state.config().await?;
 				let mut output = back_state.output();
@@ -484,7 +484,7 @@ simple_query!(
 		let back_state = self.back_state.clone();
 		let id = keys.clone();
 
-		query_spawn(async move {
+		query_spawn(back_state.0.clone(), async move {
 			let config = back_state.config().await?;
 			let mut o = back_state.output();
 			let instance = config
@@ -631,7 +631,7 @@ simple_mutation!(
 		let back_state = self.back_state.clone();
 		let id = keys.clone();
 
-		query_spawn(async move {
+		query_spawn(back_state.0.clone(), async move {
 			let config = back_state.config().await?;
 			let mut o = back_state.output();
 			o.set_task(Task::DeleteInstance);
@@ -664,7 +664,7 @@ simple_mutation!(
 		let back_state = self.back_state.clone();
 		let id = keys.clone();
 
-		query_spawn(async move {
+		query_spawn(back_state.0.clone(), async move {
 			let mut raw_config = back_state.raw_config().await?;
 			let mut o = back_state.output();
 

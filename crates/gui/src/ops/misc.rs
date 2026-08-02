@@ -16,7 +16,7 @@ simple_query!(
 	fn run(&self, _keys: &Self::Keys) -> impl Future<Output = Result<Self::Ok, Self::Err>> {
 		let back_state = self.back_state.clone();
 
-		query_spawn(async move {
+		query_spawn(back_state.0.clone(), async move {
 			let logs = get_log_files(&back_state.paths, "gui")?;
 			Ok(logs.into_iter().map(|x| x.file_name().unwrap_or_default().to_string_lossy().to_string()).collect())
 		})
@@ -32,7 +32,7 @@ simple_query!(
 		let back_state = self.back_state.clone();
 		let log = keys.clone();
 
-		query_spawn(async move {
+		query_spawn(back_state.0.clone(), async move {
 			let path = if let Some(log) = log {
 				get_log_file_path(&back_state.paths, "gui", &log)
 			} else {
@@ -53,7 +53,7 @@ simple_mutation!(
 		let back_state = self.back_state.clone();
 		let keys = keys.clone();
 
-		query_spawn(async move {
+		query_spawn(back_state.0.clone(), async move {
 			let mut o = back_state.output();
 			o.set_task(Task::Opening);
 			let dir = match keys {

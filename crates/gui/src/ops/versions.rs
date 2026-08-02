@@ -38,7 +38,7 @@ impl QueryCapability for FetchMinecraftVersions {
 		let back_state = self.back_state.clone();
 		let keys = keys.clone();
 
-		query_spawn(async move {
+		query_spawn(back_state.0.clone(), async move {
 			let config = back_state.config().await?;
 
 			let core = config

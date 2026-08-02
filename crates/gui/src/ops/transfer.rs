@@ -29,7 +29,7 @@ simple_query!(
 	fn run(&self, _keys: &Self::Keys) -> impl Future<Output = Result<Self::Ok, Self::Err>> {
 		let back_state = self.back_state.clone();
 
-		query_spawn(async move {
+		query_spawn(back_state.0.clone(), async move {
 			let mut o = back_state.output();
 			back_state
 				.plugins
@@ -56,7 +56,7 @@ simple_mutation!(
 			keys.side.clone(),
 		);
 
-		query_spawn(async move {
+		query_spawn(back_state.0.clone(), async move {
 			let mut o = back_state.output();
             o.set_task(Task::ImportInstance);
 
@@ -106,7 +106,7 @@ simple_mutation!(
 		let back_state = self.back_state.clone();
 		let (format, link, instances) = (keys.format.clone(), keys.link, keys.instances.clone());
 
-		query_spawn(async move {
+		query_spawn(back_state.0.clone(), async move {
 			let mut o = back_state.output();
 			o.set_task(Task::MigrateInstances);
 
@@ -168,7 +168,7 @@ simple_query!(
 		let back_state = self.back_state.clone();
 		let format = keys.clone();
 
-		query_spawn(async move {
+		query_spawn(back_state.0.clone(), async move {
 			let mut o = back_state.output();
 			let result = back_state
 				.plugins
@@ -201,7 +201,7 @@ simple_mutation!(
 		let back_state = self.back_state.clone();
 		let (id, format, path) = (keys.id.clone(), keys.format.clone(), keys.path.clone());
 
-		query_spawn(async move {
+		query_spawn(back_state.0.clone(), async move {
 			let config = back_state.config().await?;
 			let mut o = back_state.output();
 			o.set_task(Task::ExportInstance);
