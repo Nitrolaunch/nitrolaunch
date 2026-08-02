@@ -1,4 +1,4 @@
-name: Build GUI2
+name: Build GUI
 on:
   workflow_dispatch:
   push:
@@ -40,9 +40,9 @@ jobs:
             target
             ~/.cargo/registry
             ~/.cargo/git
-          key: ${{ runner.os }}-gui2-${{ hashFiles('Cargo.lock') }}
+          key: ${{ runner.os }}-gui-${{ hashFiles('Cargo.lock') }}
           restore-keys: |
-            ${{ runner.os }}-gui2-
+            ${{ runner.os }}-gui-
 
       - name: Setup Rust environment
         uses: raftario/setup-rust-action@v1.0.0
@@ -81,23 +81,23 @@ jobs:
 
       - name: Build native binary
         if: ${{ matrix.os != 'macos-latest' }}
-        run: cargo build --locked -p nitro_gui2 --profile "${{ env.BUILD_PROFILE }}"
+        run: cargo build --locked -p nitro_gui --profile "${{ env.BUILD_PROFILE }}"
 
       - if: ${{ matrix.os == 'windows-2022' }}
         name: Build Windows ARM64 binary
-        run: cargo build --locked -p nitro_gui2 --profile "${{ env.BUILD_PROFILE }}" --target aarch64-pc-windows-msvc
+        run: cargo build --locked -p nitro_gui --profile "${{ env.BUILD_PROFILE }}" --target aarch64-pc-windows-msvc
 
       - if: ${{ matrix.os == 'macos-latest' }}
         name: Build macOS binaries
         run: |
-          cargo build --locked -p nitro_gui2 --profile "${{ env.BUILD_PROFILE }}" --target x86_64-apple-darwin
-          cargo build --locked -p nitro_gui2 --profile "${{ env.BUILD_PROFILE }}" --target aarch64-apple-darwin
+          cargo build --locked -p nitro_gui --profile "${{ env.BUILD_PROFILE }}" --target x86_64-apple-darwin
+          cargo build --locked -p nitro_gui --profile "${{ env.BUILD_PROFILE }}" --target aarch64-apple-darwin
 
       - name: Package Linux
         if: ${{ matrix.os == 'ubuntu-latest' }}
         run: |
           mkdir -p dist/linux-x86_64
-          cp "target/${{ env.BUILD_PROFILE }}/nitro_gui2" "dist/linux-x86_64/Nitrolaunch"
+          cp "target/${{ env.BUILD_PROFILE }}/nitro_gui" "dist/linux-x86_64/Nitrolaunch"
           tar -C dist -czf "dist/Nitrolaunch-linux-x86_64.tar.gz" linux-x86_64
 
       - name: Package Windows x64
@@ -105,7 +105,7 @@ jobs:
         shell: powershell
         run: |
           New-Item -ItemType Directory -Force -Path dist\windows-x64 | Out-Null
-          Copy-Item "target\${{ env.BUILD_PROFILE }}\nitro_gui2.exe" "dist\windows-x64\Nitrolaunch.exe"
+          Copy-Item "target\${{ env.BUILD_PROFILE }}\nitro_gui.exe" "dist\windows-x64\Nitrolaunch.exe"
           Compress-Archive -Path "dist\windows-x64\*" -DestinationPath "dist\Nitrolaunch-windows-x64.zip" -Force
 
       - name: Package Windows ARM64
@@ -113,7 +113,7 @@ jobs:
         shell: powershell
         run: |
           New-Item -ItemType Directory -Force -Path dist\windows-arm64 | Out-Null
-          Copy-Item "target\aarch64-pc-windows-msvc\${{ env.BUILD_PROFILE }}\nitro_gui2.exe" "dist\windows-arm64\Nitrolaunch.exe"
+          Copy-Item "target\aarch64-pc-windows-msvc\${{ env.BUILD_PROFILE }}\nitro_gui.exe" "dist\windows-arm64\Nitrolaunch.exe"
           Compress-Archive -Path "dist\windows-arm64\*" -DestinationPath "dist\Nitrolaunch-windows-arm64.zip" -Force
 
       - name: Package macOS universal app
@@ -122,8 +122,8 @@ jobs:
           mkdir -p dist/macos-universal/Nitrolaunch.app/Contents/MacOS
           mkdir -p dist/macos-universal/Nitrolaunch.app/Contents/Resources
           lipo -create \
-            "target/x86_64-apple-darwin/${{ env.BUILD_PROFILE }}/nitro_gui2" \
-            "target/aarch64-apple-darwin/${{ env.BUILD_PROFILE }}/nitro_gui2" \
+            "target/x86_64-apple-darwin/${{ env.BUILD_PROFILE }}/nitro_gui" \
+            "target/aarch64-apple-darwin/${{ env.BUILD_PROFILE }}/nitro_gui" \
             -output "dist/macos-universal/Nitrolaunch.app/Contents/MacOS/Nitrolaunch"
           printf '%s\n' \
             '<?xml version="1.0" encoding="UTF-8"?>' \
@@ -135,7 +135,7 @@ jobs:
             '    <key>CFBundleExecutable</key>' \
             '    <string>Nitrolaunch</string>' \
             '    <key>CFBundleIdentifier</key>' \
-            '    <string>org.nitrolaunch.gui2</string>' \
+            '    <string>org.nitrolaunch.gui</string>' \
             '    <key>CFBundleInfoDictionaryVersion</key>' \
             '    <string>6.0</string>' \
             '    <key>CFBundleName</key>' \

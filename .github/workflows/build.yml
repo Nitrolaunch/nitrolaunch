@@ -44,7 +44,7 @@ jobs:
             libwayland-dev
       - if: ${{ matrix.os == 'ubuntu-latest'}}
         name: Run tests
-        run: cargo test --workspace --exclude nitro_gui
+        run: cargo test --workspace
       - if: ${{ github.ref_name == 'main' }}
         name: Build CLI Release
         run: cargo build --package nitro_cli --release

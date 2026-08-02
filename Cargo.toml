@@ -51,7 +51,7 @@ members = [
 	"crates/cli",
 	"crates/config",
 	"crates/core",
-	"crates/gui2",
+	"crates/gui",
 	"crates/instance",
 	"crates/mods",
 	"crates/net",
