@@ -348,6 +348,13 @@ impl BackState {
 		LauncherOutput::new(&self.output_inner)
 	}
 
+	pub fn log(&self, message: impl Into<MessageContents>) {
+		let _ = self.output_inner.logger.try_send(Message {
+			contents: message.into(),
+			level: MessageLevel::Debug,
+		});
+	}
+
 	pub fn register_task(
 		&self,
 		task: Task,

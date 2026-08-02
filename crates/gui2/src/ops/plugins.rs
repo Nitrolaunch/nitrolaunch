@@ -1,4 +1,4 @@
-use anyhow::{Context, bail};
+use anyhow::Context;
 use freya::query::QueriesStorage;
 use itertools::Itertools;
 use nitrolaunch::{
@@ -272,13 +272,16 @@ simple_mutation!(
 
 			for (i, plugin) in default_plugins.into_iter().enumerate() {
 				let Some(plugin) = verified_list.get(plugin) else {
-					bail!("Unknown plugin '{plugin}'");
+					back_state.log(format!("Unknown plugin '{plugin}'"));
+					continue;
 				};
 
-				plugin
+				if let Err(e) = plugin
 					.install(None, &back_state.paths, &back_state.client, &mut o)
 					.await
-					.with_context(|| format!("Failed to install plugin {}", plugin.id))?;
+				{
+					back_state.log(format!("Failed to install plugin '{}': {e:?}", plugin.id));
+				}
 
 				o.display(MessageContents::Progress {
 					current: i as u32,
