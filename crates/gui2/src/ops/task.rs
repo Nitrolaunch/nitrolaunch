@@ -147,6 +147,7 @@ pub enum Task {
 	InstallDefaultPlugins,
 	LoginAccount,
 	LoginFirstAccount,
+	FetchLoaderVersions,
 	Opening,
 	CustomAction,
 }
@@ -170,6 +171,7 @@ impl Task {
 			Self::InstallDefaultPlugins => true,
 			Self::LoginAccount => true,
 			Self::LoginFirstAccount => true,
+			Self::FetchLoaderVersions => false,
 			Self::Opening => false,
 			Self::CustomAction => false,
 		}
@@ -193,6 +195,7 @@ impl Task {
 			Self::InstallDefaultPlugins => true,
 			Self::LoginAccount => true,
 			Self::LoginFirstAccount => true,
+			Self::FetchLoaderVersions => false,
 			Self::Opening => false,
 			Self::CustomAction => false,
 		}
@@ -216,6 +219,7 @@ impl Task {
 			Self::InstallDefaultPlugins => "Plugins installed".into(),
 			Self::LoginAccount => "Logged in".into(),
 			Self::LoginFirstAccount => "Logged in".into(),
+			Self::FetchLoaderVersions => "Loader versions fetched".into(),
 			Self::Opening => "Opened".into(),
 			Self::CustomAction => "Action completed".into(),
 		}
@@ -239,6 +243,7 @@ impl Task {
 			Self::InstallDefaultPlugins => "Failed to install plugins".into(),
 			Self::LoginAccount => "Failed to log in".into(),
 			Self::LoginFirstAccount => "Failed to log in".into(),
+			Self::FetchLoaderVersions => "Failed to fetch loader versions".into(),
 			Self::Opening => "Failed to open".into(),
 			Self::CustomAction => "Failed to run action".into(),
 		}
@@ -264,6 +269,7 @@ impl Display for Task {
 			Self::InstallDefaultPlugins => write!(f, "Installing plugins"),
 			Self::LoginAccount => write!(f, "Logging in"),
 			Self::LoginFirstAccount => write!(f, "Logging in"),
+			Self::FetchLoaderVersions => write!(f, "Fetching loader versions"),
 			Self::Opening => write!(f, "Opening"),
 			Self::CustomAction => write!(f, "Running"),
 		}

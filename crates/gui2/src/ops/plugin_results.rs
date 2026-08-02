@@ -85,7 +85,6 @@ impl FetchLoaderVersions {
 				back_state: Captured(back_state),
 			},
 		)
-		.stale_time(Duration::from_mins(15))
 	}
 }
 
@@ -105,6 +104,8 @@ impl QueryCapability for FetchLoaderVersions {
 		let keys = keys.clone();
 
 		query_spawn(async move {
+			let mut o = back_state.output();
+			o.set_task(Task::FetchLoaderVersions);
 			let Some(minecraft_version) = keys.minecraft_version else {
 				return Ok(Vec::new());
 			};

@@ -7,10 +7,7 @@ use nitrolaunch::{
 	config::modifications::{ConfigModification, apply_modifications_and_write},
 	config_crate::{ConfigKind, instance::InstanceConfig, template::TemplateConfig},
 	core::util::versions::MinecraftVersion,
-	instance::{
-		parse_loader_config,
-		update::{InstanceUpdateContext, UpdateFacets, manager::UpdateSettings},
-	},
+	instance::update::{InstanceUpdateContext, UpdateFacets, manager::UpdateSettings},
 	io::lock::Lockfile,
 	shared::{
 		Side, UpdateDepth,
@@ -89,7 +86,7 @@ impl QueryCapability for FetchItems {
 						.version
 						.as_ref()
 						.map(|x| MinecraftVersion::from_deser(&x)),
-					loader: x.instance.loader.as_ref().map(|x| parse_loader_config(x).0),
+					loader: x.client_loader().or(x.server_loader()).map(|x| x.0),
 					source_plugin: x.instance.source_plugin.clone(),
 					is_editable: x.instance.is_editable || x.instance.source_plugin.is_none(),
 					is_deletable: x.instance.is_deletable || x.instance.source_plugin.is_none(),

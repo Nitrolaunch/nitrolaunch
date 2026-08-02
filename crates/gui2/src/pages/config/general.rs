@@ -2,13 +2,13 @@ use std::rc::Rc;
 
 use nitrolaunch::{
 	config_crate::{ConfigKind, instance::make_valid_instance_id, template::TemplateConfig},
-	instance::parse_loader_config,
 	shared::{Side, util::to_string_json, versions::VersionPattern},
 };
 
 use crate::{
 	components::input::{
-		Derivable, icon::IconSelector, select::Selected, switch::Switch, text::TextInput,
+		Derivable, final_value_owned, icon::IconSelector, select::Selected, switch::Switch,
+		text::TextInput,
 	},
 	ops::{
 		instance::FetchItems,
@@ -298,7 +298,11 @@ impl Component for LoadersConfig {
 			.ok()
 			.cloned()
 			.unwrap_or_default();
-		let minecraft_version = self.config_state.version.read().cloned();
+		let minecraft_version = final_value_owned(
+			self.config_state.version.read().cloned(),
+			&self.parent_configs.0,
+			|x| x.instance.version.as_ref().map(|x| to_string_json(x)),
+		);
 		let client_loader_versions = use_query(FetchLoaderVersions::new(
 			back_state.clone(),
 			self.config_state
@@ -351,7 +355,7 @@ impl Component for LoadersConfig {
 				.clone()
 				.map(|x| Some(x)),
 			&self.parent_configs.0,
-			|x| x.client_loader().map(|x| Some(parse_loader_config(x).0)),
+			|x| x.client_loader().map(|x| Some(x.0)),
 		)
 		.children(client_options);
 		let field_name = if self.config_state.ty == ConfigKind::Instance {
@@ -388,7 +392,7 @@ impl Component for LoadersConfig {
 				.clone()
 				.map(|x| Some(x)),
 			&self.parent_configs.0,
-			|x| x.server_loader().map(|x| Some(parse_loader_config(x).0)),
+			|x| x.server_loader().map(|x| Some(x.0)),
 		)
 		.children(server_options);
 		let field_name = if self.config_state.ty == ConfigKind::Instance {
@@ -486,10 +490,16 @@ impl Component for LoadersConfig {
 		rect()
 			.width(Size::fill())
 			.maybe(show_client_fields, |this| {
-				this.child(client_field).child(client_version_field)
+				this.child(client_field)
+					.maybe(self.config_state.client_loader.read().is_some(), |this| {
+						this.child(client_version_field)
+					})
 			})
 			.maybe(show_server_fields, |this| {
-				this.child(server_field).child(server_version_field)
+				this.child(server_field)
+					.maybe(self.config_state.server_loader.read().is_some(), |this| {
+						this.child(server_version_field)
+					})
 			})
 	}
 }

@@ -4,7 +4,7 @@ use anyhow::Context;
 use nitrolaunch::{
 	config::modifications::{ConfigModification, apply_modifications_and_write},
 	config_crate::{ConfigKind, package::PackageConfigDeser},
-	instance::{Instance, parse_loader_config, update::manager::UpdateSettings},
+	instance::{Instance, update::manager::UpdateSettings},
 	instance_crate::{addon::Addon, lock::InstanceLockfile},
 	pkg::search::{PackageMultiSearchResults, PackageSearchSession},
 	pkg_crate::{
@@ -594,8 +594,8 @@ simple_query!(
 						}
 					}
 
-					let client_loader = template.client_loader().map(|x| parse_loader_config(x).0).unwrap_or_default();
-					let server_loader = template.server_loader().map(|x| parse_loader_config(x).0).unwrap_or_default();
+					let client_loader = template.client_loader().map(|x| x.0).unwrap_or_default();
+					let server_loader = template.server_loader().map(|x| x.0).unwrap_or_default();
 					if !loaders.is_empty() && !loaders.iter().any(|x| x.matches(&client_loader) || x.matches(&server_loader)) {
 						return Ok(Some(PackageCompatabilityError::WrongLoader));
 					}

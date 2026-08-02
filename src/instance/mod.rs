@@ -23,6 +23,7 @@ use std::path::{Path, PathBuf};
 use anyhow::{Context, bail, ensure};
 use nitro_config::instance::{
 	ClientWindowConfig, InstanceConfig, LaunchConfig, LaunchMemory, is_valid_instance_id,
+	parse_loader_config,
 };
 use nitro_config::template::TemplateConfig;
 use nitro_core::io::java::install::JavaInstallationKind;
@@ -32,7 +33,7 @@ use nitro_instance::lock::InstanceLockfile;
 use nitro_shared::Side;
 use nitro_shared::java_args::MemoryNum;
 use nitro_shared::loaders::Loader;
-use nitro_shared::versions::{VersionPattern, parse_versioned_string};
+use nitro_shared::versions::VersionPattern;
 
 use crate::config::package::read_package_config;
 use crate::io::paths::Paths;
@@ -229,12 +230,6 @@ impl InstKind {
 			Self::Server { .. } => Side::Server,
 		}
 	}
-}
-
-/// Parses a loader from configuration
-pub fn parse_loader_config(loader: &str) -> (Loader, VersionPattern) {
-	let (loader, version) = parse_versioned_string(loader);
-	(Loader::parse_from_str(loader), version)
 }
 
 fn launch_config_to_options(config: LaunchConfig) -> anyhow::Result<LaunchOptions> {

@@ -29,7 +29,6 @@ use nitrolaunch::{
 		template::{TemplateConfig, TemplateLoaderConfiguration, TemplatePackageConfiguration},
 	},
 	core::util::versions::MinecraftVersion,
-	instance::parse_loader_config,
 	shared::{
 		Side,
 		loaders::Loader,
@@ -356,8 +355,7 @@ impl ConfigState {
 		self.from.set_if_modified(config.instance.from.get_vec());
 
 		let (loader, loader_version) = if let Some(loader) = config.client_loader() {
-			let result = parse_loader_config(loader);
-			(Some(result.0), result.1)
+			(Some(loader.0), loader.1)
 		} else {
 			(None, VersionPattern::Any)
 		};
@@ -365,8 +363,7 @@ impl ConfigState {
 		self.client_loader_version.set_if_modified(loader_version);
 
 		let (loader, loader_version) = if let Some(loader) = config.server_loader() {
-			let result = parse_loader_config(loader);
-			(Some(result.0), result.1)
+			(Some(loader.0), loader.1)
 		} else {
 			(None, VersionPattern::Any)
 		};

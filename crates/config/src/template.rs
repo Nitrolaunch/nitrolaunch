@@ -3,11 +3,15 @@ use std::collections::HashMap;
 use anyhow::Context;
 use nitro_shared::Side;
 use nitro_shared::id::TemplateID;
+use nitro_shared::loaders::Loader;
 use nitro_shared::output::{MessageContents, NitroOutput};
 use nitro_shared::pkg::{PkgRequest, PkgRequestSource};
+use nitro_shared::versions::VersionPattern;
 #[cfg(feature = "schema")]
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+
+use crate::instance::parse_loader_config;
 
 use super::instance::InstanceConfig;
 use super::package::PackageConfigDeser;
@@ -44,17 +48,27 @@ impl TemplateConfig {
 	}
 
 	/// Gets the client loader of this config
-	pub fn client_loader(&self) -> Option<&str> {
+	pub fn client_loader(&self) -> Option<(Loader, VersionPattern)> {
+		self.client_loader_raw().map(|x| parse_loader_config(x))
+	}
+
+	/// Gets the client loader of this config as a versioned string
+	pub fn client_loader_raw(&self) -> Option<&str> {
 		self.loader
-			.client()
+			.client_raw()
 			.map(|x| x.as_str())
 			.or(self.instance.loader.as_deref())
 	}
 
 	/// Gets the server loader of this config
-	pub fn server_loader(&self) -> Option<&str> {
+	pub fn server_loader(&self) -> Option<(Loader, VersionPattern)> {
+		self.server_loader_raw().map(|x| parse_loader_config(x))
+	}
+
+	/// Gets the server loader of this config as a versioned string
+	pub fn server_loader_raw(&self) -> Option<&str> {
 		self.loader
-			.server()
+			.server_raw()
 			.map(|x| x.as_str())
 			.or(self.instance.loader.as_deref())
 	}
@@ -84,7 +98,12 @@ impl Default for TemplateLoaderConfiguration {
 
 impl TemplateLoaderConfiguration {
 	/// Gets the client side of this configuration
-	pub fn client(&self) -> Option<&String> {
+	pub fn client(&self) -> Option<(Loader, VersionPattern)> {
+		self.client_raw().map(|x| parse_loader_config(x))
+	}
+
+	/// Gets the client side of this configuration as a versioned string
+	pub fn client_raw(&self) -> Option<&String> {
 		match self {
 			Self::Simple(loader) => loader.as_ref(),
 			Self::Full { client, .. } => client.as_ref(),
@@ -92,7 +111,12 @@ impl TemplateLoaderConfiguration {
 	}
 
 	/// Gets the server side of this configuration
-	pub fn server(&self) -> Option<&String> {
+	pub fn server(&self) -> Option<(Loader, VersionPattern)> {
+		self.server_raw().map(|x| parse_loader_config(x))
+	}
+
+	/// Gets the server side of this configuration as a versioned string
+	pub fn server_raw(&self) -> Option<&String> {
 		match self {
 			Self::Simple(loader) => loader.as_ref(),
 			Self::Full { server, .. } => server.as_ref(),
@@ -102,11 +126,11 @@ impl TemplateLoaderConfiguration {
 	/// Merges this configuration with another one
 	pub fn merge(&mut self, other: &Self) {
 		let out = Self::Full {
-			client: other.client().or(self.client()).cloned(),
-			server: other.server().or(self.server()).cloned(),
+			client: other.client_raw().or(self.client_raw()).cloned(),
+			server: other.server_raw().or(self.server_raw()).cloned(),
 		};
-		*self = if out.client() == out.server() {
-			Self::Simple(out.client().cloned())
+		*self = if out.client_raw() == out.server_raw() {
+			Self::Simple(out.client_raw().cloned())
 		} else {
 			out
 		};
@@ -412,8 +436,14 @@ impl InstanceConfig {
 		);
 
 		let loader = match side {
-			Side::Client => config.loader.clone().or(template_loaders.client().cloned()),
-			Side::Server => config.loader.clone().or(template_loaders.server().cloned()),
+			Side::Client => config
+				.loader
+				.clone()
+				.or(template_loaders.client_raw().cloned()),
+			Side::Server => config
+				.loader
+				.clone()
+				.or(template_loaders.server_raw().cloned()),
 		};
 
 		config.loader = loader.clone();

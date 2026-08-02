@@ -6,7 +6,7 @@ use nitro_shared::java_args::MemoryNum;
 use nitro_shared::loaders::Loader;
 use nitro_shared::pkg::{PackageOverrides, PackageStability};
 use nitro_shared::util::{DefaultExt, DeserListOrSingle, merge_options};
-use nitro_shared::versions::MinecraftVersionDeser;
+use nitro_shared::versions::{MinecraftVersionDeser, VersionPattern, parse_versioned_string};
 #[cfg(feature = "schema")]
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -423,6 +423,12 @@ pub fn make_valid_instance_id(string: &str) -> String {
 /// Check if a loader can be installed by Nitrolaunch
 pub fn can_install_loader(loader: &Loader) -> bool {
 	matches!(loader, Loader::Vanilla)
+}
+
+/// Parses a loader from configuration
+pub fn parse_loader_config(loader: &str) -> (Loader, VersionPattern) {
+	let (loader, version) = parse_versioned_string(loader);
+	(Loader::parse_from_str(loader), version)
 }
 
 #[cfg(test)]
