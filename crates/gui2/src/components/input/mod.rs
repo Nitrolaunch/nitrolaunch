@@ -5,7 +5,6 @@ use crate::prelude::*;
 pub mod control;
 pub mod file;
 pub mod icon;
-pub mod number;
 pub mod select;
 pub mod switch;
 pub mod tabs;
