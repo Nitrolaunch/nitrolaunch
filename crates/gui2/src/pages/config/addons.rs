@@ -71,7 +71,7 @@ impl Component for AddonsConfig {
 		let filter = use_state(|| Filter::Configured);
 		let pkg_ty = use_state::<Option<PackageKind>>(|| None);
 		let search = use_state(|| String::new());
-		let side = use_state::<Option<Side>>(|| None);
+		// let side = use_state::<Option<Side>>(|| None);
 
 		let open_states = use_state::<HashSet<String>>(|| HashSet::new());
 
@@ -180,7 +180,6 @@ impl Component for AddonsConfig {
 
 		let filters = Dropdown::from_state(filter.clone())
 			.header_width(Size::flex(1.0))
-			.options_width(180.0)
 			.child(SelectOption::new(
 				Filter::Configured,
 				"Configured",
@@ -201,7 +200,6 @@ impl Component for AddonsConfig {
 			}),
 		)
 		.header_width(Size::flex(1.0))
-		.options_width(180.0)
 		.child(SelectOption::new(None, "Any Type", Some("asterisk")))
 		.children(
 			[
@@ -218,22 +216,22 @@ impl Component for AddonsConfig {
 
 		let search_input = search_bar(TextInput::new(search), &theme);
 
-		let on_select_side =
-			Rc::new(move |new_side: Selected<Option<Side>>| side.clone().set(new_side.single()));
-		let sides = Dropdown::new(Selected::Single(side.read().clone()), on_select_side)
-			.header_width(Size::flex(1.0))
-			.options_width(180.0)
-			.child(SelectOption::new(None, "Any Side", Some("asterisk")))
-			.child(SelectOption::new(
-				Some(Side::Client),
-				"Client",
-				Some("controller"),
-			))
-			.child(SelectOption::new(
-				Some(Side::Server),
-				"Server",
-				Some("server"),
-			));
+		// let on_select_side =
+		// 	Rc::new(move |new_side: Selected<Option<Side>>| side.clone().set(new_side.single()));
+		// let sides = Dropdown::new(Selected::Single(side.read().clone()), on_select_side)
+		// 	.header_width(Size::flex(1.0))
+		// 	.options_width(180.0)
+		// 	.child(SelectOption::new(None, "Any Side", Some("asterisk")))
+		// 	.child(SelectOption::new(
+		// 		Some(Side::Client),
+		// 		"Client",
+		// 		Some("controller"),
+		// 	))
+		// 	.child(SelectOption::new(
+		// 		Some(Side::Server),
+		// 		"Server",
+		// 		Some("server"),
+		// 	));
 
 		let front_state2 = front_state.clone();
 		let back_state2 = back_state.clone();
@@ -308,15 +306,9 @@ impl Component for AddonsConfig {
 		let filters = rect()
 			.width(Size::fill())
 			.cont()
-			.child(
-				rect()
-					.width(Size::flex(1.0))
-					.cont()
-					.child(filters)
-					.child(ty_selector)
-					.child(sides),
-			)
-			.child(rect().width(Size::flex(0.5)).child(search_input));
+			.child(segment(filters, 1.0))
+			.child(segment(search_input, 3.0))
+			.child(segment(ty_selector, 1.0));
 		let header = rect()
 			.width(Size::fill())
 			.spacing(theme.gap)
