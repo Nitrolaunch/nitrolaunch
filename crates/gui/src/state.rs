@@ -25,7 +25,7 @@ use nitrolaunch::{
 	shared::{
 		UpdateDepth,
 		output::{Message, MessageContents, MessageLevel, NitroOutput, NoOp},
-		pkg::{PackageDiff, ResolutionError},
+		pkg::PackageDiff,
 		versions::{MinecraftLatestVersion, MinecraftVersionDeser},
 	},
 };
@@ -42,7 +42,7 @@ use crate::{
 	dependency::BackDependency,
 	instance_manager::RunningInstanceManager,
 	ops::task::{Task, TaskManager},
-	output::{LauncherOutput, OutputInner},
+	output::{LauncherOutput, OutputInner, SerializableResolutionError},
 	pages::{config::ConfiguredItem, settings},
 	routing::{Navigator, Page},
 	secrets::get_ms_client_id,
@@ -467,7 +467,7 @@ pub enum BackEvent {
 	OutputEndProcess(Option<Task>),
 	OutputEndSection(Option<Task>),
 	OutputResolutionError {
-		error: Arc<ResolutionError>,
+		error: Arc<SerializableResolutionError>,
 		instance_id: String,
 	},
 	UpdateRunningInstances,

@@ -123,7 +123,7 @@ impl Component for InstanceListItem {
 			rect()
 				.cont()
 				.child(icon("tag", 16.0))
-				.child(clip_text(&version.to_string()))
+				.child(clip_text(&version.to_string()).width(Size::auto()))
 		} else {
 			rect()
 		};

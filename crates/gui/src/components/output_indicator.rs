@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use nitrolaunch::shared::output::MessageContents;
 
 use crate::{
+	data::LauncherData,
 	ops::task::{KillTask, Task},
 	prelude::*,
 	state::BackEvent,
@@ -28,8 +29,10 @@ impl Component for OutputIndicator {
 		});
 
 		let front_state2 = front_state.clone();
+		let back_state2 = back_state.clone();
 		use_future(move || {
 			let front_state2 = front_state2.clone();
+			let back_state = back_state2.clone();
 			async move {
 				let mut event_rx = front_state2.read().subscribe_events();
 				loop {
@@ -66,6 +69,19 @@ impl Component for OutputIndicator {
 						BackEvent::OutputEndSection(Some(task)) => {
 							if let Some(task) = tasks.write().get_mut(&task) {
 								task.section = None;
+							}
+						}
+						BackEvent::OutputResolutionError { error, instance_id } => {
+							front_state2.write().toast(Toast::error(
+								"Package resolution failed",
+								Some(format!("Instance {instance_id} failed to resolve packages. Check the instance for more information.").into_element()),
+							));
+
+							if let Ok(mut data) = LauncherData::open(&back_state.paths) {
+								data.last_resolution_errors
+									.insert(instance_id, (*error).clone());
+								let _ = data.write(&back_state.paths);
+								front_state2.write().invalidate(FrontChannel::Data);
 							}
 						}
 						_ => {}

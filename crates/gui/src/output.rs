@@ -206,7 +206,7 @@ impl NitroOutput for LauncherOutput {
 			level: MessageLevel::Important,
 		});
 		let _ = self.inner.event_tx.send(BackEvent::OutputResolutionError {
-			error: Arc::new(error),
+			error: Arc::new(SerializableResolutionError::from_err(error)),
 			instance_id: instance_id.to_string(),
 		});
 	}

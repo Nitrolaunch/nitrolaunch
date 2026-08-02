@@ -82,27 +82,39 @@ impl Component for ResolutionErrorView {
 	}
 }
 
-pub fn get_res_err_title(error: &SerializableResolutionError) -> String {
+pub fn get_res_err_title(error: &SerializableResolutionError) -> Element {
 	match error {
-		SerializableResolutionError::PackageContext(req, ..) => format!("In package {req}"),
-		SerializableResolutionError::FailedToPreload(..) => "Failed to preload package".to_string(),
+		SerializableResolutionError::PackageContext(req, ..) => paragraph()
+			.span("In package ")
+			.child(PackageChip {
+				req: req.clone(),
+				error: true,
+			})
+			.into_element(),
+		SerializableResolutionError::FailedToPreload(..) => {
+			"Failed to preload package".to_string().into_element()
+		}
 		SerializableResolutionError::FailedToGetProperties(..) => {
-			"Failed to get package properties".to_string()
+			"Failed to get package properties"
+				.to_string()
+				.into_element()
 		}
 		SerializableResolutionError::NoValidVersionsFound(..) => {
-			"No valid versions found".to_string()
+			"No valid versions found".to_string().into_element()
 		}
 		SerializableResolutionError::ExtensionNotFulfilled(..) => {
-			"Extension not fulfilled".to_string()
+			"Extension not fulfilled".to_string().into_element()
 		}
 		SerializableResolutionError::ExplicitRequireNotFulfilled(..) => {
-			"Explicit require not fulfilled".to_string()
+			"Explicit require not fulfilled".to_string().into_element()
 		}
-		SerializableResolutionError::IncompatiblePackage(..) => "Incompatible package".to_string(),
+		SerializableResolutionError::IncompatiblePackage(..) => {
+			"Incompatible package".to_string().into_element()
+		}
 		SerializableResolutionError::FailedToEvaluate(..) => {
-			"Failed to evaluate package".to_string()
+			"Failed to evaluate package".to_string().into_element()
 		}
-		SerializableResolutionError::Misc(..) => "Miscellaneous error".to_string(),
+		SerializableResolutionError::Misc(..) => "Miscellaneous error".to_string().into_element(),
 	}
 }
 
