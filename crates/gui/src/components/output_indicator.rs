@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use nitrolaunch::shared::output::MessageContents;
 
 use crate::{
+	components::misc::progress_bar,
 	data::LauncherData,
 	ops::task::{KillTask, Task},
 	prelude::*,
@@ -103,24 +104,55 @@ impl Component for OutputIndicator {
 		let indicator = rect()
 			.width(Size::fill())
 			.height(Size::px(36.0))
+			.horizontal()
+			.center()
+			.spacing(theme.gap)
 			.panel_colorway(&theme, false, !tasks.read().is_empty())
 			.background(theme.bg)
-			.corner_radius(theme.round2)
-			.center()
-			.maybe(current_task.is_some_and(|x| x.can_cancel()), |this| {
-				this.tip(&front_state, "Click to cancel")
+			.corner_radius(theme.round)
+			.on_press(move |_| {
+				if current_task2.is_some() {
+					is_open.toggle();
+				}
 			})
-			.on_press(move |_| kill_task.mutate(current_task2.clone().unwrap()))
+			.maybe(current_task.is_some(), |this| {
+				this.child(CircularLoader::new().size(24.0))
+			})
 			.child(indicator_text);
 
 		let popout = if *is_open.read() {
+			let current_task2 = current_task.clone();
+			let task = current_task
+				.as_ref()
+				.and_then(|x| tasks.read().get(x).cloned());
+			let current_message = task
+				.as_ref()
+				.and_then(|x| x.messages.last())
+				.map(|x| format_message(x, &theme))
+				.unwrap_or("Running".into_element());
+
+			let actual = rect()
+				.height(Size::fill())
+				.horizontal()
+				.cross_align(Alignment::Center)
+				.spacing(theme.gap)
+				.padding(theme.gap2)
+				.panel_colorway(&theme, false, true)
+				.corner_radius(theme.round)
+				.maybe(current_task.is_some_and(|x| x.can_cancel()), |this| {
+					this.tip(&front_state, "Click to cancel")
+				})
+				.on_press(move |_| kill_task.mutate(current_task2.clone().unwrap()))
+				.child(CircularLoader::new().size(24.0))
+				.child(current_message);
+
 			Some(
 				rect()
 					.width(Size::fill())
-					.height(Size::px(128.0))
-					.panel_colorway(&theme, false, false)
-					.corner_radius(theme.round2)
-					.margin((0.0, 0.0, 8.0, 0.0)),
+					.height(Size::px(36.0))
+					.margin((0.0, 0.0, theme.gap2, 0.0))
+					.center()
+					.child(actual),
 			)
 		} else {
 			None
@@ -130,6 +162,7 @@ impl Component for OutputIndicator {
 	}
 }
 
+#[derive(Clone)]
 struct TaskData {
 	messages: Vec<MessageContents>,
 	process: Option<String>,
@@ -143,5 +176,37 @@ impl TaskData {
 			process: None,
 			section: None,
 		}
+	}
+}
+
+fn format_message(message: &MessageContents, theme: &Theme) -> Element {
+	match message {
+		MessageContents::Simple(text) => text.clone().into_element(),
+		MessageContents::Warning(text) => label()
+			.text(text.clone())
+			.color(theme.warning)
+			.into_element(),
+		MessageContents::Error(text) => {
+			label().text(text.clone()).color(theme.error).into_element()
+		}
+		MessageContents::Success(text) => label()
+			.text(text.clone())
+			.color(theme.success)
+			.into_element(),
+		MessageContents::Header(text) => label()
+			.text(text.clone())
+			.font_weight(FontWeight::BOLD)
+			.into_element(),
+		MessageContents::Progress { current, total } => {
+			progress_bar(theme, *current as f32 / *total as f32).into_element()
+		}
+		MessageContents::Associated(msg1, msg2) => rect()
+			.horizontal()
+			.center()
+			.spacing(theme.gap)
+			.child(format_message(msg1, theme))
+			.child(format_message(msg2, theme))
+			.into_element(),
+		other => other.clone().default_format().into_element(),
 	}
 }

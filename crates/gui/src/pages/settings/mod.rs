@@ -338,6 +338,10 @@ impl ConsoleImpl for Impl {
 
 #[cfg(debug_assertions)]
 mod debug {
+	use nitrolaunch::shared::output::{MessageContents, NitroOutput};
+
+	use crate::ops::task::Task;
+
 	use super::*;
 
 	#[derive(PartialEq)]
@@ -346,6 +350,7 @@ mod debug {
 	impl Component for DebugSettings {
 		fn render(&self) -> impl IntoElement {
 			let front_state = use_front_state();
+			let back_state = use_consume::<BackState>();
 
 			let front_state2 = front_state.clone();
 			let front_state3 = front_state.clone();
@@ -396,6 +401,30 @@ mod debug {
 								"Error",
 								Some("Lorem ipsum dolor sit amet adipiscing sdofijsdfoisjdfoisjdoflij".into_element()),
 							));
+						}),
+				)
+				.child(
+					rect()
+						.width(Size::px(16.0))
+						.height(Size::px(16.0))
+						.background(Color::BLUE)
+						.on_press(move |_| {
+							let back_state = back_state.clone();
+							spawn_forever(async move {
+								let mut o = back_state.output();
+								o.set_task(Task::Opening);
+								tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+								for i in 0..100 {
+									o.display(MessageContents::associated(
+										MessageContents::Simple("Downloading".into()),
+										MessageContents::Progress {
+											current: i as u32,
+											total: 100,
+										},
+									));
+									tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+								}
+							});
 						}),
 				)
 		}
