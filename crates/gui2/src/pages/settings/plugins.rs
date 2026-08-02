@@ -1,7 +1,7 @@
 use std::rc::Rc;
 
 use itertools::Itertools;
-use nitrolaunch::shared::loaders::Loader;
+use nitrolaunch::shared::{loaders::Loader, util::open_link};
 
 use crate::{
 	components::input::{select::Selected, switch::Switch},
@@ -244,6 +244,7 @@ impl Component for PluginItem {
 			SelectOption::simple_or_none(info.version.clone())
 		});
 
+		let documentation = info.meta.documentation.clone();
 		let controls = rect()
 			.width(Size::flex(1.0))
 			.height(Size::fill())
@@ -253,15 +254,28 @@ impl Component for PluginItem {
 			.main_align(Alignment::End)
 			.padding(Gaps::new(0.0, theme.gap2, 0.0, 0.0))
 			.maybe_child(enable_switch)
+			.maybe(self.info.0.meta.documentation.is_some(), |this| {
+				this.child(rect().tip(&front_state, "Documentation").child(
+					icon_button("book", &theme).on_press(move |_| {
+						let _ = open_link(documentation.as_deref().unwrap());
+					}),
+				))
+			})
 			.maybe(self.is_remote, |this| {
 				this.child(
-					button(&theme)
-						.on_press(install)
-						.child(icon("download", 16.0)),
+					rect().tip(&front_state, "Install").child(
+						button(&theme)
+							.on_press(install)
+							.child(icon("download", 16.0)),
+					),
 				)
 			})
 			.maybe(!self.is_remote, |this| {
-				this.child(icon_button("trash", &theme).on_press(uninstall))
+				this.child(
+					rect()
+						.tip(&front_state, "Uninstall")
+						.child(icon_button("trash", &theme).on_press(uninstall)),
+				)
 			})
 			.child(rect().width(Size::px(84.0)).child(version_selector));
 
