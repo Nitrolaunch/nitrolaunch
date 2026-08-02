@@ -97,13 +97,13 @@ impl Component for NavBar {
 			.center()
 			.main_align(Alignment::End)
 			.child(AccountSelector)
-			.child(Toasts)
 			.child(
 				rect()
 					.margin(3.0)
 					.tip(&front_state, "Help")
 					.child(help_button),
-			);
+			)
+			.child(Toasts);
 
 		rect()
 			.width(Size::fill())
