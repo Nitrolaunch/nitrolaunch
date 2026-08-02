@@ -281,11 +281,11 @@ impl<T: EventHandlersExt> CustomEvents for T {
 	}
 
 	fn hover(self, mut state: State<bool>) -> Self {
-		self.on_pointer_enter(move |_| {
+		self.on_pointer_over(move |_| {
 			Cursor::set(CursorIcon::Pointer);
 			state.set(true);
 		})
-		.on_pointer_leave(move |_| {
+		.on_pointer_out(move |_| {
 			Cursor::set(CursorIcon::default());
 			state.set(false);
 		})
