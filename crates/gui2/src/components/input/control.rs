@@ -121,7 +121,8 @@ impl Component for ControlInput {
 					let max = *max as f64;
 					let step = *step as f64;
 					let scale = (max - min) / 100.0;
-					let value = value.as_f64().unwrap_or(min) / scale;
+					let value = value.as_f64().unwrap_or(min);
+					let scaled_value = value / scale;
 
 					let theme = SliderThemePartial {
 						background: Some(Preference::Specific(theme.panel)),
@@ -138,10 +139,14 @@ impl Component for ControlInput {
 								.unwrap_or(serde_json::Number::from_f64(0.0).unwrap()),
 						));
 					})
-					.value(value)
+					.value(scaled_value)
 					.theme(theme);
 
-					rect().width(Size::px(240.0)).child(slider).into_element()
+					rect()
+						.width(Size::px(240.0))
+						.tip(&front_state, &format!("{:.3}", value))
+						.child(slider)
+						.into_element()
 				} else {
 					label().text("Not supported yet").into_element()
 				}
