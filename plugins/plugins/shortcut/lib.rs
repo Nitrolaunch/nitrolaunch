@@ -125,7 +125,7 @@ fn create_shortcut(
 
 	match get_os_string().as_str() {
 		"linux" => {
-			let icon = include_bytes!("../../../gui/src-tauri/icons/icon_128x128.png");
+			let icon = include_bytes!("../../../crates/gui2/assets/icon_128x128.png");
 			let icon_path =
 				home_dir.join(".local/share/icons/hicolor/128x128/apps/nitrolaunch.png");
 			if let Some(parent) = icon_path.parent() {
@@ -145,7 +145,7 @@ fn create_shortcut(
 			std::fs::write(path, contents).context("Failed to write shortcut")?;
 		}
 		"windows" => {
-			let icon = include_bytes!("../../../gui/src-tauri/icons/icon.ico");
+			let icon = include_bytes!("../../../crates/gui2/assets/icon.ico");
 			let icon_path = get_data_dir().join("internal/shortcut_icon.ico");
 			let _ = std::fs::write(&icon_path, icon);
 
