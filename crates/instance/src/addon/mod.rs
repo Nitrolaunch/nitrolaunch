@@ -59,7 +59,7 @@ impl Addon {
 	}
 
 	/// Checks if this addon is the source for the given target addon.
-	/// 
+	///
 	/// For example, if this addon targeted a destination file, and you called Addon::from_file() on that path,
 	/// Addon::is_source(self, other) would return true
 	pub fn is_source(&self, other: &Self) -> bool {

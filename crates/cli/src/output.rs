@@ -2,7 +2,7 @@ use std::borrow::Cow;
 use std::io::Write;
 use std::time::Duration;
 
-use anyhow::Context;
+use anyhow::{Context, bail};
 use color_print::{cformat, cstr};
 use inquire::{Confirm, Password};
 use itertools::Itertools;
@@ -13,6 +13,7 @@ use nitrolaunch::shared::io::config::IO_CONFIG;
 use nitrolaunch::shared::lang::translate::{TranslationKey, TranslationMap};
 use nitrolaunch::shared::output::{Message, MessageContents, MessageLevel, NitroOutput};
 use nitrolaunch::shared::util::print::ReplPrinter;
+use tokio::sync::broadcast;
 use tokio::sync::mpsc::{Receiver, Sender};
 
 /// A nice colored bullet point for terminal output
@@ -34,6 +35,7 @@ pub const CHECK: &str = "\u{2713}";
 /// Terminal NitroOutput
 pub struct TerminalOutput {
 	tx: Sender<Event>,
+	rx: broadcast::Receiver<ResponseEvent>,
 	level: MessageLevel,
 	translation_map: Option<TranslationMap>,
 }
@@ -69,29 +71,30 @@ impl NitroOutput for TerminalOutput {
 		default: bool,
 		message: MessageContents,
 	) -> anyhow::Result<bool> {
-		let ans = Confirm::new(&format_message(message))
-			.with_default(default)
-			.prompt()
-			.context("Inquire prompt failed")?;
+		let _ = self
+			.tx
+			.send(Event::YesNo {
+				message: message.clone(),
+				default,
+			})
+			.await
+			.context("Failed to send yes/no prompt event")?;
 
-		Ok(ans)
+		while let Ok(response) = self.rx.recv().await {
+			if let ResponseEvent::YesNo(answer) = response {
+				return Ok(answer);
+			}
+		}
+
+		bail!("Failed to receive yes/no prompt response");
 	}
 
 	async fn prompt_password(&mut self, message: MessageContents) -> anyhow::Result<String> {
-		let ans = Password::new(&format_message(message))
-			.without_confirmation()
-			.prompt()
-			.context("Inquire prompt failed")?;
-
-		Ok(ans)
+		self.prompt_a_password(message, false).await
 	}
 
 	async fn prompt_new_password(&mut self, message: MessageContents) -> anyhow::Result<String> {
-		let ans = Password::new(&format_message(message))
-			.prompt()
-			.context("Inquire prompt failed")?;
-
-		Ok(ans)
+		self.prompt_a_password(message, true).await
 	}
 
 	fn translate(&self, key: TranslationKey) -> &str {
@@ -120,6 +123,7 @@ impl NitroOutput for TerminalOutput {
 	fn get_greater_copy(&self) -> Box<dyn NitroOutput + Sync> {
 		Box::new(Self {
 			tx: self.tx.clone(),
+			rx: self.rx.resubscribe(),
 			level: MessageLevel::Important,
 			translation_map: None,
 		})
@@ -128,13 +132,15 @@ impl NitroOutput for TerminalOutput {
 
 impl TerminalOutput {
 	pub fn new(paths: &Paths) -> anyhow::Result<Self> {
-		let (tx, rx) = tokio::sync::mpsc::channel(20);
-		let output_task = OutputTask::new(rx, paths)?;
+		let (tx, rx) = tokio::sync::mpsc::channel(80);
+		let (response_tx, response_rx) = broadcast::channel(20);
+		let output_task = OutputTask::new(rx, response_tx, paths)?;
 
 		tokio::spawn(output_task.run());
 
 		Ok(Self {
 			tx,
+			rx: response_rx,
 			level: MessageLevel::Important,
 			translation_map: None,
 		})
@@ -149,6 +155,29 @@ impl TerminalOutput {
 	/// Set the translation map of the output
 	pub fn set_translation_map(&mut self, map: TranslationMap) {
 		self.translation_map = Some(map);
+	}
+
+	async fn prompt_a_password(
+		&mut self,
+		message: MessageContents,
+		is_new: bool,
+	) -> anyhow::Result<String> {
+		let _ = self
+			.tx
+			.send(Event::Password {
+				message: message.clone(),
+				is_new,
+			})
+			.await
+			.context("Failed to send password prompt event")?;
+
+		while let Ok(response) = self.rx.recv().await {
+			if let ResponseEvent::Password { password } = response {
+				return Ok(password);
+			}
+		}
+
+		bail!("Failed to receive password prompt response");
 	}
 }
 
@@ -203,6 +232,7 @@ fn add_period(string: String) -> String {
 
 struct OutputTask {
 	rx: Receiver<Event>,
+	tx: broadcast::Sender<ResponseEvent>,
 	printer: ReplPrinter,
 	level: MessageLevel,
 	in_process: bool,
@@ -214,7 +244,11 @@ struct OutputTask {
 }
 
 impl OutputTask {
-	fn new(rx: Receiver<Event>, paths: &Paths) -> anyhow::Result<Self> {
+	fn new(
+		rx: Receiver<Event>,
+		response_tx: broadcast::Sender<ResponseEvent>,
+		paths: &Paths,
+	) -> anyhow::Result<Self> {
 		let mut logger = Logger::new(paths, "cli").context("Failed to create logger")?;
 
 		// Log the command
@@ -223,6 +257,7 @@ impl OutputTask {
 
 		Ok(Self {
 			rx,
+			tx: response_tx,
 			printer: ReplPrinter::new(true),
 			level: MessageLevel::Important,
 			in_process: false,
@@ -259,6 +294,27 @@ impl OutputTask {
 						Event::EndProcess => self.end_process(),
 						Event::StartSection => self.start_section(),
 						Event::EndSection => self.end_section(),
+						Event::YesNo { message, default } => {
+							let ans = Confirm::new(&format_message(message))
+								.with_default(default)
+								.prompt();
+							if let Ok(ans) = ans {
+								let _ = self.tx.send(ResponseEvent::YesNo(ans));
+							}
+						}
+						Event::Password { message, is_new } => {
+							let ans = if is_new {
+								Password::new(&format_message(message))
+									.prompt()
+							} else {
+								Password::new(&format_message(message))
+									.without_confirmation()
+									.prompt()
+							};
+							if let Ok(ans) = ans {
+								let _ = self.tx.send(ResponseEvent::Password { password: ans });
+							}
+						}
 						Event::SetLevel(level) => self.level = level,
 					}
 				}
@@ -373,7 +429,21 @@ enum Event {
 	EndProcess,
 	StartSection,
 	EndSection,
+	YesNo {
+		message: MessageContents,
+		default: bool,
+	},
+	Password {
+		message: MessageContents,
+		is_new: bool,
+	},
 	SetLevel(MessageLevel),
+}
+
+#[derive(Clone)]
+enum ResponseEvent {
+	YesNo(bool),
+	Password { password: String },
 }
 
 /// Formatting for messages
