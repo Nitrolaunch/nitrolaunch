@@ -337,5 +337,13 @@
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Protect yourself against malware in mods"
+	},
+	"mojang_transfer": {
+		"id": "mojang_transfer",
+		"name": "Mojang Transfer",
+		"version": "v7",
+		"github_owner": "Nitrolaunch",
+		"github_repo": "plugins",
+		"description": "Instance transfer for the Official Launcher"
 	}
 }
