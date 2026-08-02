@@ -62,7 +62,6 @@ members = [
 	"crates/plugin",
 	"crates/shared",
 	"crates/tools",
-	"gui/src-tauri",
 	"plugins",
 	"plugins/plugins/auto_mcs",
 	"plugins/plugins/automate",
