@@ -198,6 +198,7 @@ impl Component for PackageInstallModal {
 		let req = self.req.clone();
 		let tab = tab.clone();
 		let selected_item = selected_item.clone();
+		let new_instance_id = new_instance_id.clone();
 		let on_close = self.on_close.clone();
 		Modal::new(format!("Install {name}"), "download".into())
 			.size(MODAL_MEDIUM_WIDTH, MODAL_MEDIUM_HEIGHT)
@@ -231,12 +232,9 @@ impl Component for PackageInstallModal {
 								PackageInstallLocation::Template(selected.id.unwrap().into(), None)
 							}
 						}
-						Tab::ModpackInstance => {
-							let Some(selected) = selected_item.read().clone() else {
-								return;
-							};
-							PackageInstallLocation::NewInstanceModpack(selected.id.unwrap().into())
-						}
+						Tab::ModpackInstance => PackageInstallLocation::NewInstanceModpack(
+							new_instance_id.read().clone().into(),
+						),
 					};
 
 					install_package.mutate((req.clone(), location));

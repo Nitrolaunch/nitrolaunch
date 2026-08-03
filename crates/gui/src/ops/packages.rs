@@ -20,7 +20,10 @@ use nitrolaunch::{
 };
 use tokio::task::JoinSet;
 
-use crate::{ops::task::Task, pages::config::ConfiguredItem, prelude::*, simple_query};
+use crate::{
+	dependency::BackDependency, ops::task::Task, pages::config::ConfiguredItem, prelude::*,
+	simple_query,
+};
 
 #[derive(Clone, PartialEq, Eq, Hash)]
 pub struct FetchInstanceLockfile {
@@ -490,6 +493,8 @@ impl MutationCapability for InstallPackage {
 				&mut o,
 			)
 			.await?;
+
+			back_state.invalidate(BackDependency::Items);
 
 			Ok(())
 		})

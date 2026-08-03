@@ -5,8 +5,10 @@ use std::{
 };
 
 use anyhow::{Context, bail};
-use nitro_config::instance::InstanceConfig;
+use nitro_config::instance::{InstanceConfig, make_valid_instance_id};
+use nitro_core::io::files::create_leading_dirs_async;
 use nitro_instance::lock::{LockfileAddon, LockfileModpack};
+use nitro_net::download;
 use nitro_plugin::hook::hooks::{AddModpackFormats, InstallModpack, InstallModpackArg};
 use nitro_shared::{
 	Side, UpdateDepth,
@@ -292,6 +294,22 @@ impl Instance {
 
 		config.modpack = Some(modpack.to_string());
 
+		// Download and add the icon
+		if let Some(icon) = download_result.icon {
+			let pkg_identifier = make_valid_instance_id(&modpack.to_string_no_version());
+			let path = paths.internal.join("icons").join(&pkg_identifier);
+			if !path.exists() {
+				let _ = create_leading_dirs_async(&path).await;
+				if let Err(e) = download::file(&icon, &path, client).await {
+					o.display(MessageContents::Error(format!(
+						"Failed to download modpack icon: {e:?}"
+					)));
+				}
+			}
+
+			config.icon = Some(path.to_string_lossy().to_string());
+		}
+
 		Ok(config)
 	}
 }
@@ -303,7 +321,7 @@ pub struct ModpackInstallResult {
 	pub supplied_packages: Vec<String>,
 }
 
-/// Evaluates a modpack package and downloads it's addon
+/// Evaluates a modpack package and downloads its addon
 pub async fn download_modpack_package(
 	modpack: &ArcPkgReq,
 	input: EvalInput,
@@ -350,9 +368,15 @@ pub async fn download_modpack_package(
 			.context("Failed to download modpack")?;
 	}
 
+	let meta = package
+		.get_metadata(paths, client)
+		.await
+		.context("Failed to get modpack metadata")?;
+
 	Ok(Some(ModpackDownloadResult {
 		modpack_path,
 		format: format.clone(),
+		icon: meta.icon.clone(),
 		bundled: result.bundled,
 		included: result.inclusions,
 	}))
@@ -365,6 +389,8 @@ pub struct ModpackDownloadResult {
 	pub modpack_path: PathBuf,
 	/// Format of the modpack
 	pub format: String,
+	/// URL to the icon of the modpack
+	pub icon: Option<String>,
 	/// Packages bundled with the modpack, to be included in suppression
 	pub bundled: Vec<Arc<str>>,
 	/// Packages included with the modpack, to be included in suppression
