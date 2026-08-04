@@ -401,6 +401,11 @@ impl ConfigState {
 			.write()
 			.update(config.instance.plugin_config.clone());
 
+		// Set default side for new instances
+		if self.ty == ConfigKind::Instance && self.is_new {
+			self.side.set_if_modified(Some(Side::Client));
+		}
+
 		self.is_dirty.set_if_modified(self.is_new);
 		self.is_id_dirty.set_if_modified(!self.is_new);
 	}
