@@ -966,7 +966,7 @@ def_hook!(
 );
 
 /// Information about a Java type
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Clone)]
 #[serde(default)]
 pub struct JavaTypeInfo {
 	/// The ID of the Java type

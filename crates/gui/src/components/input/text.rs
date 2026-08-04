@@ -1,4 +1,7 @@
-use crate::{components::input::Derivable, prelude::*};
+use crate::{
+	components::input::{Derivable, input_error},
+	prelude::*,
+};
 
 #[derive(PartialEq)]
 pub struct TextInput {
@@ -7,6 +10,7 @@ pub struct TextInput {
 	on_submit: Option<EventHandler<String>>,
 	derived_value: Option<String>,
 	placeholder: Option<String>,
+	error: Option<String>,
 }
 
 #[allow(dead_code)]
@@ -18,6 +22,7 @@ impl TextInput {
 			on_submit: None,
 			derived_value: None,
 			placeholder: None,
+			error: None,
 		}
 	}
 
@@ -44,6 +49,13 @@ impl Derivable<String> for TextInput {
 	}
 }
 
+impl InputError for TextInput {
+	fn input_error(mut self, message: &str) -> Self {
+		self.error = Some(message.into());
+		self
+	}
+}
+
 impl Component for TextInput {
 	fn render(&self) -> impl IntoElement {
 		let theme = use_theme();
@@ -58,7 +70,7 @@ impl Component for TextInput {
 			placeholder_color: Some(Preference::Specific(theme.fg3.into())),
 		};
 
-		Input::new(self.value.clone())
+		let out = Input::new(self.value.clone())
 			.width(Size::fill())
 			.theme_colors(input_theme)
 			.corner_radius(theme.round)
@@ -76,6 +88,17 @@ impl Component for TextInput {
 			})
 			.maybe(self.placeholder.is_some(), |this| {
 				this.placeholder(self.placeholder.clone().unwrap())
+			})
+			.maybe(self.error.is_some(), |this| {
+				this.border_fill(theme.error).focus_border_fill(theme.error)
+			})
+			.into_element();
+
+		rect()
+			.width(Size::fill())
+			.child(out)
+			.maybe(self.error.is_some(), |this| {
+				this.child(input_error(self.error.as_ref().unwrap(), &theme))
 			})
 	}
 }

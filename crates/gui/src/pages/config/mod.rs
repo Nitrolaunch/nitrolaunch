@@ -16,7 +16,7 @@ use crate::{
 		},
 		plugin_results::{FetchInstanceControls, FetchInstanceControlsKeys},
 	},
-	pages::config::{addons::AddonsConfig, general::GeneralTab},
+	pages::config::{addons::AddonsConfig, general::GeneralTab, launch::LaunchConfigPage},
 	prelude::*,
 	state::{FrontState, ModalType},
 	util::{PtrEq, Shared},
@@ -41,6 +41,7 @@ use nitrolaunch::{
 
 pub mod addons;
 mod general;
+mod launch;
 
 #[derive(PartialEq)]
 pub struct ConfigPage;
@@ -233,7 +234,11 @@ impl Component for ConfigModal {
 				on_edit: None,
 			}
 			.into_element(),
-			Tab::Launch => rect().into_element(),
+			Tab::Launch => LaunchConfigPage {
+				config_state: self.config_state.clone(),
+				parent_configs: PtrEq(parent_configs.clone()),
+			}
+			.into_element(),
 			Tab::Custom(id) => {
 				let controls = controls.read();
 				let default = Arc::default();
@@ -289,6 +294,7 @@ pub struct ConfigState {
 	pub server_loader_version: State<VersionPattern>,
 	pub packages: State<TemplatePackageConfiguration>,
 	pub modpack: State<Option<String>>,
+	pub java: State<Option<String>>,
 	pub plugin: State<Option<String>>,
 	pub plugin_config: State<ControlledConfig>,
 }
@@ -316,6 +322,7 @@ impl ConfigState {
 			server_loader_version: use_state(|| VersionPattern::Any),
 			packages: use_state(|| TemplatePackageConfiguration::default()),
 			modpack: use_state(|| None),
+			java: use_state(|| None),
 			plugin: use_state(|| None),
 			plugin_config: use_state(|| ControlledConfig::default()),
 		};
@@ -334,6 +341,7 @@ impl ConfigState {
 			out2.server_loader_version.read();
 			out2.packages.read();
 			out2.modpack.read();
+			out2.java.read();
 			out2.plugin.read();
 			out2.plugin_config.read();
 
@@ -380,12 +388,12 @@ impl ConfigState {
 				.map(|x| MinecraftVersion::from_deser(&x).to_string()),
 		);
 		self.packages.set(match self.ty {
-			ConfigKind::Instance => {
-				TemplatePackageConfiguration::Simple(config.instance.packages.clone())
-			}
-			ConfigKind::Template | ConfigKind::BaseTemplate => config.packages.clone(),
+			ConfigKind::Instance => TemplatePackageConfiguration::Simple(config.instance.packages),
+			ConfigKind::Template | ConfigKind::BaseTemplate => config.packages,
 		});
 		self.modpack.set_if_modified(config.instance.modpack);
+
+		self.java.set_if_modified(config.instance.launch.java);
 
 		self.plugin
 			.set_if_modified(config.instance.source_plugin.clone());
@@ -428,7 +436,6 @@ impl ConfigState {
 			)),
 			Some(other) => Some(MinecraftVersionDeser::Version(other.into())),
 		};
-		config.instance.modpack = self.modpack.peek().clone();
 
 		match self.ty {
 			ConfigKind::Instance => {
@@ -468,6 +475,10 @@ impl ConfigState {
 				config.loader.merge(&new_config);
 			}
 		}
+
+		config.instance.modpack = self.modpack.peek().clone();
+
+		config.instance.launch.java = self.java.peek().clone();
 
 		match self.ty {
 			ConfigKind::Instance => {

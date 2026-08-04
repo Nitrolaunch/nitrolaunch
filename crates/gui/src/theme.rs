@@ -64,6 +64,8 @@ pub struct Theme {
 	pub sidebar_width: f32,
 
 	// Other
+	/// Smaller font size
+	pub font0: f32,
 	/// Font size
 	pub font: f32,
 	/// Larger font size
@@ -140,6 +142,7 @@ pub struct ThemeDeser {
 	pub footer_height: Option<f32>,
 	pub sidebar: Option<HexColor>,
 	pub sidebar_width: Option<f32>,
+	pub font0: Option<f32>,
 	pub font: Option<f32>,
 	pub font2: Option<f32>,
 	pub gap: Option<f32>,
@@ -189,6 +192,7 @@ impl ThemeDeser {
 			footer_height: Some(48.0),
 			sidebar: Some(HexColor("#111112".into())),
 			sidebar_width: Some(42.0),
+			font0: Some(12.0),
 			font: Some(14.0),
 			font2: Some(18.0),
 			gap: Some(6.0),
@@ -238,6 +242,7 @@ impl ThemeDeser {
 			footer_height: Some(48.0),
 			sidebar: Some(HexColor("#eeeef0".into())),
 			sidebar_width: Some(42.0),
+			font0: Some(12.0),
 			font: Some(14.0),
 			font2: Some(18.0),
 			gap: Some(6.0),
@@ -294,6 +299,7 @@ impl From<ThemeDeser> for Theme {
 			footer_height: value.footer_height.unwrap_or(48.0),
 			sidebar: value.sidebar.unwrap_or_default().into(),
 			sidebar_width: value.sidebar_width.unwrap_or(42.0),
+			font0: value.font0.unwrap_or(12.0),
 			font: value.font.unwrap_or(14.0),
 			font2: value.font2.unwrap_or(18.0),
 			gap: value.gap.unwrap_or(6.0),

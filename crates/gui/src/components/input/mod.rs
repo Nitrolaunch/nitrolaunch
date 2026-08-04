@@ -100,3 +100,31 @@ pub fn final_value_owned<T>(
 		parent_configs.into_iter().find_map(|x| property(x))
 	}
 }
+
+/// Used for inputs that can display validation errors
+pub trait InputError {
+	fn input_error(self, message: &str) -> Self;
+
+	fn maybe_input_error(self, condition: bool, message: &str) -> Self
+	where
+		Self: Sized,
+	{
+		if condition {
+			self.input_error(message)
+		} else {
+			self
+		}
+	}
+}
+
+/// Simple absolute error message tag
+pub fn input_error(message: &str, theme: &Theme) -> impl IntoElement {
+	rect()
+		.position(Position::new_absolute().top(-theme.gap2).right(-theme.gap2))
+		.layer(Layer::Relative(2))
+		.padding((theme.gap / 2.0, theme.gap))
+		.corner_radius(theme.round)
+		.background(theme.error)
+		.font_size(theme.font0)
+		.child(message)
+}

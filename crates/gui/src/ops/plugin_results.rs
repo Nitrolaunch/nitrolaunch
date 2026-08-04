@@ -8,9 +8,9 @@ use nitrolaunch::{
 		control::Control,
 		hook::hooks::{
 			AccountTypeInfo, AddAccountTypes, AddDropdownButtons, AddInstanceConfigControls,
-			AddInstanceConfigControlsArg, AddSupportedLoaders, CustomAction, CustomActionArg,
-			DropdownButton, DropdownButtonLocation, GetLoaderVersions, GetLoaderVersionsArg,
-			GetPopup, GetPopupArg,
+			AddInstanceConfigControlsArg, AddJavaTypes, AddSupportedLoaders, CustomAction,
+			CustomActionArg, DropdownButton, DropdownButtonLocation, GetLoaderVersions,
+			GetLoaderVersionsArg, GetPopup, GetPopupArg, JavaTypeInfo,
 		},
 	},
 	shared::{
@@ -199,6 +199,26 @@ simple_query!(
 				.await?;
 
 			Ok(results.into_iter().filter(|b| b.location == location).collect())
+		})
+	}
+);
+
+simple_query!(
+	name = FetchJavaTypes,
+	ok = Vec<JavaTypeInfo>,
+	err = anyhow::Error,
+	keys = (),
+	fn run(&self, _keys: &Self::Keys) -> impl Future<Output = Result<Self::Ok, Self::Err>> {
+		let back_state = self.back_state.clone();
+
+		query_spawn(back_state.0.clone(), async move {
+			let mut o = back_state.output();
+			back_state
+				.plugins
+				.call_hook(AddJavaTypes, &(), &back_state.paths, &mut o)
+				.await?
+				.flatten_all_results(&mut o)
+				.await
 		})
 	}
 );
