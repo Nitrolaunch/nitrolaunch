@@ -301,6 +301,7 @@ impl Component for InstancePage {
 			.border(border_right(theme.border, theme.panel_border))
 			.child(tabs);
 
+		let config_state2 = config_state.clone();
 		let save_fn = config_state.save_fn(front_state.clone(), save_config);
 		let contents = match &*tab.read() {
 			// Tab::Info => rect().into_element(),
@@ -309,7 +310,9 @@ impl Component for InstancePage {
 				parent_configs: PtrEq(parent_configs.clone()),
 				on_edit: Some(
 					(move |_| {
-						save_fn();
+						if config_state2.has_changed() {
+							save_fn();
+						}
 					})
 					.into(),
 				),

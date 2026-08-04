@@ -544,7 +544,7 @@ impl ConfigState {
 		}
 	}
 
-	fn has_changed(&self) -> bool {
+	pub fn has_changed(&self) -> bool {
 		if self.is_new {
 			return true;
 		}

@@ -133,6 +133,7 @@ impl Component for AddonsConfig {
 			let open_states2 = open_states.clone();
 			let open_states3 = open_states.clone();
 			let theme2 = theme.clone();
+			let on_edit = self.on_edit.clone();
 			VirtualScrollView::new_with_data(
 				(
 					packages.read().cloned(),
@@ -157,6 +158,7 @@ impl Component for AddonsConfig {
 						packages: packages.0.clone(),
 						config_state: config_state.clone(),
 						is_open: open_states.contains(&item.id.to_string()),
+						on_edit: on_edit.clone(),
 						open_toggle,
 					}
 					.into_element()
@@ -350,6 +352,7 @@ struct ContentItemElem {
 	config_state: ConfigState,
 	is_open: bool,
 	open_toggle: EventHandler<()>,
+	on_edit: Option<EventHandler<()>>,
 }
 
 impl ContentItemElem {
@@ -448,6 +451,7 @@ impl Component for ContentItemElem {
 		let header_size = 16.0 + theme.gap * 2.0;
 		let config_state2 = self.config_state.clone();
 		let item2 = self.item.clone();
+		let on_edit = self.on_edit.clone();
 		let more_dropdown = Dropdown::new(
 			Selected::Single(ItemMoreDropdown::More),
 			Rc::new(move |selected| match selected.single() {
@@ -456,6 +460,9 @@ impl Component for ContentItemElem {
 					ContentItemType::Modpack { .. } | ContentItemType::Addon => {}
 					ContentItemType::Package { req } => {
 						config_state2.packages.clone().write().remove_package(req);
+						if let Some(on_edit) = &on_edit {
+							on_edit.call(());
+						}
 					}
 				},
 			}),
