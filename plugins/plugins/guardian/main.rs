@@ -162,15 +162,15 @@ fn main() -> anyhow::Result<()> {
 }
 
 fn default_scan(inst_dir: &Path, data_dir: &Path, o: &mut impl NitroOutput) -> anyhow::Result<()> {
+	let dir = inst_dir.join("mods");
+	if !dir.exists() {
+		return Ok(());
+	}
+
 	let possible_threats = Threats::load();
 
 	o.start_process();
-	let result = Runtime::new()?.block_on(scan_dir(
-		&inst_dir.join("mods"),
-		&possible_threats,
-		data_dir,
-		o,
-	))?;
+	let result = Runtime::new()?.block_on(scan_dir(&dir, &possible_threats, data_dir, o))?;
 
 	o.display(MessageContents::Success("Scanned".into()));
 	o.end_process();
