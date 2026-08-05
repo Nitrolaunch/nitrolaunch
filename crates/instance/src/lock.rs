@@ -1,5 +1,5 @@
 use std::{
-	collections::HashMap,
+	collections::{HashMap, HashSet},
 	fs::File,
 	io::BufReader,
 	path::{Path, PathBuf},
@@ -189,6 +189,11 @@ impl InstanceLockfile {
 		self.contents.loader_version = version;
 	}
 
+	/// Updates the configured packages for the instance. Should be called after packages are installed.
+	pub fn update_configured_packages(&mut self, packages: HashSet<String>) {
+		self.contents.configured_packages = packages;
+	}
+
 	/// Get the locked addons
 	pub fn get_addons(&self) -> impl Iterator<Item = &LockfileAddon> {
 		self.contents.addons.iter()
@@ -197,6 +202,11 @@ impl InstanceLockfile {
 	/// Get the locked packages
 	pub fn get_packages(&self) -> &HashMap<String, LockfilePackage> {
 		&self.contents.packages
+	}
+
+	/// Gets the last configured packages when they were installed, for checking for changes in the package configuration
+	pub fn get_configured_packages(&self) -> &HashSet<String> {
+		&self.contents.configured_packages
 	}
 
 	/// Get the locked modpack
@@ -244,6 +254,9 @@ pub(crate) struct InstanceLockfileContents {
 	pub loader_version: Option<String>,
 	/// Currently installed packages for the instance
 	pub packages: HashMap<String, LockfilePackage>,
+	/// Currently configured packages for the instance
+	#[serde(default)]
+	pub configured_packages: HashSet<String>,
 	/// Currently installed addons on the instance
 	#[serde(default)]
 	pub addons: Vec<LockfileAddon>,
@@ -332,6 +345,7 @@ mod tests {
 				loader: Loader::Fabric,
 				loader_version: Some("0.14.0".to_string()),
 				packages: HashMap::new(),
+				configured_packages: HashSet::new(),
 				addons: Vec::new(),
 				modpack: None,
 			},

@@ -20,8 +20,6 @@ use nitro_shared::{UpdateDepth, translate};
 #[cfg(not(feature = "disable_instance_update_packages"))]
 use packages::print_package_support_messages;
 use packages::update_instance_packages;
-#[cfg(not(feature = "disable_instance_update_packages"))]
-use std::collections::HashSet;
 
 use anyhow::Context;
 use nitro_shared::output::{MessageContents, NitroOutput};
@@ -72,7 +70,7 @@ impl Instance {
 		} else {
 			depth
 		};
-		let will_update_packages = facets.packages && depth >= UpdateDepth::Full;
+		let will_update_packages = facets.packages || depth >= UpdateDepth::Full;
 
 		let mut manager = UpdateManager::new(depth);
 
@@ -131,8 +129,6 @@ impl Instance {
 			{
 				use std::sync::Arc;
 
-				let mut all_packages = HashSet::new();
-
 				ctx.output.display(MessageContents::Header(translate!(
 					ctx.output,
 					StartUpdatingPackages
@@ -149,18 +145,11 @@ impl Instance {
 					suppress: modpack_result.supplied_packages,
 				};
 
-				let packages = update_instance_packages(
-					self,
-					&Arc::new(constants),
-					mc_version,
-					ctx,
-					depth == UpdateDepth::Force,
-				)
-				.await?;
+				let packages =
+					update_instance_packages(self, &Arc::new(constants), mc_version, depth, ctx)
+						.await?;
 
-				all_packages.extend(packages);
-
-				let all_packages = Vec::from_iter(all_packages);
+				let all_packages = Vec::from_iter(packages);
 				let _ = print_package_support_messages(&all_packages, ctx).await;
 
 				ctx.output.end_section();

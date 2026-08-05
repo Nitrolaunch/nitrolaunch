@@ -4,18 +4,21 @@ use std::path::Path;
 use std::sync::Arc;
 
 use itertools::Itertools;
+use nitro_config::package::EvalPermissions;
 use nitro_core::net::get_transfer_limit;
 use nitro_instance::addon::get_addon_dirs;
-use nitro_pkg::PkgRequest;
+use nitro_instance::lock::InstanceLockfile;
 use nitro_pkg::repo::PackageFlag;
+use nitro_pkg::{PkgRequest, PkgRequestSource};
 use nitro_shared::minecraft::AddonKind;
 use nitro_shared::output::{MessageContents, NitroOutput};
-use nitro_shared::pkg::{ArcPkgReq, PackageDiff, merge_package_lists};
-use nitro_shared::translate;
-use nitro_shared::versions::VersionInfo;
+use nitro_shared::pkg::{ArcPkgReq, PackageDiff, PackageStability, merge_package_lists};
+use nitro_shared::versions::{VersionInfo, VersionPattern};
+use nitro_shared::{UpdateDepth, translate};
 use tokio::sync::Semaphore;
 use tokio::task::JoinSet;
 
+use crate::config::package::PackageConfig;
 use crate::instance::Instance;
 use crate::pkg::eval::{EvalConstants, EvalParameters, ResolutionAndEvalResult, resolve};
 use crate::util::select_random_n_items_from_list;
@@ -29,16 +32,23 @@ pub async fn update_instance_packages<O: NitroOutput>(
 	instance: &mut Instance,
 	constants: &Arc<EvalConstants>,
 	mc_version: String,
+	depth: UpdateDepth,
 	ctx: &mut InstanceUpdateContext<'_, O>,
-	force: bool,
 ) -> anyhow::Result<HashSet<ArcPkgReq>> {
+	let mut inst_lock = instance.get_lockfile(ctx.paths)?;
+
+	// Check for updates
+	let Some(packages) = get_included_packages(instance, &inst_lock, depth) else {
+		return Ok(HashSet::new());
+	};
+
 	// Resolve dependencies
 	ctx.output.start_process();
 	ctx.output.display(MessageContents::StartProcess(translate!(
 		ctx.output,
 		StartResolvingDependencies
 	)));
-	let resolution = resolve_instance(instance, constants, ctx)
+	let resolution = resolve_instance(instance, &packages, constants, ctx)
 		.await
 		.context("Failed to resolve dependencies for instance")?;
 	ctx.output.display(MessageContents::Success(translate!(
@@ -46,8 +56,6 @@ pub async fn update_instance_packages<O: NitroOutput>(
 		FinishResolvingDependencies
 	)));
 	ctx.output.end_process();
-
-	let mut inst_lock = instance.get_lockfile(ctx.paths)?;
 
 	// Prompt to update the packages
 	let current_packages = inst_lock.get_packages();
@@ -93,7 +101,12 @@ pub async fn update_instance_packages<O: NitroOutput>(
 
 		// Install the package on the instance
 		let new_tasks = instance
-			.get_package_addon_tasks(&package.eval, ctx.paths, force, ctx.client)
+			.get_package_addon_tasks(
+				&package.eval,
+				ctx.paths,
+				depth == UpdateDepth::Force,
+				ctx.client,
+			)
 			.await
 			.with_context(|| {
 				format!(
@@ -156,6 +169,8 @@ pub async fn update_instance_packages<O: NitroOutput>(
 		let _ = addon.remove_from_instance();
 	}
 
+	inst_lock
+		.update_configured_packages(instance.packages.iter().map(|x| x.id.to_string()).collect());
 	inst_lock.write()?;
 
 	ctx.output.display(MessageContents::Success(translate!(
@@ -213,6 +228,7 @@ async fn run_addon_tasks(
 /// Resolve packages on an instance
 async fn resolve_instance<O: NitroOutput>(
 	instance: &mut Instance,
+	packages: &[PackageConfig],
 	constants: &Arc<EvalConstants>,
 	ctx: &mut InstanceUpdateContext<'_, O>,
 ) -> anyhow::Result<ResolutionAndEvalResult> {
@@ -223,7 +239,7 @@ async fn resolve_instance<O: NitroOutput>(
 	overrides.suppress = merge_package_lists(overrides.suppress.into_iter(), &constants.suppress);
 
 	let resolution = resolve(
-		&instance.packages,
+		packages,
 		&instance.id,
 		constants.clone(),
 		params,
@@ -242,6 +258,75 @@ async fn resolve_instance<O: NitroOutput>(
 	})?;
 
 	Ok(resolution)
+}
+
+/// Gets the inputs for the package resolver, based on whether we are doing a full or partial update
+fn get_included_packages(
+	instance: &Instance,
+	inst_lock: &InstanceLockfile,
+	depth: UpdateDepth,
+) -> Option<Vec<PackageConfig>> {
+	match depth {
+		UpdateDepth::Full | UpdateDepth::Force => Some(instance.packages.clone()),
+		UpdateDepth::Shallow => {
+			// We only want to update new or removed packages, and only if we have to
+			if inst_lock.get_configured_packages()
+				== &instance
+					.packages
+					.iter()
+					.map(|x| x.id.to_string())
+					.collect::<HashSet<_>>()
+			{
+				return None;
+			}
+
+			// Add locked packages as soft requirements
+			let mut out = Vec::new();
+			for (pkg, data) in inst_lock.get_packages() {
+				let mut req = PkgRequest::parse(pkg, PkgRequestSource::UserRequire);
+				let mut pkg = instance
+					.packages
+					.iter()
+					.find(|x| PkgRequest::parse(&x.id, PkgRequestSource::UserRequire) == req)
+					.cloned()
+					.unwrap_or_else(|| PackageConfig {
+						id: pkg.clone().into(),
+						features: Vec::new(),
+						use_default_features: true,
+						permissions: EvalPermissions::default(),
+						stability: PackageStability::default(),
+						worlds: Vec::new(),
+						content_version: None,
+						optional: false,
+					});
+
+				req.content_version = data
+					.content_version
+					.clone()
+					.map(VersionPattern::Prefer)
+					.unwrap_or_default();
+				pkg.id = req.to_string().into();
+				out.push(pkg);
+			}
+
+			// Add any newly configured packages
+			for pkg in &instance.packages {
+				let req = PkgRequest::parse(&pkg.id, PkgRequestSource::UserRequire);
+				out.retain(|x| PkgRequest::parse(&x.id, PkgRequestSource::UserRequire) != req);
+				out.push(pkg.clone());
+			}
+
+			// Remove any soft constraints for packages that are no longer configured
+			for pkg_id in inst_lock.get_configured_packages() {
+				if !instance.packages.iter().any(|x| *x.id == *pkg_id) {
+					let req = PkgRequest::parse(pkg_id, PkgRequestSource::UserRequire);
+					out.retain(|x| PkgRequest::parse(&x.id, PkgRequestSource::UserRequire) != req);
+				}
+			}
+
+			Some(out)
+		}
+	}
 }
 
 /// Removes existing addons on an instance just in case there are lockfile issues
