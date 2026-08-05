@@ -6,6 +6,7 @@ use crate::{
 		account::auth::MicrosoftAuthPrompt,
 		dialog::{custom_popup::CustomPopupModal, modal::Modal},
 		instance::transfer::{InstanceTransferModal, InstanceTransferMode, MigrateModal},
+		pkg::diffs::PackageDiffsModal,
 	},
 	ops::instance::{DeleteInstance, DeleteTemplate},
 	pages::{config::ConfigPage, onboarding::OnboardingModal, settings::SettingsPage},
@@ -13,6 +14,7 @@ use crate::{
 	routing::Page,
 	state::{BackEvent, ModalType, use_launcher_data},
 	theme::ThemeDeser,
+	util::PtrEq,
 };
 
 /// Global event listeners and modals
@@ -95,6 +97,11 @@ impl Component for Global {
 									.toast(Toast::success("Account logged in"));
 							}
 						}
+						BackEvent::ShowPackageDiffsPrompt { diffs } => {
+							front_state2
+								.write()
+								.set_modal(Some(ModalType::PackageDiffs(diffs)));
+						}
 						_ => {}
 					}
 				}
@@ -161,6 +168,12 @@ impl Component for Global {
 						.into_element(),
 					)
 				}
+				ModalType::PackageDiffs(diffs) => Some(
+					PackageDiffsModal {
+						diffs: PtrEq(diffs.clone()),
+					}
+					.into_element(),
+				),
 				ModalType::MicrosoftAuth { url, device_code } => Some(
 					MicrosoftAuthPrompt::new(url.clone(), device_code.clone(), move |_| {
 						front_state4.write().set_modal(None);

@@ -233,6 +233,7 @@ pub enum ModalType {
 	Settings(settings::Tab),
 	DeleteInstance(String),
 	DeleteTemplate(String),
+	PackageDiffs(Arc<[PackageDiff]>),
 	MicrosoftAuth { url: String, device_code: String },
 	Transfer(InstanceTransferMode, Option<String>),
 	Migrate,
@@ -254,7 +255,11 @@ pub struct BackState {
 }
 
 impl BackState {
-	pub async fn new(event_tx: broadcast::Sender<BackEvent>) -> anyhow::Result<Self> {
+	pub async fn new(
+		event_tx: broadcast::Sender<BackEvent>,
+		event_rx: broadcast::Receiver<BackEvent>,
+	) -> anyhow::Result<Self> {
+		let event_rx = Arc::new(event_rx);
 		let paths = Arc::new(Paths::new().await?);
 		let plugins = PluginManager::load(&paths, &mut NoOp).await?;
 
@@ -280,6 +285,7 @@ impl BackState {
 
 		let output_inner = OutputInner {
 			event_tx: event_tx.clone(),
+			event_rx: event_rx.clone(),
 			password_prompt: Arc::new(Mutex::new(None)),
 			yes_no_prompt: Arc::new(Mutex::new(None)),
 			passkeys: Arc::new(Mutex::new(HashMap::new())),
@@ -479,9 +485,12 @@ pub enum BackEvent {
 	ShowYesNoPrompt {
 		message: String,
 	},
+	ConfirmYesNoPrompt {
+		yes: bool,
+	},
 	ShowPasskeyPrompt,
 	ShowPackageDiffsPrompt {
-		diffs: Vec<PackageDiff>,
+		diffs: Arc<[PackageDiff]>,
 	},
 }
 

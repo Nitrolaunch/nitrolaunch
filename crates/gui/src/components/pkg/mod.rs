@@ -8,6 +8,7 @@ use crate::{
 	theme::Colorway,
 };
 
+pub mod diffs;
 pub mod error;
 pub mod filters;
 pub mod install;
@@ -96,7 +97,6 @@ impl Component for PackageChip {
 					.into_element()
 			})
 			.unwrap_or(default_icon);
-		// let ico = rect().center().child(ico);
 
 		let name = details_query
 			.read()
@@ -105,17 +105,9 @@ impl Component for PackageChip {
 			.and_then(|x| x.meta.name.clone())
 			.unwrap_or_else(|| self.req.to_string_no_version());
 
-		let border = if self.error {
-			theme.error
-		} else {
-			theme.panel_border
-		};
-
 		rect()
 			.height(Size::px(theme.input_height))
-			.border(theme.border(border))
 			.padding(theme.gap)
-			.corner_radius(theme.round)
 			.cont()
 			.cross_align(Alignment::Center)
 			.child(ico)

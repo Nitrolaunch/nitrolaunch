@@ -37,7 +37,9 @@ fn main() {
 	let _rt = rt.enter();
 
 	let (event_tx, event_rx) = broadcast::channel(100);
-	let back_state = rt.block_on(BackState::new(event_tx)).unwrap();
+	let back_state = rt
+		.block_on(BackState::new(event_tx, event_rx.resubscribe()))
+		.unwrap();
 
 	let window = WindowConfig::new(move || app(back_state.clone(), event_rx.resubscribe()))
 		.with_size(1400.0, 900.0)
