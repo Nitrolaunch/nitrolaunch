@@ -13,6 +13,17 @@ pub fn text_tag(text: &str, theme: &Theme) -> Rect {
 		theme,
 	)
 }
+/// Simple string tag with an icon
+pub fn icon_text_tag(ico: &str, text: &str, theme: &Theme) -> Rect {
+	tag(
+		Some(icon(ico, 12.0).into_element()),
+		Some(text),
+		theme.fg,
+		theme.item,
+		theme.item,
+		theme,
+	)
+}
 
 /// Tag for a repository
 pub fn repo_tag(repo: &str, compact: bool, back_state: &BackState, theme: &Theme) -> Rect {

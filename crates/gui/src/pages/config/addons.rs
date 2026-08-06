@@ -17,6 +17,7 @@ use nitrolaunch::{
 		Side,
 		pkg::{ArcPkgReq, PackageKind},
 		util::{from_string_json, to_string_json},
+		versions::VersionPattern,
 	},
 };
 
@@ -27,7 +28,7 @@ use crate::{
 			select::Selected,
 			text::{TextInput, search_bar},
 		},
-		pkg::error::ResolutionErrorView,
+		pkg::{error::ResolutionErrorView, versions::InstalledPackageVersion},
 	},
 	ops::{
 		ConditionalQuery,
@@ -483,6 +484,17 @@ impl Component for ContentItemElem {
 		));
 
 		let mut badges = Vec::new();
+
+		if let ContentItemType::Package { req } = &self.item.ty {
+			badges.push(
+				InstalledPackageVersion {
+					configured: req.content_version.optional().map(|x| x.to_string()),
+					installed: self.item.locked_version.clone(),
+				}
+				.into_element(),
+			);
+		}
+
 		if self.item.is_configured && !(self.item.is_locked && self.item.files_exist) {
 			badges.push(
 				badge("warning", theme.warning, &theme)
@@ -623,6 +635,7 @@ struct ContentItem {
 	is_configured: bool,
 	is_locked: bool,
 	files_exist: bool,
+	locked_version: Option<String>,
 	locked_addons: PtrEq<[Addon]>,
 	locked_packages: PtrEq<[ArcPkgReq]>,
 	addon_ty: Option<PackageKind>,
@@ -791,6 +804,7 @@ fn build_items(
 			is_configured: true,
 			is_locked: lock_modpack.is_some(),
 			files_exist: true,
+			locked_version: None,
 			locked_addons: addons,
 			locked_packages,
 			addon_ty: None,
@@ -808,8 +822,15 @@ fn build_items(
 	}
 
 	if let Some(lockfile) = &lockfile {
-		for (pkg, _) in lockfile.get_packages() {
-			let req = PkgRequest::parse(pkg, PkgRequestSource::UserRequire).arc();
+		for (pkg, data) in lockfile.get_packages() {
+			let req = PkgRequest::parse(pkg, PkgRequestSource::UserRequire)
+				.with_content_version(
+					data.content_version
+						.as_deref()
+						.map(VersionPattern::from)
+						.unwrap_or_default(),
+				)
+				.arc();
 
 			let mut files_exist = true;
 			let addons = lockfile
@@ -828,6 +849,7 @@ fn build_items(
 				id: Arc::from(pkg.clone()),
 				is_locked: true,
 				is_configured: false,
+				locked_version: data.content_version.clone(),
 				locked_addons: PtrEq(addons.collect()),
 				locked_packages: PtrEq(Arc::default()),
 				files_exist,
@@ -861,6 +883,7 @@ fn build_items(
 				is_configured: true,
 				is_locked: false,
 				files_exist: false,
+				locked_version: None,
 				locked_addons: PtrEq(Arc::default()),
 				locked_packages: PtrEq(Arc::default()),
 				addon_ty: None,
@@ -868,6 +891,9 @@ fn build_items(
 			items.last_mut().unwrap()
 		};
 		item.is_configured = true;
+		if let ContentItemType::Package { req: req2 } = &mut item.ty {
+			*req2 = req.clone();
+		}
 
 		packages.insert(req);
 	}
@@ -888,6 +914,7 @@ fn build_items(
 				is_configured: false,
 				is_locked: false,
 				files_exist: true,
+				locked_version: None,
 				locked_addons: PtrEq(Arc::default()),
 				locked_packages: PtrEq(Arc::default()),
 				addon_ty: Some(PackageKind::from_addon_kind(addon.kind)),

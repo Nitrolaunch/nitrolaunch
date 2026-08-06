@@ -13,7 +13,7 @@ use nitrolaunch::{
 use crate::{
 	components::{
 		pkg::install::PackageInstallModal,
-		tag::{loader_tag, text_tag},
+		tag::{icon_text_tag, loader_tag, text_tag},
 	},
 	ops::packages::FetchPackageContentVersions,
 	prelude::*,
@@ -207,5 +207,47 @@ impl Component for Version {
 					.children(loaders),
 			)
 			.child(install)
+	}
+}
+
+/// Used for displaying or configuring a package's version
+#[derive(PartialEq)]
+pub struct InstalledPackageVersion {
+	pub configured: Option<String>,
+	pub installed: Option<String>,
+}
+
+impl Component for InstalledPackageVersion {
+	fn render(&self) -> impl IntoElement {
+		let theme = use_theme();
+		let front_state = use_front_state();
+
+		let (ico, contents) = if let Some(configured) = &self.configured {
+			("lock", configured.clone())
+		} else if let Some(installed) = &self.installed {
+			("tag", installed.clone())
+		} else {
+			("tag", "None".to_string())
+		};
+
+		let tip = if let Some(configured) = &self.configured {
+			if let Some(installed) = &self.installed {
+				if configured != installed {
+					format!(
+						"Requested version {configured}, installed version {installed}"
+					)
+				} else {
+					format!("Requested and installed version {configured}")
+				}
+			} else {
+				format!("Requested version {configured}")
+			}
+		} else if let Some(installed) = &self.installed {
+			format!("Installed version {installed}")
+		} else {
+			"No version".into()
+		};
+
+		icon_text_tag(ico, &contents, &theme).tip(&front_state, &tip)
 	}
 }
