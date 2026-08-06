@@ -44,7 +44,6 @@ fn main() {
 	let window = WindowConfig::new(move || app(back_state.clone(), event_rx.resubscribe()))
 		.with_size(1400.0, 900.0)
 		.with_title("Nitrolaunch")
-		.with_decorations(false)
 		.with_app_id("Nitrolaunch");
 	let config = LaunchConfig::new().with_window(window);
 	#[cfg(feature = "profiler")]
