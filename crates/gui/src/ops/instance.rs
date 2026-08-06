@@ -24,6 +24,7 @@ use crate::{
 	prelude::*,
 	secrets::get_ms_client_id,
 	simple_mutation, simple_query,
+	state::BackEvent,
 };
 
 #[derive(Clone, PartialEq, Eq, Hash)]
@@ -607,6 +608,7 @@ pub async fn update_instance_impl(
 				let mut data = back_state2.data();
 				data.last_resolution_errors.remove(&instance_id2);
 				let _ = data.write(&paths);
+				let _ = back_state2.event_tx.send(BackEvent::InvalidateData);
 			}
 
 			back_state2.invalidate(BackDependency::InstanceContent(instance_id2));

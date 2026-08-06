@@ -492,6 +492,7 @@ pub enum BackEvent {
 	ShowPackageDiffsPrompt {
 		diffs: Arc<[PackageDiff]>,
 	},
+	InvalidateData,
 }
 
 /// Information from plugins and such that is fetched on startup or reload once and then used

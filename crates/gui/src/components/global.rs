@@ -102,6 +102,9 @@ impl Component for Global {
 								.write()
 								.set_modal(Some(ModalType::PackageDiffs(diffs)));
 						}
+						BackEvent::InvalidateData => {
+							front_state2.write().invalidate(FrontChannel::Data);
+						}
 						_ => {}
 					}
 				}
