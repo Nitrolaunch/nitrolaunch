@@ -34,7 +34,7 @@ impl Component for RepoSelector {
 			}),
 		)
 		.fit()
-		.child(SelectOption::new(None, "", Some("box")).tip("All repositories"))
+		.child(SelectOption::new(None, "", Some("asterisk")).tip("All repositories"))
 		.children(
 			repos
 				.iter()
