@@ -23,6 +23,7 @@ impl Component for PackageDiffsModal {
 
 		let diffs = ScrollView::new()
 			.expanded()
+			.spacing(theme.gap)
 			.children(self.diffs.0.iter().map(|x| diff(x, &theme).into_element()));
 
 		let contents = rect().expanded().padding(theme.gap2).child(diffs);
@@ -95,14 +96,9 @@ fn diff(diff: &PackageDiff, theme: &Theme) -> impl IntoElement {
 		PackageDiff::ManyRemoved(count) => format!("Remove {count} packages").into_element(),
 	};
 
-	rect()
-		.width(Size::fill())
+	let contents = segment(contents, 1.0)
 		.height(Size::px(theme.input_height))
-		.padding(theme.gap)
-		.corner_radius(theme.round)
-		.horizontal()
-		.flex()
-		.cross_align(Alignment::Center)
+		.main_align(Alignment::Center)
 		.border(Border {
 			fill: theme.panel_border,
 			width: BorderWidth {
@@ -113,11 +109,17 @@ fn diff(diff: &PackageDiff, theme: &Theme) -> impl IntoElement {
 			},
 			alignment: BorderAlignment::Inner,
 		})
+		.corner_radius(CornerRadius::new(0.0, theme.round, theme.round, 0.0))
+		.padding(Gaps::new(0.0, theme.gap, 0.0, theme.gap));
+
+	rect()
+		.width(Size::fill())
+		.height(Size::px(theme.input_height))
+		.padding(theme.gap)
+		.corner_radius(theme.round)
+		.horizontal()
+		.flex()
+		.cross_align(Alignment::Center)
 		.child(indicator)
-		.child(
-			segment(contents, 1.0)
-				.height(Size::fill())
-				.main_align(Alignment::Center)
-				.padding(Gaps::new(0.0, theme.gap, 0.0, theme.gap)),
-		)
+		.child(contents)
 }
