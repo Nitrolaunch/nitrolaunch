@@ -161,7 +161,6 @@ impl Component for PackageView {
 		let contents = match &*tab.read() {
 			Tab::Description => {
 				if let Some(long_description) = &meta.long_description {
-					println!("{long_description}");
 					let markdown = MarkdownViewer::new(long_description.clone())
 						.width(Size::fill())
 						.paragraph_size(14.0)
