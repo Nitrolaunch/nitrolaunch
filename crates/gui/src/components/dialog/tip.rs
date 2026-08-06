@@ -99,3 +99,23 @@ impl<T: EventHandlersExt> TipExt for T {
 		})
 	}
 }
+
+#[derive(PartialEq)]
+pub struct Tipped(Element, String);
+
+impl Tipped {
+	pub fn new(element: impl IntoElement, tip: &str) -> Self {
+		Self(element.into_element(), tip.to_string())
+	}
+}
+
+impl Component for Tipped {
+	fn render(&self) -> impl IntoElement {
+		let front_state = use_front_state();
+
+		let front_state2 = front_state.clone();
+		use_drop(move || front_state2.write().set_tip(None));
+
+		rect().tip(&front_state, &self.1).child(self.0.clone())
+	}
+}

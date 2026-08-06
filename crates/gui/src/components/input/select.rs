@@ -4,7 +4,7 @@ use freya::query::UseMutation;
 use nitrolaunch::plugin_crate::hook::hooks::DropdownButton;
 
 use crate::{
-	components::input::Derivable,
+	components::{dialog::tip::Tipped, input::Derivable},
 	ops::{
 		ToastedMutation,
 		plugin_results::{
@@ -572,7 +572,6 @@ impl<T: PartialEq + Clone + 'static> Component for DropdownOption<T> {
 	fn render(&self) -> impl IntoElement {
 		let theme = use_theme();
 		let is_hovered = use_state(|| false);
-		let front_state = use_front_state();
 
 		let on_select = self.on_select.clone();
 		let on_deselect = self.on_deselect.clone();
@@ -593,7 +592,7 @@ impl<T: PartialEq + Clone + 'static> Component for DropdownOption<T> {
 			(theme.fg, theme.panel, theme.panel)
 		};
 
-		rect()
+		let out = rect()
 			.width(Size::fill())
 			.height(Size::px(theme.input_height))
 			.color(fg)
@@ -612,11 +611,13 @@ impl<T: PartialEq + Clone + 'static> Component for DropdownOption<T> {
 					(on_select.0)(id.clone());
 				}
 			})
-			.maybe(self.option.tip.is_some(), |this| {
-				this.tip(&front_state, self.option.tip.as_deref().unwrap())
-			})
-			.child(dropdown_option_contents(&self.option, false, false, &theme))
-			.into_element()
+			.child(dropdown_option_contents(&self.option, false, false, &theme));
+
+		if let Some(tip) = &self.option.tip {
+			Tipped::new(out, tip).into_element()
+		} else {
+			out.into_element()
+		}
 	}
 }
 
