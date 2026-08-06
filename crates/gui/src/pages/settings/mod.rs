@@ -418,11 +418,11 @@ mod debug {
 								tokio::time::sleep(std::time::Duration::from_secs(5)).await;
 								for i in 0..100 {
 									o.display(MessageContents::associated(
-										MessageContents::Simple("Downloading".into()),
 										MessageContents::Progress {
 											current: i as u32,
 											total: 100,
 										},
+										MessageContents::Simple("Downloading".into()),
 									));
 									tokio::time::sleep(std::time::Duration::from_millis(100)).await;
 								}

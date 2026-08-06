@@ -181,9 +181,10 @@ impl TaskData {
 
 fn format_message(message: &MessageContents, theme: &Theme) -> Element {
 	match message {
-		MessageContents::Simple(text) => text.clone().into_element(),
+		MessageContents::Simple(text) => label().text(text.clone()).max_lines(1).into_element(),
 		MessageContents::Warning(text) => label()
 			.text(text.clone())
+			.max_lines(1)
 			.color(theme.warning)
 			.into_element(),
 		MessageContents::Error(text) => {
@@ -191,15 +192,18 @@ fn format_message(message: &MessageContents, theme: &Theme) -> Element {
 		}
 		MessageContents::Success(text) => label()
 			.text(text.clone())
+			.max_lines(1)
 			.color(theme.success)
 			.into_element(),
 		MessageContents::Header(text) => label()
 			.text(text.clone())
+			.max_lines(1)
 			.font_weight(FontWeight::BOLD)
 			.into_element(),
-		MessageContents::Progress { current, total } => {
-			progress_bar(theme, *current as f32 / *total as f32).into_element()
-		}
+		MessageContents::Progress { current, total } => rect()
+			.width(Size::px(240.0))
+			.child(progress_bar(theme, *current as f32 / *total as f32))
+			.into_element(),
 		MessageContents::Associated(msg1, msg2) => rect()
 			.horizontal()
 			.center()
