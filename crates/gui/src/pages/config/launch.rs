@@ -3,11 +3,7 @@ use std::{path::Path, rc::Rc};
 use nitrolaunch::config_crate::template::TemplateConfig;
 
 use crate::{
-	components::input::{select::Selected, text::TextInput},
-	ops::plugin_results::FetchJavaTypes,
-	pages::config::ConfigState,
-	prelude::*,
-	util::PtrEq,
+	components::input::{Derivable, derived_value_owned, select::Selected, text::TextInput}, ops::plugin_results::FetchJavaTypes, pages::config::ConfigState, prelude::*, util::PtrEq,
 };
 
 #[derive(PartialEq)]
@@ -22,6 +18,7 @@ impl Component for LaunchConfigPage {
 
 		rect().expanded().padding(theme.gap3).child(JavaSelector {
 			java: self.config_state.java.clone(),
+			parent_configs: self.parent_configs.clone(),
 		})
 	}
 }
@@ -29,6 +26,7 @@ impl Component for LaunchConfigPage {
 #[derive(PartialEq)]
 struct JavaSelector {
 	java: State<Option<String>>,
+	parent_configs: PtrEq<[TemplateConfig]>,
 }
 
 impl Component for JavaSelector {
@@ -58,6 +56,20 @@ impl Component for JavaSelector {
 		};
 		let is_custom = selected == JavaSelected::Custom;
 
+		let derived = derived_value_owned(self.java.read().clone(), &self.parent_configs.0, |x| {
+			x.instance.launch.java.clone()
+		});
+		let derived_selected = match &derived {
+			Some(selected) => {
+				if selected.is_empty() || !all_options.contains(&selected.as_str()) {
+					Some(JavaSelected::Custom)
+				} else {
+					Some(JavaSelected::Standard(selected.clone()))
+				}
+			}
+			None => None,
+		};
+
 		let java2 = self.java.clone();
 		let selected2 = selected.clone();
 		let selector = Dropdown::new(
@@ -78,6 +90,7 @@ impl Component for JavaSelector {
 			}),
 		)
 		.panel_colorway()
+		.derived(derived_selected)
 		.child(SelectOption::new(
 			JavaSelected::None,
 			"Inherit",
@@ -143,6 +156,7 @@ impl Component for JavaSelector {
 
 		let exists = Path::new(&*path.read()).exists();
 		let custom_input = TextInput::new(path)
+			.derived(derived)
 			.maybe_input_error(!exists, "Path does not exist")
 			.placeholder("Enter path...");
 		let custom_input = field("Custom Java Path", "folder", &theme, custom_input).tip(
