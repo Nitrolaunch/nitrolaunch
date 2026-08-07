@@ -331,7 +331,11 @@ impl ControlledConfig {
 	}
 
 	pub fn optimize(&mut self) {
-		Self::optimize_value(&mut Value::Object(self.data.clone()));
+		let mut value = Value::Object(self.data.clone());
+		Self::optimize_value(&mut value);
+		if let Value::Object(map) = value {
+			self.data = map;
+		}
 	}
 
 	fn optimize_value(value: &mut Value) {
