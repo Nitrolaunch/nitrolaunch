@@ -36,10 +36,7 @@ impl Component for OutputIndicator {
 			let back_state = back_state2.clone();
 			async move {
 				let mut event_rx = front_state2.read().subscribe_events();
-				loop {
-					let Ok(ev) = event_rx.recv().await else {
-						continue;
-					};
+				while let Ok(ev) = event_rx.recv().await {
 					match ev {
 						BackEvent::OutputStartTask(task) => {
 							if !tasks.read().contains_key(&task) {
