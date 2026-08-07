@@ -167,27 +167,36 @@ impl Component for InstanceTransferModal {
 			}
 			let import_side = import_side.read().clone();
 
-			match mode {
-				InstanceTransferMode::Import => {
-					import_mutation.mutate(ImportInstanceKeys {
-						format,
-						path: source_path,
-						id: new_id,
-						side: Some(import_side),
-					});
-					front_state2.write().set_modal(None);
+			let mode = mode.clone();
+			let front_state2 = front_state2.clone();
+			let exporting_instance = exporting_instance.clone();
+			spawn_forever(async move {
+				match mode {
+					InstanceTransferMode::Import => {
+						import_mutation
+							.mutate_async(ImportInstanceKeys {
+								format,
+								path: source_path,
+								id: new_id,
+								side: Some(import_side),
+							})
+							.await;
+						front_state2.write().set_modal(None);
+					}
+					InstanceTransferMode::Export => {
+						export_mutation
+							.mutate_async(ExportInstanceKeys {
+								format,
+								path: source_path,
+								id: exporting_instance
+									.clone()
+									.expect("Exporting instance ID must be provided"),
+							})
+							.await;
+						front_state2.write().set_modal(None);
+					}
 				}
-				InstanceTransferMode::Export => {
-					export_mutation.mutate(ExportInstanceKeys {
-						format,
-						path: source_path,
-						id: exporting_instance
-							.clone()
-							.expect("Exporting instance ID must be provided"),
-					});
-					front_state2.write().set_modal(None);
-				}
-			}
+			});
 		};
 		let submit_title = match self.mode {
 			InstanceTransferMode::Import => "Import",
