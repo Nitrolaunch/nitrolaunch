@@ -78,11 +78,13 @@ impl Component for AddonsConfig {
 
 		let modpack = self.config_state.modpack.clone();
 		let packages = self.config_state.packages.clone();
+		let parent_configs = self.parent_configs.clone();
 		let results = use_memo(move || {
 			build_items(
 				lockfile.read().state().ok(),
 				modpack.read().as_ref(),
 				&*packages.read(),
+				&parent_configs.0,
 				addons.read().state().ok().map(|x| x.as_slice()),
 			)
 		});
@@ -191,7 +193,7 @@ impl Component for AddonsConfig {
 			.child(SelectOption::new(
 				Filter::Dependencies,
 				"Dependencies",
-				Some("diagram"),
+				Some("scale"),
 			))
 			.child(SelectOption::new(Filter::All, "All", Some("asterisk")));
 
@@ -505,9 +507,17 @@ impl Component for ContentItemElem {
 					.into_element(),
 			);
 		}
+		if self.item.is_derived {
+			badges.push(
+				badge("diagram", theme.template, &theme)
+					.background(theme.template_bg)
+					.tip(&front_state, "Inherited from a template")
+					.into_element(),
+			);
+		}
 		if !self.item.is_configured && self.item.is_locked {
 			badges.push(
-				badge("diagram", theme.fg3, &theme)
+				badge("scale", theme.fg3, &theme)
 					.tip(&front_state, "Dependency of another package")
 					.into_element(),
 			);
@@ -520,7 +530,7 @@ impl Component for ContentItemElem {
 			);
 		}
 
-		if self.item.is_package() && self.item.is_configured {
+		if self.item.is_package() && self.item.is_configured && !self.item.is_derived {
 			badges.push(more_dropdown.into_element());
 		}
 
@@ -634,6 +644,7 @@ struct ContentItem {
 	id: Arc<str>,
 	is_configured: bool,
 	is_locked: bool,
+	is_derived: bool,
 	files_exist: bool,
 	locked_version: Option<String>,
 	locked_addons: PtrEq<[Addon]>,
@@ -767,6 +778,7 @@ fn build_items(
 	lockfile: Option<&InstanceLockfile>,
 	modpack: Option<&String>,
 	configured_packages: &TemplatePackageConfiguration,
+	parent_configs: &[TemplateConfig],
 	addons: Option<&[Addon]>,
 ) -> (Vec<ContentItem>, Vec<ArcPkgReq>) {
 	let mut items = Vec::new();
@@ -803,6 +815,7 @@ fn build_items(
 			id: Arc::from(modpack.clone()),
 			is_configured: true,
 			is_locked: lock_modpack.is_some(),
+			is_derived: false,
 			files_exist: true,
 			locked_version: None,
 			locked_addons: addons,
@@ -849,6 +862,7 @@ fn build_items(
 				id: Arc::from(pkg.clone()),
 				is_locked: true,
 				is_configured: false,
+				is_derived: false,
 				locked_version: data.content_version.clone(),
 				locked_addons: PtrEq(addons.collect()),
 				locked_packages: PtrEq(Arc::default()),
@@ -882,6 +896,7 @@ fn build_items(
 				id: package.get_pkg_id(),
 				is_configured: true,
 				is_locked: false,
+				is_derived: false,
 				files_exist: false,
 				locked_version: None,
 				locked_addons: PtrEq(Arc::default()),
@@ -891,6 +906,69 @@ fn build_items(
 			items.last_mut().unwrap()
 		};
 		item.is_configured = true;
+		if let ContentItemType::Package { req: req2 } = &mut item.ty {
+			*req2 = req.clone();
+		}
+
+		packages.insert(req);
+	}
+
+	let parent_packages =
+		parent_configs
+			.iter()
+			.fold(TemplatePackageConfiguration::default(), |mut acc, cfg| {
+				acc.merge(cfg.packages.clone());
+				acc
+			});
+
+	let derived_global_packages = parent_packages.iter_global().map(|x| (x, None));
+	let derived_client_packages = parent_packages
+		.iter_side(Side::Client)
+		.map(|x| (x, Some(Side::Client)));
+	let derived_server_packages = parent_packages
+		.iter_side(Side::Server)
+		.map(|x| (x, Some(Side::Server)));
+	for (package, _side) in derived_global_packages
+		.chain(derived_client_packages)
+		.chain(derived_server_packages)
+	{
+		let req = PkgRequest::parse(package.get_pkg_id(), PkgRequestSource::UserRequire).arc();
+		if items
+			.iter()
+			.any(|x| matches!(&x.ty, ContentItemType::Package {req: req2} if *req2 == req))
+		{
+			continue;
+		}
+
+		let item = if let Some(pos) = items
+			.iter()
+			.position(|x| matches!(&x.ty, ContentItemType::Package {req: req2} if *req2 == req))
+		{
+			&mut items[pos]
+		} else {
+			items.push(ContentItem {
+				ty: ContentItemType::Package { req: req.clone() },
+				id: package.get_pkg_id(),
+				is_configured: false,
+				is_locked: false,
+				is_derived: false,
+				files_exist: false,
+				locked_version: None,
+				locked_addons: PtrEq(Arc::default()),
+				locked_packages: PtrEq(Arc::default()),
+				addon_ty: None,
+			});
+			items.last_mut().unwrap()
+		};
+
+		// Don't overwrite configured packages with derived ones
+		if item.is_configured {
+			continue;
+		}
+
+		item.is_configured = true;
+		item.is_derived = true;
+
 		if let ContentItemType::Package { req: req2 } = &mut item.ty {
 			*req2 = req.clone();
 		}
@@ -913,6 +991,7 @@ fn build_items(
 				id: addon.file_name.clone().into(),
 				is_configured: false,
 				is_locked: false,
+				is_derived: false,
 				files_exist: true,
 				locked_version: None,
 				locked_addons: PtrEq(Arc::default()),
