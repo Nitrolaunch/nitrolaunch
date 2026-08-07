@@ -18,7 +18,10 @@ use serde::{Deserialize, Serialize};
 nitro_wasm_plugin!(main, "mojang_transfer");
 
 fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
-	plugin.check_migration(|_| {
+	plugin.check_migration(|arg| {
+		if arg != "mojang" {
+			return Ok(None);
+		}
 		let data_folder = get_data_dir()?;
 		let launcher_profiles = data_folder.join("launcher_profiles.json");
 
@@ -38,6 +41,13 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 	})?;
 
 	plugin.migrate_instances(|arg| {
+		if arg.format != "mojang" {
+			return Ok(MigrateInstancesResult {
+				format: arg.format,
+				..Default::default()
+			});
+		}
+
 		let data_folder = get_data_dir()?;
 
 		let launcher_profiles = data_folder.join("launcher_profiles.json");

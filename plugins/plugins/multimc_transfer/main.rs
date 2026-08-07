@@ -104,6 +104,10 @@ fn main() -> anyhow::Result<()> {
 	})?;
 
 	plugin.check_migration(|mut ctx, arg| {
+		if arg != "multimc" && arg != "prism" {
+			return Ok(None);
+		}
+
 		let data_folder = data_folder(&arg)?;
 		let instances_folder = data_folder.join("instances");
 		let instances = get_available_instances(&instances_folder, ctx.get_output())?;
