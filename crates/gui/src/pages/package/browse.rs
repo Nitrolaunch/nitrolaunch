@@ -73,7 +73,7 @@ impl Component for BrowsePackagesPage {
 			}
 		});
 
-		let selected_pkg = use_state::<Option<ArcPkgReq>>(|| None);
+		let selected_pkg = search_state.previewed.clone();
 		use_side_effect(move || {
 			if let Some(req) = &*selected_pkg.read() {
 				front_state
@@ -196,6 +196,7 @@ impl Component for BrowsePackagesPage {
 #[derive(Clone)]
 struct PackageSearchState {
 	repo: State<Option<String>>,
+	previewed: State<Option<ArcPkgReq>>,
 	page: State<u16>,
 	search: State<String>,
 	ty: State<PackageKind>,
@@ -208,6 +209,7 @@ impl PackageSearchState {
 	fn new(back_state: &BackState, browse_filters: Option<BrowseFilters>) -> Self {
 		let out = Self {
 			repo: use_state(|| None),
+			previewed: use_state(|| None),
 			page: use_state(|| 0),
 			search: use_state(|| String::new()),
 			ty: use_state(|| PackageKind::Mod),
@@ -237,6 +239,7 @@ impl PackageSearchState {
 			state2.loaders.read();
 
 			state2.page.set_if_modified(0);
+			state2.previewed.set_if_modified(None);
 
 			// Handle what package types and categories are available based on the selected repository
 			if let Some(repo) = &*state2.repo.peek() {
