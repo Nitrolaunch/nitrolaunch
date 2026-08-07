@@ -2,8 +2,8 @@
 	"id": "paper",
 	"name": "Paper",
 	"description": "Install Paper and Folia instances",
-	"version": "v7",
-	"nitro_version": "0.30.0",
+	"version": "v8",
+	"nitro_version": "0.31.0",
 	"protocol_version": 3,
 	"hooks": {
 		"on_instance_setup": {

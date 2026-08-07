@@ -2,8 +2,8 @@
 	"id": "themes",
 	"name": "Themes",
 	"description": "Adds more themes for you to choose from",
-	"version": "v7",
-	"nitro_version": "0.30.0",
+	"version": "v8",
+	"nitro_version": "0.31.0",
 	"hooks": {
 		"add_themes": {
 			"constant": [

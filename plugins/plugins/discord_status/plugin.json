@@ -2,8 +2,8 @@
 	"id": "discord_status",
 	"name": "Discord Status",
 	"description": "Show your running instances to Discord",
-	"version": "v7",
-	"nitro_version": "0.30.0",
+	"version": "v8",
+	"nitro_version": "0.31.0",
 	"protocol_version": 3,
 	"hooks": {
 		"while_instance_launch": {

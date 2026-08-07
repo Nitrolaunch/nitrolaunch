@@ -3,8 +3,8 @@
 	"name": "MultiMC Transfer",
 	"description": "Instance transfer for MultiMC and PrismLauncher",
 	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/multimc_transfer",
-	"version": "v7",
-	"nitro_version": "0.30.0",
+	"version": "v8",
+	"nitro_version": "0.31.0",
 	"protocol_version": 3,
 	"hooks": {
 		"add_instance_transfer_formats": {

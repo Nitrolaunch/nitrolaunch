@@ -3,8 +3,8 @@
 	"name": "Stats",
 	"description": "Track and view playtime stats",
 	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/stats",
-	"version": "v7",
-	"nitro_version": "0.30.0",
+	"version": "v8",
+	"nitro_version": "0.31.0",
 	"protocol_version": 3,
 	"hooks": {
 		"subcommand": {

@@ -1,6 +1,6 @@
 [package]
 name = "nitro_instance"
-version = "0.30.0"
+version = "0.31.0"
 description = "Instance file and addon management for Nitrolaunch"
 keywords = ["minecraft", "launcher", "game", "mc"]
 categories.workspace = true

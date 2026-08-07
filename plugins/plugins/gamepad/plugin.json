@@ -2,8 +2,8 @@
 	"id": "gamepad",
 	"name": "Gamepad",
 	"description": "Adds better gamepad and arrow key support for the GUI",
-	"version": "v7",
-	"nitro_version": "0.30.0",
+	"version": "v8",
+	"nitro_version": "0.31.0",
 	"hooks": {
 		"inject_page_script": {
 			"property": "page",
