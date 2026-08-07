@@ -122,6 +122,7 @@ impl Component for OutputIndicator {
 
 		let popout = if *is_open.read() {
 			let current_task2 = current_task.clone();
+			let can_cancel = current_task.as_ref().is_some_and(|x| x.can_cancel());
 			let task = current_task
 				.as_ref()
 				.and_then(|x| tasks.read().get(x).cloned());
@@ -130,6 +131,11 @@ impl Component for OutputIndicator {
 				.and_then(|x| x.messages.last())
 				.map(|x| format_message(x, &theme))
 				.unwrap_or("Running".into_element());
+			let indicator = if can_cancel {
+				icon("delete", 16.0).into_element()
+			} else {
+				CircularLoader::new().size(24.0).into_element()
+			};
 
 			let actual = rect()
 				.height(Size::fill())
@@ -139,11 +145,9 @@ impl Component for OutputIndicator {
 				.padding(theme.gap2)
 				.panel_colorway(&theme, false, true)
 				.corner_radius(theme.round)
-				.maybe(current_task.is_some_and(|x| x.can_cancel()), |this| {
-					this.tip(&front_state, "Click to cancel")
-				})
+				.maybe(can_cancel, |this| this.tip(&front_state, "Click to cancel"))
 				.on_press(move |_| kill_task.mutate(current_task2.clone().unwrap()))
-				.child(CircularLoader::new().size(24.0))
+				.child(indicator)
 				.child(current_message);
 
 			Some(
