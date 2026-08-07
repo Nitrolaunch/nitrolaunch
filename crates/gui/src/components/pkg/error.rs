@@ -85,6 +85,8 @@ impl Component for ResolutionErrorView {
 pub fn get_res_err_title(error: &SerializableResolutionError) -> Element {
 	match error {
 		SerializableResolutionError::PackageContext(req, ..) => paragraph()
+			.height(Size::fill())
+			.vertical_align(VerticalAlign::Center)
 			.span("In package ")
 			.child(PackageChip {
 				req: req.clone(),
