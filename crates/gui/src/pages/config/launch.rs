@@ -3,7 +3,11 @@ use std::{path::Path, rc::Rc};
 use nitrolaunch::config_crate::template::TemplateConfig;
 
 use crate::{
-	components::input::{Derivable, derived_value_owned, select::Selected, text::TextInput}, ops::plugin_results::FetchJavaTypes, pages::config::ConfigState, prelude::*, util::PtrEq,
+	components::input::{Derivable, derived_value_owned, select::Selected, text::TextInput},
+	ops::plugin_results::FetchJavaTypes,
+	pages::config::ConfigState,
+	prelude::*,
+	util::PtrEq,
 };
 
 #[derive(PartialEq)]

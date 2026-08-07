@@ -233,9 +233,7 @@ impl Component for InstalledPackageVersion {
 		let tip = if let Some(configured) = &self.configured {
 			if let Some(installed) = &self.installed {
 				if configured != installed {
-					format!(
-						"Requested version {configured}, installed version {installed}"
-					)
+					format!("Requested version {configured}, installed version {installed}")
 				} else {
 					format!("Requested and installed version {configured}")
 				}

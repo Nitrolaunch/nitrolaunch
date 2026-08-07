@@ -152,10 +152,10 @@ impl Component for PluginsTab {
 		)));
 		let cancel_task = use_mutation(Mutation::new(KillTask::new(back_state.clone())));
 
-		let progress = use_state(|| (0, 0));
+		let state = use_state(|| PluginsState::Idle);
 
 		let front_state2 = front_state.clone();
-		let mut progress2 = progress.clone();
+		let mut state2 = state.clone();
 		use_future(move || {
 			let front_state2 = front_state2.clone();
 			async move {
@@ -166,13 +166,17 @@ impl Component for PluginsTab {
 							message: MessageContents::Progress { current, total },
 							task: Some(Task::InstallDefaultPlugins),
 						} => {
-							progress2.set((current, total));
+							state2.set(PluginsState::Installing(current, total));
 						}
 						BackEvent::OutputEndTask {
 							task: Task::InstallDefaultPlugins,
-							..
+							success,
 						} => {
-							progress2.set((0, 0));
+							if success {
+								state2.set(PluginsState::Installed);
+							} else {
+								state2.set(PluginsState::Idle);
+							}
 						}
 						_ => {}
 					}
@@ -180,22 +184,54 @@ impl Component for PluginsTab {
 			}
 		});
 
-		let button = if progress.read().1 == 0 {
-			icon_text_button("download", "Install", &theme)
-				.width(Size::px(180.0))
-				.active(&theme)
-				.on_press(move |_| {
-					install_mutation.mutate(());
-				})
-		} else {
-			let mut progress2 = progress.clone();
-			icon_text_button("delete", "Cancel", &theme)
-				.width(Size::px(180.0))
-				.active(&theme)
-				.on_press(move |_| {
-					cancel_task.mutate(Task::InstallDefaultPlugins);
-					progress2.set((0, 0));
-				})
+		let contents = match &*state.read() {
+			PluginsState::Idle => {
+				let text = "We recommend you install some plugins before you start. These include features like mod repositories, launcher support, and themes";
+				rect()
+					.center()
+					.spacing(theme.gap3)
+					.child(label().text(text).width(Size::px(300.0)).color(theme.fg2))
+					.child(
+						icon_text_button("download", "Install", &theme)
+							.width(Size::px(180.0))
+							.active(&theme)
+							.on_press(move |_| {
+								install_mutation.mutate(());
+							}),
+					)
+			}
+			PluginsState::Installing(current, total) => {
+				let mut state2 = state.clone();
+				rect()
+					.center()
+					.spacing(theme.gap3)
+					.child(
+						label()
+							.text("Installing...")
+							.width(Size::px(300.0))
+							.color(theme.fg2),
+					)
+					.child(
+						rect().width(Size::px(300.0)).child(
+							progress_bar(&theme, *current as f32 / *total as f32)
+								.width(Size::fill())
+								.height(Size::px(8.0)),
+						),
+					)
+					.child(
+						icon_text_button("delete", "Cancel", &theme)
+							.width(Size::px(180.0))
+							.on_press(move |_| {
+								cancel_task.mutate(Task::InstallDefaultPlugins);
+								state2.set(PluginsState::Idle);
+							}),
+					)
+			}
+			PluginsState::Installed => rect().child(
+				label()
+					.text("Plugins installed successfully!")
+					.color(theme.fg2),
+			),
 		};
 
 		let left = rect()
@@ -203,19 +239,13 @@ impl Component for PluginsTab {
 			.height(Size::fill())
 			.center()
 			.spacing(theme.gap3)
-			.child(label().text("Default Plugins").font_size(24.0).font_weight(FontWeight::BOLD))
-			.child(label().text("We recommend you install some plugins before you start. These include features like mod repositories, launcher support, and themes").width(Size::px(300.0)).color(theme.fg2))
-			.maybe(progress.read().1 > 0, |this| {
-				let (current, total) = *progress.read();
-				this.child(rect()
-					.width(Size::px(300.0))
-					.child(
-						progress_bar(&theme, current as f32 / total as f32)
-							.width(Size::fill())
-							.height(Size::px(8.0)),
-					))
-			})
-			.child(button);
+			.child(
+				label()
+					.text("Default Plugins")
+					.font_size(24.0)
+					.font_weight(FontWeight::BOLD),
+			)
+			.child(contents);
 
 		rect()
 			.expanded()
@@ -224,6 +254,12 @@ impl Component for PluginsTab {
 			.child(left)
 			.child(banner_image(SPLASH2, "splash2", false, &theme))
 	}
+}
+
+enum PluginsState {
+	Idle,
+	Installing(u32, u32),
+	Installed,
 }
 
 #[derive(PartialEq)]
