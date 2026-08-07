@@ -87,7 +87,7 @@ impl Component for BrowsePackagesPage {
 		let mut page2 = search_state.page.clone();
 		let page_buttons = PageButtons {
 			page: (*search_state.page.read()).into(),
-			total_pages: results.read().total_results,
+			total_pages: results.read().total_results.div_ceil(PAGE_SIZE as usize),
 			on_set: (move |new_page| page2.set(new_page as u16)).into(),
 		};
 
