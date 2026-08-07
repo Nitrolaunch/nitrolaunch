@@ -187,6 +187,7 @@ impl Component for PluginsTab {
 		let contents = match &*state.read() {
 			PluginsState::Idle => {
 				let text = "We recommend you install some plugins before you start. These include features like mod repositories, launcher support, and themes";
+				let mut state2 = state.clone();
 				rect()
 					.center()
 					.spacing(theme.gap3)
@@ -197,6 +198,7 @@ impl Component for PluginsTab {
 							.active(&theme)
 							.on_press(move |_| {
 								install_mutation.mutate(());
+								state2.set(PluginsState::Installing(0, 1));
 							}),
 					)
 			}
