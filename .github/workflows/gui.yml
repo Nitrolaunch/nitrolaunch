@@ -101,7 +101,7 @@ jobs:
           cp "target/${{ env.BUILD_PROFILE }}/nitro_gui" "dist/linux-x86_64/Nitrolaunch"
           # Include provided desktop file and icons from crates/gui/assets
           mkdir -p dist/linux-x86_64/usr/share/applications
-          mkdir -p dist/linux-x86_64/usr/share/icons/hicolor/256x256/apps
+          mkdir -p dist/linux-x86_64/usr/share/icons/hicolor/1024x1024/apps
           cp crates/gui/assets/Nitrolaunch.desktop dist/linux-x86_64/usr/share/applications/Nitrolaunch.desktop
           cp crates/gui/assets/icon_1024x1024.png dist/linux-x86_64/usr/share/icons/hicolor/1024x1024/apps/Nitrolaunch.png
           tar -C dist -czf "dist/Nitrolaunch-linux-x86_64.tar.gz" linux-x86_64
