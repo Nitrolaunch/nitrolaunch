@@ -237,8 +237,12 @@ impl Component for PackageInstallModal {
 						),
 					};
 
-					install_package.mutate((req.clone(), location));
-					on_close.call(());
+					let on_close = on_close.clone();
+					let req = req.clone();
+					spawn_forever(async move {
+						install_package.mutate_async((req.clone(), location)).await;
+						on_close.call(());
+					});
 				})
 				.into(),
 				active: is_save_ready,
