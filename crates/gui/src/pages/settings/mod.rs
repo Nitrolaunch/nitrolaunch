@@ -42,8 +42,8 @@ impl Component for SettingsPage {
 		Modal::new("Settings".into(), "gear".into())
 			.maybe_child(tab.is_some(), || SettingsModal {
 				tab: tab.unwrap_or(Tab::General),
-				on_submit: on_submit.clone(),
-				is_dirty: is_dirty.clone(),
+				on_submit,
+				is_dirty,
 			})
 			.size_large()
 			.on_close(move |_| front_state.write().set_modal(None))
@@ -85,12 +85,12 @@ impl Component for SettingsModal {
 		));
 		let show_directory = use_mutation(Mutation::new(ShowDirectory::new(back_state.clone())));
 
-		let settings_state = SettingsState::new(self.is_dirty.clone());
+		let settings_state = SettingsState::new(self.is_dirty);
 
 		let front_state2 = front_state.clone();
 		let back_state2 = back_state.clone();
 		let mut settings_state2 = settings_state.clone();
-		let mut on_submit_state = self.on_submit.clone();
+		let mut on_submit_state = self.on_submit;
 		use_side_effect(move || {
 			let prefs = prefs_query.read().state().ok().cloned().unwrap_or_default();
 
@@ -131,8 +131,8 @@ impl Component for SettingsModal {
 		});
 
 		let tab = use_state(|| self.tab.clone());
-		let show_directory2 = show_directory.clone();
-		let show_directory3 = show_directory.clone();
+		let show_directory2 = show_directory;
+		let show_directory3 = show_directory;
 
 		let tabs = SideTabs::new(tab)
 			.child(SelectOption::new(Tab::General, "General", Some("gear")))
@@ -237,9 +237,9 @@ impl SettingsState {
 	pub fn new(is_dirty: State<bool>) -> Self {
 		let out = Self {
 			is_dirty,
-			language: use_state(|| Language::default()),
-			base_theme: use_state(|| String::new()),
-			overlay_themes: use_state(|| Vec::new()),
+			language: use_state(Language::default),
+			base_theme: use_state(String::new),
+			overlay_themes: use_state(Vec::new),
 		};
 
 		use_side_effect(move || {

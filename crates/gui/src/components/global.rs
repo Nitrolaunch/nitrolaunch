@@ -57,11 +57,10 @@ impl Component for Global {
 			for new_theme in data.base_theme.into_iter().chain(data.overlay_themes) {
 				if new_theme == "light" {
 					theme = theme.merge(ThemeDeser::light());
-				} else if let Some(data) = available_themes.iter().find(|x| x.id == new_theme) {
-					if let Ok(new_theme) = serde_json::from_str::<ThemeDeser>(&data.settings) {
+				} else if let Some(data) = available_themes.iter().find(|x| x.id == new_theme)
+					&& let Ok(new_theme) = serde_json::from_str::<ThemeDeser>(&data.settings) {
 						theme = theme.merge(new_theme);
 					}
-				}
 			}
 			front_state2.write().set_theme(theme.into());
 			back_state2.output().debug("Theme applied".into());
@@ -117,12 +116,9 @@ impl Component for Global {
 			async move {
 				let mut event_rx = front_state2.read().subscribe_events();
 				while let Ok(event) = event_rx.recv().await {
-					match event {
-						BackEvent::Invalidate(dependency) => {
-							dependency.invalidate();
-						}
-						_ => {}
-					}
+					if let BackEvent::Invalidate(dependency) = event {
+     							dependency.invalidate();
+     						}
 				}
 			}
 		});

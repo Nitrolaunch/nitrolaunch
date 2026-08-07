@@ -63,9 +63,9 @@ impl Component for BrowsePackagesPage {
 			return placeholder("No package repositories available from plugins. Please install a plugin that provides package repositories.", &theme).font_size(18.0);
 		}
 
-		let results_query2 = results_query.clone();
-		let mut search_session2 = search_session.clone();
-		let mut results2 = results.clone();
+		let results_query2 = results_query;
+		let mut search_session2 = search_session;
+		let mut results2 = results;
 		use_side_effect(move || {
 			if let Some(result) = results_query2.read().state().ok() {
 				results2.set(result.0.clone());
@@ -73,7 +73,7 @@ impl Component for BrowsePackagesPage {
 			}
 		});
 
-		let selected_pkg = search_state.previewed.clone();
+		let selected_pkg = search_state.previewed;
 		use_side_effect(move || {
 			if let Some(req) = &*selected_pkg.read() {
 				front_state
@@ -84,7 +84,7 @@ impl Component for BrowsePackagesPage {
 			}
 		});
 
-		let mut page2 = search_state.page.clone();
+		let mut page2 = search_state.page;
 		let page_buttons = PageButtons {
 			page: (*search_state.page.read()).into(),
 			total_pages: results.read().total_results.div_ceil(PAGE_SIZE as usize),
@@ -92,11 +92,11 @@ impl Component for BrowsePackagesPage {
 		};
 
 		let ty_selector = PackageTypeFilter {
-			ty: search_state.ty.clone(),
+			ty: search_state.ty,
 			repo: search_state.repo.read().clone(),
 		};
 
-		let search = TextInput::new(search_state.search.clone());
+		let search = TextInput::new(search_state.search);
 
 		let search_state2 = search_state.clone();
 		let top_bar_right = rect()
@@ -104,7 +104,7 @@ impl Component for BrowsePackagesPage {
 			.height(Size::fill())
 			.cont()
 			.child(rect().height(Size::fill()).center().child(RepoSelector {
-				repo: search_state.repo.clone(),
+				repo: search_state.repo,
 			}))
 			.child(rect().height(Size::fill()).center().child(ty_selector))
 			.child(
@@ -115,9 +115,9 @@ impl Component for BrowsePackagesPage {
 					.child(search_bar(search, &theme)),
 			)
 			.child(rect().height(Size::fill()).center().child(PackageFilters {
-				loaders: search_state.loaders.clone(),
-				mc_versions: search_state.mc_versions.clone(),
-				categories: search_state.categories.clone(),
+				loaders: search_state.loaders,
+				mc_versions: search_state.mc_versions,
+				categories: search_state.categories,
 				on_reset: EventHandler::new(move |_| {
 					search_state2.clone().reset();
 				}),
@@ -156,7 +156,7 @@ impl Component for BrowsePackagesPage {
 				BrowseItem {
 					req: req.clone(),
 					preview,
-					selected_package: selected_pkg.clone(),
+					selected_package: selected_pkg,
 				}
 				.into_element()
 			}))
@@ -211,9 +211,9 @@ impl PackageSearchState {
 			repo: use_state(|| None),
 			previewed: use_state(|| None),
 			page: use_state(|| 0),
-			search: use_state(|| String::new()),
+			search: use_state(String::new),
 			ty: use_state(|| PackageKind::Mod),
-			categories: use_state(|| Vec::new()),
+			categories: use_state(Vec::new),
 			mc_versions: use_state(|| {
 				browse_filters
 					.as_ref()
@@ -242,8 +242,8 @@ impl PackageSearchState {
 			state2.previewed.set_if_modified(None);
 
 			// Handle what package types and categories are available based on the selected repository
-			if let Some(repo) = &*state2.repo.peek() {
-				if let Some(repo) = back_state.repos().get(repo) {
+			if let Some(repo) = &*state2.repo.peek()
+				&& let Some(repo) = back_state.repos().get(repo) {
 					if !repo.package_types.is_empty()
 						&& !repo.package_types.contains(&*state2.ty.peek())
 					{
@@ -260,7 +260,6 @@ impl PackageSearchState {
 						state2.categories.set(Vec::new());
 					}
 				}
-			}
 		});
 
 		out
@@ -338,7 +337,7 @@ impl Component for BrowseItem {
 		});
 
 		let req = self.req.clone();
-		let mut selected_package = self.selected_package.clone();
+		let mut selected_package = self.selected_package;
 
 		let repo = self.req.repository.as_deref().map(|x| {
 			rect()

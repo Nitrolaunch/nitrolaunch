@@ -17,11 +17,11 @@ impl<C: ConsoleImpl> Component for Console<C> {
 
 		// Used for reactivity
 		let contents = use_reactive(&self.console.contents());
-		let mut line_indexes = use_state::<Vec<usize>>(|| Vec::new());
+		let mut line_indexes = use_state::<Vec<usize>>(Vec::new);
 		let mut line_count = use_state::<usize>(|| 0);
 
 		let ty = use_state::<Option<MessageType>>(|| None);
-		let input = use_state(|| String::new());
+		let input = use_state(String::new);
 
 		use_side_effect({
 			move || {
@@ -61,7 +61,7 @@ impl<C: ConsoleImpl> Component for Console<C> {
 		let theme2 = theme.clone();
 		let contents = match self.console.contents() {
 			Some(contents) => {
-				let indexes = line_indexes.clone();
+				let indexes = line_indexes;
 				VirtualScrollView::new_with_data(PtrEq(contents.clone()), move |item, contents| {
 					let indexes_read = indexes.read();
 					let line = if item.index < indexes_read.len() {
@@ -101,7 +101,7 @@ impl<C: ConsoleImpl> Component for Console<C> {
 		};
 
 		let input_fn = self.console.input_fn();
-		let mut input2 = input.clone();
+		let mut input2 = input;
 		let contents = rect()
 			.width(Size::fill())
 			.height(Size::flex(1.0))

@@ -46,15 +46,15 @@ impl Component for MicrosoftAuthPrompt {
 }
 
 pub fn ms_auth_info(url: String, device_code: String, theme: &Theme) -> Rect {
-	let code_copy = button(&theme)
+	let code_copy = button(theme)
 		.child(device_code.clone())
 		.on_press(move |_| {
 			let _ = Clipboard::set(device_code.clone());
 		});
-	let code_copy = field("Copy this code", "copy", &theme, code_copy);
+	let code_copy = field("Copy this code", "copy", theme, code_copy);
 
 	let url2 = url.clone();
-	let button = icon_text_button("globe", "Open login page", &theme)
+	let button = icon_text_button("globe", "Open login page", theme)
 		.color(theme.primary)
 		.border_fill(theme.primary)
 		.background(theme.primary_bg)
@@ -65,14 +65,14 @@ pub fn ms_auth_info(url: String, device_code: String, theme: &Theme) -> Rect {
 	let open_login_page = field(
 		"Then paste the code into the login page",
 		"globe",
-		&theme,
+		theme,
 		button,
 	);
 
 	let fallback = field(
 		"If the page doesn't open automatically, you can use the browser link below.",
 		"link",
-		&theme,
+		theme,
 		label().text(url).color(theme.fg3),
 	);
 

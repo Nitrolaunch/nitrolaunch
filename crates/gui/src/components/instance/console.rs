@@ -32,11 +32,11 @@ impl Component for InstanceConsole {
 
 		let back_state2 = back_state.clone();
 		let id2 = self.id.clone();
-		let contents_query2 = contents_query.clone();
+		let contents_query2 = contents_query;
 		use_future(move || {
 			let back_state2 = back_state2.clone();
 			let id2 = id2.clone();
-			let contents_query2 = contents_query2.clone();
+			let contents_query2 = contents_query2;
 			async move {
 				let mut last_modified = None;
 				loop {

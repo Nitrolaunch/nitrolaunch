@@ -220,7 +220,7 @@ simple_query!(
 	keys = ConfigKind,
 	fn run(&self, keys: &Self::Keys) -> impl Future<Output = Result<Self::Ok, Self::Err>> {
 		let back_state = self.back_state.clone();
-		let ty = keys.clone();
+		let ty = *keys;
 
 		query_spawn(back_state.0.clone(), async move {
 			let out = back_state

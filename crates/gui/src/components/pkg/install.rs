@@ -47,7 +47,7 @@ impl Component for PackageInstallModal {
 
 		let tab = use_state(|| Tab::Instance);
 		let selected_item = use_state::<Option<ConfiguredItem>>(|| None);
-		let new_instance_id = use_state(|| String::new());
+		let new_instance_id = use_state(String::new);
 
 		let enable = selected_item.read().is_some();
 		let compatability_check = use_query(
@@ -66,8 +66,8 @@ impl Component for PackageInstallModal {
 		);
 		let compatability_err = compatability_check.read().state().ok().cloned().flatten();
 
-		let tab2 = tab.clone();
-		let mut selected_item2 = selected_item.clone();
+		let tab2 = tab;
+		let mut selected_item2 = selected_item;
 		use_side_effect(move || {
 			tab2.read();
 			selected_item2.set(None);
@@ -78,7 +78,7 @@ impl Component for PackageInstallModal {
 
 		let tabs = TopTabs::new(tab).children(
 			Tab::get_tabs(is_modpack)
-				.into_iter()
+				.iter()
 				.map(|x| SelectOption::new(x.clone(), x.name(is_modpack), Some(x.icon()))),
 		);
 
@@ -110,7 +110,7 @@ impl Component for PackageInstallModal {
 					3,
 					items.instances.iter().map(|x| Item {
 						item: x.clone(),
-						selected: selected_item.clone(),
+						selected: selected_item,
 					}),
 				)
 				.gap(theme.gap2);
@@ -122,7 +122,7 @@ impl Component for PackageInstallModal {
 					3,
 					items.templates.iter().map(|x| Item {
 						item: x.clone(),
-						selected: selected_item.clone(),
+						selected: selected_item,
 					}),
 				)
 				.gap(theme.gap2);
@@ -196,9 +196,9 @@ impl Component for PackageInstallModal {
 		};
 
 		let req = self.req.clone();
-		let tab = tab.clone();
-		let selected_item = selected_item.clone();
-		let new_instance_id = new_instance_id.clone();
+		let tab = tab;
+		let selected_item = selected_item;
+		let new_instance_id = new_instance_id;
 		let on_close = self.on_close.clone();
 		Modal::new(format!("Install {name}"), "download".into())
 			.size(MODAL_MEDIUM_WIDTH, MODAL_MEDIUM_HEIGHT)
@@ -263,7 +263,7 @@ impl Component for Item {
 
 		let is_selected = self.selected.read().as_ref() == Some(&self.item.get_config_item());
 
-		let mut selected = self.selected.clone();
+		let mut selected = self.selected;
 
 		let inst_icon = if self.item.icon.is_none() {
 			icon("box", 28.0).into_element()

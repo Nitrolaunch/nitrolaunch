@@ -95,7 +95,7 @@ impl PackageConfigDeser {
 
 	/// Get the package request of the config
 	pub fn get_req(&self) -> PkgRequest {
-		PkgRequest::parse(&self.get_pkg_id(), PkgRequestSource::UserRequire)
+		PkgRequest::parse(self.get_pkg_id(), PkgRequestSource::UserRequire)
 	}
 
 	/// Get the features of the config

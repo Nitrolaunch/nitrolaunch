@@ -191,8 +191,7 @@ impl FrontState {
 
 		self.toasts = self
 			.toasts
-			.iter()
-			.map(|x| x.clone())
+			.iter().cloned()
 			.chain(std::iter::once(toast))
 			.collect();
 		self.invalidate(FrontChannel::Toast);
@@ -505,7 +504,7 @@ struct CachedInfo {
 impl CachedInfo {
 	async fn new(paths: &Paths, plugins: &PluginManager, o: &mut impl NitroOutput) -> Self {
 		let repos = if let Ok(repos) = plugins
-			.call_hook(AddCustomPackageRepositories, &(), &paths, o)
+			.call_hook(AddCustomPackageRepositories, &(), paths, o)
 			.await
 		{
 			if let Ok(repos) = repos.flatten_all_results(o).await {
@@ -552,7 +551,7 @@ impl CachedInfo {
 						offline_auth: false,
 					},
 					client,
-					&plugins,
+					plugins,
 					paths,
 					o,
 				)
@@ -577,8 +576,8 @@ pub fn use_launcher_data() -> LauncherDataHook {
 	let state = use_state(|| back_state.data());
 
 	let back_state2 = back_state.clone();
-	let mut state2 = state.clone();
-	let radio2 = radio.clone();
+	let mut state2 = state;
+	let radio2 = radio;
 	use_side_effect(move || {
 		radio2.read();
 		state2.set_if_modified(back_state2.data());

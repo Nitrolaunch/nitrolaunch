@@ -71,19 +71,19 @@ impl Component for AddonsConfig {
 
 		let filter = use_state(|| Filter::Configured);
 		let pkg_ty = use_state::<Option<PackageKind>>(|| None);
-		let search = use_state(|| String::new());
+		let search = use_state(String::new);
 		// let side = use_state::<Option<Side>>(|| None);
 
-		let open_states = use_state::<HashSet<String>>(|| HashSet::new());
+		let open_states = use_state::<HashSet<String>>(HashSet::new);
 
-		let modpack = self.config_state.modpack.clone();
-		let packages = self.config_state.packages.clone();
+		let modpack = self.config_state.modpack;
+		let packages = self.config_state.packages;
 		let parent_configs = self.parent_configs.clone();
 		let results = use_memo(move || {
 			build_items(
 				lockfile.read().state().ok(),
 				modpack.read().as_ref(),
-				&*packages.read(),
+				&packages.read(),
 				&parent_configs.0,
 				addons.read().state().ok().map(|x| x.as_slice()),
 			)
@@ -111,13 +111,13 @@ impl Component for AddonsConfig {
 			PtrEq(packages.ok().unwrap_or(&default_packages).clone())
 		});
 
-		let packages2 = packages.clone();
+		let packages2 = packages;
 		let processed_items = use_memo(move || {
 			filter_sort_items(
 				results.read().0.clone(),
 				&packages2.read().0,
-				&*filter.read(),
-				&*search.read(),
+				&filter.read(),
+				&search.read(),
 				pkg_ty.read().as_ref(),
 			)
 		});
@@ -132,9 +132,9 @@ impl Component for AddonsConfig {
 				.into_element()
 		} else {
 			let config_state = self.config_state.clone();
-			let processed_items2 = processed_items.clone();
-			let open_states2 = open_states.clone();
-			let open_states3 = open_states.clone();
+			let processed_items2 = processed_items;
+			let open_states2 = open_states;
+			let open_states3 = open_states;
 			let theme2 = theme.clone();
 			let on_edit = self.on_edit.clone();
 			VirtualScrollView::new_with_data(
@@ -145,7 +145,7 @@ impl Component for AddonsConfig {
 				),
 				move |item, (packages, processed_items, open_states)| {
 					let item = processed_items.get(item.index).unwrap();
-					let open_states2 = open_states2.clone();
+					let open_states2 = open_states2;
 					let id = item.id.to_string();
 					let open_toggle = EventHandler::new(move |_: ()| {
 						let contains = open_states2.read().contains(&id);
@@ -183,7 +183,7 @@ impl Component for AddonsConfig {
 			.into_element()
 		};
 
-		let filters = Dropdown::from_state(filter.clone())
+		let filters = Dropdown::from_state(filter)
 			.header_width(Size::flex(1.0))
 			.child(SelectOption::new(
 				Filter::Configured,
@@ -197,9 +197,9 @@ impl Component for AddonsConfig {
 			))
 			.child(SelectOption::new(Filter::All, "All", Some("asterisk")));
 
-		let pkg_ty2 = pkg_ty.clone();
+		let pkg_ty2 = pkg_ty;
 		let ty_selector = Dropdown::new(
-			Selected::Single(pkg_ty.read().clone()),
+			Selected::Single(*pkg_ty.read()),
 			Rc::new(move |selected| {
 				pkg_ty2.clone().set(selected.single());
 			}),
@@ -244,11 +244,11 @@ impl Component for AddonsConfig {
 		let front_state2 = front_state.clone();
 		let back_state2 = back_state.clone();
 		let parent_configs = self.parent_configs.clone();
-		let id = self.config_state.id.clone();
-		let version = self.config_state.version.clone();
+		let id = self.config_state.id;
+		let version = self.config_state.version;
 		let loader = match self.config_state.side.read().as_ref() {
-			Some(Side::Client) | None => self.config_state.client_loader.clone(),
-			Some(Side::Server) => self.config_state.server_loader.clone(),
+			Some(Side::Client) | None => self.config_state.client_loader,
+			Some(Side::Server) => self.config_state.server_loader,
 		};
 		let ty = self.config_state.ty;
 		let browse_button = icon_text_button("search", "Browse for Packages", &theme)
@@ -260,14 +260,14 @@ impl Component for AddonsConfig {
 				let front_state2 = front_state2.clone();
 				let back_state2 = back_state2.clone();
 				let parent_configs = parent_configs.clone();
-				let id = id.clone();
-				let version = version.clone();
-				let loader = loader.clone();
+				let id = id;
+				let version = version;
+				let loader = loader;
 				spawn(async move {
 					let id = id.read().clone();
 					let version =
 						final_value_owned(version.read().clone(), &parent_configs.0, |x| {
-							x.instance.version.as_ref().map(|x| to_string_json(x))
+							x.instance.version.as_ref().map(to_string_json)
 						});
 					let Some(version) = version else {
 						return;
@@ -294,7 +294,7 @@ impl Component for AddonsConfig {
 				});
 			});
 
-		let id = self.config_state.id.clone();
+		let id = self.config_state.id;
 		let update_button = icon_text_button("cycle", "Update Packages", &theme)
 			.active(&theme)
 			.on_press(move |_| {
@@ -423,21 +423,19 @@ impl Component for ContentItemElem {
 						self.item.get_name(&self.packages).to_string(),
 						Some(self.item.id.to_string()),
 					)
-				} else {
-					if let Some(Err(err)) = self.packages.get(req) {
-						(
-							icon("error", 24.0).color(theme.error).into_element(),
-							err.root_cause().to_string(),
-							Some(self.item.id.to_string()),
-						)
-					} else {
-						(
-							CircularLoader::new().into_element(),
-							"Loading".into(),
-							Some(self.item.id.to_string()),
-						)
-					}
-				}
+				} else if let Some(Err(err)) = self.packages.get(req) {
+    						(
+    							icon("error", 24.0).color(theme.error).into_element(),
+    							err.root_cause().to_string(),
+    							Some(self.item.id.to_string()),
+    						)
+    					} else {
+    						(
+    							CircularLoader::new().into_element(),
+    							"Loading".into(),
+    							Some(self.item.id.to_string()),
+    						)
+    					}
 			}
 			ContentItemType::Addon => {
 				let ico = self
@@ -525,7 +523,7 @@ impl Component for ContentItemElem {
 		if let Some(kind) = self.item.get_addon_ty(&self.packages) {
 			badges.push(
 				badge(get_package_kind_icon(kind), theme.fg3, &theme)
-					.tip(&front_state, &kind.to_string_pretty())
+					.tip(&front_state, kind.to_string_pretty())
 					.into_element(),
 			);
 		}
@@ -850,11 +848,10 @@ fn build_items(
 				.get_addons()
 				.filter(|x| x.is_from_package(pkg))
 				.map(|x| x.to_addon())
-				.map(|x| {
+				.inspect(|x| {
 					if !x.exists() {
 						files_exist = false;
 					}
-					x
 				});
 
 			items.push(ContentItem {

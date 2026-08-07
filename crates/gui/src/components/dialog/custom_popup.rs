@@ -27,11 +27,11 @@ impl Component for CustomPopupModal {
 			),
 		));
 
-		let control_state = use_state(|| ControlledConfig::default());
+		let control_state = use_state(ControlledConfig::default);
 
 		let contents = Controls {
 			controls: PtrEq(self.popup.0.controls.iter().cloned().collect()),
-			values: control_state.clone(),
+			values: control_state,
 			side: None,
 		};
 
@@ -44,9 +44,9 @@ impl Component for CustomPopupModal {
 			.buttons(self.popup.0.buttons.iter().map(move |button| {
 				let plugin = self.popup.0.plugin.clone();
 				let button = button.clone();
-				let custom_action_mutation = custom_action_mutation.clone();
+				let custom_action_mutation = custom_action_mutation;
 				let front_state2 = front_state2.clone();
-				let control_state = control_state.clone();
+				let control_state = control_state;
 
 				ModalButton {
 					title: button.title.clone(),

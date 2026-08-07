@@ -62,12 +62,12 @@ impl Component for TextInput {
 
 		let on_change = self.on_change.clone();
 		let input_theme = InputColorsThemePartial {
-			background: Some(Preference::Specific(theme.bg.into())),
-			focus_background: Some(Preference::Specific(theme.panel.into())),
-			border_fill: Some(Preference::Specific(theme.item_border.into())),
-			focus_border_fill: Some(Preference::Specific(theme.item_select_border.into())),
-			color: Some(Preference::Specific(theme.fg.into())),
-			placeholder_color: Some(Preference::Specific(theme.fg3.into())),
+			background: Some(Preference::Specific(theme.bg)),
+			focus_background: Some(Preference::Specific(theme.panel)),
+			border_fill: Some(Preference::Specific(theme.item_border)),
+			focus_border_fill: Some(Preference::Specific(theme.item_select_border)),
+			color: Some(Preference::Specific(theme.fg)),
+			placeholder_color: Some(Preference::Specific(theme.fg3)),
 		};
 
 		let out = Input::new(self.value.clone())
@@ -122,8 +122,8 @@ pub fn transparent_text_input(input: State<String>, theme: &Theme) -> Input {
 		focus_background: Some(Preference::Specific(Color::TRANSPARENT)),
 		border_fill: Some(Preference::Specific(Color::TRANSPARENT)),
 		focus_border_fill: Some(Preference::Specific(Color::TRANSPARENT)),
-		color: Some(Preference::Specific(theme.fg.into())),
-		placeholder_color: Some(Preference::Specific(theme.fg3.into())),
+		color: Some(Preference::Specific(theme.fg)),
+		placeholder_color: Some(Preference::Specific(theme.fg3)),
 	};
 
 	Input::new(input)

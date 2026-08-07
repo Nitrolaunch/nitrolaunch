@@ -73,7 +73,7 @@ pub fn derived_value<'a, T>(
 	if editable_value.is_some() {
 		None
 	} else {
-		parent_configs.into_iter().find_map(|x| property(x))
+		parent_configs.iter().find_map(property)
 	}
 }
 
@@ -85,7 +85,7 @@ pub fn derived_value_owned<T>(
 	if editable_value.is_some() {
 		None
 	} else {
-		parent_configs.into_iter().find_map(|x| property(x))
+		parent_configs.iter().find_map(property)
 	}
 }
 
@@ -97,7 +97,7 @@ pub fn final_value_owned<T>(
 	if let Some(value) = editable_value {
 		Some(value)
 	} else {
-		parent_configs.into_iter().find_map(|x| property(x))
+		parent_configs.iter().find_map(property)
 	}
 }
 

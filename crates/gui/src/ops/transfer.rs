@@ -53,7 +53,7 @@ simple_mutation!(
 			keys.id.clone(),
 			keys.format.clone(),
 			keys.path.clone(),
-			keys.side.clone(),
+			keys.side,
 		);
 
 		query_spawn(back_state.0.clone(), async move {

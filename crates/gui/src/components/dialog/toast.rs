@@ -38,7 +38,7 @@ impl Component for Toasts {
 		let toasts_height = 350.0;
 
 		let toasts = toasts
-			.into_iter()
+			.iter()
 			.map(|x| ToastElem { toast: x.clone() }.into_element());
 		let toasts = ScrollView::new()
 			.width(Size::fill())
@@ -80,7 +80,7 @@ impl Component for ToastElem {
 			AnimNum::new(1.0, 0.0).duration(Duration::from_secs(lifetime as u64))
 		});
 
-		let life2 = life.clone();
+		let life2 = life;
 		let id = self.toast.id;
 		let front_state2 = front_state.clone();
 		use_side_effect(move || {

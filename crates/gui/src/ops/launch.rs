@@ -175,10 +175,11 @@ impl MutationCapability for KillInstance {
 		let back_state = self.back_state.clone();
 
 		query_spawn(back_state.0.clone(), async move {
-			Ok(back_state
-				.running_instances
-				.kill(&id, account.as_deref())
-				.await)
+			let _: () = back_state
+   				.running_instances
+   				.kill(&id, account.as_deref())
+   				.await;
+   Ok(())
 		})
 	}
 }

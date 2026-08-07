@@ -217,7 +217,7 @@ impl Component for FooterButton {
 		};
 
 		let item = self.item.clone();
-		let mut show_install_modal2 = show_install_modal.clone();
+		let mut show_install_modal2 = show_install_modal;
 		let front_state2 = front_state.clone();
 		let on_press = move |_| match &item {
 			FooterItem::None => {}

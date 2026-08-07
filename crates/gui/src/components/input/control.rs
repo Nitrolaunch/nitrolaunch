@@ -32,7 +32,7 @@ impl Component for ControlInput {
 			_ => String::new(),
 		};
 		let value_str = use_reactive(&value_str);
-		let value_str2 = value_str.clone();
+		let value_str2 = value_str;
 		let on_set2 = on_set.clone();
 		use_side_effect(move || {
 			let value = value_str2.read().clone();
@@ -167,7 +167,7 @@ impl Component for ControlInput {
 				.into_element(),
 		};
 
-		let icon = self.control.icon.as_deref().unwrap_or_else(|| "properties");
+		let icon = self.control.icon.as_deref().unwrap_or("properties");
 
 		field(&self.control.name, icon, &theme, control)
 			.maybe(self.control.description.is_some(), |this| {
@@ -210,7 +210,7 @@ impl ControlSection {
 				let section_icon = control.icon.clone().unwrap_or_else(|| "box".into());
 				let section = sections
 					.entry(section_id.clone())
-					.or_insert_with(|| ControlSection::default());
+					.or_default();
 				section.id = section_id;
 				section.name = section_name;
 				section.icon = section_icon;
@@ -260,7 +260,7 @@ impl Component for Controls {
 					.filter(|x| filter_control(x, self.side))
 					.map(|x| {
 						let id = x.id.clone();
-						let mut values = self.values.clone();
+						let mut values = self.values;
 						ControlInput {
 							control: x.clone(),
 							value: self
@@ -339,25 +339,22 @@ impl ControlledConfig {
 	}
 
 	fn optimize_value(value: &mut Value) {
-		match value {
-			Value::Object(map) => {
-				let keys_to_remove: Vec<String> = map
-					.iter_mut()
-					.filter_map(|(k, v)| {
-						Self::optimize_value(v);
-						if v.is_null() || (v.is_object() && v.as_object().unwrap().is_empty()) {
-							None
-						} else {
-							Some(k.clone())
-						}
-					})
-					.collect();
-				for key in keys_to_remove {
-					map.remove(&key);
-				}
-			}
-			_ => {}
-		}
+		if let Value::Object(map) = value {
+  				let keys_to_remove: Vec<String> = map
+  					.iter_mut()
+  					.filter_map(|(k, v)| {
+  						Self::optimize_value(v);
+  						if v.is_null() || (v.is_object() && v.as_object().unwrap().is_empty()) {
+  							None
+  						} else {
+  							Some(k.clone())
+  						}
+  					})
+  					.collect();
+  				for key in keys_to_remove {
+  					map.remove(&key);
+  				}
+  			}
 	}
 }
 

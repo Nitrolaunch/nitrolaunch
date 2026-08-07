@@ -16,8 +16,8 @@ impl Component for Tips {
 		front_state.read().subscribe(FrontChannel::Tip);
 		let tip = front_state.read().tip().cloned().unwrap_or_default();
 		let platform = Platform::get();
-		let mut window = platform.root_size.peek().clone();
-		let scale_factor = platform.scale_factor.peek().clone();
+		let mut window = *platform.root_size.peek();
+		let scale_factor = *platform.scale_factor.peek();
 		window.width /= scale_factor as f32;
 		window.height /= scale_factor as f32;
 		let place_right = window.width - tip.x < FLIP_MARGIN;

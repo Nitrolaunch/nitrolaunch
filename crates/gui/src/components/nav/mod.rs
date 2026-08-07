@@ -22,7 +22,7 @@ impl Component for NavBar {
 		front_state.read().subscribe(FrontChannel::Route);
 		let theme = use_theme();
 		let selected_category = use_reactive(&front_state.read().route().get_category());
-		let selected_category2 = selected_category.clone();
+		let selected_category2 = selected_category;
 		let front_state2 = front_state.clone();
 		use_side_effect(move || {
 			front_state2

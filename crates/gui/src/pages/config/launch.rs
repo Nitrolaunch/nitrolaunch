@@ -21,7 +21,7 @@ impl Component for LaunchConfigPage {
 		let theme = use_theme();
 
 		rect().expanded().padding(theme.gap3).child(JavaSelector {
-			java: self.config_state.java.clone(),
+			java: self.config_state.java,
 			parent_configs: self.parent_configs.clone(),
 		})
 	}
@@ -74,7 +74,7 @@ impl Component for JavaSelector {
 			None => None,
 		};
 
-		let java2 = self.java.clone();
+		let java2 = self.java;
 		let selected2 = selected.clone();
 		let selector = Dropdown::new(
 			Selected::Single(selected),
@@ -136,10 +136,10 @@ impl Component for JavaSelector {
 		);
 
 		// We can't use use_transform_optional_string because it will return None if the string is empty, but that means inherit
-		let path = use_state(|| String::new());
+		let path = use_state(String::new);
 		use_side_effect({
-			let java = self.java.clone();
-			let mut path = path.clone();
+			let java = self.java;
+			let mut path = path;
 			move || {
 				if let Some(java) = &*java.read()
 					&& is_custom
@@ -149,8 +149,8 @@ impl Component for JavaSelector {
 			}
 		});
 		use_side_effect({
-			let mut java = self.java.clone();
-			let path = path.clone();
+			let mut java = self.java;
+			let path = path;
 			move || {
 				if is_custom {
 					java.set_if_modified(Some(path.read().clone()));

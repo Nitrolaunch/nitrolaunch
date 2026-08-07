@@ -49,7 +49,7 @@ impl TemplateConfig {
 
 	/// Gets the client loader of this config
 	pub fn client_loader(&self) -> Option<(Loader, VersionPattern)> {
-		self.client_loader_raw().map(|x| parse_loader_config(x))
+		self.client_loader_raw().map(parse_loader_config)
 	}
 
 	/// Gets the client loader of this config as a versioned string
@@ -62,7 +62,7 @@ impl TemplateConfig {
 
 	/// Gets the server loader of this config
 	pub fn server_loader(&self) -> Option<(Loader, VersionPattern)> {
-		self.server_loader_raw().map(|x| parse_loader_config(x))
+		self.server_loader_raw().map(parse_loader_config)
 	}
 
 	/// Gets the server loader of this config as a versioned string

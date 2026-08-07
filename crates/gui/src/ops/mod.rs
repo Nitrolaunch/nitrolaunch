@@ -29,11 +29,11 @@ macro_rules! simple_query {
 	) => {
 		#[derive(Clone, PartialEq, Eq, Hash)]
 		pub struct $name {
-			back_state: freya::query::Captured<crate::state::BackState>,
+			back_state: freya::query::Captured<$crate::state::BackState>,
 		}
 
 		impl $name {
-			pub fn new(back_state: crate::state::BackState) -> Self {
+			pub fn new(back_state: $crate::state::BackState) -> Self {
 				Self {
 					back_state: freya::query::Captured(back_state),
 				}
@@ -61,11 +61,11 @@ macro_rules! simple_mutation {
 	) => {
 		#[derive(Clone, PartialEq, Eq, Hash)]
 		pub struct $name {
-			back_state: freya::query::Captured<crate::state::BackState>,
+			back_state: freya::query::Captured<$crate::state::BackState>,
 		}
 
 		impl $name {
-			pub fn new(back_state: crate::state::BackState) -> Self {
+			pub fn new(back_state: $crate::state::BackState) -> Self {
 				Self {
 					back_state: freya::query::Captured(back_state),
 				}

@@ -31,7 +31,7 @@ impl<T: PartialEq + Clone + 'static> Component for SideTabs<T> {
 
 		let tabs = self.tabs.iter().map(|tab| {
 			Tab {
-				is_selected: (&*self.selected.read()) == &tab.id,
+				is_selected: *self.selected.read() == tab.id,
 				option: tab.clone(),
 				on_select: self.selected.setter(),
 				horizontal: false,
@@ -84,7 +84,7 @@ impl<T: PartialEq + Clone + 'static> Component for TopTabs<T> {
 
 		let tabs = self.tabs.iter().map(|tab| {
 			Tab {
-				is_selected: (&*self.selected.read()) == &tab.id,
+				is_selected: *self.selected.read() == tab.id,
 				option: tab.clone(),
 				on_select: self.selected.setter(),
 				horizontal: true,

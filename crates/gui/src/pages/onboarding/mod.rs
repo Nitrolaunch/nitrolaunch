@@ -49,7 +49,7 @@ impl Component for OnboardingModal {
 			"arrow_right"
 		};
 
-		let mut tab2 = tab.clone();
+		let mut tab2 = tab;
 		let front_state2 = front_state.clone();
 		Modal::new_no_title()
 			.size_xlarge()
@@ -124,11 +124,11 @@ fn welcome_tab(theme: &Theme) -> impl IntoElement {
 					status_panel(
 						"Keep in mind the launcher is still in beta. There's lots of features on the horizon!",
 						theme.panel,
-						&theme,
+						theme,
 					)
 					.width(Size::fill()),
 				)
-				.child(socials(&theme)),
+				.child(socials(theme)),
 		);
 
 	rect()
@@ -155,7 +155,7 @@ impl Component for PluginsTab {
 		let state = use_state(|| PluginsState::Idle);
 
 		let front_state2 = front_state.clone();
-		let mut state2 = state.clone();
+		let mut state2 = state;
 		use_future(move || {
 			let front_state2 = front_state2.clone();
 			async move {
@@ -187,7 +187,7 @@ impl Component for PluginsTab {
 		let contents = match &*state.read() {
 			PluginsState::Idle => {
 				let text = "We recommend you install some plugins before you start. These include features like mod repositories, launcher support, and themes";
-				let mut state2 = state.clone();
+				let mut state2 = state;
 				rect()
 					.center()
 					.spacing(theme.gap3)
@@ -203,7 +203,7 @@ impl Component for PluginsTab {
 					)
 			}
 			PluginsState::Installing(current, total) => {
-				let mut state2 = state.clone();
+				let mut state2 = state;
 				rect()
 					.center()
 					.spacing(theme.gap3)
@@ -277,20 +277,20 @@ impl Component for MigrateTab {
 
 		let format = use_state::<Option<String>>(|| None);
 		let link = use_state(|| false);
-		let instances = use_state(|| Vec::new());
+		let instances = use_state(Vec::new);
 
 		let contents = MigrateContents {
-			format: format.clone(),
-			link: link.clone(),
-			instances: instances.clone(),
+			format,
+			link,
+			instances,
 		};
 
 		let mut on_submit = on_migrate(
 			front_state.clone(),
 			migrate_mutation,
-			format.clone(),
-			link.clone(),
-			instances.clone(),
+			format,
+			link,
+			instances,
 		);
 
 		let right = rect()
@@ -384,7 +384,7 @@ fn banner_image(
 			.expanded()
 			.opacity(0.75)
 			.corner_radius(radius)
-			.shiny_border(radius, &theme)
+			.shiny_border(radius, theme)
 			.image_cover(ImageCover::Center)
 			.aspect_ratio(AspectRatio::Max)
 			.child(

@@ -47,8 +47,8 @@ impl ComponentOwned for IconSelector {
 		let option_gap = 8.0;
 		let option_size = selector_width / cols as f32 - option_gap;
 
-		let options = std::iter::once(None).chain(OPTIONS.into_iter().map(Some));
-		let options = options.map(|x| x.map(|x| *x)).map(|x| {
+		let options = std::iter::once(None).chain(OPTIONS.iter().map(Some));
+		let options = options.map(|x| x.copied()).map(|x| {
 			let is_selected = x == self.icon.read().as_deref();
 			let is_derived = x == derived.as_deref() && x.is_some();
 
@@ -56,7 +56,7 @@ impl ComponentOwned for IconSelector {
 				.width(Size::percent(75.0))
 				.height(Size::percent(75.0));
 
-			let mut selected = self.icon.clone();
+			let mut selected = self.icon;
 
 			rect()
 				.width(Size::px(option_size))

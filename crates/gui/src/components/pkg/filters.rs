@@ -36,12 +36,12 @@ impl Component for PackageFilters {
 			});
 
 		let loaders_filter = PackageLoadersFilter {
-			loaders: self.loaders.clone(),
+			loaders: self.loaders,
 		};
 		let loaders_filter = field("Loaders", "box", &theme, loaders_filter);
 
 		let mc_versions_filter = PackageVersionsFilter {
-			mc_versions: self.mc_versions.clone(),
+			mc_versions: self.mc_versions,
 		};
 		let mc_versions_filter = field(
 			"Minecraft Versions",
@@ -51,7 +51,7 @@ impl Component for PackageFilters {
 		);
 
 		let categories_filter = PackageCategoryFilter {
-			categories: self.categories.clone(),
+			categories: self.categories,
 			repo: None,
 		};
 		let categories_filter = field("Categories", "tag", &theme, categories_filter);
@@ -71,7 +71,7 @@ impl Component for PackageFilters {
 			.child(categories_filter)
 			.child(reset_button);
 
-		let mut is_open2 = is_open.clone();
+		let mut is_open2 = is_open;
 		let button = icon_button("text_align_center", &theme).on_press(move |_| {
 			is_open2.toggle();
 		});
@@ -98,9 +98,9 @@ impl Component for PackageTypeFilter {
 			.as_ref()
 			.and_then(|repo| back_state.repos().get(repo))
 			.map(|r| r.package_types.clone())
-			.unwrap_or_else(|| Vec::new());
+			.unwrap_or_default();
 
-		Dropdown::from_state(self.ty.clone())
+		Dropdown::from_state(self.ty)
 			.panel_colorway()
 			.header_width(Size::px(180.0))
 			.children(
@@ -135,13 +135,13 @@ impl Component for PackageCategoryFilter {
 	fn render(&self) -> impl IntoElement {
 		let back_state = use_consume::<BackState>();
 
-		let categories = self.categories.clone();
+		let categories = self.categories;
 		let available_categories = self
 			.repo
 			.as_ref()
 			.and_then(|repo| back_state.repos().get(repo))
 			.map(|r| r.package_categories.clone())
-			.unwrap_or_else(|| Vec::new());
+			.unwrap_or_default();
 
 		Dropdown::new(
 			Selected::Multi(categories.read().clone()),
@@ -152,11 +152,11 @@ impl Component for PackageCategoryFilter {
 		.panel_colorway()
 		.children(
 			PACKAGE_CATEGORIES
-				.into_iter()
+				.iter()
 				.filter(|x| available_categories.is_empty() || available_categories.contains(x))
 				.map(|x| {
 					SelectOption::new(
-						x.clone(),
+						*x,
 						package_category_display_name(*x),
 						Some(package_category_icon(*x)),
 					)
@@ -180,7 +180,7 @@ impl Component for PackageVersionsFilter {
 		let available_versions = available_versions.state();
 		let available_versions = available_versions.ok().unwrap_or(&default);
 
-		let mc_versions = self.mc_versions.clone();
+		let mc_versions = self.mc_versions;
 		Dropdown::new(
 			Selected::Multi(mc_versions.read().clone()),
 			Rc::new(move |selected| {
@@ -213,7 +213,7 @@ impl Component for PackageLoadersFilter {
 			.cloned()
 			.unwrap_or_default();
 
-		let loaders = self.loaders.clone();
+		let loaders = self.loaders;
 		Dropdown::new(
 			Selected::Multi(loaders.read().clone()),
 			Rc::new(move |selected| {

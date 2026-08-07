@@ -85,8 +85,7 @@ impl Component for PackageView {
 			.supported_loaders
 			.iter()
 			.flatten()
-			.map(|x| x.get_matches())
-			.flatten()
+			.flat_map(|x| x.get_matches())
 			.unique()
 			.map(|x| loader_tag(&x, false, &theme).into_element());
 		let lower_details = rect()

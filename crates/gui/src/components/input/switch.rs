@@ -12,9 +12,9 @@ impl Component for Switch {
 
 		let position = if self.enabled { 16.0 } else { 0.0 };
 		let color = if self.enabled {
-			theme.primary.into()
+			theme.primary
 		} else {
-			theme.disabled.into()
+			theme.disabled
 		};
 
 		let on_toggle = self.on_toggle.clone();

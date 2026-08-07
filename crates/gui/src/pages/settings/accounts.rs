@@ -35,7 +35,7 @@ impl Component for AccountSettings {
 		let accounts = accounts.state();
 		let accounts = accounts.ok().unwrap_or(&default);
 
-		let mut is_editing2 = is_editing.clone();
+		let mut is_editing2 = is_editing;
 		let accounts = ScrollView::new()
 			.expanded()
 			.spacing(theme.gap2)
@@ -96,10 +96,10 @@ impl Component for AccountItem {
 		let account_types = account_types.state();
 		let account_types = account_types.ok().unwrap_or(&default);
 
-		let editing_id = use_state(|| String::new());
+		let editing_id = use_state(String::new);
 		let editing_ty = use_state(|| AccountKind::Microsoft { xbox_uid: None });
 
-		let mut editing_id2 = editing_id.clone();
+		let mut editing_id2 = editing_id;
 		use_side_effect(move || {
 			let value = make_valid_instance_id(editing_id.read().as_str());
 			editing_id2.set_if_modified(value);
@@ -108,7 +108,7 @@ impl Component for AccountItem {
 		let account = &self.account.0;
 		let is_editing = self.on_edit_submit.is_some();
 
-		let name = account.get_name().unwrap_or(&*account.get_id());
+		let name = account.get_name().unwrap_or(account.get_id());
 
 		let image = ImageViewer::new(get_account_image(account.get_uuid()))
 			.asset_age(Duration::from_hours(1))
@@ -125,7 +125,7 @@ impl Component for AccountItem {
 
 		let is_authenticated = account.is_auth_valid(&back_state.paths.core);
 
-		let editing_ty2 = editing_ty.clone();
+		let editing_ty2 = editing_ty;
 		let ty_dropdown =
 			Dropdown::new(
 				Selected::Single(editing_ty.read().cloned()),
@@ -149,7 +149,7 @@ impl Component for AccountItem {
 			.cont()
 			.child(
 				segment(
-					TextInput::new(editing_id.clone()).placeholder("Enter account ID"),
+					TextInput::new(editing_id).placeholder("Enter account ID"),
 					1.0,
 				)
 				.tip(
@@ -175,8 +175,8 @@ impl Component for AccountItem {
 		let id = account.get_id().clone();
 		let action: EventHandler<_> = if is_editing {
 			let on_edit_submit = self.on_edit_submit.clone().unwrap();
-			let editing_id = editing_id.clone();
-			let editing_ty = editing_ty.clone();
+			let editing_id = editing_id;
+			let editing_ty = editing_ty;
 			let front_state = front_state.clone();
 			(move |_: Event<PressEventData>| {
 				if editing_id.read().is_empty() {

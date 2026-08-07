@@ -417,7 +417,7 @@ pub async fn launch(
 			};
 
 			for line in lines {
-				instance_stdout_line(&*line);
+				instance_stdout_line(&line);
 			}
 		};
 
@@ -948,7 +948,7 @@ async fn kill(
 	data.ensure_config(true).await?;
 	let config = data.config.get();
 
-	let instance = pick_instance(instance, &config)?;
+	let instance = pick_instance(instance, config)?;
 
 	let mut registry =
 		RunningInstanceRegistry::open(&data.paths).context("Failed to open registry")?;

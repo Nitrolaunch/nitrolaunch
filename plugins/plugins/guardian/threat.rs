@@ -46,15 +46,14 @@ pub struct Signature {
 
 impl Signature {
 	pub fn matches(&self, file: &[u8], constant_pool_end: Option<usize>) -> bool {
-		if let Some(end) = constant_pool_end {
-			if self
+		if let Some(end) = constant_pool_end
+			&& self
 				.constant_matchers
 				.iter()
 				.any(|x| matcher_matches(x, &file[0..end]))
 			{
 				return true;
 			}
-		}
 
 		self.matchers.iter().any(|x| matcher_matches(x, file))
 	}

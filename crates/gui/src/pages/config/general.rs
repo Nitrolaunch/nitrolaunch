@@ -49,11 +49,11 @@ impl Component for GeneralTab {
 
 		let name = use_transform_optional_string(self.config_state.name);
 
-		let mut id = self.config_state.id.clone();
-		let mut is_id_dirty = self.config_state.is_id_dirty.clone();
+		let mut id = self.config_state.id;
+		let mut is_id_dirty = self.config_state.is_id_dirty;
 		use_side_effect(move || {
 			if !*is_id_dirty.peek() {
-				id.set(make_valid_instance_id(&*name.read()));
+				id.set(make_valid_instance_id(&name.read()));
 			}
 		});
 
@@ -112,9 +112,9 @@ impl Component for GeneralTab {
 		let templates = items.ok().map(|x| {
 			x.templates
 				.iter()
-				.map(|x| SelectOption::new(&x.id, &x.name.as_deref().unwrap_or(&x.id), None))
+				.map(|x| SelectOption::new(&x.id, x.name.as_deref().unwrap_or(&x.id), None))
 		});
-		let from = self.config_state.from.clone();
+		let from = self.config_state.from;
 		let from_field = Dropdown::new(
 			Selected::Multi(from.read().clone()),
 			Rc::new(move |selected| {
@@ -141,7 +141,7 @@ impl Component for GeneralTab {
 				)
 			})
 		});
-		let config_plugin = self.config_state.plugin.clone();
+		let config_plugin = self.config_state.plugin;
 		let config_plugin_field = Dropdown::new(
 			Selected::Single(config_plugin.read().clone()),
 			Rc::new(move |selected| {
@@ -172,15 +172,15 @@ impl Component for GeneralTab {
 		let show_side_field = self.config_state.ty.is_template()
 			|| (self.config_state.ty == ConfigKind::Instance && self.config_state.is_new);
 		let show_none_option = self.config_state.ty.is_template();
-		let side = self.config_state.side.clone();
+		let side = self.config_state.side;
 		let side_field = InlineSelect::new(
-			Selected::Single(side.read().clone()),
+			Selected::Single(*side.read()),
 			Rc::new(move |value| {
 				side.clone().set(value.single_optional().flatten());
 			}),
 		)
 		.derived_value_owned(
-			self.config_state.side.read().clone().map(Some),
+			(*self.config_state.side.read()).map(Some),
 			&self.parent_configs.0,
 			|x| x.instance.side.map(Some),
 		)
@@ -208,7 +208,7 @@ impl Component for GeneralTab {
 			.into_iter()
 			.rev()
 			.map(|x| SelectOption::simple_or_none(Some(x)));
-		let version = self.config_state.version.clone();
+		let version = self.config_state.version;
 		let version_selector = Dropdown::new(
 			Selected::Single(self.config_state.version.read().cloned()),
 			Rc::new(move |selected| {
@@ -301,7 +301,7 @@ impl Component for LoadersConfig {
 		let minecraft_version = final_value_owned(
 			self.config_state.version.read().cloned(),
 			&self.parent_configs.0,
-			|x| x.instance.version.as_ref().map(|x| to_string_json(x)),
+			|x| x.instance.version.as_ref().map(to_string_json),
 		);
 		let client_loader_versions = use_query(FetchLoaderVersions::new(
 			back_state.clone(),
@@ -337,7 +337,7 @@ impl Component for LoadersConfig {
 			)
 		});
 
-		let client_loader = self.config_state.client_loader.clone();
+		let client_loader = self.config_state.client_loader;
 		let client_field = InlineSelect::new(
 			Selected::Single(self.config_state.client_loader.read().clone()),
 			Rc::new(move |selected| {
@@ -353,7 +353,7 @@ impl Component for LoadersConfig {
 				.client_loader
 				.read()
 				.clone()
-				.map(|x| Some(x)),
+				.map(Some),
 			&self.parent_configs.0,
 			|x| x.client_loader().map(|x| Some(x.0)),
 		)
@@ -374,7 +374,7 @@ impl Component for LoadersConfig {
 		let show_client_fields = self.config_state.ty.is_template()
 			|| *self.config_state.side.read() == Some(Side::Client);
 
-		let server_loader = self.config_state.server_loader.clone();
+		let server_loader = self.config_state.server_loader;
 		let server_field = InlineSelect::new(
 			Selected::Single(server_loader.read().clone()),
 			Rc::new(move |selected| {
@@ -390,7 +390,7 @@ impl Component for LoadersConfig {
 				.server_loader
 				.read()
 				.clone()
-				.map(|x| Some(x)),
+				.map(Some),
 			&self.parent_configs.0,
 			|x| x.server_loader().map(|x| Some(x.0)),
 		)
@@ -420,7 +420,7 @@ impl Component for LoadersConfig {
 		let options = client_loader_versions
 			.into_iter()
 			.map(|x| SelectOption::simple_or_none(Some(x)));
-		let client_version = self.config_state.client_loader_version.clone();
+		let client_version = self.config_state.client_loader_version;
 		let client_version_field = Dropdown::new(
 			Selected::Single(
 				self.config_state
@@ -458,7 +458,7 @@ impl Component for LoadersConfig {
 		let options = server_loader_versions
 			.into_iter()
 			.map(|x| SelectOption::simple_or_none(Some(x)));
-		let server_version = self.config_state.server_loader_version.clone();
+		let server_version = self.config_state.server_loader_version;
 		let server_version_field = Dropdown::new(
 			Selected::Single(
 				self.config_state

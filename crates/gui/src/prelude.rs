@@ -26,7 +26,7 @@ pub trait StateExt<T>: Clone {
 
 impl<T: 'static> StateExt<T> for State<T> {
 	fn setter(&self) -> EventHandler<T> {
-		let mut this = self.clone();
+		let mut this = *self;
 		EventHandler::from(move |value| this.set(value))
 	}
 }
@@ -42,7 +42,7 @@ impl<T: PartialEq + Clone + 'static> VecStateExt<T> for State<Vec<T>> {
 	type Item = T;
 
 	fn select_setter(&self) -> EventHandler<Self::Item> {
-		let mut this = self.clone();
+		let mut this = *self;
 		EventHandler::from(move |value| {
 			if this.read().contains(&value) {
 				let values = this

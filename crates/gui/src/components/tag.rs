@@ -45,12 +45,12 @@ pub fn repo_tag(repo: &str, compact: bool, back_state: &BackState, theme: &Theme
 		.text_color
 		.as_deref()
 		.and_then(Color::from_hex)
-		.unwrap_or(theme.bg.into());
+		.unwrap_or(theme.bg);
 	let bg = meta
 		.color
 		.as_deref()
 		.and_then(Color::from_hex)
-		.unwrap_or(theme.fg2.into());
+		.unwrap_or(theme.fg2);
 
 	tag(Some(ico), name, fg, bg, bg, theme)
 }

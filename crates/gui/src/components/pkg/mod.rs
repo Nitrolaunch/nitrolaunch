@@ -25,7 +25,7 @@ impl Component for RepoSelector {
 		let theme = use_theme();
 		let repos = back_state.repos();
 
-		let repo = self.repo.clone();
+		let repo = self.repo;
 
 		InlineSelect::new(
 			Selected::Single(self.repo.read().cloned()),
@@ -45,7 +45,7 @@ impl Component for RepoSelector {
 						.color
 						.as_deref()
 						.and_then(Color::from_hex)
-						.unwrap_or(theme.bg.into());
+						.unwrap_or(theme.bg);
 
 					let ico = meta
 						.icon

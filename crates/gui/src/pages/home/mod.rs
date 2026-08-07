@@ -51,7 +51,7 @@ impl Component for HomePage {
 
 		let tab = use_state(|| Tab::Instances);
 		let filter = use_state::<Option<Side>>(|| None);
-		let search = use_state(|| String::new());
+		let search = use_state(String::new);
 		let selected = use_state::<Option<InstanceItemInfo>>(|| None);
 
 		let front_state2 = front_state.clone();
@@ -86,10 +86,10 @@ impl Component for HomePage {
 			Tab::Templates => ConfigKind::Template,
 		};
 		let add_placeholder =
-			InstanceListItem::add_placeholder(add_placeholder_ty, selected.clone());
+			InstanceListItem::add_placeholder(add_placeholder_ty, selected);
 
 		let items = items
-			.into_iter()
+			.iter()
 			.filter(|x| {
 				if let Some(filter) = &*filter.read()
 					&& x.side != Some(*filter)
@@ -108,7 +108,7 @@ impl Component for HomePage {
 
 				true
 			})
-			.map(|x| InstanceListItem::new(x.clone(), selected.clone()))
+			.map(|x| InstanceListItem::new(x.clone(), selected))
 			.chain(std::iter::once(add_placeholder));
 
 		let items_elem = grid(4, items).gap(items_gap);
@@ -187,7 +187,7 @@ impl Component for HomePage {
 		))
 		.custom_buttons(add_buttons, AddOption::Custom);
 
-		let tabs = TopTabs::new(tab.clone())
+		let tabs = TopTabs::new(tab)
 			.child(SelectOption::new(Tab::Instances, "Instances", Some("box")))
 			.child(SelectOption::new(
 				Tab::Templates,
@@ -211,7 +211,7 @@ impl Component for HomePage {
 			.center()
 			.child(search_bar);
 
-		let filters = TopTabs::new(filter.clone())
+		let filters = TopTabs::new(filter)
 			.child(SelectOption::new(None, "All", Some("box")))
 			.child(SelectOption::new(
 				Some(Side::Client),

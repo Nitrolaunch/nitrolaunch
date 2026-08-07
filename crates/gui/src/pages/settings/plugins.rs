@@ -71,8 +71,8 @@ impl Component for PluginsPage {
 				.into_iter()
 				.sorted_by_cached_key(|x| x.id.clone())
 				.filter_map(|x| {
-					if *is_remote.peek() {
-						if local_plugins
+					if *is_remote.peek()
+						&& local_plugins
 							.read()
 							.state()
 							.ok()
@@ -83,7 +83,6 @@ impl Component for PluginsPage {
 						{
 							return None;
 						}
-					}
 
 					Some(
 						PluginItem {

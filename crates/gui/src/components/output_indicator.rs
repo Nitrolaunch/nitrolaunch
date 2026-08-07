@@ -20,7 +20,7 @@ impl Component for OutputIndicator {
 		let back_state = use_consume::<BackState>();
 		let kill_task = use_mutation(Mutation::new(KillTask::new(back_state.clone())));
 
-		let mut tasks = use_state::<HashMap<Task, TaskData>>(|| HashMap::new());
+		let mut tasks = use_state::<HashMap<Task, TaskData>>(HashMap::new);
 		let mut is_open = use_state(|| false);
 
 		use_side_effect(move || {

@@ -93,7 +93,7 @@ impl MutationCapability for PreloadPackages {
 				"Preloading {} packages",
 				packages.len()
 			)));
-			let out = config
+			config
 				.packages
 				.preload_packages(
 					packages.iter(),
@@ -104,7 +104,7 @@ impl MutationCapability for PreloadPackages {
 				.await?;
 			o.debug(MessageContents::Simple("Packages preloaded".into()));
 
-			Ok(out)
+			Ok(())
 		})
 	}
 }
@@ -432,7 +432,7 @@ impl MutationCapability for InstallPackage {
 						.context("Instance does not exist")?;
 
 					let mut inst_config = instance.original_config().clone();
-					inst_config.modpack = Some(keys.0.to_string().into());
+					inst_config.modpack = Some(keys.0.to_string());
 
 					ConfigModification::UpdateInstance(instance_id.clone(), inst_config)
 				}
@@ -442,7 +442,7 @@ impl MutationCapability for InstallPackage {
 						.get(&template_id)
 						.context("Template does not exist")?;
 					let mut template = template.clone();
-					template.instance.modpack = Some(keys.0.to_string().into());
+					template.instance.modpack = Some(keys.0.to_string());
 
 					ConfigModification::UpdateTemplate(template_id.clone(), template)
 				}

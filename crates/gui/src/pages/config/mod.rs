@@ -182,7 +182,7 @@ impl Component for ConfigModal {
 		let final_side = final_value_owned(
 			self.config_state.side.read().cloned(),
 			&parent_configs,
-			|x| x.instance.side.clone(),
+			|x| x.instance.side,
 		);
 		let left_panel = rect()
 			.width(Size::flex(1.0))
@@ -245,7 +245,7 @@ impl Component for ConfigModal {
 				let children = controls.0.get(id).map(|x| &x.controls).unwrap_or(&default);
 				Controls {
 					controls: PtrEq(children.clone()),
-					values: self.config_state.plugin_config.clone(),
+					values: self.config_state.plugin_config,
 					side: final_side,
 				}
 				.into_element()
@@ -309,9 +309,9 @@ impl ConfigState {
 			is_id_dirty: use_state(|| false),
 			original_config: use_state(|| PtrEq(Arc::new(TemplateConfig::default()))),
 			parent_configs: use_state(|| PtrEq(Arc::default())),
-			id: use_state(|| String::new()),
-			original_id: use_state(|| String::new()),
-			from: use_state(|| Vec::new()),
+			id: use_state(String::new),
+			original_id: use_state(String::new),
+			from: use_state(Vec::new),
 			name: use_state(|| None),
 			icon: use_state(|| None),
 			side: use_state(|| None),
@@ -320,11 +320,11 @@ impl ConfigState {
 			server_loader: use_state(|| None),
 			client_loader_version: use_state(|| VersionPattern::Any),
 			server_loader_version: use_state(|| VersionPattern::Any),
-			packages: use_state(|| TemplatePackageConfiguration::default()),
+			packages: use_state(TemplatePackageConfiguration::default),
 			modpack: use_state(|| None),
 			java: use_state(|| None),
 			plugin: use_state(|| None),
-			plugin_config: use_state(|| ControlledConfig::default()),
+			plugin_config: use_state(ControlledConfig::default),
 		};
 
 		let out2 = out.clone();
@@ -430,7 +430,7 @@ impl ConfigState {
 		config.instance.from = DeserListOrSingle::from_iter(self.from.peek().clone());
 		config.instance.name = self.name.peek().clone();
 		config.instance.icon = self.icon.peek().clone();
-		config.instance.side = self.side.peek().clone();
+		config.instance.side = *self.side.peek();
 		config.instance.version = match self.version.peek().as_deref() {
 			None => None,
 			Some("latest") => Some(MinecraftVersionDeser::Latest(
@@ -455,11 +455,11 @@ impl ConfigState {
 				config.instance.loader = match side {
 					Side::Client => format_loader(
 						self.client_loader.peek().as_ref(),
-						&*self.client_loader_version.peek(),
+						&self.client_loader_version.peek(),
 					),
 					Side::Server => format_loader(
 						self.server_loader.peek().as_ref(),
-						&*self.server_loader_version.peek(),
+						&self.server_loader_version.peek(),
 					),
 				};
 			}
@@ -468,11 +468,11 @@ impl ConfigState {
 				let new_config = TemplateLoaderConfiguration::Full {
 					client: format_loader(
 						self.client_loader.peek().as_ref(),
-						&*self.client_loader_version.peek(),
+						&self.client_loader_version.peek(),
 					),
 					server: format_loader(
 						self.server_loader.peek().as_ref(),
-						&*self.server_loader_version.peek(),
+						&self.server_loader_version.peek(),
 					),
 				};
 
@@ -570,11 +570,7 @@ pub struct ConfiguredItem {
 }
 
 fn format_loader(loader: Option<&Loader>, version: &VersionPattern) -> Option<String> {
-	if let Some(loader) = loader {
-		Some(format_versioned_string(&to_string_json(loader), version))
-	} else {
-		None
-	}
+	loader.map(|loader| format_versioned_string(&to_string_json(loader), version))
 }
 
 pub enum ConfigError {

@@ -97,12 +97,7 @@ fn main() -> anyhow::Result<()> {
 				// Check if the versions are supported
 				let supported_versions =
 					get_cached_supported_versions(&smithed_dir, &client).await?;
-				arg.parameters.minecraft_versions = arg
-					.parameters
-					.minecraft_versions
-					.into_iter()
-					.filter(|x| supported_versions.contains(x))
-					.collect();
+				arg.parameters.minecraft_versions.retain(|x| supported_versions.contains(x));
 
 				let search_task = {
 					let client = client.clone();

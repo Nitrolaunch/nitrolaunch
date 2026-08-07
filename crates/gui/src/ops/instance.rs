@@ -86,7 +86,7 @@ impl QueryCapability for FetchItems {
 						.instance
 						.version
 						.as_ref()
-						.map(|x| MinecraftVersion::from_deser(&x)),
+						.map(MinecraftVersion::from_deser),
 					loader: x.client_loader().or(x.server_loader()).map(|x| x.0),
 					source_plugin: x.instance.source_plugin.clone(),
 					is_editable: x.instance.is_editable || x.instance.source_plugin.is_none(),

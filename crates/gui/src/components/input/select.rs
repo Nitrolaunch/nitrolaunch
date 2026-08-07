@@ -376,7 +376,7 @@ impl<T: PartialEq + Clone + 'static> Component for Dropdown<T> {
 		let is_hovered = use_state(|| false);
 		let mut is_open = use_state(|| false);
 
-		let is_open2 = is_open.clone();
+		let is_open2 = is_open;
 		let on_open_change = self.on_open_change.clone();
 		use_side_effect(move || {
 			if let Some(handler) = &on_open_change {
@@ -522,7 +522,7 @@ impl<T: PartialEq + Clone + 'static> Component for Dropdown<T> {
 		let options_width = self
 			.options_width
 			.map(Size::px)
-			.unwrap_or_else(|| Size::fill());
+			.unwrap_or_else(Size::fill);
 
 		let options_position = if let Some(position) = &self.options_position {
 			position.clone()

@@ -21,7 +21,7 @@ impl Component for LoginTab {
 		let step = use_state(|| AuthStep::NotStarted);
 
 		let front_state2 = front_state.clone();
-		let mut step2 = step.clone();
+		let mut step2 = step;
 		use_future(move || {
 			let front_state2 = front_state2.clone();
 			async move {

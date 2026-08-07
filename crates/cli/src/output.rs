@@ -162,7 +162,7 @@ impl TerminalOutput {
 		message: MessageContents,
 		is_new: bool,
 	) -> anyhow::Result<String> {
-		let _ = self
+		self
 			.tx
 			.send(Event::Password {
 				message: message.clone(),
@@ -394,9 +394,9 @@ impl OutputTask {
 
 	fn display_text_impl(&mut self, text: &str) {
 		if self.in_process {
-			self.printer.print(&text);
+			self.printer.print(text);
 		} else {
-			self.printer.print(&text);
+			self.printer.print(text);
 			self.printer.newline();
 		}
 	}

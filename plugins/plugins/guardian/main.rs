@@ -247,11 +247,10 @@ fn scan_jar(data: &[u8], possible_threats: &Threats, data_dir: &Path) -> anyhow:
 
 	// Check for cached scan
 	let cache_file = get_scan_cache_path(&data_hash.to_string(), &possible_threats.hash, data_dir);
-	if let Ok(data) = std::fs::read(&cache_file) {
-		if let Ok(report) = serde_json::from_slice(&data) {
+	if let Ok(data) = std::fs::read(&cache_file)
+		&& let Ok(report) = serde_json::from_slice(&data) {
 			return Ok(report);
 		}
-	}
 
 	let mut zip = ZipArchive::new(Cursor::new(data)).context("Failed to open JAR archive")?;
 	let mut read_buf = Vec::new();

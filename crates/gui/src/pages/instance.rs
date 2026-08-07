@@ -76,12 +76,12 @@ impl Component for InstancePage {
 		)));
 
 		let tab = use_state(|| Tab::Console);
-		let config = use_state(|| InstanceConfig::default());
+		let config = use_state(InstanceConfig::default);
 
 		let id = self.id.clone();
 		let config_state = ConfigState::new(ConfigKind::Instance, false);
 		let mut config_state2 = config_state.clone();
-		let mut config2 = config.clone();
+		let mut config2 = config;
 		use_side_effect(move || {
 			let config = config_query
 				.read()

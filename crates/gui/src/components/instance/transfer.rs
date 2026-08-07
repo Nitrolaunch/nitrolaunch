@@ -53,7 +53,7 @@ impl Component for InstanceTransferModal {
 
 		let format = use_state::<Option<String>>(|| None);
 		let source_path = use_state::<Option<PathBuf>>(|| None);
-		let new_id = use_state(|| String::new());
+		let new_id = use_state(String::new);
 		let import_side = use_state(|| Side::Client);
 
 		let default = Vec::new();
@@ -79,7 +79,7 @@ impl Component for InstanceTransferModal {
 				&theme,
 			))
 		} else {
-			let format2 = format.clone();
+			let format2 = format;
 			let format_selector = Dropdown::new(
 				Selected::Single(format.read().cloned()),
 				Rc::new(move |selected| {
@@ -96,9 +96,9 @@ impl Component for InstanceTransferModal {
 			let format_selector = field("Format", "curly_braces", &theme, format_selector);
 
 			let path_selector = if self.mode == InstanceTransferMode::Import {
-				FileSelector::select(source_path.clone())
+				FileSelector::select(source_path)
 			} else {
-				FileSelector::save(source_path.clone())
+				FileSelector::save(source_path)
 			};
 			let title = if self.mode == InstanceTransferMode::Import {
 				"File"
@@ -107,13 +107,13 @@ impl Component for InstanceTransferModal {
 			};
 			let path_selector = field(title, "folder", &theme, path_selector);
 
-			let new_id_field = TextInput::new(new_id.clone());
+			let new_id_field = TextInput::new(new_id);
 			let new_id_field = field("New ID", "hashtag", &theme, new_id_field)
 				.tip(&front_state, "The ID for the new instance");
 
-			let import_side2 = import_side.clone();
+			let import_side2 = import_side;
 			let side_selector = InlineSelect::new(
-				Selected::Single(import_side.read().clone()),
+				Selected::Single(*import_side.read()),
 				Rc::new(move |selected| {
 					import_side2.clone().set(selected.single());
 				}),
@@ -128,7 +128,7 @@ impl Component for InstanceTransferModal {
 
 			let show_side_selector = self.mode == InstanceTransferMode::Import
 				&& source_path.read().is_some()
-				&& selected_format.map_or(false, |x| x.needs_import_side);
+				&& selected_format.is_some_and(|x| x.needs_import_side);
 
 			rect()
 				.width(Size::fill())
@@ -165,7 +165,7 @@ impl Component for InstanceTransferModal {
 					.toast(Toast::error("An instance ID must be provided", None));
 				return;
 			}
-			let import_side = import_side.read().clone();
+			let import_side = *import_side.read();
 
 			let mode = mode.clone();
 			let front_state2 = front_state2.clone();
@@ -246,20 +246,20 @@ impl Component for MigrateModal {
 
 		let format = use_state::<Option<String>>(|| None);
 		let link = use_state(|| false);
-		let instances = use_state(|| Vec::new());
+		let instances = use_state(Vec::new);
 
 		let contents = MigrateContents {
-			format: format.clone(),
-			link: link.clone(),
-			instances: instances.clone(),
+			format,
+			link,
+			instances,
 		};
 
 		let on_submit = on_migrate(
 			front_state.clone(),
 			migrate_mutation,
-			format.clone(),
-			link.clone(),
-			instances.clone(),
+			format,
+			link,
+			instances,
 		);
 
 		let front_state2 = front_state.clone();
@@ -303,8 +303,8 @@ impl Component for MigrateContents {
 			.enable(self.format.read().is_some()),
 		);
 
-		let formats2 = formats.clone();
-		let mut format2 = self.format.clone();
+		let formats2 = formats;
+		let mut format2 = self.format;
 		use_side_effect(move || {
 			let formats = formats2.read();
 			let formats = formats.state();
@@ -312,9 +312,7 @@ impl Component for MigrateContents {
 			if let Some(formats) = formats {
 				format2.set(
 					formats
-						.iter()
-						.filter(|x| x.migrate.is_some())
-						.next()
+						.iter().find(|x| x.migrate.is_some())
 						.map(|x| x.id.clone()),
 				);
 			}
@@ -336,7 +334,7 @@ impl Component for MigrateContents {
 				))
 				.into_element()
 		} else {
-			let format2 = self.format.clone();
+			let format2 = self.format;
 			let format_selector = Dropdown::new(
 				Selected::Single(self.format.read().cloned()),
 				Rc::new(move |selected| {
@@ -368,7 +366,7 @@ impl Component for MigrateContents {
 					.width(Size::fill())
 					.child(placeholder("No instances found to migrate", &theme)),
 				QueryStateData::Settled { res: Ok(res), .. } => {
-					let instances2 = self.instances.clone();
+					let instances2 = self.instances;
 					let instance_selector = InlineSelect::new(
 						Selected::Multi(self.instances.read().clone()),
 						Rc::new(move |selected| {
@@ -384,9 +382,9 @@ impl Component for MigrateContents {
 					let instance_selector = field("Instances", "honeycomb", &theme, instance_selector)
                         .tip(&front_state, "Instances to migrate from the launcher. If none are selected, all instances will be migrated.");
 
-					let link2 = self.link.clone();
+					let link2 = self.link;
 					let mode_selector = InlineSelect::new(
-						Selected::Single(self.link.read().clone()),
+						Selected::Single(*self.link.read()),
 						Rc::new(move |selected| {
 							link2.clone().set(selected.single());
 						}),
@@ -429,7 +427,7 @@ pub fn on_migrate(
 				.toast(Toast::error("A format must be selected", None));
 			return;
 		};
-		let link = link.read().clone();
+		let link = *link.read();
 		let instances = instances.read().clone();
 
 		mutation.mutate(MigrateInstancesKeys {

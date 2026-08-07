@@ -149,7 +149,7 @@ impl<T: ContainerSizeExt + StyleExt + ContainerWithContentExt + TextStyleExt> Cu
 
 		self.color(fg)
 			.border(Some(Border {
-				fill: border.into(),
+				fill: border,
 				width: theme.border.into(),
 				alignment: BorderAlignment::Inner,
 			}))
@@ -161,7 +161,7 @@ impl<T: ContainerSizeExt + StyleExt + ContainerWithContentExt + TextStyleExt> Cu
 
 		self.color(fg)
 			.border(Some(Border {
-				fill: border.into(),
+				fill: border,
 				width: theme.border.into(),
 				alignment: BorderAlignment::Inner,
 			}))

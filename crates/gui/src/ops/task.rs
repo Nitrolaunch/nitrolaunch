@@ -203,10 +203,10 @@ impl Task {
 
 	pub fn success_message(&self) -> String {
 		match self {
-			Self::LaunchInstance(..) => format!("Launched!"),
-			Self::UpdateInstance(..) => format!("Instance updated"),
-			Self::UpdateInstancePackages(..) => format!("Packages updated"),
-			Self::UpdateInstanceModpack(..) => format!("Modpack updated"),
+			Self::LaunchInstance(..) => "Launched!".to_string(),
+			Self::UpdateInstance(..) => "Instance updated".to_string(),
+			Self::UpdateInstancePackages(..) => "Packages updated".to_string(),
+			Self::UpdateInstanceModpack(..) => "Modpack updated".to_string(),
 			Self::DeleteInstance => "Instance deleted".into(),
 			Self::InstallModpack => "Modpack installed".into(),
 			Self::ImportInstance => "Instance imported".into(),

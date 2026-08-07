@@ -45,7 +45,7 @@ impl Component for ResolutionErrorView {
 			.center()
 			.child(icon(arrow, 16.0));
 
-		let mut is_open2 = is_open.clone();
+		let mut is_open2 = is_open;
 		let header = rect()
 			.width(Size::fill())
 			.height(Size::px(48.0))

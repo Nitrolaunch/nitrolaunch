@@ -33,7 +33,7 @@ impl Component for FileSelector {
 	fn render(&self) -> impl IntoElement {
 		let theme = use_theme();
 
-		let path = self.path.clone();
+		let path = self.path;
 		let preview = if let Some(path) = path.read().as_ref() {
 			path.to_string_lossy().to_string()
 		} else {
@@ -41,13 +41,15 @@ impl Component for FileSelector {
 		};
 		let save = self.save;
 		let file = self.file;
-		let button = icon_text_button("folder", &preview, &theme)
+		
+
+		icon_text_button("folder", &preview, &theme)
 			.width(Size::fill())
 			.border_fill(theme.panel_border)
 			.background(theme.bg)
 			.hover_background(theme.panel_hover)
 			.on_press(move |_| {
-				let mut path = path.clone();
+				let mut path = path;
 				spawn(async move {
 					let new_path = tokio::task::spawn_blocking(move || {
 						let dialog = FileDialog::new();
@@ -66,8 +68,6 @@ impl Component for FileSelector {
 						path.set(Some(new_path));
 					}
 				});
-			});
-
-		button
+			})
 	}
 }

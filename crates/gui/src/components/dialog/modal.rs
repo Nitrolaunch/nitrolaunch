@@ -185,7 +185,7 @@ impl Component for Modal {
 
 		ModalBase::new()
 			.on_close(self.on_close.clone())
-			.size(self.size.0.clone(), self.size.1.clone())
+			.size(self.size.0, self.size.1)
 			.maybe_child(self.child.is_some(), move || {
 				let on_close = on_close.clone();
 

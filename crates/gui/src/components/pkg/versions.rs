@@ -48,7 +48,7 @@ impl Component for PackageVersions {
 
 			Version {
 				version: NotEq(version.clone()),
-				installing_version: installing_version.clone(),
+				installing_version,
 			}
 			.into_element()
 		})
@@ -56,7 +56,7 @@ impl Component for PackageVersions {
 		.length(len)
 		.expanded();
 
-		let mut installing_version2 = installing_version.clone();
+		let mut installing_version2 = installing_version;
 		rect().expanded().padding(theme.gap2).child(versions).maybe(
 			installing_version.read().is_some(),
 			|this| {
@@ -125,7 +125,7 @@ impl Component for Version {
 			.or(self.version.0.version.as_deref())
 			.unwrap_or("idk");
 
-		let mut installing_version = self.installing_version.clone();
+		let mut installing_version = self.installing_version;
 		let content_version = self
 			.version
 			.0
@@ -177,10 +177,8 @@ impl Component for Version {
 			.conditional_properties
 			.loaders
 			.iter()
-			.map(|x| x.iter())
-			.flatten()
-			.map(|x| x.get_matches())
-			.flatten()
+			.flat_map(|x| x.iter())
+			.flat_map(|x| x.get_matches())
 			.unique()
 			.map(|x| loader_tag(&x, true, &theme).into_element());
 

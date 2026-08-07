@@ -77,7 +77,7 @@ impl PackageSearchSession {
 		if let Some(results) = self.get_results(params.skip) {
 			let total_results = self.get_total_results(Some(repo)).unwrap_or_default();
 			return Ok(PackageMultiSearchResults {
-				results: results.into_iter().map(|x| x.clone()).collect(),
+				results: results.into_iter().cloned().collect(),
 				total_results,
 			});
 		}
@@ -120,7 +120,7 @@ impl PackageSearchSession {
 		if let Some(results) = self.get_results(params.skip) {
 			let total_results = self.get_total_results(None).unwrap_or_default();
 			return Ok(PackageMultiSearchResults {
-				results: results.into_iter().map(|x| x.clone()).collect(),
+				results: results.into_iter().cloned().collect(),
 				total_results,
 			});
 		}
@@ -145,11 +145,10 @@ impl PackageSearchSession {
 
 			let repo_skip = page * share;
 
-			if let Some(total) = state.total_results {
-				if repo_skip >= total {
+			if let Some(total) = state.total_results
+				&& repo_skip >= total {
 					continue;
 				}
-			}
 
 			let mut search = params.clone();
 			search.skip = repo_skip;

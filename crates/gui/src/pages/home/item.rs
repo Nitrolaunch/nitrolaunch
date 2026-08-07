@@ -56,7 +56,7 @@ impl Component for InstanceListItem {
 			.as_ref()
 			.is_some_and(|x| x == &self.info);
 
-		let mut selected = self.selected.clone();
+		let mut selected = self.selected;
 
 		let name = if let Some(name) = &self.info.name {
 			name
