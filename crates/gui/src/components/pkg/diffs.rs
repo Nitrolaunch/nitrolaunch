@@ -83,6 +83,7 @@ fn diff(diff: &PackageDiff, theme: &Theme) -> impl IntoElement {
 		.into_element(),
 		PackageDiff::VersionChanged(req, from, to) => rect()
 			.horizontal()
+			.cross_align(Alignment::Center)
 			.spacing(theme.gap)
 			.child(PackageChip {
 				req: req.clone(),
