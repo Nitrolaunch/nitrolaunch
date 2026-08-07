@@ -342,7 +342,7 @@ pub fn get_plugin_icon(plugin: &str) -> impl IntoElement {
 		"octane" => "lightning",
 		"share" => "popout",
 		"server_restart" => "refresh",
-		"shorcut" => "popout",
+		"shortcut" => "popout",
 		"skin_stealer" => "multiple_users",
 		"stats" => "graph",
 		"themes" => "palette",
