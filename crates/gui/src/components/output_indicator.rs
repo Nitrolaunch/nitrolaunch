@@ -92,7 +92,10 @@ impl Component for OutputIndicator {
 		});
 
 		let temp = tasks.read();
-		let current_task = temp.iter().next().map(|x| x.0.clone());
+		let current_task = temp
+			.iter()
+			.max_by_key(|x| x.1.messages.len())
+			.map(|x| x.0.clone());
 
 		let indicator_text = match tasks.read().len() {
 			0 => "No tasks running".into(),
