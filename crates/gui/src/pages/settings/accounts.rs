@@ -205,9 +205,9 @@ impl Component for AccountItem {
 		let (ico, text) = if is_editing {
 			("check", "Save")
 		} else if is_authenticated {
-			("logout", "Logout")
+			("logout", "Log out")
 		} else {
-			("login", "Login")
+			("login", "Log in")
 		};
 
 		let action_button = icon_text_button(ico, text, &theme).on_press(action);
