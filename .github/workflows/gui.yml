@@ -102,8 +102,8 @@ jobs:
           # Include provided desktop file and icons from crates/gui/assets
           mkdir -p dist/linux-x86_64/usr/share/applications
           mkdir -p dist/linux-x86_64/usr/share/icons/hicolor/256x256/apps
-          cp crates/gui/assets/nitro-gui.desktop dist/linux-x86_64/usr/share/applications/nitro-gui.desktop
-          cp crates/gui/assets/icon-256.png dist/linux-x86_64/usr/share/icons/hicolor/256x256/apps/nitro-gui.png
+          cp crates/gui/assets/Nitrolaunch.desktop dist/linux-x86_64/usr/share/applications/Nitrolaunch.desktop
+          cp crates/gui/assets/icon_1024x1024.png dist/linux-x86_64/usr/share/icons/hicolor/1024x1024/apps/Nitrolaunch.png
           tar -C dist -czf "dist/Nitrolaunch-linux-x86_64.tar.gz" linux-x86_64
 
       - name: Package Windows x64
