@@ -97,7 +97,13 @@ jobs:
         if: ${{ matrix.os == 'ubuntu-latest' }}
         run: |
           mkdir -p dist/linux-x86_64
+          # Copy binary
           cp "target/${{ env.BUILD_PROFILE }}/nitro_gui" "dist/linux-x86_64/Nitrolaunch"
+          # Include provided desktop file and icons from crates/gui/assets
+          mkdir -p dist/linux-x86_64/usr/share/applications
+          mkdir -p dist/linux-x86_64/usr/share/icons/hicolor/256x256/apps
+          cp crates/gui/assets/nitro-gui.desktop dist/linux-x86_64/usr/share/applications/nitro-gui.desktop
+          cp crates/gui/assets/icon-256.png dist/linux-x86_64/usr/share/icons/hicolor/256x256/apps/nitro-gui.png
           tar -C dist -czf "dist/Nitrolaunch-linux-x86_64.tar.gz" linux-x86_64
 
       - name: Package Windows x64
@@ -106,6 +112,7 @@ jobs:
         run: |
           New-Item -ItemType Directory -Force -Path dist\windows-x64 | Out-Null
           Copy-Item "target\${{ env.BUILD_PROFILE }}\nitro_gui.exe" "dist\windows-x64\Nitrolaunch.exe"
+          Copy-Item crates\gui\assets\icon.ico dist\windows-x64\Nitrolaunch.ico
           Compress-Archive -Path "dist\windows-x64\*" -DestinationPath "dist\Nitrolaunch-windows-x64.zip" -Force
 
       - name: Package Windows ARM64
@@ -114,6 +121,7 @@ jobs:
         run: |
           New-Item -ItemType Directory -Force -Path dist\windows-arm64 | Out-Null
           Copy-Item "target\aarch64-pc-windows-msvc\${{ env.BUILD_PROFILE }}\nitro_gui.exe" "dist\windows-arm64\Nitrolaunch.exe"
+          Copy-Item crates\gui\assets\icon.ico dist\windows-arm64\Nitrolaunch.ico
           Compress-Archive -Path "dist\windows-arm64\*" -DestinationPath "dist\Nitrolaunch-windows-arm64.zip" -Force
 
       - name: Package macOS universal app
@@ -125,6 +133,7 @@ jobs:
             "target/x86_64-apple-darwin/${{ env.BUILD_PROFILE }}/nitro_gui" \
             "target/aarch64-apple-darwin/${{ env.BUILD_PROFILE }}/nitro_gui" \
             -output "dist/macos-universal/Nitrolaunch.app/Contents/MacOS/Nitrolaunch"
+          cp crates/gui/assets/icon.icns dist/macos-universal/Nitrolaunch.app/Contents/Resources/icon.icns
           printf '%s\n' \
             '<?xml version="1.0" encoding="UTF-8"?>' \
             '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">' \
@@ -140,6 +149,8 @@ jobs:
             '    <string>6.0</string>' \
             '    <key>CFBundleName</key>' \
             '    <string>Nitrolaunch</string>' \
+            '    <key>CFBundleIconFile</key>' \
+            '    <string>icon</string>' \
             '    <key>CFBundlePackageType</key>' \
             '    <string>APPL</string>' \
             '    <key>CFBundleShortVersionString</key>' \
