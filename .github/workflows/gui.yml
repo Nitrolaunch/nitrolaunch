@@ -93,96 +93,45 @@ jobs:
           cargo build --locked -p nitro_gui --profile "${{ env.BUILD_PROFILE }}" --target x86_64-apple-darwin
           cargo build --locked -p nitro_gui --profile "${{ env.BUILD_PROFILE }}" --target aarch64-apple-darwin
 
-      - name: Package Linux
+      - name: Package with cargo-packager (Linux)
         if: ${{ matrix.os == 'ubuntu-latest' }}
         run: |
-          mkdir -p dist/linux-x86_64
-          # Copy binary
-          cp "target/${{ env.BUILD_PROFILE }}/nitro_gui" "dist/linux-x86_64/Nitrolaunch"
-          # Include provided desktop file and icons from crates/gui/assets
-          mkdir -p dist/linux-x86_64/usr/share/applications
-          mkdir -p dist/linux-x86_64/usr/share/icons/hicolor/1024x1024/apps
-          cp crates/gui/assets/Nitrolaunch.desktop dist/linux-x86_64/usr/share/applications/Nitrolaunch.desktop
-          cp crates/gui/assets/icon_1024x1024.png dist/linux-x86_64/usr/share/icons/hicolor/1024x1024/apps/Nitrolaunch.png
-          tar -C dist -czf "dist/Nitrolaunch-linux-x86_64.tar.gz" linux-x86_64
+          # Install cargo-packager (from the requested repo) and run it to produce .deb and AppImage
+          cargo install --git https://github.com/crabnebula-dev/cargo-packager cargo-packager || true
+          cargo-packager --manifest-path crates/gui/Cargo.toml --bin nitro_gui \
+            --output dist --product Nitrolaunch --version 0.31.0 \
+            --desktop crates/gui/assets/Nitrolaunch.desktop --icon crates/gui/assets/icon_1024x1024.png \
+            --formats deb,appimage
 
-          # Create Debian package
-          mkdir -p package/DEBIAN
-          cp crates/gui/assets/debian/control package/DEBIAN/control
-           mkdir -p package/usr/bin
-           mkdir -p package/usr/share/applications
-           mkdir -p package/usr/share/icons/hicolor/1024x1024/apps
-           cp dist/linux-x86_64/Nitrolaunch package/usr/bin/Nitrolaunch
-           cp crates/gui/assets/Nitrolaunch.desktop package/usr/share/applications/Nitrolaunch.desktop
-           cp crates/gui/assets/icon_1024x1024.png package/usr/share/icons/hicolor/1024x1024/apps/Nitrolaunch.png
-           chmod 755 package/usr/bin/Nitrolaunch
-           dpkg-deb --build package dist/Nitrolaunch-0.31.0-amd64.deb
-
-           # Create AppImage
-           mkdir -p AppDir/usr/bin
-           mkdir -p AppDir/usr/share/applications
-           mkdir -p AppDir/usr/share/icons/hicolor/1024x1024/apps
-           cp dist/linux-x86_64/Nitrolaunch AppDir/usr/bin/Nitrolaunch
-           cp crates/gui/assets/Nitrolaunch.desktop AppDir/Nitrolaunch.desktop
-           cp crates/gui/assets/Nitrolaunch.desktop AppDir/usr/share/applications/Nitrolaunch.desktop
-           cp crates/gui/assets/icon_1024x1024.png AppDir/usr/share/icons/hicolor/1024x1024/apps/Nitrolaunch.png
-           chmod +x AppDir/usr/bin/Nitrolaunch
-           wget -q -O appimagetool.AppImage https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
-          chmod +x appimagetool.AppImage
-          ./appimagetool.AppImage --appimage-extract
-          ./squashfs-root/AppRun AppDir dist/Nitrolaunch-x86_64.AppImage
-
-      - name: Package Windows x64
+      - name: Package with cargo-packager (Windows x64)
         if: ${{ matrix.os == 'windows-2022' }}
         shell: powershell
         run: |
-          New-Item -ItemType Directory -Force -Path dist\windows-x64 | Out-Null
-          Copy-Item "target\${{ env.BUILD_PROFILE }}\nitro_gui.exe" "dist\windows-x64\Nitrolaunch.exe"
-          Copy-Item crates\gui\assets\icon.ico dist\windows-x64\Nitrolaunch.ico
-          # Embed icon into exe (rcedit)
-          choco install rcedit -y
-          rcedit.exe "dist\windows-x64\Nitrolaunch.exe" --set-icon "dist\windows-x64\Nitrolaunch.ico"
+          # Install cargo-packager and produce exe+msi
+          cargo install --git https://github.com/crabnebula-dev/cargo-packager cargo-packager || true
+          cargo-packager --manifest-path crates/gui/Cargo.toml --bin nitro_gui \
+            --output dist --product Nitrolaunch --version 0.31.0 \
+            --icon crates/gui/assets/icon.ico --desktop crates/gui/assets/Nitrolaunch.desktop \
+            --formats exe,msi
 
-          # Create MSI using WiX Toolset
-          choco install wixtoolset -y
-          $productGuid = [guid]::NewGuid().ToString()
-          $upgradeGuid = [guid]::NewGuid().ToString()
-          $componentGuid = [guid]::NewGuid().ToString()
-          # Use the template from the repository and replace GUID placeholders
-          Copy-Item crates\gui\assets\wix\Product.wxs.template Product.wxs
-          (Get-Content Product.wxs) -replace '__PRODUCT_GUID__', $productGuid -replace '__UPGRADE_GUID__', $upgradeGuid -replace '__COMPONENT_GUID__', $componentGuid | Set-Content Product.wxs
-          &"$env:ProgramFiles(x86)\WiX Toolset v3.11\bin\candle.exe" -nologo Product.wxs
-          &"$env:ProgramFiles(x86)\WiX Toolset v3.11\bin\light.exe" -nologo -ext WixUIExtension Product.wixobj -o dist\Nitrolaunch-windows-x64.msi
-
-          Compress-Archive -Path "dist\windows-x64\*" -DestinationPath "dist\Nitrolaunch-windows-x64.zip" -Force
-
-      - name: Package Windows ARM64
+      - name: Package with cargo-packager (Windows ARM64)
         if: ${{ matrix.os == 'windows-2022' }}
         shell: powershell
         run: |
-          New-Item -ItemType Directory -Force -Path dist\windows-arm64 | Out-Null
-          Copy-Item "target\aarch64-pc-windows-msvc\${{ env.BUILD_PROFILE }}\nitro_gui.exe" "dist\windows-arm64\Nitrolaunch.exe"
-          Copy-Item crates\gui\assets\icon.ico dist\windows-arm64\Nitrolaunch.ico
-          # For ARM64 MSI we will just zip (WiX on runner may not support ARM64 MSI easily)
-          Compress-Archive -Path "dist\windows-arm64\*" -DestinationPath "dist\Nitrolaunch-windows-arm64.zip" -Force
+          cargo install --git https://github.com/crabnebula-dev/cargo-packager cargo-packager || true
+          cargo-packager --manifest-path crates/gui/Cargo.toml --bin nitro_gui \
+            --target aarch64-pc-windows-msvc --output dist --product Nitrolaunch --version 0.31.0 \
+            --icon crates/gui/assets/icon.ico --desktop crates/gui/assets/Nitrolaunch.desktop \
+            --formats exe
 
-      - name: Package macOS universal app
+      - name: Package with cargo-packager (macOS)
         if: ${{ matrix.os == 'macos-latest' }}
         run: |
-          mkdir -p dist/macos-universal/Nitrolaunch.app/Contents/MacOS
-          mkdir -p dist/macos-universal/Nitrolaunch.app/Contents/Resources
-          lipo -create \
-            "target/x86_64-apple-darwin/${{ env.BUILD_PROFILE }}/nitro_gui" \
-            "target/aarch64-apple-darwin/${{ env.BUILD_PROFILE }}/nitro_gui" \
-            -output "dist/macos-universal/Nitrolaunch.app/Contents/MacOS/Nitrolaunch"
-          cp crates/gui/assets/icon.icns dist/macos-universal/Nitrolaunch.app/Contents/Resources/icon.icns
-          # Use Info.plist template from repository
-          cp crates/gui/assets/Info.plist.template dist/macos-universal/Nitrolaunch.app/Contents/Info.plist
-           cd dist/macos-universal
-           zip -qr ../Nitrolaunch-macos-universal.zip Nitrolaunch.app
-          # Create a compressed DMG
-          cd ..
-          hdiutil create -volname "Nitrolaunch" -srcfolder macos-universal/Nitrolaunch.app -ov -format UDZO Nitrolaunch-macos-0.31.0.dmg
+          cargo install --git https://github.com/crabnebula-dev/cargo-packager cargo-packager || true
+          cargo-packager --manifest-path crates/gui/Cargo.toml --bin nitro_gui \
+            --output dist --product Nitrolaunch --version 0.31.0 \
+            --icon crates/gui/assets/icon.icns --desktop crates/gui/assets/Nitrolaunch.desktop \
+            --formats app,dmg
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
