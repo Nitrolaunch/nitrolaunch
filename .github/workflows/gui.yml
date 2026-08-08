@@ -106,6 +106,30 @@ jobs:
           cp crates/gui/assets/icon_1024x1024.png dist/linux-x86_64/usr/share/icons/hicolor/1024x1024/apps/Nitrolaunch.png
           tar -C dist -czf "dist/Nitrolaunch-linux-x86_64.tar.gz" linux-x86_64
 
+          # Create Debian package
+          mkdir -p package/DEBIAN
+          cp crates/gui/assets/debian/control package/DEBIAN/control
+           mkdir -p package/usr/bin
+           mkdir -p package/usr/share/applications
+           mkdir -p package/usr/share/icons/hicolor/1024x1024/apps
+           cp dist/linux-x86_64/Nitrolaunch package/usr/bin/Nitrolaunch
+           cp crates/gui/assets/Nitrolaunch.desktop package/usr/share/applications/Nitrolaunch.desktop
+           cp crates/gui/assets/icon_1024x1024.png package/usr/share/icons/hicolor/1024x1024/apps/Nitrolaunch.png
+           chmod 755 package/usr/bin/Nitrolaunch
+           dpkg-deb --build package dist/Nitrolaunch-0.31.0-amd64.deb
+
+           # Create AppImage
+           mkdir -p AppDir/usr/bin
+           mkdir -p AppDir/usr/share/applications
+           mkdir -p AppDir/usr/share/icons/hicolor/1024x1024/apps
+           cp dist/linux-x86_64/Nitrolaunch AppDir/usr/bin/Nitrolaunch
+           cp crates/gui/assets/Nitrolaunch.desktop AppDir/usr/share/applications/Nitrolaunch.desktop
+           cp crates/gui/assets/icon_1024x1024.png AppDir/usr/share/icons/hicolor/1024x1024/apps/Nitrolaunch.png
+           chmod +x AppDir/usr/bin/Nitrolaunch
+           wget -q -O appimagetool.AppImage https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
+           chmod +x appimagetool.AppImage
+           ./appimagetool.AppImage AppDir dist/Nitrolaunch-x86_64.AppImage
+
       - name: Package Windows x64
         if: ${{ matrix.os == 'windows-2022' }}
         shell: powershell
@@ -113,6 +137,21 @@ jobs:
           New-Item -ItemType Directory -Force -Path dist\windows-x64 | Out-Null
           Copy-Item "target\${{ env.BUILD_PROFILE }}\nitro_gui.exe" "dist\windows-x64\Nitrolaunch.exe"
           Copy-Item crates\gui\assets\icon.ico dist\windows-x64\Nitrolaunch.ico
+          # Embed icon into exe (rcedit)
+          choco install rcedit -y
+          rcedit.exe "dist\windows-x64\Nitrolaunch.exe" --set-icon "dist\windows-x64\Nitrolaunch.ico"
+
+          # Create MSI using WiX Toolset
+          choco install wixtoolset -y
+          $productGuid = [guid]::NewGuid().ToString()
+          $upgradeGuid = [guid]::NewGuid().ToString()
+          $componentGuid = [guid]::NewGuid().ToString()
+          # Use the template from the repository and replace GUID placeholders
+          Copy-Item crates\gui\assets\wix\Product.wxs.template Product.wxs
+          (Get-Content Product.wxs) -replace '__PRODUCT_GUID__', $productGuid -replace '__UPGRADE_GUID__', $upgradeGuid -replace '__COMPONENT_GUID__', $componentGuid | Set-Content Product.wxs
+          &"$env:ProgramFiles(x86)\WiX Toolset v3.11\bin\candle.exe" -nologo Product.wxs
+          &"$env:ProgramFiles(x86)\WiX Toolset v3.11\bin\light.exe" -nologo -ext WixUIExtension Product.wixobj -o dist\Nitrolaunch-windows-x64.msi
+
           Compress-Archive -Path "dist\windows-x64\*" -DestinationPath "dist\Nitrolaunch-windows-x64.zip" -Force
 
       - name: Package Windows ARM64
@@ -122,6 +161,7 @@ jobs:
           New-Item -ItemType Directory -Force -Path dist\windows-arm64 | Out-Null
           Copy-Item "target\aarch64-pc-windows-msvc\${{ env.BUILD_PROFILE }}\nitro_gui.exe" "dist\windows-arm64\Nitrolaunch.exe"
           Copy-Item crates\gui\assets\icon.ico dist\windows-arm64\Nitrolaunch.ico
+          # For ARM64 MSI we will just zip (WiX on runner may not support ARM64 MSI easily)
           Compress-Archive -Path "dist\windows-arm64\*" -DestinationPath "dist\Nitrolaunch-windows-arm64.zip" -Force
 
       - name: Package macOS universal app
@@ -134,38 +174,13 @@ jobs:
             "target/aarch64-apple-darwin/${{ env.BUILD_PROFILE }}/nitro_gui" \
             -output "dist/macos-universal/Nitrolaunch.app/Contents/MacOS/Nitrolaunch"
           cp crates/gui/assets/icon.icns dist/macos-universal/Nitrolaunch.app/Contents/Resources/icon.icns
-          printf '%s\n' \
-            '<?xml version="1.0" encoding="UTF-8"?>' \
-            '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">' \
-            '<plist version="1.0">' \
-            '  <dict>' \
-            '    <key>CFBundleDevelopmentRegion</key>' \
-            '    <string>en</string>' \
-            '    <key>CFBundleExecutable</key>' \
-            '    <string>Nitrolaunch</string>' \
-            '    <key>CFBundleIdentifier</key>' \
-            '    <string>org.nitrolaunch.gui</string>' \
-            '    <key>CFBundleInfoDictionaryVersion</key>' \
-            '    <string>6.0</string>' \
-            '    <key>CFBundleName</key>' \
-            '    <string>Nitrolaunch</string>' \
-            '    <key>CFBundleIconFile</key>' \
-            '    <string>icon</string>' \
-            '    <key>CFBundlePackageType</key>' \
-            '    <string>APPL</string>' \
-            '    <key>CFBundleShortVersionString</key>' \
-            '    <string>0.31.0</string>' \
-            '    <key>CFBundleVersion</key>' \
-            '    <string>0.31.0</string>' \
-            '    <key>LSMinimumSystemVersion</key>' \
-            '    <string>13.0</string>' \
-            '    <key>NSHighResolutionCapable</key>' \
-            '    <true/>' \
-            '  </dict>' \
-            '</plist>' \
-            > "dist/macos-universal/Nitrolaunch.app/Contents/Info.plist"
-          cd dist/macos-universal
-          zip -qr ../Nitrolaunch-macos-universal.zip Nitrolaunch.app
+          # Use Info.plist template from repository
+          cp crates/gui/assets/Info.plist.template dist/macos-universal/Nitrolaunch.app/Contents/Info.plist
+           cd dist/macos-universal
+           zip -qr ../Nitrolaunch-macos-universal.zip Nitrolaunch.app
+          # Create a compressed DMG
+          cd ..
+          hdiutil create -volname "Nitrolaunch" -srcfolder macos-universal/Nitrolaunch.app -ov -format UDZO Nitrolaunch-macos-0.31.0.dmg
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
@@ -175,3 +190,8 @@ jobs:
           path: |
             dist/*.zip
             dist/*.tar.gz
+            dist/*.msi
+            dist/*.dmg
+            dist/*.deb
+            dist/*.AppImage
+            dist/*-x86_64.AppImage

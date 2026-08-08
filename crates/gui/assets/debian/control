@@ -1,0 +1,7 @@
+Package: nitrolaunch
+Version: 0.31.0
+Section: utils
+Priority: optional
+Architecture: amd64
+Maintainer: Nitro <nitro@example.com>
+Description: Nitrolaunch GUI
