@@ -99,6 +99,7 @@ jobs:
           cargo install --git https://github.com/crabnebula-dev/cargo-packager cargo-packager || true
           cargo-packager --manifest-path crates/gui/Cargo.toml \
             --binaries-dir target/${{ env.BUILD_PROFILE }} \
+            --profile ${{ env.BUILD_PROFILE }} \
             --out-dir dist \
             --formats deb,appimage
 
@@ -109,6 +110,7 @@ jobs:
           cargo install --git https://github.com/crabnebula-dev/cargo-packager cargo-packager | Out-Null
           cargo-packager --manifest-path crates/gui/Cargo.toml `
             --binaries-dir target\${{ env.BUILD_PROFILE }} `
+            --profile ${{ env.BUILD_PROFILE }} `
             --out-dir dist `
             --formats wix
 
@@ -118,6 +120,7 @@ jobs:
           cargo install --git https://github.com/crabnebula-dev/cargo-packager cargo-packager || true
           cargo-packager --manifest-path crates/gui/Cargo.toml \
             --binaries-dir target/x86_64-apple-darwin/${{ env.BUILD_PROFILE }} \
+            --profile ${{ env.BUILD_PROFILE }} \
             --out-dir dist \
             --formats app,dmg
 
@@ -134,3 +137,4 @@ jobs:
             dist/*.deb
             dist/*.AppImage
             dist/*-x86_64.AppImage
+            crates/gui/dist/**
