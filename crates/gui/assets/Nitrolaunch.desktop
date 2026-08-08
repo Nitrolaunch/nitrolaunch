@@ -2,7 +2,7 @@
 Name=Nitrolaunch
 Comment=The supercharged Minecraft launcher
 Exec=Nitrolaunch
-Icon=icon
+Icon=nitro_gui
 Terminal=false
 Type=Application
 Categories=Game;
