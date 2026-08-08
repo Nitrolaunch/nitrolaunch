@@ -123,6 +123,7 @@ jobs:
            mkdir -p AppDir/usr/share/applications
            mkdir -p AppDir/usr/share/icons/hicolor/1024x1024/apps
            cp dist/linux-x86_64/Nitrolaunch AppDir/usr/bin/Nitrolaunch
+           cp crates/gui/assets/Nitrolaunch.desktop AppDir/Nitrolaunch.desktop
            cp crates/gui/assets/Nitrolaunch.desktop AppDir/usr/share/applications/Nitrolaunch.desktop
            cp crates/gui/assets/icon_1024x1024.png AppDir/usr/share/icons/hicolor/1024x1024/apps/Nitrolaunch.png
            chmod +x AppDir/usr/bin/Nitrolaunch
