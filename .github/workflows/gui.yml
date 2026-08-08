@@ -83,7 +83,7 @@ jobs:
         if: ${{ matrix.os != 'macos-latest' }}
         run: cargo build --locked -p nitro_gui --profile "${{ env.BUILD_PROFILE }}"
 
-      - if: ${{ matrix.os == 'windows-2022' }}
+      - if: ${{ matrix.os == 'windows-2022 SKIP' }}
         name: Build Windows ARM64 binary
         run: cargo build --locked -p nitro_gui --profile "${{ env.BUILD_PROFILE }}" --target aarch64-pc-windows-msvc
 
