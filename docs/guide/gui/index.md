@@ -4,11 +4,9 @@ This guide will show you how to use the Nitrolaunch desktop app from the basics 
 
 ## 1. Installing
 
-Download the latest version of the launcher for your system from the [releases page](https://github.com/Nitrolaunch/nitrolaunch/releases). Make sure you choose a file labeled `gui`.
-
 ### Package manager
 
-The package `nitrolaunch-gui` is available on the AUR and Nix package repositories.
+The package `nitrolaunch-gui` is available on the AUR package repository.
 
 ### Releases
 
@@ -20,11 +18,9 @@ Instances may be a familiar term that you have heard of before from other launch
 
 ## 3. Starting the app
 
-Start the app and install the default set of plugins when prompted. This will include plugins for common things like installing Fabric and installing from Modrinth.
+Start the app and follow through all the prompts to install default plugins, migrate from another launcher, and get your Microsoft account logged in.
 
 Click the `Create Instance` button to make a new instance to launch.
-
-![](../../assets/screenshots/create_instance.png)
 
 ## 4. Creating an Instance
 
@@ -40,11 +36,7 @@ Finally, click save to finish making the new instance and return to the instance
 
 ## 5. Launching!
 
-Before we launch, we must update the instance to download the necessary files and set up the instance. Select the instance from the list and click update. If this is the first time, it will probably take a couple minutes to complete.
-
-![](../../assets/screenshots/update_button.png)
-
-Looks like we are ready to launch. Click the launch button to start playing! You will also be prompted to log in with your Microsoft account. Simply follow the prompts on screen.
+Looks like we are ready to launch. Select an instance from the home page and click the launch button to start playing!
 
 For more info, read the other documentation or join our [Discord server](https://discord.gg/25fhkjeTvW).
 When you want to start adding things like mods or resource packs to your instance, check out the [packages guide](packages.md).

@@ -39,11 +39,14 @@ Instances may be a familiar term that you have heard of before from other launch
 
 ## 3. Configuring
 
-Run the command `nitro instance list` to create the default config file, and list the example instances. Now if you run `nitro config edit`, you should be able to edit the config file in your favorite editor and get a sense of what it looks like. Finally, let's try launching one of the default instances.
+Run the command `nitro instance list` to create the default config file, and list the example instances. Now if you run `nitro config edit`, you should be able to edit the config file in your favorite editor and get a sense of what it looks like. You can also run `nitro instance edit <instance>` to focus on a specific instance. Finally, let's try launching one of the default instances.
 
 ## 4. Launching!
 
-Looks like we are ready to launch. Run `nitro instance launch example-client` to start up the client! When launching for the first time, you will have to follow the shown login instructions in order to authenticate with your Microsoft account. Afterwards, you won't have to log in again.
+Looks like we are ready to launch. Run `nitro launch example-client` to start up the client! When launching for the first time, you will have to follow the shown login instructions in order to authenticate with your Microsoft account. Afterwards, you won't have to log in again.
+
+## 5. Updating
+When you want to update the assets or packages on an instance, simply run `nitro instance update` to bring everything up to date.
 
 For more info, read the other documentation or join our [Discord server](https://discord.gg/25fhkjeTvW).
 When you want to start adding things like mods or resource packs to your instance, check out the [packages guide](packages.md).

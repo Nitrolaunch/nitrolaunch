@@ -1,10 +1,10 @@
 ![Nitrolaunch Logo](docs/assets/LogoLarge.png)
 
-## 🚀 **A Minecraft launcher for the future**
+## 🚀 **The supercharged Minecraft launcher**
 
 [![](https://dcbadge.limes.pink/api/server/https://discord.gg/25fhkjeTvW)](https://discord.gg/25fhkjeTvW)
 
-Nitrolaunch is a Minecraft launcher and ecosystem meant to reinvent the launcher as you know it, providing a one-of-a-kind plugin system, server management capabilities, and a new paradigm for package management.
+Nitrolaunch is a Minecraft launcher and ecosystem meant to reinvent the launcher as you know it, providing 
 
 Nitrolaunch is extremely modular, letting you configure it with exactly the features you need for your setup. It's perfect for server admins, developers, or people just wanting to play the game.
 
@@ -16,11 +16,17 @@ Nitrolaunch is extremely modular, letting you configure it with exactly the feat
 
 ## 💻 Desktop or Command line
 
-Nitrolaunch will work how you do, as an intuitive desktop app or CLI
+Nitrolaunch will work how you do, as a fully native desktop app or lightweight CLI
 
 |                      App                      |                    CLI                    |
 | :-------------------------------------------: | :---------------------------------------: |
-| ![](docs/assets/screenshots/package_page.png) | ![](docs/assets/screenshots/cli_list.png) |
+| ![](docs/assets/screenshots/package_page.png) | ![](docs/assets/screenshots/cli_browse.png) |
+
+## 🗃️ Modular Configuration
+
+Share configuration between instances using instance templates.
+
+![](docs/assets/screenshots/instance_config.png)
 
 ## 🔌 Plugin System
 
@@ -30,19 +36,15 @@ Almost every feature of the launcher can be extended with a revolutionary plugin
 
 ## 🫶 Play with Friends
 
-Nitrolaunch supports both clients and servers, and you can export your configuration as a code with one click to synchronize your experience.
+Nitrolaunch supports both clients and servers, and you can export your templates as a code with one click to synchronize your experience.
 
 ![](docs/assets/screenshots/instances.png)
 
 ## 📥 Modern Packaging
 
-Install mods, datapacks, shaders, and more from sources like Modrinth and Smithed.
+Install mods, datapacks, shaders, modpacks, and more from sites like Modrinth and Smithed. Make any modpack your own by adding your own packages, while keeping the original pack up to date.
 
 ![](docs/assets/screenshots/gui_packages.png)
-
-## ⚡ Extremely fast, light on system resources, and available for all major platforms.
-
-![](docs/assets/screenshots/launch.gif)
 
 ## 😺 And much more!
 
