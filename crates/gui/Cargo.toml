@@ -10,9 +10,26 @@ authors.workspace = true
 repository.workspace = true
 rust-version.workspace = true
 
-[[bin]]
-name = "nitro_gui"
-path = "src/main.rs"
+[package.metadata.packager]
+product_name = "Nitrolaunch"
+version = "0.31.0"
+identifier = "org.nitrolaunch.gui"
+description = "Nitrolaunch GUI"
+icons = [
+  "assets/icon_1024x1024.png",
+  "assets/icon.ico",
+  "assets/icon.icns"
+]
+
+[[package.metadata.packager.binaries]]
+path = "nitro_gui"
+main = true
+
+[package.metadata.packager.linux]
+generate_desktop_entry = true
+
+[package.metadata.packager.deb]
+desktop_template = "assets/Nitrolaunch.desktop"
 
 [features]
 devtools = ["freya/devtools"]
@@ -38,3 +55,7 @@ which = { workspace = true }
 
 [target.'cfg(target_os = "windows")'.build-dependencies]
 static_vcruntime = "2.0"
+
+[[bin]]
+name = "nitro_gui"
+path = "src/main.rs"
