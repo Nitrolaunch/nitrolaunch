@@ -118,11 +118,17 @@ jobs:
         if: ${{ matrix.os == 'macos-latest' }}
         run: |
           cargo install --git https://github.com/crabnebula-dev/cargo-packager cargo-packager || true
-          cargo-packager --manifest-path crates/gui/Cargo.toml \
-            --binaries-dir target/x86_64-apple-darwin/${{ env.BUILD_PROFILE }} \
-            --profile ${{ env.BUILD_PROFILE }} \
-            --out-dir dist \
-            --formats app,dmg
+           # Create a universal binary from both architectures
+           mkdir -p target/${{ env.BUILD_PROFILE }}
+           lipo -create \
+             target/x86_64-apple-darwin/${{ env.BUILD_PROFILE }}/nitro_gui \
+             target/aarch64-apple-darwin/${{ env.BUILD_PROFILE }}/nitro_gui \
+             -output target/${{ env.BUILD_PROFILE }}/nitro_gui
+           cargo-packager --manifest-path crates/gui/Cargo.toml \
+             --binaries-dir target/${{ env.BUILD_PROFILE }} \
+             --profile ${{ env.BUILD_PROFILE }} \
+             --out-dir dist \
+             --formats app,dmg
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
