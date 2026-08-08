@@ -127,8 +127,9 @@ jobs:
            cp crates/gui/assets/icon_1024x1024.png AppDir/usr/share/icons/hicolor/1024x1024/apps/Nitrolaunch.png
            chmod +x AppDir/usr/bin/Nitrolaunch
            wget -q -O appimagetool.AppImage https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
-           chmod +x appimagetool.AppImage
-           ./appimagetool.AppImage AppDir dist/Nitrolaunch-x86_64.AppImage
+          chmod +x appimagetool.AppImage
+          ./appimagetool.AppImage --appimage-extract
+          ./squashfs-root/AppRun AppDir dist/Nitrolaunch-x86_64.AppImage
 
       - name: Package Windows x64
         if: ${{ matrix.os == 'windows-2022' }}
