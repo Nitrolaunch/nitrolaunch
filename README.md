@@ -4,9 +4,9 @@
 
 [![](https://dcbadge.limes.pink/api/server/https://discord.gg/25fhkjeTvW)](https://discord.gg/25fhkjeTvW)
 
-Nitrolaunch is a Minecraft launcher and ecosystem meant to reinvent the launcher as you know it, providing 
+Nitrolaunch is a Minecraft launcher, server manager, and ecosystem meant to make playing Minecraft easier.
 
-Nitrolaunch is extremely modular, letting you configure it with exactly the features you need for your setup. It's perfect for server admins, developers, or people just wanting to play the game.
+The design is extremely modular, letting you configure it with exactly the features you need for your setup. It's perfect for server admins, developers, or people just wanting to play the game.
 
 - [Discord](https://discord.gg/25fhkjeTvW)
 - [Website](https://Nitrolaunch.github.io)
