@@ -107,12 +107,8 @@ impl PkgRegistry {
 		client: &Client,
 		o: &mut impl NitroOutput,
 	) -> anyhow::Result<Arc<Package>> {
-		if self.has_now(req) {
-			Ok(self
-				.packages
-				.get(req)
-				.expect("Package does not exist")
-				.clone())
+		if let Some(pkg) = self.packages.get(req) {
+			Ok(pkg.clone())
 		} else {
 			self.query_insert(req, true, paths, client, o).await
 		}
@@ -141,7 +137,7 @@ impl PkgRegistry {
 		client: &Client,
 		o: &mut impl NitroOutput,
 	) -> ArcPkgReq {
-		let Ok(pkg) = self.query_insert(req, true, paths, client, o).await else {
+		let Ok(pkg) = self.get(req, paths, client, o).await else {
 			return req.clone();
 		};
 
