@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use crate::{prelude::*, state::FrontState, util::Shared};
+use crate::{components::TOAST_TIP_LAYER, prelude::*, state::FrontState, util::Shared};
 
 #[derive(PartialEq)]
 pub struct Tips;
@@ -51,11 +51,10 @@ impl Component for Tips {
 			.position(position)
 			.max_width(Size::px(available_width))
 			.max_height(Size::px(available_height))
-			.layer(Layer::Overlay)
+			.layer(Layer::OverlayLevel(TOAST_TIP_LAYER))
 			.child(
 				rect()
 					.padding(theme.gap2)
-					.layer(Layer::Relative(100))
 					.item_colorway(&theme, false, false)
 					.border(theme.border(theme.secondary))
 					.corner_radius(theme.round)
