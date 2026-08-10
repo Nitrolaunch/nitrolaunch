@@ -8,13 +8,15 @@ Nitrolaunch is a Minecraft launcher, server manager, and ecosystem meant to make
 
 The design is extremely modular, letting you configure it with exactly the features you need for your setup. It's perfect for server admins, developers, or people just wanting to play the game.
 
+**Note**: There's no vibe coding here. Everything was made with dedication over years of effort.
+
 - [Discord](https://discord.gg/25fhkjeTvW)
 - [Website](https://Nitrolaunch.github.io)
 - [Documentation](https://Nitrolaunch.github.io/nitrolaunch)
 
-# ✨ Features
+# Features
 
-## 💻 Desktop or Command line
+## Desktop or Command line
 
 Nitrolaunch will work how you do, as a fully native desktop app or lightweight CLI
 
@@ -22,36 +24,36 @@ Nitrolaunch will work how you do, as a fully native desktop app or lightweight C
 | :-------------------------------------------: | :---------------------------------------: |
 | ![](docs/assets/screenshots/package_page.png) | ![](docs/assets/screenshots/cli_browse.png) |
 
-## 🗃️ Modular Configuration
+## Modular Configuration
 
 Share configuration between instances using instance templates.
 
 ![](docs/assets/screenshots/instance_config.png)
 
-## 🔌 Plugin System
+## Plugin System
 
 Almost every feature of the launcher can be extended with a revolutionary plugin system. Pick and choose the features you want.
 
 ![](docs/assets/screenshots/plugins.png)
 
-## 🫶 Play with Friends
+## Play with Friends
 
 Nitrolaunch supports both clients and servers, and you can export your templates as a code with one click to synchronize your experience.
 
 ![](docs/assets/screenshots/instances.png)
 
-## 📥 Modern Packaging
+## Modern Packaging
 
 Install mods, datapacks, shaders, modpacks, and more from sites like Modrinth and Smithed. Make any modpack your own by adding your own packages, while keeping the original pack up to date.
 
 ![](docs/assets/screenshots/gui_packages.png)
 
-## 😺 And much more!
+## And much more!
 
-- ✈️ Easy to switch - Migrate from your current launcher without copying any files
-- 🗜️ Enhanced datapack support, including global packs and [welding](https://weld.smithed.dev) of packs for better compatability
-- 🛠️ Global and backwards-compatible options sharing
-- 🗃️ Tools for server admins, like automatic file backups and creating many instances from one config
+- Easy to switch - Migrate from your current launcher without copying any files
+- Enhanced datapack support, including global packs and [welding](https://weld.smithed.dev) of packs for better compatability
+- Global and backwards-compatible options sharing
+- Tools for server admins, like automatic file backups and creating many instances from one config
 
 # 🚀 Getting Started
 
