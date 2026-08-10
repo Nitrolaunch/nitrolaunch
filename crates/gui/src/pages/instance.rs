@@ -125,7 +125,7 @@ impl Component for InstancePage {
 				.corner_radius(theme.round2)
 				.into_element()
 		} else {
-			icon("box", 36.0).into_element()
+			icon("box_dot", 36.0).into_element()
 		};
 		let ico = rect()
 			.width(Size::px(80.0))

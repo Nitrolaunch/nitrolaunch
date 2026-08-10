@@ -266,7 +266,7 @@ impl Component for Item {
 		let mut selected = self.selected;
 
 		let inst_icon = if self.item.icon.is_none() {
-			icon("box", 28.0).into_element()
+			icon("box_dot", 28.0).into_element()
 		} else {
 			let inst_icon = get_instance_icon(self.item.icon.as_deref());
 			ImageViewer::new(inst_icon)
@@ -329,7 +329,7 @@ impl Tab {
 
 	fn icon(&self) -> &'static str {
 		match self {
-			Self::Instance => "box",
+			Self::Instance => "box_dot",
 			Self::Template => "diagram",
 			Self::ModpackInstance => "minecraft",
 		}

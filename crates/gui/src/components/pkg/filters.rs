@@ -38,7 +38,7 @@ impl Component for PackageFilters {
 		let loaders_filter = PackageLoadersFilter {
 			loaders: self.loaders,
 		};
-		let loaders_filter = field("Loaders", "box", &theme, loaders_filter);
+		let loaders_filter = field("Loaders", "box_highlight", &theme, loaders_filter);
 
 		let mc_versions_filter = PackageVersionsFilter {
 			mc_versions: self.mc_versions,

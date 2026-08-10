@@ -168,7 +168,7 @@ impl Component for HomePage {
 		.child(SelectOption::new(
 			AddOption::Instance,
 			"New Instance",
-			Some("box"),
+			Some("box_dot"),
 		))
 		.child(SelectOption::new(
 			AddOption::Template,
@@ -188,7 +188,7 @@ impl Component for HomePage {
 		.custom_buttons(add_buttons, AddOption::Custom);
 
 		let tabs = TopTabs::new(tab)
-			.child(SelectOption::new(Tab::Instances, "Instances", Some("box")))
+			.child(SelectOption::new(Tab::Instances, "Instances", Some("box_dot")))
 			.child(SelectOption::new(
 				Tab::Templates,
 				"Templates",
@@ -212,7 +212,7 @@ impl Component for HomePage {
 			.child(search_bar);
 
 		let filters = TopTabs::new(filter)
-			.child(SelectOption::new(None, "All", Some("box")))
+			.child(SelectOption::new(None, "All", Some("asterisk")))
 			.child(SelectOption::new(
 				Some(Side::Client),
 				"Client",

@@ -93,7 +93,7 @@ impl Component for ConfigPage {
 			None => "".into(),
 		};
 
-		Modal::new(title, "box".into())
+		Modal::new(title, "gear".into())
 			.maybe_child(item.is_some(), || ConfigModal {
 				item: item.clone().unwrap(),
 				config_state: config_state.clone(),

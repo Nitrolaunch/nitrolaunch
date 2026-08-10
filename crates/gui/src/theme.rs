@@ -171,7 +171,7 @@ impl ThemeDeser {
 			secondary_bg: Some(secondary_bg.clone()),
 			panel: Some(HexColor("#0b0b0c".into())),
 			panel_border: Some(HexColor("#19191b".into())),
-			panel_hover: Some(HexColor("#141415".into())),
+			panel_hover: Some(HexColor("#101011".into())),
 			item: Some(HexColor("#121214".into())),
 			item_border: Some(HexColor("#202021".into())),
 			item_hover: Some(HexColor("#1b1b1e".into())),

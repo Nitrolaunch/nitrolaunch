@@ -72,7 +72,7 @@ pub fn get_loader_icon(loader: &Loader) -> ImageViewer {
 
 pub fn get_package_kind_icon(kind: PackageKind) -> &'static str {
 	match kind {
-		PackageKind::Mod => "box",
+		PackageKind::Mod => "box_plus",
 		PackageKind::ResourcePack => "palette",
 		PackageKind::Datapack => "curly_braces",
 		PackageKind::Plugin => "jigsaw",

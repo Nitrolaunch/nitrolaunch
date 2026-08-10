@@ -113,7 +113,7 @@ impl Component for InstanceListItem {
 		let loader = if let Some(loader) = &self.info.loader {
 			rect()
 				.cont()
-				.child(icon("box", 16.0))
+				.child(icon("box_highlight", 16.0))
 				.child(loader.to_string())
 		} else {
 			rect()
