@@ -63,6 +63,7 @@ fn main() {
 	add_file!(zip, "plugins/plugins/gen_pkg.md");
 	add_file!(zip, "plugins/plugins/glfw_fix.md");
 	add_file!(zip, "plugins/plugins/graalvm.md");
+	add_file!(zip, "plugins/plugins/guardian.md");
 	add_file!(zip, "plugins/plugins/lang.md");
 	add_file!(zip, "plugins/plugins/modrinth.md");
 	add_file!(zip, "plugins/plugins/modrinth_api.md");

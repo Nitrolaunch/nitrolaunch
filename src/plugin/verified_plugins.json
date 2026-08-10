@@ -312,7 +312,8 @@
 		"version": "v8",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
-		"description": "Create desktop shortcuts to launch instances"
+		"description": "Create desktop shortcuts to launch instances",
+		"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/shortcut"
 	},
 	"skin_stealer": {
 		"id": "skin_stealer",
@@ -320,7 +321,8 @@
 		"version": "v8",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
-		"description": "Get the skin of other players"
+		"description": "Get the skin of other players",
+		"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/skin_stealer"
 	},
 	"doctor": {
 		"id": "doctor",
@@ -328,7 +330,8 @@
 		"version": "v8",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
-		"description": "Detect, diagnose, and fix crashes and issues"
+		"description": "Detect, diagnose, and fix crashes and issues",
+		"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/doctor"
 	},
 	"guardian": {
 		"id": "guardian",
@@ -336,7 +339,8 @@
 		"version": "v8",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
-		"description": "Protect yourself against malware in mods"
+		"description": "Protect yourself against malware in mods",
+		"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/guardian"
 	},
 	"mojang_transfer": {
 		"id": "mojang_transfer",
@@ -344,6 +348,7 @@
 		"version": "v8",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
-		"description": "Instance transfer for the Official Launcher"
+		"description": "Instance transfer for the Official Launcher",
+		"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/mojang_transfer"
 	}
 }
