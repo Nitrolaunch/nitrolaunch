@@ -251,6 +251,7 @@ impl Component for ContentConfig {
 			Some(Side::Server) => self.config_state.server_loader,
 		};
 		let ty = self.config_state.ty;
+		let is_dirty = self.config_state.is_dirty.clone();
 		let browse_button = icon_text_button("search", "Browse for Packages", &theme)
 			.border_fill(theme.primary)
 			.color(theme.primary)
@@ -264,6 +265,13 @@ impl Component for ContentConfig {
 				let version = version;
 				let loader = loader;
 				spawn(async move {
+					if *is_dirty.read() {
+						front_state2
+							.write()
+							.toast(Toast::warning("You have unsaved changes", None));
+						return;
+					}
+
 					let id = id.read().clone();
 					let version =
 						final_value_owned(version.read().clone(), &parent_configs.0, |x| {
@@ -285,6 +293,8 @@ impl Component for ContentConfig {
 							.toast(Toast::error("Failed to get canonical version", None));
 						return;
 					};
+
+					front_state2.write().set_modal(None);
 					front_state2
 						.write()
 						.navigate(Page::Packages(Some(BrowseFilters {
@@ -295,9 +305,18 @@ impl Component for ContentConfig {
 			});
 
 		let id = self.config_state.id;
+		let is_dirty = self.config_state.is_dirty.clone();
+		let front_state2 = front_state.clone();
 		let update_button = icon_text_button("cycle", "Update Packages", &theme)
 			.active(&theme)
 			.on_press(move |_| {
+				if *is_dirty.read() {
+					front_state2
+						.write()
+						.toast(Toast::warning("You have unsaved changes", None));
+					return;
+				}
+
 				update.mutate(UpdateInstanceKeys {
 					id: id.read().clone(),
 					mode: UpdateInstanceMode::Packages,
@@ -424,18 +443,18 @@ impl Component for ContentItemElem {
 						Some(self.item.id.to_string()),
 					)
 				} else if let Some(Err(err)) = self.packages.get(req) {
-    						(
-    							icon("error", 24.0).color(theme.error).into_element(),
-    							err.root_cause().to_string(),
-    							Some(self.item.id.to_string()),
-    						)
-    					} else {
-    						(
-    							CircularLoader::new().into_element(),
-    							"Loading".into(),
-    							Some(self.item.id.to_string()),
-    						)
-    					}
+					(
+						icon("error", 24.0).color(theme.error).into_element(),
+						err.root_cause().to_string(),
+						Some(self.item.id.to_string()),
+					)
+				} else {
+					(
+						CircularLoader::new().into_element(),
+						"Loading".into(),
+						Some(self.item.id.to_string()),
+					)
+				}
 			}
 			ContentItemType::Addon => {
 				let ico = self
