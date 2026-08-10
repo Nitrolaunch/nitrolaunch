@@ -138,6 +138,11 @@ fn main() -> anyhow::Result<()> {
 			let path = instances_folder.join(&name);
 
 			let mc_dir = path.join(".minecraft");
+			let mc_dir = if mc_dir.exists() {
+				mc_dir
+			} else {
+				path.join("minecraft")
+			};
 
 			let cfg_path = path.join("instance.cfg");
 
@@ -380,8 +385,8 @@ fn get_available_instances(
 
 		let path = entry.path();
 
-		let mc_dir = path.join(".minecraft");
-		if !mc_dir.exists() {
+		let mc_dirs = [path.join(".minecraft"), path.join("minecraft")];
+		if !mc_dirs.iter().any(|d| d.exists()) {
 			o.debug(MessageContents::Simple(format!(
 				"Skipping {name}, Minecraft dir missing"
 			)));
