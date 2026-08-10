@@ -139,7 +139,9 @@ impl Instance {
 				dir
 			};
 
-			tokio::fs::remove_dir_all(path).await?;
+			if path.exists() {
+				tokio::fs::remove_dir_all(path).await?;
+			}
 		}
 
 		Ok(())
