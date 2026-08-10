@@ -1,12 +1,13 @@
 use std::rc::Rc;
 
+use freya::query::UseMutation;
 use itertools::Itertools;
 use nitrolaunch::shared::{loaders::Loader, util::open_link};
 
 use crate::{
 	components::input::{select::Selected, switch::Switch},
 	ops::{
-		ConditionalQuery,
+		ConditionalQuery, ToastedMutation,
 		plugins::{
 			DisablePlugin, EnablePlugin, FetchLocalPlugins, FetchPluginVersions,
 			FetchRemotePlugins, InstallPlugin, PluginInfo, UninstallPlugin,
@@ -25,6 +26,32 @@ impl Component for PluginsPage {
 		let back_state = use_consume::<BackState>();
 		let local_plugins = use_query(Query::new((), FetchLocalPlugins::new(back_state.clone())));
 		let remote_plugins = use_query(Query::new((), FetchRemotePlugins::new(back_state.clone())));
+
+		let install_mutation =
+			use_mutation(Mutation::new(InstallPlugin::new(back_state.clone()).toast(
+				&back_state,
+				Some("Plugin installed"),
+				"Failed to install plugin",
+			)));
+		let uninstall_mutation = use_mutation(Mutation::new(
+			UninstallPlugin::new(back_state.clone()).toast(
+				&back_state,
+				Some("Plugin uninstalled"),
+				"Failed to uninstall plugin",
+			),
+		));
+		let enable_mutation =
+			use_mutation(Mutation::new(EnablePlugin::new(back_state.clone()).toast(
+				&back_state,
+				Some("Plugin enabled"),
+				"Failed to enable plugin",
+			)));
+		let disable_mutation =
+			use_mutation(Mutation::new(DisablePlugin::new(back_state.clone()).toast(
+				&back_state,
+				Some("Plugin disabled"),
+				"Failed to disable plugin",
+			)));
 
 		let is_remote = use_state(|| false);
 
@@ -80,14 +107,18 @@ impl Component for PluginsPage {
 							.unwrap_or_default()
 							.iter()
 							.any(|p| p.id == x.id)
-						{
-							return None;
-						}
+					{
+						return None;
+					}
 
 					Some(
 						PluginItem {
 							info: NotEq(x),
 							is_remote: *is_remote.peek(),
+							install_mutation: NotEq(install_mutation.clone()),
+							uninstall_mutation: NotEq(uninstall_mutation.clone()),
+							enable_mutation: NotEq(enable_mutation.clone()),
+							disable_mutation: NotEq(disable_mutation.clone()),
 						}
 						.into_element(),
 					)
@@ -112,6 +143,10 @@ impl Component for PluginsPage {
 struct PluginItem {
 	info: NotEq<PluginInfo>,
 	is_remote: bool,
+	install_mutation: NotEq<UseMutation<ToastedMutation<InstallPlugin>>>,
+	uninstall_mutation: NotEq<UseMutation<ToastedMutation<UninstallPlugin>>>,
+	enable_mutation: NotEq<UseMutation<ToastedMutation<EnablePlugin>>>,
+	disable_mutation: NotEq<UseMutation<ToastedMutation<DisablePlugin>>>,
 }
 
 impl Component for PluginItem {
@@ -132,40 +167,16 @@ impl Component for PluginItem {
 			|| id.clone(),
 		));
 
-		let install_mutation =
-			use_mutation(Mutation::new(InstallPlugin::new(back_state.clone()).toast(
-				&back_state,
-				Some("Plugin installed"),
-				"Failed to install plugin",
-			)));
-		let uninstall_mutation = use_mutation(Mutation::new(
-			UninstallPlugin::new(back_state.clone()).toast(
-				&back_state,
-				Some("Plugin uninstalled"),
-				"Failed to uninstall plugin",
-			),
-		));
-		let enable_mutation =
-			use_mutation(Mutation::new(EnablePlugin::new(back_state.clone()).toast(
-				&back_state,
-				Some("Plugin enabled"),
-				"Failed to enable plugin",
-			)));
-		let disable_mutation =
-			use_mutation(Mutation::new(DisablePlugin::new(back_state.clone()).toast(
-				&back_state,
-				Some("Plugin disabled"),
-				"Failed to disable plugin",
-			)));
-
 		let id = self.info.0.id.clone();
+		let install_mutation = self.install_mutation.clone();
 		let install = move |_: Event<PressEventData>| {
-			install_mutation.mutate((id.clone(), None));
+			install_mutation.0.mutate((id.clone(), None));
 		};
 
 		let id = self.info.0.id.clone();
+		let uninstall_mutation = self.uninstall_mutation.clone();
 		let uninstall = move |_: Event<PressEventData>| {
-			uninstall_mutation.mutate(id.clone());
+			uninstall_mutation.0.mutate(id.clone());
 		};
 
 		let info = &self.info.0;
@@ -202,13 +213,15 @@ impl Component for PluginItem {
 			} else {
 				"Click to enable"
 			};
+			let disable_mutation = self.disable_mutation.clone();
+			let enable_mutation = self.enable_mutation.clone();
 			Some(rect().tip(&front_state, tip).child(Switch {
 				enabled,
 				on_toggle: EventHandler::new(move |_| {
 					if enabled {
-						disable_mutation.mutate(id.clone());
+						disable_mutation.0.mutate(id.clone());
 					} else {
-						enable_mutation.mutate(id.clone());
+						enable_mutation.0.mutate(id.clone());
 					}
 				}),
 			}))
@@ -219,7 +232,7 @@ impl Component for PluginItem {
 			Selected::Single(info.version.clone()),
 			Rc::new(move |selected| {
 				let version = selected.single().clone();
-				install_mutation.mutate((id.clone(), version));
+				install_mutation.0.mutate((id.clone(), version));
 			}),
 		)
 		.child(SelectOption::new(None, "Any", None))
