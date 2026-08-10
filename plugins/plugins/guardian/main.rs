@@ -162,20 +162,28 @@ fn main() -> anyhow::Result<()> {
 }
 
 fn default_scan(inst_dir: &Path, data_dir: &Path, o: &mut impl NitroOutput) -> anyhow::Result<()> {
-	let dir = inst_dir.join("mods");
-	if !dir.exists() {
+	let dirs = [inst_dir.join("mods"), inst_dir.join("plugins")];
+	if !dirs.iter().any(|x| x.exists()) {
 		return Ok(());
 	}
 
 	let possible_threats = Threats::load();
+	let mut results = HashMap::new();
 
 	o.start_process();
-	let result = Runtime::new()?.block_on(scan_dir(&dir, &possible_threats, data_dir, o))?;
+	for dir in dirs {
+		if !dir.exists() {
+			continue;
+		}
+
+		let result = Runtime::new()?.block_on(scan_dir(&dir, &possible_threats, data_dir, o))?;
+		results.extend(result);
+	}
 
 	o.display(MessageContents::Success("Scanned".into()));
 	o.end_process();
 
-	for (filename, report) in result.into_iter().sorted_by_cached_key(|x| x.1.score()) {
+	for (filename, report) in results.into_iter().sorted_by_cached_key(|x| x.1.score()) {
 		let mitigation = report.mitigation();
 		if let Mitigation::Detection = mitigation {
 			report.dump(data_dir);
@@ -248,9 +256,10 @@ fn scan_jar(data: &[u8], possible_threats: &Threats, data_dir: &Path) -> anyhow:
 	// Check for cached scan
 	let cache_file = get_scan_cache_path(&data_hash.to_string(), &possible_threats.hash, data_dir);
 	if let Ok(data) = std::fs::read(&cache_file)
-		&& let Ok(report) = serde_json::from_slice(&data) {
-			return Ok(report);
-		}
+		&& let Ok(report) = serde_json::from_slice(&data)
+	{
+		return Ok(report);
+	}
 
 	let mut zip = ZipArchive::new(Cursor::new(data)).context("Failed to open JAR archive")?;
 	let mut read_buf = Vec::new();
