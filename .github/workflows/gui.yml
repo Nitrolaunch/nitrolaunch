@@ -136,11 +136,4 @@ jobs:
           name: ${{ matrix.package }}
           if-no-files-found: error
           path: |
-            dist/*.zip
-            dist/*.tar.gz
-            dist/*.msi
-            dist/*.dmg
-            dist/*.deb
-            dist/*.AppImage
-            dist/*-x86_64.AppImage
             crates/gui/dist/**
