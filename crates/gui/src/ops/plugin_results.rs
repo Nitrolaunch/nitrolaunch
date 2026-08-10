@@ -1,7 +1,6 @@
 use std::{sync::Arc, time::Duration};
 
 use anyhow::{Context, bail};
-use freya::query::QueriesStorage;
 use nitrolaunch::{
 	config_crate::ConfigKind,
 	plugin_crate::{
@@ -330,7 +329,7 @@ simple_mutation!(
 		_keys: &Self::Keys,
 		_result: &Result<Self::Ok, Self::Err>,
 	) -> impl Future<Output = ()> {
-		QueriesStorage::<FetchItems>::try_invalidate_all()
+		invalidate_all::<FetchItems>()
 	}
 );
 

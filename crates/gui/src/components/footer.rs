@@ -1,6 +1,5 @@
 use std::rc::Rc;
 
-use freya::query::QueriesStorage;
 use nitrolaunch::{
 	config_crate::ConfigKind, plugin_crate::hook::hooks::DropdownButtonLocation,
 	shared::pkg::ArcPkgReq,
@@ -116,7 +115,7 @@ impl Component for FooterButton {
 			async move {
 				while let Ok(ev) = event_rx.recv().await {
 					if let BackEvent::UpdateRunningInstances = ev {
-						QueriesStorage::<FetchInstanceRunState>::try_invalidate_all().await;
+						invalidate_all::<FetchInstanceRunState>().await;
 					}
 				}
 			}

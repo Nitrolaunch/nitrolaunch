@@ -14,7 +14,9 @@ pub use crate::components::{
 	icon_text_button, img, placeholder, segment, skeleton,
 };
 pub use crate::icons::icon;
-pub use crate::ops::{ToastedMutationExt, ToastedQueryExt, query_spawn};
+pub use crate::ops::{
+	ToastedMutationExt, ToastedQueryExt, invalidate_all, invalidate_matching, query_spawn,
+};
 pub use crate::state::{BackState, FrontChannel, use_front_state};
 pub use crate::theme::{Theme, use_theme};
 pub use crate::util::NotEq;

@@ -1,7 +1,7 @@
 use std::{hash::Hash, marker::PhantomData, pin::Pin};
 
 use anyhow::anyhow;
-use freya::query::{Captured, MutationCapability, Query, QueryCapability};
+use freya::query::{Captured, MutationCapability, QueriesStorage, Query, QueryCapability};
 use nitrolaunch::shared::output::MessageContents;
 
 use crate::state::{BackEvent, BackState};
@@ -312,6 +312,27 @@ where
 			_p: PhantomData,
 		}
 	}
+}
+
+/// Invalidate that handles ToastedQuery and ConditionalQuery
+pub async fn invalidate_all<Q: QueryCapability>()
+where
+	Q::Err: AnyhowError,
+{
+	QueriesStorage::<Q>::try_invalidate_all().await;
+	QueriesStorage::<ToastedQuery<Q>>::try_invalidate_all().await;
+	QueriesStorage::<ConditionalQuery<Q>>::try_invalidate_all().await;
+}
+
+/// Invalidate matching that handles ToastedQuery and ConditionalQuery
+pub async fn invalidate_matching<Q: QueryCapability>(keys: Q::Keys)
+where
+	Q::Err: AnyhowError,
+{
+	QueriesStorage::<Q>::try_invalidate_matching(keys.clone()).await;
+	QueriesStorage::<ToastedQuery<Q>>::try_invalidate_matching(keys.clone()).await;
+	// Too hard to check this
+	QueriesStorage::<ConditionalQuery<Q>>::try_invalidate_all().await;
 }
 
 /// Utility to get around some Rust incapabilities, forcing a future to be send

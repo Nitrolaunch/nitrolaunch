@@ -1,8 +1,5 @@
 use std::{
-	collections::{HashMap, HashSet},
-	hash::{DefaultHasher, Hash, Hasher},
-	rc::Rc,
-	sync::Arc,
+	collections::{HashMap, HashSet}, dbg, hash::{DefaultHasher, Hash, Hasher}, rc::Rc, sync::Arc,
 };
 
 use itertools::Itertools;
@@ -797,6 +794,7 @@ fn build_items(
 	parent_configs: &[TemplateConfig],
 	addons: Option<&[Addon]>,
 ) -> (Vec<ContentItem>, Vec<ArcPkgReq>) {
+	dbg!(lockfile);
 	let mut items = Vec::new();
 	let mut packages = HashSet::new();
 

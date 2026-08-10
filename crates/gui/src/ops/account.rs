@@ -1,5 +1,4 @@
 use anyhow::Context;
-use freya::query::QueriesStorage;
 use itertools::Itertools;
 use nitrolaunch::{
 	config::modifications::{ConfigModification, apply_modifications_and_write},
@@ -99,7 +98,7 @@ simple_mutation!(
 		_result: &Result<Self::Ok, Self::Err>,
 	) -> impl Future<Output = ()>
 	{
-		QueriesStorage::<FetchAccounts>::try_invalidate_all()
+		invalidate_all::<FetchAccounts>()
 	}
 );
 
@@ -139,7 +138,7 @@ simple_mutation!(
 		_result: &Result<Self::Ok, Self::Err>,
 	) -> impl Future<Output = ()>
 	{
-		QueriesStorage::<FetchAccounts>::try_invalidate_all()
+		invalidate_all::<FetchAccounts>()
 	}
 );
 
@@ -180,7 +179,7 @@ simple_mutation!(
 		_keys: &Self::Keys,
 		_result: &Result<Self::Ok, Self::Err>,
 	) -> impl Future<Output = ()> {
-		QueriesStorage::<FetchAccounts>::try_invalidate_all()
+		invalidate_all::<FetchAccounts>()
 	}
 );
 

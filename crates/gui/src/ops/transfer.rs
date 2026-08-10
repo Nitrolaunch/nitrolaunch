@@ -1,7 +1,6 @@
 use std::path::PathBuf;
 
 use anyhow::Context;
-use freya::query::QueriesStorage;
 use nitrolaunch::{
 	config::modifications::{ConfigModification, apply_modifications_and_write},
 	instance::{
@@ -92,7 +91,7 @@ simple_mutation!(
 		_keys: &Self::Keys,
 		_result: &Result<Self::Ok, Self::Err>,
 	) -> impl Future<Output = ()> {
-		QueriesStorage::<FetchItems>::try_invalidate_all()
+		invalidate_all::<FetchItems>()
 	}
 );
 
@@ -148,7 +147,7 @@ simple_mutation!(
 		_result: &Result<Self::Ok, Self::Err>,
 	) -> impl Future<Output = ()>
 	{
-		QueriesStorage::<FetchItems>::try_invalidate_all()
+		invalidate_all::<FetchItems>()
 	}
 );
 

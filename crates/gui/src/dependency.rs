@@ -1,8 +1,9 @@
-use freya::{prelude::spawn, query::QueriesStorage};
+use freya::prelude::spawn;
 
 use crate::ops::{
 	account::FetchAccounts,
 	instance::{FetchInstanceConfig, FetchItems},
+	invalidate_all, invalidate_matching,
 	launch::FetchRunningInstances,
 	packages::FetchInstanceLockfile,
 };
@@ -21,17 +22,17 @@ impl BackDependency {
 	pub fn invalidate(&self) {
 		match self {
 			Self::Items => {
-				spawn(QueriesStorage::<FetchItems>::try_invalidate_all());
+				spawn(invalidate_all::<FetchItems>());
 			}
 			Self::RunningInstances => {
-				spawn(QueriesStorage::<FetchRunningInstances>::try_invalidate_all());
+				spawn(invalidate_all::<FetchRunningInstances>());
 			}
 			Self::Accounts => {
-				spawn(QueriesStorage::<FetchAccounts>::try_invalidate_all());
+				spawn(invalidate_all::<FetchAccounts>());
 			}
 			Self::InstanceContent(id) => {
-				spawn(QueriesStorage::<FetchInstanceConfig>::try_invalidate_matching(id.clone()));
-				spawn(QueriesStorage::<FetchInstanceLockfile>::try_invalidate_matching(id.clone()));
+				spawn(invalidate_matching::<FetchInstanceConfig>(id.clone()));
+				spawn(invalidate_matching::<FetchInstanceLockfile>(id.clone()));
 			}
 		}
 	}
