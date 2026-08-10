@@ -78,7 +78,6 @@ pub fn dir_symlink(path: &Path, target: &Path) -> std::io::Result<()> {
 /// Identical files will be overwritten
 pub fn copy_dir_contents(src: &Path, dest: &Path) -> anyhow::Result<()> {
 	ensure!(src.is_dir());
-	ensure!(dest.is_dir());
 
 	fs::create_dir_all(&dest)?;
 
@@ -102,7 +101,6 @@ pub fn copy_dir_contents(src: &Path, dest: &Path) -> anyhow::Result<()> {
 /// Identical files will be overwritten
 pub async fn copy_dir_contents_async(src: &Path, dest: &Path) -> anyhow::Result<()> {
 	ensure!(src.is_dir());
-	ensure!(dest.is_dir());
 
 	tokio::fs::create_dir_all(&dest).await?;
 
