@@ -227,6 +227,18 @@ impl Component for GeneralTab {
 			},
 		)
 		.allow_inherit()
+		.child(
+			SelectOption::new(Some("latest".into()), "Latest", Some("star"))
+				.tip("Always pick the latest stable version when the instance is updated"),
+		)
+		.maybe_child(*include_snapshots.read(), || {
+			SelectOption::new(
+				Some("latest_snapshot".into()),
+				"Latest Snapshot",
+				Some("star"),
+			)
+			.tip("Always pick the latest snapshot version when the instance is updated")
+		})
 		.children(minecraft_versions);
 
 		let version_field = rect()
