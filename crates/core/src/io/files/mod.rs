@@ -80,16 +80,19 @@ pub fn copy_dir_contents(src: &Path, dest: &Path) -> anyhow::Result<()> {
 	ensure!(src.is_dir());
 	ensure!(dest.is_dir());
 
+	fs::create_dir_all(&dest)?;
+
 	for file in fs::read_dir(src)? {
 		let file = file?;
 		let src_path = file.path();
 		let rel = src_path.strip_prefix(src)?;
 		let dest_path = dest.join(rel);
 
-		let mut src_file = std::io::BufReader::new(std::fs::File::open(src_path)?);
-		let mut dest_file = std::io::BufWriter::new(std::fs::File::create(dest_path)?);
-
-		std::io::copy(&mut src_file, &mut dest_file)?;
+		if src_path.is_dir() {
+			copy_dir_contents(&src_path, &dest_path)?;
+		} else {
+			fs::copy(&src_path, &dest_path)?;
+		}
 	}
 
 	Ok(())
@@ -101,16 +104,19 @@ pub async fn copy_dir_contents_async(src: &Path, dest: &Path) -> anyhow::Result<
 	ensure!(src.is_dir());
 	ensure!(dest.is_dir());
 
+	tokio::fs::create_dir_all(&dest).await?;
+
 	for file in fs::read_dir(src)? {
 		let file = file?;
 		let src_path = file.path();
 		let rel = src_path.strip_prefix(src)?;
 		let dest_path = dest.join(rel);
 
-		let mut src_file = std::io::BufReader::new(std::fs::File::open(src_path)?);
-		let mut dest_file = std::io::BufWriter::new(std::fs::File::create(dest_path)?);
-
-		std::io::copy(&mut src_file, &mut dest_file)?;
+		if src_path.is_dir() {
+			copy_dir_contents(&src_path, &dest_path)?;
+		} else {
+			tokio::fs::copy(&src_path, &dest_path).await?;
+		}
 	}
 
 	Ok(())
