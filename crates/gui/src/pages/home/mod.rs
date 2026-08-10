@@ -85,8 +85,7 @@ impl Component for HomePage {
 			Tab::Instances => ConfigKind::Instance,
 			Tab::Templates => ConfigKind::Template,
 		};
-		let add_placeholder =
-			InstanceListItem::add_placeholder(add_placeholder_ty, selected);
+		let add_placeholder = InstanceListItem::add_placeholder(add_placeholder_ty, selected);
 
 		let items = items
 			.iter()
@@ -160,19 +159,19 @@ impl Component for HomePage {
 				}
 			}),
 		)
-		.custom_header(SelectOption::new(AddOption::Add, "Add", Some("plus")))
+		.custom_header(SelectOption::new(AddOption::Add, "New", Some("plus")))
 		.header_width(Size::px(80.0))
 		.options_width(180.0)
 		.hide_arrow()
 		.panel_colorway()
 		.child(SelectOption::new(
 			AddOption::Instance,
-			"New Instance",
+			"Instance",
 			Some("box_dot"),
 		))
 		.child(SelectOption::new(
 			AddOption::Template,
-			"New Template",
+			"Template",
 			Some("diagram"),
 		))
 		.child(SelectOption::new(
@@ -188,7 +187,11 @@ impl Component for HomePage {
 		.custom_buttons(add_buttons, AddOption::Custom);
 
 		let tabs = TopTabs::new(tab)
-			.child(SelectOption::new(Tab::Instances, "Instances", Some("box_dot")))
+			.child(SelectOption::new(
+				Tab::Instances,
+				"Instances",
+				Some("box_dot"),
+			))
 			.child(SelectOption::new(
 				Tab::Templates,
 				"Templates",
