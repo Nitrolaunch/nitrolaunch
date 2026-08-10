@@ -35,7 +35,8 @@ impl Component for AccountSelector {
 				data2.save();
 			}),
 		)
-		.header_width(Size::px(240.0))
+		.header_width(Size::px(200.0))
+		.hide_arrow()
 		.child(SelectOption::new(None, "No Account", Some("user")))
 		.children(accounts.iter().map(|account| {
 			let name = account.get_name().unwrap_or(account.get_id());
