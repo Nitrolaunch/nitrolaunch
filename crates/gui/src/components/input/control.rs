@@ -27,14 +27,18 @@ impl Component for ControlInput {
 		let value = self.value.clone();
 		let on_set = self.on_set.clone();
 
-		let value_str = match &value {
-			Value::String(s) => s.clone(),
-			_ => String::new(),
+		let (value_str, is_str) = match &value {
+			Value::String(s) => (s.clone(), true),
+			_ => (String::new(), false),
 		};
 		let value_str = use_reactive(&value_str);
 		let value_str2 = value_str;
 		let on_set2 = on_set.clone();
 		use_side_effect(move || {
+			if !is_str {
+				return;
+			}
+
 			let value = value_str2.read().clone();
 			let value = if value.is_empty() {
 				Value::Null
@@ -208,9 +212,7 @@ impl ControlSection {
 				let section_id = control.id.clone();
 				let section_name = control.name.clone();
 				let section_icon = control.icon.clone().unwrap_or_else(|| "box".into());
-				let section = sections
-					.entry(section_id.clone())
-					.or_default();
+				let section = sections.entry(section_id.clone()).or_default();
 				section.id = section_id;
 				section.name = section_name;
 				section.icon = section_icon;
@@ -280,7 +282,7 @@ impl Component for Controls {
 	}
 }
 
-#[derive(Default, Clone)]
+#[derive(Default, Clone, Debug)]
 pub struct ControlledConfig {
 	data: serde_json::Map<String, Value>,
 }
@@ -340,21 +342,11 @@ impl ControlledConfig {
 
 	fn optimize_value(value: &mut Value) {
 		if let Value::Object(map) = value {
-  				let keys_to_remove: Vec<String> = map
-  					.iter_mut()
-  					.filter_map(|(k, v)| {
-  						Self::optimize_value(v);
-  						if v.is_null() || (v.is_object() && v.as_object().unwrap().is_empty()) {
-  							None
-  						} else {
-  							Some(k.clone())
-  						}
-  					})
-  					.collect();
-  				for key in keys_to_remove {
-  					map.remove(&key);
-  				}
-  			}
+			map.retain(|_, v| {
+				Self::optimize_value(v);
+				!v.is_null() && !(v.is_object() && v.as_object().unwrap().is_empty())
+			});
+		}
 	}
 }
 
