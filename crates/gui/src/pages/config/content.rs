@@ -45,13 +45,13 @@ use crate::{
 };
 
 #[derive(PartialEq)]
-pub struct AddonsConfig {
+pub struct ContentConfig {
 	pub config_state: ConfigState,
 	pub parent_configs: PtrEq<[TemplateConfig]>,
 	pub on_edit: Option<EventHandler<()>>,
 }
 
-impl Component for AddonsConfig {
+impl Component for ContentConfig {
 	fn render(&self) -> impl IntoElement {
 		let theme = use_theme();
 		let front_state = use_front_state();

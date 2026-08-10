@@ -25,7 +25,7 @@ use crate::{
 		misc::{ShowDirectory, ShowDirectoryOption},
 		plugin_results::{FetchDropdownButtons, OpenCustomPopup, RunCustomAction},
 	},
-	pages::config::{ConfigState, ConfiguredItem, addons::AddonsConfig},
+	pages::config::{ConfigState, ConfiguredItem, content::ContentConfig},
 	prelude::*,
 	state::ModalType,
 	util::{PtrEq, assets::get_instance_icon},
@@ -305,7 +305,7 @@ impl Component for InstancePage {
 		let save_fn = config_state.save_fn(front_state.clone(), save_config);
 		let contents = match &*tab.read() {
 			// Tab::Info => rect().into_element(),
-			Tab::Content => AddonsConfig {
+			Tab::Content => ContentConfig {
 				config_state: config_state.clone(),
 				parent_configs: PtrEq(parent_configs.clone()),
 				on_edit: Some(

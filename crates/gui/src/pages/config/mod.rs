@@ -16,7 +16,7 @@ use crate::{
 		},
 		plugin_results::{FetchInstanceControls, FetchInstanceControlsKeys},
 	},
-	pages::config::{addons::AddonsConfig, general::GeneralTab, launch::LaunchConfigPage},
+	pages::config::{content::ContentConfig, general::GeneralTab, launch::LaunchConfigPage},
 	prelude::*,
 	state::{FrontState, ModalType},
 	util::{PtrEq, Shared},
@@ -39,7 +39,7 @@ use nitrolaunch::{
 	},
 };
 
-pub mod addons;
+pub mod content;
 mod general;
 mod launch;
 
@@ -228,7 +228,7 @@ impl Component for ConfigModal {
 				parent_configs: PtrEq(parent_configs.clone()),
 			}
 			.into_element(),
-			Tab::Content => AddonsConfig {
+			Tab::Content => ContentConfig {
 				config_state: self.config_state.clone(),
 				parent_configs: PtrEq(parent_configs.clone()),
 				on_edit: None,
