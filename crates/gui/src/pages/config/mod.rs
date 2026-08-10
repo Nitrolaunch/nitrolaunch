@@ -257,7 +257,7 @@ impl Component for ConfigModal {
 		rect()
 			.horizontal()
 			.flex()
-			.child(left_panel)
+			.maybe(!self.config_state.is_new, |this| this.child(left_panel))
 			.child(right_panel)
 	}
 }
