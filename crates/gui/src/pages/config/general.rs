@@ -207,7 +207,7 @@ impl Component for GeneralTab {
 		let minecraft_versions = minecraft_versions
 			.into_iter()
 			.rev()
-			.map(|x| SelectOption::simple_or_none(Some(x)));
+			.map(|x| SelectOption::new(Some(x.clone()), &x, Some("tag")));
 		let version = self.config_state.version;
 		let version_selector = Dropdown::new(
 			Selected::Single(self.config_state.version.read().cloned()),
@@ -349,11 +349,7 @@ impl Component for LoadersConfig {
 		.grid(4)
 		.allow_inherit()
 		.derived_value_owned(
-			self.config_state
-				.client_loader
-				.read()
-				.clone()
-				.map(Some),
+			self.config_state.client_loader.read().clone().map(Some),
 			&self.parent_configs.0,
 			|x| x.client_loader().map(|x| Some(x.0)),
 		)
@@ -386,11 +382,7 @@ impl Component for LoadersConfig {
 		.grid(4)
 		.allow_inherit()
 		.derived_value_owned(
-			self.config_state
-				.server_loader
-				.read()
-				.clone()
-				.map(Some),
+			self.config_state.server_loader.read().clone().map(Some),
 			&self.parent_configs.0,
 			|x| x.server_loader().map(|x| Some(x.0)),
 		)

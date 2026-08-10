@@ -473,7 +473,7 @@ impl<T: PartialEq + Clone + 'static> Component for Dropdown<T> {
 			.center()
 			.child(preview);
 
-		let option_count = (self.options.len() as f32).min(10.5);
+		let option_count = (self.options.len() as f32).min(7.5);
 		// Don't include the gap after the last option
 		let options_height =
 			Size::px(theme.input_height * option_count + theme.gap * (option_count - 1.0));
