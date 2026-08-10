@@ -83,6 +83,7 @@ impl Component for NavBar {
 			.width(Size::flex(1.0))
 			.horizontal()
 			.flex()
+			.cross_align(Alignment::Center)
 			.child(buttons);
 
 		let help_button = icon_button("question_mark", &theme).on_press(|_| {
@@ -109,8 +110,12 @@ impl Component for NavBar {
 			.width(Size::fill())
 			.height(Size::px(theme.navbar_height))
 			.horizontal()
-			.background(theme.navbar)
 			.flex()
+			.cross_align(Alignment::Center)
+			.background(theme.navbar)
+			.border(
+				border_bottom(theme.border, theme.panel_border).alignment(BorderAlignment::Outer),
+			)
 			.child(left)
 			.child(center)
 			.child(right)

@@ -95,7 +95,7 @@ impl<T: PartialEq + Clone + 'static> Component for TopTabs<T> {
 		rect()
 			.width(Size::fill())
 			.cont()
-			.margin(theme.gap)
+			.padding(theme.gap)
 			.children(tabs)
 	}
 }
