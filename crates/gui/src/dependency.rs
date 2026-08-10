@@ -5,7 +5,7 @@ use crate::ops::{
 	instance::{FetchInstanceConfig, FetchItems},
 	invalidate_all, invalidate_matching,
 	launch::FetchRunningInstances,
-	packages::FetchInstanceLockfile,
+	packages::{FetchInstanceAddons, FetchInstanceLockfile},
 };
 
 /// Backend dependency that can be invalidated
@@ -33,6 +33,7 @@ impl BackDependency {
 			Self::InstanceContent(id) => {
 				spawn(invalidate_matching::<FetchInstanceConfig>(id.clone()));
 				spawn(invalidate_matching::<FetchInstanceLockfile>(id.clone()));
+				spawn(invalidate_matching::<FetchInstanceAddons>(id.clone()));
 			}
 		}
 	}
