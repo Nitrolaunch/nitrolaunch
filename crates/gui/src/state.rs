@@ -136,6 +136,7 @@ impl FrontState {
 		self.navigator.navigate(route);
 		self.check_route_change(prev_route);
 		self.invalidate(FrontChannel::Route);
+		self.set_modal(None);
 	}
 
 	pub fn forward(&mut self) {

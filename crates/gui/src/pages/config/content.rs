@@ -294,7 +294,6 @@ impl Component for ContentConfig {
 						return;
 					};
 
-					front_state2.write().set_modal(None);
 					front_state2
 						.write()
 						.navigate(Page::Packages(Some(BrowseFilters {
