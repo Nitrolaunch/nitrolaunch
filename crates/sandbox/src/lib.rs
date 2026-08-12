@@ -23,10 +23,7 @@ pub fn resolve(
 	policy: &policy::SandboxPolicy,
 	params: GroupResolveParams<'_>,
 ) -> anyhow::Result<policy::ResolvedSandboxPolicy> {
-	let mut resolved = policy::ResolvedSandboxPolicy {
-		allowed_paths: Default::default(),
-		allowed_hosts: Default::default(),
-	};
+	let mut resolved = policy::ResolvedSandboxPolicy::default();
 
 	let mut groups = DEFAULT_POLICY_GROUPS.to_vec();
 	groups.extend(policy.allowed.iter().copied());

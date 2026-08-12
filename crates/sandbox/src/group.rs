@@ -26,8 +26,8 @@ pub enum PolicyGroup {
 	Instance,
 	/// Allows access to all devices
 	Devices,
-	/// Allows access to network devices
-	NetworkDevices,
+	/// Allows access to the network
+	Network,
 	/// Allows access to input devices like keyboards and mice
 	InputDevices,
 	/// Allows access to graphics devices like GPUs
@@ -167,7 +167,13 @@ impl PolicyGroup {
 					}
 				}
 			}
-			Self::InputDevices | Self::NetworkDevices => {}
+			Self::InputDevices => {}
+			Self::Network => {
+				resolved.allowed_hosts.push("localhost".into());
+				resolved.allowed_ports.push(25565);
+				resolved.allowed_ports.push(80);
+				resolved.allowed_ports.push(443);
+			}
 		}
 	}
 }
