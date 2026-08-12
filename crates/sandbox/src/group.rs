@@ -12,6 +12,7 @@ pub static DEFAULT_POLICY_GROUPS: &[PolicyGroup] = &[
 	PolicyGroup::Instance,
 	PolicyGroup::GameFiles,
 	PolicyGroup::Devices,
+	PolicyGroup::Network,
 ];
 
 /// Standard presets of policies for the sandbox
@@ -29,9 +30,11 @@ pub enum PolicyGroup {
 	/// Allows access to the network
 	Network,
 	/// Allows access to input devices like keyboards and mice
-	InputDevices,
-	/// Allows access to graphics devices like GPUs
-	GraphicsDevices,
+	Input,
+	/// Allows access to graphics
+	Graphics,
+	/// Allows access to audio
+	Audio,
 }
 
 impl PolicyGroup {
@@ -118,7 +121,7 @@ impl PolicyGroup {
 						.insert("/dev".into(), FilesystemPolicy::ReadWrite);
 				}
 			}
-			Self::GraphicsDevices => {
+			Self::Graphics => {
 				#[cfg(target_os = "linux")]
 				{
 					let write_paths = [
@@ -137,7 +140,11 @@ impl PolicyGroup {
 							.allowed_paths
 							.insert(path.into(), FilesystemPolicy::ReadWrite);
 					}
-					let read_paths = ["/proc/driver/nvidia"];
+					let read_paths = [
+						"/proc/driver/nvidia",
+						"/usr/share/icons",
+						"/usr/share/fonts",
+					];
 					for path in read_paths {
 						resolved
 							.allowed_paths
@@ -167,12 +174,23 @@ impl PolicyGroup {
 					}
 				}
 			}
-			Self::InputDevices => {}
+			Self::Input => {}
 			Self::Network => {
 				resolved.allowed_hosts.push("localhost".into());
 				resolved.allowed_ports.push(25565);
 				resolved.allowed_ports.push(80);
 				resolved.allowed_ports.push(443);
+			}
+			Self::Audio => {
+				#[cfg(target_os = "linux")]
+				{
+					let read_paths = ["/usr/share/alsa", "/usr/share/pulseaudio"];
+					for path in read_paths {
+						resolved
+							.allowed_paths
+							.insert(path.into(), FilesystemPolicy::Read);
+					}
+				}
 			}
 		}
 	}
