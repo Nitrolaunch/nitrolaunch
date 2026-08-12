@@ -5,7 +5,7 @@ use itertools::Itertools;
 use nitrolaunch::shared::{loaders::Loader, util::open_link};
 
 use crate::{
-	components::input::{select::Selected, switch::Switch},
+	components::input::select::Selected,
 	ops::{
 		ConditionalQuery, ToastedMutation,
 		plugins::{
@@ -98,16 +98,15 @@ impl Component for PluginsPage {
 				.into_iter()
 				.sorted_by_cached_key(|x| x.id.clone())
 				.filter_map(|x| {
-					if *is_remote.peek()
-						&& local_plugins
-							.read()
-							.state()
-							.ok()
-							.cloned()
-							.unwrap_or_default()
-							.iter()
-							.any(|p| p.id == x.id)
-					{
+					let default = Vec::new();
+					let local_plugins = local_plugins.read();
+					let local_plugins = local_plugins.state();
+					let is_local_too = local_plugins
+						.ok()
+						.unwrap_or(&default)
+						.iter()
+						.any(|p| p.id == x.id);
+					if *is_remote.peek() && is_local_too {
 						return None;
 					}
 
@@ -173,12 +172,6 @@ impl Component for PluginItem {
 			install_mutation.0.mutate((id.clone(), None));
 		};
 
-		let id = self.info.0.id.clone();
-		let uninstall_mutation = self.uninstall_mutation.clone();
-		let uninstall = move |_: Event<PressEventData>| {
-			uninstall_mutation.0.mutate(id.clone());
-		};
-
 		let info = &self.info.0;
 		let ico = get_plugin_icon(&info.id);
 		let (ico_fg, ico_bg, ico_tip) = if info.is_official {
@@ -203,30 +196,6 @@ impl Component for PluginItem {
 			);
 		let name = info.meta.name.clone().unwrap_or_else(|| info.id.clone());
 
-		let enabled = info.enabled;
-		let id = self.info.0.id.clone();
-		let enable_switch = if self.is_remote {
-			None
-		} else {
-			let tip = if enabled {
-				"Click to disable"
-			} else {
-				"Click to enable"
-			};
-			let disable_mutation = self.disable_mutation.clone();
-			let enable_mutation = self.enable_mutation.clone();
-			Some(rect().tip(&front_state, tip).child(Switch {
-				enabled,
-				on_toggle: EventHandler::new(move |_| {
-					if enabled {
-						disable_mutation.0.mutate(id.clone());
-					} else {
-						enable_mutation.0.mutate(id.clone());
-					}
-				}),
-			}))
-		};
-
 		let id = info.id.clone();
 		let version_selector = Dropdown::new(
 			Selected::Single(info.version.clone()),
@@ -235,7 +204,9 @@ impl Component for PluginItem {
 				install_mutation.0.mutate((id.clone(), version));
 			}),
 		)
-		.child(SelectOption::new(None, "Any", None))
+		.hide_arrow()
+		.header_width(Size::auto())
+		.child(SelectOption::new(None, "Any", Some("tag")))
 		.children(
 			versions
 				.read()
@@ -244,7 +215,7 @@ impl Component for PluginItem {
 				.cloned()
 				.unwrap_or_default()
 				.into_iter()
-				.map(|v| SelectOption::simple_or_none(Some(v))),
+				.map(|v| SelectOption::new(Some(v.clone()), &v, Some("download"))),
 		)
 		.on_open_change(move |is_open| {
 			if is_open {
@@ -252,11 +223,59 @@ impl Component for PluginItem {
 			}
 		})
 		.loading(!versions.read().state().is_ok())
-		.maybe_child(!versions.read().state().is_ok(), || {
-			SelectOption::simple_or_none(info.version.clone())
+		.maybe_child(
+			!versions.read().state().is_ok() && info.version.is_some(),
+			|| {
+				SelectOption::new(
+					info.version.clone(),
+					info.version.as_deref().unwrap(),
+					Some("tag"),
+				)
+			},
+		);
+
+		let id = info.id.clone();
+		let documentation = info.meta.documentation.clone();
+		let enable_mutation = self.enable_mutation.clone();
+		let disable_mutation = self.disable_mutation.clone();
+		let uninstall_mutation = self.uninstall_mutation.clone();
+		let more_dropdown = Dropdown::new(
+			Selected::Single(MoreDropdown::More),
+			Rc::new(move |selected| match selected.single() {
+				MoreDropdown::More => {}
+				MoreDropdown::Documentation => {
+					if let Some(doc) = &documentation {
+						let _ = open_link(doc);
+					}
+				}
+				MoreDropdown::Enable => {
+					enable_mutation.0.mutate(id.clone());
+				}
+				MoreDropdown::Disable => {
+					disable_mutation.0.mutate(id.clone());
+				}
+				MoreDropdown::Uninstall => {
+					uninstall_mutation.0.mutate(id.clone());
+				}
+			}),
+		)
+		.custom_header(SelectOption::new(MoreDropdown::More, "", Some("elipsis")))
+		.header_width(Size::auto())
+		.hide_arrow()
+		.options_width(180.0)
+		.maybe_child(self.info.0.meta.documentation.is_some(), || {
+			SelectOption::new(MoreDropdown::Documentation, "Documentation", Some("book"))
+		})
+		.maybe_child(!self.is_remote && !info.enabled, || {
+			SelectOption::new(MoreDropdown::Enable, "Enable", Some("check"))
+		})
+		.maybe_child(!self.is_remote && info.enabled, || {
+			SelectOption::new(MoreDropdown::Disable, "Disable", Some("delete"))
+		})
+		.maybe_child(!self.is_remote, || {
+			SelectOption::new(MoreDropdown::Uninstall, "Uninstall", Some("trash"))
 		});
 
-		let documentation = info.meta.documentation.clone();
 		let controls = rect()
 			.width(Size::flex(1.0))
 			.height(Size::fill())
@@ -265,31 +284,11 @@ impl Component for PluginItem {
 			.cross_align(Alignment::Center)
 			.main_align(Alignment::End)
 			.padding(Gaps::new(0.0, theme.gap2, 0.0, 0.0))
-			.maybe_child(enable_switch)
-			.maybe(self.info.0.meta.documentation.is_some(), |this| {
-				this.child(rect().tip(&front_state, "Documentation").child(
-					icon_button("book", &theme).on_press(move |_| {
-						let _ = open_link(documentation.as_deref().unwrap());
-					}),
-				))
-			})
+			.child(version_selector)
 			.maybe(self.is_remote, |this| {
-				this.child(
-					rect().tip(&front_state, "Install").child(
-						button(&theme)
-							.on_press(install)
-							.child(icon("download", 16.0)),
-					),
-				)
+				this.child(icon_text_button("download", "Install", &theme).on_press(install))
 			})
-			.maybe(!self.is_remote, |this| {
-				this.child(
-					rect()
-						.tip(&front_state, "Uninstall")
-						.child(icon_button("trash", &theme).on_press(uninstall)),
-				)
-			})
-			.child(rect().width(Size::px(84.0)).child(version_selector));
+			.maybe(!self.is_remote, |this| this.child(more_dropdown));
 
 		let header = rect()
 			.width(Size::fill())
@@ -318,6 +317,15 @@ impl Component for PluginItem {
 					.child(description),
 			)
 	}
+}
+
+#[derive(PartialEq, Clone)]
+enum MoreDropdown {
+	More,
+	Documentation,
+	Enable,
+	Disable,
+	Uninstall,
 }
 
 pub fn get_plugin_icon(plugin: &str) -> impl IntoElement {
