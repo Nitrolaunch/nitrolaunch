@@ -2,8 +2,8 @@ use std::path::Path;
 
 use itertools::Itertools;
 use landlock::{
-	ABI, Access, AccessFs, PathBeneath, PathFd, PathFdError, Ruleset, RulesetAttr, RulesetCreated,
-	RulesetCreatedAttr, RulesetError,
+	ABI, Access, AccessFs, AccessNet, NetPort, PathBeneath, PathFd, PathFdError, Ruleset,
+	RulesetAttr, RulesetCreated, RulesetCreatedAttr, RulesetError,
 };
 
 use crate::policy::{FilesystemPolicy, ResolvedSandboxPolicy};
@@ -44,13 +44,19 @@ fn create_ruleset(policy: &ResolvedSandboxPolicy) -> Result<RulesetCreated, Rest
 		ruleset = ruleset.add_rule(PathBeneath::new(PathFd::new(path)?, access))?;
 	}
 
+	for port in policy.allowed_ports.iter().sorted() {
+		ruleset = ruleset.add_rule(NetPort::new(*port, AccessNet::from_all(LL_VERSION)))?;
+	}
+
 	Ok(ruleset)
 }
 
 fn create_base_ruleset() -> Result<RulesetCreated, RestrictionError> {
 	let disallow_all_fs = AccessFs::from_all(LL_VERSION) | AccessFs::Execute;
+	let disallow_all_net = AccessNet::from_all(LL_VERSION);
 
 	Ok(Ruleset::default()
 		.handle_access(disallow_all_fs)?
+		.handle_access(disallow_all_net)?
 		.create()?)
 }

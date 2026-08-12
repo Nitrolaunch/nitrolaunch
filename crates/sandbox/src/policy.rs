@@ -10,10 +10,12 @@ use crate::group::PolicyGroup;
 pub struct SandboxPolicy {
 	/// Additional allowed policy groups
 	pub allowed: Vec<PolicyGroup>,
-	/// List of filesystem paths and their access policies for the sandboxed instance
+	/// List of additional allowed filesystem paths and their access policies for the sandboxed instance
 	pub allowed_paths: HashMap<String, FilesystemPolicy>,
-	/// List of IP addresses or hostnames that the sandboxed Minecraft instance can connect to
+	/// List of additional allowed IP addresses or hostnames that the sandboxed Minecraft instance can connect to
 	pub allowed_hosts: Vec<String>,
+	/// List of additional allowed ports
+	pub allowed_ports: Vec<u16>,
 }
 
 /// Defines access to a filesystem path for the sandboxed instance
@@ -25,13 +27,14 @@ pub enum FilesystemPolicy {
 	/// File or directory can be read and written to
 	#[serde(alias = "write")]
 	ReadWrite,
-    /// File can be executed
-    Execute,
+	/// File can be executed
+	Execute,
 }
 
 /// Resolved version of the sandbox policy, with all groups expanded into their individual rules
-#[derive(Debug)]
+#[derive(Default, Debug)]
 pub struct ResolvedSandboxPolicy {
 	pub(crate) allowed_paths: HashMap<String, FilesystemPolicy>,
 	pub(crate) allowed_hosts: Vec<String>,
+	pub(crate) allowed_ports: Vec<u16>,
 }
