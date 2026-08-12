@@ -128,11 +128,20 @@ impl PolicyGroup {
 						"/dev/shm",
 						"/sys/class/drm",
 						"/tmp/.X11-unix",
+						"/usr/share/vulkan",
+						"/usr/share/glvnd",
+						"/usr/share/X11/xorg.conf.d",
 					];
 					for path in write_paths {
 						resolved
 							.allowed_paths
 							.insert(path.into(), FilesystemPolicy::ReadWrite);
+					}
+					let read_paths = ["/proc/driver/nvidia"];
+					for path in read_paths {
+						resolved
+							.allowed_paths
+							.insert(path.into(), FilesystemPolicy::Read);
 					}
 
 					if let Ok(runtime_dir) = std::env::var("XDG_RUNTIME_DIR") {
