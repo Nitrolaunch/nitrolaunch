@@ -27,14 +27,6 @@ pub fn apply(policy: ResolvedSandboxPolicy) -> anyhow::Result<()> {
 	Ok(())
 }
 
-fn create_base_ruleset() -> Result<RulesetCreated, RestrictionError> {
-	let disallow_all_fs = AccessFs::from_all(LL_VERSION) | AccessFs::Execute;
-
-	Ok(Ruleset::default()
-		.handle_access(disallow_all_fs)?
-		.create()?)
-}
-
 fn create_ruleset(policy: &ResolvedSandboxPolicy) -> Result<RulesetCreated, RestrictionError> {
 	let mut ruleset = create_base_ruleset()?;
 
@@ -53,4 +45,12 @@ fn create_ruleset(policy: &ResolvedSandboxPolicy) -> Result<RulesetCreated, Rest
 	}
 
 	Ok(ruleset)
+}
+
+fn create_base_ruleset() -> Result<RulesetCreated, RestrictionError> {
+	let disallow_all_fs = AccessFs::from_all(LL_VERSION) | AccessFs::Execute;
+
+	Ok(Ruleset::default()
+		.handle_access(disallow_all_fs)?
+		.create()?)
 }
