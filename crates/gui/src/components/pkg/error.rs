@@ -15,7 +15,7 @@ impl Component for ResolutionErrorView {
 		let is_open = use_state(|| false);
 
 		let ico = match &*self.error.0 {
-			SerializableResolutionError::PackageContext(..) => "elipsis",
+			SerializableResolutionError::PackageContext(..) => "ellipsis",
 			SerializableResolutionError::FailedToPreload(..) => "error",
 			SerializableResolutionError::FailedToGetProperties(..) => "curly_braces",
 			SerializableResolutionError::NoValidVersionsFound(..) => "asterisk",

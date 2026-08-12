@@ -259,7 +259,7 @@ impl Component for PluginItem {
 				}
 			}),
 		)
-		.custom_header(SelectOption::new(MoreDropdown::More, "", Some("elipsis")))
+		.custom_header(SelectOption::new(MoreDropdown::More, "", Some("ellipsis")))
 		.header_width(Size::auto())
 		.hide_arrow()
 		.options_width(180.0)

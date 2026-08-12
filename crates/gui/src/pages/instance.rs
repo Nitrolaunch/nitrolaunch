@@ -243,7 +243,7 @@ impl Component for InstancePage {
 		)
 		.options_width(160.0)
 		.align_options_right()
-		.custom_header(SelectOption::new(MoreOption::More, "More", Some("elipsis")))
+		.custom_header(SelectOption::new(MoreOption::More, "More", Some("ellipsis")))
 		.header_width(Size::auto())
 		.hide_arrow()
 		.panel_colorway()

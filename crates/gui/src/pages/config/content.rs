@@ -486,7 +486,7 @@ impl Component for ContentItemElem {
 		.custom_header(SelectOption::new(
 			ItemMoreDropdown::More,
 			"",
-			Some("elipsis"),
+			Some("ellipsis"),
 		))
 		.header_width(Size::px(header_size))
 		.hide_arrow()

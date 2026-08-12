@@ -173,7 +173,7 @@ impl Component for FooterButton {
 						.custom_header(SelectOption::new(
 							TemplateMoreOption::More,
 							"",
-							Some("elipsis"),
+							Some("ellipsis"),
 						))
 						.header_width(Size::auto())
 						.hide_arrow()

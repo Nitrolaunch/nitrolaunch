@@ -228,7 +228,7 @@ impl Component for AccountItem {
 				}
 			}),
 		)
-		.custom_header(SelectOption::simple_icon(MoreOption::More, "elipsis"))
+		.custom_header(SelectOption::simple_icon(MoreOption::More, "ellipsis"))
 		.header_width(Size::auto())
 		.options_width(128.0)
 		.align_options_right()
