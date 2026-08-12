@@ -19,6 +19,7 @@ schema = ["dep:schemars"]
 [dependencies]
 anyhow = { workspace = true }
 async-trait = { workspace = true }
+glob = { workspace = true }
 itertools = { workspace = true }
 landlock = { workspace = true }
 nitro_shared = { workspace = true }

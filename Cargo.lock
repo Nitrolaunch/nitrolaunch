@@ -4770,6 +4770,7 @@ version = "0.31.0"
 dependencies = [
  "anyhow",
  "async-trait",
+ "glob",
  "itertools 0.11.0",
  "landlock",
  "nitro_shared",

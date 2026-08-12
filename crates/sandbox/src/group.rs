@@ -1,6 +1,7 @@
 use std::path::Path;
 
 use nitro_shared::Side;
+use nitro_shared::io::home_dir;
 use serde::{Deserialize, Serialize};
 
 use crate::policy::{FilesystemPolicy, ResolvedSandboxPolicy};
@@ -77,7 +78,7 @@ impl PolicyGroup {
 						"/etc/ssl",
 						"/etc",
 					];
-					let write_paths = ["/proc/self/fd"];
+					let write_paths = ["/proc/self", "/tmp"];
 					for path in read_paths {
 						resolved
 							.allowed_paths
@@ -117,7 +118,47 @@ impl PolicyGroup {
 						.insert("/dev".into(), FilesystemPolicy::ReadWrite);
 				}
 			}
-			Self::GraphicsDevices | Self::InputDevices | Self::NetworkDevices => {}
+			Self::GraphicsDevices => {
+				#[cfg(target_os = "linux")]
+				{
+					let write_paths = [
+						"/dev/dri",
+						"/dev/nvidia0",
+						"/dev/nvidiactl",
+						"/dev/shm",
+						"/sys/class/drm",
+						"/tmp/.X11-unix",
+					];
+					for path in write_paths {
+						resolved
+							.allowed_paths
+							.insert(path.into(), FilesystemPolicy::ReadWrite);
+					}
+
+					if let Ok(runtime_dir) = std::env::var("XDG_RUNTIME_DIR") {
+						resolved
+							.allowed_paths
+							.insert(runtime_dir.into(), FilesystemPolicy::ReadWrite);
+					}
+
+					let x_authority = std::env::var("XAUTHORITY").unwrap_or_else(|_| {
+						let home = home_dir().unwrap_or("/home".into());
+						home.join(".Xauthority").to_string_lossy().into()
+					});
+					resolved
+						.allowed_paths
+						.insert(x_authority.into(), FilesystemPolicy::ReadWrite);
+
+					for path in glob::glob("/sys/devices/pci*").into_iter().flatten() {
+						if let Ok(path) = path {
+							resolved
+								.allowed_paths
+								.insert(path.to_string_lossy().into(), FilesystemPolicy::ReadWrite);
+						}
+					}
+				}
+			}
+			Self::InputDevices | Self::NetworkDevices => {}
 		}
 	}
 }

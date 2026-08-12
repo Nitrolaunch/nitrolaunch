@@ -75,6 +75,7 @@ pub(crate) async fn launch_game_process(
 		params.paths,
 		&stdout,
 		stdin.as_deref(),
+		o,
 	)
 	.await
 	.context("Failed to spawn child process")?;
@@ -105,6 +106,7 @@ async fn spawn_child(
 	paths: &Paths,
 	stdout: &Path,
 	stdin: Option<&Path>,
+	o: &mut impl NitroOutput,
 ) -> anyhow::Result<Child> {
 	if let Some(policy) = sandbox_policy {
 		let java_installation = Path::new(java_command)
@@ -128,6 +130,7 @@ async fn spawn_child(
 				stdin_file: stdin,
 			},
 		)?;
+		o.debug(MessageContents::Simple(format!("{resolved_policy:?}")));
 
 		let (tx, rx) = oneshot::channel();
 
