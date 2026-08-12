@@ -15,6 +15,7 @@ use nitro_instance::lock::InstanceLockfile;
 use nitro_plugin::hook::hooks::{
 	AfterInstanceSetup, OnInstanceSetup, OnInstanceSetupArg, OnInstanceSetupResult, RemoveLoader,
 };
+use nitro_sandbox::policy::SandboxPolicy;
 use nitro_shared::Side;
 use nitro_shared::output::OutputProcess;
 use nitro_shared::output::{MessageContents, NitroOutput};
@@ -279,10 +280,16 @@ impl Instance {
 			.dir
 			.clone()
 			.unwrap_or(paths.data.join("instances").join(&*self.id));
+		let sandbox = if self.config.sandbox {
+			Some(SandboxPolicy::default())
+		} else {
+			None
+		};
 		let config = nitro_core::InstanceConfiguration {
 			side,
 			path: inst_dir,
 			launch: launch_config,
+			sandbox,
 			jar_path: self.modification_data.jar_path_override.clone(),
 			main_class: self.modification_data.main_class_override.clone(),
 			additional_libs: self.modification_data.classpath_extension.get_paths(),

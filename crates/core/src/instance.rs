@@ -2,6 +2,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use anyhow::{Context, bail};
+use nitro_sandbox::policy::SandboxPolicy;
 use nitro_shared::io::update_link;
 use nitro_shared::output::{MessageContents, NitroOutput};
 use nitro_shared::versions::VersionName;
@@ -266,6 +267,7 @@ impl Instance {
 			jar_path: &self.jar_path,
 			main_class: &self.main_class,
 			launch_config: &launch_config,
+			sandbox_policy: self.config.sandbox.as_ref(),
 			paths: &self.params.paths,
 			req_client: &self.params.req_client,
 			client_meta: &self.params.client_meta,
@@ -310,6 +312,8 @@ pub struct InstanceConfiguration {
 	pub path: PathBuf,
 	/// Launch options for the instance
 	pub launch: LaunchConfiguration,
+	/// Sandboxing policy for the instance
+	pub sandbox: Option<SandboxPolicy>,
 	/// JAR path override
 	pub jar_path: Option<PathBuf>,
 	/// Java main class override
@@ -331,6 +335,7 @@ impl InstanceConfiguration {
 			side,
 			path,
 			launch: LaunchConfiguration::new(),
+			sandbox: None,
 			jar_path: None,
 			main_class: None,
 			additional_libs: Vec::new(),

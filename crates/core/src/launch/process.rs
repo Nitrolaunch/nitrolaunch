@@ -7,9 +7,12 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use anyhow::Context;
 use nitro_auth::mc::AccessToken;
+use nitro_sandbox::group::GroupResolveParams;
+use nitro_sandbox::policy::SandboxPolicy;
 use nitro_shared::output::{MessageContents, NitroOutput};
 use nitro_shared::versions::VersionName;
-use nitro_shared::{no_window, translate};
+use nitro_shared::{Side, no_window, translate};
+use tokio::sync::oneshot;
 
 use crate::instance::InstanceKind;
 use crate::io::create_named_pipe;
@@ -20,7 +23,7 @@ use crate::{InstanceHandle, Paths, WrapperCommand};
 use super::LaunchConfiguration;
 
 /// Launch the game process
-pub(crate) fn launch_game_process(
+pub(crate) async fn launch_game_process(
 	mut params: LaunchGameProcessParameters<'_>,
 	o: &mut impl NitroOutput,
 ) -> anyhow::Result<InstanceHandle> {
@@ -56,13 +59,25 @@ pub(crate) fn launch_game_process(
 	};
 
 	// Get the command and output it
-	let mut cmd = get_process_launch_command(proc_params, &stdout, stdin.as_deref())
+	let cmd = get_process_launch_command(proc_params, &stdout, stdin.as_deref())
 		.context("Failed to create process launch command")?;
 
 	output_launch_command(&cmd, params.account_access_token, params.censor_secrets, o)?;
 
 	// Spawn
-	let child = cmd.spawn().context("Failed to spawn child process")?;
+	let classpath = params.classpath.clone();
+	let child = spawn_child(
+		cmd,
+		params.sandbox_policy,
+		params.side.get_side(),
+		params.cwd,
+		params.command,
+		params.paths,
+		&stdout,
+		stdin.as_deref(),
+	)
+	.await
+	.context("Failed to spawn child process")?;
 
 	let stdout_file = File::open(&stdout)?;
 	let stdin_file = if let Some(stdin) = &stdin {
@@ -77,8 +92,67 @@ pub(crate) fn launch_game_process(
 		stdout,
 		stdin_file,
 		stdin,
-		params.classpath,
+		classpath,
 	))
+}
+
+async fn spawn_child(
+	mut command: Command,
+	sandbox_policy: Option<&SandboxPolicy>,
+	side: Side,
+	instance_dir: &Path,
+	java_command: &OsStr,
+	paths: &Paths,
+	stdout: &Path,
+	stdin: Option<&Path>,
+) -> anyhow::Result<Child> {
+	if let Some(policy) = sandbox_policy {
+		let java_installation = Path::new(java_command)
+			.parent()
+			.context("Java bin parent missing")?
+			.parent()
+			.context("Java installation parent missing")?;
+
+		let resolved_policy = nitro_sandbox::resolve(
+			policy,
+			GroupResolveParams {
+				side: side,
+				instance_dir,
+				java_installation,
+				jars_dir: &paths.jars,
+				assets_dir: &paths.assets,
+				libraries_dir: &paths.libraries,
+				natives_dir: &paths.internal.join("natives"),
+				versions_dir: &paths.internal.join("versions"),
+				stdout_file: Some(stdout),
+				stdin_file: stdin,
+			},
+		)?;
+
+		let (tx, rx) = oneshot::channel();
+
+		std::thread::spawn(move || {
+			let result = (move || {
+				nitro_sandbox::apply(resolved_policy).context("Failed to apply sandboxing")?;
+				command.spawn().context("Failed to spawn child process")
+			})();
+
+			let _ = tx.send(result);
+		});
+
+		let result = rx.await.context("Failed to receive child process result");
+
+		// IDK why, but this error handling is necessary to get the error to propagate correctly
+		match result {
+			Ok(Ok(child)) => Ok(child),
+			Ok(Err(e)) => Err(e).context("Sandboxing thread failed"),
+			Err(e) => Err(anyhow::anyhow!(
+				"Failed to receive child process result: {e:?}"
+			)),
+		}
+	} else {
+		command.spawn().context("Failed to spawn child process")
+	}
 }
 
 /// Launch a generic process with the core's config system
@@ -227,6 +301,7 @@ pub(crate) struct LaunchGameProcessParameters<'a> {
 	pub paths: &'a Paths,
 	pub props: LaunchProcessProperties,
 	pub launch_config: &'a LaunchConfiguration,
+	pub sandbox_policy: Option<&'a SandboxPolicy>,
 	pub version: &'a VersionName,
 	pub version_list: &'a [String],
 	pub side: &'a InstanceKind,

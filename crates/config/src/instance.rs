@@ -45,6 +45,9 @@ pub struct InstanceConfig {
 	/// Window configuration
 	#[serde(skip_serializing_if = "DefaultExt::is_default")]
 	pub window: ClientWindowConfig,
+	/// Whether to enable sandboxing
+	#[serde(skip_serializing_if = "DefaultExt::is_default")]
+	pub sandbox: bool,
 
 	// Package config
 	/// Modpack package for this instance
@@ -104,6 +107,7 @@ impl InstanceConfig {
 		self.loader = other.loader.or(self.loader.clone());
 		self.package_stability = other.package_stability.or(self.package_stability);
 		self.launch.merge(other.launch);
+		self.sandbox = other.sandbox || self.sandbox;
 		self.datapack_folder = other.datapack_folder.or(self.datapack_folder.clone());
 		self.packages.extend(other.packages);
 		self.overrides.merge(other.overrides);
