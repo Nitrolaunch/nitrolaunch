@@ -13,6 +13,7 @@ pub fn text_tag(text: &str, theme: &Theme) -> Rect {
 		theme,
 	)
 }
+
 /// Simple string tag with an icon
 pub fn icon_text_tag(ico: &str, text: &str, theme: &Theme) -> Rect {
 	tag(

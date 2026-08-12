@@ -5,7 +5,7 @@ use itertools::Itertools;
 use nitrolaunch::shared::{loaders::Loader, util::open_link};
 
 use crate::{
-	components::input::select::Selected,
+	components::{input::select::Selected, tag::tag},
 	ops::{
 		ConditionalQuery, ToastedMutation,
 		plugins::{
@@ -173,8 +173,11 @@ impl Component for PluginItem {
 		};
 
 		let info = &self.info.0;
+		let is_disabled = !info.enabled && !self.is_remote;
 		let ico = get_plugin_icon(&info.id);
-		let (ico_fg, ico_bg, ico_tip) = if info.is_official {
+		let (ico_fg, ico_bg, ico_tip) = if is_disabled {
+			(theme.disabled, theme.bg, "Disabled")
+		} else if info.is_official {
 			(theme.success, theme.success_bg, "Official")
 		} else {
 			(theme.fg, theme.bg, "Unofficial")
@@ -294,13 +297,24 @@ impl Component for PluginItem {
 			.width(Size::fill())
 			.height(Size::px(48.0))
 			.cont()
+			.cross_align(Alignment::Center)
 			.child(ico)
+			.child(name)
+			.maybe(is_disabled, |this| {
+				this.child(tag(
+					None::<Rect>,
+					Some("Disabled"),
+					theme.disabled,
+					theme.item,
+					theme.item,
+					&theme,
+				))
+			})
 			.child(
-				segment(label().text(name), 1.0)
+				segment(controls, 1.0)
 					.height(Size::fill())
 					.main_align(Alignment::Center),
-			)
-			.child(controls);
+			);
 
 		let description = info.meta.description.clone().unwrap_or_default();
 
@@ -308,12 +322,14 @@ impl Component for PluginItem {
 			.width(Size::fill())
 			.border(theme.border(theme.panel_border))
 			.corner_radius(theme.round)
+			.maybe(is_disabled, |this| this.color(theme.disabled))
 			.child(header)
 			.child(
 				rect()
 					.width(Size::fill())
 					.padding(Gaps::new(0.0, theme.gap2, theme.gap2, theme.gap2))
 					.color(theme.fg2)
+					.maybe(is_disabled, |this| this.color(theme.disabled))
 					.child(description),
 			)
 	}
