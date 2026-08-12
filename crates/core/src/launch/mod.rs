@@ -13,6 +13,7 @@ use std::ops::DerefMut;
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, bail};
+use nitro_sandbox::policy::SandboxPolicy;
 use nitro_shared::java_args::MemoryArg;
 use nitro_shared::output::{MessageContents, NitroOutput};
 use nitro_shared::versions::VersionName;
@@ -96,6 +97,7 @@ pub(crate) async fn launch(
 		paths: params.paths,
 		props,
 		launch_config: params.launch_config,
+		sandbox_policy: params.sandbox_policy,
 		version: params.version,
 		version_list: &params.version_manifest.list,
 		side: params.side,
@@ -104,7 +106,9 @@ pub(crate) async fn launch(
 		pipe_stdin: params.pipe_stdin,
 	};
 
-	launch_game_process(proc_params, o).context("Failed to launch game process")
+	launch_game_process(proc_params, o)
+		.await
+		.context("Failed to launch game process")
 }
 
 /// Container struct for parameters for launching an instance
@@ -118,6 +122,7 @@ pub(crate) struct LaunchParameters<'a> {
 	pub jar_path: &'a Path,
 	pub main_class: &'a str,
 	pub launch_config: &'a LaunchConfiguration,
+	pub sandbox_policy: Option<&'a SandboxPolicy>,
 	pub paths: &'a Paths,
 	pub req_client: &'a reqwest::Client,
 	pub client_meta: &'a ClientMeta,

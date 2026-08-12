@@ -21,6 +21,7 @@ pub use nitro_net as net_crate;
 pub use nitro_parse as parse;
 pub use nitro_pkg as pkg_crate;
 pub use nitro_plugin as plugin_crate;
+pub use nitro_sandbox as sandbox;
 pub use nitro_shared as shared;
 
 /// Installable addons

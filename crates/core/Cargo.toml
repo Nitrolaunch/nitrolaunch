@@ -26,6 +26,7 @@ itertools = { workspace = true }
 libflate = { workspace = true }
 nitro_auth = { workspace = true }
 nitro_net = { workspace = true }
+nitro_sandbox = { workspace = true }
 nitro_shared = { workspace = true }
 reqwest = { workspace = true }
 schemars = { workspace = true, optional = true }
