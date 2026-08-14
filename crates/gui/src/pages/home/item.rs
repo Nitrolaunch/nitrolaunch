@@ -215,9 +215,6 @@ impl Component for InstanceListItem {
 				.position(Position::new_absolute().top(-size / 2.0).right(-size / 2.0))
 				.center()
 				.color(theme.secondary)
-				.border(theme.border(theme.secondary))
-				.background(theme.secondary_bg)
-				.corner_radius(theme.round)
 				.tip(&front_state, &format!("From the {x} plugin"))
 				.child(icon("jigsaw", 16.0))
 		});

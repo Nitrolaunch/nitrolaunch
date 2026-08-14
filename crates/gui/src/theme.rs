@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 use crate::state::{FrontChannel, use_front_state};
 
 /// Theme for the app
+#[allow(dead_code)]
 pub struct Theme {
 	// Base Colors
 	/// Foreground / text color
