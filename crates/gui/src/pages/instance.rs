@@ -169,12 +169,12 @@ impl Component for InstancePage {
 		.child(SelectOption::new(
 			LaunchOption::Launch,
 			"Launch",
-			Some("play"),
+			Some("rocket"),
 		))
 		.child(SelectOption::new(
 			LaunchOption::LaunchOffline,
 			"Launch Offline",
-			Some("play"),
+			Some("rocket"),
 		))
 		.maybe_child(run_state == InstanceRunState::Running, || {
 			SelectOption::new(LaunchOption::Kill, "Kill", Some("stop"))

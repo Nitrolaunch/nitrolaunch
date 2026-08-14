@@ -67,7 +67,7 @@ impl Component for InstanceListItem {
 		let inst_icon = if self.is_add_placeholder {
 			icon("plus", 26.0).into_element()
 		} else if self.info.icon.is_none() {
-			icon("box", 32.0).into_element()
+			icon("box_dot", 32.0).into_element()
 		} else {
 			let inst_icon = get_instance_icon(self.info.icon.as_deref());
 			ImageViewer::new(inst_icon)

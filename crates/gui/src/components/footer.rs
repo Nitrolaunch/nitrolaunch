@@ -360,7 +360,7 @@ impl FooterItem {
 				ty: ConfigKind::Instance,
 				..
 			}) => match run_state {
-				InstanceRunState::Stopped => "play",
+				InstanceRunState::Stopped => "rocket",
 				InstanceRunState::Running => "stop",
 			},
 			Self::InstanceOrTemplate(InstanceItemInfo {
