@@ -32,6 +32,18 @@ fn main() -> anyhow::Result<()> {
 				Subcommand::Version { version } => cleanup_version(&data_dir, &version).await,
 				Subcommand::Addons => cleanup_addons(&data_dir).await,
 				Subcommand::FabricCache => cleanup_fabric_cache(&data_dir).await,
+				Subcommand::Skins => {
+					let dir = data_dir.join("internal/assets/skins");
+					if let Ok(size) = dir_size(&dir) {
+						let num = MemoryNum::from_bytes(size);
+						cprintln!("<s>Removing cached skins ({num})...");
+						tokio::fs::remove_dir_all(dir).await?;
+					} else {
+						println!("No cached skins found.");
+					}
+
+					Ok(())
+				}
 			}
 		})?;
 
@@ -58,6 +70,8 @@ enum Subcommand {
 	Addons,
 	#[command(about = "Remove Fabric mod caches")]
 	FabricCache,
+	#[command(about = "Remove cached skin files")]
+	Skins,
 }
 
 async fn cleanup_version(data_dir: &Path, version: &str) -> anyhow::Result<()> {
