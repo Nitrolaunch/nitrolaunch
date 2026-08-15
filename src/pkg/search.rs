@@ -7,7 +7,7 @@ use std::{
 use dashmap::DashMap;
 use nitro_pkg::{PackageMetaAndProps, PkgRequest, PkgRequestSource};
 use nitro_shared::{
-	output::NitroOutput,
+	output::{MessageContents, NitroOutput},
 	pkg::{ArcPkgReq, PackageSearchParameters},
 };
 use reqwest::Client;
@@ -146,9 +146,10 @@ impl PackageSearchSession {
 			let repo_skip = page * share;
 
 			if let Some(total) = state.total_results
-				&& repo_skip >= total {
-					continue;
-				}
+				&& repo_skip >= total
+			{
+				continue;
+			}
 
 			let mut search = params.clone();
 			search.skip = repo_skip;
@@ -183,7 +184,18 @@ impl PackageSearchSession {
 		let mut results = Vec::new();
 		let mut final_repo_count = 0;
 		while let Some(result) = tasks.join_next().await {
-			let result = result??;
+			let Ok(result) = result else {
+				continue;
+			};
+			let result = match result {
+				Ok(x) => x,
+				Err(e) => {
+					o.display(MessageContents::Error(format!(
+						"Failed to search a repository: {e:?}"
+					)));
+					continue;
+				}
+			};
 			if result.1.total_results > 0 {
 				final_repo_count += 1;
 			}
