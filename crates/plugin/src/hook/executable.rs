@@ -59,9 +59,6 @@ pub(crate) async fn call_executable<H: Hook + Sized>(
 		cmd.env(NITRO_VERSION_ENV, nitro_version);
 	}
 	cmd.env(NITRO_PLUGIN_ENV, "1");
-	if let Some(working_dir) = arg.working_dir {
-		cmd.current_dir(working_dir);
-	}
 	cmd.env(HOOK_VERSION_ENV, H::get_version().to_string());
 	{
 		let lock = arg.persistence.lock().await;
