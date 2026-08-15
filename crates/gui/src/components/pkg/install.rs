@@ -1,5 +1,5 @@
 use nitrolaunch::{
-	config_crate::ConfigKind,
+	config_crate::{ConfigKind, instance::make_valid_instance_id},
 	pkg_crate::{metadata::PackageMetadata, properties::PackageProperties},
 	shared::{
 		pkg::{ArcPkgReq, PackageKind},
@@ -48,6 +48,11 @@ impl Component for PackageInstallModal {
 		let tab = use_state(|| Tab::Instance);
 		let selected_item = use_state::<Option<ConfiguredItem>>(|| None);
 		let new_instance_id = use_state(String::new);
+		let mut new_instance_id2 = new_instance_id.clone();
+		use_side_effect(move || {
+			let new_value = make_valid_instance_id(&*new_instance_id2.read());
+			new_instance_id2.set_if_modified(new_value);
+		});
 
 		let enable = selected_item.read().is_some();
 		let compatability_check = use_query(
