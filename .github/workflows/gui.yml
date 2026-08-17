@@ -108,10 +108,10 @@ jobs:
       - name: Build Flatpak bundle (Linux)
         if: ${{ matrix.os == 'ubuntu-latest' }}
         run: |
-          flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
-          flatpak install -y --noninteractive flathub org.freedesktop.Platform//24.08 org.freedesktop.Sdk//24.08
+          flatpak --user remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+          flatpak --user install -y --noninteractive flathub org.freedesktop.Platform//24.08 org.freedesktop.Sdk//24.08
           rm -rf builddir repo dist/*.flatpak
-          flatpak-builder --repo=repo --force-clean builddir crates/gui/assets/org.nitrolaunch.Nitrolaunch.json
+          flatpak-builder --user --repo=repo --force-clean builddir crates/gui/assets/org.nitrolaunch.Nitrolaunch.json
           flatpak build-bundle repo dist/Nitrolaunch.flatpak org.nitrolaunch.Nitrolaunch
 
       - name: Package with cargo-packager (Windows x64)
