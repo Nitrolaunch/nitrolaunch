@@ -316,7 +316,7 @@ enum Tab {
 impl Tab {
 	fn get_tabs(is_modpack: bool) -> &'static [Tab] {
 		if is_modpack {
-			&[Self::Instance, Self::Template, Self::ModpackInstance]
+			&[Self::ModpackInstance, Self::Instance, Self::Template]
 		} else {
 			&[Self::Instance, Self::Template]
 		}
