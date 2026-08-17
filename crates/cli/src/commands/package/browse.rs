@@ -67,7 +67,7 @@ pub async fn run(
 	instance: Option<String>,
 	template: Option<String>,
 ) -> anyhow::Result<()> {
-	data.ensure_config(true).await?;
+	data.ensure_config(false).await?;
 
 	let repos = data
 		.config
