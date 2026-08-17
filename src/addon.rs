@@ -43,7 +43,7 @@ impl AddonExt for PackageAddon {
 	}
 
 	fn get_path(&self, paths: &Paths, instance_id: &str) -> PathBuf {
-		if let Some(hash) = &self.hashes.sha512 {
+		if let Some(hash) = &self.hashes.sha256 {
 			return get_sha256_addon_path(&paths.addons, hash);
 		}
 
