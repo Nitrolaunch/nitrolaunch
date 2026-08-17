@@ -61,7 +61,9 @@ jobs:
             libgl1-mesa-dev \
             libwayland-dev \
             libwayland-egl1 \
-            libgles2-mesa-dev
+            libgles2-mesa-dev \
+            flatpak \
+            flatpak-builder
 
       - if: ${{ matrix.os == 'windows-2022' }}
         name: Install MSVC ARM64 Build Tools
@@ -103,6 +105,15 @@ jobs:
             --out-dir dist \
             --formats deb,appimage
 
+      - name: Build Flatpak bundle (Linux)
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+        run: |
+          flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+          flatpak install -y --noninteractive flathub org.freedesktop.Platform//24.08 org.freedesktop.Sdk//24.08
+          rm -rf builddir repo dist/*.flatpak
+          flatpak-builder --repo=repo --force-clean builddir crates/gui/assets/org.nitrolaunch.Nitrolaunch.json
+          flatpak build-bundle repo dist/Nitrolaunch.flatpak org.nitrolaunch.Nitrolaunch
+
       - name: Package with cargo-packager (Windows x64)
         if: ${{ matrix.os == 'windows-2022' }}
         shell: powershell
@@ -136,4 +147,5 @@ jobs:
           name: ${{ matrix.package }}
           if-no-files-found: error
           path: |
+            dist/*.flatpak
             crates/gui/dist/**
