@@ -34,9 +34,7 @@
       "build-commands": [
         "BIN=$(find target -type f -name nitro_gui 2>/dev/null | head -n 1); if [ -z \"$BIN\" ]; then echo 'nitro_gui binary not found in target/ (tried release/fast_release/debug)'; exit 1; fi; install -Dm755 \"$BIN\" /app/bin/nitro_gui",
         "install -Dm644 crates/gui/assets/Nitrolaunch.desktop /app/share/applications/org.nitrolaunch.Nitrolaunch.desktop",
-        "install -Dm644 crates/gui/assets/icon_1024x1024.png /app/share/icons/hicolor/1024x1024/apps/org.nitrolaunch.Nitrolaunch.png",
-        "install -Dm644 crates/gui/assets/icon_1024x1024.png /app/share/icons/hicolor/128x128/apps/org.nitrolaunch.Nitrolaunch.png",
-        "install -Dm644 crates/gui/assets/icon_1024x1024.png /app/share/icons/hicolor/256x256/apps/org.nitrolaunch.Nitrolaunch.png"
+        "install -Dm644 crates/gui/assets/icon_128x128.png /app/share/icons/hicolor/128x128/apps/org.nitrolaunch.Nitrolaunch.png"
       ],
       "sources": [
         {
