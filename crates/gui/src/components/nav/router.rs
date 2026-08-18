@@ -1,5 +1,9 @@
 use crate::{
-	pages::{home::HomePage, instance::InstancePage, package::browse::BrowsePackagesPage},
+	pages::{
+		home::HomePage,
+		instance::InstancePage,
+		package::{browse::BrowsePackagesPage, view::PackageView},
+	},
 	prelude::*,
 	routing::Page,
 };
@@ -22,6 +26,11 @@ impl Component for Router {
 			Page::Home => HomePage.into_element(),
 			Page::Packages(browse_filters) => BrowsePackagesPage {
 				filters: browse_filters.clone(),
+			}
+			.into_element(),
+			Page::Package(req) => PackageView {
+				req: req.clone(),
+				fullscreen: true,
 			}
 			.into_element(),
 			Page::Instance(id) => InstancePage { id: id.clone() }.into_element(),

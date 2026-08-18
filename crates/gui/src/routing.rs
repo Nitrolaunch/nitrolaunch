@@ -1,5 +1,7 @@
 use std::collections::VecDeque;
 
+use nitrolaunch::shared::pkg::ArcPkgReq;
+
 use crate::pages::package::browse::BrowseFilters;
 
 /// Manages route and history
@@ -61,6 +63,7 @@ impl Navigator {
 pub enum Page {
 	Home,
 	Packages(Option<BrowseFilters>),
+	Package(ArcPkgReq),
 	Instance(String),
 }
 
@@ -68,7 +71,7 @@ impl Page {
 	pub fn get_category(&self) -> PageCategory {
 		match self {
 			Self::Home | Self::Instance(..) => PageCategory::Home,
-			Self::Packages(..) => PageCategory::Packages,
+			Self::Packages(..) | Self::Package(..) => PageCategory::Packages,
 		}
 	}
 }

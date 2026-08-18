@@ -12,6 +12,7 @@ use crate::{
 	},
 	ops::packages::FetchPackageDetails,
 	prelude::*,
+	routing::Page,
 	state::FrontState,
 	util::{PtrEq, Shared},
 };
@@ -19,6 +20,7 @@ use crate::{
 #[derive(PartialEq)]
 pub struct PackageView {
 	pub req: ArcPkgReq,
+	pub fullscreen: bool,
 }
 
 impl Component for PackageView {
@@ -34,7 +36,9 @@ impl Component for PackageView {
 				"Failed to fetch package",
 			),
 		));
+
 		let tab = use_state(|| Tab::Description);
+		let icon_is_hovered = use_state(|| false);
 
 		let details = details_query.read();
 		let details = details.state();
@@ -52,10 +56,31 @@ impl Component for PackageView {
 				.width(Size::px(56.0))
 				.height(Size::px(56.0))
 				.corner_radius(theme.round2)
+				.maybe(*icon_is_hovered.read() && !self.fullscreen, |this| {
+					this.child(
+						rect()
+							.expanded()
+							.position(Position::new_absolute())
+							.center()
+							.child(icon("fullscreen", 24.0).color(theme.bg)),
+					)
+				})
 				.into_element()
 		} else {
 			default_icon
 		};
+
+		let fullscreen = self.fullscreen;
+		let front_state2 = front_state.clone();
+		let req = self.req.clone();
+		let ico = rect()
+			.maybe(!self.fullscreen, |this| this.hover(icon_is_hovered))
+			.on_press(move |_| {
+				if !fullscreen {
+					front_state2.write().navigate(Page::Package(req.clone()));
+				}
+			})
+			.child(ico);
 
 		let name = if is_loading {
 			"Loading".into()

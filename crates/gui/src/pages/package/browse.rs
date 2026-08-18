@@ -175,6 +175,7 @@ impl Component for BrowsePackagesPage {
 			.maybe(selected_pkg.read().is_some(), |this| {
 				this.child(PackageView {
 					req: selected_pkg.peek().cloned().unwrap(),
+					fullscreen: false,
 				})
 			})
 			.maybe(selected_pkg.read().is_none(), |this| {
@@ -243,23 +244,24 @@ impl PackageSearchState {
 
 			// Handle what package types and categories are available based on the selected repository
 			if let Some(repo) = &*state2.repo.peek()
-				&& let Some(repo) = back_state.repos().get(repo) {
-					if !repo.package_types.is_empty()
-						&& !repo.package_types.contains(&*state2.ty.peek())
-					{
-						state2.ty.set(repo.package_types[0]);
-					}
-
-					if !repo.package_categories.is_empty()
-						&& !state2
-							.categories
-							.peek()
-							.iter()
-							.all(|x| repo.package_categories.contains(x))
-					{
-						state2.categories.set(Vec::new());
-					}
+				&& let Some(repo) = back_state.repos().get(repo)
+			{
+				if !repo.package_types.is_empty()
+					&& !repo.package_types.contains(&*state2.ty.peek())
+				{
+					state2.ty.set(repo.package_types[0]);
 				}
+
+				if !repo.package_categories.is_empty()
+					&& !state2
+						.categories
+						.peek()
+						.iter()
+						.all(|x| repo.package_categories.contains(x))
+				{
+					state2.categories.set(Vec::new());
+				}
+			}
 		});
 
 		out
