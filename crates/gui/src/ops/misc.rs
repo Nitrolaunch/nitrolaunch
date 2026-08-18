@@ -3,7 +3,10 @@ use std::sync::Arc;
 use anyhow::Context;
 use nitrolaunch::{
 	io::logging::{get_log_file_path, get_log_files},
-	shared::id::InstanceID,
+	shared::{
+		id::InstanceID,
+		output::{MessageContents, NitroOutput},
+	},
 };
 
 use crate::{ops::task::Task, prelude::*, simple_mutation, simple_query};
@@ -74,8 +77,11 @@ simple_mutation!(
 				}
 			};
 
+			o.finish_task();
 			tokio::task::spawn_blocking(move || {
-				showfile::show_path_in_file_manager(dir);
+				if let Err(e) = open::that(dir) {
+					o.debug(MessageContents::Error(format!("Failed to show dir: {e:?}")));
+				}
 			});
 
 			Ok(())

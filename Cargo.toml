@@ -140,6 +140,7 @@ nitro_plugin = { path = "crates/plugin", version = "0.31.0", default-features = 
 ] }
 nitro_shared = { path = "crates/shared", version = "0.31.0" }
 oauth2 = "4.4.2"
+open = "5.4.1"
 pin-project-lite = "0.2.16"
 rand = "0.8.5"
 rand_chacha = "0.3.1"
@@ -164,7 +165,6 @@ schemars = { version = "0.8.20" }
 serde = { version = "1.0.202", features = ["derive", "rc"] }
 serde_json = "1.0.117"
 sha2 = "0.10.8"
-showfile = "0.1.1"
 simd-json = { version = "0.13.10", features = ["value-no-dup-keys"] }
 sysinfo = { version = "0.34.2", default-features = false, features = ["system"] }
 sys-locale = "0.3.1"
