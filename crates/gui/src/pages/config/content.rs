@@ -40,8 +40,8 @@ use crate::{
 	pages::{config::ConfigState, package::browse::BrowseFilters},
 	prelude::*,
 	routing::Page,
-	state::use_launcher_data,
-	util::{PtrEq, assets::get_package_kind_icon},
+	state::{FrontState, use_launcher_data},
+	util::{PtrEq, Shared, assets::get_package_kind_icon},
 };
 
 #[derive(PartialEq)]
@@ -625,17 +625,13 @@ impl Component for ContentItemElem {
 						.locked_addons
 						.0
 						.iter()
-						.map(|x| SubItem::from_addon(x).render(&theme)),
+						.map(|x| SubItem::from_addon(x).render(&theme, &front_state)),
 				)
 			})
 			.maybe(self.item.is_modpack(), |this| {
-				this.children(
-					self.item
-						.locked_packages
-						.0
-						.iter()
-						.map(|x| SubItem::from_pkg(x, &self.packages, &theme).render(&theme)),
-				)
+				this.children(self.item.locked_packages.0.iter().map(|x| {
+					SubItem::from_pkg(x, &self.packages, &theme).render(&theme, &front_state)
+				}))
 			});
 
 		rect()
@@ -729,6 +725,7 @@ enum ContentItemType {
 struct SubItem {
 	image: Element,
 	name: String,
+	req: Option<ArcPkgReq>,
 }
 
 impl SubItem {
@@ -742,6 +739,7 @@ impl SubItem {
 		Self {
 			image: ico.into_element(),
 			name: addon.file_name.clone(),
+			req: None,
 		}
 	}
 
@@ -769,10 +767,14 @@ impl SubItem {
 			.and_then(|x| x.meta.name.clone())
 			.unwrap_or_else(|| req.to_string_no_version());
 
-		Self { image: ico, name }
+		Self {
+			image: ico,
+			name,
+			req: Some(req.clone()),
+		}
 	}
 
-	fn render(self, theme: &Theme) -> impl IntoElement {
+	fn render(self, theme: &Theme, front_state: &Shared<FrontState>) -> impl IntoElement {
 		let height = Self::height();
 
 		let ico = rect()
@@ -787,11 +789,20 @@ impl SubItem {
 			.main_align(Alignment::Center)
 			.child(self.name);
 
+		let front_state = front_state.clone();
+		let req = self.req.clone();
 		rect()
 			.width(Size::fill())
 			.height(Size::px(height))
 			.cont()
 			.margin(Gaps::new(0.0, 0.0, 0.0, theme.gap2))
+			.maybe(self.req.is_some(), |this| {
+				this.clickable().on_press(move |_| {
+					front_state
+						.write()
+						.navigate(Page::Package(req.clone().unwrap()));
+				})
+			})
 			.child(ico)
 			.child(name)
 	}
