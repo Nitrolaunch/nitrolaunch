@@ -45,7 +45,15 @@ impl Component for PackageInstallModal {
 		));
 		let items_query = use_query(FetchItems::new(back_state.clone()));
 
-		let tab = use_state(|| Tab::Instance);
+		let is_modpack = self.props.0.kinds.contains(&PackageKind::Modpack);
+
+		let tab = use_state(|| {
+			if is_modpack {
+				Tab::ModpackInstance
+			} else {
+				Tab::Instance
+			}
+		});
 		let selected_item = use_state::<Option<ConfiguredItem>>(|| None);
 		let new_instance_id = use_state(String::new);
 		let mut new_instance_id2 = new_instance_id.clone();
@@ -79,7 +87,6 @@ impl Component for PackageInstallModal {
 		});
 
 		let name = self.meta.0.name.clone().unwrap_or(self.req.to_string());
-		let is_modpack = self.props.0.kinds.contains(&PackageKind::Modpack);
 
 		let tabs = TopTabs::from_state(tab).children(
 			Tab::get_tabs(is_modpack)
