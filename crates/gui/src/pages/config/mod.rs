@@ -188,7 +188,7 @@ impl Component for ConfigModal {
 			.width(Size::flex(1.0))
 			.border(border_right(theme.border, theme.panel_border))
 			.child(
-				SideTabs::new(tab)
+				SideTabs::from_state(tab)
 					.child(SelectOption::new(Tab::General, "General", Some("gear")))
 					.child(SelectOption::new(
 						Tab::Content,

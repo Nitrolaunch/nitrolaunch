@@ -81,7 +81,7 @@ impl Component for PackageInstallModal {
 		let name = self.meta.0.name.clone().unwrap_or(self.req.to_string());
 		let is_modpack = self.props.0.kinds.contains(&PackageKind::Modpack);
 
-		let tabs = TopTabs::new(tab).children(
+		let tabs = TopTabs::from_state(tab).children(
 			Tab::get_tabs(is_modpack)
 				.iter()
 				.map(|x| SelectOption::new(x.clone(), x.name(is_modpack), Some(x.icon()))),

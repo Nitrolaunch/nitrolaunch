@@ -21,14 +21,6 @@ impl Component for NavBar {
 		let front_state = use_front_state();
 		front_state.read().subscribe(FrontChannel::Route);
 		let theme = use_theme();
-		let selected_category = use_reactive(&front_state.read().route().get_category());
-		let selected_category2 = selected_category;
-		let front_state2 = front_state.clone();
-		use_side_effect(move || {
-			front_state2
-				.write()
-				.navigate(selected_category2.read().get_page());
-		});
 
 		// let mut show_sidebar = self.show_sidebar.clone();
 		// let menu_button = icon_button("menu", &theme).on_press(move |_| show_sidebar.toggle());
@@ -71,13 +63,19 @@ impl Component for NavBar {
 			.child(rect().margin(3.0).child(back_button))
 			.child(rect().margin(3.0).child(forward_button));
 
-		let buttons = TopTabs::new(selected_category)
-			.child(SelectOption::new(PageCategory::Home, "Home", Some("home")))
-			.child(SelectOption::new(
-				PageCategory::Packages,
-				"Packages",
-				Some("honeycomb"),
-			));
+		let front_state2 = front_state.clone();
+		let buttons = TopTabs::new(
+			front_state.read().route().get_category(),
+			move |category: PageCategory| {
+				front_state2.write().navigate(category.get_page());
+			},
+		)
+		.child(SelectOption::new(PageCategory::Home, "Home", Some("home")))
+		.child(SelectOption::new(
+			PageCategory::Packages,
+			"Packages",
+			Some("honeycomb"),
+		));
 		let center = rect()
 			.height(Size::fill())
 			.width(Size::flex(1.0))

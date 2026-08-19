@@ -134,7 +134,7 @@ impl Component for SettingsModal {
 		let show_directory2 = show_directory;
 		let show_directory3 = show_directory;
 
-		let tabs = SideTabs::new(tab)
+		let tabs = SideTabs::from_state(tab)
 			.child(SelectOption::new(Tab::General, "General", Some("gear")))
 			.child(SelectOption::new(
 				Tab::Accounts,

@@ -243,7 +243,11 @@ impl Component for InstancePage {
 		)
 		.options_width(160.0)
 		.align_options_right()
-		.custom_header(SelectOption::new(MoreOption::More, "More", Some("ellipsis")))
+		.custom_header(SelectOption::new(
+			MoreOption::More,
+			"More",
+			Some("ellipsis"),
+		))
 		.header_width(Size::auto())
 		.hide_arrow()
 		.panel_colorway()
@@ -288,7 +292,7 @@ impl Component for InstancePage {
 			)
 			.child(controls);
 
-		let tabs = SideTabs::new(tab)
+		let tabs = SideTabs::from_state(tab)
 			.child(SelectOption::new(Tab::Console, "Console", Some("text")))
 			.child(SelectOption::new(
 				Tab::Content,

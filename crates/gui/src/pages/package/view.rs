@@ -241,7 +241,7 @@ impl Component for PackageView {
 			.height(Size::flex(1.0))
 			.child(contents);
 
-		let tabs = TopTabs::new(tab)
+		let tabs = TopTabs::from_state(tab)
 			.child(SelectOption::new(
 				Tab::Description,
 				"Description",

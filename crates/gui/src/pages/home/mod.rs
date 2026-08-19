@@ -186,7 +186,7 @@ impl Component for HomePage {
 		))
 		.custom_buttons(add_buttons, AddOption::Custom);
 
-		let tabs = TopTabs::new(tab)
+		let tabs = TopTabs::from_state(tab)
 			.child(SelectOption::new(
 				Tab::Instances,
 				"Instances",
@@ -214,7 +214,7 @@ impl Component for HomePage {
 			.center()
 			.child(search_bar);
 
-		let filters = TopTabs::new(filter)
+		let filters = TopTabs::from_state(filter)
 			.child(SelectOption::new(None, "All", Some("asterisk")))
 			.child(SelectOption::new(
 				Some(Side::Client),

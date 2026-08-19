@@ -3,15 +3,26 @@ use crate::prelude::*;
 #[derive(PartialEq)]
 pub struct SideTabs<T: PartialEq + Clone + 'static> {
 	tabs: Vec<SelectOption<T>>,
-	selected: State<T>,
+	selected: T,
+	on_select: EventHandler<T>,
 }
 
 impl<T: PartialEq + Clone + 'static> SideTabs<T> {
-	pub fn new(selected: State<T>) -> Self {
+	pub fn new(selected: T, on_select: impl Into<EventHandler<T>>) -> Self {
 		Self {
 			tabs: Vec::new(),
 			selected,
+			on_select: on_select.into(),
 		}
+	}
+
+	pub fn from_state(state: State<T>) -> Self
+	where
+		T: 'static,
+	{
+		Self::new(state.read().clone(), move |selected| {
+			state.clone().set(selected);
+		})
 	}
 
 	pub fn child(mut self, child: SelectOption<T>) -> Self {
@@ -31,9 +42,9 @@ impl<T: PartialEq + Clone + 'static> Component for SideTabs<T> {
 
 		let tabs = self.tabs.iter().map(|tab| {
 			Tab {
-				is_selected: *self.selected.read() == tab.id,
+				is_selected: self.selected == tab.id,
 				option: tab.clone(),
-				on_select: self.selected.setter(),
+				on_select: self.on_select.clone(),
 				horizontal: false,
 			}
 			.into_element()
@@ -56,15 +67,26 @@ impl<T: PartialEq + Clone + 'static> Component for SideTabs<T> {
 #[derive(PartialEq)]
 pub struct TopTabs<T: PartialEq + Clone + 'static> {
 	tabs: Vec<SelectOption<T>>,
-	selected: State<T>,
+	selected: T,
+	on_select: EventHandler<T>,
 }
 
 impl<T: PartialEq + Clone + 'static> TopTabs<T> {
-	pub fn new(selected: State<T>) -> Self {
+	pub fn new(selected: T, on_select: impl Into<EventHandler<T>>) -> Self {
 		Self {
 			tabs: Vec::new(),
 			selected,
+			on_select: on_select.into(),
 		}
+	}
+
+	pub fn from_state(state: State<T>) -> Self
+	where
+		T: 'static,
+	{
+		Self::new(state.read().clone(), move |selected| {
+			state.clone().set(selected);
+		})
 	}
 
 	pub fn child(mut self, child: SelectOption<T>) -> Self {
@@ -84,9 +106,9 @@ impl<T: PartialEq + Clone + 'static> Component for TopTabs<T> {
 
 		let tabs = self.tabs.iter().map(|tab| {
 			Tab {
-				is_selected: *self.selected.read() == tab.id,
+				is_selected: self.selected == tab.id,
 				option: tab.clone(),
-				on_select: self.selected.setter(),
+				on_select: self.on_select.clone(),
 				horizontal: true,
 			}
 			.into_element()
