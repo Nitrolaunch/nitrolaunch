@@ -471,10 +471,16 @@ impl Component for ContentItemElem {
 		let config_state2 = self.config_state.clone();
 		let item2 = self.item.clone();
 		let on_edit = self.on_edit.clone();
+		let front_state2 = front_state.clone();
 		let more_dropdown = Dropdown::new(
 			Selected::Single(ItemMoreDropdown::More),
 			Rc::new(move |selected| match selected.single() {
 				ItemMoreDropdown::More => {}
+				ItemMoreDropdown::Info => {
+					if let Some(req) = item2.req() {
+						front_state2.write().navigate(Page::Package(req.clone()));
+					}
+				}
 				ItemMoreDropdown::Remove => match &item2.ty {
 					ContentItemType::Modpack { .. } | ContentItemType::Addon => {}
 					ContentItemType::Package { req } => {
@@ -495,11 +501,13 @@ impl Component for ContentItemElem {
 		.hide_arrow()
 		.options_width(180.0)
 		.options_position(Position::new_absolute().right(header_size + theme.gap))
-		.child(SelectOption::new(
-			ItemMoreDropdown::Remove,
-			"Remove",
-			Some("trash"),
-		));
+		.maybe_child(self.item.is_package() || self.item.is_modpack(), || {
+			SelectOption::new(ItemMoreDropdown::Info, "Info", Some("popout"))
+		})
+		.maybe_child(
+			self.item.is_package() && self.item.is_configured && !self.item.is_derived,
+			|| SelectOption::new(ItemMoreDropdown::Remove, "Remove", Some("trash")),
+		);
 
 		let mut badges = Vec::new();
 
@@ -546,10 +554,6 @@ impl Component for ContentItemElem {
 			);
 		}
 
-		if self.item.is_package() && self.item.is_configured && !self.item.is_derived {
-			badges.push(more_dropdown.into_element());
-		}
-
 		if self.item.is_modpack()
 			&& self.config_state.ty == ConfigKind::Instance
 			&& !self.config_state.is_new
@@ -569,6 +573,8 @@ impl Component for ContentItemElem {
 				.child(update_button);
 			badges.push(update_button.into_element());
 		}
+
+		badges.push(more_dropdown.into_element());
 
 		let header_height = Self::base_height(self.item.is_modpack());
 		let open_toggle = self.open_toggle.clone();
@@ -651,6 +657,7 @@ impl Component for ContentItemElem {
 #[derive(PartialEq, Clone)]
 enum ItemMoreDropdown {
 	More,
+	Info,
 	Remove,
 }
 
