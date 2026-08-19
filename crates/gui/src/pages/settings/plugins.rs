@@ -251,6 +251,9 @@ impl Component for PluginItem {
 						let _ = open_link(doc);
 					}
 				}
+				MoreDropdown::Update => {
+					install_mutation.0.mutate((id.clone(), None));
+				}
 				MoreDropdown::Enable => {
 					enable_mutation.0.mutate(id.clone());
 				}
@@ -268,6 +271,9 @@ impl Component for PluginItem {
 		.options_width(180.0)
 		.maybe_child(self.info.0.meta.documentation.is_some(), || {
 			SelectOption::new(MoreDropdown::Documentation, "Documentation", Some("book"))
+		})
+		.maybe_child(!self.is_remote, || {
+			SelectOption::new(MoreDropdown::Update, "Update", Some("cycle"))
 		})
 		.maybe_child(!self.is_remote && !info.enabled, || {
 			SelectOption::new(MoreDropdown::Enable, "Enable", Some("check"))
@@ -339,6 +345,7 @@ impl Component for PluginItem {
 enum MoreDropdown {
 	More,
 	Documentation,
+	Update,
 	Enable,
 	Disable,
 	Uninstall,
