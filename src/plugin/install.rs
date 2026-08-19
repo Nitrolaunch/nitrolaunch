@@ -43,7 +43,7 @@ pub async fn get_verified_plugins(
 
 	if !offline
 		&& let Ok(remote_list) = download::json::<HashMap<String, VerifiedPlugin>>(
-			"https://github.com/Nitrolaunch/nitrolaunch/blob/main/src/plugin/verified_plugins.json",
+			"https://raw.githubusercontent.com/Nitrolaunch/nitrolaunch/main/src/plugin/verified_plugins.json",
 			client,
 		)
 		.await
