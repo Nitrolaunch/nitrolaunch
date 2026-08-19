@@ -519,10 +519,7 @@ impl<T: PartialEq + Clone + 'static> Component for Dropdown<T> {
 			.into_element()
 		};
 
-		let options_width = self
-			.options_width
-			.map(Size::px)
-			.unwrap_or_else(Size::fill);
+		let options_width = self.options_width.map(Size::px).unwrap_or_else(Size::fill);
 
 		let options_position = if let Some(position) = &self.options_position {
 			position.clone()
@@ -547,9 +544,10 @@ impl<T: PartialEq + Clone + 'static> Component for Dropdown<T> {
 			})
 			.position(options_position)
 			.layer(Layer::Overlay)
-			.panel_colorway(&theme, false, false)
-			.corner_radius(theme.round)
 			.padding(theme.gap)
+			.corner_radius(theme.round)
+			.panel_colorway(&theme, false, false)
+			.shadow(Shadow::new().x(2.0).y(2.0).blur(8.0).color(Color::BLACK))
 			.on_pointer_leave(move |_| {
 				is_open.set(false);
 			})
