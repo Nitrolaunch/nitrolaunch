@@ -323,6 +323,7 @@ pub mod conditions {
 		/// x86_64 architecture
 		X86_64,
 		/// ARM architecture
+		#[serde(alias = "aarch64")]
 		Arm,
 	}
 
