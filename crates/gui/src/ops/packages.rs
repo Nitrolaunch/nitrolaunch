@@ -377,10 +377,11 @@ impl MutationCapability for InstallPackage {
 		let back_state = self.back_state.clone();
 		let keys = keys.clone();
 
-		query_spawn(back_state.0.clone(), async move {
+		let task = async move {
 			let config = back_state.config().await?;
 			let mut raw_config = back_state.raw_config().await?;
 			let mut o = back_state.output();
+			o.set_task(Task::InstallPackage);
 
 			let modification = match keys.1 {
 				PackageInstallLocation::Instance(instance_id) => {
@@ -447,8 +448,6 @@ impl MutationCapability for InstallPackage {
 					ConfigModification::UpdateTemplate(template_id.clone(), template)
 				}
 				PackageInstallLocation::NewInstanceModpack(instance_id) => {
-					o.set_task(Task::InstallModpack);
-
 					let core = config
 						.get_core(
 							None,
@@ -497,7 +496,11 @@ impl MutationCapability for InstallPackage {
 			back_state.invalidate(BackDependency::Items);
 
 			Ok(())
-		})
+		};
+
+		self.back_state
+			.register_task(Task::InstallPackage, tokio::spawn(task));
+		async { Ok(()) }
 	}
 }
 

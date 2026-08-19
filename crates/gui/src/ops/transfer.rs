@@ -15,9 +15,7 @@ use nitrolaunch::{
 };
 
 use crate::{
-	ops::{instance::FetchItems, task::Task},
-	prelude::*,
-	simple_mutation, simple_query,
+	dependency::BackDependency, ops::task::Task, prelude::*, simple_mutation, simple_query,
 };
 
 simple_query!(
@@ -40,7 +38,6 @@ simple_query!(
 	}
 );
 
-#[rustfmt::skip]
 simple_mutation!(
 	name = ImportInstance,
 	ok = (),
@@ -55,9 +52,9 @@ simple_mutation!(
 			keys.side,
 		);
 
-		query_spawn(back_state.0.clone(), async move {
+		let task = async move {
 			let mut o = back_state.output();
-            o.set_task(Task::ImportInstance);
+			o.set_task(Task::ImportInstance);
 
 			let formats = load_formats(&back_state.plugins, &back_state.paths, &mut o).await?;
 
@@ -83,19 +80,17 @@ simple_mutation!(
 			)
 			.await?;
 
+			back_state.invalidate(BackDependency::Items);
+
 			Ok(())
-		})
-	}
-	fn on_settled(
-		&self,
-		_keys: &Self::Keys,
-		_result: &Result<Self::Ok, Self::Err>,
-	) -> impl Future<Output = ()> {
-		invalidate_all::<FetchItems>()
+		};
+
+		self.back_state
+			.register_task(Task::ImportInstance, tokio::spawn(task));
+		async { Ok(()) }
 	}
 );
 
-#[rustfmt::skip]
 simple_mutation!(
 	name = MigrateInstances,
 	ok = (),
@@ -105,7 +100,7 @@ simple_mutation!(
 		let back_state = self.back_state.clone();
 		let (format, link, instances) = (keys.format.clone(), keys.link, keys.instances.clone());
 
-		query_spawn(back_state.0.clone(), async move {
+		let task = async move {
 			let mut o = back_state.output();
 			o.set_task(Task::MigrateInstances);
 
@@ -138,16 +133,14 @@ simple_mutation!(
 			)
 			.await?;
 
+			back_state.invalidate(BackDependency::Items);
+
 			Ok(())
-		})
-	}
-	fn on_settled(
-		&self,
-		_keys: &Self::Keys,
-		_result: &Result<Self::Ok, Self::Err>,
-	) -> impl Future<Output = ()>
-	{
-		invalidate_all::<FetchItems>()
+		};
+
+		self.back_state
+			.register_task(Task::MigrateInstances, tokio::spawn(task));
+		async { Ok(()) }
 	}
 );
 
@@ -200,7 +193,7 @@ simple_mutation!(
 		let back_state = self.back_state.clone();
 		let (id, format, path) = (keys.id.clone(), keys.format.clone(), keys.path.clone());
 
-		query_spawn(back_state.0.clone(), async move {
+		let task = async move {
 			let config = back_state.config().await?;
 			let mut o = back_state.output();
 			o.set_task(Task::ExportInstance);
@@ -226,7 +219,11 @@ simple_mutation!(
 				.await?;
 
 			Ok(())
-		})
+		};
+
+		self.back_state
+			.register_task(Task::ExportInstance, tokio::spawn(task));
+		async { Ok(()) }
 	}
 );
 
