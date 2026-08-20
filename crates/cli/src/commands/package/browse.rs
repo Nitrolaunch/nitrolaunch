@@ -43,7 +43,7 @@ use ratatui::{
 	symbols,
 	text::{Line, Span},
 	widgets::{
-		Block, Borders, Clear, List, ListItem, ListState, Paragraph, StatefulWidget, Widget,
+		Block, Borders, Clear, List, ListItem, ListState, Paragraph, StatefulWidget, Widget, Wrap,
 	},
 };
 use ratatui_image::{Image, Resize, picker::Picker};
@@ -1298,7 +1298,9 @@ impl<'a> Widget for PackageInfoWidget<'a> {
 					let scroll_height = scroll_height.saturating_sub(visible_lines);
 					*self.scroll_height = scroll_height;
 
-					let markdown = Paragraph::new(text).scroll((self.state.preview_scroll, 0));
+					let markdown = Paragraph::new(text)
+						.scroll((self.state.preview_scroll, 0))
+						.wrap(Wrap { trim: false });
 					markdown.render(body_pane, buf);
 				}
 			}
