@@ -85,7 +85,7 @@ impl Component for GeneralSettings {
 			.tip(&front_state, "Changes the scale of the entire launcher");
 
 		let out = rect()
-			.padding(theme.gap2)
+			.padding(theme.gap3)
 			.child(base_themes)
 			.child(overlay_themes)
 			.child(zoom);
