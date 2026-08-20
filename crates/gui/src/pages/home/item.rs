@@ -73,6 +73,7 @@ impl Component for InstanceListItem {
 			ImageViewer::new(inst_icon)
 				.width(Size::percent(60.0))
 				.height(Size::percent(60.0))
+				.corner_radius(theme.round)
 				.into_element()
 		};
 
