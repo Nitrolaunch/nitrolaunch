@@ -123,7 +123,7 @@ simple_mutation!(
 		let back_state = self.back_state.clone();
 		let (id, version) = keys.clone();
 
-		query_spawn(back_state.0.clone(), async move {
+		let task = async move {
 			let mut o = back_state.output();
 			o.set_task(Task::InstallPlugin);
 
@@ -136,7 +136,11 @@ simple_mutation!(
 				.context("Failed to install plugin")?;
 
 			Ok(())
-		})
+		};
+
+		self.back_state
+			.register_task(Task::InstallPlugin, tokio::spawn(task));
+		async { Ok(()) }
 	}
 
 	fn on_settled(
