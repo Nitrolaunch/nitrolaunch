@@ -107,6 +107,7 @@ impl Component for SettingsModal {
 				let mut data = (*original_data).clone();
 				let og_theme = data.base_theme.clone();
 				let og_overlays = data.overlay_themes.clone();
+				let og_zoom = data.zoom;
 				if settings_state3.apply(&mut prefs, &mut data).is_err() {
 					return false;
 				};
@@ -121,6 +122,9 @@ impl Component for SettingsModal {
 
 				if og_theme != data.base_theme || og_overlays != data.overlay_themes {
 					front_state.write().invalidate(FrontChannel::ThemeConfig);
+				}
+				if og_zoom != data.zoom {
+					front_state.write().invalidate(FrontChannel::Zoom);
 				}
 
 				front_state.write().invalidate(FrontChannel::Data);
@@ -230,6 +234,7 @@ struct SettingsState {
 	language: State<Language>,
 	base_theme: State<String>,
 	overlay_themes: State<Vec<String>>,
+	zoom: State<f64>,
 }
 
 impl SettingsState {
@@ -240,12 +245,14 @@ impl SettingsState {
 			language: use_state(Language::default),
 			base_theme: use_state(String::new),
 			overlay_themes: use_state(Vec::new),
+			zoom: use_state(|| 1.0),
 		};
 
 		use_side_effect(move || {
 			out.language.read();
 			out.base_theme.read();
 			out.overlay_themes.read();
+			out.zoom.read();
 
 			out.is_dirty.clone().set(true);
 		});
@@ -258,6 +265,7 @@ impl SettingsState {
 		self.base_theme
 			.set_if_modified(data.base_theme.unwrap_or("dark".into()));
 		self.overlay_themes.set_if_modified(data.overlay_themes);
+		self.zoom.set_if_modified(data.zoom);
 
 		self.is_dirty.set_if_modified(false);
 	}
@@ -271,6 +279,7 @@ impl SettingsState {
 
 		data.base_theme = Some(self.base_theme.read().clone());
 		data.overlay_themes = self.overlay_themes.read().clone();
+		data.zoom = *self.zoom.read();
 
 		Ok(())
 	}

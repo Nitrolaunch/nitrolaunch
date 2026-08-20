@@ -58,12 +58,20 @@ impl Component for Global {
 				if new_theme == "light" {
 					theme = theme.merge(ThemeDeser::light());
 				} else if let Some(data) = available_themes.iter().find(|x| x.id == new_theme)
-					&& let Ok(new_theme) = serde_json::from_str::<ThemeDeser>(&data.settings) {
-						theme = theme.merge(new_theme);
-					}
+					&& let Ok(new_theme) = serde_json::from_str::<ThemeDeser>(&data.settings)
+				{
+					theme = theme.merge(new_theme);
+				}
 			}
 			front_state2.write().set_theme(theme.into());
 			back_state2.output().debug("Theme applied".into());
+		});
+		let radio = use_radio(FrontChannel::Zoom);
+		use_side_effect(move || {
+			radio.read();
+			let data = back_state.data();
+			let platform = Platform::get();
+			platform.set_custom_scale_factor(data.zoom);
 		});
 
 		let is_onboarding = matches!(front_state.read().modal(), Some(ModalType::Onboarding))
@@ -117,8 +125,8 @@ impl Component for Global {
 				let mut event_rx = front_state2.read().subscribe_events();
 				while let Ok(event) = event_rx.recv().await {
 					if let BackEvent::Invalidate(dependency) = event {
-     							dependency.invalidate();
-     						}
+						dependency.invalidate();
+					}
 				}
 			}
 		});

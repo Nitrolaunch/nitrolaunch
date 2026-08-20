@@ -35,6 +35,13 @@ pub struct LauncherData {
 	pub base_theme: Option<String>,
 	/// The currently selected overlay themes
 	pub overlay_themes: Vec<String>,
+	/// The current zoom level of the app
+	#[serde(default = "default_zoom")]
+	pub zoom: f64,
+}
+
+fn default_zoom() -> f64 {
+	1.0
 }
 
 impl LauncherData {

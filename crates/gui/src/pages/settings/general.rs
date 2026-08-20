@@ -2,7 +2,9 @@ use std::{rc::Rc, sync::LazyLock};
 
 use nitrolaunch::plugin_crate::hook::hooks::{Theme, ThemeType};
 
-use crate::{pages::settings::SettingsState, prelude::*, theme::ThemeDeser};
+use crate::{
+	components::input::slider, pages::settings::SettingsState, prelude::*, theme::ThemeDeser,
+};
 
 static BUILTIN_THEMES: LazyLock<[Theme; 2]> = LazyLock::new(|| {
 	[
@@ -70,10 +72,23 @@ impl Component for GeneralSettings {
 			"Additional effects to layer on top of the base theme. Use as many as you want.",
 		);
 
+		let zoom = slider(
+			*self.state.zoom.read(),
+			0.5,
+			1.75,
+			0.1,
+			self.state.zoom.setter(),
+			&theme,
+			&front_state,
+		);
+		let zoom = field("Zoom Level", "search", &theme, zoom)
+			.tip(&front_state, "Changes the scale of the entire launcher");
+
 		let out = rect()
 			.padding(theme.gap2)
 			.child(base_themes)
-			.child(overlay_themes);
+			.child(overlay_themes)
+			.child(zoom);
 
 		ScrollView::new().expanded().child(out)
 	}

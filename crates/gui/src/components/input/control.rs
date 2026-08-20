@@ -7,7 +7,7 @@ use nitrolaunch::{
 use serde_json::Value;
 
 use crate::{
-	components::input::{select::Selected, switch::Switch, text::TextInput},
+	components::input::{select::Selected, slider, switch::Switch, text::TextInput},
 	prelude::*,
 	util::PtrEq,
 };
@@ -124,33 +124,23 @@ impl Component for ControlInput {
 					let min = *min as f64;
 					let max = *max as f64;
 					let step = *step as f64;
-					let scale = (max - min) / 100.0;
 					let value = value.as_f64().unwrap_or(min);
-					let scaled_value = value / scale;
 
-					let theme = SliderThemePartial {
-						background: Some(Preference::Specific(theme.panel)),
-						border_fill: Some(Preference::Specific(theme.panel_border)),
-						thumb_background: Some(Preference::Specific(theme.primary)),
-						thumb_inner_background: Some(Preference::Specific(theme.primary)),
-					};
-
-					let slider = Slider::new(move |new_value: f64| {
-						let new_value = new_value * scale;
-						let rounded = (new_value / step).round() * step;
-						on_set.call(Value::Number(
-							serde_json::Number::from_f64(rounded)
-								.unwrap_or(serde_json::Number::from_f64(0.0).unwrap()),
-						));
-					})
-					.value(scaled_value)
-					.theme(theme);
-
-					rect()
-						.width(Size::px(240.0))
-						.tip(&front_state, &format!("{:.3}", value))
-						.child(slider)
-						.into_element()
+					slider(
+						value,
+						min,
+						max,
+						step,
+						move |value| {
+							on_set.call(Value::Number(
+								serde_json::Number::from_f64(value)
+									.unwrap_or(serde_json::Number::from_f64(0.0).unwrap()),
+							));
+						},
+						&theme,
+						&front_state,
+					)
+					.into_element()
 				} else {
 					label().text("Not supported yet").into_element()
 				}

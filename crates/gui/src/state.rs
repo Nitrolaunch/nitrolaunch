@@ -83,6 +83,8 @@ pub enum FrontChannel {
 	Theme,
 	/// Changes to the configured theme, which then updates the theme
 	ThemeConfig,
+	/// Changes to the zoom level
+	Zoom,
 }
 
 impl RadioChannel<()> for FrontChannel {}

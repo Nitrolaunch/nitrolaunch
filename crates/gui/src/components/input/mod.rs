@@ -1,6 +1,6 @@
 use nitrolaunch::config_crate::template::TemplateConfig;
 
-use crate::prelude::*;
+use crate::{prelude::*, state::FrontState, util::Shared};
 
 pub mod control;
 pub mod file;
@@ -127,4 +127,39 @@ pub fn input_error(message: &str, theme: &Theme) -> impl IntoElement {
 		.background(theme.error)
 		.font_size(theme.font0)
 		.child(message)
+}
+
+pub fn slider(
+	value: f64,
+	min: f64,
+	max: f64,
+	step: f64,
+	on_change: impl Into<EventHandler<f64>>,
+	theme: &Theme,
+	front_state: &Shared<FrontState>,
+) -> impl IntoElement {
+	let on_change = on_change.into();
+	let scale = (max - min) / 100.0;
+	let scaled_value = value / scale;
+
+	let theme = SliderThemePartial {
+		background: Some(Preference::Specific(theme.panel)),
+		border_fill: Some(Preference::Specific(theme.panel_border)),
+		thumb_background: Some(Preference::Specific(theme.primary)),
+		thumb_inner_background: Some(Preference::Specific(theme.primary)),
+	};
+
+	let slider = Slider::new(move |new_value: f64| {
+		let new_value = new_value * scale;
+		let rounded = (new_value / step).round() * step;
+		on_change.call(rounded);
+	})
+	.value(scaled_value)
+	.theme(theme);
+
+	rect()
+		.width(Size::px(240.0))
+		.tip(&front_state, &format!("{:.3}", value))
+		.child(slider)
+		.into_element()
 }
