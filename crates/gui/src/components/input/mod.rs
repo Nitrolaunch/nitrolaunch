@@ -142,7 +142,7 @@ pub fn slider(
 	let scale = (max - min) / 100.0;
 	let scaled_value = value / scale;
 
-	let theme = SliderThemePartial {
+	let slider_theme = SliderThemePartial {
 		background: Some(Preference::Specific(theme.panel)),
 		border_fill: Some(Preference::Specific(theme.panel_border)),
 		thumb_background: Some(Preference::Specific(theme.primary)),
@@ -155,11 +155,22 @@ pub fn slider(
 		on_change.call(rounded);
 	})
 	.value(scaled_value)
-	.theme(theme);
+	.theme(slider_theme);
+
+	let indicators = rect()
+		.width(Size::fill())
+		.horizontal()
+		.main_align(Alignment::SpaceBetween)
+		.font_size(theme.font0)
+		.color(theme.fg3)
+		.font_weight(FontWeight::BOLD)
+		.child(format!("{:.3}", min))
+		.child(format!("{:.3}", max));
 
 	rect()
 		.width(Size::px(240.0))
 		.tip(&front_state, &format!("{:.3}", value))
+		.child(indicators)
 		.child(slider)
 		.into_element()
 }
