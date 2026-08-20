@@ -150,7 +150,7 @@ pub fn slider(
 	};
 
 	let slider = Slider::new(move |new_value: f64| {
-		let new_value = new_value * scale;
+		let new_value = new_value * scale + min;
 		let rounded = (new_value / step).round() * step;
 		on_change.call(rounded);
 	})
