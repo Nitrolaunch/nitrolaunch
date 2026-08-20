@@ -31,7 +31,7 @@ use nitrolaunch::{
 		id::{InstanceID, TemplateID},
 		loaders::Loader,
 		output::NoOp,
-		pkg::{ArcPkgReq, PackageKind, PackageSearchParameters, PackageStability},
+		pkg::{ArcPkgReq, PackageCategory, PackageKind, PackageSearchParameters, PackageStability},
 		util::to_string_json,
 		versions::{VersionPattern, parse_single_versioned_string},
 	},
@@ -361,6 +361,30 @@ impl<'a> State<'a> {
 		};
 
 		Some(req.arc())
+	}
+
+	fn get_available_package_types(&self) -> Vec<PackageKind> {
+		if let Some(repo) = self.get_selected_repo_info() {
+			repo.metadata.package_types.clone()
+		} else {
+			self.repositories
+				.iter()
+				.flat_map(|x| x.metadata.package_types.clone())
+				.unique()
+				.collect()
+		}
+	}
+
+	fn get_available_package_categories(&self) -> Vec<PackageCategory> {
+		if let Some(repo) = self.get_selected_repo_info() {
+			repo.metadata.package_categories.clone()
+		} else {
+			self.repositories
+				.iter()
+				.flat_map(|x| x.metadata.package_categories.clone())
+				.unique()
+				.collect()
+		}
 	}
 
 	/// Returns focus to the element above
@@ -935,10 +959,8 @@ impl Popup {
 				state.search_params.repo = Some(repo.id.clone());
 			}
 			Self::PackageType => {
-				let Some(repo) = state.get_selected_repo_info() else {
-					return;
-				};
-				let Some(ty) = repo.metadata.package_types.get(pos) else {
+				let types = state.get_available_package_types();
+				let Some(ty) = types.get(pos) else {
 					return;
 				};
 
@@ -980,10 +1002,8 @@ impl Popup {
 				}
 			}
 			Self::Category => {
-				let Some(repo) = state.get_selected_repo_info() else {
-					return;
-				};
-				let Some(category) = repo.metadata.package_categories.get(pos) else {
+				let categories = state.get_available_package_categories();
+				let Some(category) = categories.get(pos) else {
 					return;
 				};
 				let category = *category;
@@ -1018,16 +1038,9 @@ impl Popup {
 					return Vec::new();
 				};
 
-				let Some(repo) = state.get_selected_repo_info() else {
-					return Vec::new();
-				};
+				let types = state.get_available_package_types();
 
-				repo.metadata
-					.package_types
-					.iter()
-					.position(|x| x == ty)
-					.into_iter()
-					.collect()
+				types.iter().position(|x| x == ty).into_iter().collect()
 			}
 			Self::Version => state
 				.search_params
@@ -1044,16 +1057,14 @@ impl Popup {
 				.filter_map(|x| state.loaders.iter().position(|y| y == x))
 				.collect(),
 			Self::Category => {
-				let Some(repo) = state.get_selected_repo_info() else {
-					return Vec::new();
-				};
+				let categories = state.get_available_package_categories();
 
 				state
 					.search_params
 					.inner
 					.categories
 					.iter()
-					.filter_map(|x| repo.metadata.package_categories.iter().position(|y| y == x))
+					.filter_map(|x| categories.iter().position(|y| y == x))
 					.collect()
 			}
 		}
@@ -1066,30 +1077,18 @@ impl Popup {
 				items.extend(state.repositories.iter().map(|x| x.id.clone()));
 				items
 			}
-			Self::PackageType => {
-				let Some(repo) = state.get_selected_repo_info() else {
-					return Vec::new();
-				};
-
-				repo.metadata
-					.package_types
-					.iter()
-					.map(|x| x.to_string())
-					.collect()
-			}
+			Self::PackageType => state
+				.get_available_package_types()
+				.iter()
+				.map(|x| x.to_string())
+				.collect(),
 			Self::Version => state.versions.clone(),
 			Self::Loader => state.loaders.iter().map(|x| x.to_string()).collect(),
-			Self::Category => {
-				let Some(repo) = state.get_selected_repo_info() else {
-					return Vec::new();
-				};
-
-				repo.metadata
-					.package_categories
-					.iter()
-					.map(to_string_json)
-					.collect()
-			}
+			Self::Category => state
+				.get_available_package_categories()
+				.iter()
+				.map(to_string_json)
+				.collect(),
 		}
 	}
 
