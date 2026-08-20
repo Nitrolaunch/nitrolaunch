@@ -145,6 +145,8 @@ pin-project-lite = "0.2.16"
 rand = "0.8.5"
 rand_chacha = "0.3.1"
 ratatui = { version = "0.30.0", default-features = false, features = ["crossterm", "layout-cache", "underline-color"] }
+# Fixes broken rendering with Kitty
+ratatui-core = "=0.1.0"
 ratatui-image = { version = "10.0.6", default-features = false, features = [
 	"crossterm"
 ] }

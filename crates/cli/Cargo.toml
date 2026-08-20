@@ -28,6 +28,7 @@ inquire = { workspace = true }
 itertools = { workspace = true }
 nitrolaunch = { workspace = true }
 ratatui = { workspace = true }
+ratatui-core = { workspace = true }
 ratatui-image = { workspace = true }
 ratatui-textarea = { workspace = true }
 reqwest = { workspace = true }
