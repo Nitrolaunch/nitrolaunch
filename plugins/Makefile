@@ -22,6 +22,7 @@ package.cross_platform: build.cross_platform
 	@rm -f release/multiply-universal.zip
 	@rm -f release/nitro_transfer-universal.zip
 	@rm -f release/octane-universal.zip
+	@rm -f release/purpur-universal.zip
 	@rm -f release/share-universal.zip
 	@rm -f release/shortcut-universal.zip
 	@rm -f release/skin_stealer-universal.zip
@@ -62,6 +63,8 @@ package.cross_platform: build.cross_platform
 	@printf "@ nitro_plugin_nitro_transfer.wasm\\n@=plugin.wasm\\n" | zipnote -w release/nitro_transfer-universal.zip
 	@zip -j release/octane-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_octane.wasm plugins/octane/plugin.json
 	@printf "@ nitro_plugin_octane.wasm\\n@=plugin.wasm\\n" | zipnote -w release/octane-universal.zip
+	@zip -j release/purpur-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_purpur.wasm plugins/purpur/plugin.json
+	@printf "@ nitro_plugin_purpur.wasm\\n@=plugin.wasm\\n" | zipnote -w release/purpur-universal.zip
 
 	@zip -j release/share-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_share.wasm plugins/share/plugin.json plugins/share/export_template.js plugins/share/import_template.js
 	@printf "@ nitro_plugin_share.wasm\\n@=plugin.wasm\\n" | zipnote -w release/share-universal.zip
@@ -293,6 +296,11 @@ install.paper:
 	@cargo install --path . --bin nitro_plugin_paper --locked --profile fast_release
 	@mkdir -p ~/.local/share/nitro/plugins/paper
 	@cat plugins/paper/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/paper/plugin.json
+
+install.purpur:
+	@cargo build -p nitro_plugin_purpur --release --target wasm32-wasip2
+	@cp -r plugins/purpur ~/.local/share/nitro/plugins
+	@cp -r ../target/wasm32-wasip2/release/nitro_plugin_purpur.wasm ~/.local/share/nitro/plugins/purpur/plugin.wasm
 
 install.server_restart:
 	@cargo install --path . --bin nitro_plugin_server_restart --locked --profile fast_release
