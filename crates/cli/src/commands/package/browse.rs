@@ -957,6 +957,26 @@ impl Popup {
 				};
 
 				state.search_params.repo = Some(repo.id.clone());
+
+				// Handle package types and categories that are no longer supported by this repo
+				let available_pkg_types = state.get_available_package_types();
+				if !state
+					.search_params
+					.inner
+					.types
+					.iter()
+					.all(|x| available_pkg_types.contains(x))
+				{
+					state.search_params.inner.types =
+						available_pkg_types.first().into_iter().cloned().collect();
+				}
+
+				let available_categories = state.get_available_package_categories();
+				state
+					.search_params
+					.inner
+					.categories
+					.retain(|x| available_categories.contains(x));
 			}
 			Self::PackageType => {
 				let types = state.get_available_package_types();
