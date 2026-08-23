@@ -44,6 +44,8 @@ pub enum TemplateSubcommand {
 		/// The template to delete
 		template: Option<String>,
 	},
+	#[command(about = "Edit the base template configuration")]
+	EditBase,
 	#[command(about = "Duplicates a template into a new one")]
 	Duplicate {
 		/// The template to duplicate
@@ -66,6 +68,7 @@ pub async fn run(subcommand: TemplateSubcommand, data: &mut CmdData<'_>) -> anyh
 		TemplateSubcommand::Info { template } => info(data, template).await,
 		TemplateSubcommand::Delete { template } => delete(data, template).await,
 		TemplateSubcommand::Edit { template } => edit(data, template).await,
+		TemplateSubcommand::EditBase => edit_base(data).await,
 		TemplateSubcommand::Duplicate { template, new_id } => {
 			duplicate(data, template, new_id).await
 		}
@@ -271,6 +274,35 @@ async fn edit(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()> 
 	apply_modifications_and_write(
 		&mut raw_config,
 		modifications,
+		&data.paths,
+		&config.plugins,
+		data.output,
+	)
+	.await
+	.context("Failed to modify and write config")?;
+
+	data.output
+		.display(MessageContents::Success("Changes saved".into()));
+
+	Ok(())
+}
+
+async fn edit_base(data: &mut CmdData<'_>) -> anyhow::Result<()> {
+	data.ensure_config(true).await?;
+	let mut raw_config = data.get_raw_config()?;
+	let config = data.config.get_mut();
+
+	let text = serde_json::to_string_pretty(&config.base_template)
+		.context("Failed to serialize config")?;
+	let edited = edit_temp_file(&text, &format!("Editing base template"), &data.paths)?;
+	let new_config: TemplateConfig = serde_json::from_str(&edited)
+		.context("Failed to serialize. Make sure your config is valid JSON")?;
+
+	raw_config.base_template = Some(new_config);
+
+	apply_modifications_and_write(
+		&mut raw_config,
+		Vec::new(),
 		&data.paths,
 		&config.plugins,
 		data.output,
