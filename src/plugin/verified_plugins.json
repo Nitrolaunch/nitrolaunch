@@ -350,5 +350,13 @@
 		"github_repo": "plugins",
 		"description": "Instance transfer for the Official Launcher",
 		"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/mojang_transfer"
+	},
+	"purpur": {
+		"id": "purpur",
+		"name": "Purpur",
+		"version": "v8",
+		"github_owner": "Nitrolaunch",
+		"github_repo": "plugins",
+		"description": "Install and play Purpur servers"
 	}
 }

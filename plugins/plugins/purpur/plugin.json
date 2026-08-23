@@ -1,0 +1,19 @@
+{
+	"id": "purpur",
+	"name": "Purpur",
+	"description": "Install and play Purpur servers",
+	"uninstall_dirs": ["purpur"],
+	"version": "v8",
+	"nitro_version": "0.31.0",
+	"protocol_version": 3,
+	"hooks": {
+		"on_instance_setup": {
+			"wasm": true
+		},
+		"add_supported_loaders": {
+			"constant": [
+				"purpur"
+			]
+		}
+	}
+}
