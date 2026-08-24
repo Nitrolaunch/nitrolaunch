@@ -277,27 +277,24 @@ impl Component for ContentConfig {
 						final_value_owned(version.read().clone(), &parent_configs.0, |x| {
 							x.instance.version.as_ref().map(to_string_json)
 						});
-					let Some(version) = version else {
-						return;
-					};
-					let canonical_version = tokio::spawn(async move {
-						let version = from_string_json(&version).ok()?;
-						back_state2
-							.canonicalize_version(Some(&id), ty, &version)
-							.await
-					})
-					.await;
-					let Ok(Some(canonical_version)) = canonical_version else {
-						front_state2
-							.write()
-							.toast(Toast::error("Failed to get canonical version", None));
-						return;
+					let canonical_version = if let Some(version) = version {
+						let canonical_version = tokio::spawn(async move {
+							let version = from_string_json(&version).ok()?;
+							back_state2
+								.canonicalize_version(Some(&id), ty, &version)
+								.await
+						})
+						.await;
+
+						canonical_version.ok().flatten()
+					} else {
+						None
 					};
 
 					front_state2
 						.write()
 						.navigate(Page::Packages(Some(BrowseFilters {
-							mc_versions: vec![canonical_version.to_string()],
+							mc_versions: canonical_version.into_iter().collect(),
 							loader: loader.read().clone().unwrap_or_default(),
 						})));
 				});
