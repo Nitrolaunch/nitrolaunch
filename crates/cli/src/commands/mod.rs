@@ -269,6 +269,8 @@ pub async fn run_cli() -> anyhow::Result<()> {
 		output.display(MessageContents::Error(format!("{e:?}")));
 	}
 
+	output.shutdown().await;
+
 	res
 }
 

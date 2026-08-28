@@ -15,6 +15,7 @@ use nitrolaunch::shared::output::{Message, MessageContents, MessageLevel, NitroO
 use nitrolaunch::shared::util::print::ReplPrinter;
 use tokio::sync::broadcast;
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
+use tokio::task::JoinHandle;
 
 /// A nice colored bullet point for terminal output
 pub const HYPHEN_POINT: &str = cstr!("<k!> - </k!>");
@@ -36,6 +37,8 @@ pub const CHECK: &str = "\u{2713}";
 pub struct TerminalOutput {
 	tx: UnboundedSender<Event>,
 	rx: broadcast::Receiver<ResponseEvent>,
+	/// Held to prevent the output task from being dropped before the process exits
+	_output_task: Option<JoinHandle<()>>,
 	level: MessageLevel,
 	translation_map: Option<TranslationMap>,
 }
@@ -124,6 +127,7 @@ impl NitroOutput for TerminalOutput {
 			rx: self.rx.resubscribe(),
 			level: MessageLevel::Important,
 			translation_map: None,
+			_output_task: None,
 		})
 	}
 }
@@ -134,13 +138,14 @@ impl TerminalOutput {
 		let (response_tx, response_rx) = broadcast::channel(20);
 		let output_task = OutputTask::new(rx, response_tx, paths)?;
 
-		tokio::spawn(output_task.run());
+		let task = tokio::spawn(output_task.run());
 
 		Ok(Self {
 			tx,
 			rx: response_rx,
 			level: MessageLevel::Important,
 			translation_map: None,
+			_output_task: Some(task),
 		})
 	}
 
@@ -153,6 +158,14 @@ impl TerminalOutput {
 	/// Set the translation map of the output
 	pub fn set_translation_map(&mut self, map: TranslationMap) {
 		self.translation_map = Some(map);
+	}
+
+	/// Shuts down the output task and waits until it is finished
+	pub async fn shutdown(self) {
+		std::mem::drop(self.tx);
+		if let Some(task) = self._output_task {
+			let _ = task.await;
+		}
 	}
 
 	async fn prompt_a_password(
