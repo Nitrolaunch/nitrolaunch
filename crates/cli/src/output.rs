@@ -14,7 +14,7 @@ use nitrolaunch::shared::lang::translate::{TranslationKey, TranslationMap};
 use nitrolaunch::shared::output::{Message, MessageContents, MessageLevel, NitroOutput};
 use nitrolaunch::shared::util::print::ReplPrinter;
 use tokio::sync::broadcast;
-use tokio::sync::mpsc::{Receiver, Sender};
+use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 
 /// A nice colored bullet point for terminal output
 pub const HYPHEN_POINT: &str = cstr!("<k!> - </k!>");
@@ -34,7 +34,7 @@ pub const CHECK: &str = "\u{2713}";
 
 /// Terminal NitroOutput
 pub struct TerminalOutput {
-	tx: Sender<Event>,
+	tx: UnboundedSender<Event>,
 	rx: broadcast::Receiver<ResponseEvent>,
 	level: MessageLevel,
 	translation_map: Option<TranslationMap>,
@@ -43,27 +43,27 @@ pub struct TerminalOutput {
 #[async_trait::async_trait]
 impl NitroOutput for TerminalOutput {
 	fn display_text(&mut self, text: String, level: MessageLevel) {
-		let _ = self.tx.try_send(Event::Print(text, level));
+		let _ = self.tx.send(Event::Print(text, level));
 	}
 
 	fn display_message(&mut self, message: Message) {
-		let _ = self.tx.try_send(Event::Message(message));
+		let _ = self.tx.send(Event::Message(message));
 	}
 
 	fn start_process(&mut self) {
-		let _ = self.tx.try_send(Event::StartProcess);
+		let _ = self.tx.send(Event::StartProcess);
 	}
 
 	fn end_process(&mut self) {
-		let _ = self.tx.try_send(Event::EndProcess);
+		let _ = self.tx.send(Event::EndProcess);
 	}
 
 	fn start_section(&mut self) {
-		let _ = self.tx.try_send(Event::StartSection);
+		let _ = self.tx.send(Event::StartSection);
 	}
 
 	fn end_section(&mut self) {
-		let _ = self.tx.try_send(Event::EndSection);
+		let _ = self.tx.send(Event::EndSection);
 	}
 
 	async fn prompt_yes_no(
@@ -71,14 +71,12 @@ impl NitroOutput for TerminalOutput {
 		default: bool,
 		message: MessageContents,
 	) -> anyhow::Result<bool> {
-		let _ = self
-			.tx
+		self.tx
 			.send(Event::YesNo {
 				message: message.clone(),
 				default,
 			})
-			.await
-			.context("Failed to send yes/no prompt event")?;
+			.map_err(|_| anyhow::anyhow!("Failed to send yes/no prompt event"))?;
 
 		while let Ok(response) = self.rx.recv().await {
 			if let ResponseEvent::YesNo(answer) = response {
@@ -132,7 +130,7 @@ impl NitroOutput for TerminalOutput {
 
 impl TerminalOutput {
 	pub fn new(paths: &Paths) -> anyhow::Result<Self> {
-		let (tx, rx) = tokio::sync::mpsc::channel(80);
+		let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
 		let (response_tx, response_rx) = broadcast::channel(20);
 		let output_task = OutputTask::new(rx, response_tx, paths)?;
 
@@ -149,7 +147,7 @@ impl TerminalOutput {
 	/// Set the log level of the output
 	pub fn set_log_level(&mut self, level: MessageLevel) {
 		self.level = level;
-		let _ = self.tx.try_send(Event::SetLevel(level));
+		let _ = self.tx.send(Event::SetLevel(level));
 	}
 
 	/// Set the translation map of the output
@@ -162,14 +160,12 @@ impl TerminalOutput {
 		message: MessageContents,
 		is_new: bool,
 	) -> anyhow::Result<String> {
-		self
-			.tx
+		self.tx
 			.send(Event::Password {
 				message: message.clone(),
 				is_new,
 			})
-			.await
-			.context("Failed to send password prompt event")?;
+			.map_err(|_| anyhow::anyhow!("Failed to send password prompt event"))?;
 
 		while let Ok(response) = self.rx.recv().await {
 			if let ResponseEvent::Password { password } = response {
@@ -231,7 +227,7 @@ fn add_period(string: String) -> String {
 }
 
 struct OutputTask {
-	rx: Receiver<Event>,
+	rx: UnboundedReceiver<Event>,
 	tx: broadcast::Sender<ResponseEvent>,
 	printer: ReplPrinter,
 	level: MessageLevel,
@@ -245,7 +241,7 @@ struct OutputTask {
 
 impl OutputTask {
 	fn new(
-		rx: Receiver<Event>,
+		rx: UnboundedReceiver<Event>,
 		response_tx: broadcast::Sender<ResponseEvent>,
 		paths: &Paths,
 	) -> anyhow::Result<Self> {
