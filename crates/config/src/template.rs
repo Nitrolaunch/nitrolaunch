@@ -12,6 +12,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::instance::parse_loader_config;
+use crate::package::add_or_update_package_config;
 
 use super::instance::InstanceConfig;
 use super::package::PackageConfigDeser;
@@ -273,7 +274,7 @@ impl TemplatePackageConfiguration {
 						server: Vec::new(),
 					}
 				}
-				Self::Full { client, .. } => client.push(pkg),
+				Self::Full { client, .. } => add_or_update_package_config(client, pkg),
 			},
 			Some(Side::Server) => match self {
 				Self::Simple(global) => {
@@ -283,11 +284,11 @@ impl TemplatePackageConfiguration {
 						server: vec![pkg],
 					}
 				}
-				Self::Full { server, .. } => server.push(pkg),
+				Self::Full { server, .. } => add_or_update_package_config(server, pkg),
 			},
 			None => match self {
-				Self::Simple(global) => global.push(pkg),
-				Self::Full { global, .. } => global.push(pkg),
+				Self::Simple(global) => add_or_update_package_config(global, pkg),
+				Self::Full { global, .. } => add_or_update_package_config(global, pkg),
 			},
 		}
 	}

@@ -3,7 +3,10 @@ use std::{collections::HashMap, sync::Arc};
 use anyhow::Context;
 use nitrolaunch::{
 	config::modifications::{ConfigModification, apply_modifications_and_write},
-	config_crate::{ConfigKind, package::PackageConfigDeser},
+	config_crate::{
+		ConfigKind,
+		package::{PackageConfigDeser, add_or_update_package_config},
+	},
 	instance::{Instance, update::manager::UpdateSettings},
 	instance_crate::{addon::Addon, lock::InstanceLockfile},
 	pkg::search::{PackageMultiSearchResults, PackageSearchSession},
@@ -391,9 +394,10 @@ impl MutationCapability for InstallPackage {
 						.context("Instance does not exist")?;
 
 					let mut inst_config = instance.original_config().clone();
-					inst_config
-						.packages
-						.push(PackageConfigDeser::Basic(keys.0.to_string().into()));
+					add_or_update_package_config(
+						&mut inst_config.packages,
+						PackageConfigDeser::Basic(keys.0.to_string()),
+					);
 
 					ConfigModification::UpdateInstance(instance_id.clone(), inst_config)
 				}

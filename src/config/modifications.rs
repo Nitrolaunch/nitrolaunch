@@ -1,6 +1,7 @@
 use anyhow::{Context, anyhow, bail};
 use nitro_config::ConfigDeser;
 use nitro_config::instance::InstanceConfig;
+use nitro_config::package::add_or_update_package_config;
 use nitro_config::template::TemplateConfig;
 use nitro_config::{account::AccountConfig, package::PackageConfigDeser};
 use nitro_core::io::json_to_file_pretty;
@@ -173,7 +174,7 @@ pub async fn apply_modifications(
 					.instances
 					.get_mut(&instance_id)
 					.ok_or(anyhow!("Unknown instance '{instance_id}'"))?;
-				instance.packages.push(package);
+				add_or_update_package_config(&mut instance.packages, package);
 			}
 			ConfigModification::RemoveAccount(account) => {
 				config.accounts.remove(&account);

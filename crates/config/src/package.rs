@@ -97,6 +97,14 @@ impl PackageConfigDeser {
 		PkgRequest::parse(self.get_id(), PkgRequestSource::UserRequire)
 	}
 
+	/// Sets the package request of the config
+	pub fn set_id(&mut self, new_id: String) {
+		match self {
+			Self::Basic(req) => *req = new_id,
+			Self::Full(cfg) => cfg.id = new_id,
+		}
+	}
+
 	/// Get the features of the config
 	pub fn get_features(&self) -> Vec<String> {
 		match &self {
@@ -170,6 +178,21 @@ impl PackageConfigDeser {
 	}
 }
 
+/// Adds or changes a package in a package configuration list.
+/// Changes only the request, and leaves the other fields as they are, unless this is a new package.
+pub fn add_or_update_package_config(
+	configs: &mut Vec<PackageConfigDeser>,
+	new_config: PackageConfigDeser,
+) {
+	for pkg in configs.iter_mut() {
+		if pkg.get_req() == new_config.get_req() {
+			pkg.set_id(new_config.get_id().to_string());
+			return;
+		}
+	}
+	configs.push(new_config);
+}
+
 /// Permissions level for an evaluation
 #[derive(Deserialize, Serialize, Debug, Copy, Clone, Default, PartialEq, Eq)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
@@ -182,4 +205,33 @@ pub enum EvalPermissions {
 	Standard,
 	/// Allow execution of things that could compromise security
 	Elevated,
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	fn test_add_empty() {
+		let mut configs = Vec::new();
+		let new_config = PackageConfigDeser::Basic("pkg1".to_string());
+		add_or_update_package_config(&mut configs, new_config);
+		assert_eq!(configs.len(), 1);
+	}
+
+	#[test]
+	fn test_add_update() {
+		let mut configs = vec![PackageConfigDeser::Basic("pkg1".to_string())];
+		let new_config = PackageConfigDeser::Basic("pkg1".to_string());
+		add_or_update_package_config(&mut configs, new_config);
+		assert_eq!(configs.len(), 1);
+	}
+
+	#[test]
+	fn test_add_new() {
+		let mut configs = vec![PackageConfigDeser::Basic("pkg1".to_string())];
+		let new_config = PackageConfigDeser::Basic("pkg2".to_string());
+		add_or_update_package_config(&mut configs, new_config);
+		assert_eq!(configs.len(), 2);
+	}
 }

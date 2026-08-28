@@ -17,7 +17,10 @@ use nitrolaunch::{
 		Config,
 		modifications::{ConfigModification, apply_modifications_and_write},
 	},
-	config_crate::{instance::is_valid_instance_id, package::PackageConfigDeser},
+	config_crate::{
+		instance::is_valid_instance_id,
+		package::{PackageConfigDeser, add_or_update_package_config},
+	},
 	core::{NitroCore, util::versions::MinecraftVersion},
 	instance::update::manager::UpdateSettings,
 	io::paths::Paths,
@@ -1732,9 +1735,10 @@ async fn worker_thread(
 						};
 
 						let mut config = instance.original_config().clone();
-						config
-							.packages
-							.push(PackageConfigDeser::Basic(req.to_string().into()));
+						add_or_update_package_config(
+							&mut config.packages,
+							PackageConfigDeser::Basic(req.to_string()),
+						);
 
 						ConfigModification::UpdateInstance(id, config)
 					}
