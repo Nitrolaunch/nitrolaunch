@@ -194,7 +194,8 @@ impl FrontState {
 
 		self.toasts = self
 			.toasts
-			.iter().cloned()
+			.iter()
+			.cloned()
 			.chain(std::iter::once(toast))
 			.collect();
 		self.invalidate(FrontChannel::Toast);
@@ -380,6 +381,17 @@ impl BackState {
 	/// Invalidates a dependency from a tokio task which can't access freya context
 	pub fn invalidate(&self, dependency: BackDependency) {
 		let _ = self.event_tx.send(BackEvent::Invalidate(dependency));
+	}
+
+	/// Invalidates installed plugins
+	pub async fn invalidate_plugins(&self) {
+		let mut o = self.output();
+		self.invalidate(BackDependency::Plugins);
+		if let Err(e) = self.plugins.reload(&self.paths, &mut o).await {
+			o.display(MessageContents::Error(format!(
+				"Failed to reload plugins: {e:?}"
+			)));
+		}
 	}
 
 	pub fn repos(&self) -> &HashMap<String, RepoMetadata> {

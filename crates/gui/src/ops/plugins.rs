@@ -149,7 +149,7 @@ simple_mutation!(
 		_result: &Result<Self::Ok, Self::Err>,
 	) -> impl Future<Output = ()>
 	{
-		invalidate_all::<FetchLocalPlugins>()
+		self.back_state.invalidate_plugins()
 	}
 );
 
@@ -170,7 +170,7 @@ simple_mutation!(
 		_keys: &Self::Keys,
 		_result: &Result<Self::Ok, Self::Err>,
 	) -> impl Future<Output = ()> {
-		invalidate_all::<FetchLocalPlugins>()
+		self.back_state.invalidate_plugins()
 	}
 );
 
@@ -191,7 +191,7 @@ simple_mutation!(
 		_keys: &Self::Keys,
 		_result: &Result<Self::Ok, Self::Err>,
 	) -> impl Future<Output = ()> {
-		invalidate_all::<FetchLocalPlugins>()
+		self.back_state.invalidate_plugins()
 	}
 );
 
@@ -212,7 +212,7 @@ simple_mutation!(
 		_keys: &Self::Keys,
 		_result: &Result<Self::Ok, Self::Err>,
 	) -> impl Future<Output = ()> {
-		invalidate_all::<FetchLocalPlugins>()
+		self.back_state.invalidate_plugins()
 	}
 );
 
@@ -291,6 +291,8 @@ simple_mutation!(
 					total: default_plugins.len() as u32,
 				});
 			}
+
+			back_state.invalidate_plugins().await;
 
 			Ok::<_, anyhow::Error>(())
 		};

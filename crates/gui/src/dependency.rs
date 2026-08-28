@@ -6,6 +6,7 @@ use crate::ops::{
 	invalidate_all, invalidate_matching,
 	launch::FetchRunningInstances,
 	packages::{FetchInstanceAddons, FetchInstanceLockfile},
+	plugins::FetchLocalPlugins,
 };
 
 /// Backend dependency that can be invalidated
@@ -15,6 +16,7 @@ pub enum BackDependency {
 	RunningInstances,
 	Accounts,
 	InstanceContent(String),
+	Plugins,
 }
 
 impl BackDependency {
@@ -34,6 +36,9 @@ impl BackDependency {
 				spawn(invalidate_matching::<FetchInstanceConfig>(id.clone()));
 				spawn(invalidate_matching::<FetchInstanceLockfile>(id.clone()));
 				spawn(invalidate_matching::<FetchInstanceAddons>(id.clone()));
+			}
+			Self::Plugins => {
+				spawn(invalidate_all::<FetchLocalPlugins>());
 			}
 		}
 	}
