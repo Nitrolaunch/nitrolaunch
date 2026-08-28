@@ -1602,10 +1602,10 @@ impl<'a> InstallPromptState<'a> {
 			InstallLocation::Instance | InstallLocation::Template => {
 				let list = List::default().highlight_symbol(">");
 				let list = if state.install_prompt.location == InstallLocation::Instance {
-					list.items(state.instances.iter().map(|x| x.deref()))
+					list.items(state.instances.iter().sorted().map(|x| x.deref()))
 						.highlight_style(Style::new().green())
 				} else {
-					list.items(state.templates.iter().map(|x| x.deref()))
+					list.items(state.templates.iter().sorted().map(|x| x.deref()))
 						.highlight_style(Style::new().light_blue())
 				};
 
