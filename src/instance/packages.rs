@@ -145,9 +145,7 @@ impl Instance {
 	pub fn get_package_config(&self, package: &ArcPkgReq) -> Option<&PackageConfig> {
 		let configured_packages = self.packages();
 
-		configured_packages
-			.iter()
-			.find(|x| x.get_request() == *package)
+		configured_packages.iter().find(|x| x.req == *package)
 	}
 }
 

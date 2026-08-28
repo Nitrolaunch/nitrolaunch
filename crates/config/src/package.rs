@@ -2,9 +2,7 @@ use std::borrow::Cow;
 use std::fmt::Display;
 
 use anyhow::bail;
-use nitro_shared::pkg::{
-	PackageID, PackageStability, PkgRequest, PkgRequestSource, is_valid_package_id,
-};
+use nitro_shared::pkg::{PackageStability, PkgRequest, PkgRequestSource, is_valid_package_id};
 use nitro_shared::util::{DefaultExt, is_valid_identifier};
 #[cfg(feature = "schema")]
 use schemars::JsonSchema;
@@ -15,8 +13,8 @@ use serde::{Deserialize, Serialize};
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[serde(untagged)]
 pub enum PackageConfigDeser {
-	/// Basic configuration for a repository package with just the package ID
-	Basic(PackageID),
+	/// Basic configuration for a repository package with just the package request
+	Basic(String),
 	/// Full configuration for a package
 	Full(FullPackageConfig),
 }
@@ -25,8 +23,9 @@ pub enum PackageConfigDeser {
 #[derive(Deserialize, Serialize, Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 pub struct FullPackageConfig {
-	/// The ID of the pcakage
-	pub id: PackageID,
+	/// The ID / request of the pcakage
+	#[serde(alias = "req")]
+	pub id: String,
 	/// The package's enabled features
 	#[serde(default)]
 	#[serde(skip_serializing_if = "Vec::is_empty")]
@@ -85,17 +84,17 @@ impl Display for PackageConfigDeser {
 }
 
 impl PackageConfigDeser {
-	/// Get the package ID of the config
-	pub fn get_pkg_id(&self) -> PackageID {
+	/// Get the package request of the config as a string
+	pub fn get_id(&self) -> &str {
 		match &self {
-			Self::Basic(id) => id.clone(),
-			Self::Full(cfg) => cfg.id.clone(),
+			Self::Basic(req) => req,
+			Self::Full(cfg) => &cfg.id,
 		}
 	}
 
 	/// Get the package request of the config
 	pub fn get_req(&self) -> PkgRequest {
-		PkgRequest::parse(self.get_pkg_id(), PkgRequestSource::UserRequire)
+		PkgRequest::parse(self.get_id(), PkgRequestSource::UserRequire)
 	}
 
 	/// Get the features of the config
@@ -156,14 +155,14 @@ impl PackageConfigDeser {
 
 	/// Validate this config
 	pub fn validate(&self) -> anyhow::Result<()> {
-		let id = self.get_pkg_id();
-		if !is_valid_package_id(&id) {
-			bail!("Invalid package ID '{id}'");
+		let req = self.get_req();
+		if !is_valid_package_id(&req.id) {
+			bail!("Invalid package ID '{req}'");
 		}
 
 		for feature in self.get_features() {
 			if !is_valid_identifier(&feature) {
-				bail!("Invalid string '{feature}'");
+				bail!("Invalid package feature string '{feature}'");
 			}
 		}
 

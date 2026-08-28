@@ -2,7 +2,6 @@ use std::{collections::HashMap, fs::File};
 
 use anyhow::Context;
 use nitro_config::{instance::InstanceConfig, template::TemplateConfig};
-use nitro_pkg::PkgRequest;
 use nitro_shared::{
 	id::{InstanceID, TemplateID},
 	output::{MessageContents, NitroOutput},
@@ -47,11 +46,11 @@ pub fn check_configured_packages(
 	o: &mut impl NitroOutput,
 ) {
 	for inst in instances.values() {
-		if inst.packages.iter().any(|x| {
-			PkgRequest::parse(x.get_pkg_id(), nitro_pkg::PkgRequestSource::UserRequire)
-				.repository
-				.is_none()
-		}) {
+		if inst
+			.packages
+			.iter()
+			.any(|x| x.get_req().repository.is_none())
+		{
 			o.display(MessageContents::Warning(
 				"An instance uses deprecated generic packages".into(),
 			));
@@ -60,11 +59,12 @@ pub fn check_configured_packages(
 	}
 
 	for temp in templates.values() {
-		if temp.instance.packages.iter().any(|x| {
-			PkgRequest::parse(x.get_pkg_id(), nitro_pkg::PkgRequestSource::UserRequire)
-				.repository
-				.is_none()
-		}) {
+		if temp
+			.instance
+			.packages
+			.iter()
+			.any(|x| x.get_req().repository.is_none())
+		{
 			o.display(MessageContents::Warning(
 				"A template uses deprecated generic packages".into(),
 			));

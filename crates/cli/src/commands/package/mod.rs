@@ -18,7 +18,7 @@ use nitrolaunch::shared::output::{MessageContents, NitroOutput};
 use anyhow::{Context, bail};
 use clap::Subcommand;
 use color_print::{cformat, cprint, cprintln};
-use nitrolaunch::shared::pkg::{PackageID, PackageKind, PackageSearchParameters};
+use nitrolaunch::shared::pkg::{ArcPkgReq, PackageKind, PackageSearchParameters};
 use nitrolaunch::shared::util::from_string_json;
 use reqwest::Client;
 use serde::Serialize;
@@ -222,19 +222,19 @@ async fn list(data: &mut CmdData<'_>, raw: bool, instance: Option<String>) -> an
 		if !raw {
 			cprintln!("<s>Packages in instance <b>{}</b>:", instance_id);
 		}
-		for pkg in instance.packages().iter().sorted_by_key(|x| &x.id) {
+		for pkg in instance.packages().iter().sorted_by_key(|x| &x.req) {
 			if raw {
-				println!("{}", pkg.id);
+				println!("{}", pkg.req);
 			} else {
-				cprintln!("{}<b!>{}</>", HYPHEN_POINT, pkg.id);
+				cprintln!("{}<b!>{}</>", HYPHEN_POINT, pkg.req);
 			}
 		}
 	} else {
-		let mut found_pkgs: HashMap<PackageID, Vec<TemplateID>> = HashMap::new();
+		let mut found_pkgs: HashMap<ArcPkgReq, Vec<TemplateID>> = HashMap::new();
 		for (id, instance) in config.instances.iter() {
 			for pkg in instance.packages() {
 				found_pkgs
-					.entry(pkg.id.clone())
+					.entry(pkg.req.clone())
 					.or_default()
 					.push(id.clone());
 			}
@@ -682,13 +682,12 @@ async fn add(
 	packages.sort();
 
 	let package = if let Some(package) = package {
-		Arc::from(package)
+		package
 	} else {
 		inquire::Select::new("Which package would you like to install?", packages)
 			.prompt()
 			.context("Failed to get desired package")?
-			.id
-			.clone()
+			.to_string()
 	};
 
 	let instance =

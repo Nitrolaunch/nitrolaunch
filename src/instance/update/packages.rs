@@ -169,8 +169,13 @@ pub async fn update_instance_packages<O: NitroOutput>(
 		let _ = addon.remove_from_instance();
 	}
 
-	inst_lock
-		.update_configured_packages(instance.packages.iter().map(|x| x.id.to_string()).collect());
+	inst_lock.update_configured_packages(
+		instance
+			.packages
+			.iter()
+			.map(|x| x.req.to_string())
+			.collect(),
+	);
 	inst_lock.write()?;
 
 	ctx.output.display(MessageContents::Success(translate!(
@@ -274,7 +279,7 @@ fn get_included_packages(
 				== &instance
 					.packages
 					.iter()
-					.map(|x| x.id.to_string())
+					.map(|x| x.req.to_string())
 					.collect::<HashSet<_>>()
 			{
 				return None;
@@ -287,10 +292,10 @@ fn get_included_packages(
 				let mut pkg = instance
 					.packages
 					.iter()
-					.find(|x| PkgRequest::parse(&x.id, PkgRequestSource::UserRequire) == req)
+					.find(|x| *x.req == req)
 					.cloned()
 					.unwrap_or_else(|| PackageConfig {
-						id: pkg.clone().into(),
+						req: req.clone().arc(),
 						features: Vec::new(),
 						use_default_features: true,
 						permissions: EvalPermissions::default(),
@@ -305,22 +310,21 @@ fn get_included_packages(
 					.clone()
 					.map(VersionPattern::Prefer)
 					.unwrap_or_default();
-				pkg.id = req.to_string().into();
+				pkg.req = req.clone().arc();
 				out.push(pkg);
 			}
 
 			// Add any newly configured packages
 			for pkg in &instance.packages {
-				let req = PkgRequest::parse(&pkg.id, PkgRequestSource::UserRequire);
-				out.retain(|x| PkgRequest::parse(&x.id, PkgRequestSource::UserRequire) != req);
+				out.retain(|x| x.req != pkg.req);
 				out.push(pkg.clone());
 			}
 
 			// Remove any soft constraints for packages that are no longer configured
 			for pkg_id in inst_lock.get_configured_packages() {
-				if !instance.packages.iter().any(|x| *x.id == *pkg_id) {
-					let req = PkgRequest::parse(pkg_id, PkgRequestSource::UserRequire);
-					out.retain(|x| PkgRequest::parse(&x.id, PkgRequestSource::UserRequire) != req);
+				let req = PkgRequest::parse(pkg_id, PkgRequestSource::UserRequire);
+				if !instance.packages.iter().any(|x| *x.req == req) {
+					out.retain(|x| *x.req != req);
 				}
 			}
 

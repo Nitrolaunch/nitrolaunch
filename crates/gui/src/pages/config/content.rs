@@ -914,7 +914,7 @@ fn build_items(
 		.chain(client_packages)
 		.chain(server_packages)
 	{
-		let req = PkgRequest::parse(package.get_pkg_id(), PkgRequestSource::UserRequire).arc();
+		let req = package.get_req().arc();
 		let item = if let Some(pos) = items
 			.iter()
 			.position(|x| matches!(&x.ty, ContentItemType::Package {req: req2} if *req2 == req))
@@ -923,7 +923,7 @@ fn build_items(
 		} else {
 			items.push(ContentItem {
 				ty: ContentItemType::Package { req: req.clone() },
-				id: package.get_pkg_id(),
+				id: package.get_id().into(),
 				is_configured: true,
 				is_locked: false,
 				is_derived: false,
@@ -962,7 +962,7 @@ fn build_items(
 		.chain(derived_client_packages)
 		.chain(derived_server_packages)
 	{
-		let req = PkgRequest::parse(package.get_pkg_id(), PkgRequestSource::UserRequire).arc();
+		let req = package.get_req().arc();
 		if items
 			.iter()
 			.any(|x| matches!(&x.ty, ContentItemType::Package {req: req2} if *req2 == req))
@@ -978,7 +978,7 @@ fn build_items(
 		} else {
 			items.push(ContentItem {
 				ty: ContentItemType::Package { req: req.clone() },
-				id: package.get_pkg_id(),
+				id: package.get_id().into(),
 				is_configured: false,
 				is_locked: false,
 				is_derived: false,

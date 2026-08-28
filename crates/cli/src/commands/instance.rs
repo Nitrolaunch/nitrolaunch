@@ -304,14 +304,10 @@ async fn info(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()> 
 		print!("{} ", PACKAGE);
 	}
 	cprintln!("<s>Packages:");
-	for pkg in instance
-		.packages()
-		.iter()
-		.sorted_by_key(|x| x.get_request())
-	{
+	for pkg in instance.packages().iter().sorted_by_key(|x| x.req.clone()) {
 		print_indent();
 		cprint!("{}", HYPHEN_POINT);
-		cprint!("<b!>{}<g!>", pkg.id);
+		cprint!("<b!>{}<g!>", pkg.req);
 		cprintln!();
 	}
 

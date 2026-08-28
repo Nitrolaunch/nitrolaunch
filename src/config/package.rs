@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use anyhow::ensure;
 use nitro_config::package::{EvalPermissions, PackageConfigDeser};
 use nitro_pkg::properties::PackageProperties;
@@ -10,8 +8,8 @@ use nitro_pkg::{PkgRequest, PkgRequestSource};
 /// Stored configuration for a package
 #[derive(Clone, Debug)]
 pub struct PackageConfig {
-	/// The ID of the package
-	pub id: PackageID,
+	/// The request of the package
+	pub req: ArcPkgReq,
 	/// The package's enabled features
 	pub features: Vec<String>,
 	/// Whether or not to use the package's default features
@@ -41,7 +39,7 @@ impl PackageConfig {
 	/// Create the default configuration for a package with a package ID
 	pub fn from_id(id: PackageID) -> Self {
 		Self {
-			id,
+			req: PkgRequest::parse(id, PkgRequestSource::UserRequire).arc(),
 			features: Vec::new(),
 			use_default_features: true,
 			permissions: EvalPermissions::default(),
@@ -75,14 +73,6 @@ impl PackageConfig {
 
 		Ok(out)
 	}
-
-	/// Get the request of the config
-	pub fn get_request(&self) -> ArcPkgReq {
-		Arc::new(PkgRequest::parse(
-			self.id.clone(),
-			PkgRequestSource::UserRequire,
-		))
-	}
 }
 
 /// Reads configuration for a package
@@ -90,10 +80,8 @@ pub fn read_package_config(
 	config: PackageConfigDeser,
 	default_stability: PackageStability,
 ) -> PackageConfig {
-	let id = config.get_pkg_id();
-
 	PackageConfig {
-		id,
+		req: config.get_req().arc(),
 		features: config.get_features(),
 		use_default_features: config.get_use_default_features(),
 		permissions: config.get_permissions(),

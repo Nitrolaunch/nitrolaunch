@@ -161,21 +161,21 @@ async fn info(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()> 
 	for pkg in template.packages.iter_global() {
 		print_indent();
 		cprint!("{}", HYPHEN_POINT);
-		cprint!("<b!>{}<g!>", pkg.get_pkg_id());
+		cprint!("<b!>{}<g!>", pkg.get_id());
 		cprintln!();
 	}
 	cprintln!("   <s>Client Packages:");
 	for pkg in template.packages.iter_side(Side::Client) {
 		print_indent();
 		cprint!("{}", HYPHEN_POINT);
-		cprint!("<b!>{}<g!>", pkg.get_pkg_id());
+		cprint!("<b!>{}<g!>", pkg.get_id());
 		cprintln!();
 	}
 	cprintln!("   <s>Server Packages:");
 	for pkg in template.packages.iter_side(Side::Server) {
 		print_indent();
 		cprint!("{}", HYPHEN_POINT);
-		cprint!("<b!>{}<g!>", pkg.get_pkg_id());
+		cprint!("<b!>{}<g!>", pkg.get_id());
 		cprintln!();
 	}
 

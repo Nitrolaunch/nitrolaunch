@@ -475,13 +475,13 @@ struct EvaluatorCommonInput<'a> {
 
 /// Newtype for PkgInstanceConfig
 #[derive(Clone)]
-struct EvalPackageConfig(PackageConfig, ArcPkgReq);
+struct EvalPackageConfig(PackageConfig);
 
 impl ConfiguredPackage for EvalPackageConfig {
 	type EvalInput = EvalInput;
 
 	fn get_package(&self) -> ArcPkgReq {
-		self.1.clone()
+		self.0.req.clone()
 	}
 
 	fn override_configured_package_input(
@@ -732,7 +732,7 @@ pub async fn resolve(
 
 	let packages = packages
 		.iter()
-		.map(|x| EvalPackageConfig((*x).clone(), x.get_request()))
+		.map(|x| EvalPackageConfig((*x).clone()))
 		.collect::<Vec<_>>();
 
 	let result =

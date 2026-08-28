@@ -5,7 +5,7 @@ use nitro_shared::Side;
 use nitro_shared::id::TemplateID;
 use nitro_shared::loaders::Loader;
 use nitro_shared::output::{MessageContents, NitroOutput};
-use nitro_shared::pkg::{PkgRequest, PkgRequestSource};
+use nitro_shared::pkg::PkgRequest;
 use nitro_shared::versions::VersionPattern;
 #[cfg(feature = "schema")]
 use schemars::JsonSchema;
@@ -464,23 +464,14 @@ pub fn consolidate_package_configs(
 	let mut map = HashMap::new();
 	for template in templates {
 		for pkg in template.packages.iter_global() {
-			map.insert(
-				PkgRequest::parse(pkg.get_pkg_id(), PkgRequestSource::UserRequire).id,
-				pkg.clone(),
-			);
+			map.insert(pkg.get_req(), pkg.clone());
 		}
 		for pkg in template.packages.iter_side(side) {
-			map.insert(
-				PkgRequest::parse(pkg.get_pkg_id(), PkgRequestSource::UserRequire).id,
-				pkg.clone(),
-			);
+			map.insert(pkg.get_req(), pkg.clone());
 		}
 	}
 	for pkg in &instance.packages {
-		map.insert(
-			PkgRequest::parse(pkg.get_pkg_id(), PkgRequestSource::UserRequire).id,
-			pkg.clone(),
-		);
+		map.insert(pkg.get_req(), pkg.clone());
 	}
 
 	map.into_values().collect()
