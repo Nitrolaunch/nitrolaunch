@@ -161,7 +161,7 @@ enum ProfileType {
 fn get_data_dir() -> anyhow::Result<PathBuf> {
 	let out = match get_os_string().as_str() {
 		"linux" => format!("{}/.local/share/.minecraft", std::env::var("HOME")?),
-		"windows" => format!("{}/Roaming/.minecraft", std::env::var("%APPDATA%")?),
+		"windows" => format!("{}/.minecraft", std::env::var("APPDATA")?),
 		"macos" => format!(
 			"{}/Library/Application Support/minecraft",
 			std::env::var("HOME")?
