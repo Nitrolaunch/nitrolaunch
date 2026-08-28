@@ -41,6 +41,9 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 			.context("Failed to extract GraalVM archive")?;
 		let extracted_dir = out_dir.join(&dir_name);
 
+		#[cfg(target_os = "macos")]
+		let extracted_dir = extracted_dir.join("Contents/Home");
+
 		let version = dir_name.replace("graalvm-jdk-", "");
 
 		Ok(Some(InstallCustomJavaResult {
