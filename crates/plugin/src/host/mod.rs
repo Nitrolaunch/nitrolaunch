@@ -50,6 +50,13 @@ impl CorePluginManager {
 		self.wasm_loader = loader;
 	}
 
+	/// Resets the plugin manager and cache
+	pub async fn clear(&mut self) {
+		self.plugins.clear();
+		self.plugin_list.clear();
+		self.wasm_loader.lock().await.reset_cache();
+	}
+
 	/// Add a plugin to the manager
 	pub async fn add_plugin(
 		&mut self,

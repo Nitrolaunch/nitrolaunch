@@ -3,7 +3,6 @@ pub mod context;
 /// Online plugin installation from verified GitHub repos
 pub mod install;
 
-use std::collections::HashSet;
 use std::fs::File;
 use std::io::{Read, Seek};
 use std::path::{Path, PathBuf};
@@ -12,6 +11,7 @@ use std::sync::Arc;
 use crate::config::plugin::{PluginConfig, PluginsConfig};
 use crate::io::paths::Paths;
 use anyhow::{Context, bail};
+use dashmap::DashSet;
 use nitro_core::io::{json_from_file, json_to_file_pretty};
 use nitro_plugin::PluginPaths;
 use nitro_plugin::hook::call::{HookHandle, HookHandles};
@@ -29,7 +29,7 @@ use zip::ZipArchive;
 #[derive(Clone)]
 pub struct PluginManager {
 	inner: Arc<Mutex<PluginManagerInner>>,
-	plugins: HashSet<String>,
+	plugins: DashSet<String>,
 }
 
 /// Inner for the PluginManager
@@ -56,11 +56,22 @@ impl PluginManager {
 		}
 	}
 
-	/// Load the PluginManager from the plugins.json file
+	/// Load the plugin manager from the plugins.json file
 	pub async fn load(paths: &Paths, o: &mut impl NitroOutput) -> anyhow::Result<Self> {
+		let out = Self::new(paths);
+		out.reload(paths, o).await?;
+		Ok(out)
+	}
+
+	/// Reloads the plugin manager from the plugins.json file
+	pub async fn reload(&self, paths: &Paths, o: &mut impl NitroOutput) -> anyhow::Result<()> {
 		let config = Self::open_config(paths).context("Failed to open plugins config")?;
 
-		let mut out = Self::new(paths);
+		{
+			let mut inner = self.inner.lock().await;
+			inner.configs.clear();
+			inner.manager.clear().await;
+		}
 
 		for plugin_id in config.plugins {
 			let config = config.config.get(&plugin_id).cloned();
@@ -69,14 +80,14 @@ impl PluginManager {
 				custom_config: config,
 			};
 
-			out.load_plugin(plugin, paths, o)
+			self.load_plugin(plugin, paths, o)
 				.await
 				.with_context(|| format!("Failed to load plugin {plugin_id}"))?;
 		}
 
-		out.check_dependencies(o).await;
+		self.check_dependencies(o).await;
 
-		Ok(out)
+		Ok(())
 	}
 
 	/// Get the path to the config file
@@ -105,13 +116,13 @@ impl PluginManager {
 				manager,
 				configs: Vec::new(),
 			})),
-			plugins: HashSet::new(),
+			plugins: DashSet::new(),
 		}
 	}
 
 	/// Add a plugin to the manager
 	pub async fn add_plugin(
-		&mut self,
+		&self,
 		plugin: PluginConfig,
 		manifest: PluginManifest,
 		paths: &Paths,
@@ -170,7 +181,7 @@ impl PluginManager {
 
 	/// Load a plugin from the plugin directory
 	pub async fn load_plugin(
-		&mut self,
+		&self,
 		plugin: PluginConfig,
 		paths: &Paths,
 		o: &mut impl NitroOutput,
