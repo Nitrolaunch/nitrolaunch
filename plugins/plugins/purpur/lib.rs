@@ -66,11 +66,11 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 			.join("internal/jars")
 			.join(format!("{}_server_purpur.jar", &arg.version_info.version));
 
+		let build = arg
+			.desired_loader_version
+			.get_match(&builds)
+			.context("No matching Purpur build versions found")?;
 		if !jar_path.exists() || arg.update_depth > UpdateDepth::Shallow {
-			let build = arg
-				.desired_loader_version
-				.get_match(&builds)
-				.context("No matching Purpur build versions found")?;
 			download_purpur_jar(&arg.version_info.version, &build, &jar_path)
 				.context("Failed to download Purpur jar")?;
 		}
@@ -80,6 +80,7 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 		Ok(OnInstanceSetupResult {
 			main_class_override: Some("org.bukkit.craftbukkit.Main".into()),
 			jar_path_override: Some(jar_path.to_string_lossy().to_string()),
+			loader_version: Some(build),
 			..Default::default()
 		})
 	})?;
