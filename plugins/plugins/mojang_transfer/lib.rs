@@ -163,7 +163,7 @@ fn get_data_dir() -> anyhow::Result<PathBuf> {
 		"linux" => format!("{}/.local/share/.minecraft", std::env::var("HOME")?),
 		"windows" => format!("{}/Roaming/.minecraft", std::env::var("%APPDATA%")?),
 		"macos" => format!(
-			"{}/Library/Application Support/.minecraft",
+			"{}/Library/Application Support/minecraft",
 			std::env::var("HOME")?
 		),
 		_ => bail!("Unsupported OS"),
