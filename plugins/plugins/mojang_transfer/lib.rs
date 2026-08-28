@@ -67,6 +67,7 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 
 		for profile in profiles.profiles.into_values() {
 			if let Some(requested_instances) = &arg.instances
+				&& !requested_instances.is_empty()
 				&& !requested_instances.contains(&profile.name)
 			{
 				continue;
