@@ -304,14 +304,20 @@ async fn update_adoptium(
 	extracted_bin_name.push_str("-jre");
 	let extracted_bin_dir = out_dir.join(&extracted_bin_name);
 
+	// MacOS does some screwery
+	#[cfg(not(target_os = "macos"))]
+	let final_dir = extracted_bin_dir;
+	#[cfg(target_os = "macos")]
+	let final_dir = extracted_bin_dir.join("Contents/Home");
+
 	if !params
 		.persistent
 		.lock()
 		.await
-		.update_java_installation("adoptium", major_version, &release_name, &extracted_bin_dir)
+		.update_java_installation("adoptium", major_version, &release_name, &final_dir)
 		.context("Failed to update Java in lockfile")?
 	{
-		return Ok(extracted_bin_dir);
+		return Ok(final_dir);
 	}
 
 	params.persistent.lock().await.dump(params.paths).await?;
@@ -347,12 +353,6 @@ async fn update_adoptium(
 		o,
 		FinishJavaInstallation
 	)));
-
-	// MacOS does some screwery
-	#[cfg(not(target_os = "macos"))]
-	let final_dir = extracted_bin_dir;
-	#[cfg(target_os = "macos")]
-	let final_dir = extracted_bin_dir.join("Contents/Home");
 
 	Ok(final_dir)
 }
