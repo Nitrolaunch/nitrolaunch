@@ -15,6 +15,7 @@ pub enum Loader {
 	/// MinecraftForge
 	Forge,
 	/// NeoForged
+	#[serde(alias = "neoforge")]
 	NeoForged,
 	/// Fabric Loader
 	Fabric,
