@@ -35,7 +35,7 @@ impl VersionPattern {
 			},
 			Self::Latest(found) => match found {
 				Some(found) => vec![found.clone()],
-				None => match versions.get(versions.len()).cloned() {
+				None => match versions.last().cloned() {
 					Some(version) => vec![version],
 					None => vec![],
 				},
