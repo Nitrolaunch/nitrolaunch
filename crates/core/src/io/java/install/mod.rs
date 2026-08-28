@@ -234,9 +234,9 @@ fn get_existing_dir(
 
 	let directory = persistent.get_java_path(java, major_version)?;
 	if directory.exists() {
-		None
-	} else {
 		Some(directory)
+	} else {
+		None
 	}
 }
 
