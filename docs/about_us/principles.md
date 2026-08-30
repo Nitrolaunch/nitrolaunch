@@ -25,3 +25,6 @@ The oldest versions should still work just as well as the newest.
 
 ## 8. We are not a cracked launcher
 Cracked launchers are always shady and always attract shady people. We won't support anyone trying to make our launcher cracked.
+
+## 9. We are always human-driven
+Some AI tools might be used to review or generate small amounts of code, but the majority of the software is designed and written by a human.

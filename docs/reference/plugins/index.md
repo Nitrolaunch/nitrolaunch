@@ -1,4 +1,4 @@
-# Plugin Development
+# Plugin Development Reference
 
 Guides and standard documentation for plugin development
 
