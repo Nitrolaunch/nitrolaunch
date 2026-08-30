@@ -273,9 +273,7 @@ async fn info(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()> 
 	if !instance.original_config().from.is_empty() {
 		print_indent();
 		cprint!("<s>Derives from:</> ");
-		for template in instance.original_config().from.iter() {
-			cprint!("<b>{template}");
-		}
+		cprint!("<b>{}", instance.original_config().from.iter().join(", "));
 		cprintln!();
 	}
 
