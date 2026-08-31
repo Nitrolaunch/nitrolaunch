@@ -692,7 +692,7 @@ Adds new package repositories that can be queried and searched
 ```
 
 - `is_preferred`: Whether this repository should be loaded before or after repositories like `std` and `core`
-- `metadata`: [RepoMetadata](reference/packages/index.md)
+- `metadata`: [RepoMetadata](../packages/index.md)
 
 ### `query_custom_package_repository`
 

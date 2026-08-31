@@ -5,5 +5,9 @@ branding:
   title: Nitrolaunch
   label: &351198019 Docs
 links:
-- text: Docs
-  link: /docs
+- text: Getting Started
+  link: /getting_started
+- text: Packages
+  link: /packages
+- text: Plugins
+  link: /plugins

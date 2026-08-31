@@ -58,6 +58,10 @@ Navigate to the instance's content page, and click `Update Packages` to update.
 Run `nitro instance update --packages`.
 +++
 
+!!!warning Do not use in-game updaters
+In-game mod updaters like ModMenu will not work properly with Nitrolaunch packages as updating will remove Nitrolaunch's file and replace it with an untracked one. Please do not use these updaters on Nitrolaunch packages.
+!!!
+
 ## Removing Packages
 +++ App
 Navigate to the instance's content page, and click the 3 dots to bring up the remove option.
