@@ -1,6 +1,7 @@
 use std::{collections::HashMap, io::Cursor};
 
 use anyhow::Context;
+use itertools::Itertools;
 use zip::ZipArchive;
 
 static DOCS: &[u8] = include_bytes!("../../zipped_docs.zip");
@@ -40,7 +41,7 @@ impl Docs {
 
 	/// Get the list of doc pages
 	pub fn get_pages(&self) -> Vec<String> {
-		self.docs.keys().cloned().collect()
+		self.docs.keys().sorted().cloned().collect()
 	}
 }
 
