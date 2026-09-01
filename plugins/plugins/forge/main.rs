@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::{fs::create_dir_all, path::PathBuf};
 
 use anyhow::{Context, bail};
 use nitro_core::io::{json_from_file, json_to_file};
@@ -31,6 +31,8 @@ fn main() -> anyhow::Result<()> {
 		let client = nitro_net::download::Client::new();
 		let runtime = tokio::runtime::Runtime::new()?;
 		let loader_version;
+
+		let _ = create_dir_all(internal_dir.join("forge"));
 
 		let result = match mode {
 			Mode::NeoForge => {
