@@ -1,5 +1,6 @@
 use anyhow::{Context, bail};
 use nitro_config::{instance::InstanceConfig, template::TemplateConfig};
+use nitro_instance::files::{InstanceSave, get_instance_saves};
 use nitro_plugin::hook::hooks::{DeleteInstance, SaveInstanceConfigArg};
 use nitro_shared::{
 	Side,
@@ -158,5 +159,14 @@ impl Instance {
 		}
 
 		dir_size(dir)
+	}
+
+	/// Gets the saves for this instance
+	pub fn get_saves(&self) -> anyhow::Result<Vec<InstanceSave>> {
+		let Some(dir) = &self.dir else {
+			return Ok(Vec::new());
+		};
+
+		get_instance_saves(dir, self.side())
 	}
 }

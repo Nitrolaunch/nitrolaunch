@@ -12,6 +12,8 @@ use nitro_shared::Side;
 
 /// Immutable content for an instance like mods and resource packs
 pub mod addon;
+/// Instance files like saves and screenshots
+pub mod files;
 /// Storing versions and content in an instance
 pub mod lock;
 /// Game logs

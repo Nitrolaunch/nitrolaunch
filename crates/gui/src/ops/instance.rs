@@ -7,6 +7,7 @@ use nitrolaunch::{
 	config_crate::{ConfigKind, instance::InstanceConfig, template::TemplateConfig},
 	core::util::versions::MinecraftVersion,
 	instance::update::{InstanceUpdateContext, UpdateFacets, manager::UpdateSettings},
+	instance_crate::files::InstanceSave,
 	io::lock::Lockfile,
 	shared::{
 		Side, UpdateDepth,
@@ -683,3 +684,29 @@ simple_mutation!(
 		invalidate_all::<FetchItems>()
 	}
 );
+
+simple_query!(
+	name = FetchInstanceFiles,
+	ok = InstanceFiles,
+	err = anyhow::Error,
+	keys = String,
+	fn run(&self, keys: &Self::Keys) -> impl Future<Output = Result<Self::Ok, Self::Err>> {
+		let back_state = self.back_state.clone();
+		let id = keys.clone();
+
+		query_spawn(back_state.0.clone(), async move {
+			let config = back_state.config().await?;
+			let Some(instance) = config.instances.get(&InstanceID::from(id.clone())) else {
+				return Ok(InstanceFiles::default());
+			};
+
+			let saves = instance.get_saves()?;
+			Ok(InstanceFiles { saves })
+		})
+	}
+);
+
+#[derive(Default, Clone)]
+pub struct InstanceFiles {
+	pub saves: Vec<InstanceSave>,
+}
