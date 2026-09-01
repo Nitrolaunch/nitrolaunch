@@ -1,8 +1,8 @@
 use std::rc::Rc;
 
 use nitrolaunch::{
-	config_crate::ConfigKind, plugin_crate::hook::hooks::DropdownButtonLocation,
-	shared::pkg::ArcPkgReq,
+	config_crate::ConfigKind, core::QuickPlayType,
+	plugin_crate::hook::hooks::DropdownButtonLocation, shared::pkg::ArcPkgReq,
 };
 
 use crate::{
@@ -227,6 +227,7 @@ impl Component for FooterButton {
 						launch_instance.mutate(LaunchInstanceParams {
 							id: info.id.clone(),
 							offline: false,
+							quick_play: QuickPlayType::default(),
 						});
 					}
 					InstanceRunState::Running => {
