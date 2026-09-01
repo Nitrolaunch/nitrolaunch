@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use anyhow::{Context, bail};
 use nitro_config::{instance::InstanceConfig, template::TemplateConfig};
 use nitro_instance::files::{InstanceSave, get_instance_saves};
@@ -168,5 +170,14 @@ impl Instance {
 		};
 
 		get_instance_saves(dir, self.side())
+	}
+
+	/// Gets the screenshots for this instance
+	pub fn get_screenshots(&self) -> anyhow::Result<Vec<PathBuf>> {
+		let Some(dir) = &self.dir else {
+			return Ok(Vec::new());
+		};
+
+		nitro_instance::files::get_instance_screenshots(dir, self.side())
 	}
 }

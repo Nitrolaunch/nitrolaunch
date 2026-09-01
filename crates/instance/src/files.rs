@@ -55,3 +55,28 @@ fn process_save(dir: &Path) -> anyhow::Result<InstanceSave> {
 	let icon_path = Some(icon_path).filter(|p| p.exists());
 	Ok(InstanceSave { name, icon_path })
 }
+
+/// Gets the screenshots for an instance
+pub fn get_instance_screenshots(instance_dir: &Path, side: Side) -> anyhow::Result<Vec<PathBuf>> {
+	if let Side::Server = side {
+		return Ok(Vec::new());
+	}
+
+	let screenshots_dir = instance_dir.join("screenshots");
+
+	if !screenshots_dir.exists() {
+		return Ok(Vec::new());
+	}
+
+	let mut screenshots = Vec::new();
+	for entry in std::fs::read_dir(screenshots_dir)? {
+		let Ok(entry) = entry else {
+			continue;
+		};
+		if entry.file_type().is_ok_and(|x| x.is_file()) {
+			screenshots.push(entry.path());
+		}
+	}
+
+	Ok(screenshots)
+}

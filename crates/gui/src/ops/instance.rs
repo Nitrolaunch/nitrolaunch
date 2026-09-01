@@ -1,4 +1,4 @@
-use std::{sync::Arc, time::Duration};
+use std::{path::PathBuf, sync::Arc, time::Duration};
 
 use anyhow::{Context, bail};
 use itertools::Itertools;
@@ -701,7 +701,8 @@ simple_query!(
 			};
 
 			let saves = instance.get_saves()?;
-			Ok(InstanceFiles { saves })
+			let screenshots = instance.get_screenshots()?;
+			Ok(InstanceFiles { saves, screenshots })
 		})
 	}
 );
@@ -709,4 +710,5 @@ simple_query!(
 #[derive(Default, Clone)]
 pub struct InstanceFiles {
 	pub saves: Vec<InstanceSave>,
+	pub screenshots: Vec<PathBuf>,
 }

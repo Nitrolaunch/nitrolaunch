@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use nitrolaunch::core::QuickPlayType;
 
 use crate::{
-	components::misc::number_indicator,
+	components::{gallery::Gallery, misc::number_indicator},
 	ops::{
 		instance::FetchInstanceFiles,
 		launch::{LaunchInstance, LaunchInstanceParams},
@@ -58,9 +58,32 @@ impl Component for InstanceFilesView {
 					.child(number_indicator(save_count, &theme)),
 			)
 			.child(saves);
-		let right = rect().width(Size::percent(50.0)).height(Size::fill());
 
-		rect().expanded().child(left).child(right)
+		let screenshot_count = files.screenshots.len();
+		let screenshots = files.screenshots.into_iter().map(|x| ImageSource::Path(x));
+		let screenshots = Gallery {
+			items: screenshots.collect(),
+			columns: 2,
+		};
+
+		let right = rect()
+			.width(Size::percent(50.0))
+			.height(Size::fill())
+			.padding(theme.gap2)
+			.spacing(theme.gap2)
+			.child(
+				rect()
+					.width(Size::fill())
+					.horizontal()
+					.spacing(theme.gap)
+					.center()
+					.child(icon("picture", 16.0))
+					.child("Screenshots")
+					.child(number_indicator(screenshot_count, &theme)),
+			)
+			.child(screenshots);
+
+		rect().expanded().horizontal().child(left).child(right)
 	}
 }
 
