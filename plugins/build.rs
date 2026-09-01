@@ -1,21 +1,21 @@
-use std::fs::File;
 use std::path::PathBuf;
+use std::{fs::File, path::Path};
 
 use zip::{CompressionMethod, ZipWriter, write::FileOptions};
 
 macro_rules! add_file {
-	($zip:expr, $path:literal) => {
-		let path = PathBuf::from(concat!("../docs/", $path));
-		if !path.exists() {
-			panic!("Doc file {path:?} does not exist");
+	($zip:expr, $path:expr) => {
+		let path2 = Path::new("../docs").join($path);
+		if !path2.exists() {
+			panic!("Doc file {path2:?} does not exist");
 		}
 		$zip.start_file(
 			$path,
 			FileOptions::<()>::default().compression_method(CompressionMethod::Deflated),
 		)
 		.unwrap();
-		std::io::copy(&mut File::open(&path).unwrap(), &mut $zip).unwrap();
-		println!("cargo::rerun-if-changed={path:?}");
+		std::io::copy(&mut File::open(&path2).unwrap(), $zip).unwrap();
+		println!("cargo::rerun-if-changed={path2:?}");
 	};
 }
 
@@ -23,64 +23,31 @@ fn main() {
 	let out = File::create("./zipped_docs.zip").unwrap();
 	let mut zip = ZipWriter::new(out);
 
-	add_file!(zip, "index.md");
-	add_file!(zip, "configuring.md");
-	add_file!(zip, "loaders.md");
-	add_file!(zip, "principles.md");
-	zip.add_directory("packages", FileOptions::<()>::default())
-		.unwrap();
-	add_file!(zip, "packages/declarative.md");
-	add_file!(zip, "packages/index.md");
-	add_file!(zip, "packages/scripts.md");
-	zip.add_directory("guide", FileOptions::<()>::default())
-		.unwrap();
-	add_file!(zip, "guide/index.md");
-	add_file!(zip, "guide/cli/index.md");
-	add_file!(zip, "guide/cli/packages.md");
-	add_file!(zip, "guide/gui/index.md");
-	add_file!(zip, "guide/gui/packages.md");
-	zip.add_directory("plugins", FileOptions::<()>::default())
-		.unwrap();
-	add_file!(zip, "plugins/index.md");
-	add_file!(zip, "plugins/user_guide.md");
-	zip.add_directory("plugins/development", FileOptions::<()>::default())
-		.unwrap();
-	add_file!(zip, "plugins/development/index.md");
-	add_file!(zip, "plugins/development/format.md");
-	add_file!(zip, "plugins/development/hooks.md");
-	add_file!(zip, "plugins/plugins/index.md");
+	fn walk(dir: &Path, zip: &mut ZipWriter<File>) {
+		for entry in std::fs::read_dir(dir).unwrap() {
+			let entry = entry.unwrap();
+			let path = entry.path();
+			if path.is_dir() {
+				zip.add_directory(
+					path.strip_prefix("../docs").unwrap().to_string_lossy(),
+					FileOptions::<()>::default(),
+				)
+				.unwrap();
+				walk(&path, zip);
+			} else if path.is_file() && path.extension().map(|s| s == "md").unwrap_or(false) {
+				add_file!(
+					zip,
+					path.strip_prefix("../docs")
+						.unwrap()
+						.to_string_lossy()
+						.to_string()
+				);
+			}
+		}
+	}
 
-	add_file!(zip, "plugins/plugins/auto_mcs.md");
-	add_file!(zip, "plugins/plugins/automate.md");
-	add_file!(zip, "plugins/plugins/backup.md");
-	add_file!(zip, "plugins/plugins/better_jsons.md");
-	add_file!(zip, "plugins/plugins/cleanup.md");
-	add_file!(zip, "plugins/plugins/config_split.md");
-	add_file!(zip, "plugins/plugins/custom_files.md");
-	add_file!(zip, "plugins/plugins/docs.md");
-	add_file!(zip, "plugins/plugins/doctor.md");
-	add_file!(zip, "plugins/plugins/extra_versions.md");
-	add_file!(zip, "plugins/plugins/gen_pkg.md");
-	add_file!(zip, "plugins/plugins/glfw_fix.md");
-	add_file!(zip, "plugins/plugins/graalvm.md");
-	add_file!(zip, "plugins/plugins/guardian.md");
-	add_file!(zip, "plugins/plugins/lang.md");
-	add_file!(zip, "plugins/plugins/modrinth.md");
-	add_file!(zip, "plugins/plugins/modrinth_api.md");
-	add_file!(zip, "plugins/plugins/mojang_transfer.md");
-	add_file!(zip, "plugins/plugins/multimc_transfer.md");
-	add_file!(zip, "plugins/plugins/nitro_transfer.md");
-	add_file!(zip, "plugins/plugins/octane.md");
-	add_file!(zip, "plugins/plugins/options.md");
-	add_file!(zip, "plugins/plugins/server_restart.md");
-	add_file!(zip, "plugins/plugins/share.md");
-	add_file!(zip, "plugins/plugins/shortcut.md");
-	add_file!(zip, "plugins/plugins/skin_stealer.md");
-	add_file!(zip, "plugins/plugins/smithed.md");
-	add_file!(zip, "plugins/plugins/smithed_api.md");
-	add_file!(zip, "plugins/plugins/stats.md");
-	add_file!(zip, "plugins/plugins/webtools.md");
-	add_file!(zip, "plugins/plugins/weld.md");
-	add_file!(zip, "plugins/plugins/xmcl_transfer.md");
-	add_file!(zip, "plugins/plugins/zulu.md");
+	let docs = PathBuf::from("../docs");
+	walk(&docs, &mut zip);
+
+	zip.finish().unwrap();
 }
