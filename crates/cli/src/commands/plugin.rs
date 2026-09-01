@@ -164,7 +164,7 @@ pub(crate) async fn install(
 	version: Option<String>,
 	files: Vec<String>,
 ) -> anyhow::Result<()> {
-	if plugins.is_empty() {
+	if plugins.is_empty() && files.is_empty() {
 		bail!("No plugins were provided to install");
 	}
 
