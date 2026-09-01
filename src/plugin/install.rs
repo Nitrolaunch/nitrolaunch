@@ -87,7 +87,7 @@ impl VerifiedPlugin {
 
 			// Select the correct asset
 			for asset in release.assets {
-				if !asset.name.contains(&self.id) {
+				if !asset.name.starts_with(&self.id) {
 					continue;
 				}
 
