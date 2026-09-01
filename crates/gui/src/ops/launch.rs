@@ -2,7 +2,7 @@ use std::io::Write;
 
 use anyhow::Context;
 use nitrolaunch::{
-	core::io::open_named_pipe,
+	core::{QuickPlayType, io::open_named_pipe},
 	instance::{
 		launch::LaunchSettings,
 		tracking::RunningInstanceEntry,
@@ -29,6 +29,7 @@ pub struct LaunchInstance {
 pub struct LaunchInstanceParams {
 	pub id: String,
 	pub offline: bool,
+	pub quick_play: QuickPlayType,
 }
 
 impl LaunchInstance {
@@ -47,6 +48,7 @@ impl MutationCapability for LaunchInstance {
 	fn run(&self, keys: &Self::Keys) -> impl Future<Output = Result<Self::Ok, Self::Err>> {
 		let id = keys.id.clone();
 		let offline = keys.offline;
+		let quick_play = keys.quick_play.clone();
 		let back_state = self.back_state.clone();
 
 		let task = async move {
@@ -81,7 +83,7 @@ impl MutationCapability for LaunchInstance {
 			let settings = LaunchSettings {
 				offline_auth: offline,
 				pipe_stdin: false,
-				quick_play: None,
+				quick_play: Some(quick_play),
 			};
 
 			let mut lock = Lockfile::open(&back_state.paths)?;
@@ -176,10 +178,10 @@ impl MutationCapability for KillInstance {
 
 		query_spawn(back_state.0.clone(), async move {
 			let _: () = back_state
-   				.running_instances
-   				.kill(&id, account.as_deref())
-   				.await;
-   Ok(())
+				.running_instances
+				.kill(&id, account.as_deref())
+				.await;
+			Ok(())
 		})
 	}
 }

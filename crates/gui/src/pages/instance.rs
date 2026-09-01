@@ -2,6 +2,7 @@ use std::rc::Rc;
 
 use nitrolaunch::{
 	config_crate::{ConfigKind, instance::InstanceConfig, template::TemplateConfig},
+	core::QuickPlayType,
 	plugin_crate::hook::hooks::DropdownButtonLocation,
 };
 
@@ -152,12 +153,14 @@ impl Component for InstancePage {
 					launch.mutate(LaunchInstanceParams {
 						id: id.clone(),
 						offline: false,
+						quick_play: QuickPlayType::default(),
 					});
 				}
 				LaunchOption::LaunchOffline => {
 					launch.mutate(LaunchInstanceParams {
 						id: id.clone(),
 						offline: true,
+						quick_play: QuickPlayType::default(),
 					});
 				}
 				LaunchOption::Kill => {

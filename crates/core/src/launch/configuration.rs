@@ -146,7 +146,7 @@ pub struct WrapperCommand {
 }
 
 /// Options for the Minecraft QuickPlay feature
-#[derive(Debug, PartialEq, Eq, Default, Clone)]
+#[derive(Debug, PartialEq, Eq, Default, Clone, Hash)]
 pub enum QuickPlayType {
 	/// QuickPlay a world
 	World {

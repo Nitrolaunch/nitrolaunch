@@ -1,6 +1,15 @@
 use std::path::PathBuf;
 
-use crate::{components::misc::number_indicator, ops::instance::FetchInstanceFiles, prelude::*};
+use nitrolaunch::core::QuickPlayType;
+
+use crate::{
+	components::misc::number_indicator,
+	ops::{
+		instance::FetchInstanceFiles,
+		launch::{LaunchInstance, LaunchInstanceParams},
+	},
+	prelude::*,
+};
 
 #[derive(PartialEq)]
 pub struct InstanceFilesView {
@@ -22,6 +31,8 @@ impl Component for InstanceFilesView {
 			Item {
 				icon: x.icon_path.map(|x| ImageSource::Path(PathBuf::from(x))),
 				name: x.name,
+				ty: ItemType::Save,
+				instance_id: self.id.clone(),
 			}
 			.into_element()
 		});
@@ -57,11 +68,22 @@ impl Component for InstanceFilesView {
 struct Item {
 	name: String,
 	icon: Option<ImageSource>,
+	ty: ItemType,
+	instance_id: String,
+}
+
+#[derive(PartialEq, Clone, Copy)]
+enum ItemType {
+	Save,
 }
 
 impl Component for Item {
 	fn render(&self) -> impl IntoElement {
 		let theme = use_theme();
+		let front_state = use_front_state();
+		let back_state = use_consume::<BackState>();
+		let launch_mutation = use_mutation(LaunchInstance::new(back_state.clone()));
+
 		let is_hovered = use_state(|| false);
 
 		let ico = if let Some(ico) = &self.icon {
@@ -83,6 +105,20 @@ impl Component for Item {
 			.center()
 			.child(ico);
 
+		let instance_id = self.instance_id.clone();
+		let name = self.name.clone();
+		let launch_button = icon_button("rocket", &theme)
+			.active(&theme)
+			.on_press(move |_| {
+				launch_mutation.mutate(LaunchInstanceParams {
+					id: instance_id.clone(),
+					offline: false,
+					quick_play: QuickPlayType::World {
+						world: name.clone(),
+					},
+				});
+			});
+
 		rect()
 			.width(Size::fill())
 			.height(Size::px(48.0))
@@ -95,6 +131,17 @@ impl Component for Item {
 				segment(self.name.clone(), 1.0)
 					.height(Size::fill())
 					.main_align(Alignment::Center),
+			)
+			.child(
+				rect()
+					.height(Size::fill())
+					.center()
+					.padding(Gaps::new(0.0, theme.gap2, 0.0, 0.0))
+					.child(
+						rect()
+							.tip(&front_state, "Launch this world")
+							.child(launch_button),
+					),
 			)
 	}
 }
