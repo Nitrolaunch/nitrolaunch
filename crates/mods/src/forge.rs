@@ -98,9 +98,9 @@ pub async fn install(
 		.join(format!("{}-{forge_version}.json", mode.to_str()));
 
 	let server_jar_path = match mode {
-		Mode::NeoForge => internal_dir
-			.join("libraries")
-			.join("net/neoforged/neoforge/{forge_version}/neoforge-{forge_version}-server.jar"),
+		Mode::NeoForge => internal_dir.join("libraries").join(format!(
+			"net/neoforged/neoforge/{forge_version}/neoforge-{forge_version}-server.jar"
+		)),
 	};
 
 	let already_installed = match side {
