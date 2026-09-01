@@ -107,7 +107,7 @@ pub async fn install(
 		Side::Client => client_meta_path.exists(),
 		Side::Server => server_jar_path.exists(),
 	};
-	let already_installed = already_installed || update_depth == UpdateDepth::Force;
+	let already_installed = already_installed && update_depth != UpdateDepth::Force;
 
 	let mut process = o.get_process();
 	process.display(MessageContents::StartProcess(format!(
