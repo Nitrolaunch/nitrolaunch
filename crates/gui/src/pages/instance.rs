@@ -11,7 +11,9 @@ use crate::{
 			select::{Selected, run_dropdown_button},
 			tabs::SideTabs,
 		},
-		instance::{console::InstanceConsole, transfer::InstanceTransferMode},
+		instance::{
+			console::InstanceConsole, files::InstanceFilesView, transfer::InstanceTransferMode,
+		},
 	},
 	ops::{
 		instance::{
@@ -75,7 +77,7 @@ impl Component for InstancePage {
 			front_state.clone(),
 		)));
 
-		let tab = use_state(|| Tab::Console);
+		let tab = use_state(|| Tab::Info);
 		let config = use_state(InstanceConfig::default);
 
 		let id = self.id.clone();
@@ -293,6 +295,7 @@ impl Component for InstancePage {
 			.child(controls);
 
 		let tabs = SideTabs::from_state(tab)
+			.child(SelectOption::new(Tab::Info, "Info", Some("info")))
 			.child(SelectOption::new(Tab::Console, "Console", Some("text")))
 			.child(SelectOption::new(
 				Tab::Content,
@@ -308,7 +311,10 @@ impl Component for InstancePage {
 		let config_state2 = config_state.clone();
 		let save_fn = config_state.save_fn(front_state.clone(), save_config);
 		let contents = match &*tab.read() {
-			// Tab::Info => rect().into_element(),
+			Tab::Info => InstanceFilesView {
+				id: self.id.clone(),
+			}
+			.into_element(),
 			Tab::Content => ContentConfig {
 				config_state: config_state.clone(),
 				parent_configs: PtrEq(parent_configs.clone()),
@@ -346,7 +352,7 @@ impl Component for InstancePage {
 
 #[derive(PartialEq, Clone)]
 enum Tab {
-	// Info,
+	Info,
 	Content,
 	Console,
 }

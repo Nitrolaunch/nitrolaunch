@@ -76,3 +76,18 @@ pub fn status_panel(text: &str, color: Color, theme: &Theme) -> Rect {
 		.corner_radius(theme.round)
 		.child(label().text(text.to_string()).font_size(16.0))
 }
+
+/// Usually for indicating a number of items, like a notification count
+pub fn number_indicator(num: usize, theme: &Theme) -> Rect {
+	rect()
+		.height(Size::px(20.0))
+		.min_width(Size::px(20.0))
+		.padding(Gaps::new(0.0, theme.gap, 0.0, theme.gap))
+		.center()
+		.corner_radius(theme.round)
+		.background(theme.item)
+		.font_size(theme.font0)
+		.font_weight(FontWeight::BOLD)
+		.color(theme.fg3)
+		.child(num.to_string())
+}
