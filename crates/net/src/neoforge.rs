@@ -38,7 +38,10 @@ pub fn get_latest_neoforge_version<'a>(
 pub fn is_version_compatible(neoforge_version: &str, minecraft_version: &str) -> bool {
 	// Get the major version and patch of a release (remove the 1.)
 	let minecraft_major_version = &minecraft_version[2..];
-	neoforge_version.starts_with(minecraft_major_version)
+	neoforge_version
+		.strip_prefix(minecraft_major_version)
+		.map(|rest| rest.starts_with('.') || rest.starts_with('-'))
+		.unwrap_or(false)
 }
 
 /// Downloads the installer for the given NeoForge version
