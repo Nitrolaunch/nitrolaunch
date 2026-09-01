@@ -299,12 +299,12 @@ impl Component for InstancePage {
 
 		let tabs = SideTabs::from_state(tab)
 			.child(SelectOption::new(Tab::Info, "Info", Some("info")))
-			.child(SelectOption::new(Tab::Console, "Console", Some("text")))
 			.child(SelectOption::new(
 				Tab::Content,
 				"Content",
 				Some("honeycomb"),
-			));
+			))
+			.child(SelectOption::new(Tab::Console, "Console", Some("text")));
 		let tabs = rect()
 			.width(Size::flex(1.0))
 			.height(Size::fill())

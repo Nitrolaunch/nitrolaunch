@@ -6,6 +6,7 @@ use nitrolaunch::{
 
 use crate::{
 	components::{
+		gallery::Gallery,
 		input::tabs::TopTabs,
 		pkg::versions::PackageVersions,
 		tag::{loader_tag, repo_tag},
@@ -213,22 +214,19 @@ impl Component for PackageView {
 			.into_element(),
 			Tab::Gallery => {
 				if let Some(gallery) = meta.gallery.as_ref().filter(|x| !x.is_empty()) {
-					let items = gallery.iter().map(|x| {
-						rect()
-							.width(Size::fill())
-							.height(Size::px(180.0))
-							.corner_radius(theme.round2)
-							.shiny_border(&theme)
-							.child(
-								img(x)
-									.expanded()
-									.aspect_ratio(AspectRatio::Max)
-									.image_cover(ImageCover::Center)
-									.corner_radius(theme.round2),
-							)
-					});
-					let grid = grid(3, items).gap(theme.gap2);
-					ScrollView::new().expanded().child(grid).into_element()
+					Gallery {
+						items: gallery
+							.iter()
+							.map(|x| {
+								ImageSource::Uri(
+									Url::parse(x)
+										.unwrap_or(Url::parse("https://example.com").unwrap()),
+								)
+							})
+							.collect(),
+						columns: 3,
+					}
+					.into_element()
 				} else if is_loading {
 					loading_spinner
 				} else {

@@ -37,6 +37,7 @@ pub mod nav;
 pub mod output_indicator;
 pub mod pkg;
 pub mod tag;
+pub mod gallery;
 
 pub const TOAST_TIP_LAYER: u8 = 3;
 
