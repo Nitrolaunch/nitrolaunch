@@ -20,11 +20,11 @@ First, you have to find some packages to install.
 +++ App
 Navigate to the packages tab at the top to start browsing. 
 
-![](assets/screenshots/gui_packages.png)
+![](../assets/screenshots/gui_packages.png)
 +++ CLI
 Run `nitro package browse` to enter the package browser. Keybinds are written in brackets next to items, and at the bottom. Press `q` to exit.
 
-![](assets/screenshots/cli_browse.png)
+![](../assets/screenshots/cli_browse.png)
 +++
 
 Use the filters at the top to select which repository to use, what types of packages to look for, and filter by other things like the loader or Minecraft version. By default, Nitrolaunch will search all repositories at once and combine the results.
@@ -33,11 +33,11 @@ Use the filters at the top to select which repository to use, what types of pack
 +++ App
 Start by either clicking the install button, or one of the install buttons on a version in the versions tab.
 
-![](assets/screenshots/package_page.png)
+![](../assets/screenshots/package_page.png)
 
 This will bring up a menu where you can pick which instance or template to install on.
 
-![](assets/screenshots/package_install.png)
+![](../assets/screenshots/package_install.png)
 +++ CLI
 Find the package you want and press `i` to bring up the install menu, or switch to the versions tab and press `i` on the version you want to install. Select the instance or template to install on.
 +++
@@ -53,7 +53,7 @@ Packages will be updated whenever you do a standard instance update. However, yo
 
 +++ App
 Navigate to the instance's content page, and click `Update Packages` to update.
-![](assets/screenshots/instance_packages.png)
+![](../assets/screenshots/instance_packages.png)
 +++ CLI
 Run `nitro instance update --packages`.
 +++

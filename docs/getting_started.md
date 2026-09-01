@@ -79,7 +79,7 @@ Run `nitro instance add` to open an interactive prompt and set up a new instance
 +++ App
 Click to select an instance from the list and then click launch at the bottom of the screen. Your game will start shortly!
 +++ CLI
-Run `nitro instance launch <instance_id>` to launch the instance you just created.
+Run `nitro launch <instance_id>` to launch the instance you just created.
 
 !!!tip Tip
 You can omit the instance ID for the `launch` command and many other `instance` commands. There are also some aliases such as `inst` and `pkg` you can use to save typing.
@@ -90,4 +90,4 @@ The first launch will probably take a little while since all of the game files n
 >>>
 
 For more info, read the other documentation or join our [Discord server](https://discord.gg/25fhkjeTvW).
-When you want to start adding things like mods or resource packs to your instance, check out the [packages guide](packages.md).
+When you want to start adding things like mods or resource packs to your instance, check out the [packages guide](packages/index.md).
