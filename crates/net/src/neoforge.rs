@@ -37,7 +37,9 @@ pub fn get_latest_neoforge_version<'a>(
 /// Checks if a NeoForge version is made for a given Minecraft version
 pub fn is_version_compatible(neoforge_version: &str, minecraft_version: &str) -> bool {
 	// Get the major version and patch of a release (remove the 1.)
-	let minecraft_major_version = &minecraft_version[2..];
+	let minecraft_major_version = minecraft_version
+		.strip_prefix("1.")
+		.unwrap_or(minecraft_version);
 	neoforge_version
 		.strip_prefix(minecraft_major_version)
 		.map(|rest| rest.starts_with('.') || rest.starts_with('-'))
