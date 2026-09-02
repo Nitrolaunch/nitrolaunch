@@ -1,6 +1,12 @@
-use std::path::{Path, PathBuf};
+use std::{
+	fs::File,
+	io::BufReader,
+	path::{Path, PathBuf},
+};
 
 use anyhow::Context;
+use base64::Engine;
+use nbt::decode::read_compound_tag;
 use nitro_shared::Side;
 
 /// Basic information about a save in an instance
@@ -79,4 +85,54 @@ pub fn get_instance_screenshots(instance_dir: &Path, side: Side) -> anyhow::Resu
 	}
 
 	Ok(screenshots)
+}
+
+/// Gets the servers for an instance
+pub fn get_instance_servers(instance_dir: &Path, side: Side) -> anyhow::Result<Vec<ServerInfo>> {
+	if let Side::Server = side {
+		return Ok(Vec::new());
+	}
+
+	let servers_file = instance_dir.join("servers.dat");
+	if !servers_file.exists() {
+		return Ok(Vec::new());
+	}
+
+	let mut servers =
+		BufReader::new(File::open(servers_file).context("Failed to open servers.dat")?);
+	let root = read_compound_tag(&mut servers).context("Failed to parse servers.dat")?;
+	let servers = root
+		.get_compound_tag_vec("servers")
+		.map_err(|e| anyhow::anyhow!("Failed to read servers list: {e}"))?;
+
+	let out = servers
+		.iter()
+		.filter_map(|s| {
+			Some(ServerInfo {
+				name: s.get_str("name").ok().map(|x| x.to_string()),
+				address: s.get_str("ip").ok()?.to_string(),
+				icon_png: s.get_str("icon").ok().and_then(|x| {
+					base64::engine::GeneralPurpose::new(
+						&base64::alphabet::STANDARD,
+						base64::engine::GeneralPurposeConfig::new(),
+					)
+					.decode(x)
+					.ok()
+				}),
+			})
+		})
+		.collect();
+
+	Ok(out)
+}
+
+/// Basic information about a server in an instance
+#[derive(Clone)]
+pub struct ServerInfo {
+	/// The name of the server, if it exists
+	pub name: Option<String>,
+	/// The address of the server
+	pub address: String,
+	/// The icon of the server, if it exists
+	pub icon_png: Option<Vec<u8>>,
 }

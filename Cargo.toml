@@ -125,6 +125,7 @@ itertools = "0.11.0"
 libflate = "2.1.0"
 lnk = { version = "0.6.3", features = ["unstable-save", "binwrite"] }
 memchr = "2.8.0"
+named-binary-tag = "0.6.0"
 nitrolaunch = { path = ".", version = "0.31.0" }
 nitro_auth = { path = "crates/auth", version = "0.31.0" }
 nitro_core = { path = "crates/core", version = "0.31.0" }

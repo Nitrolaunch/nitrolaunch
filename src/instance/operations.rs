@@ -2,7 +2,9 @@ use std::path::PathBuf;
 
 use anyhow::{Context, bail};
 use nitro_config::{instance::InstanceConfig, template::TemplateConfig};
-use nitro_instance::files::{InstanceSave, get_instance_saves};
+use nitro_instance::files::{
+	InstanceSave, ServerInfo, get_instance_saves, get_instance_screenshots, get_instance_servers,
+};
 use nitro_plugin::hook::hooks::{DeleteInstance, SaveInstanceConfigArg};
 use nitro_shared::{
 	Side,
@@ -178,6 +180,15 @@ impl Instance {
 			return Ok(Vec::new());
 		};
 
-		nitro_instance::files::get_instance_screenshots(dir, self.side())
+		get_instance_screenshots(dir, self.side())
+	}
+
+	/// Gets the servers for this instance
+	pub fn get_servers(&self) -> anyhow::Result<Vec<ServerInfo>> {
+		let Some(dir) = &self.dir else {
+			return Ok(Vec::new());
+		};
+
+		get_instance_servers(dir, self.side())
 	}
 }

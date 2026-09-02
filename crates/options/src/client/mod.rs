@@ -4,6 +4,7 @@ mod file;
 mod keybinds;
 
 pub use file::create_keys;
+pub use file::read_options_txt;
 pub use file::write_options_txt;
 
 use std::{collections::HashMap, fmt::Display};
