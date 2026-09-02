@@ -31,7 +31,7 @@ pub fn write_server_properties(
 }
 
 /// Collect a hashmap from an existing server.properties file so we can compare with it
-fn read_server_properties(path: &Path) -> anyhow::Result<HashMap<String, String>> {
+pub fn read_server_properties(path: &Path) -> anyhow::Result<HashMap<String, String>> {
 	if path.exists() {
 		let contents = std::fs::read_to_string(path).context("Failed to read options.txt")?;
 		read_options_file(&contents, SEP)

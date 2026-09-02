@@ -5,6 +5,7 @@ use nitro_shared::util::{DefaultExt, ToInt};
 
 pub use file::create_keys;
 pub use file::get_world_name;
+pub use file::read_server_properties;
 pub use file::write_server_properties;
 
 use std::collections::HashMap;

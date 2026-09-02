@@ -33,6 +33,7 @@ impl Component for InstanceFilesView {
 				name: x.name,
 				ty: ItemType::Save,
 				instance_id: self.id.clone(),
+				server_address: None,
 			}
 			.into_element()
 		});
@@ -41,12 +42,12 @@ impl Component for InstanceFilesView {
 			.height(Size::fill())
 			.spacing(theme.gap)
 			.children(saves);
-		let left = rect()
-			.width(Size::percent(50.0))
-			.height(Size::fill())
+		let left_top = rect()
+			.width(Size::fill())
+			.height(Size::percent(50.0))
 			.padding(theme.gap2)
 			.spacing(theme.gap2)
-			.border(border_right(theme.border, theme.panel_border))
+			.border(border_bottom(theme.border, theme.panel_border))
 			.child(
 				rect()
 					.width(Size::fill())
@@ -66,9 +67,9 @@ impl Component for InstanceFilesView {
 			columns: 2,
 		};
 
-		let right = rect()
-			.width(Size::percent(50.0))
-			.height(Size::fill())
+		let left_bottom = rect()
+			.width(Size::fill())
+			.height(Size::percent(50.0))
 			.padding(theme.gap2)
 			.spacing(theme.gap2)
 			.child(
@@ -83,6 +84,48 @@ impl Component for InstanceFilesView {
 			)
 			.child(screenshots);
 
+		let left = rect()
+			.width(Size::percent(50.0))
+			.height(Size::fill())
+			.spacing(theme.gap2)
+			.border(border_right(theme.border, theme.panel_border))
+			.child(left_top)
+			.child(left_bottom);
+
+		let server_count = files.servers.len();
+		let servers = files.servers.into_iter().map(|x| {
+			Item {
+				icon: x.icon_png.map(|x| ImageSource::from(Bytes::from(x))),
+				name: x.name.unwrap_or_else(|| x.address.clone()),
+				ty: ItemType::Server,
+				instance_id: self.id.clone(),
+				server_address: Some(x.address),
+			}
+			.into_element()
+		});
+		let servers = ScrollView::new()
+			.width(Size::fill())
+			.height(Size::fill())
+			.spacing(theme.gap)
+			.children(servers);
+
+		let right = rect()
+			.width(Size::percent(50.0))
+			.height(Size::fill())
+			.padding(theme.gap2)
+			.spacing(theme.gap2)
+			.child(
+				rect()
+					.width(Size::fill())
+					.horizontal()
+					.spacing(theme.gap)
+					.center()
+					.child(icon("server", 16.0))
+					.child("Servers")
+					.child(number_indicator(server_count, &theme)),
+			)
+			.child(servers);
+
 		rect().expanded().horizontal().child(left).child(right)
 	}
 }
@@ -93,11 +136,13 @@ struct Item {
 	icon: Option<ImageSource>,
 	ty: ItemType,
 	instance_id: String,
+	server_address: Option<String>,
 }
 
 #[derive(PartialEq, Clone, Copy)]
 enum ItemType {
 	Save,
+	Server,
 }
 
 impl Component for Item {
@@ -120,7 +165,11 @@ impl Component for Item {
 				})
 				.into_element()
 		} else {
-			icon("box", 24.0).into_element()
+			let default_icon = match self.ty {
+				ItemType::Save => "minecraft",
+				ItemType::Server => "server",
+			};
+			icon(default_icon, 24.0).into_element()
 		};
 		let ico = rect()
 			.width(Size::px(48.0))
@@ -130,18 +179,31 @@ impl Component for Item {
 
 		let instance_id = self.instance_id.clone();
 		let name = self.name.clone();
+		let ty = self.ty;
+		let server_address = self.server_address.clone();
 		let launch_button = icon_button("rocket", &theme)
 			.active(&theme)
 			.on_press(move |_| {
+				let quick_play = match ty {
+					ItemType::Save => QuickPlayType::World {
+						world: name.clone(),
+					},
+					ItemType::Server => QuickPlayType::Server {
+						server: server_address.clone().unwrap_or_default(),
+						port: None,
+					},
+				};
 				launch_mutation.mutate(LaunchInstanceParams {
 					id: instance_id.clone(),
 					offline: false,
-					quick_play: QuickPlayType::World {
-						world: name.clone(),
-					},
+					quick_play,
 				});
 			});
 
+		let launch_tip = match ty {
+			ItemType::Save => "Play this world",
+			ItemType::Server => "Play this server",
+		};
 		rect()
 			.width(Size::fill())
 			.height(Size::px(48.0))
@@ -160,11 +222,7 @@ impl Component for Item {
 					.height(Size::fill())
 					.center()
 					.padding(Gaps::new(0.0, theme.gap2, 0.0, 0.0))
-					.child(
-						rect()
-							.tip(&front_state, "Launch this world")
-							.child(launch_button),
-					),
+					.child(rect().tip(&front_state, launch_tip).child(launch_button)),
 			)
 	}
 }

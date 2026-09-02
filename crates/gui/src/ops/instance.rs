@@ -7,7 +7,7 @@ use nitrolaunch::{
 	config_crate::{ConfigKind, instance::InstanceConfig, template::TemplateConfig},
 	core::util::versions::MinecraftVersion,
 	instance::update::{InstanceUpdateContext, UpdateFacets, manager::UpdateSettings},
-	instance_crate::files::InstanceSave,
+	instance_crate::files::{InstanceSave, ServerInfo},
 	io::lock::Lockfile,
 	shared::{
 		Side, UpdateDepth,
@@ -702,7 +702,13 @@ simple_query!(
 
 			let saves = instance.get_saves()?;
 			let screenshots = instance.get_screenshots()?;
-			Ok(InstanceFiles { saves, screenshots })
+			let servers = instance.get_servers()?;
+
+			Ok(InstanceFiles {
+				saves,
+				screenshots,
+				servers,
+			})
 		})
 	}
 );
@@ -711,4 +717,5 @@ simple_query!(
 pub struct InstanceFiles {
 	pub saves: Vec<InstanceSave>,
 	pub screenshots: Vec<PathBuf>,
+	pub servers: Vec<ServerInfo>,
 }
