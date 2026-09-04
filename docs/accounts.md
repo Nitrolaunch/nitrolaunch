@@ -59,7 +59,7 @@ Nitrolaunch supports offline launching as long as these two requirements are met
 2. All of the files that are necessary for the instance to run are downloaded.
 
 !!!info
-Make sure to do these things before you go offline, as you can't complete them without an internet connection.
+Make sure to do these things before you go offline, as you can't complete them without an internet connection. You should probably test the launch with your WiFi disconnected before you go offline for real. 
 !!!
 
 +++ App
