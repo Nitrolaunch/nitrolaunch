@@ -1,6 +1,6 @@
 # Instance Templates
 
-Instance templates are a powerful system that save you time by sharing common configuration between instances.
+Instance templates are a powerful system that save you time by sharing common configuration between instances. Check out the [examples](examples.md) for some ways you can use them!
 
 ## Creating and Managing Templates
 
