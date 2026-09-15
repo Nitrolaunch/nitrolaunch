@@ -16,6 +16,14 @@ Go to the settings in the top right and navigate to the plugins tab. Click `Avai
 Use the `nitro plugin browse` command to see a list of available plugins. Then, you can run `nitro plugin install <plugin>` to install the plugin you want.
 +++
 
+## Updating
+
++++ App
+Click the three dots next to a plugin in the plugin settings and then click update.
++++ CLI
+Use the `nitro plugin update <plugin>` command to update a specific plugin. You can also omit the plugin to update all plugins.
++++
+
 ### Enabling and Disabling
 
 Plugins can be easily disabled after they are installed, which lets you turn off their functionality without fully uninstalling them.
@@ -55,6 +63,7 @@ Run `nitro config edit-plugins` and add an entry under the `config` field in you
 	}
 }
 ```
+
 +++
 
 ### Manual Installation
