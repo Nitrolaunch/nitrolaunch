@@ -2,8 +2,8 @@
 	"id": "packhost",
 	"name": "Resource Pack Host",
 	"description": "Host a resource pack locally for servers",
-	"version": "v8",
-	"nitro_version": "0.31.0",
+	"version": "0.32.0",
+	"nitro_version": "0.32.0",
 	"protocol_version": 3,
 	"hooks": {
 		"on_instance_setup": {
