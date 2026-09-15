@@ -46,11 +46,9 @@ impl Component for MicrosoftAuthPrompt {
 }
 
 pub fn ms_auth_info(url: String, device_code: String, theme: &Theme) -> Rect {
-	let code_copy = button(theme)
-		.child(device_code.clone())
-		.on_press(move |_| {
-			let _ = Clipboard::set(device_code.clone());
-		});
+	let code_copy = button(theme).child(device_code.clone()).on_press(move |_| {
+		let _ = Clipboard::set(device_code.clone());
+	});
 	let code_copy = field("Copy this code", "copy", theme, code_copy);
 
 	let url2 = url.clone();

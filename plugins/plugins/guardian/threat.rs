@@ -51,9 +51,9 @@ impl Signature {
 				.constant_matchers
 				.iter()
 				.any(|x| matcher_matches(x, &file[0..end]))
-			{
-				return true;
-			}
+		{
+			return true;
+		}
 
 		self.matchers.iter().any(|x| matcher_matches(x, file))
 	}

@@ -41,7 +41,6 @@ impl Component for FileSelector {
 		};
 		let save = self.save;
 		let file = self.file;
-		
 
 		icon_text_button("folder", &preview, &theme)
 			.width(Size::fill())
