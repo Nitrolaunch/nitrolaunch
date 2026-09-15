@@ -22,6 +22,9 @@ pub struct LaunchConfiguration {
 	pub wrappers: Vec<WrapperCommand>,
 	/// Quick Play options
 	pub quick_play: QuickPlayType,
+	/// Whether to exclude default arguments and only use the provided arguments.
+	/// Will exclude the classpath, main class, and jar path and simply run with the JVM arguments and then game arguments.
+	pub exclude_default_args: bool,
 	/// Whether or not to use the Log4J configuration
 	pub use_log4j_config: bool,
 }
@@ -38,6 +41,7 @@ impl LaunchConfiguration {
 			env: HashMap::new(),
 			wrappers: Vec::new(),
 			quick_play: QuickPlayType::None,
+			exclude_default_args: false,
 			use_log4j_config: false,
 		}
 	}
@@ -117,6 +121,12 @@ impl LaunchConfigBuilder {
 	/// Set the type of Quick Play to use
 	pub fn quick_play(mut self, quick_play: QuickPlayType) -> Self {
 		self.config.quick_play = quick_play;
+		self
+	}
+
+	/// Set whether to exclude default arguments
+	pub fn exclude_default_args(mut self, exclude_default_args: bool) -> Self {
+		self.config.exclude_default_args = exclude_default_args;
 		self
 	}
 

@@ -21,22 +21,19 @@ use super::LaunchConfiguration;
 
 /// Launch the game process
 pub(crate) fn launch_game_process(
-	mut params: LaunchGameProcessParameters<'_>,
+	params: LaunchGameProcessParameters<'_>,
 	o: &mut impl NitroOutput,
 ) -> anyhow::Result<InstanceHandle> {
-	// Modify the parameters based on game-specific properties
-
-	// Prepend generated game args to the beginning
-	let previous_game_args = params.props.game_args.clone();
-	params.props.game_args = params.launch_config.generate_game_args(
+	// Canonicalize
+	let mut launch_config = params.launch_config.clone();
+	launch_config.jvm_args = params.launch_config.generate_jvm_args();
+	launch_config.game_args = params.launch_config.generate_game_args(
 		params.version,
 		params.version_list,
 		params.side.get_side(),
 		o,
 	);
-	params.props.game_args.extend(previous_game_args);
 
-	// Create the parameters for the process
 	let proc_params = LaunchProcessParameters {
 		command: params.command,
 		cwd: params.cwd,
@@ -81,7 +78,9 @@ pub(crate) fn launch_game_process(
 	))
 }
 
-/// Launch a generic process with the core's config system
+/// Launch a generic process with the core's config system.
+///
+/// Arguments should be canonicalized before running, as this function will not call generate_x_args on the launch config.
 pub fn launch_process(
 	params: LaunchProcessParameters<'_>,
 	stdout_path: &Path,
@@ -108,12 +107,18 @@ pub fn get_process_launch_command(
 	cmd.envs(params.props.additional_env_vars);
 
 	// Add the arguments
-	cmd.args(params.launch_config.generate_jvm_args());
-	cmd.args(params.props.jvm_args);
-	if let Some(main_class) = params.main_class {
-		cmd.arg(main_class);
+	if params.launch_config.exclude_default_args {
+		cmd.args(params.launch_config.jvm_args.clone());
+		cmd.args(params.launch_config.game_args.clone());
+	} else {
+		cmd.args(params.launch_config.jvm_args.clone());
+		cmd.args(params.props.jvm_args);
+		if let Some(main_class) = params.main_class {
+			cmd.arg(main_class);
+		}
+		cmd.args(params.launch_config.game_args.clone());
+		cmd.args(params.props.game_args);
 	}
-	cmd.args(params.props.game_args);
 
 	// Capture stdio
 	let stdout = File::create_new(stdout_path).context("Failed to open stdout")?;
@@ -249,7 +254,7 @@ pub struct LaunchProcessParameters<'a> {
 	pub launch_config: &'a LaunchConfiguration,
 }
 
-/// Properties for launching the game process that are created by
+/// Generated properties for launching the game process that are created by
 /// the side-specific launch routine
 #[derive(Default)]
 pub struct LaunchProcessProperties {

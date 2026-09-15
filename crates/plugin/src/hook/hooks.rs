@@ -183,6 +183,8 @@ pub struct OnInstanceSetupResult {
 	pub wrappers: Vec<WrapperCommand>,
 	/// Whether to skip adding the game JAR to the final classpath
 	pub exclude_game_jar: bool,
+	/// Whether to exclude all of the generated / default arguments to the JVM and game
+	pub exclude_default_args: bool,
 }
 
 def_hook!(
