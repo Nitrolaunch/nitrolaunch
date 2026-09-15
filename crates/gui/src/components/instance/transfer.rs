@@ -300,13 +300,10 @@ impl Component for MigrateContents {
 			(),
 			FetchTransferFormats::new(back_state.clone()),
 		));
-		let check_migration = use_query(
-			Query::new(
-				self.format.read().clone().unwrap_or_default(),
-				CheckMigration::new(back_state.clone()),
-			)
-			.enable(self.format.read().is_some()),
-		);
+		let check_migration = use_query(Query::new(
+			self.format.read().clone(),
+			CheckMigration::new(back_state.clone()),
+		));
 
 		let formats2 = formats;
 		let mut format2 = self.format;

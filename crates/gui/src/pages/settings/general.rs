@@ -150,6 +150,7 @@ impl Component for SelectableTheme {
 			.padding(theme.gap3)
 			.spacing(theme.gap3)
 			.hover(is_hovered)
+			.clickable()
 			.on_press(move |_| {
 				on_select.call(id.clone());
 			})

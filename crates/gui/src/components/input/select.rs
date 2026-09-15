@@ -466,6 +466,7 @@ impl<T: PartialEq + Clone + 'static> Component for Dropdown<T> {
 				this.panel_colorway(&theme, *is_hovered.read(), false)
 			})
 			.hover(is_hovered)
+			.clickable()
 			.on_press(move |ev: Event<PressEventData>| {
 				ev.stop_propagation();
 				is_open.toggle()

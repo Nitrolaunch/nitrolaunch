@@ -62,21 +62,16 @@ impl Component for PackageInstallModal {
 			new_instance_id2.set_if_modified(new_value);
 		});
 
-		let enable = selected_item.read().is_some();
-		let compatability_check = use_query(
-			Query::new(
-				CheckPackageCompatabilityKeys {
-					item: selected_item.read().cloned().unwrap_or(ConfiguredItem {
-						ty: ConfigKind::BaseTemplate,
-						id: None,
-						is_new: false,
-					}),
+		let compatability_check = use_query(Query::new(
+			selected_item
+				.read()
+				.cloned()
+				.map(|x| CheckPackageCompatabilityKeys {
+					item: x,
 					package: self.req.clone(),
-				},
-				CheckPackageCompatability::new(back_state.clone()),
-			)
-			.enable(enable),
-		);
+				}),
+			CheckPackageCompatability::new(back_state.clone()),
+		));
 		let compatability_err = compatability_check.read().state().ok().cloned().flatten();
 
 		let tab2 = tab;
@@ -303,6 +298,7 @@ impl Component for Item {
 			.height(Size::px(48.0))
 			.panel_colorway(&theme, *is_hovered.read(), is_selected)
 			.hover(is_hovered)
+			.clickable()
 			.corner_radius(theme.round)
 			.on_press(move |_| {
 				selected.set(Some(item.clone()));

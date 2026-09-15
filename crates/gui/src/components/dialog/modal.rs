@@ -200,6 +200,7 @@ impl Component for Modal {
 					.height(Size::px(32.0))
 					.center()
 					.hover(close_button_hovered)
+					.clickable()
 					.background(close_button_bg)
 					.corner_radius(theme.round2)
 					.on_press(move |_| on_close.call(()))

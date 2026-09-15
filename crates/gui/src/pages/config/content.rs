@@ -582,6 +582,7 @@ impl Component for ContentItemElem {
 			.corner_radius(theme.round2)
 			.panel_colorway(&theme, *is_hovered.read(), false)
 			.hover(is_hovered)
+			.clickable()
 			.on_press(move |_| open_toggle.call(()))
 			.child(
 				rect()

@@ -319,9 +319,9 @@ pub async fn invalidate_all<Q: QueryCapability>()
 where
 	Q::Err: AnyhowError,
 {
-	QueriesStorage::<Q>::try_invalidate_all().await;
-	QueriesStorage::<ToastedQuery<Q>>::try_invalidate_all().await;
-	QueriesStorage::<ConditionalQuery<Q>>::try_invalidate_all().await;
+	QueriesStorage::<Q>::invalidate_all().await;
+	QueriesStorage::<ToastedQuery<Q>>::invalidate_all().await;
+	QueriesStorage::<ConditionalQuery<Q>>::invalidate_all().await;
 }
 
 /// Invalidate matching that handles ToastedQuery and ConditionalQuery
@@ -329,10 +329,20 @@ pub async fn invalidate_matching<Q: QueryCapability>(keys: Q::Keys)
 where
 	Q::Err: AnyhowError,
 {
-	QueriesStorage::<Q>::try_invalidate_matching(keys.clone()).await;
-	QueriesStorage::<ToastedQuery<Q>>::try_invalidate_matching(keys.clone()).await;
+	QueriesStorage::<Q>::invalidate_matching(keys.clone()).await;
+	QueriesStorage::<ToastedQuery<Q>>::invalidate_matching(keys.clone()).await;
 	// Too hard to check this
-	QueriesStorage::<ConditionalQuery<Q>>::try_invalidate_all().await;
+	QueriesStorage::<ConditionalQuery<Q>>::invalidate_all().await;
+}
+
+/// Prevents aliasing in use_query with Option keys, where a None would disable the query rather than passing None as a key.
+#[derive(Clone, PartialEq, Eq, Hash)]
+pub struct QueryOption<T>(pub Option<T>);
+
+impl<T> From<Option<T>> for QueryOption<T> {
+	fn from(value: Option<T>) -> Self {
+		Self(value)
+	}
 }
 
 /// Utility to get around some Rust incapabilities, forcing a future to be send

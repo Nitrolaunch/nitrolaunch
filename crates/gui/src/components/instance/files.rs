@@ -209,6 +209,7 @@ impl Component for Item {
 			.height(Size::px(48.0))
 			.cont()
 			.hover(is_hovered)
+			.clickable()
 			.panel_colorway(&theme, *is_hovered.read(), false)
 			.corner_radius(theme.round)
 			.child(ico)

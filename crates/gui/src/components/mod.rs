@@ -12,8 +12,8 @@ use freya::{
 	},
 	prelude::{
 		Border, BorderAlignment, BorderWidth, ChildrenExt, Color, Component, ContainerExt,
-		ContainerSizeExt, ContainerWithContentExt, Content, Cursor, Element, IntoElement, Layer,
-		Position, Size, State, TextOverflow, WritableUtils, rect,
+		ContainerSizeExt, ContainerWithContentExt, Content, Element, IntoElement, Layer, Position,
+		Size, State, TextOverflow, WritableUtils, rect,
 	},
 	winit::window::CursorIcon,
 };
@@ -128,6 +128,9 @@ pub trait CustomStyles {
 
 	/// Adds a nice drop shadow for dialogs and overlay panels
 	fn overlay_shadow(self) -> Self;
+
+	/// Sets cursor to pointer on mouse over
+	fn clickable(self) -> Self;
 }
 
 impl<T: ContainerSizeExt + StyleExt + ContainerWithContentExt + TextStyleExt> CustomStyles for T {
@@ -187,6 +190,10 @@ impl<T: ContainerSizeExt + StyleExt + ContainerWithContentExt + TextStyleExt> Cu
 
 	fn overlay_shadow(self) -> Self {
 		self.shadow(Shadow::new().x(2.0).y(2.0).blur(8.0).color(Color::BLACK))
+	}
+
+	fn clickable(self) -> Self {
+		self.cursor(CursorIcon::Pointer)
 	}
 }
 
@@ -269,58 +276,19 @@ pub fn panel_colorway(theme: &Theme, hovered: bool, selected: bool) -> (Color, C
 }
 
 pub trait CustomEvents {
-	/// Sets cursor to pointer on mouse over
-	fn clickable(self) -> Self;
-
 	/// Updates a state with hover status
 	fn hover(self, state: State<bool>) -> Self;
-
-	// /// Extends an event handler
-	// fn extend_event<T>(self, event: EventName, handler: EventHandler<T>) -> Self;
 }
 
 impl<T: EventHandlersExt> CustomEvents for T {
-	fn clickable(self) -> Self {
-		self.on_pointer_enter(|_| {
-			Cursor::set(CursorIcon::Pointer);
-		})
-		.on_pointer_leave(|_| {
-			Cursor::set(CursorIcon::default());
-		})
-	}
-
 	fn hover(self, mut state: State<bool>) -> Self {
 		self.on_pointer_over(move |_| {
-			Cursor::set(CursorIcon::Pointer);
 			state.set(true);
 		})
 		.on_pointer_out(move |_| {
-			Cursor::set(CursorIcon::default());
 			state.set(false);
 		})
 	}
-
-	// fn extend_event(mut self, event: EventName, handler: EventHandlerType) -> Self {
-	// 	fn extend_handler<T: Clone + 'static>(handler: EventHandler<T>, event: &mut EventHandler<T>) {
-	// 		let old = event.clone();
-	// 		*event = (move |arg: T| {
-	// 			handler.call(arg.clone());
-	// 			old.call(arg);
-	// 		})
-	// 		.into();
-	// 	}
-
-	// 	if let Some(event) = self.get_event_handlers().get_mut(&event) {
-	// 		match (handler, event) {
-	// 			(EventHandlerType::File(handler), EventHandlerType::File(event)) => {
-	// 				extend_handler(handler, event)
-	// 			}
-	// 		}
-	// 	} else {
-	// 	}
-
-	// 	self
-	// }
 }
 
 pub trait ButtonExt {

@@ -88,7 +88,6 @@ fn node_to_elem(node: Node, theme: &Theme) -> Element {
 						.text(text)
 						.text_decoration(TextDecoration::Underline)
 						.color(theme.primary)
-						.clickable()
 						.on_press(move |_| {
 							if let Some(href) = &href {
 								let _ = open_link(href);

@@ -10,6 +10,7 @@ use crate::{
 	},
 	data::LauncherData,
 	ops::{
+		QueryOption,
 		misc::{FetchGlobalLog, FetchGlobalLogs, ShowDirectory, ShowDirectoryOption},
 		settings::{FetchPreferences, SavePreferences},
 	},
@@ -295,7 +296,7 @@ impl Component for SettingsConsole {
 		let back_state = use_consume::<BackState>();
 		let selected_log = use_state::<Option<String>>(|| None);
 		let contents_query = use_query(Query::new(
-			selected_log.read().clone(),
+			QueryOption(selected_log.read().clone()),
 			FetchGlobalLog::new(back_state.clone()),
 		));
 		let logs = use_query(Query::new((), FetchGlobalLogs::new(back_state.clone())));

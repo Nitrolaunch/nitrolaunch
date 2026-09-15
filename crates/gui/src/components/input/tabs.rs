@@ -158,6 +158,7 @@ impl<T: PartialEq + Clone + 'static> Component for Tab<T> {
 			.cross_align(Alignment::Center)
 			.maybe(self.horizontal, |this| this.main_align(Alignment::Center))
 			.hover(is_hovered)
+			.clickable()
 			.on_press(move |_| on_select.call(id.clone()))
 			.maybe_child(self.option.icon.clone())
 			.child(label().text(self.option.title.to_string()).max_lines(1))

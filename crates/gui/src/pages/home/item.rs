@@ -229,6 +229,7 @@ impl Component for InstanceListItem {
 			.on_press(on_click)
 			.clickable()
 			.hover(is_hovered)
+			.clickable()
 			.child(top)
 			.child(bottom)
 			.maybe_child(plugin_indicator)

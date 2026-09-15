@@ -91,6 +91,7 @@ impl ComponentOwned for IconSelector {
 			.item_colorway(&theme, *is_hovered.read(), false)
 			.maybe(derived.is_some(), |this| this.derived_colorway(&theme))
 			.hover(is_hovered)
+			.clickable()
 			.corner_radius(theme.round2)
 			.center()
 			.clickable()

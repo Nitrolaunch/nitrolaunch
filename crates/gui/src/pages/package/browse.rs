@@ -372,6 +372,7 @@ impl Component for BrowseItem {
 			.width(Size::fill())
 			.height(Size::px(64.0))
 			.hover(is_hovered)
+			.clickable()
 			.corner_radius(theme.round)
 			.simple_colorway(&theme, *is_hovered.read(), is_selected)
 			.cont()

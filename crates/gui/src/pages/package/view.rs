@@ -76,7 +76,9 @@ impl Component for PackageView {
 		let front_state2 = front_state.clone();
 		let req = self.req.clone();
 		let ico = rect()
-			.maybe(!self.fullscreen, |this| this.hover(icon_is_hovered))
+			.maybe(!self.fullscreen, |this| {
+				this.hover(icon_is_hovered).clickable()
+			})
 			.on_press(move |_| {
 				if !fullscreen {
 					front_state2.write().navigate(Page::Package(req.clone()));
