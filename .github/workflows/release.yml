@@ -1,0 +1,188 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "*"
+
+permissions:
+  actions: read
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  NITRO_VERSION: ${{ github.ref_name }}
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out release tag
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check that tag points to main
+        run: |
+          git fetch origin main --no-tags
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main
+
+      - name: Normalize version
+        run: echo "NITRO_VERSION=${NITRO_VERSION#v}" >> "$GITHUB_ENV"
+
+      - name: Download latest GUI artifacts
+        uses: dawidd6/action-download-artifact@v11
+        with:
+          workflow: gui.yml
+          workflow_conclusion: success
+          branch: main
+          name: linux-x86_64
+          path: artifacts/gui/linux
+
+      - name: Download latest Windows GUI artifacts
+        uses: dawidd6/action-download-artifact@v11
+        with:
+          workflow: gui.yml
+          workflow_conclusion: success
+          branch: main
+          name: windows
+          path: artifacts/gui/windows
+
+      - name: Download latest macOS GUI artifacts
+        uses: dawidd6/action-download-artifact@v11
+        with:
+          workflow: gui.yml
+          workflow_conclusion: success
+          branch: main
+          name: macos-universal
+          path: artifacts/gui/macos
+
+      - name: Download latest CLI artifacts
+        uses: dawidd6/action-download-artifact@v11
+        with:
+          workflow: build.yml
+          workflow_conclusion: success
+          branch: main
+          name: ubuntu-latest
+          path: artifacts/cli/linux
+
+      - name: Download latest Windows CLI artifacts
+        uses: dawidd6/action-download-artifact@v11
+        with:
+          workflow: build.yml
+          workflow_conclusion: success
+          branch: main
+          name: windows-latest
+          path: artifacts/cli/windows
+
+      - name: Download latest macOS CLI artifacts
+        uses: dawidd6/action-download-artifact@v11
+        with:
+          workflow: build.yml
+          workflow_conclusion: success
+          branch: main
+          name: macos-latest
+          path: artifacts/cli/macos
+
+      - name: Download latest plugin artifacts
+        uses: dawidd6/action-download-artifact@v11
+        with:
+          workflow: build_plugins.yml
+          workflow_conclusion: success
+          branch: main
+          name: universal
+          path: artifacts/plugins/universal
+
+      - name: Download latest Linux plugin artifacts
+        uses: dawidd6/action-download-artifact@v11
+        with:
+          workflow: build_plugins.yml
+          workflow_conclusion: success
+          branch: main
+          name: x86_64-unknown-linux-gnu
+          path: artifacts/plugins/linux
+
+      - name: Download latest Windows plugin artifacts
+        uses: dawidd6/action-download-artifact@v11
+        with:
+          workflow: build_plugins.yml
+          workflow_conclusion: success
+          branch: main
+          name: x86_64-pc-windows-gnu
+          path: artifacts/plugins/windows
+
+      - name: Download latest ARM64 macOS plugin artifacts
+        uses: dawidd6/action-download-artifact@v11
+        with:
+          workflow: build_plugins.yml
+          workflow_conclusion: success
+          branch: main
+          name: aarch64-apple-darwin
+          path: artifacts/plugins/macos-aarch64
+
+      - name: Download latest x86_64 macOS plugin artifacts
+        uses: dawidd6/action-download-artifact@v11
+        with:
+          workflow: build_plugins.yml
+          workflow_conclusion: success
+          branch: main
+          name: x86_64-apple-darwin
+          path: artifacts/plugins/macos-x86_64
+
+      - name: Prepare release assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p release-assets/plugins
+
+          find artifacts/plugins -type f -name '*.zip' -exec cp '{}' release-assets/plugins/ ';'
+
+          while IFS= read -r file; do
+            case "$file" in
+              *.AppImage) cp "$file" "release-assets/Nitrolaunch_app_${NITRO_VERSION}_x86_64.AppImage" ;;
+              *.deb) cp "$file" "release-assets/Nitrolaunch_app_${NITRO_VERSION}_amd64.deb" ;;
+              *.flatpak) cp "$file" "release-assets/Nitrolaunch_app_${NITRO_VERSION}.flatpak" ;;
+              *.msi) cp "$file" "release-assets/Nitrolaunch_app_${NITRO_VERSION}_x64_en-US.msi" ;;
+              *.dmg) cp "$file" "release-assets/Nitrolaunch_app_${NITRO_VERSION}_universal.dmg" ;;
+            esac
+          done < <(find artifacts/gui -type f \( -name '*.AppImage' -o -name '*.deb' -o -name '*.flatpak' -o -name '*.msi' -o -name '*.dmg' \))
+
+          for platform in linux windows macos; do
+            while IFS= read -r file; do
+              cp "$file" "release-assets/Nitrolaunch_cli_${NITRO_VERSION}_${platform}${file##*nitro}"
+            done < <(find "artifacts/cli/$platform" -type f -name 'nitro*')
+          done
+
+          test -n "$(find release-assets/plugins -type f -name '*.zip' -print -quit)"
+          test -n "$(find release-assets -maxdepth 1 -type f -print -quit)"
+
+      - name: Extract changelog entry
+        shell: bash
+        run: |
+          set -euo pipefail
+          awk -v version="$NITRO_VERSION" '
+            $0 == "# Nitrolaunch " version { found = 1; print; next }
+            found && /^# Nitrolaunch / { exit }
+            found { print }
+          ' CHANGELOG.md > release-notes.md
+          test -s release-notes.md
+
+      - name: Publish main release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Nitrolaunch v${{ env.NITRO_VERSION }}
+          body_path: release-notes.md
+          files: release-assets/*
+
+      - name: Publish plugin release
+        uses: softprops/action-gh-release@v2
+        with:
+          repository: Nitrolaunch/plugins
+          token: ${{ secrets.PLUGINS_TOKEN }}
+          tag_name: plugin-all-v${{ env.NITRO_VERSION }}
+          name: Plugin Release v${{ env.NITRO_VERSION }}
+          files: release-assets/plugins/*.zip
