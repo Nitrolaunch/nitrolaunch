@@ -101,6 +101,12 @@ impl PackageSearchSession {
 			self.results.insert(skip + i, req.clone());
 		}
 
+		self.repos
+			.entry(repo.to_string())
+			.or_insert_with(|| RepoState {
+				total_results: Some(results.total_results),
+			});
+
 		Ok(PackageMultiSearchResults {
 			results: reqs,
 			total_results: results.total_results,
