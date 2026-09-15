@@ -12,6 +12,7 @@ use freya::{
 use freya_core::{
 	integration::{State, WritableUtils},
 	lifecycle::{effect::use_side_effect, state::use_state},
+	platform::Platform,
 };
 use nitrolaunch::{
 	config::Config,
@@ -47,7 +48,7 @@ use crate::{
 	pages::{config::ConfiguredItem, settings},
 	routing::{Navigator, Page},
 	secrets::get_ms_client_id,
-	theme::Theme,
+	theme::{THEME_FONT, Theme},
 	util::{PtrEq, Shared},
 };
 
@@ -126,6 +127,12 @@ impl FrontState {
 	}
 
 	pub fn set_theme(&mut self, theme: Theme) {
+		if let Some(font) = &theme.font_family {
+			if let Ok(font) = std::fs::read(font) {
+				Platform::get().load_font(THEME_FONT, font);
+			}
+		}
+
 		self.theme = Arc::new(theme);
 		self.invalidate(FrontChannel::Theme);
 	}

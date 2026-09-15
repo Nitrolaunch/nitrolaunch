@@ -6,6 +6,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::state::{FrontChannel, use_front_state};
 
+pub static THEME_FONT: &str = "theme-font";
+
 /// Theme for the app
 #[allow(dead_code)]
 pub struct Theme {
@@ -85,6 +87,8 @@ pub struct Theme {
 	pub round2: f32,
 	/// Height for inputs
 	pub input_height: f32,
+	/// Path to font family data file, ttf or otf
+	pub font_family: Option<String>,
 }
 
 impl Theme {
@@ -153,6 +157,7 @@ pub struct ThemeDeser {
 	pub round: Option<f32>,
 	pub round2: Option<f32>,
 	pub input_height: Option<f32>,
+	pub font_family: Option<String>,
 }
 
 impl ThemeDeser {
@@ -203,6 +208,7 @@ impl ThemeDeser {
 			round: Some(8.0),
 			round2: Some(12.0),
 			input_height: Some(32.0),
+			font_family: None,
 		}
 	}
 
@@ -253,6 +259,7 @@ impl ThemeDeser {
 			round: Some(8.0),
 			round2: Some(12.0),
 			input_height: Some(32.0),
+			font_family: None,
 		}
 	}
 
@@ -310,6 +317,7 @@ impl From<ThemeDeser> for Theme {
 			round: value.round.unwrap_or(8.0),
 			round2: value.round2.unwrap_or(12.0),
 			input_height: value.input_height.unwrap_or(32.0),
+			font_family: value.font_family,
 		}
 	}
 }

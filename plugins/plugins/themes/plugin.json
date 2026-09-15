@@ -54,6 +54,14 @@
 					"type": "base",
 					"settings": "$file:high_contrast.json",
 					"color": "#ffffff"
+				},
+				{
+					"id": "minecraft",
+					"name": "Minecraft",
+					"description": "Minecraft-inspired theme with blocky aesthetics",
+					"type": "base",
+					"settings": "$file:minecraft.json",
+					"color": "#4da834"
 				}
 			]
 		}

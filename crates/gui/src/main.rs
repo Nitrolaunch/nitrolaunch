@@ -19,6 +19,7 @@ use crate::prelude::*;
 
 use crate::components::nav::{NavBar, router::Router};
 use crate::state::{BackEvent, BackState, FrontChannel, FrontState};
+use crate::theme::THEME_FONT;
 use crate::util::Shared;
 
 mod cli;
@@ -135,6 +136,9 @@ impl Component for App {
 			.background(theme.bg)
 			.color(theme.fg)
 			.font_size(theme.font)
+			.maybe(theme.font_family.is_some(), |this| {
+				this.font_family(THEME_FONT)
+			})
 			.child(NavBar { show_sidebar })
 			.child(Tips)
 			.child(view)
