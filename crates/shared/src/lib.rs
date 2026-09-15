@@ -24,6 +24,8 @@ pub mod nitro_executable;
 pub mod output;
 /// Common package constructs
 pub mod pkg;
+/// Server browsing structs
+pub mod servers;
 /// Other utilities
 pub mod util;
 /// Tools for working with UUIDs
