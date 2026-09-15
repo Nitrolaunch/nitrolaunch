@@ -104,7 +104,8 @@
 		"version": "v8",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
-		"description": "Install Fabric and Quilt instances"
+		"description": "Install Fabric and Quilt instances",
+		"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/fabric_quilt"
 	},
 	"custom_files": {
 		"id": "custom_files",
@@ -121,7 +122,8 @@
 		"version": "v8",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
-		"description": "Install Paper and Folia server instances"
+		"description": "Install Paper and Folia server instances",
+		"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/paper"
 	},
 	"automate": {
 		"id": "automate",
@@ -296,7 +298,8 @@
 		"version": "v8",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
-		"description": "Install NeoForge on the client"
+		"description": "Install NeoForge on the client",
+		"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/forge"
 	},
 	"themes": {
 		"id": "themes",
@@ -357,7 +360,8 @@
 		"version": "v8",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
-		"description": "Install and play Purpur servers"
+		"description": "Install and play Purpur servers",
+		"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/purpur"
 	},
 	"curseforge": {
 		"id": "curseforge",
