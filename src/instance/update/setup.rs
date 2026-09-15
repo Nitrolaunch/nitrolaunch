@@ -197,6 +197,7 @@ impl Instance {
 		self.modification_data.wrappers.extend(result.wrappers);
 
 		self.modification_data.exclude_game_jar |= result.exclude_game_jar;
+		self.modification_data.exclude_default_args |= result.exclude_default_args;
 
 		if let Some(loader_version) = result.loader_version {
 			lock.update_loader_version(Some(loader_version));
@@ -273,6 +274,7 @@ impl Instance {
 			env: self.launch.env.clone(),
 			wrappers,
 			quick_play,
+			exclude_default_args: self.modification_data.exclude_default_args,
 			use_log4j_config: self.launch.use_log4j_config,
 		};
 		let inst_dir = self
@@ -358,6 +360,8 @@ pub struct ModificationData {
 	pub wrappers: Vec<WrapperCommand>,
 	/// Whether to skip adding the game JAR to the classpath
 	pub exclude_game_jar: bool,
+	/// Whether to exclude all of the generated / default arguments to the JVM and game
+	pub exclude_default_args: bool,
 }
 
 impl ModificationData {
@@ -371,6 +375,7 @@ impl ModificationData {
 			game_args: Vec::new(),
 			wrappers: Vec::new(),
 			exclude_game_jar: false,
+			exclude_default_args: false,
 		}
 	}
 }

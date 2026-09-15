@@ -81,7 +81,8 @@ fn main() -> anyhow::Result<()> {
 			jvm_args: result.jvm_args,
 			game_args: result.game_args,
 			loader_version,
-			exclude_game_jar: true,
+			exclude_game_jar: result.exclude_game_jar,
+			exclude_default_args: result.exclude_default_args,
 			..Default::default()
 		})
 	})?;

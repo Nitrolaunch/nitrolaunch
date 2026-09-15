@@ -97,10 +97,12 @@ pub async fn install(
 		.join(format!("{}-{forge_version}", mode.to_str()))
 		.join(format!("{}-{forge_version}.json", mode.to_str()));
 
+	let forge_lib_dir = internal_dir
+		.join("libraries")
+		.join(format!("net/neoforged/neoforge/{forge_version}"));
+
 	let server_jar_path = match mode {
-		Mode::NeoForge => internal_dir.join("libraries").join(format!(
-			"net/neoforged/neoforge/{forge_version}/neoforge-{forge_version}-server.jar"
-		)),
+		Mode::NeoForge => forge_lib_dir.join(format!("neoforge-{forge_version}-server.jar")),
 	};
 
 	let already_installed = match side {
@@ -189,11 +191,46 @@ pub async fn install(
 				jvm_args,
 				game_args,
 				exclude_game_jar: true,
+				exclude_default_args: false,
 			})
 		}
 		Side::Server => {
-			// libraries/net/neoforged/neoforge/20.2.93/unix_args.txt
-			bail!("Forge server is not currently supported");
+			// Read arguments from the server args file
+			let args_file_path = if cfg!(target_os = "windows") {
+				forge_lib_dir.join("win_args.txt")
+			} else {
+				forge_lib_dir.join("unix_args.txt")
+			};
+			let args = std::fs::read_to_string(&args_file_path)
+				.context("Failed to read server args file")?;
+			let libraries_dir_str =
+				format!("{}/", internal_dir.join("libraries").to_string_lossy());
+			// There's lots of arguments on the same lines
+			let mut args: Vec<_> = args
+				.lines()
+				.flat_map(|x| x.split(' '))
+				.map(|x| {
+					if x == "-DlibraryDirectory=libraries" {
+						format!(
+							"-DlibraryDirectory={}",
+							internal_dir.join("libraries").display()
+						)
+					} else {
+						x.replace("libraries/", &libraries_dir_str)
+					}
+				})
+				.collect();
+
+			args.push("nogui".into());
+
+			Ok(ForgeInstallResult {
+				classpath: Classpath::new(),
+				main_class: String::new(),
+				jvm_args: args,
+				game_args: Vec::new(),
+				exclude_game_jar: false,
+				exclude_default_args: true,
+			})
 		}
 	}
 }
@@ -210,6 +247,8 @@ pub struct ForgeInstallResult {
 	pub game_args: Vec<String>,
 	/// Whether to skip adding the game JAR to the final classpath
 	pub exclude_game_jar: bool,
+	/// Whether to exclude all of the generated / default arguments to the JVM and game
+	pub exclude_default_args: bool,
 }
 
 /// Runs the installer at the given path
