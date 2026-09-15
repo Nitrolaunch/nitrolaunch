@@ -17,6 +17,7 @@ use crate::{
 
 #[derive(PartialEq)]
 pub struct PackageFilters {
+	pub repo: Option<String>,
 	pub loaders: State<Vec<Loader>>,
 	pub mc_versions: State<Vec<String>>,
 	pub categories: State<Vec<PackageCategory>>,
@@ -52,7 +53,7 @@ impl Component for PackageFilters {
 
 		let categories_filter = PackageCategoryFilter {
 			categories: self.categories,
-			repo: None,
+			repo: self.repo.clone(),
 		};
 		let categories_filter = field("Categories", "tag", &theme, categories_filter);
 		let dropdown = rect()

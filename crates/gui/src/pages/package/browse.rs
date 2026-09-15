@@ -115,6 +115,7 @@ impl Component for BrowsePackagesPage {
 					.child(search_bar(search, &theme)),
 			)
 			.child(rect().height(Size::fill()).center().child(PackageFilters {
+				repo: search_state.repo.read().clone(),
 				loaders: search_state.loaders,
 				mc_versions: search_state.mc_versions,
 				categories: search_state.categories,
