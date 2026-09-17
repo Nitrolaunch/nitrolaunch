@@ -14,7 +14,6 @@ package.cross_platform: build.cross_platform
 	@rm -f release/custom_files-universal.zip
 	@rm -f release/doctor-universal.zip
 	@rm -f release/extra_versions-universal.zip
-	@rm -f release/gamepad-universal.zip
 	@rm -f release/glfw_fix-universal.zip
 	@rm -f release/graalvm-universal.zip
 	@rm -f release/lang-universal.zip
@@ -81,7 +80,6 @@ package.cross_platform: build.cross_platform
 	@printf "@ nitro_plugin_zulu.wasm\\n@=plugin.wasm\\n" | zipnote -w release/zulu-universal.zip
 
 	@zip -j release/extra_versions-universal.zip plugins/extra_versions/plugin.json
-	@zip -j release/gamepad-universal.zip plugins/gamepad/plugin.json plugins/gamepad/gamepad.js
 	@zip -j release/lang-universal.zip plugins/lang/plugin.json
 	@zip -j release/themes-universal.zip plugins/themes/**
 	@zip -j release/weld-universal.zip plugins/weld/plugin.json plugins/weld/weld.pyz
@@ -227,9 +225,6 @@ install.forge:
 	@cargo install --path . --bin nitro_plugin_forge --locked --profile fast_release
 	@mkdir -p ~/.local/share/nitro/plugins/forge
 	@cat plugins/forge/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/forge/plugin.json
-
-install.gamepad:
-	@cp -r plugins/gamepad ~/.local/share/nitro/plugins
 
 install.gen_pkg:
 	@cargo install --path . --bin nitro_plugin_gen_pkg --locked --profile fast_release

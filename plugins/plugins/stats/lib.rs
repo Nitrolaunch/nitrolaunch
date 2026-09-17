@@ -13,7 +13,6 @@ use nitro_plugin::api::wasm::sys::get_data_dir;
 use nitro_plugin::api::wasm::util::{
 	get_custom_config, get_persistent_state, set_persistent_state,
 };
-use nitro_plugin::hook::hooks::{InstanceTile, InstanceTileSize};
 use nitro_plugin::nitro_wasm_plugin;
 use nitro_shared::output::{MessageContents, NitroOutput};
 use nitro_shared::util::utc_timestamp;
@@ -78,19 +77,6 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 				println!("$_{e:?}");
 			}
 		}
-	})?;
-
-	plugin.add_instance_tiles(|arg| {
-		let stats = Stats::open().context("Failed to open stats")?;
-
-		let default = InstanceStats::default();
-		let stats = stats.instances.get(&arg).unwrap_or(&default);
-
-		Ok(vec![InstanceTile {
-			id: "stats".into(),
-			contents: format_stat_card(stats),
-			size: InstanceTileSize::Small,
-		}])
 	})?;
 
 	Ok(())
@@ -247,17 +233,7 @@ fn default_live_tracking() -> bool {
 	true
 }
 
-/// Gets the formatted stat card HTML for the given stats
-fn format_stat_card(stats: &InstanceStats) -> String {
-	let out = include_str!("stat_card.html");
-
-	let out = out.replace("{{playtime}}", &format_time(stats.calculate_playtime()));
-
-	let last_launch = get_last_launch_difference(stats.last_launch).unwrap_or("Never".into());
-
-	out.replace("{{last_played}}", &last_launch)
-}
-
+#[allow(dead_code)]
 fn get_last_launch_difference(last_launch: Option<u64>) -> Option<String> {
 	let last_launch = last_launch?;
 	let now = utc_timestamp().ok()?;
@@ -271,6 +247,7 @@ fn get_last_launch_difference(last_launch: Option<u64>) -> Option<String> {
 }
 
 /// Formats a larger time in minutes
+#[allow(dead_code)]
 fn format_time_large(mut time: u64) -> String {
 	let days = time / 24 / 60;
 	time %= 24 * 60;

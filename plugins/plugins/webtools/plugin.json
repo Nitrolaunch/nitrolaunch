@@ -9,12 +9,6 @@
 	"hooks": {
 		"subcommand": {
 			"wasm": true
-		},
-		"add_sidebar_buttons": {
-			"wasm": true
-		},
-		"get_page": {
-			"wasm": true
 		}
 	},
 	"subcommands": {

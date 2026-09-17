@@ -1,12 +1,9 @@
-use std::str::FromStr;
-
 use clap::Parser;
 use nitro_plugin::{
 	api::wasm::{
 		WASMPlugin,
 		sys::{get_os_string, run_command},
 	},
-	hook::hooks::SidebarButton,
 	nitro_wasm_plugin,
 };
 
@@ -29,52 +26,6 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 		}
 
 		Ok(())
-	})?;
-
-	plugin.get_page(|page| {
-		if !page.contains("webtools") {
-			return Ok(None);
-		}
-
-		// Extract a specific tool
-		if let Some((_, tool)) = page.split_once('-') {
-			let Ok(tool) = <WebTool as FromStr>::from_str(tool) else {
-				return Ok(None);
-			};
-
-			let page = include_str!("tool_page.html");
-			let page = page.replace("{{url}}", tool.url());
-			return Ok(Some(page));
-		}
-
-		let page = include_str!("all_tools.html");
-		let mut tools_string = String::new();
-		for tool in ALL_WEBTOOLS {
-			let component = include_str!("tool_component.html");
-			let component = component.replace("{{id}}", tool.name());
-			let component = component.replace("{{name}}", tool.display_name());
-			let component = component.replace("{{description}}", tool.description());
-			let url = if tool.embed_allowed() { "" } else { tool.url() };
-			let component = component.replace("{{url}}", url);
-			let component = component.replace("{{icon}}", tool.icon());
-			tools_string.push_str(&component);
-		}
-		let page = page.replace("{{tools}}", &tools_string);
-
-		Ok(Some(page))
-	})?;
-
-	plugin.add_sidebar_buttons(|_| {
-		let icon = include_str!("gear.svg");
-		Ok(vec![SidebarButton {
-			html: format!(
-				"<div style=\"margin-top:0.3rem;margin-right:-0.2rem\">{icon}</div><div>Webtools</div>"
-			),
-			href: "/custom/webtools".into(),
-			selected_url_start: Some("/custom/webtools".into()),
-			color: "#777777".into(),
-			..Default::default()
-		}])
 	})?;
 
 	Ok(())
@@ -145,6 +96,7 @@ macro_rules! define_webtools {
 			)+
 		}
 
+		#[allow(dead_code)]
 		impl WebTool {
 			fn url(&self) -> &'static str {
 				match &self {

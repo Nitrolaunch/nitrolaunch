@@ -30,14 +30,6 @@
 				}
 			]
 		},
-		"inject_page_script": {
-			"property": "page",
-			"cases": {
-				"\"instances\"": {
-					"file": "export_template.js"
-				}
-			}
-		},
 		"get_popup": {
 			"wasm": true
 		},

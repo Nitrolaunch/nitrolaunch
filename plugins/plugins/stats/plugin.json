@@ -19,9 +19,6 @@
 		"while_instance_launch": {
 			"wasm": true
 		},
-		"add_instance_tiles": {
-			"wasm": true
-		},
 		"add_plugin_config_controls": {
 			"constant": [
 				{

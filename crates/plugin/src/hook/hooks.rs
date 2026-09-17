@@ -608,61 +608,6 @@ def_hook!(
 );
 
 def_hook!(
-	InjectPageScript,
-	"inject_page_script",
-	"Hook for running JavaScript on GUI pages",
-	InjectPageScriptArg,
-	String,
-	1,
-	true,
-);
-
-/// Argument for the InjectPageScript hook
-#[derive(Serialize, Deserialize, Default)]
-#[serde(default)]
-pub struct InjectPageScriptArg {
-	/// The identifier for the page
-	pub page: String,
-	/// The identifier for whatever 'thing' this page is representing. Could be an instance, template, anything else, or nothing.
-	pub object: Option<String>,
-}
-
-def_hook!(
-	AddSidebarButtons,
-	"add_sidebar_buttons",
-	"Hook for adding buttons to the GUI sidebar",
-	(),
-	Vec<SidebarButton>,
-	1,
-	true,
-);
-
-/// Data for a GUI sidebar button
-#[derive(Serialize, Deserialize, Default)]
-#[serde(default)]
-pub struct SidebarButton {
-	/// The inner HTML of the button
-	pub html: String,
-	/// Where the button should go when pressed
-	pub href: String,
-	/// What the current URL should equal to select this item
-	pub selected_url: Option<String>,
-	/// What the current URL should start with to select this item
-	pub selected_url_start: Option<String>,
-	/// The CSS color of this button
-	pub color: String,
-}
-
-def_hook!(
-	GetPage,
-	"get_page",
-	"Hook for adding pages to the GUI",
-	String,
-	Option<String>,
-	1,
-);
-
-def_hook!(
 	AddCustomPackageRepositories,
 	"add_custom_package_repositories",
 	"Hook for adding custom package repositories",
@@ -788,8 +733,6 @@ pub struct Theme {
 	pub description: Option<String>,
 	/// The type of this theme
 	pub r#type: ThemeType,
-	/// The CSS data for the theme
-	pub css: String,
 	/// JSON settings for the theme
 	pub settings: String,
 	/// A css color that identifies this theme
@@ -856,8 +799,6 @@ pub struct DropdownButton {
 	pub tip: Option<String>,
 	/// A custom action to do when this button is clicked
 	pub action: Option<String>,
-	/// Javascript to run when this button is clicked
-	pub on_click: Option<String>,
 	/// A popup to open when this button is clicked
 	pub popup: Option<String>,
 }
@@ -876,37 +817,6 @@ pub enum DropdownButtonLocation {
 	InstanceMoreOptions,
 	/// Button on the action bar for more options for a selected template
 	TemplateMoreOptions,
-}
-
-def_hook!(
-	AddInstanceTiles,
-	"add_instance_tiles",
-	"Adds tiles to the instance page in the GUI",
-	String,
-	Vec<InstanceTile>,
-	1,
-	true,
-);
-
-/// Tile on the GUI instance page
-#[derive(Serialize, Deserialize)]
-pub struct InstanceTile {
-	/// Unique ID for this tile
-	pub id: String,
-	/// HTML contents of this tile
-	pub contents: String,
-	/// The size of this tile
-	pub size: InstanceTileSize,
-}
-
-/// Size of an InstanceTile
-#[derive(Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
-#[serde(rename_all = "snake_case")]
-pub enum InstanceTileSize {
-	/// Spans one unit
-	Small,
-	/// Spans two units
-	Large,
 }
 
 def_hook!(

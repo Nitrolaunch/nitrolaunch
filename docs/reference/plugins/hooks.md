@@ -470,6 +470,7 @@ Handles authentication with custom account types
 Gets the cosmetics available on a custom account
 
 - Argument:
+
 ```
 {
 	"id": string,
@@ -507,6 +508,7 @@ Gets the cosmetics available on a custom account
 Uploads and activates a new skin for a custom account
 
 - Argument:
+
 ```
 {
 	"id": string,
@@ -525,6 +527,7 @@ Uploads and activates a new skin for a custom account
 Activates or deactivates a cape for a custom account
 
 - Argument:
+
 ```
 {
 	"id": string,
@@ -557,6 +560,7 @@ Adds a repository to search for skins from
 Searches a custom skin repository
 
 - Argument:
+
 ```
 {
 	"repository": string,
@@ -786,6 +790,7 @@ Defines additional schema for instance or template configuration
 ```
 
 - Result:
+
 ```
 {
 	"controls": [
@@ -802,6 +807,7 @@ Defines additional schema for configuring this plugin globally
 - Argument: None
 
 - Result:
+
 ```
 [
 	Control,
@@ -818,6 +824,7 @@ Add new formats for modpacks
 - Argument: None
 
 - Result:
+
 ```
 [
 	{
@@ -836,6 +843,7 @@ Add new formats for modpacks
 Installs a modpack on an existing instance. Use instance transfer for supporting importing an instance.
 
 - Argument:
+
 ```
 {
 	"format": string,
@@ -847,6 +855,7 @@ Installs a modpack on an existing instance. Use instance transfer for supporting
 ```
 
 - Result:
+
 ```
 {
 	"name": string,
@@ -876,61 +885,6 @@ Installs a modpack on an existing instance. Use instance transfer for supporting
 
 ## GUI Hooks
 
-### `inject_page_script`
-
-Called whenever certain pages in the GUI are opened. Runs whatever the result of the hook is as Javascript on the page.
-
-- Argument:
-
-```
-{
-	"page": "instances" | "instance" | "instance_config" | "template_config" | "base_template_config" | "packages" | "plugins",
-	"object": string | null
-}
-```
-
-- Result: string
-
-- `object`: The identifier for whatever 'thing' this page is representing. Could be an instance, template, anything else, or nothing.
-
-### `add_sidebar_buttons`
-
-Adds custom buttons to the sidebar
-
-- Argument: None
-
-- Result:
-
-```
-[
-	{
-		"html": string,
-		"href": string,
-		"selected_url": string | null,
-		"selected_url_start": string | null,
-		"color": string
-	},
-	...
-]
-```
-
-- `html`: The inner HTML of the button
-- `href`: Where the button leads to, likely a custom page
-- `selected_url`: What the current URL should equal to select this item
-- `selected_url_start`: What the current URL should start with to select this item
-
-### `get_page`
-
-Lets you add custom pages. The page will be available at `/custom/yourcustompagedata`. You can include custom data like a specific ID in the data section of the URL as well.
-
-- Argument: `string`
-
-This is the custom page data in the URL
-
-- Result: `string | null`
-
-This is the resulting page as HTML. Only include things that would be in a `<body>` tag.
-
 ### `add_themes`
 
 Adds custom themes for the GUI
@@ -945,7 +899,7 @@ Adds custom themes for the GUI
 		"id": string,
 		"name": string,
 		"description": string | null,
-		"css": string,
+		"settings": string,
 		"color": string,
 	},
 	...
@@ -982,29 +936,6 @@ Adds custom buttons to certain dropdowns in the UI
 - `tip`: An optional tooltip for this option
 - `action`: A custom plugin action to run when this button is clicked
 - `on_click`: JavaScript to run when this button is clicked
-
-### `add_instance_tiles`
-
-Adds custom tiles to the instance page in the GUI
-
-- Argument: None
-
-- Result:
-
-```
-[
-	{
-		"id": string,
-		"contents": string,
-		"size": "small" | "large"
-	},
-	...
-]
-```
-
-- `id`: A unique ID for this tile. Ensures consistent location.
-- `contents`: The HTML contents of the tile. Script tags will not be called, so it is important to include a page script as well to hook into the tile if you want functionality.
-- `size`: About how much space this tile needs to take up. Will be taken into account by the layout algorithm.
 
 ### `add_instance_icons`
 
