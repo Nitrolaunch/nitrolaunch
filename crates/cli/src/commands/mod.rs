@@ -149,6 +149,8 @@ pub struct Cli {
 	debug: bool,
 	#[arg(short = 'D', long)]
 	trace: bool,
+	#[arg(long)]
+	skip_onboarding: bool,
 }
 
 /// Run the command line interface
@@ -184,7 +186,7 @@ pub async fn run_cli() -> anyhow::Result<()> {
 	let _ = write_extra_commands_file(&paths);
 
 	// First launch message
-	if is_first_run(&paths) {
+	if is_first_run(&paths) && !cli.skip_onboarding {
 		output.display(MessageContents::Header("Welcome to Nitrolaunch!".into()));
 
 		let install_default = output
