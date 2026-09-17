@@ -1,10 +1,12 @@
 use std::{
+	cmp::Reverse,
 	collections::HashMap,
 	env::consts::{ARCH, OS},
 	io::Cursor,
 };
 
 use anyhow::{Context, bail};
+use itertools::Itertools;
 use nitro_core::net::download;
 use nitro_net::github::{GithubAsset, get_github_releases};
 use nitro_plugin::plugin::PluginMetadata;
@@ -65,6 +67,9 @@ impl VerifiedPlugin {
 		let releases = get_github_releases(&self.github_owner, &self.github_repo, client)
 			.await
 			.context("Failed to get GitHub releases")?;
+		let releases = releases
+			.into_iter()
+			.sorted_by_cached_key(|x| Reverse(x.published_at.clone()));
 
 		let mut assets = Vec::new();
 

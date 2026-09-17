@@ -8,6 +8,7 @@ pub struct GithubRelease {
 	pub tag_name: String,
 	pub name: String,
 	pub body: Option<String>,
+	pub published_at: Option<String>,
 	pub assets: Vec<GithubAsset>,
 }
 

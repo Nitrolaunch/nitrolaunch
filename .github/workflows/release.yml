@@ -176,6 +176,7 @@ jobs:
           tag_name: ${{ github.ref_name }}
           name: Nitrolaunch v${{ env.NITRO_VERSION }}
           body_path: release-notes.md
+          make_latest: true
           files: release-assets/*
 
       - name: Publish plugin release
@@ -185,4 +186,5 @@ jobs:
           token: ${{ secrets.PLUGINS_TOKEN }}
           tag_name: plugin-all-v${{ env.NITRO_VERSION }}
           name: Plugin Release v${{ env.NITRO_VERSION }}
+          make_latest: true
           files: release-assets/plugins/*.zip
