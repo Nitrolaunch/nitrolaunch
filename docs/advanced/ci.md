@@ -18,6 +18,12 @@ The first time the CLI is run after being installed, it will prompt you to insta
 
 To disable, simply add `--skip-onboarding` before your first nitro command, for example `nitro --skip-onboarding instance list`. You will not need to add the flag anymore after the first command.
 
+## Auto-Yes
+
+For commands like `launch` and `instance update`, there can sometimes be confirmation prompts for things like package installs.
+
+To automatically confirm these prompts, add `--yes` before any command that can prompt. For example, `nitro --yes instance update foo`.
+
 ## Running as Root
 
 When running Nitrolaunch as root on Linux, the data directory will be `/root/.local/share/nitro`, **not** `/usr/share/nitro`. The config directory will be `/root/.config/nitro` as well.

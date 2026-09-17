@@ -47,6 +47,7 @@ pub struct TerminalOutput {
 	_output_task: Option<JoinHandle<()>>,
 	level: MessageLevel,
 	translation_map: Option<TranslationMap>,
+	auto_yes: bool,
 }
 
 #[async_trait::async_trait]
@@ -80,6 +81,10 @@ impl NitroOutput for TerminalOutput {
 		default: bool,
 		message: MessageContents,
 	) -> anyhow::Result<bool> {
+		if self.auto_yes {
+			return Ok(true);
+		}
+
 		self.tx
 			.send(Event::YesNo {
 				message: message.clone(),
@@ -151,6 +156,7 @@ impl NitroOutput for TerminalOutput {
 			rx: self.rx.resubscribe(),
 			level: MessageLevel::Important,
 			translation_map: None,
+			auto_yes: self.auto_yes,
 			_output_task: None,
 		})
 	}
@@ -169,6 +175,7 @@ impl TerminalOutput {
 			rx: response_rx,
 			level: MessageLevel::Important,
 			translation_map: None,
+			auto_yes: false,
 			_output_task: Some(task),
 		})
 	}
@@ -182,6 +189,11 @@ impl TerminalOutput {
 	/// Set the translation map of the output
 	pub fn set_translation_map(&mut self, map: TranslationMap) {
 		self.translation_map = Some(map);
+	}
+
+	/// Set whether to automatically answer yes to all prompts.
+	pub fn set_auto_yes(&mut self, auto_yes: bool) {
+		self.auto_yes = auto_yes;
 	}
 
 	/// Shuts down the output task and waits until it is finished

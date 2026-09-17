@@ -149,6 +149,10 @@ pub struct Cli {
 	debug: bool,
 	#[arg(short = 'D', long)]
 	trace: bool,
+	/// Whether to automatically answer yes to all prompts. This is useful for scripting, but can be dangerous.
+	#[arg(short, long)]
+	yes: bool,
+	/// Whether to skip the onboarding process on first launch. Will override the --yes flag.
 	#[arg(long)]
 	skip_onboarding: bool,
 }
@@ -241,6 +245,7 @@ pub async fn run_cli() -> anyhow::Result<()> {
 	let res = {
 		let mut data = CmdData::new(paths, &mut output)?;
 		data.output.set_log_level(log_level);
+		data.output.set_auto_yes(cli.yes);
 
 		match cli.command {
 			Command::Account { command } => account::run(command, &mut data).await,
