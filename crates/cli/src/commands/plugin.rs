@@ -45,6 +45,9 @@ pub enum PluginSubcommand {
 		/// Plugin ZIP files to install
 		#[arg(short, long)]
 		files: Vec<String>,
+		/// Whether to install the plugin even if it is already installed
+		#[arg(short, long)]
+		force: bool,
 	},
 	#[command(about = "Uninstall a plugin")]
 	Uninstall { plugin: String },
@@ -76,7 +79,8 @@ pub async fn run(command: PluginSubcommand, data: &mut CmdData<'_>) -> anyhow::R
 			plugins,
 			version,
 			files,
-		} => install(data, plugins, version, files).await,
+			force,
+		} => install(data, plugins, version, files, force).await,
 		PluginSubcommand::Uninstall { plugin } => uninstall(data, plugin).await,
 		PluginSubcommand::Update { plugins } => update(data, plugins).await,
 		PluginSubcommand::Browse => browse(data).await,
@@ -163,6 +167,7 @@ pub(crate) async fn install(
 	plugins: Vec<String>,
 	version: Option<String>,
 	files: Vec<String>,
+	force: bool,
 ) -> anyhow::Result<()> {
 	if plugins.is_empty() && files.is_empty() {
 		bail!("No plugins were provided to install");
@@ -180,8 +185,18 @@ pub(crate) async fn install(
 
 	for plugin in plugins {
 		let (plugin_id, version_override) = parse_single_versioned_string(&plugin);
-
 		let version = version_override.or(version.as_deref());
+
+		if !force
+			&& PluginManager::plugin_exists_with_optional_version(&plugin_id, version, &data.paths)
+		{
+			data.output.display(MessageContents::Success(translate!(
+				data.output,
+				SkippingInstalledPlugin,
+				"plugin" = plugin_id
+			)));
+			continue;
+		}
 
 		let Some(plugin) = verified_list.get(plugin_id) else {
 			bail!("Unknown plugin '{plugin_id}'");

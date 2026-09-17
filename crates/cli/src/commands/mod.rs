@@ -219,6 +219,7 @@ pub async fn run_cli() -> anyhow::Result<()> {
 				],
 				None,
 				Vec::new(),
+				false,
 			)
 			.await
 			{

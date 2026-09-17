@@ -422,6 +422,36 @@ impl PluginManager {
 		}
 	}
 
+	/// Checks whether a plugin is installed by checking for its directory or JSON file
+	pub fn plugin_exists(plugin: &str, paths: &Paths) -> bool {
+		let dir = paths.plugins.join(plugin);
+		let file = paths.plugins.join(format!("{plugin}.json"));
+		dir.exists() || file.exists()
+	}
+
+	/// Checks whether a plugin is installed and has the specified version
+	pub fn plugin_exists_with_version(plugin: &str, version: &str, paths: &Paths) -> bool {
+		if let Ok(manifest) = Self::load_plugin_manifest(plugin, paths) {
+			if let Some(manifest_version) = &manifest.version {
+				return manifest_version == version;
+			}
+		}
+		false
+	}
+
+	/// Checks whether a plugin is installed, and if a version is provided, checks that the installed plugin has that version
+	pub fn plugin_exists_with_optional_version(
+		plugin: &str,
+		version: Option<&str>,
+		paths: &Paths,
+	) -> bool {
+		if let Some(version) = version {
+			Self::plugin_exists_with_version(plugin, version, paths)
+		} else {
+			Self::plugin_exists(plugin, paths)
+		}
+	}
+
 	/// Checks whether a plugin is present in the manager
 	pub fn has_plugin(&self, plugin: &str) -> bool {
 		self.plugins.contains(plugin)
