@@ -11,7 +11,7 @@ For example:
 curl --fail -Lo nitro https://github.com/Nitrolaunch/nitrolaunch/releases/download/0.32.0/Nitrolaunch_cli_0.32.0_linux
 ```
 
-Then the CLI can be run with `./nitro`.
+Then the CLI can be run with `./nitro` after using `chmod +x nitro` to make it executable.
 ## Skipping Onboarding
 
 The first time the CLI is run after being installed, it will prompt you to install default plugins. This is probably not want you want in an automated pipeline.
@@ -20,4 +20,4 @@ To disable, simply add `--skip-onboarding` before your first nitro command, for 
 
 ## Running as Root
 
-When running Nitrolaunch as root on Linux, the data directory will be `/root/.local/share/nitro`, **not** `/usr/share/nitro`.
+When running Nitrolaunch as root on Linux, the data directory will be `/root/.local/share/nitro`, **not** `/usr/share/nitro`. The config directory will be `/root/.config/nitro` as well.
