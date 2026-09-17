@@ -8,7 +8,7 @@ To install the CLI, which is the most useful for automation, the fastest way is 
 
 For example:
 ```
-curl -o nitro https://github.com/Nitrolaunch/nitrolaunch/releases/download/0.32.0/Nitrolaunch_cli_0.32.0_linux
+curl --fail -Lo nitro https://github.com/Nitrolaunch/nitrolaunch/releases/download/0.32.0/Nitrolaunch_cli_0.32.0_linux
 ```
 
 Then the CLI can be run with `./nitro`.
