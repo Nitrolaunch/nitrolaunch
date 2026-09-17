@@ -15,7 +15,10 @@ use nitro_net::{
 	modrinth::{self, Member, Project, SearchResults, Version},
 };
 use nitro_pkg::{PackageMetaAndProps, PackageSearchResults, PkgRequest, PkgRequestSource};
-use nitro_pkg_gen::{modrinth::get_preview, relation_substitution::RelationSubNone};
+use nitro_pkg_gen::{
+	modrinth::{get_preview, make_valid_slug},
+	relation_substitution::RelationSubNone,
+};
 use nitro_plugin::{
 	api::{executable::ExecutablePlugin, utils::PackageSearchCache},
 	hook::hooks::{CustomRepoQueryResult, ImportInstanceResult, InstallModpackResult},
@@ -122,7 +125,7 @@ fn main() -> anyhow::Result<()> {
 					id: result.id.clone().into(),
 					content_version: VersionPattern::Any,
 					repository: Some("modrinth".into()),
-					slug: Some(result.slug.clone()),
+					slug: Some(make_valid_slug(&result.slug)),
 				};
 				let req_str = req.to_string();
 

@@ -527,12 +527,6 @@ pub fn make_valid_slug(string: &str) -> String {
 	let string = string.to_lowercase();
 	string
 		.chars()
-		.map(|c| {
-			if !c.is_ascii_alphanumeric() && c != '.' && c != ':' {
-				'-'
-			} else {
-				c
-			}
-		})
+		.map(|c| if !c.is_ascii_alphanumeric() { '-' } else { c })
 		.collect()
 }
