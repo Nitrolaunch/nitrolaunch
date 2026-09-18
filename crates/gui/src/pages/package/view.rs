@@ -1,7 +1,10 @@
 use itertools::Itertools;
 use nitrolaunch::{
 	pkg_crate::metadata::{LongDescriptionFormat, PackageMetadata},
-	shared::{pkg::ArcPkgReq, util::open_link},
+	shared::{
+		pkg::ArcPkgReq,
+		util::{TakeThen, open_link},
+	},
 };
 
 use crate::{
@@ -10,7 +13,7 @@ use crate::{
 		input::tabs::TopTabs,
 		markdown::{HTMLViewer, MarkdownHTMLViewer},
 		pkg::versions::PackageVersions,
-		tag::{loader_tag, repo_tag},
+		tag::{category_tag, loader_tag, repo_tag, text_tag},
 	},
 	ops::packages::FetchPackageDetails,
 	prelude::*,
@@ -110,20 +113,19 @@ impl Component for PackageView {
 			.repository
 			.as_deref()
 			.map(|x| repo_tag(x, false, &back_state, &theme));
-		let loaders = props
-			.supported_loaders
+		let categories = meta
+			.categories
 			.iter()
 			.flatten()
-			.flat_map(|x| x.get_matches())
 			.unique()
-			.map(|x| loader_tag(&x, false, &theme).into_element());
+			.map(|x| category_tag(*x, &theme).into_element());
 		let lower_details = rect()
 			.width(Size::fill())
 			.horizontal()
 			.spacing(theme.gap)
 			.cross_align(Alignment::Center)
 			.maybe_child(repo)
-			.children(loaders);
+			.children(categories);
 
 		let details = rect()
 			.width(Size::flex(1.0))
@@ -140,10 +142,15 @@ impl Component for PackageView {
 			.cross_align(Alignment::End)
 			.padding(Gaps::new(0.0, theme.gap2 * 2.0, 0.0, 0.0))
 			.child(
-				clip_text(meta.description.as_deref().unwrap_or("..."))
-					.color(theme.fg2)
-					.text_align(TextAlign::End)
-					.max_lines(2),
+				clip_text(
+					meta.description
+						.as_deref()
+						.unwrap_or("No description provided"),
+				)
+				.color(theme.fg2)
+				.text_align(TextAlign::End)
+				.max_lines(2)
+				.width(Size::px(400.0)),
 			);
 
 		let top = rect()
@@ -260,11 +267,31 @@ impl Component for PackageView {
 			.child(tabs)
 			.child(main);
 
+		let loaders = props
+			.supported_loaders
+			.iter()
+			.flatten()
+			.flat_map(|x| x.get_matches())
+			.unique()
+			.map(|x| loader_tag(&x, false, &theme));
+
+		let versions = props
+			.supported_versions
+			.iter()
+			.flatten()
+			.map(|x| text_tag(&x.to_string(), &theme));
+		let versions = TakeThen::new(versions, 35, text_tag("...", &theme));
+
+		let right = ScrollView::new()
+			.child(tag_box("Loaders", loaders, &theme))
+			.child(tag_box("Versions", versions, &theme))
+			.child(properties(&self.req, &meta, &front_state, &theme));
+
 		let right = rect()
 			.width(Size::flex(1.5))
 			.height(Size::fill())
 			.border(border_left(theme.border, theme.panel_border))
-			.child(properties(&self.req, &meta, &front_state, &theme));
+			.child(right);
 
 		let bottom = rect()
 			.width(Size::fill())
@@ -292,7 +319,7 @@ fn properties(
 	theme: &Theme,
 ) -> Rect {
 	rect()
-		.expanded()
+		.width(Size::fill())
 		.padding(theme.gap)
 		.spacing(theme.gap)
 		.child(property("hashtag", "ID", req, front_state, theme))
@@ -438,6 +465,28 @@ fn property_impl(ico: &'static str, title: &str, value: impl IntoElement, theme:
 			segment(value, 1.0)
 				.cross_align(Alignment::End)
 				.overflow(Overflow::Clip),
+		)
+}
+
+fn tag_box(title: &str, tags: impl IntoIterator<Item = impl IntoElement>, theme: &Theme) -> Rect {
+	rect()
+		.width(Size::fill())
+		.border(border_bottom(theme.border, theme.panel_border))
+		.padding(theme.gap2)
+		.spacing(theme.gap2)
+		.child(
+			label()
+				.text(title.to_string())
+				.font_weight(FontWeight::BOLD),
+		)
+		.child(
+			rect()
+				.horizontal()
+				.spacing(theme.gap)
+				.content(Content::Wrap {
+					wrap_spacing: Some(theme.gap),
+				})
+				.children(tags),
 		)
 }
 

@@ -1,6 +1,12 @@
-use nitrolaunch::shared::loaders::Loader;
+use nitrolaunch::shared::{loaders::Loader, pkg::PackageCategory};
 
-use crate::{prelude::*, util::assets::get_loader_icon};
+use crate::{
+	prelude::*,
+	util::{
+		assets::get_loader_icon,
+		pkg::{package_category_display_name, package_category_icon},
+	},
+};
 
 /// Simple string tag
 pub fn text_tag(text: &str, theme: &Theme) -> Rect {
@@ -88,6 +94,21 @@ fn get_loader_color(loader: &Loader, theme: &Theme) -> Color {
 		Loader::Folia => Color::from_hex("#ff6576").unwrap(),
 		_ => theme.fg2,
 	}
+}
+
+/// Tag for a package category
+pub fn category_tag(category: PackageCategory, theme: &Theme) -> Rect {
+	let name = package_category_display_name(category);
+	let ico = package_category_icon(category);
+
+	tag(
+		Some(icon(ico, 14.0)),
+		Some(name),
+		theme.bg,
+		theme.secondary,
+		theme.secondary,
+		theme,
+	)
 }
 
 /// Tag element

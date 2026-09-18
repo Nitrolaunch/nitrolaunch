@@ -469,6 +469,39 @@ macro_rules! try_3 {
 	};
 }
 
+/// Iterator chain method that takes n values, and if the input has more than n values, it will also append a value to the end.
+pub struct TakeThen<I: Iterator> {
+	it: I,
+	n: usize,
+	then: Option<I::Item>,
+}
+
+impl<I: Iterator> TakeThen<I> {
+	/// Creates a new TakeThen iterator
+	pub fn new(it: I, n: usize, then: I::Item) -> Self {
+		Self {
+			it,
+			n,
+			then: Some(then),
+		}
+	}
+}
+
+impl<I: Iterator> Iterator for TakeThen<I> {
+	type Item = I::Item;
+
+	fn next(&mut self) -> Option<Self::Item> {
+		if self.n > 0 {
+			self.n -= 1;
+			self.it.next()
+		} else if let Some(then) = self.then.take() {
+			Some(then)
+		} else {
+			None
+		}
+	}
+}
+
 #[cfg(test)]
 mod tests {
 	use super::*;
