@@ -107,7 +107,7 @@ All fields are optional unless stated otherwise.
 - `name`: A custom display name for this instance. Has no rules and does not have to be unique.
 - `icon`: A path to an icon file for this instance. Should be square and in a common format like PNG or JPEG.
 - `loader`: The loader for the instance. Check [the loader list](loaders.md) for which ones are available. This string can also be formatted as `loader@version` to request a specific version pattern of the loader.
-- `package_stability`: Global stability setting for all packages in this instance. Defaults to `"stable"`.
+- `package_stability`: Global stability setting for all packages in this instance. Defaults to `"latest"`.
 - `launch`: Options that modify the game execution.
 - `launch.args`: Custom arguments that will be passed to the Java Virtual Machine and game. Each one is optional and can either be a string of arguments separated by spaces or a list.
 - `launch.memory`: Memory sizes for the Java heap initial and maximum space. Use a string to set both (recommended), or set them individually using an object. These follow the same format as the Java arguments (e.g. `1024M` or `10G`) and should be preferred to using custom arguments as it allows Nitrolaunch to do some extra things.
