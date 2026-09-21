@@ -27,7 +27,7 @@ use nitrolaunch::{
 		UpdateDepth,
 		manual_files::ManualFile,
 		output::{Message, MessageContents, MessageLevel, NitroOutput, NoOp},
-		pkg::PackageDiff,
+		pkg::{ArcPkgReq, PackageDiff},
 		versions::{MinecraftLatestVersion, MinecraftVersionDeser},
 	},
 };
@@ -64,6 +64,7 @@ pub struct FrontState {
 	toast_id_counter: u32,
 	tip: Option<Tip>,
 	event_rx: Rc<broadcast::Receiver<BackEvent>>,
+	package_cart: Rc<[ArcPkgReq]>,
 }
 
 /// Different "channels" for listening to changes in parts of the global frontend state
@@ -87,6 +88,8 @@ pub enum FrontChannel {
 	ThemeConfig,
 	/// Changes to the zoom level
 	Zoom,
+	/// Changes to the package cart
+	Cart,
 }
 
 impl RadioChannel<()> for FrontChannel {}
@@ -106,6 +109,7 @@ impl FrontState {
 			toast_id_counter: 0,
 			tip: None,
 			event_rx: Rc::new(event_rx),
+			package_cart: Rc::default(),
 		}
 	}
 
@@ -230,6 +234,15 @@ impl FrontState {
 	pub fn set_tip(&mut self, tip: Option<Tip>) {
 		self.tip = tip;
 		self.invalidate(FrontChannel::Tip);
+	}
+
+	pub fn cart(&self) -> &[ArcPkgReq] {
+		&self.package_cart
+	}
+
+	pub fn set_cart(&mut self, cart: Rc<[ArcPkgReq]>) {
+		self.package_cart = cart;
+		self.invalidate(FrontChannel::Cart);
 	}
 }
 

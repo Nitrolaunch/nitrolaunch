@@ -10,7 +10,7 @@ use crate::{
 		input::select::{Selected, run_dropdown_button},
 		instance::running_instances::RunningInstances,
 		output_indicator::OutputIndicator,
-		pkg::install::PackageInstallModal,
+		pkg::{cart::PackageCart, install::PackageInstallModal},
 	},
 	ops::{
 		instance::InstanceItemInfo,
@@ -78,6 +78,7 @@ impl Component for FooterButton {
 	fn render(&self) -> impl IntoElement {
 		let theme = use_theme();
 		let front_state = use_front_state();
+		front_state.read().subscribe(FrontChannel::Cart);
 		let back_state = use_consume::<BackState>();
 		let launch_instance = use_mutation(LaunchInstance::new(back_state.clone()));
 		let kill_instance = use_mutation(KillInstance::new(back_state.clone()));
@@ -108,6 +109,7 @@ impl Component for FooterButton {
 		));
 
 		let mut show_install_modal = use_state(|| false);
+		let mut show_shopping_cart = use_state(|| false);
 
 		let front_state2 = front_state.clone();
 		use_future(move || {
@@ -121,16 +123,9 @@ impl Component for FooterButton {
 			}
 		});
 
-		let instance_run_state = instance_run_state
-			.read()
-			.state()
-			.ok()
-			.cloned()
-			.unwrap_or_default();
-
 		let front_state2 = front_state.clone();
-		let left_button = if let FooterItem::InstanceOrTemplate(info) = &self.item {
-			match info.ty {
+		let left_button = match &self.item {
+			FooterItem::InstanceOrTemplate(info) => match info.ty {
 				ConfigKind::Instance => {
 					let id = info.id.clone();
 					Some(
@@ -188,9 +183,32 @@ impl Component for FooterButton {
 					)
 				}
 				ConfigKind::BaseTemplate => None,
+			},
+			FooterItem::InstallPackage(..) => {
+				let button = icon_button("shopping_cart", &theme);
+				let message = format!("{} items in cart", front_state.read().cart().len());
+				Some(
+					rect()
+						.tip(&front_state, &message)
+						.on_press(move |_| {
+							show_shopping_cart.toggle();
+						})
+						.child(button)
+						.maybe(*show_shopping_cart.read(), |this| {
+							this.child(
+								rect()
+									.position(
+										Position::new_absolute()
+											.bottom(theme.gap2 + 24.0 + theme.input_height)
+											.right(0.0),
+									)
+									.child(PackageCart),
+							)
+						})
+						.into_element(),
+				)
 			}
-		} else {
-			None
+			_ => None,
 		};
 
 		let left = rect()
@@ -215,6 +233,13 @@ impl Component for FooterButton {
 		} else {
 			(theme.primary, theme.primary, theme.primary_bg)
 		};
+
+		let instance_run_state = instance_run_state
+			.read()
+			.state()
+			.ok()
+			.cloned()
+			.unwrap_or_default();
 
 		let item = self.item.clone();
 		let mut show_install_modal2 = show_install_modal;
@@ -275,7 +300,39 @@ impl Component for FooterButton {
 					),
 			);
 
-		let right = rect().height(Size::fill()).width(Size::flex(1.0));
+		let front_state2 = front_state.clone();
+		let right_button = if let FooterItem::InstallPackage(req) = &self.item {
+			let req = req.clone();
+			let in_cart = front_state.read().cart().contains(&req);
+			let (ico, tip) = if in_cart {
+				("check", "Remove from cart")
+			} else {
+				("plus", "Add to cart")
+			};
+			let button = icon_button(ico, &theme)
+				.maybe(!in_cart, |this| this.active(&theme))
+				.on_press(move |_| {
+					let lock = front_state2.read();
+					let cart = lock.cart().iter();
+					let cart = if in_cart {
+						cart.filter(|x| **x != req).cloned().collect()
+					} else {
+						cart.cloned().chain(std::iter::once(req.clone())).collect()
+					};
+					std::mem::drop(lock);
+					front_state2.write().set_cart(cart);
+				});
+			Some(rect().tip(&front_state, tip).child(button))
+		} else {
+			None
+		};
+
+		let right = rect()
+			.height(Size::fill())
+			.width(Size::flex(1.0))
+			.cont()
+			.cross_align(Alignment::Center)
+			.maybe_child(right_button);
 
 		rect()
 			.width(Size::fill())

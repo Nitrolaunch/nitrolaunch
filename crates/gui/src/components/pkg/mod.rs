@@ -5,9 +5,10 @@ use nitrolaunch::shared::pkg::ArcPkgReq;
 
 use crate::{
 	components::input::select::Selected, ops::packages::FetchPackageDetails, prelude::*,
-	theme::Colorway,
+	routing::Page, theme::Colorway,
 };
 
+pub mod cart;
 pub mod diffs;
 pub mod error;
 pub mod filters;
@@ -75,6 +76,7 @@ pub struct PackageChip {
 impl Component for PackageChip {
 	fn render(&self) -> impl IntoElement {
 		let theme = use_theme();
+		let front_state = use_front_state();
 		let back_state = use_consume::<BackState>();
 		let details_query = use_query(Query::new(
 			self.req.clone(),
@@ -106,11 +108,17 @@ impl Component for PackageChip {
 			.and_then(|x| x.meta.name.clone())
 			.unwrap_or_else(|| self.req.to_string_no_version());
 
+		let req = self.req.clone();
+
 		rect()
 			.height(Size::px(theme.input_height))
 			.padding(theme.gap)
 			.cont()
 			.cross_align(Alignment::Center)
+			.on_press(move |_| {
+				front_state.write().navigate(Page::Package(req.clone()));
+			})
+			.clickable()
 			.child(ico)
 			.child(
 				rect()
