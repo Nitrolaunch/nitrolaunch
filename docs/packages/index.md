@@ -81,3 +81,12 @@ Go to the package's page and install it with the global install button rather th
 +++ CLI
 Use `nitro instance edit` and remove the `@version` from the end.
 +++
+
+## Synchronizing Packages
+Packages from most repositories will be cached for about an hour whenever they are requested. If a new version of a package comes out and you want to use it immediately, or there is some issue with one of your downloaded packages, you can run a package sync.
+
++++ App
+Navigate to the package browse page and click the `Synchronize cached packages` button in the top-right corner.
++++ CLI
+Run the `nitro package sync` command.
++++

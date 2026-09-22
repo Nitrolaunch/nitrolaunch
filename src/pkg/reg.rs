@@ -21,6 +21,7 @@ use crate::io::paths::Paths;
 use crate::plugin::PluginManager;
 
 use std::collections::HashMap;
+use std::ops::DerefMut;
 use std::sync::Arc;
 
 /// An object used to store and cache all of the packages that we are working with.
@@ -228,6 +229,46 @@ impl PkgRegistry {
 		Ok(out)
 	}
 
+	/// Synchronize the registry with the repositories, updating any caches
+	pub async fn sync(
+		&self,
+		paths: &Paths,
+		client: &Client,
+		o: &mut impl NitroOutput,
+	) -> anyhow::Result<()> {
+		for repo in &self.repos {
+			let mut process = o.get_process();
+			process.display(MessageContents::StartProcess(format!(
+				"Syncing repository {}",
+				repo.get_id()
+			)));
+
+			let result = repo
+				.sync(paths, &self.plugins, client, process.deref_mut())
+				.await;
+
+			match result {
+				Ok(..) => {
+					process.display(MessageContents::Success(format!(
+						"Synced repository {}",
+						repo.get_id()
+					)));
+				}
+				Err(e) => {
+					process.display(MessageContents::Error(format!(
+						"Failed to sync repository {}: {e}",
+						repo.get_id()
+					)));
+					continue;
+				}
+			};
+		}
+
+		self.update_cached_packages(paths, client, o).await?;
+
+		Ok(())
+	}
+
 	/// Remove cached packages
 	async fn remove_cached_packages(
 		&self,
@@ -245,7 +286,7 @@ impl PkgRegistry {
 		Ok(())
 	}
 
-	/// Update cached package scripts based on the caching strategy
+	/// Update cached packages
 	pub async fn update_cached_packages(
 		&self,
 		paths: &Paths,
