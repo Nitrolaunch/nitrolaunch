@@ -36,13 +36,7 @@ impl Component for PackageInstallModal {
 	fn render(&self) -> impl IntoElement {
 		let theme = use_theme();
 		let back_state = use_consume::<BackState>();
-		let install_package = use_mutation(Mutation::new(
-			InstallPackage::new(back_state.clone()).toast(
-				&back_state,
-				Some("Package installed"),
-				"Failed to install package",
-			),
-		));
+		let install_package = use_mutation(Mutation::new(InstallPackage::new(back_state.clone())));
 		let items_query = use_query(FetchItems::new(back_state.clone()));
 
 		let is_modpack = self.props.0.kinds.contains(&PackageKind::Modpack);
