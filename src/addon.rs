@@ -9,6 +9,7 @@ use nitro_shared::io::update_link;
 use nitro_shared::manual_files::ManualFile;
 use nitro_shared::minecraft::AddonKind;
 use nitro_shared::pkg::AddonOptionalHashes;
+use nitro_shared::try_3;
 use reqwest::Client;
 
 use crate::io::paths::Paths;
@@ -163,8 +164,7 @@ impl AddonRequest {
 					if url.is_empty() {
 						bail!("Empty URL for addon {id} from package {pkg}");
 					}
-					download::file(url, &path, &client)
-						.await
+					try_3!({ download::file(url.clone(), &path, &client).await })
 						.context("Failed to download addon")?;
 				}
 				AddonLocation::Local(actual_path) => {

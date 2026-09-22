@@ -11,10 +11,10 @@ use nitro_shared::io::config::IO_CONFIG;
 
 /// Sensible open file descriptor limit for asynchronous transfers
 #[cfg(target_os = "windows")]
-const FD_SENSIBLE_LIMIT: usize = 128;
+const FD_SENSIBLE_LIMIT: usize = 32;
 /// Sensible open file descriptor limit for asynchronous transfers
 #[cfg(not(target_os = "windows"))]
-const FD_SENSIBLE_LIMIT: usize = 128;
+const FD_SENSIBLE_LIMIT: usize = 32;
 
 /// Get the sensible limit for asynchronous transfers
 pub fn get_transfer_limit() -> usize {
