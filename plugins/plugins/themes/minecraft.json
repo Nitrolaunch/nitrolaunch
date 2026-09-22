@@ -1,5 +1,7 @@
 {
     "font_family": "${PLUGIN_DIR}/MinecraftRegular.otf",
     "primary": "#4da834",
-    "item_select_border": "#4da834"
+    "item_select_border": "#4da834",
+    "round": 0,
+    "round2": 0
 }
