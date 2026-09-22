@@ -51,10 +51,11 @@ impl Component for Footer {
 		let right = rect()
 			.height(Size::fill())
 			.width(Size::flex(1.0))
+			.padding(Gaps::new(0.0, theme.gap, 0.0, 0.0))
 			.cont()
+			.main_align(Alignment::End)
 			.cross_align(Alignment::Center)
-			.child(rect().width(Size::flex(2.0)).child(OutputIndicator))
-			.child(rect().width(Size::flex(1.0)));
+			.child(OutputIndicator);
 
 		rect()
 			.width(Size::fill())

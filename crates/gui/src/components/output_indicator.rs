@@ -100,14 +100,31 @@ impl Component for OutputIndicator {
 			other => format!("{other} tasks running"),
 		};
 
+		let spinner = if tasks.read().is_empty() {
+			rect()
+				.width(Size::px(6.0))
+				.height(Size::px(6.0))
+				.corner_radius(3.0)
+				.background(theme.disabled)
+				.into_element()
+		} else {
+			CircularLoader::new()
+				.size(24.0)
+				.primary_color(theme.primary)
+				.into_element()
+		};
+
 		let current_task2 = current_task.clone();
 		let indicator = rect()
-			.width(Size::fill())
+			.width(Size::px(240.0))
 			.height(Size::px(36.0))
 			.horizontal()
-			.center()
+			.cont()
+			.cross_align(Alignment::Center)
 			.spacing(theme.gap)
-			.panel_colorway(&theme, false, !tasks.read().is_empty())
+			.panel_colorway(&theme, false, false)
+			.color(theme.disabled)
+			.maybe(current_task.is_some(), |this| this.active_colorway(&theme))
 			.background(theme.bg)
 			.corner_radius(theme.round)
 			.on_press(move |_| {
@@ -115,10 +132,8 @@ impl Component for OutputIndicator {
 					is_open.toggle();
 				}
 			})
-			.maybe(current_task.is_some(), |this| {
-				this.child(CircularLoader::new().size(24.0))
-			})
-			.child(indicator_text);
+			.child(spinner.center_box(36.0))
+			.child(segment(indicator_text, 1.0).cross_align(Alignment::Center));
 
 		let popout = if *is_open.read() {
 			let current_task2 = current_task.clone();

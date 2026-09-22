@@ -9,9 +9,9 @@ pub use crate::components::dialog::toast::Toast;
 pub use crate::components::input::select::{Dropdown, InlineSelect, SelectOption};
 pub use crate::components::input::{InputError, field};
 pub use crate::components::{
-	ButtonExt, CustomEvents, CustomStyles, FancyBorderExt, FancyBorderExtImage, border_bottom,
-	border_left, border_right, border_top, button, clip_text, elem_text_button, grid, icon_button,
-	icon_text_button, img, placeholder, segment, skeleton,
+	ButtonExt, CustomEvents, CustomStyles, ElementExt2, FancyBorderExt, FancyBorderExtImage,
+	border_bottom, border_left, border_right, border_top, button, clip_text, elem_text_button,
+	grid, icon_button, icon_text_button, img, placeholder, segment, skeleton,
 };
 pub use crate::icons::icon;
 pub use crate::ops::{

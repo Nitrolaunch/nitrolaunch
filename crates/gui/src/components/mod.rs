@@ -120,8 +120,11 @@ pub trait CustomStyles {
 	/// Sets full panel colorway based off hover / select state
 	fn panel_colorway(self, theme: &Theme, hovered: bool, selected: bool) -> Self;
 
-	/// Sets full panel colorway based off hover / select state
+	/// Sets simple colorway based off hover / select state
 	fn simple_colorway(self, theme: &Theme, hovered: bool, selected: bool) -> Self;
+
+	/// Sets active colorway
+	fn active_colorway(self, theme: &Theme) -> Self;
 
 	/// Sets a derived colorway
 	fn derived_colorway(self, theme: &Theme) -> Self;
@@ -182,6 +185,12 @@ impl<T: ContainerSizeExt + StyleExt + ContainerWithContentExt + TextStyleExt> Cu
 		self.background(bg)
 	}
 
+	fn active_colorway(self, theme: &Theme) -> Self {
+		self.color(theme.primary)
+			.border(theme.border(theme.primary))
+			.background(theme.primary_bg)
+	}
+
 	fn derived_colorway(self, theme: &Theme) -> Self {
 		self.color(theme.template)
 			.border(theme.border(theme.template))
@@ -194,6 +203,21 @@ impl<T: ContainerSizeExt + StyleExt + ContainerWithContentExt + TextStyleExt> Cu
 
 	fn clickable(self) -> Self {
 		self.cursor(CursorIcon::Pointer)
+	}
+}
+
+pub trait ElementExt2 {
+	/// Centers the element in a square box with the given size
+	fn center_box(self, size: f32) -> Rect;
+}
+
+impl<T: IntoElement> ElementExt2 for T {
+	fn center_box(self, size: f32) -> Rect {
+		rect()
+			.width(Size::px(size))
+			.height(Size::px(size))
+			.center()
+			.child(self)
 	}
 }
 
