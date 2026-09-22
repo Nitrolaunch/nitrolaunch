@@ -282,7 +282,6 @@ impl Component for FooterButton {
 			.width(Size::fill())
 			.height(Size::px(theme.footer_height))
 			.cont()
-			.background(theme.footer)
 			.child(left)
 			.child(center)
 			.child(right)

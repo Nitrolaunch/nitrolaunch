@@ -64,6 +64,10 @@ pub trait Hook {
 pub static PLUGIN_DIR_TOKEN: &str = "${PLUGIN_DIR}";
 /// The substitution token for the executable file extension in the command
 pub static EXE_EXTENSION_TOKEN: &str = "${EXE_EXTENSION}";
+/// The substitution token for the data directory in the command
+pub static DATA_DIR_TOKEN: &str = "${DATA_DIR}";
+/// The substitution token for the config directory in the command
+pub static CONFIG_DIR_TOKEN: &str = "${CONFIG_DIR}";
 /// The environment variable for custom config passed to a hook
 pub static CUSTOM_CONFIG_ENV: &str = "NITRO_CUSTOM_CONFIG";
 /// The environment variable for the data directory passed to a hook

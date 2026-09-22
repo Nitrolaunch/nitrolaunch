@@ -3,6 +3,8 @@
 	windows_subsystem = "windows"
 )]
 
+use std::path::PathBuf;
+
 use clap::Parser;
 use freya::radio::use_init_radio_station;
 use nitrolaunch::shared::nitro_executable::{NitroClientId, NitroExecutableRegistry};
@@ -129,6 +131,24 @@ impl Component for App {
 			.child(sidebar)
 			.child(router);
 
+		let background_image = if let Some(background_image) = &theme.background_image {
+			Some(
+				rect()
+					.expanded()
+					.position(Position::new_absolute().left(0.0).top(0.0))
+					.child(
+						ImageViewer::new(PathBuf::from(background_image.clone()))
+							.expanded()
+							.opacity(0.2)
+							.image_cover(ImageCover::Center)
+							.aspect_ratio(AspectRatio::Max)
+							.child(rect().expanded().blur(theme.background_image_blur)),
+					),
+			)
+		} else {
+			None
+		};
+
 		rect()
 			.width(Size::fill())
 			.height(Size::fill())
@@ -139,6 +159,7 @@ impl Component for App {
 			.maybe(theme.font_family.is_some(), |this| {
 				this.font_family(THEME_FONT)
 			})
+			.maybe_child(background_image)
 			.child(NavBar { show_sidebar })
 			.child(Tips)
 			.child(view)

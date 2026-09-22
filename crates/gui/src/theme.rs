@@ -89,6 +89,10 @@ pub struct Theme {
 	pub input_height: f32,
 	/// Path to font family data file, ttf or otf
 	pub font_family: Option<String>,
+	/// Path to background image file, png or jpg
+	pub background_image: Option<String>,
+	/// Blur amount for background image
+	pub background_image_blur: f32,
 }
 
 impl Theme {
@@ -158,6 +162,8 @@ pub struct ThemeDeser {
 	pub round2: Option<f32>,
 	pub input_height: Option<f32>,
 	pub font_family: Option<String>,
+	pub background_image: Option<String>,
+	pub background_image_blur: f32,
 }
 
 impl ThemeDeser {
@@ -209,6 +215,8 @@ impl ThemeDeser {
 			round2: Some(12.0),
 			input_height: Some(32.0),
 			font_family: None,
+			background_image: None,
+			background_image_blur: 24.0,
 		}
 	}
 
@@ -260,6 +268,8 @@ impl ThemeDeser {
 			round2: Some(12.0),
 			input_height: Some(32.0),
 			font_family: None,
+			background_image: None,
+			background_image_blur: 24.0,
 		}
 	}
 
@@ -318,6 +328,8 @@ impl From<ThemeDeser> for Theme {
 			round2: value.round2.unwrap_or(12.0),
 			input_height: value.input_height.unwrap_or(32.0),
 			font_family: value.font_family,
+			background_image: value.background_image,
+			background_image_blur: value.background_image_blur,
 		}
 	}
 }

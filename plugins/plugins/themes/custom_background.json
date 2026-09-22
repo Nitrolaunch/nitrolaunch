@@ -1,0 +1,5 @@
+{
+    "background_image": "${DATA_DIR}/custom_background.png",
+    "panel_border": "#cccccc33",
+    "background_image_blur": 0.0
+}
