@@ -62,6 +62,22 @@
 					"type": "base",
 					"settings": "$file:minecraft.json",
 					"color": "#4da834"
+				},
+				{
+					"id": "custom_background",
+					"name": "Custom Background",
+					"description": "Sets custom_background.png in your data directory as the background image",
+					"type": "overlay",
+					"settings": "$file:custom_background.json",
+					"color": "#ffffff"
+				},
+				{
+					"id": "custom_background_blur",
+					"name": "Custom Background (Blurred)",
+					"description": "Sets custom_background.png in your data directory as the background image with a blur effect",
+					"type": "overlay",
+					"settings": "$file:custom_background_blur.json",
+					"color": "#ffffff"
 				}
 			]
 		}

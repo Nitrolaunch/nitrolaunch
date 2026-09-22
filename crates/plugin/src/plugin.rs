@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::fmt::Debug;
+use std::path::Path;
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -12,6 +13,8 @@ use serde::{Deserialize, Deserializer};
 use tokio::sync::Mutex;
 
 use crate::PluginPaths;
+use crate::hook::CONFIG_DIR_TOKEN;
+use crate::hook::DATA_DIR_TOKEN;
 use crate::hook::Hook;
 use crate::hook::PLUGIN_DIR_TOKEN;
 use crate::hook::WASM_FILE_NAME;
@@ -185,7 +188,13 @@ impl Plugin {
 				// Replace file tokens
 				let mut value = constant.clone();
 
-				replace_file_tokens(&mut value, &self.working_dir, false)?;
+				replace_file_tokens(
+					&mut value,
+					&self.working_dir,
+					&paths.data_dir,
+					&paths.config_dir,
+					false,
+				)?;
 
 				Ok(Some(HookHandle::constant(
 					serde_json::from_value(value)?,
@@ -518,17 +527,19 @@ impl PluginPersistence {
 fn replace_file_tokens(
 	value: &mut serde_json::Value,
 	working_dir: &Option<PathBuf>,
+	data_dir: &Path,
+	config_dir: &Path,
 	test: bool,
 ) -> anyhow::Result<()> {
 	match value {
 		serde_json::Value::Array(values) => {
 			for value in values {
-				replace_file_tokens(value, working_dir, test)?;
+				replace_file_tokens(value, working_dir, data_dir, config_dir, test)?;
 			}
 		}
 		serde_json::Value::Object(props) => {
 			for prop in props.values_mut() {
-				replace_file_tokens(prop, working_dir, test)?;
+				replace_file_tokens(prop, working_dir, data_dir, config_dir, test)?;
 			}
 		}
 		serde_json::Value::String(value) => {
@@ -552,6 +563,8 @@ fn replace_file_tokens(
 			if let Some(working_dir) = working_dir {
 				*value = value.replace(PLUGIN_DIR_TOKEN, &working_dir.to_string_lossy());
 			}
+			*value = value.replace(DATA_DIR_TOKEN, &data_dir.to_string_lossy());
+			*value = value.replace(CONFIG_DIR_TOKEN, &config_dir.to_string_lossy());
 		}
 		_ => {}
 	}
@@ -571,7 +584,14 @@ mod tests {
 			"baz": format!("{FILE_REPLACEMENT_TOKEN}foobar")
 		}]);
 
-		replace_file_tokens(&mut json, &None, true).unwrap();
+		replace_file_tokens(
+			&mut json,
+			&None,
+			&Path::new("/data"),
+			&Path::new("/config"),
+			true,
+		)
+		.unwrap();
 
 		let expected = json!([{
 			"foo": "bar",
