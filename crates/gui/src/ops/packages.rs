@@ -25,7 +25,7 @@ use tokio::task::JoinSet;
 
 use crate::{
 	dependency::BackDependency, ops::task::Task, pages::config::ConfiguredItem, prelude::*,
-	simple_query,
+	simple_mutation, simple_query,
 };
 
 #[derive(Clone, PartialEq, Eq, Hash)]
@@ -630,3 +630,28 @@ pub enum PackageCompatabilityError {
 	WrongMinecraftVersion,
 	WrongLoader,
 }
+
+simple_mutation!(
+	name = SyncPackages,
+	ok = (),
+	err = anyhow::Error,
+	keys = (),
+	fn run(&self, _: &Self::Keys) -> impl Future<Output = Result<Self::Ok, Self::Err>> {
+		let back_state = self.back_state.clone();
+		let task = async move {
+			let mut o = back_state.output();
+			o.set_task(Task::SyncPackages);
+			let config = back_state.config().await?;
+			config
+				.packages
+				.sync(&back_state.paths, &back_state.client, &mut o)
+				.await?;
+			Ok(())
+		};
+
+		self.back_state
+			.register_task(Task::SyncPackages, tokio::spawn(task));
+
+		async { Ok(()) }
+	}
+);

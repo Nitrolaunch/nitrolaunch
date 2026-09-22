@@ -18,7 +18,7 @@ use crate::{
 		},
 		tag::repo_tag,
 	},
-	ops::packages::{SearchPackages, SearchPackagesParams},
+	ops::packages::{SearchPackages, SearchPackagesParams, SyncPackages},
 	pages::package::view::PackageView,
 	prelude::*,
 };
@@ -58,6 +58,7 @@ impl Component for BrowsePackagesPage {
 			results: Vec::new(),
 			total_results: 0,
 		});
+		let sync_mutation = use_mutation(SyncPackages::new(back_state.clone()));
 
 		if back_state.repos().is_empty() {
 			return placeholder("No package repositories available from plugins. Please install a plugin that provides package repositories.", &theme).font_size(18.0);
@@ -74,13 +75,14 @@ impl Component for BrowsePackagesPage {
 		});
 
 		let selected_pkg = search_state.previewed;
+		let front_state2 = front_state.clone();
 		use_side_effect(move || {
 			if let Some(req) = &*selected_pkg.read() {
-				front_state
+				front_state2
 					.write()
 					.set_footer(FooterItem::InstallPackage(req.clone()));
 			} else {
-				front_state.write().set_footer(FooterItem::None);
+				front_state2.write().set_footer(FooterItem::None);
 			}
 		});
 
@@ -103,26 +105,36 @@ impl Component for BrowsePackagesPage {
 			.width(Size::flex(3.5))
 			.height(Size::fill())
 			.cont()
-			.child(rect().height(Size::fill()).center().child(RepoSelector {
+			.cross_align(Alignment::Center)
+			.child(RepoSelector {
 				repo: search_state.repo,
-			}))
-			.child(rect().height(Size::fill()).center().child(ty_selector))
+			})
+			.child(ty_selector)
 			.child(
 				rect()
 					.width(Size::flex(1.0))
-					.height(Size::fill())
-					.center()
 					.child(search_bar(search, &theme)),
 			)
-			.child(rect().height(Size::fill()).center().child(PackageFilters {
-				repo: search_state.repo.read().clone(),
-				loaders: search_state.loaders,
-				mc_versions: search_state.mc_versions,
-				categories: search_state.categories,
-				on_reset: EventHandler::new(move |_| {
-					search_state2.clone().reset();
-				}),
-			}));
+			.child(
+				rect()
+					.tip(&front_state, "More filters")
+					.child(PackageFilters {
+						repo: search_state.repo.read().clone(),
+						loaders: search_state.loaders,
+						mc_versions: search_state.mc_versions,
+						categories: search_state.categories,
+						on_reset: EventHandler::new(move |_| {
+							search_state2.clone().reset();
+						}),
+					}),
+			)
+			.child(
+				rect()
+					.tip(&front_state, "Synchronize cached packages")
+					.child(icon_button("cycle", &theme).on_press(move |_| {
+						sync_mutation.mutate(());
+					})),
+			);
 
 		let top_bar = rect()
 			.width(Size::fill())
