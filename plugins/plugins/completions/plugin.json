@@ -3,8 +3,8 @@
 	"name": "Completions",
 	"description": "Shell completions for zsh and other shells",
 	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/completions",
-	"version": "0.32.0",
-	"nitro_version": "0.32.0",
+	"version": "0.32.1",
+	"nitro_version": "0.32.1",
 	"protocol_version": 3,
 	"hooks": {
 		"subcommand": {

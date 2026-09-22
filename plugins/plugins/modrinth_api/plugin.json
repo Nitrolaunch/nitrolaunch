@@ -3,8 +3,8 @@
 	"name": "Modrinth API",
 	"description": "Make simple Modrinth API calls to query project versions",
 	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/modrinth_api",
-	"version": "0.32.0",
-	"nitro_version": "0.32.0",
+	"version": "0.32.1",
+	"nitro_version": "0.32.1",
 	"protocol_version": 3,
 	"hooks": {
 		"subcommand": {

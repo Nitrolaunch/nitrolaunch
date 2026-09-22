@@ -2,8 +2,8 @@
 	"id": "graalvm",
 	"name": "GraalVM",
 	"description": "Oracle GraalVM Java installation",
-	"version": "0.32.0",
-	"nitro_version": "0.32.0",
+	"version": "0.32.1",
+	"nitro_version": "0.32.1",
 	"protocol_version": 3,
 	"hooks": {
 		"add_java_types": {

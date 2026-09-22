@@ -1,3 +1,21 @@
+# Nitrolaunch 0.32.1
+
+## New Features
+- CLI flag to automatically answer yes to all prompts
+- CLI flag to skip the first-run onboarding
+- The `plugin install` command will no longer re-install an existing plugin without a `--force` flag
+- Minecraft theme!
+- Information about packages and dependencies will now be saved to logs when updating packages on an instance
+
+## Improvements
+- Better styling for output indicator
+
+## Bug Fixes
+- Plugin versions were not updated in the verified list
+- The most recent version of a plugin would not always be installed
+- Modrinth slugs were not sanitized properly
+- Addon downloads were prone to network errors
+
 # Nitrolaunch 0.32.0
 
 ## Meta

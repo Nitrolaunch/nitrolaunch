@@ -1,6 +1,6 @@
 [package]
 name = "nitro_config"
-version = "0.32.0"
+version = "0.32.1"
 description = "Serialization for Nitrolaunch configuration"
 keywords = ["minecraft", "launcher", "game", "mc"]
 categories.workspace = true

@@ -3,8 +3,8 @@
 	"name": "Automate",
 	"description": "Run commands at different parts of the instance lifecycle with no coding knowledge",
 	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/automate",
-	"version": "0.32.0",
-	"nitro_version": "0.32.0",
+	"version": "0.32.1",
+	"nitro_version": "0.32.1",
 	"protocol_version": 3,
 	"hooks": {
 		"on_instance_launch": {

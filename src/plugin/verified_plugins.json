@@ -2,7 +2,7 @@
 	"octane": {
 		"id": "octane",
 		"name": "Octane",
-		"version": "0.32.0",
+		"version": "0.32.1",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Use multiple methods to improve Minecraft performance",
@@ -11,7 +11,7 @@
 	"backup": {
 		"id": "backup",
 		"name": "Backup",
-		"version": "0.32.0",
+		"version": "0.32.1",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Create backups of instances",
@@ -20,7 +20,7 @@
 	"docs": {
 		"id": "docs",
 		"name": "Docs",
-		"version": "0.32.0",
+		"version": "0.32.1",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "View Nitrolaunch's documentation straight from the command line",
@@ -29,7 +29,7 @@
 	"extra_versions": {
 		"id": "extra_versions",
 		"name": "Extra Versions",
-		"version": "0.32.0",
+		"version": "0.32.1",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Add versions of Minecraft that are not normally available",
@@ -38,7 +38,7 @@
 	"gen_pkg": {
 		"id": "gen_pkg",
 		"name": "Gen Package",
-		"version": "0.32.0",
+		"version": "0.32.1",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Automatically generate packages from existing websites",
@@ -47,7 +47,7 @@
 	"lang": {
 		"id": "lang",
 		"name": "Lang",
-		"version": "0.32.0",
+		"version": "0.32.1",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Language translations for Nitrolaunch",
@@ -56,7 +56,7 @@
 	"modrinth_api": {
 		"id": "modrinth_api",
 		"name": "Modrinth API",
-		"version": "0.32.0",
+		"version": "0.32.1",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Make simple Modrinth API calls to query project versions",
@@ -65,7 +65,7 @@
 	"options": {
 		"id": "options",
 		"name": "Options",
-		"version": "0.32.0",
+		"version": "0.32.1",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Manage game options for client and server",
@@ -74,7 +74,7 @@
 	"server_restart": {
 		"id": "server_restart",
 		"name": "Server Restart",
-		"version": "0.32.0",
+		"version": "0.32.1",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Manage restart behavior for Spigot and Paper servers",
@@ -83,7 +83,7 @@
 	"stats": {
 		"id": "stats",
 		"name": "Stats",
-		"version": "0.32.0",
+		"version": "0.32.1",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Track and view playtime stats",
@@ -92,7 +92,7 @@
 	"nitro_transfer": {
 		"id": "nitro_transfer",
 		"name": "Nitrolaunch Transfer",
-		"version": "0.32.0",
+		"version": "0.32.1",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Import and export Nitrolaunch instances",
@@ -101,7 +101,7 @@
 	"fabric_quilt": {
 		"id": "fabric_quilt",
 		"name": "Fabric Quilt",
-		"version": "0.32.0",
+		"version": "0.32.1",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Install Fabric and Quilt instances",
@@ -110,7 +110,7 @@
 	"custom_files": {
 		"id": "custom_files",
 		"name": "Custom Files",
-		"version": "0.32.0",
+		"version": "0.32.1",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Share custom files across multiple instances",
@@ -119,7 +119,7 @@
 	"paper": {
 		"id": "paper",
 		"name": "Paper",
-		"version": "0.32.0",
+		"version": "0.32.1",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Install Paper and Folia server instances",
@@ -128,7 +128,7 @@
 	"automate": {
 		"id": "automate",
 		"name": "Automate",
-		"version": "0.32.0",
+		"version": "0.32.1",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Run commands at different parts of the instance lifecycle with no coding knowledge",
@@ -137,7 +137,7 @@
 	"config_split": {
 		"id": "config_split",
 		"name": "Config Split",
-		"version": "0.32.0",
+		"version": "0.32.1",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Split parts of your configuration into multiple files",
@@ -146,7 +146,7 @@
 	"smithed_api": {
 		"id": "smithed_api",
 		"name": "Smithed API",
-		"version": "0.32.0",
+		"version": "0.32.1",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Make simple Smithed API calls to query project versions",
@@ -155,7 +155,7 @@
 	"smithed": {
 		"id": "smithed",
 		"name": "Smithed",
-		"version": "0.32.0",
+		"version": "0.32.1",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Install Smithed packs on templates and instances",
@@ -164,7 +164,7 @@
 	"modrinth": {
 		"id": "modrinth",
 		"name": "Modrinth",
-		"version": "0.32.0",
+		"version": "0.32.1",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Install Modrinth projects on templates and instances",
@@ -173,7 +173,7 @@
 	"weld": {
 		"id": "weld",
 		"name": "Weld",
-		"version": "0.32.0",
+		"version": "0.32.1",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Weld data and resource packs together for better compatability",
@@ -182,7 +182,7 @@
 	"xmcl_transfer": {
 		"id": "xmcl_transfer",
 		"name": "XMCL Transfer",
-		"version": "0.32.0",
+		"version": "0.32.1",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Instance transfer for XMCL",
@@ -191,7 +191,7 @@
 	"cleanup": {
 		"id": "cleanup",
 		"name": "Cleanup",
-		"version": "0.32.0",
+		"version": "0.32.1",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Clean up old files",
@@ -200,7 +200,7 @@
 	"glfw_fix": {
 		"id": "glfw_fix",
 		"name": "GLFW Fix",
-		"version": "0.32.0",
+		"version": "0.32.1",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Fixes crashes from a bad GLFW version",
@@ -209,7 +209,7 @@
 	"multimc_transfer": {
 		"id": "multimc_transfer",
 		"name": "MultiMC Transfer",
-		"version": "0.32.0",
+		"version": "0.32.1",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Instance transfer for MultiMC and PrismLauncher",
@@ -218,7 +218,7 @@
 	"better_jsons": {
 		"id": "better_jsons",
 		"name": "BetterJSONs",
-		"version": "0.32.0",
+		"version": "0.32.1",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Uses BetterJSONs versions for improved compatability",
@@ -227,7 +227,7 @@
 	"share": {
 		"id": "share",
 		"name": "Share",
-		"version": "0.32.0",
+		"version": "0.32.1",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Share templates and addons with friends",
@@ -236,7 +236,7 @@
 	"multiply": {
 		"id": "multiply",
 		"name": "Multiply",
-		"version": "0.32.0",
+		"version": "0.32.1",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Create many instances easily",
@@ -245,7 +245,7 @@
 	"curseforge_api": {
 		"id": "curseforge_api",
 		"name": "CurseForge API",
-		"version": "0.32.0",
+		"version": "0.32.1",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Make simple CurseForge API calls to query mod versions"
@@ -253,7 +253,7 @@
 	"beet": {
 		"id": "beet",
 		"name": "Beet",
-		"version": "0.32.0",
+		"version": "0.32.1",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Tools for Beet developers"
@@ -261,7 +261,7 @@
 	"zulu": {
 		"id": "zulu",
 		"name": "Zulu",
-		"version": "0.32.0",
+		"version": "0.32.1",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Azul Zulu Java installation"
@@ -269,7 +269,7 @@
 	"graalvm": {
 		"id": "graalvm",
 		"name": "GraalVM",
-		"version": "0.32.0",
+		"version": "0.32.1",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Oracle GraalVM Java installation"
@@ -277,7 +277,7 @@
 	"addon_share": {
 		"id": "addon_share",
 		"name": "Addon Share",
-		"version": "0.32.0",
+		"version": "0.32.1",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Share instance addons as a zip file",
@@ -286,7 +286,7 @@
 	"completions": {
 		"id": "completions",
 		"name": "Completions",
-		"version": "0.32.0",
+		"version": "0.32.1",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Shell completions for zsh and other shells",
@@ -295,7 +295,7 @@
 	"forge": {
 		"id": "forge",
 		"name": "Forge",
-		"version": "0.32.0",
+		"version": "0.32.1",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Install NeoForge on the client",
@@ -304,7 +304,7 @@
 	"themes": {
 		"id": "themes",
 		"name": "Themes",
-		"version": "0.32.0",
+		"version": "0.32.1",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Adds more themes for you to choose from"
@@ -312,7 +312,7 @@
 	"shortcut": {
 		"id": "shortcut",
 		"name": "Shortcut",
-		"version": "0.32.0",
+		"version": "0.32.1",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Create desktop shortcuts to launch instances",
@@ -321,7 +321,7 @@
 	"skin_stealer": {
 		"id": "skin_stealer",
 		"name": "Skin Stealer",
-		"version": "0.32.0",
+		"version": "0.32.1",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Get the skin of other players",
@@ -330,7 +330,7 @@
 	"doctor": {
 		"id": "doctor",
 		"name": "Doctor",
-		"version": "0.32.0",
+		"version": "0.32.1",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Detect, diagnose, and fix crashes and issues",
@@ -339,7 +339,7 @@
 	"guardian": {
 		"id": "guardian",
 		"name": "Guardian",
-		"version": "0.32.0",
+		"version": "0.32.1",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Protect yourself against malware in mods",
@@ -348,7 +348,7 @@
 	"mojang_transfer": {
 		"id": "mojang_transfer",
 		"name": "Mojang Transfer",
-		"version": "0.32.0",
+		"version": "0.32.1",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Instance transfer for the Official Launcher",
@@ -357,7 +357,7 @@
 	"purpur": {
 		"id": "purpur",
 		"name": "Purpur",
-		"version": "0.32.0",
+		"version": "0.32.1",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Install and play Purpur servers",
@@ -366,7 +366,7 @@
 	"curseforge": {
 		"id": "curseforge",
 		"name": "CurseForge",
-		"version": "0.32.0",
+		"version": "0.32.1",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
 		"description": "Install CurseForge packages and modpacks",

@@ -4338,7 +4338,7 @@ dependencies = [
 
 [[package]]
 name = "nitro_auth"
-version = "0.32.0"
+version = "0.32.1"
 dependencies = [
  "anyhow",
  "bytes",
@@ -4357,7 +4357,7 @@ dependencies = [
 
 [[package]]
 name = "nitro_cli"
-version = "0.32.0"
+version = "0.32.1"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -4384,7 +4384,7 @@ dependencies = [
 
 [[package]]
 name = "nitro_config"
-version = "0.32.0"
+version = "0.32.1"
 dependencies = [
  "anyhow",
  "cfg-match",
@@ -4396,7 +4396,7 @@ dependencies = [
 
 [[package]]
 name = "nitro_core"
-version = "0.32.0"
+version = "0.32.1"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -4421,7 +4421,7 @@ dependencies = [
 
 [[package]]
 name = "nitro_gui"
-version = "0.32.0"
+version = "0.32.1"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -4444,7 +4444,7 @@ dependencies = [
 
 [[package]]
 name = "nitro_instance"
-version = "0.32.0"
+version = "0.32.1"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -4463,7 +4463,7 @@ dependencies = [
 
 [[package]]
 name = "nitro_mods"
-version = "0.32.0"
+version = "0.32.1"
 dependencies = [
  "anyhow",
  "itertools 0.11.0",
@@ -4479,7 +4479,7 @@ dependencies = [
 
 [[package]]
 name = "nitro_net"
-version = "0.32.0"
+version = "0.32.1"
 dependencies = [
  "anyhow",
  "bytes",
@@ -4492,7 +4492,7 @@ dependencies = [
 
 [[package]]
 name = "nitro_options"
-version = "0.32.0"
+version = "0.32.1"
 dependencies = [
  "anyhow",
  "itertools 0.11.0",
@@ -4504,7 +4504,7 @@ dependencies = [
 
 [[package]]
 name = "nitro_parse"
-version = "0.32.0"
+version = "0.32.1"
 dependencies = [
  "anyhow",
  "nitro_shared",
@@ -4515,7 +4515,7 @@ dependencies = [
 
 [[package]]
 name = "nitro_pkg"
-version = "0.32.0"
+version = "0.32.1"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -4531,7 +4531,7 @@ dependencies = [
 
 [[package]]
 name = "nitro_pkg_gen"
-version = "0.32.0"
+version = "0.32.1"
 dependencies = [
  "anyhow",
  "nitro_core",
@@ -4546,7 +4546,7 @@ dependencies = [
 
 [[package]]
 name = "nitro_plugin"
-version = "0.32.0"
+version = "0.32.1"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -4879,7 +4879,7 @@ dependencies = [
 
 [[package]]
 name = "nitro_shared"
-version = "0.32.0"
+version = "0.32.1"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -4911,7 +4911,7 @@ dependencies = [
 
 [[package]]
 name = "nitrolaunch"
-version = "0.32.0"
+version = "0.32.1"
 dependencies = [
  "anyhow",
  "async-trait",

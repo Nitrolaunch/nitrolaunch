@@ -2,8 +2,8 @@
 	"id": "curseforge_api",
 	"name": "CurseForge API",
 	"description": "Make simple CurseForge API calls to query mod versions",
-	"version": "0.32.0",
-	"nitro_version": "0.32.0",
+	"version": "0.32.1",
+	"nitro_version": "0.32.1",
 	"protocol_version": 3,
 	"hooks": {
 		"subcommand": {
