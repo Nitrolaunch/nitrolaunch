@@ -8,7 +8,7 @@ pub fn text_tag(text: &str, theme: &Theme) -> Rect {
 		None::<Rect>,
 		Some(text),
 		theme.fg,
-		theme.item,
+		theme.item_border,
 		theme.item,
 		theme,
 	)
@@ -20,7 +20,7 @@ pub fn icon_text_tag(ico: &str, text: &str, theme: &Theme) -> Rect {
 		Some(icon(ico, 12.0).into_element()),
 		Some(text),
 		theme.fg,
-		theme.item,
+		theme.item_border,
 		theme.item,
 		theme,
 	)
@@ -103,7 +103,7 @@ pub fn tag(
 	let border = border.into();
 	let bg = bg.into();
 	rect()
-		.height(Size::px(20.0))
+		.height(Size::px(22.0))
 		.center()
 		.horizontal()
 		.spacing(theme.gap)

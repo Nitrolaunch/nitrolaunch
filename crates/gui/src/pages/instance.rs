@@ -15,6 +15,7 @@ use crate::{
 		instance::{
 			console::InstanceConsole, files::InstanceFilesView, transfer::InstanceTransferMode,
 		},
+		tag::icon_text_tag,
 	},
 	ops::{
 		instance::{
@@ -272,28 +273,45 @@ impl Component for InstancePage {
 		.custom_buttons(more_buttons, MoreOption::Custom);
 
 		let controls = rect()
-			.height(Size::fill())
 			.cont()
 			.main_align(Alignment::End)
-			.cross_align(Alignment::Center)
 			.padding(Gaps::new(0.0, theme.gap3, 0.0, 0.0))
 			.child(launch_dropdown)
 			.child(update_button)
 			.maybe(is_editable, |this| this.child(settings_button))
 			.child(more_dropdown);
 
+		let imported_tag = if config.read().imported {
+			Some(icon_text_tag("download", "Imported", &theme))
+		} else {
+			None
+		};
+		let plugin_tag = if let Some(plugin) = &config.read().source_plugin {
+			Some(
+				icon_text_tag("jigsaw", "Plugin", &theme)
+					.tip(&front_state, &format!("Provided by plugin: {}", plugin)),
+			)
+		} else {
+			None
+		};
+
 		let head = rect()
 			.width(Size::fill())
 			.height(Size::px(80.0))
 			.cont()
+			.cross_align(Alignment::Center)
 			.border(border_bottom(theme.border, theme.panel_border))
 			.child(ico)
 			.child(
-				segment(name, 1.0)
-					.height(Size::fill())
+				rect()
+					.width(Size::flex(1.0))
+					.horizontal()
+					.spacing(theme.gap2)
 					.font_size(theme.font2)
 					.font_weight(FontWeight::BOLD)
-					.main_align(Alignment::Center),
+					.child(name)
+					.maybe_child(imported_tag)
+					.maybe_child(plugin_tag),
 			)
 			.child(controls);
 
