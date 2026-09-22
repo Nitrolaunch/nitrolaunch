@@ -610,6 +610,8 @@ pub struct ResolutionAndEvalResult {
 	pub packages: Vec<ResolvedPackage>,
 	/// Package recommendations that were not satisfied
 	pub unfulfilled_recommendations: Vec<nitro_pkg::resolve::RecommendedPackage>,
+	/// The list of dependencies that were required to satisfy the packages, represented as a list of package requests. Used for debugging.
+	pub dependencies: Vec<ArcPkgReq>,
 }
 
 impl ResolutionAndEvalResult {
@@ -769,6 +771,7 @@ pub async fn resolve(
 	Ok(ResolutionAndEvalResult {
 		packages,
 		unfulfilled_recommendations: result.unfulfilled_recommendations,
+		dependencies: result.dependencies,
 	})
 }
 

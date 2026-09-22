@@ -67,7 +67,7 @@ pub async fn resolve<'a, E: PackageEvaluator<'a>>(
 	// Create the initial EvalPackage tasks and constraints from the installed packages
 	for config in packages.iter().sorted_by_key(|x| x.get_package()) {
 		let req = config.get_package();
-		resolver.update_dependency(&req, DependencyKind::UserRequire);
+		resolver.update_dependency(&req, DependencyKind::UserRequire, None);
 		resolver.package_configs.insert(req.clone(), config.clone());
 	}
 
@@ -177,6 +177,7 @@ pub async fn resolve<'a, E: PackageEvaluator<'a>>(
 	let out = ResolutionResult {
 		packages: resolver.collect_packages(),
 		unfulfilled_recommendations,
+		dependencies: resolver.collect_dependencies(),
 	};
 
 	Ok(out)
@@ -188,6 +189,8 @@ pub struct ResolutionResult {
 	pub packages: Vec<ResolutionPackageResult>,
 	/// Package recommendations that were not satisfied
 	pub unfulfilled_recommendations: Vec<RecommendedPackage>,
+	/// The list of dependencies that were required to satisfy the packages, represented as a list of package requests. Used for debugging.
+	pub dependencies: Vec<ArcPkgReq>,
 }
 
 /// A single package resulting from resolution
@@ -214,12 +217,12 @@ async fn resolve_task<'a, E: PackageEvaluator<'a>>(
 	resolver: &mut Resolver<'a, E>,
 ) -> Result<(), ResolutionError> {
 	match task {
-		Task::EvalPackage { dest } => {
+		Task::EvalPackage { dest, src } => {
 			if is_package_overridden(&dest, &resolver.overrides.suppress) {
 				return Ok(());
 			}
 
-			let result = resolve_eval_package(dest.clone(), common_input, evaluator, resolver)
+			let result = resolve_eval_package(dest.clone(), src, common_input, evaluator, resolver)
 				.await
 				.map_err(|e| ResolutionError::PackageContext(dest.clone(), Box::new(e)));
 
@@ -251,6 +254,7 @@ async fn resolve_task<'a, E: PackageEvaluator<'a>>(
 /// Resolve an EvalPackage task
 async fn resolve_eval_package<'a, E: PackageEvaluator<'a>>(
 	package: ArcPkgReq,
+	src: Option<ArcPkgReq>,
 	common_input: &E::CommonInput,
 	evaluator: &mut E,
 	resolver: &mut Resolver<'a, E>,
@@ -263,7 +267,7 @@ async fn resolve_eval_package<'a, E: PackageEvaluator<'a>>(
 	let dependency = resolver
 		.dependencies
 		.entry(package.clone())
-		.or_insert_with(|| Dependency::new(package.clone(), DependencyKind::Require));
+		.or_insert_with(|| Dependency::new(package.clone(), DependencyKind::Require, src.clone()));
 
 	dependency
 		.canonicalize_versions(evaluator, common_input)
@@ -327,7 +331,7 @@ async fn resolve_eval_package<'a, E: PackageEvaluator<'a>>(
 			));
 		}
 		resolver.check_constraints(&req)?;
-		resolver.update_dependency(&req, DependencyKind::Require);
+		resolver.update_dependency(&req, DependencyKind::Require, Some(package.clone()));
 	}
 
 	for bundled in result.bundled.iter().sorted() {
@@ -337,7 +341,7 @@ async fn resolve_eval_package<'a, E: PackageEvaluator<'a>>(
 		));
 		resolver.check_constraints(&req)?;
 
-		resolver.update_dependency(&req, DependencyKind::Bundled);
+		resolver.update_dependency(&req, DependencyKind::Bundled, Some(package.clone()));
 	}
 
 	for (check_package, compat_package) in result.compats.iter().sorted() {
@@ -349,7 +353,11 @@ async fn resolve_eval_package<'a, E: PackageEvaluator<'a>>(
 			compat_package,
 			PkgRequestSource::Dependency(package.clone()),
 		));
-		resolver.compats.insert((check_package, compat_package));
+		resolver.compats.insert(Compat {
+			parent: package.clone(),
+			check: check_package,
+			compat: compat_package,
+		});
 	}
 
 	for extension in result.extensions.iter().sorted() {
@@ -415,7 +423,7 @@ struct Resolver<'a, E: PackageEvaluator<'a>> {
 	dependencies: HashMap<ArcPkgReq, Dependency>,
 	refusals: HashSet<ArcPkgReq>,
 	recommendations: HashSet<RecommendedPackage>,
-	compats: HashSet<(ArcPkgReq, ArcPkgReq)>,
+	compats: HashSet<Compat>,
 	extensions: HashSet<ArcPkgReq>,
 	suppressions: HashSet<ArcPkgReq>,
 	constant_input: E::EvalInput,
@@ -440,7 +448,12 @@ where
 	}
 
 	/// Updates a dependency
-	pub fn update_dependency(&mut self, req: &ArcPkgReq, kind: DependencyKind) {
+	pub fn update_dependency(
+		&mut self,
+		req: &ArcPkgReq,
+		kind: DependencyKind,
+		parent: Option<ArcPkgReq>,
+	) {
 		if self.suppressions.contains(req) {
 			return;
 		}
@@ -448,8 +461,10 @@ where
 		let (dependency, just_inserted) = if let Some(dependency) = self.dependencies.get_mut(req) {
 			(dependency, false)
 		} else {
-			self.dependencies
-				.insert(req.clone(), Dependency::new(req.clone(), kind));
+			self.dependencies.insert(
+				req.clone(),
+				Dependency::new(req.clone(), kind, parent.clone()),
+			);
 
 			(self.dependencies.get_mut(req).unwrap(), true)
 		};
@@ -460,8 +475,10 @@ where
 
 		// Update the package if it changed
 		if just_inserted || version_changed {
-			self.tasks
-				.push_back(Task::EvalPackage { dest: req.clone() });
+			self.tasks.push_back(Task::EvalPackage {
+				dest: req.clone(),
+				src: parent,
+			});
 		}
 	}
 
@@ -508,21 +525,42 @@ where
 	/// Checks compat constraints to see if new constraints are needed
 	pub fn check_compats(&mut self) {
 		let mut packages_to_require = Vec::new();
-		for (check_package, compat_package) in &self.compats {
-			if self.is_required(check_package) && !self.is_required(compat_package) {
-				packages_to_require.push(compat_package.clone());
+		for compat in &self.compats {
+			if self.is_required(&compat.check) && !self.is_required(&compat.compat) {
+				packages_to_require.push(compat.clone());
 			}
 		}
-		for package in packages_to_require {
-			self.update_dependency(&package, DependencyKind::Require);
+		for compat in packages_to_require {
+			self.update_dependency(&compat.compat, DependencyKind::Require, Some(compat.parent));
 		}
 	}
 
 	/// Collect all needed packages for final output
-	pub fn collect_packages(self) -> Vec<ResolutionPackageResult> {
+	pub fn collect_packages(&self) -> Vec<ResolutionPackageResult> {
 		self.dependencies
-			.into_values()
+			.values()
 			.map(|x| ResolutionPackageResult { req: x.pkg.clone() })
+			.collect()
+	}
+
+	/// Collect all needed dependencies for final output
+	pub fn collect_dependencies(&self) -> Vec<ArcPkgReq> {
+		self.dependencies
+			.values()
+			.map(|x| {
+				let src = x.parent.clone();
+				let mut dest = (*x.pkg).clone();
+				dest.source = if let Some(src) = src {
+					match x.kind {
+						DependencyKind::Require => PkgRequestSource::Dependency(src),
+						DependencyKind::Bundled => PkgRequestSource::Bundled(src),
+						DependencyKind::UserRequire => PkgRequestSource::UserRequire,
+					}
+				} else {
+					PkgRequestSource::UserRequire
+				};
+				dest.arc()
+			})
 			.collect()
 	}
 }
@@ -531,6 +569,8 @@ where
 struct Dependency {
 	pkg: ArcPkgReq,
 	kind: DependencyKind,
+	/// The package that this dependency is required by
+	parent: Option<ArcPkgReq>,
 	/// Version pattern constraints imposed on the available versions, uncanonicalized
 	uncanonicalized_version_constraints: Vec<VersionPattern>,
 	/// Version pattern constraints that have been canonicalized to the actual names
@@ -541,10 +581,11 @@ struct Dependency {
 
 impl Dependency {
 	/// Creates a new dependency
-	pub fn new(pkg: ArcPkgReq, kind: DependencyKind) -> Self {
+	pub fn new(pkg: ArcPkgReq, kind: DependencyKind, parent: Option<ArcPkgReq>) -> Self {
 		Self {
 			pkg,
 			kind,
+			parent,
 			uncanonicalized_version_constraints: Vec::new(),
 			canonicalized_version_constraints: Vec::new(),
 			already_canonicalized_version_constraints: Vec::new(),
@@ -625,10 +666,20 @@ enum DependencyKind {
 	UserRequire,
 }
 
+#[derive(Clone, PartialEq, Eq, Hash)]
+struct Compat {
+	parent: ArcPkgReq,
+	check: ArcPkgReq,
+	compat: ArcPkgReq,
+}
+
 /// A task that needs to be completed for resolution
 enum Task {
 	/// Evaluate a package and its relationships
-	EvalPackage { dest: Arc<PkgRequest> },
+	EvalPackage {
+		dest: ArcPkgReq,
+		src: Option<ArcPkgReq>,
+	},
 }
 
 async fn make_err_reqs_displayable<'eval, E: PackageEvaluator<'eval>>(

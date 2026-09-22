@@ -16,13 +16,16 @@ use nitro_shared::pkg::{ArcPkgReq, PackageDiff, PackageStability, merge_package_
 use nitro_shared::util::OS_STRING;
 use nitro_shared::versions::{VersionInfo, VersionPattern};
 use nitro_shared::{UpdateDepth, manual_files, translate};
+use reqwest::Client;
 use tokio::sync::Semaphore;
 use tokio::task::JoinSet;
 
 use crate::addon::{AddonExt, AddonRequest};
 use crate::config::package::PackageConfig;
 use crate::instance::Instance;
+use crate::io::paths::Paths;
 use crate::pkg::eval::{EvalConstants, EvalParameters, ResolutionAndEvalResult, resolve};
+use crate::pkg::reg::PkgRegistry;
 use crate::util::select_random_n_items_from_list;
 
 use super::InstanceUpdateContext;
@@ -58,6 +61,15 @@ pub async fn update_instance_packages<O: NitroOutput>(
 		FinishResolvingDependencies
 	)));
 	ctx.output.end_process();
+
+	print_dependency_debug_info(
+		&resolution.dependencies,
+		ctx.packages,
+		ctx.paths,
+		ctx.client,
+		ctx.output,
+	)
+	.await;
 
 	// Prompt to update the packages
 	let current_packages = inst_lock.get_packages();
@@ -493,5 +505,22 @@ fn remove_nitro_addons(dir: &Path) {
 		if filename.starts_with("nitro_") && filename.contains("addon") {
 			let _ = std::fs::remove_file(entry.path());
 		}
+	}
+}
+
+async fn print_dependency_debug_info(
+	deps: &[ArcPkgReq],
+	reg: &PkgRegistry,
+	paths: &Paths,
+	client: &Client,
+	o: &mut impl NitroOutput,
+) {
+	o.trace(MessageContents::Header("Dependencies:".into()));
+	for dep in deps.iter().sorted() {
+		let dep = reg.make_req_displayable(dep, paths, client, o).await;
+		o.trace(MessageContents::Package(
+			(*dep).clone(),
+			Box::new("Dependency".into()),
+		));
 	}
 }
