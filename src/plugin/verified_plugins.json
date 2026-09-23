@@ -307,7 +307,8 @@
 		"version": "0.32.1",
 		"github_owner": "Nitrolaunch",
 		"github_repo": "plugins",
-		"description": "Adds more themes for you to choose from"
+		"description": "Adds more themes for you to choose from",
+		"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/themes"
 	},
 	"shortcut": {
 		"id": "shortcut",

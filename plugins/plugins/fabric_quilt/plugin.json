@@ -2,6 +2,7 @@
 	"id": "fabric_quilt",
 	"name": "Fabric Quilt",
 	"description": "Install Fabric and Quilt instances",
+	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/fabric_quilt",
 	"uninstall_dirs": ["fabric_quilt"],
 	"version": "0.32.1",
 	"nitro_version": "0.32.1",
