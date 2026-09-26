@@ -269,7 +269,7 @@ def_hook!(
 #[serde(default)]
 pub struct ReplaceInstanceLaunchResult {
 	/// The PID of the newly spawned instance process
-	pub pid: u32,
+	pub pid: Option<u32>,
 	/// An optional path for the stdout of the instance, if you aren't using the one that nitro provides you
 	pub stdout_path: Option<String>,
 }

@@ -71,6 +71,10 @@ name = "nitro_plugin_packhost"
 path = "plugins/packhost/main.rs"
 
 [[bin]]
+name = "nitro_plugin_remote"
+path = "plugins/remote/main.rs"
+
+[[bin]]
 name = "nitro_plugin_paper"
 path = "plugins/paper/main.rs"
 
@@ -103,6 +107,9 @@ clap = { workspace = true }
 color-print = { workspace = true }
 discord-rich-presence = { workspace = true }
 glob = { workspace = true }
+http-body-util = { workspace = true }
+hyper = { workspace = true }
+hyper-util = { workspace = true }
 iso8601-timestamp = { workspace = true }
 itertools = { workspace = true }
 memchr = { workspace = true }
@@ -121,7 +128,7 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 sysinfo = { workspace = true }
 termimad = { workspace = true }
-tokio = { workspace = true }
+tokio = { version = "1.37.0", features = ["rt-multi-thread", "net"] }
 version-compare = { workspace = true }
 zip = { workspace = true }
 

@@ -340,12 +340,24 @@ impl<T> DeserListOrSingle<T> {
 
 	/// Iterates over this DeserListOrSingle
 	pub fn iter(&self) -> DeserListOrSingleIter<'_, T> {
-		match &self {
+		match self {
 			Self::Single(val) => {
 				DeserListOrSingleIter(DeserListOrSingleIterState::Single(Some(val)))
 			}
 			Self::List(list) => {
 				DeserListOrSingleIter(DeserListOrSingleIterState::List(list.iter()))
+			}
+		}
+	}
+
+	/// Iterates over this DeserListOrSingle mutably
+	pub fn iter_mut(&mut self) -> DeserListOrSingleIterMut<'_, T> {
+		match self {
+			Self::Single(val) => {
+				DeserListOrSingleIterMut(DeserListOrSingleIterMutState::Single(Some(val)))
+			}
+			Self::List(list) => {
+				DeserListOrSingleIterMut(DeserListOrSingleIterMutState::List(list.iter_mut()))
 			}
 		}
 	}
@@ -390,6 +402,26 @@ impl<T: Clone> DeserListOrSingle<T> {
 		let mut self_vec = self.get_vec();
 		self_vec.extend(other.iter().cloned());
 		*self = Self::List(self_vec);
+	}
+
+	/// Pushes a value to the list, converting a single to a list if necessary
+	pub fn push(&mut self, value: T) {
+		match self {
+			Self::Single(val) => {
+				*self = Self::List(vec![val.clone(), value]);
+			}
+			Self::List(list) => list.push(value),
+		}
+	}
+
+	/// Pushes a value to the front of the list, converting a single to a list if necessary
+	pub fn push_front(&mut self, value: T) {
+		match self {
+			Self::Single(val) => {
+				*self = Self::List(vec![value, val.clone()]);
+			}
+			Self::List(list) => list.insert(0, value),
+		}
 	}
 }
 
@@ -441,6 +473,26 @@ impl<'a, T> Iterator for DeserListOrSingleIter<'a, T> {
 		match &mut self.0 {
 			DeserListOrSingleIterState::Single(val) => val.take(),
 			DeserListOrSingleIterState::List(slice_iter) => slice_iter.next(),
+		}
+	}
+}
+
+/// Mutable iterator over DeserListOrSingle
+pub struct DeserListOrSingleIterMut<'a, T>(DeserListOrSingleIterMutState<'a, T>);
+
+/// State for a DeserListOrSingleIterMut
+enum DeserListOrSingleIterMutState<'a, T> {
+	Single(Option<&'a mut T>),
+	List(std::slice::IterMut<'a, T>),
+}
+
+impl<'a, T> Iterator for DeserListOrSingleIterMut<'a, T> {
+	type Item = &'a mut T;
+
+	fn next(&mut self) -> Option<Self::Item> {
+		match &mut self.0 {
+			DeserListOrSingleIterMutState::Single(val) => val.take(),
+			DeserListOrSingleIterMutState::List(slice_iter) => slice_iter.next(),
 		}
 	}
 }
