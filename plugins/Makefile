@@ -111,6 +111,7 @@ package_zips.platform_dependent:
 	@rm -f release/options-${OS}.zip
 	@rm -f release/packhost-${OS}.zip
 	@rm -f release/paper-${OS}.zip
+	@rm -f release/remote-${OS}.zip
 	@rm -f release/server_restart-${OS}.zip
 	@rm -f release/smithed-${OS}.zip
 	@rm -f release/smithed_api-${OS}.zip
@@ -134,6 +135,7 @@ package_zips.platform_dependent:
 	@zip -j release/options-${OS}.zip $(TARGET_DIR)/nitro_plugin_options${EXTENSION} plugins/options/plugin.json
 	@zip -j release/packhost-${OS}.zip $(TARGET_DIR)/nitro_plugin_packhost${EXTENSION} plugins/packhost/plugin.json
 	@zip -j release/paper-${OS}.zip $(TARGET_DIR)/nitro_plugin_paper${EXTENSION} plugins/paper/plugin.json
+	@zip -j release/remote-${OS}.zip $(TARGET_DIR)/nitro_plugin_remote${EXTENSION} plugins/remote/plugin.json
 	@zip -j release/server_restart-${OS}.zip $(TARGET_DIR)/nitro_plugin_server_restart${EXTENSION} plugins/server_restart/plugin.json
 	@zip -j release/smithed-${OS}.zip $(TARGET_DIR)/nitro_plugin_smithed${EXTENSION} plugins/smithed/plugin.json plugins/smithed/page.html plugins/smithed/icon.svg
 	@zip -j release/smithed_api-${OS}.zip $(TARGET_DIR)/nitro_plugin_smithed_api${EXTENSION} plugins/smithed_api/plugin.json
@@ -303,6 +305,11 @@ install.purpur:
 	@cargo build -p nitro_plugin_purpur --release --target wasm32-wasip2
 	@cp -r plugins/purpur ~/.local/share/nitro/plugins
 	@cp -r ../target/wasm32-wasip2/release/nitro_plugin_purpur.wasm ~/.local/share/nitro/plugins/purpur/plugin.wasm
+
+install.remote:
+	@cargo install --path . --bin nitro_plugin_remote --locked --profile fast_release
+	@mkdir -p ~/.local/share/nitro/plugins/remote
+	@cat plugins/remote/plugin.json | sed 's,\$${PLUGIN_DIR}/,,' > ~/.local/share/nitro/plugins/remote/plugin.json
 
 install.server_restart:
 	@cargo install --path . --bin nitro_plugin_server_restart --locked --profile fast_release

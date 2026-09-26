@@ -182,7 +182,7 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 		)));
 
 		Ok(Some(ReplaceInstanceLaunchResult {
-			pid,
+			pid: Some(pid),
 			stdout_path: Some(log_file_path),
 		}))
 	})?;
