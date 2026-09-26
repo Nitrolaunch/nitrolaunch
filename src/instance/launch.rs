@@ -207,7 +207,7 @@ impl Instance {
 			bail!("No plugins handled custom launch for this instance");
 		};
 
-		hook_arg.pid = Some(result.pid);
+		hook_arg.pid = result.pid;
 
 		// Run while_instance_launch hooks alongside
 		let hook_handles = plugins
@@ -311,7 +311,7 @@ enum InstanceHandleInner {
 	},
 	Plugin {
 		/// PID of the instance process
-		pid: u32,
+		pid: Option<u32>,
 		/// Stdout file for the process
 		stdout_file: File,
 		/// Stdin file for the process
@@ -325,11 +325,15 @@ enum InstanceHandleInner {
 
 impl InstanceHandle {
 	fn create_tracking_entry(&self, paths: &Paths) -> anyhow::Result<()> {
+		let Some(pid) = self.get_pid() else {
+			return Ok(());
+		};
+
 		let mut registry = RunningInstanceRegistry::open(paths)
 			.context("Failed to open registry of running instances")?;
 		let entry = RunningInstanceEntry {
 			instance_id: self.instance_id.to_string(),
-			pid: self.get_pid(),
+			pid,
 			parent_pid: std::process::id(),
 			is_java: matches!(&self.inner, InstanceHandleInner::Standard { .. }),
 			stdin_file: self
@@ -398,8 +402,12 @@ impl InstanceHandle {
 					}
 				}
 				InstanceHandleInner::Plugin { pid, .. } => {
-					system.refresh_processes(sysinfo::ProcessesToUpdate::All, true);
-					if !is_process_alive(*pid, &system, false) {
+					if let Some(pid) = pid {
+						system.refresh_processes(sysinfo::ProcessesToUpdate::All, true);
+						if !is_process_alive(*pid, &system, false) {
+							break ExitStatus::default();
+						}
+					} else {
 						break ExitStatus::default();
 					}
 				}
@@ -439,13 +447,14 @@ impl InstanceHandle {
 			InstanceHandleInner::Standard { mut inner, .. } => {
 				let _ = inner.kill();
 			}
-			InstanceHandleInner::Plugin { pid, .. } => {
+			InstanceHandleInner::Plugin { pid: Some(pid), .. } => {
 				let mut system = System::new_all();
 				system.refresh_processes(sysinfo::ProcessesToUpdate::All, true);
 				if let Some(proc) = system.process(Pid::from(pid as usize)) {
 					proc.kill();
 				}
 			}
+			_ => {}
 		}
 
 		Self::on_stop(
@@ -472,9 +481,9 @@ impl InstanceHandle {
 	}
 
 	/// Gets the PID of the instance process
-	pub fn get_pid(&self) -> u32 {
+	pub fn get_pid(&self) -> Option<u32> {
 		match &self.inner {
-			InstanceHandleInner::Standard { inner, .. } => inner.get_pid(),
+			InstanceHandleInner::Standard { inner, .. } => Some(inner.get_pid()),
 			InstanceHandleInner::Plugin { pid, .. } => *pid,
 		}
 	}
@@ -520,7 +529,7 @@ impl InstanceHandle {
 	/// Function that should be run whenever the instance stops
 	async fn on_stop(
 		instance_id: &str,
-		pid: u32,
+		pid: Option<u32>,
 		account: Option<&str>,
 		arg: &InstanceLaunchArg,
 		plugins: &PluginManager,
@@ -532,10 +541,12 @@ impl InstanceHandle {
 		process.display(MessageContents::StartProcess(msg));
 
 		// Remove the instance from the registry
-		let registry = RunningInstanceRegistry::open(paths);
-		if let Ok(mut registry) = registry {
-			registry.remove_instance(pid, instance_id, account);
-			let _ = registry.write();
+		if let Some(pid) = pid {
+			let registry = RunningInstanceRegistry::open(paths);
+			if let Ok(mut registry) = registry {
+				registry.remove_instance(pid, instance_id, account);
+				let _ = registry.write();
+			}
 		}
 
 		// Call on stop hooks
