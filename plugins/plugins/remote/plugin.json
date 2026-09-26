@@ -1,0 +1,30 @@
+{
+	"id": "remote",
+	"name": "Remote",
+	"description": "Launch and manage instances from a remote computer",
+	"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/remote",
+	"version": "0.32.1",
+	"nitro_version": "0.32.1",
+	"protocol_version": 3,
+	"hooks": {
+		"add_instances": {
+			"executable": "${PLUGIN_DIR}/nitro_plugin_remote"
+		},
+		"add_templates": {
+			"executable": "${PLUGIN_DIR}/nitro_plugin_remote"
+		},
+		"replace_instance_launch": {
+			"executable": "${PLUGIN_DIR}/nitro_plugin_remote"
+		},
+		"delete_instance": {
+			"executable": "${PLUGIN_DIR}/nitro_plugin_remote"
+		},
+		"subcommand": {
+			"executable": "${PLUGIN_DIR}/nitro_plugin_remote"
+		}
+	},
+	"subcommands": {
+		"remote": "Manage remote instance access",
+		"rem": "Manage remote instance access"
+	}
+}
