@@ -14,11 +14,12 @@ rust-version.workspace = true
 workspace = true
 
 [features]
-schema = ["dep:schemars"]
+schema = ["dep:schemars", "nitro_sandbox/schema"]
 
 [dependencies]
 anyhow = { workspace = true }
 cfg-match = { workspace = true }
+nitro_sandbox = { workspace = true }
 nitro_shared = { workspace = true }
 schemars = { workspace = true, optional = true }
 serde = { workspace = true }
