@@ -10,6 +10,8 @@ use crate::group::PolicyGroup;
 pub struct SandboxPolicy {
 	/// Additional allowed policy groups
 	pub allowed: Vec<PolicyGroup>,
+	/// Policy groups to disallow from the defaults
+	pub disallowed: Vec<PolicyGroup>,
 	/// List of additional allowed filesystem paths and their access policies for the sandboxed instance
 	pub allowed_paths: HashMap<String, FilesystemPolicy>,
 	/// List of additional allowed IP addresses or hostnames that the sandboxed Minecraft instance can connect to
