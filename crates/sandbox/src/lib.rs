@@ -45,6 +45,7 @@ pub fn resolve(
 }
 
 /// Applies the sandboxing policy to the current thread
+#[allow(unused_variables)]
 pub fn apply(policy: policy::ResolvedSandboxPolicy) -> anyhow::Result<()> {
 	#[cfg(target_os = "linux")]
 	{

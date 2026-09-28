@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
+use nitro_sandbox::policy::SandboxPolicy;
 use nitro_shared::Side;
 use nitro_shared::java_args::MemoryNum;
 use nitro_shared::loaders::Loader;
@@ -45,9 +46,9 @@ pub struct InstanceConfig {
 	/// Window configuration
 	#[serde(skip_serializing_if = "DefaultExt::is_default")]
 	pub window: ClientWindowConfig,
-	/// Whether to enable sandboxing
+	/// Sandboxing configuration
 	#[serde(skip_serializing_if = "DefaultExt::is_default")]
-	pub sandbox: bool,
+	pub sandbox: SandboxConfig,
 
 	// Package config
 	/// Modpack package for this instance
@@ -107,7 +108,7 @@ impl InstanceConfig {
 		self.loader = other.loader.or(self.loader.clone());
 		self.package_stability = other.package_stability.or(self.package_stability);
 		self.launch.merge(other.launch);
-		self.sandbox = other.sandbox || self.sandbox;
+		self.sandbox.merge(other.sandbox);
 		self.datapack_folder = other.datapack_folder.or(self.datapack_folder.clone());
 		self.packages.extend(other.packages);
 		self.overrides.merge(other.overrides);
@@ -382,6 +383,27 @@ impl ClientWindowConfig {
 	/// Merge two ClientWindowConfigs
 	pub fn merge(&mut self, other: Self) -> &mut Self {
 		self.resolution = merge_options(self.resolution, other.resolution);
+		self
+	}
+}
+
+/// Configuration for sandboxing on an instance
+#[derive(Deserialize, Serialize, Default, Clone, Debug, PartialEq)]
+#[serde(default)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
+pub struct SandboxConfig {
+	/// Whether to enable sandboxing
+	#[serde(skip_serializing_if = "Option::is_none")]
+	pub enable: Option<bool>,
+	/// The sandboxing policy to use
+	pub policy: SandboxPolicy,
+}
+
+impl SandboxConfig {
+	/// Merge two SandboxConfigs
+	pub fn merge(&mut self, other: Self) -> &mut Self {
+		self.enable = other.enable.or(self.enable);
+		self.policy.merge(other.policy);
 		self
 	}
 }

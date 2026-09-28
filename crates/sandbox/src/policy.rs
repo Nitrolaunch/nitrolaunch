@@ -4,9 +4,13 @@ use serde::{Deserialize, Serialize};
 
 use crate::group::PolicyGroup;
 
+#[cfg(feature = "schema")]
+use schemars::JsonSchema;
+
 /// Configuration for the sandboxing system
-#[derive(Deserialize, Serialize, Default)]
+#[derive(Deserialize, Serialize, Default, Clone, Debug, PartialEq)]
 #[serde(default)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 pub struct SandboxPolicy {
 	/// Additional allowed policy groups
 	pub allowed: Vec<PolicyGroup>,
@@ -20,9 +24,21 @@ pub struct SandboxPolicy {
 	pub allowed_ports: Vec<u16>,
 }
 
+impl SandboxPolicy {
+	/// Merges another SandboxPolicy into this one
+	pub fn merge(&mut self, other: SandboxPolicy) {
+		self.allowed.extend(other.allowed);
+		self.disallowed.extend(other.disallowed);
+		self.allowed_paths.extend(other.allowed_paths);
+		self.allowed_hosts.extend(other.allowed_hosts);
+		self.allowed_ports.extend(other.allowed_ports);
+	}
+}
+
 /// Defines access to a filesystem path for the sandboxed instance
 #[derive(Deserialize, Serialize, Clone, Copy, PartialEq, Eq, Hash, Debug)]
 #[serde(rename_all = "snake_case")]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 pub enum FilesystemPolicy {
 	/// File or directory can only be read
 	Read,

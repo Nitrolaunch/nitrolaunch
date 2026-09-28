@@ -1,10 +1,14 @@
 use std::path::Path;
 
 use nitro_shared::Side;
+#[allow(unused_imports)]
 use nitro_shared::io::home_dir;
 use serde::{Deserialize, Serialize};
 
 use crate::policy::{FilesystemPolicy, ResolvedSandboxPolicy};
+
+#[cfg(feature = "schema")]
+use schemars::JsonSchema;
 
 /// Default, no-brainer policy groups for the sandbox, necessary for the instance to function
 pub static DEFAULT_POLICY_GROUPS: &[PolicyGroup] = &[
@@ -16,8 +20,9 @@ pub static DEFAULT_POLICY_GROUPS: &[PolicyGroup] = &[
 ];
 
 /// Standard presets of policies for the sandbox
-#[derive(Deserialize, Serialize, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Deserialize, Serialize, Clone, Copy, PartialEq, Eq, Hash, Debug)]
 #[serde(rename_all = "snake_case")]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 pub enum PolicyGroup {
 	/// Allows access to launching Java, stdin/out, and system files
 	Base,

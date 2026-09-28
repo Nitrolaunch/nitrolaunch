@@ -4399,6 +4399,7 @@ version = "0.32.1"
 dependencies = [
  "anyhow",
  "cfg-match",
+ "nitro_sandbox",
  "nitro_shared",
  "schemars",
  "serde",
