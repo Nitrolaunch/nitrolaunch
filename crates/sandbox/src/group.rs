@@ -19,6 +19,13 @@ pub static DEFAULT_POLICY_GROUPS: &[PolicyGroup] = &[
 	PolicyGroup::Network,
 ];
 
+/// Additional default policy groups for client instances
+pub static CLIENT_POLICY_GROUPS: &[PolicyGroup] = &[
+	PolicyGroup::Graphics,
+	PolicyGroup::Input,
+	PolicyGroup::Audio,
+];
+
 /// Standard presets of policies for the sandbox
 #[derive(Deserialize, Serialize, Clone, Copy, PartialEq, Eq, Hash, Debug)]
 #[serde(rename_all = "snake_case")]
