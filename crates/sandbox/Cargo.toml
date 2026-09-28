@@ -21,9 +21,11 @@ anyhow = { workspace = true }
 async-trait = { workspace = true }
 glob = { workspace = true }
 itertools = { workspace = true }
-landlock = { workspace = true }
 nitro_shared = { workspace = true }
 schemars = { workspace = true, optional = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+landlock = { workspace = true }
