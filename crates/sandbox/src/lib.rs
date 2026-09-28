@@ -26,12 +26,13 @@ pub fn resolve(
 	let mut resolved = policy::ResolvedSandboxPolicy::default();
 
 	let mut groups = DEFAULT_POLICY_GROUPS.to_vec();
-	groups.extend(policy.allowed.iter().copied());
 	if params.side == Side::Client {
 		groups.push(PolicyGroup::Graphics);
 		groups.push(PolicyGroup::Input);
 		groups.push(PolicyGroup::Audio);
 	}
+	groups.extend(policy.allowed.iter().copied());
+	groups.retain(|x| !policy.disallowed.contains(x));
 
 	for group in groups {
 		group.resolve(&params, &mut resolved);
