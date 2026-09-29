@@ -14,17 +14,13 @@ use nitrolaunch::{
 		id::{InstanceID, TemplateID},
 		loaders::Loader,
 		output::NoOp,
+		util::MakeSend,
 	},
 };
 
 use crate::{
-	dependency::BackDependency,
-	ops::{MakeSend, task::Task},
-	pages::config::ConfiguredItem,
-	prelude::*,
-	secrets::get_ms_client_id,
-	simple_mutation, simple_query,
-	state::BackEvent,
+	dependency::BackDependency, ops::task::Task, pages::config::ConfiguredItem, prelude::*,
+	secrets::get_ms_client_id, simple_mutation, simple_query, state::BackEvent,
 };
 
 #[derive(Clone, PartialEq, Eq, Hash)]

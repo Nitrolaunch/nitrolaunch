@@ -9,15 +9,12 @@ use nitrolaunch::{
 		update::{InstanceUpdateContext, manager::UpdateSettings},
 	},
 	io::lock::Lockfile,
-	shared::{UpdateDepth, id::InstanceID},
+	shared::{UpdateDepth, id::InstanceID, util::MakeSend},
 };
 
 use crate::{
-	data::LauncherData,
-	ops::{MakeSend, task::Task},
-	prelude::*,
-	secrets::get_ms_client_id,
-	simple_mutation, simple_query,
+	data::LauncherData, ops::task::Task, prelude::*, secrets::get_ms_client_id, simple_mutation,
+	simple_query,
 };
 
 #[derive(Clone, PartialEq, Eq, Hash)]
