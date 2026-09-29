@@ -385,11 +385,7 @@ mod tests {
 		let mut lockfile = create_test_lockfile();
 		let req = PkgRequest::parse("test-pkg", PkgRequestSource::UserRequire);
 
-		// Initial version
-		lockfile.update_package(&req, &[], Some("1.0.0".to_string()));
-
-		// Update to new version
-		let addon = LockfileAddon {
+		let mut addon = LockfileAddon {
 			id: Some("addon1".to_string()),
 			package: Some("test-pkg".to_string()),
 			from_modpack: false,
@@ -399,12 +395,23 @@ mod tests {
 			hashes: AddonOptionalHashes::default(),
 		};
 
-		lockfile.update_package(&req, &[addon], Some("2.0.0".to_string()));
+		// Initial version
+		lockfile.update_package(
+			&req,
+			std::slice::from_ref(&addon),
+			Some("1.0.0".to_string()),
+		);
+
+		// Update to new version
+		addon.file_name = "addon1_v2.jar".to_string();
+		addon.files = vec!["mods/addon1_v2.jar".to_string()];
+		let files_to_remove = lockfile.update_package(&req, &[addon], Some("2.0.0".to_string()));
 
 		assert_eq!(
 			lockfile.contents.packages["test-pkg"].content_version,
 			Some("2.0.0".to_string())
 		);
+		assert!(files_to_remove.contains(&PathBuf::from("mods/addon1.jar")));
 	}
 
 	#[test]
