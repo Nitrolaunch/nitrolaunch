@@ -42,8 +42,7 @@ struct Cli {
 
 #[derive(Debug, clap::Subcommand)]
 enum Subcommand {
-	#[command(about = "List all available tools")]
-	#[command(alias = "ls")]
+	#[command(about = "Link a beet project to an instance")]
 	Link {
 		/// The instance to link to
 		instance: String,
