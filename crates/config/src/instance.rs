@@ -77,9 +77,9 @@ pub struct InstanceConfig {
 	/// Whether this plugin instance is able to be deleted. Does nothing if this instance was not created by a plugin
 	#[serde(skip_serializing_if = "DefaultExt::is_default")]
 	pub is_deletable: bool,
-	/// Whether to use a plugin to custom launch this instance. Should only be set by plugins.
+	/// The mode to use when launching this instance. Should only be set by plugins.
 	#[serde(skip_serializing_if = "DefaultExt::is_default")]
-	pub custom_launch: bool,
+	pub launch_mode: LaunchMode,
 	/// A custom plugin to use to retrieve logs for this instance. Should only be set by plugins.
 	#[serde(skip_serializing_if = "DefaultExt::is_default")]
 	pub custom_logging_plugin: Option<String>,
@@ -117,7 +117,7 @@ impl InstanceConfig {
 		self.source_plugin = other.source_plugin;
 		self.is_editable = other.is_editable;
 		self.is_deletable = other.is_deletable;
-		self.custom_launch = other.custom_launch;
+		self.launch_mode = other.launch_mode;
 		self.imported = other.imported;
 	}
 
@@ -126,7 +126,7 @@ impl InstanceConfig {
 		self.source_plugin = None;
 		self.is_editable = false;
 		self.is_deletable = false;
-		self.custom_launch = false;
+		self.launch_mode = LaunchMode::Normal;
 		self.custom_logging_plugin = None;
 	}
 
@@ -135,7 +135,7 @@ impl InstanceConfig {
 		self.source_plugin = original_config.source_plugin.clone();
 		self.is_editable = original_config.is_editable;
 		self.is_deletable = original_config.is_deletable;
-		self.custom_launch = original_config.custom_launch;
+		self.launch_mode = original_config.launch_mode;
 	}
 
 	/// Gets the directory for this instance
@@ -380,6 +380,20 @@ impl ClientWindowConfig {
 		self.resolution = merge_options(self.resolution, other.resolution);
 		self
 	}
+}
+
+/// Launch mode for an instance, overridden by plugins
+#[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Copy, Default)]
+#[serde(rename_all = "snake_case")]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
+pub enum LaunchMode {
+	/// Launch the instance normally
+	#[default]
+	Normal,
+	/// Launch the instance in the background. The hook should return immediately.
+	Background,
+	/// Launch the instance and wait for it to finish. The hook should return when the instance exits.
+	Wait,
 }
 
 /// Checks if an instance ID is valid

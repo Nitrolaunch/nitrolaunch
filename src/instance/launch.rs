@@ -11,10 +11,10 @@ use std::time::Duration;
 use sysinfo::{Pid, System};
 
 use anyhow::{Context, bail};
-use nitro_config::instance::{QuickPlay, WrapperCommand};
+use nitro_config::instance::{LaunchMode, QuickPlay, WrapperCommand};
 use nitro_core::account::{AccountID, AccountManager};
 use nitro_core::io::java::install::JavaInstallationKind;
-use nitro_plugin::hook::call::HookHandles;
+use nitro_plugin::hook::call::{HookHandle, HookHandles};
 use nitro_plugin::hook::hooks::{
 	InstanceLaunchArg, OnInstanceLaunch, OnInstanceStop, ReplaceInstanceLaunch, WhileInstanceLaunch,
 };
@@ -86,7 +86,7 @@ impl Instance {
 			.context("Failed to call on launch hook")?;
 		results.all_results(section.deref_mut()).await?;
 
-		if self.dir.is_some() && !self.config.custom_launch {
+		if self.dir.is_some() && self.config.launch_mode == LaunchMode::Normal {
 			self.launch_standard(
 				ctx.core,
 				hook_arg,
@@ -193,30 +193,35 @@ impl Instance {
 		o: &mut impl NitroOutput,
 	) -> anyhow::Result<InstanceHandle> {
 		// Set up stdio
-		let stdout_path = get_stdio_file_path(&paths.core, false);
+		let mut stdout_path = get_stdio_file_path(&paths.core, false);
 		let stdin_path = get_stdio_file_path(&paths.core, true);
 		hook_arg.stdout_path = Some(stdout_path.to_string_lossy().to_string());
 		hook_arg.stdin_path = Some(stdin_path.to_string_lossy().to_string());
 
-		let result = plugins
+		let mut result = plugins
 			.call_hook(ReplaceInstanceLaunch, &hook_arg, paths, o)
 			.await
 			.context("Failed to call custom launch hook")?;
 
-		let Some(result) = result.first_some(o).await? else {
-			bail!("No plugins handled custom launch for this instance");
-		};
+		// If this is a background launch, we need to wait for the hook to finish now
+		let (pid, handle) = if self.config.launch_mode == LaunchMode::Background {
+			let Some(result) = result.first_some(o).await? else {
+				bail!("No plugins handled custom launch for this instance");
+			};
 
-		hook_arg.pid = result.pid;
+			hook_arg.pid = result.pid;
+			// Use the result stdout path if it gives one
+			stdout_path = result.stdout_path.map(PathBuf::from).unwrap_or(stdout_path);
+			(result.pid, None)
+		} else {
+			(None, result.next())
+		};
 
 		// Run while_instance_launch hooks alongside
 		let hook_handles = plugins
 			.call_hook(WhileInstanceLaunch, &hook_arg, paths, o)
 			.await
 			.context("Failed to call while launch hook")?;
-
-		// Use the result stdout path if it gives one
-		let stdout_path = result.stdout_path.map(PathBuf::from).unwrap_or(stdout_path);
 
 		let stdout_file =
 			File::open(&stdout_path).context("Launch hook did not open an stdout file")?;
@@ -233,7 +238,8 @@ impl Instance {
 			output_fn: None,
 			account: selected_account.clone(),
 			inner: InstanceHandleInner::Plugin {
-				pid: result.pid,
+				pid,
+				handle,
 				stdout_file,
 				stdin_file,
 				stdout_path,
@@ -312,6 +318,8 @@ enum InstanceHandleInner {
 	Plugin {
 		/// PID of the instance process
 		pid: Option<u32>,
+		/// Hook handle for the launched instance if we are in wait mode
+		handle: Option<HookHandle<ReplaceInstanceLaunch>>,
 		/// Stdout file for the process
 		stdout_file: File,
 		/// Stdin file for the process
@@ -401,8 +409,12 @@ impl InstanceHandle {
 						break status;
 					}
 				}
-				InstanceHandleInner::Plugin { pid, .. } => {
-					if let Some(pid) = pid {
+				InstanceHandleInner::Plugin { pid, handle, .. } => {
+					if let Some(handle) = handle {
+						if let Ok(true) = handle.poll(o).await {
+							break ExitStatus::default();
+						}
+					} else if let Some(pid) = pid {
 						system.refresh_processes(sysinfo::ProcessesToUpdate::All, true);
 						if !is_process_alive(*pid, &system, false) {
 							break ExitStatus::default();
