@@ -5,6 +5,7 @@ use std::{
 };
 
 use anyhow::{Context, bail};
+use nitro_config::instance::LaunchMode;
 use nitro_plugin::{
 	api::wasm::{
 		WASMPlugin,
@@ -38,9 +39,9 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 			return Ok(OnInstanceSetupResult::default());
 		};
 
-		if arg.config.custom_launch {
+		if arg.config.launch_mode != LaunchMode::Normal {
 			return Ok(OnInstanceSetupResult::default());
-		};
+		}
 
 		// Make sure this is a Paper or Folia server instance
 		if side != Side::Server || arg.loader != Loader::Purpur {

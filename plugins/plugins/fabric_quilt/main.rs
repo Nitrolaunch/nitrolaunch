@@ -5,6 +5,7 @@ use nitro_core::io::java::maven::MavenLibraryParts;
 use nitro_mods::fabric_quilt;
 use nitro_plugin::{api::executable::ExecutablePlugin, hook::hooks::OnInstanceSetupResult};
 use nitro_shared::{UpdateDepth, loaders::Loader, versions::VersionPattern};
+use nitrolaunch::config_crate::instance::LaunchMode;
 
 fn main() -> anyhow::Result<()> {
 	let mut plugin =
@@ -18,7 +19,7 @@ fn main() -> anyhow::Result<()> {
 			return Ok(OnInstanceSetupResult::default());
 		};
 
-		if arg.config.custom_launch {
+		if arg.config.launch_mode != LaunchMode::Normal {
 			return Ok(OnInstanceSetupResult::default());
 		}
 
