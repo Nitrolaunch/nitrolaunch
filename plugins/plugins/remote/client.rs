@@ -1,10 +1,12 @@
 use std::path::{Path, PathBuf};
 
 use anyhow::Context;
+use memchr::arch::x86_64;
 use nitro_core::io::{json_from_file, json_to_file};
 use nitro_net::download::Client;
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 
+use crate::server::GetJobResponse;
 use crate::server::PORT;
 use crate::server::SyncResponse;
 
@@ -30,6 +32,25 @@ pub async fn sync(
 	}
 }
 
+/// Fetches a job from the remote
+pub async fn get_job(
+	settings: &RemoteSettings,
+	client: &Client,
+	job_id: u64,
+) -> anyhow::Result<Option<GetJobResponse>> {
+	download_json_optional(&format!("jobs/{job_id}"), settings, client).await
+}
+
+/// Launches an instance on the remote server and returns the job ID
+pub async fn launch(
+	settings: &RemoteSettings,
+	client: &Client,
+	request: crate::server::LaunchRequest,
+) -> anyhow::Result<u64> {
+	let body = serde_json::to_string(&request).context("Failed to serialize launch request")?;
+	download_job_number("launch", Some(body), settings, client).await
+}
+
 /// Settings on the client for a single remote server
 #[derive(Serialize, Deserialize, Clone)]
 pub struct RemoteSettings {
@@ -47,11 +68,7 @@ async fn download_json<T: DeserializeOwned>(
 	settings: &RemoteSettings,
 	client: &Client,
 ) -> anyhow::Result<T> {
-	let address = format!("{}:{PORT}", settings.address);
-	let mut url = format!("{address}/{}", subpath);
-	if !url.starts_with("http://") && !url.starts_with("https://") {
-		url = format!("http://{}", url);
-	}
+	let url = format_url(settings, subpath);
 	client
 		.get(url)
 		.header("Authorization", &settings.key)
@@ -63,4 +80,61 @@ async fn download_json<T: DeserializeOwned>(
 		.json()
 		.await
 		.context("Failed to parse JSON")
+}
+
+async fn download_json_optional<T: DeserializeOwned>(
+	subpath: &str,
+	settings: &RemoteSettings,
+	client: &Client,
+) -> anyhow::Result<Option<T>> {
+	let url = format_url(settings, subpath);
+	let response = client
+		.get(url)
+		.header("Authorization", &settings.key)
+		.send()
+		.await
+		.context("Failed to send request")?;
+
+	if response.status().is_success() {
+		let data = response.json().await.context("Failed to parse JSON")?;
+		Ok(Some(data))
+	} else if response.status().as_u16() == 404 {
+		Ok(None)
+	} else {
+		Err(anyhow::anyhow!(
+			"Server reported an error: {}",
+			response.status()
+		))
+	}
+}
+
+async fn download_job_number(
+	subpath: &str,
+	body: Option<String>,
+	settings: &RemoteSettings,
+	client: &Client,
+) -> anyhow::Result<u64> {
+	let url = format_url(settings, subpath);
+	let response = client
+		.get(url)
+		.body(body.unwrap_or_default())
+		.header("Authorization", &settings.key)
+		.send()
+		.await
+		.context("Failed to send request")?
+		.error_for_status()
+		.context("Server reported an error")?;
+
+	let text = response.text().await.context("Failed to read response")?;
+	let number: u64 = text.trim().parse().context("Failed to parse number")?;
+	Ok(number)
+}
+
+fn format_url(settings: &RemoteSettings, subpath: &str) -> String {
+	let address = format!("{}:{PORT}", settings.address);
+	let mut url = format!("{address}/{}", subpath);
+	if !url.starts_with("http://") && !url.starts_with("https://") {
+		url = format!("http://{}", url);
+	}
+	url
 }
