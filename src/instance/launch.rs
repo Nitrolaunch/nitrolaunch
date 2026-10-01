@@ -223,9 +223,16 @@ impl Instance {
 			.await
 			.context("Failed to call while launch hook")?;
 
-		let stdout_file =
-			File::open(&stdout_path).context("Launch hook did not open an stdout file")?;
-		let stdin_file = open_file_append(&stdin_path)?;
+		let stdout_file = if stdout_path.exists() {
+			File::open(&stdout_path).ok()
+		} else {
+			None
+		};
+		let stdin_file = if stdin_path.exists() {
+			open_file_append(&stdin_path).ok()
+		} else {
+			None
+		};
 
 		let selected_account = selected_account.map(|x| x.to_string());
 
@@ -321,9 +328,9 @@ enum InstanceHandleInner {
 		/// Hook handle for the launched instance if we are in wait mode
 		handle: Option<HookHandle<ReplaceInstanceLaunch>>,
 		/// Stdout file for the process
-		stdout_file: File,
+		stdout_file: Option<File>,
 		/// Stdin file for the process
-		stdin_file: File,
+		stdin_file: Option<File>,
 		/// Stdout file path
 		stdout_path: PathBuf,
 		/// Stdin file path
@@ -379,16 +386,18 @@ impl InstanceHandle {
 			// Instance stdio
 			if !self.is_silent {
 				let inst_stdout = match &mut self.inner {
-					InstanceHandleInner::Standard { inner, .. } => inner.stdout(),
-					InstanceHandleInner::Plugin { stdout_file, .. } => stdout_file,
+					InstanceHandleInner::Standard { inner, .. } => Some(inner.stdout()),
+					InstanceHandleInner::Plugin { stdout_file, .. } => stdout_file.as_mut(),
 				};
 
 				// This is non-blocking as the stdout file will have an EoF
-				if let Ok(bytes_read) = inst_stdout.read(&mut stdio_buf) {
-					if let Some(output_fn) = &mut self.output_fn {
-						output_fn(&stdio_buf[0..bytes_read]);
-					} else {
-						let _ = self.stdout.write_all(&stdio_buf[0..bytes_read]).await;
+				if let Some(inst_stdout) = inst_stdout {
+					if let Ok(bytes_read) = inst_stdout.read(&mut stdio_buf) {
+						if let Some(output_fn) = &mut self.output_fn {
+							output_fn(&stdio_buf[0..bytes_read]);
+						} else {
+							let _ = self.stdout.write_all(&stdio_buf[0..bytes_read]).await;
+						}
 					}
 				}
 			}
@@ -532,9 +541,15 @@ impl InstanceHandle {
 			InstanceHandleInner::Standard { inner, .. } => inner
 				.write_stdin(data)
 				.context("Failed to write to inner stdin"),
-			InstanceHandleInner::Plugin { stdin_file, .. } => stdin_file
-				.write_all(data)
-				.context("Failed to write to stdin file"),
+			InstanceHandleInner::Plugin { stdin_file, .. } => {
+				if let Some(stdin_file) = stdin_file {
+					stdin_file
+						.write_all(data)
+						.context("Failed to write to stdin file")
+				} else {
+					Ok(())
+				}
+			}
 		}
 	}
 
