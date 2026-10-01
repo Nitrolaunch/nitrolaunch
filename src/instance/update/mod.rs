@@ -71,6 +71,7 @@ impl Instance {
 			depth
 		};
 		let will_update_packages = facets.packages || depth >= UpdateDepth::Full;
+		let will_update_packages = will_update_packages && self.dir.is_some();
 
 		let mut manager = UpdateManager::new(depth);
 
