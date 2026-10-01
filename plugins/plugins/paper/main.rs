@@ -17,6 +17,7 @@ use nitro_shared::{
 	loaders::Loader,
 	output::{MessageContents, NitroOutput, OutputProcess},
 };
+use nitrolaunch::config_crate::instance::LaunchMode;
 use tokio::runtime::Runtime;
 
 fn main() -> anyhow::Result<()> {
@@ -30,7 +31,7 @@ fn main() -> anyhow::Result<()> {
 			return Ok(OnInstanceSetupResult::default());
 		};
 
-		if arg.config.custom_launch {
+		if arg.config.launch_mode != LaunchMode::Normal {
 			return Ok(OnInstanceSetupResult::default());
 		}
 

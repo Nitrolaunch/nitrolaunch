@@ -3,6 +3,7 @@ use nitro_core::Paths;
 use nitro_mods::sponge;
 use nitro_plugin::{api::executable::ExecutablePlugin, hook::hooks::OnInstanceSetupResult};
 use nitro_shared::{Side, loaders::Loader};
+use nitrolaunch::config_crate::instance::LaunchMode;
 
 fn main() -> anyhow::Result<()> {
 	let mut plugin = ExecutablePlugin::from_manifest_file("sponge", include_str!("plugin.json"))?;
@@ -15,7 +16,7 @@ fn main() -> anyhow::Result<()> {
 			return Ok(OnInstanceSetupResult::default());
 		};
 
-		if arg.config.custom_launch {
+		if arg.config.launch_mode != LaunchMode::Normal {
 			return Ok(OnInstanceSetupResult::default());
 		}
 

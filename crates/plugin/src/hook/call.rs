@@ -154,7 +154,7 @@ impl<H: Hook> HookHandle<H> {
 		Ok(())
 	}
 
-	/// Poll the handle, returning true if the handle is ready
+	/// Poll the handle, returning true if the handle is ready to finish
 	pub async fn poll(&mut self, o: &mut impl NitroOutput) -> anyhow::Result<bool> {
 		if self.is_finished {
 			return Ok(true);
