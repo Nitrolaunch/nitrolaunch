@@ -14,6 +14,7 @@ use serde::{Deserialize, Serialize};
 use crate::server::KeyPermission;
 
 mod client;
+mod output;
 mod server;
 
 static BASE_TEMPLATE_ID: &str = "base_template";
@@ -183,6 +184,7 @@ fn process_instance_config(config: &mut InstanceConfig, remote_id: &str) {
 	config
 		.from
 		.push_front(process_id(BASE_TEMPLATE_ID, remote_id));
+	config.dir = Some("none".into());
 }
 
 fn process_id(id: &str, remote_id: &str) -> String {
