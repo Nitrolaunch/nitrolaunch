@@ -10,6 +10,7 @@ use nitro_shared::{
 	loaders::Loader,
 	output::{MessageContents, NitroOutput},
 };
+use nitrolaunch::config_crate::instance::LaunchMode;
 
 fn main() -> anyhow::Result<()> {
 	let mut plugin = ExecutablePlugin::from_manifest_file("forge", include_str!("plugin.json"))?;
@@ -18,7 +19,7 @@ fn main() -> anyhow::Result<()> {
 			bail!("Instance side is empty");
 		};
 
-		if arg.config.custom_launch {
+		if arg.config.launch_mode != LaunchMode::Normal {
 			return Ok(OnInstanceSetupResult::default());
 		}
 
