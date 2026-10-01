@@ -49,7 +49,7 @@ fn main() -> anyhow::Result<()> {
 			};
 
 			out.extend(data.instances.into_iter().map(|(id, mut config)| {
-				process_instance_config(&mut config, &remote.id);
+				process_instance_config(&mut config, &remote.id, false);
 				(process_id(&id, &remote.id).into(), config)
 			}));
 		}
@@ -80,7 +80,7 @@ fn main() -> anyhow::Result<()> {
 			let it = std::iter::once((BASE_TEMPLATE_ID.into(), data.base_template))
 				.chain(data.templates);
 			out.extend(it.map(|(id, mut config)| {
-				process_instance_config(&mut config.instance, &remote.id);
+				process_instance_config(&mut config.instance, &remote.id, id == BASE_TEMPLATE_ID);
 				(process_id(&id, &remote.id).into(), config)
 			}));
 		}
@@ -205,15 +205,17 @@ struct PluginConfig {
 	remotes: Vec<client::RemoteSettings>,
 }
 
-fn process_instance_config(config: &mut InstanceConfig, remote_id: &str) {
+fn process_instance_config(config: &mut InstanceConfig, remote_id: &str, is_base_template: bool) {
 	config.source_plugin = Some("remote".into());
 	config
 		.from
 		.iter_mut()
 		.for_each(|x| *x = process_id(x, remote_id));
-	config
-		.from
-		.push_front(process_id(BASE_TEMPLATE_ID, remote_id));
+	if !is_base_template {
+		config
+			.from
+			.push_front(process_id(BASE_TEMPLATE_ID, remote_id));
+	}
 	config.dir = Some("none".into());
 	config.launch_mode = LaunchMode::Wait;
 }
