@@ -6,7 +6,7 @@ use std::{
 };
 
 use anyhow::{Context, bail};
-use nitro_config::instance::{InstanceConfig, make_valid_instance_id};
+use nitro_config::instance::{InstanceConfig, LaunchMode, make_valid_instance_id};
 use nitro_plugin::{
 	api::wasm::{
 		WASMPlugin,
@@ -95,7 +95,7 @@ fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
 			};
 
 			config.dir = Some(path.to_string_lossy().to_string());
-			config.custom_launch = true;
+			config.launch_mode = LaunchMode::Background;
 			config.is_editable = false;
 
 			let server_name = config

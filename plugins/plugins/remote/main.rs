@@ -8,7 +8,10 @@ use clap::Parser;
 use nitro_net::download::Client;
 use nitro_plugin::{api::executable::ExecutablePlugin, hook::hooks::ReplaceInstanceLaunchResult};
 use nitro_shared::output::{Advanced, MessageContents, NitroOutput};
-use nitrolaunch::{config_crate::instance::InstanceConfig, io::paths::Paths};
+use nitrolaunch::{
+	config_crate::instance::{InstanceConfig, LaunchMode},
+	io::paths::Paths,
+};
 use serde::{Deserialize, Serialize};
 
 use crate::server::KeyPermission;
@@ -185,6 +188,7 @@ fn process_instance_config(config: &mut InstanceConfig, remote_id: &str) {
 		.from
 		.push_front(process_id(BASE_TEMPLATE_ID, remote_id));
 	config.dir = Some("none".into());
+	config.launch_mode = LaunchMode::Wait;
 }
 
 fn process_id(id: &str, remote_id: &str) -> String {
