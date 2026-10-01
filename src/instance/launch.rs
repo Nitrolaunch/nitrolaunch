@@ -223,16 +223,8 @@ impl Instance {
 			.await
 			.context("Failed to call while launch hook")?;
 
-		let stdout_file = if stdout_path.exists() {
-			File::open(&stdout_path).ok()
-		} else {
-			None
-		};
-		let stdin_file = if stdin_path.exists() {
-			open_file_append(&stdin_path).ok()
-		} else {
-			None
-		};
+		let stdout_file = File::open(&stdout_path).ok();
+		let stdin_file = open_file_append(&stdin_path).ok();
 
 		let selected_account = selected_account.map(|x| x.to_string());
 
