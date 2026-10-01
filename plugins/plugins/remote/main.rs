@@ -9,12 +9,16 @@ use nitro_net::download::Client;
 use nitro_plugin::{api::executable::ExecutablePlugin, hook::hooks::ReplaceInstanceLaunchResult};
 use nitro_shared::output::{Advanced, MessageContents, NitroOutput};
 use nitrolaunch::{
-	config_crate::instance::{InstanceConfig, LaunchMode},
+	config_crate::instance::{InstanceConfig, LaunchMode, QuickPlay},
 	io::paths::Paths,
 };
 use serde::{Deserialize, Serialize};
+use tokio::runtime::Runtime;
 
-use crate::server::KeyPermission;
+use crate::{
+	output::RemoteOutputListener,
+	server::{KeyPermission, LaunchRequest},
+};
 
 mod client;
 mod output;
@@ -25,7 +29,7 @@ static BASE_TEMPLATE_ID: &str = "base_template";
 fn main() -> anyhow::Result<()> {
 	let mut plugin = ExecutablePlugin::from_manifest_file("remote", include_str!("plugin.json"))?;
 	plugin.add_instances(|mut ctx, _| {
-		let runtime = tokio::runtime::Runtime::new()?;
+		let runtime = Runtime::new()?;
 		let client = Client::new();
 		let dir = get_dir(&ctx.get_data_dir()?);
 		let plugin_config = parse_plugin_config(ctx.get_custom_config())?;
@@ -54,7 +58,7 @@ fn main() -> anyhow::Result<()> {
 	})?;
 
 	plugin.add_templates(|mut ctx, _| {
-		let runtime = tokio::runtime::Runtime::new()?;
+		let runtime = Runtime::new()?;
 		let client = Client::new();
 		let dir = get_dir(&ctx.get_data_dir()?);
 		let plugin_config = parse_plugin_config(ctx.get_custom_config())?;
@@ -84,10 +88,33 @@ fn main() -> anyhow::Result<()> {
 		Ok(out)
 	})?;
 
-	plugin.replace_instance_launch(|ctx, arg| {
+	plugin.replace_instance_launch(|mut ctx, arg| {
 		if arg.config.source_plugin.is_none_or(|x| x != "remote") {
 			return Ok(None);
 		}
+		let (remote_id, instance_id) = parse_id(&arg.id).context("Invalid remote instance ID")?;
+		let plugin_config = parse_plugin_config(ctx.get_custom_config())?;
+		let remote = plugin_config
+			.remotes
+			.into_iter()
+			.find(|x| x.id == remote_id)
+			.context("Remote does not exist")?;
+
+		let runtime = Runtime::new()?;
+		let client = Client::new();
+
+		let request = LaunchRequest {
+			instance: instance_id.into(),
+			account: None,
+			quick_play: QuickPlay::default(),
+			offline: false,
+		};
+		let job_id = runtime
+			.block_on(client::launch(&remote, &client, request))
+			.context("Failed to make launch request")?;
+
+		let mut listener = RemoteOutputListener::new(job_id, remote.clone(), client.clone());
+		runtime.block_on(listener.listen(ctx.get_output()));
 
 		Ok(Some(ReplaceInstanceLaunchResult {
 			pid: None,
@@ -108,7 +135,7 @@ fn main() -> anyhow::Result<()> {
 		let it = std::iter::once(format!("nitro {subcommand}")).chain(arg.args.into_iter().skip(1));
 		let cli = Cli::parse_from(it);
 
-		let runtime = tokio::runtime::Runtime::new()?;
+		let runtime = Runtime::new()?;
 		let mut o = Advanced::new();
 		let plugin_config = parse_plugin_config(ctx.get_custom_config())?;
 
@@ -193,4 +220,8 @@ fn process_instance_config(config: &mut InstanceConfig, remote_id: &str) {
 
 fn process_id(id: &str, remote_id: &str) -> String {
 	format!("{remote_id}:{id}")
+}
+
+fn parse_id(id: &str) -> Option<(&str, &str)> {
+	id.split_once(':')
 }
