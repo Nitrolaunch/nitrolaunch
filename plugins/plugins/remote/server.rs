@@ -4,7 +4,7 @@ use std::{
 
 use anyhow::Context;
 use base64::{Engine, engine::GeneralPurposeConfig};
-use http_body_util::Full;
+use http_body_util::{BodyExt, Full};
 use hyper::{
 	Method, Request, Response,
 	body::{Bytes, Incoming},
@@ -16,17 +16,32 @@ use nitro_core::{
 	io::{json_from_file, json_to_file},
 };
 use nitro_net::download::Client;
-use nitro_shared::output::{MessageContents, NitroOutput};
+use nitro_shared::{
+	UpdateDepth,
+	id::InstanceID,
+	output::{MessageContents, NitroOutput},
+	util::MakeSend,
+};
 use nitrolaunch::{
 	config::Config,
-	config_crate::{instance::InstanceConfig, template::TemplateConfig},
-	io::paths::Paths,
+	config_crate::{
+		instance::{InstanceConfig, QuickPlay},
+		template::TemplateConfig,
+	},
+	instance::{
+		launch::LaunchSettings,
+		update::{InstanceUpdateContext, manager::UpdateSettings},
+	},
+	io::{lock::Lockfile, paths::Paths},
 	plugin::PluginManager,
 };
 use serde::{Deserialize, Serialize};
-use tokio::{net::TcpListener, sync::Mutex};
+use tokio::net::TcpListener;
 
-use crate::get_dir;
+use crate::{
+	get_dir,
+	output::{OutputEvent, RemoteOutput},
+};
 
 pub const PORT: u16 = 1112;
 
@@ -45,10 +60,15 @@ pub async fn run(paths: &Paths, o: &mut impl NitroOutput) -> anyhow::Result<()> 
 		.context("Failed to bind to port")?;
 
 	let plugins = PluginManager::load(paths, o).await?;
-	let client_id = get_ms_client_id();
-	let config = Config::load(&Config::get_path(paths), plugins, true, paths, client_id, o).await?;
-	let config = Arc::new(Mutex::new(config));
 	let client = Client::new();
+	let remote_out = RemoteOutput::new(paths);
+	let state = State {
+		client,
+		paths: Arc::new(paths.clone()),
+		plugins,
+		settings: settings,
+		o: remote_out,
+	};
 
 	o.display(MessageContents::Success("Server started".into()));
 
@@ -59,24 +79,13 @@ pub async fn run(paths: &Paths, o: &mut impl NitroOutput) -> anyhow::Result<()> 
 		};
 		let io = TokioIo::new(stream);
 		let mut o = o.get_lesser_copy();
-		let o2 = o.get_lesser_copy();
-		let config = config.clone();
-		let settings = settings.clone();
-		let client = client.clone();
+		let state = state.clone();
 
 		tokio::spawn(async move {
 			if let Err(e) = http1::Builder::new()
 				.serve_connection(
 					io,
-					hyper::service::service_fn(|req| {
-						handle(
-							req,
-							config.clone(),
-							settings.clone(),
-							client.clone(),
-							o2.get_lesser_copy(),
-						)
-					}),
+					hyper::service::service_fn(|req| handle(req, state.clone())),
 				)
 				.await
 			{
@@ -88,52 +97,202 @@ pub async fn run(paths: &Paths, o: &mut impl NitroOutput) -> anyhow::Result<()> 
 	}
 }
 
-async fn handle(
-	req: Request<Incoming>,
-	config: Arc<Mutex<Config>>,
-	settings: Arc<RemoteSettings>,
-	client: Client,
-	mut o: impl NitroOutput,
-) -> anyhow::Result<Response<Full<Bytes>>> {
+async fn handle(req: Request<Incoming>, state: State) -> anyhow::Result<Response<Full<Bytes>>> {
 	let path = req.uri().path();
 	let method = req.method();
+	let o = state.o.clone();
 	let key = req
 		.headers()
 		.get("Authorization")
 		.map(|x| x.to_str().unwrap_or(""));
-	if path == "/" {
+
+	if path == "/" && method == Method::GET {
 		Ok(Response::builder()
 			.status(200)
 			.body(Full::new(Bytes::from_static(b"OK")))
 			.unwrap())
 	} else if path == "/sync" && method == Method::GET {
-		if let Some(response) = settings.check_key_header(key, KeyPermission::Query) {
+		if let Some(response) = state.settings.check_key_header(key, KeyPermission::Query) {
 			return Ok(response);
 		}
-		let config = config.lock().await;
-		let instances = config
-			.instances
-			.iter()
-			.map(|(id, instance)| (id.to_string(), instance.config().clone()))
-			.collect::<HashMap<_, _>>();
-		let templates = config
-			.templates
-			.iter()
-			.map(|(id, template)| (id.to_string(), template.clone()))
-			.collect::<HashMap<_, _>>();
-		let base_template = config.base_template.clone();
-		let response = SyncResponse {
-			instances,
-			templates,
-			base_template,
+		match sync(state).await {
+			Ok(response) => Ok(response),
+			Err(e) => {
+				o.log(MessageContents::Error(e.to_string()));
+				Ok(ise())
+			}
+		}
+	} else if path.starts_with("/jobs") && method == Method::GET {
+		if let Some(response) = state.settings.check_key_header(key, KeyPermission::Query) {
+			return Ok(response);
+		}
+		let Ok(job_id) = path.trim_start_matches("/jobs/").parse::<u64>() else {
+			return Ok(invalid_request());
 		};
-
-		json_response(&response)
+		match get_job(state, job_id).await {
+			Ok(response) => Ok(response),
+			Err(e) => {
+				o.log(MessageContents::Error(e.to_string()));
+				Ok(ise())
+			}
+		}
+	} else if path == "/launch" && method == Method::POST {
+		if let Some(response) = state.settings.check_key_header(key, KeyPermission::Run) {
+			return Ok(response);
+		}
+		let body = req
+			.into_body()
+			.collect()
+			.await
+			.context("Failed to collect body")?;
+		let Ok(request) = serde_json::from_slice::<LaunchRequest>(&body.to_bytes()) else {
+			return Ok(invalid_request());
+		};
+		match launch(state, request).await {
+			Ok(response) => Ok(response),
+			Err(e) => {
+				o.log(MessageContents::Error(e.to_string()));
+				Ok(ise())
+			}
+		}
 	} else {
 		Ok(Response::builder()
 			.status(404)
 			.body(Full::new(Bytes::from_static(b"Not Found")))
 			.unwrap())
+	}
+}
+
+async fn sync(mut state: State) -> anyhow::Result<Response<Full<Bytes>>> {
+	let config = state.config().await?;
+	let instances = config
+		.instances
+		.iter()
+		.map(|(id, instance)| (id.to_string(), instance.config().clone()))
+		.collect::<HashMap<_, _>>();
+	let templates = config
+		.templates
+		.iter()
+		.map(|(id, template)| (id.to_string(), template.clone()))
+		.collect::<HashMap<_, _>>();
+	let base_template = config.base_template.clone();
+	let response = SyncResponse {
+		instances,
+		templates,
+		base_template,
+	};
+
+	json_response(&response)
+}
+
+async fn get_job(state: State, job_id: u64) -> anyhow::Result<Response<Full<Bytes>>> {
+	if let Some(job) = state.o.get_job(job_id) {
+		json_response(&GetJobResponse {
+			id: job.id,
+			events: job.events.into_iter().collect(),
+			is_finished: job.is_finished,
+		})
+	} else {
+		Ok(not_found())
+	}
+}
+
+async fn launch(mut state: State, request: LaunchRequest) -> anyhow::Result<Response<Full<Bytes>>> {
+	state.o.new_job();
+	let job_id = state.o.job_id().unwrap();
+	let o = state.o.clone();
+	let task = async move {
+		let mut config = state.config().await?;
+		let core = config
+			.get_core(
+				Some(&get_ms_client_id()),
+				&UpdateSettings {
+					depth: UpdateDepth::Shallow,
+					offline_auth: request.offline,
+				},
+				&state.client,
+				&config.plugins,
+				&state.paths,
+				&mut state.o,
+			)
+			.await?;
+
+		let instance = config
+			.instances
+			.get_mut(&InstanceID::from(request.instance))
+			.context("Instance does not exist")?;
+
+		let settings = LaunchSettings {
+			offline_auth: request.offline,
+			pipe_stdin: false,
+			quick_play: None,
+		};
+
+		let mut lock = Lockfile::open(&state.paths)?;
+		let mut ctx = InstanceUpdateContext {
+			packages: &config.packages,
+			accounts: &mut config.accounts,
+			plugins: &config.plugins,
+			prefs: &config.prefs,
+			paths: &state.paths,
+			lock: &mut lock,
+			client: &state.client,
+			output: &mut state.o,
+			core: &core,
+		};
+
+		let mut handle = instance
+			.launch(settings, &mut ctx)
+			.await
+			.context("Failed to launch instance")?;
+
+		handle.silence_output(true);
+		state.o.finish();
+
+		handle
+			.wait(&config.plugins, &state.paths, &mut state.o)
+			.await?;
+
+		Ok::<(), anyhow::Error>(())
+	};
+	let task = unsafe { MakeSend::new(task) };
+
+	tokio::spawn(async move {
+		if let Err(e) = task.await {
+			o.log(MessageContents::Error(format!(
+				"Failed to launch instance: {e:?}"
+			)));
+		}
+	});
+
+	Ok(Response::builder()
+		.status(200)
+		.body(Full::new(Bytes::from(job_id.to_string())))
+		.unwrap())
+}
+
+#[derive(Clone)]
+struct State {
+	client: Client,
+	paths: Arc<Paths>,
+	plugins: PluginManager,
+	settings: Arc<RemoteSettings>,
+	o: RemoteOutput,
+}
+
+impl State {
+	async fn config(&mut self) -> anyhow::Result<Config> {
+		let client_id = get_ms_client_id();
+		let config = Config::load(
+			&Config::get_path(&self.paths),
+			self.plugins.clone(),
+			false,
+			&self.paths,
+			client_id,
+			&mut self.o,
+		)
+		.await?;
+		Ok(config)
 	}
 }
 
@@ -144,6 +303,27 @@ fn json_response<T: Serialize>(data: &T) -> anyhow::Result<Response<Full<Bytes>>
 		.header("Content-Type", "application/json")
 		.body(Full::new(Bytes::from(json)))
 		.unwrap())
+}
+
+fn not_found() -> Response<Full<Bytes>> {
+	Response::builder()
+		.status(404)
+		.body(Full::new(Bytes::from_static(b"Not Found")))
+		.unwrap()
+}
+
+fn ise() -> Response<Full<Bytes>> {
+	Response::builder()
+		.status(500)
+		.body(Full::new(Bytes::from_static(b"Internal Server Error")))
+		.unwrap()
+}
+
+fn invalid_request() -> Response<Full<Bytes>> {
+	Response::builder()
+		.status(400)
+		.body(Full::new(Bytes::from_static(b"Invalid Request")))
+		.unwrap()
 }
 
 #[derive(Serialize, Deserialize, Default)]
@@ -250,6 +430,21 @@ pub struct SyncResponse {
 	pub instances: HashMap<String, InstanceConfig>,
 	pub templates: HashMap<String, TemplateConfig>,
 	pub base_template: TemplateConfig,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct GetJobResponse {
+	pub id: u64,
+	pub events: Vec<OutputEvent>,
+	pub is_finished: bool,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct LaunchRequest {
+	pub instance: String,
+	pub account: Option<String>,
+	pub quick_play: QuickPlay,
+	pub offline: bool,
 }
 
 /// Generates a random access key
