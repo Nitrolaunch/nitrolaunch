@@ -54,6 +54,11 @@ impl RemoteOutput {
 
 	pub fn set_job(&mut self, job_id: u64) {
 		self.job = Some(job_id);
+		self.jobs.entry(job_id).or_insert_with(|| Job {
+			id: job_id,
+			events: VecDeque::new(),
+			is_finished: false,
+		});
 	}
 
 	pub fn new_job(&mut self) {
@@ -140,7 +145,8 @@ impl NitroOutput for RemoteOutput {
 
 	fn display_message(&mut self, message: Message) {
 		self.send_event(OutputEvent::Message(message.clone()));
-		self.log_message(message);
+		self.log_message(message.clone());
+		println!("{}", message.contents.default_format());
 	}
 
 	async fn prompt_yes_no(
@@ -192,24 +198,21 @@ impl RemoteOutputListener {
 		}
 	}
 
-	/// Polls the remote server for new output events for this job. Returns None if the job is complete.
-	pub async fn poll(&mut self) -> anyhow::Result<Option<Vec<OutputEvent>>> {
+	/// Polls the remote server for new output events for this job. Returns the events and whether the job is finished.
+	pub async fn poll(&mut self) -> anyhow::Result<(Vec<OutputEvent>, bool)> {
 		let response =
 			crate::client::get_job(&self.remote_settings, &self.client, self.job).await?;
 		let Some(response) = response else {
-			return Ok(None);
+			return Ok((Vec::new(), true));
 		};
-		if response.is_finished {
-			return Ok(None);
-		}
 
 		let events = response.events;
 		if self.current_event_index >= events.len() {
-			Ok(Some(Vec::new()))
+			Ok((Vec::new(), response.is_finished))
 		} else {
 			let new_events = events[self.current_event_index..].to_vec();
 			self.current_event_index = events.len();
-			Ok(Some(new_events))
+			Ok((new_events, response.is_finished))
 		}
 	}
 
@@ -217,16 +220,17 @@ impl RemoteOutputListener {
 	pub async fn listen(&mut self, o: &mut impl NitroOutput) {
 		loop {
 			let result = self.poll().await;
-			let Ok(result) = result else {
+			let Ok((events, is_finished)) = result else {
 				o.display(MessageContents::Error(
 					"Failed to poll remote server for output".into(),
 				));
 				continue;
 			};
-			let Some(events) = result else {
-				break;
-			};
+
 			self.apply_events(events, o);
+			if is_finished {
+				break;
+			}
 			tokio::time::sleep(Duration::from_millis(150)).await;
 		}
 	}
@@ -243,5 +247,24 @@ impl RemoteOutputListener {
 				}
 			}
 		}
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[tokio::test]
+	async fn test_full_job() {
+		let mut output = RemoteOutput::new(&Paths::new_no_create().unwrap());
+		output.new_job();
+		let job_id = output.job_id().unwrap();
+
+		output.display_text("Test message".into(), MessageLevel::Important);
+		output.finish_job(job_id);
+
+		let job = output.get_job(job_id).unwrap();
+		assert_eq!(job.events.len(), 1);
+		assert!(job.is_finished);
 	}
 }

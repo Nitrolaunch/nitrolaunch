@@ -100,6 +100,38 @@ pub async fn run(paths: &Paths, o: &mut impl NitroOutput) -> anyhow::Result<()> 
 async fn handle(req: Request<Incoming>, state: State) -> anyhow::Result<Response<Full<Bytes>>> {
 	let path = req.uri().path();
 	let method = req.method();
+	let mut o = state.o.clone();
+
+	o.debug(MessageContents::Simple(format!(
+		"Received request: {} {}",
+		method.as_str(),
+		path
+	)));
+
+	let result = handle_inner(req, state).await;
+	match &result {
+		Ok(response) => {
+			o.debug(MessageContents::Simple(format!(
+				"Responding with status: {}",
+				response.status()
+			)));
+		}
+		Err(e) => {
+			o.display(MessageContents::Error(format!(
+				"Failed to handle request: {e:?}"
+			)));
+		}
+	}
+
+	result
+}
+
+async fn handle_inner(
+	req: Request<Incoming>,
+	state: State,
+) -> anyhow::Result<Response<Full<Bytes>>> {
+	let path = req.uri().path();
+	let method = req.method();
 	let o = state.o.clone();
 	let key = req
 		.headers()
