@@ -204,7 +204,7 @@ impl Instance {
 			.context("Failed to call custom launch hook")?;
 
 		// If this is a background launch, we need to wait for the hook to finish now
-		let (pid, handle) = if self.config.launch_mode == LaunchMode::Background {
+		let (pid, handles) = if self.config.launch_mode == LaunchMode::Background {
 			let Some(result) = result.first_some(o).await? else {
 				bail!("No plugins handled custom launch for this instance");
 			};
@@ -214,7 +214,7 @@ impl Instance {
 			stdout_path = result.stdout_path.map(PathBuf::from).unwrap_or(stdout_path);
 			(result.pid, None)
 		} else {
-			(None, result.next())
+			(None, Some(result))
 		};
 
 		// Run while_instance_launch hooks alongside
@@ -238,7 +238,7 @@ impl Instance {
 			account: selected_account.clone(),
 			inner: InstanceHandleInner::Plugin {
 				pid,
-				handle,
+				handles,
 				stdout_file,
 				stdin_file,
 				stdout_path,
@@ -318,7 +318,7 @@ enum InstanceHandleInner {
 		/// PID of the instance process
 		pid: Option<u32>,
 		/// Hook handle for the launched instance if we are in wait mode
-		handle: Option<HookHandle<ReplaceInstanceLaunch>>,
+		handles: Option<HookHandles<ReplaceInstanceLaunch>>,
 		/// Stdout file for the process
 		stdout_file: Option<File>,
 		/// Stdin file for the process
@@ -410,9 +410,13 @@ impl InstanceHandle {
 						break status;
 					}
 				}
-				InstanceHandleInner::Plugin { pid, handle, .. } => {
-					if let Some(handle) = handle {
-						if let Ok(true) = handle.poll(o).await {
+				InstanceHandleInner::Plugin { pid, handles, .. } => {
+					if let Some(handles) = handles {
+						if let Ok(true) = handles.poll_all(o).await {
+							// Propagate errors
+							while let Some(handle) = handles.next() {
+								handle.result(o).await?;
+							}
 							break ExitStatus::default();
 						}
 					} else if let Some(pid) = pid {
