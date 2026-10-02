@@ -321,12 +321,14 @@ impl<H: Hook> HookHandles<H> {
 
 	/// Polls all the hooks in the queue.
 	/// Note that this is only valid behavior for certain hooks that are long-running such as WhileInstanceLaunch.
-	pub async fn poll_all(&mut self, o: &mut impl NitroOutput) -> anyhow::Result<()> {
+	/// Returns true when all hooks are finished.
+	pub async fn poll_all(&mut self, o: &mut impl NitroOutput) -> anyhow::Result<bool> {
+		let mut finished = true;
 		for handle in &mut self.handles {
-			handle.poll(o).await?;
+			finished &= handle.poll(o).await?;
 		}
 
-		Ok(())
+		Ok(finished)
 	}
 
 	/// Terminates all the handles in the queue
