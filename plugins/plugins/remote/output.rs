@@ -149,6 +149,22 @@ impl NitroOutput for RemoteOutput {
 		println!("{}", message.contents.default_format());
 	}
 
+	fn start_process(&mut self) {
+		self.send_event(OutputEvent::StartProcess);
+	}
+
+	fn end_process(&mut self) {
+		self.send_event(OutputEvent::EndProcess);
+	}
+
+	fn start_section(&mut self) {
+		self.send_event(OutputEvent::StartSection);
+	}
+
+	fn end_section(&mut self) {
+		self.send_event(OutputEvent::EndSection);
+	}
+
 	async fn prompt_yes_no(
 		&mut self,
 		default: bool,
@@ -172,6 +188,10 @@ pub struct Job {
 #[derive(Clone, Serialize, Deserialize)]
 pub enum OutputEvent {
 	Message(Message),
+	StartProcess,
+	EndProcess,
+	StartSection,
+	EndSection,
 	PromptYesNo(MessageContents),
 }
 
@@ -242,6 +262,10 @@ impl RemoteOutputListener {
 				OutputEvent::Message(message) => {
 					o.display_message(message);
 				}
+				OutputEvent::StartProcess => o.start_process(),
+				OutputEvent::EndProcess => o.end_process(),
+				OutputEvent::StartSection => o.start_section(),
+				OutputEvent::EndSection => o.end_section(),
 				OutputEvent::PromptYesNo(message) => {
 					let _ = o.prompt_yes_no(true, message);
 				}
