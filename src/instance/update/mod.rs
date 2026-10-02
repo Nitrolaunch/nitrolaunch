@@ -63,6 +63,9 @@ impl Instance {
 		facets: UpdateFacets,
 		ctx: &mut InstanceUpdateContext<'_, O>,
 	) -> anyhow::Result<()> {
+		if self.dir.is_none() {
+			return Ok(());
+		}
 		// If the instance has never been fully created, change to full update
 		let has_done_first_update = ctx.lock.has_instance_done_first_update(&self.id);
 		let depth = if !has_done_first_update {
@@ -71,7 +74,6 @@ impl Instance {
 			depth
 		};
 		let will_update_packages = facets.packages || depth >= UpdateDepth::Full;
-		let will_update_packages = will_update_packages && self.dir.is_some();
 
 		let mut manager = UpdateManager::new(depth);
 
