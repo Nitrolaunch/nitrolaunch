@@ -116,7 +116,7 @@ async fn download_job_number(
 ) -> anyhow::Result<u64> {
 	let url = format_url(settings, subpath);
 	let response = client
-		.get(url)
+		.post(url)
 		.body(body.unwrap_or_default())
 		.header("Authorization", &settings.key)
 		.send()
