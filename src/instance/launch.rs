@@ -14,7 +14,7 @@ use anyhow::{Context, bail};
 use nitro_config::instance::{LaunchMode, QuickPlay, WrapperCommand};
 use nitro_core::account::{AccountID, AccountManager};
 use nitro_core::io::java::install::JavaInstallationKind;
-use nitro_plugin::hook::call::{HookHandle, HookHandles};
+use nitro_plugin::hook::call::HookHandles;
 use nitro_plugin::hook::hooks::{
 	InstanceLaunchArg, OnInstanceLaunch, OnInstanceStop, ReplaceInstanceLaunch, WhileInstanceLaunch,
 };
@@ -198,7 +198,7 @@ impl Instance {
 		hook_arg.stdout_path = Some(stdout_path.to_string_lossy().to_string());
 		hook_arg.stdin_path = Some(stdin_path.to_string_lossy().to_string());
 
-		let mut result = plugins
+		let result = plugins
 			.call_hook(ReplaceInstanceLaunch, &hook_arg, paths, o)
 			.await
 			.context("Failed to call custom launch hook")?;
