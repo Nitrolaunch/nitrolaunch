@@ -7,7 +7,7 @@ use anyhow::Context;
 use clap::Parser;
 use nitro_net::download::Client;
 use nitro_plugin::{api::executable::ExecutablePlugin, hook::hooks::ReplaceInstanceLaunchResult};
-use nitro_shared::output::{Advanced, MessageContents, NitroOutput};
+use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput, Simple};
 use nitrolaunch::{
 	config_crate::instance::{InstanceConfig, LaunchMode, QuickPlay},
 	io::paths::Paths,
@@ -136,7 +136,7 @@ fn main() -> anyhow::Result<()> {
 		let cli = Cli::parse_from(it);
 
 		let runtime = Runtime::new()?;
-		let mut o = Advanced::new();
+		let mut o = Simple(MessageLevel::Important);
 		let plugin_config = parse_plugin_config(ctx.get_custom_config())?;
 
 		match cli.subcommand {
