@@ -190,3 +190,8 @@ hook_interface!(
 );
 hook_interface!(install_modpack, "install_modpack", InstallModpack);
 hook_interface!(get_popup, "get_popup", GetPopup);
+hook_interface!(
+	replace_instance_update,
+	"replace_instance_update",
+	ReplaceInstanceUpdate
+);

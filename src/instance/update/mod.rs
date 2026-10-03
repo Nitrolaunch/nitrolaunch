@@ -15,7 +15,10 @@ use crate::plugin::PluginManager;
 use nitro_core::NitroCore;
 use nitro_core::account::AccountManager;
 use nitro_pkg::{PkgRequest, PkgRequestSource};
-use nitro_plugin::hook::hooks::{AfterPackagesInstalled, AfterPackagesInstalledArg};
+use nitro_plugin::hook::hooks::{
+	AfterPackagesInstalled, AfterPackagesInstalledArg, ReplaceInstanceUpdate,
+	ReplaceInstanceUpdateArg,
+};
 use nitro_shared::{UpdateDepth, translate};
 #[cfg(not(feature = "disable_instance_update_packages"))]
 use packages::print_package_support_messages;
@@ -63,9 +66,6 @@ impl Instance {
 		facets: UpdateFacets,
 		ctx: &mut InstanceUpdateContext<'_, O>,
 	) -> anyhow::Result<()> {
-		if self.dir.is_none() {
-			return Ok(());
-		}
 		// If the instance has never been fully created, change to full update
 		let has_done_first_update = ctx.lock.has_instance_done_first_update(&self.id);
 		let depth = if !has_done_first_update {
@@ -74,6 +74,35 @@ impl Instance {
 			depth
 		};
 		let will_update_packages = facets.packages || depth >= UpdateDepth::Full;
+
+		// Custom update behavior
+		if self.dir.is_none() {
+			if let Some(source_plugin) = &self.config.source_plugin {
+				let arg = ReplaceInstanceUpdateArg {
+					id: self.id.to_string(),
+					inst_dir: self.dir.as_ref().map(|x| x.to_string_lossy().to_string()),
+					config: self.config.clone(),
+					update_depth: depth,
+					update_instance: facets.instance,
+					update_packages: will_update_packages,
+					update_modpack: facets.modpack,
+				};
+				let result = ctx
+					.plugins
+					.call_hook_on_plugin(
+						ReplaceInstanceUpdate,
+						source_plugin,
+						&arg,
+						ctx.paths,
+						ctx.output,
+					)
+					.await?;
+				if let Some(result) = result {
+					result.result(ctx.output).await?;
+				}
+				return Ok(());
+			}
+		}
 
 		let mut manager = UpdateManager::new(depth);
 
