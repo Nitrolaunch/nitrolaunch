@@ -5,7 +5,9 @@ use nitro_core::io::{json_from_file, json_to_file};
 use nitro_net::download::Client;
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 
+use crate::output::InputEvent;
 use crate::server::GetJobResponse;
+use crate::server::InputJobRequest;
 use crate::server::PORT;
 use crate::server::SyncResponse;
 
@@ -37,7 +39,25 @@ pub async fn get_job(
 	client: &Client,
 	job_id: u64,
 ) -> anyhow::Result<Option<GetJobResponse>> {
-	download_json_optional(&format!("jobs/{job_id}"), settings, client).await
+	download_json_optional(&format!("jobs/{job_id}"), None, settings, client).await
+}
+
+/// Sends an input for a job on the remote
+pub async fn send_input(
+	settings: &RemoteSettings,
+	client: &Client,
+	job_id: u64,
+	input: InputEvent,
+) -> anyhow::Result<()> {
+	let body = InputJobRequest { event: input };
+	let body = serde_json::to_string(&body).context("Failed to serialize input")?;
+	post(
+		&format!("jobs/{job_id}/input"),
+		Some(body),
+		settings,
+		client,
+	)
+	.await
 }
 
 /// Launches an instance on the remote server and returns the job ID
@@ -93,12 +113,14 @@ async fn download_json<T: DeserializeOwned>(
 
 async fn download_json_optional<T: DeserializeOwned>(
 	subpath: &str,
+	body: Option<String>,
 	settings: &RemoteSettings,
 	client: &Client,
 ) -> anyhow::Result<Option<T>> {
 	let url = format_url(settings, subpath);
 	let response = client
 		.get(url)
+		.body(body.unwrap_or_default())
 		.header("Authorization", &settings.key)
 		.send()
 		.await
@@ -137,6 +159,26 @@ async fn download_job_number(
 	let text = response.text().await.context("Failed to read response")?;
 	let number: u64 = text.trim().parse().context("Failed to parse number")?;
 	Ok(number)
+}
+
+async fn post(
+	subpath: &str,
+	body: Option<String>,
+	settings: &RemoteSettings,
+	client: &Client,
+) -> anyhow::Result<()> {
+	let url = format_url(settings, subpath);
+	client
+		.post(url)
+		.body(body.unwrap_or_default())
+		.header("Authorization", &settings.key)
+		.send()
+		.await
+		.context("Failed to send request")?
+		.error_for_status()
+		.context("Server reported an error")?;
+
+	Ok(())
 }
 
 fn format_url(settings: &RemoteSettings, subpath: &str) -> String {
