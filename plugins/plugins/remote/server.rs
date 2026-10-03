@@ -136,7 +136,7 @@ async fn handle_inner(
 ) -> anyhow::Result<Response<Full<Bytes>>> {
 	let path = req.uri().path();
 	let method = req.method();
-	let o = state.o.clone();
+	let mut o = state.o.clone();
 	let key = req
 		.headers()
 		.get("Authorization")
@@ -154,7 +154,7 @@ async fn handle_inner(
 		match sync(state).await {
 			Ok(response) => Ok(response),
 			Err(e) => {
-				o.log(MessageContents::Error(e.to_string()));
+				o.display(MessageContents::Error(format!("{e:?}")));
 				Ok(ise())
 			}
 		}
@@ -168,7 +168,7 @@ async fn handle_inner(
 		match get_job(state, job_id) {
 			Ok(response) => Ok(response),
 			Err(e) => {
-				o.log(MessageContents::Error(e.to_string()));
+				o.display(MessageContents::Error(format!("{e:?}")));
 				Ok(ise())
 			}
 		}
@@ -194,7 +194,7 @@ async fn handle_inner(
 		match input_job(state, job_id, request) {
 			Ok(response) => Ok(response),
 			Err(e) => {
-				o.log(MessageContents::Error(e.to_string()));
+				o.display(MessageContents::Error(format!("{e:?}")));
 				Ok(ise())
 			}
 		}
@@ -246,7 +246,7 @@ async fn handle_inner(
 		match configure_instance(state, &id, request).await {
 			Ok(response) => Ok(response),
 			Err(e) => {
-				o.log(MessageContents::Error(e.to_string()));
+				o.display(MessageContents::Error(format!("{e:?}")));
 				Ok(ise())
 			}
 		}
@@ -272,7 +272,7 @@ async fn handle_inner(
 		match configure_template(state, &id, request).await {
 			Ok(response) => Ok(response),
 			Err(e) => {
-				o.log(MessageContents::Error(e.to_string()));
+				o.display(MessageContents::Error(format!("{e:?}")));
 				Ok(ise())
 			}
 		}
