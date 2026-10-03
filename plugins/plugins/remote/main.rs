@@ -17,7 +17,7 @@ use tokio::runtime::Runtime;
 
 use crate::{
 	output::RemoteOutputListener,
-	server::{KeyPermission, LaunchRequest},
+	server::{KeyPermission, LaunchRequest, UpdateRequest},
 };
 
 mod client;
@@ -122,6 +122,38 @@ fn main() -> anyhow::Result<()> {
 		}))
 	})?;
 
+	plugin.replace_instance_update(|mut ctx, arg| {
+		if arg.config.source_plugin.is_none_or(|x| x != "remote") {
+			return Ok(());
+		}
+		let (remote_id, instance_id) = parse_id(&arg.id).context("Invalid remote instance ID")?;
+		let plugin_config = parse_plugin_config(ctx.get_custom_config())?;
+		let remote = plugin_config
+			.remotes
+			.into_iter()
+			.find(|x| x.id == remote_id)
+			.context("Remote does not exist")?;
+
+		let runtime = Runtime::new()?;
+		let client = Client::new();
+
+		let request = UpdateRequest {
+			instance: instance_id.into(),
+			depth: arg.update_depth,
+			update_instance: arg.update_instance,
+			update_packages: arg.update_packages,
+			update_modpack: arg.update_modpack,
+		};
+		let job_id = runtime
+			.block_on(client::update(&remote, &client, request))
+			.context("Failed to make update request")?;
+
+		let mut listener = RemoteOutputListener::new(job_id, remote.clone(), client.clone());
+		runtime.block_on(listener.listen(ctx.get_output()));
+
+		Ok(())
+	})?;
+
 	plugin.delete_instance(|ctx, arg| Ok(()))?;
 
 	plugin.subcommand(|ctx, arg| {
@@ -137,7 +169,6 @@ fn main() -> anyhow::Result<()> {
 
 		let runtime = Runtime::new()?;
 		let mut o = Simple(MessageLevel::Important);
-		let plugin_config = parse_plugin_config(ctx.get_custom_config())?;
 
 		match cli.subcommand {
 			Subcommand::Start => {
