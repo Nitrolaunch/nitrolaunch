@@ -211,13 +211,21 @@ fn main() -> anyhow::Result<()> {
 
 		let runtime = Runtime::new()?;
 		runtime
-			.block_on(client::configure_template(
-				&remote,
-				&Client::new(),
-				&dir,
-				&template_id,
-				&arg.config,
-			))
+			.block_on(async move {
+				if template_id == BASE_TEMPLATE_ID {
+					client::configure_base_template(&remote, &Client::new(), &dir, &arg.config)
+						.await
+				} else {
+					client::configure_template(
+						&remote,
+						&Client::new(),
+						&dir,
+						&template_id,
+						&arg.config,
+					)
+					.await
+				}
+			})
 			.context("Failed to configure template on remote")?;
 
 		Ok(())
