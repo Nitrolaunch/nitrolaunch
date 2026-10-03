@@ -142,6 +142,28 @@ pub async fn configure_template(
 	Ok(())
 }
 
+/// Configures the base template on the remote server
+pub async fn configure_base_template(
+	settings: &RemoteSettings,
+	client: &Client,
+	dir: &Path,
+	template_config: &TemplateConfig,
+) -> anyhow::Result<()> {
+	let body =
+		serde_json::to_string(template_config).context("Failed to serialize template config")?;
+	post("base_template/configure", Some(body), settings, client).await?;
+
+	// Update cache
+	let remote_dir = get_remote_data_dir(dir, &settings.id);
+	let path = get_sync_cache_path(&remote_dir);
+	if let Ok(mut data) = json_from_file::<SyncResponse>(path.clone()) {
+		data.base_template = template_config.clone();
+		let _ = json_to_file(path, &data);
+	}
+
+	Ok(())
+}
+
 /// Settings on the client for a single remote server
 #[derive(Serialize, Deserialize, Clone)]
 pub struct RemoteSettings {
