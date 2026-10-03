@@ -86,7 +86,7 @@ pub fn extract_zip_dir<R: Read + Seek>(
 unsafe extern "C" {
 	fn mkfifo(path: *const i8, mode: u32) -> i32;
 
-	fn open(path: *const i8, flags: i32, mode: u32) -> i32;
+	fn open(path: *const i8, flags: i32, ...) -> i32;
 
 	fn fcntl(file: i32, op: i32, mode: i32) -> i32;
 }
