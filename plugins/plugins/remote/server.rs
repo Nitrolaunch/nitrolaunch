@@ -30,7 +30,7 @@ use nitrolaunch::{
 	},
 	instance::{
 		launch::LaunchSettings,
-		update::{InstanceUpdateContext, manager::UpdateSettings},
+		update::{InstanceUpdateContext, UpdateFacets, manager::UpdateSettings},
 	},
 	io::{lock::Lockfile, paths::Paths},
 	plugin::PluginManager,
@@ -180,13 +180,20 @@ async fn handle_inner(
 		let Ok(request) = serde_json::from_slice::<LaunchRequest>(&body.to_bytes()) else {
 			return Ok(invalid_request());
 		};
-		match launch(state, request).await {
-			Ok(response) => Ok(response),
-			Err(e) => {
-				o.log(MessageContents::Error(e.to_string()));
-				Ok(ise())
-			}
+		Ok(launch(state, request).await)
+	} else if path == "/update" && method == Method::POST {
+		if let Some(response) = state.settings.check_key_header(key, KeyPermission::Update) {
+			return Ok(response);
 		}
+		let body = req
+			.into_body()
+			.collect()
+			.await
+			.context("Failed to collect body")?;
+		let Ok(request) = serde_json::from_slice::<UpdateRequest>(&body.to_bytes()) else {
+			return Ok(invalid_request());
+		};
+		Ok(update(state, request).await)
 	} else {
 		Ok(Response::builder()
 			.status(404)
@@ -229,7 +236,7 @@ async fn get_job(state: State, job_id: u64) -> anyhow::Result<Response<Full<Byte
 	}
 }
 
-async fn launch(mut state: State, request: LaunchRequest) -> anyhow::Result<Response<Full<Bytes>>> {
+async fn launch(mut state: State, request: LaunchRequest) -> Response<Full<Bytes>> {
 	state.o.new_job();
 	let job_id = state.o.job_id().unwrap();
 	let o = state.o.clone();
@@ -297,10 +304,73 @@ async fn launch(mut state: State, request: LaunchRequest) -> anyhow::Result<Resp
 		}
 	});
 
-	Ok(Response::builder()
+	Response::builder()
 		.status(200)
 		.body(Full::new(Bytes::from(job_id.to_string())))
-		.unwrap())
+		.unwrap()
+}
+
+async fn update(mut state: State, request: UpdateRequest) -> Response<Full<Bytes>> {
+	state.o.new_job();
+	let job_id = state.o.job_id().unwrap();
+	let o = state.o.clone();
+	let task = async move {
+		let mut config = state.config().await?;
+		let core = config
+			.get_core(
+				Some(&get_ms_client_id()),
+				&UpdateSettings {
+					depth: request.depth,
+					offline_auth: false,
+				},
+				&state.client,
+				&config.plugins,
+				&state.paths,
+				&mut state.o,
+			)
+			.await?;
+
+		let instance = config
+			.instances
+			.get_mut(&InstanceID::from(request.instance))
+			.context("Instance does not exist")?;
+
+		let mut lock = Lockfile::open(&state.paths)?;
+		let mut ctx = InstanceUpdateContext {
+			packages: &config.packages,
+			accounts: &mut config.accounts,
+			plugins: &config.plugins,
+			prefs: &config.prefs,
+			paths: &state.paths,
+			lock: &mut lock,
+			client: &state.client,
+			output: &mut state.o,
+			core: &core,
+		};
+		let facets = UpdateFacets {
+			instance: request.update_instance,
+			packages: request.update_packages,
+			modpack: request.update_modpack,
+		};
+
+		instance.update(request.depth, facets, &mut ctx).await?;
+
+		Ok::<(), anyhow::Error>(())
+	};
+	let task = unsafe { MakeSend::new(task) };
+
+	tokio::spawn(async move {
+		if let Err(e) = task.await {
+			o.log(MessageContents::Error(format!(
+				"Failed to update instance: {e:?}"
+			)));
+		}
+	});
+
+	Response::builder()
+		.status(200)
+		.body(Full::new(Bytes::from(job_id.to_string())))
+		.unwrap()
 }
 
 #[derive(Clone)]
@@ -427,6 +497,8 @@ pub enum KeyPermission {
 	Run,
 	/// Can edit and add instances
 	Edit,
+	/// Can update instances
+	Update,
 	/// Can delete instances
 	Delete,
 }
@@ -439,6 +511,7 @@ impl FromStr for KeyPermission {
 			"query" => Ok(Self::Query),
 			"run" => Ok(Self::Run),
 			"edit" => Ok(Self::Edit),
+			"update" => Ok(Self::Update),
 			"delete" => Ok(Self::Delete),
 			_ => Err(()),
 		}
@@ -451,6 +524,7 @@ impl Display for KeyPermission {
 			Self::Query => "query",
 			Self::Run => "run",
 			Self::Edit => "edit",
+			Self::Update => "update",
 			Self::Delete => "delete",
 		};
 		write!(f, "{s}")
@@ -477,6 +551,15 @@ pub struct LaunchRequest {
 	pub account: Option<String>,
 	pub quick_play: QuickPlay,
 	pub offline: bool,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct UpdateRequest {
+	pub instance: String,
+	pub depth: UpdateDepth,
+	pub update_instance: bool,
+	pub update_packages: bool,
+	pub update_modpack: bool,
 }
 
 /// Generates a random access key
