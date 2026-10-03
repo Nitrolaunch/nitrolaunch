@@ -458,6 +458,17 @@ impl<T: Clone> Extend<T> for DeserListOrSingle<T> {
 	}
 }
 
+impl<T> FromIterator<T> for DeserListOrSingle<T> {
+	fn from_iter<U: IntoIterator<Item = T>>(iter: U) -> Self {
+		let vec: Vec<T> = iter.into_iter().collect();
+		if vec.len() == 1 {
+			Self::Single(vec.into_iter().next().expect("Length is 1"))
+		} else {
+			Self::List(vec)
+		}
+	}
+}
+
 /// Iterator over DeserListOrSingle
 pub struct DeserListOrSingleIter<'a, T>(DeserListOrSingleIterState<'a, T>);
 
