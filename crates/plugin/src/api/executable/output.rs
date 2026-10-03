@@ -6,7 +6,7 @@ use std::{
 use anyhow::Context;
 use nitro_shared::{
 	manual_files::ManualFile,
-	output::{Message, MessageLevel, NitroOutput},
+	output::{Message, MessageContents, MessageLevel, NitroOutput},
 };
 
 use crate::{
@@ -72,6 +72,26 @@ impl NitroOutput for ExecutablePluginOutput {
 		self.send_action(OutputAction::EndSection);
 	}
 
+	async fn prompt_yes_no(
+		&mut self,
+		default: bool,
+		message: MessageContents,
+	) -> anyhow::Result<bool> {
+		self.send_action(OutputAction::StartYesNoPrompt { message, default });
+
+		let stdin = std::io::stdin();
+
+		loop {
+			if let Some(InputAction::PromptResult(success)) =
+				poll_input_action(&stdin, self.protocol_version)?
+			{
+				return Ok(success);
+			}
+
+			tokio::time::sleep(Duration::from_millis(10)).await;
+		}
+	}
+
 	async fn prompt_special_manual_files(&mut self, files: Vec<ManualFile>) -> anyhow::Result<()> {
 		self.send_action(OutputAction::StartManualFilesPrompt(files));
 
@@ -88,7 +108,7 @@ impl NitroOutput for ExecutablePluginOutput {
 				}
 			}
 
-			tokio::time::sleep(Duration::from_millis(150)).await;
+			tokio::time::sleep(Duration::from_millis(10)).await;
 		}
 	}
 }

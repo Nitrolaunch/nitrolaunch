@@ -6,18 +6,24 @@ use std::{
 
 use dashmap::DashMap;
 use nitro_net::download::Client;
-use nitro_shared::output::{Message, MessageContents, MessageLevel, NitroOutput};
+use nitro_shared::{
+	output::{Message, MessageContents, MessageLevel, NitroOutput},
+	pkg::PackageDiff,
+	try_3,
+};
 use nitrolaunch::io::{logging::Logger, paths::Paths};
 use serde::{Deserialize, Serialize};
 use tokio::sync::{broadcast, mpsc};
+
+use crate::client::send_input;
 
 /// NitroOutput implementation to output to the remote client. Can be many of these.
 pub struct RemoteOutput {
 	job: Option<u64>,
 	jobs: Arc<DashMap<u64, Job>>,
 	job_counter: Arc<AtomicU64>,
-	tx: broadcast::Sender<InputEvent>,
-	rx: broadcast::Receiver<InputEvent>,
+	tx: broadcast::Sender<InputEventWithJob>,
+	rx: broadcast::Receiver<InputEventWithJob>,
 	logger_tx: mpsc::Sender<Message>,
 }
 
@@ -86,6 +92,13 @@ impl RemoteOutput {
 		if let Some(mut job) = self.jobs.get_mut(&job_id) {
 			job.is_finished = true;
 		}
+	}
+
+	pub fn send_input(&self, input: InputEvent, job_id: u64) {
+		let _ = self.tx.send(InputEventWithJob {
+			job_id,
+			event: input,
+		});
 	}
 
 	pub fn log_message(&self, message: Message) {
@@ -170,10 +183,27 @@ impl NitroOutput for RemoteOutput {
 		default: bool,
 		message: MessageContents,
 	) -> anyhow::Result<bool> {
-		self.send_event(OutputEvent::PromptYesNo(message));
+		self.send_event(OutputEvent::PromptYesNo { message, default });
 		match self.rx.recv().await {
-			Ok(InputEvent::YesNo(value)) => Ok(value),
+			Ok(InputEventWithJob {
+				event: InputEvent::YesNo(value),
+				job_id,
+			}) if Some(job_id) == self.job => Ok(value),
 			_ => Ok(default),
+		}
+	}
+
+	async fn prompt_special_package_diffs(
+		&mut self,
+		diffs: Vec<PackageDiff>,
+	) -> anyhow::Result<bool> {
+		self.send_event(OutputEvent::PromptPackageDiffs(diffs.clone()));
+		match self.rx.recv().await {
+			Ok(InputEventWithJob {
+				event: InputEvent::YesNo(value),
+				job_id,
+			}) if Some(job_id) == self.job => Ok(value),
+			_ => Ok(false),
 		}
 	}
 }
@@ -192,12 +222,22 @@ pub enum OutputEvent {
 	EndProcess,
 	StartSection,
 	EndSection,
-	PromptYesNo(MessageContents),
+	PromptYesNo {
+		message: MessageContents,
+		default: bool,
+	},
+	PromptPackageDiffs(Vec<PackageDiff>),
 }
 
 #[derive(Clone, Serialize, Deserialize)]
 pub enum InputEvent {
 	YesNo(bool),
+}
+
+#[derive(Clone)]
+struct InputEventWithJob {
+	job_id: u64,
+	event: InputEvent,
 }
 
 /// Used on the client to listen for output events from the server
@@ -244,19 +284,21 @@ impl RemoteOutputListener {
 				o.display(MessageContents::Error(
 					"Failed to poll remote server for output".into(),
 				));
+				tokio::time::sleep(Duration::from_millis(500)).await;
 				continue;
 			};
 
-			self.apply_events(events, o);
+			self.apply_events(events, o).await;
 			if is_finished {
 				break;
 			}
-			tokio::time::sleep(Duration::from_millis(150)).await;
+			tokio::time::sleep(Duration::from_millis(250)).await;
 		}
 	}
 
-	/// Applies a list of output events to the given NitroOutput
-	pub fn apply_events(&mut self, events: Vec<OutputEvent>, o: &mut impl NitroOutput) {
+	/// Applies a list of output events to the given NitroOutput and responds to prompts with input events.
+	/// This will block until all events are applied.
+	pub async fn apply_events(&mut self, events: Vec<OutputEvent>, o: &mut impl NitroOutput) {
 		for event in events {
 			match event {
 				OutputEvent::Message(message) => {
@@ -266,10 +308,29 @@ impl RemoteOutputListener {
 				OutputEvent::EndProcess => o.end_process(),
 				OutputEvent::StartSection => o.start_section(),
 				OutputEvent::EndSection => o.end_section(),
-				OutputEvent::PromptYesNo(message) => {
-					let _ = o.prompt_yes_no(true, message);
+				OutputEvent::PromptYesNo { message, default } => {
+					let result = o.prompt_yes_no(default, message).await.unwrap_or(default);
+					self.send_input(InputEvent::YesNo(result), o).await;
+				}
+				OutputEvent::PromptPackageDiffs(diffs) => {
+					let result = o
+						.prompt_special_package_diffs(diffs)
+						.await
+						.unwrap_or_default();
+					self.send_input(InputEvent::YesNo(result), o).await;
 				}
 			}
+		}
+	}
+
+	async fn send_input(&self, input: InputEvent, o: &mut impl NitroOutput) {
+		let result = try_3!({
+			send_input(&self.remote_settings, &self.client, self.job, input.clone()).await
+		});
+		if let Err(e) = result {
+			o.display(MessageContents::Error(format!(
+				"Failed to send input to remote server: {e}"
+			)));
 		}
 	}
 }

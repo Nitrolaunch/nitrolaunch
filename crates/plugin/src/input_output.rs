@@ -2,7 +2,7 @@ use anyhow::Context;
 use base64::prelude::*;
 use nitro_shared::{
 	manual_files::ManualFile,
-	output::{Message, MessageLevel},
+	output::{Message, MessageContents, MessageLevel},
 };
 use serde::{Deserialize, Serialize};
 
@@ -25,6 +25,13 @@ pub enum OutputAction {
 	StartSection,
 	/// End an output section
 	EndSection,
+	/// Start a yes/no prompt
+	StartYesNoPrompt {
+		/// The message to display
+		message: MessageContents,
+		/// The default value if the user does not respond
+		default: bool,
+	},
 	/// Start a manual files prompt
 	StartManualFilesPrompt(Vec<ManualFile>),
 	/// Set the result of the hook
