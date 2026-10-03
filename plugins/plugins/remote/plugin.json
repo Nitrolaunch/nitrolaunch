@@ -16,6 +16,9 @@
 		"replace_instance_launch": {
 			"executable": "${PLUGIN_DIR}/nitro_plugin_remote"
 		},
+		"replace_instance_update": {
+			"executable": "${PLUGIN_DIR}/nitro_plugin_remote"
+		},
 		"delete_instance": {
 			"executable": "${PLUGIN_DIR}/nitro_plugin_remote"
 		},
