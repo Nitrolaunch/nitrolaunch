@@ -293,6 +293,10 @@ impl<H: Hook> ExecutableHookHandle<H> {
 						OutputAction::EndSection => {
 							o.end_section();
 						}
+						OutputAction::StartYesNoPrompt { message, default } => {
+							let result = o.prompt_yes_no(default, message).await.unwrap_or(default);
+							inputs_to_send.push(InputAction::PromptResult(result));
+						}
 						OutputAction::StartManualFilesPrompt(files) => {
 							let result = o.prompt_special_manual_files(files).await;
 							inputs_to_send.push(InputAction::PromptResult(result.is_ok()));
