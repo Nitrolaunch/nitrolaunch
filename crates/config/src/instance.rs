@@ -86,6 +86,9 @@ pub struct InstanceConfig {
 	/// Whether this instance was imported
 	#[serde(skip_serializing_if = "DefaultExt::is_default")]
 	pub imported: bool,
+	/// Whether this instance is remote
+	#[serde(skip_serializing_if = "DefaultExt::is_default")]
+	pub is_remote: bool,
 
 	/// Config for plugins
 	#[serde(skip_serializing_if = "serde_json::Map::is_empty")]
@@ -119,6 +122,7 @@ impl InstanceConfig {
 		self.is_deletable = other.is_deletable;
 		self.launch_mode = other.launch_mode;
 		self.imported = other.imported;
+		self.is_remote = other.is_remote;
 	}
 
 	/// Removes fields that only plugins should be able to edit, for when serializing to user config
@@ -126,6 +130,7 @@ impl InstanceConfig {
 		self.source_plugin = None;
 		self.is_editable = false;
 		self.is_deletable = false;
+		self.is_remote = false;
 		self.launch_mode = LaunchMode::Normal;
 		self.custom_logging_plugin = None;
 	}
@@ -135,6 +140,7 @@ impl InstanceConfig {
 		self.source_plugin = original_config.source_plugin.clone();
 		self.is_editable = original_config.is_editable;
 		self.is_deletable = original_config.is_deletable;
+		self.is_remote = original_config.is_remote;
 		self.launch_mode = original_config.launch_mode;
 	}
 
