@@ -154,7 +154,7 @@ fn main() -> anyhow::Result<()> {
 		Ok(())
 	})?;
 
-	plugin.save_instance_config(|ctx, arg| {
+	plugin.save_instance_config(|ctx, mut arg| {
 		if arg
 			.config
 			.source_plugin
@@ -172,6 +172,8 @@ fn main() -> anyhow::Result<()> {
 			.context("Remote does not exist")?;
 		let dir = get_dir(&ctx.get_data_dir()?);
 
+		unprocess_instance_config(&mut arg.config);
+
 		let runtime = Runtime::new()?;
 		runtime
 			.block_on(client::configure_instance(
@@ -186,7 +188,7 @@ fn main() -> anyhow::Result<()> {
 		Ok(())
 	})?;
 
-	plugin.save_template_config(|ctx, arg| {
+	plugin.save_template_config(|ctx, mut arg| {
 		if arg
 			.config
 			.instance
@@ -204,6 +206,8 @@ fn main() -> anyhow::Result<()> {
 			.find(|x| x.id == remote_id)
 			.context("Remote does not exist")?;
 		let dir = get_dir(&ctx.get_data_dir()?);
+
+		unprocess_instance_config(&mut arg.config.instance);
 
 		let runtime = Runtime::new()?;
 		runtime
@@ -300,7 +304,6 @@ struct PluginConfig {
 }
 
 fn process_instance_config(config: &mut InstanceConfig, remote_id: &str, is_base_template: bool) {
-	config.source_plugin = Some("remote".into());
 	config
 		.from
 		.iter_mut()
@@ -310,9 +313,25 @@ fn process_instance_config(config: &mut InstanceConfig, remote_id: &str, is_base
 			.from
 			.push_front(process_id(BASE_TEMPLATE_ID, remote_id));
 	}
+
+	config.source_plugin = Some("remote".into());
 	config.dir = Some("none".into());
 	config.launch_mode = LaunchMode::Wait;
 	config.is_editable = true;
+}
+
+fn unprocess_instance_config(config: &mut InstanceConfig) {
+	config.from = config
+		.from
+		.iter()
+		.filter_map(|x| parse_id(x).map(|(_, id)| id.into()))
+		.filter(|x| x != BASE_TEMPLATE_ID)
+		.collect();
+
+	config.source_plugin = None;
+	config.dir = None;
+	config.launch_mode = LaunchMode::Normal;
+	config.is_editable = false;
 }
 
 fn process_id(id: &str, remote_id: &str) -> String {
