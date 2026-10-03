@@ -93,7 +93,7 @@ pub async fn configure_instance(
 	let body =
 		serde_json::to_string(instance_config).context("Failed to serialize instance config")?;
 	post(
-		&format!("instance/{id}/configure"),
+		&format!("instances/{id}/configure"),
 		Some(body),
 		settings,
 		client,
@@ -123,7 +123,7 @@ pub async fn configure_template(
 	let body =
 		serde_json::to_string(template_config).context("Failed to serialize template config")?;
 	post(
-		&format!("template/{id}/configure"),
+		&format!("templates/{id}/configure"),
 		Some(body),
 		settings,
 		client,
