@@ -326,6 +326,7 @@ fn process_instance_config(config: &mut InstanceConfig, remote_id: &str, is_base
 	config.dir = Some("none".into());
 	config.launch_mode = LaunchMode::Wait;
 	config.is_editable = true;
+	config.is_remote = true;
 }
 
 fn unprocess_instance_config(config: &mut InstanceConfig) {
@@ -340,6 +341,7 @@ fn unprocess_instance_config(config: &mut InstanceConfig) {
 	config.dir = None;
 	config.launch_mode = LaunchMode::Normal;
 	config.is_editable = false;
+	config.is_remote = false;
 }
 
 fn process_id(id: &str, remote_id: &str) -> String {
