@@ -1,7 +1,6 @@
 use std::path::{Path, PathBuf};
 
 use anyhow::Context;
-use memchr::arch::x86_64;
 use nitro_core::io::{json_from_file, json_to_file};
 use nitro_net::download::Client;
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
