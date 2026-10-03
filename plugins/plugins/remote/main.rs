@@ -154,7 +154,70 @@ fn main() -> anyhow::Result<()> {
 		Ok(())
 	})?;
 
-	plugin.delete_instance(|ctx, arg| Ok(()))?;
+	plugin.save_instance_config(|ctx, arg| {
+		if arg
+			.config
+			.source_plugin
+			.as_ref()
+			.is_none_or(|x| x != "remote")
+		{
+			return Ok(());
+		}
+		let (remote_id, instance_id) = parse_id(&arg.id).context("Invalid remote instance ID")?;
+		let plugin_config = parse_plugin_config(ctx.get_custom_config())?;
+		let remote = plugin_config
+			.remotes
+			.into_iter()
+			.find(|x| x.id == remote_id)
+			.context("Remote does not exist")?;
+		let dir = get_dir(&ctx.get_data_dir()?);
+
+		let runtime = Runtime::new()?;
+		runtime
+			.block_on(client::configure_instance(
+				&remote,
+				&Client::new(),
+				&dir,
+				&instance_id,
+				&arg.config,
+			))
+			.context("Failed to configure instance on remote")?;
+
+		Ok(())
+	})?;
+
+	plugin.save_template_config(|ctx, arg| {
+		if arg
+			.config
+			.instance
+			.source_plugin
+			.as_ref()
+			.is_none_or(|x| x != "remote")
+		{
+			return Ok(());
+		}
+		let (remote_id, template_id) = parse_id(&arg.id).context("Invalid remote instance ID")?;
+		let plugin_config = parse_plugin_config(ctx.get_custom_config())?;
+		let remote = plugin_config
+			.remotes
+			.into_iter()
+			.find(|x| x.id == remote_id)
+			.context("Remote does not exist")?;
+		let dir = get_dir(&ctx.get_data_dir()?);
+
+		let runtime = Runtime::new()?;
+		runtime
+			.block_on(client::configure_template(
+				&remote,
+				&Client::new(),
+				&dir,
+				&template_id,
+				&arg.config,
+			))
+			.context("Failed to configure template on remote")?;
+
+		Ok(())
+	})?;
 
 	plugin.subcommand(|ctx, arg| {
 		let Some(subcommand) = arg.args.first() else {
@@ -249,6 +312,7 @@ fn process_instance_config(config: &mut InstanceConfig, remote_id: &str, is_base
 	}
 	config.dir = Some("none".into());
 	config.launch_mode = LaunchMode::Wait;
+	config.is_editable = true;
 }
 
 fn process_id(id: &str, remote_id: &str) -> String {
