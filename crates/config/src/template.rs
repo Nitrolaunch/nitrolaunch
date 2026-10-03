@@ -358,7 +358,9 @@ pub fn consolidate_template_configs(
 			if template.instance.from.is_empty() {
 				// Templates with no ancestor can just be added directly to the output, after deriving from the base template
 				let mut template = template.clone();
-				if let Some(base_template) = base_template {
+				if let Some(base_template) = base_template
+					&& !template.instance.is_remote
+				{
 					let overlay = template;
 					template = base_template.clone();
 					template.merge(overlay);
