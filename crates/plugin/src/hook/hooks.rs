@@ -1293,3 +1293,32 @@ pub struct PopupButton {
 	/// Whether this button is active or not
 	pub active: bool,
 }
+
+def_hook!(
+	ReplaceInstanceUpdate,
+	"replace_instance_update",
+	"Hook for replacing the update behavior of an instance without a game dir",
+	ReplaceInstanceUpdateArg,
+	(),
+	1,
+);
+
+/// Argument for the ReplaceInstanceUpdate hook
+#[derive(Serialize, Deserialize, Default)]
+#[serde(default)]
+pub struct ReplaceInstanceUpdateArg {
+	/// The ID of the instance
+	pub id: String,
+	/// Path to the instance's directory
+	pub inst_dir: Option<String>,
+	/// The instance's configuration
+	pub config: InstanceConfig,
+	/// The depth to update at
+	pub update_depth: UpdateDepth,
+	/// Whether the instance files will be updated
+	pub update_instance: bool,
+	/// Whether packages will be updated
+	pub update_packages: bool,
+	/// Whether the modpack will be updated
+	pub update_modpack: bool,
+}
