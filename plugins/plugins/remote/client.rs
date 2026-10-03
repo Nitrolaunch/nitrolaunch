@@ -50,6 +50,16 @@ pub async fn launch(
 	download_job_number("launch", Some(body), settings, client).await
 }
 
+/// Updates an instance on the remote server and returns the job ID
+pub async fn update(
+	settings: &RemoteSettings,
+	client: &Client,
+	request: crate::server::UpdateRequest,
+) -> anyhow::Result<u64> {
+	let body = serde_json::to_string(&request).context("Failed to serialize update request")?;
+	download_job_number("update", Some(body), settings, client).await
+}
+
 /// Settings on the client for a single remote server
 #[derive(Serialize, Deserialize, Clone)]
 pub struct RemoteSettings {
