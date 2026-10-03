@@ -19,6 +19,12 @@
 		"replace_instance_update": {
 			"executable": "${PLUGIN_DIR}/nitro_plugin_remote"
 		},
+		"save_instance_config": {
+			"executable": "${PLUGIN_DIR}/nitro_plugin_remote"
+		},
+		"save_template_config": {
+			"executable": "${PLUGIN_DIR}/nitro_plugin_remote"
+		},
 		"delete_instance": {
 			"executable": "${PLUGIN_DIR}/nitro_plugin_remote"
 		},
