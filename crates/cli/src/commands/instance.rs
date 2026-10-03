@@ -803,7 +803,7 @@ async fn edit(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()> 
 	let edited = edit_temp_file(&text, &format!("Editing instance {id}"), &data.paths)?;
 	let mut new_config: InstanceConfig = serde_json::from_str(&edited)
 		.context("Failed to serialize. Make sure your config is valid JSON")?;
-	new_config.restore_plugin_only_fields(&inst_config);
+	new_config.restore_plugin_only_fields(&instance.original_config());
 
 	let modifications = vec![ConfigModification::UpdateInstance(id, new_config)];
 	apply_modifications_and_write(
