@@ -259,6 +259,25 @@ fn main() -> anyhow::Result<()> {
 					o.display(MessageContents::Success(format!("Added key: {key}")));
 				}
 			},
+			Subcommand::Sync { remote } => {
+				let dir = get_dir(&ctx.get_data_dir()?);
+				let plugin_config = parse_plugin_config(ctx.get_custom_config())?;
+				let remote = plugin_config
+					.remotes
+					.into_iter()
+					.find(|x| x.id == remote)
+					.context("Remote does not exist")?;
+
+				o.start_process();
+				o.display(MessageContents::StartProcess(
+					"Synchronizing with remote".into(),
+				));
+				runtime.block_on(client::sync(&remote, &Client::new(), &dir, true))?;
+				o.display(MessageContents::Success(
+					"Configuration synchronized".into(),
+				));
+				o.end_process();
+			}
 		}
 
 		Ok(())
@@ -281,6 +300,11 @@ enum Subcommand {
 	Key {
 		#[command(subcommand)]
 		subcommand: KeySubcommand,
+	},
+	#[command(about = "Synchronize configuration with a remote server")]
+	Sync {
+		/// The remote to synchronize with
+		remote: String,
 	},
 }
 
