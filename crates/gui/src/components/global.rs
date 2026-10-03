@@ -66,6 +66,7 @@ impl Component for Global {
 			front_state2.write().set_theme(theme.into());
 			back_state2.output().debug("Theme applied".into());
 		});
+		// Zoom
 		let radio = use_radio(FrontChannel::Zoom);
 		use_side_effect(move || {
 			radio.read();

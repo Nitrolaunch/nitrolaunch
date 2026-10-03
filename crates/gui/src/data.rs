@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 use crate::output::SerializableResolutionError;
 
 /// Stored launcher data
-#[derive(Serialize, Deserialize, Default, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, PartialEq)]
 #[serde(default)]
 pub struct LauncherData {
 	/// Whether the launcher has been opened before
@@ -36,12 +36,25 @@ pub struct LauncherData {
 	/// The currently selected overlay themes
 	pub overlay_themes: Vec<String>,
 	/// The current zoom level of the app
-	#[serde(default = "default_zoom")]
 	pub zoom: f64,
 }
 
-fn default_zoom() -> f64 {
-	1.0
+impl Default for LauncherData {
+	fn default() -> Self {
+		Self {
+			launcher_opened_before: false,
+			saved_instance_icons: Vec::new(),
+			pinned_instances: HashSet::new(),
+			current_account: None,
+			last_repository: None,
+			last_resolution_errors: HashMap::new(),
+			last_added_package: None,
+			last_opened_instance: None,
+			base_theme: None,
+			overlay_themes: Vec::new(),
+			zoom: 1.0,
+		}
+	}
 }
 
 impl LauncherData {
