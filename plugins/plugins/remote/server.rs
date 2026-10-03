@@ -40,7 +40,7 @@ use tokio::net::TcpListener;
 
 use crate::{
 	get_dir,
-	output::{OutputEvent, RemoteOutput},
+	output::{InputEvent, OutputEvent, RemoteOutput},
 };
 
 pub const PORT: u16 = 1112;
@@ -154,14 +154,40 @@ async fn handle_inner(
 				Ok(ise())
 			}
 		}
-	} else if path.starts_with("/jobs") && method == Method::GET {
+	} else if path.starts_with("/jobs/") && method == Method::GET {
 		if let Some(response) = state.settings.check_key_header(key, KeyPermission::Query) {
 			return Ok(response);
 		}
 		let Ok(job_id) = path.trim_start_matches("/jobs/").parse::<u64>() else {
 			return Ok(invalid_request());
 		};
-		match get_job(state, job_id).await {
+		match get_job(state, job_id) {
+			Ok(response) => Ok(response),
+			Err(e) => {
+				o.log(MessageContents::Error(e.to_string()));
+				Ok(ise())
+			}
+		}
+	} else if path.starts_with("/jobs/") && path.ends_with("/input") && method == Method::POST {
+		if let Some(response) = state.settings.check_key_header(key, KeyPermission::Query) {
+			return Ok(response);
+		}
+		let Ok(job_id) = path
+			.trim_start_matches("/jobs/")
+			.trim_end_matches("/input")
+			.parse::<u64>()
+		else {
+			return Ok(invalid_request());
+		};
+		let body = req
+			.into_body()
+			.collect()
+			.await
+			.context("Failed to collect body")?;
+		let Ok(request) = serde_json::from_slice::<InputJobRequest>(&body.to_bytes()) else {
+			return Ok(invalid_request());
+		};
+		match input_job(state, job_id, request) {
 			Ok(response) => Ok(response),
 			Err(e) => {
 				o.log(MessageContents::Error(e.to_string()));
@@ -224,13 +250,29 @@ async fn sync(mut state: State) -> anyhow::Result<Response<Full<Bytes>>> {
 	json_response(&response)
 }
 
-async fn get_job(state: State, job_id: u64) -> anyhow::Result<Response<Full<Bytes>>> {
+fn get_job(state: State, job_id: u64) -> anyhow::Result<Response<Full<Bytes>>> {
 	if let Some(job) = state.o.get_job(job_id) {
 		json_response(&GetJobResponse {
 			id: job.id,
 			events: job.events.into_iter().collect(),
 			is_finished: job.is_finished,
 		})
+	} else {
+		Ok(not_found())
+	}
+}
+
+fn input_job(
+	state: State,
+	job_id: u64,
+	request: InputJobRequest,
+) -> anyhow::Result<Response<Full<Bytes>>> {
+	if state.o.get_job(job_id).is_some() {
+		state.o.send_input(request.event, job_id);
+		Ok(Response::builder()
+			.status(200)
+			.body(Full::new(Bytes::from_static(b"OK")))
+			.unwrap())
 	} else {
 		Ok(not_found())
 	}
@@ -543,6 +585,11 @@ pub struct GetJobResponse {
 	pub id: u64,
 	pub events: Vec<OutputEvent>,
 	pub is_finished: bool,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct InputJobRequest {
+	pub event: InputEvent,
 }
 
 #[derive(Serialize, Deserialize)]
