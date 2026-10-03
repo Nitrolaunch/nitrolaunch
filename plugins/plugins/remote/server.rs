@@ -18,13 +18,17 @@ use nitro_core::{
 use nitro_net::download::Client;
 use nitro_shared::{
 	UpdateDepth,
-	id::InstanceID,
+	id::{InstanceID, TemplateID},
 	output::{MessageContents, NitroOutput},
 	util::MakeSend,
 };
 use nitrolaunch::{
-	config::Config,
+	config::{
+		Config,
+		modifications::{ConfigModification, apply_modifications_and_write},
+	},
 	config_crate::{
+		ConfigDeser,
 		instance::{InstanceConfig, QuickPlay},
 		template::TemplateConfig,
 	},
@@ -220,6 +224,58 @@ async fn handle_inner(
 			return Ok(invalid_request());
 		};
 		Ok(update(state, request).await)
+	} else if path.starts_with("/instances/")
+		&& path.ends_with("/configure")
+		&& method == Method::POST
+	{
+		if let Some(response) = state.settings.check_key_header(key, KeyPermission::Edit) {
+			return Ok(response);
+		}
+		let id = path
+			.trim_start_matches("/instances/")
+			.trim_end_matches("/configure")
+			.to_string();
+		let body = req
+			.into_body()
+			.collect()
+			.await
+			.context("Failed to collect body")?;
+		let Ok(request) = serde_json::from_slice::<InstanceConfig>(&body.to_bytes()) else {
+			return Ok(invalid_request());
+		};
+		match configure_instance(state, &id, request).await {
+			Ok(response) => Ok(response),
+			Err(e) => {
+				o.log(MessageContents::Error(e.to_string()));
+				Ok(ise())
+			}
+		}
+	} else if path.starts_with("/templates/")
+		&& path.ends_with("/configure")
+		&& method == Method::POST
+	{
+		if let Some(response) = state.settings.check_key_header(key, KeyPermission::Edit) {
+			return Ok(response);
+		}
+		let id = path
+			.trim_start_matches("/templates/")
+			.trim_end_matches("/configure")
+			.to_string();
+		let body = req
+			.into_body()
+			.collect()
+			.await
+			.context("Failed to collect body")?;
+		let Ok(request) = serde_json::from_slice::<TemplateConfig>(&body.to_bytes()) else {
+			return Ok(invalid_request());
+		};
+		match configure_template(state, &id, request).await {
+			Ok(response) => Ok(response),
+			Err(e) => {
+				o.log(MessageContents::Error(e.to_string()));
+				Ok(ise())
+			}
+		}
 	} else {
 		Ok(Response::builder()
 			.status(404)
@@ -415,6 +471,64 @@ async fn update(mut state: State, request: UpdateRequest) -> Response<Full<Bytes
 		.unwrap()
 }
 
+async fn configure_instance(
+	mut state: State,
+	id: &str,
+	instance_config: InstanceConfig,
+) -> anyhow::Result<Response<Full<Bytes>>> {
+	let config = state.config().await?;
+	let mut raw_config = state.raw_config().await?;
+	let id = InstanceID::from(id);
+	let is_new = !config.instances.contains_key(&id);
+	let modification = if is_new {
+		ConfigModification::AddInstance(id, instance_config)
+	} else {
+		ConfigModification::UpdateInstance(id, instance_config)
+	};
+	apply_modifications_and_write(
+		&mut raw_config,
+		vec![modification],
+		&state.paths,
+		&state.plugins,
+		&mut state.o,
+	)
+	.await?;
+
+	Response::builder()
+		.status(200)
+		.body(Full::new(Bytes::from("OK")))
+		.context("Failed to build response")
+}
+
+async fn configure_template(
+	mut state: State,
+	id: &str,
+	template_config: TemplateConfig,
+) -> anyhow::Result<Response<Full<Bytes>>> {
+	let config = state.config().await?;
+	let mut raw_config = state.raw_config().await?;
+	let id = TemplateID::from(id);
+	let is_new = !config.templates.contains_key(&id);
+	let modification = if is_new {
+		ConfigModification::AddTemplate(id, template_config)
+	} else {
+		ConfigModification::UpdateTemplate(id, template_config)
+	};
+	apply_modifications_and_write(
+		&mut raw_config,
+		vec![modification],
+		&state.paths,
+		&state.plugins,
+		&mut state.o,
+	)
+	.await?;
+
+	Response::builder()
+		.status(200)
+		.body(Full::new(Bytes::from("OK")))
+		.context("Failed to build response")
+}
+
 #[derive(Clone)]
 struct State {
 	client: Client,
@@ -437,6 +551,10 @@ impl State {
 		)
 		.await?;
 		Ok(config)
+	}
+
+	async fn raw_config(&mut self) -> anyhow::Result<ConfigDeser> {
+		Config::open(&Config::get_path(&self.paths))
 	}
 }
 
