@@ -276,6 +276,25 @@ async fn handle_inner(
 				Ok(ise())
 			}
 		}
+	} else if path == "/base_template/configure" && method == Method::POST {
+		if let Some(response) = state.settings.check_key_header(key, KeyPermission::Edit) {
+			return Ok(response);
+		}
+		let body = req
+			.into_body()
+			.collect()
+			.await
+			.context("Failed to collect body")?;
+		let Ok(request) = serde_json::from_slice::<TemplateConfig>(&body.to_bytes()) else {
+			return Ok(invalid_request());
+		};
+		match configure_base_template(state, request).await {
+			Ok(response) => Ok(response),
+			Err(e) => {
+				o.display(MessageContents::Error(format!("{e:?}")));
+				Ok(ise())
+			}
+		}
 	} else {
 		Ok(Response::builder()
 			.status(404)
@@ -517,6 +536,27 @@ async fn configure_template(
 	apply_modifications_and_write(
 		&mut raw_config,
 		vec![modification],
+		&state.paths,
+		&state.plugins,
+		&mut state.o,
+	)
+	.await?;
+
+	Response::builder()
+		.status(200)
+		.body(Full::new(Bytes::from("OK")))
+		.context("Failed to build response")
+}
+
+async fn configure_base_template(
+	mut state: State,
+	template_config: TemplateConfig,
+) -> anyhow::Result<Response<Full<Bytes>>> {
+	let mut raw_config = state.raw_config().await?;
+	raw_config.base_template = Some(template_config);
+	apply_modifications_and_write(
+		&mut raw_config,
+		vec![],
 		&state.paths,
 		&state.plugins,
 		&mut state.o,
