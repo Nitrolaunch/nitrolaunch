@@ -53,9 +53,12 @@ impl Instance {
 			.await?;
 		let version_info = core_version.get_version_info();
 
-		self.update(UpdateDepth::Shallow, UpdateFacets::all(), ctx)
-			.await
-			.context("Failed to update instance")?;
+		// Skip the update if we have a custom launch because the plugin is responsible for handling updates in that case
+		if self.dir.is_some() && self.config.launch_mode == LaunchMode::Normal {
+			self.update(UpdateDepth::Shallow, UpdateFacets::all(), ctx)
+				.await
+				.context("Failed to update instance")?;
+		}
 
 		let hook_arg = InstanceLaunchArg {
 			id: self.id.to_string(),
