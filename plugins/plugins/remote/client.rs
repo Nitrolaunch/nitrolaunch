@@ -3,6 +3,8 @@ use std::path::{Path, PathBuf};
 use anyhow::Context;
 use nitro_core::io::{json_from_file, json_to_file};
 use nitro_net::download::Client;
+use nitrolaunch::config_crate::instance::InstanceConfig;
+use nitrolaunch::config_crate::template::TemplateConfig;
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 
 use crate::output::InputEvent;
@@ -20,7 +22,7 @@ pub async fn sync(
 ) -> anyhow::Result<SyncResponse> {
 	let remote_dir = get_remote_data_dir(dir, &settings.id);
 	let _ = std::fs::create_dir_all(&remote_dir);
-	let path = remote_dir.join("remote_config.json");
+	let path = get_sync_cache_path(&remote_dir);
 
 	if !force && path.exists() {
 		json_from_file(path)
@@ -80,6 +82,66 @@ pub async fn update(
 	download_job_number("update", Some(body), settings, client).await
 }
 
+/// Configures an instance on the remote server
+pub async fn configure_instance(
+	settings: &RemoteSettings,
+	client: &Client,
+	dir: &Path,
+	id: &str,
+	instance_config: &InstanceConfig,
+) -> anyhow::Result<()> {
+	let body =
+		serde_json::to_string(instance_config).context("Failed to serialize instance config")?;
+	post(
+		&format!("instance/{id}/configure"),
+		Some(body),
+		settings,
+		client,
+	)
+	.await?;
+
+	// Update cache
+	let remote_dir = get_remote_data_dir(dir, &settings.id);
+	let path = get_sync_cache_path(&remote_dir);
+	if let Ok(mut data) = json_from_file::<SyncResponse>(path.clone()) {
+		data.instances
+			.insert(id.to_string(), instance_config.clone());
+		let _ = json_to_file(path, &data);
+	}
+
+	Ok(())
+}
+
+/// Configures a template on the remote server
+pub async fn configure_template(
+	settings: &RemoteSettings,
+	client: &Client,
+	dir: &Path,
+	id: &str,
+	template_config: &TemplateConfig,
+) -> anyhow::Result<()> {
+	let body =
+		serde_json::to_string(template_config).context("Failed to serialize template config")?;
+	post(
+		&format!("template/{id}/configure"),
+		Some(body),
+		settings,
+		client,
+	)
+	.await?;
+
+	// Update cache
+	let remote_dir = get_remote_data_dir(dir, &settings.id);
+	let path = get_sync_cache_path(&remote_dir);
+	if let Ok(mut data) = json_from_file::<SyncResponse>(path.clone()) {
+		data.templates
+			.insert(id.to_string(), template_config.clone());
+		let _ = json_to_file(path, &data);
+	}
+
+	Ok(())
+}
+
 /// Settings on the client for a single remote server
 #[derive(Serialize, Deserialize, Clone)]
 pub struct RemoteSettings {
@@ -90,6 +152,10 @@ pub struct RemoteSettings {
 
 fn get_remote_data_dir(dir: &Path, remote_id: &str) -> PathBuf {
 	dir.join("remote").join(remote_id)
+}
+
+fn get_sync_cache_path(remote_dir: &Path) -> PathBuf {
+	remote_dir.join("remote_config.json")
 }
 
 async fn download_json<T: DeserializeOwned>(
