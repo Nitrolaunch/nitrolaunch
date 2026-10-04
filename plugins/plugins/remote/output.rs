@@ -159,7 +159,9 @@ impl NitroOutput for RemoteOutput {
 	fn display_message(&mut self, message: Message) {
 		self.send_event(OutputEvent::Message(message.clone()));
 		self.log_message(message.clone());
-		println!("{}", message.contents.default_format());
+		if message.level >= MessageLevel::Important {
+			println!("{}", message.contents.default_format());
+		}
 	}
 
 	fn start_process(&mut self) {
