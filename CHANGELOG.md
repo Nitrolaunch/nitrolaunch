@@ -1,3 +1,6 @@
+# Nitrolaunch 0.32.2
+- Fixes issue where zoom would be set to zero on first launch, messing up the UI
+
 # Nitrolaunch 0.32.1
 
 ## New Features
