@@ -58,7 +58,7 @@ pub async fn run(paths: &Paths, o: &mut impl NitroOutput) -> anyhow::Result<()> 
 	let settings = RemoteSettings::open(&remote_dir).unwrap_or_default();
 	let settings = Arc::new(settings);
 
-	let addr: SocketAddr = ([127, 0, 0, 1], PORT).into();
+	let addr: SocketAddr = ([0, 0, 0, 0], PORT).into();
 	let listener = TcpListener::bind(addr)
 		.await
 		.context("Failed to bind to port")?;
