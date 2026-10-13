@@ -62,6 +62,9 @@ impl<R: Read + Seek> ModrinthPack<R> {
 			};
 			let url = url.clone();
 			let client = client.clone();
+			if let Some(parent) = path.parent() {
+				let _ = std::fs::create_dir_all(parent);
+			}
 			tasks.spawn(async move { nitro_net::download::file(url, path, &client).await });
 		}
 
