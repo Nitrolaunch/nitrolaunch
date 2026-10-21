@@ -334,7 +334,7 @@ fn format_url(settings: &RemoteSettings, subpath: &str) -> String {
 	if url.starts_with("http://") {
 		url = url.replacen("http://", "https://", 1);
 	} else if !url.starts_with("https://") {
-		url = format!("http://{}", url);
+		url = format!("https://{}", url);
 	}
 	url
 }
