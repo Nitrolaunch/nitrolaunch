@@ -157,6 +157,7 @@ ratatui-image = { version = "10.0.6", default-features = false, features = [
 	"crossterm"
 ] }
 ratatui-textarea = "0.9.0"
+rcgen = "0.14"
 reqwest = { version = "0.12.15", default-features = false, features = [
 	"json",
 	"rustls-tls",
@@ -168,6 +169,7 @@ rsa = { version = "0.9.10", default-features = false, features = [
 	"std",
 	"u64_digit",
 ] }
+rustls = "0.23.0"
 rust-embed = "8.11.0"
 schemars = { version = "0.8.20" }
 serde = { version = "1.0.202", features = ["derive", "rc"] }
@@ -180,6 +182,7 @@ tar = { version = "0.4.38", default-features = false }
 termimad = "0.31.1"
 thiserror = "1.0.61"
 tokio = { version = "1.37.0", features = ["rt-multi-thread"] }
+tokio-rustls = "0.26.0"
 tui-markdown = { version = "0.3.7", default-features = false }
 version-compare = "0.2.0"
 wasmtime = { version = "41.0.0", default-features = false, features = [
