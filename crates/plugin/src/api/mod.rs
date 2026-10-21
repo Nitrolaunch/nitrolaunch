@@ -195,3 +195,4 @@ hook_interface!(
 	"replace_instance_update",
 	ReplaceInstanceUpdate
 );
+hook_interface!(kill_instance, "kill_instance", KillInstance);

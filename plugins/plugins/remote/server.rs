@@ -244,6 +244,25 @@ async fn handle_inner(
 			return Ok(invalid_request());
 		};
 		Ok(update(state, request).await)
+	} else if path == "/kill" && method == Method::POST {
+		if let Some(response) = state.settings.check_key_header(key, KeyPermission::Run) {
+			return Ok(response);
+		}
+		let body = req
+			.into_body()
+			.collect()
+			.await
+			.context("Failed to collect body")?;
+		let Ok(request) = serde_json::from_slice::<KillInstanceRequest>(&body.to_bytes()) else {
+			return Ok(invalid_request());
+		};
+		match kill_instance(state, request).await {
+			Ok(response) => Ok(response),
+			Err(e) => {
+				o.display(MessageContents::Error(format!("{e:?}")));
+				Ok(ise())
+			}
+		}
 	} else if path.starts_with("/instances/")
 		&& path.ends_with("/configure")
 		&& method == Method::POST
@@ -508,6 +527,30 @@ async fn update(mut state: State, request: UpdateRequest) -> Response<Full<Bytes
 		.status(200)
 		.body(Full::new(Bytes::from(job_id.to_string())))
 		.unwrap()
+}
+
+async fn kill_instance(
+	mut state: State,
+	request: KillInstanceRequest,
+) -> anyhow::Result<Response<Full<Bytes>>> {
+	let config = state.config().await?;
+	let instance = config
+		.instances
+		.get(&InstanceID::from(request.instance))
+		.context("Instance does not exist")?;
+	instance
+		.kill(
+			request.account.as_deref(),
+			&state.paths,
+			&state.plugins,
+			&mut state.o,
+		)
+		.await?;
+
+	Response::builder()
+		.status(200)
+		.body(Full::new(Bytes::from("OK")))
+		.context("Failed to build response")
 }
 
 async fn configure_instance(
@@ -785,6 +828,12 @@ pub struct UpdateRequest {
 	pub update_instance: bool,
 	pub update_packages: bool,
 	pub update_modpack: bool,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct KillInstanceRequest {
+	pub instance: String,
+	pub account: Option<String>,
 }
 
 /// Generates a random access key

@@ -5,7 +5,9 @@ use nitro_config::{instance::InstanceConfig, template::TemplateConfig};
 use nitro_instance::files::{
 	InstanceSave, ServerInfo, get_instance_saves, get_instance_screenshots, get_instance_servers,
 };
-use nitro_plugin::hook::hooks::{DeleteInstance, SaveInstanceConfigArg};
+use nitro_plugin::hook::hooks::{
+	DeleteInstance, KillInstance, KillInstanceArg, SaveInstanceConfigArg,
+};
 use nitro_shared::{
 	Side,
 	id::{InstanceID, TemplateID},
@@ -19,7 +21,7 @@ use crate::{
 		Config,
 		modifications::{ConfigModification, apply_modifications_and_write},
 	},
-	instance::Instance,
+	instance::{Instance, tracking::RunningInstanceRegistry},
 	io::paths::Paths,
 	plugin::PluginManager,
 };
@@ -146,6 +148,34 @@ impl Instance {
 
 			if path.exists() {
 				tokio::fs::remove_dir_all(path).await?;
+			}
+		}
+
+		Ok(())
+	}
+
+	/// Kills all processes for this instance, or a specific account if specified.
+	pub async fn kill(
+		&self,
+		account: Option<&str>,
+		paths: &Paths,
+		plugins: &PluginManager,
+		o: &mut impl NitroOutput,
+	) -> anyhow::Result<()> {
+		let mut registry = RunningInstanceRegistry::open(paths)?;
+		registry.kill_instance(&self.id, account);
+		let _ = registry.write();
+		if let Some(source_plugin) = &self.original_config.source_plugin {
+			let arg = KillInstanceArg {
+				id: self.id.to_string(),
+				account: account.map(|x| x.to_string()),
+				config: self.config.clone(),
+			};
+			if let Some(result) = plugins
+				.call_hook_on_plugin(KillInstance, source_plugin, &arg, paths, o)
+				.await?
+			{
+				result.result(o).await?;
 			}
 		}
 
