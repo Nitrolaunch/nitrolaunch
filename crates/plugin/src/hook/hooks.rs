@@ -1322,3 +1322,24 @@ pub struct ReplaceInstanceUpdateArg {
 	/// Whether the modpack will be updated
 	pub update_modpack: bool,
 }
+
+def_hook!(
+	KillInstance,
+	"kill_instance",
+	"Hook for killing a custom instance",
+	KillInstanceArg,
+	(),
+	1,
+);
+
+/// Argument for the KillInstance hook
+#[derive(Serialize, Deserialize, Default)]
+#[serde(default)]
+pub struct KillInstanceArg {
+	/// The ID of the instance
+	pub id: String,
+	/// ID of the account that launched the instance, if any
+	pub account: Option<String>,
+	/// The instance's configuration
+	pub config: InstanceConfig,
+}

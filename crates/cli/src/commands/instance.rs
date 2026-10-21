@@ -975,13 +975,19 @@ async fn kill(
 	let config = data.config.get();
 
 	let instance = pick_instance(instance, config)?;
-
-	let mut registry =
-		RunningInstanceRegistry::open(&data.paths).context("Failed to open registry")?;
-
-	registry.kill_instance(&instance, account.as_deref());
-
-	registry.write()?;
+	let instance = config
+		.instances
+		.get(&instance)
+		.context("Instance does not exist")?;
+	instance
+		.kill(
+			account.as_deref(),
+			&data.paths,
+			&config.plugins,
+			data.output,
+		)
+		.await
+		.context("Failed to kill instance")?;
 
 	data.output
 		.display(MessageContents::Success("Instance killed".into()));

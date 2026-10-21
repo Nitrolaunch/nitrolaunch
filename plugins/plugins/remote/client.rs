@@ -12,10 +12,10 @@ use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use tokio::sync::OnceCell;
 
 use crate::output::InputEvent;
-use crate::server::GetJobResponse;
 use crate::server::InputJobRequest;
 use crate::server::PORT;
 use crate::server::SyncResponse;
+use crate::server::{GetJobResponse, KillInstanceRequest};
 
 /// Client for interacting with a remote control server.
 /// Mostly handles TLS / certificates.
@@ -132,6 +132,13 @@ impl RemoteClient {
 		let client = self.client().await?;
 		let body = serde_json::to_string(&request).context("Failed to serialize update request")?;
 		download_job_number("update", Some(body), &self.settings, &client).await
+	}
+
+	/// Kills an instance on the remote server
+	pub async fn kill_instance(&self, request: KillInstanceRequest) -> anyhow::Result<()> {
+		let client = self.client().await?;
+		let body = serde_json::to_string(&request).context("Failed to serialize kill request")?;
+		post("kill", Some(body), &self.settings, &client).await
 	}
 
 	/// Configures an instance on the remote server

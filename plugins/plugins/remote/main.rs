@@ -17,7 +17,7 @@ use tokio::runtime::Runtime;
 use crate::{
 	client::RemoteClient,
 	output::RemoteOutputListener,
-	server::{KeyPermission, LaunchRequest, UpdateRequest},
+	server::{KeyPermission, KillInstanceRequest, LaunchRequest, UpdateRequest},
 };
 
 mod client;
@@ -220,6 +220,29 @@ fn main() -> anyhow::Result<()> {
 				}
 			})
 			.context("Failed to configure template on remote")?;
+
+		Ok(())
+	})?;
+
+	plugin.kill_instance(|ctx, arg| {
+		let (remote_id, instance_id) = parse_id(&arg.id).context("Invalid remote instance ID")?;
+		let plugin_config = parse_plugin_config(ctx.get_custom_config())?;
+		let remote = plugin_config
+			.remotes
+			.into_iter()
+			.find(|x| x.id == remote_id)
+			.context("Remote does not exist")?;
+		let dir = get_dir(&ctx.get_data_dir()?);
+		let client = RemoteClient::new(remote, &dir);
+
+		let request = KillInstanceRequest {
+			instance: instance_id.into(),
+			account: arg.account.map(|x| x.to_string()),
+		};
+		let runtime = Runtime::new()?;
+		runtime
+			.block_on(client.kill_instance(request))
+			.context("Failed to kill instance on remote")?;
 
 		Ok(())
 	})?;
