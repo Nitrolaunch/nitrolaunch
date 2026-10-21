@@ -54,15 +54,6 @@ impl RunningInstanceManager {
 		}
 	}
 
-	/// Kills an instance
-	pub async fn kill(&self, instance: &str, account: Option<&str>) {
-		let mut lock = self.running_instance_registry.lock().await;
-		lock.kill_instance(instance, account);
-		let _ = lock.write();
-		std::mem::drop(lock);
-		self.emit_update_event().await;
-	}
-
 	/// Gets an instance entry
 	pub async fn get_entry(
 		&self,
