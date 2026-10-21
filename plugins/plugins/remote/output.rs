@@ -5,7 +5,6 @@ use std::{
 };
 
 use dashmap::DashMap;
-use nitro_net::download::Client;
 use nitro_shared::{
 	output::{Message, MessageContents, MessageLevel, NitroOutput},
 	pkg::PackageDiff,
@@ -15,7 +14,7 @@ use nitrolaunch::io::{logging::Logger, paths::Paths};
 use serde::{Deserialize, Serialize};
 use tokio::sync::{broadcast, mpsc};
 
-use crate::client::send_input;
+use crate::client::RemoteClient;
 
 /// NitroOutput implementation to output to the remote client. Can be many of these.
 pub struct RemoteOutput {
@@ -245,16 +244,14 @@ struct InputEventWithJob {
 /// Used on the client to listen for output events from the server
 pub struct RemoteOutputListener {
 	job: u64,
-	remote_settings: crate::client::RemoteSettings,
-	client: Client,
+	client: RemoteClient,
 	current_event_index: usize,
 }
 
 impl RemoteOutputListener {
-	pub fn new(job: u64, remote_settings: crate::client::RemoteSettings, client: Client) -> Self {
+	pub fn new(job: u64, client: RemoteClient) -> Self {
 		Self {
 			job,
-			remote_settings,
 			client,
 			current_event_index: 0,
 		}
@@ -262,8 +259,7 @@ impl RemoteOutputListener {
 
 	/// Polls the remote server for new output events for this job. Returns the events and whether the job is finished.
 	pub async fn poll(&mut self) -> anyhow::Result<(Vec<OutputEvent>, bool)> {
-		let response =
-			crate::client::get_job(&self.remote_settings, &self.client, self.job).await?;
+		let response = self.client.get_job(self.job).await?;
 		let Some(response) = response else {
 			return Ok((Vec::new(), true));
 		};
@@ -326,9 +322,7 @@ impl RemoteOutputListener {
 	}
 
 	async fn send_input(&self, input: InputEvent, o: &mut impl NitroOutput) {
-		let result = try_3!({
-			send_input(&self.remote_settings, &self.client, self.job, input.clone()).await
-		});
+		let result = try_3!({ self.client.send_input(self.job, input.clone()).await });
 		if let Err(e) = result {
 			o.display(MessageContents::Error(format!(
 				"Failed to send input to remote server: {e}"
