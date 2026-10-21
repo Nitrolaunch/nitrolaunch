@@ -174,11 +174,20 @@ impl MutationCapability for KillInstance {
 		let back_state = self.back_state.clone();
 
 		query_spawn(back_state.0.clone(), async move {
-			let _: () = back_state
-				.running_instances
-				.kill(&id, account.as_deref())
-				.await;
-			Ok(())
+			let config = back_state.config().await?;
+			let mut output = back_state.output();
+			let instance = config
+				.instances
+				.get(&InstanceID::from(id.clone()))
+				.context("Instance does not exist")?;
+			instance
+				.kill(
+					account.as_deref(),
+					&back_state.paths,
+					&back_state.plugins,
+					&mut output,
+				)
+				.await
 		})
 	}
 }

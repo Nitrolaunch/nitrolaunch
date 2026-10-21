@@ -28,6 +28,9 @@
 		"delete_instance": {
 			"executable": "${PLUGIN_DIR}/nitro_plugin_remote"
 		},
+		"kill_instance": {
+			"executable": "${PLUGIN_DIR}/nitro_plugin_remote"
+		},
 		"subcommand": {
 			"executable": "${PLUGIN_DIR}/nitro_plugin_remote"
 		}
