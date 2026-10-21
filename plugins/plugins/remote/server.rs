@@ -39,8 +39,13 @@ use nitrolaunch::{
 	io::{lock::Lockfile, paths::Paths},
 	plugin::PluginManager,
 };
+use rustls::{
+	ServerConfig,
+	pki_types::{CertificateDer, PrivateKeyDer, PrivatePkcs8KeyDer},
+};
 use serde::{Deserialize, Serialize};
 use tokio::net::TcpListener;
+use tokio_rustls::TlsAcceptor;
 
 use crate::{
 	get_dir,
@@ -63,6 +68,9 @@ pub async fn run(paths: &Paths, o: &mut impl NitroOutput) -> anyhow::Result<()> 
 		.await
 		.context("Failed to bind to port")?;
 
+	let tls_config = tls_config(&remote_dir).context("Failed to load TLS configuration")?;
+	let acceptor = TlsAcceptor::from(tls_config);
+
 	let plugins = PluginManager::load(paths, o).await?;
 	let client = Client::new();
 	let remote_out = RemoteOutput::new(paths);
@@ -81,11 +89,23 @@ pub async fn run(paths: &Paths, o: &mut impl NitroOutput) -> anyhow::Result<()> 
 			o.display(MessageContents::Error("Failed to accept connection".into()));
 			continue;
 		};
-		let io = TokioIo::new(stream);
+		let acceptor = acceptor.clone();
+
 		let mut o = o.get_lesser_copy();
 		let state = state.clone();
 
 		tokio::spawn(async move {
+			let stream = match acceptor.accept(stream).await {
+				Ok(s) => s,
+				Err(e) => {
+					o.display(MessageContents::Error(format!(
+						"Failed to accept TLS connection: {e}"
+					)));
+					return;
+				}
+			};
+			let io = TokioIo::new(stream);
+
 			if let Err(e) = http1::Builder::new()
 				.serve_connection(
 					io,
@@ -788,4 +808,34 @@ const fn get_raw_ms_client_id() -> &'static str {
 		// Please don't use my client ID :)
 		"402abc71-43fb-45c1-b230-e7fc9d4485fe"
 	}
+}
+
+fn tls_config(dir: &Path) -> anyhow::Result<Arc<ServerConfig>> {
+	let cert_path = dir.join("cert.json");
+	let cert_keys = if cert_path.exists() {
+		json_from_file(cert_path)?
+	} else {
+		let cert = rcgen::generate_simple_self_signed(vec![])?;
+		let cert_keys = CertKeys {
+			cert: cert.cert.der().to_vec(),
+			signing_key: cert.signing_key.serialize_der(),
+		};
+		json_to_file(cert_path, &cert_keys)?;
+		cert_keys
+	};
+
+	let cert = CertificateDer::from(cert_keys.cert);
+	let key = PrivateKeyDer::Pkcs8(PrivatePkcs8KeyDer::from(cert_keys.signing_key));
+
+	let config = ServerConfig::builder()
+		.with_no_client_auth()
+		.with_single_cert(vec![cert], key)?;
+
+	Ok(Arc::new(config))
+}
+
+#[derive(Serialize, Deserialize)]
+struct CertKeys {
+	cert: Vec<u8>,
+	signing_key: Vec<u8>,
 }

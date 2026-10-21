@@ -5,7 +5,6 @@ use std::{
 
 use anyhow::Context;
 use clap::Parser;
-use nitro_net::download::Client;
 use nitro_plugin::{api::executable::ExecutablePlugin, hook::hooks::ReplaceInstanceLaunchResult};
 use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput, Simple};
 use nitrolaunch::{
@@ -16,6 +15,7 @@ use serde::{Deserialize, Serialize};
 use tokio::runtime::Runtime;
 
 use crate::{
+	client::RemoteClient,
 	output::RemoteOutputListener,
 	server::{KeyPermission, LaunchRequest, UpdateRequest},
 };
@@ -30,13 +30,13 @@ fn main() -> anyhow::Result<()> {
 	let mut plugin = ExecutablePlugin::from_manifest_file("remote", include_str!("plugin.json"))?;
 	plugin.add_instances(|mut ctx, _| {
 		let runtime = Runtime::new()?;
-		let client = Client::new();
 		let dir = get_dir(&ctx.get_data_dir()?);
 		let plugin_config = parse_plugin_config(ctx.get_custom_config())?;
 
 		let mut out = HashMap::new();
 		for remote in plugin_config.remotes {
-			let data = runtime.block_on(client::sync(&remote, &client, &dir, false));
+			let client = RemoteClient::new(remote.clone(), &dir);
+			let data = runtime.block_on(client.sync(false));
 			let data = match data {
 				Ok(data) => data,
 				Err(e) => {
@@ -59,13 +59,13 @@ fn main() -> anyhow::Result<()> {
 
 	plugin.add_templates(|mut ctx, _| {
 		let runtime = Runtime::new()?;
-		let client = Client::new();
 		let dir = get_dir(&ctx.get_data_dir()?);
 		let plugin_config = parse_plugin_config(ctx.get_custom_config())?;
 
 		let mut out = HashMap::new();
 		for remote in plugin_config.remotes {
-			let data = runtime.block_on(client::sync(&remote, &client, &dir, false));
+			let client = RemoteClient::new(remote.clone(), &dir);
+			let data = runtime.block_on(client.sync(false));
 			let data = match data {
 				Ok(data) => data,
 				Err(e) => {
@@ -99,9 +99,10 @@ fn main() -> anyhow::Result<()> {
 			.into_iter()
 			.find(|x| x.id == remote_id)
 			.context("Remote does not exist")?;
+		let dir = get_dir(&ctx.get_data_dir()?);
 
 		let runtime = Runtime::new()?;
-		let client = Client::new();
+		let client = RemoteClient::new(remote, &dir);
 
 		let request = LaunchRequest {
 			instance: instance_id.into(),
@@ -110,10 +111,10 @@ fn main() -> anyhow::Result<()> {
 			offline: false,
 		};
 		let job_id = runtime
-			.block_on(client::launch(&remote, &client, request))
+			.block_on(client.launch(request))
 			.context("Failed to make launch request")?;
 
-		let mut listener = RemoteOutputListener::new(job_id, remote.clone(), client.clone());
+		let mut listener = RemoteOutputListener::new(job_id, client.clone());
 		runtime.block_on(listener.listen(ctx.get_output()));
 
 		Ok(Some(ReplaceInstanceLaunchResult {
@@ -133,9 +134,10 @@ fn main() -> anyhow::Result<()> {
 			.into_iter()
 			.find(|x| x.id == remote_id)
 			.context("Remote does not exist")?;
+		let dir = get_dir(&ctx.get_data_dir()?);
 
 		let runtime = Runtime::new()?;
-		let client = Client::new();
+		let client = RemoteClient::new(remote, &dir);
 
 		let request = UpdateRequest {
 			instance: instance_id.into(),
@@ -145,10 +147,10 @@ fn main() -> anyhow::Result<()> {
 			update_modpack: arg.update_modpack,
 		};
 		let job_id = runtime
-			.block_on(client::update(&remote, &client, request))
+			.block_on(client.update(request))
 			.context("Failed to make update request")?;
 
-		let mut listener = RemoteOutputListener::new(job_id, remote.clone(), client.clone());
+		let mut listener = RemoteOutputListener::new(job_id, client.clone());
 		runtime.block_on(listener.listen(ctx.get_output()));
 
 		Ok(())
@@ -171,18 +173,13 @@ fn main() -> anyhow::Result<()> {
 			.find(|x| x.id == remote_id)
 			.context("Remote does not exist")?;
 		let dir = get_dir(&ctx.get_data_dir()?);
+		let client = RemoteClient::new(remote, &dir);
 
 		unprocess_instance_config(&mut arg.config);
 
 		let runtime = Runtime::new()?;
 		runtime
-			.block_on(client::configure_instance(
-				&remote,
-				&Client::new(),
-				&dir,
-				&instance_id,
-				&arg.config,
-			))
+			.block_on(client.configure_instance(&dir, &instance_id, &arg.config))
 			.context("Failed to configure instance on remote")?;
 
 		Ok(())
@@ -206,6 +203,7 @@ fn main() -> anyhow::Result<()> {
 			.find(|x| x.id == remote_id)
 			.context("Remote does not exist")?;
 		let dir = get_dir(&ctx.get_data_dir()?);
+		let client = RemoteClient::new(remote, &dir);
 
 		unprocess_instance_config(&mut arg.config.instance);
 
@@ -213,17 +211,11 @@ fn main() -> anyhow::Result<()> {
 		runtime
 			.block_on(async move {
 				if template_id == BASE_TEMPLATE_ID {
-					client::configure_base_template(&remote, &Client::new(), &dir, &arg.config)
-						.await
+					client.configure_base_template(&dir, &arg.config).await
 				} else {
-					client::configure_template(
-						&remote,
-						&Client::new(),
-						&dir,
-						&template_id,
-						&arg.config,
-					)
-					.await
+					client
+						.configure_template(&dir, &template_id, &arg.config)
+						.await
 				}
 			})
 			.context("Failed to configure template on remote")?;
@@ -267,12 +259,13 @@ fn main() -> anyhow::Result<()> {
 					.into_iter()
 					.find(|x| x.id == remote)
 					.context("Remote does not exist")?;
+				let client = RemoteClient::new(remote, &dir);
 
 				o.start_process();
 				o.display(MessageContents::StartProcess(
 					"Synchronizing with remote".into(),
 				));
-				runtime.block_on(client::sync(&remote, &Client::new(), &dir, true))?;
+				runtime.block_on(client.sync(true))?;
 				o.display(MessageContents::Success(
 					"Configuration synchronized".into(),
 				));

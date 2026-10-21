@@ -126,11 +126,15 @@ nitro_pkg = { workspace = true }
 nitro_pkg_gen = { workspace = true }
 nitro_shared = { workspace = true }
 rand = { workspace = true }
+rcgen = { workspace = true }
+reqwest = { workspace = true }
+rustls = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 sysinfo = { workspace = true }
 termimad = { workspace = true }
 tokio = { version = "1.37.0", features = ["rt-multi-thread", "net"] }
+tokio-rustls = { workspace = true }
 version-compare = { workspace = true }
 zip = { workspace = true }
 
