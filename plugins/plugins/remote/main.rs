@@ -27,6 +27,7 @@ mod server;
 static BASE_TEMPLATE_ID: &str = "base_template";
 
 fn main() -> anyhow::Result<()> {
+	let _ = rustls::crypto::ring::default_provider().install_default();
 	let mut plugin = ExecutablePlugin::from_manifest_file("remote", include_str!("plugin.json"))?;
 	plugin.add_instances(|mut ctx, _| {
 		let runtime = Runtime::new()?;
