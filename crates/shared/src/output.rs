@@ -337,6 +337,8 @@ pub enum MessageContents {
 		/// The total amount that needs to be completed
 		total: u32,
 	},
+	/// A message that is scoped to a certain context, such as a remote server
+	Scoped(String, Box<MessageContents>),
 }
 
 impl MessageContents {
@@ -348,6 +350,11 @@ impl MessageContents {
 	/// Constructs an associated message
 	pub fn associated(property: MessageContents, value: MessageContents) -> Self {
 		Self::Associated(Box::new(property), Box::new(value))
+	}
+
+	/// Constructs a scoped message
+	pub fn scoped(scope: impl ToString, message: MessageContents) -> Self {
+		Self::Scoped(scope.to_string(), Box::new(message))
 	}
 
 	/// Constructs a list item message
@@ -378,6 +385,33 @@ impl MessageContents {
 			}
 			MessageContents::ListItem(item) => format!(" - {}", item.default_format()),
 			MessageContents::Progress { current, total } => format!("{current}/{total}"),
+			MessageContents::Scoped(scope, message) => {
+				format!("[{scope}] {}", message.default_format())
+			}
+		}
+	}
+
+	/// Applies a function to this message and all of its children
+	pub fn walk(&self, f: &mut impl FnMut(&MessageContents)) {
+		f(self);
+		match self {
+			MessageContents::Property(_, value)
+			| MessageContents::Package(_, value)
+			| MessageContents::ListItem(value)
+			| MessageContents::Scoped(_, value) => value.walk(f),
+			MessageContents::Associated(value1, value2) => {
+				value1.walk(f);
+				value2.walk(f);
+			}
+			_ => {}
+		}
+	}
+
+	/// Gets the scope of this message, if it has one
+	pub fn scope(&self) -> Option<&str> {
+		match self {
+			MessageContents::Scoped(scope, _) => Some(scope),
+			_ => None,
 		}
 	}
 }
