@@ -39,6 +39,7 @@ use nitrolaunch::{
 	io::{lock::Lockfile, paths::Paths},
 	plugin::PluginManager,
 };
+use rand::Rng;
 use rustls::{
 	ServerConfig,
 	pki_types::{CertificateDer, PrivateKeyDer, PrivatePkcs8KeyDer},
@@ -838,10 +839,11 @@ pub struct KillInstanceRequest {
 
 /// Generates a random access key
 pub fn generate_random_key() -> String {
-	let num: u128 = rand::random();
+	let mut big_num = [0u8; 64];
+	rand::thread_rng().fill(&mut big_num);
 
 	base64::engine::GeneralPurpose::new(&base64::alphabet::URL_SAFE, GeneralPurposeConfig::new())
-		.encode(num.to_ne_bytes())
+		.encode(big_num)
 		.replace("=", "")
 }
 
