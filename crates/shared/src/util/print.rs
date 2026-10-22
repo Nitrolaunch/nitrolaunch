@@ -36,6 +36,11 @@ impl ReplPrinter {
 		self.options.indent_str = make_indent(self.options.indent);
 	}
 
+	/// Get the current indent level of the printer
+	pub fn get_indent(&self) -> usize {
+		self.options.indent
+	}
+
 	/// Replace the current line with spaces
 	pub fn clearline(&self) {
 		if !self.options.verbose {
@@ -59,16 +64,34 @@ impl ReplPrinter {
 
 	/// Print text to the output, replacing the current line
 	pub fn print(&self, text: &str) {
+		self.print_impl(text, true);
+	}
+
+	/// Print text to the output, replacing the current line, but with no indent
+	pub fn print_no_indent(&self, text: &str) {
+		self.print_impl(text, false);
+	}
+
+	fn print_impl(&self, text: &str, indent: bool) {
 		if !self.options.verbose {
 			return;
 		}
 		let mut lock = std::io::stdout().lock();
 
 		// Write the text
-		let _ = write!(&mut lock, "\r{}{text}", self.options.indent_str);
+		if indent {
+			let _ = write!(&mut lock, "\r{}{text}", self.options.indent_str);
+		} else {
+			let _ = write!(&mut lock, "\r{text}");
+		}
 
 		// Calculate the amount written
-		let written = get_terminal_width(text) + self.options.indent_str.chars().count();
+		let indent_width = if indent {
+			self.options.indent_str.chars().count()
+		} else {
+			0
+		};
+		let written = get_terminal_width(text) + indent_width;
 
 		// Clear leftover characters from the last print
 		let chars_written = self.chars_written.load(Ordering::Relaxed);

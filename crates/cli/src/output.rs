@@ -14,7 +14,7 @@ use nitrolaunch::shared::io::config::IO_CONFIG;
 use nitrolaunch::shared::lang::translate::{TranslationKey, TranslationMap};
 use nitrolaunch::shared::manual_files::{self, ManualFile};
 use nitrolaunch::shared::output::{Message, MessageContents, MessageLevel, NitroOutput};
-use nitrolaunch::shared::util::print::ReplPrinter;
+use nitrolaunch::shared::util::print::{ReplPrinter, make_indent};
 use tokio::sync::broadcast;
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use tokio::task::JoinHandle;
@@ -327,7 +327,7 @@ impl OutputTask {
 					match ev {
 						Event::Print(text, level) => {
 							if level >= self.level {
-								self.display_text_impl(&text);
+								self.display_text_impl(&text, None);
 							}
 							let _ = self.logger.log_message(MessageContents::Simple(text), level);
 						}
@@ -478,7 +478,10 @@ impl OutputTask {
 			.log_message(message.contents.clone(), message.level);
 
 		if message.level >= self.level {
-			let is_error = matches!(&message.contents, MessageContents::Error(..));
+			let mut is_error = false;
+			message
+				.contents
+				.walk(&mut |x| is_error |= matches!(x, MessageContents::Error(..)));
 
 			/*
 				If the message is an error it will span multiple lines and break the ReplPrinter,
@@ -488,13 +491,17 @@ impl OutputTask {
 				self.end_process();
 			}
 
-			let is_success = matches!(message.contents, MessageContents::Success(..));
+			let mut is_success = false;
+			message
+				.contents
+				.walk(&mut |x| is_success |= matches!(x, MessageContents::Success(..)));
 			if self.in_process {
 				self.loading_spinner_message = Some(message.contents);
 				if is_success {
 					self.update_spinner();
 				}
 			} else {
+				let scope = message.contents.scope().map(|x| x.to_string());
 				let message_contents = if is_success {
 					format!(
 						"{} {}",
@@ -509,16 +516,21 @@ impl OutputTask {
 				} else {
 					message_contents
 				};
-				self.display_text_impl(&message_contents);
+				self.display_text_impl(&message_contents, scope);
 			}
 		}
 	}
 
-	fn display_text_impl(&mut self, text: &str) {
-		if self.in_process {
-			self.printer.print(text);
+	fn display_text_impl(&mut self, text: &str, scope: Option<String>) {
+		if let Some(scope) = scope {
+			let indent = make_indent(self.printer.get_indent());
+			let message = cformat!("[<b>{scope}</>] {indent}{text}");
+			self.printer.print_no_indent(&message);
 		} else {
-			self.printer.print(text);
+			self.printer.print(&text);
+		};
+
+		if !self.in_process {
 			self.printer.newline();
 		}
 	}
@@ -533,14 +545,17 @@ impl OutputTask {
 			self.loading_spinner_stage = 0;
 		}
 
-		let spinner = if let MessageContents::Success(..) = &message {
+		let mut is_success = false;
+		message.walk(&mut |x| is_success |= matches!(x, MessageContents::Success(..)));
+		let spinner = if is_success {
 			format_loading_spinner(4)
 		} else {
 			format_loading_spinner(self.loading_spinner_stage)
 		};
 
+		let scope = message.scope().map(|x| x.to_string());
 		let message = format!("{spinner} {}", format_message(message.clone()));
-		self.display_text_impl(&message);
+		self.display_text_impl(&message, scope);
 	}
 }
 
@@ -614,6 +629,8 @@ fn format_message(contents: MessageContents) -> String {
 			);
 			cformat!("<s>[</><g>{}</g><k!>{}</><s>]</>", full, empty)
 		}
+		// The scope indicator is handled in the display function
+		MessageContents::Scoped(_, message) => format_message(*message),
 		contents => contents.default_format(),
 	}
 }

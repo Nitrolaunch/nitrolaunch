@@ -299,7 +299,8 @@ impl RemoteOutputListener {
 	pub async fn apply_events(&mut self, events: Vec<OutputEvent>, o: &mut impl NitroOutput) {
 		for event in events {
 			match event {
-				OutputEvent::Message(message) => {
+				OutputEvent::Message(mut message) => {
+					message.contents = MessageContents::scoped("remote", message.contents);
 					o.display_message(message);
 				}
 				OutputEvent::StartProcess => o.start_process(),
