@@ -145,6 +145,13 @@ impl Component for ControlInput {
 					label().text("Not supported yet").into_element()
 				}
 			}
+			ControlSchema::List { fields, is_map } => ObjectListControl {
+				fields: fields.clone().into(),
+				is_map: *is_map,
+				value,
+				on_set,
+			}
+			.into_element(),
 			ControlSchema::CopyButton { text } => icon_text_button("copy", "Click to copy", &theme)
 				.border_fill(theme.panel_border)
 				.focus_border_fill(theme.panel_border)
@@ -168,6 +175,238 @@ impl Component for ControlInput {
 				this.tip(&front_state, self.control.description.as_deref().unwrap())
 			})
 			.into_element()
+	}
+}
+
+#[derive(PartialEq)]
+struct ObjectListControl {
+	fields: Arc<[Control]>,
+	is_map: bool,
+	value: Value,
+	on_set: EventHandler<Value>,
+}
+
+impl Component for ObjectListControl {
+	fn render(&self) -> impl IntoElement {
+		let theme = use_theme();
+
+		let mut values = match (&self.value, self.is_map) {
+			(Value::Array(values), false) if values.iter().all(Value::is_object) => values
+				.iter()
+				.map(|value| (None, value.as_object().unwrap().clone()))
+				.collect::<Vec<_>>(),
+			(Value::Object(values), true) if values.values().all(Value::is_object) => values
+				.iter()
+				.map(|(key, value)| (Some(key.clone()), value.as_object().unwrap().clone()))
+				.collect::<Vec<_>>(),
+			_ => Vec::new(),
+		};
+
+		let on_set = self.on_set.clone();
+		let is_map = self.is_map;
+		let current_value = self.value.clone();
+		let add = icon_text_button("plus", "Add", &theme)
+			.border_fill(theme.panel_border)
+			.focus_border_fill(theme.panel_border)
+			.on_press(move |_| {
+				let value = serde_json::Map::default();
+				if is_map {
+					let mut map = match &current_value {
+						Value::Object(map) if map.values().all(Value::is_object) => map.clone(),
+						_ => serde_json::Map::new(),
+					};
+					let mut key = "new".to_string();
+					let mut suffix = 1;
+					if let Value::Object(current) = &current_value {
+						while current.contains_key(&key) {
+							key = format!("new-{suffix}");
+							suffix += 1;
+						}
+					}
+					map.insert(key, Value::Object(value));
+					on_set.call(Value::Object(map));
+				} else {
+					let mut values = match &current_value {
+						Value::Array(values) if values.iter().all(Value::is_object) => {
+							values.clone()
+						}
+						_ => Vec::new(),
+					};
+					values.push(Value::Object(value));
+					on_set.call(Value::Array(values));
+				}
+			});
+
+		let rows = values.drain(..).enumerate().map(|(index, (key, value))| {
+			ObjectListRow {
+				fields: self.fields.clone(),
+				index,
+				key,
+				is_map: self.is_map,
+				value: self.value.clone(),
+				on_set: self.on_set.clone(),
+				row: value,
+			}
+			.into_element()
+		});
+
+		rect()
+			.width(Size::fill())
+			.spacing(theme.gap2)
+			.children(rows)
+			.child(add)
+	}
+}
+
+struct ObjectListRow {
+	fields: Arc<[Control]>,
+	index: usize,
+	key: Option<String>,
+	is_map: bool,
+	value: Value,
+	on_set: EventHandler<Value>,
+	row: serde_json::Map<String, Value>,
+}
+
+impl PartialEq for ObjectListRow {
+	fn eq(&self, other: &Self) -> bool {
+		self.fields == other.fields
+			&& self.index == other.index
+			&& self.key == other.key
+			&& self.is_map == other.is_map
+			&& self.value == other.value
+			&& self.row == other.row
+	}
+}
+
+impl Component for ObjectListRow {
+	fn render(&self) -> impl IntoElement {
+		let theme = use_theme();
+		let is_map = self.is_map;
+		let index = self.index;
+		let fields = self.fields.clone();
+		let original_value = self.value.clone();
+		let current_key = self.key.clone();
+		let row = self.row.clone();
+		let row_config = ControlledConfig::new(row.clone());
+		let row_on_set = self.on_set.clone();
+		let child_controls = fields.iter().map(|control| {
+			let id = control.id.clone();
+			let mut child_row = row.clone();
+			let child_on_set = row_on_set.clone();
+			let child_original_value = original_value.clone();
+			let child_key = current_key.clone();
+			ControlInput {
+				control: control.clone(),
+				value: row_config.get(&id).cloned().unwrap_or(Value::Null),
+				on_set: EventHandler::new(move |new| {
+					set_value(&mut child_row, &id, new);
+					child_on_set.call(replace_row(
+						&child_original_value,
+						is_map,
+						index,
+						child_key.as_deref(),
+						child_row.clone(),
+					));
+				}),
+			}
+			.into_element()
+		});
+		let remove_value = original_value.clone();
+		let remove_key = current_key.clone();
+		let remove_on_set = self.on_set.clone();
+		let remove = icon_button("trash", &theme).on_press(move |_| {
+			if is_map {
+				let mut values = remove_value.as_object().cloned().unwrap_or_default();
+				if let Some(key) = remove_key.as_deref() {
+					values.remove(key);
+				}
+				remove_on_set.call(Value::Object(values));
+			} else {
+				let values = remove_value.as_array().cloned().unwrap_or_default();
+				remove_on_set.call(Value::Array(
+					values
+						.into_iter()
+						.enumerate()
+						.filter_map(|(row_index, value)| (row_index != index).then_some(value))
+						.collect(),
+				));
+			}
+		});
+		let key_state = use_state(|| self.key.clone().unwrap_or_default());
+		let key_on_set = self.on_set.clone();
+		let value = self.value.clone();
+		let old_key = self.key.clone();
+
+		let key_input = TextInput::new(key_state).on_change(move |new_key: String| {
+			if !is_map || Some(new_key.clone()) == old_key {
+				return;
+			}
+			if let (Some(old_key), Value::Object(values)) = (&old_key, &value) {
+				let mut values = values.clone();
+				if let Some(value) = values.remove(old_key) {
+					values.insert(new_key, value);
+					key_on_set.call(Value::Object(values));
+				}
+			}
+		});
+
+		rect()
+			.width(Size::fill())
+			.padding(Gaps::new(theme.gap2, theme.gap2, 0.0, theme.gap2))
+			.background(theme.panel)
+			.border(theme.border(theme.panel_border))
+			.corner_radius(theme.round)
+			.spacing(theme.gap)
+			.child(
+				rect()
+					.width(Size::fill())
+					.cont()
+					.cross_align(Alignment::Center)
+					.maybe(self.is_map, |this| {
+						this.child(
+							rect()
+								.horizontal()
+								.cross_align(Alignment::Center)
+								.color(theme.fg3)
+								.child("Unique Key"),
+						)
+						.child(rect().width(Size::flex(1.0)).child(key_input))
+					})
+					.maybe(!self.is_map, |this| {
+						this.child(rect().width(Size::flex(1.0)))
+					})
+					.child(remove),
+			)
+			.child(rect().children(child_controls))
+	}
+}
+
+fn set_value(data: &mut serde_json::Map<String, Value>, key: &str, value: Value) {
+	let mut config = ControlledConfig::new(std::mem::take(data));
+	config.set(key, value);
+	*data = config.into_data();
+}
+
+fn replace_row(
+	value: &Value,
+	is_map: bool,
+	index: usize,
+	key: Option<&str>,
+	row: serde_json::Map<String, Value>,
+) -> Value {
+	if is_map {
+		let mut values = value.as_object().cloned().unwrap_or_default();
+		if let Some(key) = key {
+			values.insert(key.to_string(), Value::Object(row));
+		}
+		Value::Object(values)
+	} else {
+		let mut values = value.as_array().cloned().unwrap_or_default();
+		if let Some(value) = values.get_mut(index) {
+			*value = Value::Object(row);
+		}
+		Value::Array(values)
 	}
 }
 
@@ -278,6 +517,10 @@ pub struct ControlledConfig {
 }
 
 impl ControlledConfig {
+	pub fn new(data: serde_json::Map<String, Value>) -> Self {
+		Self { data }
+	}
+
 	pub fn update(&mut self, new_data: serde_json::Map<String, Value>) {
 		self.data = new_data;
 	}
