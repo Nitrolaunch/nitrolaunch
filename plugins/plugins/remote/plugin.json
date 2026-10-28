@@ -48,6 +48,7 @@
 					"name": "Remotes",
 					"description": "Remote control servers to connect to",
 					"section": "Remote",
+					"icon": "globe",
 					"schema": {
 						"type": "list",
 						"fields": [
@@ -55,6 +56,7 @@
 								"id": "id",
 								"name": "ID",
 								"description": "The ID to use for the remote server. Impacts instance and template IDs.",
+								"icon": "hashtag",
 								"schema": {
 									"type": "string"
 								}
@@ -63,6 +65,7 @@
 								"id": "address",
 								"name": "Address",
 								"description": "The address of the remote server, without protocol or port",
+								"icon": "text",
 								"schema": {
 									"type": "string"
 								}
@@ -71,6 +74,7 @@
 								"id": "key",
 								"name": "Key",
 								"description": "The key to use for authentication with the remote server",
+								"icon": "lock",
 								"schema": {
 									"type": "string"
 								}
