@@ -1,4 +1,8 @@
-use std::{sync::Arc, time::Duration};
+use std::sync::Arc;
+
+use nitrolaunch::instance::operations::{
+	LOCAL_INSTANCE_OUTPUT_UPDATE_RATE, REMOTE_INSTANCE_OUTPUT_UPDATE_RATE,
+};
 
 use crate::{
 	components::console::{Console, ConsoleImpl},
@@ -13,15 +17,19 @@ use crate::{
 #[derive(PartialEq)]
 pub struct InstanceConsole {
 	pub id: String,
+	pub is_remote: bool,
 }
 
 impl Component for InstanceConsole {
 	fn render(&self) -> impl IntoElement {
 		let back_state = use_consume::<BackState>();
 		let selected_log = use_state::<Option<String>>(|| None);
+		let char_count = use_state::<u64>(|| 0);
+		let mut total_content = use_state::<Option<Arc<str>>>(|| None);
 		let contents_query = use_query(FetchInstanceOutput::new(
 			self.id.clone(),
 			selected_log.read().clone(),
+			*char_count.read(),
 			back_state.clone(),
 		));
 		let logs = use_query(Query::new(
@@ -30,52 +38,43 @@ impl Component for InstanceConsole {
 		));
 		let write_input = use_mutation(Mutation::new(WriteInstanceInput::new(back_state.clone())));
 
-		let back_state2 = back_state.clone();
-		let id2 = self.id.clone();
-		let contents_query2 = contents_query;
-		use_future(move || {
-			let back_state2 = back_state2.clone();
-			let id2 = id2.clone();
-			let contents_query2 = contents_query2;
-			async move {
-				let mut last_modified = None;
-				loop {
-					tokio::time::sleep(Duration::from_millis(100)).await;
-
-					let Some(entry) = back_state2.running_instances.get_entry(&id2, None).await
-					else {
-						continue;
-					};
-					let Some(stdout_file) = &entry.stdout_file else {
-						continue;
-					};
-					let path = back_state2.paths.internal.join("stdio").join(stdout_file);
-					let Ok(metadata) = tokio::fs::metadata(&path).await else {
-						continue;
-					};
-
-					let modified = metadata.modified().ok();
-					if last_modified != modified {
-						last_modified = modified;
-						contents_query2.invalidate();
-					}
-				}
+		let update_rate = if self.is_remote {
+			REMOTE_INSTANCE_OUTPUT_UPDATE_RATE
+		} else {
+			LOCAL_INSTANCE_OUTPUT_UPDATE_RATE
+		};
+		let contents_query2 = contents_query.clone();
+		use_future(move || async move {
+			loop {
+				tokio::time::sleep(update_rate).await;
+				contents_query2.invalidate();
 			}
 		});
-
-		let contents = contents_query
-			.read()
-			.state()
-			.ok()
-			.cloned()
-			.unwrap_or_default()
-			.map(PtrEq);
+		let contents_query2 = contents_query.clone();
+		let mut char_count2 = char_count.clone();
+		use_side_effect(move || {
+			let new_content = contents_query2
+				.read()
+				.state()
+				.ok()
+				.cloned()
+				.flatten()
+				.unwrap_or_default();
+			let combined = total_content
+				.peek()
+				.as_ref()
+				.unwrap_or(&Arc::default())
+				.as_ref()
+				.to_string() + &new_content;
+			total_content.set(Some(combined.into()));
+			*char_count2.write() += new_content.len() as u64;
+		});
 
 		let logs = logs.read().state().ok().cloned().unwrap_or_default();
 
 		let id = self.id.clone();
 		let console = Impl {
-			contents,
+			contents: total_content.read().cloned().map(PtrEq),
 			log_files: PtrEq(logs),
 			selected_log,
 			is_loading: !contents_query.read().state().is_ok(),
