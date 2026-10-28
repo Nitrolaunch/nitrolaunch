@@ -33,6 +33,52 @@
 		},
 		"subcommand": {
 			"executable": "${PLUGIN_DIR}/nitro_plugin_remote"
+		},
+		"add_plugin_config_controls": {
+			"constant": [
+				{
+					"id": "remote",
+					"name": "Remote",
+					"schema": {
+						"type": "section"
+					}
+				},
+				{
+					"id": "remotes",
+					"name": "Remotes",
+					"description": "Remote control servers to connect to",
+					"section": "Remote",
+					"schema": {
+						"type": "list",
+						"fields": [
+							{
+								"id": "id",
+								"name": "ID",
+								"description": "The ID to use for the remote server. Impacts instance and template IDs.",
+								"schema": {
+									"type": "string"
+								}
+							},
+							{
+								"id": "address",
+								"name": "Address",
+								"description": "The address of the remote server, without protocol or port",
+								"schema": {
+									"type": "string"
+								}
+							},
+							{
+								"id": "key",
+								"name": "Key",
+								"description": "The key to use for authentication with the remote server",
+								"schema": {
+									"type": "string"
+								}
+							}
+						]
+					}
+				}
+			]
 		}
 	},
 	"subcommands": {
