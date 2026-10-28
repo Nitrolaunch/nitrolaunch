@@ -196,3 +196,13 @@ hook_interface!(
 	ReplaceInstanceUpdate
 );
 hook_interface!(kill_instance, "kill_instance", KillInstance);
+hook_interface!(
+	get_instance_output,
+	"get_instance_output",
+	GetInstanceOutput
+);
+hook_interface!(
+	send_instance_input,
+	"send_instance_input",
+	SendInstanceInput
+);

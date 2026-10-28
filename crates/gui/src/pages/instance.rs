@@ -351,6 +351,7 @@ impl Component for InstancePage {
 			.into_element(),
 			Tab::Console => InstanceConsole {
 				id: self.id.clone(),
+				is_remote: config.read().is_remote,
 			}
 			.into_element(),
 		};
