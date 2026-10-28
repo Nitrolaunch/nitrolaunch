@@ -33,7 +33,7 @@ desktop_template = "assets/Nitrolaunch.desktop"
 
 [features]
 devtools = ["freya/devtools"]
-profiler = ["freya/performance"]
+profiler = ["freya/metrics"]
 
 [dependencies]
 anyhow = { workspace = true }

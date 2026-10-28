@@ -17,7 +17,10 @@ use freya::{
 	},
 	winit::window::CursorIcon,
 };
-use freya_core::style::{corner_radius::CornerRadius, shadow::Shadow};
+use freya_core::{
+	integration::{BackgroundExt, DecorationExt, EffectExt},
+	style::{corner_radius::CornerRadius, shadow::Shadow},
+};
 use reqwest::Url;
 
 use crate::{
@@ -63,7 +66,7 @@ pub fn button(theme: &Theme) -> Button {
 		.border_fill(Color::TRANSPARENT)
 		.corner_radius(theme.round)
 		.padding(theme.gap)
-		.cursor_icon(CursorIcon::Pointer)
+		.cursor(CursorIcon::Pointer)
 }
 
 pub fn icon_button(icon: &str, theme: &Theme) -> Button {
@@ -136,7 +139,16 @@ pub trait CustomStyles {
 	fn clickable(self) -> Self;
 }
 
-impl<T: ContainerSizeExt + StyleExt + ContainerWithContentExt + TextStyleExt> CustomStyles for T {
+impl<
+	T: ContainerSizeExt
+		+ StyleExt
+		+ ContainerWithContentExt
+		+ TextStyleExt
+		+ DecorationExt
+		+ BackgroundExt
+		+ EffectExt,
+> CustomStyles for T
+{
 	fn fill(self) -> Self {
 		self.width(Size::fill()).height(Size::fill())
 	}
@@ -228,7 +240,7 @@ pub trait FancyBorderExt {
 
 impl FancyBorderExt for Rect {
 	fn shiny_border(mut self, theme: &Theme) -> Self {
-		let radius = self.get_style().corner_radius;
+		let radius = self.style_mut().corner_radius;
 		self.child(
 			rect()
 				.expanded()

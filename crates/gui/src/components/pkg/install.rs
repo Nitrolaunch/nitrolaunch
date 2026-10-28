@@ -245,7 +245,7 @@ impl Component for PackageInstallModal {
 
 					let on_close = on_close.clone();
 					let req = req.clone();
-					spawn_forever(async move {
+					spawn_in_window(async move {
 						install_package.mutate_async((req.clone(), location)).await;
 						on_close.call(());
 					});

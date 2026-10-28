@@ -186,7 +186,7 @@ impl<T: PartialEq + Clone + 'static> Component for InlineSelectOption<T> {
 			.maybe(
 				self.is_selected && self.option.selected_colorway.is_some(),
 				|mut this| {
-					this.get_style().borders.clear();
+					this.style_mut().borders.clear();
 					this.colorway(self.option.selected_colorway.unwrap(), &theme)
 				},
 			)

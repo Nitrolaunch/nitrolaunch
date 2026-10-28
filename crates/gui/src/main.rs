@@ -142,7 +142,7 @@ impl Component for App {
 							.opacity(0.2)
 							.image_cover(ImageCover::Center)
 							.aspect_ratio(AspectRatio::Max)
-							.child(rect().expanded().blur(theme.background_image_blur)),
+							.child(rect().expanded().backdrop_blur(theme.background_image_blur)),
 					),
 			)
 		} else {

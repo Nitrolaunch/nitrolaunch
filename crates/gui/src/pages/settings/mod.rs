@@ -422,7 +422,7 @@ mod debug {
 						.background(Color::BLUE)
 						.on_press(move |_| {
 							let back_state = back_state.clone();
-							spawn_forever(async move {
+							spawn_in_window(async move {
 								let mut o = back_state.output();
 								o.set_task(Task::Opening);
 								tokio::time::sleep(std::time::Duration::from_secs(5)).await;

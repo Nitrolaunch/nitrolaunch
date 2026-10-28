@@ -176,7 +176,7 @@ impl Component for InstanceTransferModal {
 			let mode = mode.clone();
 			let front_state2 = front_state2.clone();
 			let exporting_instance = exporting_instance.clone();
-			spawn_forever(async move {
+			spawn_in_window(async move {
 				match mode {
 					InstanceTransferMode::Import => {
 						import_mutation

@@ -20,7 +20,7 @@ pub fn icon(icon: &str, size: f32) -> SvgViewer {
 
 	icon.width(Size::px(size))
 		.height(Size::px(size))
-		.parallel(true)
+		.async_rasterization(true)
 	// Fix pop-in
 	// .maybe(cfg!(debug_assertions), |this| this.color(Color::WHITE))
 }

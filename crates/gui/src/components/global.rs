@@ -72,7 +72,7 @@ impl Component for Global {
 			radio.read();
 			let data = back_state.data();
 			let platform = Platform::get();
-			platform.set_custom_scale_factor(data.zoom);
+			platform.current_window().set_custom_scale_factor(data.zoom);
 		});
 
 		let is_onboarding = matches!(front_state.read().modal(), Some(ModalType::Onboarding))
