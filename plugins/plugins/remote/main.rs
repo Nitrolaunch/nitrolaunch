@@ -247,6 +247,44 @@ fn main() -> anyhow::Result<()> {
 		Ok(())
 	})?;
 
+	plugin.delete_instance(|ctx, arg| {
+		let (remote_id, instance_id) = parse_id(&arg.id).context("Invalid remote instance ID")?;
+		let plugin_config = parse_plugin_config(ctx.get_custom_config())?;
+		let remote = plugin_config
+			.remotes
+			.into_iter()
+			.find(|x| x.id == remote_id)
+			.context("Remote does not exist")?;
+		let dir = get_dir(&ctx.get_data_dir()?);
+		let client = RemoteClient::new(remote, &dir);
+
+		let runtime = Runtime::new()?;
+		runtime
+			.block_on(client.delete_instance(&dir, &instance_id))
+			.context("Failed to delete instance on remote")?;
+
+		Ok(())
+	})?;
+
+	plugin.delete_template(|ctx, arg| {
+		let (remote_id, template_id) = parse_id(&arg.id).context("Invalid remote template ID")?;
+		let plugin_config = parse_plugin_config(ctx.get_custom_config())?;
+		let remote = plugin_config
+			.remotes
+			.into_iter()
+			.find(|x| x.id == remote_id)
+			.context("Remote does not exist")?;
+		let dir = get_dir(&ctx.get_data_dir()?);
+		let client = RemoteClient::new(remote, &dir);
+
+		let runtime = Runtime::new()?;
+		runtime
+			.block_on(client.delete_template(&dir, &template_id))
+			.context("Failed to delete template on remote")?;
+
+		Ok(())
+	})?;
+
 	plugin.subcommand(|ctx, arg| {
 		let Some(subcommand) = arg.args.first() else {
 			return Ok(());
