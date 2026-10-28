@@ -298,6 +298,7 @@ fn main() -> anyhow::Result<()> {
 
 		let runtime = Runtime::new()?;
 		let mut o = Simple(MessageLevel::Important);
+		let dir = get_dir(&ctx.get_data_dir()?);
 
 		match cli.subcommand {
 			Subcommand::Start => {
@@ -305,12 +306,59 @@ fn main() -> anyhow::Result<()> {
 				runtime.block_on(server::run(&paths, &mut o))?;
 			}
 			Subcommand::Key { subcommand } => match subcommand {
-				KeySubcommand::Add { permissions } => {
-					let dir = get_dir(&ctx.get_data_dir()?);
+				KeySubcommand::List => {
+					let settings = server::RemoteSettings::open(&dir).unwrap_or_default();
+					for key in settings.keys() {
+						let perms = if key.permissions.is_empty() {
+							"all".to_string()
+						} else {
+							key.permissions
+								.iter()
+								.map(|p| p.to_string())
+								.collect::<Vec<_>>()
+								.join(", ")
+						};
+						o.display(MessageContents::list_item(MessageContents::property(
+							&key.id,
+							perms.into(),
+						)));
+					}
+				}
+				KeySubcommand::Add { id, permissions } => {
 					let mut settings = server::RemoteSettings::open(&dir).unwrap_or_default();
-					let key = settings.add_key(permissions);
+					settings.add_key(id, permissions);
 					settings.save(&dir)?;
-					o.display(MessageContents::Success(format!("Added key: {key}")));
+					o.display(MessageContents::Success(format!(
+						"Added key. View its key string with the `key show` command."
+					)));
+				}
+				KeySubcommand::Grant { id, permissions } => {
+					let mut settings = server::RemoteSettings::open(&dir).unwrap_or_default();
+					settings.grant_to_key(&id, permissions);
+					settings.save(&dir)?;
+					o.display(MessageContents::Success(format!(
+						"Granted permissions to key {id}"
+					)));
+				}
+				KeySubcommand::Revoke { id, permissions } => {
+					let mut settings = server::RemoteSettings::open(&dir).unwrap_or_default();
+					settings.revoke_from_key(&id, permissions);
+					settings.save(&dir)?;
+					o.display(MessageContents::Success(format!(
+						"Revoked permissions from key {id}"
+					)));
+				}
+				KeySubcommand::Show { id } => {
+					let settings = server::RemoteSettings::open(&dir).unwrap_or_default();
+					if let Some(key_str) = settings.show_key(&id) {
+						o.display(MessageContents::Success(format!(
+							"Key string for key {id}: {key_str}"
+						)));
+					} else {
+						o.display(MessageContents::Error(format!(
+							"Key with ID {id} not found"
+						)));
+					}
 				}
 			},
 			Subcommand::Sync { remote } => {
@@ -365,10 +413,34 @@ enum Subcommand {
 
 #[derive(Debug, clap::Subcommand)]
 enum KeySubcommand {
+	#[command(about = "List all remote access keys")]
+	#[command(alias = "ls")]
+	List,
 	#[command(about = "Add a new remote access key to the server")]
 	Add {
-		#[arg(long, help = "The permissions for the key")]
+		/// A unique identifier for the key. Used to reference the key later.
+		id: String,
+		/// The permissions for the key. Can be any of 'query', 'run', 'edit', 'update', or 'delete'. Leave empty to allow all permissions.
 		permissions: Vec<KeyPermission>,
+	},
+	#[command(about = "Add permissions to an existing key")]
+	Grant {
+		/// The key to modify
+		id: String,
+		/// The permissions to add to the key. Can be any of 'query', 'run', 'edit', 'update', or 'delete'
+		permissions: Vec<KeyPermission>,
+	},
+	#[command(about = "Remove permissions from an existing key")]
+	Revoke {
+		/// The key to modify
+		id: String,
+		/// The permissions to remove from the key. Can be any of 'query', 'run', 'edit', 'update', or 'delete'
+		permissions: Vec<KeyPermission>,
+	},
+	#[command(about = "Show the secret key string for the given key")]
+	Show {
+		/// The key to show
+		id: String,
 	},
 }
 
