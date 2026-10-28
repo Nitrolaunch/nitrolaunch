@@ -784,23 +784,47 @@ impl RemoteSettings {
 		None
 	}
 
-	pub fn add_key(&mut self, permissions: Vec<KeyPermission>) -> String {
-		let id = generate_random_key();
+	pub fn keys(&self) -> &Vec<Key> {
+		&self.keys
+	}
+
+	pub fn add_key(&mut self, id: String, permissions: Vec<KeyPermission>) {
+		let key = generate_random_key();
 		let key = Key {
-			id: id.clone(),
+			id,
+			key,
 			permissions,
 		};
 		self.keys.push(key);
-		id
+	}
+
+	pub fn grant_to_key(&mut self, key_id: &str, permissions: Vec<KeyPermission>) {
+		if let Some(key) = self.keys.iter_mut().find(|k| k.id == key_id) {
+			key.permissions.extend(permissions);
+		}
+	}
+
+	pub fn revoke_from_key(&mut self, key_id: &str, permissions: Vec<KeyPermission>) {
+		if let Some(key) = self.keys.iter_mut().find(|k| k.id == key_id) {
+			key.permissions.retain(|p| !permissions.contains(p));
+		}
+	}
+
+	pub fn show_key(&self, key_id: &str) -> Option<&str> {
+		self.keys
+			.iter()
+			.find(|k| k.id == key_id)
+			.map(|k| k.key.as_str())
 	}
 }
 
 /// A key that can be used to access the remote server
 #[derive(Serialize, Deserialize, Clone)]
-struct Key {
-	id: String,
+pub struct Key {
+	pub id: String,
+	key: String,
 	/// The permissions that this key has. If empty, the key has all permissions.
-	permissions: Vec<KeyPermission>,
+	pub permissions: Vec<KeyPermission>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Copy, PartialEq, Eq, Debug, clap::ValueEnum)]
