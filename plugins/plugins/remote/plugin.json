@@ -28,6 +28,9 @@
 		"delete_instance": {
 			"executable": "${PLUGIN_DIR}/nitro_plugin_remote"
 		},
+		"delete_template": {
+			"executable": "${PLUGIN_DIR}/nitro_plugin_remote"
+		},
 		"kill_instance": {
 			"executable": "${PLUGIN_DIR}/nitro_plugin_remote"
 		},

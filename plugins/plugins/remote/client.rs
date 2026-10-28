@@ -228,6 +228,38 @@ impl RemoteClient {
 
 		Ok(())
 	}
+
+	/// Deletes an instance on the remote server
+	pub async fn delete_instance(&self, dir: &Path, id: &str) -> anyhow::Result<()> {
+		let client = self.client().await?;
+		delete(&format!("instances/{id}"), &self.settings, &client).await?;
+
+		// Update cache
+		let remote_dir = get_remote_data_dir(dir, &self.settings.id);
+		let path = get_sync_cache_path(&remote_dir);
+		if let Ok(mut data) = json_from_file::<SyncResponse>(path.clone()) {
+			data.instances.remove(id);
+			let _ = json_to_file(path, &data);
+		}
+
+		Ok(())
+	}
+
+	/// Deletes a template on the remote server
+	pub async fn delete_template(&self, dir: &Path, id: &str) -> anyhow::Result<()> {
+		let client = self.client().await?;
+		delete(&format!("templates/{id}"), &self.settings, &client).await?;
+
+		// Update cache
+		let remote_dir = get_remote_data_dir(dir, &self.settings.id);
+		let path = get_sync_cache_path(&remote_dir);
+		if let Ok(mut data) = json_from_file::<SyncResponse>(path.clone()) {
+			data.templates.remove(id);
+			let _ = json_to_file(path, &data);
+		}
+
+		Ok(())
+	}
 }
 
 /// Settings on the client for a single remote server
@@ -325,6 +357,20 @@ async fn post(
 	client
 		.post(url)
 		.body(body.unwrap_or_default())
+		.header("Authorization", &settings.key)
+		.send()
+		.await
+		.context("Failed to send request")?
+		.error_for_status()
+		.context("Server reported an error")?;
+
+	Ok(())
+}
+
+async fn delete(subpath: &str, settings: &RemoteSettings, client: &Client) -> anyhow::Result<()> {
+	let url = format_url(settings, subpath);
+	client
+		.delete(url)
 		.header("Authorization", &settings.key)
 		.send()
 		.await

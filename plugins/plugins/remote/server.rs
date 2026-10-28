@@ -335,6 +335,24 @@ async fn handle_inner(
 				Ok(ise())
 			}
 		}
+	} else if path.starts_with("/instances/") && method == Method::DELETE {
+		let id = path.trim_start_matches("/instances/").to_string();
+		match delete_instance(state, &id).await {
+			Ok(response) => Ok(response),
+			Err(e) => {
+				o.display(MessageContents::Error(format!("{e:?}")));
+				Ok(ise())
+			}
+		}
+	} else if path.starts_with("/templates/") && method == Method::DELETE {
+		let id = path.trim_start_matches("/templates/").to_string();
+		match delete_template(state, &id).await {
+			Ok(response) => Ok(response),
+			Err(e) => {
+				o.display(MessageContents::Error(format!("{e:?}")));
+				Ok(ise())
+			}
+		}
 	} else {
 		Ok(Response::builder()
 			.status(404)
@@ -621,6 +639,39 @@ async fn configure_base_template(
 	apply_modifications_and_write(
 		&mut raw_config,
 		vec![],
+		&state.paths,
+		&state.plugins,
+		&mut state.o,
+	)
+	.await?;
+
+	Response::builder()
+		.status(200)
+		.body(Full::new(Bytes::from("OK")))
+		.context("Failed to build response")
+}
+
+async fn delete_instance(mut state: State, id: &str) -> anyhow::Result<Response<Full<Bytes>>> {
+	let config = state.config().await?;
+	let instance = config
+		.instances
+		.get(&InstanceID::from(id))
+		.context("Instance does not exist")?;
+	instance
+		.delete(&state.paths, &state.plugins, &mut state.o)
+		.await?;
+
+	Response::builder()
+		.status(200)
+		.body(Full::new(Bytes::from("OK")))
+		.context("Failed to build response")
+}
+
+async fn delete_template(mut state: State, id: &str) -> anyhow::Result<Response<Full<Bytes>>> {
+	let mut raw_config = state.raw_config().await?;
+	apply_modifications_and_write(
+		&mut raw_config,
+		vec![ConfigModification::RemoveTemplate(id.to_string().into())],
 		&state.paths,
 		&state.plugins,
 		&mut state.o,
