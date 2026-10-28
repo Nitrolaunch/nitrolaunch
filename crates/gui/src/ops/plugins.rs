@@ -1,13 +1,18 @@
 use anyhow::Context;
 use itertools::Itertools;
 use nitrolaunch::{
+	config::plugin::PluginsConfig,
 	config_crate::ConfigKind,
+	core::io::{json_from_file, json_to_file_pretty},
 	plugin::{PluginManager, install::get_verified_plugins},
 	plugin_crate::plugin::PluginMetadata,
 	shared::output::{MessageContents, NitroOutput},
 };
 
-use crate::{ops::task::Task, prelude::*, simple_mutation, simple_query};
+use crate::{
+	components::input::control::ControlledConfig, ops::task::Task, prelude::*, simple_mutation,
+	simple_query,
+};
 
 #[rustfmt::skip]
 simple_query! {
@@ -302,5 +307,56 @@ simple_mutation!(
 			.register_task(Task::InstallDefaultPlugins, tokio::spawn(task));
 
 		async { Ok(()) }
+	}
+);
+
+simple_query!(
+	name = FetchPluginConfig,
+	ok = ControlledConfig,
+	err = anyhow::Error,
+	keys = String,
+	fn run(&self, keys: &Self::Keys) -> impl Future<Output = Result<Self::Ok, Self::Err>> {
+		let back_state = self.back_state.clone();
+		let plugin_id = keys.clone();
+
+		query_spawn(back_state.0.clone(), async move {
+			back_state.reload_plugins().await;
+			let config = back_state
+				.plugins
+				.get_lock()
+				.await
+				.configs
+				.iter()
+				.find(|x| x.id == plugin_id)
+				.and_then(|x| x.custom_config.clone())
+				.unwrap_or(serde_json::Value::Object(Default::default()));
+			if let serde_json::Value::Object(object) = config {
+				Ok(ControlledConfig::new(object))
+			} else {
+				Ok(ControlledConfig::new(serde_json::Map::new()))
+			}
+		})
+	}
+);
+
+simple_mutation!(
+	name = SavePluginConfig,
+	ok = (),
+	err = anyhow::Error,
+	keys = (String, serde_json::Map<String, serde_json::Value>),
+	fn run(&self, keys: &Self::Keys) -> impl Future<Output = Result<Self::Ok, Self::Err>> {
+		let back_state = self.back_state.clone();
+		let (plugin_id, plugin_config) = keys.clone();
+
+		query_spawn(back_state.0.clone(), async move {
+			let config_path = PluginManager::get_config_path(&back_state.paths);
+			let mut config: PluginsConfig = json_from_file(&config_path)?;
+			config.config.insert(
+				plugin_id,
+				serde_json::Value::Object(plugin_config),
+			);
+			json_to_file_pretty(config_path, &config)?;
+			Ok::<_, anyhow::Error>(())
+		})
 	}
 );

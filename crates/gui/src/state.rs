@@ -394,8 +394,13 @@ impl BackState {
 
 	/// Invalidates installed plugins
 	pub async fn invalidate_plugins(&self) {
-		let mut o = self.output();
 		self.invalidate(BackDependency::Plugins);
+		self.reload_plugins().await;
+	}
+
+	/// Reloads plugins from the plugin manager
+	pub async fn reload_plugins(&self) {
+		let mut o = self.output();
 		if let Err(e) = self.plugins.reload(&self.paths, &mut o).await {
 			o.display(MessageContents::Error(format!(
 				"Failed to reload plugins: {e:?}"

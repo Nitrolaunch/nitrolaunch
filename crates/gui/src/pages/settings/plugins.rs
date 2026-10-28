@@ -1,20 +1,27 @@
-use std::rc::Rc;
+use std::{rc::Rc, sync::Arc};
 
 use freya::query::UseMutation;
 use itertools::Itertools;
 use nitrolaunch::shared::{loaders::Loader, util::open_link};
 
 use crate::{
-	components::{input::select::Selected, tag::tag},
+	components::{
+		input::{
+			control::{ControlledConfig, Controls},
+			select::Selected,
+		},
+		tag::tag,
+	},
 	ops::{
 		ConditionalQuery, ToastedMutation,
+		plugin_results::FetchPluginControls,
 		plugins::{
-			DisablePlugin, EnablePlugin, FetchLocalPlugins, FetchPluginVersions,
-			FetchRemotePlugins, InstallPlugin, PluginInfo, UninstallPlugin,
+			DisablePlugin, EnablePlugin, FetchLocalPlugins, FetchPluginConfig, FetchPluginVersions,
+			FetchRemotePlugins, InstallPlugin, PluginInfo, SavePluginConfig, UninstallPlugin,
 		},
 	},
 	prelude::*,
-	util::assets::get_loader_icon,
+	util::{PtrEq, assets::get_loader_icon},
 };
 
 #[derive(PartialEq)]
@@ -52,6 +59,13 @@ impl Component for PluginsPage {
 				Some("Plugin disabled"),
 				"Failed to disable plugin",
 			)));
+		let save_mutation = use_mutation(Mutation::new(
+			SavePluginConfig::new(back_state.clone()).toast(
+				&back_state,
+				Some("Configuration saved"),
+				"Failed to save configuration",
+			),
+		));
 
 		let is_remote = use_state(|| false);
 
@@ -118,6 +132,7 @@ impl Component for PluginsPage {
 							uninstall_mutation: NotEq(uninstall_mutation.clone()),
 							enable_mutation: NotEq(enable_mutation.clone()),
 							disable_mutation: NotEq(disable_mutation.clone()),
+							save_mutation: NotEq(save_mutation.clone()),
 						}
 						.into_element(),
 					)
@@ -146,6 +161,7 @@ struct PluginItem {
 	uninstall_mutation: NotEq<UseMutation<ToastedMutation<UninstallPlugin>>>,
 	enable_mutation: NotEq<UseMutation<ToastedMutation<EnablePlugin>>>,
 	disable_mutation: NotEq<UseMutation<ToastedMutation<DisablePlugin>>>,
+	save_mutation: NotEq<UseMutation<ToastedMutation<SavePluginConfig>>>,
 }
 
 impl Component for PluginItem {
@@ -153,8 +169,11 @@ impl Component for PluginItem {
 		let theme = use_theme();
 		let front_state = use_front_state();
 		let back_state = use_consume::<BackState>();
+		let info = &self.info.0;
 
 		let mut fetch_versions = use_state(|| false);
+		let is_configuring = use_state(|| false);
+		let config = use_state(|| ControlledConfig::new(Default::default()));
 		let id = self.info.0.id.clone();
 		let versions = use_query(ConditionalQuery::new(
 			FetchPluginVersions::new(back_state.clone()).toast(
@@ -166,13 +185,43 @@ impl Component for PluginItem {
 			|| id.clone(),
 		));
 
+		let keys = if info.enabled {
+			Some(self.info.0.id.clone())
+		} else {
+			None
+		};
+		let controls = use_query(Query::new(
+			keys,
+			FetchPluginControls::new(back_state.clone()),
+		));
+		let controls = controls.read();
+		let controls = controls.state();
+		let controls = controls.ok().cloned();
+		let controls = controls.unwrap_or(PtrEq(Arc::default()));
+
+		let keys = if *is_configuring.read() {
+			Some(self.info.0.id.clone())
+		} else {
+			None
+		};
+		let config_query = use_query(Query::new(keys, FetchPluginConfig::new(back_state.clone())));
+		let mut config2 = config.clone();
+		use_side_effect(move || {
+			if let Some(new_config) = config_query
+				.read()
+				.ok()
+				.and_then(|x| x.as_ref().ok().cloned())
+			{
+				config2.set(new_config);
+			}
+		});
+
 		let id = self.info.0.id.clone();
 		let install_mutation = self.install_mutation.clone();
 		let install = move |_: Event<PressEventData>| {
 			install_mutation.0.mutate((id.clone(), None));
 		};
 
-		let info = &self.info.0;
 		let is_disabled = !info.enabled && !self.is_remote;
 		let ico = get_plugin_icon(&info.id);
 		let (ico_fg, ico_bg, ico_tip) = if is_disabled {
@@ -242,6 +291,7 @@ impl Component for PluginItem {
 		let enable_mutation = self.enable_mutation.clone();
 		let disable_mutation = self.disable_mutation.clone();
 		let uninstall_mutation = self.uninstall_mutation.clone();
+		let is_configuring2 = is_configuring.clone();
 		let more_dropdown = Dropdown::new(
 			Selected::Single(MoreDropdown::More),
 			Rc::new(move |selected| match selected.single() {
@@ -253,6 +303,9 @@ impl Component for PluginItem {
 				}
 				MoreDropdown::Update => {
 					install_mutation.0.mutate((id.clone(), None));
+				}
+				MoreDropdown::Configure => {
+					is_configuring2.clone().set(true);
 				}
 				MoreDropdown::Enable => {
 					enable_mutation.0.mutate(id.clone());
@@ -275,6 +328,10 @@ impl Component for PluginItem {
 		.maybe_child(!self.is_remote, || {
 			SelectOption::new(MoreDropdown::Update, "Update", Some("cycle"))
 		})
+		.maybe_child(
+			!self.is_remote && !controls.0.is_empty() && info.enabled,
+			|| SelectOption::new(MoreDropdown::Configure, "Configure", Some("gear")),
+		)
 		.maybe_child(!self.is_remote && !info.enabled, || {
 			SelectOption::new(MoreDropdown::Enable, "Enable", Some("check"))
 		})
@@ -285,7 +342,7 @@ impl Component for PluginItem {
 			SelectOption::new(MoreDropdown::Uninstall, "Uninstall", Some("trash"))
 		});
 
-		let controls = rect()
+		let options = rect()
 			.width(Size::flex(1.0))
 			.height(Size::fill())
 			.cont()
@@ -317,12 +374,29 @@ impl Component for PluginItem {
 				))
 			})
 			.child(
-				segment(controls, 1.0)
+				segment(options, 1.0)
 					.height(Size::fill())
 					.main_align(Alignment::Center),
 			);
 
 		let description = info.meta.description.clone().unwrap_or_default();
+
+		let id = self.info.0.id.clone();
+		let save_mutation = self.save_mutation.clone();
+		let config2 = config.clone();
+		let mut is_configuring2 = is_configuring.clone();
+		let save_button = icon_text_button("check", "Save", &theme)
+			.active(&theme)
+			.on_press(move |_| {
+				let mut config = config2.read().clone();
+				config.optimize();
+				save_mutation.0.mutate((id.clone(), config.into_data()));
+				is_configuring2.set(false);
+			});
+		let mut is_configuring2 = is_configuring.clone();
+		let collapse_button = icon_button("delete", &theme).on_press(move |_| {
+			is_configuring2.set(false);
+		});
 
 		rect()
 			.width(Size::fill())
@@ -334,10 +408,36 @@ impl Component for PluginItem {
 				rect()
 					.width(Size::fill())
 					.padding(Gaps::new(0.0, theme.gap2, theme.gap2, theme.gap2))
-					.color(theme.fg2)
-					.maybe(is_disabled, |this| this.color(theme.disabled))
+					.maybe(!is_disabled, |this| this.color(theme.fg2))
 					.child(description),
 			)
+			.maybe(*is_configuring.read(), |this| {
+				this.child(
+					rect()
+						.width(Size::fill())
+						.padding(theme.gap2)
+						.border(border_top(theme.border, theme.panel_border))
+						.child(
+							rect()
+								.width(Size::fill())
+								.height(Size::px(300.0))
+								.child(Controls {
+									controls: controls.clone(),
+									values: config.clone(),
+									side: None,
+								}),
+						)
+						.child(
+							rect()
+								.width(Size::fill())
+								.cont()
+								.padding(Gaps::new(theme.gap2, 0.0, 0.0, 0.0))
+								.border(border_top(theme.border, theme.panel_border))
+								.child(segment(save_button, 1.0))
+								.child(collapse_button),
+						),
+				)
+			})
 	}
 }
 
@@ -346,6 +446,7 @@ enum MoreDropdown {
 	More,
 	Documentation,
 	Update,
+	Configure,
 	Enable,
 	Disable,
 	Uninstall,

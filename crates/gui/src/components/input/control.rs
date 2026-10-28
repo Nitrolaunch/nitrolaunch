@@ -584,6 +584,9 @@ impl ControlledConfig {
 }
 
 pub fn filter_control(control: &Control, side: Option<Side>) -> bool {
+	if let ControlSchema::Section = &control.schema {
+		return false;
+	}
 	if let Some(checked_side) = &control.side {
 		side == Some(*checked_side)
 	} else {

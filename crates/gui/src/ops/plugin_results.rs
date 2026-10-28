@@ -7,9 +7,10 @@ use nitrolaunch::{
 		control::Control,
 		hook::hooks::{
 			AccountTypeInfo, AddAccountTypes, AddDropdownButtons, AddInstanceConfigControls,
-			AddInstanceConfigControlsArg, AddJavaTypes, AddSupportedLoaders, CustomAction,
-			CustomActionArg, DropdownButton, DropdownButtonLocation, GetLoaderVersions,
-			GetLoaderVersionsArg, GetPopup, GetPopupArg, JavaTypeInfo,
+			AddInstanceConfigControlsArg, AddJavaTypes, AddPluginConfigControls,
+			AddSupportedLoaders, CustomAction, CustomActionArg, DropdownButton,
+			DropdownButtonLocation, GetLoaderVersions, GetLoaderVersionsArg, GetPopup, GetPopupArg,
+			JavaTypeInfo,
 		},
 	},
 	shared::{
@@ -178,6 +179,31 @@ pub struct FetchInstanceControlsKeys {
 	pub ty: ConfigKind,
 	pub config_plugin: Option<String>,
 }
+
+simple_query!(
+	name = FetchPluginControls,
+	ok = PtrEq<[Control]>,
+	err = anyhow::Error,
+	keys = String,
+	fn run(&self, keys: &Self::Keys) -> impl Future<Output = Result<Self::Ok, Self::Err>> {
+		let back_state = self.back_state.clone();
+		let plugin_id = keys.clone();
+
+		query_spawn(back_state.0.clone(), async move {
+			let mut o = back_state.output();
+			let result = back_state
+				.plugins
+				.call_hook_on_plugin(AddPluginConfigControls, &plugin_id, &(), &back_state.paths, &mut o)
+				.await?;
+			match result {
+				Some(result) => {
+					result.result(&mut o).await.map(|x| PtrEq(x.into_iter().collect()))
+				}
+				None => Ok(PtrEq(Arc::default())),
+			}
+		})
+	}
+);
 
 simple_query!(
 	name = FetchDropdownButtons,
