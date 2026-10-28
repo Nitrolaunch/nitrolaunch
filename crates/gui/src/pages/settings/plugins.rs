@@ -484,6 +484,7 @@ pub fn get_plugin_icon(plugin: &str) -> impl IntoElement {
 		"lang" => "language",
 		"multiply" => "honeycomb",
 		"octane" => "lightning",
+		"remote" => "globe",
 		"share" => "popout",
 		"server_restart" => "refresh",
 		"shortcut" => "popout",
