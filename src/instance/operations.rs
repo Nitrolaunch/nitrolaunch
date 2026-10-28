@@ -1,12 +1,21 @@
-use std::path::PathBuf;
+use std::{
+	io::{SeekFrom, Write},
+	path::PathBuf,
+	time::Duration,
+};
 
 use anyhow::{Context, bail};
-use nitro_config::{instance::InstanceConfig, template::TemplateConfig};
+use nitro_config::{
+	instance::{InstanceConfig, LaunchMode},
+	template::TemplateConfig,
+};
+use nitro_core::io::files::open_file_append;
 use nitro_instance::files::{
 	InstanceSave, ServerInfo, get_instance_saves, get_instance_screenshots, get_instance_servers,
 };
 use nitro_plugin::hook::hooks::{
-	DeleteInstance, KillInstance, KillInstanceArg, SaveInstanceConfigArg,
+	DeleteInstance, GetInstanceOutput, GetInstanceOutputArg, KillInstance, KillInstanceArg,
+	SaveInstanceConfigArg, SendInstanceInput, SendInstanceInputArg,
 };
 use nitro_shared::{
 	Side,
@@ -15,6 +24,7 @@ use nitro_shared::{
 	output::NitroOutput,
 	util::DeserListOrSingle,
 };
+use tokio::io::{AsyncReadExt, AsyncSeekExt};
 
 use crate::{
 	config::{
@@ -25,6 +35,11 @@ use crate::{
 	io::paths::Paths,
 	plugin::PluginManager,
 };
+
+/// A suggested rate at which to update output from a local instance
+pub const LOCAL_INSTANCE_OUTPUT_UPDATE_RATE: Duration = Duration::from_millis(100);
+/// A suggested rate at which to update output from a remote instance
+pub const REMOTE_INSTANCE_OUTPUT_UPDATE_RATE: Duration = Duration::from_millis(350);
 
 impl Instance {
 	/// Consolidates the parent configs of this instance into it's config, and saves the result
@@ -176,6 +191,85 @@ impl Instance {
 				.await?
 			{
 				result.result(o).await?;
+			}
+		}
+
+		Ok(())
+	}
+
+	/// Gets the live standard output of this instance, starting from the specified UTF-8 character index
+	pub async fn get_output(
+		&self,
+		after: u64,
+		paths: &Paths,
+		plugins: &PluginManager,
+		o: &mut impl NitroOutput,
+	) -> anyhow::Result<String> {
+		if let Some(source_plugin) = &self.original_config.source_plugin
+			&& self.config.launch_mode != LaunchMode::Normal
+		{
+			let arg = GetInstanceOutputArg {
+				id: self.id.to_string(),
+				config: self.config.clone(),
+				after,
+			};
+			if let Some(result) = plugins
+				.call_hook_on_plugin(GetInstanceOutput, source_plugin, &arg, paths, o)
+				.await?
+			{
+				return result.result(o).await;
+			}
+		} else {
+			let registry = RunningInstanceRegistry::open(paths)?;
+			if let Some(instance) = registry.get_instance(&self.id, None) {
+				if let Some(stdout_file) = &instance.stdout_file {
+					let path = paths.internal.join("stdio").join(stdout_file);
+					if path.exists() {
+						let mut file = tokio::fs::File::open(&path).await?;
+						file.seek(SeekFrom::Start(after)).await?;
+						let mut output = String::new();
+						file.read_to_string(&mut output).await?;
+						return Ok(output);
+					}
+				}
+			}
+		}
+
+		Ok(String::new())
+	}
+
+	/// Sends data to this instance's standard input
+	pub async fn send_input(
+		&self,
+		input: &str,
+		paths: &Paths,
+		plugins: &PluginManager,
+		o: &mut impl NitroOutput,
+	) -> anyhow::Result<()> {
+		if let Some(source_plugin) = &self.original_config.source_plugin
+			&& self.config.launch_mode != LaunchMode::Normal
+		{
+			let arg = SendInstanceInputArg {
+				id: self.id.to_string(),
+				config: self.config.clone(),
+				input: input.to_string(),
+			};
+			if let Some(result) = plugins
+				.call_hook_on_plugin(SendInstanceInput, source_plugin, &arg, paths, o)
+				.await?
+			{
+				result.result(o).await?;
+			}
+		} else {
+			let registry = RunningInstanceRegistry::open(paths)?;
+			if let Some(instance) = registry.get_instance(&self.id, None) {
+				if let Some(stdin_file) = &instance.stdin_file {
+					let path = paths.internal.join("stdio").join(stdin_file);
+					if path.exists() {
+						let mut file = open_file_append(&path)?;
+						file.write_all(input.as_bytes())?;
+					}
+				}
 			}
 		}
 

@@ -1,8 +1,6 @@
-use std::io::Write;
-
 use anyhow::Context;
 use nitrolaunch::{
-	core::{QuickPlayType, io::open_named_pipe},
+	core::QuickPlayType,
 	instance::{
 		launch::LaunchSettings,
 		tracking::RunningInstanceEntry,
@@ -226,20 +224,15 @@ simple_mutation!(
 		let (id, input) = keys.clone();
 
 		async move {
-			let Some(entry) = back_state.running_instances.get_entry(&id, None).await else {
-				return Ok(());
-			};
-
-			let Some(path) = &entry.stdin_file else {
-				return Ok(());
-			};
-			let path = back_state.paths.internal.join("stdio").join(path);
-
-			let mut file = open_named_pipe(path).context("Failed to open input pipe")?;
-			file.write_all(input.as_bytes())
-				.context("Failed to write to instance input")?;
-
-			Ok(())
+			let mut output = back_state.output();
+			let config = back_state.config().await?;
+			let instance = config
+				.instances
+				.get(&InstanceID::from(id.clone()))
+				.context("Instance does not exist")?;
+			instance
+				.send_input(&input, &back_state.paths, &back_state.plugins, &mut output)
+				.await
 		}
 	}
 );

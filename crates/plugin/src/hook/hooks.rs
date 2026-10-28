@@ -1343,3 +1343,45 @@ pub struct KillInstanceArg {
 	/// The instance's configuration
 	pub config: InstanceConfig,
 }
+
+def_hook!(
+	GetInstanceOutput,
+	"get_instance_output",
+	"Hook for getting the live standard output of a custom instance",
+	GetInstanceOutputArg,
+	String,
+	1,
+);
+
+/// Argument for the GetInstanceOutput hook
+#[derive(Serialize, Deserialize, Default)]
+#[serde(default)]
+pub struct GetInstanceOutputArg {
+	/// The ID of the instance
+	pub id: String,
+	/// The instance's configuration
+	pub config: InstanceConfig,
+	/// The UTF-8 character index after which to start fetching output
+	pub after: u64,
+}
+
+def_hook!(
+	SendInstanceInput,
+	"send_instance_input",
+	"Hook for sending input to a custom instance",
+	SendInstanceInputArg,
+	(),
+	1,
+);
+
+/// Argument for the SendInstanceInput hook
+#[derive(Serialize, Deserialize, Default)]
+#[serde(default)]
+pub struct SendInstanceInputArg {
+	/// The ID of the instance
+	pub id: String,
+	/// The instance's configuration
+	pub config: InstanceConfig,
+	/// The input to send to the instance
+	pub input: String,
+}

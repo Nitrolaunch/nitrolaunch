@@ -407,9 +407,14 @@ pub struct FetchInstanceOutput {
 }
 
 impl FetchInstanceOutput {
-	pub fn new(id: String, log_file: Option<String>, back_state: BackState) -> Query<Self> {
+	pub fn new(
+		id: String,
+		log_file: Option<String>,
+		after: u64,
+		back_state: BackState,
+	) -> Query<Self> {
 		Query::new(
-			(id, log_file),
+			(id, log_file, after),
 			Self {
 				back_state: Captured(back_state),
 			},
@@ -420,22 +425,21 @@ impl FetchInstanceOutput {
 impl QueryCapability for FetchInstanceOutput {
 	type Ok = Option<Arc<str>>;
 	type Err = anyhow::Error;
-	type Keys = (String, Option<String>);
+	type Keys = (String, Option<String>, u64);
 
 	fn run(&self, keys: &Self::Keys) -> impl Future<Output = Result<Self::Ok, Self::Err>> {
 		let back_state = self.back_state.clone();
-		let (id, log_file) = keys.clone();
+		let (id, log_file, after) = keys.clone();
 
 		query_spawn(back_state.0.clone(), async move {
+			let config = back_state.config().await?;
+			let mut output = back_state.output();
+			let instance = config
+				.instances
+				.get(&InstanceID::from(id.clone()))
+				.context("Instance not found")?;
 			if let Some(log_file) = log_file {
-				let config = back_state.config().await?;
-				let mut output = back_state.output();
-				let instance = config
-					.instances
-					.get(&InstanceID::from(id.clone()))
-					.context("Instance not found")?;
-
-				return Ok(Some(
+				Ok(Some(
 					instance
 						.get_log(
 							&log_file,
@@ -445,26 +449,15 @@ impl QueryCapability for FetchInstanceOutput {
 						)
 						.await?
 						.into(),
-				));
+				))
+			} else {
+				Ok(Some(
+					instance
+						.get_output(after, &back_state.paths, &back_state.plugins, &mut output)
+						.await?
+						.into(),
+				))
 			}
-
-			let path = {
-				let Some(entry) = back_state.running_instances.get_entry(&id, None).await else {
-					return Ok(None);
-				};
-
-				let Some(path) = &entry.stdout_file else {
-					return Ok(None);
-				};
-
-				back_state.paths.internal.join("stdio").join(path)
-			};
-
-			let contents = tokio::fs::read_to_string(path)
-				.await
-				.context("Failed to read output file")?;
-
-			Ok(Some(contents.into()))
 		})
 	}
 }
