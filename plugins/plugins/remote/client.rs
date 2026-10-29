@@ -12,10 +12,10 @@ use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use tokio::sync::OnceCell;
 
 use crate::output::InputEvent;
-use crate::server::InputJobRequest;
-use crate::server::PORT;
 use crate::server::SyncResponse;
+use crate::server::{GetInstanceOutputRequest, InputJobRequest};
 use crate::server::{GetJobResponse, KillInstanceRequest};
+use crate::server::{PORT, SendInstanceInputRequest};
 
 /// Client for interacting with a remote control server.
 /// Mostly handles TLS / certificates.
@@ -260,6 +260,40 @@ impl RemoteClient {
 
 		Ok(())
 	}
+
+	/// Gets the output of an instance on the remote server
+	pub async fn get_instance_output(&self, id: &str, after: u64) -> anyhow::Result<String> {
+		let client = self.client().await?;
+		let request = GetInstanceOutputRequest { after };
+		let body = serde_json::to_string(&request).context("Failed to serialize request")?;
+		let response = download_text(
+			&format!("instances/{id}/output"),
+			Some(body),
+			&self.settings,
+			&client,
+		)
+		.await?;
+
+		Ok(response)
+	}
+
+	/// Sends input to an instance on the remote server
+	pub async fn send_instance_input(&self, id: &str, input: &str) -> anyhow::Result<()> {
+		let client = self.client().await?;
+		let request = SendInstanceInputRequest {
+			input: input.to_string(),
+		};
+		let body = serde_json::to_string(&request).context("Failed to serialize request")?;
+		post(
+			&format!("instances/{id}/input"),
+			Some(body),
+			&self.settings,
+			&client,
+		)
+		.await?;
+
+		Ok(())
+	}
 }
 
 /// Settings on the client for a single remote server
@@ -276,6 +310,27 @@ fn get_remote_data_dir(dir: &Path, remote_id: &str) -> PathBuf {
 
 fn get_sync_cache_path(remote_dir: &Path) -> PathBuf {
 	remote_dir.join("remote_config.json")
+}
+
+async fn download_text(
+	subpath: &str,
+	body: Option<String>,
+	settings: &RemoteSettings,
+	client: &Client,
+) -> anyhow::Result<String> {
+	let url = format_url(settings, subpath);
+	let response = client
+		.get(url)
+		.body(body.unwrap_or_default())
+		.header("Authorization", &settings.key)
+		.send()
+		.await
+		.context("Failed to send request")?
+		.error_for_status()
+		.context("Server reported an error")?;
+
+	let text = response.text().await.context("Failed to read response")?;
+	Ok(text)
 }
 
 async fn download_json<T: DeserializeOwned>(

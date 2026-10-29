@@ -34,6 +34,12 @@
 		"kill_instance": {
 			"executable": "${PLUGIN_DIR}/nitro_plugin_remote"
 		},
+		"get_instance_output": {
+			"executable": "${PLUGIN_DIR}/nitro_plugin_remote"
+		},
+		"send_instance_input": {
+			"executable": "${PLUGIN_DIR}/nitro_plugin_remote"
+		},
 		"subcommand": {
 			"executable": "${PLUGIN_DIR}/nitro_plugin_remote"
 		},

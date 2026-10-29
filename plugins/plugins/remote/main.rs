@@ -285,6 +285,44 @@ fn main() -> anyhow::Result<()> {
 		Ok(())
 	})?;
 
+	plugin.get_instance_output(|ctx, arg| {
+		let (remote_id, instance_id) = parse_id(&arg.id).context("Invalid remote instance ID")?;
+		let plugin_config = parse_plugin_config(ctx.get_custom_config())?;
+		let remote = plugin_config
+			.remotes
+			.into_iter()
+			.find(|x| x.id == remote_id)
+			.context("Remote does not exist")?;
+		let dir = get_dir(&ctx.get_data_dir()?);
+		let client = RemoteClient::new(remote, &dir);
+
+		let runtime = Runtime::new()?;
+		let output = runtime
+			.block_on(client.get_instance_output(&instance_id, arg.after))
+			.context("Failed to get instance output on remote")?;
+
+		Ok(output)
+	})?;
+
+	plugin.send_instance_input(|ctx, arg| {
+		let (remote_id, instance_id) = parse_id(&arg.id).context("Invalid remote instance ID")?;
+		let plugin_config = parse_plugin_config(ctx.get_custom_config())?;
+		let remote = plugin_config
+			.remotes
+			.into_iter()
+			.find(|x| x.id == remote_id)
+			.context("Remote does not exist")?;
+		let dir = get_dir(&ctx.get_data_dir()?);
+		let client = RemoteClient::new(remote, &dir);
+
+		let runtime = Runtime::new()?;
+		runtime
+			.block_on(client.send_instance_input(&instance_id, &arg.input))
+			.context("Failed to send instance input on remote")?;
+
+		Ok(())
+	})?;
+
 	plugin.subcommand(|ctx, arg| {
 		let Some(subcommand) = arg.args.first() else {
 			return Ok(());

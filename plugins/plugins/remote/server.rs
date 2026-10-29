@@ -336,6 +336,9 @@ async fn handle_inner(
 			}
 		}
 	} else if path.starts_with("/instances/") && method == Method::DELETE {
+		if let Some(response) = state.settings.check_key_header(key, KeyPermission::Delete) {
+			return Ok(response);
+		}
 		let id = path.trim_start_matches("/instances/").to_string();
 		match delete_instance(state, &id).await {
 			Ok(response) => Ok(response),
@@ -345,8 +348,59 @@ async fn handle_inner(
 			}
 		}
 	} else if path.starts_with("/templates/") && method == Method::DELETE {
+		if let Some(response) = state.settings.check_key_header(key, KeyPermission::Delete) {
+			return Ok(response);
+		}
 		let id = path.trim_start_matches("/templates/").to_string();
 		match delete_template(state, &id).await {
+			Ok(response) => Ok(response),
+			Err(e) => {
+				o.display(MessageContents::Error(format!("{e:?}")));
+				Ok(ise())
+			}
+		}
+	} else if path.starts_with("/instances") && path.ends_with("/output") && method == Method::GET {
+		if let Some(response) = state.settings.check_key_header(key, KeyPermission::Query) {
+			return Ok(response);
+		}
+		let id = path
+			.trim_start_matches("/instances/")
+			.trim_end_matches("/output")
+			.to_string();
+		let body = req
+			.into_body()
+			.collect()
+			.await
+			.context("Failed to collect body")?;
+		let Ok(request) = serde_json::from_slice::<GetInstanceOutputRequest>(&body.to_bytes())
+		else {
+			return Ok(invalid_request());
+		};
+		match get_instance_output(state, &id, request.after).await {
+			Ok(response) => Ok(response),
+			Err(e) => {
+				o.display(MessageContents::Error(format!("{e:?}")));
+				Ok(ise())
+			}
+		}
+	} else if path.starts_with("/instances") && path.ends_with("/input") && method == Method::POST {
+		if let Some(response) = state.settings.check_key_header(key, KeyPermission::Input) {
+			return Ok(response);
+		}
+		let id = path
+			.trim_start_matches("/instances/")
+			.trim_end_matches("/input")
+			.to_string();
+		let body = req
+			.into_body()
+			.collect()
+			.await
+			.context("Failed to collect body")?;
+		let Ok(request) = serde_json::from_slice::<SendInstanceInputRequest>(&body.to_bytes())
+		else {
+			return Ok(invalid_request());
+		};
+		match send_instance_input(state, &id, &request.input).await {
 			Ok(response) => Ok(response),
 			Err(e) => {
 				o.display(MessageContents::Error(format!("{e:?}")));
@@ -684,6 +738,46 @@ async fn delete_template(mut state: State, id: &str) -> anyhow::Result<Response<
 		.context("Failed to build response")
 }
 
+async fn get_instance_output(
+	mut state: State,
+	id: &str,
+	after: u64,
+) -> anyhow::Result<Response<Full<Bytes>>> {
+	let config = state.config().await?;
+	let instance = config
+		.instances
+		.get(&InstanceID::from(id))
+		.context("Instance does not exist")?;
+	let output = instance
+		.get_output(after, &state.paths, &state.plugins, &mut state.o)
+		.await?;
+
+	Response::builder()
+		.status(200)
+		.body(Full::new(Bytes::from(output)))
+		.context("Failed to build response")
+}
+
+async fn send_instance_input(
+	mut state: State,
+	id: &str,
+	input: &str,
+) -> anyhow::Result<Response<Full<Bytes>>> {
+	let config = state.config().await?;
+	let instance = config
+		.instances
+		.get(&InstanceID::from(id))
+		.context("Instance does not exist")?;
+	instance
+		.send_input(input, &state.paths, &state.plugins, &mut state.o)
+		.await?;
+
+	Response::builder()
+		.status(200)
+		.body(Full::new(Bytes::from("OK")))
+		.context("Failed to build response")
+}
+
 #[derive(Clone)]
 struct State {
 	client: Client,
@@ -840,6 +934,8 @@ pub enum KeyPermission {
 	Update,
 	/// Can delete instances
 	Delete,
+	/// Can send input to instances
+	Input,
 }
 
 impl FromStr for KeyPermission {
@@ -852,6 +948,7 @@ impl FromStr for KeyPermission {
 			"edit" => Ok(Self::Edit),
 			"update" => Ok(Self::Update),
 			"delete" => Ok(Self::Delete),
+			"input" => Ok(Self::Input),
 			_ => Err(()),
 		}
 	}
@@ -865,6 +962,7 @@ impl Display for KeyPermission {
 			Self::Edit => "edit",
 			Self::Update => "update",
 			Self::Delete => "delete",
+			Self::Input => "input",
 		};
 		write!(f, "{s}")
 	}
@@ -910,6 +1008,16 @@ pub struct UpdateRequest {
 pub struct KillInstanceRequest {
 	pub instance: String,
 	pub account: Option<String>,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct GetInstanceOutputRequest {
+	pub after: u64,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct SendInstanceInputRequest {
+	pub input: String,
 }
 
 /// Generates a random access key
