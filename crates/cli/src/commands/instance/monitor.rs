@@ -142,7 +142,7 @@ impl<'a> State<'a> {
 		let text = self.input.lines().join("\n");
 		let _ = self.output_tx.try_send(Task::SendInput {
 			instance_id: self.get_selected_instance().unwrap_or_default(),
-			input: text.clone(),
+			input: format!("{text}\n"),
 		});
 		*self.input_history.last_mut().unwrap() = text;
 		self.input_history.push(String::new());
@@ -500,7 +500,9 @@ fn format_instance_stdout_line_ratatui(line: &str) -> Line<'static> {
 
 	spans.push(Span::raw(remainder[..level_start].to_owned()));
 	spans.push(Span::styled((*level).to_owned(), *level_style));
-	spans.extend(format_section_codes(&remainder[level_start + level.len()..]));
+	spans.extend(format_section_codes(
+		&remainder[level_start + level.len()..],
+	));
 	Line::from(spans)
 }
 
