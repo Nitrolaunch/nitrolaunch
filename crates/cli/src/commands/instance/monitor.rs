@@ -275,13 +275,13 @@ fn renderer(terminal: &mut DefaultTerminal, mut state: State<'_>) -> anyhow::Res
 							state.send_input();
 						}
 					}
-					KeyCode::Up | KeyCode::Char('k') => {
+					KeyCode::Up => {
 						if state.input_history_index > 0 {
 							state.input_history_index -= 1;
 							state.set_input(state.input_history[state.input_history_index].clone());
 						}
 					}
-					KeyCode::Down | KeyCode::Char('j') => {
+					KeyCode::Down => {
 						if state.input_history_index < state.input_history.len() - 1 {
 							state.input_history_index += 1;
 							state.set_input(state.input_history[state.input_history_index].clone());
@@ -326,7 +326,7 @@ fn render<'a>(frame: &mut Frame, state: &mut State<'a>) {
 		FocusState::Console => {
 			"esc to return to list; h/k/j/l for scroll; enter to focus input; space to jump to bottom; a/i/w/e/c for filter"
 		}
-		FocusState::Input => "esc to exit search; enter to submit; k/j to navigate history",
+		FocusState::Input => "esc to exit search; enter to submit; up/down to navigate history",
 	};
 
 	let keybinds = Paragraph::new(keybinds_text);
