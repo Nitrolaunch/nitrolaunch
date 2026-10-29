@@ -40,6 +40,8 @@ use crate::prompt::{
 };
 use crate::secrets::get_ms_client_id;
 
+mod monitor;
+
 #[derive(Debug, Subcommand)]
 pub enum InstanceSubcommand {
 	#[command(about = "List all instances")]
@@ -130,7 +132,15 @@ pub enum InstanceSubcommand {
 		output: Option<String>,
 	},
 	#[command(about = "See which instances are running")]
-	Status {},
+	Status {
+		/// Whether to open an interactive status view with console output
+		#[arg(short, long)]
+		interactive: bool,
+	},
+	#[command(about = "Monitor the status of running instances and send console commands")]
+	#[command(alias = "mon")]
+	#[command(alias = "top")]
+	Monitor {},
 	#[command(about = "Kill a running instance")]
 	Kill {
 		/// The ID of the instance to kill
@@ -217,8 +227,9 @@ pub async fn run(command: InstanceSubcommand, mut data: CmdData<'_>) -> anyhow::
 			extract(&mut data, instance, new_id).await
 		}
 		InstanceSubcommand::Logs { instance } => logs(&mut data, instance).await,
-		InstanceSubcommand::Status {} => status(&mut data).await,
+		InstanceSubcommand::Status { interactive } => status(data, interactive).await,
 		InstanceSubcommand::Kill { instance, account } => kill(&mut data, instance, account).await,
+		InstanceSubcommand::Monitor {} => monitor::run(data).await,
 		InstanceSubcommand::External(args) => {
 			call_plugin_subcommand(args, Some("instance"), &mut data).await
 		}
@@ -946,7 +957,11 @@ async fn extract(
 	Ok(())
 }
 
-async fn status(data: &mut CmdData<'_>) -> anyhow::Result<()> {
+async fn status(data: CmdData<'_>, interactive: bool) -> anyhow::Result<()> {
+	if interactive {
+		return monitor::run(data).await;
+	}
+
 	let registry = RunningInstanceRegistry::open(&data.paths).context("Failed to open registry")?;
 	let count = registry.iter_entries().count();
 	if count == 0 {
