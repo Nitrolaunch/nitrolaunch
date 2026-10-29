@@ -854,7 +854,7 @@ impl RemoteSettings {
 	}
 
 	fn check_key(&self, key: &str, permission: KeyPermission) -> bool {
-		let Some(key) = self.keys.iter().find(|k| k.id == key) else {
+		let Some(key) = self.keys.iter().find(|k| k.key == key) else {
 			return false;
 		};
 		key.permissions.is_empty() || key.permissions.contains(&permission)
