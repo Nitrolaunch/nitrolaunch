@@ -293,6 +293,7 @@ pub struct RunningInstanceEntry {
 	#[serde(alias = "user")]
 	pub account: Option<String>,
 	/// Whether this instance is running remotely. pid and parent_pid may not be valid locally.
+	#[serde(default)]
 	pub is_remote: bool,
 }
 
