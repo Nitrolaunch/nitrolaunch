@@ -5,10 +5,16 @@ use std::{
 
 use anyhow::Context;
 use nitro_core::io::{json_from_file, json_to_file_pretty};
+use nitro_plugin::hook::hooks::{GetInstanceStatus, GetInstanceStatusArg};
+use nitro_shared::output::NitroOutput;
 use serde::{Deserialize, Serialize};
+use std::time::Duration;
 use sysinfo::{Pid, RefreshKind, System};
 
-use crate::io::paths::Paths;
+use crate::{io::paths::Paths, plugin::PluginManager};
+
+/// The interval at which remote instance statuses should be updated
+pub const REMOTE_STATUS_UPDATE_INTERVAL: Duration = Duration::from_millis(1500);
 
 /// A registry of running instances
 pub struct RunningInstanceRegistry {
@@ -71,6 +77,61 @@ impl RunningInstanceRegistry {
 		Ok(())
 	}
 
+	/// Updates running instances from status results from plugins
+	pub async fn update_from_plugins(
+		&mut self,
+		fetch_remote: bool,
+		plugins: &PluginManager,
+		paths: &Paths,
+		o: &mut impl NitroOutput,
+	) -> anyhow::Result<()> {
+		let arg = GetInstanceStatusArg {
+			remote: fetch_remote,
+		};
+		let results = plugins.call_hook(GetInstanceStatus, &arg, paths, o).await?;
+		let statuses = results.flatten_all_results(o).await?;
+
+		for status in &statuses {
+			let exists = self.data.instances.iter().any(|x| {
+				x.instance_id == status.id && x.pid == status.pid && x.is_remote == status.is_remote
+			});
+			if !exists {
+				self.data.instances.push(RunningInstanceEntry {
+					instance_id: status.id.clone(),
+					pid: status.pid,
+					parent_pid: status.parent_pid,
+					is_remote: status.is_remote,
+					is_java: status.is_java,
+					account: status.account.clone(),
+					stdin_file: None,
+					stdout_file: None,
+				});
+				self.is_dirty = true;
+			}
+		}
+
+		// Remote instances that are not returned as statuses are considered dead
+		if fetch_remote {
+			self.data.instances.retain(|x| {
+				if x.is_remote {
+					let exists = statuses.iter().any(|status| {
+						status.id == x.instance_id
+							&& status.pid == x.pid
+							&& status.is_remote == x.is_remote
+					});
+					if !exists {
+						return false;
+					}
+				}
+				true
+			});
+		}
+
+		self.remove_dead_instances();
+
+		Ok(())
+	}
+
 	/// Gets whether the registry is dirty (has changes that need to be written)
 	pub fn is_dirty(&self) -> bool {
 		self.is_dirty
@@ -97,7 +158,7 @@ impl RunningInstanceRegistry {
 		let original_lenth = self.data.instances.len();
 		self.data.instances.retain(|x| {
 			// Remove old stdio files
-			let is_alive = is_process_alive(x.pid, &self.system, x.is_java);
+			let is_alive = x.is_remote || is_process_alive(x.pid, &self.system, x.is_java);
 			if !is_alive {
 				let stdio_dir = self.internal_dir.join("stdio");
 				if let Some(stdin_file) = &x.stdin_file {
@@ -162,6 +223,9 @@ impl RunningInstanceRegistry {
 	pub fn kill_instance(&mut self, instance: &str, account: Option<&str>) {
 		let mut pids = Vec::new();
 		for entry in &self.data.instances {
+			if entry.is_remote {
+				continue;
+			}
 			if let Some(account) = account
 				&& entry.account.as_ref().is_none_or(|x| x != account)
 			{
@@ -186,7 +250,7 @@ impl RunningInstanceRegistry {
 
 	/// Tries to check if an instance is alive
 	pub fn is_instance_alive(&self, entry: &RunningInstanceEntry) -> bool {
-		is_process_alive(entry.pid, &self.system, entry.is_java)
+		entry.is_remote || is_process_alive(entry.pid, &self.system, entry.is_java)
 	}
 
 	/// Iterates over the entries in the registry
@@ -228,6 +292,8 @@ pub struct RunningInstanceEntry {
 	#[serde(default)]
 	#[serde(alias = "user")]
 	pub account: Option<String>,
+	/// Whether this instance is running remotely. pid and parent_pid may not be valid locally.
+	pub is_remote: bool,
 }
 
 fn default_is_java() -> bool {

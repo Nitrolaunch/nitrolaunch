@@ -275,8 +275,9 @@ impl BackState {
 		let paths = Arc::new(Paths::new().await?);
 		let plugins = PluginManager::load(&paths, &mut NoOp).await?;
 
-		let running_instances = RunningInstanceManager::new(&paths, event_tx.clone())
-			.context("Failed to create running instance manager")?;
+		let running_instances =
+			RunningInstanceManager::new(paths.clone(), plugins.clone(), event_tx.clone())
+				.context("Failed to create running instance manager")?;
 
 		tokio::spawn(running_instances.clone().get_run_task());
 

@@ -133,6 +133,9 @@ pub enum InstanceSubcommand {
 	},
 	#[command(about = "See which instances are running")]
 	Status {
+		/// Whether to skip updating status for remote instances
+		#[arg(short, long)]
+		local: bool,
 		/// Whether to open an interactive status view with console output
 		#[arg(short, long)]
 		interactive: bool,
@@ -227,7 +230,7 @@ pub async fn run(command: InstanceSubcommand, mut data: CmdData<'_>) -> anyhow::
 			extract(&mut data, instance, new_id).await
 		}
 		InstanceSubcommand::Logs { instance } => logs(&mut data, instance).await,
-		InstanceSubcommand::Status { interactive } => status(data, interactive).await,
+		InstanceSubcommand::Status { interactive, local } => status(data, interactive, local).await,
 		InstanceSubcommand::Kill { instance, account } => kill(&mut data, instance, account).await,
 		InstanceSubcommand::Monitor {} => monitor::run(data).await,
 		InstanceSubcommand::External(args) => {
@@ -957,12 +960,18 @@ async fn extract(
 	Ok(())
 }
 
-async fn status(data: CmdData<'_>, interactive: bool) -> anyhow::Result<()> {
+async fn status(mut data: CmdData<'_>, interactive: bool, local: bool) -> anyhow::Result<()> {
 	if interactive {
 		return monitor::run(data).await;
 	}
 
-	let registry = RunningInstanceRegistry::open(&data.paths).context("Failed to open registry")?;
+	data.ensure_config(true).await?;
+	let config = data.config.get();
+	let mut registry =
+		RunningInstanceRegistry::open(&data.paths).context("Failed to open registry")?;
+	registry
+		.update_from_plugins(!local, &config.plugins, &data.paths, data.output)
+		.await?;
 	let count = registry.iter_entries().count();
 	if count == 0 {
 		println!("No instances running");

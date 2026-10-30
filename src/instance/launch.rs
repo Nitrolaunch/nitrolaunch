@@ -357,6 +357,7 @@ impl InstanceHandle {
 					.to_string(),
 			),
 			account: self.account.clone(),
+			is_remote: false,
 		};
 		registry.add_instance(entry);
 		registry.write()
