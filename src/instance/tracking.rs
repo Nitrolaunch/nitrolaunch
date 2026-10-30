@@ -112,6 +112,7 @@ impl RunningInstanceRegistry {
 
 		// Remote instances that are not returned as statuses are considered dead
 		if fetch_remote {
+			let original_length = self.data.instances.len();
 			self.data.instances.retain(|x| {
 				if x.is_remote {
 					let exists = statuses.iter().any(|status| {
@@ -125,6 +126,9 @@ impl RunningInstanceRegistry {
 				}
 				true
 			});
+			if original_length != self.data.instances.len() {
+				self.is_dirty = true;
+			}
 		}
 
 		self.remove_dead_instances();
