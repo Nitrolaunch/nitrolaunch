@@ -426,14 +426,9 @@ async fn handle_inner(
 		if let Some(response) = state.settings.check_key_header(key, KeyPermission::Query) {
 			return Ok(response);
 		}
-		let id = path
-			.trim_start_matches("/instances/")
-			.trim_end_matches("/logs")
-			.to_string();
-		let log_id = path
-			.trim_start_matches("/instances/")
-			.trim_end_matches("/logs")
-			.to_string();
+		let mut components = path.trim_start_matches("/instances/").split("/");
+		let id = components.next().unwrap_or_default().to_string();
+		let log_id = components.last().unwrap_or_default().to_string();
 		match get_instance_log(state, &id, &log_id).await {
 			Ok(response) => Ok(response),
 			Err(e) => {
