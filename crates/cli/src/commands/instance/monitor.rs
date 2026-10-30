@@ -21,7 +21,7 @@ use ratatui::{
 	style::{Color, Modifier, Style, Stylize},
 	symbols,
 	text::{Line, Span},
-	widgets::{Block, Borders, Clear, List, ListItem, ListState, Paragraph, Widget},
+	widgets::{Block, Clear, List, ListItem, ListState, Paragraph, Widget},
 };
 use ratatui_textarea::TextArea;
 use tokio::{
@@ -464,7 +464,7 @@ impl<'a, 'b, 'c> Widget for ConsoleWidget<'a, 'b, 'c> {
 		let input_pane = layout[1];
 
 		// Output pane
-		let block = Block::new().borders(Borders::BOTTOM);
+		let block = Block::new();
 		let inner_area = block.inner(output_pane);
 		block.render(output_pane, buf);
 
