@@ -407,6 +407,40 @@ async fn handle_inner(
 				Ok(ise())
 			}
 		}
+	} else if path.starts_with("/instances") && path.ends_with("/logs") && method == Method::GET {
+		if let Some(response) = state.settings.check_key_header(key, KeyPermission::Query) {
+			return Ok(response);
+		}
+		let id = path
+			.trim_start_matches("/instances/")
+			.trim_end_matches("/logs")
+			.to_string();
+		match get_instance_logs(state, &id).await {
+			Ok(response) => Ok(response),
+			Err(e) => {
+				o.display(MessageContents::Error(format!("{e:?}")));
+				Ok(ise())
+			}
+		}
+	} else if path.starts_with("/instances") && path.contains("/logs") && method == Method::GET {
+		if let Some(response) = state.settings.check_key_header(key, KeyPermission::Query) {
+			return Ok(response);
+		}
+		let id = path
+			.trim_start_matches("/instances/")
+			.trim_end_matches("/logs")
+			.to_string();
+		let log_id = path
+			.trim_start_matches("/instances/")
+			.trim_end_matches("/logs")
+			.to_string();
+		match get_instance_log(state, &id, &log_id).await {
+			Ok(response) => Ok(response),
+			Err(e) => {
+				o.display(MessageContents::Error(format!("{e:?}")));
+				Ok(ise())
+			}
+		}
 	} else {
 		Ok(Response::builder()
 			.status(404)
@@ -775,6 +809,39 @@ async fn send_instance_input(
 	Response::builder()
 		.status(200)
 		.body(Full::new(Bytes::from("OK")))
+		.context("Failed to build response")
+}
+
+async fn get_instance_logs(mut state: State, id: &str) -> anyhow::Result<Response<Full<Bytes>>> {
+	let config = state.config().await?;
+	let instance = config
+		.instances
+		.get(&InstanceID::from(id))
+		.context("Instance does not exist")?;
+	let logs = instance
+		.get_logs(&state.plugins, &state.paths, &mut state.o)
+		.await?;
+
+	json_response(&logs)
+}
+
+async fn get_instance_log(
+	mut state: State,
+	id: &str,
+	log_id: &str,
+) -> anyhow::Result<Response<Full<Bytes>>> {
+	let config = state.config().await?;
+	let instance = config
+		.instances
+		.get(&InstanceID::from(id))
+		.context("Instance does not exist")?;
+	let log = instance
+		.get_log(log_id, &state.plugins, &state.paths, &mut state.o)
+		.await?;
+
+	Response::builder()
+		.status(200)
+		.body(Full::new(Bytes::from(log)))
 		.context("Failed to build response")
 }
 

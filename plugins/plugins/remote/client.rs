@@ -294,6 +294,24 @@ impl RemoteClient {
 
 		Ok(())
 	}
+
+	/// Gets the logs of an instance on the remote server
+	pub async fn get_instance_logs(&self, id: &str) -> anyhow::Result<Vec<String>> {
+		let client = self.client().await?;
+		download_json(&format!("instances/{id}/logs"), &self.settings, &client).await
+	}
+
+	/// Gets a specific log of an instance on the remote server
+	pub async fn get_instance_log(&self, id: &str, log_id: &str) -> anyhow::Result<String> {
+		let client = self.client().await?;
+		download_text(
+			&format!("instances/{id}/logs/{log_id}"),
+			None,
+			&self.settings,
+			&client,
+		)
+		.await
+	}
 }
 
 /// Settings on the client for a single remote server
