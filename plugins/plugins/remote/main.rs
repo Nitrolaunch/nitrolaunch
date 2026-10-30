@@ -369,21 +369,21 @@ fn main() -> anyhow::Result<()> {
 
 		let plugin_config = parse_plugin_config(ctx.get_custom_config())?;
 		let dir = get_dir(&ctx.get_data_dir()?);
-		let mut tasks = JoinSet::new();
-		for remote in plugin_config.remotes {
-			let remote_id = remote.id.clone();
-			let client = RemoteClient::new(remote, &dir);
-			tasks.spawn(async move {
-				let mut running_instances = client.get_running_instances().await?;
-				for instance in &mut running_instances {
-					instance.id = process_id(&instance.id, &remote_id);
-					instance.is_remote = true;
-				}
-				Ok::<_, anyhow::Error>(running_instances)
-			});
-		}
 		let runtime = Runtime::new()?;
 		let out = runtime.block_on(async move {
+			let mut tasks = JoinSet::new();
+			for remote in plugin_config.remotes {
+				let remote_id = remote.id.clone();
+				let client = RemoteClient::new(remote, &dir);
+				tasks.spawn(async move {
+					let mut running_instances = client.get_running_instances().await?;
+					for instance in &mut running_instances {
+						instance.id = process_id(&instance.id, &remote_id);
+						instance.is_remote = true;
+					}
+					Ok::<_, anyhow::Error>(running_instances)
+				});
+			}
 			let mut out = Vec::new();
 			while let Some(result) = tasks.join_next().await {
 				if let Ok(Ok(instances)) = result {
