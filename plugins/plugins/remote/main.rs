@@ -323,6 +323,45 @@ fn main() -> anyhow::Result<()> {
 		Ok(())
 	})?;
 
+	plugin.get_instance_logs(|ctx, arg| {
+		let (remote_id, instance_id) = parse_id(&arg.id).context("Invalid remote instance ID")?;
+		let plugin_config = parse_plugin_config(ctx.get_custom_config())?;
+		let remote = plugin_config
+			.remotes
+			.into_iter()
+			.find(|x| x.id == remote_id)
+			.context("Remote does not exist")?;
+		let dir = get_dir(&ctx.get_data_dir()?);
+		let client = RemoteClient::new(remote, &dir);
+
+		let runtime = Runtime::new()?;
+		let logs = runtime
+			.block_on(client.get_instance_logs(&instance_id))
+			.context("Failed to get instance logs on remote")?;
+
+		Ok(logs)
+	})?;
+
+	plugin.get_instance_log(|ctx, arg| {
+		let (remote_id, instance_id) =
+			parse_id(&arg.instance_id).context("Invalid remote instance ID")?;
+		let plugin_config = parse_plugin_config(ctx.get_custom_config())?;
+		let remote = plugin_config
+			.remotes
+			.into_iter()
+			.find(|x| x.id == remote_id)
+			.context("Remote does not exist")?;
+		let dir = get_dir(&ctx.get_data_dir()?);
+		let client = RemoteClient::new(remote, &dir);
+
+		let runtime = Runtime::new()?;
+		let log = runtime
+			.block_on(client.get_instance_log(&instance_id, &arg.log_id))
+			.context("Failed to get instance log on remote")?;
+
+		Ok(log)
+	})?;
+
 	plugin.subcommand(|ctx, arg| {
 		let Some(subcommand) = arg.args.first() else {
 			return Ok(());
@@ -512,6 +551,7 @@ fn process_instance_config(config: &mut InstanceConfig, remote_id: &str, is_base
 	}
 
 	config.source_plugin = Some("remote".into());
+	config.custom_logging_plugin = Some("remote".into());
 	config.dir = Some("none".into());
 	config.launch_mode = LaunchMode::Wait;
 	config.is_editable = true;
@@ -527,6 +567,7 @@ fn unprocess_instance_config(config: &mut InstanceConfig) {
 		.collect();
 
 	config.source_plugin = None;
+	config.custom_logging_plugin = None;
 	config.dir = None;
 	config.launch_mode = LaunchMode::Normal;
 	config.is_editable = false;

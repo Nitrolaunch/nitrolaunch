@@ -40,6 +40,12 @@
 		"send_instance_input": {
 			"executable": "${PLUGIN_DIR}/nitro_plugin_remote"
 		},
+		"get_instance_logs": {
+			"executable": "${PLUGIN_DIR}/nitro_plugin_remote"
+		},
+		"get_instance_log": {
+			"executable": "${PLUGIN_DIR}/nitro_plugin_remote"
+		},
 		"subcommand": {
 			"executable": "${PLUGIN_DIR}/nitro_plugin_remote"
 		},
