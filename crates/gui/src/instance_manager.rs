@@ -84,9 +84,14 @@ impl RunningInstanceManager {
 		let mut lock = self.running_instance_registry.lock().await;
 		let prev_hash = lock.get_entries_hash();
 
-		let _ = lock
+		if let Err(e) = lock
 			.update_from_plugins(true, &self.plugins, &self.paths, &mut NoOp)
-			.await;
+			.await
+		{
+			eprintln!("Error updating remote instances: {}", e);
+		}
+
+		let _ = lock.write();
 
 		let post_hash = lock.get_entries_hash();
 		std::mem::drop(lock);
