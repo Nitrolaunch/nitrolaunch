@@ -2,10 +2,17 @@ use std::{sync::Arc, time::Duration};
 
 use anyhow::Context;
 use nitrolaunch::{
-	instance::tracking::{RunningInstanceEntry, RunningInstanceRegistry},
+	instance::tracking::{
+		REMOTE_STATUS_UPDATE_INTERVAL, RunningInstanceEntry, RunningInstanceRegistry,
+	},
 	io::paths::Paths,
+	plugin::PluginManager,
+	shared::output::NoOp,
 };
-use tokio::sync::{Mutex, broadcast};
+use tokio::{
+	sync::{Mutex, broadcast},
+	time::interval,
+};
 
 use crate::state::BackEvent;
 
@@ -14,15 +21,23 @@ use crate::state::BackEvent;
 pub struct RunningInstanceManager {
 	running_instance_registry: Arc<Mutex<RunningInstanceRegistry>>,
 	event_tx: broadcast::Sender<BackEvent>,
+	plugins: PluginManager,
+	paths: Arc<Paths>,
 }
 
 impl RunningInstanceManager {
-	pub fn new(paths: &Paths, event_tx: broadcast::Sender<BackEvent>) -> anyhow::Result<Self> {
+	pub fn new(
+		paths: Arc<Paths>,
+		plugins: PluginManager,
+		event_tx: broadcast::Sender<BackEvent>,
+	) -> anyhow::Result<Self> {
 		let out = Self {
 			running_instance_registry: Arc::new(Mutex::new(
-				RunningInstanceRegistry::open(paths)
+				RunningInstanceRegistry::open(&paths)
 					.context("Failed to open running instance registry")?,
 			)),
+			plugins,
+			paths,
 			event_tx,
 		};
 
@@ -31,19 +46,47 @@ impl RunningInstanceManager {
 
 	/// Gets the async task to update instances
 	pub async fn get_run_task(self) -> () {
+		let mut local_interval = interval(Duration::from_millis(75));
+		let mut remote_interval = interval(REMOTE_STATUS_UPDATE_INTERVAL);
 		loop {
-			self.update_instances().await;
-			tokio::time::sleep(Duration::from_millis(75)).await;
+			tokio::select! {
+				_ = local_interval.tick() => {
+					self.update_local().await;
+				}
+				_ = remote_interval.tick() => {
+					self.update_remote().await;
+				}
+			}
 		}
 	}
 
 	/// Updates running instances from the running registry
-	pub async fn update_instances(&self) {
+	pub async fn update_local(&self) {
 		let mut lock = self.running_instance_registry.lock().await;
 		let prev_hash = lock.get_entries_hash();
 
 		let _ = lock.reread();
-		lock.remove_dead_instances();
+		let _ = lock
+			.update_from_plugins(false, &self.plugins, &self.paths, &mut NoOp)
+			.await;
+
+		let post_hash = lock.get_entries_hash();
+		std::mem::drop(lock);
+
+		// Only emit event if the list has changed
+		if prev_hash != post_hash {
+			self.emit_update_event().await;
+		}
+	}
+
+	/// Updates running instances from remote sources
+	pub async fn update_remote(&self) {
+		let mut lock = self.running_instance_registry.lock().await;
+		let prev_hash = lock.get_entries_hash();
+
+		let _ = lock
+			.update_from_plugins(true, &self.plugins, &self.paths, &mut NoOp)
+			.await;
 
 		let post_hash = lock.get_entries_hash();
 		std::mem::drop(lock);

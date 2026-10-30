@@ -16,6 +16,7 @@ use nitro_core::{
 	io::{json_from_file, json_to_file},
 };
 use nitro_net::download::Client;
+use nitro_plugin::hook::hooks::InstanceStatus;
 use nitro_shared::{
 	UpdateDepth,
 	id::{InstanceID, TemplateID},
@@ -34,6 +35,7 @@ use nitrolaunch::{
 	},
 	instance::{
 		launch::LaunchSettings,
+		tracking::RunningInstanceRegistry,
 		update::{InstanceUpdateContext, UpdateFacets, manager::UpdateSettings},
 	},
 	io::{lock::Lockfile, paths::Paths},
@@ -430,6 +432,17 @@ async fn handle_inner(
 		let id = components.next().unwrap_or_default().to_string();
 		let log_id = components.last().unwrap_or_default().to_string();
 		match get_instance_log(state, &id, &log_id).await {
+			Ok(response) => Ok(response),
+			Err(e) => {
+				o.display(MessageContents::Error(format!("{e:?}")));
+				Ok(ise())
+			}
+		}
+	} else if path == "/instances/running" && method == Method::GET {
+		if let Some(response) = state.settings.check_key_header(key, KeyPermission::Query) {
+			return Ok(response);
+		}
+		match get_running_instances(state).await {
 			Ok(response) => Ok(response),
 			Err(e) => {
 				o.display(MessageContents::Error(format!("{e:?}")));
@@ -838,6 +851,24 @@ async fn get_instance_log(
 		.status(200)
 		.body(Full::new(Bytes::from(log)))
 		.context("Failed to build response")
+}
+
+async fn get_running_instances(state: State) -> anyhow::Result<Response<Full<Bytes>>> {
+	let mut registry = RunningInstanceRegistry::open(&state.paths)?;
+
+	let running_instances: Vec<_> = registry
+		.iter_entries()
+		.map(|x| InstanceStatus {
+			id: x.instance_id.clone(),
+			pid: x.pid,
+			parent_pid: x.parent_pid,
+			is_remote: x.is_remote,
+			is_java: x.is_java,
+			account: x.account.clone(),
+		})
+		.collect();
+	let _ = registry.write();
+	json_response(&running_instances)
 }
 
 #[derive(Clone)]

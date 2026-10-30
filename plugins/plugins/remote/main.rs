@@ -12,7 +12,7 @@ use nitrolaunch::{
 	io::paths::Paths,
 };
 use serde::{Deserialize, Serialize};
-use tokio::runtime::Runtime;
+use tokio::{runtime::Runtime, task::JoinSet};
 
 use crate::{
 	client::RemoteClient,
@@ -360,6 +360,41 @@ fn main() -> anyhow::Result<()> {
 			.context("Failed to get instance log on remote")?;
 
 		Ok(log)
+	})?;
+
+	plugin.get_instance_status(|ctx, arg| {
+		if !arg.remote {
+			return Ok(Vec::new());
+		}
+
+		let plugin_config = parse_plugin_config(ctx.get_custom_config())?;
+		let dir = get_dir(&ctx.get_data_dir()?);
+		let mut tasks = JoinSet::new();
+		for remote in plugin_config.remotes {
+			let remote_id = remote.id.clone();
+			let client = RemoteClient::new(remote, &dir);
+			tasks.spawn(async move {
+				let mut running_instances = client.get_running_instances().await?;
+				for instance in &mut running_instances {
+					instance.id = process_id(&instance.id, &remote_id);
+					instance.is_remote = true;
+				}
+				Ok::<_, anyhow::Error>(running_instances)
+			});
+		}
+		let runtime = Runtime::new()?;
+		let out = runtime.block_on(async move {
+			let mut out = Vec::new();
+			while let Some(result) = tasks.join_next().await {
+				if let Ok(Ok(instances)) = result {
+					out.extend(instances);
+				}
+			}
+
+			out
+		});
+
+		Ok(out)
 	})?;
 
 	plugin.subcommand(|ctx, arg| {

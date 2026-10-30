@@ -206,3 +206,8 @@ hook_interface!(
 	"send_instance_input",
 	SendInstanceInput
 );
+hook_interface!(
+	get_instance_status,
+	"get_instance_status",
+	GetInstanceStatus
+);

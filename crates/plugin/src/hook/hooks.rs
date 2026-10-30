@@ -1385,3 +1385,38 @@ pub struct SendInstanceInputArg {
 	/// The input to send to the instance
 	pub input: String,
 }
+
+def_hook!(
+	GetInstanceStatus,
+	"get_instance_status",
+	"Hook for getting the status of custom instances",
+	GetInstanceStatusArg,
+	Vec<InstanceStatus>,
+	1,
+);
+
+/// Argument for the GetInstanceStatus hook
+#[derive(Serialize, Deserialize, Default)]
+#[serde(default)]
+pub struct GetInstanceStatusArg {
+	/// Whether to fetch the status of remote instances
+	pub remote: bool,
+}
+
+/// Running status for a single instance process
+#[derive(Serialize, Deserialize, Default)]
+#[serde(default)]
+pub struct InstanceStatus {
+	/// The ID of the instance
+	pub id: String,
+	/// The PID of the instance process
+	pub pid: u32,
+	/// The parent PID of the instance process
+	pub parent_pid: u32,
+	/// Whether this instance is running remotely. pid and parent_pid may not be valid locally.
+	pub is_remote: bool,
+	/// Whether the instance is running a Java process
+	pub is_java: bool,
+	/// The account that launched the instance, if any
+	pub account: Option<String>,
+}

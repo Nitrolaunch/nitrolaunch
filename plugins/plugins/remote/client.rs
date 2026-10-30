@@ -4,6 +4,7 @@ use std::sync::Arc;
 use anyhow::Context;
 use nitro_core::io::{json_from_file, json_to_file};
 use nitro_net::download::Client;
+use nitro_plugin::hook::hooks::InstanceStatus;
 use nitrolaunch::config_crate::instance::InstanceConfig;
 use nitrolaunch::config_crate::template::TemplateConfig;
 use reqwest::Certificate;
@@ -311,6 +312,12 @@ impl RemoteClient {
 			&client,
 		)
 		.await
+	}
+
+	/// Gets the list of running instances on the remote server
+	pub async fn get_running_instances(&self) -> anyhow::Result<Vec<InstanceStatus>> {
+		let client = self.client().await?;
+		download_json(&format!("instances/running"), &self.settings, &client).await
 	}
 }
 
