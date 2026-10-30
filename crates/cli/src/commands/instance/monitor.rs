@@ -1,11 +1,17 @@
-use std::collections::HashMap;
+use std::{
+	collections::HashMap,
+	time::{Duration, Instant},
+};
 
 use anyhow::Context;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use itertools::Itertools;
 use nitrolaunch::{
 	config::Config,
-	instance::operations::{LOCAL_INSTANCE_OUTPUT_UPDATE_RATE, REMOTE_INSTANCE_OUTPUT_UPDATE_RATE},
+	instance::{
+		operations::{LOCAL_INSTANCE_OUTPUT_UPDATE_RATE, REMOTE_INSTANCE_OUTPUT_UPDATE_RATE},
+		tracking::{REMOTE_STATUS_UPDATE_INTERVAL, RunningInstanceRegistry},
+	},
 	io::paths::Paths,
 	shared::{id::InstanceID, output::NoOp},
 };
@@ -15,7 +21,7 @@ use ratatui::{
 	style::{Color, Modifier, Style, Stylize},
 	symbols,
 	text::{Line, Span},
-	widgets::{Block, Borders, Clear, List, ListState, Paragraph, Widget},
+	widgets::{Block, Borders, Clear, List, ListItem, ListState, Paragraph, Widget},
 };
 use ratatui_textarea::TextArea;
 use tokio::{
@@ -24,6 +30,9 @@ use tokio::{
 };
 
 use crate::{commands::CmdData, prompt::get_key};
+
+const SPINNER_INTERVAL: Duration = Duration::from_millis(300);
+const SPINNER_FRAMES: [&str; 4] = ["⡈", "⠔", "⠢", "⢁"];
 
 pub async fn run(mut data: CmdData<'_>) -> anyhow::Result<()> {
 	data.ensure_config(false).await?;
@@ -50,10 +59,14 @@ struct State<'a> {
 	output_tx: Sender<Task>,
 	/// Receiver for instance output updates
 	output_rx: Receiver<InstanceOutput>,
+	/// Receiver for instance status updates
+	status_rx: Receiver<Vec<InstanceID>>,
 	/// Available instances
 	instances: Vec<InstanceID>,
 	/// Output for each instance
 	output: HashMap<InstanceID, InstanceOutput>,
+	/// The instances that are currently running
+	running_instances: Vec<InstanceID>,
 	/// Current focus state for the app
 	focus: FocusState,
 	/// Input field to send to instances
@@ -76,6 +89,10 @@ struct State<'a> {
 	input_history_index: usize,
 	/// Current filter applied to messages
 	filter: Filter,
+	/// Current frame for running instance indicators
+	spinner_stage: usize,
+	/// Time when the running instance indicators last advanced
+	last_spinner_update: Instant,
 }
 
 impl<'a> State<'a> {
@@ -84,7 +101,8 @@ impl<'a> State<'a> {
 		// Setup worker
 		let (output_tx, output_rx) = tokio::sync::mpsc::channel(4);
 		let (focus_tx, focus_rx) = tokio::sync::mpsc::channel(4);
-		let handle = tokio::spawn(worker_thread(config, paths, output_tx, focus_rx));
+		let (status_tx, status_rx) = tokio::sync::mpsc::channel(4);
+		let handle = tokio::spawn(worker_thread(config, paths, output_tx, focus_rx, status_tx));
 
 		// Input bar
 		let mut input = TextArea::new(Vec::new());
@@ -101,10 +119,12 @@ impl<'a> State<'a> {
 
 		let mut out = Self {
 			worker: handle,
+			status_rx,
 			output_tx: focus_tx,
 			output_rx,
 			instances,
 			output: HashMap::new(),
+			running_instances: Vec::new(),
 			focus: FocusState::List,
 			input,
 			instance_list,
@@ -116,6 +136,8 @@ impl<'a> State<'a> {
 			input_history: vec![String::new()],
 			input_history_index: 0,
 			filter: Filter::All,
+			spinner_stage: 0,
+			last_spinner_update: Instant::now(),
 		};
 
 		out.select_instance();
@@ -199,6 +221,11 @@ fn renderer(terminal: &mut DefaultTerminal, mut state: State<'_>) -> anyhow::Res
 
 	loop {
 		let mut should_render = false;
+		if state.last_spinner_update.elapsed() >= SPINNER_INTERVAL {
+			state.spinner_stage = (state.spinner_stage + 1) % SPINNER_FRAMES.len();
+			state.last_spinner_update = Instant::now();
+			should_render = true;
+		}
 
 		// Check for results or state updates
 		if let Ok(output) = state.output_rx.try_recv() {
@@ -211,6 +238,11 @@ fn renderer(terminal: &mut DefaultTerminal, mut state: State<'_>) -> anyhow::Res
 				})
 				.output
 				.push_str(&output.output);
+			should_render = true;
+		}
+
+		if let Ok(running_instances) = state.status_rx.try_recv() {
+			state.running_instances = running_instances;
 			should_render = true;
 		}
 
@@ -339,7 +371,21 @@ fn render<'a>(frame: &mut Frame, state: &mut State<'a>) {
 	let console_pane = main_layout[1];
 
 	// Instance list
-	let instance_items = state.instances.iter().map(|x| x.to_string());
+	let instance_items = state.instances.iter().map(|x| {
+		let is_running = state.running_instances.contains(x);
+		let (indicator, indicator_style) = if is_running {
+			(
+				format!("{} ", SPINNER_FRAMES[state.spinner_stage]),
+				Style::new().yellow(),
+			)
+		} else {
+			("○ ".to_owned(), Style::new().dark_gray())
+		};
+		ListItem::new(Line::from(vec![
+			Span::styled(indicator, indicator_style),
+			Span::raw(x.to_string()),
+		]))
+	});
 	state.instance_list = state.instance_list.clone().items(instance_items);
 	let mut block = rounded_block().title("Instances");
 	if state.focus == FocusState::List {
@@ -586,9 +632,13 @@ async fn worker_thread(
 	paths: Paths,
 	output_tx: Sender<InstanceOutput>,
 	mut task_rx: Receiver<Task>,
+	status_tx: Sender<Vec<InstanceID>>,
 ) {
 	let mut focus = None;
-	let mut interval = tokio::time::interval(LOCAL_INSTANCE_OUTPUT_UPDATE_RATE);
+	let mut output_interval = tokio::time::interval(LOCAL_INSTANCE_OUTPUT_UPDATE_RATE);
+	let mut local_status_interval = tokio::time::interval(Duration::from_millis(150));
+	let mut remote_status_interval = tokio::time::interval(REMOTE_STATUS_UPDATE_INTERVAL);
+	let mut registry = RunningInstanceRegistry::open(&paths).unwrap();
 
 	loop {
 		tokio::select! {
@@ -597,9 +647,9 @@ async fn worker_thread(
 					Task::Focus(new_focus) => {
 						if let Some(instance) = config.instances.get(&new_focus.instance_id) {
 							if instance.config().is_remote {
-								interval = tokio::time::interval(REMOTE_INSTANCE_OUTPUT_UPDATE_RATE);
+								output_interval = tokio::time::interval(REMOTE_INSTANCE_OUTPUT_UPDATE_RATE);
 							} else {
-								interval = tokio::time::interval(LOCAL_INSTANCE_OUTPUT_UPDATE_RATE);
+								output_interval = tokio::time::interval(LOCAL_INSTANCE_OUTPUT_UPDATE_RATE);
 							}
 						}
 						focus = Some(new_focus);
@@ -611,7 +661,7 @@ async fn worker_thread(
 					}
 				}
 			}
-			_ = interval.tick() => {
+			_ = output_interval.tick() => {
 				let Some(focus) = &mut focus else {
 					continue;
 				};
@@ -625,6 +675,18 @@ async fn worker_thread(
 						output,
 					});
 				}
+			}
+			_ = local_status_interval.tick() => {
+				let _ = registry.reread();
+				let _ = registry.update_from_plugins(false, &config.plugins, &paths, &mut NoOp).await;
+				let _ = status_tx.try_send(registry.iter_entries().map(|x| x.instance_id.clone().into()).collect());
+				let _ = registry.write();
+			}
+			_ = remote_status_interval.tick() => {
+				let _ = registry.reread();
+				let _ = registry.update_from_plugins(true, &config.plugins, &paths, &mut NoOp).await;
+				let _ = status_tx.try_send(registry.iter_entries().map(|x| x.instance_id.clone().into()).collect());
+				let _ = registry.write();
 			}
 		}
 	}
