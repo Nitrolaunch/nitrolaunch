@@ -327,6 +327,8 @@ pub struct RemoteSettings {
 	pub id: String,
 	pub address: String,
 	pub key: String,
+	#[serde(default)]
+	pub disable: bool,
 }
 
 fn get_remote_data_dir(dir: &Path, remote_id: &str) -> PathBuf {
