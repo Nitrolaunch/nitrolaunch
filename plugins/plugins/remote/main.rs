@@ -36,6 +36,9 @@ fn main() -> anyhow::Result<()> {
 
 		let mut out = HashMap::new();
 		for remote in plugin_config.remotes {
+			if remote.disable {
+				continue;
+			}
 			let client = RemoteClient::new(remote.clone(), &dir);
 			let data = runtime.block_on(client.sync(false));
 			let data = match data {
@@ -65,6 +68,9 @@ fn main() -> anyhow::Result<()> {
 
 		let mut out = HashMap::new();
 		for remote in plugin_config.remotes {
+			if remote.disable {
+				continue;
+			}
 			let client = RemoteClient::new(remote.clone(), &dir);
 			let data = runtime.block_on(client.sync(false));
 			let data = match data {
@@ -373,6 +379,9 @@ fn main() -> anyhow::Result<()> {
 		let out = runtime.block_on(async move {
 			let mut tasks = JoinSet::new();
 			for remote in plugin_config.remotes {
+				if remote.disable {
+					continue;
+				}
 				let remote_id = remote.id.clone();
 				let client = RemoteClient::new(remote, &dir);
 				tasks.spawn(async move {

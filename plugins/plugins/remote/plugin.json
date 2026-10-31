@@ -96,6 +96,15 @@
 								"schema": {
 									"type": "string"
 								}
+							},
+							{
+								"id": "disable",
+								"name": "Disable",
+								"description": "Whether to disable this remote server",
+								"icon": "delete",
+								"schema": {
+									"type": "boolean"
+								}
 							}
 						]
 					}
