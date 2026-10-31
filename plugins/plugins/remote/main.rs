@@ -485,22 +485,38 @@ fn main() -> anyhow::Result<()> {
 			Subcommand::Sync { remote } => {
 				let dir = get_dir(&ctx.get_data_dir()?);
 				let plugin_config = parse_plugin_config(ctx.get_custom_config())?;
-				let remote = plugin_config
-					.remotes
-					.into_iter()
-					.find(|x| x.id == remote)
-					.context("Remote does not exist")?;
-				let client = RemoteClient::new(remote, &dir);
 
-				o.start_process();
-				o.display(MessageContents::StartProcess(
-					"Synchronizing with remote".into(),
-				));
-				runtime.block_on(client.sync(true))?;
-				o.display(MessageContents::Success(
-					"Configuration synchronized".into(),
-				));
-				o.end_process();
+				let remotes = if let Some(remote) = remote {
+					vec![remote]
+				} else {
+					plugin_config
+						.remotes
+						.iter()
+						.filter(|x| !x.disable)
+						.map(|x| x.id.clone())
+						.collect()
+				};
+
+				for remote in remotes {
+					let remote = plugin_config
+						.remotes
+						.iter()
+						.find(|x| x.id == remote)
+						.context("Remote does not exist")?;
+					let client = RemoteClient::new(remote.clone(), &dir);
+
+					o.start_process();
+					o.display(MessageContents::StartProcess(format!(
+						"Synchronizing with remote {}",
+						remote.id
+					)));
+					runtime.block_on(client.sync(true))?;
+					o.display(MessageContents::Success(format!(
+						"Configuration synchronized with {}",
+						remote.id
+					)));
+					o.end_process();
+				}
 			}
 		}
 
@@ -527,8 +543,8 @@ enum Subcommand {
 	},
 	#[command(about = "Synchronize configuration with a remote server")]
 	Sync {
-		/// The remote to synchronize with
-		remote: String,
+		/// The remote to synchronize
+		remote: Option<String>,
 	},
 }
 
