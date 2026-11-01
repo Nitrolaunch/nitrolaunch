@@ -185,13 +185,16 @@ impl NitroOutput for RemoteOutput {
 		message: MessageContents,
 	) -> anyhow::Result<bool> {
 		self.send_event(OutputEvent::PromptYesNo { message, default });
-		match self.rx.recv().await {
-			Ok(InputEventWithJob {
-				event: InputEvent::YesNo(value),
-				job_id,
-			}) if Some(job_id) == self.job => Ok(value),
-			_ => Ok(default),
+		while let Ok(event) = self.rx.recv().await {
+			match event {
+				InputEventWithJob {
+					event: InputEvent::YesNo(value),
+					job_id,
+				} if Some(job_id) == self.job => return Ok(value),
+				_ => continue,
+			}
 		}
+		Ok(default)
 	}
 
 	async fn prompt_special_package_diffs(
@@ -199,13 +202,16 @@ impl NitroOutput for RemoteOutput {
 		diffs: Vec<PackageDiff>,
 	) -> anyhow::Result<bool> {
 		self.send_event(OutputEvent::PromptPackageDiffs(diffs.clone()));
-		match self.rx.recv().await {
-			Ok(InputEventWithJob {
-				event: InputEvent::YesNo(value),
-				job_id,
-			}) if Some(job_id) == self.job => Ok(value),
-			_ => Ok(false),
+		while let Ok(event) = self.rx.recv().await {
+			match event {
+				InputEventWithJob {
+					event: InputEvent::YesNo(value),
+					job_id,
+				} if Some(job_id) == self.job => return Ok(value),
+				_ => continue,
+			}
 		}
+		Ok(false)
 	}
 }
 
