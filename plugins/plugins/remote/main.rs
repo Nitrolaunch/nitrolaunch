@@ -406,6 +406,39 @@ fn main() -> anyhow::Result<()> {
 		Ok(out)
 	})?;
 
+	plugin.sync(|mut ctx, _| {
+		let plugin_config = parse_plugin_config(ctx.get_custom_config())?;
+		let dir = get_dir(&ctx.get_data_dir()?);
+
+		let runtime = Runtime::new()?;
+		runtime.block_on(async move {
+			let mut tasks = JoinSet::new();
+			for remote in plugin_config.remotes {
+				if remote.disable {
+					continue;
+				}
+				let remote_id = remote.id.clone();
+				let client = RemoteClient::new(remote, &dir);
+				tasks.spawn(async move {
+					let result = client.sync(true).await;
+					(remote_id, result)
+				});
+			}
+			while let Some(result) = tasks.join_next().await {
+				let (remote_id, result) = result?;
+				if let Err(e) = result {
+					ctx.get_output().display(MessageContents::Error(format!(
+						"Failed to synchronize with remote {remote_id}: {e}",
+					)));
+				}
+			}
+
+			Ok::<(), anyhow::Error>(())
+		})?;
+
+		Ok(())
+	})?;
+
 	plugin.subcommand(|ctx, arg| {
 		let Some(subcommand) = arg.args.first() else {
 			return Ok(());

@@ -211,3 +211,4 @@ hook_interface!(
 	"get_instance_status",
 	GetInstanceStatus
 );
+hook_interface!(sync, "sync", Sync);

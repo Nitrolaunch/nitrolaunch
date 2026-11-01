@@ -149,6 +149,7 @@ pub enum Task {
 	LoginFirstAccount,
 	FetchLoaderVersions,
 	SyncPackages,
+	Sync,
 	Opening,
 	CustomAction,
 }
@@ -174,6 +175,7 @@ impl Task {
 			Self::LoginFirstAccount => true,
 			Self::FetchLoaderVersions => false,
 			Self::SyncPackages => true,
+			Self::Sync => true,
 			Self::Opening => false,
 			Self::CustomAction => false,
 		}
@@ -199,6 +201,7 @@ impl Task {
 			Self::LoginFirstAccount => true,
 			Self::FetchLoaderVersions => false,
 			Self::SyncPackages => true,
+			Self::Sync => true,
 			Self::Opening => false,
 			Self::CustomAction => false,
 		}
@@ -224,6 +227,7 @@ impl Task {
 			Self::LoginFirstAccount => "Logged in".into(),
 			Self::FetchLoaderVersions => "Loader versions fetched".into(),
 			Self::SyncPackages => "Packages synchronized".into(),
+			Self::Sync => "Synchronized".into(),
 			Self::Opening => "Opened".into(),
 			Self::CustomAction => "Action completed".into(),
 		}
@@ -249,6 +253,7 @@ impl Task {
 			Self::LoginFirstAccount => "Failed to log in".into(),
 			Self::FetchLoaderVersions => "Failed to fetch loader versions".into(),
 			Self::SyncPackages => "Failed to synchronize packages".into(),
+			Self::Sync => "Failed to synchronize".into(),
 			Self::Opening => "Failed to open".into(),
 			Self::CustomAction => "Failed to run action".into(),
 		}
@@ -276,6 +281,7 @@ impl Display for Task {
 			Self::LoginFirstAccount => write!(f, "Logging in"),
 			Self::FetchLoaderVersions => write!(f, "Fetching loader versions"),
 			Self::SyncPackages => write!(f, "Synchronizing packages"),
+			Self::Sync => write!(f, "Synchronizing"),
 			Self::Opening => write!(f, "Opening"),
 			Self::CustomAction => write!(f, "Running"),
 		}

@@ -3,6 +3,7 @@ use std::sync::Arc;
 use anyhow::Context;
 use nitrolaunch::{
 	io::logging::{get_log_file_path, get_log_files},
+	plugin_crate::hook::hooks,
 	shared::{
 		id::InstanceID,
 		output::{MessageContents, NitroOutput},
@@ -10,6 +11,7 @@ use nitrolaunch::{
 };
 
 use crate::{
+	dependency::BackDependency,
 	ops::{QueryOption, task::Task},
 	prelude::*,
 	simple_mutation, simple_query,
@@ -99,3 +101,31 @@ pub enum ShowDirectoryOption {
 	Config,
 	Instance(String),
 }
+
+simple_mutation!(
+	name = Sync,
+	ok = (),
+	err = anyhow::Error,
+	keys = (),
+	fn run(&self, _keys: &Self::Keys) -> impl Future<Output = Result<Self::Ok, Self::Err>> {
+		let back_state = self.back_state.clone();
+
+		query_spawn(back_state.0.clone(), async move {
+			let back_state2 = back_state.clone();
+			let task = async move {
+				let mut output = back_state2.output();
+				output.set_task(Task::Sync);
+				let results = back_state2
+					.plugins
+					.call_hook(hooks::Sync, &(), &back_state2.paths, &mut output)
+					.await?;
+				results.all_results(&mut output).await?;
+				back_state2.invalidate(BackDependency::Items);
+				Ok(())
+			};
+			back_state.register_task(Task::Sync, tokio::spawn(task));
+
+			Ok(())
+		})
+	}
+);

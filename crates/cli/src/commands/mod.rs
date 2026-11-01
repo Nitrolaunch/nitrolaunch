@@ -11,6 +11,7 @@ mod r#try;
 mod version;
 
 use std::collections::HashMap;
+use std::ops::DerefMut;
 
 use anyhow::{Context, bail};
 use clap::{Parser, Subcommand};
@@ -25,7 +26,7 @@ use nitrolaunch::instance::transfer::{load_formats, migrate_instances};
 use nitrolaunch::io::paths::Paths;
 use nitrolaunch::plugin::PluginManager;
 use nitrolaunch::plugin_crate::hook::hooks::{
-	self, AddTranslations, CheckMigration, SubcommandArg,
+	self, AddTranslations, CheckMigration, SubcommandArg, Sync,
 };
 use nitrolaunch::shared::id::InstanceID;
 use nitrolaunch::shared::lang::translate::TranslationKey;
@@ -120,6 +121,8 @@ pub enum Command {
 		#[command(subcommand)]
 		command: ConfigSubcommand,
 	},
+	#[command(about = "Synchronize configuration with remote servers")]
+	Sync {},
 	#[command(about = "Manage global log files for the launcher")]
 	Log {
 		#[command(subcommand)]
@@ -270,6 +273,7 @@ pub async fn run_cli() -> anyhow::Result<()> {
 			Command::Log { command } => log::run(command, &mut data).await,
 			Command::Try { command } => r#try::run(command, &mut data).await,
 			Command::Version { command } => version::run(command, &mut data).await,
+			Command::Sync {} => sync(&mut data).await,
 			Command::External(args) => call_plugin_subcommand(args, None, &mut data).await,
 		}
 	};
@@ -461,6 +465,26 @@ async fn migrate(
 	)
 	.await
 	.context("Failed to write modified config")?;
+
+	Ok(())
+}
+
+async fn sync(data: &mut CmdData<'_>) -> anyhow::Result<()> {
+	data.ensure_config(true).await?;
+	let config = data.config.get();
+
+	let mut process = data.output.get_process();
+	process.display(MessageContents::StartProcess(
+		"Synchronizing remote servers".into(),
+	));
+	let results = config
+		.plugins
+		.call_hook(Sync, &(), &data.paths, process.deref_mut())
+		.await?;
+	results.all_results(process.deref_mut()).await?;
+	process.display(MessageContents::Success(
+		"Remote servers synchronized".into(),
+	));
 
 	Ok(())
 }
