@@ -294,6 +294,11 @@ impl Component for InstancePage {
 		} else {
 			None
 		};
+		let remote_tag = if config.read().is_remote {
+			Some(icon_text_tag("globe", "Remote", &theme))
+		} else {
+			None
+		};
 
 		let head = rect()
 			.width(Size::fill())
@@ -311,7 +316,8 @@ impl Component for InstancePage {
 					.font_weight(FontWeight::BOLD)
 					.child(name)
 					.maybe_child(imported_tag)
-					.maybe_child(plugin_tag),
+					.maybe_child(plugin_tag)
+					.maybe_child(remote_tag),
 			)
 			.child(controls);
 
