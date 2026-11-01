@@ -3,7 +3,7 @@ use std::{
 	path::{Path, PathBuf},
 };
 
-use anyhow::Context;
+use anyhow::{Context, bail};
 use clap::Parser;
 use nitro_plugin::{api::executable::ExecutablePlugin, hook::hooks::ReplaceInstanceLaunchResult};
 use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput, Simple};
@@ -182,7 +182,7 @@ fn main() -> anyhow::Result<()> {
 		let dir = get_dir(&ctx.get_data_dir()?);
 		let client = RemoteClient::new(remote, &dir);
 
-		unprocess_instance_config(&mut arg.config);
+		unprocess_instance_config(&mut arg.config, &remote_id)?;
 
 		let runtime = Runtime::new()?;
 		runtime
@@ -212,7 +212,7 @@ fn main() -> anyhow::Result<()> {
 		let dir = get_dir(&ctx.get_data_dir()?);
 		let client = RemoteClient::new(remote, &dir);
 
-		unprocess_instance_config(&mut arg.config.instance);
+		unprocess_instance_config(&mut arg.config.instance, &remote_id)?;
 
 		let runtime = Runtime::new()?;
 		runtime
@@ -662,13 +662,29 @@ fn process_instance_config(config: &mut InstanceConfig, remote_id: &str, is_base
 	config.is_remote = true;
 }
 
-fn unprocess_instance_config(config: &mut InstanceConfig) {
+fn unprocess_instance_config(config: &mut InstanceConfig, remote_id: &str) -> anyhow::Result<()> {
+	let mut invalid_from_found = false;
 	config.from = config
 		.from
 		.iter()
-		.filter_map(|x| parse_id(x).map(|(_, id)| id.into()))
+		.filter_map(|x| {
+			if let Some((remote, id)) = parse_id(x) {
+				if remote == remote_id {
+					Some(id.into())
+				} else {
+					invalid_from_found = true;
+					None
+				}
+			} else {
+				invalid_from_found = true;
+				None
+			}
+		})
 		.filter(|x| x != BASE_TEMPLATE_ID)
 		.collect();
+	if invalid_from_found {
+		bail!("Configuration cannot derive from templates not on the same remote server");
+	}
 
 	config.source_plugin = None;
 	config.custom_logging_plugin = None;
@@ -676,6 +692,8 @@ fn unprocess_instance_config(config: &mut InstanceConfig) {
 	config.launch_mode = LaunchMode::Normal;
 	config.is_editable = false;
 	config.is_remote = false;
+
+	Ok(())
 }
 
 fn process_id(id: &str, remote_id: &str) -> String {
