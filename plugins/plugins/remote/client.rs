@@ -328,6 +328,8 @@ pub struct RemoteSettings {
 	pub address: String,
 	pub key: String,
 	#[serde(default)]
+	pub port: Option<u16>,
+	#[serde(default)]
 	pub disable: bool,
 }
 
@@ -464,7 +466,8 @@ async fn delete(subpath: &str, settings: &RemoteSettings, client: &Client) -> an
 }
 
 fn format_url(settings: &RemoteSettings, subpath: &str) -> String {
-	let address = format!("{}:{PORT}", settings.address);
+	let port = settings.port.unwrap_or(PORT);
+	let address = format!("{}:{port}", settings.address);
 	let mut url = format!("{address}/{}", subpath);
 	if url.starts_with("http://") {
 		url = url.replacen("http://", "https://", 1);
