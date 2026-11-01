@@ -1420,3 +1420,12 @@ pub struct InstanceStatus {
 	/// The account that launched the instance, if any
 	pub account: Option<String>,
 }
+
+def_hook!(
+	Sync,
+	"sync",
+	"Hook for synchronizing instances and templates with remote servers",
+	(),
+	(),
+	1,
+);

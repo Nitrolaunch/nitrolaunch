@@ -12,6 +12,7 @@ use crate::{
 	},
 	ops::{
 		instance::{FetchItems, InstanceItemInfo, InstancesAndTemplates},
+		misc::Sync,
 		plugin_results::{FetchDropdownButtons, OpenCustomPopup, RunCustomAction},
 	},
 	pages::{config::ConfiguredItem, home::item::InstanceListItem},
@@ -48,6 +49,7 @@ impl Component for HomePage {
 			back_state.clone(),
 			front_state.clone(),
 		)));
+		let sync_mutation = use_mutation(Mutation::new(Sync::new(back_state.clone())));
 
 		let tab = use_state(|| Tab::Instances);
 		let filter = use_state::<Option<Side>>(|| None);
@@ -226,12 +228,25 @@ impl Component for HomePage {
 				"Server",
 				Some("server"),
 			));
+		let filters = rect().width(Size::flex(1.0)).child(filters);
+
+		let sync_button = icon_button("cycle", &theme).on_press(move |_| {
+			sync_mutation.mutate(());
+		});
+		let sync_button = rect()
+			.tip(
+				&front_state,
+				"Synchronize instances and templates from remote servers",
+			)
+			.child(sync_button);
 
 		let bar_right = rect()
 			.width(Size::flex(1.0))
 			.height(Size::fill())
+			.cont()
 			.center()
-			.child(filters);
+			.child(filters)
+			.child(sync_button);
 
 		let bar_elem = rect()
 			.width(Size::fill())
