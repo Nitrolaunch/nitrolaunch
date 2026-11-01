@@ -518,6 +518,12 @@ fn main() -> anyhow::Result<()> {
 					o.end_process();
 				}
 			}
+			Subcommand::SetPort { port } => {
+				let mut settings = server::RemoteSettings::open(&dir).unwrap_or_default();
+				settings.set_port(port);
+				settings.save(&dir)?;
+				o.display(MessageContents::Success(format!("Port set to {}", port)));
+			}
 		}
 
 		Ok(())
@@ -545,6 +551,11 @@ enum Subcommand {
 	Sync {
 		/// The remote to synchronize
 		remote: Option<String>,
+	},
+	#[command(about = "Set the port for the remote control server")]
+	SetPort {
+		/// The port to use for the remote control server
+		port: u16,
 	},
 }
 

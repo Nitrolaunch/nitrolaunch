@@ -66,7 +66,8 @@ pub async fn run(paths: &Paths, o: &mut impl NitroOutput) -> anyhow::Result<()> 
 	let settings = RemoteSettings::open(&remote_dir).unwrap_or_default();
 	let settings = Arc::new(settings);
 
-	let addr: SocketAddr = ([0, 0, 0, 0], PORT).into();
+	let port = settings.port.unwrap_or(PORT);
+	let addr: SocketAddr = ([0, 0, 0, 0], port).into();
 	let listener = TcpListener::bind(addr)
 		.await
 		.context("Failed to bind to port")?;
@@ -934,6 +935,7 @@ fn invalid_request() -> Response<Full<Bytes>> {
 #[serde(default)]
 pub struct RemoteSettings {
 	keys: Vec<Key>,
+	port: Option<u16>,
 }
 
 impl RemoteSettings {
@@ -1002,6 +1004,10 @@ impl RemoteSettings {
 			.iter()
 			.find(|k| k.id == key_id)
 			.map(|k| k.key.as_str())
+	}
+
+	pub fn set_port(&mut self, port: u16) {
+		self.port = Some(port);
 	}
 }
 
