@@ -196,7 +196,7 @@ async fn handle_inner(
 			}
 		}
 	} else if path.starts_with("/jobs/") && path.ends_with("/input") && method == Method::POST {
-		if let Some(response) = state.settings.check_key_header(key, KeyPermission::Query) {
+		if let Some(response) = state.settings.check_key_header(key, KeyPermission::Input) {
 			return Ok(response);
 		}
 		let Ok(job_id) = path
@@ -1027,7 +1027,7 @@ pub enum KeyPermission {
 	Update,
 	/// Can delete instances
 	Delete,
-	/// Can send input to instances
+	/// Can send input to instances and jobs
 	Input,
 }
 
