@@ -6,20 +6,19 @@ use freya::{
 		SkeletonThemePartialExt,
 	},
 	elements::{
-		extensions::{ContainerPositionExt, EventHandlersExt, LayerExt, StyleExt, TextStyleExt},
+		extensions::{
+			BackgroundExt, ContainerPositionExt, DecorationExt, EffectExt, EventHandlersExt,
+			LayerExt, StyleExt, TextStyleExt,
+		},
 		label::{Label, label},
 		rect::Rect,
 	},
 	prelude::{
 		Border, BorderAlignment, BorderWidth, ChildrenExt, Color, Component, ContainerExt,
-		ContainerSizeExt, ContainerWithContentExt, Content, Element, IntoElement, Layer, Position,
-		Size, State, TextOverflow, WritableUtils, rect,
+		ContainerSizeExt, ContainerWithContentExt, Content, CornerRadius, Element, IntoElement,
+		Layer, Position, Shadow, Size, State, TextOverflow, WritableUtils, rect,
 	},
 	winit::window::CursorIcon,
-};
-use freya_core::{
-	integration::{BackgroundExt, DecorationExt, EffectExt},
-	style::{corner_radius::CornerRadius, shadow::Shadow},
 };
 use reqwest::Url;
 

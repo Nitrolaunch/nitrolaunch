@@ -6,13 +6,8 @@ use std::{
 
 use anyhow::Context;
 use freya::{
-	prelude::use_consume,
+	prelude::{Platform, State, WritableUtils, use_consume, use_side_effect, use_state},
 	radio::{Radio, RadioChannel, RadioStation, use_radio},
-};
-use freya_core::{
-	integration::{State, WritableUtils},
-	lifecycle::{effect::use_side_effect, state::use_state},
-	platform::Platform,
 };
 use nitrolaunch::{
 	config::Config,
