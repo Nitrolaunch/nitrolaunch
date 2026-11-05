@@ -6,17 +6,19 @@ use std::{
 };
 
 use anyhow::Context;
-use nitro_shared::{pkg::PackageSearchParameters, util::utc_timestamp};
+use nitro_shared::{
+	pkg::PackageSearchParameters, servers::ServerSearchParams, util::utc_timestamp,
+};
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 
 /// A cache for search results in a custom plugin repository that holds entries for a certain amount of time
-pub struct PackageSearchCache {
+pub struct SearchCache {
 	max_age: u64,
 	contents: CacheContents,
 	path: PathBuf,
 }
 
-impl PackageSearchCache {
+impl SearchCache {
 	/// Opens the cache at the given JSON file given the max age for an entry in seconds
 	pub fn open(path: impl AsRef<Path>, max_age: u64) -> anyhow::Result<Self> {
 		let contents = if path.as_ref().exists() {
@@ -35,9 +37,9 @@ impl PackageSearchCache {
 	}
 
 	/// Checks the cache for cached results
-	pub fn check<D: DeserializeOwned>(&self, search: &PackageSearchParameters) -> Option<D> {
+	pub fn check<S: SearchParams, R: DeserializeOwned>(&self, search: &S) -> Option<R> {
 		// Don't cache searches with queries as users will want up to date results
-		if search.search.is_some() {
+		if search.has_search() {
 			return None;
 		}
 
@@ -55,10 +57,10 @@ impl PackageSearchCache {
 	}
 
 	/// Writes to the cache
-	pub fn write<S: Serialize>(
+	pub fn write<S: SearchParams, R: Serialize>(
 		&mut self,
-		search: &PackageSearchParameters,
-		results: S,
+		search: &S,
+		results: R,
 	) -> anyhow::Result<()> {
 		let search = serde_json::to_string(search).context("Failed to stringify search")?;
 		let results = serde_json::to_value(results).context("Failed to serialize results")?;
@@ -82,4 +84,22 @@ struct CacheContents {
 struct CacheEntry {
 	timestamp: u64,
 	results: serde_json::Value,
+}
+
+/// Trait for search parameters used in the cache
+pub trait SearchParams: Serialize {
+	/// Checks whether the parameters specify a fuzzy string search
+	fn has_search(&self) -> bool;
+}
+
+impl SearchParams for PackageSearchParameters {
+	fn has_search(&self) -> bool {
+		self.search.is_some()
+	}
+}
+
+impl SearchParams for ServerSearchParams {
+	fn has_search(&self) -> bool {
+		self.search.is_some()
+	}
 }

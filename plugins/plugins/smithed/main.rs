@@ -16,8 +16,7 @@ use nitro_pkg_gen::relation_substitution::{
 	PackageAndVersion, RelationSubFunction, RelationSubNone,
 };
 use nitro_plugin::{
-	api::executable::ExecutablePlugin, api::utils::PackageSearchCache,
-	hook::hooks::CustomRepoQueryResult,
+	api::executable::ExecutablePlugin, api::utils::SearchCache, hook::hooks::CustomRepoQueryResult,
 };
 use nitro_shared::versions::VersionPattern;
 use serde::{Deserialize, Serialize};
@@ -87,10 +86,10 @@ fn main() -> anyhow::Result<()> {
 			let cache_path = smithed_dir.join("search_cache.json");
 			create_leading_dirs(&cache_path)?;
 			let mut search_cache =
-				PackageSearchCache::open(cache_path, 300).context("Failed to open search cache")?;
+				SearchCache::open(cache_path, 300).context("Failed to open search cache")?;
 
 			let (results, total_results) = if let Some(entry) =
-				search_cache.check::<(Vec<PackSearchResult>, usize)>(&arg.parameters)
+				search_cache.check::<_, (Vec<PackSearchResult>, usize)>(&arg.parameters)
 			{
 				entry
 			} else {

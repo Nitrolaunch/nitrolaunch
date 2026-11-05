@@ -20,7 +20,7 @@ use nitro_pkg_gen::{
 	relation_substitution::RelationSubNone,
 };
 use nitro_plugin::{
-	api::{executable::ExecutablePlugin, utils::PackageSearchCache},
+	api::{executable::ExecutablePlugin, utils::SearchCache},
 	hook::hooks::{CustomRepoQueryResult, ImportInstanceResult, InstallModpackResult},
 };
 use nitro_shared::{
@@ -103,10 +103,10 @@ fn main() -> anyhow::Result<()> {
 			let cache_path = data_dir.join("internal/modrinth/search_cache.json");
 			create_leading_dirs(&cache_path)?;
 			let mut search_cache =
-				PackageSearchCache::open(cache_path, 250).context("Failed to open search cache")?;
+				SearchCache::open(cache_path, 250).context("Failed to open search cache")?;
 
 			let results =
-				if let Some(results) = search_cache.check::<SearchResults>(&arg.parameters) {
+				if let Some(results) = search_cache.check::<_, SearchResults>(&arg.parameters) {
 					results
 				} else {
 					let results = modrinth::search_projects(arg.parameters.clone(), &client)
