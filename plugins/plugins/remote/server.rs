@@ -362,7 +362,7 @@ async fn handle_inner(
 				Ok(ise())
 			}
 		}
-	} else if path.starts_with("/instances") && path.ends_with("/output") && method == Method::GET {
+	} else if path.starts_with("/instances") && path.ends_with("/output") && method == Method::POST {
 		if let Some(response) = state.settings.check_key_header(key, KeyPermission::Query) {
 			return Ok(response);
 		}
