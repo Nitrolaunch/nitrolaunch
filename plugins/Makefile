@@ -9,6 +9,7 @@ package.cross_platform: build.cross_platform
 	@rm -f release/automate-universal.zip
 	@rm -f release/backup-universal.zip
 	@rm -f release/better_jsons-universal.zip
+	@rm -f release/breakblocks-universal.zip
 	@rm -f release/completions-universal.zip
 	@rm -f release/config_split-universal.zip
 	@rm -f release/custom_files-universal.zip
@@ -39,6 +40,8 @@ package.cross_platform: build.cross_platform
 	@printf "@ nitro_plugin_backup.wasm\\n@=plugin.wasm\\n" | zipnote -w release/backup-universal.zip
 	@zip -j release/better_jsons-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_better_jsons.wasm plugins/better_jsons/plugin.json
 	@printf "@ nitro_plugin_better_jsons.wasm\\n@=plugin.wasm\\n" | zipnote -w release/better_jsons-universal.zip
+	@zip -j release/breakblocks-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_breakblocks.wasm plugins/breakblocks/plugin.json
+	@printf "@ nitro_plugin_breakblocks.wasm\\n@=plugin.wasm\\n" | zipnote -w release/breakblocks-universal.zip
 	@zip -j release/config_split-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_config_split.wasm plugins/config_split/plugin.json
 	@printf "@ nitro_plugin_config_split.wasm\\n@=plugin.wasm\\n" | zipnote -w release/config_split-universal.zip
 
@@ -169,6 +172,11 @@ install.better_jsons:
 	@cargo build -p nitro_plugin_better_jsons --release --target wasm32-wasip2
 	@cp -r plugins/better_jsons ~/.local/share/nitro/plugins
 	@cp -r ../target/wasm32-wasip2/release/nitro_plugin_better_jsons.wasm ~/.local/share/nitro/plugins/better_jsons/plugin.wasm
+
+install.breakblocks:
+	@cargo build -p nitro_plugin_breakblocks --release --target wasm32-wasip2
+	@cp -r plugins/breakblocks ~/.local/share/nitro/plugins
+	@cp -r ../target/wasm32-wasip2/release/nitro_plugin_breakblocks.wasm ~/.local/share/nitro/plugins/breakblocks/plugin.wasm
 
 install.cleanup:
 	@cargo install --path . --bin nitro_plugin_cleanup --locked --profile fast_release

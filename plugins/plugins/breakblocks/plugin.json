@@ -1,0 +1,17 @@
+{
+	"id": "breakblocks",
+	"name": "BreakBlocks",
+	"description": "Browse Minecraft servers from BreakBlocks.com",
+	"documentation": "https://breakblocks.com/docs/overview",
+	"version": "0.32.2",
+	"nitro_version": "0.32.2",
+	"protocol_version": 3,
+	"hooks": {
+		"add_server_repositories": {
+			"wasm": true
+		},
+		"search_server_repository": {
+			"wasm": true
+		}
+	}
+}

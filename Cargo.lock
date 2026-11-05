@@ -4700,6 +4700,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "nitro_plugin_breakblocks"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "nitro_plugin",
+ "nitro_shared",
+ "serde",
+ "serde_json",
+ "wstd",
+]
+
+[[package]]
 name = "nitro_plugin_completions"
 version = "0.1.0"
 dependencies = [
