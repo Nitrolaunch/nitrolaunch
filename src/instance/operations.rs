@@ -197,7 +197,7 @@ impl Instance {
 		Ok(())
 	}
 
-	/// Gets the live standard output of this instance, starting from the specified UTF-8 character index
+	/// Gets the live standard output of this instance, starting from the specified byte index.
 	pub async fn get_output(
 		&self,
 		after: u64,

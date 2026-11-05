@@ -1361,7 +1361,7 @@ pub struct GetInstanceOutputArg {
 	pub id: String,
 	/// The instance's configuration
 	pub config: InstanceConfig,
-	/// The UTF-8 character index after which to start fetching output
+	/// The byte index after which to start fetching output
 	pub after: u64,
 }
 

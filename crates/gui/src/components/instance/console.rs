@@ -24,12 +24,12 @@ impl Component for InstanceConsole {
 	fn render(&self) -> impl IntoElement {
 		let back_state = use_consume::<BackState>();
 		let selected_log = use_state::<Option<String>>(|| None);
-		let char_count = use_state::<u64>(|| 0);
+		let byte_count = use_state::<u64>(|| 0);
 		let mut total_content = use_state::<Option<Arc<str>>>(|| None);
 		let contents_query = use_query(FetchInstanceOutput::new(
 			self.id.clone(),
 			selected_log.read().clone(),
-			*char_count.read(),
+			*byte_count.read(),
 			back_state.clone(),
 		));
 		let logs = use_query(Query::new(
@@ -51,7 +51,7 @@ impl Component for InstanceConsole {
 			}
 		});
 		let contents_query2 = contents_query.clone();
-		let mut char_count2 = char_count.clone();
+		let mut byte_count2 = byte_count.clone();
 		use_side_effect(move || {
 			let new_content = contents_query2
 				.read()
@@ -67,7 +67,7 @@ impl Component for InstanceConsole {
 				.as_ref()
 				.to_string() + &new_content;
 			total_content.set(Some(combined.into()));
-			*char_count2.write() += new_content.len() as u64;
+			*byte_count2.write() += new_content.len() as u64;
 		});
 
 		let logs = logs.read().state().ok().cloned().unwrap_or_default();
