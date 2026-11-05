@@ -212,3 +212,13 @@ hook_interface!(
 	GetInstanceStatus
 );
 hook_interface!(sync, "sync", Sync);
+hook_interface!(
+	add_server_repositories,
+	"add_server_repositories",
+	AddServerRepositories
+);
+hook_interface!(
+	search_server_repository,
+	"search_server_repository",
+	SearchServerRepository
+);

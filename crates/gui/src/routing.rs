@@ -65,6 +65,7 @@ pub enum Page {
 	Packages(Option<BrowseFilters>),
 	Package(ArcPkgReq),
 	Instance(String),
+	Servers,
 }
 
 impl Page {
@@ -72,6 +73,7 @@ impl Page {
 		match self {
 			Self::Home | Self::Instance(..) => PageCategory::Home,
 			Self::Packages(..) | Self::Package(..) => PageCategory::Packages,
+			Self::Servers => PageCategory::Servers,
 		}
 	}
 }
@@ -81,6 +83,7 @@ impl Page {
 pub enum PageCategory {
 	Home,
 	Packages,
+	Servers,
 }
 
 impl PageCategory {
@@ -89,6 +92,7 @@ impl PageCategory {
 		match self {
 			Self::Home => Page::Home,
 			Self::Packages => Page::Packages(None),
+			Self::Servers => Page::Servers,
 		}
 	}
 }

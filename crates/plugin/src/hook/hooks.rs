@@ -15,6 +15,7 @@ use nitro_shared::minecraft::VersionEntry;
 use nitro_shared::minecraft::{AddonKind, SkinVariant};
 use nitro_shared::minecraft::{Cape, MinecraftUserProfile, Skin};
 use nitro_shared::pkg::{PackageID, PackageQueryDepth, PackageSearchParameters};
+use nitro_shared::servers::{ServerSearchParams, ServerSearchResults};
 use nitro_shared::versions::VersionPattern;
 use nitro_shared::{Side, versions::VersionInfo};
 use serde::{Deserialize, Serialize};
@@ -1437,5 +1438,33 @@ def_hook!(
 	"Hook for synchronizing instances and templates with remote servers",
 	(),
 	(),
+	1,
+);
+
+def_hook!(
+	AddServerRepositories,
+	"add_server_repositories",
+	"Hook for adding server repositories",
+	(),
+	Vec<ServerRepository>,
+	1,
+);
+
+/// Result from the AddServerRepositories hook
+#[derive(Serialize, Deserialize, Default)]
+#[serde(default)]
+pub struct ServerRepository {
+	/// The ID of the repository
+	pub id: String,
+	/// The display name of the repository
+	pub name: String,
+}
+
+def_hook!(
+	SearchServerRepository,
+	"search_server_repository",
+	"Hook for searching server repositories",
+	ServerSearchParams,
+	ServerSearchResults,
 	1,
 );

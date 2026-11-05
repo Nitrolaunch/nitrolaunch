@@ -75,6 +75,11 @@ impl Component for NavBar {
 			PageCategory::Packages,
 			"Packages",
 			Some("honeycomb"),
+		))
+		.child(SelectOption::new(
+			PageCategory::Servers,
+			"Servers",
+			Some("server"),
 		));
 		let center = rect()
 			.height(Size::fill())

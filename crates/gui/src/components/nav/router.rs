@@ -3,6 +3,7 @@ use crate::{
 		home::HomePage,
 		instance::InstancePage,
 		package::{browse::BrowsePackagesPage, view::PackageView},
+		servers::ServersPage,
 	},
 	prelude::*,
 	routing::Page,
@@ -34,6 +35,7 @@ impl Component for Router {
 			}
 			.into_element(),
 			Page::Instance(id) => InstancePage { id: id.clone() }.into_element(),
+			Page::Servers => ServersPage.into_element(),
 		};
 
 		rect().width(Size::fill()).height(Size::fill()).child(child)
