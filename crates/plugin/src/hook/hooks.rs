@@ -1349,7 +1349,7 @@ def_hook!(
 	"get_instance_output",
 	"Hook for getting the live standard output of a custom instance",
 	GetInstanceOutputArg,
-	String,
+	GetInstanceOutputResult,
 	1,
 );
 
@@ -1363,6 +1363,16 @@ pub struct GetInstanceOutputArg {
 	pub config: InstanceConfig,
 	/// The byte index after which to start fetching output
 	pub after: u64,
+}
+
+/// Result from the GetInstanceOutput hook
+#[derive(Serialize, Deserialize, Default)]
+#[serde(default)]
+pub struct GetInstanceOutputResult {
+	/// The output of the instance
+	pub output: String,
+	/// A unique ID used to identify the process / launch
+	pub process_id: u32,
 }
 
 def_hook!(

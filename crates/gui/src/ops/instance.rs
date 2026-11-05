@@ -9,6 +9,7 @@ use nitrolaunch::{
 	instance::update::{InstanceUpdateContext, UpdateFacets, manager::UpdateSettings},
 	instance_crate::files::{InstanceSave, ServerInfo},
 	io::lock::Lockfile,
+	plugin_crate::hook::hooks::GetInstanceOutputResult,
 	shared::{
 		Side, UpdateDepth,
 		id::{InstanceID, TemplateID},
@@ -423,7 +424,7 @@ impl FetchInstanceOutput {
 }
 
 impl QueryCapability for FetchInstanceOutput {
-	type Ok = Option<Arc<str>>;
+	type Ok = Option<GetInstanceOutputResult>;
 	type Err = anyhow::Error;
 	type Keys = (String, Option<String>, u64);
 
@@ -439,23 +440,23 @@ impl QueryCapability for FetchInstanceOutput {
 				.get(&InstanceID::from(id.clone()))
 				.context("Instance not found")?;
 			if let Some(log_file) = log_file {
-				Ok(Some(
-					instance
-						.get_log(
-							&log_file,
-							&back_state.plugins,
-							&back_state.paths,
-							&mut output,
-						)
-						.await?
-						.into(),
-				))
+				let contents = instance
+					.get_log(
+						&log_file,
+						&back_state.plugins,
+						&back_state.paths,
+						&mut output,
+					)
+					.await?;
+				Ok(Some(GetInstanceOutputResult {
+					output: contents,
+					process_id: 0,
+				}))
 			} else {
 				Ok(Some(
 					instance
 						.get_output(after, &back_state.paths, &back_state.plugins, &mut output)
-						.await?
-						.into(),
+						.await?,
 				))
 			}
 		})

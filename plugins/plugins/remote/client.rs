@@ -13,8 +13,8 @@ use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use tokio::sync::OnceCell;
 
 use crate::output::InputEvent;
-use crate::server::SyncResponse;
 use crate::server::{GetInstanceOutputRequest, InputJobRequest};
+use crate::server::{GetInstanceOutputResponse, SyncResponse};
 use crate::server::{GetJobResponse, KillInstanceRequest};
 use crate::server::{PORT, SendInstanceInputRequest};
 
@@ -263,19 +263,21 @@ impl RemoteClient {
 	}
 
 	/// Gets the output of an instance on the remote server
-	pub async fn get_instance_output(&self, id: &str, after: u64) -> anyhow::Result<String> {
+	pub async fn get_instance_output(
+		&self,
+		id: &str,
+		after: u64,
+	) -> anyhow::Result<GetInstanceOutputResponse> {
 		let client = self.client().await?;
 		let request = GetInstanceOutputRequest { after };
 		let body = serde_json::to_string(&request).context("Failed to serialize request")?;
-		let response = download_text(
+		post_json::<GetInstanceOutputResponse>(
 			&format!("instances/{id}/output"),
 			Some(body),
 			&self.settings,
 			&client,
 		)
-		.await?;
-
-		Ok(response)
+		.await
 	}
 
 	/// Sends input to an instance on the remote server
@@ -449,6 +451,26 @@ async fn post(
 		.context("Server reported an error")?;
 
 	Ok(())
+}
+
+async fn post_json<T: DeserializeOwned>(
+	subpath: &str,
+	body: Option<String>,
+	settings: &RemoteSettings,
+	client: &Client,
+) -> anyhow::Result<T> {
+	let url = format_url(settings, subpath);
+	let response = client
+		.post(url)
+		.body(body.unwrap_or_default())
+		.header("Authorization", &settings.key)
+		.send()
+		.await
+		.context("Failed to send request")?
+		.error_for_status()
+		.context("Server reported an error")?;
+
+	response.json().await.context("Failed to parse JSON")
 }
 
 async fn delete(subpath: &str, settings: &RemoteSettings, client: &Client) -> anyhow::Result<()> {

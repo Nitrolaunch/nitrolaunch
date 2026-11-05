@@ -192,13 +192,15 @@ impl<'a> State<'a> {
 		self.last_selected_instance = Some(instance_id.clone());
 		self.console_scroll = 0;
 
+		let (after, process_id) = self
+			.output
+			.get(&instance_id)
+			.map(|x| (x.output.len() as u64, x.process_id))
+			.unwrap_or((0, 0));
 		let _ = self.output_tx.try_send(Task::Focus(Focus {
 			instance_id: instance_id.clone(),
-			after: self
-				.output
-				.get(&instance_id)
-				.map(|x| x.output.len() as u64)
-				.unwrap_or_default(),
+			after,
+			process_id,
 		}));
 	}
 
@@ -229,15 +231,19 @@ fn renderer(terminal: &mut DefaultTerminal, mut state: State<'_>) -> anyhow::Res
 
 		// Check for results or state updates
 		if let Ok(output) = state.output_rx.try_recv() {
-			state
+			let entry = state
 				.output
 				.entry(output.instance_id.clone())
 				.or_insert_with(|| InstanceOutput {
 					instance_id: output.instance_id.clone(),
 					output: String::new(),
-				})
-				.output
-				.push_str(&output.output);
+					process_id: 0,
+				});
+			if entry.process_id != output.process_id {
+				entry.output.clear();
+			}
+			entry.process_id = output.process_id;
+			entry.output.push_str(&output.output);
 			should_render = true;
 		}
 
@@ -472,6 +478,7 @@ impl<'a, 'b, 'c> Widget for ConsoleWidget<'a, 'b, 'c> {
 		let default = InstanceOutput {
 			instance_id: self.instance_id.clone(),
 			output: "Loading...".into(),
+			process_id: 0,
 		};
 		let output_text = self.state.output.get(&self.instance_id).unwrap_or(&default);
 		let visible_lines = inner_area.height as u64;
@@ -669,10 +676,15 @@ async fn worker_thread(
 					continue;
 				};
 				if let Ok(output) = instance.get_output(focus.after, &paths, &config.plugins, &mut NoOp).await {
-					focus.after += output.len() as u64;
+					if output.process_id != focus.process_id {
+						focus.after = 0;
+						focus.process_id = output.process_id;
+					}
+					focus.after += output.output.len() as u64;
 					let _ = output_tx.try_send(InstanceOutput {
 						instance_id: focus.instance_id.clone(),
-						output,
+						output: output.output,
+						process_id: output.process_id,
 					});
 				}
 			}
@@ -704,12 +716,14 @@ enum Task {
 struct Focus {
 	instance_id: InstanceID,
 	after: u64,
+	process_id: u32,
 }
 
 /// Update for output received from an instance
 struct InstanceOutput {
 	instance_id: InstanceID,
 	output: String,
+	process_id: u32,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

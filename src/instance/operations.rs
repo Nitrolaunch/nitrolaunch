@@ -14,8 +14,8 @@ use nitro_instance::files::{
 	InstanceSave, ServerInfo, get_instance_saves, get_instance_screenshots, get_instance_servers,
 };
 use nitro_plugin::hook::hooks::{
-	DeleteInstance, GetInstanceOutput, GetInstanceOutputArg, KillInstance, KillInstanceArg,
-	SaveInstanceConfigArg, SendInstanceInput, SendInstanceInputArg,
+	DeleteInstance, GetInstanceOutput, GetInstanceOutputArg, GetInstanceOutputResult, KillInstance,
+	KillInstanceArg, SaveInstanceConfigArg, SendInstanceInput, SendInstanceInputArg,
 };
 use nitro_shared::{
 	Side,
@@ -197,14 +197,14 @@ impl Instance {
 		Ok(())
 	}
 
-	/// Gets the live standard output of this instance, starting from the specified byte index.
+	/// Gets the live standard output of this instance, starting from the specified byte index
 	pub async fn get_output(
 		&self,
 		after: u64,
 		paths: &Paths,
 		plugins: &PluginManager,
 		o: &mut impl NitroOutput,
-	) -> anyhow::Result<String> {
+	) -> anyhow::Result<GetInstanceOutputResult> {
 		if let Some(source_plugin) = &self.original_config.source_plugin
 			&& self.config.launch_mode != LaunchMode::Normal
 		{
@@ -229,13 +229,19 @@ impl Instance {
 						file.seek(SeekFrom::Start(after)).await?;
 						let mut output = String::new();
 						file.read_to_string(&mut output).await?;
-						return Ok(output);
+						return Ok(GetInstanceOutputResult {
+							output,
+							process_id: instance.pid,
+						});
 					}
 				}
 			}
 		}
 
-		Ok(String::new())
+		Ok(GetInstanceOutputResult {
+			output: String::new(),
+			process_id: 0,
+		})
 	}
 
 	/// Sends data to this instance's standard input

@@ -5,7 +5,10 @@ use std::{
 
 use anyhow::{Context, bail};
 use clap::Parser;
-use nitro_plugin::{api::executable::ExecutablePlugin, hook::hooks::ReplaceInstanceLaunchResult};
+use nitro_plugin::{
+	api::executable::ExecutablePlugin,
+	hook::hooks::{GetInstanceOutputResult, ReplaceInstanceLaunchResult},
+};
 use nitro_shared::output::{MessageContents, MessageLevel, NitroOutput, Simple};
 use nitrolaunch::{
 	config_crate::instance::{InstanceConfig, LaunchMode, QuickPlay},
@@ -307,7 +310,10 @@ fn main() -> anyhow::Result<()> {
 			.block_on(client.get_instance_output(&instance_id, arg.after))
 			.context("Failed to get instance output on remote")?;
 
-		Ok(output)
+		Ok(GetInstanceOutputResult {
+			output: output.output,
+			process_id: output.process_id,
+		})
 	})?;
 
 	plugin.send_instance_input(|ctx, arg| {

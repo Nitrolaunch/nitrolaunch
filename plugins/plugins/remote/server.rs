@@ -795,10 +795,10 @@ async fn get_instance_output(
 		.get_output(after, &state.paths, &state.plugins, &mut state.o)
 		.await?;
 
-	Response::builder()
-		.status(200)
-		.body(Full::new(Bytes::from(output)))
-		.context("Failed to build response")
+	json_response(&GetInstanceOutputResponse {
+		output: output.output,
+		process_id: output.process_id,
+	})
 }
 
 async fn send_instance_input(
@@ -1112,6 +1112,12 @@ pub struct KillInstanceRequest {
 #[derive(Serialize, Deserialize)]
 pub struct GetInstanceOutputRequest {
 	pub after: u64,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct GetInstanceOutputResponse {
+	pub output: String,
+	pub process_id: u32,
 }
 
 #[derive(Serialize, Deserialize)]
