@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use crate::loaders::Loader;
 
 /// Information about a Minecraft server
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
 #[serde(default)]
 pub struct ServerInfo {
 	/// The display name of the server
@@ -46,10 +46,12 @@ pub enum ServerCategory {
 }
 
 /// Search parameters for finding servers
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
 #[serde(default)]
 pub struct ServerSearchParams {
-	/// The number of packages to return
+	/// The repository to search, or all repositories when absent
+	pub repository: Option<String>,
+	/// The number of servers to return
 	pub count: u8,
 	/// How many results to skip
 	pub skip: usize,

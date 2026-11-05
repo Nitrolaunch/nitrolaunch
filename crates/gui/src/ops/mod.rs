@@ -14,6 +14,7 @@ pub mod packages;
 pub mod plugin_results;
 pub mod plugins;
 pub mod settings;
+pub mod servers;
 pub mod task;
 pub mod transfer;
 pub mod versions;

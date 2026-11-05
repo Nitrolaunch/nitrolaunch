@@ -17,7 +17,7 @@ use nitrolaunch::{
 	io::{logging::Logger, paths::Paths},
 	pkg_crate::repo::RepoMetadata,
 	plugin::PluginManager,
-	plugin_crate::hook::hooks::{self, AddCustomPackageRepositories, AddThemes},
+	plugin_crate::hook::hooks::{self, AddCustomPackageRepositories, AddServerRepositories, AddThemes},
 	shared::{
 		UpdateDepth,
 		manual_files::ManualFile,
@@ -412,6 +412,10 @@ impl BackState {
 		&self.cached_info.themes
 	}
 
+	pub fn server_repos(&self) -> &[nitrolaunch::plugin_crate::hook::hooks::ServerRepository] {
+		&self.cached_info.server_repos
+	}
+
 	pub async fn versions(&self) -> anyhow::Result<&Arc<VersionManifestAndList>> {
 		self.cached_info
 			.versions(
@@ -525,6 +529,7 @@ pub enum BackEvent {
 /// Information from plugins and such that is fetched on startup or reload once and then used
 struct CachedInfo {
 	repos: HashMap<String, RepoMetadata>,
+	server_repos: Vec<nitrolaunch::plugin_crate::hook::hooks::ServerRepository>,
 	themes: Vec<nitrolaunch::plugin_crate::hook::hooks::Theme>,
 	versions: OnceLock<Arc<VersionManifestAndList>>,
 }
@@ -555,8 +560,15 @@ impl CachedInfo {
 			Vec::new()
 		};
 
+		let server_repos = if let Ok(repos) = plugins.call_hook(AddServerRepositories, &(), paths, o).await {
+			repos.flatten_all_results(o).await.unwrap_or_default()
+		} else {
+			Vec::new()
+		};
+
 		Self {
 			repos,
+			server_repos,
 			themes,
 			versions: OnceLock::new(),
 		}
