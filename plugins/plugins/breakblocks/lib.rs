@@ -6,7 +6,6 @@ use nitro_plugin::{
 		utils::SearchCache,
 		wasm::{WASMPlugin, sys::get_data_dir},
 	},
-	hook::hooks::ServerRepository,
 	nitro_wasm_plugin,
 };
 use nitro_shared::servers::{ServerInfo, ServerSearchParams, ServerSearchResults};
@@ -16,21 +15,13 @@ use wstd::{
 	runtime::block_on,
 };
 
-const REPOSITORY_ID: &str = "breakblocks";
 const API_URL: &str = "https://api.breakblocks.com/api/v0.1/servers/find";
 
 nitro_wasm_plugin!(main, "breakblocks");
 
 fn main(plugin: &mut WASMPlugin) -> anyhow::Result<()> {
-	plugin.add_server_repositories(|()| {
-		Ok(vec![ServerRepository {
-			id: REPOSITORY_ID.into(),
-			name: "BreakBlocks".into(),
-		}])
-	})?;
-
 	plugin.search_server_repository(|arg| {
-		if arg.repository.as_deref() != Some(REPOSITORY_ID) {
+		if arg.repository.as_deref() != Some("breakblocks") {
 			return Ok(ServerSearchResults::default());
 		}
 

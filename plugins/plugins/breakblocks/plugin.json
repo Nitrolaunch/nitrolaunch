@@ -8,7 +8,12 @@
 	"protocol_version": 3,
 	"hooks": {
 		"add_server_repositories": {
-			"wasm": true
+			"constant": [
+				{
+					"id": "breakblocks",
+					"name": "BreakBlocks"
+				}
+			]
 		},
 		"search_server_repository": {
 			"wasm": true
