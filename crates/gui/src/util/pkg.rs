@@ -1,4 +1,4 @@
-use nitrolaunch::shared::pkg::PackageCategory;
+use nitrolaunch::shared::{pkg::PackageCategory, servers::ServerCategory};
 
 pub static PACKAGE_CATEGORIES: &[PackageCategory] = &[
 	PackageCategory::Adventure,
@@ -42,6 +42,19 @@ pub static PACKAGE_CATEGORIES: &[PackageCategory] = &[
 	PackageCategory::Utility,
 	PackageCategory::VanillaPlus,
 	PackageCategory::Worldgen,
+];
+
+pub static SERVER_CATEGORIES: &[ServerCategory] = &[
+	ServerCategory::Pvp,
+	ServerCategory::Pve,
+	ServerCategory::Survival,
+	ServerCategory::Creative,
+	ServerCategory::Minigames,
+	ServerCategory::Modded,
+	ServerCategory::Economy,
+	ServerCategory::Skyblock,
+	ServerCategory::Anarchy,
+	ServerCategory::Other,
 ];
 
 pub fn package_category_display_name(category: PackageCategory) -> &'static str {
@@ -133,5 +146,35 @@ pub fn package_category_icon(category: PackageCategory) -> &'static str {
 		PackageCategory::Utility => "gear",
 		PackageCategory::VanillaPlus => "plus",
 		PackageCategory::Worldgen => "globe",
+	}
+}
+
+pub fn server_category_display_name(category: ServerCategory) -> &'static str {
+	match category {
+		ServerCategory::Pvp => "PvP",
+		ServerCategory::Pve => "PvE",
+		ServerCategory::Survival => "Survival",
+		ServerCategory::Creative => "Creative",
+		ServerCategory::Minigames => "Minigames",
+		ServerCategory::Modded => "Modded",
+		ServerCategory::Economy => "Economy",
+		ServerCategory::Skyblock => "Skyblock",
+		ServerCategory::Anarchy => "Anarchy",
+		ServerCategory::Other => "Other",
+	}
+}
+
+pub fn server_category_icon(category: ServerCategory) -> &'static str {
+	match category {
+		ServerCategory::Pvp => "sword",
+		ServerCategory::Pve => "helmet",
+		ServerCategory::Survival => "plus",
+		ServerCategory::Creative => "palette",
+		ServerCategory::Minigames => "controller",
+		ServerCategory::Modded => "gear",
+		ServerCategory::Economy => "graph",
+		ServerCategory::Skyblock => "box",
+		ServerCategory::Anarchy => "lightning",
+		ServerCategory::Other => "question_mark",
 	}
 }
