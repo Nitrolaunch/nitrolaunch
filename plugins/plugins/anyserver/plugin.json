@@ -1,0 +1,22 @@
+{
+	"id": "anyserver",
+	"name": "AnyServer.pro",
+	"description": "Browse Minecraft servers from AnyServer.pro",
+	"documentation": "https://anyserver.pro",
+	"version": "0.32.2",
+	"nitro_version": "0.32.2",
+	"protocol_version": 3,
+	"hooks": {
+		"add_server_repositories": {
+			"constant": [
+				{
+					"id": "anyserver",
+					"name": "AnyServer.pro"
+				}
+			]
+		},
+		"search_server_repository": {
+			"wasm": true
+		}
+	}
+}

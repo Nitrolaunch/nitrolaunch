@@ -4650,6 +4650,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "nitro_plugin_anyserver"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "nitro_plugin",
+ "nitro_shared",
+ "serde",
+ "serde_json",
+ "wstd",
+]
+
+[[package]]
 name = "nitro_plugin_auto_mcs"
 version = "0.1.0"
 dependencies = [

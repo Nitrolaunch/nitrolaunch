@@ -6,6 +6,7 @@ package.cross_platform: build.cross_platform
 	@mkdir -p release
 
 	@rm -f release/auto_mcs-universal.zip
+	@rm -f release/anyserver-universal.zip
 	@rm -f release/automate-universal.zip
 	@rm -f release/backup-universal.zip
 	@rm -f release/better_jsons-universal.zip
@@ -34,6 +35,8 @@ package.cross_platform: build.cross_platform
 
 	@zip -j release/auto_mcs-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_auto_mcs.wasm plugins/auto_mcs/plugin.json
 	@printf "@ nitro_plugin_auto_mcs.wasm\\n@=plugin.wasm\\n" | zipnote -w release/auto_mcs-universal.zip
+	@zip -j release/anyserver-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_anyserver.wasm plugins/anyserver/plugin.json
+	@printf "@ nitro_plugin_anyserver.wasm\\n@=plugin.wasm\\n" | zipnote -w release/anyserver-universal.zip
 	@zip -j release/automate-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_automate.wasm plugins/automate/plugin.json
 	@printf "@ nitro_plugin_automate.wasm\\n@=plugin.wasm\\n" | zipnote -w release/automate-universal.zip
 	@zip -j release/backup-universal.zip ../target/wasm32-wasip2/release/nitro_plugin_backup.wasm plugins/backup/plugin.json
@@ -152,6 +155,11 @@ install.auto_mcs:
 	@cargo build -p nitro_plugin_auto_mcs --release --target wasm32-wasip2
 	@cp -r plugins/auto_mcs ~/.local/share/nitro/plugins
 	@cp -r ../target/wasm32-wasip2/release/nitro_plugin_auto_mcs.wasm ~/.local/share/nitro/plugins/auto_mcs/plugin.wasm
+
+install.anyserver:
+	@cargo build -p nitro_plugin_anyserver --release --target wasm32-wasip2
+	@cp -r plugins/anyserver ~/.local/share/nitro/plugins
+	@cp -r ../target/wasm32-wasip2/release/nitro_plugin_anyserver.wasm ~/.local/share/nitro/plugins/anyserver/plugin.wasm
 
 install.automate:
 	@cargo build -p nitro_plugin_automate --release --target wasm32-wasip2

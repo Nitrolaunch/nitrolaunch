@@ -67,6 +67,7 @@ members = [
 	"plugins/plugins/automate",
 	"plugins/plugins/backup",
 	"plugins/plugins/better_jsons",
+	"plugins/plugins/anyserver",
 	"plugins/plugins/breakblocks",
 	"plugins/plugins/completions",
 	"plugins/plugins/config_split",
