@@ -15,6 +15,7 @@ use anyhow::{Context, bail};
 use itertools::Itertools;
 use nitro_config::instance::InstanceConfig;
 use nitro_config::template::TemplateConfig;
+use nitro_net::download::Client;
 use nitro_shared::output::NitroOutput;
 use tokio::sync::Mutex;
 
@@ -25,6 +26,7 @@ pub struct CorePluginManager {
 	plugin_list: Vec<String>,
 	nitro_version: Option<&'static str>,
 	wasm_loader: Arc<Mutex<WASMLoader>>,
+	client: Client,
 	context: Option<Arc<dyn PluginContext>>,
 }
 
@@ -36,6 +38,7 @@ impl CorePluginManager {
 			plugin_list: Vec::new(),
 			nitro_version: None,
 			wasm_loader: Arc::new(Mutex::new(WASMLoader::new(&paths.data_dir))),
+			client: Client::new(),
 			context: None,
 		}
 	}
@@ -86,6 +89,7 @@ impl CorePluginManager {
 				self.nitro_version,
 				&self.plugin_list,
 				self.wasm_loader.clone(),
+				&self.client,
 				self.context.as_ref(),
 				o,
 			)
@@ -104,6 +108,7 @@ impl CorePluginManager {
 				self.nitro_version,
 				&self.plugin_list,
 				self.wasm_loader.clone(),
+				&self.client,
 				self.context.as_ref(),
 				o,
 			)
@@ -142,6 +147,7 @@ impl CorePluginManager {
 					self.nitro_version,
 					&self.plugin_list,
 					self.wasm_loader.clone(),
+					&self.client,
 					self.context.as_ref(),
 					o,
 				)
@@ -176,6 +182,7 @@ impl CorePluginManager {
 						self.nitro_version,
 						&self.plugin_list,
 						self.wasm_loader.clone(),
+						&self.client,
 						self.context.as_ref(),
 						o,
 					)

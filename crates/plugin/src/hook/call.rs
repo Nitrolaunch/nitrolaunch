@@ -16,6 +16,7 @@ use crate::{
 	plugin::HookSubscription,
 };
 use anyhow::Context;
+use nitro_net::download::Client;
 use nitro_shared::output::{MessageContents, NitroOutput, NoOp};
 use tokio::sync::Mutex;
 
@@ -48,6 +49,8 @@ pub struct HookCallArg<'a, H: Hook> {
 	pub protocol_version: u16,
 	/// The WASM file loader
 	pub wasm_loader: Arc<Mutex<WASMLoader>>,
+	/// The download client
+	pub client: Client,
 }
 
 /// Context information for a hook call that could be passed to the hook

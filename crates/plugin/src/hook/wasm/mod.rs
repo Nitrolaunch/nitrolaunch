@@ -85,6 +85,7 @@ pub(crate) async fn call_wasm<H: Hook + Sized>(
 			context: arg.ctx.global_context.cloned(),
 			persistence: arg.persistence.clone(),
 			wasm_loader: arg.wasm_loader,
+			client: arg.client,
 			data_dir: arg.paths.data_dir.to_string_lossy().to_string(),
 			config_dir: arg.paths.config_dir.to_string_lossy().to_string(),
 			plugin_dir: arg
@@ -111,6 +112,7 @@ pub(super) struct WASMHookHandle<H: Hook> {
 	context: Option<Arc<dyn PluginContext>>,
 	persistence: Arc<Mutex<PluginPersistence>>,
 	wasm_loader: Arc<Mutex<WASMLoader>>,
+	client: Client,
 	data_dir: String,
 	config_dir: String,
 	plugin_dir: String,
@@ -181,7 +183,7 @@ impl<H: Hook> WASMHookHandle<H> {
 			data_dir: self.data_dir.clone(),
 			config_dir: self.config_dir.clone(),
 			plugin_dir: self.plugin_dir.clone(),
-			client: Client::new(),
+			client: self.client.clone(),
 			o: self.o.clone(),
 		};
 

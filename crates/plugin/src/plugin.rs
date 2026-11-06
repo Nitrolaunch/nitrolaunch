@@ -7,6 +7,7 @@ use std::sync::Arc;
 
 use anyhow::Context;
 use anyhow::bail;
+use nitro_net::download::Client;
 use nitro_shared::output::NitroOutput;
 use serde::Serialize;
 use serde::{Deserialize, Deserializer};
@@ -78,6 +79,7 @@ impl Plugin {
 		nitro_version: Option<&str>,
 		plugin_list: &[String],
 		wasm_loader: Arc<Mutex<WASMLoader>>,
+		client: &Client,
 		context: Option<&Arc<dyn PluginContext>>,
 		o: &mut impl NitroOutput,
 	) -> anyhow::Result<Option<HookHandle<H>>> {
@@ -93,6 +95,7 @@ impl Plugin {
 			nitro_version,
 			plugin_list,
 			wasm_loader,
+			client,
 			context,
 			o,
 		)
@@ -109,6 +112,7 @@ impl Plugin {
 		nitro_version: Option<&str>,
 		plugin_list: &[String],
 		wasm_loader: Arc<Mutex<WASMLoader>>,
+		client: &Client,
 		context: Option<&Arc<dyn PluginContext>>,
 		o: &mut impl NitroOutput,
 	) -> anyhow::Result<Option<HookHandle<H>>> {
@@ -146,6 +150,7 @@ impl Plugin {
 						.protocol_version
 						.unwrap_or(DEFAULT_PROTOCOL_VERSION),
 					wasm_loader,
+					client: client.clone(),
 				};
 				call_wasm(hook, arg, o).await.map(Some)
 			}
@@ -178,6 +183,7 @@ impl Plugin {
 						.protocol_version
 						.unwrap_or(DEFAULT_PROTOCOL_VERSION),
 					wasm_loader,
+					client: client.clone(),
 				};
 				hook.call(arg, o).await.map(Some)
 			}
@@ -247,6 +253,7 @@ impl Plugin {
 							nitro_version,
 							plugin_list,
 							wasm_loader,
+							client,
 							context,
 							o,
 						))
