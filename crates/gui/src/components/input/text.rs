@@ -111,6 +111,7 @@ pub fn search_bar(input: TextInput, theme: &Theme) -> Rect {
 				.position(Position::new_absolute().right(12.0))
 				.height(Size::px(theme.input_height))
 				.center()
+				.layer(1)
 				.child(icon("search", 16.0)),
 		)
 		.child(input)
