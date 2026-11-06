@@ -14,24 +14,39 @@ let
       with pkgs;
       [
         openal
-        glfw3-minecraft
         alsa-lib
         libjack2
         libpulseaudio
         pipewire
+
+        glfw3-minecraft
+        sdl3
         libGL
+        vulkan-loader
+        wayland
+        libdecor
         libx11
         libxcursor
         libxext
         libxrandr
         libxxf86vm
-        vulkan-loader
+
         libxrender
         libxtst
         libxi
         libxcb
         fontconfig
         freetype
+
+        stdenv.cc.cc.lib
+        udev 
+        libusb1 
+        flite 
+        gamemode.lib
+
+        mesa-demos
+        pciutils 
+        xrandr 
       ]
       ++ [nitro-cli-unwrapped nitrolaunch-unwrapped]
       ++ extraPkgs pkgs;
