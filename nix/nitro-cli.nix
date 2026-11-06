@@ -8,7 +8,12 @@ rustPlatform.buildRustPackage (finalAttrs: {
 
   src = ../.;
 
-  cargoLock.lockFile = ../Cargo.lock;
+  cargoLock = {
+    lockFile = ../Cargo.lock;
+    outputHashes = {
+      "freya-0.5.0-rc.6" = "sha256-rxY+9T1bvuaZc36AwqLW1iq3yYicCm0jfqMVQ8ycf28=";
+    };
+  };
   buildType = "fast_release";
 
   cargoBuildFlags = [
