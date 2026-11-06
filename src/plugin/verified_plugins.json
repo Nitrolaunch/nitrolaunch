@@ -372,5 +372,23 @@
 		"github_repo": "plugins",
 		"description": "Install CurseForge packages and modpacks",
 		"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/curseforge"
+	},
+	"breakblocks": {
+		"id": "breakblocks",
+		"name": "BreakBlocks",
+		"version": "0.32.2",
+		"github_owner": "Nitrolaunch",
+		"github_repo": "plugins",
+		"description": "Browse Minecraft servers from BreakBlocks.com",
+		"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/breakblocks"
+	},
+	"anyserver": {
+		"id": "anyserver",
+		"name": "AnyServer",
+		"version": "0.32.2",
+		"github_owner": "Nitrolaunch",
+		"github_repo": "plugins",
+		"description": "Browse Minecraft servers from AnyServer.pro",
+		"documentation": "https://nitrolaunch.github.io/nitrolaunch/plugins/plugins/anyserver"
 	}
 }
