@@ -26,6 +26,12 @@ let
         libxrandr
         libxxf86vm
         vulkan-loader
+        libxrender
+        libxtst
+        libxi
+        libxcb
+        fontconfig
+        freetype
       ]
       ++ [nitro-cli-unwrapped nitrolaunch-unwrapped]
       ++ extraPkgs pkgs;
