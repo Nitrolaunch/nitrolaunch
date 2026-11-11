@@ -38,6 +38,7 @@ pub fn resolve(
 
 	resolved.allowed_paths.extend(policy.allowed_paths.clone());
 	resolved.allowed_hosts.extend(policy.allowed_hosts.clone());
+	resolved.allowed_ports.extend(policy.allowed_ports.clone());
 
 	Ok(resolved)
 }
