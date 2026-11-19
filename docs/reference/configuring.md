@@ -164,21 +164,19 @@ or
 	"permissions": "restricted" | "standard" | "elevated",
 	"stability": "stable" | "latest",
 	"worlds": [string],
-	"content_version": string,
 	"optional": bool
 }
 ```
 
 In most cases the first form is all you need. If you want more control over how the package works, use the second form.
 
-- `id`: The identifier for the package. It is very important that this field is correct for the package to work. A content version can be specified for the package in the form of `package@version`, which will override the content version field.
+- `id`: The identifier for the package. It is very important that this field is correct for the package to work. A content version can be specified for the package in the form of `package@version`.
 - `type`: The type of the package, currently only allowing a standard `"repository"` package.
 - `features` (Optional): A list of strings for package features that you would like to enable.
 - `use_default_features` (Optional): Whether or not to use the default features of this package. `true` by default.
 - `permissions` (Optional): The amount of control you would like to give this package. Can be `"restricted"`, `"standard"`, or `"elevated"`. Packages you do not trust should be given the `"restricted"` level. Packages that you trust and want to provide access to special commands for can be given `"elevated"`. Defaults to `"standard"`.
 - `stability` (Optional): Specify whether you want this package to use development versions of addons or not. Defaults to using the `package_stability` setting from the instance.
 - `worlds` (Optional): A list of worlds to only apply addons like datapacks to. If left empty (the default), will apply to all worlds in the instance.
-- `content_version` (Optional): An optional content version to request the package to be. Can be a [version pattern](../advanced/version_patterns.md).
 - `optional` (Optional): Whether this package can be skipped if it has errors. Note that this can cause mods to have unmet dependency errors if they depend on an optional package that fails to install.
 
 ## Preferences
