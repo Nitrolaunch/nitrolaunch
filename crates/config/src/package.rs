@@ -46,10 +46,6 @@ pub struct FullPackageConfig {
 	#[serde(default)]
 	#[serde(skip_serializing_if = "Vec::is_empty")]
 	pub worlds: Vec<String>,
-	/// Desired content version for this package
-	#[serde(default)]
-	#[serde(skip_serializing_if = "Option::is_none")]
-	pub content_version: Option<String>,
 	/// Whether this package is optional
 	#[serde(default)]
 	#[serde(skip_serializing_if = "DefaultExt::is_default")]
@@ -142,14 +138,6 @@ impl PackageConfigDeser {
 		match &self {
 			Self::Basic(..) => Cow::Owned(Vec::new()),
 			Self::Full(cfg) => Cow::Borrowed(&cfg.worlds),
-		}
-	}
-
-	/// Get the content version of the config
-	pub fn get_content_version(&self) -> Option<&String> {
-		match &self {
-			Self::Basic(..) => None,
-			Self::Full(cfg) => cfg.content_version.as_ref(),
 		}
 	}
 
