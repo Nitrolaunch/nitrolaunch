@@ -70,24 +70,31 @@ impl QueryCapability for FetchItems {
 				});
 
 			let templates = config
-				.consolidated_templates
+				.templates
 				.iter()
 				.sorted_by_cached_key(|x| x.0.clone())
 				.map(|(id, x)| InstanceItemInfo {
 					id: id.to_string(),
 					ty: ConfigKind::Template,
-					name: x.instance.name.clone(),
-					icon: x.instance.icon.clone(),
-					side: x.instance.side,
+					name: x.config().instance.name.clone(),
+					icon: x.config().instance.icon.clone(),
+					side: x.config().instance.side,
 					version: x
+						.config()
 						.instance
 						.version
 						.as_ref()
 						.map(MinecraftVersion::from_deser),
-					loader: x.client_loader().or(x.server_loader()).map(|x| x.0),
-					source_plugin: x.instance.source_plugin.clone(),
-					is_editable: x.instance.is_editable || x.instance.source_plugin.is_none(),
-					is_deletable: x.instance.is_deletable || x.instance.source_plugin.is_none(),
+					loader: x
+						.config()
+						.client_loader()
+						.or(x.config().server_loader())
+						.map(|x| x.0),
+					source_plugin: x.config().instance.source_plugin.clone(),
+					is_editable: x.config().instance.is_editable
+						|| x.config().instance.source_plugin.is_none(),
+					is_deletable: x.config().instance.is_deletable
+						|| x.config().instance.source_plugin.is_none(),
 				});
 
 			let base_template = InstanceItemInfo {
@@ -247,13 +254,10 @@ impl QueryCapability for FetchInstanceOrTemplateConfig {
 					let Some(template) = config.templates.get(&id) else {
 						return Ok(None);
 					};
-					let Some(consolidated_template) = config.consolidated_templates.get(&id) else {
-						return Ok(None);
-					};
 
 					Ok(Some(InstanceOrTemplateConfigs {
-						main: consolidated_template.clone(),
-						no_templates: template.clone(),
+						main: template.config().clone(),
+						no_templates: template.original_config().clone(),
 					}))
 				}
 				ConfigKind::BaseTemplate => Ok(Some(InstanceOrTemplateConfigs {
@@ -304,9 +308,9 @@ impl QueryCapability for FetchParentConfigs {
 				.iter()
 				.filter_map(|x| {
 					config
-						.consolidated_templates
+						.templates
 						.get(&TemplateID::from(x.clone()))
-						.cloned()
+						.map(|x| x.config().clone())
 				})
 				.collect();
 

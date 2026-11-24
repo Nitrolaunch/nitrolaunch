@@ -406,7 +406,7 @@ impl MutationCapability for InstallPackage {
 						.templates
 						.get(&template_id)
 						.context("Template does not exist")?;
-					let mut template = template.clone();
+					let mut template = template.original_config().clone();
 
 					let pkg = PackageConfigDeser::Basic(keys.0.to_string().into());
 					template.packages.add_package(pkg, side);
@@ -446,7 +446,7 @@ impl MutationCapability for InstallPackage {
 						.templates
 						.get(&template_id)
 						.context("Template does not exist")?;
-					let mut template = template.clone();
+					let mut template = template.original_config().clone();
 					template.instance.modpack = Some(keys.0.to_string());
 
 					ConfigModification::UpdateTemplate(template_id.clone(), template)
@@ -585,9 +585,9 @@ simple_query!(
 					let id = keys.item.id;
 					let template = match keys.item.ty {
 						ConfigKind::Template => config
-							.consolidated_templates
+							.templates
 							.get(&TemplateID::from(id.clone().unwrap()))
-							.context("Template does not exist")?,
+							.context("Template does not exist")?.original_config(),
 						ConfigKind::BaseTemplate => &config.base_template,
 						_ => unreachable!(),
 					};

@@ -18,6 +18,8 @@ pub mod files;
 pub mod lock;
 /// Game logs
 pub mod logs;
+/// Instance templates
+pub mod template;
 
 /// Gets the directory for game files on an instance from it's base directory (instances/foo)
 pub fn get_instance_dir(base_dir: &Path, side: Side) -> PathBuf {

@@ -27,9 +27,10 @@ impl Config {
 		o: &mut impl NitroOutput,
 	) -> anyhow::Result<()> {
 		let mut template = self
-			.consolidated_templates
+			.templates
 			.get(template_id)
 			.context("Template does not exist")?
+			.config()
 			.clone();
 		template.instance.from = DeserListOrSingle::default();
 
@@ -55,6 +56,7 @@ impl Config {
 			.templates
 			.get(template_id)
 			.context("Template does not exist")?
+			.config()
 			.clone();
 
 		let modifications = vec![ConfigModification::AddTemplate(

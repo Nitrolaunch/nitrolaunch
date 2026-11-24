@@ -362,7 +362,8 @@ async fn handle_inner(
 				Ok(ise())
 			}
 		}
-	} else if path.starts_with("/instances") && path.ends_with("/output") && method == Method::POST {
+	} else if path.starts_with("/instances") && path.ends_with("/output") && method == Method::POST
+	{
 		if let Some(response) = state.settings.check_key_header(key, KeyPermission::Query) {
 			return Ok(response);
 		}
@@ -468,7 +469,7 @@ async fn sync(mut state: State) -> anyhow::Result<Response<Full<Bytes>>> {
 	let templates = config
 		.templates
 		.iter()
-		.map(|(id, template)| (id.to_string(), template.clone()))
+		.map(|(id, template)| (id.to_string(), template.original_config().clone()))
 		.collect::<HashMap<_, _>>();
 	let base_template = config.base_template.clone();
 	let response = SyncResponse {

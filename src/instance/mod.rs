@@ -76,7 +76,7 @@ impl Instance {
 	pub fn from_config(
 		id: InstanceID,
 		mut config: InstanceConfig,
-		templates: &HashMap<TemplateID, TemplateConfig>,
+		templates: &HashMap<TemplateID, &TemplateConfig>,
 		paths: &Paths,
 	) -> anyhow::Result<Self> {
 		if !is_valid_instance_id(&id) {

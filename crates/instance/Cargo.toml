@@ -27,6 +27,7 @@ named-binary-tag = { workspace = true }
 schemars = { workspace = true, optional = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
+nitro_config = { workspace = true }
 nitro_shared = { workspace = true }
 nitro_net = { workspace = true, optional = true }
 tokio = { workspace = true, optional = true }

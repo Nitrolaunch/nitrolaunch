@@ -160,14 +160,14 @@ async fn create_filters(
 			bail!("Template does not exist");
 		};
 
-		if let Some(loader) = &template.instance.loader {
+		if let Some(loader) = &template.config().instance.loader {
 			let (loader, _) = parse_single_versioned_string(loader);
 			let loader = Loader::parse_from_str(loader);
 			if loader != Loader::Vanilla {
 				params.loaders = vec![loader];
 			}
 		}
-		if let Some(version) = &template.instance.version {
+		if let Some(version) = &template.config().instance.version {
 			let version = MinecraftVersion::from_deser(version);
 			let version = core.resolve_version(&version).await?;
 			params.minecraft_versions = vec![version.to_string()];
@@ -1731,7 +1731,7 @@ async fn worker_thread(
 						let Some(template) = config.templates.get(&id) else {
 							continue;
 						};
-						let mut config = template.clone();
+						let mut config = template.original_config().clone();
 
 						config
 							.packages

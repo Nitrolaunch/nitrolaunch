@@ -4546,6 +4546,7 @@ dependencies = [
  "itertools 0.11.0",
  "libflate",
  "named-binary-tag",
+ "nitro_config",
  "nitro_net",
  "nitro_shared",
  "schemars",

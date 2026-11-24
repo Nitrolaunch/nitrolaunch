@@ -19,6 +19,7 @@ use crate::config::core_setup::setup_core;
 use crate::instance::update::manager::UpdateSettings;
 use crate::plugin::PluginManager;
 use crate::plugin::context::NitroPluginContext;
+use crate::template::{Template, load_templates};
 use anyhow::Context;
 use nitro_config::ConfigDeser;
 use nitro_config::template::TemplateConfig;
@@ -54,10 +55,8 @@ pub struct Config {
 	pub accounts: AccountManager,
 	/// Instances
 	pub instances: HashMap<InstanceID, Instance>,
-	/// Unconsolidated templates
-	pub templates: HashMap<TemplateID, TemplateConfig>,
-	/// Consolidated templates
-	pub consolidated_templates: HashMap<TemplateID, TemplateConfig>,
+	/// Templates
+	pub templates: HashMap<TemplateID, Template>,
 	/// The globally applied template
 	pub base_template: TemplateConfig,
 	/// Named groups of instances
@@ -154,6 +153,18 @@ impl Config {
 			o.display(MessageContents::Warning(translate!(o, NoAccounts)));
 		}
 
+		// Load templates
+		let templates = load_templates(&paths.config.join("templates"), &config.templates, o);
+		let mut templates = match templates {
+			Ok(templates) => templates,
+			Err(e) => {
+				o.display(MessageContents::Error(format!(
+					"Failed to load templates: {e:?}"
+				)));
+				HashMap::new()
+			}
+		};
+
 		// Add instances from plugins
 		let arg = AddInstancesArg {};
 		let results = plugins.call_hook(AddInstances, &arg, paths, o).await;
@@ -187,6 +198,7 @@ impl Config {
 				)));
 			}
 		}
+
 		// Add templates from plugins
 		let results = plugins.call_hook(AddTemplates, &arg, paths, o).await;
 		match results {
@@ -203,12 +215,19 @@ impl Config {
 						}
 					};
 					for (id, mut template) in result.into_iter() {
-						if config.templates.contains_key(&id) {
+						if templates.contains_key(&id) {
 							continue;
 						}
 
 						template.instance.source_plugin = Some(plugin_id.clone());
-						config.templates.insert(id, template);
+						templates.insert(
+							id.clone(),
+							Template::from_config(
+								id.clone(),
+								template,
+								Template::get_path(&paths.config.join("templates"), &id),
+							),
+						);
 					}
 				}
 			}
@@ -220,11 +239,17 @@ impl Config {
 		}
 
 		// Consolidate templates
-		let consolidated_templates = consolidate_template_configs(
-			config.templates.clone(),
-			config.base_template.as_ref(),
-			o,
-		);
+		let template_configs = templates
+			.iter()
+			.map(|(id, template)| (id.clone(), template.original_config()))
+			.collect();
+		let consolidated_templates =
+			consolidate_template_configs(template_configs, config.base_template.as_ref(), o);
+		for (id, consolidated) in consolidated_templates {
+			if let Some(template) = templates.get_mut(&id) {
+				template.set_consolidated_config(consolidated);
+			}
+		}
 
 		// Load extra supported loaders
 		let mut supported_loaders = Vec::new();
@@ -245,11 +270,15 @@ impl Config {
 		}
 
 		// Instances
+		let templates_for_instances = templates
+			.iter()
+			.map(|(id, template)| (id.clone(), template.config()))
+			.collect();
 		for (instance_id, instance_config) in config.instances {
 			let result = Instance::from_config(
 				instance_id.clone(),
 				instance_config,
-				&consolidated_templates,
+				&templates_for_instances,
 				paths,
 			);
 
@@ -293,9 +322,9 @@ impl Config {
 			.iter()
 			.map(|(k, v)| (k.to_string(), v.config().clone()))
 			.collect();
-		let plugin_manager_templates = consolidated_templates
+		let plugin_manager_templates = templates
 			.iter()
-			.map(|(k, v)| (k.to_string(), v.clone()))
+			.map(|(k, v)| (k.to_string(), v.config().clone()))
 			.collect();
 
 		let context = NitroPluginContext {
@@ -310,8 +339,7 @@ impl Config {
 		Self {
 			accounts,
 			instances,
-			templates: config.templates,
-			consolidated_templates,
+			templates,
 			base_template: config.base_template.unwrap_or_default(),
 			instance_groups: config.instance_groups,
 			packages: Arc::new(packages),

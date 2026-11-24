@@ -338,7 +338,7 @@ impl TemplatePackageConfiguration {
 
 /// Consolidates template configs into the full templates
 pub fn consolidate_template_configs(
-	templates: HashMap<TemplateID, TemplateConfig>,
+	templates: HashMap<TemplateID, &TemplateConfig>,
 	base_template: Option<&TemplateConfig>,
 	o: &mut impl NitroOutput,
 ) -> HashMap<TemplateID, TemplateConfig> {
@@ -357,7 +357,7 @@ pub fn consolidate_template_configs(
 
 			if template.instance.from.is_empty() {
 				// Templates with no ancestor can just be added directly to the output, after deriving from the base template
-				let mut template = template.clone();
+				let mut template = (*template).clone();
 				if let Some(base_template) = base_template
 					&& !template.instance.is_remote
 				{
@@ -372,7 +372,7 @@ pub fn consolidate_template_configs(
 					let parent_id = TemplateID::from(parent.clone());
 					if let Some(parent) = out.get(&parent_id) {
 						let mut new = parent.clone();
-						new.merge(template.clone());
+						new.merge((*template).clone());
 						out.insert(id.clone(), new);
 					} else {
 						// Check if the parent template actually doesn't exist or if we just haven't consolidated it yet
@@ -401,7 +401,7 @@ impl InstanceConfig {
 	/// Applies the derived templates of this config
 	pub fn apply_templates(
 		&mut self,
-		templates: &HashMap<TemplateID, TemplateConfig>,
+		templates: &HashMap<TemplateID, &TemplateConfig>,
 	) -> anyhow::Result<Self> {
 		let templates: anyhow::Result<Vec<_>> = self
 			.from
@@ -409,6 +409,7 @@ impl InstanceConfig {
 			.map(|x| {
 				templates
 					.get(&TemplateID::from(x.clone()))
+					.map(|x| *x)
 					.with_context(|| format!("Derived template '{x}' does not exist"))
 			})
 			.collect();
@@ -489,18 +490,17 @@ mod tests {
 	/// Make sure that consolidated templates are not removed
 	#[test]
 	fn test_consolidated_still_exists() {
-		let mut templates = HashMap::new();
-		templates.insert(TemplateID::from("foo"), TemplateConfig::default());
-		templates.insert(
-			TemplateID::from("bar"),
-			TemplateConfig {
-				instance: InstanceConfig {
-					from: DeserListOrSingle::Single("foo".into()),
-					..Default::default()
-				},
+		let template1 = TemplateConfig::default();
+		let template2 = TemplateConfig {
+			instance: InstanceConfig {
+				from: DeserListOrSingle::Single("foo".into()),
 				..Default::default()
 			},
-		);
+			..Default::default()
+		};
+		let mut templates = HashMap::new();
+		templates.insert(TemplateID::from("foo"), &template1);
+		templates.insert(TemplateID::from("bar"), &template2);
 
 		// Ensure determinism
 		for _ in 0..30 {

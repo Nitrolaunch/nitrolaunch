@@ -113,7 +113,7 @@ async fn info(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()> 
 		print!("{} ", INSTANCE);
 	}
 	cprintln!("<s><g>Template <b>{}", id);
-	if let Some(version) = &template.instance.version {
+	if let Some(version) = &template.config().instance.version {
 		print_indent();
 		if icons_enabled() {
 			print!("{} ", VERSION);
@@ -124,7 +124,7 @@ async fn info(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()> 
 		);
 	}
 
-	if let Some(side) = template.instance.side {
+	if let Some(side) = template.config().instance.side {
 		print_indent();
 		cprint!("{}Type: ", HYPHEN_POINT);
 		match side {
@@ -137,7 +137,7 @@ async fn info(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()> 
 	if icons_enabled() {
 		print!("{} ", LOADER);
 	}
-	match &template.loader {
+	match &template.config().loader {
 		TemplateLoaderConfiguration::Simple(Some(loader)) => {
 			cprintln!("<s>Loader:</s> <g>{loader}");
 		}
@@ -158,21 +158,21 @@ async fn info(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()> 
 	}
 	cprintln!("<s>Packages:");
 	cprintln!("   <s>Global Packages:");
-	for pkg in template.packages.iter_global() {
+	for pkg in template.config().packages.iter_global() {
 		print_indent();
 		cprint!("{}", HYPHEN_POINT);
 		cprint!("<b!>{}<g!>", pkg.get_id());
 		cprintln!();
 	}
 	cprintln!("   <s>Client Packages:");
-	for pkg in template.packages.iter_side(Side::Client) {
+	for pkg in template.config().packages.iter_side(Side::Client) {
 		print_indent();
 		cprint!("{}", HYPHEN_POINT);
 		cprint!("<b!>{}<g!>", pkg.get_id());
 		cprintln!();
 	}
 	cprintln!("   <s>Server Packages:");
-	for pkg in template.packages.iter_side(Side::Server) {
+	for pkg in template.config().packages.iter_side(Side::Server) {
 		print_indent();
 		cprint!("{}", HYPHEN_POINT);
 		cprint!("<b!>{}<g!>", pkg.get_id());
@@ -203,14 +203,14 @@ async fn delete(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()
 	let mut process = data.output.get_process();
 	process.display(MessageContents::StartProcess("Deleting template".into()));
 
-	if let Some(source_plugin) = &template.instance.source_plugin {
-		if !template.instance.is_deletable {
+	if let Some(source_plugin) = &template.config().instance.source_plugin {
+		if !template.config().instance.is_deletable {
 			bail!("Plugin template does not support deletion");
 		}
 
 		let arg = SaveTemplateConfigArg {
 			id: id.to_string(),
-			config: template.clone(),
+			config: template.original_config().clone(),
 		};
 
 		let result = config
@@ -256,7 +256,7 @@ async fn edit(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()> 
 		.get_mut(&id)
 		.with_context(|| format!("Unknown template '{id}'"))?;
 
-	let mut temp_config = template.clone();
+	let mut temp_config = template.original_config().clone();
 	if temp_config.instance.source_plugin.is_some() && !temp_config.instance.is_editable {
 		bail!("This plugin template does not support editing");
 	}
@@ -268,7 +268,7 @@ async fn edit(data: &mut CmdData<'_>, id: Option<String>) -> anyhow::Result<()> 
 		.context("Failed to serialize. Make sure your config is valid JSON")?;
 	new_config
 		.instance
-		.restore_plugin_only_fields(&template.instance);
+		.restore_plugin_only_fields(&template.original_config().instance);
 
 	let modifications = vec![ConfigModification::UpdateTemplate(id, new_config)];
 	apply_modifications_and_write(
