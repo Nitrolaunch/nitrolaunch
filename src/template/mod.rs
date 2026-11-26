@@ -12,6 +12,8 @@ use nitro_shared::{
 	output::{MessageContents, NitroOutput},
 };
 
+/// Applying and resolving templates on instances
+pub mod apply;
 /// Installing and launching proxies on templates
 pub mod proxy;
 
@@ -60,7 +62,11 @@ impl Template {
 
 	/// Creates a new template from a config and a path
 	pub fn from_config(id: TemplateID, config: TemplateConfig, path: PathBuf) -> Self {
-		let data = TemplateData { id, config };
+		let data = TemplateData {
+			id,
+			config,
+			components: Vec::new(),
+		};
 		Self::from_data(data, path)
 	}
 
@@ -143,4 +149,9 @@ pub fn load_templates(
 	}
 
 	Ok(templates)
+}
+
+/// Gets the storage path for a component in the storage directory based on its hash
+pub fn get_component_storage_path(hash: &str, storage_dir: &Path) -> PathBuf {
+	storage_dir.join(&hash[0..2]).join(hash)
 }

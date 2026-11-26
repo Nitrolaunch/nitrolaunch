@@ -4543,6 +4543,7 @@ dependencies = [
  "anyhow",
  "async-trait",
  "base64 0.22.1",
+ "hex",
  "itertools 0.11.0",
  "libflate",
  "named-binary-tag",

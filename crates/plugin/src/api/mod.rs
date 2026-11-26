@@ -212,3 +212,9 @@ hook_interface!(
 	GetInstanceStatus
 );
 hook_interface!(sync, "sync", Sync);
+hook_interface!(
+	add_component_formats,
+	"add_component_formats",
+	AddComponentFormats
+);
+hook_interface!(apply_components, "apply_components", ApplyComponents);

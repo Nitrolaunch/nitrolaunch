@@ -4,6 +4,7 @@ use nitro_config::ConfigKind;
 use nitro_config::instance::{InstanceConfig, WrapperCommand};
 use nitro_config::template::TemplateConfig;
 use nitro_instance::addon::Addon;
+use nitro_instance::template::{ComponentFormat, ComponentWithSource};
 use nitro_pkg::repo::{PackageFlag, RepoMetadata};
 use nitro_pkg::script_eval::AddonInstructionData;
 use nitro_pkg::{PackageContentType, PackageSearchResults, RecommendedPackage, RequiredPackage};
@@ -1439,3 +1440,41 @@ def_hook!(
 	(),
 	1,
 );
+
+def_hook!(
+	AddComponentFormats,
+	"add_component_formats",
+	"Hook for adding new component formats",
+	(),
+	Vec<ComponentFormat>,
+	1,
+);
+
+def_hook!(
+	ApplyComponents,
+	"apply_components",
+	"Hook for applying components to an instance",
+	ApplyComponentsArg,
+	ApplyComponentsResult,
+	1,
+);
+
+/// Argument for the ApplyComponents hook
+#[derive(Serialize, Deserialize, Default)]
+#[serde(default)]
+pub struct ApplyComponentsArg {
+	/// The instance's configuration
+	pub config: InstanceConfig,
+	/// The components to apply
+	pub components: Vec<ComponentWithSource>,
+	/// The target directory to apply the components to
+	pub target_dir: String,
+}
+
+/// Result from the ApplyComponents hook
+#[derive(Serialize, Deserialize, Default)]
+#[serde(default)]
+pub struct ApplyComponentsResult {
+	/// The components that failed to apply
+	pub failed_components: Vec<ComponentWithSource>,
+}

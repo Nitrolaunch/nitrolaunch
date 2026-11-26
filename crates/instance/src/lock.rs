@@ -14,7 +14,7 @@ use nitro_shared::{
 };
 use serde::{Deserialize, Serialize};
 
-use crate::addon::Addon;
+use crate::{addon::Addon, template::TemplateComponent};
 
 /// Stored install info about an instance
 #[derive(Debug)]
@@ -242,6 +242,44 @@ impl InstanceLockfile {
 
 		files_to_remove
 	}
+
+	/// Gets the locked components
+	pub fn get_components(&self) -> &Vec<TemplateComponent> {
+		&self.contents.components
+	}
+
+	/// Updates a component in the lockfile, returning the previous component if it existed,
+	/// which should be removed before the new one is applied
+	pub fn update_component(&mut self, component: TemplateComponent) -> Option<TemplateComponent> {
+		if let Some(pos) = self
+			.contents
+			.components
+			.iter()
+			.position(|x| x == &component)
+		{
+			Some(std::mem::replace(
+				&mut self.contents.components[pos],
+				component,
+			))
+		} else {
+			self.contents.components.push(component);
+			None
+		}
+	}
+
+	/// Gets the components that are in the lockfile but not in the new list of components,
+	/// which should be removed from the instance
+	pub fn get_removed_components(
+		&self,
+		new_components: &[TemplateComponent],
+	) -> Vec<TemplateComponent> {
+		self.contents
+			.components
+			.iter()
+			.filter(|existing| !new_components.iter().any(|new| new == *existing))
+			.cloned()
+			.collect()
+	}
 }
 
 #[derive(Serialize, Deserialize, Default, Debug)]
@@ -263,6 +301,9 @@ pub(crate) struct InstanceLockfileContents {
 	/// Currently installed modpack on the instance
 	#[serde(default)]
 	pub modpack: Option<LockfileModpack>,
+	/// Currently installed components from templates
+	#[serde(default)]
+	pub components: Vec<TemplateComponent>,
 }
 
 /// Package stored in the instance lockfile
@@ -348,6 +389,7 @@ mod tests {
 				configured_packages: HashSet::new(),
 				addons: Vec::new(),
 				modpack: None,
+				components: Vec::new(),
 			},
 			path: PathBuf::from("/tmp/test_lock.json"),
 		}

@@ -21,6 +21,7 @@ net = ["dep:tokio", "dep:nitro_net"]
 anyhow = { workspace = true }
 async-trait = { workspace = true }
 base64 = { workspace = true }
+hex = { workspace = true }
 itertools = { workspace = true }
 libflate = { workspace = true }
 named-binary-tag = { workspace = true }
